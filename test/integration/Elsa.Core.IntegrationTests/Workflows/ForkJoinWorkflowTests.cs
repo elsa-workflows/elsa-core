@@ -91,7 +91,7 @@ namespace Elsa.Core.IntegrationTests.Workflows
         [Fact(DisplayName = "Normal join should not eagerly clear blocking activities")]
         public async Task Test03()
         {
-            var workflow = new ForkEagerJoinWorkflow(false);
+            var workflow = new ForkEagerJoinWorkflow(false, false);
             var workflowBlueprint = WorkflowBuilder.Build(workflow);
             var workflowResult = await WorkflowStarter.StartWorkflowAsync(workflowBlueprint);
             var workflowInstance = workflowResult.WorkflowInstance!;
@@ -99,15 +99,37 @@ namespace Elsa.Core.IntegrationTests.Workflows
             Assert.Equal(2, workflowInstance.BlockingActivities.Count);
         }
         
-        [Fact(DisplayName = "Eager join should not clear all blocking activities")]
+        [Fact(DisplayName = "Eager join should clear all blocking activities")]
         public async Task Test04()
         {
-            var workflow = new ForkEagerJoinWorkflow(true);
+            var workflow = new ForkEagerJoinWorkflow(true, false);
             var workflowBlueprint = WorkflowBuilder.Build(workflow);
             var workflowResult = await WorkflowStarter.StartWorkflowAsync(workflowBlueprint);
             var workflowInstance = workflowResult.WorkflowInstance!;
 
             Assert.Single(workflowInstance.BlockingActivities);
+        }
+        
+        [Fact(DisplayName = "Eager join should clear blocking and scheduled activities")]
+        public async Task Test05()
+        {
+            var workflow = new ForkEagerJoinWorkflow(true, true);
+            var workflowBlueprint = WorkflowBuilder.Build(workflow);
+            var workflowResult = await WorkflowStarter.StartWorkflowAsync(workflowBlueprint);
+            var workflowInstance = workflowResult.WorkflowInstance!;
+
+            Assert.Single(workflowInstance.BlockingActivities);
+        }
+        
+        [Fact(DisplayName = "Normal join should not clear scheduled activities")]
+        public async Task Test06()
+        {
+            var workflow = new ForkEagerJoinWorkflow(false, true);
+            var workflowBlueprint = WorkflowBuilder.Build(workflow);
+            var workflowResult = await WorkflowStarter.StartWorkflowAsync(workflowBlueprint);
+            var workflowInstance = workflowResult.WorkflowInstance!;
+
+            Assert.Equal(2, workflowInstance.BlockingActivities.Count);
         }
 
         private async Task<WorkflowInstance> TriggerSignalAsync(IWorkflowBlueprint workflowBlueprint, WorkflowInstance workflowInstance, string signal)

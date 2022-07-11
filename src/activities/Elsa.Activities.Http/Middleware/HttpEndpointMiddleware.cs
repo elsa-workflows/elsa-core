@@ -248,7 +248,7 @@ namespace Elsa.Activities.Http.Middleware
         }
 
         private string? GetPath(PathString? basePath, HttpContext httpContext) => basePath != null
-            ? httpContext.Request.Path.StartsWithSegments(basePath.Value, out _, out var remainingPath) ? remainingPath.Value.ToLowerInvariant() : null
-            : httpContext.Request.Path.Value.ToLowerInvariant();
+            ? httpContext.Request.Path.StartsWithSegments(basePath.Value, out _, out var remainingPath) ? remainingPath.Value : null
+            : httpContext.Request.Path.Value;
     }
 }
