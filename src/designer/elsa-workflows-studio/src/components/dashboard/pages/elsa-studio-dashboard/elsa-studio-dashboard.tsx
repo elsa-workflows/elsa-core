@@ -47,7 +47,15 @@ export class ElsaStudioDashboard {
     const basePath = this.basePath || '';
     const IntlMessage = GetIntlMessage(this.i18next);
 
-    let menuItems = this.dashboardMenu.data != null ? this.dashboardMenu.data.menuItems : [];
+    const menuItemsNamespace = "menuItems"
+
+    let menuItems = (this.dashboardMenu.data != null ? this.dashboardMenu.data.menuItems : [])
+      .map(([route, label]) =>
+        this.i18next.exists(`${menuItemsNamespace}:${route}`) ?
+          [route, this.i18next.t(`${menuItemsNamespace}:${route}`)] :
+          [route, label]
+      );
+    
     let routes = this.dashboardMenu.data != null ? this.dashboardMenu.data.routes : [];
 
     const renderFeatureMenuItem = (item: any, basePath: string) => {
