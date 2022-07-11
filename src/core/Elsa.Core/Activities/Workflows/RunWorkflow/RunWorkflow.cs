@@ -125,7 +125,6 @@ namespace Elsa.Activities.Workflows
             WorkflowStatus? childWorkflowStatus;
             WorkflowInstance? childWorkflowInstance;
 
-
             //Someway the initial input changes when retrying, so we hash the values
             //when retrying this activity if faulted, if there is only one with this activity id in the workflow, we dont need to use the hash because
             //ChildWorkflowInstanceId will have the id of the subworkflow but, if it has failed in a loop, as ChildWorkflowInstanceId is metadata, it will always
@@ -166,8 +165,6 @@ namespace Elsa.Activities.Workflows
                 childWorkflowStatus = childWorkflowInstance.WorkflowStatus;
                 ChildWorkflowInstanceId = childWorkflowInstance.Id;
 
-                
-
                 context.JournalData.Add("Workflow Blueprint ID", workflowBlueprint?.Id);
                 context.JournalData.Add("Workflow Instance ID", childWorkflowInstance.Id);
                 context.JournalData.Add("Workflow Instance Status", childWorkflowInstance.WorkflowStatus);
@@ -178,7 +175,6 @@ namespace Elsa.Activities.Workflows
 
                 if (workflowBlueprint == null || workflowBlueprint.Id == context.WorkflowInstance.DefinitionId)
                     return Outcome("Not Found");
-
 
                 var result = await _startsWorkflow.StartWorkflowAsync(workflowBlueprint!, TenantId, new WorkflowInput(Input), CorrelationId, ContextId, cancellationToken: cancellationToken);
                 childWorkflowInstance = result.WorkflowInstance!;
