@@ -1,10 +1,7 @@
-using System;
-using System.Collections.Generic;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Models;
-using Elsa.Workflows.Persistence.Models;
 
-namespace Elsa.Workflows.Api.Models;
+namespace Elsa.CustomActivities.Models;
 
 public record WorkflowDefinitionModel(
     string Id,

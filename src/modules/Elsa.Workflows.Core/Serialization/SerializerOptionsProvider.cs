@@ -7,12 +7,12 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Core.Serialization;
 
-public class WorkflowSerializerOptionsProvider
+public class SerializerOptionsProvider
 {
     private readonly IEnumerable<ISerializationOptionsConfigurator> _configurators;
     private readonly IServiceProvider _serviceProvider;
 
-    public WorkflowSerializerOptionsProvider(IEnumerable<ISerializationOptionsConfigurator> configurators, IServiceProvider serviceProvider)
+    public SerializerOptionsProvider(IEnumerable<ISerializationOptionsConfigurator> configurators, IServiceProvider serviceProvider)
     {
         _configurators = configurators;
         _serviceProvider = serviceProvider;

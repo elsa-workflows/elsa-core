@@ -1,12 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using Elsa.Expressions.Helpers;
-using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Management.Models;
 
-namespace Elsa.Workflows.Api.Mappers;
+namespace Elsa.Workflows.Management.Mappers;
 
 public class VariableDefinitionMapper
 {

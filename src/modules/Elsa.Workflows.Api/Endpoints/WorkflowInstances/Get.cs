@@ -12,9 +12,9 @@ namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances;
 public class Get : Controller
 {
     private readonly IWorkflowInstanceStore _store;
-    private readonly WorkflowSerializerOptionsProvider _serializerOptionsProvider;
+    private readonly SerializerOptionsProvider _serializerOptionsProvider;
 
-    public Get(IWorkflowInstanceStore store, WorkflowSerializerOptionsProvider serializerOptionsProvider)
+    public Get(IWorkflowInstanceStore store, SerializerOptionsProvider serializerOptionsProvider)
     {
         _store = store;
         _serializerOptionsProvider = serializerOptionsProvider;

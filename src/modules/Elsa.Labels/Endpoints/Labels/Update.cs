@@ -14,15 +14,15 @@ namespace Elsa.Labels.Endpoints.Labels;
 public class Update : Controller
 {
     private readonly ILabelStore _store;
-    private readonly WorkflowSerializerOptionsProvider _workflowSerializerOptionsProvider;
+    private readonly SerializerOptionsProvider _serializerOptionsProvider;
 
     // ReSharper disable once ClassNeverInstantiated.Local
     private record LabelModel(string Name, string? Description, string? Color);
 
-    public Update(ILabelStore store, WorkflowSerializerOptionsProvider workflowSerializerOptionsProvider)
+    public Update(ILabelStore store, SerializerOptionsProvider serializerOptionsProvider)
     {
         _store = store;
-        _workflowSerializerOptionsProvider = workflowSerializerOptionsProvider;
+        _serializerOptionsProvider = serializerOptionsProvider;
     }
 
     [HttpPost]
@@ -33,7 +33,7 @@ public class Update : Controller
         if (label == null)
             return NotFound();
         
-        var serializerOptions = _workflowSerializerOptionsProvider.CreateApiOptions();
+        var serializerOptions = _serializerOptionsProvider.CreateApiOptions();
         var (name, description, color) = (await Request.ReadFromJsonAsync<LabelModel>(serializerOptions, cancellationToken))!;
 
         label.Name = name.Trim();

@@ -9,11 +9,11 @@ namespace Elsa.CustomActivities.EntityFrameworkCore.Handlers;
 
 public class ActivityDefinitionSerializer : IEntitySerializer<CustomActivitiesDbContext, ActivityDefinition>
 {
-    private readonly WorkflowSerializerOptionsProvider _workflowSerializerOptionsProvider;
+    private readonly SerializerOptionsProvider _serializerOptionsProvider;
 
-    public ActivityDefinitionSerializer(WorkflowSerializerOptionsProvider workflowSerializerOptionsProvider)
+    public ActivityDefinitionSerializer(SerializerOptionsProvider serializerOptionsProvider)
     {
-        _workflowSerializerOptionsProvider = workflowSerializerOptionsProvider;
+        _serializerOptionsProvider = serializerOptionsProvider;
     }
 
     public void Serialize(CustomActivitiesDbContext dbContext, ActivityDefinition entity)
@@ -25,7 +25,7 @@ public class ActivityDefinitionSerializer : IEntitySerializer<CustomActivitiesDb
             entity.ApplicationProperties
         };
 
-        var options = _workflowSerializerOptionsProvider.CreatePersistenceOptions();
+        var options = _serializerOptionsProvider.CreatePersistenceOptions();
         var json = JsonSerializer.Serialize(data, options);
 
         dbContext.Entry(entity).Property("Data").CurrentValue = json;
@@ -38,7 +38,7 @@ public class ActivityDefinitionSerializer : IEntitySerializer<CustomActivitiesDb
 
         if (!string.IsNullOrWhiteSpace(json))
         {
-            var options = _workflowSerializerOptionsProvider.CreatePersistenceOptions();
+            var options = _serializerOptionsProvider.CreatePersistenceOptions();
             data = JsonSerializer.Deserialize<ActivityDefinitionState>(json, options)!;
         }
 

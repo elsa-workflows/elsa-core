@@ -2,7 +2,7 @@ using Elsa.Workflows.Persistence.Entities;
 
 namespace Elsa.Workflows.Management.Services
 {
-    public interface IWorkflowPublisher
+    public interface IWorkflowDefinitionPublisher
     {
         WorkflowDefinition New();
         Task<WorkflowDefinition?> PublishAsync(string definitionId, CancellationToken cancellationToken = default);

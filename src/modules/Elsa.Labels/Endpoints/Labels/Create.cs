@@ -15,22 +15,22 @@ public class Create : Controller
 {
     private readonly ILabelStore _store;
     private readonly IIdentityGenerator _identityGenerator;
-    private readonly WorkflowSerializerOptionsProvider _workflowSerializerOptionsProvider;
+    private readonly SerializerOptionsProvider _serializerOptionsProvider;
 
     // ReSharper disable once ClassNeverInstantiated.Local
     private record LabelModel(string Name, string? Description, string? Color);
 
-    public Create(ILabelStore store, IIdentityGenerator identityGenerator, WorkflowSerializerOptionsProvider workflowSerializerOptionsProvider)
+    public Create(ILabelStore store, IIdentityGenerator identityGenerator, SerializerOptionsProvider serializerOptionsProvider)
     {
         _store = store;
         _identityGenerator = identityGenerator;
-        _workflowSerializerOptionsProvider = workflowSerializerOptionsProvider;
+        _serializerOptionsProvider = serializerOptionsProvider;
     }
 
     [HttpPost]
     public async Task<IActionResult> HandleAsync(CancellationToken cancellationToken)
     {
-        var serializerOptions = _workflowSerializerOptionsProvider.CreateApiOptions();
+        var serializerOptions = _serializerOptionsProvider.CreateApiOptions();
         var model = (await Request.ReadFromJsonAsync<LabelModel>(serializerOptions, cancellationToken))!;
 
         var label = new Label

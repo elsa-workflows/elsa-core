@@ -15,9 +15,9 @@ namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions;
 public class BulkDelete : Controller
 {
     private readonly IWorkflowDefinitionManager _workflowDefinitionManager;
-    private readonly WorkflowSerializerOptionsProvider _serializerOptionsProvider;
+    private readonly SerializerOptionsProvider _serializerOptionsProvider;
 
-    public BulkDelete(IWorkflowDefinitionManager workflowDefinitionManager, WorkflowSerializerOptionsProvider serializerOptionsProvider)
+    public BulkDelete(IWorkflowDefinitionManager workflowDefinitionManager, SerializerOptionsProvider serializerOptionsProvider)
     {
         _workflowDefinitionManager = workflowDefinitionManager;
         _serializerOptionsProvider = serializerOptionsProvider;

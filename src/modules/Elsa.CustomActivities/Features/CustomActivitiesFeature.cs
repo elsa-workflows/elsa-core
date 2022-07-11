@@ -14,7 +14,7 @@ public class CustomActivitiesFeature : FeatureBase
     public CustomActivitiesFeature(IModule module) : base(module)
     {
     }
-    
+
     public Func<IServiceProvider, IActivityDefinitionStore> ActivityDefinitionStore { get; set; } = sp => sp.GetRequiredService<MemoryActivityDefinitionStore>();
 
     public CustomActivitiesFeature WithActivityDefinitionStore(Func<IServiceProvider, IActivityDefinitionStore> factory)
@@ -23,12 +23,12 @@ public class CustomActivitiesFeature : FeatureBase
         return this;
     }
     
-    
     public override void Apply()
     {
         Services
             .AddMemoryStore<ActivityDefinition, MemoryActivityDefinitionStore>()
             .AddSingleton(ActivityDefinitionStore)
+            .AddSingleton<IActivityDefinitionPublisher, ActivityDefinitionPublisher>()
             ;
 
         Services.AddNotificationHandlersFrom(GetType());

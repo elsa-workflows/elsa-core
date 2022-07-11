@@ -17,16 +17,16 @@ public class Get : Controller
 {
     private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
     private readonly IWorkflowDefinitionLabelStore _workflowDefinitionLabelStore;
-    private readonly WorkflowSerializerOptionsProvider _workflowSerializerOptionsProvider;
+    private readonly SerializerOptionsProvider _serializerOptionsProvider;
 
     public Get(
         IWorkflowDefinitionStore workflowDefinitionStore,
         IWorkflowDefinitionLabelStore workflowDefinitionLabelStore,
-        WorkflowSerializerOptionsProvider workflowSerializerOptionsProvider)
+        SerializerOptionsProvider serializerOptionsProvider)
     {
         _workflowDefinitionStore = workflowDefinitionStore;
         _workflowDefinitionLabelStore = workflowDefinitionLabelStore;
-        _workflowSerializerOptionsProvider = workflowSerializerOptionsProvider;
+        _serializerOptionsProvider = serializerOptionsProvider;
     }
 
     [HttpGet]
@@ -37,7 +37,7 @@ public class Get : Controller
         if (workflowDefinition == null)
             return NotFound();
 
-        var serializerOptions = _workflowSerializerOptionsProvider.CreateApiOptions();
+        var serializerOptions = _serializerOptionsProvider.CreateApiOptions();
         var currentLabels = await _workflowDefinitionLabelStore.FindByWorkflowDefinitionVersionIdAsync(id, cancellationToken).Select(x => x.LabelId);
         var model = ListModel.Of(currentLabels);
 

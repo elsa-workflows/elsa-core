@@ -2,7 +2,7 @@ using Elsa.CustomActivities.Entities;
 
 namespace Elsa.CustomActivities.Models;
 
-public record ActivityDefinitionSummary(string Id, string DefinitionId, string? Name, string? Description, int? Version, bool IsLatest, bool IsPublished, string MaterializerName, DateTimeOffset CreatedAt)
+public record ActivityDefinitionSummary(string Id, string DefinitionId, string? Name, string? Description, int? Version, bool IsLatest, bool IsPublished, DateTimeOffset CreatedAt)
 {
     public static ActivityDefinitionSummary FromDefinition(ActivityDefinition workflowDefinition) => new(
         workflowDefinition.Id,
@@ -12,7 +12,6 @@ public record ActivityDefinitionSummary(string Id, string DefinitionId, string? 
         workflowDefinition.Version,
         workflowDefinition.IsLatest,
         workflowDefinition.IsPublished,
-        workflowDefinition.MaterializerName,
         workflowDefinition.CreatedAt
     );
 }

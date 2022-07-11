@@ -23,4 +23,8 @@
         <ProjectReference Include="..\Elsa.Workflows.Persistence\Elsa.Workflows.Persistence.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Endpoints\ActivityDefinitions\List" />
+    </ItemGroup>
+
 </Project>

@@ -17,13 +17,13 @@ namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions;
 public class BulkRetract : Controller
 {
     private readonly IWorkflowDefinitionStore _store;
-    private readonly IWorkflowPublisher _workflowPublisher;
-    private readonly WorkflowSerializerOptionsProvider _serializerOptionsProvider;
+    private readonly IWorkflowDefinitionPublisher _workflowDefinitionPublisher;
+    private readonly SerializerOptionsProvider _serializerOptionsProvider;
 
-    public BulkRetract(IWorkflowDefinitionStore store, IWorkflowPublisher workflowPublisher, WorkflowSerializerOptionsProvider serializerOptionsProvider)
+    public BulkRetract(IWorkflowDefinitionStore store, IWorkflowDefinitionPublisher workflowDefinitionPublisher, SerializerOptionsProvider serializerOptionsProvider)
     {
         _store = store;
-        _workflowPublisher = workflowPublisher;
+        _workflowDefinitionPublisher = workflowDefinitionPublisher;
         _serializerOptionsProvider = serializerOptionsProvider;
     }
 
@@ -52,7 +52,7 @@ public class BulkRetract : Controller
                 continue;
             }
 
-            await _workflowPublisher.RetractAsync(definition, cancellationToken);
+            await _workflowDefinitionPublisher.RetractAsync(definition, cancellationToken);
             retracted.Add(definitionId);
         }
 

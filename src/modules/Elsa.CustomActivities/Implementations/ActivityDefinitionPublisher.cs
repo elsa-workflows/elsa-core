@@ -1,47 +1,50 @@
 using System.Text.Json;
+using Elsa.CustomActivities.Entities;
+using Elsa.CustomActivities.Notifications;
+using Elsa.CustomActivities.Services;
 using Elsa.Mediator.Services;
 using Elsa.Persistence.Common.Models;
 using Elsa.Workflows.Core.Activities;
+using Elsa.Workflows.Core.Activities.Flowchart.Activities;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Notifications;
 using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Persistence.Entities;
-using Elsa.Workflows.Persistence.Models;
 using Elsa.Workflows.Persistence.Services;
 
-namespace Elsa.Workflows.Management.Implementations
+namespace Elsa.CustomActivities.Implementations
 {
-    public class WorkflowPublisher : IWorkflowPublisher
+    public class ActivityDefinitionPublisher : IActivityDefinitionPublisher
     {
-        private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
+        private readonly IActivityDefinitionStore _activityDefinitionStore;
         private readonly IEventPublisher _eventPublisher;
         private readonly IIdentityGenerator _identityGenerator;
-        private readonly WorkflowSerializerOptionsProvider _workflowSerializerOptionsProvider;
+        private readonly SerializerOptionsProvider _serializerOptionsProvider;
         private readonly ISystemClock _systemClock;
 
-        public WorkflowPublisher(
-            IWorkflowDefinitionStore workflowDefinitionStore, 
+        public ActivityDefinitionPublisher(
+            IActivityDefinitionStore activityDefinitionStore, 
             IEventPublisher eventPublisher,
             IIdentityGenerator identityGenerator, 
-            WorkflowSerializerOptionsProvider workflowSerializerOptionsProvider, 
+            SerializerOptionsProvider serializerOptionsProvider, 
             ISystemClock systemClock)
         {
-            _workflowDefinitionStore = workflowDefinitionStore;
+            _activityDefinitionStore = activityDefinitionStore;
             _eventPublisher = eventPublisher;
             _identityGenerator = identityGenerator;
-            _workflowSerializerOptionsProvider = workflowSerializerOptionsProvider;
+            _serializerOptionsProvider = serializerOptionsProvider;
             _systemClock = systemClock;
         }
 
-        public WorkflowDefinition New()
+        public ActivityDefinition New()
         {
             var id = _identityGenerator.GenerateId();
             var definitionId = _identityGenerator.GenerateId();
             const int version = 1;
 
-            return new WorkflowDefinition
+            return new ActivityDefinition
             {
                 Id = id,
                 DefinitionId = definitionId,
@@ -49,14 +52,13 @@ namespace Elsa.Workflows.Management.Implementations
                 IsLatest = true,
                 IsPublished = false,
                 CreatedAt = _systemClock.UtcNow,
-                StringData = JsonSerializer.Serialize(new Sequence(), _workflowSerializerOptionsProvider.CreateDefaultOptions()),
-                MaterializerName = JsonWorkflowMaterializer.MaterializerName
+                Data = JsonSerializer.Serialize(new Flowchart(), _serializerOptionsProvider.CreateDefaultOptions()),
             };
         }
 
-        public async Task<WorkflowDefinition?> PublishAsync(string definitionId, CancellationToken cancellationToken = default)
+        public async Task<ActivityDefinition?> PublishAsync(string definitionId, CancellationToken cancellationToken = default)
         {
-            var definition = await _workflowDefinitionStore.FindByDefinitionIdAsync(definitionId, VersionOptions.Latest, cancellationToken);
+            var definition = await _activityDefinitionStore.FindByDefinitionIdAsync(definitionId, VersionOptions.Latest, cancellationToken);
 
             if (definition == null)
                 return null;
@@ -64,18 +66,18 @@ namespace Elsa.Workflows.Management.Implementations
             return await PublishAsync(definition, cancellationToken);
         }
 
-        public async Task<WorkflowDefinition> PublishAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
+        public async Task<ActivityDefinition> PublishAsync(ActivityDefinition definition, CancellationToken cancellationToken = default)
         {
             var definitionId = definition.DefinitionId;
 
             // Reset current latest and published definitions.
-            var publishedAndOrLatestWorkflows = await _workflowDefinitionStore.FindLatestAndPublishedByDefinitionIdAsync(definitionId, cancellationToken);
+            var publishedAndOrLatestWorkflows = await _activityDefinitionStore.FindLatestAndPublishedByDefinitionIdAsync(definitionId, cancellationToken);
 
             foreach (var publishedAndOrLatestWorkflow in publishedAndOrLatestWorkflows)
             {
                 publishedAndOrLatestWorkflow.IsPublished = false;
                 publishedAndOrLatestWorkflow.IsLatest = false;
-                await _workflowDefinitionStore.SaveAsync(publishedAndOrLatestWorkflow, cancellationToken);
+                await _activityDefinitionStore.SaveAsync(publishedAndOrLatestWorkflow, cancellationToken);
             }
 
             if (definition.IsPublished)
@@ -86,15 +88,15 @@ namespace Elsa.Workflows.Management.Implementations
             definition.IsLatest = true;
             definition = Initialize(definition);
 
-            await _eventPublisher.PublishAsync(new WorkflowDefinitionPublishing(definition), cancellationToken);
-            await _workflowDefinitionStore.SaveAsync(definition, cancellationToken);
-            await _eventPublisher.PublishAsync(new WorkflowDefinitionPublished(definition), cancellationToken);
+            await _eventPublisher.PublishAsync(new ActivityDefinitionPublishing(definition), cancellationToken);
+            await _activityDefinitionStore.SaveAsync(definition, cancellationToken);
+            await _eventPublisher.PublishAsync(new ActivityDefinitionPublished(definition), cancellationToken);
             return definition;
         }
 
-        public async Task<WorkflowDefinition?> RetractAsync(string definitionId, CancellationToken cancellationToken = default)
+        public async Task<ActivityDefinition?> RetractAsync(string definitionId, CancellationToken cancellationToken = default)
         {
-            var definition = await _workflowDefinitionStore.FindByDefinitionIdAsync(definitionId, VersionOptions.Published, cancellationToken);
+            var definition = await _activityDefinitionStore.FindByDefinitionIdAsync(definitionId, VersionOptions.Published, cancellationToken);
 
             if (definition == null)
                 return null;
@@ -102,7 +104,7 @@ namespace Elsa.Workflows.Management.Implementations
             return await RetractAsync(definition, cancellationToken);
         }
 
-        public async Task<WorkflowDefinition> RetractAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
+        public async Task<ActivityDefinition> RetractAsync(ActivityDefinition definition, CancellationToken cancellationToken = default)
         {
             if (!definition.IsPublished)
                 throw new InvalidOperationException("Cannot retract an unpublished workflow definition.");
@@ -110,15 +112,15 @@ namespace Elsa.Workflows.Management.Implementations
             definition.IsPublished = false;
             definition = Initialize(definition);
 
-            await _eventPublisher.PublishAsync(new WorkflowDefinitionRetracting(definition), cancellationToken);
-            await _workflowDefinitionStore.SaveAsync(definition, cancellationToken);
-            await _eventPublisher.PublishAsync(new WorkflowDefinitionRetracted(definition), cancellationToken);
+            await _eventPublisher.PublishAsync(new ActivityDefinitionRetracting(definition), cancellationToken);
+            await _activityDefinitionStore.SaveAsync(definition, cancellationToken);
+            await _eventPublisher.PublishAsync(new ActivityDefinitionRetracted(definition), cancellationToken);
             return definition;
         }
 
-        public async Task<WorkflowDefinition?> GetDraftAsync(string definitionId, CancellationToken cancellationToken = default)
+        public async Task<ActivityDefinition?> GetDraftAsync(string definitionId, CancellationToken cancellationToken = default)
         {
-            var definition = await _workflowDefinitionStore.FindByDefinitionIdAsync(definitionId, VersionOptions.Latest, cancellationToken);
+            var definition = await _activityDefinitionStore.FindByDefinitionIdAsync(definitionId, VersionOptions.Latest, cancellationToken);
 
             if (definition == null)
                 return null;
@@ -135,27 +137,27 @@ namespace Elsa.Workflows.Management.Implementations
             return draft;
         }
 
-        public async Task<WorkflowDefinition> SaveDraftAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
+        public async Task<ActivityDefinition> SaveDraftAsync(ActivityDefinition definition, CancellationToken cancellationToken = default)
         {
             var draft = definition;
             var definitionId = definition.DefinitionId;
-            var latestVersion = await _workflowDefinitionStore.FindByDefinitionIdAsync(definitionId, VersionOptions.Latest, cancellationToken);
+            var latestVersion = await _activityDefinitionStore.FindByDefinitionIdAsync(definitionId, VersionOptions.Latest, cancellationToken);
 
             if (latestVersion is { IsPublished: true, IsLatest: true })
             {
                 latestVersion.IsLatest = false;
-                await _workflowDefinitionStore.SaveAsync(latestVersion, cancellationToken);
+                await _activityDefinitionStore.SaveAsync(latestVersion, cancellationToken);
             }
 
             draft.IsLatest = true;
             draft.IsPublished = false;
             draft = Initialize(draft);
 
-            await _workflowDefinitionStore.SaveAsync(draft, cancellationToken);
+            await _activityDefinitionStore.SaveAsync(draft, cancellationToken);
             return draft;
         }
 
-        private WorkflowDefinition Initialize(WorkflowDefinition definition)
+        private ActivityDefinition Initialize(ActivityDefinition definition)
         {
             if (definition.Id == null!)
                 definition.Id = _identityGenerator.GenerateId();

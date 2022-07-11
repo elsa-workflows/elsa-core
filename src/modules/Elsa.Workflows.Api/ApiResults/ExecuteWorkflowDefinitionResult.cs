@@ -27,7 +27,7 @@ public class ExecuteWorkflowDefinitionResult : IActionResult
         var httpContext = context.HttpContext;
         var response = httpContext.Response;
         var workflowInvoker = httpContext.RequestServices.GetRequiredService<IWorkflowInvoker>();
-        var serializerOptionsProvider = httpContext.RequestServices.GetRequiredService<WorkflowSerializerOptionsProvider>();
+        var serializerOptionsProvider = httpContext.RequestServices.GetRequiredService<SerializerOptionsProvider>();
         var executeRequest = new InvokeWorkflowDefinitionRequest(DefinitionId, VersionOptions.Published, CorrelationId: CorrelationId);
         var result = await workflowInvoker.InvokeAsync(executeRequest, CancellationToken.None);
         var serializerOptions = serializerOptionsProvider.CreateApiOptions();
