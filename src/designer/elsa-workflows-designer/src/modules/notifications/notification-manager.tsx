@@ -11,7 +11,7 @@ import { NotificationEventTypes } from './event-types';
   shadow: false,
   styleUrl: 'notification.scss',
 })
-export class LabelsManager {
+export class NotificationManager {
   private readonly eventBus: EventBus;
   private readonly notyf: Notyf;
 

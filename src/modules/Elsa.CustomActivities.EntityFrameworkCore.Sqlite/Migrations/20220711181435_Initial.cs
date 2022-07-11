@@ -1,5 +1,4 @@
-﻿using System;
-using Microsoft.EntityFrameworkCore.Migrations;
+﻿using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -17,15 +16,11 @@ namespace Elsa.CustomActivities.EntityFrameworkCore.Sqlite.Migrations
                     DefinitionId = table.Column<string>(type: "TEXT", nullable: false),
                     Name = table.Column<string>(type: "TEXT", nullable: true),
                     Description = table.Column<string>(type: "TEXT", nullable: true),
+                    Data = table.Column<string>(type: "TEXT", nullable: true),
                     CreatedAt = table.Column<string>(type: "TEXT", nullable: false),
                     Version = table.Column<int>(type: "INTEGER", nullable: false),
                     IsLatest = table.Column<bool>(type: "INTEGER", nullable: false),
-                    IsPublished = table.Column<bool>(type: "INTEGER", nullable: false),
-                    MaterializerName = table.Column<string>(type: "TEXT", nullable: false),
-                    MaterializerContext = table.Column<string>(type: "TEXT", nullable: true),
-                    StringData = table.Column<string>(type: "TEXT", nullable: true),
-                    BinaryData = table.Column<byte[]>(type: "BLOB", nullable: true),
-                    Data = table.Column<string>(type: "TEXT", nullable: true)
+                    IsPublished = table.Column<bool>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {

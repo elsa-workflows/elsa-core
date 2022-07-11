@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Elsa.Workflows.Api.Extensions;
 using Elsa.AspNetCore.Extensions;
 using Elsa.Extensions;
@@ -19,6 +20,7 @@ using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Management.Serialization;
 using Elsa.Workflows.Runtime.Extensions;
+using FastEndpoints;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -44,6 +46,7 @@ services
         .UseJavaScript()
         .UseLiquid()
         .UseHttp()
+        .UseCustomActivities()
         .UseMvc()
     );
 
@@ -75,6 +78,7 @@ app.UseRouting();
 app.UseAuthorization();
 app.MapManagementApiEndpoints();
 app.UseHttpActivities();
+app.UseFastEndpoints();
 app.MapRazorPages();
 
 app.Run();

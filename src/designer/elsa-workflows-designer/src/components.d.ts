@@ -27,6 +27,10 @@ import { Flowchart } from "./components/activities/flowchart/models";
 import { WorkflowNavigationItem } from "./components/designer/workflow-navigator/models";
 import { PublishClickedArgs } from "./components/toolbar/workflow-publish-button/workflow-publish-button";
 export namespace Components {
+    interface ElsaActivityDefinitionBrowser {
+        "hide": () => Promise<void>;
+        "show": () => Promise<void>;
+    }
     interface ElsaActivityProperties {
         "activity"?: Activity;
         "hide": () => Promise<void>;
@@ -68,6 +72,8 @@ export namespace Components {
     }
     interface ElsaCopyButton {
         "value": string;
+    }
+    interface ElsaCustomActivitiesManager {
     }
     interface ElsaDefaultActivityTemplate {
         "activityId": string;
@@ -142,8 +148,6 @@ export namespace Components {
     interface ElsaLabelsManager {
         "hide": () => Promise<void>;
         "show": () => Promise<void>;
-    }
-    interface ElsaLabelsWidget {
     }
     interface ElsaModalDialog {
         "actions": Array<ActionDefinition>;
@@ -286,6 +290,12 @@ export namespace Components {
     }
 }
 declare global {
+    interface HTMLElsaActivityDefinitionBrowserElement extends Components.ElsaActivityDefinitionBrowser, HTMLStencilElement {
+    }
+    var HTMLElsaActivityDefinitionBrowserElement: {
+        prototype: HTMLElsaActivityDefinitionBrowserElement;
+        new (): HTMLElsaActivityDefinitionBrowserElement;
+    };
     interface HTMLElsaActivityPropertiesElement extends Components.ElsaActivityProperties, HTMLStencilElement {
     }
     var HTMLElsaActivityPropertiesElement: {
@@ -333,6 +343,12 @@ declare global {
     var HTMLElsaCopyButtonElement: {
         prototype: HTMLElsaCopyButtonElement;
         new (): HTMLElsaCopyButtonElement;
+    };
+    interface HTMLElsaCustomActivitiesManagerElement extends Components.ElsaCustomActivitiesManager, HTMLStencilElement {
+    }
+    var HTMLElsaCustomActivitiesManagerElement: {
+        prototype: HTMLElsaCustomActivitiesManagerElement;
+        new (): HTMLElsaCustomActivitiesManagerElement;
     };
     interface HTMLElsaDefaultActivityTemplateElement extends Components.ElsaDefaultActivityTemplate, HTMLStencilElement {
     }
@@ -411,12 +427,6 @@ declare global {
     var HTMLElsaLabelsManagerElement: {
         prototype: HTMLElsaLabelsManagerElement;
         new (): HTMLElsaLabelsManagerElement;
-    };
-    interface HTMLElsaLabelsWidgetElement extends Components.ElsaLabelsWidget, HTMLStencilElement {
-    }
-    var HTMLElsaLabelsWidgetElement: {
-        prototype: HTMLElsaLabelsWidgetElement;
-        new (): HTMLElsaLabelsWidgetElement;
     };
     interface HTMLElsaModalDialogElement extends Components.ElsaModalDialog, HTMLStencilElement {
     }
@@ -599,6 +609,7 @@ declare global {
         new (): HTMLElsaWorkflowToolbarMenuElement;
     };
     interface HTMLElementTagNameMap {
+        "elsa-activity-definition-browser": HTMLElsaActivityDefinitionBrowserElement;
         "elsa-activity-properties": HTMLElsaActivityPropertiesElement;
         "elsa-activity-properties-editor": HTMLElsaActivityPropertiesEditorElement;
         "elsa-button-group": HTMLElsaButtonGroupElement;
@@ -607,6 +618,7 @@ declare global {
         "elsa-code-editor-input": HTMLElsaCodeEditorInputElement;
         "elsa-context-menu": HTMLElsaContextMenuElement;
         "elsa-copy-button": HTMLElsaCopyButtonElement;
+        "elsa-custom-activities-manager": HTMLElsaCustomActivitiesManagerElement;
         "elsa-default-activity-template": HTMLElsaDefaultActivityTemplateElement;
         "elsa-dropdown-button": HTMLElsaDropdownButtonElement;
         "elsa-dropdown-input": HTMLElsaDropdownInputElement;
@@ -620,7 +632,6 @@ declare global {
         "elsa-label-editor": HTMLElsaLabelEditorElement;
         "elsa-label-picker": HTMLElsaLabelPickerElement;
         "elsa-labels-manager": HTMLElsaLabelsManagerElement;
-        "elsa-labels-widget": HTMLElsaLabelsWidgetElement;
         "elsa-modal-dialog": HTMLElsaModalDialogElement;
         "elsa-monaco-editor": HTMLElsaMonacoEditorElement;
         "elsa-multi-line-input": HTMLElsaMultiLineInputElement;
@@ -654,6 +665,9 @@ declare global {
     }
 }
 declare namespace LocalJSX {
+    interface ElsaActivityDefinitionBrowser {
+        "onWorkflowDefinitionSelected"?: (event: CustomEvent<WorkflowDefinitionSummary>) => void;
+    }
     interface ElsaActivityProperties {
         "activity"?: Activity;
     }
@@ -684,6 +698,8 @@ declare namespace LocalJSX {
     }
     interface ElsaCopyButton {
         "value"?: string;
+    }
+    interface ElsaCustomActivitiesManager {
     }
     interface ElsaDefaultActivityTemplate {
         "activityId"?: string;
@@ -766,8 +782,6 @@ declare namespace LocalJSX {
         "selectedLabels"?: Array<string>;
     }
     interface ElsaLabelsManager {
-    }
-    interface ElsaLabelsWidget {
     }
     interface ElsaModalDialog {
         "actions"?: Array<ActionDefinition>;
@@ -896,6 +910,7 @@ declare namespace LocalJSX {
     interface ElsaWorkflowToolbarMenu {
     }
     interface IntrinsicElements {
+        "elsa-activity-definition-browser": ElsaActivityDefinitionBrowser;
         "elsa-activity-properties": ElsaActivityProperties;
         "elsa-activity-properties-editor": ElsaActivityPropertiesEditor;
         "elsa-button-group": ElsaButtonGroup;
@@ -904,6 +919,7 @@ declare namespace LocalJSX {
         "elsa-code-editor-input": ElsaCodeEditorInput;
         "elsa-context-menu": ElsaContextMenu;
         "elsa-copy-button": ElsaCopyButton;
+        "elsa-custom-activities-manager": ElsaCustomActivitiesManager;
         "elsa-default-activity-template": ElsaDefaultActivityTemplate;
         "elsa-dropdown-button": ElsaDropdownButton;
         "elsa-dropdown-input": ElsaDropdownInput;
@@ -917,7 +933,6 @@ declare namespace LocalJSX {
         "elsa-label-editor": ElsaLabelEditor;
         "elsa-label-picker": ElsaLabelPicker;
         "elsa-labels-manager": ElsaLabelsManager;
-        "elsa-labels-widget": ElsaLabelsWidget;
         "elsa-modal-dialog": ElsaModalDialog;
         "elsa-monaco-editor": ElsaMonacoEditor;
         "elsa-multi-line-input": ElsaMultiLineInput;
@@ -954,6 +969,7 @@ export { LocalJSX as JSX };
 declare module "@stencil/core" {
     export namespace JSX {
         interface IntrinsicElements {
+            "elsa-activity-definition-browser": LocalJSX.ElsaActivityDefinitionBrowser & JSXBase.HTMLAttributes<HTMLElsaActivityDefinitionBrowserElement>;
             "elsa-activity-properties": LocalJSX.ElsaActivityProperties & JSXBase.HTMLAttributes<HTMLElsaActivityPropertiesElement>;
             "elsa-activity-properties-editor": LocalJSX.ElsaActivityPropertiesEditor & JSXBase.HTMLAttributes<HTMLElsaActivityPropertiesEditorElement>;
             "elsa-button-group": LocalJSX.ElsaButtonGroup & JSXBase.HTMLAttributes<HTMLElsaButtonGroupElement>;
@@ -962,6 +978,7 @@ declare module "@stencil/core" {
             "elsa-code-editor-input": LocalJSX.ElsaCodeEditorInput & JSXBase.HTMLAttributes<HTMLElsaCodeEditorInputElement>;
             "elsa-context-menu": LocalJSX.ElsaContextMenu & JSXBase.HTMLAttributes<HTMLElsaContextMenuElement>;
             "elsa-copy-button": LocalJSX.ElsaCopyButton & JSXBase.HTMLAttributes<HTMLElsaCopyButtonElement>;
+            "elsa-custom-activities-manager": LocalJSX.ElsaCustomActivitiesManager & JSXBase.HTMLAttributes<HTMLElsaCustomActivitiesManagerElement>;
             "elsa-default-activity-template": LocalJSX.ElsaDefaultActivityTemplate & JSXBase.HTMLAttributes<HTMLElsaDefaultActivityTemplateElement>;
             "elsa-dropdown-button": LocalJSX.ElsaDropdownButton & JSXBase.HTMLAttributes<HTMLElsaDropdownButtonElement>;
             "elsa-dropdown-input": LocalJSX.ElsaDropdownInput & JSXBase.HTMLAttributes<HTMLElsaDropdownInputElement>;
@@ -975,7 +992,6 @@ declare module "@stencil/core" {
             "elsa-label-editor": LocalJSX.ElsaLabelEditor & JSXBase.HTMLAttributes<HTMLElsaLabelEditorElement>;
             "elsa-label-picker": LocalJSX.ElsaLabelPicker & JSXBase.HTMLAttributes<HTMLElsaLabelPickerElement>;
             "elsa-labels-manager": LocalJSX.ElsaLabelsManager & JSXBase.HTMLAttributes<HTMLElsaLabelsManagerElement>;
-            "elsa-labels-widget": LocalJSX.ElsaLabelsWidget & JSXBase.HTMLAttributes<HTMLElsaLabelsWidgetElement>;
             "elsa-modal-dialog": LocalJSX.ElsaModalDialog & JSXBase.HTMLAttributes<HTMLElsaModalDialogElement>;
             "elsa-monaco-editor": LocalJSX.ElsaMonacoEditor & JSXBase.HTMLAttributes<HTMLElsaMonacoEditorElement>;
             "elsa-multi-line-input": LocalJSX.ElsaMultiLineInput & JSXBase.HTMLAttributes<HTMLElsaMultiLineInputElement>;
