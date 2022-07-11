@@ -71,6 +71,7 @@ namespace Elsa.Activities.ControlFlow
 
             await RemoveBlockingActivitiesAsync(workflowExecutionContext, owningFork);
             await RemoveScopeActivitiesAsync(workflowExecutionContext, ancestors, owningFork);
+            RemoveScheduledActivitiesAsync(workflowExecutionContext, owningFork);
 
             // Clear the recorded inbound transitions. This is necessary in case we're in a looping construct. 
             InboundTransitions = new List<string>();
@@ -123,6 +124,29 @@ namespace Elsa.Activities.ControlFlow
                     if (blockingActivityHasInboundFork && joinActivityHasInboundBlockingActivity)
                         await workflowExecutionContext.RemoveBlockingActivityAsync(blockingActivity);
                 }
+            }
+        }
+        
+        private void RemoveScheduledActivitiesAsync(WorkflowExecutionContext workflowExecutionContext, IActivityBlueprint? fork)
+        {
+            if (!EagerJoin) return;
+            
+            var scheduledActivities = workflowExecutionContext.WorkflowInstance.ScheduledActivities.ToList();
+            
+            foreach (var scheduledActivity in scheduledActivities)
+            {
+                var blockingActivityBlueprint = workflowExecutionContext.WorkflowBlueprint.GetActivity(scheduledActivity.ActivityId)!;
+                var blockingActivityAncestors = workflowExecutionContext.GetInboundActivityPath(scheduledActivity.ActivityId).ToList();
+
+                // Include composite activities in the equation.
+                if (blockingActivityBlueprint.Parent != null)
+                {
+                    var compositeBlockingActivityAncestors = workflowExecutionContext.GetInboundActivityPath(blockingActivityBlueprint.Parent.Id).ToList();
+                    blockingActivityAncestors = blockingActivityAncestors.Concat(compositeBlockingActivityAncestors).ToList();
+                }
+                
+                if (fork == null || blockingActivityAncestors.Contains(fork.Id))
+                    workflowExecutionContext.WorkflowInstance.ScheduledActivities.Remove(scheduledActivity);
             }
         }
 
