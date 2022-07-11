@@ -2,6 +2,7 @@ import {Component, h, Prop, State} from '@stencil/core';
 import {ActivityDefinitionProperty, ActivityModel, ActivityPropertyDescriptor, RuntimeSelectListProviderSettings, SelectList, SyntaxNames} from "../../../../models";
 import Tunnel from "../../../../data/workflow-editor";
 import {getSelectListItems} from "../../../../utils/select-list-items";
+import {awaitElement} from "../../../../utils/utils";
 
 @Component({
   tag: 'elsa-dropdown-property',
@@ -20,7 +21,7 @@ export class ElsaDropdownProperty {
   async componentWillLoad() {
     const defaultSyntax = this.propertyDescriptor.defaultSyntax || SyntaxNames.Literal;
     this.currentValue = this.propertyModel.expressions[defaultSyntax] || undefined;
-    const dependsOnEvent = this.propertyDescriptor.options?.context.dependsOnEvent;
+    const dependsOnEvent = this.propertyDescriptor.options?.context?.dependsOnEvent;
 
     // Does this property have a dependency on another property?
     if (!!dependsOnEvent) {
@@ -34,7 +35,7 @@ export class ElsaDropdownProperty {
         }
 
         // Listen for change events on the dependency dropdown list.
-        const dependentInputElement: HTMLSelectElement = await this.awaitElement('#' + event);
+        const dependentInputElement: HTMLSelectElement = await awaitElement('#' + event);
         dependentInputElement.addEventListener('change', this.reloadSelectListFromDeps);
 
         // Get the current value of the dependency dropdown list.
@@ -101,7 +102,7 @@ export class ElsaDropdownProperty {
     this.selectList = await getSelectListItems(this.serverUrl, {options: options} as ActivityPropertyDescriptor);
 
     const firstOption: any = this.selectList.items[0];
-    let currentSelectList = await this.awaitElement('#' + this.propertyDescriptor.name);
+    let currentSelectList = await awaitElement('#' + this.propertyDescriptor.name);
 
     if (firstOption) {
       const optionIsObject = typeof (firstOption) == 'object';
@@ -114,13 +115,6 @@ export class ElsaDropdownProperty {
       currentSelectList.dispatchEvent(new Event("change"));
     });
   }
-
-  private awaitElement = async selector => {
-    while (document.querySelector(selector) === null) {
-      await new Promise(resolve => requestAnimationFrame(resolve))
-    }
-    return document.querySelector(selector);
-  };
 
   private onChange(e: Event) {
     const select = (e.target as HTMLSelectElement);
