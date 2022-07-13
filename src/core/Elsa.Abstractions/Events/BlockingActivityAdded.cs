@@ -1,9 +1,6 @@
 using Elsa.Models;
 using Elsa.Services.Models;
 using MediatR;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Elsa.Events
 {

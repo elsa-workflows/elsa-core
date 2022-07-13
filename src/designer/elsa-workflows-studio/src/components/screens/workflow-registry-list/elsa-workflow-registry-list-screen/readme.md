@@ -25,7 +25,9 @@
 
 - [elsa-context-menu](../../../controls/elsa-context-menu)
 - stencil-route-link
+- [elsa-pager](../../../controls/elsa-pager)
 - [elsa-confirm-dialog](../../../shared/elsa-confirm-dialog)
+- [elsa-dropdown-button](../../../controls/elsa-dropdown-button)
 - context-consumer
 
 ### Graph
@@ -33,9 +35,12 @@
 graph TD;
   elsa-workflow-registry-list-screen --> elsa-context-menu
   elsa-workflow-registry-list-screen --> stencil-route-link
+  elsa-workflow-registry-list-screen --> elsa-pager
   elsa-workflow-registry-list-screen --> elsa-confirm-dialog
+  elsa-workflow-registry-list-screen --> elsa-dropdown-button
   elsa-workflow-registry-list-screen --> context-consumer
   elsa-confirm-dialog --> elsa-modal-dialog
+  elsa-dropdown-button --> stencil-route-link
   elsa-studio-workflow-registry --> elsa-workflow-registry-list-screen
   style elsa-workflow-registry-list-screen fill:#f9f,stroke:#333,stroke-width:4px
 ```

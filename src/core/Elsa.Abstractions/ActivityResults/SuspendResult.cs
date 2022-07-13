@@ -18,7 +18,7 @@ namespace Elsa.ActivityResults
             activityExecutionContext.WorkflowExecutionContext.Suspend();
 
             var mediator = activityExecutionContext.ServiceProvider.GetRequiredService<IMediator>();
-            await mediator.Publish(new BlockingActivityAdded(activityExecutionContext.WorkflowExecutionContext, blockingActivity));
+            await mediator.Publish(new BlockingActivityAdded(activityExecutionContext.WorkflowExecutionContext, blockingActivity), cancellationToken);
         }
     }
 }

@@ -80,7 +80,6 @@ namespace Elsa.Server.Api.Services
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine(e);
                     throw new WorkflowException("Failed to evaluate a designer-critical property value. Please make sure that the value does not rely on external context.", e);
                 }
             }

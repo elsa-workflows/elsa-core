@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Elsa.Models;
 using NodaTime;
 
@@ -8,6 +8,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
     {
         public string Id { get; set; } = default!;
         public string DefinitionId { get; set; } = default!;
+        public string DefinitionVersionId { get; set; } = default!;
         public string? TenantId { get; set; }
         public int Version { get; set; }
         public WorkflowStatus WorkflowStatus { get; set; }
@@ -20,8 +21,9 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
         public Instant? FinishedAt { get; set; }
         public Instant? CancelledAt { get; set; }
         public Instant? FaultedAt { get; set; }
+        public IDictionary<string, object?> Metadata { get; set; } = default!;
     }
-    
+
     public record RetryWorkflowRequest(bool RunImmediately)
     {
         /// <summary>

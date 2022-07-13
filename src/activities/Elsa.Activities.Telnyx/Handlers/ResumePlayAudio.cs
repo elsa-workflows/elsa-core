@@ -4,7 +4,7 @@ using Elsa.Services;
 
 namespace Elsa.Activities.Telnyx.Handlers
 {
-    public class ResumePlayAudio : ResumeWebhookDrivenActivity<PlayAudio, CallPlaybackEndedPayload>
+    public class ResumePlayAudio : ResumeWebhookDrivenActivity<PlayAudio, CallPlaybackStartedPayload>
     {
         public ResumePlayAudio(IWorkflowLaunchpad workflowLaunchpad) : base(workflowLaunchpad)
         {

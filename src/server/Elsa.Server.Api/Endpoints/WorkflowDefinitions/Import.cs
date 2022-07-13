@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Server.Api.Helpers;
 
 namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
 {
@@ -13,7 +14,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
     [ApiVersion("1")]
     [Route("v{apiVersion:apiVersion}/workflow-definitions/{workflowDefinitionId}/import")]
     [Produces("application/json")]
-    public class Import : ControllerBase
+    public class Import : Controller
     {
         private readonly IWorkflowPublisher _workflowPublisher;
         private readonly IContentSerializer _contentSerializer;
@@ -58,7 +59,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             workflowDefinition.TenantId = await _tenantAccessor.GetTenantIdAsync(cancellationToken);
 
             await _workflowPublisher.SaveDraftAsync(workflowDefinition, cancellationToken);
-            return Ok(workflowDefinition);
+            return Json(workflowDefinition, SerializationHelper.GetSettingsForWorkflowDefinition());
         }
     }
 }

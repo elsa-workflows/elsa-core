@@ -1,4 +1,3 @@
-using Elsa;
 using Elsa.Activities.Entity;
 using Elsa.Activities.Entity.Bookmarks;
 using Elsa.Options;

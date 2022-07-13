@@ -1,5 +1,5 @@
 using Elsa.Events;
-using Elsa.Testing.Events;
+using Elsa.WorkflowTesting.Events;
 using MediatR;
 using System;
 using System.Threading;

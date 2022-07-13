@@ -1,13 +1,17 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
+    <Import Project="..\..\..\..\common.props" />
+    <Import Project="..\..\..\..\configureawait.props" />
+    
+    <PropertyGroup>
+        <TargetFrameworks>netcoreapp3.1;net5.0;net6.0</TargetFrameworks>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\server\Elsa.Server.Api\Elsa.Server.Api.csproj" />
-    <ProjectReference Include="..\Elsa.WorkflowSettings\Elsa.WorkflowSettings.csproj" />
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\server\Elsa.Server.Api\Elsa.Server.Api.csproj" />
+        <ProjectReference Include="..\Elsa.WorkflowSettings\Elsa.WorkflowSettings.csproj" />
+    </ItemGroup>
 
 </Project>

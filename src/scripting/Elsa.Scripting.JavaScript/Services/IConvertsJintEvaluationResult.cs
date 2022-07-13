@@ -8,11 +8,11 @@ namespace Elsa.Scripting.JavaScript.Services
     /// <remarks>
     /// <para>
     /// Using Jint with arbitrary .NET objects can present a few difficulties where it comes to
-    /// round-tripping objects.  This interface provides the functionality to convert them.
+    /// round-tripping objects. This interface provides the functionality to convert them.
     /// </para>
     /// <para>
     /// As things stand at the moment, it is known that the implementation of this interface is far
-    /// from perfect.  In particular, it's not always certain that the result returned from this object
+    /// from perfect. In particular, it's not always certain that the result returned from this object
     /// will always be usable with <c>JSON.stringify</c> in a subsequent JavaScript expression.
     /// Additionally, we will not always return the same .NET types for objects when - for example - they
     /// are contained within another object or contained within a JS array.

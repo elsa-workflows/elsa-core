@@ -9,10 +9,11 @@
 [![Nuget (with prereleases)](https://img.shields.io/nuget/vpre/Elsa)](https://www.nuget.org/packages/Elsa/2.0.0-rc1-0)
 [![MyGet (with prereleases)](https://img.shields.io/myget/elsa-2/vpre/Elsa?label=myget)](https://www.myget.org/gallery/elsa-2)
 [![Build status](https://ci.appveyor.com/api/projects/status/github/elsa-workflows/elsa-core?svg=true&branch=master)](https://ci.appveyor.com/project/sfmskywalker/elsa)
-[![Discord](https://img.shields.io/discord/814605913783795763?label=chat&logo=discord)](https://discord.gg/hhChk5H472)
-[![Stack Overflow questions](https://img.shields.io/badge/stackoverflow-elsa_workflows-orange.svg)]( http://stackoverflow.com/questions/tagged/elsa-workflows )
 [![Build elsa-dashboard:latest](https://github.com/elsa-workflows/elsa-core/actions/workflows/publish-latest-dashboard-and-server-docker.yml/badge.svg)](https://github.com/elsa-workflows/elsa-core/actions/workflows/publish-latest-dashboard-and-server-docker.yml)
 [![Docker Image Version (latest semver)](https://img.shields.io/docker/v/elsaworkflows/elsa-dashboard-and-server?label=docker&logo=docker)](https://hub.docker.com/repository/docker/elsaworkflows/elsa-dashboard-and-server)
+[![Discord](https://img.shields.io/discord/814605913783795763?label=chat&logo=discord)](https://discord.gg/hhChk5H472)
+[![Stack Overflow questions](https://img.shields.io/badge/stackoverflow-elsa_workflows-orange.svg)]( http://stackoverflow.com/questions/tagged/elsa-workflows )
+[![Subreddit subscribers](https://img.shields.io/reddit/subreddit-subscribers/elsaworkflows?style=social)](https://www.reddit.com/r/elsaworkflows/)
 
 Elsa Core is a workflows library that enables workflow execution in any .NET Core application.
 Workflows can be defined using code and using the visual workflow designer.
@@ -113,7 +114,7 @@ Alternatively, you might run `.\build-assets-and-run-dashboard-monolith.ps1` tha
 ### Docker Compose
 
 Another quick way to try out Elsa is to run `build-and-run-dashboard-monolith-with-docker.ps1`, which will use Docker Compose to build an image and start a container.
-When the container starts, you can reach the Elsa Dashboard at http://localhost:6868 
+When the container starts, you can reach the Elsa Dashboard at http://localhost:14000 
 
 ## Roadmap
 
@@ -149,19 +150,28 @@ Version 2.0
 - [x] State Machines
 - [ ] Test Workflows from Designer
 - [ ] Debug Workflows from Designer
-- [ ] Sagas
 - [ ] Localization Support
 - [ ] Lucene Indexing
 
-Version 3.0 (engine redesign)
+Version 3.0 (engine + designer redesign)
 
-- [ ] Programming model similar to WF
-- [ ] Sequential Workflows
-- [ ] Flowchart Workflows
+- [x] Programming model similar to WF
+- [x] Sequential Workflows
+- [x] Flowchart Workflows
 - [ ] State Machine Workflows
 - [ ] Sagas
-- [ ] BPMS Workflows
-- [ ] Actor Model for Distributed Workflows
+- [ ] BPMN Workflows
+- [x] Actor Model for Distributed Workflows
+
+Additional goals for Elsa 3 (separate from core library)
+- [ ] Modular workflow server application framework: unobtrusively add new capabilities to the workflow engine. Requires a common ORM in order to extend persistence layer in a modular fashion. EF Core has the potential to abstract away any & all DB providers, including MongoDB.
+- [ ] Modular & themeable dashboard application framework: unobtrusively add UI (screens & widgets) to the dashboard (could be Blazor). The dashboard would be a SPA, invoking API endpoints by the modular workflow server.
+- [ ] Module: ability for users to visually define API endpoints and implement their logic using workflows ("code behind" concept of VB and WinForms). With Swagger integration for Open API.
+- [ ] Module: ability to define logical forms (form name and fields) and implement their submission logic visually using workflows (also "code behind" concept).
+
+
+The secondary goals for Elsa 3 aim to bring about a low-code framework & platform for rapid application development. This shoud apply to the full spectrum of application development, ranging from embedded software (e.g Raspberry PI) to microservices & serverless architectures. Where one would normally write C# code to handle UI events or implement API endpoints, one can now visually design their logic using workflows.
+
 
 ## Workflow Designer
 

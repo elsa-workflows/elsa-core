@@ -8,14 +8,14 @@ export interface WorkflowDefinition {
   displayName?: string;
   description?: string;
   version: number;
-  variables?: Variables;
+  variables?: string;
   customAttributes?: Variables;
   contextOptions?: WorkflowContextOptions;
   isSingleton?: boolean;
   persistenceBehavior?: WorkflowPersistenceBehavior;
   deleteCompletedInstances?: boolean;
-  isPublished?: boolean;
-  isLatest?: boolean;
+  isPublished: boolean;
+  isLatest: boolean;
   activities: Array<ActivityDefinition>;
   connections: Array<ConnectionDefinition>;
   tag?: string;
@@ -35,6 +35,15 @@ export interface WorkflowDefinitionSummary {
   isPublished?: boolean;
   isLatest?: boolean;
   tag?: string;
+}
+
+export interface WorkflowDefinitionVersion {
+  id: string;
+  definitionId: string;
+  version: number;
+  isLatest: boolean;
+  isPublished: boolean;
+  createdAt: Date;
 }
 
 export interface ActivityBlueprint {
@@ -79,6 +88,7 @@ export interface WorkflowBlueprint extends CompositeActivityBlueprint {
 
 export interface WorkflowBlueprintSummary {
   id: string;
+  versionId: string;
   name?: string;
   displayName?: string;
   description?: string;
@@ -94,6 +104,7 @@ export interface WorkflowBlueprintSummary {
 export interface WorkflowInstance {
   id: string;
   definitionId: string;
+  definitionVersionId: string;
   tenantId?: string;
   version: number;
   workflowStatus: WorkflowStatus;
@@ -110,7 +121,7 @@ export interface WorkflowInstance {
   activityData?: Map<any>;
   activityOutput?: Map<any>;
   blockingActivities: Array<BlockingActivity>;
-  fault?: WorkflowFault;
+  faults?: Array<WorkflowFault>;
   scheduledActivities: Array<ScheduledActivity>;
   scopes: Array<ActivityScope>;
   currentActivity: ScheduledActivity;
@@ -119,6 +130,7 @@ export interface WorkflowInstance {
 export interface WorkflowInstanceSummary {
   id: string;
   definitionId: string;
+  definitionVersionId: string;
   tenantId?: string;
   version: number;
   workflowStatus: WorkflowStatus;
@@ -285,6 +297,11 @@ export interface ActivityPropertyDescriptor {
 }
 
 export interface WorkflowStorageDescriptor {
+  name: string;
+  displayName?: string;
+}
+
+export interface WorkflowProviderDescriptor {
   name: string;
   displayName?: string;
 }

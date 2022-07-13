@@ -3,9 +3,9 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Elsa.Events;
 using Elsa.Models;
-using Elsa.Services;
 using Elsa.Services.Models;
 using MediatR;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Elsa.Handlers
@@ -13,10 +13,12 @@ namespace Elsa.Handlers
     public class WriteWorkflowExecutionLog : INotificationHandler<ActivityExecuting>, INotificationHandler<ActivityExecutionResultExecuted>, INotificationHandler<ActivityFaulted>
     {
         private readonly IMapper _mapper;
+        private readonly JsonSerializer _jsonSerializer;
 
-        public WriteWorkflowExecutionLog(IMapper mapper)
+        public WriteWorkflowExecutionLog(IMapper mapper, JsonSerializer jsonSerializer)
         {
             _mapper = mapper;
+            _jsonSerializer = jsonSerializer;
         }
 
         public Task Handle(ActivityExecuting notification, CancellationToken cancellationToken)
@@ -31,11 +33,11 @@ namespace Elsa.Handlers
 
             var data = new JObject
             {
-                ["Outcomes"] = JToken.FromObject(activityExecutionContext.Outcomes)
+                ["Outcomes"] = JToken.FromObject(activityExecutionContext.Outcomes, _jsonSerializer)
             };
 
             foreach (var entry in activityExecutionContext.JournalData)
-                data[entry.Key] = entry.Value != null ? JToken.FromObject(entry.Value) : JValue.CreateNull();
+                data[entry.Key] = entry.Value != null ? JToken.FromObject(entry.Value, _jsonSerializer) : JValue.CreateNull();
 
             var resuming = activityExecutionContext.Resuming;
             WriteEntry(resuming ? "Resumed" : "Executed", default, activityExecutionContext, data);

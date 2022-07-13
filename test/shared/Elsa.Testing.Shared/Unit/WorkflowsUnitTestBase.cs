@@ -4,10 +4,11 @@ using Elsa.Builders;
 using Elsa.Options;
 using Elsa.Persistence;
 using Elsa.Services;
-using Elsa.Services.Bookmarks;
 using Elsa.Services.WorkflowStorage;
 using Elsa.Testing.Shared.Helpers;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Hosting.Internal;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -18,7 +19,7 @@ namespace Elsa.Testing.Shared.Unit
         private readonly TemporaryFolder _tempFolder;
 
         protected WorkflowsUnitTestBase(
-            ITestOutputHelper testOutputHelper, 
+            ITestOutputHelper testOutputHelper,
             Action<IServiceCollection>? configureServices = default,
             Action<ElsaOptionsBuilder>? extraOptions = null)
         {
@@ -32,7 +33,8 @@ namespace Elsa.Testing.Shared.Unit
                         extraOptions?.Invoke(options);
                     }
                 );
-            
+
+            services.AddSingleton<IHostApplicationLifetime, ApplicationLifetime>();
             configureServices?.Invoke(services);
             ServiceProvider = services.BuildServiceProvider();
             ServiceScope = ServiceProvider.CreateScope();

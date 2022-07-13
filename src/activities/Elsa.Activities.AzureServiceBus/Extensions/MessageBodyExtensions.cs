@@ -1,14 +1,14 @@
 using System;
 using System.Text;
+using Azure.Messaging.ServiceBus;
 using Elsa.Activities.AzureServiceBus.Models;
 using Elsa.Serialization;
-using Microsoft.Azure.ServiceBus;
 
 namespace Elsa.Activities.AzureServiceBus.Extensions
 {
     public static class MessageBodyExtensions
     {
-        public static T ReadBody<T>(this MessageModel message, IContentSerializer serializer) => (T) message.ReadBody(typeof(T), serializer);
+        public static T ReadBody<T>(this MessageModel message, IContentSerializer serializer) => (T)message.ReadBody(typeof(T), serializer);
 
         public static object ReadBody(this MessageModel message, Type type, IContentSerializer serializer)
         {
@@ -20,19 +20,15 @@ namespace Elsa.Activities.AzureServiceBus.Extensions
             return serializer.Deserialize(json, type)!;
         }
 
-        public static Message CreateMessage(IContentSerializer serializer, object message)
+        public static ServiceBusMessage CreateMessage(IContentSerializer serializer, object message)
         {
-            byte[] messageBytes;    
-
             if (message is string s)
-                messageBytes = Encoding.UTF8.GetBytes(s);
-            else
-            {
-                var json = serializer.Serialize(message);
-                messageBytes = Encoding.UTF8.GetBytes(json);
-            }
+                return new ServiceBusMessage(s);
+            
+            var json = serializer.Serialize(message);
+            var messageBytes = Encoding.UTF8.GetBytes(json);
 
-            return new Message(messageBytes);
+            return new ServiceBusMessage(messageBytes);
         }
     }
 }

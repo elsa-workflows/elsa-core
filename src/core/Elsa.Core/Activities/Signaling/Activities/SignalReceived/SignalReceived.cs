@@ -2,7 +2,6 @@ using System;
 using Elsa.Activities.Signaling.Models;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
-using Elsa.Design;
 using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;

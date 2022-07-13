@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <Import Project="..\..\..\common.props"/>
+    <Import Project="..\..\..\configureawait.props"/>
+
+    <PropertyGroup>
+        <TargetFramework>net5.0</TargetFramework>
+        <Description>
+            Elsa is a set of workflow libraries and tools that enable lean and mean workflowing capabilities in any .NET Core application.
+            This package provides activities to send and receive messages using MQTT.
+        </Description>
+        <PackageTags>elsa, workflows</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\core\Elsa.Abstractions\Elsa.Abstractions.csproj"/>
+        <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj"/>
+        <ProjectReference Include="..\..\modules\workflowtesting\Elsa.WorkflowTesting\Elsa.WorkflowTesting.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="System.Net.Mqtt" Version="0.6.16-beta"/>
+    </ItemGroup>
+
+</Project>

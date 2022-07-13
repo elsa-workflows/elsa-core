@@ -1,3 +1,4 @@
+using System;
 using Elsa.Activities.Console;
 using Elsa.Activities.RabbitMq;
 using Elsa.Builders;
@@ -21,9 +22,9 @@ namespace Elsa.Samples.RabbitMqWorker.Workflows
              
                 return $"Start! - correlationId: {correlationId}";
             })
-            .SendTopicMessage(_connectionString, "Greetings", null, "Greetings from RabbitMQ")
-            .MessageReceived(_connectionString, "Greetings", null)         
-            .WriteLine(ctx => "End: " + (string)ctx.Input);
+            .SendTopicMessage(_connectionString, "Greetings", "Greetings from RabbitMQ")
+            .MessageReceived(_connectionString, "Greetings")         
+            .WriteLine(ctx => "End: " + (string?)ctx.Input);
 
     }
 }

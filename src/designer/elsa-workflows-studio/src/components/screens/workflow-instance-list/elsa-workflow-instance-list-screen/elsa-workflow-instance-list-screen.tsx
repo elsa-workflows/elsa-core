@@ -3,15 +3,7 @@ import {injectHistory, LocationSegments, RouterHistory} from "@stencil/router";
 import * as collection from 'lodash/collection';
 import * as array from 'lodash/array';
 import {confirmDialogService, createElsaClient, eventBus} from "../../../../services";
-import {
-  EventTypes,
-  OrderBy,
-  PagedList,
-  VersionOptions,
-  WorkflowBlueprintSummary,
-  WorkflowInstanceSummary,
-  WorkflowStatus
-} from "../../../../models";
+import {EventTypes, OrderBy, PagedList, WorkflowBlueprintSummary, WorkflowInstanceSummary, WorkflowStatus} from "../../../../models";
 import {DropdownButtonItem, DropdownButtonOrigin} from "../../../controls/elsa-dropdown-button/models";
 import {Map, parseQuery} from '../../../../utils/utils';
 import moment from "moment";
@@ -89,6 +81,9 @@ export class ElsaWorkflowInstanceListScreen {
     }, {
       text: t('BulkActions.Actions.Delete'),
       name: 'Delete',
+    }, {
+      text: t('BulkActions.Actions.Retry'),
+      name: 'Retry',
     }];
 
     await eventBus.emit(EventTypes.WorkflowInstanceBulkActionsLoading, this, {sender: this, bulkActions});
@@ -141,7 +136,7 @@ export class ElsaWorkflowInstanceListScreen {
 
   t = (key: string, options?: any) => this.i18next.t(key, options);
 
-  applyQueryString(queryString?: string) {
+  private applyQueryString(queryString?: string) {
     const query = parseQuery(queryString);
 
     this.selectedWorkflowId = query.workflow;
@@ -155,14 +150,12 @@ export class ElsaWorkflowInstanceListScreen {
     this.currentPageSize = Math.max(Math.min(this.currentPageSize, ElsaWorkflowInstanceListScreen.MAX_PAGE_SIZE), ElsaWorkflowInstanceListScreen.MIN_PAGE_SIZE);
   }
 
-  async loadWorkflowBlueprints() {
+  private async loadWorkflowBlueprints() {
     const elsaClient = await this.createClient();
-    const versionOptions: VersionOptions = {allVersions: true};
-    const workflowBlueprintPagedList = await elsaClient.workflowRegistryApi.list(null, null, versionOptions);
-    this.workflowBlueprints = workflowBlueprintPagedList.items;
+    this.workflowBlueprints = await elsaClient.workflowRegistryApi.listAll({allVersions: true});
   }
 
-  async loadWorkflowInstances() {
+  private async loadWorkflowInstances() {
     this.currentPage = isNaN(this.currentPage) ? ElsaWorkflowInstanceListScreen.START_PAGE : this.currentPage;
     this.currentPage = Math.max(this.currentPage, ElsaWorkflowInstanceListScreen.START_PAGE);
     this.currentPageSize = isNaN(this.currentPageSize) ? ElsaWorkflowInstanceListScreen.DEFAULT_PAGE_SIZE : this.currentPageSize;
@@ -184,7 +177,7 @@ export class ElsaWorkflowInstanceListScreen {
 
   getLatestWorkflowBlueprintVersions(): Array<WorkflowBlueprintSummary> {
     const groups = collection.groupBy(this.workflowBlueprints, 'id');
-    return collection.map(groups, x => array.first(collection.sortBy(x, 'version', 'desc')));
+    return collection.map(groups, x => array.first(collection.orderBy(x, 'version', 'desc')));
   }
 
   buildFilterUrl(workflowId?: string, workflowStatus?: WorkflowStatus, orderBy?: OrderBy, pageSize?: number, correlationId?: string) {
@@ -332,6 +325,18 @@ export class ElsaWorkflowInstanceListScreen {
     await this.loadWorkflowInstances();
   }
 
+  async onRetryClick(e: Event, workflowInstance: WorkflowInstanceSummary) {
+    const t = this.t;
+    const result = await confirmDialogService.show(t('RetryDialog.Title'), t('RetryDialog.Message'));
+
+    if (!result)
+      return;
+
+    const elsaClient = await this.createClient();
+    await elsaClient.workflowInstancesApi.retry(workflowInstance.id);
+    await this.loadWorkflowInstances();
+  }
+
   async onBulkCancel() {
     const t = this.t;
     const result = await confirmDialogService.show(t('BulkCancelDialog.Title'), t('BulkCancelDialog.Message'));
@@ -360,6 +365,20 @@ export class ElsaWorkflowInstanceListScreen {
     this.currentPage = 0;
   }
 
+  async onBulkRetry() {
+    const t = this.t;
+    const result = await confirmDialogService.show(t('BulkRetryDialog.Title'), t('BulkRetryDialog.Message'));
+
+    if (!result)
+      return;
+
+    const elsaClient = await this.createClient();
+    await elsaClient.workflowInstancesApi.bulkRetry({workflowInstanceIds: this.selectedWorkflowInstanceIds});
+    this.selectedWorkflowInstanceIds = [];
+    await this.loadWorkflowInstances();
+    this.currentPage = 0;
+  }
+
   async onBulkActionSelected(e: CustomEvent<DropdownButtonItem>) {
     const action = e.detail;
 
@@ -369,6 +388,9 @@ export class ElsaWorkflowInstanceListScreen {
         break;
       case 'Delete':
         await this.onBulkDelete();
+        break;
+      case 'Retry':
+        await this.onBulkRetry();
         break;
       default:
         action.handler();
@@ -435,6 +457,17 @@ export class ElsaWorkflowInstanceListScreen {
       );
     };
 
+    const renderRetryIcon = function () {
+      return (
+        <svg class="elsa-h-5 w-5 elsa-text-gray-500" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path stroke="none" d="M0 0h24v24H0z"/>
+          <path d="M12 17l-2 2l2 2m-2 -2h9a2 2 0 0 0 1.75 -2.75l-.55 -1"/>
+          <path d="M12 17l-2 2l2 2m-2 -2h9a2 2 0 0 0 1.75 -2.75l-.55 -1" transform="rotate(120 12 13)"/>
+          <path d="M12 17l-2 2l2 2m-2 -2h9a2 2 0 0 0 1.75 -2.75l-.55 -1" transform="rotate(240 12 13)"/>
+        </svg>
+      );
+    };
+
     return (
       <div>
         <div
@@ -443,7 +476,7 @@ export class ElsaWorkflowInstanceListScreen {
             <div class="elsa-flex-1 elsa-flex">
               <form class="elsa-w-full elsa-flex md:ml-0" onSubmit={e => this.onSearch(e)}>
                 <label htmlFor="search_field" class="elsa-sr-only">Search</label>
-                <div class="elsa-relative elsa-w-full elsa-text-cool-gray-400 focus-within:elsa-text-cool-gray-600">
+                <div class="elsa-relative elsa-w-full elsa-text-gray-400 focus-within:elsa-text-gray-600">
                   <div
                     class="elsa-absolute elsa-inset-y-0 elsa-left-0 elsa-flex elsa-items-center elsa-pointer-events-none">
                     <svg class="elsa-h-5 elsa-w-5" fill="currentColor" viewBox="0 0 20 20">
@@ -452,7 +485,7 @@ export class ElsaWorkflowInstanceListScreen {
                     </svg>
                   </div>
                   <input name="searchTerm"
-                         class="elsa-block elsa-w-full elsa-h-full elsa-pl-8 elsa-pr-3 elsa-py-2 elsa-rounded-md elsa-text-cool-gray-900 elsa-placeholder-cool-gray-500 focus:elsa-placeholder-cool-gray-400 sm:elsa-text-sm elsa-border-0 focus:elsa-outline-none focus:elsa-ring-0"
+                         class="elsa-block elsa-w-full elsa-h-full elsa-pl-8 elsa-pr-3 elsa-py-2 elsa-rounded-md elsa-text-gray-900 elsa-placeholder-gray-500 focus:elsa-placeholder-gray-400 sm:elsa-text-sm elsa-border-0 focus:elsa-outline-none focus:elsa-ring-0"
                          placeholder={t('Search')}
                          type="search"/>
                 </div>
@@ -532,11 +565,11 @@ export class ElsaWorkflowInstanceListScreen {
               </thead>
               <tbody class="elsa-bg-white elsa-divide-y elsa-divide-gray-100">
               {workflowInstances.map(workflowInstance => {
-                const workflowBlueprint = workflowBlueprints.find(x => x.id == workflowInstance.definitionId && x.version == workflowInstance.version) ?? {
+                const workflowBlueprint = workflowBlueprints.find(x => x.versionId == workflowInstance.definitionVersionId) ?? {
                   name: 'Not Found',
                   displayName: '(Workflow definition not found)'
                 };
-                const displayName = workflowBlueprint.displayName || workflowBlueprint.name || 'Untitled';
+                const displayName = workflowBlueprint.displayName || workflowBlueprint.name || '(Untitled)';
                 const statusColor = this.getStatusColor(workflowInstance.workflowStatus);
                 const instanceViewUrl = `${basePath}/workflow-instances/${workflowInstance.id}`;
                 const correlationId = !!workflowInstance.correlationId ? workflowInstance.correlationId : ''
@@ -548,6 +581,26 @@ export class ElsaWorkflowInstanceListScreen {
                 const finishedAt = !!workflowInstance.finishedAt ? moment(workflowInstance.finishedAt) : null;
                 const lastExecutedAt = !!workflowInstance.lastExecutedAt ? moment(workflowInstance.lastExecutedAt) : null;
                 const faultedAt = !!workflowInstance.faultedAt ? moment(workflowInstance.faultedAt) : null;
+                const isFaulted = workflowInstance.workflowStatus == WorkflowStatus.Faulted;
+
+                const contextMenuItems = [
+                  {text: t('Table.ContextMenu.View'), anchorUrl: instanceViewUrl, icon: renderViewIcon()},
+                  {
+                    text: t('Table.ContextMenu.Cancel'),
+                    clickHandler: e => this.onCancelClick(e, workflowInstance),
+                    icon: renderCancelIcon()
+                  },
+                    ...[isFaulted ? {
+                      text: t('Table.ContextMenu.Retry'),
+                      clickHandler: e => this.onRetryClick(e, workflowInstance),
+                      icon: renderRetryIcon()
+                    } : null],
+                  {
+                    text: t('Table.ContextMenu.Delete'),
+                    clickHandler: e => this.onDeleteClick(e, workflowInstance),
+                    icon: renderDeleteIcon()
+                  }
+                ].filter(x => x != null);
 
                 return <tr>
                   <td
@@ -605,26 +658,13 @@ export class ElsaWorkflowInstanceListScreen {
                     {!!faultedAt ? faultedAt.format('DD-MM-YYYY HH:mm:ss') : '-'}
                   </td>
                   <td class="elsa-pr-6">
-                    <elsa-context-menu history={this.history} menuItems={[
-                      {text: t('Table.ContextMenu.View'), anchorUrl: instanceViewUrl, icon: renderViewIcon()},
-                      {
-                        text: t('Table.ContextMenu.Cancel'),
-                        clickHandler: e => this.onCancelClick(e, workflowInstance),
-                        icon: renderCancelIcon()
-                      },
-                      {
-                        text: t('Table.ContextMenu.Delete'),
-                        clickHandler: e => this.onDeleteClick(e, workflowInstance),
-                        icon: renderDeleteIcon()
-                      }
-                    ]}/>
+                    <elsa-context-menu history={this.history} menuItems={contextMenuItems}/>
                   </td>
                 </tr>
               })}
               </tbody>
             </table>
-            <elsa-pager page={this.currentPage} pageSize={this.currentPageSize} totalCount={totalCount}
-                        history={this.history} onPaged={this.onPaged} culture={this.culture}/>
+            <elsa-pager page={this.currentPage} pageSize={this.currentPageSize} totalCount={totalCount} history={this.history} onPaged={this.onPaged} culture={this.culture}/>
           </div>
         </div>
       </div>
@@ -739,9 +779,16 @@ export class ElsaWorkflowInstanceListScreen {
     });
 
     const renderIcon = function () {
-      return <svg class="elsa-mr-3 elsa-h-5 elsa-w-5 elsa-text-gray-400" fill="none" viewBox="0 0 24 24"
-                  stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 8h9m-9 4h9m5"/>
+      return <svg class="elsa-h-5 elsa-w-5 elsa-text-gray-400 elsa-mr-2" width="24" height="24" viewBox="0 0 24 24"
+                  stroke-width="2"
+                  stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path stroke="none" d="M0 0h24v24H0z"/>
+        <line x1="9" y1="6" x2="20" y2="6"/>
+        <line x1="9" y1="12" x2="20" y2="12"/>
+        <line x1="9" y1="18" x2="20" y2="18"/>
+        <line x1="5" y1="6" x2="5" y2="6.01"/>
+        <line x1="5" y1="12" x2="5" y2="12.01"/>
+        <line x1="5" y1="18" x2="5" y2="18.01"/>
       </svg>
     };
 

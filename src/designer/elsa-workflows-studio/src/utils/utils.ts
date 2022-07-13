@@ -177,7 +177,9 @@ export function mapSyntaxToLanguage(syntax: string): any {
     case 'JavaScript':
       return 'javascript';
     case 'Liquid':
-      return 'handlebars';
+      return 'liquid';
+    case 'SQL':
+      return 'sql';
     case 'Literal':
     default:
       return 'plaintext';
@@ -205,12 +207,12 @@ export function htmlEncode(value) {
 
 export function durationToString(duration: Duration) {
   return !!duration ? duration.asHours() > 1
-    ? `${duration.asHours().toFixed(3)} h`
-    : duration.asMinutes() > 1
-      ? `${duration.asMinutes().toFixed(3)} m`
-      : duration.asSeconds() > 1
-        ? `${duration.asSeconds().toFixed(3)} s`
-        : `${duration.asMilliseconds()} ms`
+      ? `${duration.asHours().toFixed(3)} h`
+      : duration.asMinutes() > 1
+        ? `${duration.asMinutes().toFixed(3)} m`
+        : duration.asSeconds() > 1
+          ? `${duration.asSeconds().toFixed(3)} s`
+          : `${duration.asMilliseconds()} ms`
     : null;
 }
 
@@ -220,4 +222,11 @@ export function clip(el) {
   const sel = window.getSelection();
   sel.removeAllRanges();
   sel.addRange(range);
+}
+
+export async function awaitElement(selector) {
+  while (document.querySelector(selector) === null) {
+    await new Promise(resolve => requestAnimationFrame(resolve))
+  }
+  return document.querySelector(selector);
 }

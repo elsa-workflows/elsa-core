@@ -1,9 +1,7 @@
 using AutoMapper;
 using Elsa.Activities.File.Models;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
 
 namespace Elsa.Activities.File.MapperProfiles
 {

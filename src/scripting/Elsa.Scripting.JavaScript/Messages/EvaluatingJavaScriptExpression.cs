@@ -1,4 +1,4 @@
-﻿using Elsa.Services.Models;
+using Elsa.Services.Models;
 using Jint;
 using MediatR;
 

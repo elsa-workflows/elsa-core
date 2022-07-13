@@ -1,58 +1,59 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
-    <IsPackable>false</IsPackable>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <IsPackable>false</IsPackable>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Autofixture" Version="4.17.0" />
-    <PackageReference Include="Autofixture.AutoMoq" Version="4.17.0" />
-    <PackageReference Include="autofixture.xunit2" Version="4.17.0" />
-    <PackageReference Include="Moq" Version="4.16.1" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.11.0" />
-    <PackageReference Include="NodaTime.Testing" Version="3.0.5" />
-    <PackageReference Include="System.Text.Encodings.Web" Version="5.0.1" />
-    <PackageReference Include="xunit" Version="2.4.1" />
-    <PackageReference Include="XunitXml.TestLogger" Version="3.0.66" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="coverlet.collector" Version="3.1.0">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="YesSql.Core" Version="3.0.7" />
-    <PackageReference Include="YesSql.Provider.Sqlite" Version="3.0.7" />
-    <PackageReference Include="YesSql.Provider.PostgreSql" Version="3.0.7" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0" />
-    <PackageReference Include="Hangfire.AspNetCore" Version="1.7.25" />
-    <PackageReference Include="Hangfire.InMemory" Version="0.3.4" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="5.0.10" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Autofixture" Version="4.17.0"/>
+        <PackageReference Include="Autofixture.AutoMoq" Version="4.17.0"/>
+        <PackageReference Include="autofixture.xunit2" Version="4.17.0"/>
+        <PackageReference Include="Moq" Version="4.16.1"/>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.11.0"/>
+        <PackageReference Include="NodaTime.Testing" Version="3.0.9"/>
+        <PackageReference Include="System.Text.Encodings.Web" Version="6.0.0"/>
+        <PackageReference Include="xunit" Version="2.4.1"/>
+        <PackageReference Include="XunitXml.TestLogger" Version="3.0.66"/>
+        <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="coverlet.collector" Version="3.1.0">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="YesSql.Core" Version="3.0.7"/>
+        <PackageReference Include="YesSql.Provider.Sqlite" Version="3.0.7"/>
+        <PackageReference Include="YesSql.Provider.PostgreSql" Version="3.0.7"/>
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.0"/>
+        <PackageReference Include="Hangfire.AspNetCore" Version="1.7.28"/>
+        <PackageReference Include="Hangfire.InMemory" Version="0.3.4"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="6.0.1"/>
+    </ItemGroup>
 
-  <ItemGroup>
-    <None Update="Elsa.Core.UnitTests.xunit.runner.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\hello-world-workflow.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
+    <ItemGroup>
+        <None Update="Elsa.Core.UnitTests.xunit.runner.json">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Assets\hello-world-workflow.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\src\activities\Elsa.Activities.UserTask\Elsa.Activities.UserTask.csproj" />
-    <ProjectReference Include="..\..\..\src\core\Elsa\Elsa.csproj" />
-    <ProjectReference Include="..\..\shared\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj" />
-    <ProjectReference Include="..\..\..\src\activities\Elsa.Activities.Temporal.Common\Elsa.Activities.Temporal.Common.csproj" />
-    <ProjectReference Include="..\..\..\src\activities\Elsa.Activities.Temporal.Hangfire\Elsa.Activities.Temporal.Hangfire.csproj" />
-    <ProjectReference Include="..\..\..\src\activities\Elsa.Activities.Temporal.Quartz\Elsa.Activities.Temporal.Quartz.csproj" />
-    <ProjectReference Include="..\..\..\src\persistence\Elsa.Persistence.MongoDb\Elsa.Persistence.MongoDb.csproj" />
-    <ProjectReference Include="..\..\..\src\persistence\Elsa.Persistence.YesSql\Elsa.Persistence.YesSql.csproj" />
-    <ProjectReference Include="..\..\..\src\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.Core\Elsa.Persistence.EntityFramework.Core.csproj" />
-    <ProjectReference Include="..\..\..\src\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.Sqlite\Elsa.Persistence.EntityFramework.Sqlite.csproj" />
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\src\activities\Elsa.Activities.UserTask\Elsa.Activities.UserTask.csproj"/>
+        <ProjectReference Include="..\..\..\src\core\Elsa\Elsa.csproj"/>
+        <ProjectReference Include="..\..\shared\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj"/>
+        <ProjectReference Include="..\..\..\src\activities\Elsa.Activities.Temporal.Common\Elsa.Activities.Temporal.Common.csproj"/>
+        <ProjectReference Include="..\..\..\src\activities\Elsa.Activities.Temporal.Hangfire\Elsa.Activities.Temporal.Hangfire.csproj"/>
+        <ProjectReference Include="..\..\..\src\activities\Elsa.Activities.Temporal.Quartz\Elsa.Activities.Temporal.Quartz.csproj"/>
+        <ProjectReference Include="..\..\..\src\persistence\Elsa.Persistence.MongoDb\Elsa.Persistence.MongoDb.csproj"/>
+        <ProjectReference Include="..\..\..\src\persistence\Elsa.Persistence.YesSql\Elsa.Persistence.YesSql.csproj"/>
+        <ProjectReference Include="..\..\..\src\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.Core\Elsa.Persistence.EntityFramework.Core.csproj"/>
+        <ProjectReference Include="..\..\..\src\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.Sqlite\Elsa.Persistence.EntityFramework.Sqlite.csproj"/>
+        <ProjectReference Include="..\..\..\src\activities\Elsa.Activities.AzureServiceBus\Elsa.Activities.AzureServiceBus.csproj" />
+    </ItemGroup>
 
 </Project>

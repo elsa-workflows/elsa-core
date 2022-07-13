@@ -1,5 +1,4 @@
 using System;
-using Elsa;
 using Elsa.Activities.Rebus;
 using Elsa.Activities.Rebus.Bookmarks;
 using Elsa.Activities.Rebus.Consumers;

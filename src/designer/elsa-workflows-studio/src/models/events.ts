@@ -8,7 +8,8 @@ export const EventTypes = {
   },
   ActivityEditor: {
     Show: 'show-activity-editor',
-    Rendering: 'activity-editor.rendering',
+    Rendering: 'activity-editor-rendering',
+    Rendered: 'activity-editor-rendered',
     Appearing: 'activity-editor-appearing',
     Disappearing: 'activity-editor-disappearing'
   },
@@ -68,6 +69,7 @@ export interface ActivityDesignDisplayContext {
   displayName?: string;
   bodyDisplay: string;
   outcomes: Array<string>;
+  expanded?: boolean;
 }
 
 export interface ActivityUpdatedContext {

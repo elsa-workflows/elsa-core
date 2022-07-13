@@ -11,8 +11,6 @@ namespace Elsa.Activities.RabbitMq.Services
         RabbitMqBusConfiguration Configuration { get; }
         void SubscribeWithHandler(Func<TransportMessage, CancellationToken, Task> handler);
         Task PublishMessage(string message);
-        void StartClient();
-        void StopClient();
         void Dispose();
     }
 }

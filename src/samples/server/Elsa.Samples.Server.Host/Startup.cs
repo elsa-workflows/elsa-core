@@ -1,4 +1,9 @@
+using Elsa.Activities.Http.OpenApi;
+using Elsa.Models;
+using Elsa.Providers.Workflows;
+using Elsa.Rebus.RabbitMq;
 using Elsa.Retention.Extensions;
+using Elsa.Retention.Filters;
 using Elsa.WorkflowTesting.Api.Extensions;
 using Hangfire;
 using Hangfire.SQLite;
@@ -27,8 +32,6 @@ namespace Elsa.Samples.Server.Host
         {
             var elsaSection = Configuration.GetSection("Elsa");
 
-            services.AddControllers();
-
             // TODO: Determine startup types based on project references, similar to Orchard Core's Targets.props for Applications and Modules.
             // Note that simply loading all referenced assemblies will not include assemblies where no types have been referenced in this project (due to assembly trimming?).
             var startups = new[]
@@ -44,6 +47,8 @@ namespace Elsa.Samples.Server.Host
                 typeof(Elsa.Activities.Telnyx.Startup),
                 typeof(Elsa.Activities.File.Startup),
                 typeof(Elsa.Activities.RabbitMq.Startup),
+                typeof(Elsa.Activities.Sql.Startup),
+                typeof(Elsa.Activities.Mqtt.Startup),
                 typeof(Persistence.EntityFramework.Sqlite.Startup),
                 typeof(Persistence.EntityFramework.SqlServer.Startup),
                 typeof(Persistence.EntityFramework.MySql.Startup),
@@ -82,21 +87,43 @@ namespace Elsa.Samples.Server.Host
                     .AddWorkflowsFrom<Startup>()
                     .AddFeatures(startups, Configuration)
                     .ConfigureWorkflowChannels(options => elsaSection.GetSection("WorkflowChannels").Bind(options))
+
+                    // Optionally opt-out of indexing workflows stored in the database.
+                    // These will be indexed when published/unpublished/deleted, so no need to do it during startup.
+                    // Unless you have existing workflow definitions in the DB for which no triggers have yet been created.
+                    //.ExcludeWorkflowProviderFromStartupIndexing<DatabaseWorkflowProvider>()
+                    
+                    // For distributed hosting, configure Rebus with a real message broker such as RabbitMQ or Azure Service Bus.
+                    //.UseRabbitMq(Configuration.GetConnectionString("RabbitMq"))
+                
+                    // When testing a distributed on your local machine, make sure each instance has a unique "container" name.
+                    // This name is used to create unique input queues for pub/sub messaging where the competing consumer pattern is undesirable in order to deliver a message to each subscriber.
+                    //.WithContainerName(Configuration.GetValue<string>("ContainerName") ?? System.Environment.MachineName)
                 )
-                .AddRetentionServices(options => elsaSection.GetSection("Retention").Bind(options));
+                .AddRetentionServices(options =>
+                {
+                    // Bind options from configuration.
+                    elsaSection.GetSection("Retention").Bind(options);
+
+                    // Configure a custom filter pipeline that deletes completed AND faulted workflows.
+                    options.ConfigurePipeline = pipeline => pipeline
+                        .AddFilter(new WorkflowStatusFilter(WorkflowStatus.Cancelled, WorkflowStatus.Faulted, WorkflowStatus.Finished))
+                        // Could add additional filters. For example, if there's a way to know that some workflow is a child workflow, maybe don't delete the parent.
+                        ;
+                });
 
             // Elsa API endpoints.
             services
                 .AddNotificationHandlersFrom<Startup>()
                 .AddElsaApiEndpoints()
-                .AddElsaSwagger();
+                .AddElsaSwagger(options => options.DocumentFilter<HttpEndpointDocumentFilter>());
 
             // Allow arbitrary client browser apps to access the API for demo purposes only.
             // In a production environment, make sure to allow only origins you trust.
             services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("Content-Disposition")));
 
-            //Workflow Testing
-            //services.AddWorkflowTestingServices();
+            // Workflow Testing
+            services.AddWorkflowTestingServices();
         }
 
         public void Configure(IApplicationBuilder app)
@@ -116,11 +143,13 @@ namespace Elsa.Samples.Server.Host
                     .AllowCredentials())
                 .UseElsaFeatures()
                 .UseRouting()
-                .UseEndpoints(endpoints => { endpoints.MapControllers(); })
-                //.MapWorkflowTestHub()
-                ;
+                .UseEndpoints(endpoints =>
+                {
+                    endpoints.MapControllers();
+                    endpoints.MapWorkflowTestHub();
+                });
         }
-        
+
         private void AddHangfire(IServiceCollection services, string dbConnectionString)
         {
             services

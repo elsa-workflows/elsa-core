@@ -12,7 +12,7 @@ namespace Elsa.Providers.WorkflowStorage
     public class BlobStorageWorkflowStorageProvider : WorkflowStorageProvider
     {
         public const string ProviderName = "BlobStorage";
-        
+
         private readonly IBlobStorage _blobStorage;
         private readonly JsonSerializerSettings _serializerSettings;
 
@@ -22,27 +22,29 @@ namespace Elsa.Providers.WorkflowStorage
             _serializerSettings = DefaultContentSerializer.CreateDefaultJsonSerializationSettings();
             _serializerSettings.TypeNameHandling = TypeNameHandling.All;
         }
-        
+
         public override string DisplayName => "Blob Storage";
 
         public override async ValueTask SaveAsync(WorkflowStorageContext context, string key, object? value, CancellationToken cancellationToken = default)
         {
             if (value == null)
                 return;
-            
+
             var path = GetFullPath(context, key);
-            
-            if(value is Stream stream)
+
+            if (value is Stream stream)
             {
                 await _blobStorage.WriteAsync(path, stream, cancellationToken: cancellationToken);
                 var blob = await _blobStorage.GetBlobAsync(path, cancellationToken);
                 blob.Metadata["ContentType"] = "Binary";
+                await _blobStorage.SetBlobAsync(blob, cancellationToken);
             }
             else if (value is byte[] bytes)
             {
                 await _blobStorage.WriteAsync(path, bytes, cancellationToken: cancellationToken);
                 var blob = await _blobStorage.GetBlobAsync(path, cancellationToken);
                 blob.Metadata["ContentType"] = "Binary";
+                await _blobStorage.SetBlobAsync(blob, cancellationToken);
             }
             else
             {
@@ -51,16 +53,17 @@ namespace Elsa.Providers.WorkflowStorage
                 await _blobStorage.WriteAsync(path, jsonBytes, cancellationToken: cancellationToken);
                 var blob = await _blobStorage.GetBlobAsync(path, cancellationToken);
                 blob.Metadata["ContentType"] = "Json";
+                await _blobStorage.SetBlobAsync(blob, cancellationToken);
             }
         }
 
         public override async ValueTask<object?> LoadAsync(WorkflowStorageContext context, string key, CancellationToken cancellationToken = default)
         {
             var path = GetFullPath(context, key);
-            
+
             if (!await _blobStorage.ExistsAsync(path, cancellationToken))
                 return null;
-            
+
             var blob = await _blobStorage.GetBlobAsync(path, cancellationToken);
             var contentType = blob.Metadata.GetItem("ContentType") ?? "Json";
 
@@ -84,14 +87,14 @@ namespace Elsa.Providers.WorkflowStorage
             var path = GetContainerPath(context);
             await _blobStorage.DeleteAsync(path, cancellationToken);
         }
-        
+
         private string GetFullPath(WorkflowStorageContext context, string key)
         {
             var containerPath = GetContainerPath(context);
             var activityId = context.ActivityId;
             return $"${containerPath}/{activityId}/{key}.dat";
         }
-        
+
         private string GetContainerPath(WorkflowStorageContext context) => context.WorkflowInstance.Id;
     }
 }

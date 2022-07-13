@@ -39,14 +39,11 @@ namespace Elsa.Providers.ActivityTypes
             {
                 var activityType = await CreateActivityTypeAsync(type, cancellationToken);
                 
-                if(activityType == null)
-                    continue;
-
                 yield return activityType;
             }
         }
 
-        private async Task<ActivityType?> CreateActivityTypeAsync(Type activityType, CancellationToken cancellationToken)
+        private async Task<ActivityType> CreateActivityTypeAsync(Type activityType, CancellationToken cancellationToken)
         {
             var info = await _describesActivityType.DescribeAsync(activityType, cancellationToken);
 
@@ -56,7 +53,7 @@ namespace Elsa.Providers.ActivityTypes
                 Type = activityType,
                 Description = info.Description,
                 DisplayName = info.DisplayName,
-                IsBrowsable =  activityType.GetCustomAttribute<BrowsableAttribute>()?.Browsable ?? true,
+                IsBrowsable =  activityType.GetCustomAttribute<BrowsableAttribute>(false)?.Browsable ?? true,
                 ActivateAsync = async context => await ActivateActivity(context, activityType),
                 DescribeAsync = async () => (await _describesActivityType.DescribeAsync(activityType, cancellationToken))!, 
                 CanExecuteAsync = async (context, instance) => await instance.CanExecuteAsync(context),

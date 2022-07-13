@@ -1,3 +1,3 @@
-.\build-assets
+./build-assets
 cd ../../../../..
-.\run-dashboard-monolith
+./run-dashboard-monolith

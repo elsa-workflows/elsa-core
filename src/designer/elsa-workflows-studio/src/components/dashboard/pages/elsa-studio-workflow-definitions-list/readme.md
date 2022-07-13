@@ -30,6 +30,7 @@ graph TD;
   elsa-studio-workflow-definitions-list --> context-consumer
   elsa-workflow-definitions-list-screen --> stencil-route-link
   elsa-workflow-definitions-list-screen --> elsa-context-menu
+  elsa-workflow-definitions-list-screen --> elsa-pager
   elsa-workflow-definitions-list-screen --> elsa-confirm-dialog
   elsa-workflow-definitions-list-screen --> context-consumer
   elsa-confirm-dialog --> elsa-modal-dialog

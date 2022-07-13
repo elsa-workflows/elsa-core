@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.Telnyx.Extensions;
 using Elsa.Activities.Telnyx.Models;
 using Elsa.Activities.Telnyx.Providers.Bookmarks;
 using Elsa.Activities.Telnyx.Webhooks.Events;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
 using Elsa.Models;
 using Elsa.Services;
-using Elsa.Services.Bookmarks;
 using Elsa.Services.Models;
 using MediatR;
 
@@ -40,23 +40,12 @@ namespace Elsa.Activities.Telnyx.Handlers
             if (!supportedPayloadTypes.Contains(receivedPayloadType))
                 return;
 
-            var correlationId = GetCorrelationId(receivedPayload);
+            var correlationId = receivedPayload.GetCorrelationId();
             var bookmark = CreateBookmark();
             var context = new WorkflowsQuery(ActivityTypeName, bookmark, correlationId);
             await _workflowLaunchpad.CollectAndDispatchWorkflowsAsync(context, new WorkflowInput(receivedPayload), cancellationToken);
         }
 
         protected virtual IBookmark CreateBookmark() => new GatherUsingSpeakBookmark();
-
-        private string GetCorrelationId(CallPayload payload)
-        {
-            if (!string.IsNullOrWhiteSpace(payload.ClientState))
-            {
-                var clientStatePayload = ClientStatePayload.FromBase64(payload.ClientState);
-                return clientStatePayload.CorrelationId;
-            }
-
-            return payload.CallSessionId;
-        }
     }
 }

@@ -3,16 +3,17 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.Workflows.Helper;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Expressions;
 using Elsa.Models;
+using Elsa.Persistence;
 using Elsa.Providers.WorkflowStorage;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Elsa.Services.WorkflowStorage;
-using NetBox.Extensions;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.Workflows
@@ -27,12 +28,16 @@ namespace Elsa.Activities.Workflows
         private readonly IStartsWorkflow _startsWorkflow;
         private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IWorkflowStorageService _workflowStorageService;
-
-        public RunWorkflow(IStartsWorkflow startsWorkflow, IWorkflowRegistry workflowRegistry, IWorkflowStorageService workflowStorageService)
+        private readonly IWorkflowReviver _workflowReviver;
+        private readonly IWorkflowInstanceStore _workflowInstanceStore;
+        public RunWorkflow(IStartsWorkflow startsWorkflow, IWorkflowRegistry workflowRegistry, IWorkflowStorageService workflowStorageService, IWorkflowReviver workflowReviver,
+            IWorkflowInstanceStore workflowInstanceStore)
         {
             _startsWorkflow = startsWorkflow;
             _workflowRegistry = workflowRegistry;
             _workflowStorageService = workflowStorageService;
+            _workflowReviver = workflowReviver;
+            _workflowInstanceStore = workflowInstanceStore;
         }
 
         [ActivityInput(
@@ -83,6 +88,7 @@ namespace Elsa.Activities.Workflows
             Hint = "Optional custom attributes to associate with the workflow to run.",
             Category = PropertyCategories.Advanced,
             SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid, SyntaxNames.Json })]
+        [Obsolete("Will be removed in future versions.")]
         public Variables? CustomAttributes { get; set; } = default!;
 
         [ActivityInput(
@@ -98,28 +104,97 @@ namespace Elsa.Activities.Workflows
             set => SetState(value);
         }
 
+        [ActivityInput(
+            Label = "Retry failed workflow",
+            Hint = "True to retry existing ChildWorkflow instance instead of creating a new one when faulted.",
+            Category = PropertyCategories.Advanced,
+            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
+        )]
+        public bool RetryFailedActivities { get; set; } = default!;
+        public Dictionary<string, string> AlreadyExecutedChildren
+        {
+            get => GetState<Dictionary<string,string>>()!;
+            set => SetState(value);
+        }
+
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
             var cancellationToken = context.CancellationToken;
-            var workflowBlueprint = await FindWorkflowBlueprintAsync(cancellationToken);
 
-            if (workflowBlueprint == null || workflowBlueprint.Id == context.WorkflowInstance.DefinitionId)
-                return Outcome("Not Found");
+            var workflowBlueprint = await FindWorkflowBlueprintAsync(cancellationToken);
+            WorkflowStatus? childWorkflowStatus;
+            WorkflowInstance? childWorkflowInstance;
+
+            //Someway the initial input changes when retrying, so we hash the values
+            //when retrying this activity if faulted, if there is only one with this activity id in the workflow, we dont need to use the hash because
+            //ChildWorkflowInstanceId will have the id of the subworkflow but, if it has failed in a loop, as ChildWorkflowInstanceId is metadata, it will always
+            //have stored just the last workflowinstance executed, but not the rest, so we need to discover what is the real workflowinstace using hashed input
+
+            string hash = default!;
+
+            if (RetryFailedActivities)
+            {
+                AlreadyExecutedChildren ??= new Dictionary<string, string>();
+                hash = HashHelper.Hash(context.Input);
+            }
+
+            //We know it is a retry if ChildWorkflowInstanceId has a value here, but that value is not the real associated ChildWorkflow
+            if (RetryFailedActivities && !string.IsNullOrEmpty(ChildWorkflowInstanceId) && AlreadyExecutedChildren.ContainsKey(hash))
+            {
+                ChildWorkflowInstanceId = AlreadyExecutedChildren.GetValueOrDefault(hash);
+                childWorkflowInstance = await _workflowInstanceStore.FindByIdAsync(ChildWorkflowInstanceId);
+
+                if (childWorkflowInstance == null)
+                {
+                    throw new Exception();
+                }
+                switch (childWorkflowInstance.WorkflowStatus)
+                {
+                    case WorkflowStatus.Idle:
+                    case WorkflowStatus.Finished:
+                    case WorkflowStatus.Suspended:
+                    case WorkflowStatus.Running:
+                    case WorkflowStatus.Cancelled:
+                        break;
+                    case WorkflowStatus.Faulted:
+                        await _workflowReviver.ReviveAndRunAsync(childWorkflowInstance, cancellationToken);
+                        break;
+                    default:
+                        break;
+                }
+                childWorkflowStatus = childWorkflowInstance.WorkflowStatus;
+                ChildWorkflowInstanceId = childWorkflowInstance.Id;
+
+                context.JournalData.Add("Workflow Blueprint ID", workflowBlueprint?.Id);
+                context.JournalData.Add("Workflow Instance ID", childWorkflowInstance.Id);
+                context.JournalData.Add("Workflow Instance Status", childWorkflowInstance.WorkflowStatus);
+
+            }
+            else
+            {
+
+                if (workflowBlueprint == null || workflowBlueprint.Id == context.WorkflowInstance.DefinitionId)
+                    return Outcome("Not Found");
+
+                var result = await _startsWorkflow.StartWorkflowAsync(workflowBlueprint!, TenantId, new WorkflowInput(Input), CorrelationId, ContextId, cancellationToken: cancellationToken);
+                childWorkflowInstance = result.WorkflowInstance!;
+                childWorkflowStatus = childWorkflowInstance.WorkflowStatus;
+                ChildWorkflowInstanceId = childWorkflowInstance.Id;
+
+                context.JournalData.Add("Workflow Blueprint ID", workflowBlueprint.Id);
+                context.JournalData.Add("Workflow Instance ID", childWorkflowInstance.Id);
+                context.JournalData.Add("Workflow Instance Status", childWorkflowInstance.WorkflowStatus);
+                if (RetryFailedActivities)
+                    AlreadyExecutedChildren.Add(HashHelper.Hash(context.Input), ChildWorkflowInstanceId);
+            }
             
-            var result = await _startsWorkflow.StartWorkflowAsync(workflowBlueprint!, TenantId, new WorkflowInput(Input), CorrelationId, ContextId, cancellationToken: cancellationToken);
-            var childWorkflowInstance = result.WorkflowInstance!;
-            var childWorkflowStatus = childWorkflowInstance.WorkflowStatus;
-            ChildWorkflowInstanceId = childWorkflowInstance.Id;
-            
-            context.JournalData.Add("Workflow Blueprint ID", workflowBlueprint.Id);
-            context.JournalData.Add("Workflow Instance ID", childWorkflowInstance.Id);
-            context.JournalData.Add("Workflow Instance Status", childWorkflowInstance.WorkflowStatus);
 
             return Mode switch
             {
                 RunWorkflowMode.FireAndForget => Done(),
                 RunWorkflowMode.Blocking when childWorkflowStatus == WorkflowStatus.Finished => await ResumeSynchronouslyAsync(context, childWorkflowInstance, cancellationToken),
                 RunWorkflowMode.Blocking when childWorkflowStatus == WorkflowStatus.Suspended => Suspend(),
+                RunWorkflowMode.Blocking when childWorkflowStatus == WorkflowStatus.Idle => Suspend(),
                 RunWorkflowMode.Blocking when childWorkflowStatus == WorkflowStatus.Faulted => Fault($"Workflow {childWorkflowInstance.Id} faulted"),
                 _ => throw new ArgumentOutOfRangeException(nameof(Mode))
             };
@@ -127,16 +202,16 @@ namespace Elsa.Activities.Workflows
 
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
         {
-            var model = (FinishedWorkflowModel) context.WorkflowExecutionContext.Input!;
+            var model = (FinishedWorkflowModel)context.WorkflowExecutionContext.Input!;
             return OnResumeInternal(context, model);
         }
 
         private async Task<IActivityExecutionResult> ResumeSynchronouslyAsync(ActivityExecutionContext context, WorkflowInstance childWorkflowInstance, CancellationToken cancellationToken)
         {
             var outputReference = childWorkflowInstance.Output;
-            
-            var output = outputReference != null 
-                ? await _workflowStorageService.LoadAsync(outputReference.ProviderName, new WorkflowStorageContext(childWorkflowInstance, outputReference.ActivityId), "Output", cancellationToken) 
+
+            var output = outputReference != null
+                ? await _workflowStorageService.LoadAsync(outputReference.ProviderName, new WorkflowStorageContext(childWorkflowInstance, outputReference.ActivityId), "Output", cancellationToken)
                 : null;
 
             var model = new FinishedWorkflowModel
@@ -144,7 +219,7 @@ namespace Elsa.Activities.Workflows
                 WorkflowOutput = output,
                 WorkflowInstanceId = childWorkflowInstance.Id
             };
-            
+
             context.LogOutputProperty(this, "Output", output);
             context.JournalData.Add("Child Workflow Instance ID", childWorkflowInstance.Id);
 
@@ -175,21 +250,10 @@ namespace Elsa.Activities.Workflows
 
         private async Task<IWorkflowBlueprint?> FindWorkflowBlueprintAsync(CancellationToken cancellationToken)
         {
-            var query = await _workflowRegistry.ListAsync(cancellationToken);
+            if (string.IsNullOrWhiteSpace(WorkflowDefinitionId))
+                return null;
 
-            query = query.Where(x => x.WithVersion(VersionOptions.Published));
-
-            if (WorkflowDefinitionId != null)
-                query = query.Where(x => x.Id == WorkflowDefinitionId);
-
-            if (TenantId != null)
-                query = query.Where(x => x.TenantId == TenantId);
-
-            if (CustomAttributes != null)
-                foreach (var customAttribute in CustomAttributes.Data)
-                    query = query.Where(x => Equals(x.CustomAttributes.Get(customAttribute.Key), customAttribute.Value));
-
-            return query.FirstOrDefault();
+            return await _workflowRegistry.FindAsync(WorkflowDefinitionId, VersionOptions.Published, TenantId, cancellationToken);
         }
 
         public enum RunWorkflowMode

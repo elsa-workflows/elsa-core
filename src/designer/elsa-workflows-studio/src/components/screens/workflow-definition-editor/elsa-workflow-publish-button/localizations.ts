@@ -25,5 +25,14 @@ export const resources = {
       'Import': 'Importeren',
       'Export': 'Exporteren',
     }
-  }
+  },
+  'fa-IR': {
+    'default': {
+      'Publish': 'انتشار',
+      'Publishing': 'در حال انتشار',
+      'Unpublish': 'Unpublish',
+      'Import': 'Import',
+      'Export': 'Export',
+    }
+  },
 };

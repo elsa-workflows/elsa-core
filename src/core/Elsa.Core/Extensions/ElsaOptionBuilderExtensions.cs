@@ -26,7 +26,8 @@ namespace Elsa
 
             enabledFeatures = enabledFeatures.ToHashSet();
 
-            var startupTypesQuery = from assembly in assemblies
+            var startupTypesQuery =
+                from assembly in assemblies
                 from type in assembly.GetExportedTypes()
                 where type.IsClass && !type.IsAbstract && typeof(IStartup).IsAssignableFrom(type)
                 let featureAttribute = type.GetCustomAttribute<FeatureAttribute>()
@@ -37,7 +38,7 @@ namespace Elsa
 
             foreach (var type in startupTypes)
             {
-                var instance = (IStartup) Activator.CreateInstance(type, null);
+                var instance = (IStartup)Activator.CreateInstance(type, null);
                 instance.ConfigureElsa(builder, configuration);
                 builder.ElsaOptions.Startups.Add(instance);
             }
@@ -65,7 +66,7 @@ namespace Elsa
                 if (featureOptions.Items == null) continue;
 
                 var values = featureOptions.Items.Values.ToArray();
-                GetPermutations(key, values, enabledFeatures, 0, values.Length - 1);                
+                GetPermutations(key, values, enabledFeatures, 0, values.Length - 1);
             }
 
             return enabledFeatures;
@@ -93,6 +94,7 @@ namespace Elsa
                 bool.TryParse(configuration.GetValue<string>($"{feature}"), out var enabled);
                 featureModel.Enabled = enabled;
             }
+
             return featureModel;
         }
 
@@ -164,11 +166,10 @@ namespace Elsa
         /// </summary>
         private static void Swap(ref string item1, ref string item2)
         {
-            if (item1 == item2) return;
+            if (item1 == item2)
+                return;
 
-            var temp = item1;
-            item1 = item2;
-            item2 = temp;
+            (item1, item2) = (item2, item1);
         }
 
         private static IEnumerable<Assembly> GetAssemblies(IEnumerable<Type> assemblyMarkerTypes) => assemblyMarkerTypes.Select(x => x.Assembly).Distinct();

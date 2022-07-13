@@ -21,6 +21,7 @@ namespace Elsa.Persistence.EntityFramework.Core
         public DbSet<WorkflowInstance> WorkflowInstances { get; set; } = default!;
         public DbSet<WorkflowExecutionLogRecord> WorkflowExecutionLogRecords { get; set; } = default!;
         public DbSet<Bookmark> Bookmarks { get; set; } = default!;
+        public DbSet<Trigger> Triggers { get; set; } = default!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -60,6 +61,8 @@ namespace Elsa.Persistence.EntityFramework.Core
                 modelBuilder.Entity<WorkflowDefinition>().Property("Data").HasColumnType("NCLOB");
                 modelBuilder.Entity<Bookmark>().Property(x => x.Model).HasColumnType("NCLOB");
                 modelBuilder.Entity<Bookmark>().Property(x => x.ModelType).HasColumnType("NCLOB");
+                modelBuilder.Entity<Trigger>().Property(x => x.Model).HasColumnType("NCLOB");
+                
             }
         }
     }

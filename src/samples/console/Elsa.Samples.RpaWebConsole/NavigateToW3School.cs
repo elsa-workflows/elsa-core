@@ -1,8 +1,5 @@
-using Elsa.Activities.Primitives;
 using Elsa.Activities.Rpa.Web;
 using Elsa.Builders;
-using System.Dynamic;
-using HtmlAgilityPack;
 using Elsa.Activities.Console;
 
 namespace Elsa.Samples.RpaWebConsole

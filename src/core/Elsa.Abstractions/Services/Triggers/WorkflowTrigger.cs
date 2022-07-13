@@ -1,22 +1,22 @@
-﻿using Elsa.Services.Models;
-
-namespace Elsa.Services
+﻿namespace Elsa.Services
 {
     public class WorkflowTrigger
     {
-        public WorkflowTrigger(IWorkflowBlueprint workflowBlueprint, string activityId, string activityType, string bookmarkHash, IBookmark bookmark)
+        public WorkflowTrigger(string workflowDefinitionId, string activityId, string activityType, string bookmarkHash, IBookmark bookmark, string? tenantId)
         {
-            WorkflowBlueprint = workflowBlueprint;
+            WorkflowDefinitionId = workflowDefinitionId;
             ActivityId = activityId;
             ActivityType = activityType;
             BookmarkHash = bookmarkHash;
             Bookmark = bookmark;
+            TenantId = tenantId;
         }
 
-        public IWorkflowBlueprint WorkflowBlueprint { get; }
+        public string WorkflowDefinitionId { get; }
         public string ActivityId { get; }
         public string ActivityType { get; }
         public string BookmarkHash { get; }
         public IBookmark Bookmark { get; }
+        public string? TenantId { get; }
     }
 }

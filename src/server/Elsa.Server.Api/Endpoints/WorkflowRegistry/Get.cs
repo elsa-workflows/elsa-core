@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
@@ -42,12 +43,16 @@ namespace Elsa.Server.Api.Endpoints.WorkflowRegistry
         public async Task<ActionResult<WorkflowBlueprintModel>> Handle(string id, VersionOptions? versionOptions = default, CancellationToken cancellationToken = default)
         {
             versionOptions ??= VersionOptions.Latest;
-            var workflowBlueprint = await _workflowRegistry.GetAsync(id, null, versionOptions.Value, cancellationToken, true);
+            var workflowBlueprint = await _workflowRegistry.FindAsync(id, versionOptions.Value, default, cancellationToken);
 
             if (workflowBlueprint == null)
                 return NotFound();
 
             var model = await _workflowBlueprintMapper.MapAsync(workflowBlueprint, cancellationToken);
+            
+            // Filter out activities from composite activities.
+            model.Activities = model.Activities.Where(x => x.ParentId == null || x.ParentId == workflowBlueprint.Id).ToList();
+            
             return Json(model, _contentSerializer.GetSettings());
         }
     }

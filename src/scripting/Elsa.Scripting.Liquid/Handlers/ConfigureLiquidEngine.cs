@@ -45,6 +45,7 @@ namespace Elsa.Scripting.Liquid.Handlers
 
             options.ValueConverters.Add(x => x is JObject o ? new ObjectValue(o) : null);
             options.ValueConverters.Add(x => x is JValue v ? v.Value : null);
+            options.ValueConverters.Add(x => x is ExpandoObject e ? new ObjectValue(e) : null);
 
             memberAccessStrategy.Register<ExpandoObject>();
             memberAccessStrategy.Register<JObject>();
@@ -61,7 +62,7 @@ namespace Elsa.Scripting.Liquid.Handlers
             memberAccessStrategy.Register<ActivityExecutionContext, FluidValue>("WorkflowDefinitionVersion", x => ToFluidValue(x.WorkflowInstance.Version, options));
             memberAccessStrategy.Register<ActivityExecutionContext, LiquidPropertyAccessor>("Variables", x => new LiquidPropertyAccessor(name => ToFluidValue(x.WorkflowExecutionContext.GetMergedVariables(), name, options)));
             memberAccessStrategy.Register<ActivityExecutionContext, LiquidPropertyAccessor>("Activities", x => new LiquidPropertyAccessor(name => ToFluidValue(GetActivityModel(x, name), options)!));
-            memberAccessStrategy.Register<ActivityExecutionContext, LiquidActivityModel>((x, a) => GetActivityModel(x, a));
+            memberAccessStrategy.Register<ActivityExecutionContext, LiquidActivityModel>(GetActivityModel);
             memberAccessStrategy.Register<LiquidActivityModel, object?>((model, name) => GetActivityProperty(model, name, cancellationToken));
             memberAccessStrategy.Register<LiquidObjectAccessor<JObject>, JObject>((x, name) => x.GetValueAsync(name));
             memberAccessStrategy.Register<ExpandoObject, object>((x, name) => ((IDictionary<string, object>)x)[name]);

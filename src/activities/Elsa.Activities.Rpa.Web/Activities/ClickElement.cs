@@ -1,12 +1,7 @@
 using Elsa.ActivityResults;
 using Elsa.Attributes;
-using Elsa.Design;
-using Elsa.Expressions;
 using Elsa.Services.Models;
-using OpenQA.Selenium;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using OpenQA.Selenium.Support.Extensions;
 

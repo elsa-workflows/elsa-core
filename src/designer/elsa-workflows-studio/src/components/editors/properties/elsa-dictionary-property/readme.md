@@ -9,6 +9,7 @@
 
 | Property             | Attribute    | Description | Type                         | Default     |
 | -------------------- | ------------ | ----------- | ---------------------------- | ----------- |
+| `activityModel`      | --           |             | `ActivityModel`              | `undefined` |
 | `propertyDescriptor` | --           |             | `ActivityPropertyDescriptor` | `undefined` |
 | `propertyModel`      | --           |             | `ActivityDefinitionProperty` | `undefined` |
 | `serverUrl`          | `server-url` |             | `string`                     | `undefined` |

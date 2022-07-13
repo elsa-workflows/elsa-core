@@ -57,7 +57,7 @@ namespace Elsa.Services
         /// <summary>
         /// Executes a pending workflow.
         /// </summary>
-        Task ExecutePendingWorkflowAsync(CollectedWorkflow collectedWorkflow, WorkflowInput? input = default, CancellationToken cancellationToken = default);
+        Task<RunWorkflowResult> ExecutePendingWorkflowAsync(CollectedWorkflow collectedWorkflow, WorkflowInput? input = null, CancellationToken cancellationToken = default);
         
         /// <summary>
         /// Executes a pending workflow.

@@ -4,6 +4,7 @@ export * from './toast-notification-service';
 export * from './elsa-plugin';
 export * from './elsa-client';
 export * from './event-bus';
+export * from './features-data-manager';
 export * from './plugin-manager';
 export * from './property-display-driver';
 export * from './property-display-manager';

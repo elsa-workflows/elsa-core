@@ -1,6 +1,8 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Dynamic;
+using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -20,12 +22,21 @@ namespace Elsa.Scripting.JavaScript.Services
             return _wrapped?.ConvertToDesiredType(evaluationResult, desiredType);
         }
 
-        private static object? ConvertEnumerable(IEnumerable enumerable, Type? desiredType = null)
+        private static object? ConvertEnumerable(IEnumerable? enumerable, Type? desiredType = null)
         {
             if (enumerable is string) return enumerable;
             if (enumerable is JObject) return enumerable;
             if (enumerable is byte[]) return enumerable;
-            if (enumerable != null && desiredType != null && desiredType.IsAssignableFrom(enumerable.GetType())) return enumerable;
+            if (enumerable != null && desiredType != null && desiredType.IsInstanceOfType(enumerable)) return enumerable;
+
+            // Source could be anything that implements IEnumerable, like XPQuery<SomeType>. This needs to be converted to the desired type (e.g. ICollection<object>).
+            if (enumerable != null && desiredType is { IsGenericType: true })
+            {
+                var desiredCollectionType = typeof(ICollection<>).MakeGenericType(desiredType.GenericTypeArguments[0]);
+
+                if (desiredType.IsAssignableFrom(desiredCollectionType))
+                    return enumerable.ConvertTo(desiredType);
+            }
 
             var destinationType = GetDestinationType(desiredType);
             var json = JsonConvert.SerializeObject(enumerable);

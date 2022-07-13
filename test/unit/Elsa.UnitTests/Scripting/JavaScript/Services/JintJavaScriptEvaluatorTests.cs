@@ -2,12 +2,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using AutoFixture.Xunit2;
 using Elsa.Scripting.JavaScript.Messages;
-using Elsa.Scripting.JavaScript.Options;
 using Elsa.Services.Models;
 using Elsa.Testing.Shared;
 using Elsa.Testing.Shared.AutoFixture.Attributes;
 using MediatR;
-using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
 

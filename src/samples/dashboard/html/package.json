@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "dependencies": {
-    "serve": "^11.3.2"
+    "serve": "^13.0.2"
   },
   "devDependencies": {},
   "scripts": {

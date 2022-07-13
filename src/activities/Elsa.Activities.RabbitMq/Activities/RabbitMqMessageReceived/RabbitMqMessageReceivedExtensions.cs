@@ -14,6 +14,12 @@ namespace Elsa.Activities.RabbitMq
         public static ISetupActivity<RabbitMqMessageReceived> WithConnectionString(this ISetupActivity<RabbitMqMessageReceived> messageReceived, Func<ActivityExecutionContext, string> value) => messageReceived.Set(x => x.ConnectionString, value!);
         public static ISetupActivity<RabbitMqMessageReceived> WithConnectionString(this ISetupActivity<RabbitMqMessageReceived> messageReceived, string value) => messageReceived.Set(x => x.ConnectionString, value!);
 
+        public static ISetupActivity<RabbitMqMessageReceived> WithExchangeName(this ISetupActivity<RabbitMqMessageReceived> messageReceived, Func<ActivityExecutionContext, ValueTask<string>> value) => messageReceived.Set(x => x.ExchangeName, value!);
+        public static ISetupActivity<RabbitMqMessageReceived> WithExchangeName(this ISetupActivity<RabbitMqMessageReceived> messageReceived, Func<ValueTask<string>> value) => messageReceived.Set(x => x.ExchangeName, value!);
+        public static ISetupActivity<RabbitMqMessageReceived> WithExchangeName(this ISetupActivity<RabbitMqMessageReceived> messageReceived, Func<string> value) => messageReceived.Set(x => x.ExchangeName, value!);
+        public static ISetupActivity<RabbitMqMessageReceived> WithExchangeName(this ISetupActivity<RabbitMqMessageReceived> messageReceived, Func<ActivityExecutionContext, string> value) => messageReceived.Set(x => x.ExchangeName, value!);
+        public static ISetupActivity<RabbitMqMessageReceived> WithExchangeName(this ISetupActivity<RabbitMqMessageReceived> messageReceived, string value) => messageReceived.Set(x => x.ExchangeName, value!);
+
         public static ISetupActivity<RabbitMqMessageReceived> WithRoutingKey(this ISetupActivity<RabbitMqMessageReceived> messageReceived, Func<ActivityExecutionContext, ValueTask<string>> value) => messageReceived.Set(x => x.RoutingKey, value!);
         public static ISetupActivity<RabbitMqMessageReceived> WithRoutingKey(this ISetupActivity<RabbitMqMessageReceived> messageReceived, Func<ValueTask<string>> value) => messageReceived.Set(x => x.RoutingKey, value!);
         public static ISetupActivity<RabbitMqMessageReceived> WithRoutingKey(this ISetupActivity<RabbitMqMessageReceived> messageReceived, Func<string> value) => messageReceived.Set(x => x.RoutingKey, value!);

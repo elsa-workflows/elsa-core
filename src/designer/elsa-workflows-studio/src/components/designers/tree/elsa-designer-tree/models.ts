@@ -17,6 +17,8 @@ export interface ActivityContextMenuState {
 }
 
 export enum LayoutDirection {
-  Horizontal,
-  Vertical
+  LeftRight ='leftright',
+  TopBottom = 'topbottom',
+  RightLeft = 'rightleft',
+  BottomTop = 'bottomtop'
 }

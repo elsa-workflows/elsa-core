@@ -14,6 +14,12 @@ namespace Elsa.Activities.RabbitMq
         public static ISetupActivity<SendRabbitMqMessage> WithConnectionString(this ISetupActivity<SendRabbitMqMessage> sendMessage, Func<ActivityExecutionContext, string> value) => sendMessage.Set(x => x.ConnectionString, value!);
         public static ISetupActivity<SendRabbitMqMessage> WithConnectionString(this ISetupActivity<SendRabbitMqMessage> sendMessage, string value) => sendMessage.Set(x => x.ConnectionString, value!);
 
+        public static ISetupActivity<SendRabbitMqMessage> WithExchangeName(this ISetupActivity<SendRabbitMqMessage> sendMessage, Func<ActivityExecutionContext, ValueTask<string>> value) => sendMessage.Set(x => x.ExchangeName, value!);
+        public static ISetupActivity<SendRabbitMqMessage> WithExchangeName(this ISetupActivity<SendRabbitMqMessage> sendMessage, Func<ValueTask<string>> value) => sendMessage.Set(x => x.ExchangeName, value!);
+        public static ISetupActivity<SendRabbitMqMessage> WithExchangeName(this ISetupActivity<SendRabbitMqMessage> sendMessage, Func<string> value) => sendMessage.Set(x => x.ExchangeName, value!);
+        public static ISetupActivity<SendRabbitMqMessage> WithExchangeName(this ISetupActivity<SendRabbitMqMessage> sendMessage, Func<ActivityExecutionContext, string> value) => sendMessage.Set(x => x.ExchangeName, value!);
+        public static ISetupActivity<SendRabbitMqMessage> WithExchangeName(this ISetupActivity<SendRabbitMqMessage> sendMessage, string value) => sendMessage.Set(x => x.ExchangeName, value!);
+
         public static ISetupActivity<SendRabbitMqMessage> WithTopic(this ISetupActivity<SendRabbitMqMessage> sendMessage, Func<ActivityExecutionContext, ValueTask<string>> value) => sendMessage.Set(x => x.RoutingKey, value!);
         public static ISetupActivity<SendRabbitMqMessage> WithTopic(this ISetupActivity<SendRabbitMqMessage> sendMessage, Func<ValueTask<string>> value) => sendMessage.Set(x => x.RoutingKey, value!);
         public static ISetupActivity<SendRabbitMqMessage> WithTopic(this ISetupActivity<SendRabbitMqMessage> sendMessage, Func<string> value) => sendMessage.Set(x => x.RoutingKey, value!);

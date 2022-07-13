@@ -1,3 +1,4 @@
+using Elsa.Activities.RabbitMq.Extensions;
 using Elsa.Attributes;
 using Elsa.Options;
 using Elsa.Services.Startup;

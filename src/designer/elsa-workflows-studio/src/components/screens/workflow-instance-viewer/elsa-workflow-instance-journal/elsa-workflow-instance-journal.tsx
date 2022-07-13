@@ -76,14 +76,14 @@ export class ElsaWorkflowInstanceJournal {
 
   getEventColor(eventName: string) {
     const map = {
-      'Executing': 'blue',
-      'Executed': 'green',
-      'Faulted': 'rose',
-      'Warning': 'yellow',
-      'Information': 'blue',
+      'Executing': 'elsa-bg-blue-500',
+      'Executed': 'elsa-bg-green-500',
+      'Faulted': 'elsa-bg-rose-500',
+      'Warning': 'elsa-bg-yellow-500',
+      'Information': 'elsa-bg-blue-500',
     };
 
-    return map[eventName] || 'gray';
+    return map[eventName] || 'elsa-bg-gray-500';
   }
 
   getStatusColor(status: WorkflowStatus) {
@@ -145,17 +145,25 @@ export class ElsaWorkflowInstanceJournal {
 
   renderJournalTab = () => {
     const items = this.filteredRecords;
+    const allItems = this.records.items;
     const activityDescriptors = this.activityDescriptors;
     const workflowBlueprint = this.workflowBlueprint;
     const activityBlueprints: Array<ActivityBlueprint> = workflowBlueprint.activities || [];
     const selectedRecordId = this.selectedRecordId;
+    
 
     const renderRecord = (record: WorkflowExecutionLogRecord, index: number) => {
-      const isLastItem = index == items.length - 1;
-      const nextItem = isLastItem ? null : items[index + 1];
+      var prevItemReverseIndex = allItems
+        .slice(0, allItems.indexOf(items[index]))
+        .reverse()
+        .findIndex((e)=>{
+          return (e.activityId == record.activityId);
+        });
+
+      const prevItem = allItems[allItems.indexOf(items[index]) - (prevItemReverseIndex+1)];
       const currentTimestamp = moment(record.timestamp);
-      const nextTimestamp = isLastItem ? null : moment(nextItem.timestamp);
-      const deltaTime = isLastItem ? null : moment.duration(nextTimestamp.diff(currentTimestamp));
+      const prevTimestamp = moment(prevItem.timestamp);
+      const deltaTime = moment.duration(currentTimestamp.diff(prevTimestamp));
       const activityType = record.activityType;
       const activityIcon = activityIconProvider.getIcon(activityType);
 
@@ -226,17 +234,16 @@ export class ElsaWorkflowInstanceJournal {
           <div onClick={() => this.onRecordClick(record)}
                class={`${recordClass} elsa-border-2 elsa-cursor-pointer elsa-p-4 elsa-rounded`}>
             <div class="elsa-relative elsa-pb-10">
-              {isLastItem ? undefined :
-                <div class="elsa-flex elsa-absolute top-8 elsa-left-4 -elsa-ml-px elsa-h-full elsa-w-0.5">
-                  <div class="elsa-flex elsa-flex-1 elsa-items-center elsa-relative elsa-right-10">
-                    <span
-                      class="elsa-flex-1 elsa-text-sm elsa-text-gray-500 elsa-w-max elsa-bg-white elsa-p-1 elsa-rounded">{deltaTimeText}</span>
-                  </div>
-                </div>}
+              <div class="elsa-flex elsa-absolute top-8 elsa-left-4 -elsa-ml-px elsa-h-full elsa-w-0.5">
+                <div class="elsa-flex elsa-flex-1 elsa-items-center elsa-relative elsa-right-10">
+                  <span
+                    class="elsa-flex-1 elsa-text-sm elsa-text-gray-500 elsa-w-max elsa-bg-white elsa-p-1 elsa-ml-1 elsa-rounded-r">{deltaTimeText}</span>
+                </div>
+              </div>
               <div class="elsa-relative elsa-flex elsa-space-x-3">
                 <div>
                   <span
-                    class="elsa-h-8 elsa-w-8 elsa-rounded-full elsa-bg-green-500 elsa-flex elsa-items-center elsa-justify-center elsa-ring-8 elsa-ring-white"
+                    class={`elsa-h-8 elsa-w-8 elsa-rounded-full ${eventColor} elsa-flex elsa-items-center elsa-justify-center elsa-ring-8 elsa-ring-white elsa-mr-1`}
                     innerHTML={activityIcon}/>
                 </div>
                 <div class="elsa-min-w-0 elsa-flex-1 elsa-pt-1.5 elsa-flex elsa-justify-between elsa-space-x-4">
@@ -249,7 +256,7 @@ export class ElsaWorkflowInstanceJournal {
                     <span
                       class="elsa-relative elsa-inline-flex elsa-items-center elsa-rounded-full elsa-border elsa-border-gray-300 elsa-px-3 elsa-py-0.5 elsa-text-sm">
                       <span class="elsa-absolute elsa-flex-shrink-0 elsa-flex elsa-items-center elsa-justify-center">
-                        <span class={`elsa-h-1.5 elsa-w-1.5 elsa-rounded-full elsa-bg-${eventColor}-500`}
+                        <span class={`elsa-h-1.5 elsa-w-1.5 elsa-rounded-full ${eventColor}`}
                               aria-hidden="true"/>
                       </span>
                       <span class="elsa-ml-3.5 elsa-font-medium elsa-text-gray-900">{eventName}</span>
@@ -351,7 +358,7 @@ export class ElsaWorkflowInstanceJournal {
     const activityModel = !!this.workflowModel && this.selectedActivityId ? this.workflowModel.activities.find(x => x.activityId === this.selectedActivityId) : null;
 
     if (!activityModel)
-      return <p>No activity selected</p>;
+      return <p class="elsa-mt-4">No activity selected</p>;
 
     // Hide expressions field from properties so that we only display the evaluated value.
     const model = {...activityModel, properties: activityModel.properties.map(x => ({name: x.name, value: x.value}))}
@@ -396,7 +403,7 @@ export class ElsaWorkflowInstanceJournal {
           <dd class="elsa-text-gray-900 elsa-break-all">
             <span class="elsa-relative elsa-inline-flex elsa-items-center elsa-rounded-full">
               <span class="elsa-flex-shrink-0 elsa-flex elsa-items-center elsa-justify-center">
-                <span class={`elsa-w-2-5 elsa-h-2-5 elsa-rounded-full elsa-bg-${eventColor}-500`}
+                <span class={`elsa-w-2-5 elsa-h-2-5 elsa-rounded-full ${eventColor}`}
                       aria-hidden="true"/>
               </span>
               <span class="elsa-ml-3.5">{workflowInstance.workflowStatus || '-'}</span>

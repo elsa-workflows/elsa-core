@@ -13,7 +13,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             public string? Description { get; init; }
             public string? Tag { get; init; }
             public string? Channel { get; init; }
-            public Variables? Variables { get; init; }
+            public string? Variables { get; init; }
             public WorkflowContextOptions? ContextOptions { get; init; }
             public bool IsSingleton { get; init; }
             public WorkflowPersistenceBehavior PersistenceBehavior { get; init; }
@@ -21,6 +21,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             public bool Publish { get; init; }
             public ICollection<ActivityDefinition> Activities { get; init; } = new List<ActivityDefinition>();
             public ICollection<ConnectionDefinition> Connections { get; init; } = new List<ConnectionDefinition>();
+            public string? CustomAttributes { get; init; }
         }
     }
 }

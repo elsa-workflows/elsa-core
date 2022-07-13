@@ -19,8 +19,13 @@ import {
 } from "../../../../models";
 import {ActivityStats, createElsaClient} from "../../../../services/elsa-client";
 import state from '../../../../utils/store';
-import {ActivityContextMenuState, WorkflowDesignerMode} from "../../../designers/tree/elsa-designer-tree/models";
+import {
+  ActivityContextMenuState,
+  LayoutDirection,
+  WorkflowDesignerMode
+} from "../../../designers/tree/elsa-designer-tree/models";
 import Tunnel from "../../../../data/dashboard";
+import {featuresDataManager} from "../../../../services";
 
 @Component({
   tag: 'elsa-workflow-instance-viewer-screen',
@@ -48,6 +53,7 @@ export class ElsaWorkflowInstanceViewerScreen {
   designer: HTMLElsaDesignerTreeElement;
   journal: HTMLElsaWorkflowInstanceJournalElement;
   contextMenu: HTMLElement;
+  layoutDirection = LayoutDirection.TopBottom;
 
   @Method()
   async getServerUrl(): Promise<string> {
@@ -60,6 +66,7 @@ export class ElsaWorkflowInstanceViewerScreen {
     let workflowInstance: WorkflowInstance = {
       id: null,
       definitionId: null,
+      definitionVersionId: null,
       version: null,
       workflowStatus: WorkflowStatus.Idle,
       variables: {data: {}},
@@ -118,6 +125,12 @@ export class ElsaWorkflowInstanceViewerScreen {
   }
 
   async componentWillLoad() {
+    const layoutFeature = featuresDataManager.getFeatureConfig(featuresDataManager.supportedFeatures.workflowLayout);
+
+    if (layoutFeature && layoutFeature.enabled) {
+      this.layoutDirection = layoutFeature.value as LayoutDirection;
+    }
+
     await this.serverUrlChangedHandler(this.serverUrl);
     await this.workflowInstanceIdChangedHandler(this.workflowInstanceId);
   }
@@ -250,13 +263,13 @@ export class ElsaWorkflowInstanceViewerScreen {
 
   getActivityBorderColor = (activity: ActivityModel): string => {
     const workflowInstance = this.workflowInstance;
-    const workflowFault = !!workflowInstance ? workflowInstance.fault : null;
+    const workflowFault = !!workflowInstance ? workflowInstance.faults : null;
     const activityData = workflowInstance.activityData[activity.activityId] || {};
     const lifecycle = activityData['_Lifecycle'] || {};
     const executing = !!lifecycle.executing;
     const executed = !!lifecycle.executed;
 
-    if (!!workflowFault && workflowFault.faultedActivityId == activity.activityId)
+    if (!!workflowFault && workflowFault.find(x => x.faultedActivityId == activity.activityId))
       return 'red';
 
     if (executed)
@@ -270,7 +283,7 @@ export class ElsaWorkflowInstanceViewerScreen {
 
   renderActivityStatsButton = (activity: ActivityModel): string => {
     const workflowInstance = this.workflowInstance;
-    const workflowFault = !!workflowInstance ? workflowInstance.fault : null;
+    const workflowFault = !!workflowInstance ? workflowInstance.faults : null;
     const activityData = workflowInstance.activityData[activity.activityId] || {};
     const lifecycle = activityData['_Lifecycle'] || {};
     const executing = !!lifecycle.executing;
@@ -278,7 +291,7 @@ export class ElsaWorkflowInstanceViewerScreen {
 
     let icon: string;
 
-    if (!!workflowFault && workflowFault.faultedActivityId == activity.activityId) {
+    if (!!workflowFault && workflowFault.find(x => x.faultedActivityId == activity.activityId)) {
       icon = `<svg class="elsa-flex-shrink-0 elsa-h-6 elsa-w-6 elsa-text-red-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="10"/>
                 <line x1="12" y1="8" x2="12" y2="12"/>
@@ -317,6 +330,7 @@ export class ElsaWorkflowInstanceViewerScreen {
       <div class="elsa-flex-1 elsa-flex">
         <elsa-designer-tree model={this.workflowModel}
                             class="elsa-flex-1" ref={el => this.designer = el}
+                            layoutDirection={this.layoutDirection}
                             mode={WorkflowDesignerMode.Instance}
                             activityContextMenuButton={this.renderActivityStatsButton}
                             activityBorderColor={this.getActivityBorderColor}
@@ -333,12 +347,12 @@ export class ElsaWorkflowInstanceViewerScreen {
 
   renderActivityPerformanceMenu = () => {
     const activityStats: ActivityStats = this.activityStats;
-
+    
     const renderFault = () => {
       if (!activityStats.fault)
         return;
-
-      return <elsa-workflow-fault-information workflowFault={this.workflowInstance.fault} faultedAt={this.workflowInstance.faultedAt} />;
+      
+      return <elsa-workflow-fault-information workflowFault={this.workflowInstance.faults.find(x => x.faultedActivityId == this.selectedActivityId)} faultedAt={this.workflowInstance.faultedAt} />;
     };
 
     const renderPerformance = () => {

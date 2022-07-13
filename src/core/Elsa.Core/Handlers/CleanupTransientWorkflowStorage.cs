@@ -6,14 +6,14 @@ using MediatR;
 
 namespace Elsa.Handlers
 {
-    public class CleanupTransientWorkflowStorage : INotificationHandler<WorkflowExecutionBurstCompleted>
+    public class CleanupTransientWorkflowStorage : INotificationHandler<WorkflowExecutionFinished>
     {
         private readonly TransientWorkflowStorageProvider _transientWorkflowStorageProvider;
         public CleanupTransientWorkflowStorage(TransientWorkflowStorageProvider transientWorkflowStorageProvider) => _transientWorkflowStorageProvider = transientWorkflowStorageProvider;
         
-        public async Task Handle(WorkflowExecutionBurstCompleted notification, CancellationToken cancellationToken)
+        public async Task Handle(WorkflowExecutionFinished notification, CancellationToken cancellationToken)
         {
-            var workflowStorageContext = new WorkflowStorageContext(notification.ActivityExecutionContext.WorkflowInstance, notification.ActivityExecutionContext.ActivityId);
+            var workflowStorageContext = new WorkflowStorageContext(notification.WorkflowExecutionContext.WorkflowInstance, null);
             await _transientWorkflowStorageProvider.DeleteAsync(workflowStorageContext, cancellationToken);
         }
     }

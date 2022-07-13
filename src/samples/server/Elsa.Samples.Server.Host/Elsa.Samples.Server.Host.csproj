@@ -1,8 +1,8 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+<Project Sdk="Microsoft.NET.Sdk.Web">
     <Import Project="..\..\..\..\configureawait.props" />
 
     <PropertyGroup>
-        <TargetFramework>net5.0</TargetFramework>
+        <TargetFramework>net6.0</TargetFramework>
         <LangVersion>latest</LangVersion>
         <IsPackable>false</IsPackable>
         <Nullable>enable</Nullable>
@@ -16,9 +16,12 @@
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.Email\Elsa.Activities.Email.csproj" />
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.Entity\Elsa.Activities.Entity.csproj" />
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.File\Elsa.Activities.File.csproj" />
+        <ProjectReference Include="..\..\..\activities\Elsa.Activities.Http.OpenApi\Elsa.Activities.Http.OpenApi.csproj" />
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.Http\Elsa.Activities.Http.csproj" />
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.MassTransit\Elsa.Activities.MassTransit.csproj" />
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.RabbitMq\Elsa.Activities.RabbitMq.csproj" />
+        <ProjectReference Include="..\..\..\activities\Elsa.Activities.Sql\Elsa.Activities.Sql.csproj" />
+        <ProjectReference Include="..\..\..\activities\Elsa.Activities.Mqtt\Elsa.Activities.Mqtt.csproj" />
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.Rebus\Elsa.Activities.Rebus.csproj" />
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.Telnyx\Elsa.Activities.Telnyx.csproj" />
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.Temporal.Hangfire\Elsa.Activities.Temporal.Hangfire.csproj" />
@@ -37,8 +40,8 @@
         <ProjectReference Include="..\..\..\locking\Elsa.DistributedLocking.AzureBlob\Elsa.DistributedLocking.AzureBlob.csproj" />
         <ProjectReference Include="..\..\..\locking\Elsa.DistributedLocking.Redis\Elsa.DistributedLocking.Redis.csproj" />
         <ProjectReference Include="..\..\..\locking\Elsa.DistributedLocking.SqlServer\Elsa.DistributedLocking.SqlServer.csproj" />
-        <ProjectReference Include="..\..\..\modules\Elsa.WorkflowTesting.Api\Elsa.WorkflowTesting.Api.csproj" />
-        <ProjectReference Include="..\..\..\modules\Elsa.WorkflowTesting\Elsa.WorkflowTesting.csproj" />
+        <ProjectReference Include="..\..\..\modules\workflowtesting\Elsa.WorkflowTesting.Api\Elsa.WorkflowTesting.Api.csproj" />
+        <ProjectReference Include="..\..\..\modules\workflowtesting\Elsa.WorkflowTesting\Elsa.WorkflowTesting.csproj" />
         <ProjectReference Include="..\..\..\modules\retention\Elsa.Retention\Elsa.Retention.csproj" />
         <ProjectReference Include="..\..\..\modules\workflowsettings\Elsa.WorkflowSettings.Api\Elsa.WorkflowSettings.Api.csproj" />
         <ProjectReference Include="..\..\..\modules\workflowsettings\Elsa.WorkflowSettings.Persistence.EntityFramework.MySql\Elsa.WorkflowSettings.Persistence.EntityFramework.MySql.csproj" />
@@ -64,7 +67,7 @@
 
     <ItemGroup>
         <PackageReference Include="Hangfire.InMemory" Version="0.3.4" />
-        <PackageReference Include="Hangfire.SqlServer" Version="1.7.25" />
+        <PackageReference Include="Hangfire.SqlServer" Version="1.7.28" />
         <PackageReference Include="Quartz.Serialization.Json" Version="3.3.3" />
         <PackageReference Include="Hangfire.SQLite" Version="1.4.2" />
     </ItemGroup>

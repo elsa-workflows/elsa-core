@@ -40,5 +40,19 @@ export const resources = {
         'Message': 'Weet je zeker dat je deze workflow permanent wilt verwijderen, inclusief alle bijbehorende workflow instanties?'
       }
     }
-  }
+  },
+  'fa-IR': {
+    'default': {
+      'Name': 'نام',
+      'Instances': 'جریانها',
+      'LatestVersion': 'جدیدترین ویرایش',
+      'PublishedVersion': 'ویرایش منتشر شده',
+      'Edit': 'ویرایش',
+      'Delete': 'حذف',
+      'DeleteConfirmationModel': {
+        'Title': 'حذف تعریف فرآیند',
+        'Message': 'آیا از حذف این فرآیند و همه جریانهای آن اطمینان دارید?'
+      }
+    }
+  },
 };

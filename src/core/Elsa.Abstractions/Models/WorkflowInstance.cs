@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using Elsa.Comparers;
 using Elsa.Services.Models;
 using NodaTime;
@@ -15,6 +14,7 @@ namespace Elsa.Models
             Variables = new Variables();
             ScheduledActivities = new SimpleStack<ScheduledActivity>();
             Scopes = new SimpleStack<ActivityScope>();
+            Faults = new SimpleStack<WorkflowFault>();
         }
 
         public string DefinitionId { get; set; } = default!;
@@ -57,7 +57,7 @@ namespace Elsa.Models
             Metadata[key] = value;
         }
 
-        public WorkflowFault? Fault { get; set; }
+        public SimpleStack<WorkflowFault> Faults { get; set; }
         public SimpleStack<ScheduledActivity> ScheduledActivities { get; set; }
         public SimpleStack<ActivityScope> Scopes { get; set; }
         public ScheduledActivity? CurrentActivity { get; set; }

@@ -6,7 +6,6 @@ using Elsa.Activities.Http;
 using Elsa.Activities.Http.Bookmarks;
 using Elsa.Activities.Webhooks.ActivityTypes;
 using Elsa.Services;
-using Elsa.Services.Bookmarks;
 
 namespace Elsa.Activities.Webhooks.Bookmarks
 {

@@ -3,12 +3,8 @@ using Elsa.Activities.File;
 using Elsa.Activities.File.Models;
 using Elsa.Builders;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Text.Unicode;
-using System.Threading.Tasks;
 
 namespace Elsa.Samples.WatchDirectoryWorker.Workflows
 {

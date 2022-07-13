@@ -24,6 +24,7 @@ namespace Elsa.Persistence.MongoDb.Services
             await CreateWorkflowDefinitionsIndexes(cancellationToken);
             await CreateWorkflowExecutionLogIndexes(cancellationToken);
             await CreateBookmarkIndexes(cancellationToken);
+            await CreateTriggerIndexes(cancellationToken);
         }
 
         private async Task CreateWorkflowInstancesIndexes(CancellationToken cancellationToken)
@@ -38,6 +39,7 @@ namespace Elsa.Persistence.MongoDb.Services
             var correlationIdKeysDefinition = builder.Ascending(x => x.CorrelationId);
             var createdAtKeysDefinition = builder.Ascending(x => x.CreatedAt);
             var definitionKeysDefinition = builder.Ascending(x => x.DefinitionId);
+            var definitionVersionIdKeysDefinition = builder.Ascending(x => x.DefinitionVersionId);
             var faultedAtKeysDefinition = builder.Ascending(x => x.FaultedAt);
             var finishedAtKeysDefinition = builder.Ascending(x => x.FinishedAt);
             var lastExecutedAtKeysDefinition = builder.Ascending(x => x.LastExecutedAt);
@@ -46,17 +48,18 @@ namespace Elsa.Persistence.MongoDb.Services
             var collection = _mongoContext.WorkflowInstances;
 
             await CreateIndexesAsync(
-                collection, 
-                cancellationToken, 
-                tenantKeysDefinition, 
-                versionKeysDefinition, 
-                workflowStatusKeysDefinition, 
+                collection,
+                cancellationToken,
+                tenantKeysDefinition,
+                versionKeysDefinition,
+                workflowStatusKeysDefinition,
                 workflowNameKeysDefinition,
                 contextIdKeysDefinition,
                 contextTypeKeysDefinition,
                 correlationIdKeysDefinition,
                 createdAtKeysDefinition,
                 definitionKeysDefinition,
+                definitionVersionIdKeysDefinition,
                 faultedAtKeysDefinition,
                 finishedAtKeysDefinition,
                 lastExecutedAtKeysDefinition,
@@ -65,7 +68,7 @@ namespace Elsa.Persistence.MongoDb.Services
 
             var workflowDefinitionIdAndVersionAndStatusKeyDefinition = builder.Combine(builder.Ascending(x => x.DefinitionId), builder.Ascending(x => x.Version), builder.Ascending(x => x.WorkflowStatus));
             await collection.Indexes.CreateOneAsync(new CreateIndexModel<WorkflowInstance>(workflowDefinitionIdAndVersionAndStatusKeyDefinition), cancellationToken: cancellationToken);
-            
+
             var workflowDefinitionIdAndStatusKeyDefinition = builder.Combine(builder.Ascending(x => x.DefinitionId), builder.Ascending(x => x.WorkflowStatus));
             await collection.Indexes.CreateOneAsync(new CreateIndexModel<WorkflowInstance>(workflowDefinitionIdAndStatusKeyDefinition), cancellationToken: cancellationToken);
         }
@@ -102,6 +105,17 @@ namespace Elsa.Persistence.MongoDb.Services
             var correlationIdKeysDefinition = Builders<Bookmark>.IndexKeys.Ascending(x => x.CorrelationId);
 
             await CreateIndexesAsync(_mongoContext.Bookmarks, cancellationToken, tenantKeysDefinition, activityTypeKeysDefinition, hashKeysDefinition, workflowInstanceIdKeysDefinition, correlationIdKeysDefinition);
+        }
+
+        private async Task CreateTriggerIndexes(CancellationToken cancellationToken)
+        {
+            var tenantKeysDefinition = Builders<Trigger>.IndexKeys.Ascending(x => x.TenantId);
+            var activityTypeKeysDefinition = Builders<Trigger>.IndexKeys.Ascending(x => x.ActivityType);
+            var activityIdKeysDefinition = Builders<Trigger>.IndexKeys.Ascending(x => x.ActivityId);
+            var hashKeysDefinition = Builders<Trigger>.IndexKeys.Ascending(x => x.Hash);
+            var workflowDefinitionIdKeysDefinition = Builders<Trigger>.IndexKeys.Ascending(x => x.WorkflowDefinitionId);
+
+            await CreateIndexesAsync(_mongoContext.Triggers, cancellationToken, tenantKeysDefinition, activityTypeKeysDefinition, hashKeysDefinition, workflowDefinitionIdKeysDefinition, activityIdKeysDefinition);
         }
 
         private async Task CreateIndexesAsync<T>(IMongoCollection<T> collection, CancellationToken cancellationToken, params IndexKeysDefinition<T>[] definitions)
