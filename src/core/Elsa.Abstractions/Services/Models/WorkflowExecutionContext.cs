@@ -188,7 +188,7 @@ namespace Elsa.Services.Models
             var clock = ServiceProvider.GetRequiredService<IClock>();
             WorkflowInstance.WorkflowStatus = WorkflowStatus.Faulted;
             WorkflowInstance.FaultedAt = clock.GetCurrentInstant();
-            WorkflowInstance.Fault = new WorkflowFault(SimpleException.FromException(exception), message, activityId, activityInput, resuming);
+            WorkflowInstance.Faults.Push(new WorkflowFault(SimpleException.FromException(exception), message, activityId, activityInput, resuming));
             Exception = exception;
         }
 
@@ -197,7 +197,7 @@ namespace Elsa.Services.Models
             var clock = ServiceProvider.GetRequiredService<IClock>();
             WorkflowInstance.WorkflowStatus = WorkflowStatus.Cancelled;
             WorkflowInstance.CancelledAt = clock.GetCurrentInstant();
-            WorkflowInstance.Fault = new WorkflowFault(SimpleException.FromException(exception), message, activityId, activityInput, resuming);
+            WorkflowInstance.Faults.Push(new WorkflowFault(SimpleException.FromException(exception), message, activityId, activityInput, resuming));
         }
 
         public async Task CompleteAsync()
@@ -218,7 +218,7 @@ namespace Elsa.Services.Models
                 WorkflowInstance.WorkflowStatus = WorkflowStatus.Cancelled;
                 WorkflowInstance.CancelledAt = now;
             }
-            if(WorkflowInstance.Fault != null)
+            if(WorkflowInstance.Faults != null && WorkflowInstance.Faults.Count > 0)
             {
                 WorkflowInstance.WorkflowStatus = WorkflowStatus.Faulted;
                 WorkflowInstance.FaultedAt = now;

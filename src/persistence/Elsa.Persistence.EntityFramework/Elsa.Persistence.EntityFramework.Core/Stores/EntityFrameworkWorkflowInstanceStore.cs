@@ -80,6 +80,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
                 entity.ScheduledActivities,
                 entity.Scopes,
                 entity.Fault,
+                entity.Faults,
                 entity.CurrentActivity
             };
 
@@ -101,6 +102,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
                 entity.ScheduledActivities,
                 entity.Scopes,
                 entity.Fault,
+                entity.Faults,
                 entity.CurrentActivity
             };
 
@@ -127,6 +129,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
             entity.ScheduledActivities = data.ScheduledActivities;
             entity.Scopes = data.Scopes;
             entity.Fault = data.Fault;
+            entity.Faults = data.Faults;
             entity.CurrentActivity = data.CurrentActivity;
         }
     }

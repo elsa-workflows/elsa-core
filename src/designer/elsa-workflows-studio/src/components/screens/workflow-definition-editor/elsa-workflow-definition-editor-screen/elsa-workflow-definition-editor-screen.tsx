@@ -763,7 +763,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
       return (
         <div class="elsa-ml-4">
-          <elsa-workflow-fault-information workflowFault={this.workflowInstance?.fault}
+          <elsa-workflow-fault-information workflowFault={this.workflowInstance?.faults.find(x => x.faultedActivityId == this.selectedActivityId)}
                                            faultedAt={this.workflowInstance?.faultedAt}/>
         </div>
       );

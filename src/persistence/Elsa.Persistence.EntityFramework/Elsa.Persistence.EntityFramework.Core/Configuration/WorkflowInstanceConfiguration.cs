@@ -19,6 +19,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Configuration
             builder.Ignore(x => x.Metadata);
             builder.Ignore(x => x.BlockingActivities);
             builder.Ignore(x => x.Fault);
+            builder.Ignore(x => x.Faults);
             builder.Ignore(x => x.ScheduledActivities);
             builder.Ignore(x => x.Scopes);
             builder.Ignore(x => x.Variables);
