@@ -13,14 +13,13 @@ using Elsa.Services.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using NodaTime;
 
 namespace Elsa.Activities.AzureServiceBus.Services
 {
     public class Worker : IAsyncDisposable
     {
         private const string? TenantId = default;
-        private readonly Func<Worker, Task> _errorCallback;
+        private readonly Func<Worker, ProcessErrorEventArgs, Task> _errorCallback;
         private readonly ServiceBusAdministrationClient _administrationClient;
         private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly ILogger _logger;
@@ -29,7 +28,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
         public Worker(
             string queueOrTopic,
             string? subscription,
-            Func<Worker, Task> errorCallback,
+            Func<Worker, ProcessErrorEventArgs, Task> errorCallback,
             ServiceBusClient serviceBusClient,
             ServiceBusAdministrationClient administrationClient,
             IServiceScopeFactory serviceScopeFactory,
@@ -49,7 +48,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
                 MaxConcurrentCalls = options.Value.MaxConcurrentCalls
             };
 
-            _processor = subscription == null ? serviceBusClient.CreateProcessor(queueOrTopic, processorOptions) : serviceBusClient.CreateProcessor(queueOrTopic, subscription, processorOptions);
+            _processor = string.IsNullOrEmpty(subscription) ? serviceBusClient.CreateProcessor(queueOrTopic, processorOptions) : serviceBusClient.CreateProcessor(queueOrTopic, subscription, processorOptions);
             _processor.ProcessMessageAsync += OnMessageReceivedAsync;
             _processor.ProcessErrorAsync += OnErrorAsync;
         }
@@ -91,7 +90,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
         private async Task OnErrorAsync(ProcessErrorEventArgs args)
         {
             _logger.LogError(args.Exception, "An error occurred while processing {EntityPath}", args.EntityPath);
-            await _errorCallback(this);
+            await _errorCallback(this, args);
         }
 
         private async Task TriggerWorkflowsAsync(ServiceBusMessage message, CancellationToken cancellationToken)

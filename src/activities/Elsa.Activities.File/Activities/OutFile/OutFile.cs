@@ -19,13 +19,13 @@ namespace Elsa.Activities.File
     {
         [Required]
         [ActivityInput(Hint = "Bytes to write to file.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript }, DefaultSyntax = SyntaxNames.JavaScript)]
-        public byte[]? Bytes { get; set; }
+        public byte[] Bytes { get; set; } = default!;
 
         [Required]
         [ActivityInput(Hint = "Path to create file at.", UIHint = ActivityInputUIHints.SingleLine, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
-        public string? Path { get; set; }
+        public string Path { get; set; } = default!;
 
-        [ActivityInput(Hint = "How the output file should be written to.", UIHint = ActivityInputUIHints.Dropdown, DefaultValue = CopyMode.CreateNew)]
+        [ActivityInput(Hint = "How the output file should be written.", UIHint = ActivityInputUIHints.Dropdown, DefaultValue = CopyMode.CreateNew)]
         public CopyMode Mode { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
@@ -50,6 +50,11 @@ namespace Elsa.Activities.File
                     throw new ApplicationException("Unsupported copy mode");
             }
 
+            var folderPath = System.IO.Path.GetDirectoryName(Path)!;
+
+            if (!Directory.Exists(folderPath))
+                Directory.CreateDirectory(folderPath);
+            
             await using (var fs = new FileStream(Path, fileMode, fileAccess))
             {
                 await fs.WriteAsync(Bytes);

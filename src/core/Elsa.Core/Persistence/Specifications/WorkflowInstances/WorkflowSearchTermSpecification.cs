@@ -8,6 +8,11 @@ namespace Elsa.Persistence.Specifications.WorkflowInstances
     {
         public string SearchTerm { get; set; }
         public WorkflowSearchTermSpecification(string searchTerm) => SearchTerm = searchTerm;
-        public override Expression<Func<WorkflowInstance, bool>> ToExpression() => x => x.Name!.Contains(SearchTerm) || x.Id.Contains(SearchTerm) || x.ContextId!.Contains(SearchTerm);
+
+        public override Expression<Func<WorkflowInstance, bool>> ToExpression() => x =>
+            x.Name!.Contains(SearchTerm)
+            || x.Id.Contains(SearchTerm)
+            || x.ContextId!.Contains(SearchTerm)
+            || x.CorrelationId.Contains(SearchTerm);
     }
 }

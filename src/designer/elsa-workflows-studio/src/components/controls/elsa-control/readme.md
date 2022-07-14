@@ -17,11 +17,13 @@
 ### Used by
 
  - [elsa-activity-editor-modal](../../screens/workflow-definition-editor/elsa-activity-editor-modal)
+ - [elsa-secert-editor-modal](../../../modules/credential-manager/elsa-secret-editor-model)
 
 ### Graph
 ```mermaid
 graph TD;
   elsa-activity-editor-modal --> elsa-control
+  elsa-secert-editor-modal --> elsa-control
   style elsa-control fill:#f9f,stroke:#333,stroke-width:4px
 ```
 

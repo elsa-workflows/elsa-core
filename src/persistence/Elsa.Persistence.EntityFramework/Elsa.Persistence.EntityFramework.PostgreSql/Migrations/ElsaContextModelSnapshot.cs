@@ -148,6 +148,9 @@ namespace Elsa.Persistence.EntityFramework.PostgreSql.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("text");
 
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Data")
                         .HasColumnType("text");
 

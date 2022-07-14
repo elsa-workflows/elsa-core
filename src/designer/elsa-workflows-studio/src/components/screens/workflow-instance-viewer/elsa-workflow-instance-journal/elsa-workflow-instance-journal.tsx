@@ -76,14 +76,14 @@ export class ElsaWorkflowInstanceJournal {
 
   getEventColor(eventName: string) {
     const map = {
-      'Executing': 'blue',
-      'Executed': 'green',
-      'Faulted': 'rose',
-      'Warning': 'yellow',
-      'Information': 'blue',
+      'Executing': 'elsa-bg-blue-500',
+      'Executed': 'elsa-bg-green-500',
+      'Faulted': 'elsa-bg-rose-500',
+      'Warning': 'elsa-bg-yellow-500',
+      'Information': 'elsa-bg-blue-500',
     };
 
-    return map[eventName] || 'gray';
+    return map[eventName] || 'elsa-bg-gray-500';
   }
 
   getStatusColor(status: WorkflowStatus) {
@@ -150,9 +150,17 @@ export class ElsaWorkflowInstanceJournal {
     const workflowBlueprint = this.workflowBlueprint;
     const activityBlueprints: Array<ActivityBlueprint> = workflowBlueprint.activities || [];
     const selectedRecordId = this.selectedRecordId;
+    
 
     const renderRecord = (record: WorkflowExecutionLogRecord, index: number) => {
-      const prevItem = allItems[allItems.indexOf(items[index]) - 1];
+      var prevItemReverseIndex = allItems
+        .slice(0, allItems.indexOf(items[index]))
+        .reverse()
+        .findIndex((e)=>{
+          return (e.activityId == record.activityId);
+        });
+
+      const prevItem = allItems[allItems.indexOf(items[index]) - (prevItemReverseIndex+1)];
       const currentTimestamp = moment(record.timestamp);
       const prevTimestamp = moment(prevItem.timestamp);
       const deltaTime = moment.duration(currentTimestamp.diff(prevTimestamp));
@@ -235,7 +243,7 @@ export class ElsaWorkflowInstanceJournal {
               <div class="elsa-relative elsa-flex elsa-space-x-3">
                 <div>
                   <span
-                    class="elsa-h-8 elsa-w-8 elsa-rounded-full elsa-bg-green-500 elsa-flex elsa-items-center elsa-justify-center elsa-ring-8 elsa-ring-white elsa-mr-1"
+                    class={`elsa-h-8 elsa-w-8 elsa-rounded-full ${eventColor} elsa-flex elsa-items-center elsa-justify-center elsa-ring-8 elsa-ring-white elsa-mr-1`}
                     innerHTML={activityIcon}/>
                 </div>
                 <div class="elsa-min-w-0 elsa-flex-1 elsa-pt-1.5 elsa-flex elsa-justify-between elsa-space-x-4">
@@ -248,7 +256,7 @@ export class ElsaWorkflowInstanceJournal {
                     <span
                       class="elsa-relative elsa-inline-flex elsa-items-center elsa-rounded-full elsa-border elsa-border-gray-300 elsa-px-3 elsa-py-0.5 elsa-text-sm">
                       <span class="elsa-absolute elsa-flex-shrink-0 elsa-flex elsa-items-center elsa-justify-center">
-                        <span class={`elsa-h-1.5 elsa-w-1.5 elsa-rounded-full elsa-bg-${eventColor}-500`}
+                        <span class={`elsa-h-1.5 elsa-w-1.5 elsa-rounded-full ${eventColor}`}
                               aria-hidden="true"/>
                       </span>
                       <span class="elsa-ml-3.5 elsa-font-medium elsa-text-gray-900">{eventName}</span>
@@ -395,7 +403,7 @@ export class ElsaWorkflowInstanceJournal {
           <dd class="elsa-text-gray-900 elsa-break-all">
             <span class="elsa-relative elsa-inline-flex elsa-items-center elsa-rounded-full">
               <span class="elsa-flex-shrink-0 elsa-flex elsa-items-center elsa-justify-center">
-                <span class={`elsa-w-2-5 elsa-h-2-5 elsa-rounded-full elsa-bg-${eventColor}-500`}
+                <span class={`elsa-w-2-5 elsa-h-2-5 elsa-rounded-full ${eventColor}`}
                       aria-hidden="true"/>
               </span>
               <span class="elsa-ml-3.5">{workflowInstance.workflowStatus || '-'}</span>

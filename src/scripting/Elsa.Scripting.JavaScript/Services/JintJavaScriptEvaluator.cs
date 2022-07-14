@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Scripting.JavaScript.Converters.Jint;
@@ -45,8 +45,10 @@ namespace Elsa.Scripting.JavaScript.Services
 
         private async Task<Engine> GetConfiguredEngine(Action<Engine>? configureEngine, ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var engine = new Engine(opts =>
+            var engine = new Engine(async opts =>
             {
+                await _mediator.Publish(new ConfigureJavaScriptOptions(opts, context));
+
                 opts.AddObjectConverter<ByteArrayConverter>();
                 if (_scriptOptions.AllowClr)
                     opts.AllowClr();

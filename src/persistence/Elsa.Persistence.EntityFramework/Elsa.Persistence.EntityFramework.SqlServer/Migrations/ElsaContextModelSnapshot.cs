@@ -148,6 +148,9 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
                     b.Property<string>("Data")
                         .HasColumnType("nvarchar(max)");
 

@@ -16,10 +16,11 @@
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.Email\Elsa.Activities.Email.csproj" />
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.Entity\Elsa.Activities.Entity.csproj" />
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.File\Elsa.Activities.File.csproj" />
+        <ProjectReference Include="..\..\..\activities\Elsa.Activities.Http.OpenApi\Elsa.Activities.Http.OpenApi.csproj" />
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.Http\Elsa.Activities.Http.csproj" />
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.MassTransit\Elsa.Activities.MassTransit.csproj" />
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.RabbitMq\Elsa.Activities.RabbitMq.csproj" />
-        <ProjectReference Include="..\..\..\activities\Elsa.Activities.SQL\Elsa.Activities.Sql.csproj" />
+        <ProjectReference Include="..\..\..\activities\Elsa.Activities.Sql\Elsa.Activities.Sql.csproj" />
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.Mqtt\Elsa.Activities.Mqtt.csproj" />
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.Rebus\Elsa.Activities.Rebus.csproj" />
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.Telnyx\Elsa.Activities.Telnyx.csproj" />

@@ -3,8 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Events;
+using Elsa.Models;
 using Elsa.Options;
+using Elsa.Persistence;
 using Elsa.Providers.WorkflowStorage;
+using Elsa.Services.Models;
+using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Services.WorkflowStorage
@@ -16,7 +21,7 @@ namespace Elsa.Services.WorkflowStorage
 
         public WorkflowStorageService(IEnumerable<IWorkflowStorageProvider> providers, ElsaOptions elsaOptions, IServiceProvider serviceProvider)
         {
-            _defaultStorageProvider = (IWorkflowStorageProvider?) ActivatorUtilities.GetServiceOrCreateInstance(serviceProvider, elsaOptions.DefaultWorkflowStorageProviderType)!;
+            _defaultStorageProvider = (IWorkflowStorageProvider?)ActivatorUtilities.GetServiceOrCreateInstance(serviceProvider, elsaOptions.DefaultWorkflowStorageProviderType)!;
             _providersLookup = providers.ToDictionary(x => x.Name);
         }
 
@@ -45,6 +50,25 @@ namespace Elsa.Services.WorkflowStorage
         {
             var provider = GetProviderByNameOrDefault(providerName);
             await provider.DeleteAsync(context, cancellationToken);
+        }
+
+        public async ValueTask<WorkflowInputReference> SaveAsync(WorkflowInput input, WorkflowInstance workflowInstance, CancellationToken cancellationToken = default)
+        {
+            var workflowStorageContext = new WorkflowStorageContext(workflowInstance, workflowInstance.DefinitionId);
+            var inputStorageProvider = GetProviderByNameOrDefault(input.StorageProviderName);
+            await inputStorageProvider.SaveAsync(workflowStorageContext, nameof(WorkflowInstance.Input), input.Input, cancellationToken);
+            return new WorkflowInputReference(inputStorageProvider.Name);
+        }
+
+        public async ValueTask<object?> LoadAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken = default)
+        {
+            var inputReference = workflowInstance.Input;
+
+            if (inputReference == null)
+                return null;
+            
+            var context = new WorkflowStorageContext(workflowInstance, workflowInstance.DefinitionId);
+            return await LoadAsync(inputReference.ProviderName, context, nameof(WorkflowInstance.Input), cancellationToken);
         }
     }
 }

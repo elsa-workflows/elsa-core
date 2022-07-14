@@ -413,6 +413,14 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Secrets.Persistence.En
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Secrets.Persistence.MongoDb", "src\modules\secrets\Elsa.Secrets.Persistence.MongoDb\Elsa.Secrets.Persistence.MongoDb.csproj", "{3653FAA9-0AD1-461A-A729-82948351A159}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Activities.Http.OpenApi", "src\activities\Elsa.Activities.Http.OpenApi\Elsa.Activities.Http.OpenApi.csproj", "{F9731DF7-CEB1-4B9B-8838-803275E301E4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.CompensationConsole", "src\samples\console\Elsa.Samples.CompensationConsole\Elsa.Samples.CompensationConsole.csproj", "{962653DD-BFE7-4DDB-9B3D-5AC8C222F43F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Scripting.Sql", "src\scripting\Elsa.Scripting.Sql\Elsa.Scripting.Sql.csproj", "{68BF7E0F-0E52-4477-A5B1-367E87697C75}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.LoadAndRunFromDatabaseConsole", "src\samples\console\Elsa.Samples.LoadAndRunFromDatabaseConsole\Elsa.Samples.LoadAndRunFromDatabaseConsole.csproj", "{507FE3FC-F775-46CF-8820-B80C6FCFD348}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -991,6 +999,22 @@ Global
 		{3653FAA9-0AD1-461A-A729-82948351A159}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3653FAA9-0AD1-461A-A729-82948351A159}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3653FAA9-0AD1-461A-A729-82948351A159}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F9731DF7-CEB1-4B9B-8838-803275E301E4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F9731DF7-CEB1-4B9B-8838-803275E301E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F9731DF7-CEB1-4B9B-8838-803275E301E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F9731DF7-CEB1-4B9B-8838-803275E301E4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{962653DD-BFE7-4DDB-9B3D-5AC8C222F43F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{962653DD-BFE7-4DDB-9B3D-5AC8C222F43F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{962653DD-BFE7-4DDB-9B3D-5AC8C222F43F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{962653DD-BFE7-4DDB-9B3D-5AC8C222F43F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{68BF7E0F-0E52-4477-A5B1-367E87697C75}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{68BF7E0F-0E52-4477-A5B1-367E87697C75}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{68BF7E0F-0E52-4477-A5B1-367E87697C75}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{68BF7E0F-0E52-4477-A5B1-367E87697C75}.Release|Any CPU.Build.0 = Release|Any CPU
+		{507FE3FC-F775-46CF-8820-B80C6FCFD348}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{507FE3FC-F775-46CF-8820-B80C6FCFD348}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{507FE3FC-F775-46CF-8820-B80C6FCFD348}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{507FE3FC-F775-46CF-8820-B80C6FCFD348}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1177,6 +1201,10 @@ Global
 		{F18A3C4A-304D-49C9-B919-E2B8E2FD3D75} = {897395DA-3B0B-441A-98A1-35CFAA4A6B91}
 		{A20BC1AA-3AFB-4EDC-ABC8-E6B4CC684E06} = {897395DA-3B0B-441A-98A1-35CFAA4A6B91}
 		{3653FAA9-0AD1-461A-A729-82948351A159} = {897395DA-3B0B-441A-98A1-35CFAA4A6B91}
+		{F9731DF7-CEB1-4B9B-8838-803275E301E4} = {B43B546E-23F3-46E8-ACB7-D04F05CDA180}
+		{962653DD-BFE7-4DDB-9B3D-5AC8C222F43F} = {FC9F520F-BA51-4AD2-BFEE-EF787798E734}
+		{68BF7E0F-0E52-4477-A5B1-367E87697C75} = {9C3C685E-3D7D-4638-A031-24F71CF74B52}
+		{507FE3FC-F775-46CF-8820-B80C6FCFD348} = {FC9F520F-BA51-4AD2-BFEE-EF787798E734}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}

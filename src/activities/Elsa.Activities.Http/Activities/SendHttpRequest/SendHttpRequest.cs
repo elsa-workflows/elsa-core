@@ -7,8 +7,8 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.Http.Contracts;
 using Elsa.Activities.Http.Models;
-using Elsa.Activities.Http.Services;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Design;
@@ -79,6 +79,9 @@ namespace Elsa.Activities.Http
             SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string? ContentType { get; set; }
+        /// <summary>
+        /// The Authorization header value to send.
+        /// </summary>
 
         //[ActivityInput(Hint = "The Authorization header value to send.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }, Category = PropertyCategories.Advanced)]
         //public string? Authorization { get; set; }
@@ -104,9 +107,15 @@ namespace Elsa.Activities.Http
         )]
         public HttpRequestHeaders RequestHeaders { get; set; } = new();
 
+        /// <summary>
+        /// Read the content of the response.
+        /// </summary>
         [ActivityInput(Hint = "Read the content of the response.", SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public bool ReadContent { get; set; }
 
+        /// <summary>
+        /// The parser to use to parse the response content. Plain Text, JSON, .NET Type, Expando Object, JToken, File
+        /// </summary>
         [ActivityInput(
             Label = "Response Content Parser",
             Hint = "The parser to use to parse the response content.",
@@ -116,6 +125,9 @@ namespace Elsa.Activities.Http
         )]
         public string? ResponseContentParserName { get; set; }
 
+        /// <summary>
+        /// The assembly-qualified .NET type name to deserialize the received content into.
+        /// </summary>
         [ActivityInput(
             Label = "Response Content .NET Type",
             Hint = "The assembly-qualified .NET type name to deserialize the received content into.",
@@ -125,7 +137,8 @@ namespace Elsa.Activities.Http
         public Type? ResponseContentTargetType { get; set; }
 
         /// <summary>
-        /// A list of HTTP status codes this activity can handle.
+        /// A list of HTTP status codes this activity can handle. 
+        /// If the response's status code is in this list then an outcome with that status code is created. If it is not in this list then the outcome is <c>Unsupported Status Code</c>.
         /// </summary>
         [ActivityInput(
             Hint = "A list of possible HTTP status codes to handle.",
@@ -138,7 +151,14 @@ namespace Elsa.Activities.Http
         )]
         public ICollection<int>? SupportedStatusCodes { get; set; } = new HashSet<int>(new[] { 200 });
 
+        /// <summary>
+        /// The status code and headers of HTTP response.
+        /// </summary>
         [ActivityOutput] public HttpResponseModel? Response { get; set; }
+
+        /// <summary>
+        /// The content HTTP of the response formatted to <see cref="ResponseContentTargetType"/>
+        /// </summary>
         [ActivityOutput] public object? ResponseContent { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
@@ -149,12 +169,14 @@ namespace Elsa.Activities.Http
             var hasContent = response.Content != null!;
             var contentType = response.Content?.Headers.ContentType?.MediaType;
 
+            var allHeaders = 
+            response.Headers.ToDictionary(x => x.Key, x => x.Value.ToArray())
+                .Concat(response.Content?.Headers.ToDictionary(x => x.Key, x => x.Value.ToArray()));
+
             var responseModel = new HttpResponseModel
             {
                 StatusCode = response!.StatusCode,
-                Headers = new Dictionary<string, string[]>(
-                    response.Headers.ToDictionary(x => x.Key, x => x.Value.ToArray())
-                )
+                Headers = new Dictionary<string, string[]>(allHeaders)
             };
 
             if (hasContent && ReadContent)

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Elsa.Models;
 using Elsa.Server.Api.Endpoints.WorkflowDefinitions;
 using Swashbuckle.AspNetCore.Filters;
@@ -11,6 +11,7 @@ namespace Elsa.Server.Api.Swagger.Examples
             new(
                 Guid.NewGuid().ToString("N"),
                 Guid.NewGuid().ToString("N"),
+                null,
                 "ProcessOrderWorkflow",
                 "Process Order Workflow",
                 "Process new orders",
@@ -18,7 +19,8 @@ namespace Elsa.Server.Api.Swagger.Examples
                 false,
                 WorkflowPersistenceBehavior.Suspended,
                 true,
-                false
+                false,
+				new Variables()
             );
     }
 }

@@ -37,6 +37,7 @@ namespace Elsa.Activities.ControlFlow
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
             var parentBlueprint = context.ActivityBlueprint.Parent;
+            var isRoot = parentBlueprint == null;
 
             // Remove any blocking activities within the scope of the composite activity.
             var blockingActivities = context.WorkflowExecutionContext.WorkflowInstance.BlockingActivities;
@@ -65,6 +66,12 @@ namespace Elsa.Activities.ControlFlow
             Output = new FinishOutput(ActivityOutput, OutcomeNames);
             context.LogOutputProperty(this, nameof(Output), Output);
 
+            if (isRoot)
+            {
+                // Clear activity scheduler to prevent other scheduled activities from adding new blocking activities, which would prevent the workflow from completing.
+                context.WorkflowExecutionContext.ClearScheduledActivities();
+            }
+            
             return Noop();
         }
     }

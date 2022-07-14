@@ -31,6 +31,7 @@
 
  - [elsa-check-list-property](../properties/elsa-check-list-property)
  - [elsa-checkbox-property](../properties/elsa-checkbox-property)
+ - [elsa-cron-expression-property](../properties/elsa-cron-expression-property)
  - [elsa-dictionary-property](../properties/elsa-dictionary-property)
  - [elsa-dropdown-property](../properties/elsa-dropdown-property)
  - [elsa-json-property](../properties/elsa-json-property)
@@ -52,6 +53,7 @@ graph TD;
   elsa-expression-editor --> context-consumer
   elsa-check-list-property --> elsa-property-editor
   elsa-checkbox-property --> elsa-property-editor
+  elsa-cron-expression-property --> elsa-property-editor
   elsa-dictionary-property --> elsa-property-editor
   elsa-dropdown-property --> elsa-property-editor
   elsa-json-property --> elsa-property-editor
