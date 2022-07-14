@@ -135,9 +135,12 @@ namespace Elsa.Scripting.JavaScript.Providers
             {
                 var typeScriptType = GetTypeScriptType(context, property.PropertyType, collectedTypes);
                 var propertyName = property.PropertyType.IsNullableType() ? $"{property.Name}?" : property.Name;
+                var propertyIsStatic = property.GetGetMethod().IsStatic;
 
-
-                output.AppendLine($"{propertyName}: {typeScriptType};");
+                if(propertyIsStatic)
+                    output.AppendLine($"static {propertyName}: {typeScriptType};");
+                else
+                    output.AppendLine($"{propertyName}: {typeScriptType};");
             }
 
             foreach (var method in methods)
