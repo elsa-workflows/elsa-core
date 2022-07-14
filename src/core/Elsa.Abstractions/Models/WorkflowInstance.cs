@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Elsa.Comparers;
 using Elsa.Services.Models;
@@ -56,8 +57,27 @@ namespace Elsa.Models
         {
             Metadata[key] = value;
         }
+        [Obsolete("This property is obsolete. Use Faults instead.", false)]
+        public WorkflowFault? Fault { get; set; }
 
-        public SimpleStack<WorkflowFault> Faults { get; set; }
+        private SimpleStack<WorkflowFault> _faults;
+        public SimpleStack<WorkflowFault> Faults {
+            get
+            {
+                return _faults ??= new SimpleStack<WorkflowFault>();
+            }
+            set
+            {
+                //Temporal patch to decrease the Faults change impact
+                var result = value ?? new SimpleStack<WorkflowFault>();
+                if (Fault != null)
+                {
+                    result.Push(Fault);
+                    Fault = null;
+                }
+                _faults = result;
+            }
+        }
         public SimpleStack<ScheduledActivity> ScheduledActivities { get; set; }
         public SimpleStack<ActivityScope> Scopes { get; set; }
         public ScheduledActivity? CurrentActivity { get; set; }
