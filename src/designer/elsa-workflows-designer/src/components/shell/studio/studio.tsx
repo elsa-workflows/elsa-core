@@ -203,7 +203,6 @@ export class Studio {
     this.workflowManagerElement = this.el.getElementsByTagName('elsa-workflow-manager')[0] as HTMLElsaWorkflowManagerElement;
 
     if (!!this.workflowManagerElement) {
-      //this.workflowManagerElement.activityDescriptors = this.activityDescriptors;
       this.workflowManagerElement.monacoLibPath = this.monacoLibPath;
     }
   }

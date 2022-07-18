@@ -5,6 +5,7 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
+import { ActivityDefinitionSummary } from "./modules/custom-activities/models";
 import { ActionDefinition, ActionInvokedArgs, Activity, ActivityDeletedArgs, ActivitySelectedArgs, ChildActivitySelectedArgs, ContainerSelectedArgs, EditChildActivityArgs, GraphUpdatedArgs, IntellisenseContext, SelectListItem, TabChangedArgs, TabDefinition, Variable, WorkflowDefinition, WorkflowDefinitionSummary, WorkflowInstance, WorkflowInstanceSummary } from "./models";
 import { ActivityIdUpdatedArgs, ActivityUpdatedArgs, DeleteActivityRequestedArgs } from "./components/designer/workflow-definition-editor/activity-properties-editor";
 import { Button } from "./components/shared/button-group/models";
@@ -23,7 +24,7 @@ import { PagerData } from "./components/shared/pager/pager";
 import { PanelPosition, PanelStateChangedArgs } from "./components/designer/panel/models";
 import { WorkflowDefinitionPropsUpdatedArgs, WorkflowDefinitionUpdatedArgs } from "./components/designer/workflow-definition-editor/models";
 import { ActivityDriverRegistry } from "./services";
-import { Flowchart } from "./components/activities/flowchart/models";
+import { Flowchart, WorkflowNavigationItem as WorkflowNavigationItem1 } from "./components/activities/flowchart/models";
 import { WorkflowNavigationItem } from "./components/designer/workflow-navigator/models";
 import { PublishClickedArgs } from "./components/toolbar/workflow-publish-button/workflow-publish-button";
 export namespace Components {
@@ -278,6 +279,10 @@ export namespace Components {
         "workflowInstance"?: WorkflowInstance;
     }
     interface ElsaWorkflowNavigator {
+        "items": Array<WorkflowNavigationItem>;
+        "workflowDefinition": WorkflowDefinition;
+    }
+    interface ElsaWorkflowNavigator2 {
         "items": Array<WorkflowNavigationItem>;
         "workflowDefinition": WorkflowDefinition;
     }
@@ -590,6 +595,12 @@ declare global {
         prototype: HTMLElsaWorkflowNavigatorElement;
         new (): HTMLElsaWorkflowNavigatorElement;
     };
+    interface HTMLElsaWorkflowNavigator2Element extends Components.ElsaWorkflowNavigator2, HTMLStencilElement {
+    }
+    var HTMLElsaWorkflowNavigator2Element: {
+        prototype: HTMLElsaWorkflowNavigator2Element;
+        new (): HTMLElsaWorkflowNavigator2Element;
+    };
     interface HTMLElsaWorkflowPublishButtonElement extends Components.ElsaWorkflowPublishButton, HTMLStencilElement {
     }
     var HTMLElsaWorkflowPublishButtonElement: {
@@ -659,6 +670,7 @@ declare global {
         "elsa-workflow-journal": HTMLElsaWorkflowJournalElement;
         "elsa-workflow-manager": HTMLElsaWorkflowManagerElement;
         "elsa-workflow-navigator": HTMLElsaWorkflowNavigatorElement;
+        "elsa-workflow-navigator-2": HTMLElsaWorkflowNavigator2Element;
         "elsa-workflow-publish-button": HTMLElsaWorkflowPublishButtonElement;
         "elsa-workflow-toolbar": HTMLElsaWorkflowToolbarElement;
         "elsa-workflow-toolbar-menu": HTMLElsaWorkflowToolbarMenuElement;
@@ -666,7 +678,8 @@ declare global {
 }
 declare namespace LocalJSX {
     interface ElsaActivityDefinitionBrowser {
-        "onWorkflowDefinitionSelected"?: (event: CustomEvent<WorkflowDefinitionSummary>) => void;
+        "onActivityDefinitionSelected"?: (event: CustomEvent<ActivityDefinitionSummary>) => void;
+        "onNewActivityDefinitionSelected"?: (event: CustomEvent<any>) => void;
     }
     interface ElsaActivityProperties {
         "activity"?: Activity;
@@ -897,6 +910,11 @@ declare namespace LocalJSX {
         "onNavigate"?: (event: CustomEvent<WorkflowNavigationItem>) => void;
         "workflowDefinition"?: WorkflowDefinition;
     }
+    interface ElsaWorkflowNavigator2 {
+        "items"?: Array<WorkflowNavigationItem>;
+        "onNavigate"?: (event: CustomEvent<WorkflowNavigationItem>) => void;
+        "workflowDefinition"?: WorkflowDefinition;
+    }
     interface ElsaWorkflowPublishButton {
         "onExportClicked"?: (event: CustomEvent<any>) => void;
         "onImportClicked"?: (event: CustomEvent<File>) => void;
@@ -960,6 +978,7 @@ declare namespace LocalJSX {
         "elsa-workflow-journal": ElsaWorkflowJournal;
         "elsa-workflow-manager": ElsaWorkflowManager;
         "elsa-workflow-navigator": ElsaWorkflowNavigator;
+        "elsa-workflow-navigator-2": ElsaWorkflowNavigator2;
         "elsa-workflow-publish-button": ElsaWorkflowPublishButton;
         "elsa-workflow-toolbar": ElsaWorkflowToolbar;
         "elsa-workflow-toolbar-menu": ElsaWorkflowToolbarMenu;
@@ -1019,6 +1038,7 @@ declare module "@stencil/core" {
             "elsa-workflow-journal": LocalJSX.ElsaWorkflowJournal & JSXBase.HTMLAttributes<HTMLElsaWorkflowJournalElement>;
             "elsa-workflow-manager": LocalJSX.ElsaWorkflowManager & JSXBase.HTMLAttributes<HTMLElsaWorkflowManagerElement>;
             "elsa-workflow-navigator": LocalJSX.ElsaWorkflowNavigator & JSXBase.HTMLAttributes<HTMLElsaWorkflowNavigatorElement>;
+            "elsa-workflow-navigator-2": LocalJSX.ElsaWorkflowNavigator2 & JSXBase.HTMLAttributes<HTMLElsaWorkflowNavigator2Element>;
             "elsa-workflow-publish-button": LocalJSX.ElsaWorkflowPublishButton & JSXBase.HTMLAttributes<HTMLElsaWorkflowPublishButtonElement>;
             "elsa-workflow-toolbar": LocalJSX.ElsaWorkflowToolbar & JSXBase.HTMLAttributes<HTMLElsaWorkflowToolbarElement>;
             "elsa-workflow-toolbar-menu": LocalJSX.ElsaWorkflowToolbarMenu & JSXBase.HTMLAttributes<HTMLElsaWorkflowToolbarMenuElement>;

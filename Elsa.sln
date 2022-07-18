@@ -114,6 +114,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.CustomActivities.Entit
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.CustomActivities.EntityFrameworkCore.Sqlite", "src\modules\Elsa.CustomActivities.EntityFrameworkCore.Sqlite\Elsa.CustomActivities.EntityFrameworkCore.Sqlite.csproj", "{24E6E29B-D92C-4827-A8D3-C967F2A18561}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Api.Common", "src\common\Elsa.Api.Common\Elsa.Api.Common.csproj", "{39CD855E-83B1-4A96-93F7-01608211EBE3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Tokens.Api", "src\modules\Elsa.Tokens.Api\Elsa.Tokens.Api.csproj", "{30B49E42-AE61-4F7C-981F-923F07BB3986}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -300,6 +304,14 @@ Global
 		{24E6E29B-D92C-4827-A8D3-C967F2A18561}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{24E6E29B-D92C-4827-A8D3-C967F2A18561}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{24E6E29B-D92C-4827-A8D3-C967F2A18561}.Release|Any CPU.Build.0 = Release|Any CPU
+		{39CD855E-83B1-4A96-93F7-01608211EBE3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{39CD855E-83B1-4A96-93F7-01608211EBE3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{39CD855E-83B1-4A96-93F7-01608211EBE3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{39CD855E-83B1-4A96-93F7-01608211EBE3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{30B49E42-AE61-4F7C-981F-923F07BB3986}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{30B49E42-AE61-4F7C-981F-923F07BB3986}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{30B49E42-AE61-4F7C-981F-923F07BB3986}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{30B49E42-AE61-4F7C-981F-923F07BB3986}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{155227F0-A33B-40AA-A4B4-06F813EB921B} = {61017E64-6D00-49CB-9E81-5002DC8F7D5F}
@@ -353,5 +365,7 @@ Global
 		{1938913C-4A68-4C48-9E0B-9C74AE8EE383} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 		{75516F60-3060-4AB5-9DBE-A37EB0979235} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 		{24E6E29B-D92C-4827-A8D3-C967F2A18561} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
+		{39CD855E-83B1-4A96-93F7-01608211EBE3} = {C6658DE0-2B2F-47F0-BB61-2CA66D435C09}
+		{30B49E42-AE61-4F7C-981F-923F07BB3986} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 	EndGlobalSection
 EndGlobal

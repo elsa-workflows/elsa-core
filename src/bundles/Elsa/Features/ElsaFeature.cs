@@ -1,3 +1,4 @@
+using Elsa.Api.Common.Features;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
@@ -15,6 +16,7 @@ namespace Elsa.Features;
 [DependsOn(typeof(WorkflowPersistenceFeature))]
 [DependsOn(typeof(WorkflowRuntimeFeature))]
 [DependsOn(typeof(WorkflowManagementFeature))]
+[DependsOn(typeof(CommonApiFeature))]
 public class ElsaFeature : FeatureBase
 {
     public ElsaFeature(IModule module) : base(module)

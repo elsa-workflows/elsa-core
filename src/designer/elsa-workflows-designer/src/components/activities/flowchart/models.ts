@@ -11,3 +11,9 @@ export interface Connection {
   sourcePort: string;
   targetPort: string;
 }
+
+export interface WorkflowNavigationItem {
+  activityId: string;
+  portName?: string;
+  index: number;
+}

@@ -79,7 +79,7 @@ export class ActivityDefinitionsApi {
 
     const queryStringText = serializeQueryString(queryString);
     const httpClient = await this.provider.getHttpClient();
-    const response = await httpClient.get<PagedList<ActivityDefinitionSummary>>(`workflow-definitions${queryStringText}`);
+    const response = await httpClient.get<PagedList<ActivityDefinitionSummary>>(`activity-definitions${queryStringText}`);
     return response.data;
   }
 

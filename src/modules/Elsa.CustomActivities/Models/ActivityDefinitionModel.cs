@@ -3,7 +3,7 @@ using Elsa.Workflows.Management.Models;
 
 namespace Elsa.CustomActivities.Models;
 
-public record WorkflowDefinitionModel(
+public record ActivityDefinitionModel(
     string Id,
     string DefinitionId,
     string? Name,

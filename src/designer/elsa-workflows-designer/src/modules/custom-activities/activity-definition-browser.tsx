@@ -23,6 +23,7 @@ export class ActivityDefinitionBrowser {
   private selectAllCheckbox: HTMLInputElement;
 
   @Event() public ActivityDefinitionSelected: EventEmitter<ActivityDefinitionSummary>;
+  @Event() public NewActivityDefinitionSelected: EventEmitter;
   @State() private ActivityDefinitions: PagedList<ActivityDefinitionSummary> = { items: [], totalCount: 0 };
   @State() private publishedActivityDefinitions: PagedList<ActivityDefinitionSummary> = { items: [], totalCount: 0 };
   @State() private selectedActivityDefinitionIds: Array<string> = [];
@@ -46,6 +47,11 @@ export class ActivityDefinitionBrowser {
   public async componentWillLoad() {
     this.activityDefinitionsApi = Container.get(ActivityDefinitionsApi);
   }
+
+  private onNewDefinitionClick = async () => {
+    this.NewActivityDefinitionSelected.emit();
+    await this.hide();
+  };
 
   private async onPublishClick(e: MouseEvent, ActivityDefinition: ActivityDefinitionSummary) {
     await this.activityDefinitionsApi.publish(ActivityDefinition);
@@ -89,7 +95,6 @@ export class ActivityDefinitionBrowser {
   };
 
   private async loadActivityDefinitions() {
-    const latestVersionOptions: VersionOptions = { isLatest: true };
     const publishedVersionOptions: VersionOptions = { isPublished: true };
     const api = this.activityDefinitionsApi;
 
@@ -113,7 +118,8 @@ export class ActivityDefinitionBrowser {
     const publishedActivityDefinitions = this.publishedActivityDefinitions.items;
     const totalCount = ActivityDefinitions.totalCount;
     const closeAction = DefaultActions.Close();
-    const actions = [closeAction];
+    const newAction = DefaultActions.New(this.onNewDefinitionClick);
+    const actions = [closeAction, newAction];
 
     const filterProps: FilterProps = {
       pageSizeFilter: {
@@ -139,7 +145,7 @@ export class ActivityDefinitionBrowser {
       <Host class="block">
         <elsa-modal-dialog ref={el => (this.modalDialog = el)} actions={actions}>
           <div class="pt-4">
-            <h2 class="text-lg font-medium ml-4 mb-2">Workflow Definitions</h2>
+            <h2 class="text-lg font-medium ml-4 mb-2">Activity Definitions</h2>
             <Filter {...filterProps} />
             <div class="align-middle inline-block min-w-full border-b border-gray-200">
               <table class="default-table">
@@ -157,7 +163,6 @@ export class ActivityDefinitionBrowser {
                     <th>
                       <span class="lg:pl-2">Name</span>
                     </th>
-                    <th>Instances</th>
                     <th class="optional align-right">Latest Version</th>
                     <th class="optional align-right">Published Version</th>
                     <th />
@@ -191,14 +196,6 @@ export class ActivityDefinitionBrowser {
                           <div class="flex items-center space-x-3 lg:pl-2">
                             <a onClick={e => this.onActivityDefinitionClick(e, ActivityDefinition)} href="#" class="truncate hover:text-gray-600">
                               <span>{workflowDisplayName}</span>
-                            </a>
-                          </div>
-                        </td>
-
-                        <td>
-                          <div class="flex items-center space-x-3 lg:pl-2">
-                            <a href="#" class="truncate hover:text-gray-600">
-                              Instances
                             </a>
                           </div>
                         </td>

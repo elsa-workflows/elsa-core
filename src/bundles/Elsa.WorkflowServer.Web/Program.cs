@@ -1,7 +1,11 @@
+using Elsa.Api.Common;
+using Elsa.Api.Common.Features;
+using Elsa.Api.Common.Options;
 using Elsa.AspNetCore.Extensions;
 using Elsa.CustomActivities.EntityFrameworkCore.Extensions;
 using Elsa.CustomActivities.EntityFrameworkCore.Sqlite;
 using Elsa.Extensions;
+using Elsa.Features.Extensions;
 using Elsa.Hangfire.Implementations;
 using Elsa.Http;
 using Elsa.Http.Extensions;
@@ -19,17 +23,28 @@ using Elsa.Workflows.Api.Extensions;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Activities.Flowchart.Activities;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution.Components;
-using Elsa.Workflows.Core.Serialization;
-using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Extensions;
-using Elsa.Workflows.Management.Serialization;
 using Elsa.Workflows.Persistence.EntityFrameworkCore.Extensions;
 using Elsa.Workflows.Persistence.EntityFrameworkCore.Sqlite;
 using Elsa.Workflows.Persistence.Extensions;
 using Elsa.Workflows.Runtime.Extensions;
+using Elsa.WorkflowServer.Web.Implementations;
+using FastEndpoints;
+using FastEndpoints.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
+var configuration = builder.Configuration;
+var accessTokenOptions = new AccessTokenOptions();
+configuration.GetSection("AccessTokens").Bind(accessTokenOptions);
+
+// Global control over Elsa API endpoints security.
+ApiSecurityOptions.AllowAnonymous = !builder.Environment.IsProduction();
+ApiSecurityOptions.ValidateRoles = builder.Environment.IsProduction();
+
+// Add application-specific services.
+services.AddSingleton<CustomCredentialsValidator>();
+services.AddSingleton<CustomAccessTokenIssuer>();
 
 // Add Elsa services.
 services
@@ -50,6 +65,12 @@ services
             .AddActivity<RunJavaScript>()
             .AddActivity<Event>()
         )
+        .Use<CommonApiFeature>(feature =>
+        {
+            feature.TokenSigningKey = accessTokenOptions.SigningKey;
+            feature.CredentialsValidator = sp => sp.GetRequiredService<CustomCredentialsValidator>();
+            feature.AccessTokenIssuer = sp => sp.GetRequiredService<CustomAccessTokenIssuer>();
+        })
         .UseWorkflowPersistence(p => p.UseEntityFrameworkCore(ef => ef.UseSqlite()))
         .UseWorkflowApiEndpoints()
         .UseJavaScript()
@@ -65,13 +86,13 @@ services
     .AddSchedulingServices()
     ;
 
-//services.AddControllers();
+services.AddFastEndpoints();
+services.AddAuthenticationJWTBearer(accessTokenOptions.SigningKey);
 services.AddHealthChecks();
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()));
 
-// Register serialization configurator for configuring what types to allow to be serialized.
-services.AddSingleton<ISerializationOptionsConfigurator, CustomSerializationOptionConfigurator>();
-services.AddSingleton<ISerializationOptionsConfigurator, SerializationOptionsConfigurator>();
+// Authorization policies.
+services.AddAuthorization(options => options.AddPolicy("WorkflowManagerPolicy", policy => policy.RequireAuthenticatedUser()));
 
 // Configure middleware pipeline.
 var app = builder.Build();
@@ -96,9 +117,17 @@ app.UseCors();
 // Health checks.
 app.MapHealthChecks("/");
 
+app.UseAuthentication();
+app.UseAuthorization();
+
 // Map Elsa API endpoint controllers.
+
+// Deprecated.
 app.MapManagementApiEndpoints();
 app.MapLabelApiEndpoints();
+
+// Use FastEndpoints middleware.
+app.UseFastEndpoints(config => config.RoutingOptions = routing => routing.Prefix = "elsa/api");
 
 // Register Elsa middleware.
 app.UseJsonSerializationErrorHandler();

@@ -17,7 +17,7 @@ public class Get : Endpoint<Request, ActivityDefinition>
 
     public override void Configure()
     {
-        Routes("/api/custom-activities/activity-definitions/{definitionId}");
+        Routes("/custom-activities/activity-definitions/{definitionId}");
         Verbs(Http.GET);
     }
 

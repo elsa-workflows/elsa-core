@@ -26,7 +26,7 @@ public class Post : Endpoint<Request, Response>
 
     public override void Configure()
     {
-        Routes("/api/custom-activities");
+        Routes("/custom-activities");
         Verbs(Http.POST);
     }
 
