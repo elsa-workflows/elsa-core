@@ -1,19 +1,18 @@
-using Elsa.Services;
-using Elsa.Attributes;
-using Elsa.Services.Models;
-using Elsa.ActivityResults;
-using Elsa.Design;
-using Elsa.Expressions;
+using System.Linq;
+using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 using Elsa.Activities.Sql.Factory;
 using Elsa.Activities.Sql.Models;
-using Elsa.Secrets.Models;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using System.Threading;
+using Elsa.ActivityResults;
+using Elsa.Attributes;
+using Elsa.Design;
+using Elsa.Expressions;
 using Elsa.Metadata;
-using System.Reflection;
-using System.Linq;
+using Elsa.Secrets.Extentions;
 using Elsa.Secrets.Providers;
+using Elsa.Services;
+using Elsa.Services.Models;
 
 namespace Elsa.Activities.Sql.Activities
 {
@@ -51,10 +50,9 @@ namespace Elsa.Activities.Sql.Activities
 
         [ActivityInput(
             UIHint = ActivityInputUIHints.Dropdown,
-            Label = "Credentials string",
-            Hint = "Secret stored in credential manager",
+            Label = "Connection string",
             OptionsProvider = typeof(ExecuteSqlCommand),
-            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
          )]
         public string? CredentialString { get; set; }
 
@@ -73,11 +71,11 @@ namespace Elsa.Activities.Sql.Activities
 
         public async ValueTask<SelectList> GetSelectListAsync(object? context = default, CancellationToken cancellationToken = default)
         {
-            var secretsPostgre = await _secretsProvider.GetSecrets("PostgreSql", ":"); 
-            var secretsMssql = await _secretsProvider.GetSecrets("MSSQLServer", ":"); 
+            var secretsPostgre = await _secretsProvider.GetSecretsForSelectListAsync(SecretType.PostgreSql);
+            var secretsMssql = await _secretsProvider.GetSecretsForSelectListAsync(SecretType.MsSql);
 
-            var items = secretsMssql.Select(x => new SelectListItem(x)).ToList();
-            items.AddRange(secretsPostgre.Select(x => new SelectListItem(x)).ToList());
+            var items = secretsMssql.Select(x => new SelectListItem(x.Item1, x.Item2)).ToList();
+            items.AddRange(secretsPostgre.Select(x => new SelectListItem(x.Item1, x.Item2)).ToList());
             items.Insert(0, new SelectListItem("", "empty"));
 
             var list = new SelectList { Items = items };

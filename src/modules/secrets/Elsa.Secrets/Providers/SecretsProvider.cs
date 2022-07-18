@@ -1,11 +1,8 @@
-using Elsa.Secrets.Manager;
-using Elsa.Secrets.Models;
-using Newtonsoft.Json;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using Elsa.Secrets.Extentions;
+using Elsa.Secrets.Manager;
 
 namespace Elsa.Secrets.Providers
 {
@@ -17,25 +14,17 @@ namespace Elsa.Secrets.Providers
             _secretsManager = secretsManager;
         }
 
-        public async Task<ICollection<string>> GetSecrets(string type, string separator)
+        public async Task<ICollection<string>> GetSecrets(string type)
         {
             var secrets = await _secretsManager.GetSecrets(type);
 
-            return secrets.Select(x => convertToCredentialString(x.PropertiesJson, separator)).ToArray();
+            return secrets.Select(x => x.GetValue()).ToArray();
         }
 
-        private string convertToCredentialString(string propertiesJson, string separator)
+        public async Task<ICollection<(string, string)>> GetSecretsForSelectListAsync(string type)
         {
-            var properties = JsonConvert.DeserializeObject(propertiesJson).ConvertTo<ICollection<SecretProperty>>();
-            var sb = new StringBuilder();
-
-            foreach (var property in properties)
-            {
-                if (property.Expressions.Count() > 0)
-                    sb.Append($"{property.Name}{separator}{property.Expressions.First().Value};");
-            }
-
-            return sb.ToString();
+            var secrets = await _secretsManager.GetSecrets(type);
+            return secrets.Select(x => (x.Name ?? x.DisplayName, x.GetValue())).ToArray();
         }
     }
 }

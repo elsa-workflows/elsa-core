@@ -1,5 +1,6 @@
 import { Component, h, Host, Prop, State } from "@stencil/core";
 import { i18n } from "i18next";
+import { initializeMonacoWorker } from "../../../components/controls/elsa-monaco/elsa-monaco-utils";
 import { resources } from "../../../components/controls/elsa-pager/localizations";
 import { loadTranslations } from "../../../components/i18n/i18n-loader";
 import { EventTypes, } from "../../../models";
@@ -9,7 +10,7 @@ import state from "../../../utils/store";
 import { SecretDescriptor, SecretEditorRenderProps, SecretModel, SecretPropertyDescriptor } from "../models/secret.model";
 
 @Component({
-    tag: 'elsa-secert-editor-modal',
+    tag: 'elsa-secret-editor-modal',
     shadow: false
 })
 export class ElsaSecretEditorModel {
@@ -32,6 +33,7 @@ export class ElsaSecretEditorModel {
   }
 
   async componentWillLoad() {
+    await initializeMonacoWorker('build/assets/js/monaco-editor/min');
     this.i18next = await loadTranslations(this.culture, resources);
   }
 
@@ -136,7 +138,7 @@ export class ElsaSecretEditorModel {
 
                     <div class="elsa-mt-8">
                       {this.renderProperties(secretModel)}
-                     
+
                     </div>
                   </div>
 
@@ -178,7 +180,7 @@ export class ElsaSecretEditorModel {
       <div>
         <div class="elsa-w-full">
           {textInput(formContext, 'name', 'Name', secretModel.name, 'Secret\'s name', 'secretName')}
-          {textInput(formContext, 'type', 'Type', secretModel.displayName, 'Secret\'s type', 'secretDisplayName')}
+          {textInput(formContext, 'type', 'Type', secretModel.displayName, 'Secret\'s type', 'secretDisplayName', true)}
         </div>
         <div class="elsa-mt-6">
           <div key={key} class={`elsa-grid elsa-grid-cols-1 elsa-gap-y-6 elsa-gap-x-4 sm:elsa-grid-cols-6`}>

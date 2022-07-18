@@ -203,7 +203,7 @@ export namespace Components {
         "syntax"?: string;
         "workflowDefinitionId": string;
     }
-    interface ElsaSecertEditorModal {
+    interface ElsaSecretEditorModal {
         "culture": string;
     }
     interface ElsaSecretsPickerModal {
@@ -571,11 +571,11 @@ declare global {
         prototype: HTMLElsaScriptPropertyElement;
         new (): HTMLElsaScriptPropertyElement;
     };
-    interface HTMLElsaSecertEditorModalElement extends Components.ElsaSecertEditorModal, HTMLStencilElement {
+    interface HTMLElsaSecretEditorModalElement extends Components.ElsaSecretEditorModal, HTMLStencilElement {
     }
-    var HTMLElsaSecertEditorModalElement: {
-        prototype: HTMLElsaSecertEditorModalElement;
-        new (): HTMLElsaSecertEditorModalElement;
+    var HTMLElsaSecretEditorModalElement: {
+        prototype: HTMLElsaSecretEditorModalElement;
+        new (): HTMLElsaSecretEditorModalElement;
     };
     interface HTMLElsaSecretsPickerModalElement extends Components.ElsaSecretsPickerModal, HTMLStencilElement {
     }
@@ -824,7 +824,7 @@ declare global {
         "elsa-property-editor": HTMLElsaPropertyEditorElement;
         "elsa-radio-list-property": HTMLElsaRadioListPropertyElement;
         "elsa-script-property": HTMLElsaScriptPropertyElement;
-        "elsa-secert-editor-modal": HTMLElsaSecertEditorModalElement;
+        "elsa-secret-editor-modal": HTMLElsaSecretEditorModalElement;
         "elsa-secrets-picker-modal": HTMLElsaSecretsPickerModalElement;
         "elsa-single-line-property": HTMLElsaSingleLinePropertyElement;
         "elsa-studio-dashboard": HTMLElsaStudioDashboardElement;
@@ -1057,7 +1057,7 @@ declare namespace LocalJSX {
         "syntax"?: string;
         "workflowDefinitionId"?: string;
     }
-    interface ElsaSecertEditorModal {
+    interface ElsaSecretEditorModal {
         "culture"?: string;
     }
     interface ElsaSecretsPickerModal {
@@ -1271,7 +1271,7 @@ declare namespace LocalJSX {
         "elsa-property-editor": ElsaPropertyEditor;
         "elsa-radio-list-property": ElsaRadioListProperty;
         "elsa-script-property": ElsaScriptProperty;
-        "elsa-secert-editor-modal": ElsaSecertEditorModal;
+        "elsa-secret-editor-modal": ElsaSecretEditorModal;
         "elsa-secrets-picker-modal": ElsaSecretsPickerModal;
         "elsa-single-line-property": ElsaSingleLineProperty;
         "elsa-studio-dashboard": ElsaStudioDashboard;
@@ -1344,7 +1344,7 @@ declare module "@stencil/core" {
             "elsa-property-editor": LocalJSX.ElsaPropertyEditor & JSXBase.HTMLAttributes<HTMLElsaPropertyEditorElement>;
             "elsa-radio-list-property": LocalJSX.ElsaRadioListProperty & JSXBase.HTMLAttributes<HTMLElsaRadioListPropertyElement>;
             "elsa-script-property": LocalJSX.ElsaScriptProperty & JSXBase.HTMLAttributes<HTMLElsaScriptPropertyElement>;
-            "elsa-secert-editor-modal": LocalJSX.ElsaSecertEditorModal & JSXBase.HTMLAttributes<HTMLElsaSecertEditorModalElement>;
+            "elsa-secret-editor-modal": LocalJSX.ElsaSecretEditorModal & JSXBase.HTMLAttributes<HTMLElsaSecretEditorModalElement>;
             "elsa-secrets-picker-modal": LocalJSX.ElsaSecretsPickerModal & JSXBase.HTMLAttributes<HTMLElsaSecretsPickerModalElement>;
             "elsa-single-line-property": LocalJSX.ElsaSingleLineProperty & JSXBase.HTMLAttributes<HTMLElsaSingleLinePropertyElement>;
             "elsa-studio-dashboard": LocalJSX.ElsaStudioDashboard & JSXBase.HTMLAttributes<HTMLElsaStudioDashboardElement>;

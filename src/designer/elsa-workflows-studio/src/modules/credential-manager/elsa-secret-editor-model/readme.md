@@ -26,10 +26,10 @@
 ### Graph
 ```mermaid
 graph TD;
-  elsa-secert-editor-modal --> elsa-modal-dialog
-  elsa-secert-editor-modal --> elsa-control
-  credential-manager-items-list --> elsa-secert-editor-modal
-  style elsa-secert-editor-modal fill:#f9f,stroke:#333,stroke-width:4px
+  elsa-secret-editor-modal --> elsa-modal-dialog
+  elsa-secret-editor-modal --> elsa-control
+  credential-manager-items-list --> elsa-secret-editor-modal
+  style elsa-secret-editor-modal fill:#f9f,stroke:#333,stroke-width:4px
 ```
 
 ----------------------------------------------

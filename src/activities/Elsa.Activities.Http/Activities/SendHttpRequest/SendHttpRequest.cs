@@ -5,7 +5,6 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Contracts;
 using Elsa.Activities.Http.Models;
@@ -14,6 +13,7 @@ using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Expressions;
 using Elsa.Metadata;
+using Elsa.Secrets.Extentions;
 using Elsa.Secrets.Providers;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -79,19 +79,17 @@ namespace Elsa.Activities.Http
             SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string? ContentType { get; set; }
+
         /// <summary>
         /// The Authorization header value to send.
         /// </summary>
-
-        //[ActivityInput(Hint = "The Authorization header value to send.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }, Category = PropertyCategories.Advanced)]
-        //public string? Authorization { get; set; }
         [ActivityInput(
           UIHint = ActivityInputUIHints.Dropdown,
           Label = "Authorization",
-          Hint = "Secret stored in credential manager",
+          Hint = "The Authorization header value to send.",
           Category = PropertyCategories.Advanced,
           OptionsProvider = typeof(SendHttpRequest),
-          SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
+          SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
        )]
         public string? Authorization { get; set; }
 
@@ -259,15 +257,15 @@ namespace Elsa.Activities.Http
                 }
                 case nameof(Authorization):
                 {
-                    var secretsAuth = _secretsProvider.GetSecrets("Authorization", ":").Result;
+                    var secretsAuth = _secretsProvider.GetSecretsForSelectListAsync(SecretType.AuthorizationHeader).Result;
 
-                    var items = secretsAuth.Select(x => new SelectListItem(x)).ToList();
+                    var items = secretsAuth.Select(x => new SelectListItem(x.Item1, x.Item2)).ToList();
                     items.Insert(0, new SelectListItem("", "empty"));
 
                     var list = new SelectList { Items = items };
 
                     return list;
-                }
+                    }
                 case nameof(ResponseContentTargetType): return null;
                 default: throw new ArgumentException($"Unsupported property: {property.Name}");
             }

@@ -15,7 +15,7 @@ export class CredentialManagerItemsList {
   @Prop() culture: string;
   @Prop() basePath: string;
   private i18next: i18n;
-  
+
   async componentWillLoad() {
     this.i18next = await loadTranslations(this.culture, resources);
   }
@@ -33,7 +33,7 @@ export class CredentialManagerItemsList {
   }
 
   renderSecretPickerEditor() {
-    return <elsa-secert-editor-modal culture={this.culture}/>;
+    return <elsa-secret-editor-modal culture={this.culture}/>;
   }
 
   render() {
