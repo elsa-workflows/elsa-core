@@ -30,7 +30,7 @@ RUN dotnet build "ElsaDashboard.Web.csproj" -c Release -o /app/build
 RUN dotnet publish "ElsaDashboard.Web.csproj" -c Release -o /app/publish /p:UseAppHost=false --no-restore -f net6.0
 
 # move binaries into smaller base image
-FROM mcr.microsoft.com/dotnet/aspnet:6.0-bullseye-slim-amd64 AS base
+FROM mcr.microsoft.com/dotnet/aspnet:6.0-bullseye-slim AS base
 WORKDIR /app
 COPY --from=build /app/publish ./
 

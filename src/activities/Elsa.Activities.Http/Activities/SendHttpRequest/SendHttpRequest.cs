@@ -79,6 +79,9 @@ namespace Elsa.Activities.Http
             SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string? ContentType { get; set; }
+        /// <summary>
+        /// The Authorization header value to send.
+        /// </summary>
 
         /// <summary>
         /// The Authorization header value to send.

@@ -8101,6 +8101,11 @@ select {
   padding-bottom: 0.875rem;
 }
 
+.elsa-py-3\.5 {
+  padding-top: 0.875rem;
+  padding-bottom: 0.875rem;
+}
+
 .elsa-pr-8 {
   padding-right: 2rem;
 }
@@ -8169,6 +8174,8 @@ select {
   padding-right: 1.25rem;
 }
 
+}
+
 .elsa-pr-28 {
   padding-right: 7rem;
 }
@@ -8183,10 +8190,6 @@ select {
 
 .elsa-pr-2 {
   padding-right: 0.5rem;
-}
-
-.elsa-pr-3 {
-  padding-right: 0.75rem;
 }
 
 .elsa-pl-8 {
@@ -12682,6 +12685,10 @@ svg.jtk-connector.jtk-hover path {
   .lg\:elsa-px-0 {
     padding-left: 0px;
     padding-right: 0px;
+  }
+
+  .lg\:elsa-pr-8 {
+    padding-right: 2rem;
   }
 
   .lg\:elsa-pl-2 {

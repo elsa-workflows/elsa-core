@@ -35,7 +35,7 @@ namespace Elsa.Activities.Sql.Activities
         [ActivityInput(
             UIHint = ActivityInputUIHints.Dropdown,
             Hint = "Allowed databases to run SQL.",
-            Options = new[] { "", "MSSQLServer", "PostgreSql" },
+            Options = new[] { "MSSQL Server", "PostgreSql" },
             DefaultValue = "MSSQL Server",
             SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
@@ -51,13 +51,16 @@ namespace Elsa.Activities.Sql.Activities
         )]
         public string Query { get; set; } = default!;
 
+        /// <summary>
+        /// Connection string to run SQL
+        /// </summary>
         [ActivityInput(
               UIHint = ActivityInputUIHints.Dropdown,
-              Label = "Connection string",
               OptionsProvider = typeof(ExecuteSqlQuery),
               SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
-           )]
-        public string? CredentialString { get; set; }
+              Hint = "Connection string to run SQL"
+        )]
+        public string ConnectionString { get; set; } = default!;
 
         [ActivityOutput(DisableWorkflowProviderSelection = true, DefaultWorkflowStorageProvider = TransientWorkflowStorageProvider.ProviderName)]
         public DataSet? Output { get; set; }

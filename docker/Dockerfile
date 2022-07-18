@@ -18,7 +18,7 @@ RUN dotnet build "ElsaDashboard.Samples.AspNetCore.Monolith.csproj" -c Release -
 RUN dotnet publish "ElsaDashboard.Samples.AspNetCore.Monolith.csproj" -c Release -o /app/publish /p:UseAppHost=false --no-restore -f net6.0
 
 # move binaries into smaller base image
-FROM mcr.microsoft.com/dotnet/aspnet:6.0-bullseye-slim-amd64 AS base
+FROM mcr.microsoft.com/dotnet/aspnet:6.0-bullseye-slim AS base
 WORKDIR /app
 COPY --from=build /app/publish ./
 
