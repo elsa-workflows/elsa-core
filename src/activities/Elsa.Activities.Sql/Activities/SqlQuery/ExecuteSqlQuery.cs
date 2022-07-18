@@ -57,7 +57,7 @@ namespace Elsa.Activities.Sql.Activities
         [ActivityInput(
               UIHint = ActivityInputUIHints.Dropdown,
               OptionsProvider = typeof(ExecuteSqlQuery),
-              SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
+              SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid },
               Hint = "Connection string to run SQL"
         )]
         public string ConnectionString { get; set; } = default!;
@@ -94,7 +94,7 @@ namespace Elsa.Activities.Sql.Activities
 
         private IActivityExecutionResult ExecuteQuery()
         {
-            var sqlServerClient = _sqlClientFactory.CreateClient(new CreateSqlClientModel(Database, CredentialString));
+            var sqlServerClient = _sqlClientFactory.CreateClient(new CreateSqlClientModel(Database, ConnectionString));
             Output = sqlServerClient.ExecuteQuery(Query);
 
             return Done();

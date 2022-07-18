@@ -58,7 +58,7 @@ namespace Elsa.Models
             Metadata[key] = value;
         }
         [Obsolete("This property is obsolete. Use Faults instead.", false)]
-        public SimpleStack<WorkflowFault> Faults { get; set; }
+        public WorkflowFault? Fault { get; set; }
 
         private SimpleStack<WorkflowFault> _faults;
         public SimpleStack<WorkflowFault> Faults {
