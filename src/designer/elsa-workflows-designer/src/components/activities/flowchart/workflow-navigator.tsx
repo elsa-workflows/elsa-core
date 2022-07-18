@@ -1,8 +1,8 @@
 import {Component, FunctionalComponent, h, Prop, Event, EventEmitter} from "@stencil/core";
 import {Container} from "typedi";
 import {ActivityIconRegistry, ActivityNode, flatten, PortProviderRegistry, walkActivities} from "../../../services";
-import {WorkflowNavigationItem} from "./models";
-import {Port, WorkflowDefinition} from "../../../models";
+import {Flowchart, FlowchartNavigationItem} from "./models";
+import {Port} from "../../../models";
 import descriptorsStore from "../../../data/descriptors-store";
 
 @Component({
@@ -18,21 +18,21 @@ export class WorkflowNavigator {
     this.portProviderRegistry = Container.get(PortProviderRegistry);
   }
 
-  @Prop() items: Array<WorkflowNavigationItem> = [];
-  @Prop() workflowDefinition: WorkflowDefinition;
-  @Event() navigate: EventEmitter<WorkflowNavigationItem>;
+  @Prop() items: Array<FlowchartNavigationItem> = [];
+  @Prop() flowchart: Flowchart;
+  @Event() navigate: EventEmitter<FlowchartNavigationItem>;
 
   render() {
 
     const items = this.items;
 
-    if (items.length <= 1)
+    if (items.length <= 0)
       return null;
 
-    if (!this.workflowDefinition)
+    if (!this.flowchart)
       return;
 
-    const nodes = flatten(walkActivities(this.workflowDefinition.root));
+    const nodes = flatten(walkActivities(this.flowchart));
 
     return <div class="ml-8">
       <nav class="flex" aria-label="Breadcrumb">
@@ -43,7 +43,7 @@ export class WorkflowNavigator {
     </div>
   }
 
-  private renderPathItem = (item: WorkflowNavigationItem, index: number, nodes: Array<ActivityNode>) => {
+  private renderPathItem = (item: FlowchartNavigationItem, index: number, nodes: Array<ActivityNode>) => {
     const activityId = item.activityId;
     const activity = nodes.find(x => x.activity.id == activityId).activity;
     const activityDescriptor = descriptorsStore.activityDescriptors.find(x => x.activityType == activity.typeName);
@@ -51,7 +51,7 @@ export class WorkflowNavigator {
     const listElements = [];
     const isLastItem = index == this.items.length - 1;
 
-    const onItemClick = (e: MouseEvent, item: WorkflowNavigationItem) => {
+    const onItemClick = (e: MouseEvent, item: FlowchartNavigationItem) => {
       e.preventDefault();
       this.onItemClick(item);
     }
@@ -117,5 +117,5 @@ export class WorkflowNavigator {
     return listElements;
   }
 
-  private onItemClick = (item: WorkflowNavigationItem) => this.navigate.emit(item);
+  private onItemClick = (item: FlowchartNavigationItem) => this.navigate.emit(item);
 }

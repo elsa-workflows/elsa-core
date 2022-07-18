@@ -29,8 +29,8 @@ export class Studio {
   }
 
   @Element() private el: HTMLElsaStudioElement;
-  @Prop({attribute: 'server'}) public serverUrl: string;
-  @Prop({attribute: 'monaco-lib-path'}) public monacoLibPath: string;
+  @Prop({attribute: 'server'}) serverUrl: string;
+  @Prop({attribute: 'monaco-lib-path'}) monacoLibPath: string;
 
   @Watch('serverUrl')
   private handleServerUrl(value: string) {
@@ -92,9 +92,9 @@ export class Studio {
 
     e.detail.begin();
     const workflowDefinition = await workflowManagerElement.getWorkflowDefinition();
-    this.eventBus.emit(NotificationEventTypes.Add, this, { id: workflowDefinition.definitionId, message: `Starting publishing ${workflowDefinition.name}` });
+    await this.eventBus.emit(NotificationEventTypes.Add, this, { id: workflowDefinition.definitionId, message: `Starting publishing ${workflowDefinition.name}` });
     await this.saveWorkflowDefinition(workflowDefinition, true);
-    this.eventBus.emit(NotificationEventTypes.Update, this, { id: workflowDefinition.definitionId, message: `${workflowDefinition.name} publish finished` });
+    await this.eventBus.emit(NotificationEventTypes.Update, this, { id: workflowDefinition.definitionId, message: `${workflowDefinition.name} publish finished` });
     e.detail.complete();
   }
 
@@ -105,9 +105,9 @@ export class Studio {
     if (!workflowManagerElement) return;
 
     const workflow = await workflowManagerElement.getWorkflowDefinition();
-    this.eventBus.emit(NotificationEventTypes.Add, this, { id: workflow.definitionId, message: `Starting unpublishing ${workflow.name}` });
+    await this.eventBus.emit(NotificationEventTypes.Add, this, { id: workflow.definitionId, message: `Starting unpublishing ${workflow.name}` });
     await this.retractWorkflowDefinition(workflow);
-    this.eventBus.emit(NotificationEventTypes.Update, this, { id: workflow.definitionId, message: `${workflow.name} unpublish finished` });
+    await this.eventBus.emit(NotificationEventTypes.Update, this, { id: workflow.definitionId, message: `${workflow.name} unpublish finished` });
   }
 
   @Listen('newClicked')
@@ -187,7 +187,7 @@ export class Studio {
       workflowManagerElement.workflowDefinition = workflowDefinition;
   }
 
-  public async componentWillLoad() {
+  async componentWillLoad() {
     this.handleMonacoLibPath(this.monacoLibPath);
     this.handleServerUrl(this.serverUrl);
 
@@ -207,10 +207,6 @@ export class Studio {
     }
   }
 
-  public render() {
-    return <slot/>;
-  }
-
   private saveWorkflowDefinition = async (definition: WorkflowDefinition, publish: boolean): Promise<WorkflowDefinition> => {
     const updatedWorkflow = await this.workflowDefinitionManager.saveWorkflow(definition, publish);
     await this.workflowManagerElement.updateWorkflowDefinition(updatedWorkflow);
@@ -221,5 +217,9 @@ export class Studio {
     const updatedWorkflow = await this.workflowDefinitionManager.retractWorkflow(definition);
     await this.workflowManagerElement.updateWorkflowDefinition(updatedWorkflow);
     return updatedWorkflow;
+  }
+
+  render() {
+    return <slot/>;
   }
 }

@@ -1,4 +1,4 @@
-import {Container} from '../../../models';
+import {Activity, Container} from '../../../models';
 
 export interface Flowchart extends Container {
   start: string;
@@ -12,8 +12,14 @@ export interface Connection {
   targetPort: string;
 }
 
-export interface WorkflowNavigationItem {
+export interface FlowchartNavigationItem {
   activityId: string;
   portName?: string;
   index: number;
+}
+
+export interface FlowchartModel {
+  activities: Array<Activity>;
+  connections: Array<Connection>;
+  start: string;
 }

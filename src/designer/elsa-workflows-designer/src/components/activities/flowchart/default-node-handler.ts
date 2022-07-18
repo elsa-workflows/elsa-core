@@ -16,7 +16,6 @@ export class DefaultNodeHandler implements ActivityNodeHandler {
   createDesignerNode(context: CreateUINodeContext): Node.Metadata {
     const {activityDescriptor, activity, x, y} = context;
     const provider = this.portProviderRegistry.get(activityDescriptor.activityType);
-    debugger;
     const providerContext: PortProviderContext = {activityDescriptor, activity};
     const inPorts = [{name: 'In', displayName: null, mode: PortMode.Port}];
     let outPorts = provider.getOutboundPorts(providerContext).filter(x => x.mode == PortMode.Port);

@@ -1,11 +1,10 @@
 import {Component, h, Prop, State, Event, EventEmitter, Listen, Element} from "@stencil/core";
-import {camelCase} from 'lodash';
 import {ActivityIcon, ActivityIconRegistry, PortProviderRegistry} from "../../../services";
 import {Container} from "typedi";
 import {Activity, ActivityDescriptor, ActivityKind, ActivitySelectedArgs, ChildActivitySelectedArgs, EditChildActivityArgs, Port, PortMode} from "../../../models";
 import descriptorsStore from "../../../data/descriptors-store";
 import {isNullOrWhitespace} from "../../../utils";
-import WorkflowEditorTunnel from "../state";
+import FlowchartTunnel from "./state";
 
 @Component({
   tag: 'elsa-default-activity-template',
@@ -46,7 +45,7 @@ export class DefaultActivityTemplate {
     const activityId = this.activityId;
 
     return (
-      <WorkflowEditorTunnel.Consumer>
+      <FlowchartTunnel.Consumer>
         {({nodeMap}) => {
           const activity: Activity = nodeMap[activityId];
           const canStartWorkflow = activity?.canStartWorkflow;
@@ -85,7 +84,7 @@ export class DefaultActivityTemplate {
             </div>
           );
         }}
-      </WorkflowEditorTunnel.Consumer>
+      </FlowchartTunnel.Consumer>
     )
   }
 

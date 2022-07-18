@@ -24,7 +24,7 @@ import { PagerData } from "./components/shared/pager/pager";
 import { PanelPosition, PanelStateChangedArgs } from "./components/designer/panel/models";
 import { WorkflowDefinitionPropsUpdatedArgs, WorkflowDefinitionUpdatedArgs } from "./components/designer/workflow-definition-editor/models";
 import { ActivityDriverRegistry } from "./services";
-import { Flowchart, WorkflowNavigationItem as WorkflowNavigationItem1 } from "./components/activities/flowchart/models";
+import { Flowchart, FlowchartNavigationItem } from "./components/activities/flowchart/models";
 import { WorkflowNavigationItem } from "./components/designer/workflow-navigator/models";
 import { PublishClickedArgs } from "./components/toolbar/workflow-publish-button/workflow-publish-button";
 export namespace Components {
@@ -96,6 +96,7 @@ export namespace Components {
     interface ElsaFlowchart {
         "addActivity": (args: AddActivityArgs) => Promise<Activity>;
         "export": () => Promise<Activity>;
+        "getCurrentLevel": () => Promise<Activity>;
         "getGraph": () => Promise<Graph>;
         "import": (root: Activity) => Promise<void>;
         "interactiveMode": boolean;
@@ -283,8 +284,8 @@ export namespace Components {
         "workflowDefinition": WorkflowDefinition;
     }
     interface ElsaWorkflowNavigator2 {
-        "items": Array<WorkflowNavigationItem>;
-        "workflowDefinition": WorkflowDefinition;
+        "flowchart": Flowchart;
+        "items": Array<FlowchartNavigationItem>;
     }
     interface ElsaWorkflowPublishButton {
         "publishing": boolean;
@@ -911,9 +912,9 @@ declare namespace LocalJSX {
         "workflowDefinition"?: WorkflowDefinition;
     }
     interface ElsaWorkflowNavigator2 {
-        "items"?: Array<WorkflowNavigationItem>;
-        "onNavigate"?: (event: CustomEvent<WorkflowNavigationItem>) => void;
-        "workflowDefinition"?: WorkflowDefinition;
+        "flowchart"?: Flowchart;
+        "items"?: Array<FlowchartNavigationItem>;
+        "onNavigate"?: (event: CustomEvent<FlowchartNavigationItem>) => void;
     }
     interface ElsaWorkflowPublishButton {
         "onExportClicked"?: (event: CustomEvent<any>) => void;
