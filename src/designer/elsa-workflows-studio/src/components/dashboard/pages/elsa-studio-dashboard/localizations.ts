@@ -48,7 +48,7 @@ export const resources = {
     default: {
       'WorkflowDefinitions': 'Ablaufdefinitionen',
       'WorkflowInstances': 'Ablaufinstanzen',
-      'WorkflowRegistry': 'Ablaufverzeichniss',
+      'WorkflowRegistry': 'Ablaufverzeichnis',
       'WebhookDefinitions': 'Webhook Definitionen',
     },
     menuItems: {

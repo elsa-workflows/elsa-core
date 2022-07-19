@@ -25,7 +25,7 @@ export const resources = {
   },
   'de-DE': {
     default: {
-      'Title': 'Ablaufverzeichniss',
+      'Title': 'Ablaufverzeichnis',
       'CreateButton': 'Ablauf erstellen'
     }
   },

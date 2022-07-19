@@ -150,7 +150,7 @@ export const resources = {
             },
             'DisplayName': {
               'Label': 'Anzeigename',
-              'Hint': 'Der menschenfreundliche Name der Aktivität'
+              'Hint': 'Der freundliche Name der Aktivität'
             },
             'Description': {
               'Label': 'Beschreibung',

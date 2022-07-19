@@ -50,7 +50,7 @@ export const resources = {
       'From': 'Von',
       'To': 'bis',
       'Of': 'von',
-      'Results': 'Ergebnisse',
+      'Results': 'Ergebnissen',
       'Display': '{{template}}'
     }
   },
