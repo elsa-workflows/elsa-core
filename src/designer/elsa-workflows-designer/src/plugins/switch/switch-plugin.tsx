@@ -20,6 +20,10 @@ export class SwitchPlugin implements Plugin {
     portProviderRegistry.add(activityTypeName, () => Container.get(SwitchPortProvider));
     iconRegistry.add(SwitchPlugin.ActivityTypeName, settings => <SwitchIcon size={settings?.size}/>);
   }
+
+  async initialize(): Promise<void> {
+
+  }
 }
 
 const SwitchIcon: FunctionalComponent<ActivityIconSettings> = (settings) => (

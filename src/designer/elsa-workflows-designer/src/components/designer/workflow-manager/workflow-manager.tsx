@@ -1,6 +1,10 @@
-import {Component, h, Method, Prop, getAssetPath} from "@stencil/core";
+import {Component, getAssetPath, h, Method, Prop} from "@stencil/core";
 import {ActivityDescriptor, WorkflowDefinition, WorkflowInstance} from "../../../models";
-import {HomeView} from "./home-view";
+import {Flowchart} from "../../activities/flowchart/models";
+import descriptorsStore from "../../../data/descriptors-store";
+import {generateUniqueActivityName} from "../../../utils/generate-activity-name";
+
+const FlowchartTypeName = 'Elsa.Flowchart';
 
 @Component({
   tag: 'elsa-workflow-manager',
@@ -37,20 +41,43 @@ export class WorkflowManager {
 
   @Method()
   async newWorkflow() {
-    if (!this.workflowDefinitionEditor)
-      return null;
 
-    await this.workflowDefinitionEditor.newWorkflow();
+    const flowchartDescriptor = this.getFlowchartDescriptor();
+    const newName = await this.generateUniqueActivityName(flowchartDescriptor);
+
+    const flowchart = {
+      typeName: flowchartDescriptor.activityType,
+      activities: [],
+      connections: [],
+      id: newName,
+      metadata: {},
+      applicationProperties: {},
+      variables: []
+    } as Flowchart;
+
+    this.workflowDefinition = {
+      root: flowchart,
+      id: '',
+      name: 'Workflow 1',
+      definitionId: '',
+      version: 1,
+      isLatest: true,
+      isPublished: false,
+      materializerName: 'Json'
+    };
   }
 
+  private getFlowchartDescriptor = () => this.getActivityDescriptor(FlowchartTypeName);
+  private getActivityDescriptor = (typeName: string): ActivityDescriptor => descriptorsStore.activityDescriptors.find(x => x.activityType == typeName)
+  private generateUniqueActivityName = async (activityDescriptor: ActivityDescriptor): Promise<string> => await generateUniqueActivityName([], activityDescriptor);
+
   render() {
-    const visualPath = getAssetPath('./assets/elsa-anim.gif');
     const monacoLibPath = this.monacoLibPath;
     const workflowInstance = this.workflowInstance;
     const workflowDefinition = this.workflowDefinition;
 
     if (workflowDefinition == null) {
-      return <HomeView imageUrl={visualPath}/>;
+      return;
     }
 
     if (workflowInstance == null) {

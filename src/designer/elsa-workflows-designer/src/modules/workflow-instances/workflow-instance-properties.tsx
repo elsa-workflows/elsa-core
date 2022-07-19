@@ -1,10 +1,10 @@
 import {Component, Event, EventEmitter, h, Method, Prop, State, Watch} from '@stencil/core';
-import {TabChangedArgs, WorkflowDefinition, WorkflowInstance} from '../../../models';
-import {InfoList} from "../../shared/forms/info-list";
-import {formatTimestamp, isNullOrWhitespace} from "../../../utils";
+import {TabChangedArgs, WorkflowDefinition, WorkflowInstance} from '../../models';
+import {InfoList} from "../../components/shared/forms/info-list";
+import {formatTimestamp, isNullOrWhitespace} from "../../utils";
 import {PropertiesTabModel, TabModel, WorkflowInstancePropertiesDisplayingArgs, WorkflowInstancePropertiesEventTypes, WorkflowInstancePropertiesViewerModel} from "./models";
 import {Container} from "typedi";
-import {EventBus} from "../../../services";
+import {EventBus} from "../../services";
 
 @Component({
   tag: 'elsa-workflow-instance-properties',

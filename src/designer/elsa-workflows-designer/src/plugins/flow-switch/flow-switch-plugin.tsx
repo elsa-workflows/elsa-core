@@ -20,6 +20,10 @@ export class FlowSwitchPlugin implements Plugin {
     portProviderRegistry.add(activityTypeName, () => Container.get(FlowSwitchPortProvider));
     iconRegistry.add(FlowSwitchPlugin.ActivityTypeName, settings => <FlowSwitchIcon size={settings?.size}/>);
   }
+
+  async initialize(): Promise<void> {
+
+  }
 }
 
 const FlowSwitchIcon: FunctionalComponent<ActivityIconSettings> = (settings) => (

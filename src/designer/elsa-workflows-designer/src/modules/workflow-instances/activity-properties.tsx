@@ -7,9 +7,9 @@ import {
   RenderActivityPropsContext,
   TabChangedArgs,
   TabDefinition
-} from '../../../models';
-import {InfoList} from "../../shared/forms/info-list";
-import descriptorsStore from "../../../data/descriptors-store";
+} from '../../models';
+import {InfoList} from "../../components/shared/forms/info-list";
+import descriptorsStore from "../../data/descriptors-store";
 
 @Component({
   tag: 'elsa-activity-properties',

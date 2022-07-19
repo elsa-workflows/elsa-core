@@ -1,11 +1,11 @@
 import {Component, h, Prop, State, Watch} from "@stencil/core";
-import {ActivityDescriptor, WorkflowDefinition, WorkflowExecutionLogRecord, WorkflowInstance} from "../../../models";
+import {ActivityDescriptor, WorkflowDefinition, WorkflowExecutionLogRecord, WorkflowInstance} from "../../models";
 import {Container} from "typedi";
-import {ActivityIconRegistry, ActivityNode, createActivityNodeMap, ElsaApiClientProvider, flatten, walkActivities} from "../../../services";
-import {durationToString, formatTime, getDuration, Hash, isNullOrWhitespace} from "../../../utils";
-import descriptorsStore from '../../../data/descriptors-store';
+import {ActivityIconRegistry, ActivityNode, createActivityNodeMap, ElsaApiClientProvider, flatten, walkActivities} from "../../services";
+import {durationToString, formatTime, getDuration, Hash, isNullOrWhitespace} from "../../utils";
+import descriptorsStore from '../../data/descriptors-store';
 import {ActivityExecutionEventBlock} from "./models";
-import {ActivityIconSize} from "../../icons/activities";
+import {ActivityIconSize} from "../../components/icons/activities";
 
 // TODO: Implement dynamic loading of records.
 const PAGE_SIZE: number = 10000;

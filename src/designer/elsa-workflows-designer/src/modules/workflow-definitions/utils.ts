@@ -1,4 +1,4 @@
-import { PagedList, WorkflowDefinitionSummary } from '../../../models';
+import { PagedList, WorkflowDefinitionSummary } from '../../models';
 
 export function updateSelectedWorkflowDefinitions(isChecked: boolean, workflowDefinitions: PagedList<WorkflowDefinitionSummary>, selectedWorkflowDefinitionIds: Array<string>) {
   const currentItems = workflowDefinitions.items.map(x => x.definitionId);

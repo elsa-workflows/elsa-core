@@ -1,4 +1,4 @@
-import {Activity, ActivityDescriptor, InputDescriptor, TabDefinition, WorkflowDefinition, WorkflowExecutionLogRecord} from "../../../models";
+import {Activity, ActivityDescriptor, InputDescriptor, TabDefinition, WorkflowDefinition, WorkflowExecutionLogRecord} from "../../models";
 import moment from "moment";
 
 export const WorkflowInstanceViewerEventTypes = {

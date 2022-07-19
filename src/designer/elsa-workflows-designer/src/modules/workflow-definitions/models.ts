@@ -1,4 +1,4 @@
-import {Activity, ActivityDescriptor, InputDescriptor, TabDefinition, WorkflowDefinition} from "../../../models";
+import {Activity, ActivityDescriptor, InputDescriptor, TabDefinition, WorkflowDefinition} from "../../models";
 
 export const WorkflowEditorEventTypes = {
   WorkflowDefinition: {

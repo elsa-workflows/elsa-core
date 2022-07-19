@@ -1,7 +1,8 @@
-import { Component, h } from '@stencil/core';
+import {Component, h} from '@stencil/core';
 import Container from 'typedi';
-import { NotificationEventTypes } from '../../../modules/notifications/event-types';
-import { EventBus } from '../../../services';
+import {NotificationEventTypes} from '../../../modules/notifications/event-types';
+import {EventBus} from '../../../services';
+import toolbarComponentStore from "../../../data/toolbar-component-store";
 
 @Component({
   tag: 'elsa-workflow-toolbar',
@@ -41,13 +42,14 @@ export class WorkflowToolbar {
                 </svg>
               </button>
 
-              {/* Publish */}
-              <div class="flex-shrink-0">
-                <elsa-workflow-publish-button />
-              </div>
+              {toolbarComponentStore.components.map(component => (
+                <div class="flex-shrink-0 mr-4">
+                  {component()}
+                </div>
+              ))}
 
               {/* Menu */}
-              <elsa-workflow-toolbar-menu />
+              <elsa-workflow-toolbar-menu/>
             </div>
           </div>
         </div>

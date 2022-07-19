@@ -2,9 +2,9 @@ import {Component, h, Prop, State, Watch} from "@stencil/core";
 import {Addon, Graph} from '@antv/x6';
 import groupBy from 'lodash/groupBy';
 import {Container} from 'typedi';
-import {ActivityDescriptor} from '../../../models';
-import {ActivityDriverRegistry} from '../../../services';
-import descriptorsStore from "../../../data/descriptors-store";
+import {ActivityDescriptor} from '../../models';
+import {ActivityDriverRegistry} from '../../services';
+import descriptorsStore from "../../data/descriptors-store";
 
 interface ActivityCategoryModel {
   category: string;

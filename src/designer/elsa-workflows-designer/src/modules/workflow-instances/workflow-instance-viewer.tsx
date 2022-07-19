@@ -1,6 +1,6 @@
 import {Component, h, Listen, Prop, State, Method, Watch, Element} from '@stencil/core';
 import {Container} from "typedi";
-import {PanelPosition, PanelStateChangedArgs} from '../panel/models';
+import {PanelPosition, PanelStateChangedArgs} from '../../components/panel/models';
 import {
   Activity,
   ActivitySelectedArgs,
@@ -8,10 +8,10 @@ import {
   GraphUpdatedArgs,
   WorkflowDefinition,
   WorkflowInstance
-} from '../../../models';
-import {PluginRegistry, ActivityNameFormatter, ActivityDriverRegistry, EventBus} from '../../../services';
-import {MonacoEditorSettings} from "../../../services/monaco-editor-settings";
-import {WorkflowEditorEventTypes} from "../workflow-definition-editor/models";
+} from '../../models';
+import {PluginRegistry, ActivityNameFormatter, ActivityDriverRegistry, EventBus} from '../../services';
+import {MonacoEditorSettings} from "../../services/monaco-editor-settings";
+import {WorkflowEditorEventTypes} from "../workflow-definitions/models";
 
 @Component({
   tag: 'elsa-workflow-instance-viewer',

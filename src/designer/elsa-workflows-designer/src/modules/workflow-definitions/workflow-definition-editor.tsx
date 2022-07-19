@@ -1,7 +1,7 @@
 import {Component, Element, Event, EventEmitter, h, Listen, Method, Prop, State, Watch} from '@stencil/core';
 import {debounce} from 'lodash';
 import {Container} from "typedi";
-import {PanelPosition, PanelStateChangedArgs} from '../panel/models';
+import {PanelPosition, PanelStateChangedArgs} from '../../components/panel/models';
 import {
   Activity,
   ActivityDeletedArgs,
@@ -11,10 +11,10 @@ import {
   ContainerSelectedArgs,
   GraphUpdatedArgs,
   WorkflowDefinition
-} from '../../../models';
+} from '../../models';
 import {ActivityIdUpdatedArgs, ActivityUpdatedArgs} from './activity-properties-editor';
-import {ActivityDriverRegistry, ActivityNameFormatter, EventBus, PluginRegistry, PortProviderRegistry} from '../../../services';
-import {MonacoEditorSettings} from "../../../services/monaco-editor-settings";
+import {ActivityDriverRegistry, ActivityNameFormatter, EventBus, PluginRegistry, PortProviderRegistry} from '../../services';
+import {MonacoEditorSettings} from "../../services/monaco-editor-settings";
 import {ActivityPropertyChangedEventArgs, WorkflowDefinitionPropsUpdatedArgs, WorkflowDefinitionUpdatedArgs, WorkflowEditorEventTypes} from "./models";
 
 @Component({
@@ -130,7 +130,7 @@ export class WorkflowDefinitionEditor {
   }
 
   @Method()
-  async newWorkflow() {
+  async newWorkflow(): Promise<WorkflowDefinition> {
 
     const newRoot = await this.canvas.newRoot();
 
@@ -146,6 +146,7 @@ export class WorkflowDefinitionEditor {
     }
 
     await this.updateWorkflowDefinition(workflowDefinition);
+    return workflowDefinition;
   }
 
   async componentWillLoad() {

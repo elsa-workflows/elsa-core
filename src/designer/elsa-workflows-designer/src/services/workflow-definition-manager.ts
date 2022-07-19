@@ -1,14 +1,14 @@
-import {Service} from "typedi";
+import {Container, Service} from "typedi";
 import {WorkflowDefinition} from "../models";
 import {RetractWorkflowDefinitionRequest, SaveWorkflowDefinitionRequest} from "./api-client/workflow-definitions-api";
 import {ElsaApiClientProvider} from "./api-client/api-client";
 
 @Service()
 export class WorkflowDefinitionManager {
-  private elsaApiClientProvider: ElsaApiClientProvider;
+  private readonly elsaApiClientProvider: ElsaApiClientProvider;
 
-  constructor(elsaApiClientProvider: ElsaApiClientProvider) {
-    this.elsaApiClientProvider = elsaApiClientProvider;
+  constructor() {
+    this.elsaApiClientProvider = Container.get(ElsaApiClientProvider);
   }
 
   public saveWorkflow = async (definition: WorkflowDefinition, publish: boolean): Promise<WorkflowDefinition> => {

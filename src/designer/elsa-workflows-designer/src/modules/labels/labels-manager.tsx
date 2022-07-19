@@ -14,7 +14,7 @@ import {
   WorkflowEditorReadyArgs,
   WorkflowPropertiesEditorDisplayingArgs,
   WorkflowPropertiesEditorEventTypes
-} from "../../components/designer/workflow-definition-editor/models";
+} from "../workflow-definitions/models";
 import {ToolbarDisplayingArgs, ToolbarEventTypes} from "../../components/toolbar/workflow-toolbar-menu/models";
 import {isNullOrWhitespace} from "../../utils";
 import {FormEntry} from "../../components/shared/forms/form-entry";

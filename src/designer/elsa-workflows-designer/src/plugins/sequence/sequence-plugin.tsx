@@ -14,6 +14,10 @@ export class SequencePlugin implements Plugin {
 
     iconRegistry.add(SequencePlugin.ActivityTypeName, settings => <SequenceIcon size={settings?.size}/>);
   }
+
+  async initialize(): Promise<void> {
+
+  }
 }
 
 const SequenceIcon: FunctionalComponent<ActivityIconSettings> = (settings) => (

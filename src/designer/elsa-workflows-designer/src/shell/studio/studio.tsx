@@ -1,17 +1,15 @@
-import {Component, Element, h, Listen, Prop, Watch} from '@stencil/core';
+import {Component, Element, h, Host, Listen, Prop, Watch} from '@stencil/core';
 import 'reflect-metadata';
 import {Container} from 'typedi';
-import {ElsaApiClientProvider, ElsaClient, EventBus, ServerSettings} from '../../../services';
-import {ActivityDescriptor, VersionOptions, WorkflowDefinition, WorkflowDefinitionSummary, WorkflowInstanceSummary} from '../../../models';
-import {PublishClickedArgs} from "../../toolbar/workflow-publish-button/workflow-publish-button";
-import {MonacoEditorSettings} from "../../../services/monaco-editor-settings";
-import {downloadFromBlob} from "../../../utils";
-import {ExportWorkflowRequest, ImportWorkflowRequest} from "../../../services/api-client/workflow-definitions-api";
-import {WorkflowDefinitionManager} from "../../../services/workflow-definition-manager";
-import {WorkflowDefinitionUpdatedArgs} from "../../designer/workflow-definition-editor/models";
-import {Flowchart} from "../../activities/flowchart/models";
-import descriptorsStore from '../../../data/descriptors-store';
-import { NotificationEventTypes } from '../../../modules/notifications/event-types';
+import {ElsaApiClientProvider, ElsaClient, EventBus, PluginRegistry, ServerSettings} from '../../services';
+import {ActivityDescriptor, VersionOptions, WorkflowDefinition, WorkflowDefinitionSummary, WorkflowInstanceSummary} from '../../models';
+import {MonacoEditorSettings} from "../../services/monaco-editor-settings";
+import {downloadFromBlob} from "../../utils";
+import {ExportWorkflowRequest, ImportWorkflowRequest} from "../../services/api-client/workflow-definitions-api";
+import {WorkflowDefinitionManager} from "../../services/workflow-definition-manager";
+import descriptorsStore from '../../data/descriptors-store';
+import studioComponentStore from "../../data/studio-component-store";
+import {NotificationEventTypes} from '../../modules/notifications/event-types';
 
 @Component({
   tag: 'elsa-studio'
@@ -19,6 +17,7 @@ import { NotificationEventTypes } from '../../../modules/notifications/event-typ
 export class Studio {
   private readonly eventBus: EventBus;
   private readonly workflowDefinitionManager: WorkflowDefinitionManager;
+  private readonly pluginRegistry: PluginRegistry;
   private activityDescriptors: Array<ActivityDescriptor>;
   private elsaClient: ElsaClient;
   private workflowManagerElement?: HTMLElsaWorkflowManagerElement;
@@ -26,6 +25,7 @@ export class Studio {
   constructor() {
     this.eventBus = Container.get(EventBus);
     this.workflowDefinitionManager = Container.get(WorkflowDefinitionManager);
+    this.pluginRegistry = Container.get(PluginRegistry);
   }
 
   @Element() private el: HTMLElsaStudioElement;
@@ -45,12 +45,6 @@ export class Studio {
 
     if (!!this.workflowManagerElement)
       this.workflowManagerElement.monacoLibPath = this.monacoLibPath;
-  }
-
-  @Listen('workflowUpdated')
-  private async handleWorkflowUpdated(e: CustomEvent<WorkflowDefinitionUpdatedArgs>) {
-    const workflowDefinition = e.detail.workflowDefinition;
-    await this.saveWorkflowDefinition(workflowDefinition, false);
   }
 
   @Listen('workflowDefinitionSelected')
@@ -84,20 +78,6 @@ export class Studio {
     workflowManagerElement.workflowInstance = workflowInstance;
   }
 
-  @Listen('publishClicked')
-  private async handlePublishClicked(e: CustomEvent<PublishClickedArgs>) {
-    const workflowManagerElement = this.workflowManagerElement;
-
-    if (!workflowManagerElement) return;
-
-    e.detail.begin();
-    const workflowDefinition = await workflowManagerElement.getWorkflowDefinition();
-    await this.eventBus.emit(NotificationEventTypes.Add, this, { id: workflowDefinition.definitionId, message: `Starting publishing ${workflowDefinition.name}` });
-    await this.saveWorkflowDefinition(workflowDefinition, true);
-    await this.eventBus.emit(NotificationEventTypes.Update, this, { id: workflowDefinition.definitionId, message: `${workflowDefinition.name} publish finished` });
-    e.detail.complete();
-  }
-
   @Listen('unPublishClicked')
   private async handleUnPublishClicked(e: CustomEvent) {
     const workflowManagerElement = this.workflowManagerElement;
@@ -105,9 +85,9 @@ export class Studio {
     if (!workflowManagerElement) return;
 
     const workflow = await workflowManagerElement.getWorkflowDefinition();
-    await this.eventBus.emit(NotificationEventTypes.Add, this, { id: workflow.definitionId, message: `Starting unpublishing ${workflow.name}` });
+    await this.eventBus.emit(NotificationEventTypes.Add, this, {id: workflow.definitionId, message: `Starting unpublishing ${workflow.name}`});
     await this.retractWorkflowDefinition(workflow);
-    await this.eventBus.emit(NotificationEventTypes.Update, this, { id: workflow.definitionId, message: `${workflow.name} unpublish finished` });
+    await this.eventBus.emit(NotificationEventTypes.Update, this, {id: workflow.definitionId, message: `${workflow.name} unpublish finished`});
   }
 
   @Listen('newClicked')
@@ -117,28 +97,7 @@ export class Studio {
     if (!workflowManagerElement)
       return;
 
-    const flowchart = {
-      typeName: 'Elsa.Flowchart',
-      activities: [],
-      connections: [],
-      id: 'flowchart1',
-      metadata: {},
-      applicationProperties: {},
-      variables: []
-    } as Flowchart;
-
-    this.workflowManagerElement.workflowInstance = null;
-
-    this.workflowManagerElement.workflowDefinition = {
-      root: flowchart,
-      id: '',
-      definitionId: '',
-      version: 1,
-      isLatest: true,
-      isPublished: false,
-      name: 'workflow1',
-      materializerName: 'Json'
-    };
+    await this.workflowManagerElement.newWorkflow();
   }
 
   @Listen('exportClicked')
@@ -205,14 +164,10 @@ export class Studio {
     if (!!this.workflowManagerElement) {
       this.workflowManagerElement.monacoLibPath = this.monacoLibPath;
     }
-  }
 
-  private saveWorkflowDefinition = async (definition: WorkflowDefinition, publish: boolean): Promise<WorkflowDefinition> => {
-    const updatedWorkflow = await this.workflowDefinitionManager.saveWorkflow(definition, publish);
-    await this.workflowManagerElement.updateWorkflowDefinition(updatedWorkflow);
-    return updatedWorkflow;
+    await this.pluginRegistry.initialize();
   }
-
+  
   private retractWorkflowDefinition = async (definition: WorkflowDefinition): Promise<WorkflowDefinition> => {
     const updatedWorkflow = await this.workflowDefinitionManager.retractWorkflow(definition);
     await this.workflowManagerElement.updateWorkflowDefinition(updatedWorkflow);
@@ -220,6 +175,9 @@ export class Studio {
   }
 
   render() {
-    return <slot/>;
+    return <Host>
+      {studioComponentStore.activeComponentFactory()}
+      {studioComponentStore.modalComponents.map(modal => modal())}
+    </Host>;
   }
 }

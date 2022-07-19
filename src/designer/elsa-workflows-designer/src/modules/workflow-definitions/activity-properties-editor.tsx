@@ -7,13 +7,13 @@ import {
   RenderActivityPropsContext,
   TabChangedArgs,
   TabDefinition, Variable
-} from '../../../models';
-import {InputDriverRegistry} from "../../../services";
+} from '../../models';
+import {InputDriverRegistry} from "../../services";
 import {Container} from "typedi";
-import {ActivityInputContext} from "../../../services/node-input-driver";
-import {FormEntry} from "../../shared/forms/form-entry";
-import {isNullOrWhitespace} from "../../../utils";
-import descriptorsStore from "../../../data/descriptors-store";
+import {ActivityInputContext} from "../../services/node-input-driver";
+import {FormEntry} from "../../components/shared/forms/form-entry";
+import {isNullOrWhitespace} from "../../utils";
+import descriptorsStore from "../../data/descriptors-store";
 
 export interface ActivityUpdatedArgs {
   activity: Activity;

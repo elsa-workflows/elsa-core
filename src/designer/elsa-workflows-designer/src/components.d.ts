@@ -7,7 +7,7 @@
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
 import { ActivityDefinitionSummary } from "./modules/custom-activities/models";
 import { ActionDefinition, ActionInvokedArgs, Activity, ActivityDeletedArgs, ActivitySelectedArgs, ChildActivitySelectedArgs, ContainerSelectedArgs, EditChildActivityArgs, GraphUpdatedArgs, IntellisenseContext, SelectListItem, TabChangedArgs, TabDefinition, Variable, WorkflowDefinition, WorkflowDefinitionSummary, WorkflowInstance, WorkflowInstanceSummary } from "./models";
-import { ActivityIdUpdatedArgs, ActivityUpdatedArgs, DeleteActivityRequestedArgs } from "./components/designer/workflow-definition-editor/activity-properties-editor";
+import { ActivityIdUpdatedArgs, ActivityUpdatedArgs, DeleteActivityRequestedArgs } from "./modules/workflow-definitions/activity-properties-editor";
 import { Button } from "./components/shared/button-group/models";
 import { ContainerActivityComponent } from "./components/activities/container-activity-component";
 import { AddActivityArgs, UpdateActivityArgs } from "./components/designer/canvas/canvas";
@@ -22,10 +22,10 @@ import { ExpressionChangedArs } from "./components/designer/input-control-switch
 import { CreateLabelEventArgs, DeleteLabelEventArgs, Label, UpdateLabelEventArgs } from "./modules/labels/models";
 import { MonacoLib, MonacoValueChangedArgs } from "./components/shared/monaco-editor/monaco-editor";
 import { PagerData } from "./components/shared/pager/pager";
-import { PanelPosition, PanelStateChangedArgs } from "./components/designer/panel/models";
-import { WorkflowDefinitionPropsUpdatedArgs, WorkflowDefinitionUpdatedArgs } from "./components/designer/workflow-definition-editor/models";
+import { PanelPosition, PanelStateChangedArgs } from "./components/panel/models";
+import { WorkflowDefinitionPropsUpdatedArgs, WorkflowDefinitionUpdatedArgs } from "./modules/workflow-definitions/models";
 import { ActivityDriverRegistry } from "./services";
-import { PublishClickedArgs } from "./components/toolbar/workflow-publish-button/workflow-publish-button";
+import { PublishClickedArgs } from "./modules/workflow-definitions/workflow-publish-button";
 export namespace Components {
     interface ElsaActivityDefinitionBrowser {
         "hide": () => Promise<void>;
@@ -113,6 +113,8 @@ export namespace Components {
         "subTitle": string;
         "tabs": Array<TabDefinition>;
     }
+    interface ElsaHomePage {
+    }
     interface ElsaInputControlSwitch {
         "codeEditorHeight": string;
         "codeEditorSingleLineMode": boolean;
@@ -173,6 +175,8 @@ export namespace Components {
     interface ElsaMultiTextInput {
         "inputContext": ActivityInputContext;
     }
+    interface ElsaNewButton {
+    }
     interface ElsaNotificationsManager {
     }
     interface ElsaPager {
@@ -226,7 +230,7 @@ export namespace Components {
         "getWorkflowDefinition": () => Promise<WorkflowDefinition>;
         "importWorkflow": (workflowDefinition: WorkflowDefinition) => Promise<void>;
         "monacoLibPath": string;
-        "newWorkflow": () => Promise<void>;
+        "newWorkflow": () => Promise<WorkflowDefinition>;
         "registerActivityDrivers": (register: (registry: ActivityDriverRegistry) => void) => Promise<void>;
         "updateWorkflowDefinition": (workflowDefinition: WorkflowDefinition) => Promise<void>;
         "workflowDefinition"?: WorkflowDefinition;
@@ -272,7 +276,7 @@ export namespace Components {
     interface ElsaWorkflowManager {
         "getWorkflowDefinition": () => Promise<WorkflowDefinition>;
         "monacoLibPath": string;
-        "newWorkflow": () => Promise<any>;
+        "newWorkflow": () => Promise<void>;
         /**
           * Updates the workflow definition without importing it into the designer.
          */
@@ -389,6 +393,12 @@ declare global {
         prototype: HTMLElsaFormPanelElement;
         new (): HTMLElsaFormPanelElement;
     };
+    interface HTMLElsaHomePageElement extends Components.ElsaHomePage, HTMLStencilElement {
+    }
+    var HTMLElsaHomePageElement: {
+        prototype: HTMLElsaHomePageElement;
+        new (): HTMLElsaHomePageElement;
+    };
     interface HTMLElsaInputControlSwitchElement extends Components.ElsaInputControlSwitch, HTMLStencilElement {
     }
     var HTMLElsaInputControlSwitchElement: {
@@ -454,6 +464,12 @@ declare global {
     var HTMLElsaMultiTextInputElement: {
         prototype: HTMLElsaMultiTextInputElement;
         new (): HTMLElsaMultiTextInputElement;
+    };
+    interface HTMLElsaNewButtonElement extends Components.ElsaNewButton, HTMLStencilElement {
+    }
+    var HTMLElsaNewButtonElement: {
+        prototype: HTMLElsaNewButtonElement;
+        new (): HTMLElsaNewButtonElement;
     };
     interface HTMLElsaNotificationsManagerElement extends Components.ElsaNotificationsManager, HTMLStencilElement {
     }
@@ -628,6 +644,7 @@ declare global {
         "elsa-flow-switch-editor": HTMLElsaFlowSwitchEditorElement;
         "elsa-flowchart": HTMLElsaFlowchartElement;
         "elsa-form-panel": HTMLElsaFormPanelElement;
+        "elsa-home-page": HTMLElsaHomePageElement;
         "elsa-input-control-switch": HTMLElsaInputControlSwitchElement;
         "elsa-input-tags": HTMLElsaInputTagsElement;
         "elsa-input-tags-dropdown": HTMLElsaInputTagsDropdownElement;
@@ -639,6 +656,7 @@ declare global {
         "elsa-monaco-editor": HTMLElsaMonacoEditorElement;
         "elsa-multi-line-input": HTMLElsaMultiLineInputElement;
         "elsa-multi-text-input": HTMLElsaMultiTextInputElement;
+        "elsa-new-button": HTMLElsaNewButtonElement;
         "elsa-notifications-manager": HTMLElsaNotificationsManagerElement;
         "elsa-pager": HTMLElsaPagerElement;
         "elsa-panel": HTMLElsaPanelElement;
@@ -742,6 +760,8 @@ declare namespace LocalJSX {
         "subTitle"?: string;
         "tabs"?: Array<TabDefinition>;
     }
+    interface ElsaHomePage {
+    }
     interface ElsaInputControlSwitch {
         "codeEditorHeight"?: string;
         "codeEditorSingleLineMode"?: boolean;
@@ -808,6 +828,9 @@ declare namespace LocalJSX {
     }
     interface ElsaMultiTextInput {
         "inputContext"?: ActivityInputContext;
+    }
+    interface ElsaNewButton {
+        "onNewClicked"?: (event: CustomEvent<any>) => void;
     }
     interface ElsaNotificationsManager {
     }
@@ -930,6 +953,7 @@ declare namespace LocalJSX {
         "elsa-flow-switch-editor": ElsaFlowSwitchEditor;
         "elsa-flowchart": ElsaFlowchart;
         "elsa-form-panel": ElsaFormPanel;
+        "elsa-home-page": ElsaHomePage;
         "elsa-input-control-switch": ElsaInputControlSwitch;
         "elsa-input-tags": ElsaInputTags;
         "elsa-input-tags-dropdown": ElsaInputTagsDropdown;
@@ -941,6 +965,7 @@ declare namespace LocalJSX {
         "elsa-monaco-editor": ElsaMonacoEditor;
         "elsa-multi-line-input": ElsaMultiLineInput;
         "elsa-multi-text-input": ElsaMultiTextInput;
+        "elsa-new-button": ElsaNewButton;
         "elsa-notifications-manager": ElsaNotificationsManager;
         "elsa-pager": ElsaPager;
         "elsa-panel": ElsaPanel;
@@ -989,6 +1014,7 @@ declare module "@stencil/core" {
             "elsa-flow-switch-editor": LocalJSX.ElsaFlowSwitchEditor & JSXBase.HTMLAttributes<HTMLElsaFlowSwitchEditorElement>;
             "elsa-flowchart": LocalJSX.ElsaFlowchart & JSXBase.HTMLAttributes<HTMLElsaFlowchartElement>;
             "elsa-form-panel": LocalJSX.ElsaFormPanel & JSXBase.HTMLAttributes<HTMLElsaFormPanelElement>;
+            "elsa-home-page": LocalJSX.ElsaHomePage & JSXBase.HTMLAttributes<HTMLElsaHomePageElement>;
             "elsa-input-control-switch": LocalJSX.ElsaInputControlSwitch & JSXBase.HTMLAttributes<HTMLElsaInputControlSwitchElement>;
             "elsa-input-tags": LocalJSX.ElsaInputTags & JSXBase.HTMLAttributes<HTMLElsaInputTagsElement>;
             "elsa-input-tags-dropdown": LocalJSX.ElsaInputTagsDropdown & JSXBase.HTMLAttributes<HTMLElsaInputTagsDropdownElement>;
@@ -1000,6 +1026,7 @@ declare module "@stencil/core" {
             "elsa-monaco-editor": LocalJSX.ElsaMonacoEditor & JSXBase.HTMLAttributes<HTMLElsaMonacoEditorElement>;
             "elsa-multi-line-input": LocalJSX.ElsaMultiLineInput & JSXBase.HTMLAttributes<HTMLElsaMultiLineInputElement>;
             "elsa-multi-text-input": LocalJSX.ElsaMultiTextInput & JSXBase.HTMLAttributes<HTMLElsaMultiTextInputElement>;
+            "elsa-new-button": LocalJSX.ElsaNewButton & JSXBase.HTMLAttributes<HTMLElsaNewButtonElement>;
             "elsa-notifications-manager": LocalJSX.ElsaNotificationsManager & JSXBase.HTMLAttributes<HTMLElsaNotificationsManagerElement>;
             "elsa-pager": LocalJSX.ElsaPager & JSXBase.HTMLAttributes<HTMLElsaPagerElement>;
             "elsa-panel": LocalJSX.ElsaPanel & JSXBase.HTMLAttributes<HTMLElsaPanelElement>;

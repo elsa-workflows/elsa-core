@@ -1,7 +1,7 @@
 import { FunctionalComponent, h } from '@stencil/core';
-import { WorkflowDefinitionsOrderBy } from '../../../services/api-client/workflow-definitions-api';
-import { BulkActionsIcon, OrderByIcon, PageSizeIcon } from '../../icons/tooling';
-import { DropdownButtonItem, DropdownButtonOrigin } from '../../shared/dropdown-button/models';
+import { WorkflowDefinitionsOrderBy } from '../../services/api-client/workflow-definitions-api';
+import { BulkActionsIcon, OrderByIcon, PageSizeIcon } from '../../components/icons/tooling';
+import { DropdownButtonItem, DropdownButtonOrigin } from '../../components/shared/dropdown-button/models';
 
 export interface PageSizeFilterProps {
   selectedPageSize: number;
