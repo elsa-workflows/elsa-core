@@ -5,24 +5,26 @@ import {Edge, Graph, Model, Node, NodeView, Point} from '@antv/x6';
 import {v4 as uuid} from 'uuid';
 import './shapes';
 import './ports';
-import {ActivityNode, ActivityNode as ActivityNodeShape} from './shapes';
+import {ActivityNodeShape} from './shapes';
 import {ContainerActivityComponent} from '../container-activity-component';
 import {AddActivityArgs, UpdateActivityArgs} from '../../designer/canvas/canvas';
-import {Activity, ActivityDeletedArgs, ActivityDescriptor, ActivitySelectedArgs, Container as ContainerActivity, ContainerSelectedArgs, EditChildActivityArgs, GraphUpdatedArgs} from '../../../models';
+import {Activity, ActivityDeletedArgs, ActivityDescriptor, ActivitySelectedArgs, Container as ContainerActivity, ContainerSelectedArgs, EditChildActivityArgs, GraphUpdatedArgs, WorkflowDefinition} from '../../../models';
 import {createGraph} from './graph-factory';
 import {Connection, Flowchart, FlowchartModel, FlowchartNavigationItem} from './models';
 import {NodeFactory} from "./node-factory";
 import {Container} from "typedi";
-import {createActivityMap, EventBus, flatten, flattenList, PortProviderRegistry, walkActivities} from "../../../services";
+import {ActivityNode, createActivityLookup, EventBus, flatten, flattenList, PortProviderRegistry, walkActivities} from "../../../services";
 import {ConnectionCreatedEventArgs, FlowchartEvents} from "./events";
 import {ContextMenuAnchorPoint, MenuItemGroup} from "../../shared/context-menu/models";
 import descriptorsStore from "../../../data/descriptors-store";
-import {WorkflowNavigationItem} from "../../designer/workflow-navigator/models";
 import {Hash} from "../../../utils";
 import PositionEventArgs = NodeView.PositionEventArgs;
 import FromJSONData = Model.FromJSONData;
 import PointLike = Point.PointLike;
 import FlowchartTunnel, {FlowchartState} from "./state";
+import {generateUniqueActivityName} from "../../../utils/generate-activity-name";
+
+const FlowchartTypeName = 'Elsa.Flowchart';
 
 @Component({
   tag: 'elsa-flowchart',
@@ -35,7 +37,6 @@ export class FlowchartComponent implements ContainerActivityComponent {
   private silent: boolean = false; // Whether to emit events or not.
   private activityContextMenu: HTMLElsaContextMenuElement;
   private activity: Flowchart;
-  private nodeMap: Hash<Activity> = {};
 
   constructor() {
     this.eventBus = Container.get(EventBus);
@@ -55,7 +56,29 @@ export class FlowchartComponent implements ContainerActivityComponent {
   @Event() containerSelected: EventEmitter<ContainerSelectedArgs>;
   @Event() graphUpdated: EventEmitter<GraphUpdatedArgs>;
 
+  @State() private activityLookup: Hash<Activity> = {};
+  @State() private activityNodes: Array<ActivityNode> = [];
   @State() private currentPath: Array<FlowchartNavigationItem> = [];
+
+  @Method()
+  async newRoot(): Promise<Activity> {
+
+    const flowchartDescriptor = this.getFlowchartDescriptor();
+    const newName = await this.generateUniqueActivityName(flowchartDescriptor);
+
+    const flowchart = {
+      typeName: flowchartDescriptor.activityType,
+      activities: [],
+      connections: [],
+      id: newName,
+      metadata: {},
+      applicationProperties: {},
+      variables: []
+    } as Flowchart;
+
+    await this.importInternal(flowchart);
+    return flowchart;
+  }
 
   @Method()
   async getGraph(): Promise<Graph> {
@@ -92,7 +115,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
   async addActivity(args: AddActivityArgs): Promise<Activity> {
     const graph = this.graph;
     const {descriptor, x, y} = args;
-    let id = args.id ?? uuid();
+    let id = args.id ?? await this.generateUniqueActivityName(descriptor);
     const point: PointLike = graph.pageToLocal(x, y);
     const sx = point.x;
     const sy = point.y;
@@ -113,6 +136,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
 
     const node = this.nodeFactory.createNode(descriptor, activity, sx, sy);
     graph.addNode(node, {merge: true});
+    await this.updateModel();
     return activity;
   }
 
@@ -120,7 +144,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
   async updateActivity(args: UpdateActivityArgs) {
     const nodeId = args.id;
     const activity = args.activity;
-    const node = this.graph.getNodes().find(x => x.id == nodeId) as ActivityNode;
+    const node = this.graph.getNodes().find(x => x.id == nodeId) as ActivityNodeShape;
 
     if (!node)
       return;
@@ -148,7 +172,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
 
   @Method()
   async getCurrentLevel(): Promise<Activity> {
-    return this.getCurrentLevelInternal();
+    return this.getCurrentContainerInternal();
   }
 
   async componentDidLoad() {
@@ -159,13 +183,13 @@ export class FlowchartComponent implements ContainerActivityComponent {
   private async editChildActivity(e: CustomEvent<EditChildActivityArgs>) {
     const parentActivityId = e.detail.parentActivityId;
     const currentActivityId = this.currentPath[this.currentPath.length - 1].activityId;
-    const currentActivity = this.nodeMap[currentActivityId];
-    const parentActivity = this.nodeMap[parentActivityId] as Flowchart;
+    const currentActivity = this.activityLookup[currentActivityId];
+    const parentActivity = this.activityLookup[parentActivityId] as Flowchart;
     const parentActivityDescriptor = descriptorsStore.activityDescriptors.find(x => x.activityType == parentActivity.typeName);
     const indexInParent = currentActivity.activities?.findIndex(x => x == parentActivity);
     const portName = e.detail.port.name;
 
-    const item: WorkflowNavigationItem = {
+    const item: FlowchartNavigationItem = {
       activityId: parentActivityId,
       portName: portName,
       index: indexInParent
@@ -175,7 +199,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
     let activityProperty = portProvider.resolvePort(portName, {activity: parentActivity, activityDescriptor: parentActivityDescriptor}) as Flowchart;
 
     if (!activityProperty) {
-      activityProperty = this.createContainer();
+      activityProperty = await this.createContainer();
       portProvider.assignPort(portName, activityProperty, {activity: parentActivity, activityDescriptor: parentActivityDescriptor});
     }
 
@@ -190,10 +214,15 @@ export class FlowchartComponent implements ContainerActivityComponent {
     this.currentPath = [...this.currentPath, item];
   }
 
-  private createContainer = (): Flowchart => {
+  private getFlowchartDescriptor = () => this.getActivityDescriptor(FlowchartTypeName);
+
+  private createContainer = async (): Promise<Flowchart> => {
+    const descriptor = this.getFlowchartDescriptor();
+    const activityId = await this.generateUniqueActivityName(descriptor);
+
     return {
-      typeName: 'Elsa.Flowchart',
-      id: null,
+      typeName: descriptor.activityType,
+      id: activityId,
       start: null,
       activities: [],
       connections: [],
@@ -248,13 +277,12 @@ export class FlowchartComponent implements ContainerActivityComponent {
     await this.updateLayout();
   }
 
-  private updateModel = () => {
-    debugger;
-    const model = this.exportModel();
-    let currentLevel = this.getCurrentLevelInternal();
+  private updateModel = async () => {
+    const model = this.getFlowchartModel();
+    let currentLevel = this.getCurrentContainerInternal();
 
     if (!currentLevel) {
-      currentLevel = this.createContainer();
+      currentLevel = await this.createContainer();
     }
 
     currentLevel.activities = model.activities;
@@ -264,77 +292,38 @@ export class FlowchartComponent implements ContainerActivityComponent {
     const currentPath = this.currentPath;
     const currentNavigationItem = currentPath[currentPath.length - 1];
     const currentPortName = currentNavigationItem?.portName;
-    const currentContainer = this.nodeMap[currentNavigationItem.activityId] as Activity;
-    const currentContainerDescriptor = descriptorsStore.activityDescriptors.find(x => x.activityType == currentContainer.typeName);
+    const currentScope = this.activityLookup[currentNavigationItem.activityId] as Activity;
+    const currentScopeDescriptor = this.getActivityDescriptor(currentScope.typeName);
 
     if (!!currentPortName) {
-      // if (currentActivityDescriptor.isContainer) {
-      //   const parentNavigationItem = currentPath[currentPath.length - 2];
-      //   const parentActivityId = parentNavigationItem.activityId;
-      //   const parentActivity = this.nodeMap[parentActivityId] as ContainerActivity;
-      //   const parentActivityDescriptor = descriptorsStore.activityDescriptors.find(x => x.activityType == parentActivity.typeName);
-      //   const portProvider = this.portProviderRegistry.get(parentActivity.typeName);
-      //   const parentActivitiesProp = portProvider.resolvePort(currentPortName, {activity: parentActivity, activityDescriptor: parentActivityDescriptor}) as Array<Activity>;
-      //   parentActivitiesProp[currentNavigationItem.index] = currentLevel;
-      // } else {
-      const portProvider = this.portProviderRegistry.get(currentContainer.typeName);
-      portProvider.assignPort(currentPortName, currentLevel, {activity: currentContainer, activityDescriptor: currentContainerDescriptor});
-      //}
+      const portProvider = this.portProviderRegistry.get(currentScope.typeName);
+      portProvider.assignPort(currentPortName, currentLevel, {activity: currentScope, activityDescriptor: currentScopeDescriptor});
     } else {
       this.activity = currentLevel;
     }
 
-    const activityNodes = flatten(walkActivities(this.activity));
-    this.nodeMap = createActivityMap(activityNodes);
-    //this.currentPath = [{activityId: this.activity.id, portName: null, index: 0}];
+    this.updateLookups();
   }
 
-  private exportInternal = (): Activity => {
-    const model = this.exportModel();
-    const currentLevel = this.getCurrentLevelInternal();
-    const currentPath = this.currentPath;
-    const currentNavigationItem = currentPath[currentPath.length - 1];
-    const currentPortName = currentNavigationItem?.portName;
-    const currentActivityDescriptor = descriptorsStore.activityDescriptors.find(x => x.activityType == this.activity.typeName);
-
-    if (!!currentPortName) {
-      if (currentActivityDescriptor.isContainer) {
-        const parentNavigationItem = currentPath[currentPath.length - 2];
-        const parentActivityId = parentNavigationItem.activityId;
-        const parentActivity = this.nodeMap[parentActivityId] as ContainerActivity;
-        const parentActivityDescriptor = descriptorsStore.activityDescriptors.find(x => x.activityType == parentActivity.typeName);
-        const portProvider = this.portProviderRegistry.get(parentActivity.typeName);
-        const parentActivitiesProp = portProvider.resolvePort(currentPortName, {activity: parentActivity, activityDescriptor: parentActivityDescriptor}) as Array<Activity>;
-        parentActivitiesProp[currentNavigationItem.index] = currentLevel;
-      } else {
-        const portProvider = this.portProviderRegistry.get(currentLevel.typeName);
-        portProvider.assignPort(currentPortName, currentLevel, {activity: currentLevel, activityDescriptor: currentActivityDescriptor});
-      }
-    } else {
-      this.activity = currentLevel;
-    }
-
-    const activityNodes = flatten(walkActivities(this.activity));
-    this.nodeMap = createActivityMap(activityNodes);
-    this.currentPath = [{activityId: this.activity.id, portName: null, index: 0}];
-
+  private exportInternal = async (): Promise<Activity> => {
+    await this.updateModel();
     return this.activity;
   }
 
   private importInternal = async (root: Activity) => {
-    debugger;
     const flowchart = root as Flowchart;
     const activityNodes = flatten(walkActivities(flowchart));
 
     this.activity = flowchart;
-    this.nodeMap = createActivityMap(activityNodes);
+    this.activityLookup = createActivityLookup(activityNodes);
     this.currentPath = [{activityId: flowchart.id, portName: null, index: 0}];
 
-    this.setupGraph(flowchart);
+    await this.setupGraph(flowchart);
   };
 
-  private setupGraph = (flowchart: Flowchart) => {
-    const descriptors = descriptorsStore.activityDescriptors;
+  private getActivityDescriptor = (typeName: string): ActivityDescriptor => descriptorsStore.activityDescriptors.find(x => x.activityType == typeName)
+
+  private setupGraph = async (flowchart: Flowchart) => {
     const activities = flowchart.activities;
     const connections = flowchart.connections;
     const edges: Array<Edge.Metadata> = [];
@@ -343,7 +332,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
     const nodes: Array<Node.Metadata> = activities.map(activity => {
       const position = activity.metadata.designer?.position || {x: 100, y: 100};
       const {x, y} = position;
-      const descriptor = descriptors.find(x => x.activityType == activity.typeName)
+      const descriptor = this.getActivityDescriptor(activity.typeName);
       return this.nodeFactory.createNode(descriptor, activity, x, y);
     });
 
@@ -355,13 +344,14 @@ export class FlowchartComponent implements ContainerActivityComponent {
 
     const model: FromJSONData = {nodes, edges};
 
+    this.disableEvents();
     // Freeze then unfreeze prevents an error from occurring when importing JSON a second time (e.g. after loading a new workflow.
     this.graph.freeze();
     this.graph.fromJSON(model, {silent: false});
     this.graph.unfreeze();
   };
 
-  private exportModel = (): FlowchartModel => {
+  private getFlowchartModel = (): FlowchartModel => {
     const graph = this.graph;
     const graphModel = graph.toJSON();
     const activities = graphModel.cells.filter(x => x.shape == 'activity').map(x => x.data as Activity);
@@ -413,14 +403,22 @@ export class FlowchartComponent implements ContainerActivityComponent {
     }
   };
 
-  private getCurrentLevelInternal(): Flowchart {
-    debugger;
+  private getCurrentScope(): Activity {
     const currentItem = this.currentPath.length > 0 ? this.currentPath[this.currentPath.length - 1] : null;
 
     if (!currentItem)
       return this.activity;
 
-    const activity = this.nodeMap[currentItem.activityId] as Flowchart;
+    return this.activityLookup[currentItem.activityId];
+  }
+
+  private getCurrentContainerInternal(): Flowchart {
+    const currentItem = this.currentPath.length > 0 ? this.currentPath[this.currentPath.length - 1] : null;
+
+    if (!currentItem)
+      return this.activity;
+
+    const activity = this.activityLookup[currentItem.activityId] as Flowchart;
     const activityDescriptor = descriptorsStore.activityDescriptors.find(x => x.activityType == activity.typeName);
 
     if (activityDescriptor.isContainer)
@@ -430,12 +428,13 @@ export class FlowchartComponent implements ContainerActivityComponent {
     return portProvider.resolvePort(currentItem.portName, {activity, activityDescriptor}) as Flowchart;
   }
 
+  private updateLookups = () => {
+    this.activityNodes = flatten(walkActivities(this.activity));
+    this.activityLookup = createActivityLookup(this.activityNodes);
+  }
+
   private generateUniqueActivityName = async (activityDescriptor: ActivityDescriptor): Promise<string> => {
-    const workflowDefinition = this.workflowDefinitionState;
-    const root = workflowDefinition.root;
-    const graph = walkActivities(root);
-    const activityNodes = flattenList(graph.children);
-    return await generateUniqueActivityName(activityNodes, activityDescriptor);
+    return await generateUniqueActivityName(this.activityNodes, activityDescriptor);
   };
 
   @Watch('interactiveMode')
@@ -452,8 +451,6 @@ export class FlowchartComponent implements ContainerActivityComponent {
   }
 
   private onGraphClick = async (e: PositionEventArgs<JQuery.ClickEvent>) => {
-    const activityId = this.activity?.id;
-
     const args: ContainerSelectedArgs = {
       activity: this.activity,
     };
@@ -558,10 +555,12 @@ export class FlowchartComponent implements ContainerActivityComponent {
 
   private onGraphChanged = async () => {
     if (this.silent) {
+      await this.enableEvents(false);
       return;
     }
-    this.updateModel();
-    //this.graphUpdated.emit({exportGraph: this.exportInternal});
+
+    await this.updateModel();
+    this.graphUpdated.emit();
   }
 
   private onNodeRemoved = (e: any) => {
@@ -614,10 +613,10 @@ export class FlowchartComponent implements ContainerActivityComponent {
     }
   };
 
-  private onNavigateHierarchy = async (e: CustomEvent<WorkflowNavigationItem>) => {
+  private onNavigateHierarchy = async (e: CustomEvent<FlowchartNavigationItem>) => {
     const item = e.detail;
     const activityId = item.activityId;
-    let activity = this.nodeMap[activityId];
+    let activity = this.activityLookup[activityId];
     const activityDescriptor = descriptorsStore.activityDescriptors.find(x => x.activityType == activity.typeName);
     const path = this.currentPath;
     const index = path.indexOf(item);
@@ -639,14 +638,14 @@ export class FlowchartComponent implements ContainerActivityComponent {
 
     const state: FlowchartState = {
       flowchart: activity,
-      nodeMap: this.nodeMap
+      nodeMap: this.activityLookup
     }
 
     return (
       <FlowchartTunnel.Provider state={state}>
         <div class="relative">
           <div class="absolute left-0 top-3 z-10">
-            <elsa-workflow-navigator-2 items={this.currentPath} flowchart={activity} onNavigate={this.onNavigateHierarchy}/>
+            <elsa-workflow-navigator items={this.currentPath} flowchart={activity} onNavigate={this.onNavigateHierarchy}/>
           </div>
           <div
             class="absolute left-0 top-0 right-0 bottom-0"

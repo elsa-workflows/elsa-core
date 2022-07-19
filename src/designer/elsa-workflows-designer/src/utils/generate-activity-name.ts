@@ -11,7 +11,7 @@ export async function generateUniqueActivityName(activityNodes: Array<ActivityNo
   let newName = activityNameFormatter.format({activityDescriptor, count: counter, activityNodes});
 
   while (!!activityNodes.find(x => x.activity.id == newName))
-    newName = this.activityNameFormatter.format({activityDescriptor, count: ++counter, activityNodes});
+    newName = activityNameFormatter.format({activityDescriptor, count: ++counter, activityNodes});
 
   return newName;
 }

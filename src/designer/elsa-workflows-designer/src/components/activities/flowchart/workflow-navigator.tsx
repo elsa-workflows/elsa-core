@@ -6,7 +6,7 @@ import {Port} from "../../../models";
 import descriptorsStore from "../../../data/descriptors-store";
 
 @Component({
-  tag: 'elsa-workflow-navigator-2',
+  tag: 'elsa-workflow-navigator',
   shadow: false
 })
 export class WorkflowNavigator {

@@ -22,9 +22,9 @@ export class ActivityDefinitionBrowser {
   private modalDialog: HTMLElsaModalDialogElement;
   private selectAllCheckbox: HTMLInputElement;
 
-  @Event() public ActivityDefinitionSelected: EventEmitter<ActivityDefinitionSummary>;
-  @Event() public NewActivityDefinitionSelected: EventEmitter;
-  @State() private ActivityDefinitions: PagedList<ActivityDefinitionSummary> = { items: [], totalCount: 0 };
+  @Event() public activityDefinitionSelected: EventEmitter<ActivityDefinitionSummary>;
+  @Event() public newActivityDefinitionSelected: EventEmitter;
+  @State() private activityDefinitions: PagedList<ActivityDefinitionSummary> = { items: [], totalCount: 0 };
   @State() private publishedActivityDefinitions: PagedList<ActivityDefinitionSummary> = { items: [], totalCount: 0 };
   @State() private selectedActivityDefinitionIds: Array<string> = [];
   @State() private currentPage: number = 0;
@@ -49,7 +49,7 @@ export class ActivityDefinitionBrowser {
   }
 
   private onNewDefinitionClick = async () => {
-    this.NewActivityDefinitionSelected.emit();
+    this.newActivityDefinitionSelected.emit();
     await this.hide();
   };
 
@@ -90,7 +90,7 @@ export class ActivityDefinitionBrowser {
 
   private onActivityDefinitionClick = async (e: MouseEvent, ActivityDefinition: ActivityDefinitionSummary) => {
     e.preventDefault();
-    this.ActivityDefinitionSelected.emit(ActivityDefinition);
+    this.activityDefinitionSelected.emit(ActivityDefinition);
     await this.hide();
   };
 
@@ -110,11 +110,11 @@ export class ActivityDefinitionBrowser {
       definitionIds: unpublishedActivityDefinitionIds,
       versionOptions: publishedVersionOptions,
     });
-    this.ActivityDefinitions = latestActivityDefinitions;
+    this.activityDefinitions = latestActivityDefinitions;
   }
 
   render() {
-    const ActivityDefinitions = this.ActivityDefinitions;
+    const ActivityDefinitions = this.activityDefinitions;
     const publishedActivityDefinitions = this.publishedActivityDefinitions.items;
     const totalCount = ActivityDefinitions.totalCount;
     const closeAction = DefaultActions.Close();
@@ -259,15 +259,15 @@ export class ActivityDefinitionBrowser {
   };
 
   private getSelectAllState = () => {
-    const { items } = this.ActivityDefinitions;
+    const { items } = this.activityDefinitions;
     const selectedWorkflowInstanceIds = this.selectedActivityDefinitionIds;
     return items.findIndex(item => !selectedWorkflowInstanceIds.includes(item.definitionId)) < 0;
   };
 
   private setSelectAllIndeterminateState = () => {
     if (this.selectAllCheckbox) {
-      const selectedItems = this.ActivityDefinitions.items.filter(item => this.selectedActivityDefinitionIds.includes(item.definitionId));
-      this.selectAllCheckbox.indeterminate = selectedItems.length != 0 && selectedItems.length != this.ActivityDefinitions.items.length;
+      const selectedItems = this.activityDefinitions.items.filter(item => this.selectedActivityDefinitionIds.includes(item.definitionId));
+      this.selectAllCheckbox.indeterminate = selectedItems.length != 0 && selectedItems.length != this.activityDefinitions.items.length;
     }
   };
 
@@ -285,6 +285,6 @@ export class ActivityDefinitionBrowser {
     const checkBox = e.target as HTMLInputElement;
     const isChecked = checkBox.checked;
     this.selectAllChecked = isChecked;
-    this.selectedActivityDefinitionIds = updateSelectedActivityDefinitions(isChecked, this.ActivityDefinitions, this.selectedActivityDefinitionIds);
+    this.selectedActivityDefinitionIds = updateSelectedActivityDefinitions(isChecked, this.activityDefinitions, this.selectedActivityDefinitionIds);
   }
 }

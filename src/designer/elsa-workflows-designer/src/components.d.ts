@@ -14,9 +14,10 @@ import { AddActivityArgs, UpdateActivityArgs } from "./components/designer/canva
 import { ActivityInputContext } from "./services/node-input-driver";
 import { ContextMenuAnchorPoint, MenuItem, MenuItemGroup } from "./components/shared/context-menu/models";
 import { DropdownButtonItem, DropdownButtonOrigin } from "./components/shared/dropdown-button/models";
+import { Flowchart, FlowchartNavigationItem } from "./components/activities/flowchart/models";
 import { Graph } from "@antv/x6";
 import { AddActivityArgs as AddActivityArgs1, UpdateActivityArgs as UpdateActivityArgs1 } from "./components/designer/canvas/canvas";
-import { ActivityNode } from "./components/activities/flowchart/shapes";
+import { ActivityNodeShape } from "./components/activities/flowchart/shapes";
 import { ExpressionChangedArs } from "./components/designer/input-control-switch/input-control-switch";
 import { CreateLabelEventArgs, DeleteLabelEventArgs, Label, UpdateLabelEventArgs } from "./modules/labels/models";
 import { MonacoLib, MonacoValueChangedArgs } from "./components/shared/monaco-editor/monaco-editor";
@@ -24,8 +25,6 @@ import { PagerData } from "./components/shared/pager/pager";
 import { PanelPosition, PanelStateChangedArgs } from "./components/designer/panel/models";
 import { WorkflowDefinitionPropsUpdatedArgs, WorkflowDefinitionUpdatedArgs } from "./components/designer/workflow-definition-editor/models";
 import { ActivityDriverRegistry } from "./services";
-import { Flowchart, FlowchartNavigationItem } from "./components/activities/flowchart/models";
-import { WorkflowNavigationItem } from "./components/designer/workflow-navigator/models";
 import { PublishClickedArgs } from "./components/toolbar/workflow-publish-button/workflow-publish-button";
 export namespace Components {
     interface ElsaActivityDefinitionBrowser {
@@ -52,6 +51,7 @@ export namespace Components {
         "getRootComponent": () => Promise<ContainerActivityComponent>;
         "importGraph": (root: Activity) => Promise<void>;
         "interactiveMode": boolean;
+        "newRoot": () => Promise<Activity>;
         "reset": () => Promise<void>;
         "updateActivity": (args: UpdateActivityArgs) => Promise<void>;
         "updateLayout": () => Promise<void>;
@@ -100,6 +100,7 @@ export namespace Components {
         "getGraph": () => Promise<Graph>;
         "import": (root: Activity) => Promise<void>;
         "interactiveMode": boolean;
+        "newRoot": () => Promise<Activity>;
         "reset": () => Promise<void>;
         "updateActivity": (args: UpdateActivityArgs) => Promise<void>;
         "updateLayout": () => Promise<void>;
@@ -280,10 +281,6 @@ export namespace Components {
         "workflowInstance"?: WorkflowInstance;
     }
     interface ElsaWorkflowNavigator {
-        "items": Array<WorkflowNavigationItem>;
-        "workflowDefinition": WorkflowDefinition;
-    }
-    interface ElsaWorkflowNavigator2 {
         "flowchart": Flowchart;
         "items": Array<FlowchartNavigationItem>;
     }
@@ -596,12 +593,6 @@ declare global {
         prototype: HTMLElsaWorkflowNavigatorElement;
         new (): HTMLElsaWorkflowNavigatorElement;
     };
-    interface HTMLElsaWorkflowNavigator2Element extends Components.ElsaWorkflowNavigator2, HTMLStencilElement {
-    }
-    var HTMLElsaWorkflowNavigator2Element: {
-        prototype: HTMLElsaWorkflowNavigator2Element;
-        new (): HTMLElsaWorkflowNavigator2Element;
-    };
     interface HTMLElsaWorkflowPublishButtonElement extends Components.ElsaWorkflowPublishButton, HTMLStencilElement {
     }
     var HTMLElsaWorkflowPublishButtonElement: {
@@ -671,7 +662,6 @@ declare global {
         "elsa-workflow-journal": HTMLElsaWorkflowJournalElement;
         "elsa-workflow-manager": HTMLElsaWorkflowManagerElement;
         "elsa-workflow-navigator": HTMLElsaWorkflowNavigatorElement;
-        "elsa-workflow-navigator-2": HTMLElsaWorkflowNavigator2Element;
         "elsa-workflow-publish-button": HTMLElsaWorkflowPublishButtonElement;
         "elsa-workflow-toolbar": HTMLElsaWorkflowToolbarElement;
         "elsa-workflow-toolbar-menu": HTMLElsaWorkflowToolbarMenuElement;
@@ -907,11 +897,6 @@ declare namespace LocalJSX {
         "workflowInstance"?: WorkflowInstance;
     }
     interface ElsaWorkflowNavigator {
-        "items"?: Array<WorkflowNavigationItem>;
-        "onNavigate"?: (event: CustomEvent<WorkflowNavigationItem>) => void;
-        "workflowDefinition"?: WorkflowDefinition;
-    }
-    interface ElsaWorkflowNavigator2 {
         "flowchart"?: Flowchart;
         "items"?: Array<FlowchartNavigationItem>;
         "onNavigate"?: (event: CustomEvent<FlowchartNavigationItem>) => void;
@@ -979,7 +964,6 @@ declare namespace LocalJSX {
         "elsa-workflow-journal": ElsaWorkflowJournal;
         "elsa-workflow-manager": ElsaWorkflowManager;
         "elsa-workflow-navigator": ElsaWorkflowNavigator;
-        "elsa-workflow-navigator-2": ElsaWorkflowNavigator2;
         "elsa-workflow-publish-button": ElsaWorkflowPublishButton;
         "elsa-workflow-toolbar": ElsaWorkflowToolbar;
         "elsa-workflow-toolbar-menu": ElsaWorkflowToolbarMenu;
@@ -1039,7 +1023,6 @@ declare module "@stencil/core" {
             "elsa-workflow-journal": LocalJSX.ElsaWorkflowJournal & JSXBase.HTMLAttributes<HTMLElsaWorkflowJournalElement>;
             "elsa-workflow-manager": LocalJSX.ElsaWorkflowManager & JSXBase.HTMLAttributes<HTMLElsaWorkflowManagerElement>;
             "elsa-workflow-navigator": LocalJSX.ElsaWorkflowNavigator & JSXBase.HTMLAttributes<HTMLElsaWorkflowNavigatorElement>;
-            "elsa-workflow-navigator-2": LocalJSX.ElsaWorkflowNavigator2 & JSXBase.HTMLAttributes<HTMLElsaWorkflowNavigator2Element>;
             "elsa-workflow-publish-button": LocalJSX.ElsaWorkflowPublishButton & JSXBase.HTMLAttributes<HTMLElsaWorkflowPublishButtonElement>;
             "elsa-workflow-toolbar": LocalJSX.ElsaWorkflowToolbar & JSXBase.HTMLAttributes<HTMLElsaWorkflowToolbarElement>;
             "elsa-workflow-toolbar-menu": LocalJSX.ElsaWorkflowToolbarMenu & JSXBase.HTMLAttributes<HTMLElsaWorkflowToolbarMenuElement>;

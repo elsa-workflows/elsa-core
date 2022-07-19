@@ -13,7 +13,6 @@ export interface ContainerSelectedArgs {
 }
 
 export interface GraphUpdatedArgs {
-  exportGraph: () => Activity;
 }
 
 export interface EditChildActivityArgs {
