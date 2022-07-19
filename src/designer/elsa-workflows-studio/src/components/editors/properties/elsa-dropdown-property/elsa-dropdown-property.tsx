@@ -1,8 +1,8 @@
-import {Component, h, Prop, State} from '@stencil/core';
-import {ActivityDefinitionProperty, ActivityModel, ActivityPropertyDescriptor, RuntimeSelectListProviderSettings, SelectList, SyntaxNames} from "../../../../models";
+import { Component, h, Prop, State } from '@stencil/core';
+import { ActivityDefinitionProperty, ActivityModel, ActivityPropertyDescriptor, RuntimeSelectListProviderSettings, SelectList, SyntaxNames } from "../../../../models";
 import Tunnel from "../../../../data/workflow-editor";
-import {getSelectListItems} from "../../../../utils/select-list-items";
-import {awaitElement} from "../../../../utils/utils";
+import { getSelectListItems } from "../../../../utils/select-list-items";
+import { awaitElement } from "../../../../utils/utils";
 
 @Component({
   tag: 'elsa-dropdown-property',
@@ -13,10 +13,10 @@ export class ElsaDropdownProperty {
   @Prop() activityModel: ActivityModel;
   @Prop() propertyDescriptor: ActivityPropertyDescriptor;
   @Prop() propertyModel: ActivityDefinitionProperty;
-  @Prop({mutable: true}) serverUrl: string;
+  @Prop({ mutable: true }) serverUrl: string;
   @State() currentValue?: string;
 
-  selectList: SelectList = {items: [], isFlagsEnum: false};
+  selectList: SelectList = { items: [], isFlagsEnum: false };
 
   async componentWillLoad() {
     const defaultSyntax = this.propertyDescriptor.defaultSyntax || SyntaxNames.Literal;
@@ -51,7 +51,7 @@ export class ElsaDropdownProperty {
         runtimeSelectListProviderType: (this.propertyDescriptor.options as RuntimeSelectListProviderSettings).runtimeSelectListProviderType
 
       };
-      this.selectList = await getSelectListItems(this.serverUrl, {options: options} as ActivityPropertyDescriptor);
+      this.selectList = await getSelectListItems(this.serverUrl, { options: options } as ActivityPropertyDescriptor);
 
       if (this.currentValue == undefined) {
         const firstOption: any = this.selectList.items[0];
@@ -73,6 +73,10 @@ export class ElsaDropdownProperty {
           this.currentValue = optionIsObject ? firstOption.value : firstOption.toString();
         }
       }
+    }
+
+    if (this.currentValue != undefined) {
+      this.propertyModel.expressions[defaultSyntax] = this.currentValue;
     }
   }
 
@@ -99,7 +103,7 @@ export class ElsaDropdownProperty {
       runtimeSelectListProviderType: (this.propertyDescriptor.options as RuntimeSelectListProviderSettings).runtimeSelectListProviderType
     }
 
-    this.selectList = await getSelectListItems(this.serverUrl, {options: options} as ActivityPropertyDescriptor);
+    this.selectList = await getSelectListItems(this.serverUrl, { options: options } as ActivityPropertyDescriptor);
 
     const firstOption: any = this.selectList.items[0];
     let currentSelectList = await awaitElement('#' + this.propertyDescriptor.name);
@@ -133,7 +137,7 @@ export class ElsaDropdownProperty {
     const fieldId = propertyName;
     const fieldName = propertyName;
     let currentValue = this.currentValue;
-    const {items} = this.selectList;
+    const { items } = this.selectList;
 
     if (currentValue == undefined) {
       const defaultValue = this.propertyDescriptor.defaultValue;
@@ -148,9 +152,9 @@ export class ElsaDropdownProperty {
         onDefaultSyntaxValueChanged={e => this.onDefaultSyntaxValueChanged(e)}
         single-line={true}>
         <select id={fieldId}
-                name={fieldName}
-                onChange={e => this.onChange(e)}
-                class="elsa-mt-1 elsa-block focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-w-full elsa-shadow-sm sm:elsa-max-w-xs sm:elsa-text-sm elsa-border-gray-300 elsa-rounded-md">
+          name={fieldName}
+          onChange={e => this.onChange(e)}
+          class="elsa-mt-1 elsa-block focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-w-full elsa-shadow-sm sm:elsa-max-w-xs sm:elsa-text-sm elsa-border-gray-300 elsa-rounded-md">
           {items.map(item => {
             const optionIsObject = typeof (item) == 'object';
             const value = optionIsObject ? item.value : item.toString();
