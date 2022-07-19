@@ -23,4 +23,10 @@ export const resources = {
       'CreateButton': 'ایجاد Webhook'
     }
   },
+  'de-Ide': {
+    default: {
+      'Title': 'Webhook Definitionen',
+      'CreateButton': 'Webhook erstellen'
+    }
+  },
 };
