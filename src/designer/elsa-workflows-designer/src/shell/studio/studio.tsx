@@ -167,7 +167,7 @@ export class Studio {
 
     await this.pluginRegistry.initialize();
   }
-  
+
   private retractWorkflowDefinition = async (definition: WorkflowDefinition): Promise<WorkflowDefinition> => {
     const updatedWorkflow = await this.workflowDefinitionManager.retractWorkflow(definition);
     await this.workflowManagerElement.updateWorkflowDefinition(updatedWorkflow);
