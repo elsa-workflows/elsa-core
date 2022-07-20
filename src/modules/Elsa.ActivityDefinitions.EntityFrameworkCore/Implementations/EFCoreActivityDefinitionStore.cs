@@ -23,6 +23,19 @@ public class EFCoreActivityDefinitionStore : IActivityDefinitionStore
 
     public async Task SaveAsync(ActivityDefinition record, CancellationToken cancellationToken = default) => await _store.SaveAsync(record, cancellationToken);
 
+    public async Task<Page<ActivityDefinition>> ListAsync(VersionOptions? versionOptions = default, PageArgs? pageArgs = default, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
+        var workflowDefinitions = dbContext.ActivityDefinitions;
+        var query = workflowDefinitions.AsQueryable();
+
+        if (versionOptions != null) query = query.WithVersion(versionOptions.Value);
+
+        query = query.OrderBy(x => x.Name);
+
+        return await query.PaginateAsync(pageArgs);
+    }
+
     public async Task<Page<ActivityDefinitionSummary>> ListSummariesAsync(VersionOptions? versionOptions = default, PageArgs? pageArgs = default, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
@@ -42,4 +55,7 @@ public class EFCoreActivityDefinitionStore : IActivityDefinitionStore
         predicate = predicate.WithVersion(versionOptions);
         return await _store.FindAsync(predicate, cancellationToken);
     }
+    
+    public async Task<ActivityDefinition?> FindByDefinitionVersionIdAsync(string definitionVersionId, CancellationToken cancellationToken = default) => 
+        await _store.FindAsync(x => x.Id == definitionVersionId, cancellationToken);
 }

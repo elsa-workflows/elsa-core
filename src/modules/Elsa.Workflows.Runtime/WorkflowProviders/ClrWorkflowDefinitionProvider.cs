@@ -58,7 +58,7 @@ public class ClrWorkflowDefinitionProvider : IWorkflowDefinitionProvider
         await workflowBuilder.BuildAsync(builder, cancellationToken);
 
         var workflow = builder.BuildWorkflow();
-        _identityGraphService.AssignIdentities(workflow);
+        _identityGraphService.AssignIdentitiesAsync(workflow);
 
         var workflowJson = JsonSerializer.Serialize(workflow.Root, _serializerOptionsProvider.CreatePersistenceOptions());
         var materializerContext = new ClrWorkflowMaterializerContext(workflowBuilder.GetType());

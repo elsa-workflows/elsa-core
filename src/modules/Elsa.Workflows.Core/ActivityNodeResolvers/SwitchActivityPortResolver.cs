@@ -1,4 +1,3 @@
-using System.Reflection;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Services;
 
@@ -12,7 +11,13 @@ public class SwitchActivityPortResolver : IActivityPortResolver
     public int Priority => 0;
     public bool GetSupportsActivity(IActivity activity) => activity is Switch;
 
-    public IEnumerable<IActivity> GetPorts(IActivity activity)
+    public ValueTask<IEnumerable<IActivity>> GetPortsAsync(IActivity activity, CancellationToken cancellationToken = default)
+    {
+        var ports = GetPortsInternal(activity);
+        return new(ports);
+    }
+
+    private IEnumerable<IActivity> GetPortsInternal(IActivity activity)
     {
         var @switch = (Switch)activity;
         var cases = @switch.Cases.Where(x => x.Activity != null);
@@ -22,10 +27,5 @@ public class SwitchActivityPortResolver : IActivityPortResolver
 
         if (@switch.Default != null)
             yield return @switch.Default;
-    }
-
-    public IEnumerable<PropertyInfo> GetPorts(Type activityType)
-    {
-        throw new NotImplementedException();
     }
 }

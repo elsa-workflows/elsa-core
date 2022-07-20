@@ -10,6 +10,5 @@ public interface IActivityPortResolver
 {
     int Priority { get; }
     bool GetSupportsActivity(IActivity activity);
-    IEnumerable<IActivity> GetPorts(IActivity activity);
-    IEnumerable<PropertyInfo> GetPorts(Type activityType);
+    ValueTask<IEnumerable<IActivity>> GetPortsAsync(IActivity activity, CancellationToken cancellationToken = default);
 }

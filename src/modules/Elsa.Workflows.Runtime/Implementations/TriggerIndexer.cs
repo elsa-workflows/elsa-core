@@ -86,10 +86,10 @@ public class TriggerIndexer : ITriggerIndexer
     private async IAsyncEnumerable<WorkflowTrigger> GetTriggersAsync(Workflow workflow, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var context = new WorkflowIndexingContext(workflow, cancellationToken);
-
+        var nodes = await _activityWalker.WalkAsync(workflow.Root, cancellationToken);
+        
         // Get a list of activities that are configured as "startable".
-        var startableNodes = _activityWalker
-            .Walk(workflow.Root)
+        var startableNodes = nodes
             .Flatten()
             .Where(x => x.Activity.CanStartWorkflow)
             .ToList();

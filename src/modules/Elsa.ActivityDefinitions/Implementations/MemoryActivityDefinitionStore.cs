@@ -16,6 +16,14 @@ public class MemoryActivityDefinitionStore : IActivityDefinitionStore
         _store = store;
     }
 
+    public Task<Page<ActivityDefinition>> ListAsync(VersionOptions? versionOptions = default, PageArgs? pageArgs = default, CancellationToken cancellationToken = default)
+    {
+        var query = _store.List().AsQueryable();
+        if (versionOptions != null) query = query.WithVersion(versionOptions.Value);
+        var page = query.Paginate(pageArgs);
+        return Task.FromResult(page);
+    }
+
     public Task<Page<ActivityDefinitionSummary>> ListSummariesAsync(VersionOptions? versionOptions = default, PageArgs? pageArgs = default, CancellationToken cancellationToken = default)
     {
         var query = _store.List().AsQueryable();
@@ -27,6 +35,12 @@ public class MemoryActivityDefinitionStore : IActivityDefinitionStore
     public Task<ActivityDefinition?> FindByDefinitionIdAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
     {
         var definition = _store.Find(x => x.DefinitionId == definitionId && x.WithVersion(versionOptions));
+        return Task.FromResult(definition);
+    }
+
+    public Task<ActivityDefinition?> FindByDefinitionVersionIdAsync(string definitionVersionId, CancellationToken cancellationToken = default)
+    {
+        var definition = _store.Find(x => x.Id == definitionVersionId);
         return Task.FromResult(definition);
     }
 
