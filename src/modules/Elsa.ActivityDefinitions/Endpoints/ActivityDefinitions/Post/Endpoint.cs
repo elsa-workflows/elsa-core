@@ -1,14 +1,15 @@
 using System.Text.Json;
+using Elsa.ActivityDefinitions.Endpoints.ActivityDefinitions.List;
 using Elsa.ActivityDefinitions.Services;
+using Elsa.Api.Common;
 using Elsa.Workflows.Core.Activities.Flowchart.Activities;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Models;
-using FastEndpoints;
 
 namespace Elsa.ActivityDefinitions.Endpoints.ActivityDefinitions.Post;
 
-public class Post : Endpoint<Request, Response>
+public class Post : ProtectedEndpoint<Request, Response>
 {
     private readonly SerializerOptionsProvider _serializerOptionsProvider;
     private readonly IActivityDefinitionPublisher _activityDefinitionPublisher;
@@ -27,6 +28,7 @@ public class Post : Endpoint<Request, Response>
     public override void Configure()
     {
         Post("/activity-definitions");
+        ConfigureSecurity(List.SecurityConstants.Permissions, List.SecurityConstants.Policies, List.SecurityConstants.Roles);
     }
 
     public override async Task<Response> ExecuteAsync(Request req, CancellationToken ct)

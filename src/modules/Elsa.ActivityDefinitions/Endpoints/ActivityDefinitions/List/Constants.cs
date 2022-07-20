@@ -1,6 +1,6 @@
 namespace Elsa.ActivityDefinitions.Endpoints.ActivityDefinitions.List;
 
-public static class ListActivityDefinitions
+public static class SecurityConstants
 {
     public static readonly string[] Policies = { "ListActivityDefinitions" };
     public static readonly string[] Permissions = { "ListActivityDefinitions" };

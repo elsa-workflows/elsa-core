@@ -1,11 +1,11 @@
 using Elsa.ActivityDefinitions.Entities;
 using Elsa.ActivityDefinitions.Services;
+using Elsa.Api.Common;
 using Elsa.Persistence.Common.Models;
-using FastEndpoints;
 
 namespace Elsa.ActivityDefinitions.Endpoints.ActivityDefinitions.Get;
 
-public class Get : Endpoint<Request, ActivityDefinition>
+public class Get : ProtectedEndpoint<Request, ActivityDefinition>
 {
     private readonly IActivityDefinitionStore _activityDefinitionStore;
 
@@ -17,6 +17,7 @@ public class Get : Endpoint<Request, ActivityDefinition>
     public override void Configure()
     {
         Get("/activity-definitions/{definitionId}");
+        ConfigureSecurity(SecurityConstants.Permissions, SecurityConstants.Policies, SecurityConstants.Roles);
     }
 
     public override async Task<ActivityDefinition> ExecuteAsync(Request req, CancellationToken ct)

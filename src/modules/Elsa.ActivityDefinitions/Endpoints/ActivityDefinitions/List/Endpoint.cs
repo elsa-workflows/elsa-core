@@ -18,7 +18,7 @@ public class List : ProtectedEndpoint<Request, PagedListResponse<ActivityDefinit
     public override void Configure()
     {
         Get("/activity-definitions");
-        ConfigureSecurity(ListActivityDefinitions.Permissions, ListActivityDefinitions.Policies, ListActivityDefinitions.Roles);
+        ConfigureSecurity(SecurityConstants.Permissions, SecurityConstants.Policies, SecurityConstants.Roles);
     }
 
     public override async Task<PagedListResponse<ActivityDefinitionSummary>> ExecuteAsync(Request req, CancellationToken ct)
