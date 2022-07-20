@@ -1,3 +1,5 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Elsa.ActivityDefinitions.EntityFrameworkCore.Extensions;
 using Elsa.ActivityDefinitions.EntityFrameworkCore.Sqlite;
 using Elsa.Api.Common;
@@ -23,6 +25,7 @@ using Elsa.Workflows.Api.Extensions;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Activities.Flowchart.Activities;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution.Components;
+using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Persistence.EntityFrameworkCore.Extensions;
 using Elsa.Workflows.Persistence.EntityFrameworkCore.Sqlite;
@@ -127,7 +130,34 @@ app.MapManagementApiEndpoints();
 app.MapLabelApiEndpoints();
 
 // Use FastEndpoints middleware.
-app.UseFastEndpoints(config => config.RoutingOptions = routing => routing.Prefix = "elsa/api");
+
+ValueTask<object?> DeserializeRequestAsync(HttpRequest httpRequest, Type modelType, JsonSerializerContext? serializerContext, CancellationToken cancellationToken)
+{
+    var serializerOptionsProvider = httpRequest.HttpContext.RequestServices.GetRequiredService<SerializerOptionsProvider>();
+    var options = serializerOptionsProvider.CreateApiOptions();
+
+    return serializerContext == null
+        ? JsonSerializer.DeserializeAsync(httpRequest.Body, modelType, options, cancellationToken)
+        : JsonSerializer.DeserializeAsync(httpRequest.Body, modelType, serializerContext, cancellationToken);
+}
+
+Task SerializeRequestAsync(HttpResponse httpResponse, object dto, string contentType, JsonSerializerContext? serializerContext, CancellationToken cancellationToken)
+{
+    var serializerOptionsProvider = httpResponse.HttpContext.RequestServices.GetRequiredService<SerializerOptionsProvider>();
+    var options = serializerOptionsProvider.CreateApiOptions();
+
+    httpResponse.ContentType = contentType;
+    return serializerContext == null
+        ? JsonSerializer.SerializeAsync(httpResponse.Body, dto, dto.GetType(), options, cancellationToken)
+        : JsonSerializer.SerializeAsync(httpResponse.Body, dto, dto.GetType(), serializerContext, cancellationToken);
+}
+
+app.UseFastEndpoints(config =>
+{
+    config.RoutingOptions = routing => routing.Prefix = "elsa/api";
+    config.RequestDeserializer = DeserializeRequestAsync;
+    config.ResponseSerializer = SerializeRequestAsync;
+});
 
 // Register Elsa middleware.
 app.UseJsonSerializationErrorHandler();
