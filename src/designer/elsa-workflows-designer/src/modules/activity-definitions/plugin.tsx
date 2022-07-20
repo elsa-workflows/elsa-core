@@ -74,7 +74,7 @@ export class ActivityDefinitionsPlugin implements Plugin {
     const activityDefinition: ActivityDefinition = {
       root: flowchart,
       id: '',
-      name: 'Workflow 1',
+      name: 'Activity 1',
       definitionId: '',
       version: 1,
       isLatest: true,

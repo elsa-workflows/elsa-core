@@ -23,25 +23,25 @@ export class ActivityDefinitionsApi {
 
   async publish(request: PublishActivityDefinitionRequest): Promise<ActivityDefinition> {
     const httpClient = await this.provider.getHttpClient();
-    const response = await httpClient.post<ActivityDefinition>(`workflow-definitions/${request.definitionId}/publish`);
+    const response = await httpClient.post<ActivityDefinition>(`activity-definitions/${request.definitionId}/publish`);
     return response.data;
   }
 
   async retract(request: RetractActivityDefinitionRequest): Promise<ActivityDefinition> {
     const httpClient = await this.provider.getHttpClient();
-    const response = await httpClient.post<ActivityDefinition>(`workflow-definitions/${request.definitionId}/retract`);
+    const response = await httpClient.post<ActivityDefinition>(`activity-definitions/${request.definitionId}/retract`);
     return response.data;
   }
 
   async delete(request: DeleteActivityDefinitionRequest): Promise<ActivityDefinition> {
     const httpClient = await this.provider.getHttpClient();
-    const response = await httpClient.delete<ActivityDefinition>(`workflow-definitions/${request.definitionId}`);
+    const response = await httpClient.delete<ActivityDefinition>(`activity-definitions/${request.definitionId}`);
     return response.data;
   }
 
   async post(request: SaveActivityDefinitionRequest): Promise<ActivityDefinition> {
     const httpClient = await this.provider.getHttpClient();
-    const response = await httpClient.post<ActivityDefinition>('workflow-definitions', request);
+    const response = await httpClient.post<ActivityDefinition>('activity-definitions', request);
     return response.data;
   }
 
@@ -52,7 +52,7 @@ export class ActivityDefinitionsApi {
 
     const queryStringText = serializeQueryString(queryString);
     const httpClient = await this.provider.getHttpClient();
-    const response = await httpClient.get<ActivityDefinition>(`workflow-definitions/${request.definitionId}${queryStringText}`);
+    const response = await httpClient.get<ActivityDefinition>(`activity-definitions/${request.definitionId}${queryStringText}`);
     return response.data;
   }
 
@@ -82,7 +82,7 @@ export class ActivityDefinitionsApi {
     const definitionId = request.definitionId;
 
     const httpClient = await this.provider.getHttpClient();
-    const response = await httpClient.get(`workflow-definitions/${request.definitionId}/export${queryStringText}`, {
+    const response = await httpClient.get(`activity-definitions/${request.definitionId}/export${queryStringText}`, {
       responseType: 'blob',
     });
 
@@ -102,7 +102,7 @@ export class ActivityDefinitionsApi {
     const json = await file.text();
     const httpClient = await this.provider.getHttpClient();
 
-    const response = await httpClient.post<ActivityDefinition>(`workflow-definitions/${definitionId}/import`, json, {
+    const response = await httpClient.post<ActivityDefinition>(`activity-definitions/${definitionId}/import`, json, {
       headers: {
         'Content-Type': 'application/json',
       },

@@ -108,11 +108,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Expressions", "src\mod
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Mediator", "src\modules\Elsa.Mediator\Elsa.Mediator.csproj", "{40ED82D8-A7BB-4D37-9157-3176EDA3E119}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.CustomActivities", "src\modules\Elsa.CustomActivities\Elsa.CustomActivities.csproj", "{1938913C-4A68-4C48-9E0B-9C74AE8EE383}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ActivityDefinitions", "src\modules\Elsa.ActivityDefinitions\Elsa.ActivityDefinitions.csproj", "{1938913C-4A68-4C48-9E0B-9C74AE8EE383}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.CustomActivities.EntityFrameworkCore", "src\modules\Elsa.CustomActivities.EntityFrameworkCore\Elsa.CustomActivities.EntityFrameworkCore.csproj", "{75516F60-3060-4AB5-9DBE-A37EB0979235}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ActivityDefinitions.EntityFrameworkCore", "src\modules\Elsa.ActivityDefinitions.EntityFrameworkCore\Elsa.ActivityDefinitions.EntityFrameworkCore.csproj", "{75516F60-3060-4AB5-9DBE-A37EB0979235}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.CustomActivities.EntityFrameworkCore.Sqlite", "src\modules\Elsa.CustomActivities.EntityFrameworkCore.Sqlite\Elsa.CustomActivities.EntityFrameworkCore.Sqlite.csproj", "{24E6E29B-D92C-4827-A8D3-C967F2A18561}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ActivityDefinitions.EntityFrameworkCore.Sqlite", "src\modules\Elsa.ActivityDefinitions.EntityFrameworkCore.Sqlite\Elsa.ActivityDefinitions.EntityFrameworkCore.Sqlite.csproj", "{24E6E29B-D92C-4827-A8D3-C967F2A18561}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Api.Common", "src\common\Elsa.Api.Common\Elsa.Api.Common.csproj", "{39CD855E-83B1-4A96-93F7-01608211EBE3}"
 EndProject

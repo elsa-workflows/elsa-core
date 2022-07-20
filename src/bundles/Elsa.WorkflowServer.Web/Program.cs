@@ -1,9 +1,9 @@
+using Elsa.ActivityDefinitions.EntityFrameworkCore.Extensions;
+using Elsa.ActivityDefinitions.EntityFrameworkCore.Sqlite;
 using Elsa.Api.Common;
 using Elsa.Api.Common.Features;
 using Elsa.Api.Common.Options;
 using Elsa.AspNetCore.Extensions;
-using Elsa.CustomActivities.EntityFrameworkCore.Extensions;
-using Elsa.CustomActivities.EntityFrameworkCore.Sqlite;
 using Elsa.Extensions;
 using Elsa.Features.Extensions;
 using Elsa.Hangfire.Implementations;
