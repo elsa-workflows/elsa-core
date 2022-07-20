@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Elsa.AspNetCore.Attributes;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Management.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 

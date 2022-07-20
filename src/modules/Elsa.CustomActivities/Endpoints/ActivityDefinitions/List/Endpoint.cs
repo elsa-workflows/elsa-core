@@ -6,11 +6,11 @@ using Elsa.Persistence.Common.Models;
 
 namespace Elsa.CustomActivities.Endpoints.ActivityDefinitions.List;
 
-public class Get : ProtectedEndpoint<Request, PagedListResponse<ActivityDefinitionSummary>>
+public class List : ProtectedEndpoint<Request, PagedListResponse<ActivityDefinitionSummary>>
 {
     private readonly IActivityDefinitionStore _store;
 
-    public Get(IActivityDefinitionStore store)
+    public List(IActivityDefinitionStore store)
     {
         _store = store;
     }

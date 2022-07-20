@@ -1,16 +1,5 @@
 import {WorkflowState} from "./core";
 
-export interface WorkflowDefinitionSummary {
-  id: string;
-  definitionId: string;
-  version: number;
-  name?: string;
-  description?: string;
-  isPublished: boolean;
-  isLatest: boolean;
-  materializerName: string;
-}
-
 export enum WorkflowStatus {
   Running = 'Running',
   Finished = 'Finished'

@@ -17,8 +17,7 @@ public class Get : Endpoint<Request, ActivityDefinition>
 
     public override void Configure()
     {
-        Routes("/custom-activities/activity-definitions/{definitionId}");
-        Verbs(Http.GET);
+        Get("/custom-activities/activity-definitions/{definitionId}");
     }
 
     public override async Task<ActivityDefinition> ExecuteAsync(Request req, CancellationToken ct)

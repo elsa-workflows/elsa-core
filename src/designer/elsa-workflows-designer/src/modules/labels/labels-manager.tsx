@@ -6,18 +6,11 @@ import labelStore from "./label-store";
 import {ElsaApiClientProvider, ElsaClient, EventBus} from "../../services";
 import {CreateLabelEventArgs, DeleteLabelEventArgs, UpdateLabelEventArgs} from "./models";
 import {LabelsApi, WorkflowDefinitionLabelsApi} from "./labels-api";
-import {WorkflowDefinitionManager} from "../../services/workflow-definition-manager";
-import {
-  PropertiesTabModel,
-  WorkflowDefinitionImportedArgs,
-  WorkflowEditorEventTypes,
-  WorkflowEditorReadyArgs,
-  WorkflowPropertiesEditorDisplayingArgs,
-  WorkflowPropertiesEditorEventTypes
-} from "../workflow-definitions/models";
 import {ToolbarDisplayingArgs, ToolbarEventTypes} from "../../components/toolbar/workflow-toolbar-menu/models";
 import {isNullOrWhitespace} from "../../utils";
 import {FormEntry} from "../../components/shared/forms/form-entry";
+import {WorkflowDefinitionManager} from "../workflow-definitions/services/manager";
+import {PropertiesTabModel, WorkflowDefinitionImportedArgs, WorkflowEditorEventTypes, WorkflowEditorReadyArgs, WorkflowPropertiesEditorDisplayingArgs, WorkflowPropertiesEditorEventTypes} from "../workflow-definitions/models/ui";
 
 @Component({
   tag: 'elsa-labels-manager',

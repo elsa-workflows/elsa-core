@@ -55,18 +55,6 @@ export interface VersionedEntity {
   createdAt?: Date;
 }
 
-export interface WorkflowDefinition extends VersionedEntity {
-  definitionId: string;
-  name?: string;
-  description?: string;
-  variables?: Array<Variable>;
-  metadata?: Map<string, any>;
-  applicationProperties?: Map<string, any>;
-  materializerName: string;
-  materializerContext?: string;
-  root: Activity;
-}
-
 export interface WorkflowState {
   id: string;
   activityOutput: Map<string, Map<string, any>>;
