@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Persistence.Common.Models;
 using Elsa.ProtoActor.Extensions;
 using Elsa.Runtime.Protos;
 using Elsa.Workflows.Core.Models;
@@ -29,7 +30,7 @@ public class WorkflowInstanceGrain : WorkflowInstanceGrainBase
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly IWorkflowRunner _workflowRunner;
     private readonly IWorkflowInstanceFactory _workflowInstanceFactory;
-    private readonly WorkflowSerializerOptionsProvider _workflowSerializerOptionsProvider;
+    private readonly SerializerOptionsProvider _serializerOptionsProvider;
 
     public WorkflowInstanceGrain(
         IWorkflowInstanceStore workflowInstanceStore,
@@ -37,7 +38,7 @@ public class WorkflowInstanceGrain : WorkflowInstanceGrainBase
         IWorkflowDefinitionService workflowDefinitionService,
         IWorkflowRunner workflowRunner,
         IWorkflowInstanceFactory workflowInstanceFactory,
-        WorkflowSerializerOptionsProvider workflowSerializerOptionsProvider,
+        SerializerOptionsProvider serializerOptionsProvider,
         IContext context) : base(context)
     {
         _workflowInstanceStore = workflowInstanceStore;
@@ -45,7 +46,7 @@ public class WorkflowInstanceGrain : WorkflowInstanceGrainBase
         _workflowDefinitionService = workflowDefinitionService;
         _workflowRunner = workflowRunner;
         _workflowInstanceFactory = workflowInstanceFactory;
-        _workflowSerializerOptionsProvider = workflowSerializerOptionsProvider;
+        _serializerOptionsProvider = serializerOptionsProvider;
     }
 
     public override async Task<ExecuteWorkflowInstanceResponse> ExecuteExistingInstance(ExecuteExistingWorkflowInstanceRequest request)
@@ -95,7 +96,7 @@ public class WorkflowInstanceGrain : WorkflowInstanceGrainBase
     public override async Task<ExecuteWorkflowInstanceResponse> Execute(ExecuteWorkflowRequest request)
     {
         var cancellationToken = Context.CancellationToken;
-        var workflowState = JsonSerializer.Deserialize<WorkflowState>(request.WorkflowState, _workflowSerializerOptionsProvider.CreatePersistenceOptions())!;
+        var workflowState = JsonSerializer.Deserialize<WorkflowState>(request.WorkflowState, _serializerOptionsProvider.CreatePersistenceOptions())!;
         var versionOptions = VersionOptions.FromString(request.VersionOptions);
         var workflowDefinitionId = request.DefinitionId;
         var bookmark = request.Bookmark;
@@ -122,7 +123,7 @@ public class WorkflowInstanceGrain : WorkflowInstanceGrainBase
             CallbackMethodName = x.CallbackMethodName
         });
 
-        var options = _workflowSerializerOptionsProvider.CreatePersistenceOptions();
+        var options = _serializerOptionsProvider.CreatePersistenceOptions();
 
         var response = new ExecuteWorkflowInstanceResponse
         {

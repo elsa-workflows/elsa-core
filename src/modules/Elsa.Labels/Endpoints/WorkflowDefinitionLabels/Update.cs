@@ -22,7 +22,7 @@ public class Update : Controller
     private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
     private readonly IWorkflowDefinitionLabelStore _workflowDefinitionLabelStore;
     private readonly IIdentityGenerator _identityGenerator;
-    private readonly WorkflowSerializerOptionsProvider _workflowSerializerOptionsProvider;
+    private readonly SerializerOptionsProvider _serializerOptionsProvider;
 
     // ReSharper disable once ClassNeverInstantiated.Local
     private record SelectedLabelsModel(ICollection<string> LabelIds);
@@ -38,13 +38,13 @@ public class Update : Controller
         IWorkflowDefinitionStore workflowDefinitionStore, 
         IWorkflowDefinitionLabelStore workflowDefinitionLabelStore, 
         IIdentityGenerator identityGenerator,
-        WorkflowSerializerOptionsProvider workflowSerializerOptionsProvider)
+        SerializerOptionsProvider serializerOptionsProvider)
     {
         _labelStore = labelStore;
         _workflowDefinitionStore = workflowDefinitionStore;
         _workflowDefinitionLabelStore = workflowDefinitionLabelStore;
         _identityGenerator = identityGenerator;
-        _workflowSerializerOptionsProvider = workflowSerializerOptionsProvider;
+        _serializerOptionsProvider = serializerOptionsProvider;
     }
 
     [HttpPost]
@@ -55,7 +55,7 @@ public class Update : Controller
         if (workflowDefinition == null)
             return NotFound();
         
-        var serializerOptions = _workflowSerializerOptionsProvider.CreateApiOptions();
+        var serializerOptions = _serializerOptionsProvider.CreateApiOptions();
         var model = (await Request.ReadFromJsonAsync<SelectedLabelsModel>(serializerOptions, cancellationToken))!;
 
         if (!model.LabelIds.Any())

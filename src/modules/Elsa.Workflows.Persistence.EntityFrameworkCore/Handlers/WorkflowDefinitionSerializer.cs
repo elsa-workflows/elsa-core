@@ -8,11 +8,11 @@ namespace Elsa.Workflows.Persistence.EntityFrameworkCore.Handlers;
 
 public class WorkflowDefinitionSerializer : IEntitySerializer<WorkflowsDbContext, WorkflowDefinition>
 {
-    private readonly WorkflowSerializerOptionsProvider _workflowSerializerOptionsProvider;
+    private readonly SerializerOptionsProvider _serializerOptionsProvider;
 
-    public WorkflowDefinitionSerializer(WorkflowSerializerOptionsProvider workflowSerializerOptionsProvider)
+    public WorkflowDefinitionSerializer(SerializerOptionsProvider serializerOptionsProvider)
     {
-        _workflowSerializerOptionsProvider = workflowSerializerOptionsProvider;
+        _serializerOptionsProvider = serializerOptionsProvider;
     }
 
     public void Serialize(WorkflowsDbContext dbContext, WorkflowDefinition entity)
@@ -24,7 +24,7 @@ public class WorkflowDefinitionSerializer : IEntitySerializer<WorkflowsDbContext
             entity.ApplicationProperties
         };
 
-        var options = _workflowSerializerOptionsProvider.CreatePersistenceOptions();
+        var options = _serializerOptionsProvider.CreatePersistenceOptions();
         var json = JsonSerializer.Serialize(data, options);
 
         dbContext.Entry(entity).Property("Data").CurrentValue = json;
@@ -37,7 +37,7 @@ public class WorkflowDefinitionSerializer : IEntitySerializer<WorkflowsDbContext
 
         if (!string.IsNullOrWhiteSpace(json))
         {
-            var options = _workflowSerializerOptionsProvider.CreatePersistenceOptions();
+            var options = _serializerOptionsProvider.CreatePersistenceOptions();
             data = JsonSerializer.Deserialize<WorkflowDefinitionState>(json, options)!;
         }
 

@@ -1,6 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.AspNetCore.Attributes;
+using Elsa.Persistence.Common.Models;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Persistence.Entities;
@@ -16,18 +17,18 @@ namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions;
 [ProducesResponseType(typeof(WorkflowDefinition), StatusCodes.Status200OK)]
 public class Retract : Controller
 {
-    private readonly WorkflowSerializerOptionsProvider _serializerOptionsProvider;
+    private readonly SerializerOptionsProvider _serializerOptionsProvider;
     private readonly IWorkflowDefinitionStore _store;
-    private readonly IWorkflowPublisher _workflowPublisher;
+    private readonly IWorkflowDefinitionPublisher _workflowDefinitionPublisher;
 
     public Retract(
-        WorkflowSerializerOptionsProvider serializerOptionsProvider,
+        SerializerOptionsProvider serializerOptionsProvider,
         IWorkflowDefinitionStore store,
-        IWorkflowPublisher workflowPublisher)
+        IWorkflowDefinitionPublisher workflowDefinitionPublisher)
     {
         _serializerOptionsProvider = serializerOptionsProvider;
         _store = store;
-        _workflowPublisher = workflowPublisher;
+        _workflowDefinitionPublisher = workflowDefinitionPublisher;
     }
 
     public async Task<IActionResult> HandleAsync(string definitionId, CancellationToken cancellationToken)
@@ -43,7 +44,7 @@ public class Retract : Controller
                 Message = $"Workflow with id {definitionId} is not published"
             });
 
-        await _workflowPublisher.RetractAsync(definition, cancellationToken);
+        await _workflowDefinitionPublisher.RetractAsync(definition, cancellationToken);
         var serializerOptions = _serializerOptionsProvider.CreateApiOptions();
 
         return Json(definition, serializerOptions);

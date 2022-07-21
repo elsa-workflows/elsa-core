@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Persistence.Common.Models;
 using Elsa.ProtoActor.Extensions;
 using Elsa.Runtime.Protos;
 using Elsa.Workflows.Core.Models;
@@ -25,18 +26,18 @@ public class ProtoActorWorkflowInvoker : IWorkflowInvoker
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly Cluster _cluster;
     private readonly GrainClientFactory _grainClientFactory;
-    private readonly WorkflowSerializerOptionsProvider _workflowSerializerOptionsProvider;
+    private readonly SerializerOptionsProvider _serializerOptionsProvider;
 
     public ProtoActorWorkflowInvoker(
         IWorkflowDefinitionService workflowDefinitionService,
         Cluster cluster, 
         GrainClientFactory grainClientFactory, 
-        WorkflowSerializerOptionsProvider workflowSerializerOptionsProvider)
+        SerializerOptionsProvider serializerOptionsProvider)
     {
         _workflowDefinitionService = workflowDefinitionService;
         _cluster = cluster;
         _grainClientFactory = grainClientFactory;
-        _workflowSerializerOptionsProvider = workflowSerializerOptionsProvider;
+        _serializerOptionsProvider = serializerOptionsProvider;
     }
 
     public async Task<InvokeWorkflowResult> InvokeAsync(InvokeWorkflowDefinitionRequest request, CancellationToken cancellationToken = default)
@@ -105,7 +106,7 @@ public class ProtoActorWorkflowInvoker : IWorkflowInvoker
             throw new TimeoutException("Did not receive a response from the WorkflowInstance actor within the configured amount of time.");
 
         var bookmarks = response.Bookmarks.Select(MapBookmark).ToList();
-        var workflowState = JsonSerializer.Deserialize<WorkflowState>(response.WorkflowState.Text, _workflowSerializerOptionsProvider.CreateDefaultOptions())!;
+        var workflowState = JsonSerializer.Deserialize<WorkflowState>(response.WorkflowState.Text, _serializerOptionsProvider.CreateDefaultOptions())!;
         return new InvokeWorkflowResult(workflowState, bookmarks);
     }
 
@@ -130,7 +131,7 @@ public class ProtoActorWorkflowInvoker : IWorkflowInvoker
             Input = input!?.Serialize(),
             DefinitionId = workflow.Identity.DefinitionId,
             VersionOptions = VersionOptions.SpecificVersion(workflow.Identity.Version).ToString(),
-            WorkflowState = JsonSerializer.Serialize(workflowState, _workflowSerializerOptionsProvider.CreateDefaultOptions())
+            WorkflowState = JsonSerializer.Serialize(workflowState, _serializerOptionsProvider.CreateDefaultOptions())
         };
 
         var client = _grainClientFactory.CreateWorkflowInstanceGrainClient(workflowState.Id);

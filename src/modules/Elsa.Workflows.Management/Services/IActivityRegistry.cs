@@ -4,12 +4,12 @@ namespace Elsa.Workflows.Management.Services;
 
 public interface IActivityRegistry
 {
-    void Add(object provider, ActivityDescriptor descriptor);
-    void AddMany(object provider, IEnumerable<ActivityDescriptor> descriptors);
+    void Add(Type providerType, ActivityDescriptor descriptor);
+    void AddMany(Type providerType, IEnumerable<ActivityDescriptor> descriptors);
     void Clear();
-    void ClearProvider(object provider);
+    void ClearProvider(Type providerType);
     IEnumerable<ActivityDescriptor> ListAll();
-    IEnumerable<ActivityDescriptor> ListByProvider(object provider);
+    IEnumerable<ActivityDescriptor> ListByProvider(Type providerType);
     ActivityDescriptor? Find(Func<ActivityDescriptor, bool> predicate);
     ActivityDescriptor? Find(string activityType);
 }

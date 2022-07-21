@@ -17,11 +17,12 @@ public class ConfigureJavaScriptEngineWithActivityOutput : INotificationHandler<
         _activityWalker = activityWalker;
     }
 
-    public Task HandleAsync(EvaluatingJavaScript notification, CancellationToken cancellationToken)
+    public async Task HandleAsync(EvaluatingJavaScript notification, CancellationToken cancellationToken)
     {
         var engine = notification.Engine;
         var workflow = notification.Context.GetWorkflow();
-        var graph = _activityWalker.Walk(workflow.Root).Flatten();
+        var nodes = await _activityWalker.WalkAsync(workflow.Root, cancellationToken);
+        var graph = nodes.Flatten();
         var register = notification.Context.Memory;
         var jsActivities = new Dictionary<string, object>();
 
@@ -40,7 +41,5 @@ public class ConfigureJavaScriptEngineWithActivityOutput : INotificationHandler<
         }
         
         engine.SetValue("activities", jsActivities);
-
-        return Task.CompletedTask;
     }
 }

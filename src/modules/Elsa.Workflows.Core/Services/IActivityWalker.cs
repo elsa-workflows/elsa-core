@@ -7,6 +7,6 @@ namespace Elsa.Workflows.Core.Services;
 /// </summary>
 public interface IActivityWalker
 {
-    ActivityNode Walk(IActivity activity);
+    Task<ActivityNode> WalkAsync(IActivity activity, CancellationToken cancellationToken = default);
     
 }

@@ -1,3 +1,4 @@
+export * from './activity-descriptor-manager';
 export * from './activity-driver';
 export * from './activity-driver-registry';
 export * from './activity-icon-registry';

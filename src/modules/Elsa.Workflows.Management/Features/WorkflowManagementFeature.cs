@@ -37,7 +37,7 @@ public class WorkflowManagementFeature : FeatureBase
     public override void Apply()
     {
         Services
-            .AddSingleton<IWorkflowPublisher, WorkflowPublisher>()
+            .AddSingleton<IWorkflowDefinitionPublisher, WorkflowDefinitionPublisher>()
             .AddSingleton<IWorkflowDefinitionManager, WorkflowDefinitionManager>()
             .AddSingleton<IActivityDescriber, ActivityDescriber>()
             .AddSingleton<IActivityRegistry, ActivityRegistry>()
@@ -52,7 +52,7 @@ public class WorkflowManagementFeature : FeatureBase
             .AddSingleton<ISerializationOptionsConfigurator, SerializationOptionsConfigurator>()
             .AddSingleton<IWorkflowMaterializer, ClrWorkflowMaterializer>()
             .AddSingleton<IWorkflowMaterializer, JsonWorkflowMaterializer>()
-            .AddSingleton<WorkflowSerializerOptionsProvider>();
+            .AddSingleton<SerializerOptionsProvider>();
 
         Services.Configure<ApiOptions>(options =>
         {

@@ -10,23 +10,12 @@ public class OutboundActivityPortResolver : IActivityPortResolver
     public int Priority => -1;
     public bool GetSupportsActivity(IActivity activity) => activity is Activity;
 
-    public IEnumerable<IActivity> GetPorts(IActivity activity) =>
-        GetSinglePorts(activity)
+    public ValueTask<IEnumerable<IActivity>> GetPortsAsync(IActivity activity, CancellationToken cancellationToken = default) =>
+        new(GetSinglePorts(activity)
             .Where(x => x != null)
             .Select(x => x!)
-            .ToHashSet();
+            .ToHashSet());
 
-    public IEnumerable<PropertyInfo> GetPorts(Type activityType)
-    {
-        var outboundPortProperties =
-            from prop in activityType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-            where typeof(IActivity).IsAssignableFrom(prop.PropertyType) || typeof(IEnumerable<IActivity>).IsAssignableFrom(prop.PropertyType)
-            let portAttr = prop.GetCustomAttribute<PortAttribute>()
-            where portAttr != null
-            select prop;
-
-        return outboundPortProperties;
-    }
 
     private static IEnumerable<IActivity?> GetSinglePorts(IActivity activity)
     {

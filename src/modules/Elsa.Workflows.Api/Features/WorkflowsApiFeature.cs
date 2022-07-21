@@ -1,6 +1,6 @@
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
-using Elsa.Workflows.Api.Mappers;
+using Elsa.Workflows.Management.Mappers;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Api.Features;

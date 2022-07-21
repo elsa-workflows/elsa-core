@@ -4,6 +4,9 @@ using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Core.Models;
 
+/// <summary>
+/// A descriptor of an activity type. It also provides a constructor to create instances of this type.
+/// </summary>
 public class ActivityDescriptor
 {
     public string ActivityType { get; init; } = default!;

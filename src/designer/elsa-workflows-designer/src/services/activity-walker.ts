@@ -19,7 +19,7 @@ export interface ActivityPort {
   port: string;
 }
 
-export function createActivityMap(nodes: Array<ActivityNode>): Hash<Activity> {
+export function createActivityLookup(nodes: Array<ActivityNode>): Hash<Activity> {
   const map = {};
 
   for (const node of nodes)

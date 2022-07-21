@@ -54,7 +54,7 @@ public abstract class ActivityBase : IActivity, ISignalHandler
     }
 
     /// <summary>
-    /// Notify the sytem that this activity completed.
+    /// Notify the system that this activity completed.
     /// </summary>
     protected async ValueTask CompleteAsync(ActivityExecutionContext context)
     {

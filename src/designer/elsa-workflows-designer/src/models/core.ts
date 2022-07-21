@@ -47,21 +47,12 @@ export interface MemoryReference {
   id: string;
 }
 
-export interface WorkflowDefinition {
+export interface VersionedEntity {
   id: string;
-  definitionId: string;
   version: number;
   isLatest: boolean;
   isPublished: boolean;
-  name?: string;
-  description?: string;
   createdAt?: Date;
-  variables?: Array<Variable>;
-  metadata?: Map<string, any>;
-  applicationProperties?: Map<string, any>;
-  materializerName: string;
-  materializerContext?: string;
-  root: Activity;
 }
 
 export interface WorkflowState {

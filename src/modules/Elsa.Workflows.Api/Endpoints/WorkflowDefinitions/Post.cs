@@ -4,14 +4,16 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.AspNetCore.Attributes;
-using Elsa.Workflows.Api.Mappers;
 using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Materializers;
+using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Persistence.Entities;
+using Elsa.Workflows.Persistence.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -23,17 +25,17 @@ namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions;
 [ProducesResponseType(typeof(WorkflowDefinition), StatusCodes.Status201Created)]
 public class Post : Controller
 {
-    private readonly WorkflowSerializerOptionsProvider _serializerOptionsProvider;
-    private readonly IWorkflowPublisher _workflowPublisher;
+    private readonly SerializerOptionsProvider _serializerOptionsProvider;
+    private readonly IWorkflowDefinitionPublisher _workflowDefinitionPublisher;
     private readonly VariableDefinitionMapper _variableDefinitionMapper;
 
     public Post(
-        WorkflowSerializerOptionsProvider serializerOptionsProvider, 
-        IWorkflowPublisher workflowPublisher, 
+        SerializerOptionsProvider serializerOptionsProvider, 
+        IWorkflowDefinitionPublisher workflowDefinitionPublisher, 
         VariableDefinitionMapper variableDefinitionMapper)
     {
         _serializerOptionsProvider = serializerOptionsProvider;
-        _workflowPublisher = workflowPublisher;
+        _workflowDefinitionPublisher = workflowDefinitionPublisher;
         _variableDefinitionMapper = variableDefinitionMapper;
     }
 
@@ -56,7 +58,7 @@ public class Post : Controller
 
         // Get a workflow draft version.
         var draft = !string.IsNullOrWhiteSpace(definitionId)
-            ? await _workflowPublisher.GetDraftAsync(definitionId, cancellationToken)
+            ? await _workflowDefinitionPublisher.GetDraftAsync(definitionId, cancellationToken)
             : default;
 
         var isNew = draft == null;
@@ -64,7 +66,7 @@ public class Post : Controller
         // Create a new workflow in case no existing definition was found.
         if (isNew)
         {
-            draft = _workflowPublisher.New();
+            draft = _workflowDefinitionPublisher.New();
 
             if (!string.IsNullOrWhiteSpace(definitionId))
                 draft.DefinitionId = definitionId;
@@ -82,7 +84,7 @@ public class Post : Controller
         draft.Metadata = model.Metadata ?? new Dictionary<string, object>();
         draft.Variables = variables;
         draft.ApplicationProperties = model.ApplicationProperties ?? new Dictionary<string, object>();
-        draft = model.Publish ? await _workflowPublisher.PublishAsync(draft, cancellationToken) : await _workflowPublisher.SaveDraftAsync(draft, cancellationToken);
+        draft = model.Publish ? await _workflowDefinitionPublisher.PublishAsync(draft, cancellationToken) : await _workflowDefinitionPublisher.SaveDraftAsync(draft, cancellationToken);
 
         var draftModel = new WorkflowDefinitionModel(
             draft.Id,

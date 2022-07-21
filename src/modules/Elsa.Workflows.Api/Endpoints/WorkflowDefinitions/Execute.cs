@@ -1,6 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.AspNetCore.Attributes;
+using Elsa.Persistence.Common.Models;
 using Elsa.Workflows.Api.ApiResults;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Persistence.Models;

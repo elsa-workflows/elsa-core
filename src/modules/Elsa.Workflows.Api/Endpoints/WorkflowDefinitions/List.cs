@@ -19,9 +19,9 @@ namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions;
 public class List : Controller
 {
     private readonly IWorkflowDefinitionStore _store;
-    private readonly WorkflowSerializerOptionsProvider _serializerOptionsProvider;
+    private readonly SerializerOptionsProvider _serializerOptionsProvider;
 
-    public List(IWorkflowDefinitionStore store, WorkflowSerializerOptionsProvider serializerOptionsProvider)
+    public List(IWorkflowDefinitionStore store, SerializerOptionsProvider serializerOptionsProvider)
     {
         _store = store;
         _serializerOptionsProvider = serializerOptionsProvider;

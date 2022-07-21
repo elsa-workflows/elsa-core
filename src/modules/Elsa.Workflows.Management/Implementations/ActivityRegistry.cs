@@ -5,14 +5,14 @@ namespace Elsa.Workflows.Management.Implementations;
 
 public class ActivityRegistry : IActivityRegistry
 {
-    private readonly IDictionary<object, ICollection<ActivityDescriptor>> _providedActivityDescriptors = new Dictionary<object, ICollection<ActivityDescriptor>>();
+    private readonly IDictionary<Type, ICollection<ActivityDescriptor>> _providedActivityDescriptors = new Dictionary<Type, ICollection<ActivityDescriptor>>();
     private readonly IDictionary<string, ActivityDescriptor> _activityDescriptors = new Dictionary<string, ActivityDescriptor>();
 
-    public void Add(object provider, ActivityDescriptor descriptor) => Add(descriptor, GetOrCreateDescriptors(provider));
+    public void Add(Type providerType, ActivityDescriptor descriptor) => Add(descriptor, GetOrCreateDescriptors(providerType));
 
-    public void AddMany(object provider, IEnumerable<ActivityDescriptor> descriptors)
+    public void AddMany(Type providerType, IEnumerable<ActivityDescriptor> descriptors)
     {
-        var target = GetOrCreateDescriptors(provider);
+        var target = GetOrCreateDescriptors(providerType);
 
         foreach (var descriptor in descriptors)
             Add(descriptor, target);
@@ -24,18 +24,18 @@ public class ActivityRegistry : IActivityRegistry
         _providedActivityDescriptors.Clear();
     }
 
-    public void ClearProvider(object provider)
+    public void ClearProvider(Type providerType)
     {
-        var descriptors = ListByProvider(provider).ToList();
+        var descriptors = ListByProvider(providerType).ToList();
 
         foreach (var descriptor in descriptors)
             _activityDescriptors.Remove(descriptor.ActivityType);
 
-        _providedActivityDescriptors.Remove(provider);
+        _providedActivityDescriptors.Remove(providerType);
     }
 
     public IEnumerable<ActivityDescriptor> ListAll() => _activityDescriptors.Values;
-    public IEnumerable<ActivityDescriptor> ListByProvider(object provider) => _providedActivityDescriptors.TryGetValue(provider, out var descriptors) ? descriptors : ArraySegment<ActivityDescriptor>.Empty;
+    public IEnumerable<ActivityDescriptor> ListByProvider(Type providerType) => _providedActivityDescriptors.TryGetValue(providerType, out var descriptors) ? descriptors : ArraySegment<ActivityDescriptor>.Empty;
     public ActivityDescriptor? Find(Func<ActivityDescriptor, bool> predicate) => _activityDescriptors.Values.FirstOrDefault(predicate);
     public ActivityDescriptor? Find(string activityType) => _activityDescriptors.TryGetValue(activityType, out var descriptor) ? descriptor : null;
 
@@ -45,7 +45,7 @@ public class ActivityRegistry : IActivityRegistry
         target.Add(descriptor);
     }
 
-    private ICollection<ActivityDescriptor> GetOrCreateDescriptors(object provider)
+    private ICollection<ActivityDescriptor> GetOrCreateDescriptors(Type provider)
     {
         if (_providedActivityDescriptors.TryGetValue(provider, out var descriptors))
             return descriptors;

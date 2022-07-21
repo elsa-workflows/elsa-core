@@ -3,6 +3,7 @@ import {leave, toggle} from 'el-transition';
 import {EventBus} from "../../../services";
 import {Container} from "typedi";
 import {ToolbarDisplayingArgs, ToolbarEventTypes, ToolbarMenu, ToolbarMenuItem} from "./models";
+import toolbarButtonMenuItemStore from "../../../data/toolbar-button-menu-item-store";
 
 @Component({
   tag: 'elsa-workflow-toolbar-menu',
@@ -10,7 +11,7 @@ import {ToolbarDisplayingArgs, ToolbarEventTypes, ToolbarMenu, ToolbarMenuItem} 
 })
 export class WorkflowToolbarMenu {
   private readonly eventBus: EventBus;
-  private readonly model: ToolbarMenu;
+  //private readonly model: ToolbarMenu;
   private menu: HTMLElement;
   private element: HTMLElement;
   private workflowDefinitionBrowser: HTMLElsaWorkflowDefinitionBrowserElement;
@@ -18,23 +19,6 @@ export class WorkflowToolbarMenu {
 
   constructor() {
     this.eventBus = Container.get(EventBus);
-
-    this.model = {
-      menuItems: [{
-        text: 'Workflow Definitions',
-        onClick: this.onWorkflowDefinitionsClick,
-        order: 0
-      }, {
-        text: 'Workflow Instances',
-        onClick: this.onWorkflowInstancesClick,
-        order: 1
-      }]
-    }
-  }
-
-  async componentWillLoad() {
-    const args: ToolbarDisplayingArgs = {menu: this.model};
-    await this.eventBus.emit<WorkflowToolbarMenu>(ToolbarEventTypes.Displaying, this, args);
   }
 
   private closeMenu = () => {
@@ -46,11 +30,11 @@ export class WorkflowToolbarMenu {
   };
 
   render() {
-    const menuItems = this.model.menuItems;
+    const menuItems: Array<ToolbarMenuItem> = toolbarButtonMenuItemStore.items;
 
     return (
       <Host class="block" ref={el => this.element = el}>
-        <div class="toolbar-menu-wrapper ml-3 relative">
+        <div class="toolbar-menu-wrapper relative">
           <div>
             <button onClick={() => this.toggleMenu()}
                     type="button"
@@ -76,7 +60,6 @@ export class WorkflowToolbarMenu {
             <a href="#" role="menuitem" tabindex="-1">Settings</a>
           </div>
         </div>
-        <elsa-workflow-definition-browser ref={el => this.workflowDefinitionBrowser = el}/>
         <elsa-workflow-instance-browser ref={el => this.workflowInstanceBrowser = el}/>
       </Host>
     );
@@ -89,10 +72,6 @@ export class WorkflowToolbarMenu {
     if (!this.element.contains(target))
       this.closeMenu();
   }
-
-  private onWorkflowDefinitionsClick = async () => {
-    await this.workflowDefinitionBrowser.show();
-  };
 
   private onWorkflowInstancesClick = async () => {
     await this.workflowInstanceBrowser.show();

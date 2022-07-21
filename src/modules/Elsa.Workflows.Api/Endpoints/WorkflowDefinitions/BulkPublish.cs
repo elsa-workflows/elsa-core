@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.AspNetCore.Attributes;
+using Elsa.Persistence.Common.Models;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Persistence.Models;
@@ -16,13 +17,13 @@ namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions;
 public class BulkPublish : Controller
 {
     private readonly IWorkflowDefinitionStore _store;
-    private readonly IWorkflowPublisher _workflowPublisher;
-    private readonly WorkflowSerializerOptionsProvider _serializerOptionsProvider;
+    private readonly IWorkflowDefinitionPublisher _workflowDefinitionPublisher;
+    private readonly SerializerOptionsProvider _serializerOptionsProvider;
 
-    public BulkPublish(IWorkflowDefinitionStore store, IWorkflowPublisher workflowPublisher, WorkflowSerializerOptionsProvider serializerOptionsProvider)
+    public BulkPublish(IWorkflowDefinitionStore store, IWorkflowDefinitionPublisher workflowDefinitionPublisher, SerializerOptionsProvider serializerOptionsProvider)
     {
         _store = store;
-        _workflowPublisher = workflowPublisher;
+        _workflowDefinitionPublisher = workflowDefinitionPublisher;
         _serializerOptionsProvider = serializerOptionsProvider;
     }
 
@@ -51,7 +52,7 @@ public class BulkPublish : Controller
                 continue;
             }
 
-            await _workflowPublisher.PublishAsync(definition, cancellationToken);
+            await _workflowDefinitionPublisher.PublishAsync(definition, cancellationToken);
             published.Add(definitionId);
         }
 

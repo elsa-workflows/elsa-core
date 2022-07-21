@@ -14,9 +14,9 @@ namespace Elsa.Labels.Endpoints.Labels;
 public class Get : Controller
 {
     private readonly ILabelStore _store;
-    private readonly WorkflowSerializerOptionsProvider _serializerOptionsProvider;
+    private readonly SerializerOptionsProvider _serializerOptionsProvider;
 
-    public Get(ILabelStore store, WorkflowSerializerOptionsProvider serializerOptionsProvider)
+    public Get(ILabelStore store, SerializerOptionsProvider serializerOptionsProvider)
     {
         _store = store;
         _serializerOptionsProvider = serializerOptionsProvider;

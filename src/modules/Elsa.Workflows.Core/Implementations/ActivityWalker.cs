@@ -12,28 +12,28 @@ public class ActivityWalker : IActivityWalker
         _portResolvers = portResolvers.OrderByDescending(x => x.Priority).ToList();
     }
 
-    public ActivityNode Walk(IActivity activity)
+    public async Task<ActivityNode> WalkAsync(IActivity activity, CancellationToken cancellationToken = default)
     {
         var collectedActivities = new HashSet<IActivity>(new[] { activity });
         var graph = new ActivityNode(activity);
         var collectedNodes = new HashSet<ActivityNode>(new[] { graph });
-        WalkRecursive((graph, activity), collectedActivities, collectedNodes);
+        await WalkRecursiveAsync((graph, activity), collectedActivities, collectedNodes, cancellationToken);
         return graph;
     }
 
-    private void WalkRecursive((ActivityNode Node, IActivity Activity) pair, HashSet<IActivity> collectedActivities, HashSet<ActivityNode> collectedNodes)
+    private async Task WalkRecursiveAsync((ActivityNode Node, IActivity Activity) pair, HashSet<IActivity> collectedActivities, HashSet<ActivityNode> collectedNodes, CancellationToken cancellationToken)
     {
-        WalkPortsRecursive(pair, collectedActivities, collectedNodes);
+        await WalkPortsRecursiveAsync(pair, collectedActivities, collectedNodes, cancellationToken);
     }
 
-    private void WalkPortsRecursive((ActivityNode Node, IActivity Activity) pair, HashSet<IActivity> collectedActivities, HashSet<ActivityNode> collectedNodes)
+    private async Task WalkPortsRecursiveAsync((ActivityNode Node, IActivity Activity) pair, HashSet<IActivity> collectedActivities, HashSet<ActivityNode> collectedNodes, CancellationToken cancellationToken)
     {
         var resolver = _portResolvers.FirstOrDefault(x => x.GetSupportsActivity(pair.Activity));
 
         if (resolver == null)
             return;
 
-        var ports = resolver.GetPorts(pair.Activity);
+        var ports = await resolver.GetPortsAsync(pair.Activity, cancellationToken);
 
         foreach (var port in ports)
         {
@@ -48,7 +48,7 @@ public class ActivityWalker : IActivityWalker
             childNode.Parents.Add(pair.Node);
             pair.Node.Children.Add(childNode);
             collectedActivities.Add(port);
-            WalkRecursive((childNode, port), collectedActivities, collectedNodes);
+            await WalkRecursiveAsync((childNode, port), collectedActivities, collectedNodes, cancellationToken);
         }
     }
 }

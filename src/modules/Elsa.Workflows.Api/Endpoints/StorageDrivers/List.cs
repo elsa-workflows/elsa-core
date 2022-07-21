@@ -16,9 +16,9 @@ namespace Elsa.Workflows.Api.Endpoints.StorageDrivers;
 public class List : Controller
 {
     private readonly IStorageDriverManager _registry;
-    private readonly WorkflowSerializerOptionsProvider _serializerOptionsProvider;
+    private readonly SerializerOptionsProvider _serializerOptionsProvider;
 
-    public List(IStorageDriverManager registry, WorkflowSerializerOptionsProvider serializerOptionsProvider)
+    public List(IStorageDriverManager registry, SerializerOptionsProvider serializerOptionsProvider)
     {
         _registry = registry;
         _serializerOptionsProvider = serializerOptionsProvider;

@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Elsa.AspNetCore.Attributes;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Management.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,9 +16,9 @@ namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions;
 public class BulkDelete : Controller
 {
     private readonly IWorkflowDefinitionManager _workflowDefinitionManager;
-    private readonly WorkflowSerializerOptionsProvider _serializerOptionsProvider;
+    private readonly SerializerOptionsProvider _serializerOptionsProvider;
 
-    public BulkDelete(IWorkflowDefinitionManager workflowDefinitionManager, WorkflowSerializerOptionsProvider serializerOptionsProvider)
+    public BulkDelete(IWorkflowDefinitionManager workflowDefinitionManager, SerializerOptionsProvider serializerOptionsProvider)
     {
         _workflowDefinitionManager = workflowDefinitionManager;
         _serializerOptionsProvider = serializerOptionsProvider;

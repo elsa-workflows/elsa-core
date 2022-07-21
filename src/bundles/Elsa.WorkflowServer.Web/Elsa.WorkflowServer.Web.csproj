@@ -7,7 +7,11 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\..\modules\Elsa.ActivityDefinitions.EntityFrameworkCore.Sqlite\Elsa.ActivityDefinitions.EntityFrameworkCore.Sqlite.csproj" />
+      <ProjectReference Include="..\..\modules\Elsa.ActivityDefinitions.EntityFrameworkCore\Elsa.ActivityDefinitions.EntityFrameworkCore.csproj" />
+      <ProjectReference Include="..\..\modules\Elsa.ActivityDefinitions\Elsa.ActivityDefinitions.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.ProtoActor\Elsa.ProtoActor.csproj" />
+      <ProjectReference Include="..\..\modules\Elsa.Tokens.Api\Elsa.Tokens.Api.csproj" />
       <ProjectReference Include="..\Elsa\Elsa.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.AspNetCore\Elsa.AspNetCore.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Hangfire\Elsa.Hangfire.csproj" />

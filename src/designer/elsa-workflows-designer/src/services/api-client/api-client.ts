@@ -4,8 +4,6 @@ import {Container, Service} from 'typedi';
 import {EventBus} from '../event-bus';
 import 'reflect-metadata';
 import {ServerSettings} from '../server-settings';
-import {WorkflowDefinitionsApi, WorkflowDefinitionsApiImpl} from "./workflow-definitions-api";
-import {WorkflowInstancesApi, WorkflowInstancesApiImpl} from "./workflow-instances-api";
 import {DescriptorsApi, DescriptorsApiImpl} from "./descriptors-api";
 import {DesignerApi, DesignerApiImpl} from "./designer-api";
 import {EventTypes} from "../../models";
@@ -14,13 +12,9 @@ export class ElsaClient {
   httpClient: AxiosInstance;
   descriptors: DescriptorsApi;
   designer: DesignerApi;
-  workflowDefinitions: WorkflowDefinitionsApi;
-  workflowInstances: WorkflowInstancesApi;
 
   constructor(httpClient: AxiosInstance) {
     this.httpClient = httpClient;
-    this.workflowDefinitions = new WorkflowDefinitionsApiImpl(httpClient);
-    this.workflowInstances = new WorkflowInstancesApiImpl(httpClient);
     this.descriptors = new DescriptorsApiImpl(httpClient);
     this.designer = new DesignerApiImpl(httpClient);
   }

@@ -64,6 +64,14 @@ export class DefaultActions {
     isDangerous: true,
     onClick: handler
   });
+
+  public static New = (handler?: ActionClickArgs): ActionDefinition => ({
+    text: 'New',
+    name: 'New',
+    type: ActionType.Button,
+    isPrimary: true,
+    onClick: handler
+  });
 }
 
 export interface RenderActivityPropsContext {

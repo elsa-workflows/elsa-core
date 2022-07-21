@@ -4,9 +4,10 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.AspNetCore.Attributes;
-using Elsa.Workflows.Api.Mappers;
+using Elsa.Persistence.Common.Models;
 using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Core.Serialization;
+using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Persistence.Models;
 using Elsa.Workflows.Persistence.Services;
 using Elsa.Workflows.Runtime.Services;
@@ -22,13 +23,13 @@ public class Export : Controller
 {
     private readonly IWorkflowDefinitionStore _store;
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
-    private readonly WorkflowSerializerOptionsProvider _serializerOptionsProvider;
+    private readonly SerializerOptionsProvider _serializerOptionsProvider;
     private readonly VariableDefinitionMapper _variableDefinitionMapper;
 
     public Export(
         IWorkflowDefinitionStore store, 
         IWorkflowDefinitionService workflowDefinitionService, 
-        WorkflowSerializerOptionsProvider serializerOptionsProvider,
+        SerializerOptionsProvider serializerOptionsProvider,
         VariableDefinitionMapper variableDefinitionMapper)
     {
         _store = store;

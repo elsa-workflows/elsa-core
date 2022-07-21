@@ -6,18 +6,14 @@ namespace Elsa.Workflows.Persistence.Entities;
 /// <summary>
 /// Represents a workflow definition.
 /// </summary>
-public class WorkflowDefinition : Entity
+public class WorkflowDefinition : VersionedEntity
 {
     public string DefinitionId { get; set; } = default!;
     public string? Name { get; set; }
     public string? Description { get; set; }
-    public DateTimeOffset CreatedAt { get; set; }
-    public int Version { get; set; } = 1;
     public ICollection<Variable> Variables { get; set; } = new List<Variable>();
     public IDictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
     public IDictionary<string, object> ApplicationProperties { get; set; } = new Dictionary<string, object>();
-    public bool IsLatest { get; set; }
-    public bool IsPublished { get; set; }
 
     /// <summary>
     /// The name of the workflow materializer to interpret the <see cref="StringData"/> or <see cref="BinaryData"/>.

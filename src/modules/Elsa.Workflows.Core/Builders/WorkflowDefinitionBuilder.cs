@@ -105,7 +105,7 @@ public class WorkflowDefinitionBuilder : IWorkflowDefinitionBuilder
         var metadata = new WorkflowMetadata();
         var workflow =new Workflow(identity, publication, metadata, root, Variables, Metadata, ApplicationProperties);
 
-        _identityGraphService.AssignIdentities(workflow);
+        _identityGraphService.AssignIdentitiesAsync(workflow);
         
         return workflow;
     }

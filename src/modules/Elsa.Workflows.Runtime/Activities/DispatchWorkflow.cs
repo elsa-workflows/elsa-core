@@ -1,3 +1,4 @@
+using Elsa.Persistence.Common.Models;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;

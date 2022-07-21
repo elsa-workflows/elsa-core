@@ -3,7 +3,7 @@ import {Container} from 'typedi';
 import {Activity, ActivityDescriptor} from '../../../models';
 import {ActivityDriverRegistry, ActivityDisplayContext} from '../../../services';
 
-export class ActivityNode extends Shape.HTML {
+export class ActivityNodeShape extends Shape.HTML {
   get text() {
     return this.store.get<string>('text');
   }
@@ -111,7 +111,7 @@ export class ActivityNode extends Shape.HTML {
   }
 }
 
-ActivityNode.config({
+ActivityNodeShape.config({
   ports: {
     groups: {
       in: {
@@ -160,4 +160,4 @@ ActivityNode.config({
   },
 });
 
-Graph.registerNode('activity', ActivityNode, true);
+Graph.registerNode('activity', ActivityNodeShape, true);

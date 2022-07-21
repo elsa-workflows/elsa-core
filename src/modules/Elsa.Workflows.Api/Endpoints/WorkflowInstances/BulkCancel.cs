@@ -13,9 +13,9 @@ namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances;
 [ApiEndpoint(ControllerNames.WorkflowInstances, "BulkCancel")]
 public class BulkCancel : Controller
 {
-    private readonly WorkflowSerializerOptionsProvider _serializerOptionsProvider;
+    private readonly SerializerOptionsProvider _serializerOptionsProvider;
 
-    public BulkCancel(WorkflowSerializerOptionsProvider serializerOptionsProvider)
+    public BulkCancel(SerializerOptionsProvider serializerOptionsProvider)
     {
         _serializerOptionsProvider = serializerOptionsProvider;
     }

@@ -17,9 +17,9 @@ namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.Journal;
 public class Get : Controller
 {
     private readonly IWorkflowExecutionLogStore _store;
-    private readonly WorkflowSerializerOptionsProvider _serializerOptionsProvider;
+    private readonly SerializerOptionsProvider _serializerOptionsProvider;
 
-    public Get(IWorkflowExecutionLogStore store, WorkflowSerializerOptionsProvider serializerOptionsProvider)
+    public Get(IWorkflowExecutionLogStore store, SerializerOptionsProvider serializerOptionsProvider)
     {
         _store = store;
         _serializerOptionsProvider = serializerOptionsProvider;
