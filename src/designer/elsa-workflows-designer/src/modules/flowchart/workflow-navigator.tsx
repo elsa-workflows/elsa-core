@@ -1,9 +1,9 @@
 import {Component, FunctionalComponent, h, Prop, Event, EventEmitter} from "@stencil/core";
 import {Container} from "typedi";
-import {ActivityIconRegistry, ActivityNode, flatten, PortProviderRegistry, walkActivities} from "../../../services";
+import {ActivityIconRegistry, ActivityNode, flatten, PortProviderRegistry, walkActivities} from "../../services";
 import {Flowchart, FlowchartNavigationItem} from "./models";
-import {Port} from "../../../models";
-import descriptorsStore from "../../../data/descriptors-store";
+import {Port} from "../../models";
+import descriptorsStore from "../../data/descriptors-store";
 
 @Component({
   tag: 'elsa-workflow-navigator',

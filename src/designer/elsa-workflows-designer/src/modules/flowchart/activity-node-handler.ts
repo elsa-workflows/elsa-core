@@ -1,5 +1,5 @@
 import {Node} from "@antv/x6";
-import {Activity, ActivityDescriptor} from "../../../models";
+import {Activity, ActivityDescriptor} from "../../models";
 
 export interface ActivityNodeHandler {
   createDesignerNode: (context: CreateUINodeContext) => Node.Metadata;

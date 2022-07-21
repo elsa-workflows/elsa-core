@@ -6,20 +6,19 @@
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
 import { ActivityDefinition, ActivityDefinitionPropsUpdatedArgs, ActivityDefinitionSummary, ActivityDefinitionUpdatedArgs } from "./modules/activity-definitions/models";
-import { ActivityDriverRegistry } from "./services";
+import { ActivityDriverRegistry, ContainerActivityComponent } from "./services";
 import { ActionDefinition, ActionInvokedArgs, Activity, ActivityDeletedArgs, ActivitySelectedArgs, ChildActivitySelectedArgs, ContainerSelectedArgs, EditChildActivityArgs, GraphUpdatedArgs, IntellisenseContext, SelectListItem, TabChangedArgs, TabDefinition, Variable, WorkflowInstance, WorkflowInstanceSummary } from "./models";
 import { ActivityIdUpdatedArgs, ActivityUpdatedArgs, DeleteActivityRequestedArgs } from "./modules/workflow-definitions/components/activity-properties-editor";
 import { PublishClickedArgs } from "./modules/activity-definitions/components/publish-button";
 import { Button } from "./components/shared/button-group/models";
-import { ContainerActivityComponent } from "./components/activities/container-activity-component";
 import { AddActivityArgs, UpdateActivityArgs } from "./components/designer/canvas/canvas";
 import { ActivityInputContext } from "./services/node-input-driver";
 import { ContextMenuAnchorPoint, MenuItem, MenuItemGroup } from "./components/shared/context-menu/models";
 import { DropdownButtonItem, DropdownButtonOrigin } from "./components/shared/dropdown-button/models";
-import { Flowchart, FlowchartNavigationItem } from "./components/activities/flowchart/models";
+import { Flowchart, FlowchartNavigationItem } from "./modules/flowchart/models";
 import { Graph } from "@antv/x6";
 import { AddActivityArgs as AddActivityArgs1, UpdateActivityArgs as UpdateActivityArgs1 } from "./components/designer/canvas/canvas";
-import { ActivityNodeShape } from "./components/activities/flowchart/shapes";
+import { ActivityNodeShape } from "./modules/flowchart/shapes";
 import { ExpressionChangedArs } from "./components/designer/input-control-switch/input-control-switch";
 import { CreateLabelEventArgs, DeleteLabelEventArgs, Label, UpdateLabelEventArgs } from "./modules/labels/models";
 import { MonacoLib, MonacoValueChangedArgs } from "./components/shared/monaco-editor/monaco-editor";

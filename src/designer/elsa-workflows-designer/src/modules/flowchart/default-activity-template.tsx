@@ -1,9 +1,9 @@
 import {Component, h, Prop, State, Event, EventEmitter, Listen, Element} from "@stencil/core";
-import {ActivityIcon, ActivityIconRegistry, PortProviderRegistry} from "../../../services";
+import {ActivityIcon, ActivityIconRegistry, PortProviderRegistry} from "../../services";
 import {Container} from "typedi";
-import {Activity, ActivityDescriptor, ActivityKind, ActivitySelectedArgs, ChildActivitySelectedArgs, EditChildActivityArgs, Port, PortMode} from "../../../models";
-import descriptorsStore from "../../../data/descriptors-store";
-import {isNullOrWhitespace} from "../../../utils";
+import {Activity, ActivityDescriptor, ActivityKind, ActivitySelectedArgs, ChildActivitySelectedArgs, EditChildActivityArgs, Port, PortMode} from "../../models";
+import descriptorsStore from "../../data/descriptors-store";
+import {isNullOrWhitespace} from "../../utils";
 import FlowchartTunnel from "./state";
 
 @Component({

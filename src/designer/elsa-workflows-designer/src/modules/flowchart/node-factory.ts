@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import {Graph, Node} from '@antv/x6';
-import {Activity, ActivityDescriptor, Port} from '../../../models';
+import {Activity, ActivityDescriptor, Port} from '../../models';
 import {Container, Service} from "typedi";
 import {NodeHandlerRegistry} from "./node-handler-registry";
 

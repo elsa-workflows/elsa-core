@@ -1,5 +1,5 @@
-import {AddActivityArgs, UpdateActivityArgs} from '../designer/canvas/canvas';
-import {Activity} from '../../models';
+import {AddActivityArgs, UpdateActivityArgs} from '../components/designer/canvas/canvas';
+import {Activity} from "../models";
 
 export interface ContainerActivityComponent {
   newRoot(): Promise<Activity>;

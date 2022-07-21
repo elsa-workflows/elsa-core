@@ -1,4 +1,4 @@
-import {Activity, Container} from '../../../models';
+import {Activity, Container} from '../../models';
 
 export interface Flowchart extends Container {
   start: string;

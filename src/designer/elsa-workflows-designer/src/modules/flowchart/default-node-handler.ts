@@ -2,8 +2,8 @@ import 'reflect-metadata';
 import {Node} from "@antv/x6";
 import {Container, Service} from "typedi"
 import {ActivityNodeHandler, CreateUINodeContext} from "./activity-node-handler";
-import {PortProviderContext, PortProviderRegistry} from "../../../services";
-import {PortMode} from "../../../models";
+import {PortProviderContext, PortProviderRegistry} from "../../services";
+import {PortMode} from "../../models";
 
 @Service()
 export class DefaultNodeHandler implements ActivityNodeHandler {

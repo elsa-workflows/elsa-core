@@ -4,7 +4,7 @@ import {Container, Service} from "typedi";
 import {ActivityDescriptor, Plugin} from "../../models";
 import newButtonItemStore from "../../data/new-button-item-store";
 import {MenuItem} from "../../components/shared/context-menu/models";
-import {Flowchart} from "../../components/activities/flowchart/models";
+import {Flowchart} from "../flowchart/models";
 import {generateUniqueActivityName} from '../../utils/generate-activity-name';
 import descriptorsStore from "../../data/descriptors-store";
 import studioComponentStore from "../../data/studio-component-store";

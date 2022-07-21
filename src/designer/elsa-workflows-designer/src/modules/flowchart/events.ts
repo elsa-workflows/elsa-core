@@ -1,6 +1,6 @@
 import {Connection} from "./models";
 import {Edge, Graph, Node} from "@antv/x6";
-import {Activity} from "../../../models";
+import {Activity} from "../../models";
 
 export const FlowchartEvents = {
   ConnectionCreated: 'connection-created'

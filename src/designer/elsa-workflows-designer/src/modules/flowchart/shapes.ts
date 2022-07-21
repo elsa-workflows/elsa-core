@@ -1,7 +1,7 @@
 import {Cell, Graph, Shape} from '@antv/x6';
 import {Container} from 'typedi';
-import {Activity, ActivityDescriptor} from '../../../models';
-import {ActivityDriverRegistry, ActivityDisplayContext} from '../../../services';
+import {Activity, ActivityDescriptor} from '../../models';
+import {ActivityDriverRegistry, ActivityDisplayContext} from '../../services';
 
 export class ActivityNodeShape extends Shape.HTML {
   get text() {

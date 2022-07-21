@@ -39,7 +39,7 @@ export class Properties {
     await this.slideOverPanel.hide();
   }
 
-  @Watch('workflowDefinition')
+  @Watch('activityDefinition')
   async onWorkflowDefinitionChanged() {
     await this.createModel();
   }

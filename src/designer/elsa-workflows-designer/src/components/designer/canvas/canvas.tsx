@@ -1,5 +1,5 @@
 import {Component, h, Method, Prop} from '@stencil/core';
-import {ContainerActivityComponent} from '../../activities/container-activity-component';
+import {ContainerActivityComponent} from '../../../services';
 import {Activity, ActivityDescriptor} from '../../../models';
 
 export interface AddActivityArgs {
