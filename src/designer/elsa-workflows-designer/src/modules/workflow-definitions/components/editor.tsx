@@ -69,7 +69,7 @@ export class WorkflowDefinitionEditor {
 
   @Listen('containerSelected')
   private async handleContainerSelected(e: CustomEvent<ContainerSelectedArgs>) {
-    //this.selectedActivity = this.getCurrentContainer();
+    this.selectedActivity = e.detail.activity;
   }
 
   @Listen('activitySelected')
