@@ -1,5 +1,7 @@
 import {Component, Event, EventEmitter, Host, h, Listen, Prop} from '@stencil/core';
 import {leave, toggle} from 'el-transition'
+import {MenuItem} from "../../../components/shared/context-menu/models";
+import newButtonItemStore from "../../../data/new-button-item-store";
 
 export interface PublishClickedArgs {
   begin: () => void;
@@ -54,9 +56,9 @@ export class PublishButton {
     leave(this.menu);
   }
 
-  private onNewClick(e: Event) {
+  private onNewClick(e: MouseEvent, item: MenuItem) {
     e.preventDefault();
-    this.newClicked.emit();
+    item.clickHandler(e);
     leave(this.menu);
   }
 
@@ -85,6 +87,8 @@ export class PublishButton {
   }
 
   render() {
+    const newMenuItems: Array<MenuItem> = newButtonItemStore.items;
+
     return (
       <Host class="block" ref={el => this.element = el}>
         <span class="relative z-0 inline-flex shadow-sm rounded-md">
@@ -108,11 +112,13 @@ export class PublishButton {
               <div class="divide-y divide-gray-100 focus:outline-none" role="menu" aria-orientation="vertical" aria-labelledby="option-menu">
 
               <div class="py-1" role="none">
-                  <a href="#" onClick={e => this.onNewClick(e)}
-                     class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                     role="menuitem">
-                    New
-                  </a>
+                  {newMenuItems.map(item => (
+                    <a href="#" onClick={e => this.onNewClick(e, item)}
+                       class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                       role="menuitem">
+                      {`New ${item.text}`}
+                    </a>
+                  ))}
                 </div>
 
                 <div class="py-1" role="none">
