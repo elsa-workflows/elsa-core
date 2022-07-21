@@ -5,7 +5,6 @@ using Elsa.ActivityDefinitions.Services;
 using Elsa.Persistence.Common.Models;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Management.Services;
 using Open.Linq.AsyncExtensions;
 

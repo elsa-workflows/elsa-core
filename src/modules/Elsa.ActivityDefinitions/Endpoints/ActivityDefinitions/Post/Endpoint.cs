@@ -1,5 +1,4 @@
 using System.Text.Json;
-using Elsa.ActivityDefinitions.Endpoints.ActivityDefinitions.List;
 using Elsa.ActivityDefinitions.Services;
 using Elsa.Api.Common;
 using Elsa.Workflows.Core.Activities.Flowchart.Activities;

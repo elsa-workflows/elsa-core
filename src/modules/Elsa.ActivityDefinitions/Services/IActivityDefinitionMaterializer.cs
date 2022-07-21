@@ -1,3 +1,4 @@
+using Elsa.ActivityDefinitions.Activities;
 using Elsa.ActivityDefinitions.Entities;
 using Elsa.Workflows.Core.Services;
 
@@ -8,5 +9,5 @@ namespace Elsa.ActivityDefinitions.Services;
 /// </summary>
 public interface IActivityDefinitionMaterializer
 {
-    Task<IActivity> MaterializeAsync(ActivityDefinition definition, CancellationToken cancellationToken = default);
+    Task<IActivity> MaterializeAsync(ActivityDefinitionActivity activity, CancellationToken cancellationToken = default);
 }

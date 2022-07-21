@@ -1,7 +1,9 @@
 using System.Text.Json;
-using Elsa.ActivityDefinitions.Entities;
+using Elsa.ActivityDefinitions.Activities;
 using Elsa.ActivityDefinitions.Services;
+using Elsa.Persistence.Common.Models;
 using Elsa.Workflows.Core;
+using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,22 +12,29 @@ namespace Elsa.ActivityDefinitions.Implementations;
 
 public class ActivityDefinitionMaterializer : IActivityDefinitionMaterializer
 {
+    private readonly IActivityDefinitionStore _store;
     private readonly SerializerOptionsProvider _serializerOptionsProvider;
     private readonly IServiceProvider _serviceProvider;
 
-    public ActivityDefinitionMaterializer(SerializerOptionsProvider serializerOptionsProvider, IServiceProvider serviceProvider)
+    public ActivityDefinitionMaterializer(IActivityDefinitionStore store, SerializerOptionsProvider serializerOptionsProvider, IServiceProvider serviceProvider)
     {
+        _store = store;
         _serializerOptionsProvider = serializerOptionsProvider;
         _serviceProvider = serviceProvider;
     }
 
-    public async Task<IActivity> MaterializeAsync(ActivityDefinition definition, CancellationToken cancellationToken = default)
+    public async Task<IActivity> MaterializeAsync(ActivityDefinitionActivity activity, CancellationToken cancellationToken = default)
     {
+        var definition = await _store.FindByDefinitionIdAsync(activity.DefinitionId, VersionOptions.Published, cancellationToken);
+
+        if (definition == null)
+            return new Sequence();
+
         // Construct the root activity stored in the activity definitions.
         var root = JsonSerializer.Deserialize<IActivity>(definition.Data!, _serializerOptionsProvider.CreateDefaultOptions())!;
 
         // Prefix all activity IDS with the ID of the wrapper to prevent naming collisions.
-        var prefix = $"{definition.DefinitionId}_";
+        var prefix = $"{activity.Id}_";
         await ApplyPrefixAsync(prefix, root, cancellationToken);
 
         return root;

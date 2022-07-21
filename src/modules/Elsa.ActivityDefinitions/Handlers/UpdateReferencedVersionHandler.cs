@@ -8,7 +8,6 @@ using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Notifications;
-using Elsa.Workflows.Persistence.Entities;
 using Elsa.Workflows.Runtime.Services;
 using Microsoft.Extensions.Logging;
 using Open.Linq.AsyncExtensions;

@@ -7,9 +7,7 @@ using Elsa.Features.Services;
 using Elsa.Mediator.Extensions;
 using Elsa.Mediator.Features;
 using Elsa.Persistence.Common.Extensions;
-using Elsa.Workflows.Core.ActivityNodeResolvers;
 using Elsa.Workflows.Core.Services;
-using Elsa.Workflows.Management.Providers;
 using Elsa.Workflows.Management.Services;
 using Microsoft.Extensions.DependencyInjection;
 
