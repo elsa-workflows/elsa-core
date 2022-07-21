@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elsa.ActivityDefinitions.EntityFrameworkCore.Sqlite.Migrations
 {
     [DbContext(typeof(ActivityDefinitionsDbContext))]
-    [Migration("20220720113148_Initial")]
+    [Migration("20220721084744_Initial")]
     partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -21,6 +21,9 @@ namespace Elsa.ActivityDefinitions.EntityFrameworkCore.Sqlite.Migrations
             modelBuilder.Entity("Elsa.ActivityDefinitions.Entities.ActivityDefinition", b =>
                 {
                     b.Property<string>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Category")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("CreatedAt")
@@ -37,13 +40,17 @@ namespace Elsa.ActivityDefinitions.EntityFrameworkCore.Sqlite.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("DisplayName")
+                        .HasColumnType("TEXT");
+
                     b.Property<bool>("IsLatest")
                         .HasColumnType("INTEGER");
 
                     b.Property<bool>("IsPublished")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("Name")
+                    b.Property<string>("TypeName")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<int>("Version")
@@ -57,8 +64,8 @@ namespace Elsa.ActivityDefinitions.EntityFrameworkCore.Sqlite.Migrations
                     b.HasIndex("IsPublished")
                         .HasDatabaseName("IX_ActivityDefinition_IsPublished");
 
-                    b.HasIndex("Name")
-                        .HasDatabaseName("IX_ActivityDefinition_Name");
+                    b.HasIndex("TypeName")
+                        .HasDatabaseName("IX_ActivityDefinition_TypeName");
 
                     b.HasIndex("Version")
                         .HasDatabaseName("IX_ActivityDefinition_Version");

@@ -10,7 +10,7 @@ import descriptorsStore from "../../data/descriptors-store";
 import studioComponentStore from "../../data/studio-component-store";
 import toolbarButtonMenuItemStore from "../../data/toolbar-button-menu-item-store";
 import {ToolbarMenuItem} from "../../components/toolbar/workflow-toolbar-menu/models";
-import {ElsaApiClientProvider, ElsaClient, EventBus} from "../../services";
+import {ActivityDescriptorManager, EventBus} from "../../services";
 import toolbarComponentStore from "../../data/toolbar-component-store";
 import {NotificationEventTypes} from "../notifications/event-types";
 import {PublishClickedArgs} from "./components/publish-button";
@@ -24,15 +24,18 @@ const FlowchartTypeName = 'Elsa.Flowchart';
 export class ActivityDefinitionsPlugin implements Plugin {
   private readonly eventBus: EventBus;
   private readonly activityDefinitionManager: ActivityDefinitionManager;
+  private readonly activityDescriptorManager: ActivityDescriptorManager;
   private readonly api: ActivityDefinitionsApi;
   private activityDefinitionEditorElement: HTMLElsaActivityDefinitionEditorElement;
   private activityDefinitionBrowserElement: HTMLElsaActivityDefinitionBrowserElement;
+
 
 
   constructor() {
     this.eventBus = Container.get(EventBus);
     this.activityDefinitionManager = Container.get(ActivityDefinitionManager);
     this.api = Container.get(ActivityDefinitionsApi);
+    this.activityDescriptorManager = Container.get(ActivityDescriptorManager);
 
     const newActivityDefinitionItem: MenuItem = {
       text: 'Activity Definition',
@@ -74,8 +77,10 @@ export class ActivityDefinitionsPlugin implements Plugin {
     const activityDefinition: ActivityDefinition = {
       root: flowchart,
       id: '',
-      name: 'Activity 1',
       definitionId: '',
+      typeName: 'Activity1',
+      category: 'Custom',
+      displayName: 'Activity 1',
       version: 1,
       isLatest: true,
       isPublished: false
@@ -100,6 +105,10 @@ export class ActivityDefinitionsPlugin implements Plugin {
                                                                                          ref={el => this.activityDefinitionEditorElement = el}/>;
   };
 
+  private refreshActivityDescriptors = () => {
+
+  }
+
   private onNewActivityDefinitionClick = async () => await this.newActivityDefinition();
 
   private onActivityDefinitionUpdated = async (e: CustomEvent<ActivityDefinitionUpdatedArgs>) => {
@@ -120,9 +129,12 @@ export class ActivityDefinitionsPlugin implements Plugin {
   private onPublishClicked = async (e: CustomEvent<PublishClickedArgs>) => {
     e.detail.begin();
     const activityDefinition = await this.activityDefinitionEditorElement.getActivityDefinition();
-    await this.eventBus.emit(NotificationEventTypes.Add, this, {id: activityDefinition.definitionId, message: `Starting publishing ${activityDefinition.name}`});
+    await this.eventBus.emit(NotificationEventTypes.Add, this, {id: activityDefinition.definitionId, message: `Starting publishing ${activityDefinition.typeName}`});
     await this.saveActivityDefinition(activityDefinition, true);
-    await this.eventBus.emit(NotificationEventTypes.Update, this, {id: activityDefinition.definitionId, message: `${activityDefinition.name} publish finished`});
+    await this.eventBus.emit(NotificationEventTypes.Update, this, {id: activityDefinition.definitionId, message: `${activityDefinition.typeName} publish finished`});
     e.detail.complete();
+
+    // Reload activity descriptors.
+    await this.activityDescriptorManager.refresh();
   }
 }

@@ -5,8 +5,10 @@ namespace Elsa.ActivityDefinitions.Endpoints.ActivityDefinitions.Post;
 
 public class Request
 {
-    public string? DefinitionId { get; set; }
-    public string? Name { get; set; }
+    public string DefinitionId { get; set; } = default!;
+    public string TypeName { get; set; } = default!;
+    public string? DisplayName { get; set; }
+    public string? Category { get; set; }
     public string? Description { get; set; }
     public IActivity? Root { get; set; }
     public ICollection<VariableDefinition>? Variables { get; set; }
@@ -20,11 +22,13 @@ public class Response
     public Response()
     {
     }
-    
+
     public Response(
         string id,
         string definitionId,
-        string? name,
+        string typeName,
+        string? displayName,
+        string? category,
         string? description,
         DateTimeOffset createdAt,
         int version,
@@ -37,7 +41,9 @@ public class Response
     {
         Id = id;
         DefinitionId = definitionId;
-        Name = name;
+        TypeName = typeName;
+        DisplayName = displayName;
+        Category = category;
         Description = description;
         CreatedAt = createdAt;
         Version = version;
@@ -51,7 +57,9 @@ public class Response
 
     public string Id { get; set; } = default!;
     public string DefinitionId { get; set; } = default!;
-    public string? Name { get; set; }
+    public string TypeName { get; set; } = default!;
+    public string? DisplayName { get; set; }
+    public string? Category { get; set; }
     public string? Description { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public int Version { get; set; }

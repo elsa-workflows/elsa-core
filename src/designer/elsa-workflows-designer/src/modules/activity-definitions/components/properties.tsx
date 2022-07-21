@@ -30,12 +30,12 @@ export class Properties {
   @State() private selectedTabIndex: number = 0;
 
   @Method()
-  public async show(): Promise<void> {
+  async show(): Promise<void> {
     await this.slideOverPanel.show();
   }
 
   @Method()
-  public async hide(): Promise<void> {
+  async hide(): Promise<void> {
     await this.slideOverPanel.hide();
   }
 
@@ -46,22 +46,6 @@ export class Properties {
 
   async componentWillLoad() {
     await this.createModel();
-  }
-
-  public render() {
-    const activityDefinition = this.activityDefinition;
-    const title = activityDefinition?.name ?? 'Untitled';
-    const subTitle = 'Activity Definition'
-    const tabs = this.model.tabModels.map(x => x.tab);
-
-    return (
-      <elsa-form-panel
-        mainTitle={title}
-        subTitle={subTitle}
-        tabs={tabs}
-        selectedTabIndex={this.selectedTabIndex}
-        onSelectedTabIndexChanged={e => this.onSelectedTabIndexChanged(e)}/>
-    );
   }
 
   private createModel = async () => {
@@ -80,20 +64,31 @@ export class Properties {
       name: 'properties',
       tab: null,
       Widgets: [{
-        name: 'activityDefinitionName',
+        name: 'activityDefinitionTypeName',
         content: () => {
           const definition = this.activityDefinition;
-          return <FormEntry label="Name" fieldId="activityDefinitionName" hint="The name of the activity definition.">
-            <input type="text" name="activityDefinitionName" id="activityDefinitionName" value={definition.name} onChange={e => this.onPropertyEditorChanged(wf => wf.name = (e.target as HTMLInputElement).value)}/>
+          return <FormEntry label="Type Name" fieldId="activityDefinitionTypeName" hint="The type name of the custom activity.">
+            <input type="text" name="activityDefinitionTypeName" id="activityDefinitionTypeName" value={definition.typeName} onChange={e => this.onPropertyEditorChanged(a => a.typeName = (e.target as HTMLInputElement).value)}/>
           </FormEntry>;
         },
         order: 0
       }, {
-        name: 'activityDefinitionDescription',
+        name: 'activityDefinitionDisplayName',
         content: () => {
           const definition = this.activityDefinition;
-          return <FormEntry label="Description" fieldId="activityDefinitionDescription" hint="A brief description about the activity definition.">
-            <textarea name="activityDefinitionDescription" id="activityDefinitionDescription" value={definition.description} rows={6} onChange={e => this.onPropertyEditorChanged(wf => wf.description = (e.target as HTMLTextAreaElement).value)}/>
+          return <FormEntry label="Display Name" fieldId="activityDefinitionDisplayName" hint="The display name of the custom activity.">
+            <input type="text" name="activityDefinitionDisplayName" id="activityDefinitionDisplayName" value={definition.displayName}
+                   onChange={e => this.onPropertyEditorChanged(a => a.displayName = (e.target as HTMLInputElement).value)}/>
+          </FormEntry>;
+        },
+        order: 0
+      }, {
+        name: 'activityDefinitionCategory',
+        content: () => {
+          const definition = this.activityDefinition;
+          return <FormEntry label="Category" fieldId="activityDefinitionCategory" hint="The category to which this activity belongs.">
+              <input type="text" name="activityDefinitionCategory" id="activityDefinitionCategory" value={definition.category}
+                        onChange={e => this.onPropertyEditorChanged(a => a.category = (e.target as HTMLTextAreaElement).value)}/>
           </FormEntry>;
         },
         order: 5
@@ -165,5 +160,21 @@ export class Properties {
     activityDefinition.variables = e.detail;
     this.activityDefinitionPropsUpdated.emit({activityDefinition: activityDefinition});
     await this.createModel();
+  }
+
+  render() {
+    const activityDefinition = this.activityDefinition;
+    const title = activityDefinition?.displayName ?? activityDefinition?.typeName ?? 'Untitled';
+    const subTitle = 'Activity Definition'
+    const tabs = this.model.tabModels.map(x => x.tab);
+
+    return (
+      <elsa-form-panel
+        mainTitle={title}
+        subTitle={subTitle}
+        tabs={tabs}
+        selectedTabIndex={this.selectedTabIndex}
+        onSelectedTabIndexChanged={e => this.onSelectedTabIndexChanged(e)}/>
+    );
   }
 }

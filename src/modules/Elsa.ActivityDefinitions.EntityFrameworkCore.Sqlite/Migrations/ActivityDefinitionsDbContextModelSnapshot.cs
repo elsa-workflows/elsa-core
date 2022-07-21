@@ -21,6 +21,9 @@ namespace Elsa.ActivityDefinitions.EntityFrameworkCore.Sqlite.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Category")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("CreatedAt")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -35,13 +38,17 @@ namespace Elsa.ActivityDefinitions.EntityFrameworkCore.Sqlite.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("DisplayName")
+                        .HasColumnType("TEXT");
+
                     b.Property<bool>("IsLatest")
                         .HasColumnType("INTEGER");
 
                     b.Property<bool>("IsPublished")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("Name")
+                    b.Property<string>("TypeName")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<int>("Version")
@@ -55,8 +62,8 @@ namespace Elsa.ActivityDefinitions.EntityFrameworkCore.Sqlite.Migrations
                     b.HasIndex("IsPublished")
                         .HasDatabaseName("IX_ActivityDefinition_IsPublished");
 
-                    b.HasIndex("Name")
-                        .HasDatabaseName("IX_ActivityDefinition_Name");
+                    b.HasIndex("TypeName")
+                        .HasDatabaseName("IX_ActivityDefinition_TypeName");
 
                     b.HasIndex("Version")
                         .HasDatabaseName("IX_ActivityDefinition_Version");

@@ -13,7 +13,9 @@ export class ActivityDefinitionManager {
   public save = async (definition: ActivityDefinition, publish: boolean): Promise<ActivityDefinition> => {
     const request: SaveActivityDefinitionRequest = {
       definitionId: definition.definitionId,
-      name: definition.name,
+      typeName: definition.typeName,
+      displayName: definition.displayName,
+      category: definition.category,
       description: definition.description,
       publish: publish,
       root: definition.root,

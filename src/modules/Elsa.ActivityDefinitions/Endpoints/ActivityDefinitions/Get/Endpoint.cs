@@ -28,10 +28,10 @@ public class Get : ProtectedEndpoint<Request, ActivityDefinitionModel>
         ConfigureSecurity(SecurityConstants.Permissions, SecurityConstants.Policies, SecurityConstants.Roles);
     }
 
-    public override async Task<ActivityDefinitionModel> ExecuteAsync(Request req, CancellationToken ct)
+    public override async Task<ActivityDefinitionModel> ExecuteAsync(Request request, CancellationToken cancellationToken)
     {
-        var parsedVersionOptions = req.VersionOptions != null ? VersionOptions.FromString(req.VersionOptions) : VersionOptions.Published;
-        var definition = await _activityDefinitionStore.FindByDefinitionIdAsync(req.DefinitionId, parsedVersionOptions, ct);
+        var parsedVersionOptions = request.VersionOptions != null ? VersionOptions.FromString(request.VersionOptions) : VersionOptions.Latest;
+        var definition = await _activityDefinitionStore.FindByDefinitionIdAsync(request.DefinitionId, parsedVersionOptions, cancellationToken);
 
         if (definition == null)
             return null!;
@@ -43,7 +43,9 @@ public class Get : ProtectedEndpoint<Request, ActivityDefinitionModel>
         var model = new ActivityDefinitionModel(
             definition.Id,
             definition.DefinitionId,
-            definition.Name,
+            definition.TypeName,
+            definition.DisplayName,
+            definition.Category,
             definition.Description,
             definition.CreatedAt,
             definition.Version,

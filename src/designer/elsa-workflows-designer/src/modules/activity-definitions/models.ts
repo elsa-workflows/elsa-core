@@ -3,7 +3,9 @@ import {TabModel} from "../workflow-definitions/models/ui";
 
 export interface ActivityDefinition extends VersionedEntity {
   definitionId: string;
-  name?: string;
+  typeName: string;
+  displayName?: string;
+  category?: string;
   description?: string;
   createdAt?: Date;
   variables?: Array<Variable>;
@@ -16,7 +18,9 @@ export interface ActivityDefinitionSummary {
   id: string;
   definitionId: string;
   version: number;
-  name?: string;
+  typeName: string;
+  displayName?: string;
+  category?: string;
   description?: string;
   isPublished: boolean;
   isLatest: boolean;
@@ -24,7 +28,9 @@ export interface ActivityDefinitionSummary {
 
 export interface SaveActivityDefinitionRequest {
   definitionId: string;
-  name?: string;
+  typeName: string;
+  displayName?: string;
+  category?: string;
   description?: string;
   publish: boolean;
   root?: Activity;

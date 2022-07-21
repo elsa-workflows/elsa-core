@@ -1,8 +1,6 @@
-using System.Text.Json;
 using Elsa.ActivityDefinitions.Activities;
 using Elsa.ActivityDefinitions.Services;
 using Elsa.Persistence.Common.Models;
-using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.Services;
 
 namespace Elsa.ActivityDefinitions.Implementations;
@@ -13,12 +11,12 @@ namespace Elsa.ActivityDefinitions.Implementations;
 public class ActivityDefinitionPortResolver : IActivityPortResolver
 {
     private readonly IActivityDefinitionStore _store;
-    private readonly SerializerOptionsProvider _serializerOptionsProvider;
+    private readonly IActivityDefinitionMaterializer _activityDefinitionMaterializer;
 
-    public ActivityDefinitionPortResolver(IActivityDefinitionStore store, SerializerOptionsProvider serializerOptionsProvider)
+    public ActivityDefinitionPortResolver(IActivityDefinitionStore store, IActivityDefinitionMaterializer activityDefinitionMaterializer)
     {
         _store = store;
-        _serializerOptionsProvider = serializerOptionsProvider;
+        _activityDefinitionMaterializer = activityDefinitionMaterializer;
     }
 
     public int Priority => 0;
@@ -27,13 +25,12 @@ public class ActivityDefinitionPortResolver : IActivityPortResolver
     public async ValueTask<IEnumerable<IActivity>> GetPortsAsync(IActivity activity, CancellationToken cancellationToken = default)
     {
         var activityDefinitionActivity = (ActivityDefinitionActivity)activity;
-
         var definition = await _store.FindByDefinitionIdAsync(activityDefinitionActivity.DefinitionId, VersionOptions.Published, cancellationToken);
 
         if (definition == null)
             return Array.Empty<IActivity>();
 
-        var root = JsonSerializer.Deserialize<IActivity>(definition.Data!, _serializerOptionsProvider.CreateDefaultOptions())!;
+        var root = await _activityDefinitionMaterializer.MaterializeAsync(definition, cancellationToken);
 
         return new[] { root };
     }

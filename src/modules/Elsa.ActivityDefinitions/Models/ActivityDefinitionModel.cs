@@ -12,7 +12,9 @@ public class ActivityDefinitionModel
     public ActivityDefinitionModel(
         string id,
         string definitionId,
-        string? name,
+        string typeName,
+        string? displayName,
+        string? category,
         string? description,
         DateTimeOffset createdAt,
         int version,
@@ -25,7 +27,9 @@ public class ActivityDefinitionModel
     {
         Id = id;
         DefinitionId = definitionId;
-        Name = name;
+        TypeName = typeName;
+        DisplayName = displayName;
+        Category = category;
         Description = description;
         CreatedAt = createdAt;
         Version = version;
@@ -39,7 +43,9 @@ public class ActivityDefinitionModel
 
     public string Id { get; init; } = default!;
     public string DefinitionId { get; init; } = default!;
-    public string? Name { get; init; }
+    public string TypeName { get; init; } = default!;
+    public string? DisplayName { get; init; }
+    public string? Category { get; init; }
     public string? Description { get; init; }
     public DateTimeOffset CreatedAt { get; init; }
     public int Version { get; init; }

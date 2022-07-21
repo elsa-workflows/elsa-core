@@ -7,6 +7,6 @@ public class RegisterDescriptors : IHostedService
 {
     private readonly IActivityRegistryPopulator _activityRegistryPopulator;
     public RegisterDescriptors(IActivityRegistryPopulator activityRegistryPopulator) => _activityRegistryPopulator = activityRegistryPopulator;
-    public async Task StartAsync(CancellationToken cancellationToken) => await _activityRegistryPopulator.PopulateRegistryAsync(cancellationToken).AsTask();
+    public async Task StartAsync(CancellationToken cancellationToken) => await _activityRegistryPopulator.PopulateRegistryAsync(cancellationToken);
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }

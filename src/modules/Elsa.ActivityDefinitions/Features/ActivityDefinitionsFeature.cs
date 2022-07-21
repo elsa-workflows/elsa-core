@@ -2,8 +2,10 @@ using Elsa.ActivityDefinitions.Entities;
 using Elsa.ActivityDefinitions.Implementations;
 using Elsa.ActivityDefinitions.Services;
 using Elsa.Features.Abstractions;
+using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Mediator.Extensions;
+using Elsa.Mediator.Features;
 using Elsa.Persistence.Common.Extensions;
 using Elsa.Workflows.Core.ActivityNodeResolvers;
 using Elsa.Workflows.Core.Services;
@@ -13,6 +15,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.ActivityDefinitions.Features;
 
+[DependsOn(typeof(MediatorFeature))]
 public class ActivityDefinitionsFeature : FeatureBase
 {
     public ActivityDefinitionsFeature(IModule module) : base(module)
@@ -32,6 +35,7 @@ public class ActivityDefinitionsFeature : FeatureBase
         Services
             .AddMemoryStore<ActivityDefinition, MemoryActivityDefinitionStore>()
             .AddSingleton(ActivityDefinitionStore)
+            .AddSingleton<IActivityDefinitionMaterializer, ActivityDefinitionMaterializer>()
             .AddSingleton<IActivityDefinitionPublisher, ActivityDefinitionPublisher>()
             .AddSingleton<IActivityProvider, ActivityDefinitionActivityProvider>()
             .AddSingleton<IActivityPortResolver, ActivityDefinitionPortResolver>()

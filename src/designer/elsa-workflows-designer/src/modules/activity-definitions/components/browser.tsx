@@ -169,33 +169,33 @@ export class ActivityDefinitionBrowser {
                   </tr>
                 </thead>
                 <tbody>
-                  {ActivityDefinitions.items.map(ActivityDefinition => {
-                    const latestVersionNumber = ActivityDefinition.version;
-                    const { isPublished } = ActivityDefinition;
+                  {ActivityDefinitions.items.map(definition => {
+                    const latestVersionNumber = definition.version;
+                    const { isPublished } = definition;
                     const publishedVersion: ActivityDefinitionSummary = isPublished
-                      ? ActivityDefinition
-                      : publishedActivityDefinitions.find(x => x.definitionId == ActivityDefinition.definitionId);
+                      ? definition
+                      : publishedActivityDefinitions.find(x => x.definitionId == definition.definitionId);
                     const publishedVersionNumber = !!publishedVersion ? publishedVersion.version : '-';
 
-                    const isSelected = this.selectedActivityDefinitionIds.findIndex(x => x === ActivityDefinition.definitionId) >= 0;
-                    let workflowDisplayName = ActivityDefinition.name;
+                    const isSelected = this.selectedActivityDefinitionIds.findIndex(x => x === definition.definitionId) >= 0;
+                    let displayName = definition.displayName || definition.typeName;
 
-                    if (!workflowDisplayName || workflowDisplayName.trim().length == 0) workflowDisplayName = 'Untitled';
+                    if (!displayName || displayName.trim().length == 0) displayName = 'Untitled';
 
                     return (
                       <tr>
                         <td>
                           <input
                             type="checkbox"
-                            value={ActivityDefinition.definitionId}
+                            value={definition.definitionId}
                             checked={isSelected}
-                            onChange={e => this.onActivityDefinitionCheckChange(e, ActivityDefinition)}
+                            onChange={e => this.onActivityDefinitionCheckChange(e, definition)}
                           />
                         </td>
                         <td>
                           <div class="flex items-center space-x-3 lg:pl-2">
-                            <a onClick={e => this.onActivityDefinitionClick(e, ActivityDefinition)} href="#" class="truncate hover:text-gray-600">
-                              <span>{workflowDisplayName}</span>
+                            <a onClick={e => this.onActivityDefinitionClick(e, definition)} href="#" class="truncate hover:text-gray-600">
+                              <span>{displayName}</span>
                             </a>
                           </div>
                         </td>
@@ -205,15 +205,15 @@ export class ActivityDefinitionBrowser {
                         <td class="pr-6">
                           <elsa-context-menu
                             menuItems={[
-                              { text: 'Edit', clickHandler: e => this.onActivityDefinitionClick(e, ActivityDefinition), icon: <EditIcon /> },
+                              { text: 'Edit', clickHandler: e => this.onActivityDefinitionClick(e, definition), icon: <EditIcon /> },
                               isPublished
-                                ? { text: 'Unpublish', clickHandler: e => this.onUnPublishClick(e, ActivityDefinition), icon: <UnPublishIcon /> }
+                                ? { text: 'Unpublish', clickHandler: e => this.onUnPublishClick(e, definition), icon: <UnPublishIcon /> }
                                 : {
                                     text: 'Publish',
-                                    clickHandler: e => this.onPublishClick(e, ActivityDefinition),
+                                    clickHandler: e => this.onPublishClick(e, definition),
                                     icon: <PublishIcon />,
                                   },
-                              { text: 'Delete', clickHandler: e => this.onDeleteClick(e, ActivityDefinition), icon: <DeleteIcon /> },
+                              { text: 'Delete', clickHandler: e => this.onDeleteClick(e, definition), icon: <DeleteIcon /> },
                             ]}
                           />
                         </td>

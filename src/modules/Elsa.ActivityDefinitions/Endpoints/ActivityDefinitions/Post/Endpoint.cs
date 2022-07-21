@@ -31,13 +31,13 @@ public class Post : ProtectedEndpoint<Request, Response>
         ConfigureSecurity(List.SecurityConstants.Permissions, List.SecurityConstants.Policies, List.SecurityConstants.Roles);
     }
 
-    public override async Task<Response> ExecuteAsync(Request req, CancellationToken ct)
+    public override async Task<Response> ExecuteAsync(Request request, CancellationToken cancellationToken)
     {
-        var definitionId = req.DefinitionId;
+        var definitionId = request.DefinitionId;
 
         // Get a workflow draft version.
         var draft = !string.IsNullOrWhiteSpace(definitionId)
-            ? await _activityDefinitionPublisher.GetDraftAsync(definitionId, ct)
+            ? await _activityDefinitionPublisher.GetDraftAsync(definitionId, cancellationToken)
             : default;
 
         var isNew = draft == null;
@@ -52,27 +52,32 @@ public class Post : ProtectedEndpoint<Request, Response>
         }
 
         // Update the draft with the received model.
-        var root = req.Root ?? new Flowchart();
+        var root = request.Root ?? new Flowchart();
         var serializerOptions = _serializerOptionsProvider.CreateApiOptions();
         var data = JsonSerializer.Serialize(root, serializerOptions);
-        var variables = _variableDefinitionMapper.Map(req.Variables).ToList();
+        var variables = _variableDefinitionMapper.Map(request.Variables).ToList();
 
         draft!.Data = data;
-        draft.Name = req.Name?.Trim();
-        draft.Description = req.Description?.Trim();
-        draft.Metadata = req.Metadata ?? new Dictionary<string, object>();
+        draft.TypeName = request.TypeName;
+        draft.DisplayName = request.DisplayName?.Trim();
+        draft.Category = request.Category?.Trim();
+        draft.Description = request.Description?.Trim();
+        draft.Metadata = request.Metadata ?? new Dictionary<string, object>();
         draft.Variables = variables;
-        draft.ApplicationProperties = req.ApplicationProperties ?? new Dictionary<string, object>();
-        draft = req.Publish ? await _activityDefinitionPublisher.PublishAsync(draft, ct) : await _activityDefinitionPublisher.SaveDraftAsync(draft, ct);
+        draft.ApplicationProperties = request.ApplicationProperties ?? new Dictionary<string, object>();
+        draft = request.Publish ? await _activityDefinitionPublisher.PublishAsync(draft, cancellationToken) : await _activityDefinitionPublisher.SaveDraftAsync(draft, cancellationToken);
 
-        var draftModel = new Response(
+        // Create a response DTO.
+        var response = new Response(
             draft.Id,
             draft.DefinitionId,
-            draft.Name,
+            draft.TypeName,
+            draft.DisplayName,
+            draft.Category,
             draft.Description,
             draft.CreatedAt,
             draft.Version,
-            req.Variables ?? new List<VariableDefinition>(),
+            request.Variables ?? new List<VariableDefinition>(),
             draft.Metadata,
             draft.ApplicationProperties,
             draft.IsLatest,
@@ -80,14 +85,10 @@ public class Post : ProtectedEndpoint<Request, Response>
             root);
 
         if (isNew)
-        {
-            await SendCreatedAtAsync<Get.Get>(new { Id = draft.Id }, draftModel, default, default, false, ct);
-        }
+            await SendCreatedAtAsync<Get.Get>(new { Id = draft.Id }, response, default, default, false, cancellationToken);
         else
-        {
-            await SendOkAsync(draftModel, ct);
-        }
-        
-        return draftModel;
+            await SendOkAsync(response, cancellationToken);
+
+        return response;
     }
 }

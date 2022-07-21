@@ -17,9 +17,10 @@ interface ActivityCategoryModel {
 })
 export class ToolboxActivities {
   @Prop() graph: Graph;
-  @State() activityCategoryModels: Array<ActivityCategoryModel> = [];
+  //@State() activityCategoryModels: Array<ActivityCategoryModel> = [];
   private dnd: Addon.Dnd;
-  private renderedActivities: Map<string, string>;
+  //private renderedActivities: Map<string, string>;
+  @State() private expandedCategories: Array<string> = [];
 
   @Watch('graph')
   handleGraphChanged(value: Graph) {
@@ -35,7 +36,7 @@ export class ToolboxActivities {
   }
 
   componentWillLoad() {
-    this.handleActivityDescriptorsChanged(descriptorsStore.activityDescriptors);
+    //this.handleActivityDescriptorsChanged(descriptorsStore.activityDescriptors);
   }
 
   private static onActivityStartDrag(e: DragEvent, activityDescriptor: ActivityDescriptor) {
@@ -44,14 +45,88 @@ export class ToolboxActivities {
   }
 
   private onToggleActivityCategory(categoryModel: ActivityCategoryModel) {
-    categoryModel.expanded = !categoryModel.expanded;
-    this.activityCategoryModels = [...this.activityCategoryModels];
+    const category = categoryModel.category;
+    const expandedCategories = this.expandedCategories;
+    const isExpanded = !!expandedCategories.find(x => x == category);
+
+    if(isExpanded)
+      this.expandedCategories = expandedCategories.filter(x => x != category);
+    else
+      this.expandedCategories = [...expandedCategories, category];
+  }
+
+  // handleActivityDescriptorsChanged(value: Array<ActivityDescriptor>) {
+  //   const browsableDescriptors = value.filter(x => x.isBrowsable);
+  //   const categorizedActivitiesLookup = groupBy(browsableDescriptors, x => x.category);
+  //   const categories = Object.keys(categorizedActivitiesLookup);
+  //   const renderedActivities: Map<string, string> = new Map<string, string>();
+  //
+  //   // Group activities by category
+  //   this.activityCategoryModels = categories.map(x => {
+  //     const model: ActivityCategoryModel = {
+  //       category: x,
+  //       expanded: false,
+  //       activities: categorizedActivitiesLookup[x]
+  //     };
+  //
+  //     return model;
+  //   });
+  //
+  //   // Render activities.
+  //   const activityDriverRegistry = Container.get(ActivityDriverRegistry);
+  //
+  //   for (const activityDescriptor of browsableDescriptors) {
+  //     const activityType = activityDescriptor.activityType;
+  //     const driver = activityDriverRegistry.createDriver(activityType);
+  //     const html = driver.display({displayType: 'picker', activityDescriptor: activityDescriptor});
+  //
+  //     renderedActivities.set(activityType, html);
+  //   }
+  //
+  //   this.renderedActivities = renderedActivities;
+  // }
+
+  buildModel = (): any => {
+    const browsableDescriptors = descriptorsStore.activityDescriptors.filter(x => x.isBrowsable);
+    const categorizedActivitiesLookup = groupBy(browsableDescriptors, x => x.category);
+    const categories = Object.keys(categorizedActivitiesLookup);
+    const renderedActivities: Map<string, string> = new Map<string, string>();
+
+    // Group activities by category
+    const activityCategoryModels = categories.map(x => {
+      const model: ActivityCategoryModel = {
+        category: x,
+        expanded: !!this.expandedCategories.find(c => c == x),
+        activities: categorizedActivitiesLookup[x]
+      };
+
+      return model;
+    });
+
+    // Render activities.
+    const activityDriverRegistry = Container.get(ActivityDriverRegistry);
+
+    for (const activityDescriptor of browsableDescriptors) {
+      const activityType = activityDescriptor.activityType;
+      const driver = activityDriverRegistry.createDriver(activityType);
+      const html = driver.display({displayType: 'picker', activityDescriptor: activityDescriptor});
+
+      renderedActivities.set(activityType, html);
+    }
+
+    return {
+      categories: activityCategoryModels,
+      activities: renderedActivities
+    };
   }
 
   render() {
 
-    const categoryModels = this.activityCategoryModels;
-    const renderedActivities = this.renderedActivities;
+    // const categoryModels = this.activityCategoryModels;
+    // const renderedActivities = this.renderedActivities;
+    const model = this.buildModel();
+    const categoryModels = model.categories;
+    const renderedActivities = model.activities;
 
     return <nav class="flex-1 px-2 space-y-1 font-sans text-sm text-gray-600">
       {categoryModels.map(categoryModel => {
@@ -93,36 +168,5 @@ export class ToolboxActivities {
         }
       )}
     </nav>
-  }
-
-  handleActivityDescriptorsChanged(value: Array<ActivityDescriptor>) {
-    const browsableDescriptors = value.filter(x => x.isBrowsable);
-    const categorizedActivitiesLookup = groupBy(browsableDescriptors, x => x.category);
-    const categories = Object.keys(categorizedActivitiesLookup);
-    const renderedActivities: Map<string, string> = new Map<string, string>();
-
-    // Group activities by category
-    this.activityCategoryModels = categories.map(x => {
-      const model: ActivityCategoryModel = {
-        category: x,
-        expanded: false,
-        activities: categorizedActivitiesLookup[x]
-      };
-
-      return model;
-    });
-
-    // Render activities.
-    const activityDriverRegistry = Container.get(ActivityDriverRegistry);
-
-    for (const activityDescriptor of browsableDescriptors) {
-      const activityType = activityDescriptor.activityType;
-      const driver = activityDriverRegistry.createDriver(activityType);
-      const html = driver.display({displayType: 'picker', activityDescriptor: activityDescriptor});
-
-      renderedActivities.set(activityType, html);
-    }
-
-    this.renderedActivities = renderedActivities;
   }
 }
