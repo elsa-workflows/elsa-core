@@ -25,7 +25,7 @@ public class ActivityDefinitionMaterializer : IActivityDefinitionMaterializer
         var root = JsonSerializer.Deserialize<IActivity>(definition.Data!, _serializerOptionsProvider.CreateDefaultOptions())!;
 
         // Prefix all activity IDS with the ID of the wrapper to prevent naming collisions.
-        var prefix = $"{definition.Id}_";
+        var prefix = $"{definition.DefinitionId}_";
         await ApplyPrefixAsync(prefix, root, cancellationToken);
 
         return root;
