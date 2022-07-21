@@ -906,6 +906,7 @@ declare namespace LocalJSX {
         "variables"?: Array<Variable>;
     }
     interface ElsaWorkflowDefinitionBrowser {
+        "onNewWorkflowDefinitionSelected"?: (event: CustomEvent<any>) => void;
         "onWorkflowDefinitionSelected"?: (event: CustomEvent<WorkflowDefinitionSummary>) => void;
     }
     interface ElsaWorkflowDefinitionEditor {

@@ -50,7 +50,7 @@ export class WorkflowDefinitionsPlugin implements Plugin {
 
     studioComponentStore.modalComponents = [
       ...studioComponentStore.modalComponents,
-      () => <elsa-workflow-definition-browser ref={el => this.workflowDefinitionBrowserElement = el} onWorkflowDefinitionSelected={this.onWorkflowDefinitionSelected}/>];
+      () => <elsa-workflow-definition-browser ref={el => this.workflowDefinitionBrowserElement = el} onWorkflowDefinitionSelected={this.onWorkflowDefinitionSelected} onNewWorkflowDefinitionSelected={this.onNewWorkflowDefinitionClick}/>];
   }
 
   async initialize(): Promise<void> {

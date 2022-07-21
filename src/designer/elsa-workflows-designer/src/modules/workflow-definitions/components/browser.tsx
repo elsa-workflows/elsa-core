@@ -27,7 +27,8 @@ export class WorkflowDefinitionBrowser {
     this.api = Container.get(WorkflowDefinitionsApi);
   }
 
-  @Event() public workflowDefinitionSelected: EventEmitter<WorkflowDefinitionSummary>;
+  @Event() workflowDefinitionSelected: EventEmitter<WorkflowDefinitionSummary>;
+  @Event() public newWorkflowDefinitionSelected: EventEmitter;
   @State() private workflowDefinitions: PagedList<WorkflowDefinitionSummary> = { items: [], totalCount: 0 };
   @State() private publishedWorkflowDefinitions: PagedList<WorkflowDefinitionSummary> = { items: [], totalCount: 0 };
   @State() private selectedWorkflowDefinitionIds: Array<string> = [];
@@ -38,15 +39,20 @@ export class WorkflowDefinitionBrowser {
   @State() private selectAllChecked: boolean;
 
   @Method()
-  public async show() {
+  async show() {
     await this.modalDialog.show();
     await this.loadWorkflowDefinitions();
   }
 
   @Method()
-  public async hide() {
+  async hide() {
     await this.modalDialog.hide();
   }
+
+  private onNewDefinitionClick = async () => {
+    this.newWorkflowDefinitionSelected.emit();
+    await this.hide();
+  };
 
   private async onPublishClick(e: MouseEvent, workflowDefinition: WorkflowDefinitionSummary) {
     await this.api.publish(workflowDefinition);
@@ -116,7 +122,7 @@ export class WorkflowDefinitionBrowser {
     this.workflowDefinitions = latestWorkflowDefinitions;
   }
 
-  onPaginated = async (e: CustomEvent<PagerData>) => {
+  private onPaginated = async (e: CustomEvent<PagerData>) => {
     this.currentPage = e.detail.page;
     await this.loadWorkflowDefinitions();
   };
@@ -177,7 +183,8 @@ export class WorkflowDefinitionBrowser {
     const publishedWorkflowDefinitions = this.publishedWorkflowDefinitions.items;
     const totalCount = workflowDefinitions.totalCount;
     const closeAction = DefaultActions.Close();
-    const actions = [closeAction];
+    const newAction = DefaultActions.New(this.onNewDefinitionClick);
+    const actions = [closeAction, newAction];
 
     const filterProps: FilterProps = {
       pageSizeFilter: {

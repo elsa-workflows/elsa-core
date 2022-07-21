@@ -53,7 +53,7 @@ export class ActivityDefinitionsPlugin implements Plugin {
 
     studioComponentStore.modalComponents = [
       ...studioComponentStore.modalComponents,
-      () => <elsa-activity-definition-browser ref={el => this.activityDefinitionBrowserElement = el} onActivityDefinitionSelected={this.onActivityDefinitionSelected}/>];
+      () => <elsa-activity-definition-browser ref={el => this.activityDefinitionBrowserElement = el} onActivityDefinitionSelected={this.onActivityDefinitionSelected} onNewActivityDefinitionSelected={this.onNewActivityDefinitionClick}/>];
   }
 
   async initialize(): Promise<void> {
