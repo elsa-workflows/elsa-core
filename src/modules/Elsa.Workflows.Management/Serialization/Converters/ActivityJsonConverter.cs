@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Workflows.Core.Activities;
+using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Services;
@@ -13,11 +14,13 @@ namespace Elsa.Workflows.Management.Serialization.Converters;
 public class ActivityJsonConverter : JsonConverter<IActivity>
 {
     private readonly IActivityRegistry _activityRegistry;
+    private readonly IActivityFactory _activityFactory;
     private readonly IServiceProvider _serviceProvider;
 
-    public ActivityJsonConverter(IActivityRegistry activityRegistry, IServiceProvider serviceProvider)
+    public ActivityJsonConverter(IActivityRegistry activityRegistry, IActivityFactory activityFactory, IServiceProvider serviceProvider)
     {
         _activityRegistry = activityRegistry;
+        _activityFactory = activityFactory;
         _serviceProvider = serviceProvider;
     }
 
@@ -32,19 +35,19 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
         var activityTypeName = activityTypeNameElement.GetString()!;
         var activityDescriptor = _activityRegistry.Find(activityTypeName);
 
-        if (activityDescriptor == null)
-        {
-            var activityId = doc.RootElement.TryGetProperty("Id", out var activityIdElement) ? activityIdElement.GetString() : default;
-            
-            return new NotFoundActivity(activityTypeName)
-            {
-                Id = activityId ?? Guid.NewGuid().ToString("N"),
-            };
-        }
-
         var newOptions = new JsonSerializerOptions(options);
         newOptions.Converters.Add(new InputJsonConverterFactory(_serviceProvider));
         newOptions.Converters.Add(new OutputJsonConverterFactory(_serviceProvider));
+        
+        if (activityDescriptor == null)
+        {
+            var notFoundContext = new ActivityConstructorContext(doc.RootElement, newOptions);
+            var notFoundActivity =  (NotFoundActivity)_activityFactory.Create(typeof(NotFoundActivity), notFoundContext);
+
+            notFoundActivity.TypeName = ActivityTypeNameHelper.GenerateTypeName<NotFoundActivity>();
+            notFoundActivity.MissingTypeName = activityTypeName;
+            return notFoundActivity;
+        }
 
         var context = new ActivityConstructorContext(doc.RootElement, newOptions);
         var activity = activityDescriptor.Constructor(context);
