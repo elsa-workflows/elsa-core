@@ -53,7 +53,6 @@ services.AddSingleton<CustomAccessTokenIssuer>();
 services
     .AddElsa(elsa => elsa
         .UseManagement(management => management
-            .AddActivity<Sequence>()
             .AddActivity<WriteLine>()
             .AddActivity<ReadLine>()
             .AddActivity<If>()
