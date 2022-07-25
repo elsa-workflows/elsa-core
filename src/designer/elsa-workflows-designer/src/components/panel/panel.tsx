@@ -91,7 +91,7 @@ export class Panel {
     const dragBarClass = dragBarClassMap[this.position];
 
     return (
-      <Host class={`panel absolute bg-white z-10 ${containerCssClass} ${stateClass}`}>
+      <Host class={`panel absolute bg-white z-20 ${containerCssClass} ${stateClass}`}>
         <div class={`absolute opacity-0 bg-blue-400 transition ease-in-out duration-300 hover:opacity-100 z-10 ${dragBarClass}`} onMouseDown={this.onDragBarMouseDown} />
         <div class="panel-content-container">
           <slot />
