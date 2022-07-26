@@ -19,7 +19,10 @@ export class ModalDialogContainer {
 
     return (
       <Host>
-        {instances.map(instance => <elsa-modal-dialog content={instance.content} onHidden={() => this.onInstanceHidden(instance)}/>)}
+        {instances.map(instance => {
+          const actions = instance.actions ?? [];
+          return (<elsa-modal-dialog content={instance.content} actions={actions} onHidden={() => this.onInstanceHidden(instance)}/>);
+        })}
       </Host>
     );
   }
