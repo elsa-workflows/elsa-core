@@ -25,9 +25,9 @@ public class ActivityAttribute : Attribute
         Category = category;
     }
 
-    public string? Namespace { get; }
-    public string? TypeName { get; }
-    public string? Description { get; }
-    public string? DisplayName { get; }
-    public string? Category { get; }
+    public string? Namespace { get; set;}
+    public string? TypeName { get; set;}
+    public string? Description { get; set;}
+    public string? DisplayName { get; set; }
+    public string? Category { get; set;}
 }

@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Http;
 
-[Activity("Elsa", "HTTP", "Write an HTTP response.")]
+[Activity("Elsa", "HTTP", "Write an HTTP response.", DisplayName = "HTTP Response")]
 public class WriteHttpResponse : Activity
 {
     public Input<HttpStatusCode> StatusCode { get; set; } = new(HttpStatusCode.OK);

@@ -14,6 +14,7 @@ import {
   TimerIcon,
   WriteLineIcon
 } from "../components/icons/activities";
+import {WriteHttpResponseIcon} from "../components/icons/activities/write-http-response";
 
 export type ActivityType = string;
 export type ActivityIcon = (ActivityIconSettings?) => any;
@@ -29,6 +30,7 @@ export class ActivityIconRegistry {
     this.add('Elsa.If', settings => <IfIcon size={settings?.size}/>);
     this.add('Elsa.Flowchart', settings => <FlowchartIcon size={settings?.size}/>);
     this.add('Elsa.HttpEndpoint', settings => <HttpEndpointIcon size={settings?.size}/>);
+    this.add('Elsa.WriteHttpResponse', settings => <WriteHttpResponseIcon size={settings?.size}/>);
     this.add('Elsa.ForEach', settings => <ForEachIcon size={settings?.size}/>);
     this.add('Elsa.Delay', settings => <DelayIcon size={settings?.size}/>);
     this.add('Elsa.Timer', settings => <TimerIcon size={settings?.size}/>);

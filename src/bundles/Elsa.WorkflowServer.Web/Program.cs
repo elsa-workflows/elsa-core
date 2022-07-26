@@ -57,6 +57,7 @@ services
             .AddActivity<ReadLine>()
             .AddActivity<If>()
             .AddActivity<HttpEndpoint>()
+            .AddActivity<WriteHttpResponse>()
             .AddActivity<Flowchart>()
             .AddActivity<FlowDecision>()
             .AddActivity<FlowSwitch>()
