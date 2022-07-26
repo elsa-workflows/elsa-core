@@ -91,7 +91,7 @@ export class PublishButton {
 
     return (
       <Host class="block" ref={el => this.element = el}>
-        <span class="relative z-0 inline-flex shadow-sm rounded-md">
+        <span class="relative z-40 inline-flex shadow-sm rounded-md">
           {this.publishing ? this.renderPublishingButton() : this.renderPublishButton()}
           <span class="-ml-px relative block">
             <button onClick={() => this.toggleMenu()} id="option-menu" type="button"
