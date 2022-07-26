@@ -1,12 +1,12 @@
 import 'reflect-metadata';
 import {Service} from "typedi";
 import state from "./state";
-import {ModalDialogInstance} from "./models";
+import {ActionDefinition, ModalDialogInstance} from "./models";
 
 @Service()
 export class ModalDialogService {
 
-  show(content: () => any): ModalDialogInstance {
+  show(content: () => any, actions?: Array<ActionDefinition>): ModalDialogInstance {
     const newInstance: ModalDialogInstance = {
       content: content,
       actions: []

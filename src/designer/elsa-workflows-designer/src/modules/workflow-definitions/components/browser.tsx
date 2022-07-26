@@ -1,13 +1,13 @@
 import {Component, Event, EventEmitter, h, Host, Method, Prop, State, Watch} from '@stencil/core';
-import {DefaultActions, OrderBy, PagedList, VersionOptions} from '../../../models';
+import {OrderBy, PagedList, VersionOptions} from '../../../models';
 import {Container} from 'typedi';
-import {ElsaApiClientProvider, ElsaClient} from '../../../services';
 import {DeleteIcon, EditIcon, PublishIcon, UnPublishIcon} from '../../../components/icons/tooling';
 import {Filter, FilterProps} from './filter';
 import {PagerData} from '../../../components/shared/pager/pager';
 import {updateSelectedWorkflowDefinitions} from '../services/utils';
 import {WorkflowDefinitionSummary} from "../models/entities";
 import {WorkflowDefinitionsApi, WorkflowDefinitionsOrderBy} from "../services/api";
+import {DefaultActions} from "../../../components/shared/modal-dialog";
 
 @Component({
   tag: 'elsa-workflow-definition-browser',

@@ -1,16 +1,16 @@
 import {Component, h, Host, Method, State} from '@stencil/core';
 import {debounce} from 'lodash';
-import {DefaultActions, EventTypes} from "../../models";
+import {EventTypes} from "../../models";
 import {Container} from "typedi";
 import labelStore from "./label-store";
 import {ElsaApiClientProvider, ElsaClient, EventBus} from "../../services";
 import {CreateLabelEventArgs, DeleteLabelEventArgs, UpdateLabelEventArgs} from "./models";
 import {LabelsApi, WorkflowDefinitionLabelsApi} from "./labels-api";
-import {ToolbarDisplayingArgs, ToolbarEventTypes} from "../../components/toolbar/workflow-toolbar-menu/models";
 import {isNullOrWhitespace} from "../../utils";
 import {FormEntry} from "../../components/shared/forms/form-entry";
 import {WorkflowDefinitionManager} from "../workflow-definitions/services/manager";
 import {PropertiesTabModel, WorkflowDefinitionImportedArgs, WorkflowEditorEventTypes, WorkflowEditorReadyArgs, WorkflowPropertiesEditorDisplayingArgs, WorkflowPropertiesEditorEventTypes} from "../workflow-definitions/models/ui";
+import {DefaultActions} from "../../components/shared/modal-dialog";
 
 @Component({
   tag: 'elsa-labels-manager',

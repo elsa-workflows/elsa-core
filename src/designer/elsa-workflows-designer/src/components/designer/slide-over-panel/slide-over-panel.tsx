@@ -1,5 +1,6 @@
 import {Component, Event, EventEmitter, h, Method, Prop, State, Watch} from '@stencil/core';
-import {ActionDefinition, ActionType, TabDefinition} from '../../../models';
+import {TabDefinition} from '../../../models';
+import {ActionDefinition, ActionType} from "../../shared/modal-dialog";
 
 @Component({
   tag: 'elsa-slide-over-panel'

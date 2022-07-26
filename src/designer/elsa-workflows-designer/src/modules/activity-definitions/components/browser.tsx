@@ -3,10 +3,11 @@ import {Container} from 'typedi';
 import {Filter, FilterProps} from './filter';
 import {ActivityDefinitionsApi} from "../services/api";
 import {ActivityDefinitionsOrderBy, ActivityDefinitionSummary} from "../models";
-import {DefaultActions, PagedList, VersionOptions} from "../../../models";
+import {PagedList, VersionOptions} from "../../../models";
 import {DeleteIcon, EditIcon, PublishIcon, UnPublishIcon} from "../../../components/icons/tooling";
 import {PagerData} from "../../../components/shared/pager/pager";
 import {updateSelectedActivityDefinitions} from "../services/utils";
+import {DefaultActions} from "../../../components/shared/modal-dialog";
 
 @Component({
   tag: 'elsa-activity-definition-browser',

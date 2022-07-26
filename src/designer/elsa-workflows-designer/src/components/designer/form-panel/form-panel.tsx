@@ -1,6 +1,7 @@
 import {Component, Event, EventEmitter, h, Prop} from '@stencil/core';
-import {ActionDefinition, ActionInvokedArgs, ActionType, TabChangedArgs, TabDefinition} from '../../../models';
+import {TabChangedArgs, TabDefinition} from '../../../models';
 import {isNullOrWhitespace} from "../../../utils";
+import {ActionDefinition, ActionInvokedArgs, ActionType} from "../../shared/modal-dialog";
 
 @Component({
   tag: 'elsa-form-panel'

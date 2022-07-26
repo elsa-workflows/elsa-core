@@ -1,5 +1,5 @@
 import {Component, h, Prop, Event, EventEmitter, Method} from "@stencil/core";
-import {DefaultActions, StorageDriverDescriptor, Variable} from "../../../models";
+import {StorageDriverDescriptor, Variable} from "../../../models";
 import {FormEntry} from "../../shared/forms/form-entry";
 import {isNullOrWhitespace} from "../../../utils";
 import descriptorsStore from '../../../data/descriptors-store';

@@ -4,13 +4,14 @@ import {Search} from "./search";
 import {Filter, FilterProps} from "./filter";
 import {ListWorkflowInstancesRequest, WorkflowInstancesApi} from "../services/api";
 import {WorkflowDefinitionSummary} from "../../workflow-definitions/models/entities";
-import {DefaultActions, OrderBy, OrderDirection, PagedList, VersionOptions, WorkflowInstanceSummary, WorkflowStatus, WorkflowSubStatus} from "../../../models";
+import {OrderBy, OrderDirection, PagedList, VersionOptions, WorkflowInstanceSummary, WorkflowStatus, WorkflowSubStatus} from "../../../models";
 import {Container} from "typedi";
 import {WorkflowDefinitionsApi} from "../../workflow-definitions/services/api";
 import {getSubStatusColor, updateSelectedWorkflowInstances} from "../services/utils";
 import {formatTimestamp} from "../../../utils";
 import {DeleteIcon, EditIcon} from "../../../components/icons/tooling";
 import {PagerData} from "../../../components/shared/pager/pager";
+import {DefaultActions} from "../../../components/shared/modal-dialog";
 
 @Component({
   tag: 'elsa-workflow-instance-browser',

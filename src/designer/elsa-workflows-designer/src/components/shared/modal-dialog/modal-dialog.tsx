@@ -1,6 +1,6 @@
 import {Component, Host, h, State, Listen, Method, Event, EventEmitter, Prop} from '@stencil/core';
 import {enter, leave} from 'el-transition'
-import {ActionDefinition, ActionInvokedArgs, ActionType} from '../../../models';
+import {ActionDefinition, ActionInvokedArgs, ActionType} from "./models";
 
 @Component({
   tag: 'elsa-modal-dialog',
