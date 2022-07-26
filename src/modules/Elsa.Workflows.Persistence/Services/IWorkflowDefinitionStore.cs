@@ -26,7 +26,7 @@ public interface IWorkflowDefinitionStore
     Task SaveAsync(WorkflowDefinition record, CancellationToken cancellationToken = default);
     Task SaveManyAsync(IEnumerable<WorkflowDefinition> records, CancellationToken cancellationToken = default);
     Task<int> DeleteByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default);
-    Task<int> DeleteManyByDefinitionIdsAsync(IEnumerable<string> definitionIds, CancellationToken cancellationToken = default);
+    Task<int> DeleteByDefinitionIdsAsync(IEnumerable<string> definitionIds, CancellationToken cancellationToken = default);
 
     Task<Page<WorkflowDefinitionSummary>> ListSummariesAsync(
         VersionOptions? versionOptions = default,

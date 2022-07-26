@@ -86,7 +86,7 @@ public class MemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
         return Task.FromResult(result);
     }
 
-    public Task<int> DeleteManyByDefinitionIdsAsync(IEnumerable<string> definitionIds, CancellationToken cancellationToken = default)
+    public Task<int> DeleteByDefinitionIdsAsync(IEnumerable<string> definitionIds, CancellationToken cancellationToken = default)
     {
         var definitionIdList = definitionIds.ToList();
         _triggerStore.DeleteWhere(x => definitionIdList.Contains(x.WorkflowDefinitionId));

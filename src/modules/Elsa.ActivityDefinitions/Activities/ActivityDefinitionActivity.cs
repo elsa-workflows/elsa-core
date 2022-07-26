@@ -1,9 +1,7 @@
 using Elsa.ActivityDefinitions.Entities;
 using Elsa.ActivityDefinitions.Services;
-using Elsa.Persistence.Common.Models;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Models;
-using Microsoft.Extensions.Logging;
 
 namespace Elsa.ActivityDefinitions.Activities;
 

@@ -55,7 +55,17 @@ public class EFCoreActivityDefinitionStore : IActivityDefinitionStore
         predicate = predicate.WithVersion(versionOptions);
         return await _store.FindAsync(predicate, cancellationToken);
     }
-    
-    public async Task<ActivityDefinition?> FindByDefinitionVersionIdAsync(string definitionVersionId, CancellationToken cancellationToken = default) => 
+
+    public async Task<ActivityDefinition?> FindByDefinitionVersionIdAsync(string definitionVersionId, CancellationToken cancellationToken = default) =>
         await _store.FindAsync(x => x.Id == definitionVersionId, cancellationToken);
+
+    public async Task<int> DeleteByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default) =>
+        await _store.DeleteWhereAsync(x => x.DefinitionId == definitionId, cancellationToken);
+
+    public async Task<int> DeleteByDefinitionIdsAsync(IEnumerable<string> definitionIds, CancellationToken cancellationToken = default)
+    {
+        var definitionIdList = definitionIds.ToList();
+        await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
+        return await _store.DeleteWhereAsync(x => definitionIdList.Contains(x.DefinitionId), cancellationToken);
+    }
 }

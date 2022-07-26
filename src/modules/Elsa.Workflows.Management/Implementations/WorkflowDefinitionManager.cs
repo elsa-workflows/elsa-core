@@ -26,7 +26,7 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
     public async Task<int> BulkDeleteByDefinitionIdsAsync(IEnumerable<string> definitionIds, CancellationToken cancellationToken = default)
     {
         var ids = definitionIds.ToList();
-        var count = await _store.DeleteManyByDefinitionIdsAsync(ids, cancellationToken);
+        var count = await _store.DeleteByDefinitionIdsAsync(ids, cancellationToken);
         await _eventPublisher.PublishAsync(new WorkflowDefinitionsDeleted(ids), cancellationToken);
         return count;
     }

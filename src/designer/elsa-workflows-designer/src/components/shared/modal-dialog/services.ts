@@ -9,7 +9,7 @@ export class ModalDialogService {
   show(content: () => any, actions?: Array<ActionDefinition>): ModalDialogInstance {
     const newInstance: ModalDialogInstance = {
       content: content,
-      actions: []
+      actions: actions ?? []
     };
 
     let instances: Array<ModalDialogInstance> = state.instances;

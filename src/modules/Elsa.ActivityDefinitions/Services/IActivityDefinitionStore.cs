@@ -20,4 +20,6 @@ public interface IActivityDefinitionStore
     Task<ActivityDefinition?> FindByDefinitionVersionIdAsync(string definitionVersionId, CancellationToken cancellationToken = default);
     Task<IEnumerable<ActivityDefinition>> FindLatestAndPublishedByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default);
     Task SaveAsync(ActivityDefinition record, CancellationToken cancellationToken = default);
+    Task<int> DeleteByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default);
+    Task<int> DeleteByDefinitionIdsAsync(IEnumerable<string> definitionIds, CancellationToken cancellationToken = default);
 }

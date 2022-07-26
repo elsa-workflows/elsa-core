@@ -18,7 +18,7 @@ import {WorkflowDefinition, WorkflowDefinitionSummary} from "./models/entities";
 import {WorkflowDefinitionUpdatedArgs} from "./models/ui";
 import {PublishClickedArgs} from "./components/publish-button";
 import {WorkflowDefinitionsApi} from "./services/api";
-import {ModalDialogInstance, ModalDialogService} from "../../components/shared/modal-dialog";
+import {DefaultActions, ModalDialogInstance, ModalDialogService} from "../../components/shared/modal-dialog";
 
 const FlowchartTypeName = 'Elsa.Flowchart';
 
@@ -110,8 +110,13 @@ export class WorkflowDefinitionsPlugin implements Plugin {
   }
 
   private onBrowseWorkflowDefinitions = async () => {
+    const closeAction = DefaultActions.Close();
+    const newAction = DefaultActions.New(this.onNewWorkflowDefinitionClick);
+    const actions = [closeAction, newAction];
+
     this.workflowDefinitionBrowserInstance = this.modalDialogService.show(() =>
-      <elsa-workflow-definition-browser onWorkflowDefinitionSelected={this.onWorkflowDefinitionSelected} onNewWorkflowDefinitionSelected={this.onNewWorkflowDefinitionClick}/>)
+      <elsa-workflow-definition-browser onWorkflowDefinitionSelected={this.onWorkflowDefinitionSelected} onNewWorkflowDefinitionSelected={this.onNewWorkflowDefinitionClick}/>,
+      actions)
   }
 
   private onWorkflowDefinitionSelected = async (e: CustomEvent<WorkflowDefinitionSummary>) => {

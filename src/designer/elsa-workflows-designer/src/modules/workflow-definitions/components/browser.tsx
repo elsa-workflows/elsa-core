@@ -172,9 +172,6 @@ export class WorkflowDefinitionBrowser {
     const workflowDefinitions = this.workflowDefinitions;
     const publishedWorkflowDefinitions = this.publishedWorkflowDefinitions.items;
     const totalCount = workflowDefinitions.totalCount;
-    const closeAction = DefaultActions.Close();
-    const newAction = DefaultActions.New(this.onNewDefinitionClick);
-    const actions = [closeAction, newAction];
 
     const filterProps: FilterProps = {
       pageSizeFilter: {

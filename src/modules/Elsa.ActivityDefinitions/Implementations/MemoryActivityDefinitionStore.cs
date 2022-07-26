@@ -55,4 +55,17 @@ public class MemoryActivityDefinitionStore : IActivityDefinitionStore
         _store.Save(record);
         return Task.CompletedTask;
     }
+
+    public Task<int> DeleteByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default)
+    {
+        var result = _store.DeleteWhere(x => x.DefinitionId == definitionId);
+        return Task.FromResult(result);
+    }
+
+    public Task<int> DeleteByDefinitionIdsAsync(IEnumerable<string> definitionIds, CancellationToken cancellationToken = default)
+    {
+        var definitionIdList = definitionIds.ToList();
+        var result = _store.DeleteWhere(x => definitionIdList.Contains(x.DefinitionId));
+        return Task.FromResult(result);
+    }
 }

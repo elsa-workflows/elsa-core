@@ -106,9 +106,6 @@ export class ActivityDefinitionBrowser {
     const ActivityDefinitions = this.activityDefinitions;
     const publishedActivityDefinitions = this.publishedActivityDefinitions.items;
     const totalCount = ActivityDefinitions.totalCount;
-    const closeAction = DefaultActions.Close();
-    const newAction = DefaultActions.New(this.onNewDefinitionClick);
-    const actions = [closeAction, newAction];
 
     const filterProps: FilterProps = {
       pageSizeFilter: {

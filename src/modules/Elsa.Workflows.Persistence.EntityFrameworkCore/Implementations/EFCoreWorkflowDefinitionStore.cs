@@ -62,7 +62,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         return await dbContext.WorkflowDefinitions.DeleteWhereAsync(dbContext, x => x.DefinitionId == definitionId, cancellationToken);
     }
 
-    public async Task<int> DeleteManyByDefinitionIdsAsync(IEnumerable<string> definitionIds, CancellationToken cancellationToken = default)
+    public async Task<int> DeleteByDefinitionIdsAsync(IEnumerable<string> definitionIds, CancellationToken cancellationToken = default)
     {
         var definitionIdList = definitionIds.ToList();
         await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
