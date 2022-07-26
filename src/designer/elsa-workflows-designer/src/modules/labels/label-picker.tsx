@@ -130,11 +130,6 @@ export class LabelPicker {
     </div>
   };
 
-  private showFlyoutPanel = () => {
-    if (!!this.flyoutPanel)
-      enter(this.flyoutPanel);
-  };
-
   private closeFlyoutPanel = () => {
     if (!!this.flyoutPanel)
       leave(this.flyoutPanel);
