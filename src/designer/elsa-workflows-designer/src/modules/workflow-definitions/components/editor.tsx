@@ -237,7 +237,7 @@ export class WorkflowDefinitionEditor {
       <div class="absolute inset-0" ref={el => this.container = el}>
         <elsa-workflow-definition-editor-toolbar zoomToFit={this.onZoomToFit}/>
         <elsa-panel
-          class="elsa-activity-picker-container"
+          class="elsa-activity-picker-container z-30"
           position={PanelPosition.Left}
           onExpandedStateChanged={e => this.onActivityPickerPanelStateChanged(e.detail)}>
           <elsa-workflow-definition-editor-toolbox ref={el => this.toolbox = el}/>
@@ -248,7 +248,7 @@ export class WorkflowDefinitionEditor {
           onDragOver={this.onDragOver}
           onDrop={this.onDrop}/>
         <elsa-panel
-          class="elsa-workflow-editor-container"
+          class="elsa-workflow-editor-container z-30"
           position={PanelPosition.Right}
           onExpandedStateChanged={e => this.onWorkflowEditorPanelStateChanged(e.detail)}>
           <div class="object-editor-container">
