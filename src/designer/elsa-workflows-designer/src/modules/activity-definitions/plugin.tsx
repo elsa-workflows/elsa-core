@@ -17,6 +17,7 @@ import {PublishClickedArgs} from "./components/publish-button";
 import {ActivityDefinitionManager} from "./services/manager";
 import {ActivityDefinition, ActivityDefinitionSummary, ActivityDefinitionUpdatedArgs} from "./models";
 import {ActivityDefinitionsApi} from "./services/api";
+import {ModalDialogInstance, ModalDialogService} from "../../components/shared/modal-dialog";
 
 const FlowchartTypeName = 'Elsa.Flowchart';
 
@@ -26,16 +27,16 @@ export class ActivityDefinitionsPlugin implements Plugin {
   private readonly activityDefinitionManager: ActivityDefinitionManager;
   private readonly activityDescriptorManager: ActivityDescriptorManager;
   private readonly api: ActivityDefinitionsApi;
+  private readonly modalDialogService: ModalDialogService;
   private activityDefinitionEditorElement: HTMLElsaActivityDefinitionEditorElement;
-  private activityDefinitionBrowserElement: HTMLElsaActivityDefinitionBrowserElement;
-
-
+  private activityDefinitionBrowserInstance: ModalDialogInstance;
 
   constructor() {
     this.eventBus = Container.get(EventBus);
     this.activityDefinitionManager = Container.get(ActivityDefinitionManager);
     this.api = Container.get(ActivityDefinitionsApi);
     this.activityDescriptorManager = Container.get(ActivityDescriptorManager);
+    this.modalDialogService = Container.get(ModalDialogService);
 
     const newActivityDefinitionItem: MenuItem = {
       text: 'Activity Definition',
@@ -50,10 +51,6 @@ export class ActivityDefinitionsPlugin implements Plugin {
 
     newButtonItemStore.items = [...newButtonItemStore.items, newActivityDefinitionItem];
     toolbarButtonMenuItemStore.items = [...toolbarButtonMenuItemStore.items, activityDefinitionBrowserItem];
-
-    studioComponentStore.modalComponents = [
-      ...studioComponentStore.modalComponents,
-      () => <elsa-activity-definition-browser ref={el => this.activityDefinitionBrowserElement = el} onActivityDefinitionSelected={this.onActivityDefinitionSelected} onNewActivityDefinitionSelected={this.onNewActivityDefinitionClick}/>];
   }
 
   async initialize(): Promise<void> {
@@ -105,11 +102,10 @@ export class ActivityDefinitionsPlugin implements Plugin {
                                                                                          ref={el => this.activityDefinitionEditorElement = el}/>;
   };
 
-  private refreshActivityDescriptors = () => {
-
-  }
-
-  private onNewActivityDefinitionClick = async () => await this.newActivityDefinition();
+  private onNewActivityDefinitionClick = async () => {
+    await this.newActivityDefinition();
+    this.modalDialogService.hide(this.activityDefinitionBrowserInstance);
+  };
 
   private onActivityDefinitionUpdated = async (e: CustomEvent<ActivityDefinitionUpdatedArgs>) => {
     const activityDefinition = e.detail.activityDefinition;
@@ -117,13 +113,15 @@ export class ActivityDefinitionsPlugin implements Plugin {
   }
 
   private onBrowseActivityDefinitions = async () => {
-    await this.activityDefinitionBrowserElement.show();
+    this.activityDefinitionBrowserInstance = this.modalDialogService.show(() =>
+      <elsa-activity-definition-browser onActivityDefinitionSelected={this.onActivityDefinitionSelected} onNewActivityDefinitionSelected={this.onNewActivityDefinitionClick}/>)
   }
 
   private onActivityDefinitionSelected = async (e: CustomEvent<ActivityDefinitionSummary>) => {
     const definitionId = e.detail.definitionId;
     const workflowDefinition = await this.api.get({definitionId});
     this.showActivityDefinitionEditor(workflowDefinition);
+    this.modalDialogService.hide(this.activityDefinitionBrowserInstance);
   }
 
   private onPublishClicked = async (e: CustomEvent<PublishClickedArgs>) => {

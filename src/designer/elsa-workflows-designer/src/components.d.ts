@@ -29,8 +29,6 @@ import { WorkflowDefinitionPropsUpdatedArgs, WorkflowDefinitionUpdatedArgs } fro
 import { PublishClickedArgs as PublishClickedArgs1 } from "./modules/workflow-definitions/components/publish-button";
 export namespace Components {
     interface ElsaActivityDefinitionBrowser {
-        "hide": () => Promise<void>;
-        "show": () => Promise<void>;
     }
     interface ElsaActivityDefinitionEditor {
         "activityDefinition"?: ActivityDefinition;
@@ -170,14 +168,15 @@ export namespace Components {
         "selectedLabels": Array<string>;
     }
     interface ElsaLabelsManager {
-        "hide": () => Promise<void>;
-        "show": () => Promise<void>;
     }
     interface ElsaModalDialog {
         "actions": Array<ActionDefinition>;
+        "content": () => any;
         "hide": (animate?: boolean) => Promise<void>;
         "show": (animate?: boolean) => Promise<void>;
         "size": string;
+    }
+    interface ElsaModalDialogContainer {
     }
     interface ElsaMonacoEditor {
         "editorHeight": string;
@@ -232,17 +231,13 @@ export namespace Components {
         "tooltipContent": any;
         "tooltipPosition"?: string;
     }
-    interface ElsaVariableEditorDialog {
-        "hide": () => Promise<void>;
-        "show": () => Promise<void>;
+    interface ElsaVariableEditorDialogContent {
         "variable": Variable;
     }
     interface ElsaVariablesEditor {
         "variables"?: Array<Variable>;
     }
     interface ElsaWorkflowDefinitionBrowser {
-        "hide": () => Promise<void>;
-        "show": () => Promise<void>;
     }
     interface ElsaWorkflowDefinitionEditor {
         "getCanvas": () => Promise<HTMLElsaCanvasElement>;
@@ -269,8 +264,6 @@ export namespace Components {
         "workflowDefinition"?: WorkflowDefinition;
     }
     interface ElsaWorkflowInstanceBrowser {
-        "hide": () => Promise<void>;
-        "show": () => Promise<void>;
     }
     interface ElsaWorkflowInstanceProperties {
         "hide": () => Promise<void>;
@@ -467,6 +460,12 @@ declare global {
         prototype: HTMLElsaModalDialogElement;
         new (): HTMLElsaModalDialogElement;
     };
+    interface HTMLElsaModalDialogContainerElement extends Components.ElsaModalDialogContainer, HTMLStencilElement {
+    }
+    var HTMLElsaModalDialogContainerElement: {
+        prototype: HTMLElsaModalDialogContainerElement;
+        new (): HTMLElsaModalDialogContainerElement;
+    };
     interface HTMLElsaMonacoEditorElement extends Components.ElsaMonacoEditor, HTMLStencilElement {
     }
     var HTMLElsaMonacoEditorElement: {
@@ -545,11 +544,11 @@ declare global {
         prototype: HTMLElsaTooltipElement;
         new (): HTMLElsaTooltipElement;
     };
-    interface HTMLElsaVariableEditorDialogElement extends Components.ElsaVariableEditorDialog, HTMLStencilElement {
+    interface HTMLElsaVariableEditorDialogContentElement extends Components.ElsaVariableEditorDialogContent, HTMLStencilElement {
     }
-    var HTMLElsaVariableEditorDialogElement: {
-        prototype: HTMLElsaVariableEditorDialogElement;
-        new (): HTMLElsaVariableEditorDialogElement;
+    var HTMLElsaVariableEditorDialogContentElement: {
+        prototype: HTMLElsaVariableEditorDialogContentElement;
+        new (): HTMLElsaVariableEditorDialogContentElement;
     };
     interface HTMLElsaVariablesEditorElement extends Components.ElsaVariablesEditor, HTMLStencilElement {
     }
@@ -669,6 +668,7 @@ declare global {
         "elsa-label-picker": HTMLElsaLabelPickerElement;
         "elsa-labels-manager": HTMLElsaLabelsManagerElement;
         "elsa-modal-dialog": HTMLElsaModalDialogElement;
+        "elsa-modal-dialog-container": HTMLElsaModalDialogContainerElement;
         "elsa-monaco-editor": HTMLElsaMonacoEditorElement;
         "elsa-multi-line-input": HTMLElsaMultiLineInputElement;
         "elsa-multi-text-input": HTMLElsaMultiTextInputElement;
@@ -682,7 +682,7 @@ declare global {
         "elsa-studio": HTMLElsaStudioElement;
         "elsa-switch-editor": HTMLElsaSwitchEditorElement;
         "elsa-tooltip": HTMLElsaTooltipElement;
-        "elsa-variable-editor-dialog": HTMLElsaVariableEditorDialogElement;
+        "elsa-variable-editor-dialog-content": HTMLElsaVariableEditorDialogContentElement;
         "elsa-variables-editor": HTMLElsaVariablesEditorElement;
         "elsa-workflow-definition-browser": HTMLElsaWorkflowDefinitionBrowserElement;
         "elsa-workflow-definition-editor": HTMLElsaWorkflowDefinitionEditorElement;
@@ -838,10 +838,13 @@ declare namespace LocalJSX {
     }
     interface ElsaModalDialog {
         "actions"?: Array<ActionDefinition>;
+        "content"?: () => any;
         "onActionInvoked"?: (event: CustomEvent<ActionInvokedArgs>) => void;
         "onHidden"?: (event: CustomEvent<any>) => void;
         "onShown"?: (event: CustomEvent<any>) => void;
         "size"?: string;
+    }
+    interface ElsaModalDialogContainer {
     }
     interface ElsaMonacoEditor {
         "editorHeight"?: string;
@@ -898,7 +901,7 @@ declare namespace LocalJSX {
         "tooltipContent"?: any;
         "tooltipPosition"?: string;
     }
-    interface ElsaVariableEditorDialog {
+    interface ElsaVariableEditorDialogContent {
         "onVariableChanged"?: (event: CustomEvent<Variable>) => void;
         "variable"?: Variable;
     }
@@ -989,6 +992,7 @@ declare namespace LocalJSX {
         "elsa-label-picker": ElsaLabelPicker;
         "elsa-labels-manager": ElsaLabelsManager;
         "elsa-modal-dialog": ElsaModalDialog;
+        "elsa-modal-dialog-container": ElsaModalDialogContainer;
         "elsa-monaco-editor": ElsaMonacoEditor;
         "elsa-multi-line-input": ElsaMultiLineInput;
         "elsa-multi-text-input": ElsaMultiTextInput;
@@ -1002,7 +1006,7 @@ declare namespace LocalJSX {
         "elsa-studio": ElsaStudio;
         "elsa-switch-editor": ElsaSwitchEditor;
         "elsa-tooltip": ElsaTooltip;
-        "elsa-variable-editor-dialog": ElsaVariableEditorDialog;
+        "elsa-variable-editor-dialog-content": ElsaVariableEditorDialogContent;
         "elsa-variables-editor": ElsaVariablesEditor;
         "elsa-workflow-definition-browser": ElsaWorkflowDefinitionBrowser;
         "elsa-workflow-definition-editor": ElsaWorkflowDefinitionEditor;
@@ -1051,6 +1055,7 @@ declare module "@stencil/core" {
             "elsa-label-picker": LocalJSX.ElsaLabelPicker & JSXBase.HTMLAttributes<HTMLElsaLabelPickerElement>;
             "elsa-labels-manager": LocalJSX.ElsaLabelsManager & JSXBase.HTMLAttributes<HTMLElsaLabelsManagerElement>;
             "elsa-modal-dialog": LocalJSX.ElsaModalDialog & JSXBase.HTMLAttributes<HTMLElsaModalDialogElement>;
+            "elsa-modal-dialog-container": LocalJSX.ElsaModalDialogContainer & JSXBase.HTMLAttributes<HTMLElsaModalDialogContainerElement>;
             "elsa-monaco-editor": LocalJSX.ElsaMonacoEditor & JSXBase.HTMLAttributes<HTMLElsaMonacoEditorElement>;
             "elsa-multi-line-input": LocalJSX.ElsaMultiLineInput & JSXBase.HTMLAttributes<HTMLElsaMultiLineInputElement>;
             "elsa-multi-text-input": LocalJSX.ElsaMultiTextInput & JSXBase.HTMLAttributes<HTMLElsaMultiTextInputElement>;
@@ -1064,7 +1069,7 @@ declare module "@stencil/core" {
             "elsa-studio": LocalJSX.ElsaStudio & JSXBase.HTMLAttributes<HTMLElsaStudioElement>;
             "elsa-switch-editor": LocalJSX.ElsaSwitchEditor & JSXBase.HTMLAttributes<HTMLElsaSwitchEditorElement>;
             "elsa-tooltip": LocalJSX.ElsaTooltip & JSXBase.HTMLAttributes<HTMLElsaTooltipElement>;
-            "elsa-variable-editor-dialog": LocalJSX.ElsaVariableEditorDialog & JSXBase.HTMLAttributes<HTMLElsaVariableEditorDialogElement>;
+            "elsa-variable-editor-dialog-content": LocalJSX.ElsaVariableEditorDialogContent & JSXBase.HTMLAttributes<HTMLElsaVariableEditorDialogContentElement>;
             "elsa-variables-editor": LocalJSX.ElsaVariablesEditor & JSXBase.HTMLAttributes<HTMLElsaVariablesEditorElement>;
             "elsa-workflow-definition-browser": LocalJSX.ElsaWorkflowDefinitionBrowser & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionBrowserElement>;
             "elsa-workflow-definition-editor": LocalJSX.ElsaWorkflowDefinitionEditor & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionEditorElement>;

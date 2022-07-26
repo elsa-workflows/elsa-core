@@ -18,6 +18,7 @@ import {WorkflowDefinition, WorkflowDefinitionSummary} from "./models/entities";
 import {WorkflowDefinitionUpdatedArgs} from "./models/ui";
 import {PublishClickedArgs} from "./components/publish-button";
 import {WorkflowDefinitionsApi} from "./services/api";
+import {ModalDialogInstance, ModalDialogService} from "../../components/shared/modal-dialog";
 
 const FlowchartTypeName = 'Elsa.Flowchart';
 
@@ -25,14 +26,16 @@ const FlowchartTypeName = 'Elsa.Flowchart';
 export class WorkflowDefinitionsPlugin implements Plugin {
   private readonly eventBus: EventBus;
   private readonly workflowDefinitionManager: WorkflowDefinitionManager;
+  private readonly modalDialogService: ModalDialogService;
   private api: WorkflowDefinitionsApi;
   private workflowDefinitionEditorElement: HTMLElsaWorkflowDefinitionEditorElement;
-  private workflowDefinitionBrowserElement: HTMLElsaWorkflowDefinitionBrowserElement;
+  private workflowDefinitionBrowserInstance: ModalDialogInstance;
 
   constructor() {
     this.eventBus = Container.get(EventBus);
     this.api = Container.get(WorkflowDefinitionsApi);
     this.workflowDefinitionManager = Container.get(WorkflowDefinitionManager);
+    this.modalDialogService = Container.get(ModalDialogService);
 
     const newWorkflowDefinitionItem: MenuItem = {
       text: 'Workflow Definition',
@@ -47,10 +50,6 @@ export class WorkflowDefinitionsPlugin implements Plugin {
 
     newButtonItemStore.items = [...newButtonItemStore.items, newWorkflowDefinitionItem];
     toolbarButtonMenuItemStore.items = [...toolbarButtonMenuItemStore.items, workflowDefinitionBrowserItem];
-
-    studioComponentStore.modalComponents = [
-      ...studioComponentStore.modalComponents,
-      () => <elsa-workflow-definition-browser ref={el => this.workflowDefinitionBrowserElement = el} onWorkflowDefinitionSelected={this.onWorkflowDefinitionSelected} onNewWorkflowDefinitionSelected={this.onNewWorkflowDefinitionClick}/>];
   }
 
   async initialize(): Promise<void> {
@@ -100,7 +99,10 @@ export class WorkflowDefinitionsPlugin implements Plugin {
     studioComponentStore.activeComponentFactory = () => <elsa-workflow-definition-editor workflowDefinition={workflowDefinition} onWorkflowUpdated={this.onWorkflowUpdated} ref={el => this.workflowDefinitionEditorElement = el}/>;
   };
 
-  private onNewWorkflowDefinitionClick = async () => await this.newWorkflow();
+  private onNewWorkflowDefinitionClick = async () => {
+    await this.newWorkflow();
+    this.modalDialogService.hide(this.workflowDefinitionBrowserInstance);
+  };
 
   private onWorkflowUpdated = async (e: CustomEvent<WorkflowDefinitionUpdatedArgs>) => {
     const workflowDefinition = e.detail.workflowDefinition;
@@ -108,13 +110,15 @@ export class WorkflowDefinitionsPlugin implements Plugin {
   }
 
   private onBrowseWorkflowDefinitions = async () => {
-    await this.workflowDefinitionBrowserElement.show();
+    this.workflowDefinitionBrowserInstance = this.modalDialogService.show(() =>
+      <elsa-workflow-definition-browser onWorkflowDefinitionSelected={this.onWorkflowDefinitionSelected} onNewWorkflowDefinitionSelected={this.onNewWorkflowDefinitionClick}/>)
   }
 
   private onWorkflowDefinitionSelected = async (e: CustomEvent<WorkflowDefinitionSummary>) => {
     const definitionId = e.detail.definitionId;
     const workflowDefinition = await this.api.get({definitionId});
     this.showWorkflowDefinitionEditor(workflowDefinition);
+    this.modalDialogService.hide(this.workflowDefinitionBrowserInstance);
   }
 
   private onPublishClicked = async (e: CustomEvent<PublishClickedArgs>) => {

@@ -23,7 +23,6 @@ export class LabelsManager {
   private readonly workflowDefinitionLabelsApi: WorkflowDefinitionLabelsApi;
   private readonly saveLabelsDebounced: () => void;
   private workflowEditor: HTMLElsaWorkflowDefinitionEditorElement;
-  private modalDialog: HTMLElsaModalDialogElement;
   private elsaClient: ElsaClient;
   private definitionVersionId: string;
   private assignedLabelIds: Array<string> = [];
@@ -34,23 +33,13 @@ export class LabelsManager {
     this.labelsApi = Container.get(LabelsApi);
     this.workflowDefinitionLabelsApi = Container.get(WorkflowDefinitionLabelsApi);
     this.eventBus.on(WorkflowEditorEventTypes.WorkflowEditor.Ready, this.onWorkflowEditorReady)
-    this.eventBus.on(ToolbarEventTypes.Displaying, this.onToolbarDisplaying);
+    //this.eventBus.on(ToolbarEventTypes.Displaying, this.onToolbarDisplaying);
     this.eventBus.on(WorkflowPropertiesEditorEventTypes.Displaying, this.onWorkflowPropertiesEditorDisplaying);
     this.eventBus.on(WorkflowEditorEventTypes.WorkflowDefinition.Imported, this.onWorkflowDefinitionImported);
     this.saveLabelsDebounced = debounce(this.saveWorkflowLabels, 1000);
   }
 
   @State() private createMode: boolean = false;
-
-  @Method()
-  async show() {
-    await this.modalDialog.show();
-  }
-
-  @Method()
-  async hide() {
-    await this.modalDialog.hide();
-  }
 
   async componentWillLoad() {
     this.elsaClient = await Container.get(ElsaApiClientProvider).getElsaClient();
@@ -76,13 +65,13 @@ export class LabelsManager {
     this.workflowEditor = e.workflowEditor;
   }
 
-  private onToolbarDisplaying = (e: ToolbarDisplayingArgs) => {
-    e.menu.menuItems.push({
-      text: 'Labels',
-      onClick: this.onLabelsMenuItemClicked,
-      order: 3
-    });
-  }
+  // private onToolbarDisplaying = (e: ToolbarDisplayingArgs) => {
+  //   e.menu.menuItems.push({
+  //     text: 'Labels',
+  //     onClick: this.onLabelsMenuItemClicked,
+  //     order: 3
+  //   });
+  // }
 
   private onWorkflowPropertiesEditorDisplaying = (e: WorkflowPropertiesEditorDisplayingArgs) => {
     const propertiesTabModel = e.model.tabModels.find(x => x.name == 'properties') as PropertiesTabModel;
@@ -113,8 +102,6 @@ export class LabelsManager {
     this.definitionVersionId = workflowDefinition.id;
   }
 
-  private onLabelsMenuItemClicked = async () => await this.show();
-
   private onSelectedLabelsChanged = async (e: CustomEvent<Array<string>>) => {
     this.assignedLabelIds = e.detail;
     await this.saveLabelsDebounced();
@@ -129,41 +116,39 @@ export class LabelsManager {
     return (
       <Host class="block">
 
-        <elsa-modal-dialog ref={el => this.modalDialog = el} actions={actions}>
-          <div class="pt-4">
-            <h2 class="text-lg font-medium ml-4 mb-2">Labels</h2>
+        <div class="pt-4">
+          <h2 class="text-lg font-medium ml-4 mb-2">Labels</h2>
 
-            <div class="pl-4 pr-6">
-              <div class="flex justify-end">
-                <div class="flex-shrink">
-                  <button type="button" class="btn" onClick={() => this.createMode = !this.createMode}>New label</button>
-                </div>
+          <div class="pl-4 pr-6">
+            <div class="flex justify-end">
+              <div class="flex-shrink">
+                <button type="button" class="btn" onClick={() => this.createMode = !this.createMode}>New label</button>
               </div>
-
-              {createMode ? <elsa-label-creator onCreateLabelClicked={e => this.onCreateLabelClicked(e)}/> : undefined}
-
-              <div class="mt-5">
-                <div class="flex">
-                  <div>
-                    <p class="max-w-2xl text-sm text-gray-500">{labels.length == 1 ? '1 label' : `${labels.length} labels`}</p>
-                  </div>
-                </div>
-                <div class="mt-5 border-t border-gray-200">
-                  <div class="divide-y divide-gray-200">
-                    {labels.map(label => <div class="border-top last:border-bottom border-solid border-gray-200">
-                      <elsa-label-editor key={label.id}
-                                         label={label}
-                                         onLabelUpdated={e => this.onLabelUpdated(e)}
-                                         onLabelDeleted={e => this.onLabelDeleted(e)}
-                      />
-                    </div>)}
-                  </div>
-                </div>
-              </div>
-
             </div>
+
+            {createMode ? <elsa-label-creator onCreateLabelClicked={e => this.onCreateLabelClicked(e)}/> : undefined}
+
+            <div class="mt-5">
+              <div class="flex">
+                <div>
+                  <p class="max-w-2xl text-sm text-gray-500">{labels.length == 1 ? '1 label' : `${labels.length} labels`}</p>
+                </div>
+              </div>
+              <div class="mt-5 border-t border-gray-200">
+                <div class="divide-y divide-gray-200">
+                  {labels.map(label => <div class="border-top last:border-bottom border-solid border-gray-200">
+                    <elsa-label-editor key={label.id}
+                                       label={label}
+                                       onLabelUpdated={e => this.onLabelUpdated(e)}
+                                       onLabelDeleted={e => this.onLabelDeleted(e)}
+                    />
+                  </div>)}
+                </div>
+              </div>
+            </div>
+
           </div>
-        </elsa-modal-dialog>
+        </div>
       </Host>
     );
   }

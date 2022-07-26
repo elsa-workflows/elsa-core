@@ -1,11 +1,11 @@
-import { Component, Event, EventEmitter, h, Host, Method, Prop, State, Watch } from '@stencil/core';
-import { DefaultActions, OrderBy, PagedList, VersionOptions} from '../../../models';
-import { Container } from 'typedi';
-import { ElsaApiClientProvider, ElsaClient } from '../../../services';
-import { DeleteIcon, EditIcon, PublishIcon, UnPublishIcon } from '../../../components/icons/tooling';
-import { Filter, FilterProps } from './filter';
-import { PagerData } from '../../../components/shared/pager/pager';
-import { updateSelectedWorkflowDefinitions } from '../services/utils';
+import {Component, Event, EventEmitter, h, Host, Method, Prop, State, Watch} from '@stencil/core';
+import {DefaultActions, OrderBy, PagedList, VersionOptions} from '../../../models';
+import {Container} from 'typedi';
+import {ElsaApiClientProvider, ElsaClient} from '../../../services';
+import {DeleteIcon, EditIcon, PublishIcon, UnPublishIcon} from '../../../components/icons/tooling';
+import {Filter, FilterProps} from './filter';
+import {PagerData} from '../../../components/shared/pager/pager';
+import {updateSelectedWorkflowDefinitions} from '../services/utils';
 import {WorkflowDefinitionSummary} from "../models/entities";
 import {WorkflowDefinitionsApi, WorkflowDefinitionsOrderBy} from "../services/api";
 
@@ -20,7 +20,6 @@ export class WorkflowDefinitionBrowser {
   static readonly START_PAGE = 0;
 
   private readonly api: WorkflowDefinitionsApi;
-  private modalDialog: HTMLElsaModalDialogElement;
   private selectAllCheckbox: HTMLInputElement;
 
   constructor() {
@@ -29,8 +28,8 @@ export class WorkflowDefinitionBrowser {
 
   @Event() workflowDefinitionSelected: EventEmitter<WorkflowDefinitionSummary>;
   @Event() public newWorkflowDefinitionSelected: EventEmitter;
-  @State() private workflowDefinitions: PagedList<WorkflowDefinitionSummary> = { items: [], totalCount: 0 };
-  @State() private publishedWorkflowDefinitions: PagedList<WorkflowDefinitionSummary> = { items: [], totalCount: 0 };
+  @State() private workflowDefinitions: PagedList<WorkflowDefinitionSummary> = {items: [], totalCount: 0};
+  @State() private publishedWorkflowDefinitions: PagedList<WorkflowDefinitionSummary> = {items: [], totalCount: 0};
   @State() private selectedWorkflowDefinitionIds: Array<string> = [];
   @State() private currentPage: number = 0;
   @State() private currentPageSize: number = WorkflowDefinitionBrowser.DEFAULT_PAGE_SIZE;
@@ -38,20 +37,12 @@ export class WorkflowDefinitionBrowser {
   @State() private labels?: string[];
   @State() private selectAllChecked: boolean;
 
-  @Method()
-  async show() {
-    await this.modalDialog.show();
+  async componentWillLoad() {
     await this.loadWorkflowDefinitions();
-  }
-
-  @Method()
-  async hide() {
-    await this.modalDialog.hide();
   }
 
   private onNewDefinitionClick = async () => {
     this.newWorkflowDefinitionSelected.emit();
-    await this.hide();
   };
 
   private async onPublishClick(e: MouseEvent, workflowDefinition: WorkflowDefinitionSummary) {
@@ -75,29 +66,28 @@ export class WorkflowDefinitionBrowser {
   }
 
   private onDeleteManyClick = async () => {
-    await this.api.deleteMany({ definitionIds: this.selectedWorkflowDefinitionIds });
+    await this.api.deleteMany({definitionIds: this.selectedWorkflowDefinitionIds});
     await this.loadWorkflowDefinitions();
   };
 
   private onPublishManyClick = async () => {
-    await this.api.publishMany({ definitionIds: this.selectedWorkflowDefinitionIds });
+    await this.api.publishMany({definitionIds: this.selectedWorkflowDefinitionIds});
     await this.loadWorkflowDefinitions();
   };
 
   private onUnpublishManyClick = async () => {
-    await this.api.unpublishMany({ definitionIds: this.selectedWorkflowDefinitionIds });
+    await this.api.unpublishMany({definitionIds: this.selectedWorkflowDefinitionIds});
     await this.loadWorkflowDefinitions();
   };
 
   private onWorkflowDefinitionClick = async (e: MouseEvent, workflowDefinition: WorkflowDefinitionSummary) => {
     e.preventDefault();
     this.workflowDefinitionSelected.emit(workflowDefinition);
-    await this.hide();
   };
 
   private async loadWorkflowDefinitions() {
-    const latestVersionOptions: VersionOptions = { isLatest: true };
-    const publishedVersionOptions: VersionOptions = { isPublished: true };
+    const latestVersionOptions: VersionOptions = {isLatest: true};
+    const publishedVersionOptions: VersionOptions = {isPublished: true};
 
     // TODO: Load only json-based workflow definitions for now.
     // Later, also allow CLR-based workflows to be "edited" (publish / unpublish / position activities / set variables, etc.)
@@ -107,7 +97,7 @@ export class WorkflowDefinitionBrowser {
       materializerName,
       page: this.currentPage,
       pageSize: this.currentPageSize,
-      versionOptions: { isLatest: true },
+      versionOptions: {isLatest: true},
       orderBy: this.orderBy,
       label: this.labels,
     });
@@ -149,7 +139,7 @@ export class WorkflowDefinitionBrowser {
   };
 
   private getSelectAllState = () => {
-    const { items } = this.workflowDefinitions;
+    const {items} = this.workflowDefinitions;
     const selectedWorkflowInstanceIds = this.selectedWorkflowDefinitionIds;
     return items.findIndex(item => !selectedWorkflowInstanceIds.includes(item.definitionId)) < 0;
   };
@@ -208,100 +198,96 @@ export class WorkflowDefinitionBrowser {
 
     return (
       <Host class="block">
-        <elsa-modal-dialog ref={el => (this.modalDialog = el)} actions={actions}>
-          <div class="pt-4">
-            <h2 class="text-lg font-medium ml-4 mb-2">Workflow Definitions</h2>
-            <Filter {...filterProps} />
-            <div class="align-middle inline-block min-w-full border-b border-gray-200">
-              <table class="default-table">
-                <thead>
-                <tr>
-                  <th>
-                    <input
-                      type="checkbox"
-                      value="true"
-                      checked={this.getSelectAllState()}
-                      onChange={e => this.onSelectAllCheckChange(e)}
-                      ref={el => (this.selectAllCheckbox = el)}
-                    />
-                  </th>
-                  <th>
-                    <span class="lg:pl-2">Name</span>
-                  </th>
-                  <th>Instances</th>
-                  <th class="optional align-right">Latest Version</th>
-                  <th class="optional align-right">Published Version</th>
-                  <th />
-                </tr>
-                </thead>
-                <tbody>
-                {workflowDefinitions.items.map(workflowDefinition => {
-                  const latestVersionNumber = workflowDefinition.version;
-                  const { isPublished } = workflowDefinition;
-                  const publishedVersion: WorkflowDefinitionSummary = isPublished
-                    ? workflowDefinition
-                    : publishedWorkflowDefinitions.find(x => x.definitionId == workflowDefinition.definitionId);
-                  const publishedVersionNumber = !!publishedVersion ? publishedVersion.version : '-';
+        <div class="pt-4">
+          <h2 class="text-lg font-medium ml-4 mb-2">Workflow Definitions</h2>
+          <Filter {...filterProps} />
+          <div class="align-middle inline-block min-w-full border-b border-gray-200">
+            <table class="default-table">
+              <thead>
+              <tr>
+                <th>
+                  <input
+                    type="checkbox"
+                    value="true"
+                    checked={this.getSelectAllState()}
+                    onChange={e => this.onSelectAllCheckChange(e)}
+                    ref={el => (this.selectAllCheckbox = el)}
+                  />
+                </th>
+                <th>
+                  <span class="lg:pl-2">Name</span>
+                </th>
+                <th>Instances</th>
+                <th class="optional align-right">Latest Version</th>
+                <th class="optional align-right">Published Version</th>
+                <th/>
+              </tr>
+              </thead>
+              <tbody>
+              {workflowDefinitions.items.map(workflowDefinition => {
+                const latestVersionNumber = workflowDefinition.version;
+                const {isPublished} = workflowDefinition;
+                const publishedVersion: WorkflowDefinitionSummary = isPublished
+                  ? workflowDefinition
+                  : publishedWorkflowDefinitions.find(x => x.definitionId == workflowDefinition.definitionId);
+                const publishedVersionNumber = !!publishedVersion ? publishedVersion.version : '-';
 
-                  const isSelected = this.selectedWorkflowDefinitionIds.findIndex(x => x === workflowDefinition.definitionId) >= 0;
-                  let workflowDisplayName = workflowDefinition.name;
+                const isSelected = this.selectedWorkflowDefinitionIds.findIndex(x => x === workflowDefinition.definitionId) >= 0;
+                let workflowDisplayName = workflowDefinition.name;
 
-                  if (!workflowDisplayName || workflowDisplayName.trim().length == 0) workflowDisplayName = 'Untitled';
+                if (!workflowDisplayName || workflowDisplayName.trim().length == 0) workflowDisplayName = 'Untitled';
 
-                  return (
-                    <tr>
-                      <td>
-                        <input
-                          type="checkbox"
-                          value={workflowDefinition.definitionId}
-                          checked={isSelected}
-                          onChange={e => this.onWorkflowDefinitionCheckChange(e, workflowDefinition)}
-                        />
-                      </td>
-                      <td>
-                        <div class="flex items-center space-x-3 lg:pl-2">
-                          <a onClick={e => this.onWorkflowDefinitionClick(e, workflowDefinition)} href="#" class="truncate hover:text-gray-600">
-                            <span>{workflowDisplayName}</span>
-                          </a>
-                        </div>
-                      </td>
+                return (
+                  <tr>
+                    <td>
+                      <input
+                        type="checkbox"
+                        value={workflowDefinition.definitionId}
+                        checked={isSelected}
+                        onChange={e => this.onWorkflowDefinitionCheckChange(e, workflowDefinition)}
+                      />
+                    </td>
+                    <td>
+                      <div class="flex items-center space-x-3 lg:pl-2">
+                        <a onClick={e => this.onWorkflowDefinitionClick(e, workflowDefinition)} href="#" class="truncate hover:text-gray-600">
+                          <span>{workflowDisplayName}</span>
+                        </a>
+                      </div>
+                    </td>
 
-                      <td>
-                        <div class="flex items-center space-x-3 lg:pl-2">
-                          <a href="#" class="truncate hover:text-gray-600">
-                            Instances
-                          </a>
-                        </div>
-                      </td>
+                    <td>
+                      <div class="flex items-center space-x-3 lg:pl-2">
+                        <a href="#" class="truncate hover:text-gray-600">
+                          Instances
+                        </a>
+                      </div>
+                    </td>
 
-                      <td class="optional align-right">{latestVersionNumber}</td>
-                      <td class="optional align-right">{publishedVersionNumber}</td>
-                      <td class="pr-6">
-                        <elsa-context-menu
-                          menuItems={[
-                            { text: 'Edit', clickHandler: e => this.onWorkflowDefinitionClick(e, workflowDefinition), icon: <EditIcon /> },
-                            isPublished
-                              ? { text: 'Unpublish', clickHandler: e => this.onUnPublishClick(e, workflowDefinition), icon: <UnPublishIcon /> }
-                              : {
-                                text: 'Publish',
-                                clickHandler: e => this.onPublishClick(e, workflowDefinition),
-                                icon: <PublishIcon />,
-                              },
-                            { text: 'Delete', clickHandler: e => this.onDeleteClick(e, workflowDefinition), icon: <DeleteIcon /> },
-                          ]}
-                        />
-                      </td>
-                    </tr>
-                  );
-                })}
-                </tbody>
-              </table>
-              <elsa-pager page={this.currentPage} pageSize={this.currentPageSize} totalCount={totalCount} onPaginated={this.onPaginated} />
-            </div>
-
-            {/*<confirm-dialog ref={el => this.confirmDialog = el} culture={this.culture}/>*/}
+                    <td class="optional align-right">{latestVersionNumber}</td>
+                    <td class="optional align-right">{publishedVersionNumber}</td>
+                    <td class="pr-6">
+                      <elsa-context-menu
+                        menuItems={[
+                          {text: 'Edit', clickHandler: e => this.onWorkflowDefinitionClick(e, workflowDefinition), icon: <EditIcon/>},
+                          isPublished
+                            ? {text: 'Unpublish', clickHandler: e => this.onUnPublishClick(e, workflowDefinition), icon: <UnPublishIcon/>}
+                            : {
+                              text: 'Publish',
+                              clickHandler: e => this.onPublishClick(e, workflowDefinition),
+                              icon: <PublishIcon/>,
+                            },
+                          {text: 'Delete', clickHandler: e => this.onDeleteClick(e, workflowDefinition), icon: <DeleteIcon/>},
+                        ]}
+                      />
+                    </td>
+                  </tr>
+                );
+              })}
+              </tbody>
+            </table>
+            <elsa-pager page={this.currentPage} pageSize={this.currentPageSize} totalCount={totalCount} onPaginated={this.onPaginated}/>
           </div>
-        </elsa-modal-dialog>
+        </div>
       </Host>
     );
   }

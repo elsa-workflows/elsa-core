@@ -142,6 +142,7 @@ export class Studio {
     return <Host>
       {studioComponentStore.activeComponentFactory()}
       {studioComponentStore.modalComponents.map(modal => modal())}
+      <elsa-modal-dialog-container/>
     </Host>;
   }
 }

@@ -11,11 +11,8 @@ import toolbarButtonMenuItemStore from "../../../data/toolbar-button-menu-item-s
 })
 export class WorkflowToolbarMenu {
   private readonly eventBus: EventBus;
-  //private readonly model: ToolbarMenu;
   private menu: HTMLElement;
   private element: HTMLElement;
-  private workflowDefinitionBrowser: HTMLElsaWorkflowDefinitionBrowserElement;
-  private workflowInstanceBrowser: HTMLElsaWorkflowInstanceBrowserElement;
 
   constructor() {
     this.eventBus = Container.get(EventBus);
@@ -60,7 +57,6 @@ export class WorkflowToolbarMenu {
             <a href="#" role="menuitem" tabindex="-1">Settings</a>
           </div>
         </div>
-        <elsa-workflow-instance-browser ref={el => this.workflowInstanceBrowser = el}/>
       </Host>
     );
   }
@@ -72,10 +68,6 @@ export class WorkflowToolbarMenu {
     if (!this.element.contains(target))
       this.closeMenu();
   }
-
-  private onWorkflowInstancesClick = async () => {
-    await this.workflowInstanceBrowser.show();
-  };
 
   private onMenuItemClick = async (e: MouseEvent, menuItem: ToolbarMenuItem) => {
     e.preventDefault();

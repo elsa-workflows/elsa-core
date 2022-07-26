@@ -6,19 +6,17 @@ import {ActionDefinition, ActionInvokedArgs, ActionType} from '../../../models';
   tag: 'elsa-modal-dialog',
   shadow: false,
 })
-export class ElsaModalDialog {
-  @Prop() public actions: Array<ActionDefinition> = [];
-  @Prop() public size: string = 'sm:w-full sm:max-w-6xl';
-  @Event() public shown: EventEmitter;
-  @Event() public hidden: EventEmitter;
-  @Event() public actionInvoked: EventEmitter<ActionInvokedArgs>;
-  @State() private isVisible: boolean;
+export class ModalDialog {
   private overlay: HTMLElement
   private modal: HTMLElement
 
-  render() {
-    return this.renderModal();
-  }
+  @Prop() actions: Array<ActionDefinition> = [];
+  @Prop() size: string = 'sm:w-full sm:max-w-6xl';
+  @Prop() content: () => any = () => <div/>;
+  @Event() shown: EventEmitter;
+  @Event() hidden: EventEmitter;
+  @Event() actionInvoked: EventEmitter<ActionInvokedArgs>;
+  @State() private isVisible: boolean = true;
 
   @Method()
   async show(animate: boolean = true) {
@@ -65,7 +63,14 @@ export class ElsaModalDialog {
     }
   }
 
-  renderModal() {
+  componentDidRender() {
+    if(this.isVisible) {
+      enter(this.overlay);
+      enter(this.modal).then(this.shown.emit);
+    }
+  }
+
+  render() {
     const actions = this.actions;
 
     return (
@@ -92,7 +97,7 @@ export class ElsaModalDialog {
                  class={`hidden inline-block sm:align-top bg-white rounded-lg text-left overflow-visible shadow-xl transform transition-all sm:my-8 sm:align-top ${this.size}`}
                  role="dialog" aria-modal="true" aria-labelledby="modal-headline">
               <div class="modal-content">
-                <slot/>
+                {this.content()}
               </div>
 
               <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">

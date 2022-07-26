@@ -1,6 +1,6 @@
-import { Component, Event, EventEmitter, h, Host, Method, State } from '@stencil/core';
-import { Container } from 'typedi';
-import { Filter, FilterProps } from './filter';
+import {Component, Event, EventEmitter, h, Host, Method, State} from '@stencil/core';
+import {Container} from 'typedi';
+import {Filter, FilterProps} from './filter';
 import {ActivityDefinitionsApi} from "../services/api";
 import {ActivityDefinitionsOrderBy, ActivityDefinitionSummary} from "../models";
 import {DefaultActions, PagedList, VersionOptions} from "../../../models";
@@ -19,13 +19,12 @@ export class ActivityDefinitionBrowser {
   static readonly START_PAGE = 0;
 
   private activityDefinitionsApi: ActivityDefinitionsApi;
-  private modalDialog: HTMLElsaModalDialogElement;
   private selectAllCheckbox: HTMLInputElement;
 
   @Event() public activityDefinitionSelected: EventEmitter<ActivityDefinitionSummary>;
   @Event() public newActivityDefinitionSelected: EventEmitter;
-  @State() private activityDefinitions: PagedList<ActivityDefinitionSummary> = { items: [], totalCount: 0 };
-  @State() private publishedActivityDefinitions: PagedList<ActivityDefinitionSummary> = { items: [], totalCount: 0 };
+  @State() private activityDefinitions: PagedList<ActivityDefinitionSummary> = {items: [], totalCount: 0};
+  @State() private publishedActivityDefinitions: PagedList<ActivityDefinitionSummary> = {items: [], totalCount: 0};
   @State() private selectedActivityDefinitionIds: Array<string> = [];
   @State() private currentPage: number = 0;
   @State() private currentPageSize: number = ActivityDefinitionBrowser.DEFAULT_PAGE_SIZE;
@@ -33,24 +32,14 @@ export class ActivityDefinitionBrowser {
   @State() private labels?: string[];
   @State() private selectAllChecked: boolean;
 
-  @Method()
-  public async show() {
-    await this.modalDialog.show();
-    await this.loadActivityDefinitions();
-  }
-
-  @Method()
-  public async hide() {
-    await this.modalDialog.hide();
-  }
-
   public async componentWillLoad() {
+
     this.activityDefinitionsApi = Container.get(ActivityDefinitionsApi);
+    await this.loadActivityDefinitions();
   }
 
   private onNewDefinitionClick = async () => {
     this.newActivityDefinitionSelected.emit();
-    await this.hide();
   };
 
   private async onPublishClick(e: MouseEvent, ActivityDefinition: ActivityDefinitionSummary) {
@@ -74,34 +63,33 @@ export class ActivityDefinitionBrowser {
   }
 
   private onDeleteManyClick = async () => {
-    await this.activityDefinitionsApi.deleteMany({ definitionIds: this.selectedActivityDefinitionIds });
+    await this.activityDefinitionsApi.deleteMany({definitionIds: this.selectedActivityDefinitionIds});
     await this.loadActivityDefinitions();
   };
 
   private onPublishManyClick = async () => {
-    await this.activityDefinitionsApi.publishMany({ definitionIds: this.selectedActivityDefinitionIds });
+    await this.activityDefinitionsApi.publishMany({definitionIds: this.selectedActivityDefinitionIds});
     await this.loadActivityDefinitions();
   };
 
   private onUnpublishManyClick = async () => {
-    await this.activityDefinitionsApi.unpublishMany({ definitionIds: this.selectedActivityDefinitionIds });
+    await this.activityDefinitionsApi.unpublishMany({definitionIds: this.selectedActivityDefinitionIds});
     await this.loadActivityDefinitions();
   };
 
   private onActivityDefinitionClick = async (e: MouseEvent, ActivityDefinition: ActivityDefinitionSummary) => {
     e.preventDefault();
     this.activityDefinitionSelected.emit(ActivityDefinition);
-    await this.hide();
   };
 
   private async loadActivityDefinitions() {
-    const publishedVersionOptions: VersionOptions = { isPublished: true };
+    const publishedVersionOptions: VersionOptions = {isPublished: true};
     const api = this.activityDefinitionsApi;
 
     const latestActivityDefinitions = await api.list({
       page: this.currentPage,
       pageSize: this.currentPageSize,
-      versionOptions: { isLatest: true },
+      versionOptions: {isLatest: true},
       orderBy: this.orderBy,
       label: this.labels,
     });
@@ -143,91 +131,87 @@ export class ActivityDefinitionBrowser {
 
     return (
       <Host class="block">
-        <elsa-modal-dialog ref={el => (this.modalDialog = el)} actions={actions}>
-          <div class="pt-4">
-            <h2 class="text-lg font-medium ml-4 mb-2">Activity Definitions</h2>
-            <Filter {...filterProps} />
-            <div class="align-middle inline-block min-w-full border-b border-gray-200">
-              <table class="default-table">
-                <thead>
+        <div class="pt-4">
+          <h2 class="text-lg font-medium ml-4 mb-2">Activity Definitions</h2>
+          <Filter {...filterProps} />
+          <div class="align-middle inline-block min-w-full border-b border-gray-200">
+            <table class="default-table">
+              <thead>
+              <tr>
+                <th>
+                  <input
+                    type="checkbox"
+                    value="true"
+                    checked={this.getSelectAllState()}
+                    onChange={e => this.onSelectAllCheckChange(e)}
+                    ref={el => (this.selectAllCheckbox = el)}
+                  />
+                </th>
+                <th>
+                  <span class="lg:pl-2">Name</span>
+                </th>
+                <th class="optional align-right">Latest Version</th>
+                <th class="optional align-right">Published Version</th>
+                <th/>
+              </tr>
+              </thead>
+              <tbody>
+              {ActivityDefinitions.items.map(definition => {
+                const latestVersionNumber = definition.version;
+                const {isPublished} = definition;
+                const publishedVersion: ActivityDefinitionSummary = isPublished
+                  ? definition
+                  : publishedActivityDefinitions.find(x => x.definitionId == definition.definitionId);
+                const publishedVersionNumber = !!publishedVersion ? publishedVersion.version : '-';
+
+                const isSelected = this.selectedActivityDefinitionIds.findIndex(x => x === definition.definitionId) >= 0;
+                let displayName = definition.displayName || definition.typeName;
+
+                if (!displayName || displayName.trim().length == 0) displayName = 'Untitled';
+
+                return (
                   <tr>
-                    <th>
+                    <td>
                       <input
                         type="checkbox"
-                        value="true"
-                        checked={this.getSelectAllState()}
-                        onChange={e => this.onSelectAllCheckChange(e)}
-                        ref={el => (this.selectAllCheckbox = el)}
+                        value={definition.definitionId}
+                        checked={isSelected}
+                        onChange={e => this.onActivityDefinitionCheckChange(e, definition)}
                       />
-                    </th>
-                    <th>
-                      <span class="lg:pl-2">Name</span>
-                    </th>
-                    <th class="optional align-right">Latest Version</th>
-                    <th class="optional align-right">Published Version</th>
-                    <th />
+                    </td>
+                    <td>
+                      <div class="flex items-center space-x-3 lg:pl-2">
+                        <a onClick={e => this.onActivityDefinitionClick(e, definition)} href="#" class="truncate hover:text-gray-600">
+                          <span>{displayName}</span>
+                        </a>
+                      </div>
+                    </td>
+
+                    <td class="optional align-right">{latestVersionNumber}</td>
+                    <td class="optional align-right">{publishedVersionNumber}</td>
+                    <td class="pr-6">
+                      <elsa-context-menu
+                        menuItems={[
+                          {text: 'Edit', clickHandler: e => this.onActivityDefinitionClick(e, definition), icon: <EditIcon/>},
+                          isPublished
+                            ? {text: 'Unpublish', clickHandler: e => this.onUnPublishClick(e, definition), icon: <UnPublishIcon/>}
+                            : {
+                              text: 'Publish',
+                              clickHandler: e => this.onPublishClick(e, definition),
+                              icon: <PublishIcon/>,
+                            },
+                          {text: 'Delete', clickHandler: e => this.onDeleteClick(e, definition), icon: <DeleteIcon/>},
+                        ]}
+                      />
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {ActivityDefinitions.items.map(definition => {
-                    const latestVersionNumber = definition.version;
-                    const { isPublished } = definition;
-                    const publishedVersion: ActivityDefinitionSummary = isPublished
-                      ? definition
-                      : publishedActivityDefinitions.find(x => x.definitionId == definition.definitionId);
-                    const publishedVersionNumber = !!publishedVersion ? publishedVersion.version : '-';
-
-                    const isSelected = this.selectedActivityDefinitionIds.findIndex(x => x === definition.definitionId) >= 0;
-                    let displayName = definition.displayName || definition.typeName;
-
-                    if (!displayName || displayName.trim().length == 0) displayName = 'Untitled';
-
-                    return (
-                      <tr>
-                        <td>
-                          <input
-                            type="checkbox"
-                            value={definition.definitionId}
-                            checked={isSelected}
-                            onChange={e => this.onActivityDefinitionCheckChange(e, definition)}
-                          />
-                        </td>
-                        <td>
-                          <div class="flex items-center space-x-3 lg:pl-2">
-                            <a onClick={e => this.onActivityDefinitionClick(e, definition)} href="#" class="truncate hover:text-gray-600">
-                              <span>{displayName}</span>
-                            </a>
-                          </div>
-                        </td>
-
-                        <td class="optional align-right">{latestVersionNumber}</td>
-                        <td class="optional align-right">{publishedVersionNumber}</td>
-                        <td class="pr-6">
-                          <elsa-context-menu
-                            menuItems={[
-                              { text: 'Edit', clickHandler: e => this.onActivityDefinitionClick(e, definition), icon: <EditIcon /> },
-                              isPublished
-                                ? { text: 'Unpublish', clickHandler: e => this.onUnPublishClick(e, definition), icon: <UnPublishIcon /> }
-                                : {
-                                    text: 'Publish',
-                                    clickHandler: e => this.onPublishClick(e, definition),
-                                    icon: <PublishIcon />,
-                                  },
-                              { text: 'Delete', clickHandler: e => this.onDeleteClick(e, definition), icon: <DeleteIcon /> },
-                            ]}
-                          />
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-              <elsa-pager page={this.currentPage} pageSize={this.currentPageSize} totalCount={totalCount} onPaginated={this.onPaginated} />
-            </div>
-
-            {/*<confirm-dialog ref={el => this.confirmDialog = el} culture={this.culture}/>*/}
+                );
+              })}
+              </tbody>
+            </table>
+            <elsa-pager page={this.currentPage} pageSize={this.currentPageSize} totalCount={totalCount} onPaginated={this.onPaginated}/>
           </div>
-        </elsa-modal-dialog>
+        </div>
       </Host>
     );
   }
@@ -259,7 +243,7 @@ export class ActivityDefinitionBrowser {
   };
 
   private getSelectAllState = () => {
-    const { items } = this.activityDefinitions;
+    const {items} = this.activityDefinitions;
     const selectedWorkflowInstanceIds = this.selectedActivityDefinitionIds;
     return items.findIndex(item => !selectedWorkflowInstanceIds.includes(item.definitionId)) < 0;
   };

@@ -49,8 +49,7 @@ export class WorkflowDefinitionPropertiesEditor {
 
   public render() {
     const workflowDefinition = this.workflowDefinition;
-    const workflowDefinitionName = workflowDefinition?.name ?? 'Untitled';
-    const title = workflowDefinitionName;
+    const title = workflowDefinition?.name ?? 'Untitled';
     const subTitle = 'Workflow Definition'
     const tabs = this.model.tabModels.map(x => x.tab);
 
