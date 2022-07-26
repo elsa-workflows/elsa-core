@@ -475,8 +475,10 @@ export class FlowchartComponent implements ContainerActivityComponent {
   }
 
   private onGraphClick = async (e: PositionEventArgs<JQuery.ClickEvent>) => {
+    const currentContainer = this.getCurrentContainerInternal();
+
     const args: ContainerSelectedArgs = {
-      activity: this.activity,
+      activity: currentContainer,
     };
     return this.containerSelected.emit(args);
   };
