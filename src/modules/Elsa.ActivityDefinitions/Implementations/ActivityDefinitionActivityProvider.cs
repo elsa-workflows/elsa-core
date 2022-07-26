@@ -39,7 +39,7 @@ public class ActivityDefinitionActivityProvider : IActivityProvider
 
         return new()
         {
-            ActivityType = typeName,
+            ActivityType = definition.DefinitionId,
             DisplayName = definition.DisplayName.WithDefault(typeName),
             Description = definition.Description,
             Category = definition.Category.WithDefault("Custom"),

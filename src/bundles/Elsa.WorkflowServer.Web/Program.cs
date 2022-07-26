@@ -1,5 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Elsa.Activities.Jobs.Features;
+using Elsa.Activities.Jobs.Implementations;
+using Elsa.Activities.Jobs.Services;
 using Elsa.ActivityDefinitions.EntityFrameworkCore.Extensions;
 using Elsa.ActivityDefinitions.EntityFrameworkCore.Sqlite;
 using Elsa.Api.Common;
@@ -27,10 +30,12 @@ using Elsa.Workflows.Core.Activities.Flowchart.Activities;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution.Components;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Management.Extensions;
+using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Persistence.EntityFrameworkCore.Extensions;
 using Elsa.Workflows.Persistence.EntityFrameworkCore.Sqlite;
 using Elsa.Workflows.Persistence.Extensions;
 using Elsa.Workflows.Runtime.Extensions;
+using Elsa.WorkflowServer.Web;
 using Elsa.WorkflowServer.Web.Implementations;
 using FastEndpoints;
 using FastEndpoints.Security;
@@ -74,6 +79,7 @@ services
             feature.CredentialsValidator = sp => sp.GetRequiredService<CustomCredentialsValidator>();
             feature.AccessTokenIssuer = sp => sp.GetRequiredService<CustomAccessTokenIssuer>();
         })
+        .Use<JobsFeature>()
         .UseWorkflowPersistence(p => p.UseEntityFrameworkCore(ef => ef.UseSqlite()))
         .UseWorkflowApiEndpoints()
         .UseJavaScript()
@@ -100,6 +106,14 @@ services.AddAuthorization(options => options.AddPolicy("WorkflowManagerPolicy", 
 // Configure middleware pipeline.
 var app = builder.Build();
 var serviceProvider = app.Services;
+
+// Register a dummy job for demo purposes.
+var jobRegistry = serviceProvider.GetRequiredService<IJobRegistry>();
+jobRegistry.Add(typeof(IndexBlockchainJob));
+
+// Update activity providers.
+var activityRegistryPopulator = serviceProvider.GetRequiredService<IActivityRegistryPopulator>();
+activityRegistryPopulator.PopulateRegistryAsync(typeof(JobActivityProvider));
 
 // Configure workflow engine execution pipeline.
 serviceProvider.ConfigureDefaultWorkflowExecutionPipeline(pipeline =>

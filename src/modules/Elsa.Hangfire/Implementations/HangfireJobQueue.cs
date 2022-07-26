@@ -19,7 +19,7 @@ public class HangfireJobQueue : IJobQueue
     {
         var hangfireJob = HangfireJob.FromExpression<RunElsaJob>(x => x.RunAsync(job, CancellationToken.None));
         _backgroundJobClient.Create(hangfireJob, new EnqueuedState(queueName ?? "default"));
-        
+
         return Task.CompletedTask;
     }
 }
