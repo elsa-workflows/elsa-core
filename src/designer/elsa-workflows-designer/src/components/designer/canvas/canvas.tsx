@@ -11,6 +11,13 @@ export interface AddActivityArgs {
 
 export interface UpdateActivityArgs {
   id: string;
+  originalId: string;
+  activity: Activity;
+}
+
+export interface RenameActivityArgs {
+  originalId: string;
+  newId: string;
   activity: Activity;
 }
 
@@ -37,6 +44,11 @@ export class Canvas {
   @Method()
   public async updateActivity(args: UpdateActivityArgs): Promise<void> {
     await this.root.updateActivity(args);
+  }
+
+  @Method()
+  public async renameActivity(args: RenameActivityArgs): Promise<void> {
+    await this.root.renameActivity(args);
   }
 
   @Method()

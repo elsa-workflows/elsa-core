@@ -16,6 +16,8 @@ import {isNullOrWhitespace} from "../../../utils";
 import descriptorsStore from "../../../data/descriptors-store";
 
 export interface ActivityUpdatedArgs {
+  originalId: string;
+  newId: string;
   activity: Activity;
   activityDescriptor: ActivityDescriptor;
   propertyName?: string;
@@ -49,7 +51,6 @@ export class ActivityPropertiesEditor {
   @Prop() variables: Array<Variable> = [];
 
   @Event() activityUpdated: EventEmitter<ActivityUpdatedArgs>;
-  @Event() activityIdUpdated: EventEmitter<ActivityIdUpdatedArgs>;
   @Event() deleteActivityRequested: EventEmitter<DeleteActivityRequestedArgs>;
   @State() private selectedTabIndex: number = 0;
 
@@ -65,16 +66,26 @@ export class ActivityPropertiesEditor {
 
   componentWillRender() {
     const activity = this.activity;
+    const activityId = activity.id;
     const activityDescriptor = this.findActivityDescriptor();
     const title = activityDescriptor?.displayName ?? activityDescriptor?.activityType ?? 'Unknown Activity';
     const driverRegistry = this.inputDriverRegistry;
+
+    const onInputChanged = (inputDescriptor: InputDescriptor) => this.activityUpdated.emit({
+      newId: activityId,
+      originalId: activityId,
+      activity,
+      activityDescriptor,
+      propertyName: camelCase(inputDescriptor.name),
+      propertyDescriptor: inputDescriptor
+    });
 
     const renderInputPropertyContexts: Array<RenderActivityInputContext> = activityDescriptor.inputs.map(inputDescriptor => {
       const renderInputContext: ActivityInputContext = {
         node: activity,
         nodeDescriptor: activityDescriptor,
         inputDescriptor,
-        notifyInputChanged: () => this.activityUpdated.emit({activity, activityDescriptor, propertyName: camelCase(inputDescriptor.name), propertyDescriptor: inputDescriptor}),
+        notifyInputChanged: () => onInputChanged(inputDescriptor),
         inputChanged: (v, s) => this.onInputPropertyEditorChanged(inputDescriptor, v, s)
       };
 
@@ -163,12 +174,18 @@ export class ActivityPropertiesEditor {
 
     activity.id = newId;
 
-    this.activityIdUpdated.emit({ activity, activityDescriptor, originalId, newId: activity.id });
-    this.activityUpdated.emit({activity, activityDescriptor, propertyName: 'id', propertyDescriptor: inputDescriptor});
+    this.activityUpdated.emit({
+      newId: newId,
+      originalId: originalId,
+      activity,
+      activityDescriptor,
+      propertyName: 'id',
+      propertyDescriptor: inputDescriptor
+    });
   }
 
   private onActivityDisplayTextChanged(e: any) {
-    const activity = this.activity;
+    const activity: Activity = this.activity;
     const inputElement = e.target as HTMLInputElement;
 
     activity.metadata = {
@@ -177,11 +194,19 @@ export class ActivityPropertiesEditor {
     };
 
     const activityDescriptor = this.findActivityDescriptor();
-    this.activityUpdated.emit({activity, activityDescriptor});
+    const activityId = activity.id;
+
+    this.activityUpdated.emit({
+      newId: activityId,
+      originalId: activityId,
+      activity,
+      activityDescriptor
+    });
   }
 
   private onInputPropertyEditorChanged = (inputDescriptor: InputDescriptor, propertyValue: any, syntax: string) => {
     const activity = this.activity;
+    const activityId = activity.id;
     const propertyName = inputDescriptor.name;
     const activityDescriptor = this.findActivityDescriptor();
     const camelCasePropertyName = camelCase(propertyName);
@@ -194,11 +219,19 @@ export class ActivityPropertiesEditor {
       }
     };
 
-    this.activityUpdated.emit({activity, activityDescriptor, propertyName: camelCasePropertyName, propertyDescriptor: inputDescriptor});
+    this.activityUpdated.emit({
+      newId: activityId,
+      originalId: activityId,
+      activity,
+      activityDescriptor,
+      propertyName: camelCasePropertyName,
+      propertyDescriptor: inputDescriptor
+    });
   }
 
   private onOutputPropertyEditorChanged = (outputDescriptor: OutputDescriptor, variableName: string) => {
     const activity = this.activity;
+    const activityId = activity.id;
     const propertyName = outputDescriptor.name;
     const activityDescriptor = this.findActivityDescriptor();
     const camelCasePropertyName = camelCase(propertyName);
@@ -212,10 +245,15 @@ export class ActivityPropertiesEditor {
 
     activity[camelCasePropertyName] = property;
 
-    this.activityUpdated.emit({activity, activityDescriptor, propertyName: camelCasePropertyName, propertyDescriptor: outputDescriptor});
+    this.activityUpdated.emit({
+      newId: activityId,
+      originalId: activityId,
+      activity,
+      activityDescriptor,
+      propertyName: camelCasePropertyName,
+      propertyDescriptor: outputDescriptor
+    });
   }
-
-  private onDeleteActivity = () => this.deleteActivityRequested.emit({activity: this.activity});
 
   private renderCommonTab = () => {
     const {activity,} = this.renderContext;

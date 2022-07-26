@@ -79,14 +79,8 @@ export class WorkflowDefinitionEditor {
 
   @Listen('childActivitySelected')
   private async handleChildActivitySelected(e: CustomEvent<ChildActivitySelectedArgs>) {
-    const {parentActivity, childActivity, port} = e.detail;
+    const {childActivity} = e.detail;
     this.selectedActivity = childActivity;
-    const parentActivityId = parentActivity.id;
-  }
-
-  @Listen('activityDeleted')
-  private async handleActivityDeleted(e: CustomEvent<ActivityDeletedArgs>) {
-    //this.selectedActivity = this.getCurrentContainer();
   }
 
   @Listen('graphUpdated')
@@ -122,11 +116,6 @@ export class WorkflowDefinitionEditor {
   @Method()
   async updateWorkflowDefinition(workflowDefinition: WorkflowDefinition): Promise<void> {
     this.workflowDefinitionState = workflowDefinition;
-
-    // if (this.currentWorkflowPath.length == 0) {
-    //   this.currentWorkflowPath = [{activityId: workflowDefinition.root.id, portName: null, index: 0}];
-    //   this.selectedActivity = this.getCurrentContainer();
-    // }
   }
 
   @Method()
@@ -167,8 +156,7 @@ export class WorkflowDefinitionEditor {
       return <elsa-activity-properties-editor
         activity={this.selectedActivity}
         variables={this.workflowDefinitionState.variables}
-        onActivityUpdated={e => this.onActivityUpdated(e)}
-        onActivityIdUpdated={e => this.onActivityIdUpdated(e)}/>;
+        onActivityUpdated={e => this.onActivityUpdated(e)}/>;
   }
 
   private getWorkflowDefinitionInternal = async (): Promise<WorkflowDefinition> => {
@@ -227,24 +215,15 @@ export class WorkflowDefinitionEditor {
   private onZoomToFit = async () => await this.canvas.zoomToFit()
 
   private onActivityUpdated = async (e: CustomEvent<ActivityUpdatedArgs>) => {
-    const updatedActivity = e.detail.activity;
-    await this.canvas.updateActivity({activity: updatedActivity, id: updatedActivity.id});
+    await this.canvas.updateActivity({
+      id: e.detail.newId,
+      originalId: e.detail.originalId,
+      activity: e.detail.activity
+    });
+
     await this.updateModel();
     this.emitActivityChangedDebounced({...e.detail, workflowEditor: this.el});
     this.saveChangesDebounced();
-  }
-
-  private onActivityIdUpdated = (e: CustomEvent<ActivityIdUpdatedArgs>) => {
-    // const originalId = e.detail.originalId;
-    // const newId = e.detail.newId;
-    // const workflowPath = this.currentWorkflowPath;
-    // const item = workflowPath.find(x => x.activityId == originalId);
-    //
-    // if (!item)
-    //   return;
-    //
-    // item.activityId = newId;
-    // this.createNodeMap(this.workflowDefinition);
   }
 
   private onWorkflowPropsUpdated = (e: CustomEvent<WorkflowDefinitionPropsUpdatedArgs>) => {

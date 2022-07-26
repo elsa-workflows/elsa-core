@@ -84,11 +84,6 @@ export class Editor {
     const parentActivityId = parentActivity.id;
   }
 
-  @Listen('activityDeleted')
-  private async handleActivityDeleted(e: CustomEvent<ActivityDeletedArgs>) {
-    //this.selectedActivity = this.getCurrentContainer();
-  }
-
   @Listen('graphUpdated')
   private async handleGraphUpdated(e: CustomEvent<GraphUpdatedArgs>) {
     this.updateModelDebounced();
@@ -160,8 +155,7 @@ export class Editor {
       return <elsa-activity-properties-editor
         activity={this.selectedActivity}
         variables={this.activityDefinitionState.variables}
-        onActivityUpdated={e => this.onActivityUpdated(e)}
-        onActivityIdUpdated={e => this.onActivityIdUpdated(e)}/>;
+        onActivityUpdated={e => this.onActivityUpdated(e)}/>;
   }
 
   private getActivityDefinitionInternal = async (): Promise<ActivityDefinition> => {
@@ -220,24 +214,15 @@ export class Editor {
   private onZoomToFit = async () => await this.canvas.zoomToFit()
 
   private onActivityUpdated = async (e: CustomEvent<ActivityUpdatedArgs>) => {
-    const updatedActivity = e.detail.activity;
-    await this.canvas.updateActivity({activity: updatedActivity, id: updatedActivity.id});
+    await this.canvas.updateActivity({
+      id: e.detail.newId,
+      originalId: e.detail.originalId,
+      activity: e.detail.activity,
+    });
+
     await this.updateModel();
     this.emitActivityChangedDebounced({...e.detail, workflowEditor: this.el});
     this.saveChangesDebounced();
-  }
-
-  private onActivityIdUpdated = (e: CustomEvent<ActivityIdUpdatedArgs>) => {
-    // const originalId = e.detail.originalId;
-    // const newId = e.detail.newId;
-    // const workflowPath = this.currentWorkflowPath;
-    // const item = workflowPath.find(x => x.activityId == originalId);
-    //
-    // if (!item)
-    //   return;
-    //
-    // item.activityId = newId;
-    // this.createNodeMap(this.workflowDefinition);
   }
 
   private onActivityDefinitionPropsUpdated = (e: CustomEvent<ActivityDefinitionPropsUpdatedArgs>) => {

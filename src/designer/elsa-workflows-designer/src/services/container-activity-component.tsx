@@ -1,4 +1,4 @@
-import {AddActivityArgs, UpdateActivityArgs} from '../components/designer/canvas/canvas';
+import {AddActivityArgs, RenameActivityArgs, UpdateActivityArgs} from '../components/designer/canvas/canvas';
 import {Activity} from "../models";
 
 export interface ContainerActivityComponent {
@@ -6,6 +6,7 @@ export interface ContainerActivityComponent {
   updateLayout(): Promise<void>;
   addActivity(args: AddActivityArgs): Promise<Activity>;
   updateActivity(args: UpdateActivityArgs): Promise<void>;
+  renameActivity(args: RenameActivityArgs): Promise<void>;
   export(): Promise<Activity>
   import(root: Activity): Promise<void>;
   zoomToFit(): Promise<void>;

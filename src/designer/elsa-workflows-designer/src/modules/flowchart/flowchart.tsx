@@ -5,7 +5,7 @@ import {Edge, Graph, Model, Node, NodeView, Point} from '@antv/x6';
 import './shapes';
 import './ports';
 import {ActivityNodeShape} from './shapes';
-import {AddActivityArgs, UpdateActivityArgs} from '../../components/designer/canvas/canvas';
+import {AddActivityArgs, RenameActivityArgs, UpdateActivityArgs} from '../../components/designer/canvas/canvas';
 import {Activity, ActivityDeletedArgs, ActivityDescriptor, ActivitySelectedArgs, ContainerSelectedArgs, EditChildActivityArgs, GraphUpdatedArgs} from '../../models';
 import {createGraph} from './graph-factory';
 import {Connection, Flowchart, FlowchartModel, FlowchartNavigationItem} from './models';
@@ -140,7 +140,42 @@ export class FlowchartComponent implements ContainerActivityComponent {
 
   @Method()
   async updateActivity(args: UpdateActivityArgs) {
-    const nodeId = args.id;
+    const activityId = args.id;
+    const originalId = args.originalId;
+    const nodeId = originalId;
+    const activity = args.activity;
+    const node = this.graph.getNodes().find(x => x.id == nodeId) as ActivityNodeShape;
+
+    if (!!node) {
+
+      // Update the node's data with the activity.
+      node.setData(activity, {overwrite: true});
+
+      // Updating the node's activity property to trigger a rerender.
+      node.activity = activity;
+
+      // If the ID of the activity changed, we need to update connection references (X6 stores deep copies of data).
+      if (activityId !== originalId)
+        this.syncEdgeData(nodeId, activity);
+    }
+
+    // If the ID of the activity changed, we need to update the workflow path model and lookup.
+    if (activityId !== originalId) {
+      const workflowPath = [...this.currentPath];
+      const item = workflowPath.find(x => x.activityId == originalId);
+
+      if (!!item) {
+        item.activityId = activityId;
+        this.currentPath = workflowPath;
+      }
+
+      this.updateLookups();
+    }
+  }
+
+  @Method()
+  public async renameActivity(args: RenameActivityArgs) {
+    const nodeId = args.originalId;
     const activity = args.activity;
     const node = this.graph.getNodes().find(x => x.id == nodeId) as ActivityNodeShape;
 
@@ -400,15 +435,6 @@ export class FlowchartComponent implements ContainerActivityComponent {
       edge.data = connection;
     }
   };
-
-  private getCurrentScope(): Activity {
-    const currentItem = this.currentPath.length > 0 ? this.currentPath[this.currentPath.length - 1] : null;
-
-    if (!currentItem)
-      return this.activity;
-
-    return this.activityLookup[currentItem.activityId];
-  }
 
   private getCurrentContainerInternal(): Flowchart {
     const currentItem = this.currentPath.length > 0 ? this.currentPath[this.currentPath.length - 1] : null;

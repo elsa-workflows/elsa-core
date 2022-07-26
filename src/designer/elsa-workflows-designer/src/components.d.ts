@@ -8,16 +8,16 @@ import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
 import { ActivityDefinition, ActivityDefinitionPropsUpdatedArgs, ActivityDefinitionSummary, ActivityDefinitionUpdatedArgs } from "./modules/activity-definitions/models";
 import { ActivityDriverRegistry, ContainerActivityComponent } from "./services";
 import { ActionDefinition, ActionInvokedArgs, Activity, ActivityDeletedArgs, ActivitySelectedArgs, ChildActivitySelectedArgs, ContainerSelectedArgs, EditChildActivityArgs, GraphUpdatedArgs, IntellisenseContext, SelectListItem, TabChangedArgs, TabDefinition, Variable, WorkflowInstance, WorkflowInstanceSummary } from "./models";
-import { ActivityIdUpdatedArgs, ActivityUpdatedArgs, DeleteActivityRequestedArgs } from "./modules/workflow-definitions/components/activity-properties-editor";
+import { ActivityUpdatedArgs, DeleteActivityRequestedArgs } from "./modules/workflow-definitions/components/activity-properties-editor";
 import { PublishClickedArgs } from "./modules/activity-definitions/components/publish-button";
 import { Button } from "./components/shared/button-group/models";
-import { AddActivityArgs, UpdateActivityArgs } from "./components/designer/canvas/canvas";
+import { AddActivityArgs, RenameActivityArgs, UpdateActivityArgs } from "./components/designer/canvas/canvas";
 import { ActivityInputContext } from "./services/node-input-driver";
 import { ContextMenuAnchorPoint, MenuItem, MenuItemGroup } from "./components/shared/context-menu/models";
 import { DropdownButtonItem, DropdownButtonOrigin } from "./components/shared/dropdown-button/models";
 import { Flowchart, FlowchartNavigationItem } from "./modules/flowchart/models";
 import { Graph } from "@antv/x6";
-import { AddActivityArgs as AddActivityArgs1, UpdateActivityArgs as UpdateActivityArgs1 } from "./components/designer/canvas/canvas";
+import { AddActivityArgs as AddActivityArgs1, RenameActivityArgs as RenameActivityArgs1, UpdateActivityArgs as UpdateActivityArgs1 } from "./components/designer/canvas/canvas";
 import { ActivityNodeShape } from "./modules/flowchart/shapes";
 import { ExpressionChangedArs } from "./components/designer/input-control-switch/input-control-switch";
 import { CreateLabelEventArgs, DeleteLabelEventArgs, Label, UpdateLabelEventArgs } from "./modules/labels/models";
@@ -71,6 +71,7 @@ export namespace Components {
         "importGraph": (root: Activity) => Promise<void>;
         "interactiveMode": boolean;
         "newRoot": () => Promise<Activity>;
+        "renameActivity": (args: RenameActivityArgs) => Promise<void>;
         "reset": () => Promise<void>;
         "updateActivity": (args: UpdateActivityArgs) => Promise<void>;
         "updateLayout": () => Promise<void>;
@@ -118,6 +119,7 @@ export namespace Components {
         "import": (root: Activity) => Promise<void>;
         "interactiveMode": boolean;
         "newRoot": () => Promise<Activity>;
+        "renameActivity": (args: RenameActivityArgs) => Promise<void>;
         "reset": () => Promise<void>;
         "updateActivity": (args: UpdateActivityArgs) => Promise<void>;
         "updateLayout": () => Promise<void>;
@@ -717,7 +719,6 @@ declare namespace LocalJSX {
     }
     interface ElsaActivityPropertiesEditor {
         "activity"?: Activity;
-        "onActivityIdUpdated"?: (event: CustomEvent<ActivityIdUpdatedArgs>) => void;
         "onActivityUpdated"?: (event: CustomEvent<ActivityUpdatedArgs>) => void;
         "onDeleteActivityRequested"?: (event: CustomEvent<DeleteActivityRequestedArgs>) => void;
         "variables"?: Array<Variable>;
