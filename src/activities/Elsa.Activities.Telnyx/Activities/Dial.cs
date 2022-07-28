@@ -23,7 +23,7 @@ namespace Elsa.Activities.Telnyx.Activities
     [Action(
         Category = Constants.Category,
         Description = "Dial a number or SIP URI from a given connection.",
-        Outcomes = new[] { TelnyxOutcomeNames.CallInitiated, TelnyxOutcomeNames.Answered, TelnyxOutcomeNames.Hangup, OutcomeNames.Done },
+        Outcomes = new[] { TelnyxOutcomeNames.CallInitiated, TelnyxOutcomeNames.Answered, TelnyxOutcomeNames.Hangup, TelnyxOutcomeNames.MachineGreetingEnded, OutcomeNames.Done },
         DisplayName = "Dial"
     )]
     public class Dial : Activity
@@ -126,12 +126,13 @@ namespace Elsa.Activities.Telnyx.Activities
         [ActivityOutput] public CallAnsweredPayload? AnsweredOutput { get; set; }
         [ActivityOutput] public CallHangupPayload? HangupOutput { get; set; }
         [ActivityOutput] public CallInitiatedPayload? InitiatedOutput { get; set; }
+        [ActivityOutput] public CallMachineGreetingEnded MachineGreetingEndedOutput { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
             var response = await DialAsync(context);
             DialResponse = response;
-            
+
             context.LogOutputProperty(this, "Dial Response", response);
 
             return !SuspendWorkflow
@@ -143,11 +144,12 @@ namespace Elsa.Activities.Telnyx.Activities
         {
             var payload = context.GetInput<CallPayload>();
             Output = payload;
-            
+
             context.LogOutputProperty(this, "Output", payload);
 
             return payload switch
             {
+                CallMachineGreetingEnded greetingEndedPayload => MachineGreetingEndedOutcome(greetingEndedPayload),
                 CallAnsweredPayload answeredPayload => AnsweredOutcome(answeredPayload),
                 CallHangupPayload hangupPayload => HangupOutcome(hangupPayload),
                 CallInitiatedPayload initiatedPayload => Combine(InitiatedOutcome(initiatedPayload), Suspend()),
@@ -171,6 +173,12 @@ namespace Elsa.Activities.Telnyx.Activities
         {
             InitiatedOutput = payload;
             return Outcome(TelnyxOutcomeNames.CallInitiated, payload);
+        }
+
+        private IActivityExecutionResult MachineGreetingEndedOutcome(CallMachineGreetingEnded payload)
+        {
+            MachineGreetingEndedOutput = payload;
+            return Outcome(TelnyxOutcomeNames.MachineGreetingEnded, payload);
         }
 
         private async Task<DialResponse> DialAsync(ActivityExecutionContext context)

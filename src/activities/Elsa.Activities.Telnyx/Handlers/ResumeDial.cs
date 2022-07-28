@@ -12,6 +12,6 @@ namespace Elsa.Activities.Telnyx.Handlers
         {
         }
 
-        protected override IEnumerable<Type> GetSupportedPayloadTypes() => new[] {typeof(CallInitiatedPayload), typeof(CallAnsweredPayload), typeof(CallHangupPayload)};
+        protected override IEnumerable<Type> GetSupportedPayloadTypes() => new[] {typeof(CallInitiatedPayload), typeof(CallAnsweredPayload), typeof(CallHangupPayload), typeof(CallMachineGreetingEnded)};
     }
 }
