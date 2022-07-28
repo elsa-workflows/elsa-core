@@ -125,10 +125,10 @@ namespace Elsa.Activities.Workflows
             WorkflowStatus? childWorkflowStatus;
             WorkflowInstance? childWorkflowInstance;
 
-            //Someway the initial input changes when retrying, so we hash the values
-            //when retrying this activity if faulted, if there is only one with this activity id in the workflow, we dont need to use the hash because
-            //ChildWorkflowInstanceId will have the id of the subworkflow but, if it has failed in a loop, as ChildWorkflowInstanceId is metadata, it will always
-            //have stored just the last workflowinstance executed, but not the rest, so we need to discover what is the real workflowinstace using hashed input
+            // Somehow the initial input changes when retrying, so we hash the values
+            // when retrying this activity if faulted. If there is only one with this activity id in the workflow, we don't need to use the hash because
+            // ChildWorkflowInstanceId will have the id of the sub workflow. But if it has failed in a loop, as ChildWorkflowInstanceId is metadata, it will always
+            // have stored just the last workflow instance executed, but not the rest, so we need to discover what is the real workflow instance using hashed input.
 
             string hash = default!;
 
