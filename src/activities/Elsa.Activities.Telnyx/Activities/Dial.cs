@@ -146,6 +146,9 @@ namespace Elsa.Activities.Telnyx.Activities
             Output = payload;
 
             context.LogOutputProperty(this, "Output", payload);
+            
+            if (!context.HasCallControlId())
+                context.SetCallControlId(payload!.CallControlId);
 
             return payload switch
             {
