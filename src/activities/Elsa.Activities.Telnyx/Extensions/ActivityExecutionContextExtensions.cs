@@ -8,7 +8,7 @@ namespace Elsa.Activities.Telnyx.Extensions
         private const string CallControlIdVariableName = "TelnyxCallControlId";
         private const string FromNumberVariableName = "TelnyxFromNumber";
         private const string CallerNumberVariableName = "TelnyxCallerNumber";
-        
+
         /// <summary>
         /// Returns the control ID of the active call session in the workflow if the specified call control ID is null or empty.
         /// </summary>
@@ -24,14 +24,14 @@ namespace Elsa.Activities.Telnyx.Extensions
 
             throw new MissingCallControlIdException("No Call Control ID specified");
         }
-        
+
         /// <summary>
         /// Sets a workflow variable with the specified call control ID value.
         /// </summary>
         public static void SetCallControlId(this ActivityExecutionContext context, string callControlId) => context.SetVariable(CallControlIdVariableName, callControlId);
 
-        public static bool HasCallControlId(this ActivityExecutionContext context) => context.HasVariable(CallControlIdVariableName);
-        
+        public static bool HasCallControlId(this ActivityExecutionContext context) => !string.IsNullOrWhiteSpace(context.GetVariable(CallControlIdVariableName) as string);
+
         /// <summary>
         /// Returns the control ID of the active call session in the workflow if the specified call control ID is null or empty.
         /// </summary>
@@ -47,12 +47,12 @@ namespace Elsa.Activities.Telnyx.Extensions
 
             throw new MissingFromNumberException("No From Number specified");
         }
-        
+
         /// <summary>
         /// Sets a workflow variable with the specified call control ID value.
         /// </summary>
         public static void SetFromNumber(this ActivityExecutionContext context, string number) => context.SetVariable(FromNumberVariableName, number);
-        
+
         public static void SetCallerNumber(this ActivityExecutionContext context, string number) => context.SetVariable(CallerNumberVariableName, number);
         public static string? GetCallerNumber(this ActivityExecutionContext context) => context.GetVariable<string>(CallerNumberVariableName);
 
