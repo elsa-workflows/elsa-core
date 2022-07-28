@@ -126,7 +126,7 @@ namespace Elsa.Activities.Telnyx.Activities
         [ActivityOutput] public CallAnsweredPayload? AnsweredOutput { get; set; }
         [ActivityOutput] public CallHangupPayload? HangupOutput { get; set; }
         [ActivityOutput] public CallInitiatedPayload? InitiatedOutput { get; set; }
-        [ActivityOutput] public CallMachineGreetingEnded MachineGreetingEndedOutput { get; set; }
+        [ActivityOutput] public CallMachineGreetingEndedBase MachineGreetingEndedOutput { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
@@ -153,6 +153,7 @@ namespace Elsa.Activities.Telnyx.Activities
             return payload switch
             {
                 CallMachineGreetingEnded greetingEndedPayload => MachineGreetingEndedOutcome(greetingEndedPayload),
+                CallMachinePremiumGreetingEnded premiumGreetingEndedPayload => MachineGreetingEndedOutcome(premiumGreetingEndedPayload),
                 CallAnsweredPayload answeredPayload => AnsweredOutcome(answeredPayload),
                 CallHangupPayload hangupPayload => HangupOutcome(hangupPayload),
                 CallInitiatedPayload initiatedPayload => Combine(InitiatedOutcome(initiatedPayload), Suspend()),
@@ -178,7 +179,7 @@ namespace Elsa.Activities.Telnyx.Activities
             return Outcome(TelnyxOutcomeNames.CallInitiated, payload);
         }
 
-        private IActivityExecutionResult MachineGreetingEndedOutcome(CallMachineGreetingEnded payload)
+        private IActivityExecutionResult MachineGreetingEndedOutcome(CallMachineGreetingEndedBase payload)
         {
             MachineGreetingEndedOutput = payload;
             return Outcome(TelnyxOutcomeNames.MachineGreetingEnded, payload);

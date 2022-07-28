@@ -34,7 +34,10 @@ namespace Elsa.Activities.Telnyx.Handlers
         public async Task Handle(TelnyxWebhookReceived notification, CancellationToken cancellationToken)
         {
             var supportedPayloadTypes = GetSupportedPayloadTypes().ToHashSet();
-            var receivedPayload = (CallPayload) notification.Webhook.Data.Payload;
+
+            if(notification.Webhook.Data.Payload is not CallPayload receivedPayload)
+                return;
+            
             var receivedPayloadType = receivedPayload.GetType();
 
             if (!supportedPayloadTypes.Contains(receivedPayloadType))
