@@ -3,17 +3,17 @@ import { i18n } from "i18next";
 import { initializeMonacoWorker } from "../../../components/controls/elsa-monaco/elsa-monaco-utils";
 import { resources } from "../../../components/controls/elsa-pager/localizations";
 import { loadTranslations } from "../../../components/i18n/i18n-loader";
-import { EventTypes, } from "../../../models";
 import { eventBus, propertyDisplayManager } from "../../../services";
 import { FormContext, textInput } from "../../../utils/forms";
-import state from "../../../utils/store";
+import state from "../utils/secret.store";
 import { SecretDescriptor, SecretEditorRenderProps, SecretModel, SecretPropertyDescriptor } from "../models/secret.model";
+import { SecretEventTypes } from "../models/secret.events";
 
 @Component({
     tag: 'elsa-secret-editor-modal',
     shadow: false
 })
-export class ElsaSecretEditorModel {
+export class ElsaSecretEditorModal {
   @Prop() culture: string;
   @State() secretModel: SecretModel;
   @State() secretDescriptor: SecretDescriptor;
@@ -25,11 +25,11 @@ export class ElsaSecretEditorModel {
   timestamp: Date = new Date();
 
   connectedCallback() {
-    eventBus.on(EventTypes.SecretsEditor.Show, this.onShowSecretEditor);
+    eventBus.on(SecretEventTypes.SecretsEditor.Show, this.onShowSecretEditor);
   }
 
   disconnectedCallback() {
-    eventBus.detach(EventTypes.SecretsEditor.Show, this.onShowSecretEditor);
+    eventBus.detach(SecretEventTypes.SecretsEditor.Show, this.onShowSecretEditor);
   }
 
   async componentWillLoad() {
@@ -56,7 +56,6 @@ export class ElsaSecretEditorModel {
       category: '',
       browsable: false,
       inputProperties: [],
-      outputProperties: [],
       description: '',
       customAttributes: {}
     };
@@ -87,10 +86,10 @@ export class ElsaSecretEditorModel {
     const form: any = e.target;
     const formData = new FormData(form);
     this.updateSecret(formData);
-    await eventBus.emit(EventTypes.UpdateSecret, this, this.secretModel);
+    await eventBus.emit(SecretEventTypes.UpdateSecret, this, this.secretModel);
     await this.hide(true);
 
-    await eventBus.emit(EventTypes.SecretUpdated, this, this.secretModel);
+    await eventBus.emit(SecretEventTypes.SecretUpdated, this, this.secretModel);
   };
 
   onShowSecretEditor = async (secret: SecretModel, animate: boolean) => {

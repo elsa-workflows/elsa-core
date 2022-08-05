@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Elsa.Secrets.Persistence.EntityFramework.Sqlite.Migrations
 {
@@ -18,7 +18,7 @@ namespace Elsa.Secrets.Persistence.EntityFramework.Sqlite.Migrations
                     Type = table.Column<string>(type: "TEXT", nullable: true),
                     Name = table.Column<string>(type: "TEXT", nullable: true),
                     DisplayName = table.Column<string>(type: "TEXT", nullable: true),
-                    PropertiesJson = table.Column<string>(type: "TEXT", nullable: true)
+                    Data = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {

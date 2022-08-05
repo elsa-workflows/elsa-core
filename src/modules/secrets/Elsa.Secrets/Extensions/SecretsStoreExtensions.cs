@@ -4,9 +4,9 @@ using Elsa.Secrets.Models;
 using Elsa.Secrets.Persistence;
 using Elsa.Secrets.Persistence.Specifications;
 
-namespace Elsa.Secrets.Extentions
+namespace Elsa.Secrets.Extensions
 {
-    public static class SecretsStoreExtentions
+    public static class SecretsStoreExtensions
     {
         public static Task<Secret?> FindByIdAsync(
            this ISecretsStore store,

@@ -85,9 +85,6 @@ namespace Elsa.Samples.Server.Host
             };
 
             services
-                .AddScoped<IRuntimeSelectListProvider, ExecuteSqlCommand>();
-
-            services
                 .AddElsa(elsa => elsa
                     .AddActivitiesFrom<Startup>()
                     .AddWorkflowsFrom<Startup>()

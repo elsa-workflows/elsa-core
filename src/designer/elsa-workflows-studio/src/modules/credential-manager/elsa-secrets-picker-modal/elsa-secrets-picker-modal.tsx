@@ -1,18 +1,19 @@
 import { Component, h, Host, State } from "@stencil/core";
-import { eventBus, EventTypes } from "../../..";
-import { SecretIcon } from "../../../components/icons/secret-icon";
-import state from "../../../utils/store";
+import { eventBus } from "../../..";
+import { SecretIcon } from "../icons/secret-icon";
+import state from "../utils/secret.store";
 import { Secret, SecretDescriptor } from "../models/secret.model";
 import { Ampq } from "../models/secrets/ampq.secret";
 import { PostgreSql } from "../models/secrets/postgre-sql.secret";
 import { SqlServer } from "../models/secrets/sqlserver.activity";
 import { Token } from "../models/secrets/token.secret";
+import { SecretEventTypes } from "../models/secret.events";
 
 @Component({
   tag: 'elsa-secrets-picker-modal',
   shadow: false
 })
-export class ElasSecretsPickerModal {
+export class ElsaSecretsPickerModal {
   @State() selectedTrait: number = 7;
   @State() selectedCategory: string = 'All';
   @State() searchText: string;
@@ -21,11 +22,11 @@ export class ElasSecretsPickerModal {
   filteredSecretsDescriptorDisplayContexts: Array<any> = [];
 
   connectedCallback() {
-    eventBus.on(EventTypes.ShowSecretsPicker, this.onShowSecretsPicker);
+    eventBus.on(SecretEventTypes.ShowSecretsPicker, this.onShowSecretsPicker);
   }
 
   disconnectedCallback() {
-    eventBus.detach(EventTypes.ShowSecretsPicker, this.onShowSecretsPicker);
+    eventBus.detach(SecretEventTypes.ShowSecretsPicker, this.onShowSecretsPicker);
   }
 
   onShowSecretsPicker = async () => {
@@ -38,7 +39,7 @@ export class ElasSecretsPickerModal {
     this.categories = ['All', ...secretsDescriptors.map(x => x.category).distinct().sort()];
     const searchText = this.searchText ? this.searchText.toLowerCase() : '';
     let filteredSecretsDescriptors = secretsDescriptors;
-    
+
     if (searchText.length > 0) {
       filteredSecretsDescriptors = filteredSecretsDescriptors.filter(x => {
         const category = x.category || '';
@@ -57,7 +58,7 @@ export class ElasSecretsPickerModal {
     }
 
     this.filteredSecretsDescriptorDisplayContexts = filteredSecretsDescriptors.map(x => {
-      
+
       return {
         secretDescriptor: x,
         secretIcon: <SecretIcon color={'rose'}/>
@@ -93,7 +94,7 @@ export class ElasSecretsPickerModal {
 
   async onSecretClick(e: Event, secretDescriptor: SecretDescriptor) {
     e.preventDefault();
-    eventBus.emit(EventTypes.SecretPicked, this, secretDescriptor);
+    eventBus.emit(SecretEventTypes.SecretPicked, this, secretDescriptor);
     await this.dialog.hide(false);
   }
 
@@ -119,7 +120,7 @@ export class ElasSecretsPickerModal {
                     </a>
                   ))}
                 </nav>
-              </div> 
+              </div>
               <div class="elsa-flex-1 elsa-pr-8">
                 <div class="elsa-p-0 elsa-mb-6">
                   <div class="elsa-relative elsa-rounded-md elsa-shadow-sm">
@@ -133,7 +134,7 @@ export class ElasSecretsPickerModal {
                       </svg>
                     </div>
                     <input type="text" value={this.searchText} onInput={e => this.onSearchTextChange(e)}
-                           class="form-input elsa-block elsa-w-full elsa-pl-10 sm:elsa-text-sm sm:elsa-leading-5 focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-rounded-md elsa-border-gray-300" 
+                           class="form-input elsa-block elsa-w-full elsa-pl-10 sm:elsa-text-sm sm:elsa-leading-5 focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-rounded-md elsa-border-gray-300"
                            placeholder="Search secrets"/>
                   </div>
                 </div>

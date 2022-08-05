@@ -1,16 +1,10 @@
 using Elsa.Persistence.MongoDb.Options;
-using Elsa.Runtime;
 using Elsa.Secrets.Persistence.MongoDb.Services;
 using Elsa.Secrets.Persistence.MongoDb.Stores;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Elsa.Secrets.Persistence.MongoDb.Extentions
+namespace Elsa.Secrets.Persistence.MongoDb.Extensions
 {
     public static class SecretsServiceCollectionExtensions
     {
@@ -38,8 +32,7 @@ namespace Elsa.Secrets.Persistence.MongoDb.Extentions
                 .AddSingleton<MongoDbSecretsStore>()
                 .AddSingleton<TDbContext>()
                 .AddSingleton<ElsaMongoDbContext, TDbContext>()
-                .AddSingleton(sp => sp.GetRequiredService<TDbContext>().Secrets)
-                .AddStartupTask<DatabaseInitializer>();
+                .AddSingleton(sp => sp.GetRequiredService<TDbContext>().Secrets);
 
             secretsOptions.UseSecretsStore(sp => sp.GetRequiredService<MongoDbSecretsStore>());
 

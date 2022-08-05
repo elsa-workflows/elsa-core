@@ -19,7 +19,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
-        <ProjectReference Include="..\..\modules\secrets\Elsa.Secrets\Elsa.Secrets.csproj" />
         <ProjectReference Include="..\..\scripting\Elsa.Scripting.Sql\Elsa.Scripting.Sql.csproj" />        
     </ItemGroup>
     

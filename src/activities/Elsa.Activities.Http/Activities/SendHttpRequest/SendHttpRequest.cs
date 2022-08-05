@@ -13,8 +13,6 @@ using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Expressions;
 using Elsa.Metadata;
-using Elsa.Secrets.Extentions;
-using Elsa.Secrets.Providers;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
@@ -34,16 +32,13 @@ namespace Elsa.Activities.Http
     {
         private readonly HttpClient _httpClient;
         private readonly IEnumerable<IHttpResponseContentReader> _parsers;
-        private readonly ISecretsProvider _secretsProvider;
 
         public SendHttpRequest(
             IHttpClientFactory httpClientFactory,
-            IEnumerable<IHttpResponseContentReader> parsers,
-            ISecretsProvider secretsProvider)
+            IEnumerable<IHttpResponseContentReader> parsers)
         {
             _httpClient = httpClientFactory.CreateClient(nameof(SendHttpRequest));
             _parsers = parsers;
-            _secretsProvider = secretsProvider;
         }
 
         /// <summary>
@@ -87,11 +82,9 @@ namespace Elsa.Activities.Http
         /// The Authorization header value to send.
         /// </summary>
         [ActivityInput(
-          UIHint = ActivityInputUIHints.Dropdown,
           Label = "Authorization",
           Hint = "The Authorization header value to send.",
           Category = PropertyCategories.Advanced,
-          OptionsProvider = typeof(SendHttpRequest),
           SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
        )]
         public string? Authorization { get; set; }
@@ -258,17 +251,6 @@ namespace Elsa.Activities.Http
                     items.Insert(0, new SelectListItem("Auto Select", ""));
                     return items;
                 }
-                case nameof(Authorization):
-                {
-                    var secretsAuth = _secretsProvider.GetSecretsForSelectListAsync(SecretType.AuthorizationHeader).Result;
-
-                    var items = secretsAuth.Select(x => new SelectListItem(x.Item1, x.Item2)).ToList();
-                    items.Insert(0, new SelectListItem("", "empty"));
-
-                    var list = new SelectList { Items = items };
-
-                    return list;
-                    }
                 case nameof(ResponseContentTargetType): return null;
                 default: throw new ArgumentException($"Unsupported property: {property.Name}");
             }

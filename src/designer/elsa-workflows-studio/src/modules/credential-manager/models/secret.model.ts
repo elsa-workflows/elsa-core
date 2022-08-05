@@ -5,8 +5,7 @@ export interface Secret {
   customAttributes: any;
   description: string;
   displayName: string;
-  inputProperties: SecretProperties[]
-  properties: SecretProperties[];
+  inputProperties: SecretProperties[];
   type: string;
 }
 
@@ -33,7 +32,6 @@ export interface SecretDescriptor {
   outcomes: Array<string>;
   browsable: boolean;
   inputProperties: Array<SecretPropertyDescriptor>;
-  outputProperties: Array<SecretPropertyDescriptor>;
   customAttributes: any;
 }
 
@@ -48,17 +46,12 @@ export interface SecretPropertyDescriptor {
   defaultSyntax?: string;
   supportedSyntaxes: Array<string>;
   isReadOnly?: boolean;
-  defaultWorkflowStorageProvider?: string;
-  disableWorkflowProviderSelection: boolean;
-  considerValuesAsOutcomes: boolean;
 }
 
 export interface SecretProperties {
-  considerValuesAsOutcomes?: boolean;
   disableWorkflowProviderSelection?: boolean;
   hint?: string;
   isBrowsable?: boolean;
-  isDesignerCritical?: boolean;
   isReadOnly?: boolean;
   label?: string;
   name?: string;

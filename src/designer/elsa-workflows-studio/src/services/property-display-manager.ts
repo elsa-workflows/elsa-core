@@ -2,7 +2,7 @@
 import {PropertyDisplayDriver} from "./property-display-driver";
 import {NullPropertyDriver } from "../drivers";
 import {Map} from '../utils/utils';
-import { SecretModel } from "../modules/credential-manager/models/secret.model";
+import {SecretModel, SecretPropertyDescriptor} from "../modules/credential-manager/models/secret.model";
 
 export type PropertyDisplayDriverMap = Map<(elsaStudio: ElsaStudio) => PropertyDisplayDriver>;
 
@@ -24,19 +24,19 @@ export class PropertyDisplayManager {
     this.drivers[controlType] = driverFactory;
   }
 
-  display(activity: any, property: ActivityPropertyDescriptor) {
+  display(model: ActivityModel | SecretModel, property: ActivityPropertyDescriptor | SecretPropertyDescriptor) {
     const driver = this.getDriver(property.uiHint);
-    return driver.display(activity, property);
+    return driver.display(model, property);
   }
 
-  update(activity: any, property: ActivityPropertyDescriptor, form: FormData) {
+  update(model: ActivityModel | SecretModel, property: ActivityPropertyDescriptor | SecretPropertyDescriptor, form: FormData) {
     const driver = this.getDriver(property.uiHint);
     const update = driver.update;
-    
+
     if(!update)
       return;
-    
-    return update(activity, property, form);
+
+    return update(model, property, form);
   }
 
   getDriver(type: string) {

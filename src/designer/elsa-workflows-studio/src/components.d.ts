@@ -5,8 +5,8 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
-import { LocationSegments, MatchResults, RouterHistory } from "@stencil/router";
 import { ActivityDefinitionProperty, ActivityDescriptor, ActivityModel, ActivityPropertyDescriptor, ElsaStudio, IntellisenseContext, OrderBy, SelectListItem, VersionOptions, WorkflowBlueprint, WorkflowDefinition, WorkflowDefinitionVersion, WorkflowExecutionLogRecord, WorkflowFault, WorkflowInstance, WorkflowModel, WorkflowStatus } from "./models";
+import { LocationSegments, MatchResults, RouterHistory } from "@stencil/router";
 import { MenuItem } from "./components/controls/elsa-context-menu/models";
 import { VNode } from "@stencil/core";
 import { ActivityContextMenuState, LayoutDirection, WorkflowDesignerMode } from "./components/designers/tree/elsa-designer-tree/models";
@@ -18,16 +18,6 @@ import { ToastNotificationOptions } from "./components/shared/elsa-toast-notific
 import { WebhookDefinition } from "./modules/elsa-webhooks/models";
 import { ActivityStats } from ".";
 export namespace Components {
-    interface CredentialManagerItemsList {
-        "basePath": string;
-        "culture": string;
-    }
-    interface CredentialManagerListScreen {
-        "basePath": string;
-        "culture": string;
-        "history"?: RouterHistory;
-        "serverUrl": string;
-    }
     interface ElsaActivityEditorModal {
         "culture": string;
     }
@@ -58,6 +48,16 @@ export namespace Components {
     }
     interface ElsaCopyButton {
         "value": string;
+    }
+    interface ElsaCredentialManagerItemsList {
+        "basePath": string;
+        "culture": string;
+    }
+    interface ElsaCredentialManagerListScreen {
+        "basePath": string;
+        "culture": string;
+        "history"?: RouterHistory;
+        "serverUrl": string;
     }
     interface ElsaCronExpressionProperty {
         "activityModel": ActivityModel;
@@ -391,18 +391,6 @@ export namespace Components {
     }
 }
 declare global {
-    interface HTMLCredentialManagerItemsListElement extends Components.CredentialManagerItemsList, HTMLStencilElement {
-    }
-    var HTMLCredentialManagerItemsListElement: {
-        prototype: HTMLCredentialManagerItemsListElement;
-        new (): HTMLCredentialManagerItemsListElement;
-    };
-    interface HTMLCredentialManagerListScreenElement extends Components.CredentialManagerListScreen, HTMLStencilElement {
-    }
-    var HTMLCredentialManagerListScreenElement: {
-        prototype: HTMLCredentialManagerListScreenElement;
-        new (): HTMLCredentialManagerListScreenElement;
-    };
     interface HTMLElsaActivityEditorModalElement extends Components.ElsaActivityEditorModal, HTMLStencilElement {
     }
     var HTMLElsaActivityEditorModalElement: {
@@ -450,6 +438,18 @@ declare global {
     var HTMLElsaCopyButtonElement: {
         prototype: HTMLElsaCopyButtonElement;
         new (): HTMLElsaCopyButtonElement;
+    };
+    interface HTMLElsaCredentialManagerItemsListElement extends Components.ElsaCredentialManagerItemsList, HTMLStencilElement {
+    }
+    var HTMLElsaCredentialManagerItemsListElement: {
+        prototype: HTMLElsaCredentialManagerItemsListElement;
+        new (): HTMLElsaCredentialManagerItemsListElement;
+    };
+    interface HTMLElsaCredentialManagerListScreenElement extends Components.ElsaCredentialManagerListScreen, HTMLStencilElement {
+    }
+    var HTMLElsaCredentialManagerListScreenElement: {
+        prototype: HTMLElsaCredentialManagerListScreenElement;
+        new (): HTMLElsaCredentialManagerListScreenElement;
     };
     interface HTMLElsaCronExpressionPropertyElement extends Components.ElsaCronExpressionProperty, HTMLStencilElement {
     }
@@ -794,8 +794,6 @@ declare global {
         new (): HTMLElsaWorkflowTestPanelElement;
     };
     interface HTMLElementTagNameMap {
-        "credential-manager-items-list": HTMLCredentialManagerItemsListElement;
-        "credential-manager-list-screen": HTMLCredentialManagerListScreenElement;
         "elsa-activity-editor-modal": HTMLElsaActivityEditorModalElement;
         "elsa-activity-picker-modal": HTMLElsaActivityPickerModalElement;
         "elsa-check-list-property": HTMLElsaCheckListPropertyElement;
@@ -804,6 +802,8 @@ declare global {
         "elsa-context-menu": HTMLElsaContextMenuElement;
         "elsa-control": HTMLElsaControlElement;
         "elsa-copy-button": HTMLElsaCopyButtonElement;
+        "elsa-credential-manager-items-list": HTMLElsaCredentialManagerItemsListElement;
+        "elsa-credential-manager-list-screen": HTMLElsaCredentialManagerListScreenElement;
         "elsa-cron-expression-property": HTMLElsaCronExpressionPropertyElement;
         "elsa-designer-panel": HTMLElsaDesignerPanelElement;
         "elsa-designer-tree": HTMLElsaDesignerTreeElement;
@@ -864,16 +864,6 @@ declare global {
     }
 }
 declare namespace LocalJSX {
-    interface CredentialManagerItemsList {
-        "basePath"?: string;
-        "culture"?: string;
-    }
-    interface CredentialManagerListScreen {
-        "basePath"?: string;
-        "culture"?: string;
-        "history"?: RouterHistory;
-        "serverUrl"?: string;
-    }
     interface ElsaActivityEditorModal {
         "culture"?: string;
     }
@@ -902,6 +892,16 @@ declare namespace LocalJSX {
     }
     interface ElsaCopyButton {
         "value"?: string;
+    }
+    interface ElsaCredentialManagerItemsList {
+        "basePath"?: string;
+        "culture"?: string;
+    }
+    interface ElsaCredentialManagerListScreen {
+        "basePath"?: string;
+        "culture"?: string;
+        "history"?: RouterHistory;
+        "serverUrl"?: string;
     }
     interface ElsaCronExpressionProperty {
         "activityModel"?: ActivityModel;
@@ -1241,8 +1241,6 @@ declare namespace LocalJSX {
         "workflowTestActivityId"?: string;
     }
     interface IntrinsicElements {
-        "credential-manager-items-list": CredentialManagerItemsList;
-        "credential-manager-list-screen": CredentialManagerListScreen;
         "elsa-activity-editor-modal": ElsaActivityEditorModal;
         "elsa-activity-picker-modal": ElsaActivityPickerModal;
         "elsa-check-list-property": ElsaCheckListProperty;
@@ -1251,6 +1249,8 @@ declare namespace LocalJSX {
         "elsa-context-menu": ElsaContextMenu;
         "elsa-control": ElsaControl;
         "elsa-copy-button": ElsaCopyButton;
+        "elsa-credential-manager-items-list": ElsaCredentialManagerItemsList;
+        "elsa-credential-manager-list-screen": ElsaCredentialManagerListScreen;
         "elsa-cron-expression-property": ElsaCronExpressionProperty;
         "elsa-designer-panel": ElsaDesignerPanel;
         "elsa-designer-tree": ElsaDesignerTree;
@@ -1314,8 +1314,6 @@ export { LocalJSX as JSX };
 declare module "@stencil/core" {
     export namespace JSX {
         interface IntrinsicElements {
-            "credential-manager-items-list": LocalJSX.CredentialManagerItemsList & JSXBase.HTMLAttributes<HTMLCredentialManagerItemsListElement>;
-            "credential-manager-list-screen": LocalJSX.CredentialManagerListScreen & JSXBase.HTMLAttributes<HTMLCredentialManagerListScreenElement>;
             "elsa-activity-editor-modal": LocalJSX.ElsaActivityEditorModal & JSXBase.HTMLAttributes<HTMLElsaActivityEditorModalElement>;
             "elsa-activity-picker-modal": LocalJSX.ElsaActivityPickerModal & JSXBase.HTMLAttributes<HTMLElsaActivityPickerModalElement>;
             "elsa-check-list-property": LocalJSX.ElsaCheckListProperty & JSXBase.HTMLAttributes<HTMLElsaCheckListPropertyElement>;
@@ -1324,6 +1322,8 @@ declare module "@stencil/core" {
             "elsa-context-menu": LocalJSX.ElsaContextMenu & JSXBase.HTMLAttributes<HTMLElsaContextMenuElement>;
             "elsa-control": LocalJSX.ElsaControl & JSXBase.HTMLAttributes<HTMLElsaControlElement>;
             "elsa-copy-button": LocalJSX.ElsaCopyButton & JSXBase.HTMLAttributes<HTMLElsaCopyButtonElement>;
+            "elsa-credential-manager-items-list": LocalJSX.ElsaCredentialManagerItemsList & JSXBase.HTMLAttributes<HTMLElsaCredentialManagerItemsListElement>;
+            "elsa-credential-manager-list-screen": LocalJSX.ElsaCredentialManagerListScreen & JSXBase.HTMLAttributes<HTMLElsaCredentialManagerListScreenElement>;
             "elsa-cron-expression-property": LocalJSX.ElsaCronExpressionProperty & JSXBase.HTMLAttributes<HTMLElsaCronExpressionPropertyElement>;
             "elsa-designer-panel": LocalJSX.ElsaDesignerPanel & JSXBase.HTMLAttributes<HTMLElsaDesignerPanelElement>;
             "elsa-designer-tree": LocalJSX.ElsaDesignerTree & JSXBase.HTMLAttributes<HTMLElsaDesignerTreeElement>;

@@ -1,15 +1,12 @@
+using System;
+using System.Linq.Expressions;
 using AutoMapper;
 using Elsa.Persistence.EntityFramework.Core.Stores;
 using Elsa.Persistence.Specifications;
 using Elsa.Secrets.Models;
 using Elsa.Secrets.Persistence.EntityFramework.Core.Services;
 using Elsa.Serialization;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace Elsa.Secrets.Persistence.EntityFramework.Core.Stores
 {
@@ -17,11 +14,32 @@ namespace Elsa.Secrets.Persistence.EntityFramework.Core.Stores
     {
         private readonly IContentSerializer _contentSerializer;
 
-        public EntityFrameworkSecretsStore(ISecretsContextFactory dbContextFactory, IMapper mapper, IContentSerializer contentSerializer) : base(dbContextFactory, mapper)
-        {
-            _contentSerializer = contentSerializer;
-        }
+        public EntityFrameworkSecretsStore(ISecretsContextFactory dbContextFactory, IMapper mapper, IContentSerializer contentSerializer) : base(dbContextFactory, mapper) => _contentSerializer = contentSerializer;
 
         protected override Expression<Func<Secret, bool>> MapSpecification(ISpecification<Secret> specification) => AutoMapSpecification(specification);
+
+        protected override void OnSaving(SecretsContext dbContext, Secret entity)
+        {
+            var data = new
+            {
+                entity.Properties
+            };
+
+            var json = _contentSerializer.Serialize(data);
+            dbContext.Entry(entity).Property("Data").CurrentValue = json;
+        }
+
+        protected override void OnLoading(SecretsContext dbContext, Secret entity)
+        {
+            var data = new
+            {
+                entity.Properties
+            };
+
+            var json = (string)dbContext.Entry(entity).Property("Data").CurrentValue;
+            data = JsonConvert.DeserializeAnonymousType(json, data, DefaultContentSerializer.CreateDefaultJsonSerializationSettings())!;
+
+            entity.Properties = data.Properties;
+        }
     }
 }

@@ -1,4 +1,4 @@
-using Elsa.Secrets.Extentions;
+using Elsa.Secrets.Extensions;
 using Elsa.Secrets.Persistence;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;

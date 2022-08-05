@@ -26,7 +26,7 @@ export class CredentialManagerPlugin implements ElsaPlugin {
   onLoadingMenu(context: ConfigureDashboardMenuContext) {
 
     const menuItems: any[] = [["credential-manager", "Credential Manager"]];
-    const routes: any[] = [["credential-manager", "credential-manager-items-list", true]]
+    const routes: any[] = [["credential-manager", "elsa-credential-manager-items-list", true]]
 
     context.data.menuItems = [...context.data.menuItems, ...menuItems];
     context.data.routes = [...context.data.routes, ...routes];

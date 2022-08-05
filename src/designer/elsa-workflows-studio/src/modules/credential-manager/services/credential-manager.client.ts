@@ -1,6 +1,6 @@
 import axios, {AxiosInstance, AxiosRequestConfig} from "axios";
 import {Service} from 'axios-middleware';
-import {eventBus} from '../../../services/event-bus';
+import {eventBus} from '../../../services';
 import { EventTypes } from "../../../models";
 import { Secret, SecretModel } from "../models/secret.model";
 

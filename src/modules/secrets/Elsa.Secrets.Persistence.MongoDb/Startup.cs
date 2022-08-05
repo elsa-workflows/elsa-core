@@ -1,7 +1,7 @@
 using Elsa.Attributes;
 using Elsa.Options;
-using Elsa.Secrets.Extentions;
-using Elsa.Secrets.Persistence.MongoDb.Extentions;
+using Elsa.Secrets.Extensions;
+using Elsa.Secrets.Persistence.MongoDb.Extensions;
 using Elsa.Services.Startup;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -31,7 +31,7 @@ namespace Elsa.Secrets.Persistence.MongoDb
 
             var secretsOptionsBuilder = new SecretsOptionsBuilder(services);
             secretsOptionsBuilder.UseSecretsMongoDbPersistence(options => options.ConnectionString = connectionString);
-            services.AddScoped(sp => secretsOptionsBuilder.SectersOptions.SecretsStoreFactory(sp));
+            services.AddScoped(sp => secretsOptionsBuilder.SecretsOptions.SecretsStoreFactory(sp));
 
             elsa.AddSecrets();
         }

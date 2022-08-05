@@ -11,17 +11,17 @@ namespace Elsa.Secrets
     {
         public SecretsOptionsBuilder(IServiceCollection services)
         {
-            SectersOptions = new SectersOptions();
+            SecretsOptions = new SecretsOptions();
             Services = services;
             services.TryAddSingleton<ICacheSignal, CacheSignal>();
         }
 
         public IServiceCollection Services { get; }
-        public SectersOptions SectersOptions { get; }
+        public SecretsOptions SecretsOptions { get; }
 
         public SecretsOptionsBuilder UseSecretsStore(Func<IServiceProvider, ISecretsStore> factory)
         {
-            SectersOptions.SecretsStoreFactory = factory;
+            SecretsOptions.SecretsStoreFactory = factory;
             return this;
         }
     }

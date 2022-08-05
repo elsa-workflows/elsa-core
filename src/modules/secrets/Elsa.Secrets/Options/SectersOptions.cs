@@ -5,9 +5,9 @@ using System;
 
 namespace Elsa.Secrets.Options
 {
-    public class SectersOptions
+    public class SecretsOptions
     {
-        public SectersOptions()
+        public SecretsOptions()
         {
             SecretsStoreFactory = provider => ActivatorUtilities.CreateInstance<InMemorySecretsStore>(provider);
         }

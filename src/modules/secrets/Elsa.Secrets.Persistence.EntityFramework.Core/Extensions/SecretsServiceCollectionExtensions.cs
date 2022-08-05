@@ -1,19 +1,14 @@
+using System;
 using Elsa.Runtime;
-using Elsa.Secrets.Options;
 using Elsa.Secrets.Persistence.EntityFramework.Core.Services;
 using Elsa.Secrets.Persistence.EntityFramework.Core.StartupTasks;
 using Elsa.Secrets.Persistence.EntityFramework.Core.Stores;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Elsa.Secrets.Persistence.EntityFramework.Core.Extentions
+namespace Elsa.Secrets.Persistence.EntityFramework.Core.Extensions
 {
-    public static class SecretsServiceCollectionExtentions
+    public static class SecretsServiceCollectionExtensions
     {
         /// <summary>
         /// Configures Elsa to use Entity Framework Core for persistence, using pooled DB Context instances.
@@ -24,14 +19,14 @@ namespace Elsa.Secrets.Persistence.EntityFramework.Core.Extentions
         /// https://docs.microsoft.com/en-us/ef/core/performance/advanced-performance-topics?tabs=with-constant#dbcontext-pooling.
         /// </para>
         /// </remarks>
-        /// <param name="sectersOptions">An Elsa options builder</param>
+        /// <param name="secretsOptions">An Elsa options builder</param>
         /// <param name="configure">A configuration builder callback</param>
         /// <param name="autoRunMigrations">If <c>true</c> then database migrations will be auto-executed on startup</param>
         /// <returns>The Elsa options builder, so calls may be chained</returns>
-        public static SecretsOptionsBuilder UseEntityFrameworkPersistence(this SecretsOptionsBuilder sectersOptions,
+        public static SecretsOptionsBuilder UseEntityFrameworkPersistence(this SecretsOptionsBuilder secretsOptions,
             Action<DbContextOptionsBuilder> configure,
             bool autoRunMigrations = true) =>
-            sectersOptions.UseEntityFrameworkPersistence<SecretsContext>(configure, autoRunMigrations);
+            secretsOptions.UseEntityFrameworkPersistence<SecretsContext>(configure, autoRunMigrations);
 
         /// <summary>
         /// Configures Elsa to use Entity Framework Core for persistence, using pooled DB Context instances.
@@ -42,15 +37,15 @@ namespace Elsa.Secrets.Persistence.EntityFramework.Core.Extentions
         /// https://docs.microsoft.com/en-us/ef/core/performance/advanced-performance-topics?tabs=with-constant#dbcontext-pooling.
         /// </para>
         /// </remarks>
-        /// <param name="sectersOptions">An Elsa options builder</param>
+        /// <param name="secretsOptions">An Elsa options builder</param>
         /// <param name="configure">A configuration builder callback</param>
         /// <param name="autoRunMigrations">If <c>true</c> then database migrations will be auto-executed on startup</param>
         /// <typeparam name="TSecretsContext">The concrete type of <see cref="SecretsContext"/> to use.</typeparam>
         /// <returns>The Elsa options builder, so calls may be chained</returns>
-        public static SecretsOptionsBuilder UseEntityFrameworkPersistence<TSecretsContext>(this SecretsOptionsBuilder sectersOptions,
+        public static SecretsOptionsBuilder UseEntityFrameworkPersistence<TSecretsContext>(this SecretsOptionsBuilder secretsOptions,
             Action<DbContextOptionsBuilder> configure,
             bool autoRunMigrations = true) where TSecretsContext : SecretsContext =>
-            sectersOptions.UseEntityFrameworkPersistence<TSecretsContext>((_, builder) => configure(builder), autoRunMigrations);
+            secretsOptions.UseEntityFrameworkPersistence<TSecretsContext>((_, builder) => configure(builder), autoRunMigrations);
 
         /// <summary>
         /// Configures Elsa to use Entity Framework Core for persistence, using pooled DB Context instances.
@@ -61,14 +56,14 @@ namespace Elsa.Secrets.Persistence.EntityFramework.Core.Extentions
         /// https://docs.microsoft.com/en-us/ef/core/performance/advanced-performance-topics?tabs=with-constant#dbcontext-pooling.
         /// </para>
         /// </remarks>
-        /// <param name="sectersOptions">An Elsa options builder</param>
+        /// <param name="secretsOptions">An Elsa options builder</param>
         /// <param name="configure">A configuration builder callback, which also provides access to a service provider</param>
         /// <param name="autoRunMigrations">If <c>true</c> then database migrations will be auto-executed on startup</param>
         /// <returns>The Elsa options builder, so calls may be chained</returns>
-        public static SecretsOptionsBuilder UseEntityFrameworkPersistence(this SecretsOptionsBuilder sectersOptions,
+        public static SecretsOptionsBuilder UseEntityFrameworkPersistence(this SecretsOptionsBuilder secretsOptions,
             Action<IServiceProvider, DbContextOptionsBuilder> configure,
             bool autoRunMigrations = true) =>
-            sectersOptions.UseEntityFrameworkPersistence<SecretsContext>(configure, autoRunMigrations);
+            secretsOptions.UseEntityFrameworkPersistence<SecretsContext>(configure, autoRunMigrations);
 
         /// <summary>
         /// Configures Elsa to use Entity Framework Core for persistence, using pooled DB Context instances.

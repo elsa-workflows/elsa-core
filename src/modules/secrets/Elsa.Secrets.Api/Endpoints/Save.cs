@@ -29,11 +29,11 @@ namespace Elsa.Secrets.Api.Endpoints
                 DisplayName = request.DisplayName,
                 Name = request.Name,
                 Type = request.Type,   
-                PropertiesJson = JsonConvert.SerializeObject(request.Properties)
+                Properties = request.Properties
             };
 
             if (model.Id == null)
-                await _secretsStore.SaveAsync(model);
+                await _secretsStore.AddAsync(model);
             else
                 await _secretsStore.UpdateAsync(model);
 

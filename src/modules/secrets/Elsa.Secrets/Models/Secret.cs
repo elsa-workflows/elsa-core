@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Elsa.Models;
 
 namespace Elsa.Secrets.Models
@@ -7,6 +8,6 @@ namespace Elsa.Secrets.Models
         public string Type { get; set; } = default!;
         public string? Name { get; set; }
         public string? DisplayName { get; set; }
-        public string PropertiesJson { get; set; }
+        public ICollection<SecretProperty> Properties { get; set; }
     }
 }

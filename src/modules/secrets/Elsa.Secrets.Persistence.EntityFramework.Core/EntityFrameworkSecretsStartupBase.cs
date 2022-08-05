@@ -1,15 +1,11 @@
+using System;
 using Elsa.Options;
-using Elsa.Secrets.Extentions;
-using Elsa.Secrets.Persistence.EntityFramework.Core.Extentions;
+using Elsa.Secrets.Extensions;
+using Elsa.Secrets.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Services.Startup;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Elsa.Secrets.Persistence.EntityFramework.Core
 {
@@ -37,7 +33,7 @@ namespace Elsa.Secrets.Persistence.EntityFramework.Core
 
             var secretsOptionsBuilder = new SecretsOptionsBuilder(services);
             secretsOptionsBuilder.UseEntityFrameworkPersistence(options => Configure(options, connectionString));
-            services.AddScoped(sp => secretsOptionsBuilder.SectersOptions.SecretsStoreFactory(sp));
+            services.AddScoped(sp => secretsOptionsBuilder.SecretsOptions.SecretsStoreFactory(sp));
 
             elsa.AddSecrets();
         }

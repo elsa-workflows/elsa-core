@@ -1,14 +1,12 @@
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Elsa.Persistence.Specifications;
 using Elsa.Secrets.Events;
 using Elsa.Secrets.Models;
 using MediatR;
 using Open.Linq.AsyncExtensions;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Elsa.Secrets.Persistence.Decorators
 {
@@ -34,22 +32,22 @@ namespace Elsa.Secrets.Persistence.Decorators
 
         public async Task<int> DeleteManyAsync(ISpecification<Secret> specification, CancellationToken cancellationToken = default)
         {
-            var webhookDefinitions = await FindManyAsync(specification, cancellationToken: cancellationToken).ToList();
+            var secrets = await FindManyAsync(specification, cancellationToken: cancellationToken).ToList();
 
-            if (!webhookDefinitions.Any())
+            if (!secrets.Any())
                 return 0;
 
-            foreach (var webhookDefinition in webhookDefinitions)
-                await _mediator.Publish(new SecretDeleting(webhookDefinition), cancellationToken);
+            foreach (var secret in secrets)
+                await _mediator.Publish(new SecretDeleting(secret), cancellationToken);
 
-            await _mediator.Publish(new ManySecretsDeleting(webhookDefinitions), cancellationToken);
+            await _mediator.Publish(new ManySecretsDeleting(secrets), cancellationToken);
 
             var count = await _store.DeleteManyAsync(specification, cancellationToken);
 
-            foreach (var instance in webhookDefinitions)
+            foreach (var instance in secrets)
                 await _mediator.Publish(new SecretDeleted(instance), cancellationToken);
 
-            await _mediator.Publish(new ManySecretsDeleted(webhookDefinitions), cancellationToken);
+            await _mediator.Publish(new ManySecretsDeleted(secrets), cancellationToken);
 
             return count;
         }

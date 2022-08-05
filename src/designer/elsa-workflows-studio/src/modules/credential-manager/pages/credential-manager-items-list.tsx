@@ -4,11 +4,11 @@ import {i18n} from "i18next";
 import { resources } from '../../../components/controls/elsa-pager/localizations';
 import { loadTranslations } from '../../../components/i18n/i18n-loader';
 import Tunnel from "../../../data/dashboard";
-import { eventBus } from '../../../services/event-bus';
-import { EventTypes } from '../../../models';
+import { eventBus } from '../../../services';
+import { SecretEventTypes } from "../models/secret.events";
 
 @Component({
-  tag: 'credential-manager-items-list',
+  tag: 'elsa-credential-manager-items-list',
   shadow: false,
 })
 export class CredentialManagerItemsList {
@@ -21,11 +21,11 @@ export class CredentialManagerItemsList {
   }
 
   async onNewClick() {
-    await eventBus.emit(EventTypes.ShowSecretsPicker);
+    await eventBus.emit(SecretEventTypes.ShowSecretsPicker);
   }
 
   renderListScreen() {
-    return <credential-manager-list-screen />;
+    return <elsa-credential-manager-list-screen />;
   }
 
   renderSecretPickerModal() {
@@ -37,8 +37,6 @@ export class CredentialManagerItemsList {
   }
 
   render() {
-    const basePath = this.basePath;
-
     return (
       <div>
         <div class="elsa-border-b elsa-border-gray-200 elsa-px-4 elsa-py-4 sm:elsa-flex sm:elsa-items-center sm:elsa-justify-between sm:elsa-px-6 lg:elsa-px-8 elsa-bg-white">

@@ -1,8 +1,8 @@
+using System.Linq;
 using Elsa.Persistence.EntityFramework.Core.Configuration;
 using Elsa.Secrets.Models;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
-using System.Linq;
 
 namespace Elsa.Secrets.Persistence.EntityFramework.Core
 {
