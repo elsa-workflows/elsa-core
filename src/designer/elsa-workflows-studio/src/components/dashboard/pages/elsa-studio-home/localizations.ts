@@ -23,4 +23,10 @@ export const resources = {
       'Tagline': 'میتوانید از این داشبورد برای مدیریت بخش های مختلف استفاده نمایید.'
     }
   },
+  'de-DE': {
+    'default': {
+      'Welcome': 'Willkommen bei {{title}}',
+      'Tagline': 'Benutze das Dashboard um alles zu steuern'
+    }
+  },
 };

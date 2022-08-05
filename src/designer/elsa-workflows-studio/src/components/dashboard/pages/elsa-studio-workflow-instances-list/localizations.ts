@@ -19,4 +19,9 @@ export const resources = {
       'Title': 'فرآیندهای اجرا شده'
     }
   },
+  'de-DE': {
+    default: {
+      'Title': 'Ablaufinstanzen'
+    }
+  }
 };

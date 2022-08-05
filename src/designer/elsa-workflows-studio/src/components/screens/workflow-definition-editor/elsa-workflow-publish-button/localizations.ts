@@ -35,4 +35,13 @@ export const resources = {
       'Export': 'Export',
     }
   },
+  'de-DE': {
+    'default': {
+      'Publish': 'Veröffentlichen',
+      'Publishing': 'Am veröffentlichen',
+      'Unpublish': 'Veröffentlichung zurückziehen',
+      'Import': 'Importieren',
+      'Export': 'Exportieren',
+    }
+  },
 };

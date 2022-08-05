@@ -55,4 +55,18 @@ export const resources = {
       }
     }
   },
+  'de-DE': {
+    'default': {
+      'Name': 'Name',
+      'Instances': 'Instanzen',
+      'LatestVersion': 'Neuste Version',
+      'PublishedVersion': 'Veröffentlichte Version',
+      'Edit': 'Bearbeiten',
+      'Delete': 'Entfernen',
+      'DeleteConfirmationModel': {
+        'Title': 'Ablaufdefinition entfernen',
+        'Message': 'Sind Sie sicher, dass sie die Definition und die dazugehörigen Instanzen unwiderruflich löschen wollen?'
+      }
+    }
+  },
 };
