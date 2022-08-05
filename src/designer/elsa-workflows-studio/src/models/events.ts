@@ -51,7 +51,13 @@ export const EventTypes = {
   TestActivityMessageReceived: 'test-activity-message-received',
   FlyoutPanelTabSelected: 'flyout-panel-tab-selected',
   ComponentLoadingCustomButton: 'component-loading-custom-button',
-  ComponentCustomButtonClick: 'component-custom-button-click'
+  ComponentCustomButtonClick: 'component-custom-button-click',
+
+  HubConnectionCreated: 'hubconnection-created',
+  HubConnectionStarted: 'hubconnection-started',
+  HubConnectionConnected: 'hubconnection-connected',
+  HubConnectionFailed: 'hubconnection-failed',
+  HubConnectionClosed: 'hubconnection-closed'
 };
 
 export interface AddActivityEventArgs {
