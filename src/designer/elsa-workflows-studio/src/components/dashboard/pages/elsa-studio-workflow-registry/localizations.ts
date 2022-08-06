@@ -23,4 +23,10 @@ export const resources = {
       'CreateButton': 'ایجاد فرآیند'
     }
   },
+  'de-DE': {
+    default: {
+      'Title': 'Ablaufverzeichnis',
+      'CreateButton': 'Ablauf erstellen'
+    }
+  },
 };

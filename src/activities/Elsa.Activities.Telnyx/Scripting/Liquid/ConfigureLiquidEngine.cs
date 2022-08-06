@@ -33,6 +33,7 @@ namespace Elsa.Activities.Telnyx.Scripting.Liquid
             memberAccessStrategy.Register<CallRecordingUrls>();
             memberAccessStrategy.Register<CallSpeakStarted>();
             memberAccessStrategy.Register<CallSpeakEnded>();
+            memberAccessStrategy.Register<CallMachineGreetingEnded>();
             
             memberAccessStrategy.Register<DialResponse>();
             memberAccessStrategy.Register<ErrorResponse>();

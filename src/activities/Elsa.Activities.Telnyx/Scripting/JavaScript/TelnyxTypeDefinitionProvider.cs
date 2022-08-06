@@ -30,6 +30,7 @@ namespace Elsa.Activities.Telnyx.Scripting.JavaScript
                 typeof(CallRecordingUrls),
                 typeof(CallSpeakEnded),
                 typeof(CallSpeakStarted),
+                typeof(CallMachineGreetingEnded)
             };
         }
     }

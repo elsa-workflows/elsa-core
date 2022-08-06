@@ -42,5 +42,16 @@ export const resources = {
       'Results': 'نتیجه',
       'Display': '{{template}}'
     }
-  }
+  },
+  'de-DE': {
+    'default': {
+      'Previous': 'Vorherige',
+      'Next': 'Nächste',
+      'From': 'Von',
+      'To': 'bis',
+      'Of': 'von',
+      'Results': 'Ergebnissen',
+      'Display': '{{template}}'
+    }
+  },
 };

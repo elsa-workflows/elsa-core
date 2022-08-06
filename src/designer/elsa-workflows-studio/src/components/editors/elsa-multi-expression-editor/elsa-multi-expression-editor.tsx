@@ -68,9 +68,12 @@ export class ElsaMultiExpressionEditor {
 
     this.selectedSyntax = syntax;
     this.syntaxChanged.emit(syntax);
-
     this.currentValue = this.expressions[syntax ? syntax : this.defaultSyntax || SyntaxNames.Literal];
-    await this.expressionEditor.setExpression(this.currentValue);
+	if(this.currentValue){
+		await this.expressionEditor.setExpression(this.currentValue);
+	}
+
+
 
     this.closeContextMenu();
   }
@@ -81,8 +84,10 @@ export class ElsaMultiExpressionEditor {
 
   onExpressionChanged(e: CustomEvent<string>) {
     const expression = e.detail;
-    this.expressions[this.selectedSyntax || this.defaultSyntax] = expression;
-    this.expressionChanged.emit(expression);
+	if(expression){
+		this.expressions[this.selectedSyntax || this.defaultSyntax] = expression;
+		this.expressionChanged.emit(expression);
+	}
   }
 
   render() {

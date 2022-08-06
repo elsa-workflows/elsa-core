@@ -38,7 +38,7 @@ namespace Elsa.Server.Api.Endpoints.Activities
         public async Task<IActionResult> Handle(CancellationToken cancellationToken)
         {
             var activityTypes = await _activityTypeService.GetActivityTypesAsync(cancellationToken);
-            var tasks = activityTypes.Where(x => x.IsBrowsable).Select(x => DescribeActivity(x, cancellationToken)).ToList();
+            var tasks = activityTypes.Select(x => DescribeActivity(x, cancellationToken)).ToList();
             var descriptors = await Task.WhenAll(tasks);
             return Json(descriptors, _serializerSettingsProvider.GetSettings());
         }

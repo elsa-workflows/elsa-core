@@ -39,4 +39,14 @@ export const resources = {
       'RestartInstanceConfirmationModel.Message': 'جریان دیگری از این فرآیند در حال اجراست، آیا مایلید فرآیند جاری متوقف و فرآیند جدیدی اجرا شود؟?'
     }
   },
+  'de-DE': {
+    default: {
+      'ExecuteWorkflow': 'Ablauf ausführen',
+      'StopWorkflow': 'Ablauf stoppen',
+      'EntryEndpoint': 'Startpunkt',
+      'Status': 'Status',
+      'RestartInstanceConfirmationModel.Title': 'Der Ablauf läuft bereits',
+      'RestartInstanceConfirmationModel.Message': 'Es sieht so aus, als würde der Ablauf bereits laufen. Wollen Sie den Ablauf stoppen und einen neuen starten?'
+    }
+  },
 };

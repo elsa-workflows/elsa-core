@@ -22,5 +22,11 @@ export const resources = {
       'Yes': 'بله',
       'No': 'خیر'
     }
-  }
+  },
+  'de-DE': {
+    'default': {
+      'Yes': 'Ja',
+      'No': 'Nein',
+    }
+  },
 };

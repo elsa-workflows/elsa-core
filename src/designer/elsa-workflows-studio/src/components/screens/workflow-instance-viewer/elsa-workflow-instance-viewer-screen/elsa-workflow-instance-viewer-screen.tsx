@@ -266,8 +266,8 @@ export class ElsaWorkflowInstanceViewerScreen {
     const workflowFault = !!workflowInstance ? workflowInstance.faults : null;
     const activityData = workflowInstance.activityData[activity.activityId] || {};
     const lifecycle = activityData['_Lifecycle'] || {};
-    const executing = !!lifecycle.executing;
-    const executed = !!lifecycle.executed;
+    const executing = lifecycle.executing ?? lifecycle.Executing;
+    const executed = lifecycle.executed ?? lifecycle.Executed;
 
     if (!!workflowFault && workflowFault.find(x => x.faultedActivityId == activity.activityId))
       return 'red';
@@ -286,8 +286,8 @@ export class ElsaWorkflowInstanceViewerScreen {
     const workflowFault = !!workflowInstance ? workflowInstance.faults : null;
     const activityData = workflowInstance.activityData[activity.activityId] || {};
     const lifecycle = activityData['_Lifecycle'] || {};
-    const executing = !!lifecycle.executing;
-    const executed = !!lifecycle.executed;
+    const executing = lifecycle.executing ?? lifecycle.Executing;
+    const executed = lifecycle.executed ?? lifecycle.Executed;
 
     let icon: string;
 

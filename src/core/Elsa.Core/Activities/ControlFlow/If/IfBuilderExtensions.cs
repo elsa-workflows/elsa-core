@@ -111,5 +111,31 @@ namespace Elsa.Activities.ControlFlow
                 whenTrue(@if.When(OutcomeNames.True));
                 whenFalse(@if.When(OutcomeNames.False));
             }, lineNumber, sourceFile);
+        
+        public static IActivityBuilder If(
+            this IBuilder builder,
+            Func<bool> condition,
+            Action<IOutcomeBuilder> whenTrue,
+            Action<IOutcomeBuilder> whenFalse,
+            [CallerLineNumber] int lineNumber = default,
+            [CallerFilePath] string? sourceFile = default) =>
+            builder.If(x => x.WithCondition(condition), @if =>
+            {
+                whenTrue(@if.When(OutcomeNames.True));
+                whenFalse(@if.When(OutcomeNames.False));
+            }, lineNumber, sourceFile);
+        
+        public static IActivityBuilder If(
+            this IBuilder builder,
+            Func<ActivityExecutionContext, ValueTask<bool>> condition,
+            Action<IOutcomeBuilder> whenTrue,
+            Action<IOutcomeBuilder> whenFalse,
+            [CallerLineNumber] int lineNumber = default,
+            [CallerFilePath] string? sourceFile = default) =>
+            builder.If(x => x.WithCondition(condition), @if =>
+            {
+                whenTrue(@if.When(OutcomeNames.True));
+                whenFalse(@if.When(OutcomeNames.False));
+            }, lineNumber, sourceFile);
     }
 }

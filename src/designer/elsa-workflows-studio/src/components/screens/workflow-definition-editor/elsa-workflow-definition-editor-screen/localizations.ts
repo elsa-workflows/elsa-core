@@ -59,4 +59,19 @@ export const resources = {
       'Restart': 'راه اندازی مجدد'
     }
   },
+  'de-DE': {
+    'default': {
+      'Publishing': 'Am veröffentlichen',
+      'Published': 'Veröffentlicht',
+      "ActivityContextMenu": {
+        "Edit": "Bearbeiten",
+        "Delete": "Entfernen",
+        "DeleteSelected": "Ausgewählte entfernen"
+      },
+      "ConnectionContextMenu": {
+        "Paste": "Einfügen",
+      },
+      'Restart': 'Neustarten'
+    }
+  },
 };
