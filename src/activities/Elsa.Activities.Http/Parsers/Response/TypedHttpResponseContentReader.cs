@@ -25,7 +25,7 @@ namespace Elsa.Activities.Http.Parsers.Response
                 var responseText = (await response.Content.ReadAsStringAsync()).Trim();
                 if (GetIsXmlContentType(contentType))
                 {
-                    XmlDocument doc = new XmlDocument();
+                    var doc = new XmlDocument();
                     doc.LoadXml(responseText);
                     responseText = JsonConvert.SerializeXmlNode(doc);
                 }
