@@ -98,6 +98,7 @@ namespace Elsa.Activities.Http
         [ActivityInput(Hint = "Read the content of the response.", SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public bool ReadContent { get; set; }
 
+        private string? responseContentParserName;
         /// <summary>
         /// The parser to use to parse the response content. Plain Text, JSON, .NET Type, Expando Object, JToken, File
         /// </summary>
@@ -108,7 +109,25 @@ namespace Elsa.Activities.Http
             UIHint = ActivityInputUIHints.Dropdown,
             OptionsProvider = typeof(SendHttpRequest)
         )]
-        public string? ResponseContentParserName { get; set; }
+        public string? ResponseContentParserName
+        {
+            get
+            {
+                return responseContentParserName;
+            }
+            set
+            {
+                // once upon a time there were two additional parser but were obsoleted
+                // because they did the same thing as existing ones
+                // automatically changing to appropriate name here so old workflows continue to work
+                if (value == "Expando Object")
+                    responseContentParserName = ".NET Type";
+                else if (value == "JSON")
+                    responseContentParserName = "Plain Text";
+                else
+                    responseContentParserName = value;
+            }
+        }
 
         /// <summary>
         /// The assembly-qualified .NET type name to deserialize the received content into.
