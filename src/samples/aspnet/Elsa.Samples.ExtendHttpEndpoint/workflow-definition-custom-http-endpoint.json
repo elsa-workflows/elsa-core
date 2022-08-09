@@ -1,0 +1,102 @@
+{
+  "$id": "1",
+  "definitionId": "0b272519e8ba49478e1987cafac2b227",
+  "versionId": "9c997f7a566b4d2791c95941351d0ce6",
+  "name": "CustomHTTPEndpoint",
+  "displayName": "CustomHTTPEndpoint",
+  "version": 13,
+  "variables": {
+    "$id": "2",
+    "data": {}
+  },
+  "customAttributes": {
+    "$id": "3",
+    "data": {}
+  },
+  "isSingleton": false,
+  "persistenceBehavior": "WorkflowBurst",
+  "deleteCompletedInstances": false,
+  "isPublished": true,
+  "isLatest": true,
+  "activities": [
+    {
+      "$id": "4",
+      "activityId": "dcf7c8f3-e4e3-4bb2-bcb2-fa16edacdf40",
+      "type": "WriteHttpResponse",
+      "displayName": "HTTP Response",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "5",
+          "name": "Content",
+          "syntax": "JavaScript",
+          "expressions": {
+            "$id": "6",
+            "JavaScript": "JSON.stringify(input)"
+          }
+        },
+        {
+          "$id": "7",
+          "name": "ContentType",
+          "expressions": {
+            "$id": "8",
+            "Literal": "application/json"
+          }
+        },
+        {
+          "$id": "9",
+          "name": "StatusCode",
+          "expressions": {
+            "$id": "10"
+          }
+        },
+        {
+          "$id": "11",
+          "name": "CharSet",
+          "expressions": {
+            "$id": "12"
+          }
+        },
+        {
+          "$id": "13",
+          "name": "ResponseHeaders",
+          "expressions": {
+            "$id": "14"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "15",
+      "activityId": "393800b6-2240-400d-826a-d1e9b6a6f206",
+      "type": "TestReceiveRequest",
+      "displayName": "Receive Request",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "16",
+          "name": "Path",
+          "expressions": {
+            "$id": "17",
+            "Literal": "/mytest54321"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    }
+  ],
+  "connections": [
+    {
+      "$id": "18",
+      "sourceActivityId": "393800b6-2240-400d-826a-d1e9b6a6f206",
+      "targetActivityId": "dcf7c8f3-e4e3-4bb2-bcb2-fa16edacdf40",
+      "outcome": "Done"
+    }
+  ],
+  "id": "9c997f7a566b4d2791c95941351d0ce6"
+}
