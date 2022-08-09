@@ -1,4 +1,5 @@
 using System;
+using System.Xml;
 using System.Dynamic;
 using System.Net.Http;
 using System.Threading;
@@ -12,24 +13,24 @@ namespace Elsa.Activities.Http.Parsers.Response
     {
         public string Name => ".NET Type";
         public int Priority => 0;
-        public bool GetSupportsContentType(string contentType) => GetIsJsonContentType(contentType);
+        public bool GetSupportsContentType(string contentType) => GetIsJsonContentType(contentType) || GetIsXmlContentType(contentType);
 
         public async Task<object> ReadAsync(HttpResponseMessage response, object context, CancellationToken cancellationToken)
         {
             var activity = context as SendHttpRequest;
             var contentType = response.Content.Headers.ContentType.MediaType;
 
-            if (GetIsJsonContentType(contentType))
+            if (GetIsJsonContentType(contentType) || GetIsXmlContentType(contentType))
             {
-                var json = (await response.Content.ReadAsStringAsync()).Trim();
-                var targetType = activity?.ResponseContentTargetType ?? typeof(ExpandoObject);
-                return JsonConvert.DeserializeObject(json, targetType)!;
-            }
-
-            if (GetIsXmlContentType(contentType))
-            {
-                // TODO: parse XML.
-                throw new NotImplementedException();
+                var responseText = (await response.Content.ReadAsStringAsync()).Trim();
+                if (GetIsXmlContentType(contentType))
+                {
+                    var doc = new XmlDocument();
+                    doc.LoadXml(responseText);
+                    responseText = JsonConvert.SerializeXmlNode(doc);
+                }
+                var targetType = activity?.ResponseContentTargetType ?? (responseText.StartsWith('[') ? typeof(ExpandoObject[]) : typeof(ExpandoObject));
+                return JsonConvert.DeserializeObject(responseText, targetType)!;
             }
 
             throw new NotSupportedException();
