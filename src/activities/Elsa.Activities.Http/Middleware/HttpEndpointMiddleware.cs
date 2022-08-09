@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Xml;
 using System.Net;
 using System.Net.Mime;
 using System.Threading;
@@ -160,6 +161,11 @@ namespace Elsa.Activities.Http.Middleware
                     return;
                 }
                 catch (JsonReaderException e)
+                {
+                    await WriteBadRequestResponseAsync(e);
+                    return;
+                }
+                catch (XmlException e)
                 {
                     await WriteBadRequestResponseAsync(e);
                     return;

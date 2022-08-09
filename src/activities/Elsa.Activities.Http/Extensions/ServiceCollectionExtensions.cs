@@ -46,6 +46,7 @@ namespace Microsoft.Extensions.DependencyInjection
             services
                 .AddSingleton<IHttpRequestBodyParser, DefaultHttpRequestBodyParser>()
                 .AddSingleton<IHttpRequestBodyParser, JsonHttpRequestBodyParser>()
+                .AddSingleton<IHttpRequestBodyParser, XmlHttpRequestBodyParser>()
                 .AddSingleton<IHttpRequestBodyParser, FormHttpRequestBodyParser>()
                 .AddSingleton<IHttpResponseContentReader, PlainTextHttpResponseContentReader>()
                 .AddSingleton<IHttpResponseContentReader, JsonRawHttpResponseContentReader>()
