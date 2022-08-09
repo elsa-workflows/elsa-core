@@ -6,6 +6,10 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <Content Remove="workflow-definition-custom-http-endpoint.json" />
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="System.Text.Encodings.Web" Version="6.0.0" />
     </ItemGroup>
 

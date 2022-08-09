@@ -26,7 +26,6 @@ namespace Elsa.Samples.ExtendHttpEndpoint
      * as second parameter to result because HttpEndpointMiddleware looks up bookmarks with that activity type. 
      * In bookmark you can hardcode path and/or methods too.
      */
-
     public class CustomizeTestReceiveRequest : INotificationHandler<DescribingActivityType>
     {
         // hiding some properties from UI
