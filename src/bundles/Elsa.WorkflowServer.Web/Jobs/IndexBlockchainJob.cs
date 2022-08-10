@@ -14,7 +14,7 @@ public class IndexBlockchainJob : Job
     protected override async ValueTask ExecuteAsync(JobExecutionContext context)
     {
         Console.WriteLine("Indexing blockchain...");
-        await Task.Delay(5000);
+        await Task.Delay(1000);
         Console.WriteLine("Finished indexing blockchain.");
     }
 }

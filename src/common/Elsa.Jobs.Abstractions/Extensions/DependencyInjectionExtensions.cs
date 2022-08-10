@@ -10,6 +10,7 @@ public static class DependencyInjectionExtensions
     {
         services
             .AddSingleton<IJobSerializer, JobSerializer>()
+            .AddSingleton<IJobFactory, JobFactory>()
             .AddSingleton<IJobRunner, JobRunner>();
         
         schedulerProvider.ConfigureServices(services);
