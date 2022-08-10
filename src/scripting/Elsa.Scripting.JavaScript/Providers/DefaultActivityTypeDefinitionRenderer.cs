@@ -24,13 +24,9 @@ namespace Elsa.Scripting.JavaScript.Providers
             CancellationToken cancellationToken = default)
         {
             var typeName = activityDefinition.Name;
-            var inputProperties = activityDescriptor.InputProperties.Where(x => x.IsBrowsable is true or null);
             var outputProperties = activityDescriptor.OutputProperties.Where(x => x.IsBrowsable is true or null);
             var interfaceDeclaration = $"declare interface {typeName}";
             writer.AppendLine($"{interfaceDeclaration} {{");
-
-            foreach (var property in inputProperties)
-                await RenderActivityPropertyAsync(notification, writer, property.Name, property.Type, activityType, activityDescriptor, activityDefinition, cancellationToken);
 
             foreach (var property in outputProperties)
                 await RenderActivityPropertyAsync(notification, writer, property.Name, property.Type, activityType, activityDescriptor, activityDefinition, cancellationToken);
