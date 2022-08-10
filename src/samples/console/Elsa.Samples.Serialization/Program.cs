@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Elsa.Activities.Console;
+using Elsa.Extensions;
 using Elsa.Models;
+using Elsa.Multitenancy;
 using Elsa.Serialization;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,14 +23,10 @@ namespace Elsa.Samples.Serialization
         private static async Task Main()
         {
             // Create a service container with Elsa services.
-            var services = new ServiceCollection()
-                .AddElsa(options => options
-                    .AddConsoleActivities())
-                .BuildServiceProvider();
+            var serviceCollection = new ServiceCollection().AddElsaServices();
 
-            // Run startup actions (not needed when registering Elsa with a Host).
-            var startupRunner = services.GetRequiredService<IStartupRunner>();
-            await startupRunner.StartupAsync();
+            var services = MultitenantContainerFactory.CreateSampleMultitenantContainer(serviceCollection,
+                options => options.AddConsoleActivities());
 
             // Define a workflow.
             var workflowDefinition = new WorkflowDefinition

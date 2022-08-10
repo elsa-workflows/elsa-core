@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using Elsa.Activities.Temporal;
 using Elsa.Activities.Temporal.Common.Services;
+using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Services;
 using Elsa.Testing.Shared.Unit;
@@ -24,9 +25,12 @@ namespace Elsa.Core.IntegrationTests.Workflows
                 testOutputHelper,
                 services =>
                 {
-                    services.AddSingleton(WorkflowDefinitionScheduler.Object);
-                    services.AddSingleton(WorkflowInstanceScheduler.Object);
                     services.Replace(new ServiceDescriptor(typeof(IClock), Clock.Object));
+                },
+                containerBuilder =>
+                {
+                    containerBuilder.AddMultiton(WorkflowDefinitionScheduler.Object);
+                    containerBuilder.AddMultiton(WorkflowInstanceScheduler.Object);
                 },
                 options =>
                 {

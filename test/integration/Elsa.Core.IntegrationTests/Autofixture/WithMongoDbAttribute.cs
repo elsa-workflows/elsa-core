@@ -1,7 +1,9 @@
 using System;
 using Elsa.Persistence.MongoDb;
+using Elsa.Persistence.MongoDb.Options;
 using Elsa.Testing.Shared.AutoFixture.Attributes;
 using Elsa.Testing.Shared.Helpers;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Core.IntegrationTests.Autofixture
 {
@@ -13,10 +15,15 @@ namespace Elsa.Core.IntegrationTests.Autofixture
         {
             return builder => {
                 builder.ElsaCallbacks.Add(elsa => {
-                    elsa.UseMongoDbPersistence(opts => {
-                        opts.ConnectionString = "mongodb://localhost:27017";
-                        opts.DatabaseName = dbName;
-                    });
+                    elsa.Services.AddScoped<ElsaMongoDbOptions>(sp =>
+                        new ElsaMongoDbOptions()
+                        {
+                            DatabaseName = dbName,
+                            ConnectionString = "mongodb://localhost:27017"
+                        }
+                    );
+
+                    elsa.UseMongoDbPersistence();
                 });
             };
         }

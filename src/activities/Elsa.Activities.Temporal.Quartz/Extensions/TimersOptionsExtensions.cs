@@ -4,6 +4,7 @@ using Elsa.Activities.Temporal.Common.Services;
 using Elsa.Activities.Temporal.Quartz.Handlers;
 using Elsa.Activities.Temporal.Quartz.Jobs;
 using Elsa.Activities.Temporal.Quartz.Services;
+using Elsa.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Quartz;
 
@@ -27,11 +28,11 @@ namespace Elsa
             Action<IServiceCollectionQuartzConfigurator>? configureQuartz = default,
             Action<QuartzHostedServiceOptions>? configureQuartzHostedService = default)
         {
-            timersOptions.Services
-                .AddSingleton<QuartzSchedulerProvider>()
-                .AddSingleton<IWorkflowDefinitionScheduler, QuartzWorkflowDefinitionScheduler>()
-                .AddSingleton<IWorkflowInstanceScheduler, QuartzWorkflowInstanceScheduler>()
-                .AddSingleton<ICrontabParser, QuartzCrontabParser>()
+            timersOptions.ContainerBuilder
+                .AddMultiton<QuartzSchedulerProvider>()
+                .AddMultiton<IWorkflowDefinitionScheduler, QuartzWorkflowDefinitionScheduler>()
+                .AddMultiton<IWorkflowInstanceScheduler, QuartzWorkflowInstanceScheduler>()
+                .AddMultiton<ICrontabParser, QuartzCrontabParser>()
                 .AddTransient<RunQuartzWorkflowDefinitionJob>()
                 .AddTransient<RunQuartzWorkflowInstanceJob>()
                 .AddNotificationHandlers(typeof(ConfigureCronProperty));
@@ -40,9 +41,11 @@ namespace Elsa
             {
                 if (configureQuartzOptions != null)
                     timersOptions.Services.Configure(configureQuartzOptions);
-                
+
                 timersOptions.Services
                     .AddQuartz(configure => ConfigureQuartz(configure, configureQuartz))
+                    // tODO: this needs fixing, QuartzHostedService is registered as Singleton
+                    //       and it not working properly in multitenant environment
                     .AddQuartzHostedService(options => ConfigureQuartzHostedService(options, configureQuartzHostedService));
             }
         }

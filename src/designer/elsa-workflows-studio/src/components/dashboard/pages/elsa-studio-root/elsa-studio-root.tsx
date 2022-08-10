@@ -30,6 +30,7 @@ export class ElsaStudioRoot {
   @Prop({attribute: 'base-path', reflect: true}) basePath: string = '';
   @Prop() features: any;
   @Prop() config: string;
+  @Prop() multitenant: boolean = false;
   @State() featuresConfig: any;
   @Event() initializing: EventEmitter<ElsaStudio>;
   @Event() initialized: EventEmitter<ElsaStudio>;
@@ -37,6 +38,7 @@ export class ElsaStudioRoot {
   private confirmDialog: HTMLElsaConfirmDialogElement;
   private toastNotificationElement: HTMLElsaToastNotificationElement;
   private elsaStudio: ElsaStudio;
+  private currentTenantUrlPrefix = this.multitenant ? window.location.pathname.replace(this.basePath, '').split('/')[1] : undefined;
 
   @Method()
   async addPlugins(pluginTypes: Array<any>) {
@@ -53,6 +55,9 @@ export class ElsaStudioRoot {
     eventBus.emit(EventTypes.WorkflowModelChanged, this, event.detail);
   }
 
+  getServerUrl = () => `${this.serverUrl}${!this.currentTenantUrlPrefix ? `` : `/${this.currentTenantUrlPrefix}`}`;
+  getBasePath = () => `${this.basePath}${!this.currentTenantUrlPrefix ? `` : `/${this.currentTenantUrlPrefix}`}`;
+
   connectedCallback() {
     eventBus.on(EventTypes.ShowConfirmDialog, this.onShowConfirmDialog);
     eventBus.on(EventTypes.HideConfirmDialog, this.onHideConfirmDialog);
@@ -68,8 +73,8 @@ export class ElsaStudioRoot {
   }
 
   async componentWillLoad() {
-    const elsaClientFactory: () => Promise<ElsaClient> = () => createElsaClient(this.serverUrl);
-    const httpClientFactory: () => Promise<AxiosInstance> = () => createHttpClient(this.serverUrl);
+    const elsaClientFactory: () => Promise<ElsaClient> = () => createElsaClient(this.getServerUrl());
+    const httpClientFactory: () => Promise<AxiosInstance> = () => createHttpClient(this.getServerUrl());
 
     if (this.config) {
       await fetch(`${document.location.origin}/${this.config}`)
@@ -88,8 +93,8 @@ export class ElsaStudioRoot {
     }
 
     const elsaStudio: ElsaStudio = this.elsaStudio = {
-      serverUrl: this.serverUrl,
-      basePath: this.basePath,
+      serverUrl: this.getServerUrl(),
+      basePath: this.getBasePath(),
       features: this.featuresConfig,
       serverFeatures: [],
       eventBus,
@@ -129,8 +134,8 @@ export class ElsaStudioRoot {
     const culture = this.culture;
 
     const tunnelState: DashboardState = {
-      serverUrl: this.serverUrl,
-      basePath: this.basePath,
+      serverUrl: this.getServerUrl(),
+      basePath: this.getBasePath(),
       serverFeatures: this.elsaStudio.serverFeatures,
       culture,
       monacoLibPath: this.monacoLibPath

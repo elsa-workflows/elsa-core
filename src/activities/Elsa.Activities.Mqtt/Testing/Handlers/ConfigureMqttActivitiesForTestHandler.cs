@@ -1,6 +1,8 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.Mqtt.Activities.MqttMessageReceived;
 using Elsa.Events;
 using Elsa.WorkflowTesting.Events;
 using MediatR;
@@ -23,7 +25,11 @@ namespace Elsa.Activities.Mqtt.Testing.Handlers
 
             if (!isTest) return;
 
-            var workflowId = notification.WorkflowExecutionContext.WorkflowBlueprint.Id;
+            var workflowBlueprint = notification.WorkflowExecutionContext.WorkflowBlueprint;
+
+            if (!workflowBlueprint.Activities.Any(x => x.Type == nameof(MqttMessageReceived))) return;
+
+            var workflowId = workflowBlueprint.Id;
             var workflowInstanceId = notification.WorkflowExecutionContext.WorkflowInstance.Id;
 
 
@@ -50,6 +56,10 @@ namespace Elsa.Activities.Mqtt.Testing.Handlers
             var isTest = Convert.ToBoolean(notification.WorkflowExecutionContext.WorkflowInstance.GetMetadata("isTest"));
 
             if (!isTest) return;
+
+            var workflowBlueprint = notification.WorkflowExecutionContext.WorkflowBlueprint;
+
+            if (!workflowBlueprint.Activities.Any(x => x.Type == nameof(MqttMessageReceived))) return;
 
             var workflowInstanceId = notification.WorkflowExecutionContext.WorkflowInstance.Id;
 

@@ -1,6 +1,8 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Elsa.Builders;
+using Elsa.Extensions;
+using Elsa.Multitenancy;
 using Elsa.Persistence;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,11 +17,13 @@ namespace Elsa.Samples.BuildAndDispatchConsole
         private static async Task Main()
         {
             // Create a service container with Elsa services.
-            var services = new ServiceCollection()
-                .AddElsa(options => options
+            var serviceCollection = new ServiceCollection().AddElsaServices();
+
+            var services = MultitenantContainerFactory.CreateSampleMultitenantContainer(serviceCollection,
+                options => options
                     .AddConsoleActivities()
-                    .AddWorkflow<DemoWorkflow>())
-                .BuildServiceProvider();
+                    .AddWorkflow<DemoWorkflow>());
+
             
             // Get a workflow builder. This is a transient service.
             var workflowBuilder = services.GetRequiredService<IWorkflowBuilder>();

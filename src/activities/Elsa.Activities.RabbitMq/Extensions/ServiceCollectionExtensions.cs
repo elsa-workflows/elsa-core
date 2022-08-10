@@ -4,6 +4,7 @@ using Elsa.Activities.RabbitMq.Services;
 using Elsa.Activities.RabbitMq.StartupTasks;
 using Elsa.Activities.RabbitMq.Testing;
 using Elsa.Events;
+using Elsa.Extensions;
 using Elsa.Options;
 using Elsa.Runtime;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,12 +15,12 @@ namespace Elsa.Activities.RabbitMq.Extensions
     {
         public static ElsaOptionsBuilder AddRabbitMqActivities(this ElsaOptionsBuilder options)
         {
-            options.Services
-                .AddSingleton<BusClientFactory>()
-                .AddSingleton<IMessageReceiverClientFactory>(sp => sp.GetRequiredService<BusClientFactory>())
-                .AddSingleton<IMessageSenderClientFactory>(sp => sp.GetRequiredService<BusClientFactory>())
-                .AddSingleton<IRabbitMqQueueStarter, RabbitMqQueueStarter>()
-                .AddSingleton<IRabbitMqTestQueueManager, RabbitMqTestQueueManager>()
+            options.ContainerBuilder
+                .AddMultiton<BusClientFactory>()
+                .AddMultiton<IMessageReceiverClientFactory>(sp => sp.GetRequiredService<BusClientFactory>())
+                .AddMultiton<IMessageSenderClientFactory>(sp => sp.GetRequiredService<BusClientFactory>())
+                .AddMultiton<IRabbitMqQueueStarter, RabbitMqQueueStarter>()
+                .AddMultiton<IRabbitMqTestQueueManager, RabbitMqTestQueueManager>()
                 .AddNotificationHandlersFrom<ConfigureRabbitMqActivitiesForTestHandler>()
                 .AddStartupTask<StartRabbitMqQueues>()
                 .AddBookmarkProvider<QueueMessageReceivedBookmarkProvider>();

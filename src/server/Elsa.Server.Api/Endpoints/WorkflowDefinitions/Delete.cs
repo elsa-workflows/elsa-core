@@ -10,8 +10,8 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
 {
     [ApiController]
     [ApiVersion("1")]
-    [Route("v{apiVersion:apiVersion}/workflow-definitions/{definitionId}")]
-    [Route("v{apiVersion:apiVersion}/workflow-definitions/{definitionId}/{versionOptions}")]
+    [Route("{tenant}/v{apiVersion:apiVersion}/workflow-definitions/{definitionId}")]
+    [Route("{tenant}/v{apiVersion:apiVersion}/workflow-definitions/{definitionId}/{versionOptions}")]
     [Produces("application/json")]
     public class Delete : ControllerBase
     {

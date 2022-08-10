@@ -228,6 +228,7 @@ export namespace Components {
         "culture": string;
         "features": any;
         "monacoLibPath": string;
+        "multitenant": boolean;
         "serverUrl": string;
     }
     interface ElsaStudioWebhookDefinitionsEdit {
@@ -282,6 +283,7 @@ export namespace Components {
     interface ElsaWebhookDefinitionEditorNotifications {
     }
     interface ElsaWebhookDefinitionEditorScreen {
+        "basePath": string;
         "culture": string;
         "getServerUrl": () => Promise<string>;
         "getWebhookId": () => Promise<string>;
@@ -1080,6 +1082,7 @@ declare namespace LocalJSX {
         "culture"?: string;
         "features"?: any;
         "monacoLibPath"?: string;
+        "multitenant"?: boolean;
         "onInitialized"?: (event: CustomEvent<ElsaStudio>) => void;
         "onInitializing"?: (event: CustomEvent<ElsaStudio>) => void;
         "serverUrl"?: string;
@@ -1137,6 +1140,7 @@ declare namespace LocalJSX {
     interface ElsaWebhookDefinitionEditorNotifications {
     }
     interface ElsaWebhookDefinitionEditorScreen {
+        "basePath"?: string;
         "culture"?: string;
         "history"?: RouterHistory;
         "serverUrl"?: string;

@@ -17,7 +17,7 @@ namespace Elsa.Server.Api.Endpoints.ActivityStats
 {
     [ApiController]
     [ApiVersion("1")]
-    [Route("v{apiVersion:apiVersion}/workflow-instances/{workflowInstanceId}/activity-stats/{activityId}")]
+    [Route("{tenant}/v{apiVersion:apiVersion}/workflow-instances/{workflowInstanceId}/activity-stats/{activityId}")]
     [Produces("application/json")]
     public class Get : Controller
     {

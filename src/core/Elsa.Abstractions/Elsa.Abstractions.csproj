@@ -14,6 +14,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="Autofac.AspNetCore.Multitenant" Version="5.1.0" />
         <PackageReference Include="DistributedLock.Core" Version="1.0.4" />
         <PackageReference Include="LinqKit.Core" Version="1.1.27" />
         <PackageReference Include="MediatR" Version="10.0.1" />

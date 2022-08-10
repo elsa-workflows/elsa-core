@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Autofac;
 using Elsa.Builders;
 using Elsa.Caching;
+using Elsa.Extensions;
 using Elsa.Persistence;
 using Elsa.Providers.Workflows;
 using Elsa.Providers.WorkflowStorage;
@@ -19,10 +21,11 @@ namespace Elsa.Options
 {
     public class ElsaOptionsBuilder
     {
-        public ElsaOptionsBuilder(IServiceCollection services)
+        public ElsaOptionsBuilder(ContainerBuilder containerBuilder, IServiceCollection services)
         {
             ElsaOptions = new ElsaOptions();
             Services = services;
+            ContainerBuilder = containerBuilder;
 
             AddAutoMapper = () =>
             {
@@ -30,17 +33,19 @@ namespace Elsa.Options
                 services.AddAutoMapper(Enumerable.Empty<Assembly>(), ServiceLifetime.Singleton);
             };
 
-            services.AddSingleton<InMemNetwork>();
-            services.AddSingleton<InMemorySubscriberStore>();
-            services.AddSingleton<InMemDataStore>();
             services.AddMemoryCache();
-            services.AddSingleton<ICacheSignal, CacheSignal>();
+
+            containerBuilder.AddMultiton<InMemNetwork>();
+            containerBuilder.AddMultiton<InMemorySubscriberStore>();
+            containerBuilder.AddMultiton<InMemDataStore>();
+            containerBuilder.AddMultiton<ICacheSignal, CacheSignal>();
 
             DistributedLockingOptionsBuilder = new DistributedLockingOptionsBuilder(this);
         }
 
         public ElsaOptions ElsaOptions { get; }
         public IServiceCollection Services { get; }
+        public ContainerBuilder ContainerBuilder { get; }
         public DistributedLockingOptionsBuilder DistributedLockingOptionsBuilder { get; }
         internal Action AddAutoMapper { get; private set; }
         internal bool WithCoreActivities { get; set; } = true;
@@ -74,6 +79,14 @@ namespace Elsa.Options
             return this;
         }
 
+        //public ElsaOptionsBuilder AddActivity(Type activityType)
+        //{
+        //    ContainerBuilder.AddTransient(activityType);
+        //    ContainerBuilder.AddTransient(sp => (IActivity)sp.GetRequiredService(activityType));
+        //    ElsaOptions.ActivityFactory.Add(activityType, provider => (IActivity)ActivatorUtilities.GetServiceOrCreateInstance(provider, activityType));
+        //    return this;
+        //}
+
         public ElsaOptionsBuilder AddActivitiesFrom(Assembly assembly) => AddActivitiesFrom(new[] { assembly });
         public ElsaOptionsBuilder AddActivitiesFrom(params Assembly[] assemblies) => AddActivitiesFrom((IEnumerable<Assembly>)assemblies);
         public ElsaOptionsBuilder AddActivitiesFrom(params Type[] assemblyMarkerTypes) => AddActivitiesFrom(assemblyMarkerTypes.Select(x => x.Assembly).Distinct());
@@ -106,23 +119,23 @@ namespace Elsa.Options
             if (workflowFactory.Types.Contains(workflowType))
                 return this;
 
-            Services.AddSingleton(workflowType);
-            Services.AddSingleton(sp => (IWorkflow)sp.GetRequiredService(workflowType));
+            ContainerBuilder.AddMultiton(workflowType);
+            ContainerBuilder.AddMultiton(sp => (IWorkflow)sp.GetRequiredService(workflowType));
             workflowFactory.Add(workflowType, provider => (IWorkflow)ActivatorUtilities.GetServiceOrCreateInstance(provider, workflowType));
             return this;
         }
 
         public ElsaOptionsBuilder AddWorkflow(IWorkflow workflow)
         {
-            Services.AddSingleton(workflow);
+            ContainerBuilder.AddMultiton(workflow);
             ElsaOptions.WorkflowFactory.Add(workflow.GetType(), workflow);
             return this;
         }
 
         public ElsaOptionsBuilder AddWorkflow<T>(Func<IServiceProvider, T> workflow) where T : class, IWorkflow
         {
-            Services.AddSingleton(workflow);
-            Services.AddSingleton<IWorkflow>(sp => sp.GetRequiredService<T>());
+            ContainerBuilder.AddMultiton(workflow);
+            ContainerBuilder.AddMultiton<IWorkflow>(sp => sp.GetRequiredService<T>());
             ElsaOptions.WorkflowFactory.Add(typeof(T), sp => sp.GetRequiredService<T>());
 
             return this;

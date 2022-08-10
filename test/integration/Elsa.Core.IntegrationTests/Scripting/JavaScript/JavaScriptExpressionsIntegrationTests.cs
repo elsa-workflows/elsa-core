@@ -1,10 +1,14 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Autofac;
 using Elsa.Activities.Primitives;
 using Elsa.Builders;
 using Elsa.Core.IntegrationTests.Autofixture;
+using Elsa.Extensions;
+using Elsa.HostedServices;
 using Elsa.Models;
+using Elsa.Multitenancy;
 using Elsa.Serialization;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -23,19 +27,20 @@ namespace Elsa.Core.IntegrationTests.Scripting.JavaScript
         public async Task RunningAWorkflowThatIncludesJsonStringifyAParsedObjectShouldNotThrow([WithJavaScriptExpressions] ElsaHostBuilderBuilder hostBuilderBuilder)
         {
             var hostBuilder = hostBuilderBuilder.GetHostBuilder();
-            hostBuilder.ConfigureServices((ctx, services) => services.AddHostedService<HostedWorkflowRunner>());
+            hostBuilder.ConfigureContainer<ContainerBuilder>((ctx, builder) => builder.AddHostedService<HostedWorkflowRunner>());
             var host = await hostBuilder.StartAsync();
         }
 
         [Fact(DisplayName = "JavaScript cannot access CLR by default")]
         public async Task JavaScriptCannotAccessClrByDefault()
         {
-            var services = new ServiceCollection()
-                .AddSingleton<AssertableActivityState>()
-                .AddElsa(elsa => elsa
+            var serviceCollection = new ServiceCollection().AddElsaServices();
+
+            var services = MultitenantContainerFactory.CreateSampleMultitenantContainer(serviceCollection,
+                elsa => elsa
                     .AddActivity<AddExpressionToActivityState>()
-                    .AddWorkflow<ClrAccessWorkflow>())
-                .BuildServiceProvider();
+                    .AddWorkflow<ClrAccessWorkflow>(),
+                builder => builder.AddMultiton<AssertableActivityState>());
 
             var workflowStarter = services.GetRequiredService<IBuildsAndStartsWorkflow>();
             var activityState = services.GetRequiredService<AssertableActivityState>();
@@ -48,16 +53,18 @@ namespace Elsa.Core.IntegrationTests.Scripting.JavaScript
         [Fact(DisplayName = "JavaScript can have CLR access enabled")]
         public async Task JavaScriptCanHaveClrAccessEnabled()
         {
-            var services = new ServiceCollection()
-                .AddSingleton<AssertableActivityState>()
-                .AddElsa(elsa => elsa
-                    .AddActivity<AddExpressionToActivityState>()
-                    .AddWorkflow<ClrAccessWorkflow>())
+            var serviceCollection = new ServiceCollection()
+                .AddElsaServices()
                 .WithJavaScriptOptions(options =>
                 {
                     options.AllowClr = true;
-                })
-                .BuildServiceProvider();
+                });
+
+            var services = MultitenantContainerFactory.CreateSampleMultitenantContainer(serviceCollection,
+                elsa => elsa
+                    .AddActivity<AddExpressionToActivityState>()
+                    .AddWorkflow<ClrAccessWorkflow>(),
+                builder => builder.AddMultiton<AssertableActivityState>());
 
             var workflowStarter = services.GetRequiredService<IBuildsAndStartsWorkflow>();
             var activityState = services.GetRequiredService<AssertableActivityState>();
@@ -70,18 +77,20 @@ namespace Elsa.Core.IntegrationTests.Scripting.JavaScript
         [Fact(DisplayName = "JavaScript cannot access configuration by default")]
         public async Task JavaScriptCannotAccessConfigurationByDefault()
         {
-            var services = new ServiceCollection()
-                .AddSingleton<IConfiguration>(_ => new ConfigurationBuilder()
-                    .AddInMemoryCollection(new Dictionary<string, string>
-                    {
-                        { "SomeSecret", "I am a secret" },
-                    })
-                    .Build())
-                .AddSingleton<AssertableActivityState>()
-                .AddElsa(elsa => elsa
+            var serviceCollection = new ServiceCollection().AddElsaServices();
+
+            var services = MultitenantContainerFactory.CreateSampleMultitenantContainer(serviceCollection,
+                elsa => elsa
                     .AddActivity<AddExpressionToActivityState>()
-                    .AddWorkflow<ConfigurationAccessWorkflow>())
-                .BuildServiceProvider();
+                    .AddWorkflow<ConfigurationAccessWorkflow>(),
+                builder => builder
+                    .AddMultiton<AssertableActivityState>()
+                    .AddMultiton<IConfiguration>(_ => new ConfigurationBuilder()
+                        .AddInMemoryCollection(new Dictionary<string, string>
+                        {
+                            { "SomeSecret", "I am a secret" },
+                        })
+                        .Build()));
 
             var workflowStarter = services.GetRequiredService<IBuildsAndStartsWorkflow>();
             var activityState = services.GetRequiredService<AssertableActivityState>();
@@ -94,22 +103,25 @@ namespace Elsa.Core.IntegrationTests.Scripting.JavaScript
         [Fact(DisplayName = "JavaScript can have configuration access enabled")]
         public async Task JavaScriptHaveConfigurationAccessEnabled()
         {
-            var services = new ServiceCollection()
-                .AddSingleton<IConfiguration>(_ => new ConfigurationBuilder()
-                    .AddInMemoryCollection(new Dictionary<string, string>
-                    {
-                        { "SomeSecret", "I am a secret" },
-                    })
-                    .Build())
-                .AddSingleton<AssertableActivityState>()
-                .AddElsa(elsa => elsa
-                    .AddActivity<AddExpressionToActivityState>()
-                    .AddWorkflow<ConfigurationAccessWorkflow>())
+            var serviceCollection = new ServiceCollection()
+                .AddElsaServices()
                 .WithJavaScriptOptions(x =>
                 {
                     x.EnableConfigurationAccess = true;
-                })
-                .BuildServiceProvider();
+                });
+
+            var services = MultitenantContainerFactory.CreateSampleMultitenantContainer(serviceCollection,
+                elsa => elsa
+                    .AddActivity<AddExpressionToActivityState>()
+                    .AddWorkflow<ConfigurationAccessWorkflow>(),
+                builder => builder
+                    .AddMultiton<AssertableActivityState>()
+                    .AddMultiton<IConfiguration>(_ => new ConfigurationBuilder()
+                        .AddInMemoryCollection(new Dictionary<string, string>
+                        {
+                            { "SomeSecret", "I am a secret" },
+                        })
+                        .Build()));
 
             var workflowStarter = services.GetRequiredService<IBuildsAndStartsWorkflow>();
             var activityState = services.GetRequiredService<AssertableActivityState>();
@@ -139,7 +151,7 @@ namespace Elsa.Core.IntegrationTests.Scripting.JavaScript
             }
         }
         
-        private class HostedWorkflowRunner : IHostedService
+        private class HostedWorkflowRunner : IElsaHostedService
         {
             private readonly IStartsWorkflow _workflowRunner;
             private readonly IContentSerializer _serializer;

@@ -28,10 +28,14 @@ import {
 
 let _httpClient: AxiosInstance = null;
 let _elsaClient: ElsaClient = null;
+let _serverUrl: string = null;
+let _baseAddress: string = null;
 
 export const createHttpClient = async function (baseAddress: string): Promise<AxiosInstance> {
-  if (!!_httpClient)
+  if (!!_httpClient && (!baseAddress || _baseAddress === baseAddress))
     return _httpClient;
+
+  _baseAddress = baseAddress;
 
   const config: AxiosRequestConfig = {
     baseURL: baseAddress
@@ -46,9 +50,10 @@ export const createHttpClient = async function (baseAddress: string): Promise<Ax
 }
 
 export const createElsaClient = async function (serverUrl: string): Promise<ElsaClient> {
-
-  if (!!_elsaClient)
+  if (!!_elsaClient && (!serverUrl || _serverUrl === serverUrl))
     return _elsaClient;
+
+  _serverUrl = serverUrl;
 
   const httpClient: AxiosInstance = await createHttpClient(serverUrl);
 
@@ -322,7 +327,7 @@ export const createElsaClient = async function (serverUrl: string): Promise<Elsa
         const response = await httpClient.get<FeaturesModel>('v1/features');
         return response.data.features;
       }
-    },
+    }
   }
 
   return _elsaClient;

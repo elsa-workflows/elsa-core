@@ -1,3 +1,4 @@
+using Elsa.Extensions;
 using Elsa.Options;
 using Elsa.Secrets.Enrichers;
 using Elsa.Secrets.Handlers;
@@ -14,10 +15,10 @@ namespace Elsa.Secrets.Extensions
     {
         public static ElsaOptionsBuilder AddSecrets(this ElsaOptionsBuilder elsaOptions)
         {
-            elsaOptions.Services
-                .AddSingleton<ISecretValueFormatter, MsSqlSecretValueFormatter>()
-                .AddSingleton<ISecretValueFormatter, PostgreSqlSecretValueFormatter>()
-                .AddSingleton<ISecretValueFormatter, AuthorizationHeaderSecretValueFormatter>()
+            elsaOptions.ContainerBuilder
+                .AddMultiton<ISecretValueFormatter, MsSqlSecretValueFormatter>()
+                .AddMultiton<ISecretValueFormatter, PostgreSqlSecretValueFormatter>()
+                .AddMultiton<ISecretValueFormatter, AuthorizationHeaderSecretValueFormatter>()
                 .AddScoped<IActivityInputDescriptorEnricher, SendHttpRequestAuthorizationInputDescriptorEnricher>()
                 .AddScoped<IActivityInputDescriptorEnricher, ExecuteSqlQueryConnectionStringInputDescriptorEnricher>()
                 .AddScoped<IActivityInputDescriptorEnricher, ExecuteSqlCommandConnectionStringInputDescriptorEnricher>()

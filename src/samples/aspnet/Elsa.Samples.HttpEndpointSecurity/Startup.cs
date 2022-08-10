@@ -1,7 +1,11 @@
 using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
+using Autofac;
+using Autofac.Extensions.DependencyInjection;
+using Autofac.Multitenant;
 using Elsa.Activities.Http.Services;
+using Elsa.Multitenancy;
 using Elsa.Samples.HttpEndpointSecurity.Options;
 using Elsa.Samples.HttpEndpointSecurity.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -24,6 +28,8 @@ namespace Elsa.Samples.HttpEndpointSecurity
 
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddElsaServices();
+
             // Controllers.
             services.AddControllers();
 
@@ -60,22 +66,27 @@ namespace Elsa.Samples.HttpEndpointSecurity
 
             services.Configure<JwtOptions>(options => Configuration.GetSection("Jwt").Bind(options));
 
-            // Elsa.
-            services
-                .AddElsa(elsa => elsa
-                    .AddHttpActivities(http =>
+            // Application Services.
+            services.AddSingleton<ITokenService, TokenService>();
+        }
 
+        public void ConfigureContainer(ContainerBuilder builder)
+        {
+            // This will all go in the ROOT CONTAINER and is NOT TENANT SPECIFIC.
+
+            var services = new ServiceCollection();
+
+            builder.ConfigureElsaServices(services, elsa => elsa
+                    .AddHttpActivities(http =>
                     {
                         http.HttpEndpointAuthorizationHandlerFactory =
                             ActivatorUtilities.GetServiceOrCreateInstance<AuthenticationBasedHttpEndpointAuthorizationHandler>;
                         http.BaseUrl = new Uri(Configuration["Elsa:Server:BaseUrl"]);
                         http.BasePath = Configuration["Elsa:Server:BasePath"];
                     }
-                    ).AddWorkflowsFrom<Startup>()
-                );
+                    ).AddWorkflowsFrom<Startup>());
 
-            // Application Services.
-            services.AddSingleton<ITokenService, TokenService>();
+            builder.Populate(services);
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -86,6 +97,11 @@ namespace Elsa.Samples.HttpEndpointSecurity
                 .UseAuthorization()
                 .UseHttpActivities()
                 .UseEndpoints(endpoints => endpoints.MapControllers());
+        }
+
+        public static MultitenantContainer ConfigureMultitenantContainer(IContainer container)
+        {
+            return MultitenantContainerFactory.CreateSampleMultitenantContainer(container);
         }
     }
 }

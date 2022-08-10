@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -13,6 +13,7 @@ using Elsa.Activities.Telnyx.Scripting.Liquid;
 using Elsa.Activities.Telnyx.Webhooks.Filters;
 using Elsa.Activities.Telnyx.Webhooks.Handlers;
 using Elsa.Activities.Telnyx.Webhooks.Services;
+using Elsa.Extensions;
 using Elsa.Options;
 using Elsa.Scripting.Liquid.Extensions;
 using Microsoft.AspNetCore.Builder;
@@ -46,15 +47,15 @@ namespace Elsa.Activities.Telnyx.Extensions
                 .AddActivitiesFrom<AnswerCall>();
 
             // Services.
-            services
+            elsaOptions.ContainerBuilder
                 .AddActivityTypeProvider<NotificationActivityTypeProvider>()
                 .AddBookmarkProvidersFrom<NotificationBookmarkProvider>()
                 .AddNotificationHandlers(typeof(TriggerWebhookActivities))
                 .AddJavaScriptTypeDefinitionProvider<TelnyxTypeDefinitionProvider>()
                 .AddScoped<IWebhookHandler, WebhookHandler>()
-                .AddSingleton<IWebhookFilterService, WebhookFilterService>()
-                .AddSingleton<IWebhookFilter, AttributeBasedWebhookFilter>()
-                .AddSingleton<IWebhookFilter, CallInitiatedWebhookFilter>()
+                .AddMultiton<IWebhookFilterService, WebhookFilterService>()
+                .AddMultiton<IWebhookFilter, AttributeBasedWebhookFilter>()
+                .AddMultiton<IWebhookFilter, CallInitiatedWebhookFilter>()
                 .AddScoped(telnyxOptions.ExtensionProviderFactory);
             
             // Liquid.

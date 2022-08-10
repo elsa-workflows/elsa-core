@@ -1,20 +1,20 @@
+using Autofac;
+using Autofac.Extensions.DependencyInjection;
 using Elsa.DataMasking.Core.Contracts;
 using Elsa.DataMasking.Core.Extensions;
+using Elsa.Extensions;
+using Elsa.Multitenancy;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
 using Elsa.Samples.MaskPii.Filters;
 
 var builder = WebApplication.CreateBuilder(args);
-var services = builder.Services;
 
-// Register the "data masking" module.
-services.AddDataMasking();
+builder.Host.UseServiceProviderFactory(
+    new AutofacMultitenantServiceProviderFactory(container => MultitenantContainerFactory.CreateSampleMultitenantContainer(container)));
 
-// Register a workflow journal filter that masks user passwords.
-services.AddSingleton<IWorkflowJournalFilter, RedactPasswordFromHttpRequestFilter>();
+var services = builder.Services.AddElsaServices();
 
-// Register an activity state filter that masks user passwords.
-services.AddSingleton<IActivityStateFilter, RedactPasswordFromStoreUserActivityFilter>();
 
 // Add API endpoints for workflow designer.
 services.AddElsaApiEndpoints();
@@ -22,21 +22,34 @@ services.AddElsaApiEndpoints();
 // Configure CORS.
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()));
 
-// Register Elsa services.
-services
-    .AddElsa(elsa => elsa
-        // Use persistence
-        .UseEntityFrameworkPersistence(ef => ef.UseSqlite())
+builder.Host.ConfigureContainer<ContainerBuilder>(builder => 
+{
+    var sc = new ServiceCollection();
 
-        // Register HTTP activities.
-        .AddHttpActivities(options => options.BasePath = "/workflows")
+    builder
+       .ConfigureElsaServices(sc,
+            options => options
+                // Use persistence
+                .UseEntityFrameworkPersistence(ef => ef.UseSqlite())
 
-        // Register custom activities from this assembly.
-        .AddActivitiesFrom<Program>()
+                // Register HTTP activities.
+                .AddHttpActivities(options => options.BasePath = "/workflows")
 
-        // Register workflows from this assembly.
-        .AddWorkflowsFrom<Program>()
-    );
+                // Register custom activities from this assembly.
+                .AddActivitiesFrom<Program>()
+
+                // Register workflows from this assembly.
+                .AddWorkflowsFrom<Program>())
+       // Register a workflow journal filter that masks user passwords.
+       .AddMultiton<IWorkflowJournalFilter, RedactPasswordFromHttpRequestFilter>()
+       // Register an activity state filter that masks user passwords.
+       .AddMultiton<IActivityStateFilter, RedactPasswordFromStoreUserActivityFilter>();
+
+    // Register the "data masking" module.
+    builder.AddDataMasking();
+
+    builder.Populate(sc);
+});
 
 var app = builder.Build();
 

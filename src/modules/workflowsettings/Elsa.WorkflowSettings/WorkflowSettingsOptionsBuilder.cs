@@ -1,4 +1,6 @@
 using System;
+using Autofac;
+using AutoMapper;
 using Elsa.Caching;
 using Elsa.WorkflowSettings.Options;
 using Elsa.WorkflowSettings.Persistence;
@@ -9,15 +11,17 @@ namespace Elsa.WorkflowSettings
 {
     public class WorkflowSettingsOptionsBuilder
     {
-        public WorkflowSettingsOptionsBuilder(IServiceCollection services)
+        public WorkflowSettingsOptionsBuilder(IServiceCollection services, ContainerBuilder containerBuilder)
         {
             WorkflowSettingsOptions = new WorkflowSettingsOptions();
             Services = services;
+            ContainerBuilder = containerBuilder;
             services.TryAddSingleton<ICacheSignal, CacheSignal>();
         }
 
         public WorkflowSettingsOptions WorkflowSettingsOptions { get; }
         public IServiceCollection Services { get; }
+        public ContainerBuilder ContainerBuilder { get; }
 
         public WorkflowSettingsOptionsBuilder UseWorkflowSettingsStore(Func<IServiceProvider, IWorkflowSettingsStore> factory)
         {

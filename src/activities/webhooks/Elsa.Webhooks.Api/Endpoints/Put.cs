@@ -14,7 +14,7 @@ namespace Elsa.Webhooks.Api.Endpoints
 {
     [ApiController]
     [ApiVersion("1")]
-    [Route("v{apiVersion:apiVersion}/webhook-definitions")]
+    [Route("{tenant}/v{apiVersion:apiVersion}/webhook-definitions")]
     [Produces("application/json")]
     public class Update : ControllerBase
     {

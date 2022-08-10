@@ -1,12 +1,18 @@
 using System;
 using System.Data;
+using Autofac;
+using Autofac.Multitenant;
 using Elsa.Activities.Webhooks;
-using Elsa.Webhooks.Persistence.YesSql.Services;
+using Elsa.Extensions;
+using Elsa.Multitenancy;
+using Elsa.Multitenancy.Extensions;
 using Elsa.Persistence.YesSql;
 using Elsa.Persistence.YesSql.Data;
+using Elsa.Persistence.YesSql.Options;
 using Elsa.Runtime;
 using Elsa.Webhooks.Persistence.YesSql.Indexes;
 using Elsa.Webhooks.Persistence.YesSql.Mapping;
+using Elsa.Webhooks.Persistence.YesSql.Services;
 using Elsa.Webhooks.Persistence.YesSql.Stores;
 using Microsoft.Extensions.DependencyInjection;
 using YesSql;
@@ -22,12 +28,20 @@ namespace Elsa.Webhooks.Persistence.YesSql.Extensions
 
         public static WebhookOptionsBuilder UseWebhookYesSqlPersistence(this WebhookOptionsBuilder webhookOptions, Action<IServiceProvider, IConfiguration> configure)
         {
-            webhookOptions.Services
+            webhookOptions.ContainerBuilder
+                .Register(cc =>
+                {
+                    var tenant = cc.Resolve<ITenant>();
+                    return new ElsaDbOptions(tenant!.GetDatabaseConnectionString()!);
+                }).InstancePerTenant();
+
+            webhookOptions.Services.AddAutoMapperProfile<AutoMapperProfile>();
+
+            webhookOptions.ContainerBuilder
                 .AddScoped<YesSqlWebhookDefinitionStore>()
-                .AddSingleton(sp => CreateStore(sp, configure))
+                .AddMultiton(sp => CreateStore(sp, configure))
                 .AddStartupTask<DatabaseInitializer>()
                 .AddDataMigration<Migrations>()
-                .AddAutoMapperProfile<AutoMapperProfile>()
                 .AddIndexProvider<WebhookDefinitionIndexProvider>();
 
             webhookOptions.UseWebhookDefinitionStore(sp => sp.GetRequiredService<YesSqlWebhookDefinitionStore>());

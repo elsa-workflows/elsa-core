@@ -1,5 +1,6 @@
 
 using Elsa.Expressions;
+using Elsa.Extensions;
 using Elsa.Options;
 using Elsa.Scripting.Sql.Expressions;
 
@@ -9,7 +10,7 @@ namespace Microsoft.Extensions.DependencyInjection
     {
         public static ElsaOptionsBuilder AddSqlScripting(this ElsaOptionsBuilder elsaOptions)
         {
-            var services = elsaOptions.Services;
+            var services = elsaOptions.ContainerBuilder;
 
             services.TryAddProvider<IExpressionHandler, SqlHandler>(ServiceLifetime.Singleton);
             

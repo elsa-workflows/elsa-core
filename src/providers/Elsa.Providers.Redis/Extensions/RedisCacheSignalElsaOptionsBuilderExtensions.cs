@@ -1,9 +1,8 @@
-﻿using Elsa.Caching;
+using Elsa.Caching;
 using Elsa.Options;
 using Elsa.Runtime;
 using Elsa.Services;
 using Elsa.StartupTasks;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Extensions
 {
@@ -11,10 +10,10 @@ namespace Elsa.Extensions
     {
         public static ElsaOptionsBuilder UseRedisCacheSignal(this ElsaOptionsBuilder builder)
         {
-            var services = builder.Services;
+            var services = builder.ContainerBuilder;
             
             services
-                .AddSingleton<RedisBus>()
+                .AddMultiton<RedisBus>()
                 .AddStartupTask<SubscribeToRedisCacheSignals>()
                 .Decorate<ICacheSignal, RedisCacheSignal>();
 

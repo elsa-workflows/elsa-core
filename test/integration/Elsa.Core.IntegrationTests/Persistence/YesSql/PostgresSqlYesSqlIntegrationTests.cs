@@ -1,7 +1,10 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Autofac;
 using Elsa.Core.IntegrationTests.Autofixture;
 using Elsa.Core.IntegrationTests.Workflows;
+using Elsa.Extensions;
+using Elsa.HostedServices;
 using Elsa.Persistence;
 using Elsa.Services;
 using Elsa.Testing.Shared;
@@ -18,11 +21,11 @@ namespace Elsa.Core.IntegrationTests.Persistence.YesSql
         public async Task APersistableWorkflowInstanceWithDefaultPersistenceBehaviourShouldBeRoundTrippable([WithPersistableWorkflow,WithPostgresYesSql] ElsaHostBuilderBuilder hostBuilderBuilder)
         {
             var hostBuilder = hostBuilderBuilder.GetHostBuilder();
-            hostBuilder.ConfigureServices((ctx, services) => services.AddHostedService<HostedWorkflowRunner>());
+            hostBuilder.ConfigureContainer<ContainerBuilder>((ctx, builder) => builder.AddHostedService<HostedWorkflowRunner>());
             var host = await hostBuilder.StartAsync();
         }
 
-        class HostedWorkflowRunner : IHostedService
+        class HostedWorkflowRunner : IElsaHostedService
         {
             readonly IBuildsAndStartsWorkflow _workflowRunner;
             readonly IWorkflowInstanceStore _instanceStore;

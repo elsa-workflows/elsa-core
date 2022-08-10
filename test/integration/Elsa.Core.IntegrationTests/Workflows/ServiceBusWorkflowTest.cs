@@ -1,22 +1,24 @@
-using Elsa.Builders;
-using Elsa.Testing.Shared.Unit;
 using System;
-using System.Threading.Tasks;
-using Xunit;
-using Xunit.Abstractions;
-using Elsa.Activities.Console;
-using Elsa.Activities.AzureServiceBus.Services;
-using Moq;
-using Microsoft.Extensions.DependencyInjection;
 using System.Threading;
-using Elsa.Services;
-using Elsa.Services.Models;
+using System.Threading.Tasks;
+using Autofac.Core;
 using Elsa.Activities.AzureServiceBus;
 using Elsa.Activities.AzureServiceBus.Bookmarks;
-using Elsa.Services.Workflows;
 using Elsa.Activities.AzureServiceBus.Extensions;
+using Elsa.Activities.AzureServiceBus.Services;
 using Elsa.Activities.AzureServiceBus.StartupTasks;
+using Elsa.Activities.Console;
+using Elsa.Builders;
+using Elsa.Extensions;
 using Elsa.Models;
+using Elsa.Services;
+using Elsa.Services.Models;
+using Elsa.Services.Workflows;
+using Elsa.Testing.Shared.Unit;
+using Microsoft.Extensions.DependencyInjection;
+using Moq;
+using Xunit;
+using Xunit.Abstractions;
 
 namespace Elsa.Core.IntegrationTests.Workflows
 {
@@ -29,20 +31,23 @@ namespace Elsa.Core.IntegrationTests.Workflows
 
         public ServiceBusWorkflowTest(ITestOutputHelper testOutputHelper)
             : base(testOutputHelper,
-                services =>
+                services => {},
+                containerBuilder =>
                 {
-                    services
-                        .AddSingleton<IWorkflowLaunchpad, WorkflowLaunchpad>()
-                        .AddSingleton<IWorkerManager, WorkerManager>()
-                        .AddSingleton(WorkflowRegistryMoq.Object)
-                        .AddBookmarkProvider<MessageReceivedBookmarkProvider>()
-                        .AddHostedService<StartWorkers>();
+                    containerBuilder
+                        .AddMultiton<IWorkflowLaunchpad, WorkflowLaunchpad>()
+                        .AddMultiton<IWorkerManager, WorkerManager>()
+                        .AddMultiton(WorkflowRegistryMoq.Object);
 
-                    services
-                        .AddSingleton(new ServiceBusWorkflow(WaitHandleTest));
+                    containerBuilder
+                        .AddMultiton(new ServiceBusWorkflow(WaitHandleTest));
                 },
                 options =>
                 {
+                    options.ContainerBuilder
+                        .AddBookmarkProvider<MessageReceivedBookmarkProvider>()
+                        .AddHostedService<StartWorkers>();
+
                     options
                         .AddAzureServiceBusActivities(option => option.ConnectionString = ConnectionString)
                         ;

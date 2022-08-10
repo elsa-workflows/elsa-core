@@ -1,5 +1,10 @@
+using Autofac;
+using Autofac.Extensions.DependencyInjection;
+using Elsa.Extensions;
+using Elsa.Multitenancy;
 using Elsa.Samples.RunChildWorkflowWorker.HostedServices;
 using Elsa.Samples.RunChildWorkflowWorker.Workflows;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -11,15 +16,21 @@ namespace Elsa.Samples.RunChildWorkflowWorker
 
         private static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
-                .ConfigureServices(
-                    (_, services) =>
-                    {
-                        services
-                            .AddElsa(options => options
+                .UseServiceProviderFactory(new AutofacMultitenantServiceProviderFactory(container => MultitenantContainerFactory.CreateSampleMultitenantContainer(container)))
+                .ConfigureServices((_, services) => services.AddElsaServices())
+                .ConfigureContainer<ContainerBuilder>(builder =>
+                {
+                    var sc = new ServiceCollection();
+
+                    builder
+                       .ConfigureElsaServices(sc,
+                            options => options
                                 .AddConsoleActivities()
                                 .AddWorkflow<ParentWorkflow>()
                                 .AddWorkflow<ChildWorkflow>())
-                            .AddHostedService<RunParentWorkflow>();
-                    });
+                       .AddHostedService<RunParentWorkflow>();
+
+                    builder.Populate(sc);
+                });
     }
 }

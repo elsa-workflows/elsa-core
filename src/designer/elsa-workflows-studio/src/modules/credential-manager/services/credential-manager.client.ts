@@ -3,11 +3,13 @@ import { createHttpClient } from '../../../services';
 import { Secret, SecretModel } from "../models/secret.model";
 
 let _elsaSecretsClient: ElsaSecretsClient = null;
+let _serverUrl: string = null;
 
 export const createElsaSecretsClient = async function (serverUrl: string): Promise<ElsaSecretsClient> {
-
-  if (!!_elsaSecretsClient)
+  if (!!_elsaSecretsClient && (!serverUrl || _serverUrl === serverUrl))
     return _elsaSecretsClient;
+
+  _serverUrl = serverUrl;
 
   const httpClient: AxiosInstance = await createHttpClient(serverUrl);
 

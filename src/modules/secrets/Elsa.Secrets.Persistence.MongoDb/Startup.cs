@@ -1,4 +1,5 @@
 using Elsa.Attributes;
+using Elsa.Extensions;
 using Elsa.Options;
 using Elsa.Secrets.Extensions;
 using Elsa.Secrets.Persistence.MongoDb.Extensions;
@@ -13,25 +14,9 @@ namespace Elsa.Secrets.Persistence.MongoDb
     {
         public override void ConfigureElsa(ElsaOptionsBuilder elsa, IConfiguration configuration)
         {
-            var services = elsa.Services;
-            var section = configuration.GetSection($"Elsa:Features:WorkflowSettings");
-            var connectionStringName = section.GetValue<string>("ConnectionStringIdentifier");
-            var connectionString = section.GetValue<string>("ConnectionString");
-
-            if (string.IsNullOrWhiteSpace(connectionString))
-            {
-                if (string.IsNullOrWhiteSpace(connectionStringName))
-                    connectionStringName = "MongoDb";
-
-                connectionString = configuration.GetConnectionString(connectionStringName);
-            }
-
-            if (string.IsNullOrWhiteSpace(connectionString))
-                connectionString = "mongodb://localhost:27017/Elsa";
-
-            var secretsOptionsBuilder = new SecretsOptionsBuilder(services);
-            secretsOptionsBuilder.UseSecretsMongoDbPersistence(options => options.ConnectionString = connectionString);
-            services.AddScoped(sp => secretsOptionsBuilder.SecretsOptions.SecretsStoreFactory(sp));
+            var secretsOptionsBuilder = new SecretsOptionsBuilder(elsa.Services, elsa.ContainerBuilder);
+            secretsOptionsBuilder.UseSecretsMongoDbPersistence();
+            elsa.ContainerBuilder.AddScoped(sp => secretsOptionsBuilder.SecretsOptions.SecretsStoreFactory(sp));
 
             elsa.AddSecrets();
         }

@@ -1,6 +1,8 @@
 using System.IO;
 using System.Threading.Tasks;
+using Elsa.Extensions;
 using Elsa.Models;
+using Elsa.Multitenancy;
 using Elsa.Providers.Workflows;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,18 +21,12 @@ namespace Elsa.Samples.FileBasedWorkflow
             var currentDirectory = Path.Combine(Directory.GetCurrentDirectory(), "Workflows");
 
             // Create a service container with Elsa services.
-            var services = new ServiceCollection()
-                .AddElsa(options => options
-                    .AddConsoleActivities())
-                
-                // Configure blob storage for blob storage workflow storage provider.
-                .Configure<BlobStorageWorkflowProviderOptions>(options => options.BlobStorageFactory = () => StorageFactory.Blobs.DirectoryFiles(currentDirectory))
-                
-                .BuildServiceProvider();
+            var serviceCollection = new ServiceCollection()
+                .AddElsaServices()
+                .Configure<BlobStorageWorkflowProviderOptions>(options => options.BlobStorageFactory = () => StorageFactory.Blobs.DirectoryFiles(currentDirectory));
 
-            // Run startup actions (not needed when registering Elsa with a Host).
-            var startupRunner = services.GetRequiredService<IStartupRunner>();
-            await startupRunner.StartupAsync();
+            var services = MultitenantContainerFactory.CreateSampleMultitenantContainer(serviceCollection,
+                options => options.AddConsoleActivities());
 
             // Get the workflow registry.
             var workflowRegistry = services.GetRequiredService<IWorkflowRegistry>();

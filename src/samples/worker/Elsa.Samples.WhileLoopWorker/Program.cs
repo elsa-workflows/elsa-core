@@ -1,9 +1,14 @@
+using Autofac;
+using Autofac.Extensions.DependencyInjection;
+using Elsa.Extensions;
+using Elsa.Multitenancy;
 using Elsa.Persistence.YesSql;
+using Elsa.Samples.WhileLoopWorker.Activities;
 using Elsa.Samples.WhileLoopWorker.Services;
 using Elsa.Samples.WhileLoopWorker.Workflows;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Elsa.Samples.WhileLoopWorker.Activities;
 
 namespace Elsa.Samples.WhileLoopWorker
 {
@@ -13,17 +18,24 @@ namespace Elsa.Samples.WhileLoopWorker
 
         private static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
-                .ConfigureServices(
-                    (_, services) =>
-                    {
-                        services
-                            .AddElsa(options => options.UseYesSqlPersistence()
+                .UseServiceProviderFactory(new AutofacMultitenantServiceProviderFactory(container => MultitenantContainerFactory.CreateSampleMultitenantContainer(container)))
+                .ConfigureServices((_, services) => services.AddElsaServices())
+                .ConfigureContainer<ContainerBuilder>(builder =>
+                {
+                    var sc = new ServiceCollection();
+
+                    builder
+                       .ConfigureElsaServices(sc,
+                            options => options
+                                .UseYesSqlPersistence()
                                 .AddConsoleActivities()
                                 .AddQuartzTemporalActivities()
                                 .AddActivity<MakePhoneCall>()
                                 .AddWorkflow<PhoneCallWorkflow>())
-                            .AddSingleton<PhoneCallService>()
-                            .AddHostedService<PhoneCallWorker>();
-                    });
+                       .AddMultiton<PhoneCallService>()
+                       .AddHostedService<PhoneCallWorker>();
+
+                    builder.Populate(sc);
+                });
     }
 }

@@ -12,7 +12,7 @@ namespace Elsa.Server.Api.Endpoints.Signals
 {
     [ApiController]
     [ApiVersion("1")]
-    [Route("v{apiVersion:apiVersion}/signals/{signalName}/dispatch")]
+    [Route("{tenant}/v{apiVersion:apiVersion}/signals/{signalName}/dispatch")]
     [Produces("application/json")]
     public class Dispatch : Controller
     {

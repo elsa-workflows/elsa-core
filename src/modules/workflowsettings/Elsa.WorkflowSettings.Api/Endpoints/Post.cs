@@ -15,7 +15,7 @@ namespace Elsa.WorkflowSettings.Api.Endpoints
 {
     [ApiController]
     [ApiVersion("1")]
-    [Route("v{apiVersion:apiVersion}/workflow-settings")]
+    [Route("{tenant}/v{apiVersion:apiVersion}/workflow-settings")]
     [Produces("application/json")]
     public class Post : ControllerBase
     {

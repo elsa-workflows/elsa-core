@@ -13,6 +13,7 @@ using Elsa.Activities.Http.Models;
 using Elsa.Activities.Http.Options;
 using Elsa.Activities.Http.Parsers.Request;
 using Elsa.Models;
+using Elsa.Multitenancy;
 using Elsa.Persistence;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -22,6 +23,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Open.Linq.AsyncExtensions;
+using Elsa.Multitenancy.Extensions;
 
 namespace Elsa.Activities.Http.Middleware
 {
@@ -40,9 +42,10 @@ namespace Elsa.Activities.Http.Middleware
             IWorkflowBlueprintReflector workflowBlueprintReflector,
             IRouteMatcher routeMatcher,
             ITenantAccessor tenantAccessor,
-            IEnumerable<IHttpRequestBodyParser> contentParsers)
+            IEnumerable<IHttpRequestBodyParser> contentParsers,
+            ITenant tenant)
         {
-            var basePath = options.Value.BasePath;
+            var basePath = GetBasePath(options.Value.BasePath, tenant);
             var path = GetPath(basePath, httpContext);
 
             if (path == null)
@@ -256,5 +259,12 @@ namespace Elsa.Activities.Http.Middleware
         private string? GetPath(PathString? basePath, HttpContext httpContext) => basePath != null
             ? httpContext.Request.Path.StartsWithSegments(basePath.Value, out _, out var remainingPath) ? remainingPath.Value : null
             : httpContext.Request.Path.Value;
+
+        private PathString? GetBasePath(PathString? basePath, ITenant tenant)
+        {
+            var tenantUrlPrefix = tenant.GetTenantUrlPrefix();
+
+            return string.IsNullOrEmpty(tenantUrlPrefix) ? basePath : $"/{tenantUrlPrefix}{basePath}";
+        }
     }
 }

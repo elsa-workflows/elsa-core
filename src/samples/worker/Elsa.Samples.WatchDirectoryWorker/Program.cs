@@ -1,4 +1,9 @@
+using Autofac;
+using Autofac.Core;
+using Autofac.Extensions.DependencyInjection;
+using Elsa.Multitenancy;
 using Elsa.Samples.WatchDirectoryWorker.Workflows;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
@@ -24,15 +29,22 @@ namespace Elsa.Samples.WatchDirectoryWorker
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
-                .ConfigureServices((hostContext, services) =>
+                .UseServiceProviderFactory(new AutofacMultitenantServiceProviderFactory(container => MultitenantContainerFactory.CreateSampleMultitenantContainer(container)))
+                .ConfigureServices((_, services) => services.AddElsaServices())
+                .ConfigureContainer<ContainerBuilder>(builder =>
                 {
-                    services
-                        .AddElsa(options => options
-                            .AddConsoleActivities()
-                            .AddFileActivities()
-                            .AddQuartzTemporalActivities()
-                            .AddWorkflow<TimerCreateFile>(sp => ActivatorUtilities.CreateInstance<TimerCreateFile>(services.BuildServiceProvider(), _directory))
-                            .AddWorkflow<WatchDirectoryCreatedWorkflow>(sp => new WatchDirectoryCreatedWorkflow(_directory)));
+                    var sc = new ServiceCollection();
+
+                    builder
+                       .ConfigureElsaServices(sc,
+                            options => options
+                                .AddConsoleActivities()
+                                .AddFileActivities()
+                                .AddQuartzTemporalActivities()
+                                .AddWorkflow<TimerCreateFile>(sp => ActivatorUtilities.CreateInstance<TimerCreateFile>(sc.BuildServiceProvider(), _directory))
+                                .AddWorkflow<WatchDirectoryCreatedWorkflow>(sp => new WatchDirectoryCreatedWorkflow(_directory)));
+
+                    builder.Populate(sc);
                 });
     }
 }

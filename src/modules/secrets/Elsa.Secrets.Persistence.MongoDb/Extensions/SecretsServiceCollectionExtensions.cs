@@ -1,3 +1,8 @@
+using Autofac;
+using Autofac.Multitenant;
+using Elsa.Extensions;
+using Elsa.Multitenancy;
+using Elsa.Multitenancy.Extensions;
 using Elsa.Persistence.MongoDb.Options;
 using Elsa.Secrets.Persistence.MongoDb.Services;
 using Elsa.Secrets.Persistence.MongoDb.Stores;
@@ -8,12 +13,12 @@ namespace Elsa.Secrets.Persistence.MongoDb.Extensions
 {
     public static class SecretsServiceCollectionExtensions
     {
-        public static SecretsOptionsBuilder UseSecretsMongoDbPersistence(this SecretsOptionsBuilder secretsOptions, Action<ElsaMongoDbOptions> configureOptions) => UseSecretsMongoDbPersistence<ElsaMongoDbContext>(secretsOptions, configureOptions);
+        public static SecretsOptionsBuilder UseSecretsMongoDbPersistence(this SecretsOptionsBuilder secretsOptions) => UseSecretsMongoDbPersistence<ElsaMongoDbContext>(secretsOptions);
 
-        public static SecretsOptionsBuilder UseSecretsMongoDbPersistence<TDbContext>(this SecretsOptionsBuilder secretsOptions, Action<ElsaMongoDbOptions> configureOptions) where TDbContext : ElsaMongoDbContext
+        public static SecretsOptionsBuilder UseSecretsMongoDbPersistence<TDbContext>(this SecretsOptionsBuilder secretsOptions) where TDbContext : ElsaMongoDbContext
         {
             AddCore<TDbContext>(secretsOptions);
-            secretsOptions.Services.Configure(configureOptions);
+
             return secretsOptions;
         }
 
@@ -28,11 +33,18 @@ namespace Elsa.Secrets.Persistence.MongoDb.Extensions
 
         private static void AddCore<TDbContext>(SecretsOptionsBuilder secretsOptions) where TDbContext : ElsaMongoDbContext
         {
-            secretsOptions.Services
-                .AddSingleton<MongoDbSecretsStore>()
-                .AddSingleton<TDbContext>()
-                .AddSingleton<ElsaMongoDbContext, TDbContext>()
-                .AddSingleton(sp => sp.GetRequiredService<TDbContext>().Secrets);
+            secretsOptions.ContainerBuilder
+              .Register(cc =>
+              {
+                  var tenant = cc.Resolve<ITenant>();
+                  return new ElsaMongoDbOptions() { ConnectionString = tenant!.GetDatabaseConnectionString()! };
+              }).IfNotRegistered(typeof(ElsaMongoDbOptions)).InstancePerTenant();
+
+            secretsOptions.ContainerBuilder
+                .AddMultiton<MongoDbSecretsStore>()
+                .AddMultiton<TDbContext>()
+                .AddMultiton<ElsaMongoDbContext, TDbContext>()
+                .AddMultiton(sp => sp.GetRequiredService<TDbContext>().Secrets);
 
             secretsOptions.UseSecretsStore(sp => sp.GetRequiredService<MongoDbSecretsStore>());
 

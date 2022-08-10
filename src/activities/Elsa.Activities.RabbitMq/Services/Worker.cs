@@ -54,6 +54,7 @@ namespace Elsa.Activities.RabbitMq.Services
             var launchContext = new WorkflowsQuery(ActivityType, bookmark);
 
             using var scope = _scopeFactory.CreateScope();
+
             var workflowLaunchpad = scope.ServiceProvider.GetRequiredService<IWorkflowLaunchpad>();
             await workflowLaunchpad.CollectAndDispatchWorkflowsAsync(launchContext, new WorkflowInput(message), cancellationToken);
         }

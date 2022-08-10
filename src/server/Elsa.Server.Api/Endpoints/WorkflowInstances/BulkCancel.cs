@@ -11,7 +11,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
 {
     [ApiController]
     [ApiVersion("1")]
-    [Route("v{apiVersion:apiVersion}/workflow-instances/bulk/cancel")]
+    [Route("{tenant}/v{apiVersion:apiVersion}/workflow-instances/bulk/cancel")]
     [Produces("application/json")]
     public class BulkCancel : Controller
     {

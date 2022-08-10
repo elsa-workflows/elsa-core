@@ -1,4 +1,4 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Client.Models;
 using ElsaDashboard.Shared.Rpc;
@@ -8,11 +8,12 @@ namespace Elsa.Client.Services
 {
     public interface IWorkflowInstancesApi
     {
-        [Get("/v1/workflow-instances/{id}")]
-        Task<WorkflowInstance?> GetByIdAsync(string id, CancellationToken cancellationToken = default);
+        [Get("/{tenant}/v1/workflow-instances/{id}")]
+        Task<WorkflowInstance?> GetByIdAsync(string tenant, string id, CancellationToken cancellationToken = default);
 
-        [Get("/v1/workflow-instances")]
+        [Get("/{tenant}/v1/workflow-instances")]
         Task<PagedList<WorkflowInstanceSummary>> ListAsync(
+            string tenant,
             int? page = default,
             int? pageSize = default,
             [AliasAs("workflow")] string? workflowDefinitionId = default,
@@ -21,16 +22,16 @@ namespace Elsa.Client.Services
             string? searchTerm = default,
             CancellationToken cancellationToken = default);
 
-        [Delete("/v1/workflow-instances/{id}")]
-        Task DeleteAsync(string id, CancellationToken cancellationToken = default);
+        [Delete("/{tenant}/v1/workflow-instances/{id}")]
+        Task DeleteAsync(string tenant, string id, CancellationToken cancellationToken = default);
 
-        [Delete("/v1/workflow-instances/bulk")]
-        Task BulkDeleteAsync([Body] BulkDeleteWorkflowInstancesRequest instancesRequest, CancellationToken cancellationToken = default);
+        [Delete("/{tenant}/v1/workflow-instances/bulk")]
+        Task BulkDeleteAsync(string tenant, [Body] BulkDeleteWorkflowInstancesRequest instancesRequest, CancellationToken cancellationToken = default);
 
-        [Post("/v1/workflow-instances/{id}/retry")]
-        Task RetryAsync(string id, RetryWorkflowRequest request, CancellationToken cancellationToken = default);
+        [Post("/{tenant}/v1/workflow-instances/{id}/retry")]
+        Task RetryAsync(string tenant, string id, RetryWorkflowRequest request, CancellationToken cancellationToken = default);
 
-        [Post("/v1/workflow-instances/bulk/retry")]
-        Task BulkRetryAsync([Body] BulkRetryWorkflowInstancesRequest instancesRequest, CancellationToken cancellationToken = default);
+        [Post("/{tenant}/v1/workflow-instances/bulk/retry")]
+        Task BulkRetryAsync(string tenant, [Body] BulkRetryWorkflowInstancesRequest instancesRequest, CancellationToken cancellationToken = default);
     }
 }

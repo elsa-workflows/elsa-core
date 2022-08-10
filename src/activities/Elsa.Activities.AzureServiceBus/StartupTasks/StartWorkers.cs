@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Elsa.Activities.AzureServiceBus.Bookmarks;
 using Elsa.Activities.AzureServiceBus.Services;
+using Elsa.HostedServices;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -9,7 +10,7 @@ using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Activities.AzureServiceBus.StartupTasks
 {
-    public class StartWorkers : BackgroundService
+    public class StartWorkers : BackgroundService, IElsaHostedService
     {
         private readonly IWorkerManager _workerManager;
         private readonly IServiceScopeFactory _scopeFactory;

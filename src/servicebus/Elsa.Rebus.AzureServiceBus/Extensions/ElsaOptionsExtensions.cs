@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Azure.Core;
 using Elsa.Options;
 using Elsa.Rebus.AzureServiceBus.StartupTasks;
@@ -38,7 +38,7 @@ namespace Elsa.Rebus.AzureServiceBus
             string connectionString)
         {
 
-            elsaOptions.Services.AddStartupTask<PurgeSubscriptions>(sp =>
+            elsaOptions.ContainerBuilder.AddStartupTask<PurgeSubscriptions>(sp =>
             {
                 return new PurgeSubscriptions(sp.GetService<IServiceBusFactory>()!,
                     sp.GetService<ElsaOptions>()!,

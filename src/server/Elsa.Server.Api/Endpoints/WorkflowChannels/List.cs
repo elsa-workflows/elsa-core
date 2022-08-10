@@ -11,7 +11,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowChannels
 {
     [ApiController]
     [ApiVersion("1")]
-    [Route("v{apiVersion:apiVersion}/workflow-channels")]
+    [Route("{tenant}/v{apiVersion:apiVersion}/workflow-channels")]
     [Produces("application/json")]
     public class List : Controller
     {

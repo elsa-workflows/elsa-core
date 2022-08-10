@@ -12,7 +12,7 @@ namespace Elsa.Server.Api.Endpoints.Workflows
 {
     [ApiController]
     [ApiVersion("1")]
-    [Route("v{apiVersion:apiVersion}/workflows/{workflowDefinitionId}/dispatch")]
+    [Route("{tenant}/v{apiVersion:apiVersion}/workflows/{workflowDefinitionId}/dispatch")]
     [Produces("application/json")]
     public class Dispatch : Controller
     {

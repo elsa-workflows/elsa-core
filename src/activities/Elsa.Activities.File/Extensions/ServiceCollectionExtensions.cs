@@ -1,13 +1,14 @@
+using System;
 using Elsa;
 using Elsa.Activities.File;
 using Elsa.Activities.File.Bookmarks;
+using Elsa.Activities.File.Consumers;
+using Elsa.Activities.File.MapperProfiles;
 using Elsa.Activities.File.Services;
 using Elsa.Activities.File.StartupTasks;
-using System;
-using Elsa.Activities.File.Consumers;
-using Elsa.Options;
-using Elsa.Activities.File.MapperProfiles;
 using Elsa.Events;
+using Elsa.Extensions;
+using Elsa.Options;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -36,11 +37,13 @@ namespace Microsoft.Extensions.DependencyInjection
             builder.AddPubSubConsumer<RecreateFileSystemWatchersConsumer, TriggersDeleted>("WorkflowManagementEvents");
             builder.AddPubSubConsumer<RecreateFileSystemWatchersConsumer, BookmarkIndexingFinished>("WorkflowManagementEvents");
             builder.AddPubSubConsumer<RecreateFileSystemWatchersConsumer, BookmarksDeleted>("WorkflowManagementEvents");
-            
-            builder.Services.AddBookmarkProvider<FileCreatedBookmarkProvider>()
-                .AddAutoMapperProfile<FileSystemEventProfile>()
-                .AddSingleton<FileSystemWatchersStarter>()
+
+            builder.ContainerBuilder
+                .AddBookmarkProvider<FileCreatedBookmarkProvider>()
+                .AddMultiton<FileSystemWatchersStarter>()
                 .AddHostedService<StartFileSystemWatchers>();
+
+            builder.Services.AddAutoMapperProfile<FileSystemEventProfile>();
 
             return builder;
         }

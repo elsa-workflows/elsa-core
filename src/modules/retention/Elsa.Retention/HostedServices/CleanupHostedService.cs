@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.HostedServices;
 using Elsa.Retention.Jobs;
 using Elsa.Retention.Options;
 using Elsa.Services;
@@ -14,7 +15,7 @@ namespace Elsa.Retention.HostedServices
     /// <summary>
     /// Periodically wipes workflow instances and their execution logs.
     /// </summary>
-    public class CleanupHostedService : BackgroundService
+    public class CleanupHostedService : BackgroundService, IElsaHostedService
     {
         private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly IDistributedLockProvider _distributedLockProvider;

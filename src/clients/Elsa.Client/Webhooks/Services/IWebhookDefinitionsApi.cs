@@ -8,10 +8,10 @@ namespace Elsa.Client.Webhooks.Services
 {
     public interface IWebhookDefinitionsApi
     {
-        [Get("/v1/webhook-definitions")]
-        Task<IEnumerable<WebhookDefinition>> ListAsync(CancellationToken cancellationToken = default);
+        [Get("/{tenant}/v1/webhook-definitions")]
+        Task<IEnumerable<WebhookDefinition>> ListAsync(string tenant, CancellationToken cancellationToken = default);
 
-        [Get("/v1/webhook-definitions/{webhookDefinitionId}")]
-        Task<WebhookDefinition> GetByIdAsync(string webhookDefinitionId, CancellationToken cancellationToken = default);
+        [Get("/{tenant}/v1/webhook-definitions/{webhookDefinitionId}")]
+        Task<WebhookDefinition> GetByIdAsync(string tenant, string webhookDefinitionId, CancellationToken cancellationToken = default);
     }
 }

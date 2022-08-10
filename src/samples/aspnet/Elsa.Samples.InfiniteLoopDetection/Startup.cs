@@ -1,3 +1,7 @@
+using Autofac;
+using Autofac.Extensions.DependencyInjection;
+using Autofac.Multitenant;
+using Elsa.Multitenancy;
 using Elsa.Options;
 using Elsa.Services.Stability;
 using Microsoft.AspNetCore.Builder;
@@ -10,11 +14,8 @@ namespace Elsa.Samples.InfiniteLoopDetection
     {
         public void ConfigureServices(IServiceCollection services)
         {
-            services
-                .AddElsa(options => options
-                    .AddConsoleActivities()
-                    .StartWorkflow<InfiniteLoopingWorkflow>());
-            
+            services.AddElsaServices();
+
             // Configure infinite loop detection.
             services.Configure<LoopDetectorOptions>(options =>
             {
@@ -33,8 +34,27 @@ namespace Elsa.Samples.InfiniteLoopDetection
             });
         }
 
+        public void ConfigureContainer(ContainerBuilder builder)
+        {
+            // This will all go in the ROOT CONTAINER and is NOT TENANT SPECIFIC.
+
+            var services = new ServiceCollection();
+
+            builder
+                .ConfigureElsaServices(services, elsa => elsa
+                .AddConsoleActivities()
+                .StartWorkflow<InfiniteLoopingWorkflow>());
+
+            builder.Populate(services);
+        }
+
         public void Configure(IApplicationBuilder app)
         {
+        }
+
+        public static MultitenantContainer ConfigureMultitenantContainer(IContainer container)
+        {
+            return MultitenantContainerFactory.CreateSampleMultitenantContainer(container);
         }
     }
 }

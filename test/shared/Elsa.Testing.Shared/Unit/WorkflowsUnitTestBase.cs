@@ -1,6 +1,10 @@
 using System;
 using System.Threading.Tasks;
+using Autofac;
+using Autofac.Multitenant;
 using Elsa.Builders;
+using Elsa.Extensions;
+using Elsa.Multitenancy;
 using Elsa.Options;
 using Elsa.Persistence;
 using Elsa.Services;
@@ -21,23 +25,28 @@ namespace Elsa.Testing.Shared.Unit
         protected WorkflowsUnitTestBase(
             ITestOutputHelper testOutputHelper,
             Action<IServiceCollection>? configureServices = default,
+            Action<ContainerBuilder>? configureContainerBuilder = default,
             Action<ElsaOptionsBuilder>? extraOptions = null)
         {
             _tempFolder = new TemporaryFolder();
             TestOutputHelper = testOutputHelper;
 
-            var services = new ServiceCollection()
-                .AddElsa(options =>
-                    {
-                        options.AddConsoleActivities(Console.In, new XunitConsoleForwarder(testOutputHelper));
-                        extraOptions?.Invoke(options);
-                    }
-                );
+            var serviceCollection = new ServiceCollection().AddElsaServices();
 
-            services.AddSingleton<IHostApplicationLifetime, ApplicationLifetime>();
-            configureServices?.Invoke(services);
-            ServiceProvider = services.BuildServiceProvider();
-            ServiceScope = ServiceProvider.CreateScope();
+            serviceCollection.AddSingleton<IHostApplicationLifetime, ApplicationLifetime>();
+            configureServices?.Invoke(serviceCollection);
+
+            var serviceProvider = MultitenantContainerFactory.CreateSampleMultitenantContainer(serviceCollection,
+                options =>
+                {
+                    options.AddConsoleActivities(Console.In, new XunitConsoleForwarder(testOutputHelper));
+                    extraOptions?.Invoke(options);
+                },
+                configureContainerBuilder);
+
+            
+            ServiceProvider = serviceProvider;
+            ServiceScope = ServiceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope();
             WorkflowRunner = ServiceScope.ServiceProvider.GetRequiredService<IWorkflowRunner>();
             WorkflowBuilderAndStarter = ServiceScope.ServiceProvider.GetRequiredService<IBuildsAndStartsWorkflow>();
             WorkflowStarter = ServiceScope.ServiceProvider.GetRequiredService<IStartsWorkflow>();
@@ -51,7 +60,7 @@ namespace Elsa.Testing.Shared.Unit
         }
 
         protected ITestOutputHelper TestOutputHelper { get; }
-        protected ServiceProvider ServiceProvider { get; }
+        protected MultitenantContainer ServiceProvider { get; }
         protected IServiceScope ServiceScope { get; }
         protected IWorkflowRunner WorkflowRunner { get; }
         protected IBuildsAndStartsWorkflow WorkflowBuilderAndStarter { get; }

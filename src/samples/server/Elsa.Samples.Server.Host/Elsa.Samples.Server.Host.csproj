@@ -42,6 +42,7 @@
         <ProjectReference Include="..\..\..\locking\Elsa.DistributedLocking.SqlServer\Elsa.DistributedLocking.SqlServer.csproj" />
         <ProjectReference Include="..\..\..\modules\secrets\Elsa.Secrets.Api\Elsa.Secrets.Api.csproj" />
         <ProjectReference Include="..\..\..\modules\secrets\Elsa.Secrets.Persistance.EntityFramework.Sqlite\Elsa.Secrets.Persistence.EntityFramework.Sqlite.csproj" />
+        <ProjectReference Include="..\..\..\modules\secrets\Elsa.Secrets.Persistence.MongoDb\Elsa.Secrets.Persistence.MongoDb.csproj" />
         <ProjectReference Include="..\..\..\modules\workflowtesting\Elsa.WorkflowTesting.Api\Elsa.WorkflowTesting.Api.csproj" />
         <ProjectReference Include="..\..\..\modules\workflowtesting\Elsa.WorkflowTesting\Elsa.WorkflowTesting.csproj" />
         <ProjectReference Include="..\..\..\modules\retention\Elsa.Retention\Elsa.Retention.csproj" />
@@ -68,6 +69,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="Autofac.AspNetCore.Multitenant" Version="5.1.0" />
         <PackageReference Include="Hangfire.InMemory" Version="0.3.4" />
         <PackageReference Include="Hangfire.SqlServer" Version="1.7.28" />
         <PackageReference Include="Quartz.Serialization.Json" Version="3.3.3" />

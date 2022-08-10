@@ -12,7 +12,7 @@ namespace Elsa.WorkflowTesting.Api.Endpoints
 {
     [ApiController]
     [ApiVersion("1")]
-    [Route("v{apiVersion:apiVersion}/workflow-test/restartFromActivity")]
+    [Route("{tenant}/v{apiVersion:apiVersion}/workflow-test/restartFromActivity")]
     [Produces("application/json")]
     public class RestartFromActivity : Controller
     {

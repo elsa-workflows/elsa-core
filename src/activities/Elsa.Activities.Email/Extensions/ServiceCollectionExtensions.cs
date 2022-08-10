@@ -14,7 +14,7 @@ namespace Microsoft.Extensions.DependencyInjection
         public static ElsaOptionsBuilder AddEmailActivities(this ElsaOptionsBuilder options, Action<SmtpOptions>? configureOptions = null)
         {
             options.Services.AddEmailServices(configureOptions);
-            options.Services.AddNotificationHandlersFrom<ConfigureJavaScriptEngine>();
+            options.ContainerBuilder.AddNotificationHandlersFrom<ConfigureJavaScriptEngine>();
             options.Services.AddJavaScriptTypeDefinitionProvider<EmailTypeDefinitionProvider>();
             options.Services.AddHttpClient();
             options.AddEmailActivitiesInternal();

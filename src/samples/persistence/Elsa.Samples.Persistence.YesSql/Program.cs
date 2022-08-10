@@ -1,5 +1,7 @@
 using System;
 using System.Threading.Tasks;
+using Elsa.Extensions;
+using Elsa.Multitenancy;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications.WorkflowInstances;
 using Elsa.Persistence.YesSql;
@@ -13,16 +15,13 @@ namespace Elsa.Samples.Persistence.YesSql
         private static async Task Main()
         {
             // Create a service container with Elsa services.
-            var services = new ServiceCollection()
-                .AddElsa(options => options
+            var serviceCollection = new ServiceCollection().AddElsaServices();
+
+            var services = MultitenantContainerFactory.CreateSampleMultitenantContainer(serviceCollection,
+                options => options
                     .UseYesSqlPersistence()
                     .AddConsoleActivities()
-                    .AddWorkflow<HelloWorld>())
-                .BuildServiceProvider();
-
-            // Run startup actions (not needed when registering Elsa with a Host). This will run things like DB migrations.
-            var startupRunner = services.GetRequiredService<IStartupRunner>();
-            await startupRunner.StartupAsync();
+                    .AddWorkflow<HelloWorld>());
 
             // Get a workflow runner.
             var workflowRunner = services.GetRequiredService<IBuildsAndStartsWorkflow>();
@@ -39,8 +38,8 @@ namespace Elsa.Samples.Persistence.YesSql
 
             Console.WriteLine(count);
 
-             var loadedWorkflowInstance = await store.FindByIdAsync(workflowInstance.Id);
-             Console.WriteLine(loadedWorkflowInstance);
+            var loadedWorkflowInstance = await store.FindByIdAsync(workflowInstance.Id);
+            Console.WriteLine(loadedWorkflowInstance);
         }
     }
 }

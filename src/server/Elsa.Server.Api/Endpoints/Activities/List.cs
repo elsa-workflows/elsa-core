@@ -14,7 +14,7 @@ namespace Elsa.Server.Api.Endpoints.Activities
 {
     [ApiController]
     [ApiVersion("1")]
-    [Route("v{version:apiVersion}/activities")]
+    [Route("{tenant}/v{version:apiVersion}/activities")]
     [Produces("application/json")]
     public class List : Controller
     {

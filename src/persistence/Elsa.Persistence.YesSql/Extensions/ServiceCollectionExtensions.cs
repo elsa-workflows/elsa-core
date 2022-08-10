@@ -1,9 +1,15 @@
 using System;
 using System.Data;
+using Autofac;
+using Autofac.Multitenant;
+using Elsa.Extensions;
+using Elsa.Multitenancy;
+using Elsa.Multitenancy.Extensions;
 using Elsa.Options;
 using Elsa.Persistence.YesSql.Data;
 using Elsa.Persistence.YesSql.Indexes;
 using Elsa.Persistence.YesSql.Mapping;
+using Elsa.Persistence.YesSql.Options;
 using Elsa.Persistence.YesSql.Services;
 using Elsa.Persistence.YesSql.Stores;
 using Elsa.Runtime;
@@ -21,25 +27,37 @@ namespace Elsa.Persistence.YesSql
 
         public static ElsaOptionsBuilder UseYesSqlPersistence(this ElsaOptionsBuilder elsa, Action<IServiceProvider, IConfiguration> configure)
         {
-            elsa.Services
+            if (elsa.ContainerBuilder == null)
+                throw new ArgumentNullException("Cannot setup Entity Framework persistence for multitenancy when ContainerBuilder is null");
+
+            elsa.ContainerBuilder
+                .Register(cc =>
+                {
+                    var tenant = cc.Resolve<ITenant>();
+                    return new ElsaDbOptions(tenant!.GetDatabaseConnectionString()!);
+                }).InstancePerTenant();
+
+            elsa.ContainerBuilder
                 .AddScoped<YesSqlWorkflowDefinitionStore>()
                 .AddScoped<YesSqlWorkflowInstanceStore>()
                 .AddScoped<YesSqlWorkflowExecutionLogStore>()
                 .AddScoped<YesSqlBookmarkStore>()
                 .AddScoped<YesSqlTriggerStore>()
-                .AddSingleton(sp => CreateStore(sp, configure))
-                .AddSingleton<ISessionProvider, SessionProvider>()
+                .AddMultiton(sp => CreateStore(sp, configure))
+                .AddMultiton<ISessionProvider, SessionProvider>()
                 .AddScoped(CreateSession)
                 .AddScoped<IDataMigrationManager, DataMigrationManager>()
                 .AddStartupTask<DatabaseInitializer>()
                 .AddStartupTask<RunMigrations>()
                 .AddDataMigration<Migrations>()
-                .AddAutoMapperProfile<AutoMapperProfile>()
                 .AddIndexProvider<WorkflowDefinitionIndexProvider>()
                 .AddIndexProvider<WorkflowInstanceIndexProvider>()
                 .AddIndexProvider<WorkflowExecutionLogRecordIndexProvider>()
                 .AddIndexProvider<BookmarkIndexProvider>()
                 .AddIndexProvider<TriggerIndexProvider>();
+
+            elsa.Services
+                .AddAutoMapperProfile<AutoMapperProfile>();
 
             return elsa
                 .UseWorkflowDefinitionStore(sp => sp.GetRequiredService<YesSqlWorkflowDefinitionStore>())
@@ -49,9 +67,9 @@ namespace Elsa.Persistence.YesSql
                 .UseTriggerStore(sp => sp.GetRequiredService<YesSqlTriggerStore>());
         }
 
-        public static IServiceCollection AddIndexProvider<T>(this IServiceCollection services) where T : class, IIndexProvider => services.AddSingleton<IIndexProvider, T>();
-        public static IServiceCollection AddScopedIndexProvider<T>(this IServiceCollection services) where T : class, IIndexProvider => services.AddScoped<IScopedIndexProvider>();
-        public static IServiceCollection AddDataMigration<T>(this IServiceCollection services) where T : class, IDataMigration => services.AddScoped<IDataMigration, T>();
+        public static ContainerBuilder AddIndexProvider<T>(this ContainerBuilder containerBuilder) where T : class, IIndexProvider => containerBuilder.AddMultiton<IIndexProvider, T>();
+        public static ContainerBuilder AddScopedIndexProvider<T>(this ContainerBuilder containerBuilder) where T : class, IIndexProvider => containerBuilder.AddScoped<IScopedIndexProvider>();
+        public static ContainerBuilder AddDataMigration<T>(this ContainerBuilder containerBuilder) where T : class, IDataMigration => containerBuilder.AddScoped<IDataMigration, T>();
 
         private static IStore CreateStore(
             IServiceProvider serviceProvider,

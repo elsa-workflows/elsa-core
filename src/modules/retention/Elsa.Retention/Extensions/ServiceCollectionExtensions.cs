@@ -1,4 +1,7 @@
 using System;
+using System.Collections.Generic;
+using Autofac;
+using Elsa.Extensions;
 using Elsa.Retention.Contracts;
 using Elsa.Retention.HostedServices;
 using Elsa.Retention.Jobs;
@@ -11,13 +14,14 @@ namespace Elsa.Retention.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddRetentionServices(this IServiceCollection services, Action<CleanupOptions> configureOptions)
+        public static IServiceCollection AddRetentionServices(this IServiceCollection services, ContainerBuilder containerBuilder, Action<CleanupOptions> configureOptions)
         {
             services
                 .Configure(configureOptions)
                 .AddSingleton(CreateRetentionFilterPipeline)
-                .AddScoped<CleanupJob>()
-                .AddHostedService<CleanupHostedService>();
+                .AddScoped<CleanupJob>();
+
+            containerBuilder.AddHostedService<CleanupHostedService>();
 
             return services;
         }

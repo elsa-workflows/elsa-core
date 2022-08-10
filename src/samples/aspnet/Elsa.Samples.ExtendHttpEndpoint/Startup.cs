@@ -1,4 +1,8 @@
+using Autofac;
+using Autofac.Extensions.DependencyInjection;
+using Autofac.Multitenant;
 using Elsa;
+using Elsa.Multitenancy;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
 using Elsa.Services.Bookmarks;
@@ -22,31 +26,42 @@ namespace Elsa.Samples.ExtendHttpEndpoint
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddRazorPages();
+            services
+                .AddElsaServices()
+                .AddRazorPages(); 
+
+            services
+                .AddElsaSwagger()
+                .AddElsaApiEndpoints();
+
+            // Allow arbitrary client browser apps to access the API.
+            // In a production environment, make sure to allow only origins you trust.
+            services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("Content-Disposition")));
+        }
+
+        public void ConfigureContainer(ContainerBuilder builder)
+        {
+            // This will all go in the ROOT CONTAINER and is NOT TENANT SPECIFIC.
 
             // Elsa Server settings.
             var elsaSection = Configuration.GetSection("Elsa");
-            
-            services
-                .AddElsa(options => options
+
+            var services = new ServiceCollection();
+
+            builder.ConfigureElsaServices(services, options => options
                     .UseEntityFrameworkPersistence(ef => ef.UseSqlite())
                     .AddConsoleActivities()
                     .AddHttpActivities(elsaSection.GetSection("Server").Bind)
                     .AddJavaScriptActivities()
                     .AddActivitiesFrom<Startup>()
                     .AddFeatures(new[] { typeof(Startup) }, Configuration)
-                    .WithContainerName(elsaSection.GetSection("Server:ContainerName").Get<string>())
-                );
+                    .WithContainerName(elsaSection.GetSection("Server:ContainerName").Get<string>()));
 
-            services
-                .AddElsaSwagger()
-                .AddElsaApiEndpoints()
+            builder
                 .AddNotificationHandlers(typeof(Startup))
                 .AddBookmarkProvider<TestReceiveRequestBookmarkkProvider>();
 
-            // Allow arbitrary client browser apps to access the API.
-            // In a production environment, make sure to allow only origins you trust.
-            services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("Content-Disposition")));
+            builder.Populate(services);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -76,6 +91,11 @@ namespace Elsa.Samples.ExtendHttpEndpoint
 
                 endpoints.MapFallbackToPage("/_Host");
             });
+        }
+
+        public static MultitenantContainer ConfigureMultitenantContainer(IContainer container)
+        {
+            return MultitenantContainerFactory.CreateSampleMultitenantContainer(container);
         }
     }
 }

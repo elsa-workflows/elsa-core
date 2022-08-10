@@ -14,7 +14,7 @@ namespace Elsa.Server.Api.Endpoints.Signals
 {
     [ApiController]
     [ApiVersion("1")]
-    [Route("v{apiVersion:apiVersion}/signals/{signalName}/execute")]
+    [Route("{tenant}/v{apiVersion:apiVersion}/signals/{signalName}/execute")]
     [Produces("application/json")]
     public class Execute : Controller
     {

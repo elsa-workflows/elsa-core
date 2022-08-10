@@ -1,14 +1,17 @@
-using Xunit;
-using System.Threading.Tasks;
-using Elsa.Core.IntegrationTests.Autofixture;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.DependencyInjection;
 using System.Threading;
-using Elsa.Services;
+using System.Threading.Tasks;
+using Autofac;
+using Elsa.Core.IntegrationTests.Autofixture;
 using Elsa.Core.IntegrationTests.Workflows;
+using Elsa.Extensions;
+using Elsa.HostedServices;
 using Elsa.Persistence;
+using Elsa.Services;
 using Elsa.Testing.Shared;
 using Elsa.Testing.Shared.Helpers;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Xunit;
 
 namespace Elsa.Core.IntegrationTests.Persistence.MongoDb
 {
@@ -18,11 +21,11 @@ namespace Elsa.Core.IntegrationTests.Persistence.MongoDb
         public async Task APersistableWorkflowInstanceWithDefaultPersistenceBehaviourShouldBeRoundTrippable([WithPersistableWorkflow,WithMongoDb] ElsaHostBuilderBuilder hostBuilderBuilder)
         {
             var hostBuilder = hostBuilderBuilder.GetHostBuilder();
-            hostBuilder.ConfigureServices((ctx, services) => services.AddHostedService<HostedWorkflowRunner>());
+            hostBuilder.ConfigureContainer<ContainerBuilder>((ctx, builder) => builder.AddHostedService<HostedWorkflowRunner>());
             var host = await hostBuilder.StartAsync();
         }
 
-        class HostedWorkflowRunner : IHostedService
+        class HostedWorkflowRunner : IElsaHostedService
         {
             readonly IBuildsAndStartsWorkflow _workflowRunner;
             readonly IWorkflowInstanceStore _instanceStore;

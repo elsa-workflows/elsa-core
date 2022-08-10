@@ -1,14 +1,17 @@
-using Xunit;
-using System.Threading.Tasks;
-using Elsa.Core.IntegrationTests.Autofixture;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.DependencyInjection;
 using System.Threading;
-using Elsa.Services;
+using System.Threading.Tasks;
+using Autofac;
+using Elsa.Core.IntegrationTests.Autofixture;
 using Elsa.Core.IntegrationTests.Workflows;
+using Elsa.Extensions;
+using Elsa.HostedServices;
 using Elsa.Persistence;
+using Elsa.Services;
 using Elsa.Testing.Shared;
 using Elsa.Testing.Shared.Helpers;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Xunit;
 
 namespace Elsa.Core.IntegrationTests.Persistence.InMemory
 {
@@ -18,8 +21,8 @@ namespace Elsa.Core.IntegrationTests.Persistence.InMemory
         public async Task APersistableWorkflowInstanceWithDefaultPersistanceBehaviourShouldBeRoundTrippable([WithPersistableWorkflow] ElsaHostBuilderBuilder hostBuilderBuilder)
         {
             var hostBuilder = hostBuilderBuilder.GetHostBuilder();
-            hostBuilder.ConfigureServices((ctx, services) => {
-                services.AddHostedService<HostedWorkflowRunner<PersistableWorkflow>>();
+            hostBuilder.ConfigureContainer<ContainerBuilder>((ctx, builder) => {
+                builder.AddHostedService<HostedWorkflowRunner<PersistableWorkflow>>();
             });
             var host = await hostBuilder.StartAsync();
         }
@@ -28,8 +31,8 @@ namespace Elsa.Core.IntegrationTests.Persistence.InMemory
         public async Task APersistableOnSuspendWorkflowInstanceShouldBeRoundTrippable([WithPersistableWorkflow] ElsaHostBuilderBuilder hostBuilderBuilder)
         {
             var hostBuilder = hostBuilderBuilder.GetHostBuilder();
-            hostBuilder.ConfigureServices((ctx, services) => {
-                services.AddHostedService<HostedWorkflowRunner<PersistableWorkflow.OnSuspend>>();
+            hostBuilder.ConfigureContainer<ContainerBuilder>((ctx, builder) => {
+                builder.AddHostedService<HostedWorkflowRunner<PersistableWorkflow.OnSuspend>>();
             });
             var host = await hostBuilder.StartAsync();
         }
@@ -38,8 +41,8 @@ namespace Elsa.Core.IntegrationTests.Persistence.InMemory
         public async Task APersistableOnActivityExecutedWorkflowInstanceShouldBeRoundTrippable([WithPersistableWorkflow] ElsaHostBuilderBuilder hostBuilderBuilder)
         {
             var hostBuilder = hostBuilderBuilder.GetHostBuilder();
-            hostBuilder.ConfigureServices((ctx, services) => {
-                services.AddHostedService<HostedWorkflowRunner<PersistableWorkflow.OnActivityExecuted>>();
+            hostBuilder.ConfigureContainer<ContainerBuilder>((ctx, builder) => {
+                builder.AddHostedService<HostedWorkflowRunner<PersistableWorkflow.OnActivityExecuted>>();
             });
             var host = await hostBuilder.StartAsync();
         }
@@ -48,13 +51,13 @@ namespace Elsa.Core.IntegrationTests.Persistence.InMemory
         public async Task APersistableOnWorkflowBurstWorkflowInstanceShouldBeRoundTrippable([WithPersistableWorkflow] ElsaHostBuilderBuilder hostBuilderBuilder)
         {
             var hostBuilder = hostBuilderBuilder.GetHostBuilder();
-            hostBuilder.ConfigureServices((ctx, services) => {
-                services.AddHostedService<HostedWorkflowRunner<PersistableWorkflow.OnWorkflowBurst>>();
+            hostBuilder.ConfigureContainer<ContainerBuilder>((ctx, builder) => {
+                builder.AddHostedService<HostedWorkflowRunner<PersistableWorkflow.OnWorkflowBurst>>();
             });
             var host = await hostBuilder.StartAsync();
         }
 
-        class HostedWorkflowRunner<TWorkflow> : IHostedService where TWorkflow : PersistableWorkflow
+        class HostedWorkflowRunner<TWorkflow> : IElsaHostedService where TWorkflow : PersistableWorkflow
         {
             readonly IBuildsAndStartsWorkflow _workflowRunner;
             readonly IWorkflowInstanceStore _instanceStore;

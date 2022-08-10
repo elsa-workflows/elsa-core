@@ -19,7 +19,7 @@ namespace Elsa.Activities.MassTransit.Extensions
                 throw new ArgumentNullException(nameof(options));
             }
 
-            options.Services.AddBookmarkProvider<MessageReceivedTriggerProvider>();
+            options.ContainerBuilder.AddBookmarkProvider<MessageReceivedTriggerProvider>();
 
             return options
                 .AddActivity<PublishMassTransitMessage>()

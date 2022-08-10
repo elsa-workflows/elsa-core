@@ -20,7 +20,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
 {
     [ApiController]
     [ApiVersion("1")]
-    [Route("v{apiVersion:apiVersion}/workflow-definitions/{definitionId}/history")]
+    [Route("{tenant}/v{apiVersion:apiVersion}/workflow-definitions/{definitionId}/history")]
     [Produces("application/json")]
     public class History : Controller
     {

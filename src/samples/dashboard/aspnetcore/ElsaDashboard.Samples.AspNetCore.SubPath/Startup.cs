@@ -1,4 +1,8 @@
+using Autofac;
+using Autofac.Extensions.DependencyInjection;
+using Autofac.Multitenant;
 using Elsa;
+using Elsa.Multitenancy;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
 using Microsoft.AspNetCore.Builder;
@@ -20,22 +24,12 @@ namespace ElsaDashboard.Samples.AspNetCore.SubPath
         
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddRazorPages();
+            services
+                .AddElsaServices()
+                .AddRazorPages();
             
             // Elsa Server.
             var elsaSection = Configuration.GetSection("Elsa");
-
-            services
-                .AddElsa(options => options
-                    .UseEntityFrameworkPersistence(ef => ef.UseSqlite())
-                    .AddConsoleActivities()
-                    .AddHttpActivities(elsaSection.GetSection("Server").Bind)
-                    .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)
-                    .AddQuartzTemporalActivities()
-                    .AddJavaScriptActivities()
-                    .AddActivitiesFrom<Startup>()
-                    .AddFeatures(new[] { typeof(Startup) }, Configuration)
-                );
 
             services
                 .AddElsaSwagger()
@@ -45,7 +39,29 @@ namespace ElsaDashboard.Samples.AspNetCore.SubPath
             // In a production environment, make sure to allow only origins you trust.
             services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("Content-Disposition")));
         }
-        
+
+        public void ConfigureContainer(ContainerBuilder builder)
+        {
+            // This will all go in the ROOT CONTAINER and is NOT TENANT SPECIFIC.
+
+            var services = new ServiceCollection();
+
+            var elsaSection = Configuration.GetSection("Elsa");
+
+            builder.ConfigureElsaServices(services, elsa => elsa
+                    .AddElsaMultitenancy()
+                    .UseEntityFrameworkPersistence(ef => ef.UseSqlite())
+                    .AddConsoleActivities()
+                    .AddHttpActivities(elsaSection.GetSection("Server").Bind)
+                    .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)
+                    .AddQuartzTemporalActivities()
+                    .AddJavaScriptActivities()
+                    .AddActivitiesFrom<Startup>()
+                    .AddFeatures(new[] { typeof(Startup) }, Configuration));
+
+            builder.Populate(services);
+        }
+
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
@@ -72,6 +88,11 @@ namespace ElsaDashboard.Samples.AspNetCore.SubPath
                 endpoints.MapControllers();
                 endpoints.MapFallbackToPage("/ElsaDashboard");
             });
+        }
+
+        public static MultitenantContainer ConfigureMultitenantContainer(IContainer container)
+        {
+            return MultitenantContainerFactory.CreateMultitenantContainer(container);
         }
     }
 }

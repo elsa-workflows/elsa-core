@@ -1,4 +1,6 @@
 using System.Threading.Tasks;
+using Elsa.Extensions;
+using Elsa.Multitenancy;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -12,15 +14,10 @@ namespace Elsa.Samples.ForEachLoopConsole
         private static async Task Main()
         {
             // Create a service container with Elsa services.
-            var services = new ServiceCollection()
-                .AddElsa(options => options
-                    .AddConsoleActivities()
-                    .AddWorkflow<ForEachLoopWorkflow>())
-                .BuildServiceProvider();
+            var serviceCollection = new ServiceCollection().AddElsaServices();
 
-            // Run startup actions (not needed when registering Elsa with a Host).
-            var startupRunner = services.GetRequiredService<IStartupRunner>();
-            await startupRunner.StartupAsync();
+            var services = MultitenantContainerFactory.CreateSampleMultitenantContainer(serviceCollection,
+                options => options.AddConsoleActivities().AddWorkflow<ForEachLoopWorkflow>());
 
             // Get a workflow runner.
             var workflowRunner = services.GetRequiredService<IBuildsAndStartsWorkflow>();

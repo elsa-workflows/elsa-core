@@ -15,7 +15,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowExecutionLog
 {
     [ApiController]
     [ApiVersion("1")]
-    [Route("v{apiVersion:apiVersion}/workflow-instances/{id}/execution-log")]
+    [Route("{tenant}/v{apiVersion:apiVersion}/workflow-instances/{id}/execution-log")]
     [Produces("application/json")]
     public class Get : Controller
     {

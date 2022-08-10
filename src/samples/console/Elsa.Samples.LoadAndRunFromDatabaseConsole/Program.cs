@@ -1,5 +1,7 @@
-﻿using Elsa;
+using Elsa;
+using Elsa.Extensions;
 using Elsa.Models;
+using Elsa.Multitenancy;
 using Elsa.Persistence;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
@@ -8,15 +10,12 @@ using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 // Create a service container with Elsa services.
-var services = new ServiceCollection()
-    .AddElsa(options => options
-        .UseEntityFrameworkPersistence(ef => ef.UseSqlite())
-        .AddConsoleActivities()
-    )
-    .BuildServiceProvider();
+var serviceCollection = new ServiceCollection().AddElsaServices();
 
-// Run DB migrations.
-await services.GetRequiredService<IStartupRunner>().StartupAsync();
+var services = MultitenantContainerFactory.CreateSampleMultitenantContainer(serviceCollection,
+    options => options
+        .UseEntityFrameworkPersistence(ef => ef.UseSqlite())//tODO: do we need some multitenancy here??
+        .AddConsoleActivities());
 
 // Get a workflow definition store for saving & loading workflow definitions.
 var workflowDefinitionStore = services.GetRequiredService<IWorkflowDefinitionStore>();

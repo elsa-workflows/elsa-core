@@ -9,6 +9,9 @@ using Elsa.Core.IntegrationTests.Workflows;
 using Elsa.Persistence;
 using Elsa.Testing.Shared;
 using Elsa.Testing.Shared.Helpers;
+using Autofac;
+using Elsa.Extensions;
+using Elsa.HostedServices;
 
 namespace Elsa.Core.IntegrationTests.Persistence
 {
@@ -49,13 +52,13 @@ namespace Elsa.Core.IntegrationTests.Persistence
         {
             var hostBuilder = hostBuilderBuilder.GetHostBuilder();
             
-            hostBuilder.ConfigureServices((ctx, services) => {
-                services.AddHostedService<HostedWorkflowRunner<DuplicateActivitiesWorkflow>>();
+            hostBuilder.ConfigureContainer<ContainerBuilder>(builder => {
+                builder.AddHostedService<HostedWorkflowRunner<DuplicateActivitiesWorkflow>>();
             });
             var host = await hostBuilder.StartAsync();
         }
 
-        private class HostedWorkflowRunner<TWorkflow> : IHostedService where TWorkflow : DuplicateActivitiesWorkflow
+        private class HostedWorkflowRunner<TWorkflow> : IElsaHostedService where TWorkflow : DuplicateActivitiesWorkflow
         {
             private readonly IBuildsAndStartsWorkflow _workflowRunner;
             private readonly IWorkflowInstanceStore _instanceStore;

@@ -8,6 +8,7 @@ using Elsa.Activities.AzureServiceBus.Options;
 using Elsa.Activities.AzureServiceBus.Services;
 using Elsa.Activities.AzureServiceBus.StartupTasks;
 using Elsa.Events;
+using Elsa.Extensions;
 using Elsa.Options;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -23,14 +24,13 @@ namespace Elsa.Activities.AzureServiceBus.Extensions
             else
                 options.Services.AddOptions<AzureServiceBusOptions>();
 
-            options.Services
-                .AddSingleton(CreateServiceBusConnection)
-                .AddSingleton(CreateServiceBusManagementClient)
-                .AddSingleton<IMessageSenderFactory, MessageSenderFactory>()
-                .AddSingleton<IWorkerManager, WorkerManager>()
-                .AddHostedService<StartWorkers>()
-                .AddBookmarkProvider<MessageReceivedBookmarkProvider>()
-                ;
+            options.ContainerBuilder
+                 .AddMultiton(CreateServiceBusConnection)
+                 .AddMultiton(CreateServiceBusManagementClient)
+                 .AddMultiton<IMessageSenderFactory, MessageSenderFactory>()
+                 .AddMultiton<IWorkerManager, WorkerManager>()
+                 .AddHostedService<StartWorkers>()
+                 .AddBookmarkProvider<MessageReceivedBookmarkProvider>();
 
             options.AddPubSubConsumer<UpdateWorkers, TriggerIndexingFinished>("WorkflowManagementEvents");
             options.AddPubSubConsumer<UpdateWorkers, TriggersDeleted>("WorkflowManagementEvents");

@@ -13,7 +13,7 @@ namespace Elsa.Server.Api.Endpoints.Scripting.JavaScript.TypeDefinitions
 {
     [ApiController]
     [ApiVersion("1")]
-    [Route("v{apiVersion:apiVersion}/scripting/javascript/type-definitions/{workflowDefinitionId}")]
+    [Route("{tenant}/v{apiVersion:apiVersion}/scripting/javascript/type-definitions/{workflowDefinitionId}")]
     [Produces("application/json")]
     public class Get : Controller
     {

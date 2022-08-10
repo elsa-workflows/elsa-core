@@ -1,5 +1,9 @@
+using Autofac;
+using Autofac.Extensions.DependencyInjection;
+using Autofac.Multitenant;
 using Elsa;
 using Elsa.Activities.UserTask.Extensions;
+using Elsa.Multitenancy;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
 using Elsa.WorkflowTesting.Api.Extensions;
@@ -23,13 +27,29 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddRazorPages();
-
-            // Elsa Server settings.
-            var elsaSection = Configuration.GetSection("Elsa");
-            
             services
-                .AddElsa(options => options
+                .AddElsaServices()
+                .AddRazorPages();
+
+            services
+                .AddElsaSwagger()
+                .AddElsaApiEndpoints();
+
+            // Allow arbitrary client browser apps to access the API.
+            // In a production environment, make sure to allow only origins you trust.
+            services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("Content-Disposition")));
+        }
+
+        public void ConfigureContainer(ContainerBuilder builder)
+        {
+            // This will all go in the ROOT CONTAINER and is NOT TENANT SPECIFIC.
+
+            var services = new ServiceCollection();
+
+            var elsaSection = Configuration.GetSection("Elsa");
+
+            builder.ConfigureElsaServices(services, elsa => elsa
+                    .AddElsaMultitenancy()
                     .UseEntityFrameworkPersistence(ef => ef.UseSqlite())
                     .AddConsoleActivities()
                     .AddHttpActivities(elsaSection.GetSection("Server").Bind)
@@ -39,17 +59,14 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith
                     .AddUserTaskActivities()
                     .AddActivitiesFrom<Startup>()
                     .AddFeatures(new[] { typeof(Startup) }, Configuration)
-                    .WithContainerName(elsaSection.GetSection("Server:ContainerName").Get<string>())
-                );
+                    .WithContainerName(elsaSection.GetSection("Server:ContainerName").Get<string>()));
 
-            services
-                .AddElsaSwagger()
-                .AddElsaApiEndpoints()
-                .AddWorkflowTestingServices();
+            builder.AddWorkflowTestingServices();
 
-            // Allow arbitrary client browser apps to access the API.
-            // In a production environment, make sure to allow only origins you trust.
-            services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("Content-Disposition")));
+            // Workflow Testing
+            builder.AddWorkflowTestingServices();
+
+            builder.Populate(services);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -75,13 +92,18 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith
             app.UseEndpoints(endpoints =>
             {
                 // Maps a SignalR hub for the designer to connect to when testing workflows.
-                endpoints.MapWorkflowTestHub();
+                endpoints.MapWorkflowTestHub(Configuration);
                 
                 // Elsa Server uses ASP.NET Core Controllers.
                 endpoints.MapControllers();
 
                 endpoints.MapFallbackToPage("/_Host");
             });
+        }
+
+        public static MultitenantContainer ConfigureMultitenantContainer(IContainer container)
+        {
+            return MultitenantContainerFactory.CreateMultitenantContainer(container);
         }
     }
 }

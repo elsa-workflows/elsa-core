@@ -1,15 +1,24 @@
 using System;
+using System.Collections.Generic;
+using Autofac;
+using Autofac.Multitenant;
+using Elsa.Extensions;
+using Elsa.Multitenancy;
+using Elsa.Multitenancy.Extensions;
 using Elsa.Options;
+using Elsa.Persistence.EntityFramework.Core.Options;
 using Elsa.Persistence.EntityFramework.Core.Services;
 using Elsa.Persistence.EntityFramework.Core.StartupTasks;
 using Elsa.Persistence.EntityFramework.Core.Stores;
 using Elsa.Runtime;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Persistence.EntityFramework.Core.Extensions
 {
-    public static class ServiceCollectionExtensions
+    public static class ElsaOptionsBuilderExtensions
     {
         /// <summary>
         /// Configures Elsa to use Entity Framework Core for persistence, using pooled DB Context instances.
@@ -220,9 +229,9 @@ namespace Elsa.Persistence.EntityFramework.Core.Extensions
                 .AddScoped<EntityFrameworkWorkflowExecutionLogRecordStore>()
                 .AddScoped<EntityFrameworkBookmarkStore>()
                 .AddScoped<EntityFrameworkTriggerStore>();
-            
+
             if (autoRunMigrations)
-                elsa.Services.AddStartupTask<RunMigrations>();
+                elsa.ContainerBuilder.AddStartupTask<RunMigrations>();
 
             return elsa
                 .UseWorkflowDefinitionStore(sp => sp.GetRequiredService<EntityFrameworkWorkflowDefinitionStore>())
@@ -231,5 +240,75 @@ namespace Elsa.Persistence.EntityFramework.Core.Extensions
                 .UseBookmarkStore(sp => sp.GetRequiredService<EntityFrameworkBookmarkStore>())
                 .UseTriggerStore(sp => sp.GetRequiredService<EntityFrameworkTriggerStore>());
         }
+
+        public static ElsaOptionsBuilder UseEntityFrameworkPersistenceForMultitenancy(this ElsaOptionsBuilder elsa,
+            Action<IServiceProvider, DbContextOptionsBuilder> configure,
+            bool autoRunMigrations) => UseEntityFrameworkPersistenceForMultitenancy<ElsaContext>(elsa, configure, autoRunMigrations);
+        private static ElsaOptionsBuilder UseEntityFrameworkPersistenceForMultitenancy<TElsaContext>(ElsaOptionsBuilder elsa,
+            Action<IServiceProvider, DbContextOptionsBuilder> configure,
+            bool autoRunMigrations) where TElsaContext : ElsaContext
+        {
+            //tODO: find a way to register DbContextFactory with Autofac
+            elsa.Services.AddDbContextFactory<TElsaContext>(configure, ServiceLifetime.Scoped);
+
+            elsa.ContainerBuilder
+                .AddMultiton<IElsaContextFactory, ElsaContextFactory<TElsaContext>>()
+                .AddScoped<EntityFrameworkWorkflowDefinitionStore>()
+                .AddScoped<EntityFrameworkWorkflowInstanceStore>()
+                .AddScoped<EntityFrameworkWorkflowExecutionLogRecordStore>()
+                .AddScoped<EntityFrameworkBookmarkStore>()
+                .AddScoped<EntityFrameworkTriggerStore>();
+
+            elsa.ContainerBuilder
+                .Register(cc =>
+                {
+                    var tenant = cc.Resolve<ITenant>();
+                    return new ElsaDbOptions(tenant!.GetDatabaseConnectionString()!);
+                }).InstancePerTenant();
+
+            if (autoRunMigrations)
+                elsa.ContainerBuilder.AddStartupTask<RunMigrations>();
+
+            return elsa
+                .UseWorkflowDefinitionStore(sp => sp.GetRequiredService<EntityFrameworkWorkflowDefinitionStore>())
+                .UseWorkflowInstanceStore(sp => sp.GetRequiredService<EntityFrameworkWorkflowInstanceStore>())
+                .UseWorkflowExecutionLogStore(sp => sp.GetRequiredService<EntityFrameworkWorkflowExecutionLogRecordStore>())
+                .UseBookmarkStore(sp => sp.GetRequiredService<EntityFrameworkBookmarkStore>())
+                .UseTriggerStore(sp => sp.GetRequiredService<EntityFrameworkTriggerStore>());
+        }
+
+        // tODO: This code mimics AddDbContextFactory extension method for IServiceCollection
+        //       and allows to register DbContextFactory as multiton.
+        //       However, it touches internal API's which is not good.
+        //       Need to find a better approach.
+        //private static void AddDbContextFactory<TContext>(this ContainerBuilder containerBuilder, Action<IServiceProvider, DbContextOptionsBuilder>? optionsAction) where TContext : DbContext
+        //{
+        //    containerBuilder.Register(cc =>
+        //    {
+        //        var sp = cc.Resolve<IServiceProvider>();
+        //        return CreateDbContextOptions<TContext>(sp, optionsAction);
+        //    }).As<DbContextOptions<TContext>>().IfNotRegistered(typeof(DbContextOptions<TContext>)).InstancePerTenant();
+
+        //    containerBuilder.Register(cc => cc.Resolve<DbContextOptions<TContext>>()).As<DbContextOptions>().InstancePerTenant();
+        //    containerBuilder.RegisterType<DbContextFactorySource<TContext>>().As<IDbContextFactorySource<TContext>>().InstancePerTenant();
+
+        //    containerBuilder.RegisterType<DbContextFactory<TContext>>().As<IDbContextFactory<TContext>>().IfNotRegistered(typeof(IDbContextFactory<TContext>)).InstancePerTenant();
+
+        //    containerBuilder.RegisterType<TContext>().As<TContext>().IfNotRegistered(typeof(TContext)).InstancePerLifetimeScope();
+        //}
+
+        //private static DbContextOptions<TContext> CreateDbContextOptions<TContext>(
+        //    IServiceProvider applicationServiceProvider,
+        //    Action<IServiceProvider, DbContextOptionsBuilder>? optionsAction) where TContext : DbContext
+        //{
+        //    var builder = new DbContextOptionsBuilder<TContext>(
+        //        new DbContextOptions<TContext>(new Dictionary<Type, IDbContextOptionsExtension>()));
+
+        //    builder.UseApplicationServiceProvider(applicationServiceProvider);
+
+        //    optionsAction?.Invoke(applicationServiceProvider, builder);
+
+        //    return builder.Options;
+        //}
     }
 }

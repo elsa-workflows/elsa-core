@@ -15,7 +15,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowRegistry
 {
     [ApiController]
     [ApiVersion("1")]
-    [Route("v{apiVersion:apiVersion}/workflow-registry/by-definition-version-ids")]
+    [Route("{tenant}/v{apiVersion:apiVersion}/workflow-registry/by-definition-version-ids")]
     [Produces("application/json")]
     public class ListByDefinitionVersionIds : Controller
     {

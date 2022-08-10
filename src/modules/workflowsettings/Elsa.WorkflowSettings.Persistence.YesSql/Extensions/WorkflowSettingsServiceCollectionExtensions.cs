@@ -1,7 +1,13 @@
 using System;
 using System.Data;
+using Autofac;
+using Autofac.Multitenant;
+using Elsa.Extensions;
+using Elsa.Multitenancy;
+using Elsa.Multitenancy.Extensions;
 using Elsa.Persistence.YesSql;
 using Elsa.Persistence.YesSql.Data;
+using Elsa.Persistence.YesSql.Options;
 using Elsa.Runtime;
 using Elsa.WorkflowSettings.Persistence.YesSql.Indexes;
 using Elsa.WorkflowSettings.Persistence.YesSql.Mapping;
@@ -21,13 +27,22 @@ namespace Elsa.WorkflowSettings.Persistence.YesSql.Extensions
 
         public static WorkflowSettingsOptionsBuilder UseWorkflowSettingsYesSqlPersistence(this WorkflowSettingsOptionsBuilder workflowSettingsOptions, Action<IServiceProvider, IConfiguration> configure)
         {
-            workflowSettingsOptions.Services
+            workflowSettingsOptions.ContainerBuilder
+                .Register(cc =>
+                {
+                    var tenant = cc.Resolve<ITenant>();
+                    return new ElsaDbOptions(tenant!.GetDatabaseConnectionString()!);
+                }).InstancePerTenant();
+
+            workflowSettingsOptions.ContainerBuilder
                 .AddScoped<YesSqlWorkflowSettingsStore>()
-                .AddSingleton(sp => CreateStore(sp, configure))
+                .AddMultiton(sp => CreateStore(sp, configure))
                 .AddStartupTask<DatabaseInitializer>()
                 .AddDataMigration<Migrations>()
-                .AddAutoMapperProfile<AutoMapperProfile>()
                 .AddIndexProvider<WorkflowSettingsIndexProvider>();
+
+            workflowSettingsOptions.Services
+                .AddAutoMapperProfile<AutoMapperProfile>();
 
             workflowSettingsOptions.UseWorkflowSettingsStore(sp => sp.GetRequiredService<YesSqlWorkflowSettingsStore>());
 

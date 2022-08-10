@@ -14,7 +14,7 @@ namespace Elsa.ComponentTests.Clients.RestClient.Activities
         [Fact(DisplayName = "Listing activities returns a list of activities.")]
         public async Task Post01()
         {
-            var list = await ElsaClient.Activities.ListAsync();
+            var list = await ElsaClient.Activities.ListAsync("default");
             Assert.NotEmpty(list);
         }
     }

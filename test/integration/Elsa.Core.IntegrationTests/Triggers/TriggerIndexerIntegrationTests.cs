@@ -2,11 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Autofac.Multitenant;
 using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Primitives;
 using Elsa.Activities.Signaling;
 using Elsa.Builders;
+using Elsa.Extensions;
 using Elsa.Models;
+using Elsa.Multitenancy;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications.Triggers;
 using Elsa.Services;
@@ -60,20 +63,16 @@ namespace Elsa.Core.IntegrationTests.Triggers
             return await triggerStore.FindManyAsync(new WorkflowDefinitionIdSpecification(workflowDefinitionId));
         }
 
-        private async Task<IServiceProvider> GetServiceProvider()
+        private async Task<MultitenantContainer> GetServiceProvider()
         {
-            var services = new ServiceCollection();
-            services.AddElsa(elsa =>
-            {
-                elsa
+            var serviceCollection = new ServiceCollection().AddElsaServices();
+
+            var serviceProvider = MultitenantContainerFactory.CreateSampleMultitenantContainer(serviceCollection,
+                elsa => elsa
                     .AddWorkflow<WorkflowWithBlockingStartActivity>()
                     .AddWorkflow<WorkflowWithNonBlockingStartActivity>()
                     .AddActivity<SignalReceived>()
-                    .AddActivity<SetVariable>()
-                    ;
-            });
-
-            var serviceProvider = services.BuildServiceProvider();
+                    .AddActivity<SetVariable>());
 
             var definitionStore = serviceProvider.GetRequiredService<IWorkflowDefinitionStore>();
             await definitionStore.AddAsync(new WorkflowDefinition

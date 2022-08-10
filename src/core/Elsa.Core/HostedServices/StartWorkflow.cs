@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Builders;
@@ -11,7 +11,7 @@ namespace Elsa.HostedServices
     /// <summary>
     /// A hosted service that starts a workflow of the specified type. 
     /// </summary>
-    public class StartWorkflow<T> : IHostedService where T : IWorkflow
+    public class StartWorkflow<T> : IElsaHostedService where T : IWorkflow
     {
         private readonly IServiceProvider _serviceProvider;
         public StartWorkflow(IServiceProvider serviceProvider) => _serviceProvider = serviceProvider;

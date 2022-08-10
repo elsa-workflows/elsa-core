@@ -8,7 +8,7 @@ namespace Elsa.HostedServices
     /// <summary>
     /// Executed the specified worker within a scoped-lifetime scope.
     /// </summary>
-    public class ScopedBackgroundService<TWorker> : BackgroundService where TWorker:IScopedBackgroundService
+    public class ScopedBackgroundService<TWorker> : BackgroundService, IElsaHostedService where TWorker:IScopedBackgroundService
     {
         private readonly IServiceScopeFactory _scopeFactory;
 

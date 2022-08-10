@@ -13,7 +13,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
 {
     [ApiController]
     [ApiVersion("1")]
-    [Route("v{apiVersion:apiVersion}/workflow-definitions/{workflowDefinitionId}/publish")]
+    [Route("{tenant}/v{apiVersion:apiVersion}/workflow-definitions/{workflowDefinitionId}/publish")]
     [Produces("application/json")]
     public class Publish : ControllerBase
     {

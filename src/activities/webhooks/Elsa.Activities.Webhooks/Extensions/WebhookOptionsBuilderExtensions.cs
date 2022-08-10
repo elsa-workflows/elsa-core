@@ -4,6 +4,7 @@ using Elsa.Activities.Webhooks.Bookmarks;
 using Elsa.Activities.Webhooks.Handlers;
 using Elsa.Activities.Webhooks.Options;
 using Elsa.Activities.Webhooks.Persistence.Decorators;
+using Elsa.Extensions;
 using Elsa.Options;
 using Elsa.Webhooks.Persistence;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,20 +17,20 @@ namespace Elsa.Activities.Webhooks.Extensions
         {
             var services = elsaOptions.Services;
             
-            var optionsBuilder = new WebhookOptionsBuilder(services);
+            var optionsBuilder = new WebhookOptionsBuilder(services, elsaOptions.ContainerBuilder);
             configureOptions?.Invoke(optionsBuilder);
             var options = optionsBuilder.WebhookOptions;
 
-            services.AddSingleton(options);
+            elsaOptions.ContainerBuilder.AddMultiton(options);
 
-            services
+            elsaOptions.ContainerBuilder
                 .AddScoped(sp => sp.GetRequiredService<WebhookOptions>().WebhookDefinitionStoreFactory(sp))
                 .AddActivityTypeProvider<WebhookActivityTypeProvider>()
                 .AddBookmarkProvider<WebhookBookmarkProvider>()
                 .AddNotificationHandlersFrom<EvictWorkflowRegistryCacheHandler>();
 
-            services.Decorate<IWebhookDefinitionStore, InitializingWebhookDefinitionStore>();
-            services.Decorate<IWebhookDefinitionStore, EventPublishingWebhookDefinitionStore>();
+            elsaOptions.ContainerBuilder.Decorate<IWebhookDefinitionStore, InitializingWebhookDefinitionStore>();
+            elsaOptions.ContainerBuilder.Decorate<IWebhookDefinitionStore, EventPublishingWebhookDefinitionStore>();
 
             return elsaOptions;
         }

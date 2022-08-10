@@ -1,3 +1,7 @@
+using Autofac;
+using Autofac.Extensions.DependencyInjection;
+using Autofac.Multitenant;
+using Elsa.Multitenancy;
 using Elsa.Samples.ForkJoinTimerAndSignalHttp.Workflows;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
@@ -17,15 +21,23 @@ namespace Elsa.Samples.ForkJoinTimerAndSignalHttp
         public void ConfigureServices(IServiceCollection services)
         {
             services
+                .AddElsaServices()
                 .AddControllers();
-            
-            services
-                .AddElsa(options => options
+        }
+
+        public void ConfigureContainer(ContainerBuilder builder)
+        {
+            // This will all go in the ROOT CONTAINER and is NOT TENANT SPECIFIC.
+
+            var services = new ServiceCollection();
+
+            builder.ConfigureElsaServices(services, elsa => elsa
                     .AddConsoleActivities()
                     .AddHttpActivities(httpOptions => Configuration.GetSection("Elsa:Http").Bind(httpOptions))
                     .AddQuartzTemporalActivities()
-                    .StartWorkflow<DemoWorkflow>()         
-                );
+                    .StartWorkflow<DemoWorkflow>());
+
+            builder.Populate(services);
         }
 
         public void Configure(IApplicationBuilder app)
@@ -33,6 +45,11 @@ namespace Elsa.Samples.ForkJoinTimerAndSignalHttp
             app.UseRouting();
             app.UseEndpoints(endpoints => endpoints.MapControllers());
             app.UseWelcomePage();
+        }
+
+        public static MultitenantContainer ConfigureMultitenantContainer(IContainer container)
+        {
+            return MultitenantContainerFactory.CreateSampleMultitenantContainer(container);
         }
     }
 }

@@ -2,6 +2,7 @@ using Elsa.Events;
 using Elsa.WorkflowTesting.Events;
 using MediatR;
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -23,7 +24,11 @@ namespace Elsa.Activities.RabbitMq.Testing
 
             if (!isTest) return;
 
-            var workflowId = notification.WorkflowExecutionContext.WorkflowBlueprint.Id;
+            var workflowBlueprint = notification.WorkflowExecutionContext.WorkflowBlueprint;
+
+            if (!workflowBlueprint.Activities.Any(x => x.Type == nameof(RabbitMqMessageReceived))) return;
+
+            var workflowId = workflowBlueprint.Id;
             var workflowInstanceId = notification.WorkflowExecutionContext.WorkflowInstance.Id;
 
 
@@ -52,6 +57,10 @@ namespace Elsa.Activities.RabbitMq.Testing
             var isTest = Convert.ToBoolean(notification.WorkflowExecutionContext.WorkflowInstance.GetMetadata("isTest"));
 
             if (!isTest) return Task.CompletedTask;
+
+            var workflowBlueprint = notification.WorkflowExecutionContext.WorkflowBlueprint;
+
+            if (!workflowBlueprint.Activities.Any(x => x.Type == nameof(RabbitMqMessageReceived))) return Task.CompletedTask;
 
             var workflowInstanceId = notification.WorkflowExecutionContext.WorkflowInstance.Id;
 

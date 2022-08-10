@@ -1,5 +1,7 @@
 using System;
+using Elsa.Extensions;
 using Elsa.Options;
+using Elsa.Persistence.EntityFramework.Core.Options;
 using Elsa.Secrets.Extensions;
 using Elsa.Secrets.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Services.Startup;
@@ -15,31 +17,18 @@ namespace Elsa.Secrets.Persistence.EntityFramework.Core
 
         public override void ConfigureElsa(ElsaOptionsBuilder elsa, IConfiguration configuration)
         {
-            var services = elsa.Services;
-            var section = configuration.GetSection($"Elsa:Features:Secrets");
-            var connectionStringName = section.GetValue<string>("ConnectionStringIdentifier");
-            var connectionString = section.GetValue<string>("ConnectionString");
+            var secretsOptionsBuilder = new SecretsOptionsBuilder(elsa.Services, elsa.ContainerBuilder);
 
-            if (string.IsNullOrWhiteSpace(connectionString))
-            {
-                if (string.IsNullOrWhiteSpace(connectionStringName))
-                    connectionStringName = ProviderName;
+            secretsOptionsBuilder.UseEntityFrameworkPersistence((services, options) 
+                => Configure(options, services.GetRequiredService<ElsaDbOptions>()), autoRunMigrations: true);
 
-                connectionString = configuration.GetConnectionString(connectionStringName);
-            }
-
-            if (string.IsNullOrWhiteSpace(connectionString))
-                connectionString = GetDefaultConnectionString();
-
-            var secretsOptionsBuilder = new SecretsOptionsBuilder(services);
-            secretsOptionsBuilder.UseEntityFrameworkPersistence(options => Configure(options, connectionString));
-            services.AddScoped(sp => secretsOptionsBuilder.SecretsOptions.SecretsStoreFactory(sp));
+            elsa.ContainerBuilder.AddScoped(sp => secretsOptionsBuilder.SecretsOptions.SecretsStoreFactory(sp));
 
             elsa.AddSecrets();
         }
 
         protected virtual string GetDefaultConnectionString() => throw new Exception($"No connection string specified for the {ProviderName} provider");
-        protected abstract void Configure(DbContextOptionsBuilder options, string connectionString);
+        protected abstract void Configure(DbContextOptionsBuilder options, ElsaDbOptions elsaDbOptions);
 
     }
 }

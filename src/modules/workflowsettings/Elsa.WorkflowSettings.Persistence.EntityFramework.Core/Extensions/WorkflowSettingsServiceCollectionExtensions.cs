@@ -1,10 +1,19 @@
 using System;
+using Autofac;
+using System.Collections.Generic;
 using Elsa.Runtime;
 using Elsa.WorkflowSettings.Persistence.EntityFramework.Core.Services;
 using Elsa.WorkflowSettings.Persistence.EntityFramework.Core.StartupTasks;
 using Elsa.WorkflowSettings.Persistence.EntityFramework.Core.Stores;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.DependencyInjection;
+using Autofac.Multitenant;
+using Elsa.Extensions;
+using Elsa.Multitenancy;
+using Elsa.Multitenancy.Extensions;
+using Elsa.Persistence.EntityFramework.Core.Options;
 
 namespace Elsa.WorkflowSettings.Persistence.EntityFramework.Core.Extensions
 {
@@ -217,7 +226,37 @@ namespace Elsa.WorkflowSettings.Persistence.EntityFramework.Core.Extensions
                 .AddScoped<EntityFrameworkWorkflowSettingsStore>();
 
             if (autoRunMigrations)
-                workflowSettingsOptions.Services.AddStartupTask<RunMigrations>();
+                workflowSettingsOptions.ContainerBuilder.AddStartupTask<RunMigrations>();
+
+            workflowSettingsOptions.UseWorkflowSettingsStore(sp => sp.GetRequiredService<EntityFrameworkWorkflowSettingsStore>());
+
+            return workflowSettingsOptions;
+        }
+
+        public static WorkflowSettingsOptionsBuilder UseEntityFrameworkPersistenceForMultitenancy(this WorkflowSettingsOptionsBuilder workflowSettingsOptions,
+            Action<IServiceProvider, DbContextOptionsBuilder> configure,
+            bool autoRunMigrations = false) =>
+            workflowSettingsOptions.UseEntityFrameworkPersistenceForMultitenancy<WorkflowSettingsContext>(configure, autoRunMigrations);
+
+        static WorkflowSettingsOptionsBuilder UseEntityFrameworkPersistenceForMultitenancy<TWorkflowSettingsContext>(this WorkflowSettingsOptionsBuilder workflowSettingsOptions,
+            Action<IServiceProvider, DbContextOptionsBuilder> configure,
+            bool autoRunMigrations) where TWorkflowSettingsContext : WorkflowSettingsContext
+        {
+            workflowSettingsOptions.Services.AddDbContextFactory<TWorkflowSettingsContext>(configure, ServiceLifetime.Scoped);
+
+            workflowSettingsOptions.ContainerBuilder
+                .Register(cc =>
+                {
+                    var tenant = cc.Resolve<ITenant>();
+                    return new ElsaDbOptions(tenant!.GetDatabaseConnectionString()!);
+                }).IfNotRegistered(typeof(ElsaDbOptions)).InstancePerTenant();
+
+            workflowSettingsOptions.ContainerBuilder
+                .AddMultiton<IWorkflowSettingsContextFactory, WorkflowSettingsContextFactory<TWorkflowSettingsContext>>()
+                .AddScoped<EntityFrameworkWorkflowSettingsStore>();
+
+            if (autoRunMigrations)
+                workflowSettingsOptions.ContainerBuilder.AddStartupTask<RunMigrations>();
 
             workflowSettingsOptions.UseWorkflowSettingsStore(sp => sp.GetRequiredService<EntityFrameworkWorkflowSettingsStore>());
 

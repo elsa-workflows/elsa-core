@@ -5,6 +5,7 @@ using Elsa.Activities.Temporal.Common.Handlers;
 using Elsa.Activities.Temporal.Common.HostedServices;
 using Elsa.Activities.Temporal.Common.Messages;
 using Elsa.Activities.Temporal.Common.Options;
+using Elsa.Extensions;
 using Elsa.HostedServices;
 using Elsa.Options;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,15 +30,15 @@ namespace Elsa.Activities.Temporal
         /// <param name="configure">The configuration for temporal activity options</param>
         public static ElsaOptionsBuilder AddCommonTemporalActivities(this ElsaOptionsBuilder options, Action<TimersOptions>? configure = default)
         {
-            var timersOptions = new TimersOptions(options.Services);
+            var timersOptions = new TimersOptions(options.Services, options.ContainerBuilder);
             configure?.Invoke(timersOptions);
 
-            options.Services
+            options.ContainerBuilder
                 .AddNotificationHandlers(typeof(UnscheduleTimers))
-                .AddHostedService<ScopedBackgroundService<StartJobs>>()
                 .AddBookmarkProvider<TimerBookmarkProvider>()
                 .AddBookmarkProvider<CronBookmarkProvider>()
-                .AddBookmarkProvider<StartAtBookmarkProvider>();
+                .AddBookmarkProvider<StartAtBookmarkProvider>()
+                .AddHostedService<ScopedBackgroundService<StartJobs>>();
 
             options
                 .AddActivity<Cron>()

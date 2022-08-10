@@ -1,20 +1,19 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.HostedServices;
 using Elsa.Serialization;
-using Elsa.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Rebus.Config;
 using Rebus.Messages;
 using Rebus.Routing.TransportMessages;
-using Rebus.Routing.TypeBased;
 using Rebus.Serialization.Json;
 using Rebus.ServiceProvider;
 
 namespace Elsa.Samples.RebusErrorWorker;
 
-public class ProcessErrorQueue : BackgroundService
+public class ProcessErrorQueue : BackgroundService, IElsaHostedService
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly IConfiguration _configuration;

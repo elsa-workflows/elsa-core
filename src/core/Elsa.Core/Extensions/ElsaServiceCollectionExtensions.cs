@@ -1,5 +1,7 @@
 using System;
 using System.ComponentModel;
+using Autofac;
+using Autofac.Core;
 using Elsa;
 using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Signaling;
@@ -10,10 +12,12 @@ using Elsa.Converters;
 using Elsa.Decorators;
 using Elsa.Design;
 using Elsa.Expressions;
+using Elsa.Extensions;
 using Elsa.Handlers;
 using Elsa.HostedServices;
 using Elsa.Mapping;
 using Elsa.Metadata;
+using Elsa.Multitenancy;
 using Elsa.Options;
 using Elsa.Persistence;
 using Elsa.Persistence.Decorators;
@@ -56,117 +60,52 @@ namespace Microsoft.Extensions.DependencyInjection
             TypeDescriptor.AddAttributes(typeof(Type), new TypeConverterAttribute(typeof(TypeTypeConverter)));
         }
 
-        public static IServiceCollection AddElsaCore(
-            this IServiceCollection services,
+        public static ContainerBuilder ConfigureElsaServices(
+            this ContainerBuilder containerBuilder, IServiceCollection serviceCollection,
             Action<ElsaOptionsBuilder>? configure = default)
         {
-            var optionsBuilder = new ElsaOptionsBuilder(services);
+            var optionsBuilder = new ElsaOptionsBuilder(containerBuilder, serviceCollection);
             configure?.Invoke(optionsBuilder);
             optionsBuilder.AddAutoMapper();
 
             var options = optionsBuilder.ElsaOptions;
 
-            services
+            optionsBuilder.ContainerBuilder
                 .AddSingleton(options)
                 .AddScoped(options.WorkflowDefinitionStoreFactory)
                 .AddScoped(options.WorkflowInstanceStoreFactory)
                 .AddScoped(options.WorkflowExecutionLogStoreFactory)
                 .AddScoped(options.BookmarkStoreFactory)
                 .AddScoped(options.TriggerStoreFactory)
-                .AddSingleton(options.DistributedLockingOptions.DistributedLockProviderFactory)
+                .AddMultiton(options.DistributedLockingOptions.DistributedLockProviderFactory)
                 .AddScoped(options.WorkflowDefinitionDispatcherFactory)
                 .AddScoped(options.WorkflowInstanceDispatcherFactory)
-                .AddScoped(options.CorrelatingWorkflowDispatcherFactory)
+                .AddScoped(options.CorrelatingWorkflowDispatcherFactory);
+
+            if (options.UseTenantSignaler)
+            {
+                optionsBuilder.ContainerBuilder.AddScoped<ISignaler, TenantSignaler>();
+            }
+
+            optionsBuilder.AddCoreActivities();
+
+            optionsBuilder.ContainerBuilder
                 .AddScoped<ILoopDetectorProvider, LoopDetectorProvider>()
                 .AddScoped<ILoopHandlerProvider, LoopHandlerProvider>()
                 .AddScoped<ActivityExecutionCountLoopDetector>()
                 .AddScoped<CooldownLoopHandler>()
-                .AddSingleton<IDistributedLockProvider, DistributedLockProvider>()
+                .AddMultiton<IDistributedLockProvider, DistributedLockProvider>()
                 .AddStartupTask<ContinueRunningWorkflows>()
                 .AddStartupTask<CreateSubscriptions>()
-                .AddStartupTask<IndexTriggers>();
+                .AddStartupTask<IndexTriggers>()
+                .AddStartupTask<BackgroundServiceRunner>();
 
-            optionsBuilder
-                .AddWorkflowsCore()
-                .AddConfiguration()
-                .AddCoreActivities();
-
-            if (options.UseTenantSignaler)
-            {
-                services.AddScoped<ISignaler, TenantSignaler>();
-            }
-
-            services
-                .Decorate<IWorkflowDefinitionStore, InitializingWorkflowDefinitionStore>()
-                .Decorate<IWorkflowDefinitionStore, EventPublishingWorkflowDefinitionStore>()
-                .Decorate<IWorkflowInstanceStore, EventPublishingWorkflowInstanceStore>()
-                .Decorate<IWorkflowInstanceExecutor, LockingWorkflowInstanceExecutor>()
-                .Decorate<IWorkflowInstanceCanceller, LockingWorkflowInstanceCanceller>()
-                .Decorate<IWorkflowInstanceDeleter, LockingWorkflowInstanceDeleter>();
-
-            //TenantId default source
-            services.TryAddScoped<ITenantAccessor, DefaultTenantAccessor>();
-
-            return services;
-        }
-
-        /// <summary>
-        /// Starts the specified workflow upon application startup.
-        /// </summary>
-        public static IServiceCollection StartWorkflow<T>(this ElsaOptionsBuilder elsaOptions) where T : class, IWorkflow
-        {
-            elsaOptions.AddWorkflow<T>();
-            return elsaOptions.Services.AddHostedService<StartWorkflow<T>>();
-        }
-
-        /// <summary>
-        /// Registers a consumer and associated message type using the competing consumer pattern. With the competing consumer pattern, only the first consumer on a given node to obtain a message will handle that message.
-        /// This is in contrast to the Publisher-Subscriber pattern, where a message will be delivered to the consumer on all nodes in a cluster. To register a Publisher-Subscriber consumer, use <seealso cref="AddPubSubConsumer{TConsumer,TMessage}"/>
-        /// </summary>
-        public static ElsaOptionsBuilder AddCompetingConsumer<TConsumer, TMessage>(this ElsaOptionsBuilder elsaOptions, string? queueName = default) where TConsumer : class, IHandleMessages<TMessage>
-        {
-            elsaOptions.AddCompetingConsumerService<TConsumer, TMessage>();
-            elsaOptions.AddCompetingMessageType<TMessage>(queueName);
-            return elsaOptions;
-        }
-
-        private static ElsaOptionsBuilder AddCompetingConsumerService<TConsumer, TMessage>(this ElsaOptionsBuilder elsaOptions) where TConsumer : class, IHandleMessages<TMessage>
-        {
-            elsaOptions.Services.AddTransient<IHandleMessages<TMessage>, TConsumer>();
-            return elsaOptions;
-        }
-
-        public static ElsaOptionsBuilder AddPubSubConsumer<TConsumer, TMessage>(this ElsaOptionsBuilder elsaOptions, string? queueName = default) where TConsumer : class, IHandleMessages<TMessage>
-        {
-            elsaOptions.Services.AddTransient<IHandleMessages<TMessage>, TConsumer>();
-            elsaOptions.AddPubSubMessageType<TMessage>(queueName);
-            return elsaOptions;
-        }
-
-        public static IServiceCollection AddActivityPropertyOptionsProvider<T>(this IServiceCollection services) where T : class, IActivityPropertyOptionsProvider => services.AddSingleton<IActivityPropertyOptionsProvider, T>();
-        public static IServiceCollection AddRuntimeSelectItemsProvider<T>(this IServiceCollection services) where T : class, IRuntimeSelectListItemsProvider => services.AddScoped<IRuntimeSelectListItemsProvider, T>();
-        public static IServiceCollection AddActivityTypeProvider<T>(this IServiceCollection services) where T : class, IActivityTypeProvider => services.AddSingleton<IActivityTypeProvider, T>();
-
-        public static IServiceCollection AddWorkflowStorageProvider<T>(this IServiceCollection services) where T : class, IWorkflowStorageProvider =>
-            services
-                .AddSingleton<T>()
-                .AddSingleton<IWorkflowStorageProvider>(sp => sp.GetRequiredService<T>());
-
-        private static ElsaOptionsBuilder AddWorkflowsCore(this ElsaOptionsBuilder elsaOptions)
-        {
-            var services = elsaOptions.Services;
-
-            services
-                .TryAddSingleton<IClock>(SystemClock.Instance);
-
-            services
-                .AddLogging()
-                .AddLocalization()
-                .AddSingleton<IContainerNameAccessor, OptionsContainerNameAccessor>()
-                .AddSingleton<IIdGenerator, IdGenerator>()
+            optionsBuilder.ContainerBuilder
+                .AddMultiton<IContainerNameAccessor, OptionsContainerNameAccessor>()
+                .AddMultiton<IIdGenerator, IdGenerator>()
                 .AddScoped<IWorkflowRegistry, WorkflowRegistry>()
-                .AddSingleton<IActivityActivator, ActivityActivator>()
-                .AddSingleton<ITokenService, TokenService>()
+                .AddMultiton<IActivityActivator, ActivityActivator>()
+                .AddMultiton<ITokenService, TokenService>()
                 .AddScoped<IWorkflowRunner, WorkflowRunner>()
                 .AddScoped<WorkflowStarter>()
                 .AddScoped<WorkflowResumer>()
@@ -184,11 +123,11 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddScoped<IWorkflowReviver, WorkflowReviver>()
                 .AddScoped<IWorkflowInstanceCanceller, WorkflowInstanceCanceller>()
                 .AddScoped<IWorkflowInstanceDeleter, WorkflowInstanceDeleter>()
-                .AddSingleton<IWorkflowFactory, WorkflowFactory>()
+                .AddMultiton<IWorkflowFactory, WorkflowFactory>()
                 .AddTransient<IWorkflowBlueprintMaterializer, WorkflowBlueprintMaterializer>()
-                .AddSingleton<IWorkflowBlueprintReflector, WorkflowBlueprintReflector>()
-                .AddSingleton<IBackgroundWorker, BackgroundWorker>()
-                .AddSingleton<ICompensationService, CompensationService>()
+                .AddMultiton<IWorkflowBlueprintReflector, WorkflowBlueprintReflector>()
+                .AddMultiton<IBackgroundWorker, BackgroundWorker>()
+                .AddMultiton<ICompensationService, CompensationService>()
                 .AddScoped<IWorkflowPublisher, WorkflowPublisher>()
                 .AddScoped<IWorkflowContextManager, WorkflowContextManager>()
                 .AddScoped<IActivityTypeService, ActivityTypeService>()
@@ -196,6 +135,127 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddTransient<ICreatesWorkflowExecutionContextForWorkflowBlueprint, WorkflowExecutionContextForWorkflowBlueprintFactory>()
                 .AddTransient<ICreatesActivityExecutionContextForActivityBlueprint, ActivityExecutionContextForActivityBlueprintFactory>()
                 .AddTransient<IGetsStartActivities, GetsStartActivitiesProvider>();
+
+
+            // Workflow providers.
+            optionsBuilder.ContainerBuilder
+                .AddWorkflowProvider<ProgrammaticWorkflowProvider>()
+                .AddWorkflowProvider<BlobStorageWorkflowProvider>()
+                .AddWorkflowProvider<DatabaseWorkflowProvider>();
+
+            // Bookmarks.
+            optionsBuilder.ContainerBuilder
+                .AddMultiton<IBookmarkHasher, BookmarkHasher>()
+                .AddMultiton<IBookmarkSerializer, BookmarkSerializer>()
+                .AddScoped<IBookmarkIndexer, BookmarkIndexer>()
+                .AddScoped<IBookmarkFinder, BookmarkFinder>()
+                .AddScoped<ITriggerIndexer, TriggerIndexer>()
+                .AddScoped<IGetsTriggersForWorkflowBlueprints, TriggersForBlueprintsProvider>()
+                .AddTransient<IGetsTriggersForActivityBlueprintAndWorkflow, TriggersForActivityBlueprintAndWorkflowProvider>()
+                .AddScoped<ITriggerFinder, TriggerFinder>()
+                .AddScoped<ITriggerRemover, TriggerRemover>()
+                .AddBookmarkProvider<SignalReceivedBookmarkProvider>()
+                .AddBookmarkProvider<RunWorkflowBookmarkProvider>();
+
+            // Workflow Storage Providers.
+            optionsBuilder.ContainerBuilder
+                .AddMultiton<IWorkflowStorageService, WorkflowStorageService>()
+                .AddWorkflowStorageProvider<TransientWorkflowStorageProvider>()
+                .AddWorkflowStorageProvider<WorkflowInstanceWorkflowStorageProvider>()
+                .AddWorkflowStorageProvider<BlobStorageWorkflowStorageProvider>();
+
+            optionsBuilder.ContainerBuilder
+                .Decorate<IWorkflowRegistry, CachingWorkflowRegistry>();
+
+
+            // Service Bus.
+            optionsBuilder.ContainerBuilder
+                .AddMultiton<ServiceBusFactory>()
+                .AddMultiton<IServiceBusFactory>(sp => sp.GetRequiredService<ServiceBusFactory>())
+                .AddMultiton<ICommandSender, CommandSender>()
+                .AddMultiton<IEventPublisher, EventPublisher>();
+
+            optionsBuilder
+                .AddCompetingConsumer<TriggerWorkflowsRequestConsumer, TriggerWorkflowsRequest>("ExecuteWorkflow")
+                .AddCompetingConsumer<ExecuteWorkflowDefinitionRequestConsumer, ExecuteWorkflowDefinitionRequest>("ExecuteWorkflow")
+                .AddCompetingConsumer<ExecuteWorkflowInstanceRequestConsumer, ExecuteWorkflowInstanceRequest>("ExecuteWorkflow");
+
+            optionsBuilder.ContainerBuilder
+                .Decorate<IWorkflowDefinitionStore, InitializingWorkflowDefinitionStore>()
+                .Decorate<IWorkflowDefinitionStore, EventPublishingWorkflowDefinitionStore>()
+                .Decorate<IWorkflowInstanceStore, EventPublishingWorkflowInstanceStore>();
+
+            optionsBuilder.ContainerBuilder
+                .Decorate<IWorkflowInstanceExecutor, LockingWorkflowInstanceExecutor>()
+                .Decorate<IWorkflowInstanceCanceller, LockingWorkflowInstanceCanceller>()
+                .Decorate<IWorkflowInstanceDeleter, LockingWorkflowInstanceDeleter>();
+
+            return containerBuilder;
+        }
+
+        public static IServiceCollection AddElsaCore
+            (
+            this IServiceCollection services)
+        {
+            services.AddWorkflowsCore().AddConfiguration();
+
+            //TenantId default source
+            services.TryAddScoped<ITenantAccessor, DefaultTenantAccessor>();
+
+            return services;
+        }
+
+        /// <summary>
+        /// Starts the specified workflow upon application startup.
+        /// </summary>
+        public static ContainerBuilder StartWorkflow<T>(this ElsaOptionsBuilder elsaOptions) where T : class, IWorkflow
+        {
+            elsaOptions.AddWorkflow<T>();
+            return elsaOptions.ContainerBuilder.AddHostedService<StartWorkflow<T>>();
+        }
+
+        /// <summary>
+        /// Registers a consumer and associated message type using the competing consumer pattern. With the competing consumer pattern, only the first consumer on a given node to obtain a message will handle that message.
+        /// This is in contrast to the Publisher-Subscriber pattern, where a message will be delivered to the consumer on all nodes in a cluster. To register a Publisher-Subscriber consumer, use <seealso cref="AddPubSubConsumer{TConsumer,TMessage}"/>
+        /// </summary>
+        public static ElsaOptionsBuilder AddCompetingConsumer<TConsumer, TMessage>(this ElsaOptionsBuilder elsaOptions, string? queueName = default) where TConsumer : class, IHandleMessages<TMessage>
+        {
+            elsaOptions.AddCompetingConsumerService<TConsumer, TMessage>();
+            elsaOptions.AddCompetingMessageType<TMessage>(queueName);
+            return elsaOptions;
+        }
+
+        private static ElsaOptionsBuilder AddCompetingConsumerService<TConsumer, TMessage>(this ElsaOptionsBuilder elsaOptions) where TConsumer : class, IHandleMessages<TMessage>
+        {
+            elsaOptions.ContainerBuilder.AddTransient<IHandleMessages<TMessage>, TConsumer>();
+            return elsaOptions;
+        }
+
+        public static ElsaOptionsBuilder AddPubSubConsumer<TConsumer, TMessage>(this ElsaOptionsBuilder elsaOptions, string? queueName = default) where TConsumer : class, IHandleMessages<TMessage>
+        {
+            elsaOptions.ContainerBuilder.AddTransient<IHandleMessages<TMessage>, TConsumer>();
+            elsaOptions.AddPubSubMessageType<TMessage>(queueName);
+            return elsaOptions;
+        }
+
+        public static IServiceCollection AddActivityPropertyOptionsProvider<T>(this IServiceCollection services) where T : class, IActivityPropertyOptionsProvider => services.AddSingleton<IActivityPropertyOptionsProvider, T>();
+        public static IServiceCollection AddRuntimeSelectItemsProvider<T>(this IServiceCollection services) where T : class, IRuntimeSelectListItemsProvider => services.AddScoped<IRuntimeSelectListItemsProvider, T>();
+
+        public static ContainerBuilder AddActivityTypeProvider<T>(this ContainerBuilder services) where T : class, IActivityTypeProvider => services.AddMultiton<IActivityTypeProvider, T>();
+
+        public static ContainerBuilder AddWorkflowStorageProvider<T>(this ContainerBuilder services) where T : class, IWorkflowStorageProvider =>
+            services
+                .AddMultiton<T>()
+                .AddMultiton<IWorkflowStorageProvider>(sp => sp.GetRequiredService<T>());
+
+        private static IServiceCollection AddWorkflowsCore(this IServiceCollection services)
+        {
+            services
+                .TryAddSingleton<IClock>(SystemClock.Instance);
+
+            services
+                .AddLogging()
+                .AddLocalization();
 
             // Data Protection.
             services.AddDataProtection();
@@ -215,20 +275,11 @@ namespace Microsoft.Extensions.DependencyInjection
                 .TryAddProvider<IExpressionHandler, SwitchHandler>(ServiceLifetime.Singleton)
                 .AddScoped<IExpressionEvaluator, ExpressionEvaluator>();
 
-            // Workflow providers.
-            services
-                .AddWorkflowProvider<ProgrammaticWorkflowProvider>()
-                .AddWorkflowProvider<BlobStorageWorkflowProvider>()
-                .AddWorkflowProvider<DatabaseWorkflowProvider>();
+            //// Workflow providers.
 
             services.Configure<BlobStorageWorkflowProviderOptions>(o => o.BlobStorageFactory = StorageFactory.Blobs.InMemory);
 
-            // Workflow Storage Providers.
-            services
-                .AddSingleton<IWorkflowStorageService, WorkflowStorageService>()
-                .AddWorkflowStorageProvider<TransientWorkflowStorageProvider>()
-                .AddWorkflowStorageProvider<WorkflowInstanceWorkflowStorageProvider>()
-                .AddWorkflowStorageProvider<BlobStorageWorkflowStorageProvider>();
+            //// Workflow Storage Providers.
 
             services.Configure<BlobStorageWorkflowStorageProviderOptions>(o => o.BlobStorageFactory = StorageFactory.Blobs.InMemory);
 
@@ -239,35 +290,13 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IActivityPropertyDefaultValueResolver, ActivityPropertyDefaultValueResolver>()
                 .AddSingleton<IActivityPropertyUIHintResolver, ActivityPropertyUIHintResolver>();
 
-            // Bookmarks.
-            services
-                .AddSingleton<IBookmarkHasher, BookmarkHasher>()
-                .AddSingleton<IBookmarkSerializer, BookmarkSerializer>()
-                .AddScoped<IBookmarkIndexer, BookmarkIndexer>()
-                .AddScoped<IBookmarkFinder, BookmarkFinder>()
-                .AddScoped<ITriggerIndexer, TriggerIndexer>()
-                .AddScoped<IGetsTriggersForWorkflowBlueprints, TriggersForBlueprintsProvider>()
-                .AddTransient<IGetsTriggersForActivityBlueprintAndWorkflow, TriggersForActivityBlueprintAndWorkflowProvider>()
-                .AddScoped<ITriggerFinder, TriggerFinder>()
-                .AddScoped<ITriggerRemover, TriggerRemover>()
-                .AddBookmarkProvider<SignalReceivedBookmarkProvider>()
-                .AddBookmarkProvider<RunWorkflowBookmarkProvider>();
-
             // Mediator.
             services
                 .AddMediatR(mediatr => mediatr.AsScoped(), typeof(IActivity), typeof(LogWorkflowExecution));
 
-            // Service Bus.
-            services
-                .AddSingleton<ServiceBusFactory>()
-                .AddSingleton<IServiceBusFactory>(sp => sp.GetRequiredService<ServiceBusFactory>())
-                .AddSingleton<ICommandSender, CommandSender>()
-                .AddSingleton<IEventPublisher, EventPublisher>();
+            //// Service Bus.
 
-            elsaOptions
-                .AddCompetingConsumer<TriggerWorkflowsRequestConsumer, TriggerWorkflowsRequest>("ExecuteWorkflow")
-                .AddCompetingConsumer<ExecuteWorkflowDefinitionRequestConsumer, ExecuteWorkflowDefinitionRequest>("ExecuteWorkflow")
-                .AddCompetingConsumer<ExecuteWorkflowInstanceRequestConsumer, ExecuteWorkflowInstanceRequest>("ExecuteWorkflow");
+            
 
             // AutoMapper.
             services
@@ -280,8 +309,8 @@ namespace Microsoft.Extensions.DependencyInjection
             // Caching.
             services
                 .AddMemoryCache()
-                .AddScoped<ISignaler, Signaler>()
-                .Decorate<IWorkflowRegistry, CachingWorkflowRegistry>();
+                .AddScoped<ISignaler, Signaler>();
+//                .Decorate<IWorkflowRegistry, CachingWorkflowRegistry>();
 
             // Builder API.
             services
@@ -289,15 +318,21 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddTransient<ICompositeActivityBuilder, CompositeActivityBuilder>()
                 .AddTransient<Func<IWorkflowBuilder>>(sp => sp.GetRequiredService<IWorkflowBuilder>);
 
-            return elsaOptions;
+            return services;
         }
 
-        private static ElsaOptionsBuilder AddConfiguration(this ElsaOptionsBuilder options)
+        public static ElsaOptionsBuilder AddElsaMultitenancy(this ElsaOptionsBuilder options)
+        {
+            options.Services.AddSingleton<ITenantStore, ConfigurationTenantStore>();
+            return options;
+        }
+
+        private static IServiceCollection AddConfiguration(this IServiceCollection services)
         {
             // When using Elsa in console apps, no configuration will be registered by default, but some Elsa services depend on this service (even when there is nothing configured).
-            options.Services.TryAdd(new ServiceDescriptor(typeof(IConfiguration), _ => new ConfigurationBuilder().AddInMemoryCollection().Build(), ServiceLifetime.Singleton));
+            services.TryAdd(new ServiceDescriptor(typeof(IConfiguration), _ => new ConfigurationBuilder().AddInMemoryCollection().Build(), ServiceLifetime.Singleton));
 
-            return options;
+            return services;
         }
 
         private static ElsaOptionsBuilder AddCoreActivities(this ElsaOptionsBuilder options)

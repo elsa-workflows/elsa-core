@@ -70,6 +70,8 @@ namespace Elsa.Activities.RabbitMq.Testing
 
         public async Task DisposeTestWorkersAsync(string workflowInstance)
         {
+            if (!_workers.ContainsKey(workflowInstance)) return;
+
             foreach (var worker in _workers[workflowInstance])
             {
                 await worker.DisposeAsync();

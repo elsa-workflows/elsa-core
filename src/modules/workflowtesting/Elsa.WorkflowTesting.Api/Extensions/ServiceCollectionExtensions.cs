@@ -1,3 +1,5 @@
+using Autofac;
+using Elsa.Extensions;
 using Elsa.Server.Api.Services;
 using Elsa.WorkflowTesting.Api.Handlers;
 using Elsa.WorkflowTesting.Api.Services;
@@ -8,7 +10,7 @@ namespace Elsa.WorkflowTesting.Api.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddWorkflowTestingServices(this IServiceCollection services)
+        public static ContainerBuilder AddWorkflowTestingServices(this ContainerBuilder services)
         {
             return services
                 .AddScoped<IWorkflowTestLaunchpad, WorkflowTestLaunchpad>()

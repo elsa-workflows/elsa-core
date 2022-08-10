@@ -20,7 +20,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
 {
     [ApiController]
     [ApiVersion("1")]
-    [Route("v{apiVersion:apiVersion}/workflow-instances")]
+    [Route("{tenant}/v{apiVersion:apiVersion}/workflow-instances")]
     [Produces("application/json")]
     public class List : Controller
     {

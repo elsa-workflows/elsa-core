@@ -1,14 +1,18 @@
 using System;
-using MassTransit;
-using Elsa.Samples.MassTransitRabbitMq.Messages;
-using Elsa.Samples.MassTransitRabbitMq.Workflows;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
-using Elsa.Activities.MassTransit.Extensions;
+using Autofac;
+using Autofac.Extensions.DependencyInjection;
+using Autofac.Multitenant;
 using Elsa.Activities.MassTransit.Consumers;
+using Elsa.Activities.MassTransit.Extensions;
+using Elsa.Multitenancy;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
 using Elsa.Samples.MassTransitRabbitMq.Handlers;
+using Elsa.Samples.MassTransitRabbitMq.Messages;
+using Elsa.Samples.MassTransitRabbitMq.Workflows;
+using MassTransit;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Samples.MassTransitRabbitMq
 {
@@ -41,20 +45,29 @@ namespace Elsa.Samples.MassTransitRabbitMq
                 })
                 .AddMassTransitHostedService();
 
-            services
-                .AddElsa(options => options
+            services.AddElsaServices();
+
+            // Register custom type definitions for intellisense.
+            services.AddJavaScriptTypeDefinitionProvider<MessageTypeDefinitionProvider>();
+        }
+
+        public void ConfigureContainer(ContainerBuilder builder)
+        {
+            // This will all go in the ROOT CONTAINER and is NOT TENANT SPECIFIC.
+
+            var services = new ServiceCollection();
+
+            builder.ConfigureElsaServices(services, elsa => elsa
                     .UseEntityFrameworkPersistence(ef => ef.UseSqlite())
                     .AddConsoleActivities()
                     .AddMassTransitActivities()
                     .AddWorkflow<TestWorkflow>()
-                    .AddWorkflow<InterfaceTestWorkflow>()
-                );
+                    .AddWorkflow<InterfaceTestWorkflow>());
 
             // Register notification handlers from this project. Will register ConfigureJavaScriptEngine.
-            services.AddNotificationHandlersFrom<Startup>();
+            builder.AddNotificationHandlersFrom<Startup>();
 
-            // Register custom type definitions for intellisense.
-            services.AddJavaScriptTypeDefinitionProvider<MessageTypeDefinitionProvider>();
+            builder.Populate(services);
         }
 
         public void Configure(IApplicationBuilder app)
@@ -66,6 +79,11 @@ namespace Elsa.Samples.MassTransitRabbitMq
             {
                 endpoints.MapControllers();
             });
+        }
+
+        public static MultitenantContainer ConfigureMultitenantContainer(IContainer container)
+        {
+            return MultitenantContainerFactory.CreateSampleMultitenantContainer(container);
         }
     }
 }

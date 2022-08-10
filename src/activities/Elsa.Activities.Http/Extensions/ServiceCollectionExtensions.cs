@@ -12,6 +12,7 @@ using Elsa.Activities.Http.Scripting.JavaScript;
 using Elsa.Activities.Http.Scripting.Liquid;
 using Elsa.Activities.Http.Services;
 using Elsa.Events;
+using Elsa.Extensions;
 using Elsa.Options;
 using Elsa.Scripting.JavaScript.Providers;
 using Elsa.Scripting.Liquid.Extensions;
@@ -43,7 +44,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
             services.AddAuthorizationCore();
 
-            services
+            options.ContainerBuilder
                 .AddSingleton<IHttpRequestBodyParser, DefaultHttpRequestBodyParser>()
                 .AddSingleton<IHttpRequestBodyParser, JsonHttpRequestBodyParser>()
                 .AddSingleton<IHttpRequestBodyParser, XmlHttpRequestBodyParser>()
@@ -53,16 +54,18 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IHttpResponseContentReader, JTokenHttpResponseContentReader>()
                 .AddSingleton<IHttpResponseContentReader, FileHttpResponseContentReader>()
                 .AddSingleton<IActionContextAccessor, ActionContextAccessor>()
-                .AddSingleton<IActivityTypeDefinitionRenderer, HttpEndpointTypeDefinitionRenderer>()
-                .AddSingleton<IAbsoluteUrlProvider, DefaultAbsoluteUrlProvider>()
-                .AddSingleton<IRouteMatcher, RouteMatcher>()
-                .AddSingleton<IRouteTable, RouteTable>()
-                .AddSingleton<AllowAnonymousHttpEndpointAuthorizationHandler>()
-                .AddSingleton(sp => sp.GetRequiredService<IOptions<HttpActivityOptions>>().Value.HttpEndpointAuthorizationHandlerFactory(sp))
-                .AddSingleton(sp => sp.GetRequiredService<IOptions<HttpActivityOptions>>().Value.HttpEndpointWorkflowFaultHandlerFactory(sp))
+                .AddMultiton<IActivityTypeDefinitionRenderer, HttpEndpointTypeDefinitionRenderer>()
+                .AddMultiton<IAbsoluteUrlProvider, DefaultAbsoluteUrlProvider>()
+                .AddMultiton<IRouteMatcher, RouteMatcher>()
+                .AddMultiton<IRouteTable, RouteTable>()
+                .AddMultiton<AllowAnonymousHttpEndpointAuthorizationHandler>()
+                .AddMultiton(sp => sp.GetRequiredService<IOptions<HttpActivityOptions>>().Value.HttpEndpointAuthorizationHandlerFactory(sp))
+                .AddMultiton(sp => sp.GetRequiredService<IOptions<HttpActivityOptions>>().Value.HttpEndpointWorkflowFaultHandlerFactory(sp))
                 .AddBookmarkProvider<HttpEndpointBookmarkProvider>()
+                .AddNotificationHandlers(typeof(ConfigureJavaScriptEngine));
+
+            services
                 .AddHttpContextAccessor()
-                .AddNotificationHandlers(typeof(ConfigureJavaScriptEngine))
                 .AddLiquidFilter<SignalUrlFilter>("signal_url")
                 .AddJavaScriptTypeDefinitionProvider<HttpTypeDefinitionProvider>()
 

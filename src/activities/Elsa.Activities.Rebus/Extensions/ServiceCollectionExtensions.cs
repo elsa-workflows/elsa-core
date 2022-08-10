@@ -3,6 +3,7 @@ using Elsa.Activities.Rebus;
 using Elsa.Activities.Rebus.Bookmarks;
 using Elsa.Activities.Rebus.Consumers;
 using Elsa.Activities.Rebus.StartupTasks;
+using Elsa.Extensions;
 using Elsa.Options;
 using Elsa.Runtime;
 using Rebus.Handlers;
@@ -14,7 +15,7 @@ namespace Microsoft.Extensions.DependencyInjection
     {
         public static ElsaOptionsBuilder AddRebusActivities(this ElsaOptionsBuilder options, params Type[] messageTypes)
         {
-            var services = options.Services;
+            var services = options.ContainerBuilder;
 
             foreach (var messageType in messageTypes)
             {

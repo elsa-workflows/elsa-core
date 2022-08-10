@@ -1,6 +1,8 @@
 using System;
 using System.Threading.Tasks;
 using Elsa.Activities.Signaling.Services;
+using Elsa.Extensions;
+using Elsa.Multitenancy;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -14,15 +16,12 @@ namespace Elsa.Samples.SignalingConsole
         private static async Task Main()
         {
             // Create a service container with Elsa services.
-            var services = new ServiceCollection()
-                .AddElsa(options => options
-                    .AddConsoleActivities()
-                    .AddWorkflowsFrom<SignalReceiverWorkflow>())
-                .BuildServiceProvider();
+            var serviceCollection = new ServiceCollection().AddElsaServices();
 
-            // Run startup actions (will index triggers such as SignalReceived from workflows).
-            var startupRunner = services.GetRequiredService<IStartupRunner>();
-            await startupRunner.StartupAsync();
+            var services = MultitenantContainerFactory.CreateSampleMultitenantContainer(serviceCollection,
+                options => options
+                    .AddConsoleActivities()
+                    .AddWorkflowsFrom<SignalReceiverWorkflow>());
             
             Console.WriteLine("Press enter to send a signal from a workflow:");
             Console.ReadLine();

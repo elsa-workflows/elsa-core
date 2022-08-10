@@ -15,7 +15,7 @@ public class SampleHttpWorkflow : IWorkflow
             .WithMethod(HttpMethod.Post.Method)
             .WithContent("{\"email\": \"peter@klaven\"}")
             .WithReadContent(true)
-            .WithSupportedHttpCodes(new[]{ 200, 400 }),
+            .WithSupportedHttpCodes(new[] { 200, 400 }),
             activity =>
             {
                 activity.When("200").WriteLine("OK!");

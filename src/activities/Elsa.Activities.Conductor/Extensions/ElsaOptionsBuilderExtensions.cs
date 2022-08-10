@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using Autofac;
 using Elsa.Activities.Conductor.Consumers;
 using Elsa.Activities.Conductor.Models;
 using Elsa.Activities.Conductor.Options;
@@ -8,6 +9,7 @@ using Elsa.Activities.Conductor.Providers.Commands;
 using Elsa.Activities.Conductor.Providers.Events;
 using Elsa.Activities.Conductor.Providers.Tasks;
 using Elsa.Activities.Conductor.Services;
+using Elsa.Extensions;
 using Elsa.Options;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -27,7 +29,7 @@ namespace Elsa.Activities.Conductor.Extensions
             services.ConfigureCommandsHttpClient(configureHttpClient);
             services.ConfigureTasksHttpClient(configureHttpClient);
 
-            services
+            elsa.ContainerBuilder
                 .AddCommandsProvider<OptionsCommandsProvider>()
                 .AddEventsProvider<OptionsEventsProvider>()
                 .AddTasksProvider<OptionsTasksProvider>()
@@ -45,9 +47,9 @@ namespace Elsa.Activities.Conductor.Extensions
             return elsa;
         }
 
-        public static IServiceCollection AddCommandsProvider<T>(this IServiceCollection services) where T : class, ICommandsProvider => services.AddScoped<ICommandsProvider, T>();
-        public static IServiceCollection AddEventsProvider<T>(this IServiceCollection services) where T : class, IEventsProvider => services.AddScoped<IEventsProvider, T>();
-        public static IServiceCollection AddTasksProvider<T>(this IServiceCollection services) where T : class, ITasksProvider => services.AddScoped<ITasksProvider, T>();
+        public static ContainerBuilder AddCommandsProvider<T>(this ContainerBuilder services) where T : class, ICommandsProvider => services.AddScoped<ICommandsProvider, T>();
+        public static ContainerBuilder AddEventsProvider<T>(this ContainerBuilder services) where T : class, IEventsProvider => services.AddScoped<IEventsProvider, T>();
+        public static ContainerBuilder AddTasksProvider<T>(this ContainerBuilder services) where T : class, ITasksProvider => services.AddScoped<ITasksProvider, T>();
 
         private static void ConfigureCommandsHttpClient(this IServiceCollection services, Action<IHttpClientBuilder>? configureHttpClient = default) => services.ConfigureHttpClient<ApplicationCommandsClient>(o => o.CommandsHookUrl, configureHttpClient);
         private static void ConfigureTasksHttpClient(this IServiceCollection services, Action<IHttpClientBuilder>? configureHttpClient = default) => services.ConfigureHttpClient<ApplicationTasksClient>(o => o.CommandsHookUrl, configureHttpClient);

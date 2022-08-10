@@ -7,6 +7,8 @@ using Elsa.Expressions;
 using Elsa.Options;
 using Elsa.Scripting.JavaScript.Typings;
 using Elsa.Scripting.JavaScript.Providers;
+using Autofac;
+using Elsa.Extensions;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -33,6 +35,8 @@ namespace Microsoft.Extensions.DependencyInjection
         }
 
         public static IServiceCollection AddJavaScriptTypeDefinitionProvider<T>(this IServiceCollection services) where T: class, ITypeDefinitionProvider => services.AddScoped<ITypeDefinitionProvider, T>();
+
+        public static ContainerBuilder AddJavaScriptTypeDefinitionProvider<T>(this ContainerBuilder services) where T : class, ITypeDefinitionProvider => services.AddScoped<ITypeDefinitionProvider, T>();
 
         public static IServiceCollection AddTypeScriptDefinitionProvider<T>(this IServiceCollection services) where T : class, ITypeScriptDefinitionProvider => services.AddScoped<ITypeScriptDefinitionProvider, T>();
 

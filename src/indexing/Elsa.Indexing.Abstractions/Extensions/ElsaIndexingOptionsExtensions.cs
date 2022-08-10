@@ -10,7 +10,7 @@ namespace Elsa.Indexing.Extensions
     {
         public static ElsaOptionsBuilder UseIndexing(this ElsaOptionsBuilder options, Action<ElsaIndexingOptions> configure)
         {
-            var indexingOptions = new ElsaIndexingOptions(options.Services);
+            var indexingOptions = new ElsaIndexingOptions(options.Services, options.ContainerBuilder);
             configure.Invoke(indexingOptions);
 
             ServiceRegistrar.AddMediatRClasses(options.Services, new[] { Assembly.GetExecutingAssembly() }, new MediatRServiceConfiguration());

@@ -1,16 +1,15 @@
+using System.Threading;
+using System.Threading.Tasks;
 using Elsa.Secrets.Api.Models;
 using Elsa.Secrets.Models;
 using Elsa.Secrets.Persistence;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Elsa.Secrets.Api.Endpoints
 {
     [ApiController]
     [ApiVersion("1")]
-    [Route("v{apiVersion:apiVersion}/secrets")]
+    [Route("{tenant}/v{apiVersion:apiVersion}/secrets")]
     [Produces("application/json")]
     public class Save : Controller
     {

@@ -1,12 +1,11 @@
+using System;
+using Elsa.Extensions;
 using Elsa.Indexing.Models;
 using Elsa.Indexing.Profiles;
 using Elsa.Indexing.Services;
 using Elsa.Runtime;
-
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-
-using System;
 
 namespace Elsa.Indexing.Extensions
 {
@@ -16,12 +15,12 @@ namespace Elsa.Indexing.Extensions
         {
             options.Services.Configure(configure);
 
-            options.Services
+            options.ContainerBuilder
                 .AddScoped<IWorkflowDefinitionSearch, WorkflowDefinitionSearch>()
                 .AddScoped<IWorkflowInstanceSearch, WorkflowInstanceSearch>()
                 .AddScoped<IWorkflowDefinitionIndexer, WorkflowDefinitionIndexer>()
                 .AddScoped<IWorkflowInstanceIndexer, WorkflowInstanceIndexer>()
-                .AddSingleton<ElasticsearchContext>()
+                .AddMultiton<ElasticsearchContext>()
                 .AddScoped(services =>
                 {
                     var context = services.GetRequiredService<ElasticsearchContext>();
@@ -36,8 +35,9 @@ namespace Elsa.Indexing.Extensions
 
                      return new ElasticsearchStore<ElasticWorkflowDefinition>(context, indexName);
                 })
-                .AddAutoMapperProfile<ElasticsearchProfile>()
                 .AddStartupTask<ElasticsearchInitializer>();
+
+            options.Services.AddAutoMapperProfile<ElasticsearchProfile>();
 
             return options;
         }

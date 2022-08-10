@@ -12,7 +12,7 @@ namespace Elsa.Server.Api.Endpoints.Features
 {
     [ApiController]
     [ApiVersion("1")]
-    [Route("v{apiVersion:apiVersion}/features")]
+    [Route("{tenant}/v{apiVersion:apiVersion}/features")]
     [Produces("application/json")]
     public class List : Controller
     {

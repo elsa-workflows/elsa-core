@@ -1,7 +1,13 @@
+using Elsa.Multitenancy;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 var builder = WebApplication.CreateBuilder(args);
-var services = builder.Services;
+
+builder.Host.UseServiceProviderFactory(
+    new AutofacMultitenantServiceProviderFactory(container => MultitenantContainerFactory.CreateSampleMultitenantContainer(container)));
+
+var services = builder.Services.AddElsaServices();
+
 var configuration = builder.Configuration;
 
 // Add services.
@@ -16,7 +22,6 @@ services.AddAuthentication(options =>
 }).AddJwtBearer(options => configuration.GetSection("Auth0").Bind(options));
 
 services.AddAuthorization();
-services.AddElsa();
 
 // Build app.
 var app = builder.Build();

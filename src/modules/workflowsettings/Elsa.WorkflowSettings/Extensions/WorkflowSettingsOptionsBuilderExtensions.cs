@@ -1,3 +1,4 @@
+using Elsa.Extensions;
 using Elsa.Options;
 using Elsa.WorkflowSettings.Handlers;
 using Elsa.WorkflowSettings.Persistence;
@@ -12,7 +13,7 @@ namespace Elsa.WorkflowSettings.Extensions
     {
         public static ElsaOptionsBuilder AddWorkflowSettings(this ElsaOptionsBuilder elsaOptions)
         {
-            elsaOptions.Services
+            elsaOptions.ContainerBuilder
                 .AddScoped<IWorkflowSettingsManager, WorkflowSettingsManager>()
                 .Decorate<IWorkflowSettingsStore, InitializingWorkflowSettingsStore>()
                 .Decorate<IWorkflowSettingsStore, EventPublishingWorkflowSettingsStore>()

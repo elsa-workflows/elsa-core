@@ -7,6 +7,7 @@ using Elsa.Activities.Mqtt.StartupTasks;
 using Elsa.Activities.Mqtt.Testing;
 using Elsa.Activities.Mqtt.Testing.Handlers;
 using Elsa.Events;
+using Elsa.Extensions;
 using Elsa.Options;
 using Elsa.Runtime;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,15 +18,15 @@ namespace Elsa.Activities.Mqtt.Extensions
     {
         public static ElsaOptionsBuilder AddMqttActivities(this ElsaOptionsBuilder options)
         {
-            options.Services
-                .AddSingleton<BusClientFactory>()
-                .AddSingleton<IMessageReceiverClientFactory>(sp => sp.GetRequiredService<BusClientFactory>())
-                .AddSingleton<IMessageSenderClientFactory>(sp => sp.GetRequiredService<BusClientFactory>())
-                .AddSingleton<IMqttTopicsStarter, MqttTopicsStarter>()
+            options.ContainerBuilder
+                .AddMultiton<BusClientFactory>()
+                .AddMultiton<IMessageReceiverClientFactory>(sp => sp.GetRequiredService<BusClientFactory>())
+                .AddMultiton<IMessageSenderClientFactory>(sp => sp.GetRequiredService<BusClientFactory>())
+                .AddMultiton<IMqttTopicsStarter, MqttTopicsStarter>()
                 .AddStartupTask<StartMqttTopics>()
-                .AddBookmarkProvider<MessageReceivedBookmarkProvider>()
-                .AddSingleton<IMqttTestClientManager, MqttTestClientManager>()
-                .AddNotificationHandlersFrom<ConfigureMqttActivitiesForTestHandler>();
+                .AddMultiton<IMqttTestClientManager, MqttTestClientManager>()
+                .AddNotificationHandlersFrom<ConfigureMqttActivitiesForTestHandler>()
+                .AddBookmarkProvider<MessageReceivedBookmarkProvider>();
 
             options.AddPubSubConsumer<RestartMqttTopicsConsumer, TriggerIndexingFinished>("WorkflowManagementEvents");
             options.AddPubSubConsumer<RestartMqttTopicsConsumer, TriggersDeleted>("WorkflowManagementEvents");

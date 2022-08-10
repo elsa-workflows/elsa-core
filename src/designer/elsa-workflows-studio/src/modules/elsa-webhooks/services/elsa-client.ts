@@ -7,11 +7,15 @@ import {WebhookDefinition, WebhookDefinitionSummary} from "../models";
 
 let _httpClient: AxiosInstance = null;
 let _elsaWebhooksClient: ElsaWebhooksClient = null;
+let _serverUrl: string = null;
+let _baseAddress: string = null;
 
 export const createHttpClient = function(baseAddress: string) : AxiosInstance
 {
-  if(!!_httpClient)
+  if (!!_httpClient && (!baseAddress || _baseAddress === baseAddress))
     return _httpClient;
+
+  _baseAddress = baseAddress;
 
   const config: AxiosRequestConfig = {
     baseURL: baseAddress
@@ -28,9 +32,10 @@ export const createHttpClient = function(baseAddress: string) : AxiosInstance
 }
 
 export const createElsaWebhooksClient = function (serverUrl: string): ElsaWebhooksClient {
-
-  if (!!_elsaWebhooksClient)
+  if (!!_elsaWebhooksClient && (!serverUrl || _serverUrl === serverUrl))
     return _elsaWebhooksClient;
+
+  _serverUrl = serverUrl;
 
   const httpClient: AxiosInstance = createHttpClient(serverUrl);
 

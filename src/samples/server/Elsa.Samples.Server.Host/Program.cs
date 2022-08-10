@@ -12,6 +12,7 @@ namespace Elsa.Samples.Server.Host
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder(args)
+                .UseServiceProviderFactory(new AutofacMultitenantServiceProviderFactory(Startup.ConfigureMultitenantContainer))
                 .ConfigureWebHostDefaults(webBuilder => webBuilder
                     .UseStaticWebAssets()
                     .UseStartup<Startup>())

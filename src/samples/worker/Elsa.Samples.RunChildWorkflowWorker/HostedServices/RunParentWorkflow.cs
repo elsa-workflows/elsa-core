@@ -1,17 +1,17 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.HostedServices;
 using Elsa.Samples.RunChildWorkflowWorker.Workflows;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 
 namespace Elsa.Samples.RunChildWorkflowWorker.HostedServices
 {
     /// <summary>
     /// Runs the parent workflow.
     /// </summary>
-    public class RunParentWorkflow : IHostedService
+    public class RunParentWorkflow : IElsaHostedService
     {
         private readonly IServiceProvider _serviceProvider;
 

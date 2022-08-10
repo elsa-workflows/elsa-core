@@ -1,11 +1,13 @@
 using System;
 using System.Threading.Tasks;
+using Elsa.Extensions;
+using Elsa.Multitenancy;
 using Elsa.Persistence;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
+using Elsa.Persistence.EntityFramework.SqlServer;
 using Elsa.Persistence.Specifications.WorkflowInstances;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
-using Elsa.Persistence.EntityFramework.SqlServer;
 
 namespace Elsa.Samples.Persistence.EntityFramework
 {
@@ -14,13 +16,15 @@ namespace Elsa.Samples.Persistence.EntityFramework
         private static async Task Main()
         {
             // Create a service container with Elsa services.
-            var services = new ServiceCollection()
-                .AddElsa(options => options
+            var serviceCollection = new ServiceCollection().AddElsaServices().AddAutoMapperProfiles<Program>();
+
+            var services = MultitenantContainerFactory.CreateSampleMultitenantContainer(serviceCollection,
+                options => options
                     // Configure Elsa to use the Entity Framework Core persistence provider using one of the three available providers 
                     .UseEntityFrameworkPersistence(ef =>
                     {
                         //ef.UseSqlite();
-                        
+
                         //ef.UsePostgreSql("Server=127.0.0.1;Port=5432;Database=elsa;User Id=postgres;Password=password;");
 
                         //ef.UseMySql("Server=localhost;Port=3306;Database=elsa;User=root;Password=password;");
@@ -28,13 +32,7 @@ namespace Elsa.Samples.Persistence.EntityFramework
                         ef.UseSqlServer("Server=localhost;Database=Elsa;Integrated Security=true");
                     })
                     .AddConsoleActivities()
-                    .AddWorkflow<HelloWorld>())
-                .AddAutoMapperProfiles<Program>()
-                .BuildServiceProvider();
-            
-            // Run startup actions (not needed when registering Elsa with a Host).
-            var startupRunner = services.GetRequiredService<IStartupRunner>();
-            await startupRunner.StartupAsync();
+                    .AddWorkflow<HelloWorld>());
 
             // Get a workflow runner.
             var workflowRunner = services.GetRequiredService<IBuildsAndStartsWorkflow>();
@@ -50,7 +48,7 @@ namespace Elsa.Samples.Persistence.EntityFramework
             var count = await store.CountAsync(new WorkflowDefinitionIdSpecification(nameof(HelloWorld)));
 
             Console.WriteLine(count);
-            
+
             var loadedWorkflowInstance = await store.FindByIdAsync(workflowInstance.Id);
             Console.WriteLine(loadedWorkflowInstance);
         }

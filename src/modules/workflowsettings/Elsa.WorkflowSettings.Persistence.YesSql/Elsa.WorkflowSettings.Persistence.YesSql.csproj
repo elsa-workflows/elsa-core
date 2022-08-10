@@ -21,6 +21,7 @@
     </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\core\Elsa.Abstractions\Elsa.Abstractions.csproj" />
     <ProjectReference Include="..\..\..\core\Elsa.Core\Elsa.Core.csproj" />
     <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.YesSql\Elsa.Persistence.YesSql.csproj" />
     <ProjectReference Include="..\Elsa.WorkflowSettings\Elsa.WorkflowSettings.csproj" />

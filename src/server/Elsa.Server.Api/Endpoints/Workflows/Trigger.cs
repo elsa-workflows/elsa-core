@@ -16,7 +16,7 @@ namespace Elsa.Server.Api.Endpoints.Workflows
 {
     [ApiController]
     [ApiVersion("1")]
-    [Route("v{apiVersion:apiVersion}/workflows/trigger")]
+    [Route("{tenant}/v{apiVersion:apiVersion}/workflows/trigger")]
     [Produces("application/json")]
     public class Trigger : Controller
     {

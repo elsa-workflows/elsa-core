@@ -1,20 +1,18 @@
+using System.Collections.Generic;
+using System.Net.Mime;
+using System.Threading;
+using System.Threading.Tasks;
 using Elsa.Persistence.Specifications;
 using Elsa.Secrets.Models;
 using Elsa.Secrets.Persistence;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using System.Net.Mime;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Elsa.Secrets.Api.Endpoints
 {
     [ApiController]
     [ApiVersion("1")]
-    [Route("v{apiVersion:apiVersion}/secrets")]
+    [Route("{tenant}/v{apiVersion:apiVersion}/secrets")]
     [Produces(MediaTypeNames.Application.Json)]
     public class List : Controller
     {

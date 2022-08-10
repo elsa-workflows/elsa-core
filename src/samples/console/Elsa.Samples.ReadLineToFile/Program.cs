@@ -1,4 +1,6 @@
+using Elsa.Extensions;
 using Elsa.Models;
+using Elsa.Multitenancy;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications;
 using Elsa.Persistence.Specifications.WorkflowInstances;
@@ -13,16 +15,13 @@ namespace Elsa.Samples.ReadLineToFile
     {
         static async Task Main(string[] args)
         {
-            var services = new ServiceCollection()
-                .AddElsa(configure => configure
-                    .AddConsoleActivities()
-                    .AddFileActivities())
-                .AddAutoMapperProfiles<Program>()
-                .BuildServiceProvider();
+            // Create a service container with Elsa services.
+            var serviceCollection = new ServiceCollection().AddElsaServices().AddAutoMapperProfiles<Program>();
 
-            // Run startup actions (not needed when registering Elsa with a Host).
-            var startupRunner = services.GetRequiredService<IStartupRunner>();
-            await startupRunner.StartupAsync();
+            var services = MultitenantContainerFactory.CreateSampleMultitenantContainer(serviceCollection,
+                options => options
+                    .AddConsoleActivities()
+                    .AddFileActivities());
 
             // Get a workflow runner.
             var workflowRunner = services.GetRequiredService<IBuildsAndStartsWorkflow>();

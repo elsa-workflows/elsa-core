@@ -63,6 +63,7 @@ namespace Elsa.Services.Messaging
             _elsaOptions.ConfigureServiceBusEndpoint(configureContext);
 
             var newBus = configurer.Start();
+
             _serviceBuses.Add(prefixedQueueName, newBus);
 
             foreach (var messageType in messageTypeList)

@@ -1,4 +1,6 @@
 using System.Threading.Tasks;
+using Elsa.Extensions;
+using Elsa.Multitenancy;
 using Elsa.Samples.ProgrammaticCompositeActivitiesConsole.Workflows;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,17 +13,15 @@ namespace Elsa.Samples.ProgrammaticCompositeActivitiesConsole
         static async Task Main(string[] args)
         {
             // Create a service container with Elsa services.
-            var services = new ServiceCollection()
-                .AddLogging(logging => logging.AddConsole().SetMinimumLevel(LogLevel.Warning))
-                .AddElsa(options => options
+            var serviceCollection = new ServiceCollection()
+                .AddElsaServices()
+                .AddLogging(logging => logging.AddConsole().SetMinimumLevel(LogLevel.Warning));
+
+            var services = MultitenantContainerFactory.CreateSampleMultitenantContainer(serviceCollection,
+                options => options
                     .AddConsoleActivities()
                     .AddActivitiesFrom<Program>()
-                    .AddWorkflowsFrom<Program>())
-                .BuildServiceProvider();
-
-            // Run startup actions (not needed when registering Elsa with a Host).
-            var startupRunner = services.GetRequiredService<IStartupRunner>();
-            await startupRunner.StartupAsync();
+                    .AddWorkflowsFrom<Program>());
 
             // Get a workflow host.
             var workflowRunner = services.GetRequiredService<IBuildsAndStartsWorkflow>();

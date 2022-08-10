@@ -9,6 +9,7 @@
 
 | Property            | Attribute               | Description | Type                | Default     |
 | ------------------- | ----------------------- | ----------- | ------------------- | ----------- |
+| `basePath`          | `base-path`             |             | `string`            | `''`        |
 | `culture`           | `culture`               |             | `string`            | `undefined` |
 | `history`           | --                      |             | `RouterHistory`     | `undefined` |
 | `serverUrl`         | `server-url`            |             | `string`            | `undefined` |

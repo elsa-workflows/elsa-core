@@ -1,7 +1,11 @@
+using System.Threading.Tasks;
+using Autofac;
+using Autofac.Extensions.DependencyInjection;
+using Elsa.Extensions;
+using Elsa.Multitenancy;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using System.Threading.Tasks;
-using Elsa.Extensions;
 
 namespace Elsa.Samples.DistributedLock
 {
@@ -15,15 +19,21 @@ namespace Elsa.Samples.DistributedLock
 
         private static IHostBuilder CreateHostBuilder() =>
             Host.CreateDefaultBuilder()
-                .ConfigureServices(
-                    (_, services) =>
-                    {
-                        services
-                            .AddRedis("localhost:6379,abortConnect=false")
-                            .AddElsa(elsa => elsa.ConfigureDistributedLockProvider(options => options.UseRedisLockProvider())
+                .UseServiceProviderFactory(new AutofacMultitenantServiceProviderFactory(container => MultitenantContainerFactory.CreateSampleMultitenantContainer(container)))
+                .ConfigureServices((_, services) => services.AddElsaServices().AddRedis("localhost:6379,abortConnect=false"))
+                .ConfigureContainer<ContainerBuilder>(builder =>
+                {
+                    var sc = new ServiceCollection();
+
+                    builder
+                       .ConfigureElsaServices(sc,
+                            options => options
+                                .ConfigureDistributedLockProvider(options => options.UseRedisLockProvider())
                                 .AddConsoleActivities()
                                 .AddQuartzTemporalActivities()
                                 .AddWorkflow<RecurringWorkflow>());
-                    });
+
+                    builder.Populate(sc);
+                });
     }
 }

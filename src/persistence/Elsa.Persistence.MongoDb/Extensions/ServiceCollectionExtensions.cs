@@ -1,4 +1,9 @@
 using System;
+using Autofac;
+using Autofac.Multitenant;
+using Elsa.Extensions;
+using Elsa.Multitenancy;
+using Elsa.Multitenancy.Extensions;
 using Elsa.Options;
 using Elsa.Persistence.MongoDb.Options;
 using Elsa.Persistence.MongoDb.Services;
@@ -11,12 +16,11 @@ namespace Elsa.Persistence.MongoDb
 {
     public static class ServiceCollectionExtensions
     {
-        public static ElsaOptionsBuilder UseMongoDbPersistence(this ElsaOptionsBuilder elsa, Action<ElsaMongoDbOptions> configureOptions) => UseMongoDbPersistence<ElsaMongoDbContext>(elsa, configureOptions);
+        public static ElsaOptionsBuilder UseMongoDbPersistence(this ElsaOptionsBuilder elsa) => UseMongoDbPersistence<ElsaMongoDbContext>(elsa);
         
-        public static ElsaOptionsBuilder UseMongoDbPersistence<TDbContext>(this ElsaOptionsBuilder elsa, Action<ElsaMongoDbOptions> configureOptions) where TDbContext: ElsaMongoDbContext
+        public static ElsaOptionsBuilder UseMongoDbPersistence<TDbContext>(this ElsaOptionsBuilder elsa) where TDbContext: ElsaMongoDbContext
         {
             AddCore<TDbContext>(elsa);
-            elsa.Services.Configure(configureOptions);
 
             return elsa;
         }
@@ -32,19 +36,29 @@ namespace Elsa.Persistence.MongoDb
 
         private static void AddCore<TDbContext>(ElsaOptionsBuilder elsa) where TDbContext : ElsaMongoDbContext
         {
-            elsa.Services
-                .AddSingleton<MongoDbWorkflowDefinitionStore>()
-                .AddSingleton<MongoDbWorkflowInstanceStore>()
-                .AddSingleton<MongoDbWorkflowExecutionLogStore>()
-                .AddSingleton<MongoDbBookmarkStore>()
-                .AddSingleton<MongoDbTriggerStore>()
-                .AddSingleton<TDbContext>()
-                .AddSingleton<ElsaMongoDbContext, TDbContext>()
-                .AddSingleton(sp => sp.GetRequiredService<TDbContext>().WorkflowDefinitions)
-                .AddSingleton(sp => sp.GetRequiredService<TDbContext>().WorkflowInstances)
-                .AddSingleton(sp => sp.GetRequiredService<TDbContext>().WorkflowExecutionLog)
-                .AddSingleton(sp => sp.GetRequiredService<TDbContext>().Bookmarks)
-                .AddSingleton(sp => sp.GetRequiredService<TDbContext>().Triggers)
+            if (elsa.ContainerBuilder == null)
+                throw new ArgumentNullException("Cannot setup Entity Framework persistence for multitenancy when ContainerBuilder is null");
+
+            elsa.ContainerBuilder
+               .Register(cc =>
+               {
+                   var tenant = cc.Resolve<ITenant>();
+                   return new ElsaMongoDbOptions() { ConnectionString = tenant!.GetDatabaseConnectionString()! };
+               }).IfNotRegistered(typeof(ElsaMongoDbOptions)).InstancePerTenant();
+
+            elsa.ContainerBuilder
+                .AddMultiton<MongoDbWorkflowDefinitionStore>()
+                .AddMultiton<MongoDbWorkflowInstanceStore>()
+                .AddMultiton<MongoDbWorkflowExecutionLogStore>()
+                .AddMultiton<MongoDbBookmarkStore>()
+                .AddMultiton<MongoDbTriggerStore>()
+                .AddMultiton<TDbContext>()
+                .AddMultiton<ElsaMongoDbContext, TDbContext>()
+                .AddMultiton(sp => sp.GetRequiredService<TDbContext>().WorkflowDefinitions)
+                .AddMultiton(sp => sp.GetRequiredService<TDbContext>().WorkflowInstances)
+                .AddMultiton(sp => sp.GetRequiredService<TDbContext>().WorkflowExecutionLog)
+                .AddMultiton(sp => sp.GetRequiredService<TDbContext>().Bookmarks)
+                .AddMultiton(sp => sp.GetRequiredService<TDbContext>().Triggers)
                 .AddStartupTask<DatabaseInitializer>();
 
             elsa

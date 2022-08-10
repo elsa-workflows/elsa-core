@@ -13,7 +13,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
 {
     [ApiController]
     [ApiVersion("1")]
-    [Route("v{apiVersion:apiVersion}/workflow-definitions/{definitionId}/revert/{version}")]
+    [Route("{tenant}/v{apiVersion:apiVersion}/workflow-definitions/{definitionId}/revert/{version}")]
     [Produces("application/json")]
     public class Revert : ControllerBase
     {
