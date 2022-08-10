@@ -137,7 +137,7 @@ namespace Elsa.Scripting.JavaScript.Handlers
             {
                 var activityType = await _activityTypeService.GetActivityTypeAsync(activity.Type, cancellationToken);
                 var activityDescriptor = await _activityTypeService.DescribeActivityType(activityType, cancellationToken);
-                var outputProperties = activityDescriptor.OutputProperties;
+                var outputProperties = activityDescriptor.OutputProperties.Where(x => x.IsBrowsable is true or null);
                 var storageProviderLookup = activity.PropertyStorageProviders;
                 var activityModel = new Dictionary<string, object?>();
                 var storageContext = new WorkflowStorageContext(workflowInstance, activity.Id);

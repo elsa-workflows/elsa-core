@@ -99,7 +99,7 @@ namespace Elsa.Scripting.JavaScript.Handlers
 
             async Task RenderActivityTypeDeclarationAsync(ActivityDefinition activityDefinition, ActivityType type, StringBuilder writer)
             {
-                var descriptor = await type.DescribeAsync();
+                var descriptor = await _activityTypeService.DescribeActivityType(type);
                 var renderer = _activityTypeDefinitionRenderers.First(x => x.GetCanRenderType(type));
                 await renderer.RenderTypeDeclarationAsync(notification, type, descriptor, activityDefinition, writer, cancellationToken);
             }
