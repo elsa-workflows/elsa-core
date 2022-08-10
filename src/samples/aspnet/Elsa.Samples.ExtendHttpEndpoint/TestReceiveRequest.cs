@@ -16,6 +16,17 @@ using System.Threading.Tasks;
 
 namespace Elsa.Samples.ExtendHttpEndpoint
 {
+    /**
+     * Demonstrate how to make your own HTTP Endpoint like activity by extending HttpEndpoint class.
+     * 
+     * In you derived activity you can set default values for existing HttpEndpoint input parameters and you can add your own input and output parameters.
+     * In OnExecuteAsync you make use of new input parameters and, after invoking base OnExecuteAsync, fill new output parameters (and clear ones in base you don't need).
+     * In the INotificationHandler<DescribingActivityType> you can hide input and output parameters you don't want to be seen.
+     * You need to implement your BookmarkProvider<HttpEndpointBookmark, TestReceiveRequest> , make sure to use nameof(HttpEndpoint)
+     * as second parameter to result because HttpEndpointMiddleware looks up bookmarks with that activity type. 
+     * In bookmark you can hardcode path and/or methods too.
+     */
+
     public class CustomizeTestReceiveRequest : INotificationHandler<DescribingActivityType>
     {
         // hiding some properties from UI
@@ -66,6 +77,7 @@ namespace Elsa.Samples.ExtendHttpEndpoint
             if (Output != null)
             {
                 Body = Output.Body;
+                Output = null;
             }
 
             return baseRes;
