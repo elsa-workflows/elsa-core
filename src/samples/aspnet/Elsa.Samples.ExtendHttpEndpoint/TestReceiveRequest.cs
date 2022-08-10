@@ -26,9 +26,14 @@ namespace Elsa.Samples.ExtendHttpEndpoint
             if (descriptor.Type != nameof(TestReceiveRequest))
                 return Task.CompletedTask;
 
-            var hiddenProperties = descriptor.InputProperties.Where(x => x.Name != "Path");
+            var hiddenInputProperties = descriptor.InputProperties.Where(x => x.Name != "Path");
 
-            foreach (var hiddenProperty in hiddenProperties)
+            foreach (var hiddenProperty in hiddenInputProperties)
+                hiddenProperty.IsBrowsable = false;
+
+            var hiddenOutputProperties = descriptor.OutputProperties.Where(x => x.Name != "Body");
+
+            foreach (var hiddenProperty in hiddenOutputProperties)
                 hiddenProperty.IsBrowsable = false;
 
             return Task.CompletedTask;

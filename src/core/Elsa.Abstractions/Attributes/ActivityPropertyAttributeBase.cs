@@ -13,7 +13,12 @@ namespace Elsa.Attributes
         /// A brief description about this property for workflow tooling to use when displaying activity editors.
         /// </summary>
         public string? Hint { get; set; }
-        
+
+        /// <summary>
+        /// A value indicating whether this property should be visible.
+        /// </summary>
+        public bool IsBrowsable { get; set; } = true;
+
         /// <summary>
         /// The workflow storage provider to use by default to store the output value.
         /// </summary>
