@@ -14,10 +14,10 @@ namespace Elsa.AzureServiceBus.Handlers;
 /// </summary>
 public class UpdateWorkers : INotificationHandler<WorkflowTriggersIndexed>, INotificationHandler<WorkflowBookmarksDeleted>, INotificationHandler<WorkflowBookmarksSaved>
 {
-    private readonly IBookmarkDataSerializer _serializer;
+    private readonly IBookmarkPayloadSerializer _serializer;
     private readonly IWorkerManager _workerManager;
 
-    public UpdateWorkers(IBookmarkDataSerializer serializer, IWorkerManager workerManager)
+    public UpdateWorkers(IBookmarkPayloadSerializer serializer, IWorkerManager workerManager)
     {
         _serializer = serializer;
         _workerManager = workerManager;

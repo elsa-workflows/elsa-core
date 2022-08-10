@@ -26,12 +26,12 @@ public abstract class Trigger : Activity, ITrigger
     /// <summary>
     /// Override this method to return trigger data.
     /// </summary>
-    protected virtual IEnumerable<object> GetTriggerData(TriggerIndexingContext context) => new[] { GetTriggerDatum(context) };
+    protected virtual IEnumerable<object> GetTriggerData(TriggerIndexingContext context) => new[] { GetTriggerPayload(context) };
 
     /// <summary>
     /// Override this method to return a trigger datum.
     /// </summary>
-    protected virtual object GetTriggerDatum(TriggerIndexingContext context) => new();
+    protected virtual object GetTriggerPayload(TriggerIndexingContext context) => new();
 }
 
 public abstract class Trigger<T> : Activity<T>, ITrigger
@@ -55,14 +55,14 @@ public abstract class Trigger<T> : Activity<T>, ITrigger
     /// </summary>
     protected virtual ValueTask<IEnumerable<object>> GetTriggerDataAsync(TriggerIndexingContext context)
     {
-        var hashes = GetTriggerData(context);
+        var hashes = GetTriggerPayload(context);
         return ValueTask.FromResult(hashes);
     }
 
     /// <summary>
     /// Override this method to return trigger data.
     /// </summary>
-    protected virtual IEnumerable<object> GetTriggerData(TriggerIndexingContext context) => new[] { GetTriggerDatum(context) };
+    protected virtual IEnumerable<object> GetTriggerPayload(TriggerIndexingContext context) => new[] { GetTriggerDatum(context) };
 
     /// <summary>
     /// Override this method to return a trigger datum.

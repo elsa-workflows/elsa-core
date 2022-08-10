@@ -6,16 +6,16 @@ namespace Elsa.Workflows.Core.Implementations;
 
 public class Hasher : IHasher
 {
-    private readonly IBookmarkDataSerializer _bookmarkDataSerializer;
+    private readonly IBookmarkPayloadSerializer _bookmarkPayloadSerializer;
 
-    public Hasher(IBookmarkDataSerializer bookmarkDataSerializer)
+    public Hasher(IBookmarkPayloadSerializer bookmarkPayloadSerializer)
     {
-        _bookmarkDataSerializer = bookmarkDataSerializer;
+        _bookmarkPayloadSerializer = bookmarkPayloadSerializer;
     }
     
     public string Hash(object value)
     {
-        var json = _bookmarkDataSerializer.Serialize(value);
+        var json = _bookmarkPayloadSerializer.Serialize(value);
         return Hash(json);
     }
     

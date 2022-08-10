@@ -6,6 +6,8 @@ namespace Elsa.Jobs.Abstractions;
 
 public abstract class Job : IJob
 {
+    public string Id { get; set; } = default!;
+
     ValueTask IJob.ExecuteAsync(JobExecutionContext context) => ExecuteAsync(context);
 
     protected virtual ValueTask ExecuteAsync(JobExecutionContext context)

@@ -111,19 +111,19 @@ public class ActivityExecutionContext
 
     public Bookmark CreateBookmark(ExecuteActivityDelegate callback) => CreateBookmark(default, callback);
 
-    public Bookmark CreateBookmark(object? bookmarkDatum = default, ExecuteActivityDelegate? callback = default)
+    public Bookmark CreateBookmark(object? payload = default, ExecuteActivityDelegate? callback = default)
     {
         var hasher = GetRequiredService<IHasher>();
         var identityGenerator = GetRequiredService<IIdentityGenerator>();
-        var bookmarkDataSerializer = GetRequiredService<IBookmarkDataSerializer>();
-        var bookmarkDatumJson = bookmarkDatum != null ? bookmarkDataSerializer.Serialize(bookmarkDatum) : default;
-        var hash = bookmarkDatumJson != null ? hasher.Hash(bookmarkDatumJson) : default;
+        var payloadSerializer = GetRequiredService<IBookmarkPayloadSerializer>();
+        var payloadJson = payload != null ? payloadSerializer.Serialize(payload) : default;
+        var hash = payloadJson != null ? hasher.Hash(payloadJson) : default;
 
         var bookmark = new Bookmark(
             identityGenerator.GenerateId(),
             Activity.TypeName,
             hash,
-            bookmarkDatumJson,
+            payloadJson,
             Activity.Id,
             Id,
             callback?.Method.Name);

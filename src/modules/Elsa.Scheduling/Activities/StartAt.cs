@@ -41,7 +41,7 @@ public class StartAt : Trigger
 
     [Input] public Input<DateTimeOffset> DateTime { get; set; } = default!;
 
-    protected override object GetTriggerDatum(TriggerIndexingContext context)
+    protected override object GetTriggerPayload(TriggerIndexingContext context)
     {
         var executeAt = context.ExpressionExecutionContext.Get(DateTime);
         return new StartAtPayload(executeAt);

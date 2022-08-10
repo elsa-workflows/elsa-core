@@ -1,4 +1,6 @@
-﻿using Elsa.Workflows.Core.Models;
+﻿using Elsa.Activities.Jobs.Models;
+using Elsa.Jobs.Services;
+using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Activities.Jobs.Activities;
 
@@ -15,6 +17,20 @@ public class JobActivity : ActivityBase
     {
         JobType = jobType;
     }
-    
+
     public Type JobType { get; set; } = default!;
+
+    protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
+    {
+        var jobQueue = context.GetRequiredService<IJobQueue>();
+        var job = (IJob)Activator.CreateInstance(JobType)!;
+        var jobId = await jobQueue.SubmitJobAsync(job, cancellationToken: context.CancellationToken);
+        var bookmarkPayload = new EnqueuedJobPayload(jobId);
+        context.CreateBookmark(bookmarkPayload, Resume);
+    }
+
+    private async ValueTask Resume(ActivityExecutionContext context)
+    {
+        await CompleteAsync(context);
+    }
 }

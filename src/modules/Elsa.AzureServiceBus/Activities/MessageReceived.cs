@@ -55,7 +55,7 @@ public class MessageReceived : Trigger<object>
     /// </summary>
     public IFormatter? Formatter { get; set; }
 
-    protected override object GetTriggerDatum(TriggerIndexingContext context) => GetBookmarkData(context.ExpressionExecutionContext);
+    protected override object GetTriggerDatum(TriggerIndexingContext context) => GetBookmarkPayload(context.ExpressionExecutionContext);
 
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
@@ -63,7 +63,7 @@ public class MessageReceived : Trigger<object>
         if (!context.TryGetInput<ReceivedServiceBusMessageModel>(InputKey, out var receivedMessage))
         {
             // Create bookmarks for when we receive the expected HTTP request.
-            context.CreateBookmark(GetBookmarkData(context.ExpressionExecutionContext), Resume);
+            context.CreateBookmark(GetBookmarkPayload(context.ExpressionExecutionContext), Resume);
             return;
         }
 
@@ -87,7 +87,7 @@ public class MessageReceived : Trigger<object>
         context.Set(Result, body);
     }
 
-    private object GetBookmarkData(ExpressionExecutionContext context)
+    private object GetBookmarkPayload(ExpressionExecutionContext context)
     {
         var queueOrTopic = context.Get(QueueOrTopic)!;
         var subscription = context.Get(Subscription);

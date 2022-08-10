@@ -8,5 +8,5 @@ namespace Elsa.Jobs.Services;
 /// </summary>
 public interface IJobQueue
 {
-    Task SubmitJobAsync(IJob job, string? queueName = default, CancellationToken cancellationToken = default);
+    Task<string> SubmitJobAsync(IJob job, string? queueName = default, CancellationToken cancellationToken = default);
 }

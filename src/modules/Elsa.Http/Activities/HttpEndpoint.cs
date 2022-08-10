@@ -41,7 +41,7 @@ public class HttpEndpoint : Trigger<HttpRequestModel>
     )]
     public Input<string?> Policy { get; set; } = new(default(string?));
 
-    protected override IEnumerable<object> GetTriggerData(TriggerIndexingContext context) => GetBookmarkData(context.ExpressionExecutionContext);
+    protected override IEnumerable<object> GetTriggerPayload(TriggerIndexingContext context) => GetBookmarkPayload(context.ExpressionExecutionContext);
 
     protected override void Execute(ActivityExecutionContext context)
     {
@@ -49,7 +49,7 @@ public class HttpEndpoint : Trigger<HttpRequestModel>
         if (!context.TryGetInput<HttpRequestModel>(InputKey, out var request))
         {
             // Create bookmarks for when we receive the expected HTTP request.
-            context.CreateBookmarks(GetBookmarkData(context.ExpressionExecutionContext));
+            context.CreateBookmarks(GetBookmarkPayload(context.ExpressionExecutionContext));
             return;
         }
 
@@ -57,7 +57,7 @@ public class HttpEndpoint : Trigger<HttpRequestModel>
         context.Set(Result, request);
     }
 
-    private IEnumerable<object> GetBookmarkData(ExpressionExecutionContext context)
+    private IEnumerable<object> GetBookmarkPayload(ExpressionExecutionContext context)
     {
         // Generate bookmark data for path and selected methods.
         var path = context.Get(Path);

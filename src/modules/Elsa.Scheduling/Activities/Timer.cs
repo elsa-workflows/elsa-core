@@ -29,7 +29,7 @@ public class Timer : EventGenerator
     
     [Input] public Input<TimeSpan> Interval { get; set; } = default!;
 
-    protected override object GetTriggerDatum(TriggerIndexingContext context)
+    protected override object GetTriggerPayload(TriggerIndexingContext context)
     {
         var interval = context.ExpressionExecutionContext.Get(Interval);
         var clock = context.ExpressionExecutionContext.GetRequiredService<ISystemClock>();

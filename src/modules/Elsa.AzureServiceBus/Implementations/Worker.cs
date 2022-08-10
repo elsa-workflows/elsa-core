@@ -71,12 +71,10 @@ public class Worker : IAsyncDisposable
     private async Task InvokeWorkflowsAsync(ServiceBusReceivedMessage message, CancellationToken cancellationToken)
     {
         var payload = new MessageReceivedTriggerPayload(QueueOrTopic, Subscription);
-        var hash = _hasher.Hash(payload);
         var correlationId = message.CorrelationId;
         var messageModel = CreateMessageModel(message);
-        var input = new Dictionary<string, object>() { [MessageReceived.InputKey] = messageModel };
-        var stimulus = Stimulus.Standard(BookmarkName, hash, input, correlationId);
-        var executionResults = (await _workflowService.DispatchStimulusAsync(stimulus, cancellationToken)).ToList();
+        var input = new Dictionary<string, object> { [MessageReceived.InputKey] = messageModel };
+        var executionResults = (await _workflowService.DispatchStimulusAsync(BookmarkName, payload, input, correlationId, cancellationToken)).ToList();
 
         _logger.LogInformation("Triggered {WorkflowCount} workflows", executionResults.Count);
     }

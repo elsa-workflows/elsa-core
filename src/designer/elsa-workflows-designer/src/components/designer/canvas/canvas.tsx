@@ -38,6 +38,7 @@ export class Canvas {
 
   @Method()
   public async addActivity(args: AddActivityArgs): Promise<Activity> {
+    console.debug(`Activity type: ${args.descriptor.activityType}`)
     return await this.root.addActivity(args);
   }
 

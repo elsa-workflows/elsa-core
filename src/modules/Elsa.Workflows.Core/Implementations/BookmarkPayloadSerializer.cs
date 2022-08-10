@@ -3,11 +3,11 @@ using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Core.Implementations;
 
-public class BookmarkDataSerializer : IBookmarkDataSerializer
+public class BookmarkPayloadSerializer : IBookmarkPayloadSerializer
 {
     private readonly JsonSerializerOptions _settings;
 
-    public BookmarkDataSerializer()
+    public BookmarkPayloadSerializer()
     {
         _settings = new JsonSerializerOptions
         {

@@ -37,6 +37,7 @@ using Elsa.Workflows.Persistence.Extensions;
 using Elsa.Workflows.Runtime.Extensions;
 using Elsa.WorkflowServer.Web;
 using Elsa.WorkflowServer.Web.Implementations;
+using Elsa.WorkflowServer.Web.Jobs;
 using FastEndpoints;
 using FastEndpoints.Security;
 

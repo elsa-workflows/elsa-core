@@ -17,9 +17,7 @@ interface ActivityCategoryModel {
 })
 export class ToolboxActivities {
   @Prop() graph: Graph;
-  //@State() activityCategoryModels: Array<ActivityCategoryModel> = [];
   private dnd: Addon.Dnd;
-  //private renderedActivities: Map<string, string>;
   @State() private expandedCategories: Array<string> = [];
 
   @Watch('graph')
@@ -33,10 +31,6 @@ export class ToolboxActivities {
       scaled: false,
       animation: true,
     });
-  }
-
-  componentWillLoad() {
-    //this.handleActivityDescriptorsChanged(descriptorsStore.activityDescriptors);
   }
 
   private static onActivityStartDrag(e: DragEvent, activityDescriptor: ActivityDescriptor) {
@@ -54,37 +48,6 @@ export class ToolboxActivities {
     else
       this.expandedCategories = [...expandedCategories, category];
   }
-
-  // handleActivityDescriptorsChanged(value: Array<ActivityDescriptor>) {
-  //   const browsableDescriptors = value.filter(x => x.isBrowsable);
-  //   const categorizedActivitiesLookup = groupBy(browsableDescriptors, x => x.category);
-  //   const categories = Object.keys(categorizedActivitiesLookup);
-  //   const renderedActivities: Map<string, string> = new Map<string, string>();
-  //
-  //   // Group activities by category
-  //   this.activityCategoryModels = categories.map(x => {
-  //     const model: ActivityCategoryModel = {
-  //       category: x,
-  //       expanded: false,
-  //       activities: categorizedActivitiesLookup[x]
-  //     };
-  //
-  //     return model;
-  //   });
-  //
-  //   // Render activities.
-  //   const activityDriverRegistry = Container.get(ActivityDriverRegistry);
-  //
-  //   for (const activityDescriptor of browsableDescriptors) {
-  //     const activityType = activityDescriptor.activityType;
-  //     const driver = activityDriverRegistry.createDriver(activityType);
-  //     const html = driver.display({displayType: 'picker', activityDescriptor: activityDescriptor});
-  //
-  //     renderedActivities.set(activityType, html);
-  //   }
-  //
-  //   this.renderedActivities = renderedActivities;
-  // }
 
   buildModel = (): any => {
     const browsableDescriptors = descriptorsStore.activityDescriptors.filter(x => x.isBrowsable);
@@ -122,8 +85,6 @@ export class ToolboxActivities {
 
   render() {
 
-    // const categoryModels = this.activityCategoryModels;
-    // const renderedActivities = this.renderedActivities;
     const model = this.buildModel();
     const categoryModels = model.categories;
     const renderedActivities = model.activities;

@@ -1,6 +1,7 @@
 using Elsa.Persistence.Common.Models;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Persistence.Models;
+using Elsa.Workflows.Runtime.Attributes;
 using Elsa.Workflows.Runtime.Models;
 
 namespace Elsa.Workflows.Runtime.Services;
@@ -16,5 +17,8 @@ public interface IWorkflowService
     Task<DispatchWorkflowInstanceResponse> DispatchWorkflowAsync(string instanceId, Bookmark bookmark, IDictionary<string, object>? input = default, string? correlationId = default, CancellationToken cancellationToken = default);
     Task<IEnumerable<ExecuteWorkflowInstructionResult>> ExecuteStimulusAsync(IStimulus stimulus, CancellationToken cancellationToken = default);
     Task<IEnumerable<DispatchWorkflowInstructionResult>> DispatchStimulusAsync(IStimulus stimulus, CancellationToken cancellationToken = default);
+    Task<IEnumerable<DispatchWorkflowInstructionResult>> DispatchStimulusAsync(string bookmarkName, object bookmarkPayload, object inputs, string? correlationId = default, CancellationToken cancellationToken = default);
+    Task<IEnumerable<DispatchWorkflowInstructionResult>> DispatchStimulusAsync(string bookmarkName, object bookmarkPayload, IDictionary<string, object> inputs, string? correlationId = default, CancellationToken cancellationToken = default);
+    Task<IEnumerable<DispatchWorkflowInstructionResult>> DispatchStimulusAsync(string bookmarkName, object bookmarkPayload, string? correlationId = default, CancellationToken cancellationToken = default);
         
 }

@@ -65,7 +65,7 @@ public class WorkflowsFeature : FeatureBase
             .AddSingleton<IHasher, Hasher>()
             .AddSingleton<IIdentityGenerator, RandomIdentityGenerator>()
             .AddSingleton<ISystemClock, SystemClock>()
-            .AddSingleton<IBookmarkDataSerializer, BookmarkDataSerializer>()
+            .AddSingleton<IBookmarkPayloadSerializer, BookmarkPayloadSerializer>()
             .AddTransient<WorkflowDefinitionBuilder>()
             .AddSingleton(typeof(Func<IWorkflowDefinitionBuilder>), sp => () => sp.GetRequiredService<WorkflowDefinitionBuilder>())
             .AddSingleton<IWorkflowDefinitionBuilderFactory, WorkflowDefinitionBuilderFactory>()

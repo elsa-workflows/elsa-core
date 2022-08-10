@@ -5,5 +5,6 @@ namespace Elsa.Jobs.Services;
 
 public interface IJob
 {
+    string Id { get; set; }
     ValueTask ExecuteAsync(JobExecutionContext context);
 }
