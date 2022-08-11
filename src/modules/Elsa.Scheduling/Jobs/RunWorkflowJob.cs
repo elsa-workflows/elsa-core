@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Elsa.Jobs.Abstractions;
 using Elsa.Jobs.Models;
 using Elsa.Persistence.Common.Models;
-using Elsa.Workflows.Persistence.Models;
 using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Services;
 

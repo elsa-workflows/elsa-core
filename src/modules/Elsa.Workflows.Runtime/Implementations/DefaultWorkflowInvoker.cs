@@ -3,7 +3,6 @@ using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Persistence.Entities;
-using Elsa.Workflows.Persistence.Models;
 using Elsa.Workflows.Persistence.Services;
 using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Services;

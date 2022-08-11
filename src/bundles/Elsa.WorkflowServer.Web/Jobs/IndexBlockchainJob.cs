@@ -1,5 +1,5 @@
-using Elsa.Activities.Jobs.Features;
 using Elsa.Jobs.Abstractions;
+using Elsa.Jobs.Activities.Features;
 using Elsa.Jobs.Models;
 using Elsa.Jobs.Services;
 
@@ -7,7 +7,7 @@ namespace Elsa.WorkflowServer.Web.Jobs;
 
 /// <summary>
 /// Jobs can be scheduled manually using <see cref="IJobQueue"/>,
-/// but when enabling the <see cref="JobsFeature"/>, these jobs become available as activities too.
+/// but when enabling the <see cref="JobActivitiesFeature"/>, these jobs become available as activities too.
 /// </summary>
 public class IndexBlockchainJob : Job
 {

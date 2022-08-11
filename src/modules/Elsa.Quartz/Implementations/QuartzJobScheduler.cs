@@ -87,7 +87,7 @@ public class QuartzJobScheduler : IJobScheduler
             }
 
             default:
-                throw new NotSupportedException($"Schedule of type {schedule.GetType()} is not supported. But if you create an issue, we'll make this logic extensible & replaceable :)");
+                throw new NotSupportedException($"Schedule of type {schedule.GetType()} is not supported.");
         }
 
         return builder.Build();

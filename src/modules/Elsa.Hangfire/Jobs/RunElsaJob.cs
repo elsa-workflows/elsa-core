@@ -1,5 +1,4 @@
 using Elsa.Jobs.Services;
-using Hangfire.Server;
 
 namespace Elsa.Hangfire.Jobs;
 

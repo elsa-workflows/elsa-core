@@ -1,7 +1,6 @@
 ﻿using Elsa.Hangfire.Jobs;
 using Elsa.Jobs.Services;
 using Hangfire;
-using Hangfire.Server;
 using Hangfire.States;
 using HangfireJob = Hangfire.Common.Job;
 
@@ -16,11 +15,11 @@ public class HangfireJobQueue : IJobQueue
         _backgroundJobClient = backgroundJobClient;
     }
 
-    public Task<string> SubmitJobAsync(IJob job, string? queueName = default, CancellationToken cancellationToken = default)
+    public Task SubmitJobAsync(IJob job, string? queueName = default, CancellationToken cancellationToken = default)
     {
         var hangfireJob = HangfireJob.FromExpression<RunElsaJob>(x => x.RunAsync(job, CancellationToken.None));
-        var jobId = _backgroundJobClient.Create(hangfireJob, new EnqueuedState(queueName ?? "default"));
+        _backgroundJobClient.Create(hangfireJob, new EnqueuedState(queueName ?? "default"));
 
-        return Task.FromResult(jobId);
+        return Task.CompletedTask;
     }
 }

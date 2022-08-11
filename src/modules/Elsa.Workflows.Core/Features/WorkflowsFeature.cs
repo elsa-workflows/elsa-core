@@ -1,3 +1,4 @@
+using Elsa.Common.Features;
 using Elsa.Expressions;
 using Elsa.Expressions.Extensions;
 using Elsa.Expressions.Features;
@@ -16,6 +17,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Core.Features;
 
+[DependsOn(typeof(SystemClockFeature))]
 [DependsOn(typeof(ExpressionsFeature))]
 public class WorkflowsFeature : FeatureBase
 {
@@ -64,7 +66,6 @@ public class WorkflowsFeature : FeatureBase
             .AddSingleton<IActivitySchedulerFactory, ActivitySchedulerFactory>()
             .AddSingleton<IHasher, Hasher>()
             .AddSingleton<IIdentityGenerator, RandomIdentityGenerator>()
-            .AddSingleton<ISystemClock, SystemClock>()
             .AddSingleton<IBookmarkPayloadSerializer, BookmarkPayloadSerializer>()
             .AddTransient<WorkflowDefinitionBuilder>()
             .AddSingleton(typeof(Func<IWorkflowDefinitionBuilder>), sp => () => sp.GetRequiredService<WorkflowDefinitionBuilder>())

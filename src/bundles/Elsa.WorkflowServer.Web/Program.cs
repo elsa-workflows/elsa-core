@@ -1,8 +1,5 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Elsa.Activities.Jobs.Features;
-using Elsa.Activities.Jobs.Implementations;
-using Elsa.Activities.Jobs.Services;
 using Elsa.ActivityDefinitions.EntityFrameworkCore.Extensions;
 using Elsa.ActivityDefinitions.EntityFrameworkCore.Sqlite;
 using Elsa.Api.Common;
@@ -11,18 +8,17 @@ using Elsa.Api.Common.Options;
 using Elsa.AspNetCore.Extensions;
 using Elsa.Extensions;
 using Elsa.Features.Extensions;
-using Elsa.Hangfire.Implementations;
 using Elsa.Http;
 using Elsa.Http.Extensions;
 using Elsa.JavaScript.Activities;
 using Elsa.JavaScript.Extensions;
-using Elsa.Jobs.Extensions;
+using Elsa.Jobs.Activities.Extensions;
+using Elsa.Jobs.Activities.Implementations;
+using Elsa.Jobs.Activities.Services;
 using Elsa.Labels.EntityFrameworkCore.Extensions;
 using Elsa.Labels.EntityFrameworkCore.Sqlite;
 using Elsa.Labels.Extensions;
 using Elsa.Liquid.Extensions;
-using Elsa.Quartz.Implementations;
-using Elsa.Scheduling.Extensions;
 using Elsa.WorkflowContexts.Extensions;
 using Elsa.Workflows.Api.Extensions;
 using Elsa.Workflows.Core.Activities;
@@ -35,7 +31,6 @@ using Elsa.Workflows.Persistence.EntityFrameworkCore.Extensions;
 using Elsa.Workflows.Persistence.EntityFrameworkCore.Sqlite;
 using Elsa.Workflows.Persistence.Extensions;
 using Elsa.Workflows.Runtime.Extensions;
-using Elsa.WorkflowServer.Web;
 using Elsa.WorkflowServer.Web.Implementations;
 using Elsa.WorkflowServer.Web.Jobs;
 using FastEndpoints;
@@ -80,7 +75,7 @@ services
             feature.CredentialsValidator = sp => sp.GetRequiredService<CustomCredentialsValidator>();
             feature.AccessTokenIssuer = sp => sp.GetRequiredService<CustomAccessTokenIssuer>();
         })
-        .Use<JobsFeature>()
+        .UseJobActivities()
         .UseWorkflowPersistence(p => p.UseEntityFrameworkCore(ef => ef.UseSqlite()))
         .UseWorkflowApiEndpoints()
         .UseJavaScript()
@@ -90,11 +85,6 @@ services
         .UseHttp()
         .UseMvc()
     );
-
-services
-    .AddJobServices(new QuartzJobSchedulerProvider(), new HangfireJobQueueProvider())
-    .AddSchedulingServices()
-    ;
 
 services.AddFastEndpoints();
 services.AddAuthenticationJWTBearer(accessTokenOptions.SigningKey);

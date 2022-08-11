@@ -1,3 +1,4 @@
+using Elsa.Common.Services;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
 using Microsoft.Extensions.Logging;
@@ -13,13 +14,13 @@ public static class InvokeDriversMiddlewareExtensions
 public class ActivityInvokerMiddleware : IActivityExecutionMiddleware
 {
     private readonly ActivityMiddlewareDelegate _next;
-    private readonly ISystemClock _clock;
+    private readonly ISystemClock _systemClock;
     private readonly ILogger _logger;
 
-    public ActivityInvokerMiddleware(ActivityMiddlewareDelegate next, ISystemClock clock, ILogger<ActivityInvokerMiddleware> logger)
+    public ActivityInvokerMiddleware(ActivityMiddlewareDelegate next, ISystemClock systemClock, ILogger<ActivityInvokerMiddleware> logger)
     {
         _next = next;
-        _clock = clock;
+        _systemClock = systemClock;
         _logger = logger;
     }
 

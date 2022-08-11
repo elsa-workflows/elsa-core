@@ -1,11 +1,9 @@
 using Elsa.AspNetCore.Extensions;
 using Elsa.Extensions;
-using Elsa.Hangfire.Implementations;
 using Elsa.Http;
 using Elsa.Http.Extensions;
 using Elsa.JavaScript.Activities;
 using Elsa.Jobs.Extensions;
-using Elsa.Quartz.Implementations;
 using Elsa.Scheduling.Activities;
 using Elsa.Scheduling.Extensions;
 using Elsa.Workflows.Api.Extensions;
@@ -31,14 +29,12 @@ services
             .AddActivity<ForEach>()
             .AddActivity<Switch>()
             .AddActivity<RunJavaScript>())
+        .UseJobs()
+        .UseScheduling()
         .UseWorkflowApiEndpoints()
         .UseHttp()
         .UseMvc()
     );
-
-services
-    .AddJobServices(new QuartzJobSchedulerProvider(), new HangfireJobQueueProvider())
-    .AddSchedulingServices();
 
 // Razor Pages.
 services.AddRazorPages();

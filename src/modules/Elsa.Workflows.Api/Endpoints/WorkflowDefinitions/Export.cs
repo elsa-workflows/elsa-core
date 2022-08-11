@@ -8,7 +8,6 @@ using Elsa.Persistence.Common.Models;
 using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Management.Mappers;
-using Elsa.Workflows.Persistence.Models;
 using Elsa.Workflows.Persistence.Services;
 using Elsa.Workflows.Runtime.Services;
 using Humanizer;

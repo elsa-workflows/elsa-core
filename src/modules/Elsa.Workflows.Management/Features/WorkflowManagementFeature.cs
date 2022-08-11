@@ -1,3 +1,4 @@
+using Elsa.Common.Features;
 using Elsa.Expressions.Services;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
@@ -18,6 +19,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.Workflows.Management.Features;
 
 [DependsOn(typeof(MediatorFeature))]
+[DependsOn(typeof(SystemClockFeature))]
 [DependsOn(typeof(WorkflowsFeature))]
 [DependsOn(typeof(WorkflowPersistenceFeature))]
 public class WorkflowManagementFeature : FeatureBase

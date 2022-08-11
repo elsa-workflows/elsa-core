@@ -1,7 +1,6 @@
 using Elsa.Persistence.Common.Models;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Persistence.Entities;
-using Elsa.Workflows.Persistence.Models;
 using Elsa.Workflows.Persistence.Services;
 using Elsa.Workflows.Runtime.Services;
 using Microsoft.Extensions.Hosting;

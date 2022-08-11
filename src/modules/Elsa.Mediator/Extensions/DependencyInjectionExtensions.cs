@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Threading.Channels;
 using Elsa.Mediator.Implementations;
 using Elsa.Mediator.Middleware.Command;
 using Elsa.Mediator.Middleware.Command.Contracts;
@@ -10,6 +11,7 @@ using Elsa.Mediator.Models;
 using Elsa.Mediator.Services;
 using Elsa.Features.Services;
 using Elsa.Mediator.Features;
+using Elsa.Mediator.HostedServices;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Mediator.Extensions;
@@ -29,9 +31,16 @@ public static class DependencyInjectionExtensions
             .AddSingleton<IRequestSender>(sp => sp.GetRequiredService<IMediator>())
             .AddSingleton<ICommandSender>(sp => sp.GetRequiredService<IMediator>())
             .AddSingleton<IEventPublisher>(sp => sp.GetRequiredService<IMediator>())
+            .AddSingleton<IBackgroundCommandSender, BackgroundCommandSender>()
+            .AddSingleton<IBackgroundEventPublisher, BackgroundEventPublisher>()
             .AddSingleton<IRequestPipeline, RequestPipeline>()
             .AddSingleton<ICommandPipeline, CommandPipeline>()
-            .AddSingleton<INotificationPipeline, NotificationPipeline>();
+            .AddSingleton<INotificationPipeline, NotificationPipeline>()
+            .AddHostedService<BackgroundCommandSenderHostedService>()
+            .AddHostedService<BackgroundEventPublisherHostedService>()
+            .CreateChannel<ICommand>()
+            .CreateChannel<INotification>()
+            ;
     }
 
     public static IServiceCollection AddCommandHandler<THandler, TCommand>(this IServiceCollection services)
@@ -76,6 +85,12 @@ public static class DependencyInjectionExtensions
     public static IServiceCollection AddCommandHandlersFrom(this IServiceCollection services, Type markerType) => services.AddHandlersFromInternal<ICommandHandler>(markerType);
     public static IServiceCollection AddCommandHandlersFrom(this IServiceCollection services, Assembly assembly) => services.AddHandlersFromInternal<ICommandHandler>(assembly);
 
+    public static IServiceCollection CreateChannel<T>(this IServiceCollection services) =>
+        services
+            .AddSingleton(CreateChannel<T>())
+            .AddSingleton(CreateChannelReader<T>)
+            .AddSingleton(CreateChannelWriter<T>);
+    
 
     private static IServiceCollection AddHandlersFromInternal<TService, TMarker>(this IServiceCollection services) => services.AddHandlersFromInternal<TService>(typeof(TMarker));
     private static IServiceCollection AddHandlersFromInternal<TService>(this IServiceCollection services, Type assemblyMarkerType) => services.AddHandlersFromInternal<TService>(assemblyMarkerType.Assembly);
@@ -90,4 +105,8 @@ public static class DependencyInjectionExtensions
 
         return services;
     }
+    
+    private static Channel<T> CreateChannel<T>() => Channel.CreateUnbounded<T>(new UnboundedChannelOptions());
+    private static ChannelReader<T> CreateChannelReader<T>(IServiceProvider serviceProvider) => serviceProvider.GetRequiredService<Channel<T>>().Reader;
+    private static ChannelWriter<T> CreateChannelWriter<T>(IServiceProvider serviceProvider) => serviceProvider.GetRequiredService<Channel<T>>().Writer;
 }

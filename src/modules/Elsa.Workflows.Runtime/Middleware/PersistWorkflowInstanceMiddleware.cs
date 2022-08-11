@@ -1,3 +1,4 @@
+using Elsa.Common.Services;
 using Elsa.Mediator.Services;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
@@ -22,35 +23,32 @@ public class PersistWorkflowInstanceMiddleware : WorkflowExecutionMiddleware
 
     private readonly IWorkflowInstanceStore _workflowInstanceStore;
     private readonly IWorkflowBookmarkStore _bookmarkStore;
-    private readonly IRequestSender _requestSender;
     private readonly IEventPublisher _eventPublisher;
     private readonly IWorkflowStateSerializer _workflowStateSerializer;
     private readonly IStorageDriverManager _storageDriverManager;
     private readonly IBookmarkManager _bookmarkManager;
     private readonly IIdentityGenerator _identityGenerator;
-    private readonly ISystemClock _clock;
+    private readonly ISystemClock _systemClock;
 
     public PersistWorkflowInstanceMiddleware(
         WorkflowMiddlewareDelegate next,
         IWorkflowInstanceStore workflowInstanceStore,
         IWorkflowBookmarkStore bookmarkStore,
-        IRequestSender requestSender,
         IEventPublisher eventPublisher,
         IBookmarkManager bookmarkManager,
         IWorkflowStateSerializer workflowStateSerializer,
         IStorageDriverManager storageDriverManager,
         IIdentityGenerator identityGenerator,
-        ISystemClock clock) : base(next)
+        ISystemClock systemClock) : base(next)
     {
         _workflowInstanceStore = workflowInstanceStore;
         _bookmarkStore = bookmarkStore;
-        _requestSender = requestSender;
         _eventPublisher = eventPublisher;
         _bookmarkManager = bookmarkManager;
         _workflowStateSerializer = workflowStateSerializer;
         _storageDriverManager = storageDriverManager;
         _identityGenerator = identityGenerator;
-        _clock = clock;
+        _systemClock = systemClock;
     }
 
     public override async ValueTask InvokeAsync(WorkflowExecutionContext context)
@@ -60,7 +58,7 @@ public class PersistWorkflowInstanceMiddleware : WorkflowExecutionMiddleware
         var (definitionId, version, definitionVersionId) = workflow.Identity;
         var existingWorkflowInstance = await _workflowInstanceStore.FindByIdAsync(context.Id, cancellationToken);
         var workflowInstanceName = default(string?);
-        var now = _clock.UtcNow;
+        var now = _systemClock.UtcNow;
 
         // Get the workflow instance name, if any (could be provided by previously executed middleware). 
         if (context.TransientProperties.TryGetValue(WorkflowInstanceNameKey, out var name))

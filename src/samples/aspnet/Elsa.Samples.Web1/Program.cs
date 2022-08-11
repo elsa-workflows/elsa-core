@@ -1,11 +1,9 @@
 using Elsa.AspNetCore.Extensions;
 using Elsa.Extensions;
-using Elsa.Hangfire.Implementations;
 using Elsa.Http.Extensions;
 using Elsa.JavaScript.Extensions;
 using Elsa.Jobs.Extensions;
 using Elsa.Liquid.Extensions;
-using Elsa.Quartz.Implementations;
 using Elsa.Samples.Web1.Workflows;
 using Elsa.Scheduling.Extensions;
 using Elsa.WorkflowContexts.Extensions;
@@ -48,16 +46,14 @@ services
             runtime.Workflows.Add<StartAtTriggerWorkflow>();
             runtime.Workflows.Add<StartAtBookmarkWorkflow>();
         })
+        .UseJobs()
+        .UseScheduling()
         .UseWorkflowApiEndpoints()
         .UseJavaScript()
         .UseLiquid()
         .UseHttp()
         .UseMvc()
     );
-
-services
-    .AddJobServices(new QuartzJobSchedulerProvider(), new HangfireJobQueueProvider())
-    .AddSchedulingServices();
 
 // Add controller services. The below technique allows full control over what controllers get added from which assemblies.
 // It is even possible to add individual controllers this way using a custom TypesPart.

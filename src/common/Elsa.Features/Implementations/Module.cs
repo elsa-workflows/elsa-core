@@ -11,7 +11,7 @@ public class Module : IModule
 {
     private record HostedServiceDescriptor(int Order, Type HostedServiceType);
 
-    private readonly ISet<IFeature> _configurators = new HashSet<IFeature>();
+    private readonly ISet<IFeature> _features = new HashSet<IFeature>();
     private readonly ICollection<HostedServiceDescriptor> _hostedServiceDescriptors = new List<HostedServiceDescriptor>();
 
     public Module(IServiceCollection services)
@@ -25,10 +25,10 @@ public class Module : IModule
 
     public T Configure<T>(Func<IModule, T> factory, Action<T>? configure = default) where T : class, IFeature
     {
-        if (_configurators.FirstOrDefault(x => x is T) is not T configurator)
+        if (_features.FirstOrDefault(x => x is T) is not T configurator)
         {
             configurator = factory(this);
-            _configurators.Add(configurator);
+            _features.Add(configurator);
         }
 
         configure?.Invoke(configurator);
@@ -45,18 +45,18 @@ public class Module : IModule
     {
         ResolveDependencies();
 
-        foreach (var configurator in _configurators)
+        foreach (var feature in _features)
         {
-            configurator.Configure();
-            configurator.ConfigureHostedServices();
+            feature.Configure();
+            feature.ConfigureHostedServices();
         }
 
         foreach (var hostedServiceDescriptor in _hostedServiceDescriptors.OrderBy(x => x.Order))
             Services.TryAddEnumerable(ServiceDescriptor.Singleton(typeof(IHostedService), hostedServiceDescriptor.HostedServiceType));
         
-        foreach (var configurator in _configurators)
+        foreach (var feature in _features)
         {
-            configurator.Apply();
+            feature.Apply();
         }
     }
 
@@ -64,7 +64,7 @@ public class Module : IModule
     {
         var resolvedDependencyTypes = new HashSet<Type>();
         
-        foreach (var configurator in _configurators.ToList())
+        foreach (var configurator in _features.ToList())
             ResolveDependencies(configurator, resolvedDependencyTypes);
     }
 
@@ -83,13 +83,13 @@ public class Module : IModule
 
     private IFeature AddConfigurator(Type type)
     {
-        var configurator = _configurators.FirstOrDefault(x => x.GetType() == type);
+        var configurator = _features.FirstOrDefault(x => x.GetType() == type);
 
         if (configurator != null)
             return configurator;
 
         configurator = (IFeature)Activator.CreateInstance(type, this)!;
-        _configurators.Add(configurator);
+        _features.Add(configurator);
         return configurator;
     }
 }

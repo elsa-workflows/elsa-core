@@ -1,3 +1,4 @@
+using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Persistence.EntityFrameworkCore.Common.Abstractions;
 using Elsa.Persistence.EntityFrameworkCore.Common.Services;
@@ -9,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Persistence.EntityFrameworkCore.Features;
 
+[DependsOn(typeof(WorkflowPersistenceFeature))]
 public class EFCoreWorkflowPersistenceFeature : EFCorePersistenceFeature<WorkflowsDbContext>
 {
     public EFCoreWorkflowPersistenceFeature(IModule module) : base(module)

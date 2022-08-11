@@ -1,4 +1,6 @@
+using Elsa.Common.Features;
 using Elsa.Features.Abstractions;
+using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Mediator.Extensions;
 using Elsa.Workflows.Core.Services;
@@ -15,6 +17,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Runtime.Features;
 
+[DependsOn(typeof(SystemClockFeature))]
 public class WorkflowRuntimeFeature : FeatureBase
 {
     public WorkflowRuntimeFeature(IModule module) : base(module)

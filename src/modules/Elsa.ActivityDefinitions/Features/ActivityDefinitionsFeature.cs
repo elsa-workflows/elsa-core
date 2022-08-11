@@ -1,6 +1,7 @@
 using Elsa.ActivityDefinitions.Entities;
 using Elsa.ActivityDefinitions.Implementations;
 using Elsa.ActivityDefinitions.Services;
+using Elsa.Common.Features;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
@@ -14,6 +15,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.ActivityDefinitions.Features;
 
 [DependsOn(typeof(MediatorFeature))]
+[DependsOn(typeof(SystemClockFeature))]
 public class ActivityDefinitionsFeature : FeatureBase
 {
     public ActivityDefinitionsFeature(IModule module) : base(module)

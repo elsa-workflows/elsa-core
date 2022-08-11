@@ -2,7 +2,6 @@ using Elsa.Persistence.Common.Models;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Persistence.Models;
 using Elsa.Workflows.Runtime.Services;
 using Microsoft.Extensions.Logging;
 

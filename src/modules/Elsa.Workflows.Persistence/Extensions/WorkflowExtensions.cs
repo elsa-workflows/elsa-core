@@ -1,6 +1,5 @@
 using Elsa.Persistence.Common.Models;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Persistence.Models;
 
 namespace Elsa.Workflows.Persistence.Extensions;
 

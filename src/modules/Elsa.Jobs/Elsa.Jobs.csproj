@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <LangVersion>Latest</LangVersion>
+        <RootNamespace>Elsa.Jobs</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Cronos" Version="0.7.1" />
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\modules\Elsa.Mediator\Elsa.Mediator.csproj" />
+      <ProjectReference Include="..\Elsa.Common\Elsa.Common.csproj" />
+    </ItemGroup>
+
+</Project>

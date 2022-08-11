@@ -4,7 +4,6 @@ using Elsa.AspNetCore.Attributes;
 using Elsa.Persistence.Common.Models;
 using Elsa.Workflows.Api.ApiResults;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Persistence.Models;
 using Elsa.Workflows.Persistence.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;

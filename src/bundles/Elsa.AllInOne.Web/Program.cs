@@ -1,17 +1,14 @@
-using System.Text.Json.Serialization;
 using Elsa.Workflows.Api.Extensions;
 using Elsa.AspNetCore.Extensions;
 using Elsa.Extensions;
 using Elsa.Jobs.Extensions;
-using Elsa.Hangfire.Implementations;
 using Elsa.Http;
 using Elsa.Http.Extensions;
 using Elsa.JavaScript.Activities;
 using Elsa.JavaScript.Extensions;
-using Elsa.Quartz.Implementations;
 using Elsa.Scheduling.Activities;
-using Elsa.Scheduling.Extensions;
 using Elsa.Liquid.Extensions;
+using Elsa.Scheduling.Extensions;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Activities.Flowchart.Activities;
@@ -43,16 +40,14 @@ services
             .AddActivity<Switch>()
             .AddActivity<RunJavaScript>()
         )
+        .UseJobs()
+        .UseScheduling()
         .UseJavaScript()
         .UseLiquid()
         .UseHttp()
         .UseCustomActivities()
         .UseMvc()
     );
-
-services
-    .AddJobServices(new QuartzJobSchedulerProvider(), new HangfireJobQueueProvider())
-    .AddSchedulingServices();
 
 // Register serialization configurator for configuring what types to allow to be serialized.
 services.AddSingleton<ISerializationOptionsConfigurator, CustomSerializationOptionConfigurator>();

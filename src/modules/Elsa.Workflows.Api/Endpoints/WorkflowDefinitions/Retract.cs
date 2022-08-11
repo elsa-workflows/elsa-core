@@ -5,7 +5,6 @@ using Elsa.Persistence.Common.Models;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Persistence.Entities;
-using Elsa.Workflows.Persistence.Models;
 using Elsa.Workflows.Persistence.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;

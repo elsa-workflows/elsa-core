@@ -13,7 +13,6 @@ using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Persistence.Entities;
-using Elsa.Workflows.Persistence.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 

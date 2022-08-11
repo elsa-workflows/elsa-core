@@ -1,12 +1,10 @@
 using Elsa.AspNetCore.Extensions;
 using Elsa.Extensions;
-using Elsa.Hangfire.Implementations;
 using Elsa.Http;
 using Elsa.Http.Extensions;
 using Elsa.JavaScript.Activities;
 using Elsa.Jobs.Extensions;
 using Elsa.ProtoActor.Extensions;
-using Elsa.Quartz.Implementations;
 using Elsa.Scheduling.Activities;
 using Elsa.Scheduling.Extensions;
 using Elsa.Workflows.Api.Extensions;
@@ -40,14 +38,12 @@ services
             .AddActivity<ForEach>()
             .AddActivity<Switch>()
             .AddActivity<RunJavaScript>())
+        .UseJobs()
+        .UseScheduling()
         .UseWorkflowApiEndpoints()
         .UseHttp()
         .UseMvc()
     );
-
-services
-    .AddJobServices(new QuartzJobSchedulerProvider(), new HangfireJobQueueProvider())
-    .AddSchedulingServices();
 
 // Testing only: allow client app to connect from anywhere.
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()));

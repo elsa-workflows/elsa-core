@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Elsa.Common.Services;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.Services;
@@ -58,7 +59,7 @@ public class ClrWorkflowDefinitionProvider : IWorkflowDefinitionProvider
         await workflowBuilder.BuildAsync(builder, cancellationToken);
 
         var workflow = builder.BuildWorkflow();
-        _identityGraphService.AssignIdentitiesAsync(workflow);
+        await _identityGraphService.AssignIdentitiesAsync(workflow, cancellationToken);
 
         var workflowJson = JsonSerializer.Serialize(workflow.Root, _serializerOptionsProvider.CreatePersistenceOptions());
         var materializerContext = new ClrWorkflowMaterializerContext(workflowBuilder.GetType());

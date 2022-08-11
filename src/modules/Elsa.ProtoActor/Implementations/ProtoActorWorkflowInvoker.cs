@@ -11,7 +11,6 @@ using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Persistence.Entities;
-using Elsa.Workflows.Persistence.Models;
 using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Services;
 using Proto;
