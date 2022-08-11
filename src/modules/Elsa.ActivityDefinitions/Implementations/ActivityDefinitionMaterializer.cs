@@ -25,7 +25,7 @@ public class ActivityDefinitionMaterializer : IActivityDefinitionMaterializer
 
     public async Task<IActivity> MaterializeAsync(ActivityDefinitionActivity activity, CancellationToken cancellationToken = default)
     {
-        var definition = await _store.FindByDefinitionIdAsync(activity.DefinitionId, VersionOptions.Published, cancellationToken);
+        var definition = await _store.FindByDefinitionIdAsync(activity.DefinitionId, VersionOptions.SpecificVersion(activity.DefinitionVersion), cancellationToken);
 
         if (definition == null)
             return new Sequence();
