@@ -49,6 +49,9 @@ public class EFCoreActivityDefinitionStore : IActivityDefinitionStore
         return await query.PaginateAsync(x => ActivityDefinitionSummary.FromDefinition(x), pageArgs);
     }
 
+    public async Task<ActivityDefinition?> FindByTypeAsync(string type, int version, CancellationToken cancellationToken = default) =>
+        await _store.FindAsync(x => x.Type == type && x.Version == version, cancellationToken);
+
     public async Task<ActivityDefinition?> FindByDefinitionIdAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
     {
         Expression<Func<ActivityDefinition, bool>> predicate = x => x.DefinitionId == definitionId;

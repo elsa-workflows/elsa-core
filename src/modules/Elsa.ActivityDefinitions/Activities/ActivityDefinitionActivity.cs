@@ -10,16 +10,6 @@ namespace Elsa.ActivityDefinitions.Activities;
 /// </summary>
 public class ActivityDefinitionActivity : ActivityBase
 {
-    /// <summary>
-    /// The activity definition ID to load & execute.
-    /// </summary>
-    public string DefinitionId { get; set; } = default!;
-
-    /// <summary>
-    /// The activity definition version number to load & execute.
-    /// </summary>
-    public int DefinitionVersion { get; set; }
-
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         // Construct the root activity stored in the activity definitions.

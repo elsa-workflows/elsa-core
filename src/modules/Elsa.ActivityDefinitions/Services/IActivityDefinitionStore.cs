@@ -16,8 +16,8 @@ public interface IActivityDefinitionStore
         PageArgs? pageArgs = default,
         CancellationToken cancellationToken = default);
 
+    Task<ActivityDefinition?> FindByTypeAsync(string type, int version, CancellationToken cancellationToken = default);
     Task<ActivityDefinition?> FindByDefinitionIdAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default);
-    Task<ActivityDefinition?> FindByDefinitionVersionIdAsync(string definitionVersionId, CancellationToken cancellationToken = default);
     Task<IEnumerable<ActivityDefinition>> FindLatestAndPublishedByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default);
     Task SaveAsync(ActivityDefinition record, CancellationToken cancellationToken = default);
     Task<int> DeleteByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default);

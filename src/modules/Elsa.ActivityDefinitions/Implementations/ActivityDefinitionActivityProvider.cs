@@ -49,13 +49,6 @@ public class ActivityDefinitionActivityProvider : IActivityProvider
                 var activity = (ActivityDefinitionActivity)_activityFactory.Create(typeof(ActivityDefinitionActivity), context);
                 activity.Type = definition.Type;
                 activity.Version = definition.Version;
-
-                if (string.IsNullOrWhiteSpace(activity.DefinitionId))
-                    activity.DefinitionId = definition.DefinitionId;
-
-                if (activity.DefinitionVersion == 0)
-                    activity.DefinitionVersion = definition.Version;
-
                 return activity;
             }
         };

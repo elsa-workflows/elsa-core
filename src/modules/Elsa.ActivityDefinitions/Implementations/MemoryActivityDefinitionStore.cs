@@ -32,15 +32,15 @@ public class MemoryActivityDefinitionStore : IActivityDefinitionStore
         return Task.FromResult(page);
     }
 
-    public Task<ActivityDefinition?> FindByDefinitionIdAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
+    public Task<ActivityDefinition?> FindByTypeAsync(string type, int version, CancellationToken cancellationToken = default)
     {
-        var definition = _store.Find(x => x.DefinitionId == definitionId && x.WithVersion(versionOptions));
+        var definition = _store.Find(x => x.Type == type && x.Version == version);
         return Task.FromResult(definition);
     }
 
-    public Task<ActivityDefinition?> FindByDefinitionVersionIdAsync(string definitionVersionId, CancellationToken cancellationToken = default)
+    public Task<ActivityDefinition?> FindByDefinitionIdAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
     {
-        var definition = _store.Find(x => x.Id == definitionVersionId);
+        var definition = _store.Find(x => x.DefinitionId == definitionId && x.WithVersion(versionOptions));
         return Task.FromResult(definition);
     }
 
