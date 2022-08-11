@@ -91,6 +91,11 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddConfiguration()
                 .AddCoreActivities();
 
+            if (options.UseTenantSignaler)
+            {
+                services.AddScoped<ISignaler, TenantSignaler>();
+            }
+
             services
                 .Decorate<IWorkflowDefinitionStore, InitializingWorkflowDefinitionStore>()
                 .Decorate<IWorkflowDefinitionStore, EventPublishingWorkflowDefinitionStore>()
@@ -190,8 +195,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddActivityTypeProvider<TypeBasedActivityProvider>()
                 .AddTransient<ICreatesWorkflowExecutionContextForWorkflowBlueprint, WorkflowExecutionContextForWorkflowBlueprintFactory>()
                 .AddTransient<ICreatesActivityExecutionContextForActivityBlueprint, ActivityExecutionContextForActivityBlueprintFactory>()
-                .AddTransient<IGetsStartActivities, GetsStartActivitiesProvider>()
-                ;
+                .AddTransient<IGetsStartActivities, GetsStartActivitiesProvider>();
 
             // Data Protection.
             services.AddDataProtection();
