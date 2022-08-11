@@ -5,8 +5,8 @@ import {Container} from "typedi";
 const activityNameFormatter = Container.get(ActivityNameFormatter);
 
 export async function generateUniqueActivityName(activityNodes: Array<ActivityNode>, activityDescriptor: ActivityDescriptor): Promise<string> {
-  const activityType = activityDescriptor.activityType;
-  const activityCount = activityNodes.filter(x => x.activity.typeName == activityType).length;
+  const activityType = activityDescriptor.type;
+  const activityCount = activityNodes.filter(x => x.activity.type == activityType).length;
   let counter = activityCount + 1;
   let newName = activityNameFormatter.format({activityDescriptor, count: counter, activityNodes});
 

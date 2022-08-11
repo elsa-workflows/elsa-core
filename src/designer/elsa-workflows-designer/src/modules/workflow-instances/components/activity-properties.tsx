@@ -64,7 +64,7 @@ export class ActivityProperties {
     );
   }
 
-  private findActivityDescriptor = (): ActivityDescriptor => !!this.activity ? descriptorsStore.activityDescriptors.find(x => x.activityType == this.activity.typeName) : null;
+  private findActivityDescriptor = (): ActivityDescriptor => !!this.activity ? descriptorsStore.activityDescriptors.find(x => x.type == this.activity.type) : null;
   private onSelectedTabIndexChanged = (e: CustomEvent<TabChangedArgs>) => this.selectedTabIndex = e.detail.selectedTabIndex
 
   private renderPropertiesTab = () => {

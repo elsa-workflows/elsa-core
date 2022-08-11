@@ -8,21 +8,24 @@ namespace Elsa.Workflows.Core.Models;
 public abstract class ActivityBase : IActivity, ISignalHandler
 {
     private readonly ICollection<SignalHandlerRegistration> _signalHandlers = new List<SignalHandlerRegistration>();
-    
+
     protected ActivityBase()
     {
-        TypeName = ActivityTypeNameHelper.GenerateTypeName(GetType());
+        Type = ActivityTypeNameHelper.GenerateTypeName(GetType());
+        Version = 1;
         Behaviors.Add<ExecutionLoggingBehavior>(this);
         Behaviors.Add<ScheduledChildCallbackBehavior>(this);
     }
 
-    protected ActivityBase(string activityType) : this()
+    protected ActivityBase(string activityType, int version = 1) : this()
     {
-        TypeName = activityType;
+        Type = activityType;
+        Version = version;
     }
 
     public string Id { get; set; } = default!;
-    public string TypeName { get; set; }
+    public string Type { get; set; }
+    public int Version { get; set; }
     public bool CanStartWorkflow { get; set; }
     public IDictionary<string, object> ApplicationProperties { get; set; } = new Dictionary<string, object>();
     public IDictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();

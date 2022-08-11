@@ -14,7 +14,7 @@ namespace Elsa.ActivityDefinitions.EntityFrameworkCore.Sqlite.Migrations
                 {
                     Id = table.Column<string>(type: "TEXT", nullable: false),
                     DefinitionId = table.Column<string>(type: "TEXT", nullable: false),
-                    TypeName = table.Column<string>(type: "TEXT", nullable: false),
+                    Type = table.Column<string>(type: "TEXT", nullable: false),
                     DisplayName = table.Column<string>(type: "TEXT", nullable: true),
                     Description = table.Column<string>(type: "TEXT", nullable: true),
                     Category = table.Column<string>(type: "TEXT", nullable: true),
@@ -46,9 +46,9 @@ namespace Elsa.ActivityDefinitions.EntityFrameworkCore.Sqlite.Migrations
                 column: "IsPublished");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ActivityDefinition_TypeName",
+                name: "IX_ActivityDefinition_Type",
                 table: "ActivityDefinitions",
-                column: "TypeName");
+                column: "Type");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ActivityDefinition_Version",

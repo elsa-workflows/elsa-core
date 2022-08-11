@@ -90,8 +90,8 @@ function walkRecursive(node: ActivityNode, activity: Activity, collectedActiviti
 
 function getPorts(node: ActivityNode, activity: Activity, descriptors: Array<ActivityDescriptor>): Array<ActivityPort> {
   const portProviderRegistry = Container.get(PortProviderRegistry);
-  const portProvider = portProviderRegistry.get(activity.typeName);
-  const activityDescriptor = descriptors.find(x => x.activityType == activity.typeName);
+  const portProvider = portProviderRegistry.get(activity.type);
+  const activityDescriptor = descriptors.find(x => x.type == activity.type);
   const ports = portProvider.getOutboundPorts({activity, activityDescriptor});
   let activityPorts: Array<ActivityPort> = [];
 

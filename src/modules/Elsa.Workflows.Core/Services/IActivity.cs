@@ -15,7 +15,12 @@ public interface IActivity
     /// <summary>
     /// The logical type name of the activity.
     /// </summary>
-    string TypeName { get; set; }
+    string Type { get; set; }
+    
+    /// <summary>
+    /// The version of the activity type.
+    /// </summary>
+    int Version { get; set; }
 
     /// <summary>
     /// A value indicating whether this activity can start instances of the workflow it is a part of.

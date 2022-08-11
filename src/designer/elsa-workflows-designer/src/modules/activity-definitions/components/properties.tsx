@@ -68,7 +68,7 @@ export class Properties {
         content: () => {
           const definition = this.activityDefinition;
           return <FormEntry label="Type Name" fieldId="activityDefinitionTypeName" hint="The type name of the custom activity.">
-            <input type="text" name="activityDefinitionTypeName" id="activityDefinitionTypeName" value={definition.typeName} onChange={e => this.onPropertyEditorChanged(a => a.typeName = (e.target as HTMLInputElement).value)}/>
+            <input type="text" name="activityDefinitionTypeName" id="activityDefinitionTypeName" value={definition.type} onChange={e => this.onPropertyEditorChanged(a => a.type = (e.target as HTMLInputElement).value)}/>
           </FormEntry>;
         },
         order: 0
@@ -164,7 +164,7 @@ export class Properties {
 
   render() {
     const activityDefinition = this.activityDefinition;
-    const title = activityDefinition?.displayName ?? activityDefinition?.typeName ?? 'Untitled';
+    const title = activityDefinition?.displayName ?? activityDefinition?.type ?? 'Untitled';
     const subTitle = 'Activity Definition'
     const tabs = this.model.tabModels.map(x => x.tab);
 

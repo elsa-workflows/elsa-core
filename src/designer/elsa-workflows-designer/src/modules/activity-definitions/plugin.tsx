@@ -62,7 +62,8 @@ export class ActivityDefinitionsPlugin implements Plugin {
     const newName = await this.generateUniqueActivityName(flowchartDescriptor);
 
     const flowchart = {
-      typeName: flowchartDescriptor.activityType,
+      type: flowchartDescriptor.type,
+      version: 1,
       activities: [],
       connections: [],
       id: newName,
@@ -75,7 +76,7 @@ export class ActivityDefinitionsPlugin implements Plugin {
       root: flowchart,
       id: '',
       definitionId: '',
-      typeName: 'Activity1',
+      type: 'Activity1',
       category: 'Custom',
       displayName: 'Activity 1',
       version: 1,
@@ -87,7 +88,7 @@ export class ActivityDefinitionsPlugin implements Plugin {
   };
 
   private getFlowchartDescriptor = () => this.getActivityDescriptor(FlowchartTypeName);
-  private getActivityDescriptor = (typeName: string): ActivityDescriptor => descriptorsStore.activityDescriptors.find(x => x.activityType == typeName)
+  private getActivityDescriptor = (typeName: string): ActivityDescriptor => descriptorsStore.activityDescriptors.find(x => x.type == typeName)
   private generateUniqueActivityName = async (activityDescriptor: ActivityDescriptor): Promise<string> => await generateUniqueActivityName([], activityDescriptor);
 
   private saveActivityDefinition = async (definition: ActivityDefinition, publish: boolean): Promise<ActivityDefinition> => {
@@ -132,9 +133,9 @@ export class ActivityDefinitionsPlugin implements Plugin {
   private onPublishClicked = async (e: CustomEvent<PublishClickedArgs>) => {
     e.detail.begin();
     const activityDefinition = await this.activityDefinitionEditorElement.getActivityDefinition();
-    await this.eventBus.emit(NotificationEventTypes.Add, this, {id: activityDefinition.definitionId, message: `Starting publishing ${activityDefinition.typeName}`});
+    await this.eventBus.emit(NotificationEventTypes.Add, this, {id: activityDefinition.definitionId, message: `Starting publishing ${activityDefinition.type}`});
     await this.saveActivityDefinition(activityDefinition, true);
-    await this.eventBus.emit(NotificationEventTypes.Update, this, {id: activityDefinition.definitionId, message: `${activityDefinition.typeName} publish finished`});
+    await this.eventBus.emit(NotificationEventTypes.Update, this, {id: activityDefinition.definitionId, message: `${activityDefinition.type} publish finished`});
     e.detail.complete();
 
     // Reload activity descriptors.

@@ -18,12 +18,10 @@ export class FlowSwitchPortProvider implements PortProvider {
   }
 
   resolvePort(portName: string, context: PortProviderContext): Activity | Array<Activity> {
-    debugger;
     return null;
   }
 
   assignPort(portName: string, activity: Activity, context: PortProviderContext) {
-    debugger;
     return null;
   }
 }

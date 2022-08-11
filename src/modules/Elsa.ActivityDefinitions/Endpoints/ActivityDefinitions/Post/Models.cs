@@ -6,7 +6,7 @@ namespace Elsa.ActivityDefinitions.Endpoints.ActivityDefinitions.Post;
 public class Request
 {
     public string DefinitionId { get; set; } = default!;
-    public string TypeName { get; set; } = default!;
+    public string Type { get; set; } = default!;
     public string? DisplayName { get; set; }
     public string? Category { get; set; }
     public string? Description { get; set; }
@@ -26,7 +26,7 @@ public class Response
     public Response(
         string id,
         string definitionId,
-        string typeName,
+        string type,
         string? displayName,
         string? category,
         string? description,
@@ -41,7 +41,7 @@ public class Response
     {
         Id = id;
         DefinitionId = definitionId;
-        TypeName = typeName;
+        Type = type;
         DisplayName = displayName;
         Category = category;
         Description = description;
@@ -57,7 +57,7 @@ public class Response
 
     public string Id { get; set; } = default!;
     public string DefinitionId { get; set; } = default!;
-    public string TypeName { get; set; } = default!;
+    public string Type { get; set; } = default!;
     public string? DisplayName { get; set; }
     public string? Category { get; set; }
     public string? Description { get; set; }

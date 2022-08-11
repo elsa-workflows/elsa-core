@@ -31,7 +31,8 @@ public class ActivityDescriber : IActivityDescriber
     {
         var activityAttr = activityType.GetCustomAttribute<ActivityAttribute>();
         var ns = activityAttr?.Namespace ?? ActivityTypeNameHelper.GenerateNamespace(activityType);
-        var typeName = activityAttr?.TypeName ?? activityType.Name;
+        var typeName = activityAttr?.Type ?? activityType.Name;
+        var typeVersion = activityAttr?.Version ?? 1;
         var fullTypeName = ActivityTypeNameHelper.GenerateTypeName(activityType);
         var displayNameAttr = activityType.GetCustomAttribute<DisplayNameAttribute>();
         var displayName = displayNameAttr?.DisplayName ?? activityAttr?.DisplayName ?? typeName.Humanize(LetterCasing.Title);
@@ -71,7 +72,8 @@ public class ActivityDescriber : IActivityDescriber
         {
             Category = category,
             Description = description,
-            ActivityType = fullTypeName,
+            Type = fullTypeName,
+            Version = typeVersion,
             DisplayName = displayName,
             Kind = isTrigger ? ActivityKind.Trigger : ActivityKind.Action,
             Ports = allPorts.ToList(),
@@ -82,7 +84,7 @@ public class ActivityDescriber : IActivityDescriber
             Constructor = context =>
             {
                 var activity = _activityFactory.Create(activityType, context);
-                activity.TypeName = fullTypeName;
+                activity.Type = fullTypeName;
                 return activity;
             }
         };

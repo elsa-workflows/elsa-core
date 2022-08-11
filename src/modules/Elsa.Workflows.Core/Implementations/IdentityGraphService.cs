@@ -74,7 +74,7 @@ public class IdentityGraphService : IIdentityGraphService
 
         while (true)
         {
-            var fullTypeName = activityNode.Activity.TypeName;
+            var fullTypeName = activityNode.Activity.Type;
             var shortTypeName = fullTypeName.Split('.').Last();
             var index = GetNextIndexFor(shortTypeName, identityCounters);
             var name = $"{shortTypeName}{index + 1}";

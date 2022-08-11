@@ -163,7 +163,7 @@ export class ActivityDefinitionBrowser {
                 const publishedVersionNumber = !!publishedVersion ? publishedVersion.version : '-';
 
                 const isSelected = this.selectedActivityDefinitionIds.findIndex(x => x === definition.definitionId) >= 0;
-                let displayName = definition.displayName || definition.typeName;
+                let displayName = definition.displayName || definition.type;
 
                 if (!displayName || displayName.trim().length == 0) displayName = 'Untitled';
 

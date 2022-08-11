@@ -43,7 +43,7 @@ public class Get : ProtectedEndpoint<Request, ActivityDefinitionModel>
         var model = new ActivityDefinitionModel(
             definition.Id,
             definition.DefinitionId,
-            definition.TypeName,
+            definition.Type,
             definition.DisplayName,
             definition.Category,
             definition.Description,

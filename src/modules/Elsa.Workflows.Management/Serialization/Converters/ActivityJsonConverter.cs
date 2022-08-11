@@ -29,11 +29,15 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
         if (!JsonDocument.TryParseValue(ref reader, out var doc))
             throw new JsonException("Failed to parse JsonDocument");
 
-        if (!doc.RootElement.TryGetProperty("typeName", out var activityTypeNameElement))
+        if (!doc.RootElement.TryGetProperty("type", out var activityTypeNameElement))
             throw new JsonException("Failed to extract activity type property");
+        
+        if (!doc.RootElement.TryGetProperty("version", out var activityTypeVersionElement))
+            throw new JsonException("Failed to extract activity type version property");
 
         var activityTypeName = activityTypeNameElement.GetString()!;
-        var activityDescriptor = _activityRegistry.Find(activityTypeName);
+        var activityTypeVersion = activityTypeVersionElement.GetInt32();
+        var activityDescriptor = _activityRegistry.Find(activityTypeName, activityTypeVersion);
 
         var newOptions = new JsonSerializerOptions(options);
         newOptions.Converters.Add(new InputJsonConverterFactory(_serviceProvider));
@@ -44,8 +48,9 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
             var notFoundContext = new ActivityConstructorContext(doc.RootElement, newOptions);
             var notFoundActivity =  (NotFoundActivity)_activityFactory.Create(typeof(NotFoundActivity), notFoundContext);
 
-            notFoundActivity.TypeName = ActivityTypeNameHelper.GenerateTypeName<NotFoundActivity>();
+            notFoundActivity.Type = ActivityTypeNameHelper.GenerateTypeName<NotFoundActivity>();
             notFoundActivity.MissingTypeName = activityTypeName;
+            notFoundActivity.MissingTypeVersion = activityTypeVersion;
             return notFoundActivity;
         }
 

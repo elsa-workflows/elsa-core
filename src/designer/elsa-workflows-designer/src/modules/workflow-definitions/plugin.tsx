@@ -60,8 +60,9 @@ export class WorkflowDefinitionsPlugin implements Plugin {
     const flowchartDescriptor = this.getFlowchartDescriptor();
     const newName = await this.generateUniqueActivityName(flowchartDescriptor);
 
-    const flowchart = {
-      typeName: flowchartDescriptor.activityType,
+    const flowchart: Flowchart = {
+      type: flowchartDescriptor.type,
+      version: 1,
       activities: [],
       connections: [],
       id: newName,
@@ -85,7 +86,7 @@ export class WorkflowDefinitionsPlugin implements Plugin {
   };
 
   private getFlowchartDescriptor = () => this.getActivityDescriptor(FlowchartTypeName);
-  private getActivityDescriptor = (typeName: string): ActivityDescriptor => descriptorsStore.activityDescriptors.find(x => x.activityType == typeName)
+  private getActivityDescriptor = (typeName: string): ActivityDescriptor => descriptorsStore.activityDescriptors.find(x => x.type == typeName)
   private generateUniqueActivityName = async (activityDescriptor: ActivityDescriptor): Promise<string> => await generateUniqueActivityName([], activityDescriptor);
 
   private saveWorkflowDefinition = async (definition: WorkflowDefinition, publish: boolean): Promise<WorkflowDefinition> => {

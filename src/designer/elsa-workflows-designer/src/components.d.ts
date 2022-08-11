@@ -96,6 +96,7 @@ export namespace Components {
     interface ElsaDefaultActivityTemplate {
         "activityId": string;
         "activityType": string;
+        "activityTypeVersion": number;
         "displayType": string;
     }
     interface ElsaDropdownButton {
@@ -728,6 +729,7 @@ declare namespace LocalJSX {
     interface ElsaDefaultActivityTemplate {
         "activityId"?: string;
         "activityType"?: string;
+        "activityTypeVersion"?: number;
         "displayType"?: string;
         "onChildActivitySelected"?: (event: CustomEvent<ChildActivitySelectedArgs>) => void;
         "onEditChildActivity"?: (event: CustomEvent<EditChildActivityArgs>) => void;

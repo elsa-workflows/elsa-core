@@ -6,7 +6,7 @@ namespace Elsa.Workflows.Management.Implementations;
 public class ActivityRegistry : IActivityRegistry
 {
     private readonly IDictionary<Type, ICollection<ActivityDescriptor>> _providedActivityDescriptors = new Dictionary<Type, ICollection<ActivityDescriptor>>();
-    private readonly IDictionary<string, ActivityDescriptor> _activityDescriptors = new Dictionary<string, ActivityDescriptor>();
+    private readonly IDictionary<(string Type, int Version), ActivityDescriptor> _activityDescriptors = new Dictionary<(string Type, int Version), ActivityDescriptor>();
 
     public void Add(Type providerType, ActivityDescriptor descriptor) => Add(descriptor, GetOrCreateDescriptors(providerType));
 
@@ -29,7 +29,7 @@ public class ActivityRegistry : IActivityRegistry
         var descriptors = ListByProvider(providerType).ToList();
 
         foreach (var descriptor in descriptors)
-            _activityDescriptors.Remove(descriptor.ActivityType);
+            _activityDescriptors.Remove((descriptor.Type, descriptor.Version));
 
         _providedActivityDescriptors.Remove(providerType);
     }
@@ -37,11 +37,11 @@ public class ActivityRegistry : IActivityRegistry
     public IEnumerable<ActivityDescriptor> ListAll() => _activityDescriptors.Values;
     public IEnumerable<ActivityDescriptor> ListByProvider(Type providerType) => _providedActivityDescriptors.TryGetValue(providerType, out var descriptors) ? descriptors : ArraySegment<ActivityDescriptor>.Empty;
     public ActivityDescriptor? Find(Func<ActivityDescriptor, bool> predicate) => _activityDescriptors.Values.FirstOrDefault(predicate);
-    public ActivityDescriptor? Find(string activityType) => _activityDescriptors.TryGetValue(activityType, out var descriptor) ? descriptor : null;
+    public ActivityDescriptor? Find(string type, int version) => _activityDescriptors.TryGetValue((type, version), out var descriptor) ? descriptor : null;
 
     private void Add(ActivityDescriptor descriptor, ICollection<ActivityDescriptor> target)
     {
-        _activityDescriptors.Add(descriptor.ActivityType, descriptor);
+        _activityDescriptors.Add((descriptor.Type, descriptor.Version), descriptor);
         target.Add(descriptor);
     }
 

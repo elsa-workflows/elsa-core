@@ -17,16 +17,16 @@ public class JobAttribute : Attribute
         Category = @namespace;
     }
 
-    public JobAttribute(string @namespace, string? typeName, string? description = default, string? category = default)
+    public JobAttribute(string @namespace, string? activityType, string? description = default, string? category = default)
     {
         Namespace = @namespace;
-        TypeName = typeName;
+        ActivityType = activityType;
         Description = description;
         Category = category;
     }
 
     public string? Namespace { get; set;}
-    public string? TypeName { get; set;}
+    public string? ActivityType { get; set;}
     public string? Description { get; set;}
     public string? DisplayName { get; set; }
     public string? Category { get; set;}

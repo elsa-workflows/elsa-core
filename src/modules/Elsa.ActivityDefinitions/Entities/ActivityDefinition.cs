@@ -6,7 +6,7 @@ namespace Elsa.ActivityDefinitions.Entities;
 public class ActivityDefinition : VersionedEntity
 {
     public string DefinitionId { get; set; } = default!;
-    public string TypeName { get; set; } = default!;
+    public string Type { get; set; } = default!;
     public string? DisplayName { get; set; }
     public string? Description { get; set; }
     public string? Category { get; set; }

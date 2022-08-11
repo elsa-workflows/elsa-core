@@ -26,7 +26,7 @@ public class ActivityDefinitionActivityProvider : IActivityProvider
 
     public async ValueTask<IEnumerable<ActivityDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default)
     {
-        var definitions = await _store.ListAsync(VersionOptions.Published, cancellationToken).ToList();
+        var definitions = await _store.ListAsync(VersionOptions.All, cancellationToken).ToList();
         var descriptors = CreateDescriptors(definitions).ToList();
         return descriptors;
     }
@@ -35,20 +35,20 @@ public class ActivityDefinitionActivityProvider : IActivityProvider
 
     private ActivityDescriptor CreateDescriptor(ActivityDefinition definition)
     {
-        var typeName = definition.TypeName!;
-
         return new()
         {
-            ActivityType = typeName,
-            DisplayName = definition.DisplayName.WithDefault(typeName),
+            Type = definition.Type,
+            Version = definition.Version,
+            DisplayName = definition.DisplayName.WithDefault(definition.Type),
             Description = definition.Description,
             Category = definition.Category.WithDefault("Custom"),
             Kind = ActivityKind.Action,
-            IsBrowsable = true,
+            IsBrowsable = definition.IsPublished,
             Constructor = context =>
             {
                 var activity = (ActivityDefinitionActivity)_activityFactory.Create(typeof(ActivityDefinitionActivity), context);
-                activity.TypeName = typeName;
+                activity.Type = definition.Type;
+                activity.Version = definition.Version;
 
                 if (string.IsNullOrWhiteSpace(activity.DefinitionId))
                     activity.DefinitionId = definition.DefinitionId;

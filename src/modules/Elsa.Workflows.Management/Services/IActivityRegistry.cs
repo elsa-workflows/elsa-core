@@ -11,5 +11,5 @@ public interface IActivityRegistry
     IEnumerable<ActivityDescriptor> ListAll();
     IEnumerable<ActivityDescriptor> ListByProvider(Type providerType);
     ActivityDescriptor? Find(Func<ActivityDescriptor, bool> predicate);
-    ActivityDescriptor? Find(string activityType);
+    ActivityDescriptor? Find(string type, int version);
 }

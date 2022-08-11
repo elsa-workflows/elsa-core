@@ -16,7 +16,12 @@ public class NotFoundActivity : Activity
     }
     
     /// <summary>
-    /// The type name of the missing activity.
+    /// The type name of the missing activity type.
     /// </summary>
     public string MissingTypeName { get; set; } = default!;
+    
+    /// <summary>
+    /// The version of the missing activity type.
+    /// </summary>
+    public int MissingTypeVersion { get; set; }
 }

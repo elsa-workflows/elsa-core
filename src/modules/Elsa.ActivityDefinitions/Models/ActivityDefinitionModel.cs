@@ -12,7 +12,7 @@ public class ActivityDefinitionModel
     public ActivityDefinitionModel(
         string id,
         string definitionId,
-        string typeName,
+        string type,
         string? displayName,
         string? category,
         string? description,
@@ -27,7 +27,7 @@ public class ActivityDefinitionModel
     {
         Id = id;
         DefinitionId = definitionId;
-        TypeName = typeName;
+        Type = type;
         DisplayName = displayName;
         Category = category;
         Description = description;
@@ -43,7 +43,7 @@ public class ActivityDefinitionModel
 
     public string Id { get; init; } = default!;
     public string DefinitionId { get; init; } = default!;
-    public string TypeName { get; init; } = default!;
+    public string Type { get; init; } = default!;
     public string? DisplayName { get; init; }
     public string? Category { get; init; }
     public string? Description { get; init; }

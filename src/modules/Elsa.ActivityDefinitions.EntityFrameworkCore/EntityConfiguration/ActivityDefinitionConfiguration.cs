@@ -15,7 +15,7 @@ public class ActivityDefinitionConfiguration : IEntityTypeConfiguration<Activity
 
         builder.HasIndex(x => new {x.DefinitionId, x.Version}).HasDatabaseName($"IX_{nameof(ActivityDefinition)}_{nameof(ActivityDefinition.DefinitionId)}_{nameof(ActivityDefinition.Version)}").IsUnique();
         builder.HasIndex(x => x.Version).HasDatabaseName($"IX_{nameof(ActivityDefinition)}_{nameof(ActivityDefinition.Version)}");
-        builder.HasIndex(x => x.TypeName).HasDatabaseName($"IX_{nameof(ActivityDefinition)}_{nameof(ActivityDefinition.TypeName)}");
+        builder.HasIndex(x => x.Type).HasDatabaseName($"IX_{nameof(ActivityDefinition)}_{nameof(ActivityDefinition.Type)}");
         builder.HasIndex(x => x.IsLatest).HasDatabaseName($"IX_{nameof(ActivityDefinition)}_{nameof(ActivityDefinition.IsLatest)}");
         builder.HasIndex(x => x.IsPublished).HasDatabaseName($"IX_{nameof(ActivityDefinition)}_{nameof(ActivityDefinition.IsPublished)}");
     }

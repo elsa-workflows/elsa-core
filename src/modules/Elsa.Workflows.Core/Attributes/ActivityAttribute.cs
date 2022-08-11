@@ -17,17 +17,19 @@ public class ActivityAttribute : Attribute
         Category = @namespace;
     }
 
-    public ActivityAttribute(string @namespace, string? typeName, string? description = default, string? category = default)
+    public ActivityAttribute(string @namespace, string? type, int version = 1, string? description = default, string? category = default)
     {
         Namespace = @namespace;
-        TypeName = typeName;
+        Type = type;
+        Version = version;
         Description = description;
         Category = category;
     }
 
-    public string? Namespace { get; set;}
-    public string? TypeName { get; set;}
-    public string? Description { get; set;}
+    public string? Namespace { get; set; }
+    public string? Type { get; set; }
+    public int Version { get; set; } = 1;
+    public string? Description { get; set; }
     public string? DisplayName { get; set; }
-    public string? Category { get; set;}
+    public string? Category { get; set; }
 }

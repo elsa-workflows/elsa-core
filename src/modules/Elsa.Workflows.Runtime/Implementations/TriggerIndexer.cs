@@ -123,7 +123,7 @@ public class TriggerIndexer : ITriggerIndexer
         {
             Id = _identityGenerator.GenerateId(),
             WorkflowDefinitionId = workflow.Identity.DefinitionId,
-            Name = activity.TypeName
+            Name = activity.Type
         };
     }
 
@@ -135,7 +135,7 @@ public class TriggerIndexer : ITriggerIndexer
 
         var triggerIndexingContext = new TriggerIndexingContext(context, expressionExecutionContext, trigger, cancellationToken);
         var triggerData = await TryGetTriggerDataAsync(trigger, triggerIndexingContext);
-        var triggerTypeName = trigger.TypeName;
+        var triggerTypeName = trigger.Type;
 
         var triggers = triggerData.Select(x => new WorkflowTrigger
         {

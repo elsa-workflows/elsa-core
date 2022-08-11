@@ -10,7 +10,8 @@ export type Lookup<T> = { [key: string]: T };
 
 export interface Activity {
   id: string;
-  typeName: string;
+  type: string;
+  version: number;
   metadata: any;
   canStartWorkflow?: boolean;
   applicationProperties: any;
@@ -64,7 +65,8 @@ export interface WorkflowState {
 }
 
 export interface ActivityDescriptor {
-  activityType: string;
+  type: string;
+  version: number;
   displayName: string;
   category: string;
   description: string;

@@ -31,7 +31,7 @@ public class EFCoreActivityDefinitionStore : IActivityDefinitionStore
 
         if (versionOptions != null) query = query.WithVersion(versionOptions.Value);
 
-        query = query.OrderBy(x => x.DisplayName).ThenBy(x => x.TypeName);
+        query = query.OrderBy(x => x.DisplayName).ThenBy(x => x.Type);
 
         return await query.PaginateAsync(pageArgs);
     }
@@ -44,7 +44,7 @@ public class EFCoreActivityDefinitionStore : IActivityDefinitionStore
 
         if (versionOptions != null) query = query.WithVersion(versionOptions.Value);
 
-        query = query.OrderBy(x => x.DisplayName).ThenBy(x => x.TypeName);
+        query = query.OrderBy(x => x.DisplayName).ThenBy(x => x.Type);
 
         return await query.PaginateAsync(x => ActivityDefinitionSummary.FromDefinition(x), pageArgs);
     }

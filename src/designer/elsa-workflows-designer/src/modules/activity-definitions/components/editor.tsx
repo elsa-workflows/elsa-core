@@ -126,7 +126,7 @@ export class Editor {
     const activityDefinition: ActivityDefinition = {
       root: newRoot,
       id: '',
-      typeName: 'Activity1',
+      type: 'Activity1',
       displayName: 'Activity 1',
       category: 'Custom',
       definitionId: '',

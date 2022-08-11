@@ -57,7 +57,7 @@ public class Post : ProtectedEndpoint<Request, Response>
         var variables = _variableDefinitionMapper.Map(request.Variables).ToList();
 
         draft!.Data = data;
-        draft.TypeName = request.TypeName;
+        draft.Type = request.Type;
         draft.DisplayName = request.DisplayName?.Trim();
         draft.Category = request.Category?.Trim();
         draft.Description = request.Description?.Trim();
@@ -70,7 +70,7 @@ public class Post : ProtectedEndpoint<Request, Response>
         var response = new Response(
             draft.Id,
             draft.DefinitionId,
-            draft.TypeName,
+            draft.Type,
             draft.DisplayName,
             draft.Category,
             draft.Description,

@@ -15,7 +15,7 @@ public static class ActivityTypeNameHelper
     public static string GenerateTypeName(Type type, string? ns)
     {
         var activityAttr = type.GetCustomAttribute<ActivityAttribute>();
-        var typeName = activityAttr?.TypeName ?? type.Name;
+        var typeName = activityAttr?.Type ?? type.Name;
         return ns != null ? $"{ns}.{typeName}" : typeName;
     }
 

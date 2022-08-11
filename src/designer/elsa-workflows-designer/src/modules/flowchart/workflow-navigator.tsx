@@ -46,8 +46,8 @@ export class WorkflowNavigator {
   private renderPathItem = (item: FlowchartNavigationItem, index: number, nodes: Array<ActivityNode>) => {
     const activityId = item.activityId;
     const activity = nodes.find(x => x.activity.id == activityId).activity;
-    const activityDescriptor = descriptorsStore.activityDescriptors.find(x => x.activityType == activity.typeName);
-    const icon = this.iconRegistry.get(activity.typeName)();
+    const activityDescriptor = descriptorsStore.activityDescriptors.find(x => x.type == activity.type);
+    const icon = this.iconRegistry.get(activity.type)();
     const listElements = [];
     const isLastItem = index == this.items.length - 1;
 
@@ -59,7 +59,7 @@ export class WorkflowNavigator {
     let port: Port = null;
 
     if (!!item.portName) {
-      const portProvider = this.portProviderRegistry.get(activity.typeName);
+      const portProvider = this.portProviderRegistry.get(activity.type);
       const ports = portProvider.getOutboundPorts({activity, activityDescriptor});
 
       if (ports.length > 1)

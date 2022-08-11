@@ -13,7 +13,7 @@ export class NodeFactory {
   }
 
   public createNode(activityDescriptor: ActivityDescriptor, activity: Activity, x: number, y: number): Node.Metadata {
-    const handler = this.handlerRegistry.createHandler(activityDescriptor.activityType);
+    const handler = this.handlerRegistry.createHandler(activityDescriptor.type);
     return handler.createDesignerNode({activityDescriptor, activity, x, y});
   }
 }

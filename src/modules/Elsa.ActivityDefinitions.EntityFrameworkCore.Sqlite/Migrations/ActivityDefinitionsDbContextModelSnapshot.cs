@@ -47,7 +47,7 @@ namespace Elsa.ActivityDefinitions.EntityFrameworkCore.Sqlite.Migrations
                     b.Property<bool>("IsPublished")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("TypeName")
+                    b.Property<string>("Type")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
@@ -62,8 +62,8 @@ namespace Elsa.ActivityDefinitions.EntityFrameworkCore.Sqlite.Migrations
                     b.HasIndex("IsPublished")
                         .HasDatabaseName("IX_ActivityDefinition_IsPublished");
 
-                    b.HasIndex("TypeName")
-                        .HasDatabaseName("IX_ActivityDefinition_TypeName");
+                    b.HasIndex("Type")
+                        .HasDatabaseName("IX_ActivityDefinition_Type");
 
                     b.HasIndex("Version")
                         .HasDatabaseName("IX_ActivityDefinition_Version");

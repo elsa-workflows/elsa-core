@@ -68,7 +68,7 @@ export class ActivityPropertiesEditor {
     const activity = this.activity;
     const activityId = activity.id;
     const activityDescriptor = this.findActivityDescriptor();
-    const title = activityDescriptor?.displayName ?? activityDescriptor?.activityType ?? 'Unknown Activity';
+    const title = activityDescriptor?.displayName ?? activityDescriptor?.type ?? 'Unknown Activity';
     const driverRegistry = this.inputDriverRegistry;
 
     const onInputChanged = (inputDescriptor: InputDescriptor) => this.activityUpdated.emit({
@@ -156,7 +156,7 @@ export class ActivityPropertiesEditor {
     );
   }
 
-  private findActivityDescriptor = (): ActivityDescriptor => !!this.activity ? descriptorsStore.activityDescriptors.find(x => x.activityType == this.activity.typeName) : null;
+  private findActivityDescriptor = (): ActivityDescriptor => !!this.activity ? descriptorsStore.activityDescriptors.find(x => x.type == this.activity.type) : null;
   private onSelectedTabIndexChanged = (e: CustomEvent<TabChangedArgs>) => this.selectedTabIndex = e.detail.selectedTabIndex
 
   private onActivityIdChanged = (e: any) => {

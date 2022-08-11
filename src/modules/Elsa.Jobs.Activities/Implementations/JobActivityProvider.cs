@@ -40,7 +40,7 @@ public class JobActivityProvider : IActivityProvider
     {
         var jobAttr = jobType.GetCustomAttribute<JobAttribute>();
         var ns = jobAttr?.Namespace ?? JobTypeNameHelper.GenerateNamespace(jobType);
-        var typeName = jobAttr?.TypeName ?? jobType.Name;
+        var typeName = jobAttr?.ActivityType ?? jobType.Name;
         var fullTypeName = JobTypeNameHelper.GenerateTypeName(jobType);
         var displayNameAttr = jobType.GetCustomAttribute<DisplayNameAttribute>();
         var displayName = displayNameAttr?.DisplayName ?? jobAttr?.DisplayName ?? typeName.Humanize(LetterCasing.Title);
@@ -51,7 +51,8 @@ public class JobActivityProvider : IActivityProvider
 
         return new()
         {
-            ActivityType = fullTypeName,
+            Type = fullTypeName,
+            Version = 1,
             DisplayName = displayName,
             Description = description,
             Category = category,
@@ -60,7 +61,7 @@ public class JobActivityProvider : IActivityProvider
             Constructor = context =>
             {
                 var activity = _activityFactory.Create<JobActivity>(context);
-                activity.TypeName = fullTypeName;
+                activity.Type = fullTypeName;
                 activity.JobType = jobType;
                 
                 return activity;

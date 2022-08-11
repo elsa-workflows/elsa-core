@@ -121,7 +121,7 @@ public class ActivityExecutionContext
 
         var bookmark = new Bookmark(
             identityGenerator.GenerateId(),
-            Activity.TypeName,
+            Activity.Type,
             hash,
             payloadJson,
             Activity.Id,

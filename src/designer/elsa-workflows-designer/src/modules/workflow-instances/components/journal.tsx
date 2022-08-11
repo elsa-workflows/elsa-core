@@ -115,7 +115,7 @@ export class Journal {
       const activityDisplayText = isNullOrWhitespace(activityMetadata.displayText) ? activity.id : activityMetadata.displayText;
       const duration = durationToString(block.duration);
       const status = block.completed ? 'Completed' : 'Started';
-      const icon = iconRegistry.get(activity.typeName)({size: ActivityIconSize.Small});
+      const icon = iconRegistry.get(activity.type)({size: ActivityIconSize.Small});
       const expanded = !!expandedBlocks.find(x => x == block);
 
       const toggleIcon = expanded

@@ -12,7 +12,7 @@ public abstract class Activity : ActivityBase
 
     protected Activity(string activityType) : this()
     {
-        TypeName = activityType;
+        Type = activityType;
     }
 }
 

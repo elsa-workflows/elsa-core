@@ -9,7 +9,8 @@ namespace Elsa.Workflows.Core.Models;
 /// </summary>
 public class ActivityDescriptor
 {
-    public string ActivityType { get; init; } = default!;
+    public string Type { get; init; } = default!;
+    public int Version { get; init; }
     public string Category { get; init; } = default!;
     public string? DisplayName { get; init; }
     public string? Description { get; init; }

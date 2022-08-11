@@ -15,7 +15,7 @@ public static class JobTypeNameHelper
     public static string GenerateTypeName(Type type, string? ns)
     {
         var activityAttr = type.GetCustomAttribute<JobAttribute>();
-        var typeName = activityAttr?.TypeName ?? type.Name;
+        var typeName = activityAttr?.ActivityType ?? type.Name;
         return ns != null ? $"{ns}.{typeName}" : typeName;
     }
 

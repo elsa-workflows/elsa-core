@@ -65,7 +65,8 @@ export class FlowchartComponent implements ContainerActivityComponent {
     const newName = await this.generateUniqueActivityName(flowchartDescriptor);
 
     const flowchart = {
-      typeName: flowchartDescriptor.activityType,
+      type: flowchartDescriptor.type,
+      version: 1,
       activities: [],
       connections: [],
       id: newName,
@@ -120,7 +121,8 @@ export class FlowchartComponent implements ContainerActivityComponent {
 
     const activity: Activity = {
       id: id,
-      typeName: descriptor.activityType,
+      type: descriptor.type,
+      version: descriptor.version,
       applicationProperties: {},
       metadata: {
         designer: {
@@ -218,7 +220,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
     const currentActivityId = this.currentPath[this.currentPath.length - 1].activityId;
     const currentActivity = this.activityLookup[currentActivityId];
     const parentActivity = this.activityLookup[parentActivityId] as Flowchart;
-    const parentActivityDescriptor = descriptorsStore.activityDescriptors.find(x => x.activityType == parentActivity.typeName);
+    const parentActivityDescriptor = descriptorsStore.activityDescriptors.find(x => x.type == parentActivity.type);
     const indexInParent = currentActivity.activities?.findIndex(x => x == parentActivity);
     const portName = e.detail.port.name;
 
@@ -228,7 +230,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
       index: indexInParent
     };
 
-    const portProvider = this.portProviderRegistry.get(parentActivity.typeName);
+    const portProvider = this.portProviderRegistry.get(parentActivity.type);
     let activityProperty = portProvider.resolvePort(portName, {activity: parentActivity, activityDescriptor: parentActivityDescriptor}) as Flowchart;
 
     if (!activityProperty) {
@@ -254,7 +256,8 @@ export class FlowchartComponent implements ContainerActivityComponent {
     const activityId = await this.generateUniqueActivityName(descriptor);
 
     return {
-      typeName: descriptor.activityType,
+      type: descriptor.type,
+      version: descriptor.version,
       id: activityId,
       start: null,
       activities: [],
@@ -326,10 +329,10 @@ export class FlowchartComponent implements ContainerActivityComponent {
     const currentNavigationItem = currentPath[currentPath.length - 1];
     const currentPortName = currentNavigationItem?.portName;
     const currentScope = this.activityLookup[currentNavigationItem.activityId] as Activity;
-    const currentScopeDescriptor = this.getActivityDescriptor(currentScope.typeName);
+    const currentScopeDescriptor = this.getActivityDescriptor(currentScope.type);
 
     if (!!currentPortName) {
-      const portProvider = this.portProviderRegistry.get(currentScope.typeName);
+      const portProvider = this.portProviderRegistry.get(currentScope.type);
       portProvider.assignPort(currentPortName, currentLevel, {activity: currentScope, activityDescriptor: currentScopeDescriptor});
     } else {
       this.activity = currentLevel;
@@ -354,7 +357,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
     await this.setupGraph(flowchart);
   };
 
-  private getActivityDescriptor = (typeName: string): ActivityDescriptor => descriptorsStore.activityDescriptors.find(x => x.activityType == typeName)
+  private getActivityDescriptor = (typeName: string): ActivityDescriptor => descriptorsStore.activityDescriptors.find(x => x.type == typeName)
 
   private setupGraph = async (flowchart: Flowchart) => {
     const activities = flowchart.activities;
@@ -365,7 +368,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
     const nodes: Array<Node.Metadata> = activities.map(activity => {
       const position = activity.metadata.designer?.position || {x: 100, y: 100};
       const {x, y} = position;
-      const descriptor = this.getActivityDescriptor(activity.typeName);
+      const descriptor = this.getActivityDescriptor(activity.type);
       return this.nodeFactory.createNode(descriptor, activity, x, y);
     });
 
@@ -443,12 +446,12 @@ export class FlowchartComponent implements ContainerActivityComponent {
       return this.activity;
 
     const activity = this.activityLookup[currentItem.activityId] as Flowchart;
-    const activityDescriptor = descriptorsStore.activityDescriptors.find(x => x.activityType == activity.typeName);
+    const activityDescriptor = descriptorsStore.activityDescriptors.find(x => x.type == activity.type);
 
     if (activityDescriptor.isContainer)
       return activity;
 
-    const portProvider = this.portProviderRegistry.get(activity.typeName);
+    const portProvider = this.portProviderRegistry.get(activity.type);
     return portProvider.resolvePort(currentItem.portName, {activity, activityDescriptor}) as Flowchart;
   }
 
@@ -643,7 +646,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
     const item = e.detail;
     const activityId = item.activityId;
     let activity = this.activityLookup[activityId];
-    const activityDescriptor = descriptorsStore.activityDescriptors.find(x => x.activityType == activity.typeName);
+    const activityDescriptor = descriptorsStore.activityDescriptors.find(x => x.type == activity.type);
     const path = this.currentPath;
     const index = path.indexOf(item);
 

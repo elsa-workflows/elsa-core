@@ -8,11 +8,12 @@ export class DefaultActivityDriver implements ActivityDriver {
 
   display(context: ActivityDisplayContext): any {
     const activityDescriptor = context.activityDescriptor;
-    const activityType = activityDescriptor.activityType;
+    const type = activityDescriptor.type;
+    const version = activityDescriptor.version;
     const activity = context.activity;
     const activityId = activity?.id;
     const displayType = context.displayType;
 
-    return (`<elsa-default-activity-template activity-type="${activityType}" activity-id="${activityId}" display-type="${displayType}" />`);
+    return (`<elsa-default-activity-template activity-type="${type}" activity-type-version="${version}" activity-id="${activityId}" display-type="${displayType}" />`);
   }
 }
