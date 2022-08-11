@@ -25,7 +25,7 @@ public class ScheduledRecurringJob : IScheduledJob
         _interval = interval;
         _jobRunner = jobRunner;
         _cancellationToken = cancellationToken;
-        
+
         Schedule();
     }
 
@@ -35,7 +35,7 @@ public class ScheduledRecurringJob : IScheduledJob
     private void Schedule()
     {
         var now = _systemClock.UtcNow;
-        var delay = now - _startAt;
+        var delay = _startAt - now;
 
         if (delay.Milliseconds <= 0)
         {
@@ -43,7 +43,7 @@ public class ScheduledRecurringJob : IScheduledJob
             return;
         }
 
-        _timer = new Timer(delay.TotalMilliseconds);
+        _timer = new Timer(delay.TotalMilliseconds) { Enabled = true };
 
         _timer.Elapsed += async (_, _) =>
         {

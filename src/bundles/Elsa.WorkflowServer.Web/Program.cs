@@ -19,6 +19,7 @@ using Elsa.Labels.EntityFrameworkCore.Extensions;
 using Elsa.Labels.EntityFrameworkCore.Sqlite;
 using Elsa.Labels.Extensions;
 using Elsa.Liquid.Extensions;
+using Elsa.Scheduling.Extensions;
 using Elsa.WorkflowContexts.Extensions;
 using Elsa.Workflows.Api.Extensions;
 using Elsa.Workflows.Core.Activities;
@@ -76,6 +77,7 @@ services
             feature.AccessTokenIssuer = sp => sp.GetRequiredService<CustomAccessTokenIssuer>();
         })
         .UseJobActivities()
+        .UseScheduling()
         .UseWorkflowPersistence(p => p.UseEntityFrameworkCore(ef => ef.UseSqlite()))
         .UseWorkflowApiEndpoints()
         .UseJavaScript()

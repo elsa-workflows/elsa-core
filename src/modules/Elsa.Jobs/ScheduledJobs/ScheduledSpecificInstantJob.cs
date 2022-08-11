@@ -23,7 +23,7 @@ public class ScheduledSpecificInstantJob : IScheduledJob
         _jobRunner = jobRunner;
         _cancellationToken = cancellationToken;
         Name = name;
-        
+
         Schedule();
     }
 
@@ -33,16 +33,16 @@ public class ScheduledSpecificInstantJob : IScheduledJob
     private void Schedule()
     {
         var now = _systemClock.UtcNow;
-        var delay = now - _startAt;
+        var delay = _startAt - now;
 
-        if (delay.Milliseconds <= 0) 
-            delay = TimeSpan.Zero;
+        if (delay.Milliseconds <= 0)
+            delay = TimeSpan.FromMilliseconds(1);
 
-        _timer = new Timer(delay.TotalMilliseconds);
+        _timer = new Timer(delay.TotalMilliseconds) { Enabled = true };
 
         _timer.Elapsed += async (_, _) =>
         {
-            _timer.Dispose();
+            _timer?.Dispose();
             _timer = null;
 
             if (!_cancellationToken.IsCancellationRequested) await _jobRunner.RunJobAsync(_job, _cancellationToken);

@@ -45,7 +45,7 @@ public class ScheduledCronJob : IScheduledJob
             return;
         }
 
-        _timer = new Timer(delay.TotalMilliseconds);
+        _timer = new Timer(delay.TotalMilliseconds) { Enabled = true };
 
         _timer.Elapsed += async (_, _) =>
         {
