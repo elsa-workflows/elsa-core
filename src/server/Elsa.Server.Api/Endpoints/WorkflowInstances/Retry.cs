@@ -1,4 +1,4 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Persistence;
@@ -65,7 +65,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
                 return StatusCode(500, new
                 {
                     WorkflowInstanceId = workflowInstance.Id,
-                    Fault = workflowInstance.Fault
+                    Fault = workflowInstance.Faults
                 }).ConfigureForEndpoint();
 
             return Response.HasStarted

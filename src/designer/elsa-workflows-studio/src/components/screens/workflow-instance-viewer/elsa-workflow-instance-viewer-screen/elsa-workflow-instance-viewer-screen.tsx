@@ -263,13 +263,13 @@ export class ElsaWorkflowInstanceViewerScreen {
 
   getActivityBorderColor = (activity: ActivityModel): string => {
     const workflowInstance = this.workflowInstance;
-    const workflowFault = !!workflowInstance ? workflowInstance.fault : null;
+    const workflowFault = !!workflowInstance ? workflowInstance.faults : null;
     const activityData = workflowInstance.activityData[activity.activityId] || {};
     const lifecycle = activityData['_Lifecycle'] || {};
-    const executing = !!lifecycle.executing;
-    const executed = !!lifecycle.executed;
+    const executing = lifecycle.executing ?? lifecycle.Executing;
+    const executed = lifecycle.executed ?? lifecycle.Executed;
 
-    if (!!workflowFault && workflowFault.faultedActivityId == activity.activityId)
+    if (!!workflowFault && workflowFault.find(x => x.faultedActivityId == activity.activityId))
       return 'red';
 
     if (executed)
@@ -283,15 +283,15 @@ export class ElsaWorkflowInstanceViewerScreen {
 
   renderActivityStatsButton = (activity: ActivityModel): string => {
     const workflowInstance = this.workflowInstance;
-    const workflowFault = !!workflowInstance ? workflowInstance.fault : null;
+    const workflowFault = !!workflowInstance ? workflowInstance.faults : null;
     const activityData = workflowInstance.activityData[activity.activityId] || {};
     const lifecycle = activityData['_Lifecycle'] || {};
-    const executing = !!lifecycle.executing;
-    const executed = !!lifecycle.executed;
+    const executing = lifecycle.executing ?? lifecycle.Executing;
+    const executed = lifecycle.executed ?? lifecycle.Executed;
 
     let icon: string;
 
-    if (!!workflowFault && workflowFault.faultedActivityId == activity.activityId) {
+    if (!!workflowFault && workflowFault.find(x => x.faultedActivityId == activity.activityId)) {
       icon = `<svg class="elsa-flex-shrink-0 elsa-h-6 elsa-w-6 elsa-text-red-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="10"/>
                 <line x1="12" y1="8" x2="12" y2="12"/>
@@ -347,12 +347,12 @@ export class ElsaWorkflowInstanceViewerScreen {
 
   renderActivityPerformanceMenu = () => {
     const activityStats: ActivityStats = this.activityStats;
-
+    
     const renderFault = () => {
       if (!activityStats.fault)
         return;
-
-      return <elsa-workflow-fault-information workflowFault={this.workflowInstance.fault} faultedAt={this.workflowInstance.faultedAt} />;
+      
+      return <elsa-workflow-fault-information workflowFault={this.workflowInstance.faults.find(x => x.faultedActivityId == this.selectedActivityId)} faultedAt={this.workflowInstance.faultedAt} />;
     };
 
     const renderPerformance = () => {

@@ -74,10 +74,27 @@ namespace Elsa.Metadata
             throw new NotSupportedException("The specified outcomes type is not supported. Only string[] and typeof(IOutcomesProvider) are supported.");
         }
 
-        private IEnumerable<ActivityInputDescriptor> DescribeInputProperties(IEnumerable<PropertyInfo> properties)
+        private IEnumerable<ActivityInputDescriptor> DescribeInputProperties(IEnumerable<PropertyInfo> properties, string category = null)
         {
             foreach (var propertyInfo in properties)
             {
+                var activityPropertyObjectAttribute = propertyInfo.GetCustomAttribute<ActivityInputObjectAttribute>();
+
+                if(activityPropertyObjectAttribute != null)
+                {
+
+                    var objectProperties = propertyInfo.PropertyType.GetProperties();
+
+                    var nestedInputProperties = DescribeInputProperties(objectProperties, activityPropertyObjectAttribute?.Category);
+
+                    foreach (var property in nestedInputProperties)
+                    {
+                        property.Name = $"{propertyInfo.Name}_{property.Name}";
+                        yield return property;
+                    }
+                    continue;
+                }
+
                 var activityPropertyAttribute = propertyInfo.GetCustomAttribute<ActivityInputAttribute>();
 
                 if (activityPropertyAttribute == null)
@@ -91,7 +108,7 @@ namespace Elsa.Metadata
                     activityPropertyAttribute.Label ?? propertyInfo.Name.Humanize(LetterCasing.Title),
                     activityPropertyAttribute.Hint,
                     _optionsResolver.GetOptions(propertyInfo),
-                    activityPropertyAttribute.Category,
+                    activityPropertyAttribute.Category ?? category,
                     activityPropertyAttribute.Order,
                     _defaultValueResolver.GetDefaultValue(propertyInfo),
                     activityPropertyAttribute.DefaultSyntax,

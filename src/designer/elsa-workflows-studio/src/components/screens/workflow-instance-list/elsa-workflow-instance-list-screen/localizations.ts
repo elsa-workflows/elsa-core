@@ -242,4 +242,86 @@ export const resources = {
       }
     }
   },
+  'de-DE': {
+    'default': {
+      'Title': 'Ablaufinstanzen',
+      'Search': 'Suchen',
+      'Untitled': 'Unbenannt',
+      'Table': {
+        'Id': 'ID',
+        'CorrelationId': 'Correlation ID',
+        'Workflow': 'Ablauf',
+        'Version': 'Version',
+        'InstanceName': 'Instanzname',
+        'Status': 'Status',
+        'Created': 'Erstellt',
+        'Finished': 'Abgeschlossen',
+        'LastExecuted': 'Zuletzt ausgeführt',
+        'Faulted': 'Fehlgeschlagen',
+        'ContextMenu': {
+          'View': 'Ansehen',
+          'Cancel': 'Abbrechen',
+          'Delete': 'Entfernen',
+          'Retry': 'Nochmal ausführen'
+        }
+      },
+      'CancelDialog': {
+        'Title': 'Ablaufinstanz abbrechen',
+        'Message': 'Sind Sie sicher, dass Sie die Instanz abbrechen wollen?'
+      },
+      'DeleteDialog': {
+        'Title': 'Ablauf entfernen',
+        'Message': 'Sind Sie sicher, dass Sie die Instanz unwiderruflich entfernen wollen?'
+      },
+      'BulkCancelDialog': {
+        'Title': 'Ausgewählte Instanzen abbrechen',
+        'Message': 'Sind Sie sicher, dass Sie die ausgewählten Instanzen abbrechen wollen?'
+      },
+      'BulkDeleteDialog': {
+        'Title': 'Ausgewählte Instanzen entfernen',
+        'Message': 'Sind Sie sicher, dass Sie die ausgewählten Instanzen entfernen wollen?'
+      },
+      'BulkRetryDialog': {
+        'Title': 'Ausgewählte Instanzen nochmal ausführen',
+        'Message': 'Sind Sie sicher, dass Sie die ausgwählten Instanzen noch einmal ausführen wollen?'
+      },
+      'Pager': {
+        'Display': 'Zeige {{Start}} bis {{End}} von {{Results}} Ergebnissen'
+      },
+      'BulkActions': {
+        'Title': 'Massenaktionen',
+        'Actions': {
+          'Cancel': 'Abbrechen',
+          'Delete': 'Entfernen',
+          'Retry': 'Erneut ausführen'
+        }
+      },
+      'Filters': {
+        'Workflow': {
+          'Label': 'Ablauf',
+          'All': 'Alle'
+        },
+        'Status': {
+          'All': 'Alle',
+          'Label': 'Status',
+          'Running': 'Laufend',
+          'Idle': 'Inaktive',
+          'Suspended': 'Angehalten',
+          'Faulted': 'Fehlgeschlagen',
+          'Finished': 'Abgeschlossen',
+          'Cancelled': 'Abgebrochen'
+        },
+        'Sort': {
+          'Label': 'Sortierung',
+          'SelectedLabel': 'Sortieren nach: {{Key}}',
+          'Finished': 'Abgeschlossen',
+          'LastExecuted': 'Zuletzt ausgeführt',
+          'Started': 'Gestartet'
+        },
+        'PageSize': {
+          'SelectedLabel': 'Seitengröße: {{Size}}',
+        }
+      }
+    }
+  },
 };

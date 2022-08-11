@@ -36,7 +36,8 @@ namespace Elsa.Activities.RabbitMq
             Order = 3,
             UIHint = ActivityInputUIHints.Dictionary,
             DefaultSyntax = SyntaxNames.Json,
-            SupportedSyntaxes = new[] { SyntaxNames.Json })]
+            SupportedSyntaxes = new[] { SyntaxNames.Json,SyntaxNames.JavaScript })]
+        
         public Dictionary<string, string> Headers { get; set; } = new Dictionary<string, string>();
 
         [ActivityInput(

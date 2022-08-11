@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Xml;
 using System.Net;
 using System.Net.Mime;
 using System.Threading;
@@ -164,6 +165,11 @@ namespace Elsa.Activities.Http.Middleware
                     await WriteBadRequestResponseAsync(e);
                     return;
                 }
+                catch (XmlException e)
+                {
+                    await WriteBadRequestResponseAsync(e);
+                    return;
+                }
             }
 
             var useDispatch = httpContext.Request.GetUseDispatch();
@@ -248,7 +254,7 @@ namespace Elsa.Activities.Http.Middleware
         }
 
         private string? GetPath(PathString? basePath, HttpContext httpContext) => basePath != null
-            ? httpContext.Request.Path.StartsWithSegments(basePath.Value, out _, out var remainingPath) ? remainingPath.Value.ToLowerInvariant() : null
-            : httpContext.Request.Path.Value.ToLowerInvariant();
+            ? httpContext.Request.Path.StartsWithSegments(basePath.Value, out _, out var remainingPath) ? remainingPath.Value : null
+            : httpContext.Request.Path.Value;
     }
 }

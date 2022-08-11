@@ -1,14 +1,8 @@
 import { Component, h, Prop, State } from '@stencil/core';
-import {
-  ActivityDefinitionProperty, ActivityModel,
-  ActivityPropertyDescriptor,
-  RuntimeSelectListProviderSettings,
-  SelectList,
-  SelectListItem,
-  SyntaxNames
-} from "../../../../models";
+import { ActivityDefinitionProperty, ActivityModel, ActivityPropertyDescriptor, RuntimeSelectListProviderSettings, SelectList, SyntaxNames } from "../../../../models";
 import Tunnel from "../../../../data/workflow-editor";
 import { getSelectListItems } from "../../../../utils/select-list-items";
+import { awaitElement } from "../../../../utils/utils";
 
 @Component({
   tag: 'elsa-dropdown-property',
@@ -27,30 +21,116 @@ export class ElsaDropdownProperty {
   async componentWillLoad() {
     const defaultSyntax = this.propertyDescriptor.defaultSyntax || SyntaxNames.Literal;
     this.currentValue = this.propertyModel.expressions[defaultSyntax] || undefined;
-    this.selectList = await getSelectListItems(this.serverUrl, this.propertyDescriptor);
+    const dependsOnEvent = this.propertyDescriptor.options?.context?.dependsOnEvent;
 
-    if (this.currentValue == undefined) {
-      const firstOption : any = this.selectList.items[0];
+    // Does this property have a dependency on another property?
+    if (!!dependsOnEvent) {
 
-      if (firstOption) {
-        const optionIsObject = typeof (firstOption) == 'object';
-        this.currentValue = optionIsObject ? firstOption.value : firstOption.toString();
+      // Collect current property values of the activity.
+      const initialDepsValue = {};
+
+      for (const event of dependsOnEvent) {
+        for (const value of this.activityModel.properties) {
+          initialDepsValue[value.name] = value.expressions['Literal'];
+        }
+
+        // Listen for change events on the dependency dropdown list.
+        const dependentInputElement: HTMLSelectElement = await awaitElement('#' + event);
+        dependentInputElement.addEventListener('change', this.reloadSelectListFromDeps);
+
+        // Get the current value of the dependency dropdown list.
+        initialDepsValue[event] = dependentInputElement.value;
       }
+
+      // Load the list items from the backend.
+      const options: RuntimeSelectListProviderSettings = {
+        context: {
+          ...this.propertyDescriptor.options.context,
+          depValues: initialDepsValue
+        },
+        runtimeSelectListProviderType: (this.propertyDescriptor.options as RuntimeSelectListProviderSettings).runtimeSelectListProviderType
+
+      };
+      this.selectList = await getSelectListItems(this.serverUrl, { options: options } as ActivityPropertyDescriptor);
+
+      if (this.currentValue == undefined) {
+        const firstOption: any = this.selectList.items[0];
+
+        if (firstOption) {
+          const optionIsObject = typeof (firstOption) == 'object';
+          this.currentValue = optionIsObject ? firstOption.value : firstOption.toString();
+        }
+      }
+
+    } else {
+      this.selectList = await getSelectListItems(this.serverUrl, this.propertyDescriptor);
+
+      if (this.currentValue == undefined) {
+        const firstOption: any = this.selectList.items[0];
+
+        if (firstOption) {
+          const optionIsObject = typeof (firstOption) == 'object';
+          this.currentValue = optionIsObject ? firstOption.value : firstOption.toString();
+        }
+      }
+    }
+
+    if (this.currentValue != undefined) {
+      this.propertyModel.expressions[defaultSyntax] = this.currentValue;
     }
   }
 
-  onChange(e: Event) {
+  private reloadSelectListFromDeps = async (e: InputEvent) => {
+    const depValues = {};
+
+    for (const dependencyPropName of this.propertyDescriptor.options.context.dependsOnValue) {
+      const value = this.activityModel.properties.find((prop) => {
+        return prop.name == dependencyPropName;
+      });
+      depValues[dependencyPropName] = value.expressions["Literal"];
+    }
+
+    // Need to get the latest value of the component that just changed.
+    // For this we need to get the value from the event.
+    const currentTarget = e.currentTarget as HTMLSelectElement;
+    depValues[currentTarget.id] = currentTarget.value;
+
+    let options: RuntimeSelectListProviderSettings = {
+      context: {
+        ...this.propertyDescriptor.options.context,
+        depValues: depValues
+      },
+      runtimeSelectListProviderType: (this.propertyDescriptor.options as RuntimeSelectListProviderSettings).runtimeSelectListProviderType
+    }
+
+    this.selectList = await getSelectListItems(this.serverUrl, { options: options } as ActivityPropertyDescriptor);
+
+    const firstOption: any = this.selectList.items[0];
+    let currentSelectList = await awaitElement('#' + this.propertyDescriptor.name);
+
+    if (firstOption) {
+      const optionIsObject = typeof (firstOption) == 'object';
+      this.currentValue = optionIsObject ? firstOption.value : firstOption.toString();
+    }
+
+    // Dispatch change event so that dependent dropdown elements refresh.
+    // Do this after the current component has re-rendered, otherwise the current value will be sent to the backend, which is outdated.
+    requestAnimationFrame(() => {
+      currentSelectList.dispatchEvent(new Event("change"));
+    });
+  }
+
+  private onChange(e: Event) {
     const select = (e.target as HTMLSelectElement);
     const defaultSyntax = this.propertyDescriptor.defaultSyntax || SyntaxNames.Literal;
     this.propertyModel.expressions[defaultSyntax] = this.currentValue = select.value;
   }
 
-  onDefaultSyntaxValueChanged(e: CustomEvent) {
+  private onDefaultSyntaxValueChanged(e: CustomEvent) {
     this.currentValue = e.detail;
   }
 
   render() {
-
     const propertyDescriptor = this.propertyDescriptor;
     const propertyModel = this.propertyModel;
     const propertyName = propertyDescriptor.name;
@@ -71,7 +151,9 @@ export class ElsaDropdownProperty {
         propertyModel={propertyModel}
         onDefaultSyntaxValueChanged={e => this.onDefaultSyntaxValueChanged(e)}
         single-line={true}>
-        <select id={fieldId} name={fieldName} onChange={e => this.onChange(e)}
+        <select id={fieldId}
+          name={fieldName}
+          onChange={e => this.onChange(e)}
           class="elsa-mt-1 elsa-block focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-w-full elsa-shadow-sm sm:elsa-max-w-xs sm:elsa-text-sm elsa-border-gray-300 elsa-rounded-md">
           {items.map(item => {
             const optionIsObject = typeof (item) == 'object';

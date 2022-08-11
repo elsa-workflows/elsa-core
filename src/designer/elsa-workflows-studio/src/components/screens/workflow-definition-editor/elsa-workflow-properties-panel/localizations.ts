@@ -51,4 +51,17 @@ export const resources = {
       'Draft': 'پیش نویس'
     }
   },
+  'de-DE': {
+    default: {
+      'Name': 'Name',
+      'DisplayName': 'Anzeigename',
+      'Untitled': 'Unbenannt',
+      'Id': 'Id',
+      'Version': 'Neuste Version',
+      'PublishedVersion': 'Veröffentlichte Version',
+      'Status': 'Status',
+      'Published': 'Veröffentlicht',
+      'Draft': 'Entwurf'
+    }
+  },
 };

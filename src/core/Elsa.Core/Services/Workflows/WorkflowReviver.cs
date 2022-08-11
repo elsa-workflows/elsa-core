@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -36,28 +37,31 @@ namespace Elsa.Services.Workflows
             if (workflowInstance.WorkflowStatus != WorkflowStatus.Faulted)
                 throw new InvalidOperationException($"Cannot revive non-faulted workflow with status {workflowInstance.WorkflowStatus}");
 
-            var fault = workflowInstance.Fault;
-
-            if (fault == null)
+            var fault = workflowInstance.Faults;
+            if (fault.Count == 0)
                 throw new WorkflowException("Cannot revive a workflow with no fault");
 
-            var faultedActivityId = fault.FaultedActivityId;
 
-            if (faultedActivityId == null)
+            if (fault.Count > 0)
+            {
+                foreach (var faultedActivity in fault)
+                {
+                    // An activity caused the fault.
+                    workflowInstance.WorkflowStatus = faultedActivity.Resuming ? WorkflowStatus.Suspended : WorkflowStatus.Running;
+                    workflowInstance.ScheduledActivities.Push(new ScheduledActivity(faultedActivity.FaultedActivityId, faultedActivity.ActivityInput));
+                }
+            }
+
+            else
             {
                 // The workflow failed before or after running an activity.
                 // If no activities were scheduled, the workflow faulted before finishing executing the first activity.
                 var hasScheduledActivities = workflowInstance.CurrentActivity != null;
-                workflowInstance.WorkflowStatus = !hasScheduledActivities ? WorkflowStatus.Idle : fault.Resuming ? WorkflowStatus.Suspended : WorkflowStatus.Running;
+                workflowInstance.WorkflowStatus = !hasScheduledActivities ? WorkflowStatus.Idle : WorkflowStatus.Running;
             }
-            else
-            {
-                // An activity caused the fault.
-                workflowInstance.WorkflowStatus = fault.Resuming ? WorkflowStatus.Suspended : WorkflowStatus.Running;
-                workflowInstance.ScheduledActivities.Push(new ScheduledActivity(faultedActivityId));
-            }
+           
 
-            workflowInstance.Fault = null;
+            workflowInstance.Faults.Clear();
             workflowInstance.FaultedAt = null;
             await _workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);
             return workflowInstance;
@@ -72,17 +76,25 @@ namespace Elsa.Services.Workflows
         public async Task<WorkflowInstance> ReviveAndQueueAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken)
         {
             workflowInstance = await ReviveAsync(workflowInstance, cancellationToken);
-            var currentActivity = await GetActivityToScheduleAsync(workflowInstance, cancellationToken);
-            await _workflowInstanceDispatcher.DispatchAsync(new ExecuteWorkflowInstanceRequest(workflowInstance.Id, currentActivity.ActivityId), cancellationToken);
+            var scheduledActivities = await GetActivityToScheduleAsync(workflowInstance, cancellationToken);
+            foreach (var activity in scheduledActivities)
+            {
+                await _workflowInstanceDispatcher.DispatchAsync(new ExecuteWorkflowInstanceRequest(workflowInstance.Id, activity.ActivityId, new WorkflowInput(activity.Input)), cancellationToken);
+
+            }
             return workflowInstance;
         }
 
-        private async Task<ScheduledActivity> GetActivityToScheduleAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken)
+        private async Task<List<ScheduledActivity>> GetActivityToScheduleAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken)
         {
             var currentActivity = workflowInstance.CurrentActivity;
 
             if (currentActivity != null)
-                return currentActivity;
+                return new List<ScheduledActivity>() { currentActivity };
+            if (workflowInstance.ScheduledActivities.Count > 0)
+            {
+                return workflowInstance.ScheduledActivities;
+            }
 
             var workflowBlueprint = await _workflowRegistry.GetWorkflowAsync(workflowInstance.DefinitionId, VersionOptions.SpecificVersion(workflowInstance.Version), cancellationToken);
 
@@ -94,7 +106,7 @@ namespace Elsa.Services.Workflows
             if (startActivity == null)
                 throw new WorkflowException($"Cannot revive workflow {workflowInstance.Id} because it has no start activities");
 
-            return new ScheduledActivity(startActivity.Id);
+            return new List<ScheduledActivity>() { new ScheduledActivity(startActivity.Id) };
         }
     }
 }

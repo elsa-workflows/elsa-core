@@ -13,6 +13,6 @@ namespace Elsa.Models
         public bool LoadWorkflowContext { get; set; }
         public bool SaveWorkflowContext { get; set; }
         public ICollection<ActivityDefinitionProperty> Properties { get; set; } = new List<ActivityDefinitionProperty>();
-        public IDictionary<string, string> PropertyStorageProviders { get; } = new Dictionary<string, string>();
+        public IDictionary<string, string> PropertyStorageProviders { get; set; } = new Dictionary<string, string>();
     }
 }
