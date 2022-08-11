@@ -128,8 +128,11 @@ namespace Elsa.Services.Workflows
 
                     if (!runWorkflowResult.Executed)
                     {
-                        _logger.LogDebug("Workflow {WorkflowInstanceId} cannot be resumed from a suspended state (perhaps it needs a specific input)", workflowInstance.Id);
-                        return runWorkflowResult;
+                        if (workflowInstance.WorkflowStatus != WorkflowStatus.Faulted)
+                        {
+                            _logger.LogDebug("Workflow {WorkflowInstanceId} cannot be resumed from a suspended state (perhaps it needs a specific input)", workflowInstance.Id);
+                            return runWorkflowResult;
+                        }
                     }
 
                     break;
@@ -182,10 +185,13 @@ namespace Elsa.Services.Workflows
             catch (Exception e)
             {
                 _logger.LogWarning(e, "Failed to run workflow {WorkflowInstanceId}", workflowExecutionContext.WorkflowInstance.Id);
-                workflowExecutionContext.Fault(e, activity?.Id, null, false);
+                workflowExecutionContext.Fault(e, workflowExecutionContext.WorkflowInstance.CurrentActivity?.ActivityId, null, false);
 
-                if (activity != null)
-                    workflowExecutionContext.AddEntry(activity, "Faulted", null, SimpleException.FromException(e));
+                if (workflowExecutionContext.WorkflowInstance.CurrentActivity != null)
+                {
+                    var currentActivityBlueprint = workflowExecutionContext.WorkflowBlueprint.Activities.First(bp => bp.Id == workflowExecutionContext.WorkflowInstance.CurrentActivity.ActivityId);
+                    workflowExecutionContext.AddEntry(currentActivityBlueprint, "Faulted", null, SimpleException.FromException(e));
+                }
 
                 return new RunWorkflowResult(workflowExecutionContext.WorkflowInstance, activity?.Id, e, false);
             }
@@ -201,10 +207,13 @@ namespace Elsa.Services.Workflows
             catch (Exception e)
             {
                 _logger.LogWarning(e, "Failed to run workflow {WorkflowInstanceId}", workflowExecutionContext.WorkflowInstance.Id);
-                workflowExecutionContext.Fault(e, null, null, false);
+                workflowExecutionContext.Fault(e, workflowExecutionContext.WorkflowInstance.CurrentActivity?.ActivityId, null, false);
 
-                if (activity != null)
-                    workflowExecutionContext.AddEntry(activity, "Faulted", null, SimpleException.FromException(e));
+                if (workflowExecutionContext.WorkflowInstance.CurrentActivity != null)
+                {
+                    var currentActivityBlueprint = workflowExecutionContext.WorkflowBlueprint.Activities.First(bp => bp.Id == workflowExecutionContext.WorkflowInstance.CurrentActivity.ActivityId);
+                    workflowExecutionContext.AddEntry(currentActivityBlueprint, "Faulted", null, SimpleException.FromException(e));
+                }
 
                 return new RunWorkflowResult(workflowExecutionContext.WorkflowInstance, activity?.Id, e, false);
             }
@@ -232,8 +241,13 @@ namespace Elsa.Services.Workflows
             catch (Exception e)
             {
                 _logger.LogWarning(e, "Failed to run workflow {WorkflowInstanceId}", workflowExecutionContext.WorkflowInstance.Id);
-                workflowExecutionContext.Fault(e, activity.Id, null, false);
-                workflowExecutionContext.AddEntry(activity, "Faulted", null, SimpleException.FromException(e));
+                workflowExecutionContext.Fault(e, workflowExecutionContext.WorkflowInstance.CurrentActivity?.ActivityId, null, false);
+
+                if (workflowExecutionContext.WorkflowInstance.CurrentActivity != null)
+                {
+                    var currentActivityBlueprint = workflowExecutionContext.WorkflowBlueprint.Activities.First(bp => bp.Id == workflowExecutionContext.WorkflowInstance.CurrentActivity.ActivityId);
+                    workflowExecutionContext.AddEntry(currentActivityBlueprint, "Faulted", null, SimpleException.FromException(e));
+                }
                 return new RunWorkflowResult(workflowExecutionContext.WorkflowInstance, activity.Id, e, false);
             }
         }
