@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Events;
@@ -39,7 +39,8 @@ namespace Elsa.Handlers
             // Re-schedule the current scope activity.
             workflowInstance.Scopes.Remove(scope);
             workflowInstance.ActivityData.GetItem(scope.ActivityId)!.SetState("Unwinding", true);
-            workflowExecutionContext.ScheduleActivity(scope.ActivityId);
+            if (workflowInstance.WorkflowStatus != WorkflowStatus.Faulted)
+                workflowExecutionContext.ScheduleActivity(scope.ActivityId);
 
             return Task.CompletedTask;
         }
