@@ -39,6 +39,18 @@ message ExecuteWorkflowRequest {
   optional Input input = 5;
 }
 
+message StartWorkflowRequest {
+  string definitionId = 1;
+  string versionOptions = 2;
+  optional string correlationId = 3;
+  optional Input input = 4;
+}
+
+message StartWorkflowResponse {
+  bool NotFound = 1;
+  bool Finished = 2;
+}
+
 message ExecuteWorkflowInstanceResponse {
   Json workflowState = 1;
   repeated Bookmark bookmarks = 2;

@@ -14,3 +14,7 @@ service WorkflowInstanceGrain {
   rpc ExecuteNewInstance (ExecuteNewWorkflowInstanceRequest) returns (ExecuteWorkflowInstanceResponse);
   rpc Execute (ExecuteWorkflowRequest) returns (ExecuteWorkflowInstanceResponse);
 }
+
+service WorkflowGrain {
+  rpc Start (StartWorkflowRequest) returns (StartWorkflowResponse);
+}

@@ -1,3 +1,4 @@
+using Elsa.Persistence.Common.Models;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Persistence.Entities;
@@ -34,4 +35,9 @@ public interface IWorkflowInvoker
     /// Invokes the specified workflow.
     /// </summary>
     Task<InvokeWorkflowResult> InvokeAsync(Workflow workflow, WorkflowState workflowState, Bookmark? bookmark = default, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Under construction.
+    /// </summary>
+    Task StartAsync(string definitionId, VersionOptions versionOptions, IDictionary<string, object>? input = default, string? correlationId = default, CancellationToken cancellationToken = default);
 }

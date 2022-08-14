@@ -60,7 +60,9 @@ public class ProtoActorFeature : FeatureBase
         // Actors.
         services
             .AddSingleton(sp => new WorkflowDefinitionGrainActor((context, _) => ActivatorUtilities.CreateInstance<WorkflowDefinitionGrain>(sp, context)))
-            .AddSingleton(sp => new WorkflowInstanceGrainActor((context, _) => ActivatorUtilities.CreateInstance<WorkflowInstanceGrain>(sp, context)));
+            .AddSingleton(sp => new WorkflowInstanceGrainActor((context, _) => ActivatorUtilities.CreateInstance<WorkflowInstanceGrain>(sp, context)))
+            .AddSingleton(sp => new WorkflowGrainActor((context, _) => ActivatorUtilities.CreateInstance<WorkflowGrain>(sp, context)))
+            ;
 
         // Client factory.
         services.AddSingleton<GrainClientFactory>();
@@ -92,6 +94,7 @@ public class ProtoActorFeature : FeatureBase
 
         var workflowDefinitionProps = system.DI().PropsFor<WorkflowDefinitionGrainActor>();
         var workflowInstanceProps = system.DI().PropsFor<WorkflowInstanceGrainActor>();
+        var workflowProps = system.DI().PropsFor<WorkflowGrainActor>();
 
         var clusterConfig =
                 ClusterConfig
@@ -104,6 +107,7 @@ public class ProtoActorFeature : FeatureBase
                     .WithActorSpawnTimeout(TimeSpan.FromHours(1))
                     .WithClusterKind(WorkflowDefinitionGrainActor.Kind, workflowDefinitionProps)
                     .WithClusterKind(WorkflowInstanceGrainActor.Kind, workflowInstanceProps)
+                    .WithClusterKind(WorkflowGrainActor.Kind, workflowProps)
             ;
         return clusterConfig;
     }

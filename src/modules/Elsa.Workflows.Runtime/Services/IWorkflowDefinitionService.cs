@@ -1,3 +1,4 @@
+using Elsa.Persistence.Common.Models;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Persistence.Entities;
 
@@ -9,4 +10,5 @@ namespace Elsa.Workflows.Runtime.Services;
 public interface IWorkflowDefinitionService
 {
     Task<Workflow> MaterializeWorkflowAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default);
+    Task<WorkflowDefinition?> FindAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default);
 }

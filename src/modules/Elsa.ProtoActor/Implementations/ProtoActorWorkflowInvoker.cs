@@ -7,8 +7,10 @@ using System.Threading.Tasks;
 using Elsa.Persistence.Common.Models;
 using Elsa.ProtoActor.Extensions;
 using Elsa.Runtime.Protos;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Serialization;
+using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Persistence.Entities;
 using Elsa.Workflows.Runtime.Models;
@@ -23,17 +25,20 @@ namespace Elsa.ProtoActor.Implementations;
 public class ProtoActorWorkflowInvoker : IWorkflowInvoker
 {
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
+    private readonly IIdentityGenerator _identityGenerator;
     private readonly Cluster _cluster;
     private readonly GrainClientFactory _grainClientFactory;
     private readonly SerializerOptionsProvider _serializerOptionsProvider;
 
     public ProtoActorWorkflowInvoker(
         IWorkflowDefinitionService workflowDefinitionService,
+        IIdentityGenerator identityGenerator,
         Cluster cluster, 
         GrainClientFactory grainClientFactory, 
         SerializerOptionsProvider serializerOptionsProvider)
     {
         _workflowDefinitionService = workflowDefinitionService;
+        _identityGenerator = identityGenerator;
         _cluster = cluster;
         _grainClientFactory = grainClientFactory;
         _serializerOptionsProvider = serializerOptionsProvider;
@@ -142,6 +147,21 @@ public class ProtoActorWorkflowInvoker : IWorkflowInvoker
         var bookmarks = response.Bookmarks.Select(MapBookmark).ToList();
 
         return new InvokeWorkflowResult(workflowState, bookmarks);
+    }
+
+    public async Task StartAsync(string definitionId, VersionOptions versionOptions, IDictionary<string, object>? input = default, string? correlationId = default, CancellationToken cancellationToken = default)
+    {
+        var request = new StartWorkflowRequest
+        {
+            DefinitionId = definitionId,
+            VersionOptions = versionOptions.ToString(),
+            CorrelationId = correlationId.WithDefault(""),
+            Input = input?.Serialize()
+        };
+
+        var workflowInstanceId = _identityGenerator.GenerateId();
+        var client = _grainClientFactory.CreateWorkflowGrainClient(workflowInstanceId);
+        var response = await client.Start(request, cancellationToken);
     }
 
     private static ProtoBookmark? MapBookmark(Bookmark? bookmark)

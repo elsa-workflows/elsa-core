@@ -19,6 +19,7 @@ using Elsa.Labels.EntityFrameworkCore.Extensions;
 using Elsa.Labels.EntityFrameworkCore.Sqlite;
 using Elsa.Labels.Extensions;
 using Elsa.Liquid.Extensions;
+using Elsa.ProtoActor.Extensions;
 using Elsa.Scheduling.Extensions;
 using Elsa.WorkflowContexts.Extensions;
 using Elsa.Workflows.Api.Extensions;
@@ -76,6 +77,7 @@ services
             feature.CredentialsValidator = sp => sp.GetRequiredService<CustomCredentialsValidator>();
             feature.AccessTokenIssuer = sp => sp.GetRequiredService<CustomAccessTokenIssuer>();
         })
+        .UseRuntime(runtime => runtime.UseProtoActor())
         .UseJobActivities()
         .UseScheduling()
         .UseWorkflowPersistence(p => p.UseEntityFrameworkCore(ef => ef.UseSqlite()))

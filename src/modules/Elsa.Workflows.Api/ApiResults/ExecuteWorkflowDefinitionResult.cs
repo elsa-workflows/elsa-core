@@ -27,11 +27,14 @@ public class ExecuteWorkflowDefinitionResult : IActionResult
         var response = httpContext.Response;
         var workflowInvoker = httpContext.RequestServices.GetRequiredService<IWorkflowInvoker>();
         var serializerOptionsProvider = httpContext.RequestServices.GetRequiredService<SerializerOptionsProvider>();
-        var executeRequest = new InvokeWorkflowDefinitionRequest(DefinitionId, VersionOptions.Published, CorrelationId: CorrelationId);
-        var result = await workflowInvoker.InvokeAsync(executeRequest, CancellationToken.None);
+        //var executeRequest = new InvokeWorkflowDefinitionRequest(DefinitionId, VersionOptions.Published, CorrelationId: CorrelationId);
+        //var result = await workflowInvoker.InvokeAsync(executeRequest, CancellationToken.None);
+        await workflowInvoker.StartAsync(DefinitionId, VersionOptions.Published);
         var serializerOptions = serializerOptionsProvider.CreateApiOptions();
 
-        if (!response.HasStarted)
-            await response.WriteAsJsonAsync(result, serializerOptions, httpContext.RequestAborted);
+        
+        
+        // if (!response.HasStarted)
+        //     await response.WriteAsJsonAsync(result, serializerOptions, httpContext.RequestAborted);
     }
 }

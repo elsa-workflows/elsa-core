@@ -71,6 +71,11 @@ public class DefaultWorkflowInvoker : IWorkflowInvoker
         return await _workflowRunner.RunAsync(workflow, workflowState, bookmark, input, cancellationToken);
     }
 
+    public Task StartAsync(string definitionId, VersionOptions versionOptions, IDictionary<string, object>? input = default, string? correlationId = default, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
+
     private async Task<WorkflowDefinition> GetWorkflowDefinitionAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
     {
         var definition = await _workflowDefinitionStore.FindByDefinitionIdAsync(definitionId, versionOptions, cancellationToken);
