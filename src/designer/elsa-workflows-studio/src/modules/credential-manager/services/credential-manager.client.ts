@@ -1,31 +1,8 @@
-import axios, {AxiosInstance, AxiosRequestConfig} from "axios";
-import {Service} from 'axios-middleware';
-import {eventBus} from '../../../services';
-import { EventTypes } from "../../../models";
+import { AxiosInstance } from "axios";
+import { createHttpClient } from '../../../services';
 import { Secret, SecretModel } from "../models/secret.model";
 
-
-let _httpClient: AxiosInstance = null;
 let _elsaSecretsClient: ElsaSecretsClient = null;
-
-export const createHttpClient = function(baseAddress: string) : AxiosInstance
-{
-  if(!!_httpClient)
-    return _httpClient;
-
-  const config: AxiosRequestConfig = {
-    baseURL: baseAddress
-  };
-
-  eventBus.emit(EventTypes.HttpClientConfigCreated, this, {config});
-
-  const httpClient = axios.create(config);
-  const service = new Service(httpClient);
-
-  eventBus.emit(EventTypes.HttpClientCreated, this, {service, httpClient});
-
-  return _httpClient = httpClient;
-}
 
 export const createElsaSecretsClient = async function (serverUrl: string): Promise<ElsaSecretsClient> {
 

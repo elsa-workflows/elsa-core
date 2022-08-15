@@ -240,20 +240,14 @@ namespace Elsa.Activities.Http
         }
         
         object? IActivityPropertyOptionsProvider.GetOptions(PropertyInfo property)
-        { 
-            switch (property.Name)
-            {
-                case nameof(ResponseContentParserName):
-                {
+        {
+            if (property.Name != nameof(ResponseContentParserName))
+                return null;
 
-                    var items = _parsers.Select(x => new SelectListItem(x.Name, x.Name)).ToList();
+            var items = _parsers.Select(x => new SelectListItem(x.Name, x.Name)).ToList();
 
-                    items.Insert(0, new SelectListItem("Auto Select", ""));
-                    return items;
-                }
-                case nameof(ResponseContentTargetType): return null;
-                default: throw new ArgumentException($"Unsupported property: {property.Name}");
-            }
+            items.Insert(0, new SelectListItem("Auto Select", ""));
+            return items;
         }
 
         private static bool GetMethodSupportsBody(string method)
