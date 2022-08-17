@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup Label="ProtoActor">
+        <PackageReference Include="Proto.Actor" Version="0.29.1-alpha.0.6" />
+        <PackageReference Include="Proto.Cluster" Version="0.29.1-alpha.0.6" />
+        <PackageReference Include="Proto.Cluster.CodeGen" Version="0.29.1-alpha.0.6" />
+        <PackageReference Include="Proto.Cluster.Consul" Version="0.29.1-alpha.0.6" />
+        <PackageReference Include="Proto.Remote" Version="0.29.1-alpha.0.6" />
+        <PackageReference Include="Proto.Remote.GrpcCore" Version="0.27.1-alpha.0.45" />
+    </ItemGroup>
+
+</Project>
