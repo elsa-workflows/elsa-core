@@ -61,7 +61,7 @@ namespace Elsa.Services.Workflows
             foreach (var property in properties)
             {
                 var propertyName = parentName == null ? property.Name : $"{parentName}_{property.Name}";
-                var attr = property.GetCustomAttribute<ActivityPropertyAttributeBase>();
+                var attr = property.GetCustomAttributes<ActivityPropertyAttributeBase>().First();
                 var providerName = propertyStorageProviderDictionary.GetItem(propertyName) ?? attr.DefaultWorkflowStorageProvider;
                 var value = await _workflowStorageService.LoadAsync(providerName, workflowStorageContext, propertyName, cancellationToken);
 
@@ -85,7 +85,7 @@ namespace Elsa.Services.Workflows
             await StoreAppliedObjectValuesAsync(context, activity, cancellationToken);
         }
 
-        private async ValueTask StoreAppliedObjectValuesAsync(ActivityExecutionContext context, object activity, CancellationToken cancellationToken, string parentName = null)
+        private async ValueTask StoreAppliedObjectValuesAsync(ActivityExecutionContext context, object activity, CancellationToken cancellationToken, string? parentName = null)
         {
             var properties = activity.GetType().GetProperties().Where(IsActivityProperty).ToList();
             var nestedProperties = activity.GetType().GetProperties().Where(IsActivityObjectProperty).ToList();
@@ -96,7 +96,7 @@ namespace Elsa.Services.Workflows
             {
                 var propertyName = parentName == null ? property.Name : $"{parentName}_{property.Name}";
                 var value = property.GetValue(activity);
-                var attr = property.GetCustomAttribute<ActivityPropertyAttributeBase>();
+                var attr = property.GetCustomAttributes<ActivityPropertyAttributeBase>().First();
                 var providerName = propertyStorageProviderDictionary.GetItem(propertyName) ?? attr.DefaultWorkflowStorageProvider;
                 await _workflowStorageService.SaveAsync(providerName, workflowStorageContext, propertyName, value, cancellationToken);
             }
