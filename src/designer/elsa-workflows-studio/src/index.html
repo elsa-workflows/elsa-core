@@ -33,7 +33,7 @@
     // Integration demos.
 
     // Import publicly exposed services and models.
-    import { confirmDialogService, EventTypes, WebhooksPlugin, WorkflowSettingsPlugin } from "/build/index.esm.js";
+    import {confirmDialogService, EventTypes, WebhooksPlugin, CredentialManagerPlugin, WorkflowSettingsPlugin} from "/build/index.esm.js";
 
     function accessTokenFactory() {
       return  (Math.random() + 1).toString(36).substring(7);
@@ -331,6 +331,7 @@
         CustomActivityEditorPlugin,
         VehicleActivityPlugin,
         WebhooksPlugin,
+        CredentialManagerPlugin,
         WorkflowSettingsPlugin,
         CustomHubConnectionPlugin
       ]);

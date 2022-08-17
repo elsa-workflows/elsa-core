@@ -368,6 +368,7 @@ export class ElsaActivityEditorModal {
 
   renderPropertyEditor(activity: ActivityModel, property: ActivityPropertyDescriptor) {
     const key = `activity-property-input:${activity.activityId}:${property.name}`;
+
     const display = propertyDisplayManager.display(activity, property);
     const id = `${property.name}Control`;
     return <elsa-control key={key} id={id} class="sm:elsa-col-span-6" content={display}/>;

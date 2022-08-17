@@ -1,4 +1,6 @@
+using Elsa.Activities.Sql.Activities;
 using Elsa.Activities.Http.OpenApi;
+using Elsa.Design;
 using Elsa.Models;
 using Elsa.Providers.Workflows;
 using Elsa.Rebus.RabbitMq;
@@ -79,6 +81,7 @@ namespace Elsa.Samples.Server.Host
                 typeof(WorkflowSettings.Persistence.YesSql.SqlServerStartup),
                 typeof(WorkflowSettings.Persistence.YesSql.MySqlStartup),
                 typeof(WorkflowSettings.Persistence.YesSql.PostgreSqlStartup),
+                typeof(Secrets.Persistence.EntityFramework.Sqlite.Startup)
             };
 
             services

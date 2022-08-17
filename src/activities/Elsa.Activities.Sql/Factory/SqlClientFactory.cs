@@ -11,7 +11,7 @@ namespace Elsa.Activities.Sql.Factory
         {
             switch (createSqlClient.Database)
             {
-                case "MSSQL Server":
+                case "MSSQLServer":
                     return new SqlServerClient(createSqlClient.ConnectionString);
                 case "PostgreSql":
                     return new PostgreSqlClient(createSqlClient.ConnectionString);

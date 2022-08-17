@@ -2633,6 +2633,14 @@ select {
   margin-bottom: 1rem;
 }
 
+.elsa-mt-6 {
+  margin-top: 1.5rem;
+}
+
+.elsa-mb-6 {
+  margin-bottom: 1.5rem;
+}
+
 .elsa-ml-10 {
   margin-left: 2.5rem;
 }
@@ -2661,10 +2669,6 @@ select {
   margin-left: -0px;
 }
 
-.elsa-mb-6 {
-  margin-bottom: 1.5rem;
-}
-
 .elsa-ml-0 {
   margin-left: 0px;
 }
@@ -2683,10 +2687,6 @@ select {
 
 .-elsa-mb-8 {
   margin-bottom: -2rem;
-}
-
-.elsa-mt-6 {
-  margin-top: 1.5rem;
 }
 
 .elsa-block {
@@ -2867,12 +2867,12 @@ select {
   max-width: 28rem;
 }
 
-.elsa-max-w-7xl {
-  max-width: 80rem;
-}
-
 .elsa-max-w-4xl {
   max-width: 56rem;
+}
+
+.elsa-max-w-7xl {
+  max-width: 80rem;
 }
 
 .elsa-max-w-xl {
@@ -3056,16 +3056,10 @@ select {
   margin-left: calc(2rem * calc(1 - var(--tw-space-x-reverse)));
 }
 
-.elsa-space-x-4 > :not([hidden]) ~ :not([hidden]) {
+.elsa-space-x-3 > :not([hidden]) ~ :not([hidden]) {
   --tw-space-x-reverse: 0;
-  margin-right: calc(1rem * var(--tw-space-x-reverse));
-  margin-left: calc(1rem * calc(1 - var(--tw-space-x-reverse)));
-}
-
-.elsa-space-y-3 > :not([hidden]) ~ :not([hidden]) {
-  --tw-space-y-reverse: 0;
-  margin-top: calc(0.75rem * calc(1 - var(--tw-space-y-reverse)));
-  margin-bottom: calc(0.75rem * var(--tw-space-y-reverse));
+  margin-right: calc(0.75rem * var(--tw-space-x-reverse));
+  margin-left: calc(0.75rem * calc(1 - var(--tw-space-x-reverse)));
 }
 
 .elsa-space-y-8 > :not([hidden]) ~ :not([hidden]) {
@@ -3086,10 +3080,16 @@ select {
   margin-left: calc(2.5rem * calc(1 - var(--tw-space-x-reverse)));
 }
 
-.elsa-space-x-3 > :not([hidden]) ~ :not([hidden]) {
+.elsa-space-x-4 > :not([hidden]) ~ :not([hidden]) {
   --tw-space-x-reverse: 0;
-  margin-right: calc(0.75rem * var(--tw-space-x-reverse));
-  margin-left: calc(0.75rem * calc(1 - var(--tw-space-x-reverse)));
+  margin-right: calc(1rem * var(--tw-space-x-reverse));
+  margin-left: calc(1rem * calc(1 - var(--tw-space-x-reverse)));
+}
+
+.elsa-space-y-3 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(0.75rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(0.75rem * var(--tw-space-y-reverse));
 }
 
 .elsa-space-y-4 > :not([hidden]) ~ :not([hidden]) {
@@ -6243,14 +6243,14 @@ select {
   background-color: rgb(107 114 128 / var(--tw-bg-opacity));
 }
 
-.elsa-bg-gray-900 {
-  --tw-bg-opacity: 1;
-  background-color: rgb(17 24 39 / var(--tw-bg-opacity));
-}
-
 .elsa-bg-gray-100 {
   --tw-bg-opacity: 1;
   background-color: rgb(243 244 246 / var(--tw-bg-opacity));
+}
+
+.elsa-bg-gray-900 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(17 24 39 / var(--tw-bg-opacity));
 }
 
 .elsa-bg-gray-800 {
@@ -6263,9 +6263,24 @@ select {
   background-color: rgb(219 234 254 / var(--tw-bg-opacity));
 }
 
+.elsa-bg-blue-500 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(59 130 246 / var(--tw-bg-opacity));
+}
+
 .elsa-bg-green-500 {
   --tw-bg-opacity: 1;
   background-color: rgb(34 197 94 / var(--tw-bg-opacity));
+}
+
+.elsa-bg-rose-500 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(244 63 94 / var(--tw-bg-opacity));
+}
+
+.elsa-bg-yellow-500 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(234 179 8 / var(--tw-bg-opacity));
 }
 
 .elsa-bg-gray-200 {
@@ -6353,11 +6368,6 @@ select {
   background-color: rgb(250 204 21 / var(--tw-bg-opacity));
 }
 
-.elsa-bg-yellow-500 {
-  --tw-bg-opacity: 1;
-  background-color: rgb(234 179 8 / var(--tw-bg-opacity));
-}
-
 .elsa-bg-yellow-700 {
   --tw-bg-opacity: 1;
   background-color: rgb(161 98 7 / var(--tw-bg-opacity));
@@ -6416,11 +6426,6 @@ select {
 .elsa-bg-blue-300 {
   --tw-bg-opacity: 1;
   background-color: rgb(147 197 253 / var(--tw-bg-opacity));
-}
-
-.elsa-bg-blue-500 {
-  --tw-bg-opacity: 1;
-  background-color: rgb(59 130 246 / var(--tw-bg-opacity));
 }
 
 .elsa-bg-blue-700 {
@@ -6501,11 +6506,6 @@ select {
 .elsa-bg-rose-400 {
   --tw-bg-opacity: 1;
   background-color: rgb(251 113 133 / var(--tw-bg-opacity));
-}
-
-.elsa-bg-rose-500 {
-  --tw-bg-opacity: 1;
-  background-color: rgb(244 63 94 / var(--tw-bg-opacity));
 }
 
 .elsa-bg-rose-700 {
@@ -8076,6 +8076,11 @@ select {
   padding-right: 1.5rem;
 }
 
+.elsa-px-8 {
+  padding-left: 2rem;
+  padding-right: 2rem;
+}
+
 .elsa-px-2\.5 {
   padding-left: 0.625rem;
   padding-right: 0.625rem;
@@ -8091,9 +8096,9 @@ select {
   padding-bottom: 0px;
 }
 
-.elsa-px-8 {
-  padding-left: 2rem;
-  padding-right: 2rem;
+.elsa-py-3\.5 {
+  padding-top: 0.875rem;
+  padding-bottom: 0.875rem;
 }
 
 .elsa-py-3\.5 {
@@ -8145,24 +8150,8 @@ select {
   padding-top: 0px;
 }
 
-.elsa-pr-5 {
-  padding-right: 1.25rem;
-}
-
-.elsa-pr-28 {
-  padding-right: 7rem;
-}
-
-.elsa-pl-2 {
-  padding-left: 0.5rem;
-}
-
-.elsa-pr-7 {
-  padding-right: 1.75rem;
-}
-
-.elsa-pr-2 {
-  padding-right: 0.5rem;
+.elsa-pr-6 {
+  padding-right: 1.5rem;
 }
 
 .elsa-pb-0 {
@@ -8181,12 +8170,26 @@ select {
   padding-left: 2.5rem;
 }
 
-.elsa-pr-3 {
-  padding-right: 0.75rem;
+.elsa-pr-5 {
+  padding-right: 1.25rem;
 }
 
-.elsa-pr-6 {
-  padding-right: 1.5rem;
+}
+
+.elsa-pr-28 {
+  padding-right: 7rem;
+}
+
+.elsa-pl-2 {
+  padding-left: 0.5rem;
+}
+
+.elsa-pr-7 {
+  padding-right: 1.75rem;
+}
+
+.elsa-pr-2 {
+  padding-right: 0.5rem;
 }
 
 .elsa-pl-8 {
@@ -8282,12 +8285,12 @@ select {
   line-height: 2rem;
 }
 
-.elsa-tracking-tight {
-  letter-spacing: -0.025em;
-}
-
 .elsa-tracking-wider {
   letter-spacing: 0.05em;
+}
+
+.elsa-tracking-tight {
+  letter-spacing: -0.025em;
 }
 
 .elsa-text-blue-700 {
@@ -8375,6 +8378,11 @@ select {
   color: rgb(234 179 8 / var(--tw-text-opacity));
 }
 
+.elsa-text-gray-600 {
+  --tw-text-opacity: 1;
+  color: rgb(75 85 99 / var(--tw-text-opacity));
+}
+
 .elsa-text-teal-400 {
   --tw-text-opacity: 1;
   color: rgb(45 212 191 / var(--tw-text-opacity));
@@ -8398,11 +8406,6 @@ select {
 .elsa-text-yellow-700 {
   --tw-text-opacity: 1;
   color: rgb(161 98 7 / var(--tw-text-opacity));
-}
-
-.elsa-text-gray-600 {
-  --tw-text-opacity: 1;
-  color: rgb(75 85 99 / var(--tw-text-opacity));
 }
 
 .elsa-text-red-500 {
@@ -12586,12 +12589,12 @@ svg.jtk-connector.jtk-hover path {
     line-height: 1.75rem;
   }
 
-  .sm\:elsa-leading-none {
-    line-height: 1;
-  }
-
   .sm\:elsa-leading-5 {
     line-height: 1.25rem;
+  }
+
+  .sm\:elsa-leading-none {
+    line-height: 1;
   }
 
   .sm\:elsa-duration-700 {
@@ -12690,6 +12693,10 @@ svg.jtk-connector.jtk-hover path {
 
   .lg\:elsa-pl-2 {
     padding-left: 0.5rem;
+  }
+
+  .lg\:elsa-pr-8 {
+    padding-right: 2rem;
   }
 
   .lg\:elsa-text-left {

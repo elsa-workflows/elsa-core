@@ -78,8 +78,17 @@ namespace Elsa.Activities.Http
         /// The Authorization header value to send.
         /// </summary>
 
-        [ActivityInput(Hint = "The Authorization header value to send.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }, Category = PropertyCategories.Advanced)]
+        /// <summary>
+        /// The Authorization header value to send.
+        /// </summary>
+        [ActivityInput(
+          Label = "Authorization",
+          Hint = "The Authorization header value to send.",
+          Category = PropertyCategories.Advanced,
+          SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
+       )]
         public string? Authorization { get; set; }
+
 
         /// <summary>
         /// The headers to send along with the request.
@@ -253,9 +262,9 @@ namespace Elsa.Activities.Http
         {
             if (property.Name != nameof(ResponseContentParserName))
                 return null;
-            
-            var items =  _parsers.Select(x => new SelectListItem(x.Name, x.Name)).ToList();
-            
+
+            var items = _parsers.Select(x => new SelectListItem(x.Name, x.Name)).ToList();
+
             items.Insert(0, new SelectListItem("Auto Select", ""));
             return items;
         }

@@ -1,13 +1,13 @@
-using Elsa.Services;
-using Elsa.Attributes;
-using Elsa.Services.Models;
+using System.Data;
+using Elsa.Activities.Sql.Factory;
+using Elsa.Activities.Sql.Models;
 using Elsa.ActivityResults;
+using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Expressions;
-using Elsa.Activities.Sql.Factory;
-using System.Data;
-using Elsa.Activities.Sql.Models;
 using Elsa.Providers.WorkflowStorage;
+using Elsa.Services;
+using Elsa.Services.Models;
 
 namespace Elsa.Activities.Sql.Activities
 {
@@ -48,8 +48,8 @@ namespace Elsa.Activities.Sql.Activities
         /// Connection string to run SQL
         /// </summary>
         [ActivityInput(
-            Hint = "Connection string to run SQL",
-            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
+              SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid },
+              Hint = "Connection string to run SQL"
         )]
         public string ConnectionString { get; set; } = default!;
 
@@ -58,10 +58,7 @@ namespace Elsa.Activities.Sql.Activities
 
         private readonly ISqlClientFactory _sqlClientFactory;
 
-        public ExecuteSqlQuery(ISqlClientFactory sqlClientFactory)
-        {
-            _sqlClientFactory = sqlClientFactory;
-        }
+        public ExecuteSqlQuery(ISqlClientFactory sqlClientFactory)  => _sqlClientFactory = sqlClientFactory;
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => ExecuteQuery();
 
