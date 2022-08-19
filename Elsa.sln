@@ -421,6 +421,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Scripting.Sql", "src\s
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.LoadAndRunFromDatabaseConsole", "src\samples\console\Elsa.Samples.LoadAndRunFromDatabaseConsole\Elsa.Samples.LoadAndRunFromDatabaseConsole.csproj", "{507FE3FC-F775-46CF-8820-B80C6FCFD348}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.BuildAndDispatchConsole", "src\samples\console\Elsa.Samples.BuildAndDispatchConsole\Elsa.Samples.BuildAndDispatchConsole.csproj", "{1CA56484-4B92-46DA-AFC5-8602FDBFAAA2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1015,6 +1017,10 @@ Global
 		{507FE3FC-F775-46CF-8820-B80C6FCFD348}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{507FE3FC-F775-46CF-8820-B80C6FCFD348}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{507FE3FC-F775-46CF-8820-B80C6FCFD348}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1CA56484-4B92-46DA-AFC5-8602FDBFAAA2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1CA56484-4B92-46DA-AFC5-8602FDBFAAA2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1CA56484-4B92-46DA-AFC5-8602FDBFAAA2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1CA56484-4B92-46DA-AFC5-8602FDBFAAA2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1205,6 +1211,7 @@ Global
 		{962653DD-BFE7-4DDB-9B3D-5AC8C222F43F} = {FC9F520F-BA51-4AD2-BFEE-EF787798E734}
 		{68BF7E0F-0E52-4477-A5B1-367E87697C75} = {9C3C685E-3D7D-4638-A031-24F71CF74B52}
 		{507FE3FC-F775-46CF-8820-B80C6FCFD348} = {FC9F520F-BA51-4AD2-BFEE-EF787798E734}
+		{1CA56484-4B92-46DA-AFC5-8602FDBFAAA2} = {FC9F520F-BA51-4AD2-BFEE-EF787798E734}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}
