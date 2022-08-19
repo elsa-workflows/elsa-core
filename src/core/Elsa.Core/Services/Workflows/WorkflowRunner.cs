@@ -49,20 +49,11 @@ namespace Elsa.Services.Workflows
             IWorkflowBlueprint workflowBlueprint,
             WorkflowInstance workflowInstance,
             string? activityId = default,
-            //WorkflowInput? workflowInput = default,
             CancellationToken cancellationToken = default)
         {
             using var loggingScope = _logger.BeginScope(new Dictionary<string, object> { ["WorkflowInstanceId"] = workflowInstance.Id });
             using var workflowExecutionScope = _serviceScopeFactory.CreateScope();
 
-            // var input = workflowInput?.Input ?? await _workflowStorageService.LoadAsync(workflowInstance, cancellationToken);
-            //
-            // // If input provided, update the workflow instance with this input.
-            // if (input != null)
-            //     workflowInstance.Input = await _workflowStorageService.SaveAsync(workflowInput!, workflowInstance, cancellationToken);
-            // // If no input was provided, load the input associated with the workflow instance (if any).
-            // else
-                
             var input = await _workflowStorageService.LoadAsync(workflowInstance, cancellationToken);
 
             var workflowExecutionContext = new WorkflowExecutionContext(workflowExecutionScope.ServiceProvider, workflowBlueprint, workflowInstance, input);
