@@ -105,8 +105,8 @@ export class ElsaStudioRoot {
     };
 
     this.initializing.emit(elsaStudio);
-    await eventBus.emit(EventTypes.Root.Initializing);
     pluginManager.initialize(elsaStudio);
+    await eventBus.emit(EventTypes.Root.Initializing);
     propertyDisplayManager.initialize(elsaStudio);
     featuresDataManager.initialize(elsaStudio);
 
