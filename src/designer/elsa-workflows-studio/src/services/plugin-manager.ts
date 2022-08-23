@@ -18,29 +18,28 @@ import {DynamicOutcomesPlugin} from "../plugins/dynamic-outcomes-plugin";
 import {ElsaStudio} from "../models";
 
 export class PluginManager {
-  plugins: Array<ElsaPlugin> = [];
-  pluginTypes: Array<any> = [];
+  pluginFactories: Array<any> = [];
   elsaStudio: ElsaStudio;
   initialized: boolean;
 
   constructor() {
-    this.pluginTypes = [
-      DefaultDriversPlugin,
-      ActivityIconProviderPlugin,
-      IfPlugin,
-      WhilePlugin,
-      SwitchPlugin,
-      HttpEndpointPlugin,
-      SendHttpRequestPlugin,
-      TimerPlugin,
-      StartAtPlugin,
-      CronPlugin,
-      SignalReceivedPlugin,
-      SendSignalPlugin,
-      WriteLinePlugin,
-      StatePlugin,
-      SendEmailPlugin,
-      DynamicOutcomesPlugin
+    this.pluginFactories = [
+      () => new DefaultDriversPlugin(),
+      () => new ActivityIconProviderPlugin(),
+      () => new IfPlugin(),
+      () => new WhilePlugin(),
+      () => new SwitchPlugin(),
+      () => new HttpEndpointPlugin(),
+      () => new SendHttpRequestPlugin(),
+      () => new TimerPlugin(),
+      () => new StartAtPlugin(),
+      () => new CronPlugin(),
+      () => new SignalReceivedPlugin(),
+      () => new SendSignalPlugin(),
+      () => new WriteLinePlugin(),
+      () => new StatePlugin(),
+      () => new SendEmailPlugin(),
+      () => new DynamicOutcomesPlugin()
     ];
   }
 
@@ -50,28 +49,31 @@ export class PluginManager {
 
     this.elsaStudio = elsaStudio;
 
-    for (const pluginType of this.pluginTypes) {
+    for (const pluginType of this.pluginFactories) {
       this.createPlugin(pluginType);
     }
     this.initialized = true;
   }
 
-  registerPlugins(pluginTypes: Array<any>) {
-    for (const pluginType of pluginTypes) {
-      this.registerPlugin(pluginType);
+  registerPlugins(pluginFactories: Array<any>) {
+    for (const pluginFactory of pluginFactories) {
+      this.registerPlugin(pluginFactory);
     }
   }
 
   registerPlugin(pluginType: any) {
-    this.pluginTypes.push(pluginType);
+    const factory = () => new pluginType(this.elsaStudio);
+    this.registerPluginFactory(factory);
+  }
+
+  registerPluginFactory(pluginFactory: (studio: ElsaStudio) => ElsaPlugin) {
+    this.pluginFactories.push(pluginFactory);
 
     if (this.initialized)
-      this.createPlugin(pluginType);
+      this.createPlugin(pluginFactory);
   }
 
-  private createPlugin = (pluginType: any): ElsaPlugin => {
-    return new pluginType(this.elsaStudio) as ElsaPlugin;
-  }
+  private createPlugin = (pluginFactory: (studio: ElsaStudio) => ElsaPlugin): ElsaPlugin => (pluginFactory(this.elsaStudio) as ElsaPlugin)
 }
 
 export const pluginManager = new PluginManager();

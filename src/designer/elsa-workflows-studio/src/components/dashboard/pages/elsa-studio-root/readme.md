@@ -37,7 +37,7 @@ Type: `Promise<void>`
 
 
 
-### `addPlugins(pluginTypes: Array<any>) => Promise<void>`
+### `addPlugins(pluginFactories: Array<any>) => Promise<void>`
 
 
 

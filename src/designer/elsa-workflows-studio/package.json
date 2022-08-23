@@ -33,6 +33,7 @@
     "build:tailwind:prod": "cross-env NODE_ENV=production tailwind build -i ./tailwind.css -o ./src/globals/tailwind.css"
   },
   "dependencies": {
+    "@auth0/auth0-spa-js": "^1.22.2",
     "@microsoft/signalr": "^6.0.3",
     "ajv": "^8.10.0",
     "async-mutex": "^0.3.2",
