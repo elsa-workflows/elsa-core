@@ -335,6 +335,13 @@
         WorkflowSettingsPlugin,
         CustomHubConnectionPlugin
       ]);
+
+      // Uncomment below to register the Auth0 plugin.
+      // elsa.pluginManager.registerPluginFactory(() => new Auth0Plugin({
+      //   client_id: null, // TODO: enter client ID.
+      //   domain: null, // TODO: enter domain.
+      //   audience: null, // TODO: enter audience.
+      // }));
     });
 
     // Some components publish DOM events that we can handle directly:
