@@ -16,7 +16,7 @@ namespace Elsa.HostedServices
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            using var scope = _scopeFactory.CreateScope();
+            await using var scope = _scopeFactory.CreateAsyncScope();
             var worker = (IScopedBackgroundService)ActivatorUtilities.GetServiceOrCreateInstance<TWorker>(scope.ServiceProvider);
             await worker.ExecuteAsync(stoppingToken);
         }
