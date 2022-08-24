@@ -15,7 +15,13 @@ export class Auth0Plugin implements ElsaPlugin {
   }
 
   private initialize = async () => {
-    this.auth0 = await createAuth0Client(this.options);
+    const options = this.options;
+    const {domain} = options;
+
+    if(!domain || domain.trim().length == 0)
+      return;
+
+    this.auth0 = await createAuth0Client(options);
     const isAuthenticated = await this.auth0.isAuthenticated();
 
     // Nothing to do if authenticated.
@@ -43,11 +49,11 @@ export class Auth0Plugin implements ElsaPlugin {
     // Redirect to Auth0 for the user to authenticate themselves.
     const origin = window.location.origin;
 
-    const options = {
+    const redirectOptions = {
       redirect_uri: origin
     };
 
-    await this.auth0.loginWithRedirect(options);
+    await this.auth0.loginWithRedirect(redirectOptions);
   };
 
   private configureAuthMiddleware = async (e: any) => {
