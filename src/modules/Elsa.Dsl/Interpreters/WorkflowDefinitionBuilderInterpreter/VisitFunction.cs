@@ -4,7 +4,7 @@ namespace Elsa.Dsl.Interpreters;
 
 public partial class WorkflowDefinitionBuilderInterpreter
 {
-    public override IWorkflowDefinitionBuilder VisitExpressionStat(ElsaParser.ExpressionStatContext context)
+    public override IWorkflowBuilder VisitExpressionStat(ElsaParser.ExpressionStatContext context)
     {
         VisitChildren(context);
         var expressionValue = _expressionValue.Get(context.expr());
@@ -12,7 +12,7 @@ public partial class WorkflowDefinitionBuilderInterpreter
         return DefaultResult;
     }
 
-    public override IWorkflowDefinitionBuilder VisitFunctionExpr(ElsaParser.FunctionExprContext context)
+    public override IWorkflowBuilder VisitFunctionExpr(ElsaParser.FunctionExprContext context)
     {
         VisitChildren(context);
         var expressionValue = _expressionValue.Get(context.funcCall());
@@ -20,7 +20,7 @@ public partial class WorkflowDefinitionBuilderInterpreter
         return DefaultResult;
     }
 
-    public override IWorkflowDefinitionBuilder VisitFuncCall(ElsaParser.FuncCallContext context)
+    public override IWorkflowBuilder VisitFuncCall(ElsaParser.FuncCallContext context)
     {
         VisitChildren(context);
             

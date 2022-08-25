@@ -11,7 +11,7 @@ using HttpMethods = Microsoft.AspNetCore.Http.HttpMethods;
 
 public class HttpWorkflow : WorkflowBase
 {
-    protected override void Build(IWorkflowDefinitionBuilder workflow)
+    protected override void Build(IWorkflowBuilder workflow)
     {
         // Setup the workflow.
         workflow

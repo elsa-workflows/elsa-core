@@ -12,7 +12,7 @@ public class WorkflowRunner : IWorkflowRunner
     private readonly IWorkflowExecutionPipeline _pipeline;
     private readonly IWorkflowStateSerializer _workflowStateSerializer;
     private readonly IIdentityGraphService _identityGraphService;
-    private readonly IWorkflowDefinitionBuilderFactory _workflowDefinitionBuilderFactory;
+    private readonly IWorkflowBuilderFactory _workflowBuilderFactory;
     private readonly IActivitySchedulerFactory _schedulerFactory;
     private readonly IIdentityGenerator _identityGenerator;
 
@@ -22,7 +22,7 @@ public class WorkflowRunner : IWorkflowRunner
         IWorkflowExecutionPipeline pipeline,
         IWorkflowStateSerializer workflowStateSerializer,
         IIdentityGraphService identityGraphService,
-        IWorkflowDefinitionBuilderFactory workflowDefinitionBuilderFactory,
+        IWorkflowBuilderFactory workflowBuilderFactory,
         IActivitySchedulerFactory schedulerFactory,
         IIdentityGenerator identityGenerator)
     {
@@ -31,21 +31,21 @@ public class WorkflowRunner : IWorkflowRunner
         _pipeline = pipeline;
         _workflowStateSerializer = workflowStateSerializer;
         _identityGraphService = identityGraphService;
-        _workflowDefinitionBuilderFactory = workflowDefinitionBuilderFactory;
+        _workflowBuilderFactory = workflowBuilderFactory;
         _schedulerFactory = schedulerFactory;
         _identityGenerator = identityGenerator;
     }
 
     public async Task<InvokeWorkflowResult> RunAsync(IWorkflow workflow, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
     {
-        var builder = _workflowDefinitionBuilderFactory.CreateBuilder();
+        var builder = _workflowBuilderFactory.CreateBuilder();
         var workflowDefinition = await builder.BuildWorkflowAsync(workflow, cancellationToken);
         return await RunAsync(workflowDefinition, input, cancellationToken);
     }
 
     public async Task<InvokeWorkflowResult> RunAsync<T>(IDictionary<string, object>? input = default, CancellationToken cancellationToken = default) where T : IWorkflow
     {
-        var builder = _workflowDefinitionBuilderFactory.CreateBuilder();
+        var builder = _workflowBuilderFactory.CreateBuilder();
         var workflowDefinition = await builder.BuildWorkflowAsync<T>(cancellationToken);
         return await RunAsync(workflowDefinition, input, cancellationToken);
     }

@@ -6,7 +6,7 @@ namespace Elsa.Dsl.Interpreters;
 
 public partial class WorkflowDefinitionBuilderInterpreter
 {
-    public override IWorkflowDefinitionBuilder VisitBlockStat(ElsaParser.BlockStatContext context)
+    public override IWorkflowBuilder VisitBlockStat(ElsaParser.BlockStatContext context)
     {
         VisitChildren(context);
 
@@ -16,7 +16,7 @@ public partial class WorkflowDefinitionBuilderInterpreter
         return DefaultResult;
     }
 
-    public override IWorkflowDefinitionBuilder VisitBlock(ElsaParser.BlockContext context)
+    public override IWorkflowBuilder VisitBlock(ElsaParser.BlockContext context)
     {
         var sequence = new Sequence();
         _containerStack.Push(sequence);

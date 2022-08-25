@@ -14,7 +14,7 @@ public class StartAtBookmarkWorkflow : WorkflowBase
         _systemClock = systemClock;
     }
 
-    protected override void Build(IWorkflowDefinitionBuilder workflow)
+    protected override void Build(IWorkflowBuilder workflow)
     {
         workflow.WithRoot(new Sequence
         {

@@ -7,7 +7,7 @@ namespace Elsa.Dsl.Interpreters;
 
 public partial class WorkflowDefinitionBuilderInterpreter
 {
-    public override IWorkflowDefinitionBuilder VisitNewObjectExpr(ElsaParser.NewObjectExprContext context)
+    public override IWorkflowBuilder VisitNewObjectExpr(ElsaParser.NewObjectExprContext context)
     {
         VisitChildren(context);
 
@@ -17,7 +17,7 @@ public partial class WorkflowDefinitionBuilderInterpreter
         return DefaultResult;
     }
 
-    public override IWorkflowDefinitionBuilder VisitNewObject(ElsaParser.NewObjectContext context)
+    public override IWorkflowBuilder VisitNewObject(ElsaParser.NewObjectContext context)
     {
         var objectTypeName = context.ID().GetText();
         var typeArg = context.type()?.GetText();

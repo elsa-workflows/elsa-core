@@ -17,7 +17,7 @@ public class StartAtTriggerWorkflow : WorkflowBase
         _executeAt = systemClock.UtcNow.AddSeconds(10);
     }
 
-    protected override void Build(IWorkflowDefinitionBuilder workflow)
+    protected override void Build(IWorkflowBuilder workflow)
     {
         workflow.WithRoot(new Sequence
         {

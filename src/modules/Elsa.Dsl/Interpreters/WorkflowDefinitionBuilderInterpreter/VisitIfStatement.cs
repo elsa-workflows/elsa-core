@@ -7,7 +7,7 @@ namespace Elsa.Dsl.Interpreters;
 
 public partial class WorkflowDefinitionBuilderInterpreter
 {
-    public override IWorkflowDefinitionBuilder VisitIfStat(ElsaParser.IfStatContext context)
+    public override IWorkflowBuilder VisitIfStat(ElsaParser.IfStatContext context)
     {
         var ifActivity = new If();
         var conditionExpr = context.expr().GetText();

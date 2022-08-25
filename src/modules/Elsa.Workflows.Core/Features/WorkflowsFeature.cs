@@ -67,9 +67,9 @@ public class WorkflowsFeature : FeatureBase
             .AddSingleton<IHasher, Hasher>()
             .AddSingleton<IIdentityGenerator, RandomIdentityGenerator>()
             .AddSingleton<IBookmarkPayloadSerializer, BookmarkPayloadSerializer>()
-            .AddTransient<WorkflowDefinitionBuilder>()
-            .AddSingleton(typeof(Func<IWorkflowDefinitionBuilder>), sp => () => sp.GetRequiredService<WorkflowDefinitionBuilder>())
-            .AddSingleton<IWorkflowDefinitionBuilderFactory, WorkflowDefinitionBuilderFactory>()
+            .AddTransient<WorkflowBuilder>()
+            .AddSingleton(typeof(Func<IWorkflowBuilder>), sp => () => sp.GetRequiredService<WorkflowBuilder>())
+            .AddSingleton<IWorkflowBuilderFactory, WorkflowBuilderFactory>()
             .AddSingleton<IWellKnownTypeRegistry, WellKnownTypeRegistry>()
 
             // Pipelines.

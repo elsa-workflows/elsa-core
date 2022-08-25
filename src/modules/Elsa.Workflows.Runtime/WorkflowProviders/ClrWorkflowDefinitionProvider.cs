@@ -17,7 +17,7 @@ namespace Elsa.Workflows.Runtime.WorkflowProviders;
 public class ClrWorkflowDefinitionProvider : IWorkflowDefinitionProvider
 {
     private readonly IIdentityGraphService _identityGraphService;
-    private readonly IWorkflowDefinitionBuilderFactory _workflowBuilderFactory;
+    private readonly IWorkflowBuilderFactory _workflowBuilderFactory;
     private readonly SerializerOptionsProvider _serializerOptionsProvider;
     private readonly ISystemClock _systemClock;
     private readonly IServiceProvider _serviceProvider;
@@ -26,7 +26,7 @@ public class ClrWorkflowDefinitionProvider : IWorkflowDefinitionProvider
     public ClrWorkflowDefinitionProvider(
         IOptions<WorkflowRuntimeOptions> options,
         IIdentityGraphService identityGraphService,
-        IWorkflowDefinitionBuilderFactory workflowBuilderFactory,
+        IWorkflowBuilderFactory workflowBuilderFactory,
         SerializerOptionsProvider serializerOptionsProvider,
         ISystemClock systemClock,
         IServiceProvider serviceProvider

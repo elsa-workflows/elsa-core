@@ -7,7 +7,7 @@ namespace Elsa.Dsl.Interpreters;
 
 public partial class WorkflowDefinitionBuilderInterpreter
 {
-    public override IWorkflowDefinitionBuilder VisitExpressionMarker(ElsaParser.ExpressionMarkerContext context)
+    public override IWorkflowBuilder VisitExpressionMarker(ElsaParser.ExpressionMarkerContext context)
     {
         var language = context.ID();
         var expressionContent = context.expressionContent().GetText();

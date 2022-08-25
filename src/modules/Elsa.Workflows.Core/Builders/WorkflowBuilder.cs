@@ -4,11 +4,11 @@ using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Core.Builders;
 
-public class WorkflowDefinitionBuilder : IWorkflowDefinitionBuilder
+public class WorkflowBuilder : IWorkflowBuilder
 {
     private readonly IIdentityGraphService _identityGraphService;
 
-    public WorkflowDefinitionBuilder(IIdentityGraphService identityGraphService)
+    public WorkflowBuilder(IIdentityGraphService identityGraphService)
     {
         _identityGraphService = identityGraphService;
     }
@@ -21,25 +21,25 @@ public class WorkflowDefinitionBuilder : IWorkflowDefinitionBuilder
     public IDictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
     public IDictionary<string, object> ApplicationProperties { get; set; } = new Dictionary<string, object>();
 
-    public IWorkflowDefinitionBuilder WithId(string id)
+    public IWorkflowBuilder WithId(string id)
     {
         Id = id;
         return this;
     }
 
-    public IWorkflowDefinitionBuilder WithDefinitionId(string definitionId)
+    public IWorkflowBuilder WithDefinitionId(string definitionId)
     {
         DefinitionId = definitionId;
         return this;
     }
 
-    public IWorkflowDefinitionBuilder WithVersion(int version)
+    public IWorkflowBuilder WithVersion(int version)
     {
         Version = version;
         return this;
     }
 
-    public IWorkflowDefinitionBuilder WithRoot(IActivity root)
+    public IWorkflowBuilder WithRoot(IActivity root)
     {
         Root = root;
         return this;
@@ -71,25 +71,25 @@ public class WorkflowDefinitionBuilder : IWorkflowDefinitionBuilder
         return variable;
     }
 
-    public IWorkflowDefinitionBuilder WithVariable(Variable variable)
+    public IWorkflowBuilder WithVariable(Variable variable)
     {
         Variables.Add(variable);
         return this;
     }
 
-    public IWorkflowDefinitionBuilder WithVariables(params Variable[] variables)
+    public IWorkflowBuilder WithVariables(params Variable[] variables)
     {
         foreach (var variable in variables) Variables.Add(variable);
         return this;
     }
 
-    public IWorkflowDefinitionBuilder WithMetadata(string name, object value)
+    public IWorkflowBuilder WithMetadata(string name, object value)
     {
         Metadata[name] = value;
         return this;
     }
 
-    public IWorkflowDefinitionBuilder WithApplicationProperty(string name, object value)
+    public IWorkflowBuilder WithApplicationProperty(string name, object value)
     {
         ApplicationProperties[name] = value;
         return this;
