@@ -30,22 +30,20 @@ var sqlServerConnectionString = configuration.GetConnectionString("SqlServer");
 services
     .AddElsa(elsa => elsa
         .UseWorkflowPersistence(persistence => persistence.UseEntityFrameworkCore(ef => ef.UseSqlite()))
-        .UseRuntime(runtime =>
-        {
-            runtime.Workflows.Add<HelloWorldWorkflow>();
-            runtime.Workflows.Add<HttpWorkflow>();
-            runtime.Workflows.Add<ForkedHttpWorkflow>();
-            runtime.Workflows.Add<CompositeActivitiesWorkflow>();
-            runtime.Workflows.Add<SendMessageWorkflow>();
-            runtime.Workflows.Add<ReceiveMessageWorkflow>();
-            runtime.Workflows.Add<RunJavaScriptWorkflow>();
-            runtime.Workflows.Add<WorkflowContextsWorkflow>();
-            runtime.Workflows.Add<SubmitJobWorkflow>();
-            runtime.Workflows.Add<DelayWorkflow>();
-            runtime.Workflows.Add<OrderProcessingWorkflow>();
-            runtime.Workflows.Add<StartAtTriggerWorkflow>();
-            runtime.Workflows.Add<StartAtBookmarkWorkflow>();
-        })
+        .UseRuntime(runtime => runtime
+            .AddWorkflow<HelloWorldWorkflow>()
+            .AddWorkflow<HttpWorkflow>()
+            .AddWorkflow<ForkedHttpWorkflow>()
+            .AddWorkflow<CompositeActivitiesWorkflow>()
+            .AddWorkflow<SendMessageWorkflow>()
+            .AddWorkflow<ReceiveMessageWorkflow>()
+            .AddWorkflow<RunJavaScriptWorkflow>()
+            .AddWorkflow<WorkflowContextsWorkflow>()
+            .AddWorkflow<SubmitJobWorkflow>()
+            .AddWorkflow<DelayWorkflow>()
+            .AddWorkflow<OrderProcessingWorkflow>()
+            .AddWorkflow<StartAtTriggerWorkflow>()
+            .AddWorkflow<StartAtBookmarkWorkflow>())
         .UseJobs()
         .UseScheduling()
         .UseWorkflowApiEndpoints()
@@ -60,7 +58,7 @@ services
 // If you want to include all controllers
 services
     // Elsa API endpoints require MVC controllers. 
-    .AddControllers() 
+    .AddControllers()
     .ClearApplicationParts() // Remove all controllers from referenced packages.
     .AddApplicationPartsFrom<Program>() // Add back any controllers from the current application.
     .AddWorkflowManagementApiControllers() // Add Elsa API endpoint controllers.

@@ -1,3 +1,4 @@
+using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Core.State;
@@ -36,21 +37,27 @@ public class WorkflowRunner : IWorkflowRunner
         _identityGenerator = identityGenerator;
     }
 
-    public async Task<InvokeWorkflowResult> RunAsync(IWorkflow workflow, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
+    public async Task<RunWorkflowResult> RunAsync(IActivity activity, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
+    {
+        var workflow = Workflow.FromActivity(activity);
+        return await RunAsync(workflow, input, cancellationToken);
+    }
+
+    public async Task<RunWorkflowResult> RunAsync(IWorkflow workflow, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
     {
         var builder = _workflowBuilderFactory.CreateBuilder();
         var workflowDefinition = await builder.BuildWorkflowAsync(workflow, cancellationToken);
         return await RunAsync(workflowDefinition, input, cancellationToken);
     }
 
-    public async Task<InvokeWorkflowResult> RunAsync<T>(IDictionary<string, object>? input = default, CancellationToken cancellationToken = default) where T : IWorkflow
+    public async Task<RunWorkflowResult> RunAsync<T>(IDictionary<string, object>? input = default, CancellationToken cancellationToken = default) where T : IWorkflow
     {
         var builder = _workflowBuilderFactory.CreateBuilder();
         var workflowDefinition = await builder.BuildWorkflowAsync<T>(cancellationToken);
         return await RunAsync(workflowDefinition, input, cancellationToken);
     }
 
-    public async Task<InvokeWorkflowResult> RunAsync(Workflow workflow, IDictionary<string, object>? input, CancellationToken cancellationToken = default)
+    public async Task<RunWorkflowResult> RunAsync(Workflow workflow, IDictionary<string, object>? input, CancellationToken cancellationToken = default)
     {
         // Create a child scope.
         using var scope = _serviceScopeFactory.CreateScope();
@@ -58,13 +65,13 @@ public class WorkflowRunner : IWorkflowRunner
         // Setup a workflow execution context.
         var workflowExecutionContext = await CreateWorkflowExecutionContextAsync(scope.ServiceProvider, workflow, default, default, input, default, cancellationToken);
 
-        // Schedule the first node.
+        // Schedule the first activity.
         workflowExecutionContext.ScheduleRoot();
 
         return await RunAsync(workflowExecutionContext);
     }
 
-    public async Task<InvokeWorkflowResult> RunAsync(Workflow workflow, WorkflowState workflowState, IDictionary<string, object>? input, CancellationToken cancellationToken = default)
+    public async Task<RunWorkflowResult> RunAsync(Workflow workflow, WorkflowState workflowState, IDictionary<string, object>? input, CancellationToken cancellationToken = default)
     {
         // Create a child scope.
         using var scope = _serviceScopeFactory.CreateScope();
@@ -78,7 +85,7 @@ public class WorkflowRunner : IWorkflowRunner
         return await RunAsync(workflowExecutionContext);
     }
 
-    public async Task<InvokeWorkflowResult> RunAsync(Workflow workflow, WorkflowState workflowState, Bookmark? bookmark, IDictionary<string, object>? input, CancellationToken cancellationToken = default)
+    public async Task<RunWorkflowResult> RunAsync(Workflow workflow, WorkflowState workflowState, Bookmark? bookmark, IDictionary<string, object>? input, CancellationToken cancellationToken = default)
     {
         // Create a child scope.
         using var scope = _serviceScopeFactory.CreateScope();
@@ -92,7 +99,7 @@ public class WorkflowRunner : IWorkflowRunner
         return await RunAsync(workflowExecutionContext);
     }
 
-    public async Task<InvokeWorkflowResult> RunAsync(WorkflowExecutionContext workflowExecutionContext)
+    public async Task<RunWorkflowResult> RunAsync(WorkflowExecutionContext workflowExecutionContext)
     {
         // Transition into the Running state.
         workflowExecutionContext.TransitionTo(WorkflowSubStatus.Executing);
@@ -104,7 +111,7 @@ public class WorkflowRunner : IWorkflowRunner
         var workflowState = _workflowStateSerializer.SerializeState(workflowExecutionContext);
 
         // Return workflow execution result containing state + bookmarks.
-        return new InvokeWorkflowResult(workflowState, workflowExecutionContext.Bookmarks);
+        return new RunWorkflowResult(workflowState, workflowExecutionContext.Bookmarks);
     }
 
     private async Task<WorkflowExecutionContext> CreateWorkflowExecutionContextAsync(

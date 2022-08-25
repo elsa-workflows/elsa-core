@@ -109,7 +109,7 @@ public class WorkflowInstanceGrain : WorkflowInstanceGrainBase
         return MapResult(result);
     }
 
-    private ExecuteWorkflowInstanceResponse MapResult(InvokeWorkflowResult result)
+    private ExecuteWorkflowInstanceResponse MapResult(RunWorkflowResult result)
     {
         var bookmarks = result.Bookmarks.Select(x => new Bookmark
         {
@@ -137,7 +137,7 @@ public class WorkflowInstanceGrain : WorkflowInstanceGrainBase
         return response;
     }
 
-    private async Task<InvokeWorkflowResult> ExecuteAsync(
+    private async Task<RunWorkflowResult> ExecuteAsync(
         WorkflowDefinition workflowDefinition,
         WorkflowState workflowState,
         Bookmark? bookmarkMessage = default,
@@ -148,7 +148,7 @@ public class WorkflowInstanceGrain : WorkflowInstanceGrainBase
         return await ExecuteAsync(workflow, workflowState, bookmarkMessage, input, cancellationToken);
     }
 
-    private async Task<InvokeWorkflowResult> ExecuteAsync(
+    private async Task<RunWorkflowResult> ExecuteAsync(
         Workflow workflow,
         WorkflowState workflowState,
         Bookmark? bookmarkMessage = default,

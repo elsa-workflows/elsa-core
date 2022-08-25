@@ -12,7 +12,7 @@ namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions;
 
 [Area(AreaNames.Elsa)]
 [ApiEndpoint(ControllerNames.WorkflowDefinitions, "Execute")]
-[ProducesResponseType(typeof(InvokeWorkflowResult), StatusCodes.Status200OK)]
+[ProducesResponseType(typeof(RunWorkflowResult), StatusCodes.Status200OK)]
 public class Execute : Controller
 {
     private readonly IWorkflowDefinitionStore _store;

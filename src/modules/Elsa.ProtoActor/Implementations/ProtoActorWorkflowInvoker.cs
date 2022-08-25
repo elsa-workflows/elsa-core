@@ -39,7 +39,7 @@ public class ProtoActorWorkflowInvoker : IWorkflowInvoker
         _serializerOptionsProvider = serializerOptionsProvider;
     }
 
-    public async Task<InvokeWorkflowResult> InvokeAsync(InvokeWorkflowDefinitionRequest request, CancellationToken cancellationToken = default)
+    public async Task<RunWorkflowResult> InvokeAsync(InvokeWorkflowDefinitionRequest request, CancellationToken cancellationToken = default)
     {
         var (definitionId, versionOptions, input, correlationId) = request;
 
@@ -60,10 +60,10 @@ public class ProtoActorWorkflowInvoker : IWorkflowInvoker
         var workflowState = JsonSerializer.Deserialize<WorkflowState>(response.WorkflowState.Text)!;
         var bookmarks = response.Bookmarks.Select(MapBookmark).ToList();
 
-        return new InvokeWorkflowResult(workflowState, bookmarks);
+        return new RunWorkflowResult(workflowState, bookmarks);
     }
 
-    public async Task<InvokeWorkflowResult> InvokeAsync(InvokeWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
+    public async Task<RunWorkflowResult> InvokeAsync(InvokeWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
         var (instanceId, bookmark, input, correlationId) = request;
         var bookmarkMessage = MapBookmark(bookmark);
@@ -84,10 +84,10 @@ public class ProtoActorWorkflowInvoker : IWorkflowInvoker
         var workflowState = JsonSerializer.Deserialize<WorkflowState>(response.WorkflowState.Text)!;
         var bookmarks = response.Bookmarks.Select(MapBookmark).ToList();
 
-        return new InvokeWorkflowResult(workflowState, bookmarks);
+        return new RunWorkflowResult(workflowState, bookmarks);
     }
 
-    public async Task<InvokeWorkflowResult> InvokeAsync(WorkflowInstance workflowInstance, Bookmark? bookmark = default, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
+    public async Task<RunWorkflowResult> InvokeAsync(WorkflowInstance workflowInstance, Bookmark? bookmark = default, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
     {
         var bookmarkMessage = MapBookmark(bookmark);
 
@@ -106,10 +106,10 @@ public class ProtoActorWorkflowInvoker : IWorkflowInvoker
 
         var bookmarks = response.Bookmarks.Select(MapBookmark).ToList();
         var workflowState = JsonSerializer.Deserialize<WorkflowState>(response.WorkflowState.Text, _serializerOptionsProvider.CreateDefaultOptions())!;
-        return new InvokeWorkflowResult(workflowState, bookmarks);
+        return new RunWorkflowResult(workflowState, bookmarks);
     }
 
-    public async Task<InvokeWorkflowResult> InvokeAsync(
+    public async Task<RunWorkflowResult> InvokeAsync(
         WorkflowDefinition workflowDefinition, 
         WorkflowState workflowState, 
         Bookmark? bookmark = default, 
@@ -120,7 +120,7 @@ public class ProtoActorWorkflowInvoker : IWorkflowInvoker
         return await InvokeAsync(workflow, workflowState, bookmark, input, cancellationToken);
     }
 
-    public async Task<InvokeWorkflowResult> InvokeAsync(Workflow workflow, WorkflowState workflowState, Bookmark? bookmark = default, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
+    public async Task<RunWorkflowResult> InvokeAsync(Workflow workflow, WorkflowState workflowState, Bookmark? bookmark = default, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
     {
         var bookmarkMessage = MapBookmark(bookmark);
 
@@ -141,7 +141,7 @@ public class ProtoActorWorkflowInvoker : IWorkflowInvoker
 
         var bookmarks = response.Bookmarks.Select(MapBookmark).ToList();
 
-        return new InvokeWorkflowResult(workflowState, bookmarks);
+        return new RunWorkflowResult(workflowState, bookmarks);
     }
 
     private static ProtoBookmark? MapBookmark(Bookmark? bookmark)

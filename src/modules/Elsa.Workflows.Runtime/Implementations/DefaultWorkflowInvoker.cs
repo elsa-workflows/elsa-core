@@ -31,7 +31,7 @@ public class DefaultWorkflowInvoker : IWorkflowInvoker
         _workflowDefinitionStore = workflowDefinitionStore;
     }
 
-    public async Task<InvokeWorkflowResult> InvokeAsync(InvokeWorkflowDefinitionRequest request, CancellationToken cancellationToken = default)
+    public async Task<RunWorkflowResult> InvokeAsync(InvokeWorkflowDefinitionRequest request, CancellationToken cancellationToken = default)
     {
         var definition = await GetWorkflowDefinitionAsync(request.DefinitionId, request.VersionOptions, cancellationToken);
         var input = request.Input;
@@ -39,7 +39,7 @@ public class DefaultWorkflowInvoker : IWorkflowInvoker
         return await _workflowRunner.RunAsync(workflow, input, cancellationToken);
     }
 
-    public async Task<InvokeWorkflowResult> InvokeAsync(InvokeWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
+    public async Task<RunWorkflowResult> InvokeAsync(InvokeWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
         var workflowInstance = await _workflowInstanceStore.FindByIdAsync(request.InstanceId, cancellationToken);
 
@@ -49,7 +49,7 @@ public class DefaultWorkflowInvoker : IWorkflowInvoker
         return await InvokeAsync(workflowInstance!, request.Bookmark, request.Input, cancellationToken);
     }
 
-    public async Task<InvokeWorkflowResult> InvokeAsync(WorkflowInstance workflowInstance, Bookmark? bookmark = default, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
+    public async Task<RunWorkflowResult> InvokeAsync(WorkflowInstance workflowInstance, Bookmark? bookmark = default, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
     {
         var workflow = await _workflowDefinitionStore.FindByDefinitionIdAsync(workflowInstance.DefinitionId, VersionOptions.SpecificVersion(workflowInstance.Version), cancellationToken);
 
@@ -60,13 +60,13 @@ public class DefaultWorkflowInvoker : IWorkflowInvoker
         return await InvokeAsync(workflow, workflowState, bookmark, input, cancellationToken);
     }
 
-    public async Task<InvokeWorkflowResult> InvokeAsync(WorkflowDefinition workflowDefinition, WorkflowState workflowState, Bookmark? bookmark = default, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
+    public async Task<RunWorkflowResult> InvokeAsync(WorkflowDefinition workflowDefinition, WorkflowState workflowState, Bookmark? bookmark = default, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
     {
         var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
         return await InvokeAsync(workflow, workflowState, bookmark, input, cancellationToken);
     }
 
-    public async Task<InvokeWorkflowResult> InvokeAsync(Workflow workflow, WorkflowState workflowState, Bookmark? bookmark = default, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
+    public async Task<RunWorkflowResult> InvokeAsync(Workflow workflow, WorkflowState workflowState, Bookmark? bookmark = default, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
     {
         return await _workflowRunner.RunAsync(workflow, workflowState, bookmark, input, cancellationToken);
     }
