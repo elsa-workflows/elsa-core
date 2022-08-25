@@ -6,7 +6,6 @@ namespace Elsa.ProtoActor.Kubernetes;
 
 public class KubernetesProviderOptions : ProviderOptions
 {
-    public string HostAddress { get; set; }
-
+    public string HostAddress { get; set; } = default!;
     public IIdentityLookup IdentityLookup { get; set; } = new PartitionIdentityLookup();
 }
