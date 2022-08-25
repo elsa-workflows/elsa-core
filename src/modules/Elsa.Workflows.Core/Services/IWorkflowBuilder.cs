@@ -6,7 +6,7 @@ public interface IWorkflowBuilder
 {
     string? DefinitionId { get; }
     int Version { get; }
-    IActivity? Root { get; }
+    IActivity? Root { get; set; }
     ICollection<Variable> Variables { get; set; }
     IDictionary<string, object> ApplicationProperties { get; }
     IWorkflowBuilder WithDefinitionId(string definitionId);
