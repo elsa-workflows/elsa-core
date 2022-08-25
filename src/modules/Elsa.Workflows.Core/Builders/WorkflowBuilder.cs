@@ -13,10 +13,10 @@ public class WorkflowBuilder : IWorkflowBuilder
         _identityGraphService = identityGraphService;
     }
     
-    public string? Id { get; private set; }
-    public string? DefinitionId { get; private set; }
+    public string? Id { get; set; }
+    public string? DefinitionId { get; set; }
     public int Version { get; private set; } = 1;
-    public IActivity? Root { get; private set; }
+    public IActivity? Root { get; set; }
     public ICollection<Variable> Variables { get; set; } = new List<Variable>();
     public IDictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
     public IDictionary<string, object> ApplicationProperties { get; set; } = new Dictionary<string, object>();
