@@ -25,7 +25,7 @@ var services = builder.Services;
 services
     .AddElsa(elsa => elsa
         .UseWorkflows()
-        .UseRuntime(runtime => runtime.UseProtoActor())
+        .UseRuntime(runtime => runtime.UseProtoActor(f=> f.WithLocalhostProvider(opt => opt.Name = "my-cluster")))
         .UseManagement(management => management
             .AddActivity<Sequence>()
             .AddActivity<WriteLine>()
