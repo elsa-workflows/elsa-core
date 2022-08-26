@@ -1,8 +1,12 @@
 namespace Elsa.ActivityDefinitions.Endpoints.ActivityDefinitions.Get;
 
-public static class SecurityConstants
+/// <summary>
+/// Provides policy names accepted by the <see cref="Get"/> endpoint.
+/// </summary>
+public static class Constants
 {
-    public static readonly string[] Policies = { "ReadActivityDefinitions" };
-    public static readonly string[] Permissions = { "ReadActivityDefinitions" };
-    public static readonly string[] Roles = { "ActivityDefinitionsReader" };
+    /// <summary>
+    /// The policy name accepted by this endpoint.
+    /// </summary>
+    public const string PolicyName = "ReadActivityDefinitions";
 }

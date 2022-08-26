@@ -1,6 +1,6 @@
 using System.Linq.Expressions;
+using Elsa.Models;
 using Elsa.Persistence.Common.Extensions;
-using Elsa.Persistence.Common.Models;
 using Elsa.Persistence.EntityFrameworkCore.Common.Extensions;
 using Elsa.Persistence.EntityFrameworkCore.Common.Services;
 using Elsa.Workflows.Persistence.Entities;

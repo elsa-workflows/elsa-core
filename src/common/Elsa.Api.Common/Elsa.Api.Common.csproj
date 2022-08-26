@@ -1,20 +1,26 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+    <Import Project="..\..\..\common.props" />
+    <Import Project="..\..\..\configureawait.props" />
+
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
+        <Description>
+            Provides common features to modules that expose API endpoints.
+        </Description>
+        <RootNamespace>Elsa</RootNamespace>
+        <PackageTags>elsa, api</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="FastEndpoints" Version="4.3.1" />
-      <PackageReference Include="FastEndpoints.Security" Version="4.3.1" />
-      <PackageReference Include="FastEndpoints.Swagger" Version="4.3.1" />
+      <PackageReference Include="FastEndpoints" Version="5.0.0" />
+      <PackageReference Include="FastEndpoints.Security" Version="5.0.0" />
+      <PackageReference Include="FastEndpoints.Swagger" Version="5.0.0" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\Elsa.Features\Elsa.Features.csproj" />
-      <ProjectReference Include="..\Elsa.Persistence.Abstractions\Elsa.Persistence.Abstractions.csproj" />
+      <ProjectReference Include="..\Elsa.Models.Common\Elsa.Models.Common.csproj" />
     </ItemGroup>
 
 </Project>

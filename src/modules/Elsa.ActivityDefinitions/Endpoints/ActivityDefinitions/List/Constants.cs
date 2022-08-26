@@ -1,8 +1,12 @@
 namespace Elsa.ActivityDefinitions.Endpoints.ActivityDefinitions.List;
 
-public static class SecurityConstants
+/// <summary>
+/// Provides policy names accepted by the <see cref="List"/> endpoint.
+/// </summary>
+public static class Constants
 {
-    public static readonly string[] Policies = { "ListActivityDefinitions" };
-    public static readonly string[] Permissions = { "ListActivityDefinitions" };
-    public static readonly string[] Roles = { "ActivityDefinitionsViewer" };
+    /// <summary>
+    /// The policy name accepted by this endpoint.
+    /// </summary>
+    public const string PolicyName = "ListActivityDefinitions";
 }

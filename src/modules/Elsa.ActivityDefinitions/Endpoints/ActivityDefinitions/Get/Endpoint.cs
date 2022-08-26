@@ -1,20 +1,26 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
+using Elsa.ActivityDefinitions.Entities;
 using Elsa.ActivityDefinitions.Models;
 using Elsa.ActivityDefinitions.Services;
-using Elsa.Api.Common;
-using Elsa.Persistence.Common.Models;
+using Elsa.Models;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Mappers;
+using FastEndpoints;
 
 namespace Elsa.ActivityDefinitions.Endpoints.ActivityDefinitions.Get;
 
-public class Get : ProtectedEndpoint<Request, ActivityDefinitionModel>
+/// <summary>
+/// An endpoint that returns the specified <see cref="ActivityDefinition"/> by ID.
+/// </summary>
+public class Get : Endpoint<Request, ActivityDefinitionModel>
 {
     private readonly IActivityDefinitionStore _activityDefinitionStore;
     private readonly VariableDefinitionMapper _variableDefinitionMapper;
     private readonly SerializerOptionsProvider _serializerOptionsProvider;
 
+    /// <inheritdoc />
     public Get(IActivityDefinitionStore activityDefinitionStore, VariableDefinitionMapper variableDefinitionMapper, SerializerOptionsProvider serializerOptionsProvider)
     {
         _activityDefinitionStore = activityDefinitionStore;
@@ -22,12 +28,14 @@ public class Get : ProtectedEndpoint<Request, ActivityDefinitionModel>
         _serializerOptionsProvider = serializerOptionsProvider;
     }
 
+    /// <inheritdoc />
     public override void Configure()
     {
         Get("/activity-definitions/{definitionId}");
-        ConfigureSecurity(SecurityConstants.Permissions, SecurityConstants.Policies, SecurityConstants.Roles);
+        Policies(Constants.PolicyName);
     }
 
+    /// <inheritdoc />
     public override async Task<ActivityDefinitionModel> ExecuteAsync(Request request, CancellationToken cancellationToken)
     {
         var parsedVersionOptions = request.VersionOptions != null ? VersionOptions.FromString(request.VersionOptions) : VersionOptions.Latest;

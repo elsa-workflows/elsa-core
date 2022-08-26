@@ -2,8 +2,8 @@ using System.Linq.Expressions;
 using Elsa.ActivityDefinitions.Entities;
 using Elsa.ActivityDefinitions.Models;
 using Elsa.ActivityDefinitions.Services;
+using Elsa.Models;
 using Elsa.Persistence.Common.Extensions;
-using Elsa.Persistence.Common.Models;
 using Elsa.Persistence.EntityFrameworkCore.Common.Extensions;
 using Elsa.Persistence.EntityFrameworkCore.Common.Services;
 

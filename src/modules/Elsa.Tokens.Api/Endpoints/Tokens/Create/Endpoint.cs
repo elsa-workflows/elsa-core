@@ -1,4 +1,4 @@
-﻿using Elsa.Api.Common.Services;
+﻿using Elsa.Tokens.Api.Services;
 using FastEndpoints;
 
 namespace Elsa.Tokens.Api.Endpoints.Tokens.Create;

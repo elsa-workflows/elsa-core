@@ -1,8 +1,8 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.AspNetCore.Attributes;
+using Elsa.Models;
 using Elsa.Persistence.Common.Entities;
-using Elsa.Persistence.Common.Models;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Persistence.Services;

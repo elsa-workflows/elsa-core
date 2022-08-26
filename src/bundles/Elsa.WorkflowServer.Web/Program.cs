@@ -2,10 +2,6 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.ActivityDefinitions.EntityFrameworkCore.Extensions;
 using Elsa.ActivityDefinitions.EntityFrameworkCore.Sqlite;
-using Elsa.Api.Common;
-using Elsa.Api.Common.Features;
-using Elsa.Api.Common.Options;
-using Elsa.AspNetCore.Extensions;
 using Elsa.Extensions;
 using Elsa.Features.Extensions;
 using Elsa.Http;
@@ -32,24 +28,12 @@ using Elsa.Workflows.Persistence.EntityFrameworkCore.Extensions;
 using Elsa.Workflows.Persistence.EntityFrameworkCore.Sqlite;
 using Elsa.Workflows.Persistence.Extensions;
 using Elsa.Workflows.Runtime.Extensions;
-using Elsa.WorkflowServer.Web.Implementations;
 using Elsa.WorkflowServer.Web.Jobs;
 using FastEndpoints;
 using FastEndpoints.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
-var configuration = builder.Configuration;
-var accessTokenOptions = new AccessTokenOptions();
-configuration.GetSection("AccessTokens").Bind(accessTokenOptions);
-
-// Global control over Elsa API endpoints security.
-ApiSecurityOptions.AllowAnonymous = !builder.Environment.IsProduction();
-ApiSecurityOptions.ValidateRoles = builder.Environment.IsProduction();
-
-// Add application-specific services.
-services.AddSingleton<CustomCredentialsValidator>();
-services.AddSingleton<CustomAccessTokenIssuer>();
 
 // Add Elsa services.
 services
@@ -70,12 +54,6 @@ services
             .AddActivity<RunJavaScript>()
             .AddActivity<Event>()
         )
-        .Use<CommonApiFeature>(feature =>
-        {
-            feature.TokenSigningKey = accessTokenOptions.SigningKey;
-            feature.CredentialsValidator = sp => sp.GetRequiredService<CustomCredentialsValidator>();
-            feature.AccessTokenIssuer = sp => sp.GetRequiredService<CustomAccessTokenIssuer>();
-        })
         .UseJobActivities()
         .UseScheduling()
         .UseWorkflowPersistence(p => p.UseEntityFrameworkCore(ef => ef.UseSqlite()))
@@ -85,11 +63,9 @@ services
         .UseLabels(labels => labels.UseEntityFrameworkCore(ef => ef.UseSqlite()))
         .UseCustomActivities(feature => feature.UseEntityFrameworkCore(ef => ef.UseSqlite()))
         .UseHttp()
-        .UseMvc()
     );
 
 services.AddFastEndpoints();
-services.AddAuthenticationJWTBearer(accessTokenOptions.SigningKey);
 services.AddHealthChecks();
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()));
 
@@ -161,9 +137,9 @@ Task SerializeRequestAsync(HttpResponse httpResponse, object dto, string content
 
 app.UseFastEndpoints(config =>
 {
-    config.RoutingOptions = routing => routing.Prefix = "elsa/api";
-    config.RequestDeserializer = DeserializeRequestAsync;
-    config.ResponseSerializer = SerializeRequestAsync;
+    config.Endpoints.RoutePrefix = "elsa/api";
+    config.Serializer.RequestDeserializer = DeserializeRequestAsync;
+    config.Serializer.ResponseSerializer = SerializeRequestAsync;
 });
 
 // Register Elsa middleware.

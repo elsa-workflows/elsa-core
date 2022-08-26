@@ -1,6 +1,6 @@
+using Elsa.Models;
 using Elsa.Persistence.Common.Extensions;
 using Elsa.Persistence.Common.Implementations;
-using Elsa.Persistence.Common.Models;
 using Elsa.Workflows.Persistence.Entities;
 using Elsa.Workflows.Persistence.Services;
 

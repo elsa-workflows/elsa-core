@@ -1,8 +1,12 @@
 namespace Elsa.ActivityDefinitions.Endpoints.ActivityDefinitions.Post;
 
-public static class SecurityConstants
+/// <summary>
+/// Provides policy names accepted by the <see cref="Post"/> endpoint.
+/// </summary>
+public static class Constants
 {
-    public static readonly string[] Policies = { "CreateActivityDefinitions", "UpdateActivityDefinitions" };
-    public static readonly string[] Permissions = { "CreateActivityDefinitions", "UpdateActivityDefinitions" };
-    public static readonly string[] Roles = { "ActivityDefinitionsCreator", "ActivityDefinitionsUpdater" };
+    /// <summary>
+    /// The policy name accepted by this endpoint.
+    /// </summary>
+    public const string PolicyName = "CreateOrUpdateActivityDefinition";
 }

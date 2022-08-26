@@ -1,26 +1,31 @@
 using Elsa.ActivityDefinitions.Models;
 using Elsa.ActivityDefinitions.Services;
-using Elsa.Api.Common;
-using Elsa.Api.Common.Models;
-using Elsa.Persistence.Common.Models;
+using Elsa.Models;
+using FastEndpoints;
 
 namespace Elsa.ActivityDefinitions.Endpoints.ActivityDefinitions.List;
 
-public class List : ProtectedEndpoint<Request, PagedListResponse<ActivityDefinitionSummary>>
+/// <summary>
+/// An endpoint that returns a page of <see cref="ActivityDefinitionSummary"/> objects. 
+/// </summary>
+public class List : Endpoint<Request, PagedListResponse<ActivityDefinitionSummary>>
 {
     private readonly IActivityDefinitionStore _store;
 
+    /// <inheritdoc />
     public List(IActivityDefinitionStore store)
     {
         _store = store;
     }
 
+    /// <inheritdoc />
     public override void Configure()
     {
         Get("/activity-definitions");
-        ConfigureSecurity(SecurityConstants.Permissions, SecurityConstants.Policies, SecurityConstants.Roles);
+        Policies(Constants.PolicyName);
     }
 
+    /// <inheritdoc />
     public override async Task<PagedListResponse<ActivityDefinitionSummary>> ExecuteAsync(Request req, CancellationToken ct)
     {
         var parsedVersionOptions = req.VersionOptions != null ? VersionOptions.FromString(req.VersionOptions) : VersionOptions.Published;

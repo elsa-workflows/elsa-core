@@ -2,7 +2,7 @@ using Elsa.ActivityDefinitions.Activities;
 using Elsa.ActivityDefinitions.Entities;
 using Elsa.ActivityDefinitions.Extensions;
 using Elsa.ActivityDefinitions.Services;
-using Elsa.Persistence.Common.Models;
+using Elsa.Models;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Services;

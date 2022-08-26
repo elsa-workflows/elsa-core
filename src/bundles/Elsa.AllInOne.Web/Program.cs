@@ -1,5 +1,4 @@
 using Elsa.Workflows.Api.Extensions;
-using Elsa.AspNetCore.Extensions;
 using Elsa.Extensions;
 using Elsa.Jobs.Extensions;
 using Elsa.Http;
@@ -46,7 +45,6 @@ services
         .UseLiquid()
         .UseHttp()
         .UseCustomActivities()
-        .UseMvc()
     );
 
 // Register serialization configurator for configuring what types to allow to be serialized.

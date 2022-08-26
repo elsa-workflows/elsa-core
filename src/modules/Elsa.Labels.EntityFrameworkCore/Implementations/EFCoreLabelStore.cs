@@ -1,6 +1,6 @@
 using Elsa.Labels.Entities;
 using Elsa.Labels.Services;
-using Elsa.Persistence.Common.Models;
+using Elsa.Models;
 using Elsa.Persistence.EntityFrameworkCore.Common.Extensions;
 using Elsa.Persistence.EntityFrameworkCore.Common.Services;
 

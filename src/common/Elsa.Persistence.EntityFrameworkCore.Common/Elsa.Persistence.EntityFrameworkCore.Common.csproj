@@ -1,9 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+    <Import Project="..\..\..\common.props" />
+    <Import Project="..\..\..\configureawait.props" />
+
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
+        <Description>
+            Provides common features that can be used by persistence modules using Entity Framework Core.
+        </Description>
+        <PackageTags>elsa</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>
@@ -23,7 +28,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Elsa.Persistence.Abstractions\Elsa.Persistence.Abstractions.csproj" />
+      <ProjectReference Include="..\Elsa.Persistence.Common\Elsa.Persistence.Common.csproj" />
       <ProjectReference Include="..\Elsa.Features\Elsa.Features.csproj" />
     </ItemGroup>
 

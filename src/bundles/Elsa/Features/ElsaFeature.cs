@@ -1,4 +1,3 @@
-using Elsa.Api.Common.Features;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
@@ -10,15 +9,18 @@ using Elsa.Workflows.Runtime.Features;
 
 namespace Elsa.Features;
 
+/// <summary>
+/// Represents Elsa as a feature of the system.
+/// </summary>
 [DependsOn(typeof(MediatorFeature))]
 [DependsOn(typeof(WorkflowsFeature))]
 [DependsOn(typeof(FlowchartFeature))]
 [DependsOn(typeof(WorkflowPersistenceFeature))]
 [DependsOn(typeof(WorkflowRuntimeFeature))]
 [DependsOn(typeof(WorkflowManagementFeature))]
-[DependsOn(typeof(CommonApiFeature))]
 public class ElsaFeature : FeatureBase
 {
+    /// <inheritdoc />
     public ElsaFeature(IModule module) : base(module)
     {
     }

@@ -1,6 +1,4 @@
-using Elsa.Persistence.Common.Models;
-
-namespace Elsa.Api.Common.Models;
+namespace Elsa.Models;
 
 public class PagedListResponse<T>
 {

@@ -1,4 +1,5 @@
 using Elsa.Workflows.Api.Endpoints.ActivityDescriptors;
+using Elsa.Workflows.Api.Endpoints.ActivityDescriptors.List;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.Extensions.DependencyInjection;
 

@@ -1,8 +1,12 @@
 namespace Elsa.ActivityDefinitions.Endpoints.ActivityDefinitions.Delete;
 
-public static class SecurityConstants
+/// <summary>
+/// Provides policy names accepted by the <see cref="Delete"/> endpoint.
+/// </summary>
+public static class Constants
 {
-    public static readonly string[] Policies = { "DeleteActivityDefinitions" };
-    public static readonly string[] Permissions = { "DeleteActivityDefinitions" };
-    public static readonly string[] Roles = { "DefinitionsDeleter" };
+    /// <summary>
+    /// The policy name accepted by this endpoint.
+    /// </summary>
+    public const string PolicyName = "DeleteActivityDefinition";
 }

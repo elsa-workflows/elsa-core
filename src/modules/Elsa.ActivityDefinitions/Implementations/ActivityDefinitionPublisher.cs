@@ -4,7 +4,7 @@ using Elsa.ActivityDefinitions.Notifications;
 using Elsa.ActivityDefinitions.Services;
 using Elsa.Common.Services;
 using Elsa.Mediator.Services;
-using Elsa.Persistence.Common.Models;
+using Elsa.Models;
 using Elsa.Workflows.Core.Activities.Flowchart.Activities;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.Services;
