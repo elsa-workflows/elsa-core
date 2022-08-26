@@ -2,7 +2,11 @@ using Elsa;
 using Elsa.Activities.UserTask.Extensions;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
+using Elsa.Persistence.EntityFramework.SqlServer;
+using Elsa.Services;
 using Elsa.WorkflowTesting.Api.Extensions;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -30,7 +34,7 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith
             
             services
                 .AddElsa(options => options
-                    .UseEntityFrameworkPersistence(ef => ef.UseSqlite())
+                    .UseEntityFrameworkPersistence(ef => ef.UseSqlServer(Configuration.GetConnectionString("Workflow")))
                     .AddConsoleActivities()
                     .AddHttpActivities(elsaSection.GetSection("Server").Bind)
                     .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)
@@ -50,6 +54,15 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith
             // Allow arbitrary client browser apps to access the API.
             // In a production environment, make sure to allow only origins you trust.
             services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("Content-Disposition")));
+
+            
+
+            services.AddMvc().AddRazorPagesOptions(options =>
+            {
+                options.Conventions.AuthorizeFolder("/pages");
+                options.Conventions.AuthorizePage("/_Host");
+            });
+            services.AddScoped<ITenantAccessor, TenantAccessor>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -70,6 +83,7 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith
             app.UseCors();
             app.UseStaticFiles();
             app.UseRouting();
+            app.UseAuthentication();
             app.UseAuthorization();
             app.UseHttpActivities();
             app.UseEndpoints(endpoints =>
@@ -78,8 +92,7 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith
                 endpoints.MapWorkflowTestHub();
                 
                 // Elsa Server uses ASP.NET Core Controllers.
-                endpoints.MapControllers();
-
+                endpoints.MapControllers().RequireAuthorization();
                 endpoints.MapFallbackToPage("/_Host");
             });
         }

@@ -5,6 +5,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="6.0.8" />
         <PackageReference Include="System.Text.Encodings.Web" Version="6.0.0" />
     </ItemGroup>
 
@@ -19,6 +20,7 @@
         <ProjectReference Include="..\..\..\..\modules\workflowtesting\Elsa.WorkflowTesting.Api\Elsa.WorkflowTesting.Api.csproj" />
         <ProjectReference Include="..\..\..\..\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.Sqlite\Elsa.Persistence.EntityFramework.Sqlite.csproj" />
         <ProjectReference Include="..\..\..\..\server\Elsa.Server.Api\Elsa.Server.Api.csproj" />
+        <ProjectReference Include="..\..\..\..\server\Elsa.Server.Authentication\Elsa.Server.Authentication.csproj" />
         <ProjectReference Include="..\..\..\..\servicebus\Elsa.Rebus.AzureServiceBus\Elsa.Rebus.AzureServiceBus.csproj" />
         <ProjectReference Include="..\..\..\persistence\Elsa.Samples.Persistence.EntityFramework\Elsa.Samples.Persistence.EntityFramework.csproj" />
     </ItemGroup>
