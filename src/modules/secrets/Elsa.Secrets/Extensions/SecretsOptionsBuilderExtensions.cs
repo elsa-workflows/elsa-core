@@ -20,6 +20,7 @@ namespace Elsa.Secrets.Extensions
                 .AddSingleton<ISecretValueFormatter, MsSqlSecretValueFormatter>()
                 .AddSingleton<ISecretValueFormatter, PostgreSqlSecretValueFormatter>()
                 .AddSingleton<ISecretValueFormatter, AuthorizationHeaderSecretValueFormatter>()
+                .AddSingleton<ISecretValueFormatter, OAuth2SecretValueFormatter>()
                 .AddScoped<SecretsValueHandler>()
                 .AddScoped<ISqlConnectionStringHandler>(x => x.GetRequiredService<SecretsValueHandler>())
                 .AddScoped<ISendHttpRequestAuthorizationHeaderHandler>(x => x.GetRequiredService<SecretsValueHandler>())
