@@ -1,3 +1,5 @@
+using Elsa.Activities.Http.Contracts;
+using Elsa.Activities.Sql.Contracts;
 using Elsa.Options;
 using Elsa.Secrets.Enrichers;
 using Elsa.Secrets.Handlers;
@@ -18,6 +20,9 @@ namespace Elsa.Secrets.Extensions
                 .AddSingleton<ISecretValueFormatter, MsSqlSecretValueFormatter>()
                 .AddSingleton<ISecretValueFormatter, PostgreSqlSecretValueFormatter>()
                 .AddSingleton<ISecretValueFormatter, AuthorizationHeaderSecretValueFormatter>()
+                .AddScoped<SecretsValueHandler>()
+                .AddScoped<ISqlConnectionStringHandler>(x => x.GetRequiredService<SecretsValueHandler>())
+                .AddScoped<ISendHttpRequestAuthorizationHeaderHandler>(x => x.GetRequiredService<SecretsValueHandler>())
                 .AddScoped<IActivityInputDescriptorEnricher, SendHttpRequestAuthorizationInputDescriptorEnricher>()
                 .AddScoped<IActivityInputDescriptorEnricher, ExecuteSqlQueryConnectionStringInputDescriptorEnricher>()
                 .AddScoped<IActivityInputDescriptorEnricher, ExecuteSqlCommandConnectionStringInputDescriptorEnricher>()

@@ -6,6 +6,7 @@ using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Secrets.Persistence.Specifications;
 
 namespace Elsa.Secrets.Manager
 {
@@ -15,6 +16,13 @@ namespace Elsa.Secrets.Manager
         public SecretsManager(ISecretsStore secretsStore)
         { 
             _secretsStore = secretsStore;
+        }
+
+        public async Task<Secret> GetSecretById(string id, CancellationToken cancellationToken = default) {
+            var specification = new SecretsIdSpecification(id);
+            var secret = await _secretsStore.FindAsync(specification, cancellationToken: cancellationToken);
+
+            return secret;
         }
 
         public async Task<IEnumerable<Secret>> GetSecrets(CancellationToken cancellationToken = default)
