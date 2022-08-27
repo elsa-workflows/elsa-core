@@ -18,9 +18,17 @@ public class List : EndpointWithoutRequest<Response>
 
     public override void Configure()
     {
-        Policies(Constants.PolicyName);
-        Roles("Admin");
-        Permissions("all", "list:activity-descriptors");
+        Get("/descriptors/activities");
+        
+        if (!EndpointSecurityOptions.SecurityIsEnabled)
+        {
+            AllowAnonymous();
+        }
+        else
+        {
+            Roles("Admin", "Reader");    
+            Permissions("*", "list:activity-descriptors");
+        }
     }
 
     public override Task<Response> ExecuteAsync(CancellationToken cancellationToken)

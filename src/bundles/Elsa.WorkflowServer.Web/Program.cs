@@ -1,3 +1,7 @@
+using System.Globalization;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using Elsa;
 using Elsa.ActivityDefinitions.EntityFrameworkCore.Extensions;
 using Elsa.ActivityDefinitions.EntityFrameworkCore.Sqlite;
 using Elsa.Extensions;
@@ -26,9 +30,13 @@ using Elsa.Workflows.Persistence.Extensions;
 using Elsa.Workflows.Runtime.Extensions;
 using Elsa.WorkflowServer.Web.Jobs;
 using FastEndpoints;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
+
+EndpointSecurityOptions.DisableSecurity();
 
 // Add Elsa services.
 services
@@ -64,7 +72,32 @@ services.AddFastEndpoints();
 services.AddHealthChecks();
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()));
 
-// Authorization policies.
+// Authentication & Authorization.
+services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
+    {
+        var claims = 
+        
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            IssuerSigningKeyValidator = (key, token, parameters) => true,
+            ValidateIssuerSigningKey = false,
+            ValidateAudience = false,
+            ValidateIssuer = false,
+            ValidateTokenReplay = false,
+            ValidateActor = false,
+            RoleClaimType = ClaimTypes.Role,
+            TokenReplayValidator = (time, token, parameters) => true, 
+            SignatureValidator = (token, parameters) =>
+            {
+                return new JwtSecurityToken(token);
+            }, 
+        };
+        options.SecurityTokenValidators.Clear();
+        options.SecurityTokenValidators.Add(new CustomValidator());
+    });
+
 services.AddAuthorization(options => options.AddPolicy("WorkflowManagerPolicy", policy => policy.RequireAuthenticatedUser()));
 
 // Configure middleware pipeline.
@@ -101,7 +134,6 @@ app.MapHealthChecks("/");
 app.UseAuthentication();
 app.UseAuthorization();
 
-
 // Register Elsa middleware.
 app.UseElsaFastEndpoints();
 app.UseJsonSerializationErrorHandler();
@@ -109,3 +141,28 @@ app.UseHttpActivities();
 
 // Run.
 app.Run();
+
+public class CustomValidator : ISecurityTokenValidator
+{
+    private readonly JwtSecurityTokenHandler _tokenHandler;
+
+    public CustomValidator()
+    {
+        _tokenHandler = new JwtSecurityTokenHandler();
+    }
+
+    public bool CanReadToken(string securityToken)
+    {
+        return true;
+    }
+
+    public ClaimsPrincipal ValidateToken(string securityToken, TokenValidationParameters validationParameters, out SecurityToken validatedToken)
+    {
+        var principal = _tokenHandler.ValidateToken(securityToken, validationParameters, out validatedToken);
+
+        return principal;
+    }
+
+    public bool CanValidateToken => true;
+    public int MaximumTokenSizeInBytes { get; set; } = TokenValidationParameters.DefaultMaximumTokenSizeInBytes;
+}

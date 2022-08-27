@@ -17,7 +17,7 @@ public class List : EndpointWithoutRequest<Response>
 
     public override void Configure()
     {
-        Get("/descriptors/activities");
+        Get("/descriptors/storage-drivers");
         Policies(Constants.PolicyName);
         Permissions("all", "read:storage-drivers");
     }

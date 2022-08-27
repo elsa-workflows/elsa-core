@@ -15,7 +15,6 @@
       <ProjectReference Include="..\..\modules\Elsa.ProtoActor\Elsa.ProtoActor.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Tokens.Api\Elsa.Tokens.Api.csproj" />
       <ProjectReference Include="..\Elsa\Elsa.csproj" />
-      <ProjectReference Include="..\..\modules\Elsa.AspNetCore\Elsa.AspNetCore.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Hangfire\Elsa.Hangfire.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Http\Elsa.Http.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Labels.EntityFrameworkCore.Sqlite\Elsa.Labels.EntityFrameworkCore.Sqlite.csproj" />
