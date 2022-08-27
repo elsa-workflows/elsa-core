@@ -1,5 +1,6 @@
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -16,8 +17,8 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith
 
         public async Task<string> GetTenantIdAsync(CancellationToken cancellationToken = default)
         {
-            var result = _httpContextAccessor.HttpContext.User;
-            return "44";
+            var result = _httpContextAccessor.HttpContext.User.Claims.Where(x=>x.Type== "TenantId").FirstOrDefault();
+            return result.Value;
         }
     }
 }

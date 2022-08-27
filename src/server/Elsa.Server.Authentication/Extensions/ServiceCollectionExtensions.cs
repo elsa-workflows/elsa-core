@@ -1,6 +1,8 @@
 using Elsa.Server.Api;
 using Elsa.Server.Authentication.ExtensionOptions;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.OAuth.Claims;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.Extensions.DependencyInjection;
 using NetBox.Extensions;
@@ -28,7 +30,7 @@ namespace Elsa.Server.Authentication.Extensions
             return services;
         }
 
-        public static IServiceCollection AddElsaOpenIdConnect(this IServiceCollection services, Action<ElsaOpenIdConnectOptions> configureOptions = default)
+        public static IServiceCollection AddElsaOpenIdConnect(this IServiceCollection services,string authenticationScheme , Action<ElsaOpenIdConnectOptions>? configureOptions = default)
         {
             var elsaOpenIdConnectOptions = new ElsaOpenIdConnectOptions();
             configureOptions?.Invoke(elsaOpenIdConnectOptions);
@@ -37,13 +39,18 @@ namespace Elsa.Server.Authentication.Extensions
                 options.DefaultChallengeScheme = elsaOpenIdConnectOptions.DefaultChallengeScheme;
             }).AddCookie(option => {
                 option.LoginPath = elsaOpenIdConnectOptions.LoginPath;
-            }).AddOpenIdConnect(elsaOpenIdConnectOptions.DefaultScheme, options => {
+            }).AddOpenIdConnect(authenticationScheme, options => {
                 options.SignInScheme = elsaOpenIdConnectOptions.DefaultScheme;
                 options.Authority = elsaOpenIdConnectOptions.Authority;
                 options.ClientId = elsaOpenIdConnectOptions.ClientId;
                 options.ResponseType = elsaOpenIdConnectOptions.ResponseType;
                 options.UsePkce = elsaOpenIdConnectOptions.UsePkce;
                 options.Scope.AddRange(elsaOpenIdConnectOptions.Scopes);
+                foreach (var item in elsaOpenIdConnectOptions.UniqueJsonKeys)
+                {
+                    options.ClaimActions.MapUniqueJsonKey(item.Key, item.Value);
+                }
+               
                 options.SaveTokens = elsaOpenIdConnectOptions.SaveTokens;
                 options.ClientSecret = elsaOpenIdConnectOptions.ClientSecret;
                 options.GetClaimsFromUserInfoEndpoint = elsaOpenIdConnectOptions.GetClaimsFromUserInfoEndpoint;
@@ -52,3 +59,26 @@ namespace Elsa.Server.Authentication.Extensions
         }
     }
 }
+
+
+
+//services.AddAuthentication(options => {
+//    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+//    options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
+//}).AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options => {
+
+//    options.LoginPath = "/signin-oidc";
+//}
+
+// ).AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options => {
+//     options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+//     options.Authority = "https://localhost:44318/";
+//     options.ClientId = "ElsaDashboardClientServer";
+//     options.ResponseType = "code";
+//     options.UsePkce = false;
+//     options.Scope.Add("openid");
+//     options.Scope.Add("profile");
+//     options.SaveTokens = true;
+//     options.ClientSecret = "Elsa";
+//     options.GetClaimsFromUserInfoEndpoint = true;
+// });
