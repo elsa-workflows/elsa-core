@@ -13,7 +13,7 @@
 | `items`  | --        |             | `DropdownButtonItem[]`                                          | `[]`                           |
 | `origin` | `origin`  |             | `DropdownButtonOrigin.TopLeft \| DropdownButtonOrigin.TopRight` | `DropdownButtonOrigin.TopLeft` |
 | `text`   | `text`    |             | `string`                                                        | `undefined`                    |
-
+|`btnClass`| `btnClass`|             | `string`                                                        | `undefined`                    |
 
 ## Events
 

@@ -1,11 +1,12 @@
 import {Component, h, Prop, getAssetPath} from '@stencil/core';
 import {loadTranslations} from "../../../i18n/i18n-loader";
 import {resources} from "./localizations";
-import {i18n} from "i18next";
+import {i18n, t} from "i18next";
 import {GetIntlMessage} from "../../../i18n/intl-message";
 import Tunnel from "../../../../data/dashboard";
 import {EventTypes, ConfigureDashboardMenuContext} from '../../../../models';
 import {eventBus} from '../../../../services';
+import { DropdownButtonItem, DropdownButtonOrigin } from '../../../controls/elsa-dropdown-button/models';
 
 @Component({
   tag: 'elsa-studio-dashboard',
@@ -85,10 +86,13 @@ export class ElsaStudioDashboard {
                   </div>
                 </div>
               </div>
+              <elsa-dropdown-button text={'ibrahim'} items={ddlitems} btnClass='elsa-bg-gray-800 elsa-text-gray-300 elsa-w-full   elsa-shadow-sm elsa-px-4 elsa-py-2 elsa-inline-flex elsa-justify-center elsa-text-sm elsa-font-medium'
+                                 origin={DropdownButtonOrigin.TopRight}
+                                 onItemSelected={e => alert('gg')}/>
             </div>
           </div>
-        </nav>
 
+        </nav>
         <main>
           <stencil-router>
             <stencil-route-switch scrollTopOffset={0}>
@@ -96,9 +100,24 @@ export class ElsaStudioDashboard {
             </stencil-route-switch>
           </stencil-router>
         </main>
+
       </div>
     );
   }
 }
+const renderIcon = function () {
+  return <svg class="elsa-mr-3 elsa-h-5 elsa-w-5 elsa-text-gray-400" fill="none" viewBox="0 0 24 24"
+              stroke="currentColor">
+    <circle cx="12" cy="12" r="10"/>
+    <polygon points="10 8 16 12 10 16 10 8"/>
+  </svg>
+};
+
+const ddlitems: Array<DropdownButtonItem> = [{'text':"log out" , value : "account/logout" }].map(x => {
+  const text = x ?? t('Filters.Status.All');
+  const item: DropdownButtonItem = {text: x.text, isSelected: false, value: x.value};
+
+  return item
+});
 
 Tunnel.injectProps(ElsaStudioDashboard, ['culture', 'basePath']);

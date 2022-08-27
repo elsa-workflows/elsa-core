@@ -1,4 +1,5 @@
 using Elsa.Server.Api;
+using Elsa.Server.Authentication.Controllers;
 using Elsa.Server.Authentication.ExtensionOptions;
 using Elsa.Server.Authentication.TenantAccessors;
 using Elsa.Services;
@@ -14,6 +15,7 @@ using NetBox.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -82,6 +84,11 @@ namespace Elsa.Server.Authentication.Extensions
         public static IServiceCollection AddTenantAccessorFromClaim(this IServiceCollection services,string claimName)
         {
             services.AddScoped<ITenantAccessor>(x=>new TenantAccessorFromClaim(x.GetService<IHttpContextAccessor>(), claimName));
+            return services;
+        }
+        public static IServiceCollection AddElsaUserEndpoints(this IServiceCollection services)
+        {
+            services.AddControllers().AddApplicationPart((typeof(ElsaAuthenticationController).Assembly));
             return services;
         }
         public static IServiceCollection AddTenantAccessorFromHeader(this IServiceCollection services, string header)

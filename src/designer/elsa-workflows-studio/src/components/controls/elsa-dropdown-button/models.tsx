@@ -9,6 +9,7 @@ export interface DropdownButtonItem {
   value?: any;
   text: string;
   url?: string;
+  btnClass? : string
   isSelected?: boolean;
   handler?: () => {};
 }

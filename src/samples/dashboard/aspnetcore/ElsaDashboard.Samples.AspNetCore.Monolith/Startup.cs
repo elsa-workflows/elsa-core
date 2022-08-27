@@ -59,26 +59,26 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith
             // In a production environment, make sure to allow only origins you trust.
             services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("Content-Disposition")));
 
-            services.AddElsaOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
-            {
-                options.LoginPath = "/signin-oidc";
-                options.Authority = "https://localhost:44318/";
-                options.ClientId = "ElsaDashboardClientServer";
-                options.ResponseType = "code";
-                options.Scopes.Add("openid");
-                options.Scopes.Add("profile");
-                options.Scopes.Add("address");
-                options.Scopes.Add("TenantId");
-                options.ClientSecret = "Elsa";
-                options.UniqueJsonKeys.Add("TenantId", "TenantId");
-                options.GetClaimsFromUserInfoEndpoint = true;
-            });
+            //services.AddElsaOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
+            //{
+            //    options.LoginPath = "/signin-oidc";
+            //    options.Authority = "https://localhost:44318/";
+            //    options.ClientId = "ElsaDashboardClientServer";
+            //    options.ResponseType = "code";
+            //    options.Scopes.Add("openid");
+            //    options.Scopes.Add("profile");
+            //    options.Scopes.Add("address");
+            //    options.Scopes.Add("TenantId");
+            //    options.ClientSecret = "Elsa";
+            //    options.UniqueJsonKeys.Add("TenantId", "TenantId");
+            //    options.GetClaimsFromUserInfoEndpoint = true;
+            //});
 
-            services.AddTenantAccessorFromClaim("TenantId");
+             services.AddElsaUserEndpoints();
             services.AddMvc().AddRazorPagesOptions(options =>
             {
-                options.Conventions.AuthorizeFolder("/pages");
-                options.Conventions.AuthorizePage("/_Host");
+            //    options.Conventions.AuthorizeFolder("/pages");
+              //  options.Conventions.AuthorizePage("/_Host");
             });
  
         }
@@ -101,16 +101,16 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith
             app.UseCors();
             app.UseStaticFiles();
             app.UseRouting();
-            app.UseAuthentication();
-            app.UseAuthorization();
+        //    app.UseAuthentication();
+         //   app.UseAuthorization();
             app.UseHttpActivities();
             app.UseEndpoints(endpoints =>
             {
                 // Maps a SignalR hub for the designer to connect to when testing workflows.
                 endpoints.MapWorkflowTestHub();
-                
+
                 // Elsa Server uses ASP.NET Core Controllers.
-                endpoints.MapControllers().RequireAuthorization();
+                endpoints.MapControllers();//.RequireAuthorization();
                 endpoints.MapFallbackToPage("/_Host");
             });
         }
