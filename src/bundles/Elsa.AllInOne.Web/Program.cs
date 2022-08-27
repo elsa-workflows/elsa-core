@@ -1,4 +1,3 @@
-using Elsa.Workflows.Api.Extensions;
 using Elsa.Extensions;
 using Elsa.Jobs.Extensions;
 using Elsa.Http;
@@ -16,7 +15,6 @@ using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Management.Serialization;
 using Elsa.Workflows.Runtime.Extensions;
-using FastEndpoints;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -69,9 +67,8 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthorization();
-app.MapManagementApiEndpoints();
+app.UseElsaFastEndpoints();
 app.UseHttpActivities();
-app.UseFastEndpoints();
 app.MapRazorPages();
 
 app.Run();

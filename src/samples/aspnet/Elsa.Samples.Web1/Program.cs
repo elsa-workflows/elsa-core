@@ -1,4 +1,3 @@
-using Elsa.AspNetCore.Extensions;
 using Elsa.Extensions;
 using Elsa.Http.Extensions;
 using Elsa.JavaScript.Extensions;
@@ -50,19 +49,7 @@ services
         .UseJavaScript()
         .UseLiquid()
         .UseHttp()
-        .UseMvc()
     );
-
-// Add controller services. The below technique allows full control over what controllers get added from which assemblies.
-// It is even possible to add individual controllers this way using a custom TypesPart.
-// If you want to include all controllers
-services
-    // Elsa API endpoints require MVC controllers. 
-    .AddControllers()
-    .ClearApplicationParts() // Remove all controllers from referenced packages.
-    .AddApplicationPartsFrom<Program>() // Add back any controllers from the current application.
-    .AddWorkflowManagementApiControllers() // Add Elsa API endpoint controllers.
-    ;
 
 // Testing only: allow client app to connect from anywhere.
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()));
@@ -89,9 +76,6 @@ app.UseCors();
 
 // Root.
 app.MapGet("/", () => "Hello World!");
-
-// Map Elsa API endpoint controllers.
-app.MapManagementApiEndpoints("elsa/api");
 
 // Register Elsa middleware.
 app.UseJsonSerializationErrorHandler();

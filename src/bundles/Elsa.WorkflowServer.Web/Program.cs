@@ -1,9 +1,6 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using Elsa.ActivityDefinitions.EntityFrameworkCore.Extensions;
 using Elsa.ActivityDefinitions.EntityFrameworkCore.Sqlite;
 using Elsa.Extensions;
-using Elsa.Features.Extensions;
 using Elsa.Http;
 using Elsa.Http.Extensions;
 using Elsa.JavaScript.Activities;
@@ -21,7 +18,6 @@ using Elsa.Workflows.Api.Extensions;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Activities.Flowchart.Activities;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution.Components;
-using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Persistence.EntityFrameworkCore.Extensions;
@@ -30,7 +26,6 @@ using Elsa.Workflows.Persistence.Extensions;
 using Elsa.Workflows.Runtime.Extensions;
 using Elsa.WorkflowServer.Web.Jobs;
 using FastEndpoints;
-using FastEndpoints.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -106,43 +101,9 @@ app.MapHealthChecks("/");
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Map Elsa API endpoint controllers.
-
-// Deprecated.
-app.MapManagementApiEndpoints();
-app.MapLabelApiEndpoints();
-
-// Use FastEndpoints middleware.
-
-ValueTask<object?> DeserializeRequestAsync(HttpRequest httpRequest, Type modelType, JsonSerializerContext? serializerContext, CancellationToken cancellationToken)
-{
-    var serializerOptionsProvider = httpRequest.HttpContext.RequestServices.GetRequiredService<SerializerOptionsProvider>();
-    var options = serializerOptionsProvider.CreateApiOptions();
-
-    return serializerContext == null
-        ? JsonSerializer.DeserializeAsync(httpRequest.Body, modelType, options, cancellationToken)
-        : JsonSerializer.DeserializeAsync(httpRequest.Body, modelType, serializerContext, cancellationToken);
-}
-
-Task SerializeRequestAsync(HttpResponse httpResponse, object dto, string contentType, JsonSerializerContext? serializerContext, CancellationToken cancellationToken)
-{
-    var serializerOptionsProvider = httpResponse.HttpContext.RequestServices.GetRequiredService<SerializerOptionsProvider>();
-    var options = serializerOptionsProvider.CreateApiOptions();
-
-    httpResponse.ContentType = contentType;
-    return serializerContext == null
-        ? JsonSerializer.SerializeAsync(httpResponse.Body, dto, dto.GetType(), options, cancellationToken)
-        : JsonSerializer.SerializeAsync(httpResponse.Body, dto, dto.GetType(), serializerContext, cancellationToken);
-}
-
-app.UseFastEndpoints(config =>
-{
-    config.Endpoints.RoutePrefix = "elsa/api";
-    config.Serializer.RequestDeserializer = DeserializeRequestAsync;
-    config.Serializer.ResponseSerializer = SerializeRequestAsync;
-});
 
 // Register Elsa middleware.
+app.UseElsaFastEndpoints();
 app.UseJsonSerializationErrorHandler();
 app.UseHttpActivities();
 

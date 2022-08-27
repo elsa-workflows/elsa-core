@@ -1,4 +1,3 @@
-using Elsa.AspNetCore.Extensions;
 using Elsa.Extensions;
 using Elsa.Http;
 using Elsa.Http.Extensions;
@@ -42,7 +41,6 @@ services
         .UseScheduling()
         .UseWorkflowApiEndpoints()
         .UseHttp()
-        .UseMvc()
     );
 
 // Testing only: allow client app to connect from anywhere.
@@ -66,9 +64,6 @@ if (app.Environment.IsDevelopment())
 
 // CORS.
 app.UseCors();
-
-// Map Elsa API endpoints.
-app.MapManagementApiEndpoints();
 
 // Register Elsa HTTP activity middleware.
 app.UseHttpActivities();
