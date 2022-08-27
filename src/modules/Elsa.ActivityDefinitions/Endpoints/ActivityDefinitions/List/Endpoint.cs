@@ -1,3 +1,4 @@
+using Elsa.Abstractions;
 using Elsa.ActivityDefinitions.Models;
 using Elsa.ActivityDefinitions.Services;
 using Elsa.Models;
@@ -8,7 +9,7 @@ namespace Elsa.ActivityDefinitions.Endpoints.ActivityDefinitions.List;
 /// <summary>
 /// An endpoint that returns a page of <see cref="ActivityDefinitionSummary"/> objects. 
 /// </summary>
-public class List : Endpoint<Request, PagedListResponse<ActivityDefinitionSummary>>
+public class List : ElsaEndpoint<Request, PagedListResponse<ActivityDefinitionSummary>>
 {
     private readonly IActivityDefinitionStore _store;
 
@@ -22,7 +23,7 @@ public class List : Endpoint<Request, PagedListResponse<ActivityDefinitionSummar
     public override void Configure()
     {
         Get("/activity-definitions");
-        Policies(Constants.PolicyName);
+        ConfigurePermissions("read:activity-definitions");
     }
 
     /// <inheritdoc />

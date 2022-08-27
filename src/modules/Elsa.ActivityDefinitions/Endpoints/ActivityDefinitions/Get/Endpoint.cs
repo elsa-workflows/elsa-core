@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
+using Elsa.Abstractions;
 using Elsa.ActivityDefinitions.Entities;
 using Elsa.ActivityDefinitions.Models;
 using Elsa.ActivityDefinitions.Services;
@@ -14,7 +15,7 @@ namespace Elsa.ActivityDefinitions.Endpoints.ActivityDefinitions.Get;
 /// <summary>
 /// An endpoint that returns the specified <see cref="ActivityDefinition"/> by ID.
 /// </summary>
-public class Get : Endpoint<Request, ActivityDefinitionModel>
+public class Get : ElsaEndpoint<Request, ActivityDefinitionModel>
 {
     private readonly IActivityDefinitionStore _activityDefinitionStore;
     private readonly VariableDefinitionMapper _variableDefinitionMapper;
@@ -32,7 +33,7 @@ public class Get : Endpoint<Request, ActivityDefinitionModel>
     public override void Configure()
     {
         Get("/activity-definitions/{definitionId}");
-        Policies(Constants.PolicyName);
+        ConfigurePermissions("read:activity-definitions");
     }
 
     /// <inheritdoc />

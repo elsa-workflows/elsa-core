@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Elsa.Abstractions;
 using Elsa.ActivityDefinitions.Entities;
 using Elsa.ActivityDefinitions.Services;
 using Elsa.Workflows.Core.Activities.Flowchart.Activities;
@@ -12,7 +13,7 @@ namespace Elsa.ActivityDefinitions.Endpoints.ActivityDefinitions.Post;
 /// <summary>
 /// An endpoint that creates or updates <see cref="ActivityDefinition"/> objects. 
 /// </summary>
-public class Post : Endpoint<Request, Response>
+public class Post : ElsaEndpoint<Request, Response>
 {
     private readonly SerializerOptionsProvider _serializerOptionsProvider;
     private readonly IActivityDefinitionPublisher _activityDefinitionPublisher;
@@ -33,7 +34,7 @@ public class Post : Endpoint<Request, Response>
     public override void Configure()
     {
         Post("/activity-definitions");
-        Policies(Constants.PolicyName);
+        ConfigurePermissions("write:activity-definitions");
     }
 
     /// <inheritdoc />

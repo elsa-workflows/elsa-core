@@ -1,12 +1,12 @@
+using Elsa.Abstractions;
 using Elsa.ActivityDefinitions.Services;
-using FastEndpoints;
 
 namespace Elsa.ActivityDefinitions.Endpoints.ActivityDefinitions.Delete;
 
 /// <summary>
 /// An endpoint that deletes a specific activity definition by ID.
 /// </summary>
-public class Delete : Endpoint<Request>
+public class Delete : ElsaEndpoint<Request>
 {
     private readonly IActivityDefinitionStore _activityDefinitionStore;
 
@@ -20,7 +20,7 @@ public class Delete : Endpoint<Request>
     public override void Configure()
     {
         Delete("/activity-definitions/{definitionId}");
-        Policies(Constants.PolicyName);
+        ConfigurePermissions("delete:activity-definitions");
     }
 
     /// <inheritdoc />

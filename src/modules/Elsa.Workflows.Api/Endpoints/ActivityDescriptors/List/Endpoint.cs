@@ -1,13 +1,14 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Abstractions;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Services;
 using FastEndpoints;
 
 namespace Elsa.Workflows.Api.Endpoints.ActivityDescriptors.List;
 
-public class List : EndpointWithoutRequest<Response>
+public class List : ElsaEndpointWithoutRequest<Response>
 {
     private readonly IActivityRegistry _registry;
 
@@ -19,16 +20,7 @@ public class List : EndpointWithoutRequest<Response>
     public override void Configure()
     {
         Get("/descriptors/activities");
-        
-        if (!EndpointSecurityOptions.SecurityIsEnabled)
-        {
-            AllowAnonymous();
-        }
-        else
-        {
-            Roles("Admin", "Reader");    
-            Permissions("*", "list:activity-descriptors");
-        }
+        ConfigurePermissions("list:activity-descriptors");
     }
 
     public override Task<Response> ExecuteAsync(CancellationToken cancellationToken)

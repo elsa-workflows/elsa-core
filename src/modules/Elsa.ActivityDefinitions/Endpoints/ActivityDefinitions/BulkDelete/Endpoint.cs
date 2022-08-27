@@ -1,12 +1,12 @@
+using Elsa.Abstractions;
 using Elsa.ActivityDefinitions.Services;
-using FastEndpoints;
 
 namespace Elsa.ActivityDefinitions.Endpoints.ActivityDefinitions.BulkDelete;
 
 /// <summary>
 /// An endpoint that bulk-deletes activity definitions.
 /// </summary>
-public class BulkDelete : Endpoint<Request, Response>
+public class BulkDelete : ElsaEndpoint<Request, Response>
 {
     private readonly IActivityDefinitionStore _activityDefinitionStore;
 
@@ -20,7 +20,7 @@ public class BulkDelete : Endpoint<Request, Response>
     public override void Configure()
     {
         Post("/bulk-actions/delete/activity-definitions/by-definition-id");
-        Policies(Constants.PolicyName);
+        ConfigurePermissions("delete:activity-definitions");
     }
 
     /// <inheritdoc />
