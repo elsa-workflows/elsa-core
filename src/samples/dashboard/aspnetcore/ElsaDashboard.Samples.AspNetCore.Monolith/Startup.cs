@@ -59,7 +59,8 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith
             // In a production environment, make sure to allow only origins you trust.
             services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("Content-Disposition")));
 
-            services.AddElsaOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme , options => {
+            services.AddElsaOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
+            {
                 options.LoginPath = "/signin-oidc";
                 options.Authority = "https://localhost:44318/";
                 options.ClientId = "ElsaDashboardClientServer";
@@ -73,12 +74,13 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith
                 options.GetClaimsFromUserInfoEndpoint = true;
             });
 
+            services.AddTenantAccessorFromClaim("TenantId");
             services.AddMvc().AddRazorPagesOptions(options =>
             {
                 options.Conventions.AuthorizeFolder("/pages");
                 options.Conventions.AuthorizePage("/_Host");
             });
-            services.AddScoped<ITenantAccessor, TenantAccessor>();
+ 
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

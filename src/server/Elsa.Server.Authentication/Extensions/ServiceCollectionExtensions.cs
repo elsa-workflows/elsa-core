@@ -1,10 +1,15 @@
 using Elsa.Server.Api;
 using Elsa.Server.Authentication.ExtensionOptions;
+using Elsa.Server.Authentication.TenantAccessors;
+using Elsa.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OAuth.Claims;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.IdentityModel.Tokens;
 using NetBox.Extensions;
 using System;
 using System.Collections.Generic;
@@ -29,7 +34,6 @@ namespace Elsa.Server.Authentication.Extensions
             });
             return services;
         }
-
         public static IServiceCollection AddElsaOpenIdConnect(this IServiceCollection services,string authenticationScheme , Action<ElsaOpenIdConnectOptions>? configureOptions = default)
         {
             var elsaOpenIdConnectOptions = new ElsaOpenIdConnectOptions();
@@ -50,35 +54,40 @@ namespace Elsa.Server.Authentication.Extensions
                 {
                     options.ClaimActions.MapUniqueJsonKey(item.Key, item.Value);
                 }
-               
                 options.SaveTokens = elsaOpenIdConnectOptions.SaveTokens;
                 options.ClientSecret = elsaOpenIdConnectOptions.ClientSecret;
                 options.GetClaimsFromUserInfoEndpoint = elsaOpenIdConnectOptions.GetClaimsFromUserInfoEndpoint;
             });
             return services;
         }
+        public static IServiceCollection AddElsaJwtBearerAuthentication(this IServiceCollection services, Action<ElsaJwtOptions>? configureOptions = default)
+        {
+            var elsaJwtOptions = new ElsaJwtOptions();
+            configureOptions?.Invoke(elsaJwtOptions);
+            services.AddAuthentication(elsaJwtOptions.DefaultJwtScheme).AddJwtBearer(elsaJwtOptions.DefaultJwtScheme, option => {
+                option.RequireHttpsMetadata = elsaJwtOptions.RequireHttpsMetadata;
+                option.SaveToken = elsaJwtOptions.SaveToken;
+                option.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = elsaJwtOptions.ValidateIssuerSigningKey,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(elsaJwtOptions.IssuerSigningKey)),
+                    ValidateIssuer = elsaJwtOptions.ValidateIssuer,
+                    ValidIssuer = elsaJwtOptions.ValidIssuer,
+                    ValidateAudience = elsaJwtOptions.ValidateAudience,
+                    ValidAudience= elsaJwtOptions.Audience,
+                };
+            });
+            return services;
+        }
+        public static IServiceCollection AddTenantAccessorFromClaim(this IServiceCollection services,string claimName)
+        {
+            services.AddScoped<ITenantAccessor>(x=>new TenantAccessorFromClaim(x.GetService<IHttpContextAccessor>(), claimName));
+            return services;
+        }
+        public static IServiceCollection AddTenantAccessorFromHeader(this IServiceCollection services, string header)
+        {
+            services.AddScoped<ITenantAccessor>(x => new TenantAccessorFromHeader(x.GetService<IHttpContextAccessor>(), header));
+            return services;
+        }
     }
 }
-
-
-
-//services.AddAuthentication(options => {
-//    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-//    options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
-//}).AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options => {
-
-//    options.LoginPath = "/signin-oidc";
-//}
-
-// ).AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options => {
-//     options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-//     options.Authority = "https://localhost:44318/";
-//     options.ClientId = "ElsaDashboardClientServer";
-//     options.ResponseType = "code";
-//     options.UsePkce = false;
-//     options.Scope.Add("openid");
-//     options.Scope.Add("profile");
-//     options.SaveTokens = true;
-//     options.ClientSecret = "Elsa";
-//     options.GetClaimsFromUserInfoEndpoint = true;
-// });
