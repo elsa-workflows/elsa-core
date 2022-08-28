@@ -25,7 +25,7 @@ public class ElsaEndpoint<TRequest, TResponse> : Endpoint<TRequest, TResponse> w
     }
 }
 
-public class ElsaEndpoint<TRequest> : Endpoint<TRequest> where TRequest : notnull
+public class ElsaEndpoint<TRequest> : Endpoint<TRequest> where TRequest : notnull, new()
 {
     protected void ConfigurePermissions(params string[] permissions)
     {
