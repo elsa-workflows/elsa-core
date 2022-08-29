@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Elsa.Abstractions;
 using Elsa.Models;
 using Elsa.Workflows.Persistence.Services;
-using FastEndpoints;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.List;

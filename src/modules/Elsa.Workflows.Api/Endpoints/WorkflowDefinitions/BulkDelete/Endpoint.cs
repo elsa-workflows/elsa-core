@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Elsa.Abstractions;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Management.Services;
-using FastEndpoints;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.BulkDelete;
 

@@ -11,7 +11,6 @@ using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Services;
-using FastEndpoints;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Post;
 

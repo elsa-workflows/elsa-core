@@ -1,5 +1,4 @@
 using Elsa.Labels.Entities;
-using Elsa.Workflows.Core.Services;
 using FastEndpoints;
 
 namespace Elsa.Labels.Endpoints.Labels.Get;

@@ -1,5 +1,3 @@
-using Elsa.Labels.Endpoints.WorkflowDefinitionLabels.List;
-
 namespace Elsa.Labels.Endpoints.WorkflowDefinitionLabels.Update;
 
 /// <summary>

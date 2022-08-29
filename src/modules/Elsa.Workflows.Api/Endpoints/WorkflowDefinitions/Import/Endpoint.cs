@@ -9,7 +9,6 @@ using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Runtime.Services;
-using FastEndpoints;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Import;
 

@@ -1,5 +1,3 @@
-using Elsa.Labels.Endpoints.Labels.Get;
-
 namespace Elsa.Labels.Endpoints.Labels.List;
 
 /// <summary>

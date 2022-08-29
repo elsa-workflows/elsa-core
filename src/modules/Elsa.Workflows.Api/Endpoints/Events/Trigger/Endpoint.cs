@@ -8,7 +8,6 @@ using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Services;
-using FastEndpoints;
 
 namespace Elsa.Workflows.Api.Endpoints.Events.Trigger;
 

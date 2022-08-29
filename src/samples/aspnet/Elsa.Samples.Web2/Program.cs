@@ -6,7 +6,6 @@ using Elsa.Jobs.Extensions;
 using Elsa.ProtoActor.Extensions;
 using Elsa.Scheduling.Activities;
 using Elsa.Scheduling.Extensions;
-using Elsa.Workflows.Api.Extensions;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Activities.Flowchart.Activities;

@@ -1,4 +1,3 @@
-using Elsa.Workflows.Core.Services;
 using FastEndpoints;
 
 namespace Elsa.Abstractions;

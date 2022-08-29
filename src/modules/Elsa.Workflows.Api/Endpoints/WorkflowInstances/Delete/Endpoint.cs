@@ -2,7 +2,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Abstractions;
 using Elsa.Workflows.Persistence.Services;
-using FastEndpoints;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.Delete;
 

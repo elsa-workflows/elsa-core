@@ -4,7 +4,6 @@ using Elsa.Abstractions;
 using Elsa.Models;
 using Elsa.Persistence.Common.Entities;
 using Elsa.Workflows.Persistence.Services;
-using FastEndpoints;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.List;
 

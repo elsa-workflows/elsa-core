@@ -1,7 +1,3 @@
-using Elsa.Labels.Entities;
-using Elsa.Workflows.Core.Services;
-using Elsa.Workflows.Management.Models;
-
 namespace Elsa.Labels.Endpoints.Labels.Post;
 
 public class Request

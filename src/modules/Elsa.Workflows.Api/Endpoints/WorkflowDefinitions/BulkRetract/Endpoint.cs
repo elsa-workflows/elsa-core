@@ -5,7 +5,6 @@ using Elsa.Abstractions;
 using Elsa.Models;
 using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Persistence.Services;
-using FastEndpoints;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.BulkRetract;
 

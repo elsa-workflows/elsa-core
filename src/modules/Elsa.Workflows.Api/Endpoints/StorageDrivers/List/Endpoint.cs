@@ -3,7 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Abstractions;
 using Elsa.Workflows.Core.Services;
-using FastEndpoints;
 
 namespace Elsa.Workflows.Api.Endpoints.StorageDrivers.List;
 

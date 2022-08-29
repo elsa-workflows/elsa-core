@@ -1,5 +1,3 @@
-using FastEndpoints;
-
 namespace Elsa;
 
 public static class EndpointSecurityOptions
