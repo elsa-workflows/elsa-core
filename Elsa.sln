@@ -428,8 +428,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.ExtendHttpEndpoint", "src\samples\aspnet\Elsa.Samples.ExtendHttpEndpoint\Elsa.Samples.ExtendHttpEndpoint.csproj", "{62B28070-1AEC-49E2-A614-D505B0933E23}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.Auth0Http", "src\samples\aspnet\Elsa.Samples.Auth0Http\Elsa.Samples.Auth0Http.csproj", "{AB8C9005-3579-4C03-BC36-5BB1A04AE968}"
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.InProcessBackgroundMediator", "src\samples\aspnet\Elsa.Samples.InProcessBackgroundMediator\Elsa.Samples.InProcessBackgroundMediator.csproj", "{0319DAB2-388A-4DA1-8F62-2F0A0127F01C}"
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.ExtendHttpEndpoint", "src\samples\aspnet\Elsa.Samples.ExtendHttpEndpoint\Elsa.Samples.ExtendHttpEndpoint.csproj", "{62B28070-1AEC-49E2-A614-D505B0933E23}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
