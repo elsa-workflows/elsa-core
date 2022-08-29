@@ -65,7 +65,7 @@ namespace Elsa.Metadata
 
             if (outcomesObj is Type providerType && typeof(IOutcomesProvider).IsAssignableFrom(providerType))
             {
-                using var scope = _serviceScopeFactory.CreateScope();
+                await using var scope = _serviceScopeFactory.CreateAsyncScope();
                 var provider = (IOutcomesProvider) ActivatorUtilities.GetServiceOrCreateInstance(scope.ServiceProvider, providerType);
                 var providedOutcomes = await provider.GetOutcomesAsync(cancellationToken);
                 return providedOutcomes.ToArray();

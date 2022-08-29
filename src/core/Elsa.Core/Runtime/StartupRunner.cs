@@ -28,7 +28,7 @@ namespace Elsa.Runtime
             
             foreach (var startupTaskType in _startupTaskTypes)
             {
-                using var scope = _scopeFactory.CreateScope();
+                await using var scope = _scopeFactory.CreateAsyncScope();
                 var startupTask = (IStartupTask)scope.ServiceProvider.GetRequiredService(startupTaskType);
                 _logger.LogInformation("Running startup task {StartupTaskName}", startupTaskType.Name);
                 await startupTask.ExecuteAsync(cancellationToken);
