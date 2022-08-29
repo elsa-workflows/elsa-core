@@ -137,6 +137,7 @@ namespace Elsa.Metadata
                     (activityPropertyAttribute.Name ?? propertyInfo.Name).Pascalize(),
                     propertyInfo.PropertyType,
                     activityPropertyAttribute.Hint,
+                    activityPropertyAttribute.IsBrowsable,
                     activityPropertyAttribute.DefaultWorkflowStorageProvider,
                     activityPropertyAttribute.DisableWorkflowProviderSelection
                 );

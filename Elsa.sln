@@ -411,21 +411,23 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Secrets.Persistence.En
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Secrets.Persistence.EntityFramework.Core", "src\modules\secrets\Elsa.Secrets.Persistence.EntityFramework.Core\Elsa.Secrets.Persistence.EntityFramework.Core.csproj", "{A20BC1AA-3AFB-4EDC-ABC8-E6B4CC684E06}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Secrets.Persistence.MongoDb", "src\modules\secrets\Elsa.Secrets.Persistence.MongoDb\Elsa.Secrets.Persistence.MongoDb.csproj", "{3653FAA9-0AD1-461A-A729-82948351A159}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Secrets.Persistence.MongoDb", "src\modules\secrets\Elsa.Secrets.Persistence.MongoDb\Elsa.Secrets.Persistence.MongoDb.csproj", "{3653FAA9-0AD1-461A-A729-82948351A159}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Activities.Http.OpenApi", "src\activities\Elsa.Activities.Http.OpenApi\Elsa.Activities.Http.OpenApi.csproj", "{F9731DF7-CEB1-4B9B-8838-803275E301E4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.Http.OpenApi", "src\activities\Elsa.Activities.Http.OpenApi\Elsa.Activities.Http.OpenApi.csproj", "{F9731DF7-CEB1-4B9B-8838-803275E301E4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.CompensationConsole", "src\samples\console\Elsa.Samples.CompensationConsole\Elsa.Samples.CompensationConsole.csproj", "{962653DD-BFE7-4DDB-9B3D-5AC8C222F43F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.CompensationConsole", "src\samples\console\Elsa.Samples.CompensationConsole\Elsa.Samples.CompensationConsole.csproj", "{962653DD-BFE7-4DDB-9B3D-5AC8C222F43F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Scripting.Sql", "src\scripting\Elsa.Scripting.Sql\Elsa.Scripting.Sql.csproj", "{68BF7E0F-0E52-4477-A5B1-367E87697C75}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Scripting.Sql", "src\scripting\Elsa.Scripting.Sql\Elsa.Scripting.Sql.csproj", "{68BF7E0F-0E52-4477-A5B1-367E87697C75}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.LoadAndRunFromDatabaseConsole", "src\samples\console\Elsa.Samples.LoadAndRunFromDatabaseConsole\Elsa.Samples.LoadAndRunFromDatabaseConsole.csproj", "{507FE3FC-F775-46CF-8820-B80C6FCFD348}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.LoadAndRunFromDatabaseConsole", "src\samples\console\Elsa.Samples.LoadAndRunFromDatabaseConsole\Elsa.Samples.LoadAndRunFromDatabaseConsole.csproj", "{507FE3FC-F775-46CF-8820-B80C6FCFD348}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.BuildAndDispatchConsole", "src\samples\console\Elsa.Samples.BuildAndDispatchConsole\Elsa.Samples.BuildAndDispatchConsole.csproj", "{1CA56484-4B92-46DA-AFC5-8602FDBFAAA2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.BuildAndDispatchConsole", "src\samples\console\Elsa.Samples.BuildAndDispatchConsole\Elsa.Samples.BuildAndDispatchConsole.csproj", "{1CA56484-4B92-46DA-AFC5-8602FDBFAAA2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.InProcessBackgroundMediator", "src\samples\aspnet\Elsa.Samples.InProcessBackgroundMediator\Elsa.Samples.InProcessBackgroundMediator.csproj", "{0319DAB2-388A-4DA1-8F62-2F0A0127F01C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.InProcessBackgroundMediator", "src\samples\aspnet\Elsa.Samples.InProcessBackgroundMediator\Elsa.Samples.InProcessBackgroundMediator.csproj", "{0319DAB2-388A-4DA1-8F62-2F0A0127F01C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.Auth0Http", "src\samples\aspnet\Elsa.Samples.Auth0Http\Elsa.Samples.Auth0Http.csproj", "{AB8C9005-3579-4C03-BC36-5BB1A04AE968}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.ExtendHttpEndpoint", "src\samples\aspnet\Elsa.Samples.ExtendHttpEndpoint\Elsa.Samples.ExtendHttpEndpoint.csproj", "{62B28070-1AEC-49E2-A614-D505B0933E23}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.Auth0Http", "src\samples\aspnet\Elsa.Samples.Auth0Http\Elsa.Samples.Auth0Http.csproj", "{AB8C9005-3579-4C03-BC36-5BB1A04AE968}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -1029,6 +1031,10 @@ Global
 		{0319DAB2-388A-4DA1-8F62-2F0A0127F01C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0319DAB2-388A-4DA1-8F62-2F0A0127F01C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0319DAB2-388A-4DA1-8F62-2F0A0127F01C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{62B28070-1AEC-49E2-A614-D505B0933E23}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{62B28070-1AEC-49E2-A614-D505B0933E23}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{62B28070-1AEC-49E2-A614-D505B0933E23}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{62B28070-1AEC-49E2-A614-D505B0933E23}.Release|Any CPU.Build.0 = Release|Any CPU
 		{AB8C9005-3579-4C03-BC36-5BB1A04AE968}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{AB8C9005-3579-4C03-BC36-5BB1A04AE968}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AB8C9005-3579-4C03-BC36-5BB1A04AE968}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -1225,6 +1231,7 @@ Global
 		{507FE3FC-F775-46CF-8820-B80C6FCFD348} = {FC9F520F-BA51-4AD2-BFEE-EF787798E734}
 		{1CA56484-4B92-46DA-AFC5-8602FDBFAAA2} = {FC9F520F-BA51-4AD2-BFEE-EF787798E734}
 		{0319DAB2-388A-4DA1-8F62-2F0A0127F01C} = {22E75696-6FE9-436A-9097-EE21C603F818}
+		{62B28070-1AEC-49E2-A614-D505B0933E23} = {22E75696-6FE9-436A-9097-EE21C603F818}
 		{AB8C9005-3579-4C03-BC36-5BB1A04AE968} = {22E75696-6FE9-436A-9097-EE21C603F818}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
