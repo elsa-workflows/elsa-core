@@ -2,6 +2,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Abstractions;
 using Elsa.Models;
 using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Core.Serialization;
@@ -13,7 +14,7 @@ using Humanizer;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Export;
 
-public class Export : Endpoint<Request>
+public class Export : ElsaEndpoint<Request>
 {
     private readonly IWorkflowDefinitionStore _store;
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
@@ -35,6 +36,7 @@ public class Export : Endpoint<Request>
     public override void Configure()
     {
         Get("/workflow-definitions/{definitionId}/export");
+        ConfigurePermissions("read:workflow-definitions");
     }
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Abstractions;
 using Elsa.Models;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Management.Services;
@@ -9,7 +10,7 @@ using FastEndpoints;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.BulkPublish;
 
-public class BulkPublish : Endpoint<Request, Response>
+public class BulkPublish : ElsaEndpoint<Request, Response>
 {
     private readonly IWorkflowDefinitionStore _store;
     private readonly IWorkflowDefinitionPublisher _workflowDefinitionPublisher;
@@ -23,6 +24,7 @@ public class BulkPublish : Endpoint<Request, Response>
     public override void Configure()
     {
         Post("/bulk-actions/publish/workflow-definitions/by-definition-id");
+        ConfigurePermissions("publish:workflow-definitions");
     }
 
     public override async Task<Response> ExecuteAsync(Request request, CancellationToken cancellationToken)

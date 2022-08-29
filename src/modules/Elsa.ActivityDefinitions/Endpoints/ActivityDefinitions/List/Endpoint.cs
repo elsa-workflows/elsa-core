@@ -2,7 +2,6 @@ using Elsa.Abstractions;
 using Elsa.ActivityDefinitions.Models;
 using Elsa.ActivityDefinitions.Services;
 using Elsa.Models;
-using FastEndpoints;
 
 namespace Elsa.ActivityDefinitions.Endpoints.ActivityDefinitions.List;
 

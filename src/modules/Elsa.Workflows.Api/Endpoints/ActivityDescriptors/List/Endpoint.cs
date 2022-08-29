@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Elsa.Abstractions;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Services;
-using FastEndpoints;
 
 namespace Elsa.Workflows.Api.Endpoints.ActivityDescriptors.List;
 

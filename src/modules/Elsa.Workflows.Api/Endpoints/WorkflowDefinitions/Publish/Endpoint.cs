@@ -1,19 +1,16 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Abstractions;
 using Elsa.Models;
 using Elsa.Workflows.Api.Mappers;
 using Elsa.Workflows.Api.Models;
-using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Management.Services;
-using Elsa.Workflows.Persistence.Entities;
 using Elsa.Workflows.Persistence.Services;
 using FastEndpoints;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Publish;
 
-public class Publish : Endpoint<Request, WorkflowDefinitionResponse, WorkflowDefinitionMapper>
+public class Publish : ElsaEndpoint<Request, WorkflowDefinitionResponse, WorkflowDefinitionMapper>
 {
     private readonly IWorkflowDefinitionStore _store;
     private readonly IWorkflowDefinitionPublisher _workflowDefinitionPublisher;
@@ -27,6 +24,7 @@ public class Publish : Endpoint<Request, WorkflowDefinitionResponse, WorkflowDef
     public override void Configure()
     {
         Post("/workflow-definitions/{definitionId}/publish");
+        ConfigurePermissions("publish:workflow-definitions");
     }
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)

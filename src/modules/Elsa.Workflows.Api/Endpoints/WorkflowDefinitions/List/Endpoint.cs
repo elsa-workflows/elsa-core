@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Abstractions;
 using Elsa.Models;
 using Elsa.Workflows.Persistence.Services;
 using FastEndpoints;
@@ -9,7 +10,7 @@ using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.List;
 
-public class List : Endpoint<Request, Response>
+public class List : ElsaEndpoint<Request, Response>
 {
     private readonly IWorkflowDefinitionStore _store;
 
@@ -21,6 +22,7 @@ public class List : Endpoint<Request, Response>
     public override void Configure()
     {
         Get("/workflow-definitions");
+        ConfigurePermissions("read:workflow-definitions");
     }
 
     public override async Task<Response> ExecuteAsync(Request request, CancellationToken cancellationToken)

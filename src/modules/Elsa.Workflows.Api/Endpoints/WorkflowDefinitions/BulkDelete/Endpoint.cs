@@ -1,12 +1,13 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Abstractions;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Management.Services;
 using FastEndpoints;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.BulkDelete;
 
-public class BulkDelete : Endpoint<Request, Response>
+public class BulkDelete : ElsaEndpoint<Request, Response>
 {
     private readonly IWorkflowDefinitionManager _workflowDefinitionManager;
 
@@ -18,6 +19,7 @@ public class BulkDelete : Endpoint<Request, Response>
     public override void Configure()
     {
         Post("/bulk-actions/delete/workflow-definitions/by-definition-id");
+        ConfigurePermissions("delete:workflow-definitions");
     }
 
     public override async Task<Response> ExecuteAsync(Request request, CancellationToken cancellationToken)

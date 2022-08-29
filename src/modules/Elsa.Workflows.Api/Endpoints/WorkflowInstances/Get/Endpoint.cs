@@ -1,11 +1,12 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Abstractions;
 using Elsa.Workflows.Persistence.Services;
 using FastEndpoints;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.Get;
 
-public class Get : Endpoint<Request, Response, WorkflowInstanceMapper>
+public class Get : ElsaEndpoint<Request, Response, WorkflowInstanceMapper>
 {
     private readonly IWorkflowInstanceStore _store;
 
@@ -17,6 +18,7 @@ public class Get : Endpoint<Request, Response, WorkflowInstanceMapper>
     public override void Configure()
     {
         Get("/workflow-instances/{id}");
+        ConfigurePermissions("read:workflow-instances");
     }
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)

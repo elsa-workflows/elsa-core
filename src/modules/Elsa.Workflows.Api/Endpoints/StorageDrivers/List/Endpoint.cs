@@ -1,12 +1,13 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Abstractions;
 using Elsa.Workflows.Core.Services;
 using FastEndpoints;
 
 namespace Elsa.Workflows.Api.Endpoints.StorageDrivers.List;
 
-public class List : EndpointWithoutRequest<Response>
+public class List : ElsaEndpointWithoutRequest<Response>
 {
     private readonly IStorageDriverManager _registry;
 
@@ -18,8 +19,7 @@ public class List : EndpointWithoutRequest<Response>
     public override void Configure()
     {
         Get("/descriptors/storage-drivers");
-        Policies(Constants.PolicyName);
-        Permissions("all", "read:storage-drivers");
+        ConfigurePermissions("read:storage-drivers");
     }
 
     public override Task<Response> ExecuteAsync(CancellationToken ct)

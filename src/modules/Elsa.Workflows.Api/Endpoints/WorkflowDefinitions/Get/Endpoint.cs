@@ -1,5 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Abstractions;
 using Elsa.Models;
 using Elsa.Workflows.Api.Mappers;
 using Elsa.Workflows.Api.Models;
@@ -8,7 +9,7 @@ using FastEndpoints;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Get;
 
-public class Get : Endpoint<Request, WorkflowDefinitionResponse, WorkflowDefinitionMapper>
+public class Get : ElsaEndpoint<Request, WorkflowDefinitionResponse, WorkflowDefinitionMapper>
 {
     private readonly IWorkflowDefinitionStore _store;
 
@@ -20,6 +21,7 @@ public class Get : Endpoint<Request, WorkflowDefinitionResponse, WorkflowDefinit
     public override void Configure()
     {
         Get("/workflow-definitions/{definitionId}");
+        ConfigurePermissions("read:workflow-definitions");
     }
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)

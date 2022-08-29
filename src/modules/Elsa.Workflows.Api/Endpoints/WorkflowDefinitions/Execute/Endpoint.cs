@@ -1,5 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Abstractions;
 using Elsa.Models;
 using Elsa.Workflows.Persistence.Services;
 using Elsa.Workflows.Runtime.Models;
@@ -8,7 +9,7 @@ using FastEndpoints;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Execute;
 
-public class Execute : Endpoint<Request, Response>
+public class Execute : ElsaEndpoint<Request, Response>
 {
     private readonly IWorkflowDefinitionStore _store;
     private readonly IWorkflowInvoker _workflowInvoker;
@@ -22,6 +23,7 @@ public class Execute : Endpoint<Request, Response>
     public override void Configure()
     {
         Post("/workflow-definitions/{definitionId}/execute");
+        ConfigurePermissions("exec:workflow-definitions");
     }
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)

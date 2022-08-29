@@ -1,16 +1,14 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Abstractions;
 using Elsa.Models;
 using Elsa.Persistence.Common.Entities;
-using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Persistence.Services;
 using FastEndpoints;
-using Microsoft.AspNetCore.Mvc;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.List;
 
-public class List : Endpoint<Request, Response>
+public class List : ElsaEndpoint<Request, Response>
 {
     private readonly IWorkflowInstanceStore _store;
 
@@ -22,6 +20,7 @@ public class List : Endpoint<Request, Response>
     public override void Configure()
     {
         Get("/workflow-instances");
+        ConfigurePermissions("read:workflow-instances");
     }
 
     public override async Task<Response> ExecuteAsync(Request request, CancellationToken cancellationToken)

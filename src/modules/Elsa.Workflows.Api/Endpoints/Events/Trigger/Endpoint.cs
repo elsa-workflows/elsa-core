@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Abstractions;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
@@ -11,7 +12,7 @@ using FastEndpoints;
 
 namespace Elsa.Workflows.Api.Endpoints.Events.Trigger;
 
-public class Trigger : Endpoint<Request, Response>
+public class Trigger : ElsaEndpoint<Request, Response>
 {
     private readonly IHasher _hasher;
     private readonly IStimulusInterpreter _stimulusInterpreter;
@@ -27,9 +28,7 @@ public class Trigger : Endpoint<Request, Response>
     public override void Configure()
     {
         Post("/events/{eventName}/trigger");
-        Policies(Constants.PolicyName);
-        Permissions("all", "trigger:event");
-        Roles("Admin");
+        ConfigurePermissions("trigger:event");
     }
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)

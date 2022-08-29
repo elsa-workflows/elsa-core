@@ -1,12 +1,12 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Abstractions;
 using Elsa.Workflows.Management.Services;
 using FastEndpoints;
-using Microsoft.AspNetCore.Mvc;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Delete;
 
-public class Delete : Endpoint<Request>
+public class Delete : ElsaEndpoint<Request>
 {
     private readonly IWorkflowDefinitionManager _workflowDefinitionManager;
 
@@ -18,6 +18,7 @@ public class Delete : Endpoint<Request>
     public override void Configure()
     {
         Delete("/workflow-definitions/{definitionId}");
+        ConfigurePermissions("delete:workflow-definitions");
     }
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)

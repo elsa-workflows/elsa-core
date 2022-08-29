@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Abstractions;
 using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Serialization;
@@ -14,7 +15,7 @@ using FastEndpoints;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Post;
 
-public class Post : Endpoint<WorkflowDefinitionRequest, WorkflowDefinitionResponse>
+public class Post : ElsaEndpoint<WorkflowDefinitionRequest, WorkflowDefinitionResponse>
 {
     private readonly SerializerOptionsProvider _serializerOptionsProvider;
     private readonly IWorkflowDefinitionPublisher _workflowDefinitionPublisher;
@@ -33,6 +34,7 @@ public class Post : Endpoint<WorkflowDefinitionRequest, WorkflowDefinitionRespon
     public override void Configure()
     {
         Post("/workflow-definitions");
+        ConfigurePermissions("write:workflow-definitions");
     }
 
     public override async Task HandleAsync(WorkflowDefinitionRequest request, CancellationToken cancellationToken)

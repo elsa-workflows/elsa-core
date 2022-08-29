@@ -1,5 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Abstractions;
 using Elsa.Models;
 using Elsa.Workflows.Persistence.Services;
 using Elsa.Workflows.Runtime.Models;
@@ -8,7 +9,7 @@ using FastEndpoints;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Dispatch;
 
-public class Endpoint : Endpoint<Request, Response>
+public class Endpoint : ElsaEndpoint<Request, Response>
 {
     private readonly IWorkflowDefinitionStore _store;
     private readonly IWorkflowDispatcher _workflowDispatcher;
@@ -22,6 +23,7 @@ public class Endpoint : Endpoint<Request, Response>
     public override void Configure()
     {
         Post("/workflow-definitions/{definitionId}/dispatch");
+        ConfigurePermissions("exec:workflow-definitions");
     }
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)

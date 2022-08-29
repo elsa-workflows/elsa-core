@@ -6,7 +6,6 @@ using Elsa.Workflows.Core.Activities.Flowchart.Activities;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Models;
-using FastEndpoints;
 
 namespace Elsa.ActivityDefinitions.Endpoints.ActivityDefinitions.Post;
 

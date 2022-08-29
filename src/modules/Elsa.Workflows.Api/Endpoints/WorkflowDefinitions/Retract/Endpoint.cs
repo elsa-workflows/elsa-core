@@ -1,5 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Abstractions;
 using Elsa.Models;
 using Elsa.Workflows.Api.Mappers;
 using Elsa.Workflows.Api.Models;
@@ -9,7 +10,7 @@ using FastEndpoints;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Retract;
 
-public class Retract : Endpoint<Request, WorkflowDefinitionResponse, WorkflowDefinitionMapper>
+public class Retract : ElsaEndpoint<Request, WorkflowDefinitionResponse, WorkflowDefinitionMapper>
 {
     private readonly IWorkflowDefinitionStore _store;
     private readonly IWorkflowDefinitionPublisher _workflowDefinitionPublisher;
@@ -23,6 +24,7 @@ public class Retract : Endpoint<Request, WorkflowDefinitionResponse, WorkflowDef
     public override void Configure()
     {
         Post("/workflow-definitions/{definitionId}/retract");
+        ConfigurePermissions("retract:workflow-definitions");
     }
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
