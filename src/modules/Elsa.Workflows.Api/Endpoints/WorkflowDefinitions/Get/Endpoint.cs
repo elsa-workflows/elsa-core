@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Abstractions;
@@ -26,7 +27,7 @@ public class Get : ElsaEndpoint<Request, WorkflowDefinitionResponse, WorkflowDef
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
         var versionOptions = request.VersionOptions != null ? VersionOptions.FromString(request.VersionOptions) : VersionOptions.Latest;
-        var definition = await _store.FindByDefinitionIdAsync(request.DefinitionId, versionOptions, cancellationToken);
+        var definition = (await _store.FindByDefinitionIdAsync(request.DefinitionId, versionOptions, cancellationToken)).FirstOrDefault();
 
         if (definition == null)
         {

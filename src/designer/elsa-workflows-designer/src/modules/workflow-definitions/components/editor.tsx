@@ -9,13 +9,15 @@ import {
   ActivitySelectedArgs,
   ChildActivitySelectedArgs,
   ContainerSelectedArgs,
-  GraphUpdatedArgs,
+  GraphUpdatedArgs, 
+  VersionedEntity
 } from '../../../models';
 import {ActivityIdUpdatedArgs, ActivityUpdatedArgs} from './activity-properties-editor';
 import {ActivityDriverRegistry, ActivityNameFormatter, EventBus, PluginRegistry, PortProviderRegistry} from '../../../services';
 import {MonacoEditorSettings} from "../../../services/monaco-editor-settings";
 import {ActivityPropertyChangedEventArgs, WorkflowDefinitionPropsUpdatedArgs, WorkflowDefinitionUpdatedArgs, WorkflowEditorEventTypes} from "../models/ui";
 import {WorkflowDefinition} from "../models/entities";
+import {WorkflowDefinitionsApi} from "../../workflow-definitions/services/api";
 
 @Component({
   tag: 'elsa-workflow-definition-editor',
@@ -34,6 +36,7 @@ export class WorkflowDefinitionEditor {
   private readonly emitActivityChangedDebounced: (e: ActivityPropertyChangedEventArgs) => void;
   private readonly updateModelDebounced: () => void;
   private readonly saveChangesDebounced: () => void;
+  private readonly workflowDefinitionApi: WorkflowDefinitionsApi;
 
   constructor() {
     this.eventBus = Container.get(EventBus);
@@ -43,6 +46,7 @@ export class WorkflowDefinitionEditor {
     this.emitActivityChangedDebounced = debounce(this.emitActivityChanged, 100);
     this.updateModelDebounced = debounce(this.updateModel, 10);
     this.saveChangesDebounced = debounce(this.saveChanges, 1000);
+    this.workflowDefinitionApi = Container.get(WorkflowDefinitionsApi);
   }
 
   @Prop() workflowDefinition?: WorkflowDefinition;
@@ -50,6 +54,7 @@ export class WorkflowDefinitionEditor {
   @Event() workflowUpdated: EventEmitter<WorkflowDefinitionUpdatedArgs>
   @State() private workflowDefinitionState: WorkflowDefinition;
   @State() private selectedActivity?: Activity;
+  @State() workflowVersions: Array<WorkflowDefinition> = [];
 
   @Watch('monacoLibPath')
   private handleMonacoLibPath(value: string) {
@@ -60,6 +65,7 @@ export class WorkflowDefinitionEditor {
   @Watch('workflowDefinition')
   async onWorkflowDefinitionChanged(value: WorkflowDefinition) {
     await this.importWorkflow(value);
+    await this.loadWorkflowVersions();
   }
 
   @Listen('resize', {target: 'window'})
@@ -116,6 +122,7 @@ export class WorkflowDefinitionEditor {
   @Method()
   async updateWorkflowDefinition(workflowDefinition: WorkflowDefinition): Promise<void> {
     this.workflowDefinitionState = workflowDefinition;
+    await this.loadWorkflowVersions();
   }
 
   @Method()
@@ -138,8 +145,19 @@ export class WorkflowDefinitionEditor {
     return workflowDefinition;
   }
 
+  loadWorkflowVersions = async () => {
+    if(this.workflowDefinitionState.definitionId != null && this.workflowDefinitionState.definitionId.length > 0)
+    {
+      this.workflowVersions = await this.workflowDefinitionApi.getVersions(this.workflowDefinitionState.definitionId);
+    }
+    else {
+      this.workflowVersions = [];
+    }
+  }
+
   async componentWillLoad() {
     await this.updateWorkflowDefinition(this.workflowDefinition);
+    await this.loadWorkflowVersions();
   }
 
   async componentDidLoad() {
@@ -176,7 +194,8 @@ export class WorkflowDefinitionEditor {
   };
 
   private saveChanges = async (): Promise<void> => {
-    this.workflowUpdated.emit({workflowDefinition: this.workflowDefinitionState});
+    const latestVersion = this.workflowVersions.find(v => v.isLatest);
+    this.workflowUpdated.emit({workflowDefinition: this.workflowDefinitionState, latestVersionNumber: latestVersion?.version});
   };
 
   private updateLayout = async () => {
@@ -231,6 +250,28 @@ export class WorkflowDefinitionEditor {
     this.saveChangesDebounced();
   }
 
+  onVersionSelected = async (e: CustomEvent<WorkflowDefinition>) => {
+    const workflowToView = e.detail;
+    const workflowDefinition = await this.workflowDefinitionApi.get({definitionId: workflowToView.definitionId, versionOptions: {version: workflowToView.version}});
+    this.importWorkflow(workflowDefinition);
+  };
+
+  onDeleteVersionClicked = async (e: CustomEvent<WorkflowDefinition>) => {
+    const workflowToDelete = e.detail;
+    await this.workflowDefinitionApi.deleteVersion({definitionId: workflowToDelete.definitionId, version: workflowToDelete.version});
+    const latestWorkflowDefinition = await this.workflowDefinitionApi.get({definitionId: workflowToDelete.definitionId, versionOptions: {isLatest: true}});
+    await this.loadWorkflowVersions();
+    this.importWorkflow(latestWorkflowDefinition);
+  };
+
+  onRevertVersionClicked = async (e: CustomEvent<WorkflowDefinition>) => {
+    const workflowToRevert = e.detail;
+    await this.workflowDefinitionApi.revertVersion({definitionId: workflowToRevert.definitionId, version: workflowToRevert.version});
+    const workflowDefinition = await this.workflowDefinitionApi.get({definitionId: workflowToRevert.definitionId, versionOptions: {isLatest: true}});
+    await this.loadWorkflowVersions();
+    this.importWorkflow(workflowDefinition);
+  };
+
   render() {
 
     return (
@@ -254,7 +295,11 @@ export class WorkflowDefinitionEditor {
           <div class="object-editor-container">
             <elsa-workflow-definition-properties-editor
               workflowDefinition={this.workflowDefinitionState}
+              workflowVersions={this.workflowVersions}
               onWorkflowPropsUpdated={e => this.onWorkflowPropsUpdated(e)}
+              onVersionSelected={e => this.onVersionSelected(e)}
+              onDeleteVersionClicked={e => this.onDeleteVersionClicked(e)}
+              onRevertVersionClicked={e => this.onRevertVersionClicked(e)}
             />
           </div>
         </elsa-panel>

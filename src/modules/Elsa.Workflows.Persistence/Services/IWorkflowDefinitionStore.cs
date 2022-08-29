@@ -14,7 +14,7 @@ public interface IWorkflowDefinitionStore
     /// <summary>
     /// Finds a workflow definition by its logical definition ID and specified version options.
     /// </summary>
-    Task<WorkflowDefinition?> FindByDefinitionIdAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default);
+    Task<IEnumerable<WorkflowDefinition>> FindByDefinitionIdAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Finds a workflow definition by name and specified version options.
@@ -23,9 +23,11 @@ public interface IWorkflowDefinitionStore
 
     Task<IEnumerable<WorkflowDefinitionSummary>> FindManySummariesAsync(IEnumerable<string> definitionIds, VersionOptions? versionOptions = default, CancellationToken cancellationToken = default);
     Task<IEnumerable<WorkflowDefinition>> FindLatestAndPublishedByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default);
+    Task<WorkflowDefinition?> FindLastVersionByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken);
     Task SaveAsync(WorkflowDefinition record, CancellationToken cancellationToken = default);
     Task SaveManyAsync(IEnumerable<WorkflowDefinition> records, CancellationToken cancellationToken = default);
     Task<int> DeleteByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default);
+    Task<int> DeleteByDefinitionIdAndVersionAsync(string definitionId, int version, CancellationToken cancellationToken = default);
     Task<int> DeleteByDefinitionIdsAsync(IEnumerable<string> definitionIds, CancellationToken cancellationToken = default);
 
     Task<Page<WorkflowDefinitionSummary>> ListSummariesAsync(

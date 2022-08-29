@@ -42,7 +42,7 @@ public class Post : ElsaEndpoint<WorkflowDefinitionRequest, WorkflowDefinitionRe
 
         // Get a workflow draft version.
         var draft = !string.IsNullOrWhiteSpace(definitionId)
-            ? await _workflowDefinitionPublisher.GetDraftAsync(definitionId, cancellationToken)
+            ? await _workflowDefinitionPublisher.GetDraftAsync(definitionId, request.Version, cancellationToken)
             : default;
 
         var isNew = draft == null;

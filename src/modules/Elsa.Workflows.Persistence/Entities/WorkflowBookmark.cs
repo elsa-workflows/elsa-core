@@ -10,6 +10,7 @@ public class WorkflowBookmark : Entity
     public string? Data { get; set; }
     public string WorkflowDefinitionId { get; init; } = default!;
     public string WorkflowInstanceId { get; init; } = default!;
+    public int WorkflowVersion { get; init; } = default!;
     public string? CorrelationId { get; init; }
     public string ActivityId { get; init; } = default!;
     public string ActivityInstanceId { get; init; } = default!;
@@ -23,6 +24,7 @@ public class WorkflowBookmark : Entity
             Id = bookmark.Id,
             WorkflowDefinitionId = workflowInstance.DefinitionId,
             WorkflowInstanceId = workflowInstance.Id,
+            WorkflowVersion = workflowInstance.Version,
             CorrelationId = workflowInstance.CorrelationId,
             Hash = bookmark.Hash,
             Data = bookmark.Data,

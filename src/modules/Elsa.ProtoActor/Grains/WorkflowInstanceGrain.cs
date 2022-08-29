@@ -58,7 +58,7 @@ public class WorkflowInstanceGrain : WorkflowInstanceGrainBase
             throw new Exception($"No workflow instance found with ID {workflowInstanceId}");
 
         var workflowDefinitionId = workflowInstance.DefinitionId;
-        var workflow = await _workflowDefinitionStore.FindByDefinitionIdAsync(workflowDefinitionId, VersionOptions.SpecificVersion(workflowInstance.Version), cancellationToken);
+        var workflow = (await _workflowDefinitionStore.FindByDefinitionIdAsync(workflowDefinitionId, VersionOptions.SpecificVersion(workflowInstance.Version), cancellationToken)).FirstOrDefault();
 
         if (workflow == null)
             throw new Exception($"No workflow definition found with ID {workflowDefinitionId}");
@@ -79,7 +79,7 @@ public class WorkflowInstanceGrain : WorkflowInstanceGrainBase
         var workflowDefinitionId = request.DefinitionId;
         var correlationId = request.CorrelationId == "" ? default : request.CorrelationId;
         var workflowInstance = await _workflowInstanceFactory.CreateAsync(workflowDefinitionId, versionOptions, correlationId, cancellationToken);
-        var workflow = await _workflowDefinitionStore.FindByDefinitionIdAsync(workflowDefinitionId, VersionOptions.SpecificVersion(workflowInstance.Version), cancellationToken);
+        var workflow = (await _workflowDefinitionStore.FindByDefinitionIdAsync(workflowDefinitionId, VersionOptions.SpecificVersion(workflowInstance.Version), cancellationToken)).FirstOrDefault();
 
         if (workflow == null)
             throw new Exception($"No workflow definition found with ID {workflowDefinitionId}");
@@ -100,7 +100,7 @@ public class WorkflowInstanceGrain : WorkflowInstanceGrainBase
         var workflowDefinitionId = request.DefinitionId;
         var bookmark = request.Bookmark;
         var input = request.Input?.Deserialize();
-        var workflow = await _workflowDefinitionStore.FindByDefinitionIdAsync(workflowDefinitionId, versionOptions, cancellationToken);
+        var workflow = (await _workflowDefinitionStore.FindByDefinitionIdAsync(workflowDefinitionId, versionOptions, cancellationToken)).FirstOrDefault();
 
         if (workflow == null)
             throw new Exception($"No workflow definition found with ID {workflowDefinitionId}");

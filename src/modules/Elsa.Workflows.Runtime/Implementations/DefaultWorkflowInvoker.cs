@@ -51,7 +51,7 @@ public class DefaultWorkflowInvoker : IWorkflowInvoker
 
     public async Task<RunWorkflowResult> InvokeAsync(WorkflowInstance workflowInstance, Bookmark? bookmark = default, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
     {
-        var workflow = await _workflowDefinitionStore.FindByDefinitionIdAsync(workflowInstance.DefinitionId, VersionOptions.SpecificVersion(workflowInstance.Version), cancellationToken);
+        var workflow = (await _workflowDefinitionStore.FindByDefinitionIdAsync(workflowInstance.DefinitionId, VersionOptions.SpecificVersion(workflowInstance.Version), cancellationToken)).FirstOrDefault();
 
         if (workflow == null)
             throw new Exception($"Workflow instance references a workflow that does not exist");
@@ -73,7 +73,7 @@ public class DefaultWorkflowInvoker : IWorkflowInvoker
 
     private async Task<WorkflowDefinition> GetWorkflowDefinitionAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
     {
-        var definition = await _workflowDefinitionStore.FindByDefinitionIdAsync(definitionId, versionOptions, cancellationToken);
+        var definition = (await _workflowDefinitionStore.FindByDefinitionIdAsync(definitionId, versionOptions, cancellationToken)).FirstOrDefault();
 
         if (definition == null)
             throw new Exception($"Workflow instance references a workflow that does not exist");

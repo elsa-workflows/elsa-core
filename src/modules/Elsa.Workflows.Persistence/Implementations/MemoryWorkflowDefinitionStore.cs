@@ -32,9 +32,9 @@ public class MemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
         return Task.FromResult(definition);
     }
 
-    public Task<WorkflowDefinition?> FindByDefinitionIdAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
+    public Task<IEnumerable<WorkflowDefinition>> FindByDefinitionIdAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
     {
-        var definition = _store.Find(x => x.DefinitionId == definitionId && x.WithVersion(versionOptions));
+        var definition = _store.FindMany(x => x.DefinitionId == definitionId && x.WithVersion(versionOptions));
         return Task.FromResult(definition);
     }
 
@@ -64,6 +64,12 @@ public class MemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
         return Task.FromResult(definitions);
     }
 
+    public Task<WorkflowDefinition?> FindLastVersionByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken)
+    {
+        var query = _store.List();
+        return Task.FromResult(query.Where(w => w.DefinitionId == definitionId).OrderByDescending(w => w.Version).FirstOrDefault());
+    }
+
     public Task SaveAsync(WorkflowDefinition record, CancellationToken cancellationToken = default)
     {
         _store.Save(record);
@@ -82,6 +88,14 @@ public class MemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
         _instanceStore.DeleteWhere(x => x.DefinitionId == definitionId);
         _bookmarkStore.DeleteWhere(x => x.WorkflowDefinitionId == definitionId);
         var result = _store.DeleteWhere(x => x.DefinitionId == definitionId);
+        return Task.FromResult(result);
+    }
+    
+    public Task<int> DeleteByDefinitionIdAndVersionAsync(string definitionId, int version, CancellationToken cancellationToken = default)
+    {
+        _bookmarkStore.DeleteWhere(x => x.WorkflowDefinitionId == definitionId && x.WorkflowVersion == version);
+        _instanceStore.DeleteWhere(x => x.DefinitionId == definitionId && x.Version == version);
+        var result = _store.DeleteWhere(x => x.DefinitionId == definitionId && x.Version == version);
         return Task.FromResult(result);
     }
 

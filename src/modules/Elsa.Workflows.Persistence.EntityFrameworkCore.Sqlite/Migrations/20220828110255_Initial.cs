@@ -19,6 +19,7 @@ namespace Elsa.Workflows.Persistence.EntityFrameworkCore.Sqlite.Migrations
                     Data = table.Column<string>(type: "TEXT", nullable: true),
                     WorkflowDefinitionId = table.Column<string>(type: "TEXT", nullable: false),
                     WorkflowInstanceId = table.Column<string>(type: "TEXT", nullable: false),
+                    WorkflowVersion = table.Column<int>(type: "INTEGER", nullable: false),
                     CorrelationId = table.Column<string>(type: "TEXT", nullable: true),
                     ActivityId = table.Column<string>(type: "TEXT", nullable: false),
                     ActivityInstanceId = table.Column<string>(type: "TEXT", nullable: false),
@@ -59,6 +60,7 @@ namespace Elsa.Workflows.Persistence.EntityFrameworkCore.Sqlite.Migrations
                     Id = table.Column<string>(type: "TEXT", nullable: false),
                     WorkflowDefinitionId = table.Column<string>(type: "TEXT", nullable: false),
                     WorkflowInstanceId = table.Column<string>(type: "TEXT", nullable: false),
+                    WorkflowVersion = table.Column<int>(type: "INTEGER", nullable: false),
                     ActivityInstanceId = table.Column<string>(type: "TEXT", nullable: false),
                     ParentActivityInstanceId = table.Column<string>(type: "TEXT", nullable: true),
                     ActivityId = table.Column<string>(type: "TEXT", nullable: false),
@@ -208,6 +210,11 @@ namespace Elsa.Workflows.Persistence.EntityFrameworkCore.Sqlite.Migrations
                 name: "IX_WorkflowExecutionLogRecord_WorkflowInstanceId",
                 table: "WorkflowExecutionLogRecords",
                 column: "WorkflowInstanceId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowExecutionLogRecord_WorkflowVersion",
+                table: "WorkflowExecutionLogRecords",
+                column: "WorkflowVersion");
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowInstance_CorrelationId",

@@ -6,6 +6,7 @@ using Elsa.Persistence.EntityFrameworkCore.Common.Services;
 using Elsa.Workflows.Persistence.Entities;
 using Elsa.Workflows.Persistence.Models;
 using Elsa.Workflows.Persistence.Services;
+using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Workflows.Persistence.EntityFrameworkCore.Implementations;
 
@@ -17,11 +18,11 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
     public async Task<WorkflowDefinition?> FindByIdAsync(string id, CancellationToken cancellationToken = default) =>
         await _store.FindAsync(x => x.Id == id, cancellationToken);
 
-    public async Task<WorkflowDefinition?> FindByDefinitionIdAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<WorkflowDefinition>> FindByDefinitionIdAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
     {
         Expression<Func<WorkflowDefinition, bool>> predicate = x => x.DefinitionId == definitionId;
         predicate = predicate.WithVersion(versionOptions);
-        return await _store.FindAsync(predicate, cancellationToken);
+        return await _store.FindManyAsync(predicate, cancellationToken);
     }
 
     public async Task<WorkflowDefinition?> FindByNameAsync(string name, VersionOptions versionOptions, CancellationToken cancellationToken = default)
@@ -48,6 +49,14 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
     public async Task<IEnumerable<WorkflowDefinition>> FindLatestAndPublishedByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default) =>
         await _store.FindManyAsync(x => x.DefinitionId == definitionId && (x.IsLatest || x.IsPublished), cancellationToken);
 
+    public async Task<WorkflowDefinition?> FindLastVersionByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken)
+    {
+        await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
+        var set = dbContext.WorkflowDefinitions;
+        var query = set.AsQueryable();
+        return query.Where(w => w.DefinitionId == definitionId).OrderByDescending(w => w.Version).FirstOrDefault();
+    }
+
     public async Task SaveAsync(WorkflowDefinition record, CancellationToken cancellationToken = default) => await _store.SaveAsync(record, cancellationToken);
     public async Task SaveManyAsync(IEnumerable<WorkflowDefinition> records, CancellationToken cancellationToken = default) => await _store.SaveManyAsync(records, cancellationToken);
 
@@ -59,6 +68,15 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         await dbContext.WorkflowTriggers.DeleteWhereAsync(dbContext, x => x.WorkflowDefinitionId == definitionId, cancellationToken);
         await dbContext.WorkflowBookmarks.DeleteWhereAsync(dbContext, x => x.WorkflowDefinitionId == definitionId, cancellationToken);
         return await dbContext.WorkflowDefinitions.DeleteWhereAsync(dbContext, x => x.DefinitionId == definitionId, cancellationToken);
+    }
+    
+    public async Task<int> DeleteByDefinitionIdAndVersionAsync(string definitionId, int version, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
+        await dbContext.WorkflowExecutionLogRecords.DeleteWhereAsync(dbContext, x => x.WorkflowDefinitionId == definitionId && x.WorkflowVersion == version, cancellationToken);
+        await dbContext.WorkflowInstances.DeleteWhereAsync(dbContext, x => x.DefinitionId == definitionId && x.Version == version, cancellationToken);
+        await dbContext.WorkflowBookmarks.DeleteWhereAsync(dbContext, x => x.WorkflowDefinitionId == definitionId && x.WorkflowVersion == version, cancellationToken);
+        return await dbContext.WorkflowDefinitions.DeleteWhereAsync(dbContext, x => x.DefinitionId == definitionId && x.Version == version, cancellationToken);
     }
 
     public async Task<int> DeleteByDefinitionIdsAsync(IEnumerable<string> definitionIds, CancellationToken cancellationToken = default)

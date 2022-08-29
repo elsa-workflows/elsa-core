@@ -9,6 +9,7 @@ public class WorkflowDefinitionRequest
     public string? DefinitionId { get; set; }
     public string? Name { get; set; }
     public string? Description { get; set; } = default!;
+    public int? Version { get; set; }
     public ICollection<VariableDefinition>? Variables { get; set; } = default!;
     public IDictionary<string, object>? Metadata { get; set; } = default!;
     public IDictionary<string, object>? ApplicationProperties { get; set; } = default!;
