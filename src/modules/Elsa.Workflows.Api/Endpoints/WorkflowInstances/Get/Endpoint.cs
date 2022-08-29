@@ -27,6 +27,6 @@ public class Get : ElsaEndpoint<Request, Response, WorkflowInstanceMapper>
         if (workflowInstance == null)
             await SendNotFoundAsync(cancellationToken);
         else
-            await SendOkAsync(await Map.FromEntityAsync(workflowInstance), cancellationToken);
+            await SendOkAsync(Map.FromEntity(workflowInstance), cancellationToken);
     }
 }

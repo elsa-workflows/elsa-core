@@ -4,7 +4,7 @@ import {Container, Service} from 'typedi';
 import {EventBus} from '../event-bus';
 import 'reflect-metadata';
 import {ServerSettings} from '../server-settings';
-import {DescriptorsApi, DescriptorsApiImpl} from "./descriptors-api";
+import {DescriptorsApi} from "./descriptors-api";
 import {DesignerApi, DesignerApiImpl} from "./designer-api";
 import {EventTypes} from "../../models";
 
@@ -15,7 +15,7 @@ export class ElsaClient {
 
   constructor(httpClient: AxiosInstance) {
     this.httpClient = httpClient;
-    this.descriptors = new DescriptorsApiImpl(httpClient);
+    this.descriptors = new DescriptorsApi(httpClient);
     this.designer = new DesignerApiImpl(httpClient);
   }
 }

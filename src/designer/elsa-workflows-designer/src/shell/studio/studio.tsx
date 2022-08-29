@@ -2,7 +2,6 @@ import {Component, Element, h, Host, Prop, Watch} from '@stencil/core';
 import 'reflect-metadata';
 import {Container} from 'typedi';
 import {ElsaApiClientProvider, ElsaClient, EventBus, PluginRegistry, ServerSettings} from '../../services';
-import {ActivityDescriptor} from '../../models';
 import {MonacoEditorSettings} from "../../services/monaco-editor-settings";
 import descriptorsStore from '../../data/descriptors-store';
 import studioComponentStore from "../../data/studio-component-store";
@@ -15,7 +14,6 @@ export class Studio {
   private readonly eventBus: EventBus;
   private readonly workflowDefinitionManager: WorkflowDefinitionManager;
   private readonly pluginRegistry: PluginRegistry;
-  private activityDescriptors: Array<ActivityDescriptor>;
   private elsaClient: ElsaClient;
 
   constructor() {
@@ -123,10 +121,10 @@ export class Studio {
     const elsaClientProvider = Container.get(ElsaApiClientProvider);
 
     this.elsaClient = await elsaClientProvider.getElsaClient();
-    this.activityDescriptors = await this.elsaClient.descriptors.activities.list();
+    const activityDescriptors = await this.elsaClient.descriptors.activities.list();
     const storageDrivers = await this.elsaClient.descriptors.storageDrivers.list();
-
-    descriptorsStore.activityDescriptors = this.activityDescriptors;
+    
+    descriptorsStore.activityDescriptors = activityDescriptors;
     descriptorsStore.storageDrivers = storageDrivers;
 
     await this.pluginRegistry.initialize();
