@@ -109,7 +109,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
         public virtual async Task<int> DeleteManyAsync(ISpecification<T> specification, CancellationToken cancellationToken = default)
         {
             var filter = MapSpecification(specification);
-            return await DoWork(async dbContext => await dbContext.Set<T>().Where(filter).BatchDeleteWithWorkAroundAsync(dbContext, cancellationToken), cancellationToken);
+            return await DoWork(async dbContext => await dbContext.Set<T>().Where(filter).Select(x=>x.Id).AsQueryable().BatchDeleteWithWorkAroundAsync(dbContext, cancellationToken), cancellationToken);
         }
 
         public async Task<IEnumerable<T>> FindManyAsync(ISpecification<T> specification, IOrderBy<T>? orderBy = default, IPaging? paging = default, CancellationToken cancellationToken = default)
