@@ -4,6 +4,7 @@ using Elsa.Retention.HostedServices;
 using Elsa.Retention.Jobs;
 using Elsa.Retention.Options;
 using Elsa.Retention.Services;
+using Elsa.Retention.Stores;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
@@ -16,6 +17,8 @@ namespace Elsa.Retention.Extensions
             services
                 .Configure(configureOptions)
                 .AddSingleton(CreateRetentionFilterPipeline)
+                .AddSingleton(CreateRetentionSpecificationFilter)
+                .AddScoped<IRetentionWorkflowInstanceStore, RetentionWorkflowInstanceStore>()
                 .AddScoped<CleanupJob>()
                 .AddHostedService<CleanupHostedService>();
 
@@ -29,6 +32,16 @@ namespace Elsa.Retention.Extensions
 
             options.ConfigurePipeline(pipeline);
             return pipeline;
+        }
+
+        private static IRetentionSpecificationFilter CreateRetentionSpecificationFilter(IServiceProvider serviceProvider)
+        {
+            var options = serviceProvider.GetRequiredService<IOptions<CleanupOptions>>().Value;
+            var filter = new RetentionSpecificationFilter();
+
+            options.ConfigureSpecificationFilter(filter);
+            return filter;
+
         }
     }
 }
