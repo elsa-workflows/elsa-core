@@ -164,6 +164,8 @@ export namespace Components {
         "containerClass"?: string;
         "selectedLabels": Array<string>;
     }
+    interface ElsaLoginPage {
+    }
     interface ElsaModalDialog {
         "actions": Array<ActionDefinition>;
         "content": () => any;
@@ -437,6 +439,12 @@ declare global {
         prototype: HTMLElsaLabelPickerElement;
         new (): HTMLElsaLabelPickerElement;
     };
+    interface HTMLElsaLoginPageElement extends Components.ElsaLoginPage, HTMLStencilElement {
+    }
+    var HTMLElsaLoginPageElement: {
+        prototype: HTMLElsaLoginPageElement;
+        new (): HTMLElsaLoginPageElement;
+    };
     interface HTMLElsaModalDialogElement extends Components.ElsaModalDialog, HTMLStencilElement {
     }
     var HTMLElsaModalDialogElement: {
@@ -653,6 +661,7 @@ declare global {
         "elsa-input-tags": HTMLElsaInputTagsElement;
         "elsa-input-tags-dropdown": HTMLElsaInputTagsDropdownElement;
         "elsa-label-picker": HTMLElsaLabelPickerElement;
+        "elsa-login-page": HTMLElsaLoginPageElement;
         "elsa-modal-dialog": HTMLElsaModalDialogElement;
         "elsa-modal-dialog-container": HTMLElsaModalDialogContainerElement;
         "elsa-monaco-editor": HTMLElsaMonacoEditorElement;
@@ -813,6 +822,8 @@ declare namespace LocalJSX {
         "containerClass"?: string;
         "onSelectedLabelsChanged"?: (event: CustomEvent<Array<string>>) => void;
         "selectedLabels"?: Array<string>;
+    }
+    interface ElsaLoginPage {
     }
     interface ElsaModalDialog {
         "actions"?: Array<ActionDefinition>;
@@ -978,6 +989,7 @@ declare namespace LocalJSX {
         "elsa-input-tags": ElsaInputTags;
         "elsa-input-tags-dropdown": ElsaInputTagsDropdown;
         "elsa-label-picker": ElsaLabelPicker;
+        "elsa-login-page": ElsaLoginPage;
         "elsa-modal-dialog": ElsaModalDialog;
         "elsa-modal-dialog-container": ElsaModalDialogContainer;
         "elsa-monaco-editor": ElsaMonacoEditor;
@@ -1039,6 +1051,7 @@ declare module "@stencil/core" {
             "elsa-input-tags": LocalJSX.ElsaInputTags & JSXBase.HTMLAttributes<HTMLElsaInputTagsElement>;
             "elsa-input-tags-dropdown": LocalJSX.ElsaInputTagsDropdown & JSXBase.HTMLAttributes<HTMLElsaInputTagsDropdownElement>;
             "elsa-label-picker": LocalJSX.ElsaLabelPicker & JSXBase.HTMLAttributes<HTMLElsaLabelPickerElement>;
+            "elsa-login-page": LocalJSX.ElsaLoginPage & JSXBase.HTMLAttributes<HTMLElsaLoginPageElement>;
             "elsa-modal-dialog": LocalJSX.ElsaModalDialog & JSXBase.HTMLAttributes<HTMLElsaModalDialogElement>;
             "elsa-modal-dialog-container": LocalJSX.ElsaModalDialogContainer & JSXBase.HTMLAttributes<HTMLElsaModalDialogContainerElement>;
             "elsa-monaco-editor": LocalJSX.ElsaMonacoEditor & JSXBase.HTMLAttributes<HTMLElsaMonacoEditorElement>;

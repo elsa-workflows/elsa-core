@@ -1,4 +1,4 @@
-﻿import axios, {AxiosInstance, AxiosRequestConfig} from "axios";
+﻿import axios, {AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse} from "axios";
 import {Service as MiddlewareService} from 'axios-middleware';
 import {Container, Service} from 'typedi';
 import {EventBus} from '../event-bus';
@@ -28,8 +28,7 @@ export class ElsaApiClientProvider {
   constructor(private serverSettings: ServerSettings) {
   }
 
-  public async getHttpClient(): Promise<AxiosInstance>
-  {
+  public async getHttpClient(): Promise<AxiosInstance> {
     if (!!this.httpClient)
       return this.httpClient;
 

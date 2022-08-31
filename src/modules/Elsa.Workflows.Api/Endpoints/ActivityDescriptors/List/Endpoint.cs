@@ -19,7 +19,7 @@ public class List : ElsaEndpointWithoutRequest<Response>
     public override void Configure()
     {
         Get("/descriptors/activities");
-        ConfigurePermissions("list:activity-descriptors");
+        ConfigurePermissions("read:*", "read:activity-descriptors");
     }
 
     public override Task<Response> ExecuteAsync(CancellationToken cancellationToken)

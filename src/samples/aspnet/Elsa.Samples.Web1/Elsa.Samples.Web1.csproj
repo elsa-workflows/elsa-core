@@ -7,7 +7,6 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\..\bundles\Elsa\Elsa.csproj" />
-      <ProjectReference Include="..\..\..\modules\Elsa.AspNetCore\Elsa.AspNetCore.csproj" />
       <ProjectReference Include="..\..\..\modules\Elsa.Jobs\Elsa.Jobs.csproj" />
       <ProjectReference Include="..\..\..\modules\Elsa.AzureServiceBus\Elsa.AzureServiceBus.csproj" />
       <ProjectReference Include="..\..\..\modules\Elsa.Hangfire\Elsa.Hangfire.csproj" />

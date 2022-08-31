@@ -1,5 +1,6 @@
+import 'reflect-metadata';
 import {Component, getAssetPath, h} from "@stencil/core";
-import toolbarComponentStore from "../../data/toolbar-component-store";
+import toolbarComponentStore from "../../../data/toolbar-component-store";
 
 @Component({
   tag: 'elsa-home-page',
@@ -9,7 +10,7 @@ import toolbarComponentStore from "../../data/toolbar-component-store";
 })
 export class HomePage {
 
-  componentWillLoad(){
+  async componentWillLoad(){
     toolbarComponentStore.components = [() => <elsa-new-button/>];
   }
 

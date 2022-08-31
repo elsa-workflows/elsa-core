@@ -22,7 +22,7 @@ public class List : ElsaEndpoint<Request, PagedListResponse<ActivityDefinitionSu
     public override void Configure()
     {
         Get("/activity-definitions");
-        ConfigurePermissions("read:activity-definitions");
+        ConfigurePermissions("read:*", "read:activity-definitions");
     }
 
     /// <inheritdoc />

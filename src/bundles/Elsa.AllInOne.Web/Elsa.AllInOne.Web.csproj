@@ -9,7 +9,6 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\bundles\Elsa\Elsa.csproj" />
-      <ProjectReference Include="..\..\modules\Elsa.AspNetCore\Elsa.AspNetCore.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.ActivityDefinitions\Elsa.ActivityDefinitions.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Hangfire\Elsa.Hangfire.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Http\Elsa.Http.csproj" />

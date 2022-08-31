@@ -114,7 +114,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ActivityDefinitions.En
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Api.Common", "src\common\Elsa.Api.Common\Elsa.Api.Common.csproj", "{39CD855E-83B1-4A96-93F7-01608211EBE3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Tokens.Api", "src\modules\Elsa.Tokens.Api\Elsa.Tokens.Api.csproj", "{30B49E42-AE61-4F7C-981F-923F07BB3986}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Identity", "src\modules\Elsa.Identity\Elsa.Identity.csproj", "{30B49E42-AE61-4F7C-981F-923F07BB3986}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Jobs.Activities", "src\modules\Elsa.Jobs.Activities\Elsa.Jobs.Activities.csproj", "{81A2AE6B-3D0C-4A4A-A80B-7A661FBC8117}"
 EndProject

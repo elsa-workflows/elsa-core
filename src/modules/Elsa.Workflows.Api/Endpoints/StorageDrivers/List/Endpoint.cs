@@ -18,7 +18,7 @@ public class List : ElsaEndpointWithoutRequest<Response>
     public override void Configure()
     {
         Get("/descriptors/storage-drivers");
-        ConfigurePermissions("read:storage-drivers");
+        ConfigurePermissions("read:*", "read:storage-drivers");
     }
 
     public override Task<Response> ExecuteAsync(CancellationToken ct)
