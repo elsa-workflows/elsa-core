@@ -32,9 +32,15 @@ public class MemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
         return Task.FromResult(definition);
     }
 
-    public Task<IEnumerable<WorkflowDefinition>> FindByDefinitionIdAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
+    public Task<IEnumerable<WorkflowDefinition>> FindManyByDefinitionIdAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
     {
         var definition = _store.FindMany(x => x.DefinitionId == definitionId && x.WithVersion(versionOptions));
+        return Task.FromResult(definition);
+    }
+
+    public Task<WorkflowDefinition?> FindByDefinitionIdAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
+    {
+        var definition = _store.Find(x => x.DefinitionId == definitionId && x.WithVersion(versionOptions));
         return Task.FromResult(definition);
     }
 

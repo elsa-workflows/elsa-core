@@ -30,8 +30,7 @@ public class ProtoActorFeature : FeatureBase
     public override void Configure()
     {
         // Configure runtime with ProtoActor workflow invoker.
-        Module.Configure<WorkflowRuntimeFeature>().WorkflowInvokerFactory =
-            sp => ActivatorUtilities.CreateInstance<ProtoActorWorkflowInvoker>(sp);
+        Module.Configure<WorkflowRuntimeFeature>().WorkflowRuntime = sp => ActivatorUtilities.CreateInstance<ProtoActorWorkflowRuntime>(sp);
     }
 
     public ProtoActorFeature ConfigureProtoActorBuilder(Func<IServiceProvider, ProtoActorSystem> factory)
@@ -40,10 +39,14 @@ public class ProtoActorFeature : FeatureBase
         return this;
     }
 
-    //configure the default one
-    public Func<IServiceProvider, ProtoActorSystem> ProtoActorBuilderFactory { get; set; } =
-        _ => new ProtoActorBuilder().UseLocalhostProvider("elsa-cluster", true) .Build();
+    // Configure a default proto actor system using the localhost provider.
+    public Func<IServiceProvider, ProtoActorSystem> ProtoActorBuilderFactory { get; set; } = _ => new ProtoActorBuilder().UseLocalhostProvider("elsa-cluster", true).Build();
 
+    public override void ConfigureHostedServices()
+    {
+        Services.AddHostedService<WorkflowServerHost>();
+    }
+    
     public override void Apply()
     {
         var services = Services;
@@ -62,18 +65,16 @@ public class ProtoActorFeature : FeatureBase
                 .WithProtoMessages(MessagesReflection.Descriptor)
                 .WithProtoMessages(EmptyReflection.Descriptor);
 
-            var workflowDefinitionProps = system.DI().PropsFor<WorkflowDefinitionGrainActor>();
-            var workflowInstanceProps = system.DI().PropsFor<WorkflowInstanceGrainActor>();
+            var workflowProps = system.DI().PropsFor<WorkflowGrainActor>();
 
             var clusterConfig =
-                    ClusterConfig
-                        .Setup(protoActorSystem.Name, protoActorSystem.ClusterProvider, protoActorSystem.IdentityLookup)
-                        .WithHeartbeatExpiration(protoActorSystem.ClusterConfigurationSettings.HeartBeatExpiration)
-                        .WithActorRequestTimeout(protoActorSystem.ClusterConfigurationSettings.ActorRequestTimeout)
-                        .WithActorActivationTimeout(protoActorSystem.ClusterConfigurationSettings.ActorActivationTimeout)
-                        .WithActorSpawnTimeout(protoActorSystem.ClusterConfigurationSettings.ActorSpawnTimeout)
-                        .WithClusterKind(WorkflowDefinitionGrainActor.Kind, workflowDefinitionProps)
-                        .WithClusterKind(WorkflowInstanceGrainActor.Kind, workflowInstanceProps);
+                ClusterConfig
+                    .Setup(protoActorSystem.Name, protoActorSystem.ClusterProvider, protoActorSystem.IdentityLookup)
+                    .WithHeartbeatExpiration(protoActorSystem.ClusterConfigurationSettings.HeartBeatExpiration)
+                    .WithActorRequestTimeout(protoActorSystem.ClusterConfigurationSettings.ActorRequestTimeout)
+                    .WithActorActivationTimeout(protoActorSystem.ClusterConfigurationSettings.ActorActivationTimeout)
+                    .WithActorSpawnTimeout(protoActorSystem.ClusterConfigurationSettings.ActorSpawnTimeout)
+                    .WithClusterKind(WorkflowGrainActor.Kind, workflowProps);
 
             system
                 .WithRemote(remoteConfig)
@@ -87,17 +88,10 @@ public class ProtoActorFeature : FeatureBase
 
         // Actors.
         services
-            .AddSingleton(sp => new WorkflowDefinitionGrainActor((context, _) => ActivatorUtilities.CreateInstance<WorkflowDefinitionGrain>(sp, context)))
-            .AddSingleton(sp => new WorkflowInstanceGrainActor((context, _) => ActivatorUtilities.CreateInstance<WorkflowInstanceGrain>(sp, context)))
             .AddSingleton(sp => new WorkflowGrainActor((context, _) => ActivatorUtilities.CreateInstance<WorkflowGrain>(sp, context)))
             ;
 
         // Client factory.
         services.AddSingleton<GrainClientFactory>();
-    }
-
-    public override void ConfigureHostedServices()
-    {
-        Services.AddHostedService<WorkflowServerHost>();
     }
 }

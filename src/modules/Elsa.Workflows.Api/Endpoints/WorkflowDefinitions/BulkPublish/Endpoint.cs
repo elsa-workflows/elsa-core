@@ -35,7 +35,7 @@ public class BulkPublish : ElsaEndpoint<Request, Response>
 
         foreach (var definitionId in request.DefinitionIds)
         {
-            var definition = (await _store.FindByDefinitionIdAsync(definitionId, VersionOptions.Latest, cancellationToken)).FirstOrDefault();
+            var definition = (await _store.FindManyByDefinitionIdAsync(definitionId, VersionOptions.Latest, cancellationToken)).FirstOrDefault();
 
             if (definition == null)
             {

@@ -33,7 +33,7 @@ public class WorkflowInstanceFactory : IWorkflowInstanceFactory
 
     public async Task<WorkflowInstance> CreateAsync(string workflowDefinitionId, VersionOptions versionOptions, string? correlationId, CancellationToken cancellationToken = default)
     {
-        var workflow = (await _workflowDefinitionStore.FindByDefinitionIdAsync(workflowDefinitionId, versionOptions, cancellationToken)).FirstOrDefault()!;
+        var workflow = (await _workflowDefinitionStore.FindManyByDefinitionIdAsync(workflowDefinitionId, versionOptions, cancellationToken)).FirstOrDefault()!;
         return await CreateAsync(workflow, correlationId, cancellationToken);
     }
 

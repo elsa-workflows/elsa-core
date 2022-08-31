@@ -7,11 +7,9 @@ using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Runtime.Extensions;
 using Elsa.Workflows.Runtime.HostedServices;
 using Elsa.Workflows.Runtime.Implementations;
-using Elsa.Workflows.Runtime.Interpreters;
 using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Services;
-using Elsa.Workflows.Runtime.Stimuli.Handlers;
 using Elsa.Workflows.Runtime.WorkflowProviders;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -32,7 +30,7 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// <summary>
     /// A factory that instantiates a concrete <see cref="IWorkflowInvoker"/>.
     /// </summary>
-    public Func<IServiceProvider, IWorkflowInvoker> WorkflowInvokerFactory { get; set; } = sp => ActivatorUtilities.CreateInstance<DefaultWorkflowInvoker>(sp);
+    public Func<IServiceProvider, IWorkflowRuntime> WorkflowRuntime { get; set; } = sp => ActivatorUtilities.CreateInstance<DefaultWorkflowRuntime>(sp);
 
     /// <summary>
     /// A factory that instantiates a concrete <see cref="IWorkflowDispatcher"/>.
@@ -57,29 +55,15 @@ public class WorkflowRuntimeFeature : FeatureBase
     {
         Services
             // Core.
-            .AddSingleton<IStimulusInterpreter, StimulusInterpreter>()
-            .AddSingleton<IWorkflowInstructionExecutor, WorkflowInstructionExecutor>()
             .AddSingleton<ITriggerIndexer, TriggerIndexer>()
             .AddSingleton<IBookmarkManager, BookmarkManager>()
             .AddSingleton<IWorkflowInstanceFactory, WorkflowInstanceFactory>()
             .AddSingleton<IWorkflowDefinitionService, WorkflowDefinitionService>()
-            .AddSingleton(WorkflowInvokerFactory)
-            .AddSingleton(WorkflowDispatcherFactory)
-
-            // Stimulus handlers.
-            .AddStimulusHandler<TriggerWorkflowsStimulusHandler>()
-            .AddStimulusHandler<ResumeWorkflowsStimulusHandler>()
-
-            // Instruction interpreters.
-            .AddInstructionInterpreter<TriggerWorkflowInstructionInterpreter>()
-            .AddInstructionInterpreter<ResumeWorkflowInstructionInterpreter>()
-
+            .AddSingleton(WorkflowRuntime)
+            
             // Workflow definition providers.
             .AddWorkflowDefinitionProvider<ClrWorkflowDefinitionProvider>()
-
-            // Workflow engine.
-            .AddSingleton<IWorkflowService, WorkflowService>()
-
+            
             // Domain event handlers.
             .AddNotificationHandlersFrom(typeof(WorkflowRuntimeFeature))
 

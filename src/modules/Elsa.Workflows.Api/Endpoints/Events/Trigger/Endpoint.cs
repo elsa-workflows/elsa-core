@@ -14,14 +14,14 @@ namespace Elsa.Workflows.Api.Endpoints.Events.Trigger;
 public class Trigger : ElsaEndpoint<Request, Response>
 {
     private readonly IHasher _hasher;
-    private readonly IStimulusInterpreter _stimulusInterpreter;
-    private readonly IWorkflowInstructionExecutor _workflowInstructionExecutor;
+    // private readonly IStimulusInterpreter _stimulusInterpreter;
+    // private readonly IWorkflowInstructionExecutor _workflowInstructionExecutor;
 
-    public Trigger(IHasher hasher, IStimulusInterpreter stimulusInterpreter, IWorkflowInstructionExecutor workflowInstructionExecutor)
+    public Trigger(IHasher hasher)
     {
         _hasher = hasher;
-        _stimulusInterpreter = stimulusInterpreter;
-        _workflowInstructionExecutor = workflowInstructionExecutor;
+        // _stimulusInterpreter = stimulusInterpreter;
+        // _workflowInstructionExecutor = workflowInstructionExecutor;
     }
 
     public override void Configure()
@@ -34,14 +34,14 @@ public class Trigger : ElsaEndpoint<Request, Response>
     {
         var eventBookmark = new EventBookmarkData(request.EventName);
         var hash = _hasher.Hash(eventBookmark);
-        var stimulus = Stimulus.Standard(ActivityTypeNameHelper.GenerateTypeName<Event>(), hash);
-        var instructions = await _stimulusInterpreter.GetExecutionInstructionsAsync(stimulus, cancellationToken);
-        var executionResults = (await _workflowInstructionExecutor.ExecuteInstructionsAsync(instructions, CancellationToken.None)).ToList();
+        //var stimulus = Stimulus.Standard(ActivityTypeNameHelper.GenerateTypeName<Event>(), hash);
+        //var instructions = await _stimulusInterpreter.GetExecutionInstructionsAsync(stimulus, cancellationToken);
+        //var executionResults = (await _workflowInstructionExecutor.ExecuteInstructionsAsync(instructions, CancellationToken.None)).ToList();
 
         if (!HttpContext.Response.HasStarted)
         {
-            var response = new Response(executionResults);
-            await SendOkAsync(response, cancellationToken);
+            // var response = new Response(executionResults);
+            // await SendOkAsync(response, cancellationToken);
         }
     }
 }

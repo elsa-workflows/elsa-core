@@ -1,5 +1,5 @@
-namespace Elsa.Workflows.Runtime.Services;
-
-public interface IStimulus
-{
-}
+// namespace Elsa.Workflows.Runtime.Services;
+//
+// public interface IStimulus
+// {
+// }

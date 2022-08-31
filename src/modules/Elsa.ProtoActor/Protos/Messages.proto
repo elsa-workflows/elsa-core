@@ -6,39 +6,6 @@ option csharp_namespace = "Elsa.Runtime.Protos";
 // Empty response type.
 message Unit {}
 
-message ExecuteWorkflowDefinitionRequest {
-  string id = 1;
-  string versionOptions = 2;
-  optional Input input = 3;
-  optional string CorrelationId = 4;
-}
-
-message ExecuteWorkflowDefinitionResponse {
-  Json workflowState = 1;
-  repeated Bookmark bookmarks = 2;
-}
-
-message ExecuteExistingWorkflowInstanceRequest {
-  string instanceId = 1;
-  optional Bookmark bookmark = 2;
-  optional Input input = 3;
-}
-
-message ExecuteNewWorkflowInstanceRequest {
-  string definitionId = 1;
-  string versionOptions = 2;
-  optional Input input = 3;
-  optional string CorrelationId = 4;
-}
-
-message ExecuteWorkflowRequest {
-  string definitionId = 1;
-  string versionOptions = 2;
-  string workflowState = 3;
-  optional Bookmark bookmark = 4;
-  optional Input input = 5;
-}
-
 message StartWorkflowRequest {
   string definitionId = 1;
   string versionOptions = 2;
@@ -51,15 +18,14 @@ message StartWorkflowResponse {
   bool Finished = 2;
 }
 
-message ExecuteWorkflowInstanceResponse {
-  Json workflowState = 1;
-  repeated Bookmark bookmarks = 2;
+message ResumeWorkflowRequest {
+  string instanceId = 1;
+  Bookmark bookmark = 2;
+  optional Input input = 3;
 }
 
-message HandleStimulusRequest {
-  string activityTypeName = 1;
-  optional string hash = 2;
-  optional Input input = 3;
+message ResumeWorkflowResponse {
+  bool Finished = 1;
 }
 
 message Bookmark {

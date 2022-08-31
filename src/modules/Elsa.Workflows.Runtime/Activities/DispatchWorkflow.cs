@@ -19,18 +19,18 @@ public class DispatchWorkflow : Activity
 
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        var workflowDefinitionId = context.Get(WorkflowDefinitionId);
-        var logger = context.GetRequiredService<ILogger<DispatchWorkflow>>();
-
-        if (string.IsNullOrWhiteSpace(workflowDefinitionId))
-        {
-            logger.LogWarning("No workflow definition ID specified");
-            return;
-        }
-
-        var workflowService = context.GetRequiredService<IWorkflowService>();
-        var input = context.Get(Input);
-        var correlationId = CorrelationId.Get(context);
-        await workflowService.DispatchWorkflowAsync(workflowDefinitionId, VersionOptions.Published, input, correlationId, context.CancellationToken);
+        // var workflowDefinitionId = context.Get(WorkflowDefinitionId);
+        // var logger = context.GetRequiredService<ILogger<DispatchWorkflow>>();
+        //
+        // if (string.IsNullOrWhiteSpace(workflowDefinitionId))
+        // {
+        //     logger.LogWarning("No workflow definition ID specified");
+        //     return;
+        // }
+        //
+        // var workflowService = context.GetRequiredService<IWorkflowService>();
+        // var input = context.Get(Input);
+        // var correlationId = CorrelationId.Get(context);
+        // await workflowService.DispatchWorkflowAsync(workflowDefinitionId, VersionOptions.Published, input, correlationId, context.CancellationToken);
     }
 }

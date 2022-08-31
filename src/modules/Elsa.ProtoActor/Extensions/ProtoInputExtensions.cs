@@ -16,7 +16,7 @@ public static class ProtoInputExtensions
 
         foreach (var (key, value) in input)
         {
-            data[key] = new Runtime.Protos.Json
+            data[key] = new Json
             {
                 Text = JsonSerializer.Serialize(value)
             };
