@@ -1,4 +1,3 @@
-using Elsa.AspNetCore.Extensions;
 using Elsa.Extensions;
 using Elsa.Http.Extensions;
 using Elsa.JavaScript.Extensions;
@@ -30,41 +29,27 @@ var sqlServerConnectionString = configuration.GetConnectionString("SqlServer");
 services
     .AddElsa(elsa => elsa
         .UseWorkflowPersistence(persistence => persistence.UseEntityFrameworkCore(ef => ef.UseSqlite()))
-        .UseRuntime(runtime =>
-        {
-            runtime.Workflows.Add<HelloWorldWorkflow>();
-            runtime.Workflows.Add<HttpWorkflow>();
-            runtime.Workflows.Add<ForkedHttpWorkflow>();
-            runtime.Workflows.Add<CompositeActivitiesWorkflow>();
-            runtime.Workflows.Add<SendMessageWorkflow>();
-            runtime.Workflows.Add<ReceiveMessageWorkflow>();
-            runtime.Workflows.Add<RunJavaScriptWorkflow>();
-            runtime.Workflows.Add<WorkflowContextsWorkflow>();
-            runtime.Workflows.Add<SubmitJobWorkflow>();
-            runtime.Workflows.Add<DelayWorkflow>();
-            runtime.Workflows.Add<OrderProcessingWorkflow>();
-            runtime.Workflows.Add<StartAtTriggerWorkflow>();
-            runtime.Workflows.Add<StartAtBookmarkWorkflow>();
-        })
+        .UseRuntime(runtime => runtime
+            .AddWorkflow<HelloWorldWorkflow>()
+            .AddWorkflow<HttpWorkflow>()
+            .AddWorkflow<ForkedHttpWorkflow>()
+            .AddWorkflow<CompositeActivitiesWorkflow>()
+            .AddWorkflow<SendMessageWorkflow>()
+            .AddWorkflow<ReceiveMessageWorkflow>()
+            .AddWorkflow<RunJavaScriptWorkflow>()
+            .AddWorkflow<WorkflowContextsWorkflow>()
+            .AddWorkflow<SubmitJobWorkflow>()
+            .AddWorkflow<DelayWorkflow>()
+            .AddWorkflow<OrderProcessingWorkflow>()
+            .AddWorkflow<StartAtTriggerWorkflow>()
+            .AddWorkflow<StartAtBookmarkWorkflow>())
         .UseJobs()
         .UseScheduling()
         .UseWorkflowApiEndpoints()
         .UseJavaScript()
         .UseLiquid()
         .UseHttp()
-        .UseMvc()
     );
-
-// Add controller services. The below technique allows full control over what controllers get added from which assemblies.
-// It is even possible to add individual controllers this way using a custom TypesPart.
-// If you want to include all controllers
-services
-    // Elsa API endpoints require MVC controllers. 
-    .AddControllers() 
-    .ClearApplicationParts() // Remove all controllers from referenced packages.
-    .AddApplicationPartsFrom<Program>() // Add back any controllers from the current application.
-    .AddWorkflowManagementApiControllers() // Add Elsa API endpoint controllers.
-    ;
 
 // Testing only: allow client app to connect from anywhere.
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()));
@@ -91,9 +76,6 @@ app.UseCors();
 
 // Root.
 app.MapGet("/", () => "Hello World!");
-
-// Map Elsa API endpoint controllers.
-app.MapManagementApiEndpoints("elsa/api");
 
 // Register Elsa middleware.
 app.UseJsonSerializationErrorHandler();

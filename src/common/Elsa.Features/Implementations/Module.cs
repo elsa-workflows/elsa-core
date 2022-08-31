@@ -1,5 +1,6 @@
 using System.Reflection;
 using Elsa.Features.Attributes;
+using Elsa.Features.Extensions;
 using Elsa.Features.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -21,18 +22,18 @@ public class Module : IModule
 
     public IServiceCollection Services { get; }
 
-    public T Configure<T>(Action<T>? configure = default) where T : class, IFeature => Configure(serviceConfiguration => (T)Activator.CreateInstance(typeof(T), serviceConfiguration)!, configure);
+    public T Configure<T>(Action<T>? configure = default) where T : class, IFeature => Configure(module => (T)Activator.CreateInstance(typeof(T), module)!, configure);
 
     public T Configure<T>(Func<IModule, T> factory, Action<T>? configure = default) where T : class, IFeature
     {
-        if (_features.FirstOrDefault(x => x is T) is not T configurator)
+        if (_features.FirstOrDefault(x => x is T) is not T feature)
         {
-            configurator = factory(this);
-            _features.Add(configurator);
+            feature = factory(this);
+            _features.Add(feature);
         }
 
-        configure?.Invoke(configurator);
-        return configurator;
+        configure?.Invoke(feature);
+        return feature;
     }
 
     public IModule ConfigureHostedService<T>(int priority = 0)
@@ -43,9 +44,10 @@ public class Module : IModule
 
     public void Apply()
     {
-        ResolveDependencies();
+        var featureTypes = _features.Select(x => x.GetType()).TSort(x => x.GetCustomAttributes<DependsOn>().Select(dependsOn => dependsOn.Type)).ToList();
+        var features = featureTypes.Select(featureType => _features.FirstOrDefault(x => x.GetType() == featureType) ?? (IFeature)Activator.CreateInstance(featureType, this)!).ToList();
 
-        foreach (var feature in _features)
+        foreach (var feature in features)
         {
             feature.Configure();
             feature.ConfigureHostedServices();
@@ -53,43 +55,8 @@ public class Module : IModule
 
         foreach (var hostedServiceDescriptor in _hostedServiceDescriptors.OrderBy(x => x.Order))
             Services.TryAddEnumerable(ServiceDescriptor.Singleton(typeof(IHostedService), hostedServiceDescriptor.HostedServiceType));
-        
-        foreach (var feature in _features)
-        {
+
+        foreach (var feature in features)
             feature.Apply();
-        }
-    }
-
-    private void ResolveDependencies()
-    {
-        var resolvedDependencyTypes = new HashSet<Type>();
-        
-        foreach (var configurator in _features.ToList())
-            ResolveDependencies(configurator, resolvedDependencyTypes);
-    }
-
-    private void ResolveDependencies(IFeature feature, ISet<Type> resolvedDependencyTypes)
-    {
-        var dependencyTypes = feature.GetType().GetCustomAttributes<DependsOn>().Select(x => x.Type).ToHashSet();
-        dependencyTypes = dependencyTypes.Except(resolvedDependencyTypes).ToHashSet(); 
-
-        foreach (var type in dependencyTypes)
-        {
-            var dependencyConfigurator = AddConfigurator(type);
-            resolvedDependencyTypes.Add(type);
-            ResolveDependencies(dependencyConfigurator, resolvedDependencyTypes);
-        }
-    }
-
-    private IFeature AddConfigurator(Type type)
-    {
-        var configurator = _features.FirstOrDefault(x => x.GetType() == type);
-
-        if (configurator != null)
-            return configurator;
-
-        configurator = (IFeature)Activator.CreateInstance(type, this)!;
-        _features.Add(configurator);
-        return configurator;
     }
 }

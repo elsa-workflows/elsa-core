@@ -19,7 +19,7 @@ public class SchedulingFeature : FeatureBase
 
     public override void ConfigureHostedServices()
     {
-        Services.AddHostedService<ScheduleWorkflowsHostedService>();
+        Module.ConfigureHostedService<ScheduleWorkflowsHostedService>();
     }
 
     public override void Apply()

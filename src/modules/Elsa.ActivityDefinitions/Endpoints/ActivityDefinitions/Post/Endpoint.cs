@@ -1,6 +1,7 @@
 using System.Text.Json;
+using Elsa.Abstractions;
+using Elsa.ActivityDefinitions.Entities;
 using Elsa.ActivityDefinitions.Services;
-using Elsa.Api.Common;
 using Elsa.Workflows.Core.Activities.Flowchart.Activities;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Management.Mappers;
@@ -8,12 +9,16 @@ using Elsa.Workflows.Management.Models;
 
 namespace Elsa.ActivityDefinitions.Endpoints.ActivityDefinitions.Post;
 
-public class Post : ProtectedEndpoint<Request, Response>
+/// <summary>
+/// An endpoint that creates or updates <see cref="ActivityDefinition"/> objects. 
+/// </summary>
+public class Post : ElsaEndpoint<Request, Response>
 {
     private readonly SerializerOptionsProvider _serializerOptionsProvider;
     private readonly IActivityDefinitionPublisher _activityDefinitionPublisher;
     private readonly VariableDefinitionMapper _variableDefinitionMapper;
 
+    /// <inheritdoc />
     public Post(
         SerializerOptionsProvider serializerOptionsProvider,
         IActivityDefinitionPublisher activityDefinitionPublisher,
@@ -24,12 +29,14 @@ public class Post : ProtectedEndpoint<Request, Response>
         _variableDefinitionMapper = variableDefinitionMapper;
     }
 
+    /// <inheritdoc />
     public override void Configure()
     {
         Post("/activity-definitions");
-        ConfigureSecurity(List.SecurityConstants.Permissions, List.SecurityConstants.Policies, List.SecurityConstants.Roles);
+        ConfigurePermissions("write:activity-definitions");
     }
 
+    /// <inheritdoc />
     public override async Task<Response> ExecuteAsync(Request request, CancellationToken cancellationToken)
     {
         var definitionId = request.DefinitionId;

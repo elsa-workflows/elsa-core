@@ -1,4 +1,4 @@
-using Elsa.Persistence.Common.Models;
+using Elsa.Models;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Persistence.Entities;
@@ -56,7 +56,7 @@ public class ResumeWorkflowInstructionInterpreter : WorkflowInstructionInterpret
             return null;
         }
 
-        var definition = await _workflowDefinitionStore.FindByDefinitionIdAsync(workflowDefinitionId, VersionOptions.SpecificVersion(workflowInstance.Version), cancellationToken);
+        var definition = (await _workflowDefinitionStore.FindByDefinitionIdAsync(workflowDefinitionId, VersionOptions.SpecificVersion(workflowInstance.Version), cancellationToken)).FirstOrDefault();
 
         if (definition == null)
         {

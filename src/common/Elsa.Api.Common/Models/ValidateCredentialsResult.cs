@@ -1,4 +1,4 @@
-namespace Elsa.Api.Common.Models;
+namespace Elsa.Models;
 
 public record ValidateCredentialsResult(bool IsValid, object? Context = null)
 {

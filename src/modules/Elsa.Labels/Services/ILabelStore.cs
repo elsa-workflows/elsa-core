@@ -1,5 +1,5 @@
 using Elsa.Labels.Entities;
-using Elsa.Persistence.Common.Models;
+using Elsa.Models;
 
 namespace Elsa.Labels.Services;
 

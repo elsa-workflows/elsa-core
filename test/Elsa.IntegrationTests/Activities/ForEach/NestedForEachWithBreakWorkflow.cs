@@ -6,7 +6,7 @@ namespace Elsa.IntegrationTests.Activities;
 
 class NestedForEachWithBreakWorkflow : WorkflowBase
 {
-    protected override void Build(IWorkflowDefinitionBuilder workflow)
+    protected override void Build(IWorkflowBuilder workflow)
     {
         var outerItems = new[] { "C#", "Rust", "Go" };
         var innerItems = new[] { "Classes", "Functions", "Modules" };

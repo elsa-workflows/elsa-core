@@ -6,6 +6,7 @@ namespace Elsa.Workflows.Persistence.Entities
     {
         public string WorkflowDefinitionId { get; set; } = default!;
         public string WorkflowInstanceId { get; set; } = default!;
+        public int WorkflowVersion { get; init; }
         public string ActivityInstanceId { get; set; } = default!;
         public string? ParentActivityInstanceId { get; set; }
         public string ActivityId { get; set; } = default!;

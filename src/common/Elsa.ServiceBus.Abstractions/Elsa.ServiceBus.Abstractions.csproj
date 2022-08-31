@@ -1,9 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+    <Import Project="..\..\..\common.props" />
+    <Import Project="..\..\..\configureawait.props" />
+
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
+        <Description>
+            Provides abstractions representing a service bus that can be used by other Elsa modules.
+            Concrete implementations are provided by different packages such as Elsa.MassTransit.
+        </Description>
+        <PackageTags>elsa, common, service bus</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>

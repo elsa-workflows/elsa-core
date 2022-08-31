@@ -7,17 +7,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    </ItemGroup>
-
-    <ItemGroup>
         <PackageReference Include="Open.Linq.AsyncExtensions" Version="1.2.0" />
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Elsa.AspNetCore\Elsa.AspNetCore.csproj" />
+      <ProjectReference Include="..\..\common\Elsa.Api.Common\Elsa.Api.Common.csproj" />
       <ProjectReference Include="..\Elsa.Mediator\Elsa.Mediator.csproj" />
-      <ProjectReference Include="..\..\common\Elsa.Persistence.Abstractions\Elsa.Persistence.Abstractions.csproj" />
+      <ProjectReference Include="..\..\common\Elsa.Persistence.Common\Elsa.Persistence.Common.csproj" />
       <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
       <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj" />
       <ProjectReference Include="..\Elsa.Workflows.Persistence\Elsa.Workflows.Persistence.csproj" />

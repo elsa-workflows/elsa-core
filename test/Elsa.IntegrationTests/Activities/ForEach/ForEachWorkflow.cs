@@ -14,7 +14,7 @@ class ForEachWorkflow : WorkflowBase
         _items = items;
     }
 
-    protected override void Build(IWorkflowDefinitionBuilder workflow)
+    protected override void Build(IWorkflowBuilder workflow)
     {
         var currentItem = new Variable<string>("CurrentItem");
 

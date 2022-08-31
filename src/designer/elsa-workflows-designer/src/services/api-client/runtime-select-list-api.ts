@@ -1,11 +1,7 @@
 import {SelectList} from "../../models";
 import {AxiosInstance} from "axios";
 
-export interface RuntimeSelectListApi {
-  get(providerTypeName: string, context?: any): Promise<SelectList>
-}
-
-export class RuntimeSelectListApiImpl implements RuntimeSelectListApi {
+export class RuntimeSelectListApi {
   private httpClient: AxiosInstance;
 
   constructor(httpClient: AxiosInstance) {

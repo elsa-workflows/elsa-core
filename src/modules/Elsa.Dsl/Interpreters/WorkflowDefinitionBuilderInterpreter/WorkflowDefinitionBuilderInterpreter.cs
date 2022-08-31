@@ -8,12 +8,12 @@ using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Dsl.Interpreters;
 
-public partial class WorkflowDefinitionBuilderInterpreter : ElsaParserBaseVisitor<IWorkflowDefinitionBuilder>
+public partial class WorkflowDefinitionBuilderInterpreter : ElsaParserBaseVisitor<IWorkflowBuilder>
 {
     private readonly ITypeSystem _typeSystem;
     private readonly IFunctionActivityRegistry _functionActivityRegistry;
     private readonly IExpressionHandlerRegistry _expressionHandlerRegistry;
-    private readonly IWorkflowDefinitionBuilder _workflowDefinitionBuilder;
+    private readonly IWorkflowBuilder _workflowBuilder;
     private readonly ParseTreeProperty<object> _object = new();
     private readonly ParseTreeProperty<object?> _expressionValue = new();
     private readonly ParseTreeProperty<IList<object?>> _argValues = new();
@@ -25,16 +25,16 @@ public partial class WorkflowDefinitionBuilderInterpreter : ElsaParserBaseVisito
         ITypeSystem typeSystem, 
         IFunctionActivityRegistry functionActivityRegistry, 
         IExpressionHandlerRegistry expressionHandlerRegistry,
-        IWorkflowDefinitionBuilderFactory workflowDefinitionBuilderFactory,
+        IWorkflowBuilderFactory workflowBuilderFactory,
         WorkflowDefinitionInterpreterSettings settings)
     {
         _typeSystem = typeSystem;
         _functionActivityRegistry = functionActivityRegistry;
         _expressionHandlerRegistry = expressionHandlerRegistry;
-        _workflowDefinitionBuilder = workflowDefinitionBuilderFactory.CreateBuilder();
+        _workflowBuilder = workflowBuilderFactory.CreateBuilder();
     }
 
-    protected override IWorkflowDefinitionBuilder DefaultResult => _workflowDefinitionBuilder;
+    protected override IWorkflowBuilder DefaultResult => _workflowBuilder;
 
     private void VisitMany(IEnumerable<IParseTree> contexts)
     {

@@ -257,6 +257,12 @@ export namespace Components {
         "hide": () => Promise<void>;
         "show": () => Promise<void>;
         "workflowDefinition"?: WorkflowDefinition;
+        "workflowVersions": Array<WorkflowDefinition>;
+    }
+    interface ElsaWorkflowDefinitionVersionHistory {
+        "selectedVersion": WorkflowDefinition;
+        "serverUrl": string;
+        "workflowVersions": Array<WorkflowDefinition>;
     }
     interface ElsaWorkflowInstanceBrowser {
     }
@@ -569,6 +575,12 @@ declare global {
         prototype: HTMLElsaWorkflowDefinitionPropertiesEditorElement;
         new (): HTMLElsaWorkflowDefinitionPropertiesEditorElement;
     };
+    interface HTMLElsaWorkflowDefinitionVersionHistoryElement extends Components.ElsaWorkflowDefinitionVersionHistory, HTMLStencilElement {
+    }
+    var HTMLElsaWorkflowDefinitionVersionHistoryElement: {
+        prototype: HTMLElsaWorkflowDefinitionVersionHistoryElement;
+        new (): HTMLElsaWorkflowDefinitionVersionHistoryElement;
+    };
     interface HTMLElsaWorkflowInstanceBrowserElement extends Components.ElsaWorkflowInstanceBrowser, HTMLStencilElement {
     }
     var HTMLElsaWorkflowInstanceBrowserElement: {
@@ -664,6 +676,7 @@ declare global {
         "elsa-workflow-definition-editor-toolbox": HTMLElsaWorkflowDefinitionEditorToolboxElement;
         "elsa-workflow-definition-editor-toolbox-activities": HTMLElsaWorkflowDefinitionEditorToolboxActivitiesElement;
         "elsa-workflow-definition-properties-editor": HTMLElsaWorkflowDefinitionPropertiesEditorElement;
+        "elsa-workflow-definition-version-history": HTMLElsaWorkflowDefinitionVersionHistoryElement;
         "elsa-workflow-instance-browser": HTMLElsaWorkflowInstanceBrowserElement;
         "elsa-workflow-instance-properties": HTMLElsaWorkflowInstancePropertiesElement;
         "elsa-workflow-instance-viewer": HTMLElsaWorkflowInstanceViewerElement;
@@ -893,8 +906,20 @@ declare namespace LocalJSX {
         "graph"?: Graph;
     }
     interface ElsaWorkflowDefinitionPropertiesEditor {
+        "onDeleteVersionClicked"?: (event: CustomEvent<WorkflowDefinition>) => void;
+        "onRevertVersionClicked"?: (event: CustomEvent<WorkflowDefinition>) => void;
+        "onVersionSelected"?: (event: CustomEvent<WorkflowDefinition>) => void;
         "onWorkflowPropsUpdated"?: (event: CustomEvent<WorkflowDefinitionPropsUpdatedArgs>) => void;
         "workflowDefinition"?: WorkflowDefinition;
+        "workflowVersions"?: Array<WorkflowDefinition>;
+    }
+    interface ElsaWorkflowDefinitionVersionHistory {
+        "onDeleteVersionClicked"?: (event: CustomEvent<WorkflowDefinition>) => void;
+        "onRevertVersionClicked"?: (event: CustomEvent<WorkflowDefinition>) => void;
+        "onVersionSelected"?: (event: CustomEvent<WorkflowDefinition>) => void;
+        "selectedVersion"?: WorkflowDefinition;
+        "serverUrl"?: string;
+        "workflowVersions"?: Array<WorkflowDefinition>;
     }
     interface ElsaWorkflowInstanceBrowser {
         "onWorkflowInstanceSelected"?: (event: CustomEvent<WorkflowInstanceSummary>) => void;
@@ -976,6 +1001,7 @@ declare namespace LocalJSX {
         "elsa-workflow-definition-editor-toolbox": ElsaWorkflowDefinitionEditorToolbox;
         "elsa-workflow-definition-editor-toolbox-activities": ElsaWorkflowDefinitionEditorToolboxActivities;
         "elsa-workflow-definition-properties-editor": ElsaWorkflowDefinitionPropertiesEditor;
+        "elsa-workflow-definition-version-history": ElsaWorkflowDefinitionVersionHistory;
         "elsa-workflow-instance-browser": ElsaWorkflowInstanceBrowser;
         "elsa-workflow-instance-properties": ElsaWorkflowInstanceProperties;
         "elsa-workflow-instance-viewer": ElsaWorkflowInstanceViewer;
@@ -1036,6 +1062,7 @@ declare module "@stencil/core" {
             "elsa-workflow-definition-editor-toolbox": LocalJSX.ElsaWorkflowDefinitionEditorToolbox & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionEditorToolboxElement>;
             "elsa-workflow-definition-editor-toolbox-activities": LocalJSX.ElsaWorkflowDefinitionEditorToolboxActivities & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionEditorToolboxActivitiesElement>;
             "elsa-workflow-definition-properties-editor": LocalJSX.ElsaWorkflowDefinitionPropertiesEditor & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionPropertiesEditorElement>;
+            "elsa-workflow-definition-version-history": LocalJSX.ElsaWorkflowDefinitionVersionHistory & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionVersionHistoryElement>;
             "elsa-workflow-instance-browser": LocalJSX.ElsaWorkflowInstanceBrowser & JSXBase.HTMLAttributes<HTMLElsaWorkflowInstanceBrowserElement>;
             "elsa-workflow-instance-properties": LocalJSX.ElsaWorkflowInstanceProperties & JSXBase.HTMLAttributes<HTMLElsaWorkflowInstancePropertiesElement>;
             "elsa-workflow-instance-viewer": LocalJSX.ElsaWorkflowInstanceViewer & JSXBase.HTMLAttributes<HTMLElsaWorkflowInstanceViewerElement>;

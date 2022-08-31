@@ -6,7 +6,7 @@ namespace Elsa.Dsl.Interpreters;
 
 public partial class WorkflowDefinitionBuilderInterpreter
 {
-    public override IWorkflowDefinitionBuilder VisitArgs(ElsaParser.ArgsContext context)
+    public override IWorkflowBuilder VisitArgs(ElsaParser.ArgsContext context)
     {
         var args = context.arg();
             

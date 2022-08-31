@@ -19,7 +19,7 @@ public class BlockingWorkflow : WorkflowBase
 
     public string[] Languages { get; }
 
-    protected override void Build(IWorkflowDefinitionBuilder workflow)
+    protected override void Build(IWorkflowBuilder workflow)
     {
         var currentLanguage = workflow.WithVariable<string>().WithWorkflowDrive();
 

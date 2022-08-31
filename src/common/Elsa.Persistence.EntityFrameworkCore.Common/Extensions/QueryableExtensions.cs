@@ -1,6 +1,6 @@
 using System.Linq.Expressions;
 using EFCore.BulkExtensions;
-using Elsa.Persistence.Common.Models;
+using Elsa.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Common.Extensions;

@@ -1,9 +1,9 @@
 using Elsa.ActivityDefinitions.Entities;
 using Elsa.ActivityDefinitions.Models;
 using Elsa.ActivityDefinitions.Services;
+using Elsa.Models;
 using Elsa.Persistence.Common.Extensions;
 using Elsa.Persistence.Common.Implementations;
-using Elsa.Persistence.Common.Models;
 
 namespace Elsa.ActivityDefinitions.Implementations;
 

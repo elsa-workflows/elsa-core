@@ -22,7 +22,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\src\common\Elsa.Persistence.Abstractions\Elsa.Persistence.Abstractions.csproj" />
+      <ProjectReference Include="..\..\src\common\Elsa.Persistence.Common\Elsa.Persistence.Common.csproj" />
       <ProjectReference Include="..\..\src\modules\Elsa.Workflows.Persistence\Elsa.Workflows.Persistence.csproj" />
       <ProjectReference Include="..\..\src\modules\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
       <ProjectReference Include="..\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj" />

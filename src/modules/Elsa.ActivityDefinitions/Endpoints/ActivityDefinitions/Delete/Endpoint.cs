@@ -1,23 +1,29 @@
+using Elsa.Abstractions;
 using Elsa.ActivityDefinitions.Services;
-using Elsa.Api.Common;
 
 namespace Elsa.ActivityDefinitions.Endpoints.ActivityDefinitions.Delete;
 
-public class Delete : ProtectedEndpoint<Request>
+/// <summary>
+/// An endpoint that deletes a specific activity definition by ID.
+/// </summary>
+public class Delete : ElsaEndpoint<Request>
 {
     private readonly IActivityDefinitionStore _activityDefinitionStore;
 
+    /// <inheritdoc />
     public Delete(IActivityDefinitionStore activityDefinitionStore)
     {
         _activityDefinitionStore = activityDefinitionStore;
     }
 
+    /// <inheritdoc />
     public override void Configure()
     {
         Delete("/activity-definitions/{definitionId}");
-        ConfigureSecurity(SecurityConstants.Permissions, SecurityConstants.Policies, SecurityConstants.Roles);
+        ConfigurePermissions("delete:activity-definitions");
     }
 
+    /// <inheritdoc />
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
         await _activityDefinitionStore.DeleteByDefinitionIdAsync(request.DefinitionId, cancellationToken);

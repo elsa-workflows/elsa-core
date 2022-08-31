@@ -1,0 +1,38 @@
+using Elsa.Labels.Services;
+using Elsa.Workflows.Core.Serialization;
+using FastEndpoints;
+
+namespace Elsa.Labels.Endpoints.Labels.Update;
+
+public class Update : Endpoint<Request, Response, LabelMapper>
+{
+    private readonly ILabelStore _store;
+
+    public Update(ILabelStore store, SerializerOptionsProvider serializerOptionsProvider)
+    {
+        _store = store;
+    }
+
+    public override void Configure()
+    {
+        Post("/labels/{id}");
+        Policies(Constants.PolicyName);
+    }
+
+    public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
+    {
+        var label = await _store.FindByIdAsync(request.Id, cancellationToken);
+
+        if (label == null)
+        {
+            await SendNotFoundAsync(cancellationToken);
+            return;
+        }
+
+        label = Map.UpdateEntity(request, label);
+
+        await _store.SaveAsync(label, cancellationToken);
+        var response = await Map.FromEntityAsync(label);
+        await SendOkAsync(response, cancellationToken);
+    }
+}

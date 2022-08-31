@@ -1,4 +1,4 @@
-import {RuntimeSelectListApi, RuntimeSelectListApiImpl} from "./runtime-select-list-api";
+import {RuntimeSelectListApi} from "./runtime-select-list-api";
 import {AxiosInstance} from "axios";
 
 export interface DesignerApi {
@@ -11,7 +11,7 @@ export class DesignerApiImpl implements DesignerApi {
 
   constructor(httpClient: AxiosInstance) {
     this.httpClient = httpClient;
-    this.runtimeSelectListApi = new RuntimeSelectListApiImpl(httpClient);
+    this.runtimeSelectListApi = new RuntimeSelectListApi(httpClient);
   }
 
 }

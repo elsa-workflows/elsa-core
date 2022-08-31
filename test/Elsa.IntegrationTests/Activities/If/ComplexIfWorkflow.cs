@@ -13,7 +13,7 @@ public class ComplexIfWorkflow : WorkflowBase
         _condition = condition;
     }
         
-    protected override void Build(IWorkflowDefinitionBuilder workflow)
+    protected override void Build(IWorkflowBuilder workflow)
     {
         workflow.WithRoot(new Sequence
         {

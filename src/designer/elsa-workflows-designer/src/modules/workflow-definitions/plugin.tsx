@@ -19,6 +19,7 @@ import {WorkflowDefinitionUpdatedArgs} from "./models/ui";
 import {PublishClickedArgs} from "./components/publish-button";
 import {WorkflowDefinitionsApi} from "./services/api";
 import {DefaultActions, ModalDialogInstance, ModalDialogService} from "../../components/shared/modal-dialog";
+import {isEqual} from 'lodash'
 
 const FlowchartTypeName = 'Elsa.Flowchart';
 
@@ -106,8 +107,20 @@ export class WorkflowDefinitionsPlugin implements Plugin {
   };
 
   private onWorkflowUpdated = async (e: CustomEvent<WorkflowDefinitionUpdatedArgs>) => {
-    const workflowDefinition = e.detail.workflowDefinition;
-    await this.saveWorkflowDefinition(workflowDefinition, false);
+    const updatedWorkflowDefinition = e.detail.workflowDefinition;
+
+    if(e.detail.latestVersionNumber == undefined)
+    {
+      await this.saveWorkflowDefinition(updatedWorkflowDefinition, false);
+      return;
+    }
+
+    if(updatedWorkflowDefinition.version == e.detail.latestVersionNumber)
+    {
+      const currentWorkflowDefinition = await this.api.get({definitionId: updatedWorkflowDefinition.definitionId, versionOptions: {version: updatedWorkflowDefinition.version}});
+      if(!isEqual(currentWorkflowDefinition.root.activities, updatedWorkflowDefinition.root.activities))
+        await this.saveWorkflowDefinition(updatedWorkflowDefinition, false);
+    }
   }
 
   private onBrowseWorkflowDefinitions = async () => {

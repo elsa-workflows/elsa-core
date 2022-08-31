@@ -1,15 +1,11 @@
-import {ActivityDescriptor, StorageDriverDescriptor} from "../../models";
+import {StorageDriverDescriptor} from "../../models";
 import {AxiosInstance} from "axios";
-
-export interface StorageDriversApi {
-  list(): Promise<Array<StorageDriverDescriptor>>;
-}
 
 export interface StorageDriversResponse {
   items: Array<StorageDriverDescriptor>;
 }
 
-export class StorageDriversApiImpl implements StorageDriversApi {
+export class StorageDriversApi {
   private httpClient: AxiosInstance;
 
   constructor(httpClient: AxiosInstance) {

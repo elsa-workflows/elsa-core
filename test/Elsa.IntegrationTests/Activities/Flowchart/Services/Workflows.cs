@@ -16,7 +16,7 @@ class Workflow1 : WorkflowBase
         _items = items;
     }
 
-    protected override void Build(IWorkflowDefinitionBuilder workflow)
+    protected override void Build(IWorkflowBuilder workflow)
     {
         var currentItem = workflow.WithVariable<string>("CurrentValue", "", StorageDriverNames.Memory);
         var writeLine1 = new WriteLine { Id = "WriteLine1", Text = new Input<string>("Start!") };
@@ -49,7 +49,7 @@ class Workflow2 : WorkflowBase
         _items = items;
     }
 
-    protected override void Build(IWorkflowDefinitionBuilder workflow)
+    protected override void Build(IWorkflowBuilder workflow)
     {
         var currentItem = workflow.WithVariable<string>("CurrentValue", "", StorageDriverNames.Memory);
         var writeLine1 = new WriteLine { Id = "WriteLine1", Text = new Input<string>("Start!") };
@@ -80,7 +80,7 @@ class Workflow3 : WorkflowBase
         _items = items;
     }
 
-    protected override void Build(IWorkflowDefinitionBuilder workflow)
+    protected override void Build(IWorkflowBuilder workflow)
     {
         var currentItem = workflow.WithVariable<string>("CurrentValue", "", StorageDriverNames.Memory);
         var writeLine1 = new WriteLine { Id = "WriteLine1", Text = new Input<string>("Start!") };

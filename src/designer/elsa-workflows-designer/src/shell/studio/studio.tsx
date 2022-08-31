@@ -1,12 +1,12 @@
 import {Component, Element, h, Host, Prop, Watch} from '@stencil/core';
 import 'reflect-metadata';
 import {Container} from 'typedi';
-import {ElsaApiClientProvider, ElsaClient, EventBus, PluginRegistry, ServerSettings} from '../../services';
-import {ActivityDescriptor} from '../../models';
+import {AuthContext, ElsaApiClientProvider, ElsaClient, EventBus, PluginRegistry, ServerSettings} from '../../services';
 import {MonacoEditorSettings} from "../../services/monaco-editor-settings";
 import descriptorsStore from '../../data/descriptors-store';
 import studioComponentStore from "../../data/studio-component-store";
 import {WorkflowDefinitionManager} from "../../modules/workflow-definitions/services/manager";
+import {EventTypes} from "../../models";
 
 @Component({
   tag: 'elsa-studio'
@@ -15,13 +15,13 @@ export class Studio {
   private readonly eventBus: EventBus;
   private readonly workflowDefinitionManager: WorkflowDefinitionManager;
   private readonly pluginRegistry: PluginRegistry;
-  private activityDescriptors: Array<ActivityDescriptor>;
   private elsaClient: ElsaClient;
 
   constructor() {
     this.eventBus = Container.get(EventBus);
     this.workflowDefinitionManager = Container.get(WorkflowDefinitionManager);
     this.pluginRegistry = Container.get(PluginRegistry);
+    this.eventBus.on(EventTypes.Auth.SignedIn, this.onSignedIn)
   }
 
   @Element() private el: HTMLElsaStudioElement;
@@ -119,17 +119,19 @@ export class Studio {
   async componentWillLoad() {
     this.handleMonacoLibPath(this.monacoLibPath);
     this.handleServerUrl(this.serverUrl);
+    await this.eventBus.emit(EventTypes.Studio.Initializing, this);
+    await this.pluginRegistry.initialize();
+  }
 
+  private onSignedIn = async () => {
     const elsaClientProvider = Container.get(ElsaApiClientProvider);
-
     this.elsaClient = await elsaClientProvider.getElsaClient();
-    this.activityDescriptors = await this.elsaClient.descriptors.activities.list();
+
+    const activityDescriptors = await this.elsaClient.descriptors.activities.list();
     const storageDrivers = await this.elsaClient.descriptors.storageDrivers.list();
 
-    descriptorsStore.activityDescriptors = this.activityDescriptors;
+    descriptorsStore.activityDescriptors = activityDescriptors;
     descriptorsStore.storageDrivers = storageDrivers;
-
-    await this.pluginRegistry.initialize();
   }
 
   // private retractWorkflowDefinition = async (definition: WorkflowDefinition): Promise<WorkflowDefinition> => {

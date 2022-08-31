@@ -1,4 +1,4 @@
-using Elsa.Persistence.Common.Models;
+using Elsa.Models;
 using Elsa.Workflows.Persistence.Entities;
 using Elsa.Workflows.Persistence.Services;
 using Elsa.Workflows.Runtime.Abstractions;

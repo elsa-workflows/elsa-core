@@ -1,4 +1,3 @@
-using Elsa.AspNetCore.Extensions;
 using Elsa.Extensions;
 using Elsa.Http;
 using Elsa.Http.Extensions;
@@ -7,7 +6,6 @@ using Elsa.Jobs.Extensions;
 using Elsa.ProtoActor.Extensions;
 using Elsa.Scheduling.Activities;
 using Elsa.Scheduling.Extensions;
-using Elsa.Workflows.Api.Extensions;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Activities.Flowchart.Activities;
@@ -25,7 +23,7 @@ var services = builder.Services;
 services
     .AddElsa(elsa => elsa
         .UseWorkflows()
-        .UseRuntime(runtime => runtime.UseProtoActor())
+        .UseRuntime(runtime => runtime.UseProtoActor(f=> f.WithLocalhostProvider(opt => opt.Name = "my-cluster")))
         .UseManagement(management => management
             .AddActivity<Sequence>()
             .AddActivity<WriteLine>()
@@ -42,7 +40,6 @@ services
         .UseScheduling()
         .UseWorkflowApiEndpoints()
         .UseHttp()
-        .UseMvc()
     );
 
 // Testing only: allow client app to connect from anywhere.
@@ -66,9 +63,6 @@ if (app.Environment.IsDevelopment())
 
 // CORS.
 app.UseCors();
-
-// Map Elsa API endpoints.
-app.MapManagementApiEndpoints();
 
 // Register Elsa HTTP activity middleware.
 app.UseHttpActivities();

@@ -202,7 +202,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
 
   @Method()
   async import(root: Activity): Promise<void> {
-    return this.importInternal(root);
+    return await this.importInternal(root);
   }
 
   @Method()

@@ -13,6 +13,7 @@ export class WorkflowDefinitionManager {
   public saveWorkflow = async (definition: WorkflowDefinition, publish: boolean): Promise<WorkflowDefinition> => {
     const request: SaveWorkflowDefinitionRequest = {
       definitionId: definition.definitionId,
+      version: definition.version,
       name: definition.name,
       description: definition.description,
       publish: publish,

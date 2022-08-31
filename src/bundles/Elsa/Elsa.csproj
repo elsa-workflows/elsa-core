@@ -1,10 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+    <Import Project="..\..\..\common.props" />
+    <Import Project="..\..\..\configureawait.props" />
+
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
-        <Nullable>enable</Nullable>
+        <Description>
+            Bundles the most commonly-used packages when building an Elsa workflows application. 
+        </Description>
         <RootNamespace>Elsa</RootNamespace>
-        <LangVersion>latest</LangVersion>
+        <PackageTags>elsa</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>

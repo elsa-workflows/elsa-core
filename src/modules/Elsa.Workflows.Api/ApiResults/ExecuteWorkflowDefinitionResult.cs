@@ -1,6 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Persistence.Common.Models;
+using Elsa.Models;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Services;

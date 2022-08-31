@@ -1,6 +1,6 @@
 using System.Linq.Expressions;
+using Elsa.Models;
 using Elsa.Persistence.Common.Entities;
-using Elsa.Persistence.Common.Models;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Common.Services;
 

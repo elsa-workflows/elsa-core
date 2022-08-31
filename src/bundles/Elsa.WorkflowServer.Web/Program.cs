@@ -1,15 +1,11 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using Elsa.ActivityDefinitions.EntityFrameworkCore.Extensions;
 using Elsa.ActivityDefinitions.EntityFrameworkCore.Sqlite;
-using Elsa.Api.Common;
-using Elsa.Api.Common.Features;
-using Elsa.Api.Common.Options;
-using Elsa.AspNetCore.Extensions;
 using Elsa.Extensions;
 using Elsa.Features.Extensions;
 using Elsa.Http;
 using Elsa.Http.Extensions;
+using Elsa.Identity.Features;
+using Elsa.Identity.Options;
 using Elsa.JavaScript.Activities;
 using Elsa.JavaScript.Extensions;
 using Elsa.Jobs.Activities.Extensions;
@@ -26,31 +22,23 @@ using Elsa.Workflows.Api.Extensions;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Activities.Flowchart.Activities;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution.Components;
-using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Persistence.EntityFrameworkCore.Extensions;
 using Elsa.Workflows.Persistence.EntityFrameworkCore.Sqlite;
 using Elsa.Workflows.Persistence.Extensions;
 using Elsa.Workflows.Runtime.Extensions;
-using Elsa.WorkflowServer.Web.Implementations;
 using Elsa.WorkflowServer.Web.Jobs;
 using FastEndpoints;
-using FastEndpoints.Security;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 var configuration = builder.Configuration;
-var accessTokenOptions = new AccessTokenOptions();
-configuration.GetSection("AccessTokens").Bind(accessTokenOptions);
-
-// Global control over Elsa API endpoints security.
-ApiSecurityOptions.AllowAnonymous = !builder.Environment.IsProduction();
-ApiSecurityOptions.ValidateRoles = builder.Environment.IsProduction();
-
-// Add application-specific services.
-services.AddSingleton<CustomCredentialsValidator>();
-services.AddSingleton<CustomAccessTokenIssuer>();
+var identityOptions = new IdentityOptions();
+var identitySection = configuration.GetSection("Identity");
+identitySection.Bind(identityOptions);
 
 // Add Elsa services.
 services
@@ -71,11 +59,10 @@ services
             .AddActivity<RunJavaScript>()
             .AddActivity<Event>()
         )
-        .Use<CommonApiFeature>(feature =>
+        .Use<IdentityFeature>(identity =>
         {
-            feature.TokenSigningKey = accessTokenOptions.SigningKey;
-            feature.CredentialsValidator = sp => sp.GetRequiredService<CustomCredentialsValidator>();
-            feature.AccessTokenIssuer = sp => sp.GetRequiredService<CustomAccessTokenIssuer>();
+            identity.CreateDefaultUser = true;
+            identity.IdentityOptions = options => identitySection.Bind(options);
         })
         .UseRuntime(runtime => runtime.UseProtoActor())
         .UseJobActivities()
@@ -87,16 +74,20 @@ services
         .UseLabels(labels => labels.UseEntityFrameworkCore(ef => ef.UseSqlite()))
         .UseCustomActivities(feature => feature.UseEntityFrameworkCore(ef => ef.UseSqlite()))
         .UseHttp()
-        .UseMvc()
     );
 
 services.AddFastEndpoints();
-services.AddAuthenticationJWTBearer(accessTokenOptions.SigningKey);
 services.AddHealthChecks();
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()));
 
-// Authorization policies.
-services.AddAuthorization(options => options.AddPolicy("WorkflowManagerPolicy", policy => policy.RequireAuthenticatedUser()));
+// Authentication & Authorization.
+services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, identityOptions.ConfigureJwtBearerOptions);
+
+services.AddHttpContextAccessor();
+services.AddSingleton<IAuthorizationHandler, LocalHostRequirementHandler>();
+services.AddAuthorization(options => options.AddPolicy("SecurityRoot", policy => policy.AddRequirements(new LocalHostRequirement())));
 
 // Configure middleware pipeline.
 var app = builder.Build();
@@ -132,43 +123,8 @@ app.MapHealthChecks("/");
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Map Elsa API endpoint controllers.
-
-// Deprecated.
-app.MapManagementApiEndpoints();
-app.MapLabelApiEndpoints();
-
-// Use FastEndpoints middleware.
-
-ValueTask<object?> DeserializeRequestAsync(HttpRequest httpRequest, Type modelType, JsonSerializerContext? serializerContext, CancellationToken cancellationToken)
-{
-    var serializerOptionsProvider = httpRequest.HttpContext.RequestServices.GetRequiredService<SerializerOptionsProvider>();
-    var options = serializerOptionsProvider.CreateApiOptions();
-
-    return serializerContext == null
-        ? JsonSerializer.DeserializeAsync(httpRequest.Body, modelType, options, cancellationToken)
-        : JsonSerializer.DeserializeAsync(httpRequest.Body, modelType, serializerContext, cancellationToken);
-}
-
-Task SerializeRequestAsync(HttpResponse httpResponse, object dto, string contentType, JsonSerializerContext? serializerContext, CancellationToken cancellationToken)
-{
-    var serializerOptionsProvider = httpResponse.HttpContext.RequestServices.GetRequiredService<SerializerOptionsProvider>();
-    var options = serializerOptionsProvider.CreateApiOptions();
-
-    httpResponse.ContentType = contentType;
-    return serializerContext == null
-        ? JsonSerializer.SerializeAsync(httpResponse.Body, dto, dto.GetType(), options, cancellationToken)
-        : JsonSerializer.SerializeAsync(httpResponse.Body, dto, dto.GetType(), serializerContext, cancellationToken);
-}
-
-app.UseFastEndpoints(config =>
-{
-    config.RoutingOptions = routing => routing.Prefix = "elsa/api";
-    config.RequestDeserializer = DeserializeRequestAsync;
-    config.ResponseSerializer = SerializeRequestAsync;
-});
-
 // Register Elsa middleware.
+app.UseElsaFastEndpoints();
 app.UseJsonSerializationErrorHandler();
 app.UseHttpActivities();
 

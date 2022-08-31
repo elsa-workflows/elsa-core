@@ -6,7 +6,7 @@ namespace Elsa.IntegrationTests.Activities;
 
 public class BreakWhileForkWorkflow : WorkflowBase
 {
-    protected override void Build(IWorkflowDefinitionBuilder workflow)
+    protected override void Build(IWorkflowBuilder workflow)
     {
         var currentValue = new Variable<int?>("CurrentValue", 0);
 

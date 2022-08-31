@@ -6,7 +6,7 @@ namespace Elsa.Dsl.Interpreters;
 
 public partial class WorkflowDefinitionBuilderInterpreter
 {
-    public override IWorkflowDefinitionBuilder VisitProgram(ElsaParser.ProgramContext context)
+    public override IWorkflowBuilder VisitProgram(ElsaParser.ProgramContext context)
     {
         var stats = context.stat();
         var rootSequence = new Sequence();
@@ -23,13 +23,13 @@ public partial class WorkflowDefinitionBuilderInterpreter
         if (activities.Count == 1)
         {
             // We only have one activity, so we can use it as the root and discard the root sequence.
-            _workflowDefinitionBuilder.WithRoot(activities.Single());
+            _workflowBuilder.WithRoot(activities.Single());
         }
         else
         {
             // Assign the collected child activities to the root sequence.
             rootSequence.Activities = activities.ToList();
-            _workflowDefinitionBuilder.WithRoot(rootSequence);
+            _workflowBuilder.WithRoot(rootSequence);
         }
 
         return DefaultResult;

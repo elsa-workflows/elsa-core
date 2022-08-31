@@ -1,4 +1,4 @@
-using Elsa.Persistence.Common.Models;
+using Elsa.Models;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Persistence.Entities;
 using Elsa.Workflows.Persistence.Services;
@@ -44,10 +44,10 @@ public class PopulateWorkflowDefinitionStore : IHostedService
     private async Task AddOrUpdateAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
     {
         // Check if there's already a workflow definition by the definition ID and version.
-        var existingDefinition = await _workflowDefinitionStore.FindByDefinitionIdAsync(
+        var existingDefinition = (await _workflowDefinitionStore.FindByDefinitionIdAsync(
             definition.DefinitionId,
             VersionOptions.SpecificVersion(definition.Version),
-            cancellationToken);
+            cancellationToken)).FirstOrDefault();
 
         if (existingDefinition == null)
         {

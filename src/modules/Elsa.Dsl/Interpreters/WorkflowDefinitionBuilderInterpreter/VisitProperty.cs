@@ -9,7 +9,7 @@ namespace Elsa.Dsl.Interpreters;
 
 public partial class WorkflowDefinitionBuilderInterpreter
 {
-    public override IWorkflowDefinitionBuilder VisitProperty(ElsaParser.PropertyContext context)
+    public override IWorkflowBuilder VisitProperty(ElsaParser.PropertyContext context)
     {
         var @object = _object.Get(context.Parent.Parent.Parent);
         var objectType = @object.GetType();

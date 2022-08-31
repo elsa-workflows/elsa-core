@@ -19,12 +19,12 @@ public class WorkflowInstancePersistenceTests
 {
     private readonly IWorkflowRunner _workflowRunner;
     private readonly CapturingTextWriter _capturingTextWriter = new();
-    private readonly IWorkflowDefinitionBuilderFactory _workflowBuilderFactory;
+    private readonly IWorkflowBuilderFactory _workflowBuilderFactory;
 
     public WorkflowInstancePersistenceTests(ITestOutputHelper testOutputHelper)
     {
         var services = new TestApplicationBuilder(testOutputHelper).WithCapturingTextWriter(_capturingTextWriter).Build();
-        _workflowBuilderFactory = services.GetRequiredService<IWorkflowDefinitionBuilderFactory>();
+        _workflowBuilderFactory = services.GetRequiredService<IWorkflowBuilderFactory>();
         _workflowRunner = services.GetRequiredService<IWorkflowRunner>();
 
         services.ConfigureDefaultWorkflowExecutionPipeline(pipeline => pipeline

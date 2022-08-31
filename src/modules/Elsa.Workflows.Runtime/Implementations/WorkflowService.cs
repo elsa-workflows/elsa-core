@@ -1,4 +1,4 @@
-using Elsa.Persistence.Common.Models;
+using Elsa.Models;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Runtime.Models;
@@ -28,13 +28,13 @@ public class WorkflowService : IWorkflowService
         _hasher = hasher;
     }
 
-    public async Task<InvokeWorkflowResult> ExecuteWorkflowAsync(string definitionId, VersionOptions versionOptions, IDictionary<string, object>? input = default, string? correlationId = default, CancellationToken cancellationToken = default)
+    public async Task<RunWorkflowResult> ExecuteWorkflowAsync(string definitionId, VersionOptions versionOptions, IDictionary<string, object>? input = default, string? correlationId = default, CancellationToken cancellationToken = default)
     {
         var executeRequest = new InvokeWorkflowDefinitionRequest(definitionId, versionOptions, input, correlationId);
         return await _workflowInvoker.InvokeAsync(executeRequest, cancellationToken);
     }
 
-    public async Task<InvokeWorkflowResult> ExecuteWorkflowAsync(string instanceId, Bookmark bookmark, IDictionary<string, object>? input = default, string? correlationId = default, CancellationToken cancellationToken = default)
+    public async Task<RunWorkflowResult> ExecuteWorkflowAsync(string instanceId, Bookmark bookmark, IDictionary<string, object>? input = default, string? correlationId = default, CancellationToken cancellationToken = default)
     {
         var request = new InvokeWorkflowInstanceRequest(instanceId, bookmark, input, correlationId);
         return await _workflowInvoker.InvokeAsync(request, cancellationToken);

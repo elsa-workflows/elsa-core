@@ -5,7 +5,7 @@ namespace Elsa.Dsl.Interpreters;
 
 public partial class WorkflowDefinitionBuilderInterpreter
 {
-    public override IWorkflowDefinitionBuilder VisitLocalVarDecl(ElsaParser.LocalVarDeclContext context)
+    public override IWorkflowBuilder VisitLocalVarDecl(ElsaParser.LocalVarDeclContext context)
     {
         var variableName = context.ID().GetText();
         var variableType = context.type()?.ID().GetText();

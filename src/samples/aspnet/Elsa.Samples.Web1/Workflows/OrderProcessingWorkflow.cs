@@ -8,7 +8,7 @@ namespace Elsa.Samples.Web1.Workflows;
 
 public class OrderProcessingWorkflow : WorkflowBase
 {
-    protected override void Build(IWorkflowDefinitionBuilder workflow)
+    protected override void Build(IWorkflowBuilder workflow)
     {
         var orderVariable = new Variable<Order>();
 

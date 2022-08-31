@@ -1,4 +1,3 @@
-using Elsa.AspNetCore.Extensions;
 using Elsa.Extensions;
 using Elsa.Http;
 using Elsa.Http.Extensions;
@@ -6,7 +5,6 @@ using Elsa.JavaScript.Activities;
 using Elsa.Jobs.Extensions;
 using Elsa.Scheduling.Activities;
 using Elsa.Scheduling.Extensions;
-using Elsa.Workflows.Api.Extensions;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Activities.Flowchart.Activities;
 using Elsa.Workflows.Management.Extensions;
@@ -33,7 +31,6 @@ services
         .UseScheduling()
         .UseWorkflowApiEndpoints()
         .UseHttp()
-        .UseMvc()
     );
 
 // Razor Pages.
@@ -54,7 +51,6 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthorization();
-app.MapManagementApiEndpoints();
 app.UseHttpActivities();
 app.MapRazorPages();
 

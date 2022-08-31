@@ -5,7 +5,7 @@ namespace Elsa.IntegrationTests.Activities;
 
 class SequentialWorkflow : WorkflowBase
 {
-    protected override void Build(IWorkflowDefinitionBuilder workflow)
+    protected override void Build(IWorkflowBuilder workflow)
     {
         workflow.WithRoot(new Sequence
         {

@@ -1,4 +1,4 @@
-using Elsa.Persistence.Common.Models;
+using Elsa.Models;
 using Elsa.Runtime.Protos;
 using Proto.Cluster;
 

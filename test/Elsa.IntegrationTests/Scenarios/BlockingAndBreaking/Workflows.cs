@@ -6,7 +6,7 @@ namespace Elsa.IntegrationTests.Scenarios.BlockingAndBreaking;
 
 public class BreakWhileBlockForkWorkflow : WorkflowBase
 {
-    protected override void Build(IWorkflowDefinitionBuilder workflow)
+    protected override void Build(IWorkflowBuilder workflow)
     {
         var currentValue = new Variable<int?>(0);
 

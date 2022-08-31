@@ -7,7 +7,7 @@ namespace Elsa.Dsl.Interpreters;
 
 public partial class WorkflowDefinitionBuilderInterpreter
 {
-    public override IWorkflowDefinitionBuilder VisitBracketsExpr(ElsaParser.BracketsExprContext context)
+    public override IWorkflowBuilder VisitBracketsExpr(ElsaParser.BracketsExprContext context)
     {
         var propertyType = _expressionType.Get(context.Parent);
         var targetElementType = propertyType.GetGenericArguments().First();

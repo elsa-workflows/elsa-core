@@ -6,7 +6,8 @@ import {PropertiesTabModel, TabModel, WorkflowDefinitionPropsUpdatedArgs, Workfl
 import {FormEntry} from "../../../components/shared/forms/form-entry";
 import {isNullOrWhitespace} from "../../../utils";
 import {InfoList} from "../../../components/shared/forms/info-list";
-import {TabChangedArgs, Variable} from "../../../models";
+import {TabChangedArgs, Variable, VersionedEntity} from "../../../models";
+import {WorkflowDefinitionsApi} from "../../workflow-definitions/services/api";
 
 @Component({
   tag: 'elsa-workflow-definition-properties-editor',
@@ -14,9 +15,11 @@ import {TabChangedArgs, Variable} from "../../../models";
 export class WorkflowDefinitionPropertiesEditor {
   private readonly eventBus: EventBus;
   private slideOverPanel: HTMLElsaSlideOverPanelElement;
+  private readonly workflowDefinitionApi: WorkflowDefinitionsApi;
 
   constructor() {
     this.eventBus = Container.get(EventBus);
+    this.workflowDefinitionApi = Container.get(WorkflowDefinitionsApi);
 
     this.model = {
       tabModels: [],
@@ -24,7 +27,11 @@ export class WorkflowDefinitionPropertiesEditor {
   }
 
   @Prop() workflowDefinition?: WorkflowDefinition;
+  @Prop() workflowVersions: Array<WorkflowDefinition>;
   @Event() workflowPropsUpdated: EventEmitter<WorkflowDefinitionPropsUpdatedArgs>;
+  @Event() versionSelected: EventEmitter<WorkflowDefinition>;
+  @Event() deleteVersionClicked: EventEmitter<WorkflowDefinition>;
+  @Event() revertVersionClicked: EventEmitter<WorkflowDefinition>;
   @State() private model: WorkflowPropertiesEditorModel;
   @State() private selectedTabIndex: number = 0;
 
@@ -40,6 +47,11 @@ export class WorkflowDefinitionPropertiesEditor {
 
   @Watch('workflowDefinition')
   async onWorkflowDefinitionChanged() {
+    await this.createModel();
+  }
+
+  @Watch('workflowVersions')
+  async onWorkflowVersionsChanged() {
     await this.createModel();
   }
 
@@ -127,7 +139,15 @@ export class WorkflowDefinitionPropertiesEditor {
       }
     }
 
-    model.tabModels = [propertiesTabModel, variablesTabModel];
+    const versionHistoryTabModel: TabModel = {
+      name: 'versionHistory',
+      tab: {
+        displayText: 'Version History',
+        content: () => this.renderVersionHistoryTab()
+      }
+    }
+
+    model.tabModels = [propertiesTabModel, variablesTabModel, versionHistoryTabModel];
 
     const args: WorkflowPropertiesEditorDisplayingArgs = {model};
 
@@ -149,6 +169,15 @@ export class WorkflowDefinitionPropertiesEditor {
 
     return <div>
       <elsa-variables-editor variables={variables} onVariablesChanged={e => this.onVariablesUpdated(e)}/>
+    </div>
+  };
+
+  private renderVersionHistoryTab = () => {
+    return <div>
+      <elsa-workflow-definition-version-history
+        selectedVersion={this.workflowDefinition}
+        workflowVersions={this.workflowVersions}
+      />
     </div>
   };
 

@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <Import Project="..\..\..\common.props" />
+    <Import Project="..\..\..\configureawait.props" />
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <Description>
+            Provides common features that can be used by persistence modules.
+        </Description>
+        <PackageTags>elsa, common, persistence</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="LinqKit" Version="1.2.2" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Elsa.Models.Common\Elsa.Models.Common.csproj" />
+    </ItemGroup>
+
+</Project>

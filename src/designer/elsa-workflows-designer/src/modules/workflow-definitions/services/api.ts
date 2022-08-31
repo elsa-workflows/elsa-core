@@ -1,6 +1,6 @@
 import { getVersionOptionsString, serializeQueryString } from '../../../utils';
 import {WorkflowDefinition, WorkflowDefinitionSummary} from "../models/entities";
-import {Activity, PagedList, Variable, VersionOptions} from "../../../models";
+import {Activity, PagedList, Variable, VersionedEntity, VersionOptions} from "../../../models";
 import {Service} from "typedi";
 import {ElsaApiClientProvider} from "../../../services";
 
@@ -30,6 +30,18 @@ export class WorkflowDefinitionsApi {
     return response.data;
   }
 
+  async deleteVersion(request: DeleteWorkflowVersionRequest): Promise<WorkflowDefinition> {
+    const httpClient = await this.getHttpClient();
+    const response = await httpClient.delete<WorkflowDefinition>(`workflow-definitions/${request.definitionId}/version/${request.version}`);
+    return response.data;
+  }
+
+  async revertVersion(request: RevertWorkflowVersionRequest): Promise<WorkflowDefinition> {
+    const httpClient = await this.getHttpClient();
+    const response = await httpClient.post<WorkflowDefinition>(`workflow-definitions/${request.definitionId}/revert/${request.version}`);
+    return response.data;
+  }
+
   async post(request: SaveWorkflowDefinitionRequest): Promise<WorkflowDefinition> {
     const httpClient = await this.getHttpClient();
     const response = await httpClient.post<WorkflowDefinition>('workflow-definitions', request);
@@ -44,6 +56,12 @@ export class WorkflowDefinitionsApi {
     const queryStringText = serializeQueryString(queryString);
     const httpClient = await this.getHttpClient();
     const response = await httpClient.get<WorkflowDefinition>(`workflow-definitions/${request.definitionId}${queryStringText}`);
+    return response.data;
+  }
+
+  async getVersions(workflowDefinitionId: string): Promise<Array<WorkflowDefinition>> {
+    const httpClient = await this.getHttpClient();
+    const response = await httpClient.get<Array<WorkflowDefinition>>(`workflow-definitions/${workflowDefinitionId}/versions`);
     return response.data;
   }
 
@@ -137,6 +155,7 @@ export class WorkflowDefinitionsApi {
 
 export interface SaveWorkflowDefinitionRequest {
   definitionId: string;
+  version?: number;
   name?: string;
   description?: string;
   publish: boolean;
@@ -153,6 +172,16 @@ export interface UnpublishManyWorkflowDefinitionRequest extends BaseManyWorkflow
 
 export interface DeleteWorkflowDefinitionRequest {
   definitionId: string;
+}
+
+export interface DeleteWorkflowVersionRequest {
+  definitionId: string;
+  version: number;
+}
+
+export interface RevertWorkflowVersionRequest {
+  definitionId: string;
+  version: number;
 }
 
 export interface RetractWorkflowDefinitionRequest {

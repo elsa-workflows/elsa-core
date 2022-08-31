@@ -1,8 +1,8 @@
 using Elsa.Labels.Entities;
 using Elsa.Labels.Services;
+using Elsa.Models;
 using Elsa.Persistence.Common.Extensions;
 using Elsa.Persistence.Common.Implementations;
-using Elsa.Persistence.Common.Models;
 
 namespace Elsa.Labels.Implementations;
 

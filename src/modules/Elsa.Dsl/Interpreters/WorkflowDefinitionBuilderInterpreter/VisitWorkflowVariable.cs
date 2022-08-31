@@ -7,7 +7,7 @@ namespace Elsa.Dsl.Interpreters;
 
 public partial class WorkflowDefinitionBuilderInterpreter
 {
-    public override IWorkflowDefinitionBuilder VisitVariableDeclarationStat(ElsaParser.VariableDeclarationStatContext context)
+    public override IWorkflowBuilder VisitVariableDeclarationStat(ElsaParser.VariableDeclarationStatContext context)
     {
         VisitChildren(context);
         var expressionValue = _expressionValue.Get(context.varDecl());
@@ -15,7 +15,7 @@ public partial class WorkflowDefinitionBuilderInterpreter
         return DefaultResult;
     }
 
-    public override IWorkflowDefinitionBuilder VisitVarDecl(ElsaParser.VarDeclContext context)
+    public override IWorkflowBuilder VisitVarDecl(ElsaParser.VarDeclContext context)
     {
         var workflowVariableName = context.ID().GetText();
 

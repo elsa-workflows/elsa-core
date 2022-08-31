@@ -5,7 +5,7 @@ namespace Elsa.IntegrationTests.Scenarios.Blocking;
 
 class BlockingSequentialWorkflow : WorkflowBase
 {
-    protected override void Build(IWorkflowDefinitionBuilder workflow)
+    protected override void Build(IWorkflowBuilder workflow)
     {
         workflow.WithRoot(new Sequence
         {

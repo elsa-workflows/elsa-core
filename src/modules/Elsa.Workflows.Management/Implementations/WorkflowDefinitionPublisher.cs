@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Elsa.Common.Services;
 using Elsa.Mediator.Services;
-using Elsa.Persistence.Common.Models;
+using Elsa.Models;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.Services;
@@ -56,7 +56,7 @@ namespace Elsa.Workflows.Management.Implementations
 
         public async Task<WorkflowDefinition?> PublishAsync(string definitionId, CancellationToken cancellationToken = default)
         {
-            var definition = await _workflowDefinitionStore.FindByDefinitionIdAsync(definitionId, VersionOptions.Latest, cancellationToken);
+            var definition = (await _workflowDefinitionStore.FindByDefinitionIdAsync(definitionId, VersionOptions.Latest, cancellationToken)).FirstOrDefault();
 
             if (definition == null)
                 return null;
@@ -94,7 +94,7 @@ namespace Elsa.Workflows.Management.Implementations
 
         public async Task<WorkflowDefinition?> RetractAsync(string definitionId, CancellationToken cancellationToken = default)
         {
-            var definition = await _workflowDefinitionStore.FindByDefinitionIdAsync(definitionId, VersionOptions.Published, cancellationToken);
+            var definition = (await _workflowDefinitionStore.FindByDefinitionIdAsync(definitionId, VersionOptions.Published, cancellationToken)).FirstOrDefault();
 
             if (definition == null)
                 return null;
@@ -116,9 +116,9 @@ namespace Elsa.Workflows.Management.Implementations
             return definition;
         }
 
-        public async Task<WorkflowDefinition?> GetDraftAsync(string definitionId, CancellationToken cancellationToken = default)
+        public async Task<WorkflowDefinition?> GetDraftAsync(string definitionId, int? version, CancellationToken cancellationToken = default)
         {
-            var definition = await _workflowDefinitionStore.FindByDefinitionIdAsync(definitionId, VersionOptions.Latest, cancellationToken);
+            var definition = (await _workflowDefinitionStore.FindByDefinitionIdAsync(definitionId, version.HasValue ? VersionOptions.SpecificVersion(version.Value) : VersionOptions.Latest, cancellationToken)).FirstOrDefault();
 
             if (definition == null)
                 return null;
@@ -139,7 +139,7 @@ namespace Elsa.Workflows.Management.Implementations
         {
             var draft = definition;
             var definitionId = definition.DefinitionId;
-            var latestVersion = await _workflowDefinitionStore.FindByDefinitionIdAsync(definitionId, VersionOptions.Latest, cancellationToken);
+            var latestVersion = (await _workflowDefinitionStore.FindByDefinitionIdAsync(definitionId, VersionOptions.Latest, cancellationToken)).FirstOrDefault();
 
             if (latestVersion is { IsPublished: true, IsLatest: true })
             {

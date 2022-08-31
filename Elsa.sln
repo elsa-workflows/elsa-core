@@ -12,6 +12,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "solution", "solution", "{7D
 ProjectSection(SolutionItems) = preProject
 	README.md = README.md
 	docker-compose.yml = docker-compose.yml
+	common.props = common.props
+	configureawait.props = configureawait.props
 EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{0354F050-3992-4DD4-B0EE-5FBA04AC72B6}"
@@ -78,7 +80,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.AllInOne.Web", "src\bu
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.WorkflowServer.Web", "src\bundles\Elsa.WorkflowServer.Web\Elsa.WorkflowServer.Web.csproj", "{3C2752A7-EEBC-4ED4-B1BF-0FCF6E071BC2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.Abstractions", "src\common\Elsa.Persistence.Abstractions\Elsa.Persistence.Abstractions.csproj", "{6D590FA1-898B-429B-AE85-DE16BE691246}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.Common", "src\common\Elsa.Persistence.Common\Elsa.Persistence.Common.csproj", "{6D590FA1-898B-429B-AE85-DE16BE691246}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.EntityFrameworkCore.Common", "src\common\Elsa.Persistence.EntityFrameworkCore.Common\Elsa.Persistence.EntityFrameworkCore.Common.csproj", "{B962750E-C2B1-4F5A-B3C5-6C64CAF1ED2E}"
 EndProject
@@ -100,8 +102,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Features", "src\common
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.MemoryCache", "src\modules\Elsa.MemoryCache\Elsa.MemoryCache.csproj", "{2570418D-1674-4DAE-9A24-9146D522450C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.AspNetCore", "src\modules\Elsa.AspNetCore\Elsa.AspNetCore.csproj", "{2CFF3041-BB6A-45EA-9716-7BA531BA6479}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Expressions", "src\modules\Elsa.Expressions\Elsa.Expressions.csproj", "{80529478-A383-4FEA-B744-C71264969E9A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Mediator", "src\modules\Elsa.Mediator\Elsa.Mediator.csproj", "{40ED82D8-A7BB-4D37-9157-3176EDA3E119}"
@@ -114,13 +114,25 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ActivityDefinitions.En
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Api.Common", "src\common\Elsa.Api.Common\Elsa.Api.Common.csproj", "{39CD855E-83B1-4A96-93F7-01608211EBE3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Tokens.Api", "src\modules\Elsa.Tokens.Api\Elsa.Tokens.Api.csproj", "{30B49E42-AE61-4F7C-981F-923F07BB3986}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Identity", "src\modules\Elsa.Identity\Elsa.Identity.csproj", "{30B49E42-AE61-4F7C-981F-923F07BB3986}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Jobs.Activities", "src\modules\Elsa.Jobs.Activities\Elsa.Jobs.Activities.csproj", "{81A2AE6B-3D0C-4A4A-A80B-7A661FBC8117}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Jobs", "src\modules\Elsa.Jobs\Elsa.Jobs.csproj", "{CF1938A0-BD10-4AA1-9ABC-6D02303A9D53}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Common", "src\modules\Elsa.Common\Elsa.Common.csproj", "{D229105F-6879-4452-9189-75DE060C0F4C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ProtoActor.Kubernetes", "src\modules\Elsa.ProtoActor.Kubernetes\Elsa.ProtoActor.Kubernetes.csproj", "{26087ED2-9249-4FF3-8869-C11C405E441A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ProtoActor.Common", "src\modules\Elsa.ProtoActor.Common\Elsa.ProtoActor.Common.csproj", "{F599E891-598E-402F-A9B9-95D0B1C661F6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.Console3", "src\samples\console\Elsa.Samples.Console3\Elsa.Samples.Console3.csproj", "{517B703A-7653-4036-AAB5-7B4293D39D0F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "worker", "worker", "{389D40B8-005F-46A1-9493-1FE6065F04FD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.Worker1", "src\samples\Elsa.Samples.Worker1\Elsa.Samples.Worker1.csproj", "{197223FB-2472-442C-BD10-2E1F931285BC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Models.Common", "src\common\Elsa.Models.Common\Elsa.Models.Common.csproj", "{81BDD2FB-810E-4526-8290-80BA2F4FC473}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -280,10 +292,6 @@ Global
 		{2570418D-1674-4DAE-9A24-9146D522450C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2570418D-1674-4DAE-9A24-9146D522450C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2570418D-1674-4DAE-9A24-9146D522450C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2CFF3041-BB6A-45EA-9716-7BA531BA6479}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2CFF3041-BB6A-45EA-9716-7BA531BA6479}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2CFF3041-BB6A-45EA-9716-7BA531BA6479}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2CFF3041-BB6A-45EA-9716-7BA531BA6479}.Release|Any CPU.Build.0 = Release|Any CPU
 		{80529478-A383-4FEA-B744-C71264969E9A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{80529478-A383-4FEA-B744-C71264969E9A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{80529478-A383-4FEA-B744-C71264969E9A}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -324,6 +332,18 @@ Global
 		{D229105F-6879-4452-9189-75DE060C0F4C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D229105F-6879-4452-9189-75DE060C0F4C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D229105F-6879-4452-9189-75DE060C0F4C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F599E891-598E-402F-A9B9-95D0B1C661F6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F599E891-598E-402F-A9B9-95D0B1C661F6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{26087ED2-9249-4FF3-8869-C11C405E441A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{26087ED2-9249-4FF3-8869-C11C405E441A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{517B703A-7653-4036-AAB5-7B4293D39D0F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{517B703A-7653-4036-AAB5-7B4293D39D0F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{197223FB-2472-442C-BD10-2E1F931285BC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{197223FB-2472-442C-BD10-2E1F931285BC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{81BDD2FB-810E-4526-8290-80BA2F4FC473}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{81BDD2FB-810E-4526-8290-80BA2F4FC473}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{81BDD2FB-810E-4526-8290-80BA2F4FC473}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{81BDD2FB-810E-4526-8290-80BA2F4FC473}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{155227F0-A33B-40AA-A4B4-06F813EB921B} = {61017E64-6D00-49CB-9E81-5002DC8F7D5F}
@@ -367,7 +387,6 @@ Global
 		{8A050229-DB79-4E0B-9AFF-7565E87F2954} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 		{C237BA1A-3A7D-4AB2-BE09-2696F3C082A4} = {C6658DE0-2B2F-47F0-BB61-2CA66D435C09}
 		{2570418D-1674-4DAE-9A24-9146D522450C} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
-		{2CFF3041-BB6A-45EA-9716-7BA531BA6479} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 		{80529478-A383-4FEA-B744-C71264969E9A} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 		{40ED82D8-A7BB-4D37-9157-3176EDA3E119} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 		{80FF5821-E831-450D-AA0C-C76D07D878F4} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
@@ -381,5 +400,9 @@ Global
 		{81A2AE6B-3D0C-4A4A-A80B-7A661FBC8117} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 		{CF1938A0-BD10-4AA1-9ABC-6D02303A9D53} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 		{D229105F-6879-4452-9189-75DE060C0F4C} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
+		{517B703A-7653-4036-AAB5-7B4293D39D0F} = {873BFC3E-63C2-4495-A503-5EC05DCD84E4}
+		{F599E891-598E-402F-A9B9-95D0B1C661F6} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
+		{26087ED2-9249-4FF3-8869-C11C405E441A} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
+		{81BDD2FB-810E-4526-8290-80BA2F4FC473} = {C6658DE0-2B2F-47F0-BB61-2CA66D435C09}
 	EndGlobalSection
 EndGlobal

@@ -1,5 +1,5 @@
 using Elsa.Common.Services;
-using Elsa.Persistence.Common.Models;
+using Elsa.Models;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Core.State;
@@ -33,7 +33,7 @@ public class WorkflowInstanceFactory : IWorkflowInstanceFactory
 
     public async Task<WorkflowInstance> CreateAsync(string workflowDefinitionId, VersionOptions versionOptions, string? correlationId, CancellationToken cancellationToken = default)
     {
-        var workflow = (await _workflowDefinitionStore.FindByDefinitionIdAsync(workflowDefinitionId, versionOptions, cancellationToken))!;
+        var workflow = (await _workflowDefinitionStore.FindByDefinitionIdAsync(workflowDefinitionId, versionOptions, cancellationToken)).FirstOrDefault()!;
         return await CreateAsync(workflow, correlationId, cancellationToken);
     }
 
