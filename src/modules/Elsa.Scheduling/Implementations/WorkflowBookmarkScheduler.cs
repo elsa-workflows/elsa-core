@@ -40,7 +40,7 @@ public class WorkflowBookmarkScheduler : IWorkflowBookmarkScheduler
         {
             var payload = JsonSerializer.Deserialize<DelayPayload>(bookmark.Data!)!;
             var resumeAt = payload.ResumeAt;
-            var job = new ResumeWorkflowJob(workflowInstanceId, bookmark.ToBookmark());
+            var job = new ResumeWorkflowJob(workflowInstanceId, bookmark.Id);
             var schedule = new SpecificInstantSchedule(resumeAt);
             await _jobScheduler.ScheduleAsync(job, bookmark.Id, schedule, groupKeys, cancellationToken);
         }
@@ -50,7 +50,7 @@ public class WorkflowBookmarkScheduler : IWorkflowBookmarkScheduler
         {
             var payload = JsonSerializer.Deserialize<StartAtPayload>(bookmark.Data!)!;
             var executeAt = payload.ExecuteAt;
-            var job = new ResumeWorkflowJob(workflowInstanceId, bookmark.ToBookmark());
+            var job = new ResumeWorkflowJob(workflowInstanceId, bookmark.Id);
             var schedule = new SpecificInstantSchedule(executeAt);
             await _jobScheduler.ScheduleAsync(job, bookmark.Id, schedule, groupKeys, cancellationToken);
         }

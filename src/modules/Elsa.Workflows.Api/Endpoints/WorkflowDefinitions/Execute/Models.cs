@@ -12,12 +12,10 @@ public class Request
 
 public class Response
 {
-    public Response(WorkflowState workflowState, ICollection<Bookmark> bookmarks)
+    public Response(string instanceId)
     {
-        WorkflowState = workflowState;
-        Bookmarks = bookmarks;
+        InstanceId = instanceId;
     }
-
-    public WorkflowState WorkflowState { get; }
-    public ICollection<Bookmark> Bookmarks { get; }
+    
+    public string InstanceId { get; }
 }

@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Elsa.Abstractions;
 using Elsa.Models;
 using Elsa.Workflows.Persistence.Services;
-using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Services;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Execute;
@@ -11,12 +10,12 @@ namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Execute;
 public class Execute : ElsaEndpoint<Request, Response>
 {
     private readonly IWorkflowDefinitionStore _store;
-    private readonly IWorkflowInvoker _workflowInvoker;
+    private readonly IWorkflowRuntime _workflowRuntime;
 
-    public Execute(IWorkflowDefinitionStore store, IWorkflowInvoker workflowInvoker)
+    public Execute(IWorkflowDefinitionStore store, IWorkflowRuntime workflowRuntime)
     {
         _store = store;
-        _workflowInvoker = workflowInvoker;
+        _workflowRuntime = workflowRuntime;
     }
 
     public override void Configure()
@@ -27,7 +26,8 @@ public class Execute : ElsaEndpoint<Request, Response>
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
-        var exists = await _store.GetExistsAsync(request.DefinitionId, VersionOptions.Published, cancellationToken);
+        var definitionId = request.DefinitionId;
+        var exists = await _store.GetExistsAsync(definitionId, VersionOptions.Published, cancellationToken);
 
         if (!exists)
         {
@@ -35,10 +35,11 @@ public class Execute : ElsaEndpoint<Request, Response>
             return;
         }
 
-        var executeRequest = new InvokeWorkflowDefinitionRequest(request.DefinitionId, VersionOptions.Published, CorrelationId: request.CorrelationId);
-        var result = await _workflowInvoker.InvokeAsync(executeRequest, CancellationToken.None);
+        var correlationId = request.CorrelationId;
+        var startWorkflowOptions = new StartWorkflowOptions(correlationId, VersionOptions: VersionOptions.Published);
+        var result = await _workflowRuntime.StartWorkflowAsync(definitionId, startWorkflowOptions, cancellationToken);
 
         if (!HttpContext.Response.HasStarted)
-            await SendOkAsync(new Response(result.WorkflowState, result.Bookmarks), cancellationToken);
+            await SendOkAsync(new Response(result.InstanceId), cancellationToken);
     }
 }

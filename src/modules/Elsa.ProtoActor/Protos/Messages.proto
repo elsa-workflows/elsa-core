@@ -20,7 +20,7 @@ message StartWorkflowResponse {
 
 message ResumeWorkflowRequest {
   string instanceId = 1;
-  Bookmark bookmark = 2;
+  string bookmarkId = 2;
   optional Input input = 3;
 }
 
@@ -28,15 +28,15 @@ message ResumeWorkflowResponse {
   bool Finished = 1;
 }
 
-message Bookmark {
-  string id = 1;
-  string name = 2;
-  optional string hash = 3;
-  optional string payload = 4;
-  string activityId = 5;
-  string activityInstanceId = 6;
-  optional google.protobuf.StringValue callbackMethodName = 7;
-}
+//message Bookmark {
+//  string id = 1;
+//  string name = 2;
+//  optional string hash = 3;
+//  optional string payload = 4;
+//  string activityId = 5;
+//  string activityInstanceId = 6;
+//  optional google.protobuf.StringValue callbackMethodName = 7;
+//}
 
 message Json {
   string text = 1;

@@ -6,9 +6,11 @@ namespace Elsa.Workflows.Runtime.Services;
 
 public interface IWorkflowRuntime
 {
-    Task StartWorkflowAsync(string definitionId, RunWorkflowOptions options, CancellationToken cancellationToken = default);
-    Task ResumeWorkflowAsync(string definitionId, string instanceId, Bookmark bookmark, ResumeWorkflowOptions options, CancellationToken cancellationToken = default);
+    Task<StartWorkflowResult> StartWorkflowAsync(string definitionId, StartWorkflowOptions options, CancellationToken cancellationToken = default);
+    Task<ResumeWorkflowResult> ResumeWorkflowAsync(string instanceId, string bookmarkId, ResumeWorkflowOptions options, CancellationToken cancellationToken = default);
 }
 
-public record RunWorkflowOptions(string? CorrelationId = default, IDictionary<string, object>? Input = default, VersionOptions VersionOptions = default);
+public record StartWorkflowOptions(string? CorrelationId = default, IDictionary<string, object>? Input = default, VersionOptions VersionOptions = default);
 public record ResumeWorkflowOptions(IDictionary<string, object>? Input = default);
+public record StartWorkflowResult(string InstanceId);
+public record ResumeWorkflowResult;
