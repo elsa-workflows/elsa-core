@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Events;
 using Elsa.Models;
 using Elsa.Persistence.EntityFramework.Core.Stores;
 using Elsa.Persistence.Specifications;
@@ -10,6 +11,7 @@ using Elsa.Retention.Contracts;
 using Elsa.Retention.Models;
 using Elsa.Retention.Options;
 using Elsa.Retention.Stores;
+using MediatR;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NodaTime;
@@ -26,6 +28,7 @@ namespace Elsa.Retention.Jobs
         private readonly IClock _clock;
         private readonly IRetentionFilterPipeline _retentionFilterPipeline;
         private readonly IRetentionSpecificationFilter _specificationFilter;
+        private readonly IMediator _mediator;
         private readonly CleanupOptions _options;
         private readonly ILogger _logger;
 
@@ -34,6 +37,7 @@ namespace Elsa.Retention.Jobs
             IClock clock,
             IRetentionFilterPipeline retentionFilterPipeline,
             IRetentionSpecificationFilter specificationFilter,
+            IMediator mediator,
             IOptions<CleanupOptions> options,
             ILogger<CleanupJob> logger)
         {
@@ -41,6 +45,7 @@ namespace Elsa.Retention.Jobs
             _clock = clock;
             _retentionFilterPipeline = retentionFilterPipeline;
             _specificationFilter = specificationFilter;
+            _mediator = mediator;
             _options = options.Value;
             _logger = logger;
         }
@@ -74,6 +79,13 @@ namespace Elsa.Retention.Jobs
         {
             _logger.LogInformation("Deleting {WorkflowInstanceCount} workflow instances", workflowInstanceIds.Count);
             await (_workflowInstanceStore as EntityFrameworkWorkflowInstanceStore).DeleteManyByIdsAsync(workflowInstanceIds, cancellationToken);
+
+            //WorkflowInstanceDeleted and ManyWorkflowInstancesDeleted events only use Id.
+            var instances = workflowInstanceIds.Select(id => new WorkflowInstance() { Id = id });
+            foreach (var instance in instances)
+                await _mediator.Publish(new WorkflowInstanceDeleted(instance), cancellationToken);
+
+            await _mediator.Publish(new ManyWorkflowInstancesDeleted(instances), cancellationToken);
         }
     }
 }
