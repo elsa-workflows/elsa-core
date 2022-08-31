@@ -12,11 +12,13 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
 {
     private readonly GrainClientFactory _grainClientFactory;
     private readonly IIdentityGenerator _identityGenerator;
+    private readonly IHasher _hasher;
 
-    public ProtoActorWorkflowRuntime(GrainClientFactory grainClientFactory, IIdentityGenerator identityGenerator)
+    public ProtoActorWorkflowRuntime(GrainClientFactory grainClientFactory, IIdentityGenerator identityGenerator, IHasher hasher)
     {
         _grainClientFactory = grainClientFactory;
         _identityGenerator = identityGenerator;
+        _hasher = hasher;
     }
 
     public async Task<StartWorkflowResult> StartWorkflowAsync(string definitionId, StartWorkflowOptions options, CancellationToken cancellationToken = default)
@@ -53,5 +55,16 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
         var response = await client.Resume(request, cancellationToken);
 
         return new ResumeWorkflowResult();
+    }
+
+    public async Task<TriggerWorkflowsResult> TriggerWorkflowsAsync(object bookmarkPayload, TriggerWorkflowsOptions options, CancellationToken cancellationToken = default)
+    {
+        var hash = _hasher.Hash(bookmarkPayload);
+        var client = _grainClientFactory.CreateBookmarkGrainClient(hash);
+        var resolvedBookmark = await client.Resolve(new ResolveBookmarkRequest(), cancellationToken);
+        var workflowInstanceId = resolvedBookmark!.WorkflowInstanceId;
+        var resumeResult = await ResumeWorkflowAsync(workflowInstanceId, resolvedBookmark.BookmarkId, new ResumeWorkflowOptions(options.Input), cancellationToken);
+
+        return new TriggerWorkflowsResult();
     }
 }

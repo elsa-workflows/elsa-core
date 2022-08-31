@@ -12,5 +12,6 @@ public class GrainClientFactory
         _cluster = cluster;
     }
     
-    public WorkflowGrainClient CreateWorkflowGrainClient(string workflowInstanceId) => _cluster.GetWorkflowGrain($"workflow:{workflowInstanceId}");
+    public WorkflowGrainClient CreateWorkflowGrainClient(string workflowInstanceId) => _cluster.GetWorkflowGrain(workflowInstanceId);
+    public BookmarkGrainClient CreateBookmarkGrainClient(string hash) => _cluster.GetBookmarkGrain(hash);
 }

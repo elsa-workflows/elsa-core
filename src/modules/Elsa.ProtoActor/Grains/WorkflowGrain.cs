@@ -1,51 +1,36 @@
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.ProtoActor.Extensions;
 using Elsa.Runtime.Protos;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Core.State;
-using Elsa.Workflows.Persistence.Services;
 using Elsa.Workflows.Runtime.Services;
 using Proto;
+using Proto.Cluster;
 using Bookmark = Elsa.Workflows.Core.Models.Bookmark;
 
 namespace Elsa.ProtoActor.Grains;
 
 /// <summary>
-/// Executes a workflow instance.
+/// Executes a workflow.
 /// </summary>
 public class WorkflowGrain : WorkflowGrainBase
 {
-    private readonly IWorkflowInstanceStore _workflowInstanceStore;
-    private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly IWorkflowRunner _workflowRunner;
-    private readonly IWorkflowInstanceFactory _workflowInstanceFactory;
-    private readonly SerializerOptionsProvider _serializerOptionsProvider;
     private Workflow _workflow = default!;
     private WorkflowState _workflowState = default!;
     private ICollection<Bookmark> _bookmarks = new List<Bookmark>();
 
-    public WorkflowGrain(
-        IWorkflowInstanceStore workflowInstanceStore,
-        IWorkflowDefinitionStore workflowDefinitionStore,
-        IWorkflowDefinitionService workflowDefinitionService,
-        IWorkflowRunner workflowRunner,
-        IWorkflowInstanceFactory workflowInstanceFactory,
-        SerializerOptionsProvider serializerOptionsProvider,
-        IContext context) : base(context)
+    public WorkflowGrain(IWorkflowDefinitionService workflowDefinitionService, IWorkflowRunner workflowRunner, IContext context) : base(context)
     {
-        _workflowInstanceStore = workflowInstanceStore;
-        _workflowDefinitionStore = workflowDefinitionStore;
         _workflowDefinitionService = workflowDefinitionService;
         _workflowRunner = workflowRunner;
-        _workflowInstanceFactory = workflowInstanceFactory;
-        _serializerOptionsProvider = serializerOptionsProvider;
     }
-    
+
     public override async Task<StartWorkflowResponse> Start(StartWorkflowRequest request)
     {
         var definitionId = request.DefinitionId;
@@ -61,14 +46,14 @@ public class WorkflowGrain : WorkflowGrainBase
             {
                 NotFound = true
             };
-        
+
         _workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
         var workflowResult = await _workflowRunner.RunAsync(_workflow, input, cancellationToken);
         var finished = workflowResult.WorkflowState.Status == WorkflowStatus.Finished;
 
         _workflowState = workflowResult.WorkflowState;
-        _bookmarks = workflowResult.Bookmarks;
-        
+        await StoreBookmarksAsync(workflowResult.Bookmarks, cancellationToken);
+
         return new StartWorkflowResponse
         {
             Finished = finished
@@ -83,11 +68,29 @@ public class WorkflowGrain : WorkflowGrainBase
         var finished = workflowResult.WorkflowState.Status == WorkflowStatus.Finished;
 
         _workflowState = workflowResult.WorkflowState;
-        _bookmarks = workflowResult.Bookmarks;
-        
+        await StoreBookmarksAsync(workflowResult.Bookmarks, cancellationToken);
+
         return new ResumeWorkflowResponse
         {
             Finished = finished
         };
+    }
+
+    private async Task StoreBookmarksAsync(ICollection<Bookmark> bookmarks, CancellationToken cancellationToken)
+    {
+        _bookmarks = bookmarks;
+        var workflowInstanceId = Context.ClusterIdentity()!.Identity;
+
+        foreach (var bookmark in _bookmarks)
+        {
+            var bookmarkGrainId = bookmark.Hash;
+            var bookmarkClient = Context.GetBookmarkGrain(bookmarkGrainId);
+
+            await bookmarkClient.Store(new StoreBookmarkRequest
+            {
+                BookmarkId = bookmark.Id,
+                WorkflowInstanceId = workflowInstanceId
+            }, cancellationToken);
+        }
     }
 }

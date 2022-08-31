@@ -28,15 +28,18 @@ message ResumeWorkflowResponse {
   bool Finished = 1;
 }
 
-//message Bookmark {
-//  string id = 1;
-//  string name = 2;
-//  optional string hash = 3;
-//  optional string payload = 4;
-//  string activityId = 5;
-//  string activityInstanceId = 6;
-//  optional google.protobuf.StringValue callbackMethodName = 7;
-//}
+message StoreBookmarkRequest {
+  string WorkflowInstanceId = 1;
+  string BookmarkId = 2;
+}
+
+message ResolveBookmarkRequest {
+}
+
+message ResolveBookmarkResponse {
+  string BookmarkId = 1;
+  string WorkflowInstanceId = 2;
+}
 
 message Json {
   string text = 1;

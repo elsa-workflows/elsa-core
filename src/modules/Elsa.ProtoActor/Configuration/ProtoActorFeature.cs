@@ -58,14 +58,14 @@ public class ProtoActorFeature : FeatureBase
         services.AddSingleton(sp =>
         {
             var protoActorSystem = sp.GetService<ProtoActorSystem>();
-
             var system = new ActorSystem(protoActorSystem!.ActorSystemConfig).WithServiceProvider(sp);
 
             var remoteConfig = protoActorSystem.RemoteConfig
                 .WithProtoMessages(MessagesReflection.Descriptor)
                 .WithProtoMessages(EmptyReflection.Descriptor);
 
-            var workflowProps = system.DI().PropsFor<WorkflowGrainActor>();
+            var workflowGrainProps = system.DI().PropsFor<WorkflowGrainActor>();
+            var bookmarkGrainProps = system.DI().PropsFor<BookmarkGrainActor>();
 
             var clusterConfig =
                 ClusterConfig
@@ -74,7 +74,9 @@ public class ProtoActorFeature : FeatureBase
                     .WithActorRequestTimeout(protoActorSystem.ClusterConfigurationSettings.ActorRequestTimeout)
                     .WithActorActivationTimeout(protoActorSystem.ClusterConfigurationSettings.ActorActivationTimeout)
                     .WithActorSpawnTimeout(protoActorSystem.ClusterConfigurationSettings.ActorSpawnTimeout)
-                    .WithClusterKind(WorkflowGrainActor.Kind, workflowProps);
+                    .WithClusterKind(WorkflowGrainActor.Kind, workflowGrainProps)
+                    .WithClusterKind(BookmarkGrainActor.Kind, bookmarkGrainProps)
+                    ;
 
             system
                 .WithRemote(remoteConfig)
@@ -89,6 +91,7 @@ public class ProtoActorFeature : FeatureBase
         // Actors.
         services
             .AddSingleton(sp => new WorkflowGrainActor((context, _) => ActivatorUtilities.CreateInstance<WorkflowGrain>(sp, context)))
+            .AddSingleton(sp => new BookmarkGrainActor((context, _) => ActivatorUtilities.CreateInstance<BookmarkGrain>(sp, context)))
             ;
 
         // Client factory.

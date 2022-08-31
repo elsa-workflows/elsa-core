@@ -13,4 +13,9 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
     {
         throw new NotImplementedException();
     }
+
+    public Task<TriggerWorkflowsResult> TriggerWorkflowsAsync(object bookmarkPayload, TriggerWorkflowsOptions options, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
 }

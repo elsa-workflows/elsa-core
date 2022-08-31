@@ -9,3 +9,8 @@ service WorkflowGrain {
   rpc Start (StartWorkflowRequest) returns (StartWorkflowResponse);
   rpc Resume (ResumeWorkflowRequest) returns (ResumeWorkflowResponse);
 }
+
+service BookmarkGrain {
+  rpc Store(StoreBookmarkRequest) returns (Unit);
+  rpc Resolve (ResolveBookmarkRequest) returns (ResolveBookmarkResponse);
+}
