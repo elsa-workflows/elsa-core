@@ -105,8 +105,6 @@ activityRegistryPopulator.PopulateRegistryAsync(typeof(JobActivityProvider));
 serviceProvider.ConfigureDefaultWorkflowExecutionPipeline(pipeline =>
     pipeline
         .UseWorkflowExecutionEvents()
-        .UseWorkflowExecutionLogPersistence()
-        .UsePersistence()
         .UseWorkflowContexts()
         .UseStackBasedActivityScheduler()
 );
