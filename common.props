@@ -1,7 +1,7 @@
 <Project>
   <PropertyGroup>
     <LangVersion>latest</LangVersion>
-    <Authors>Elsa Contributors</Authors>
+    <Authors>Elsa Workflows Team</Authors>
     <Copyright>2022</Copyright> 
     <PackageProjectUrl>https://github.com/elsa-workflows/elsa-core</PackageProjectUrl>
     <RepositoryUrl>https://github.com/elsa-workflows/elsa-core</RepositoryUrl>

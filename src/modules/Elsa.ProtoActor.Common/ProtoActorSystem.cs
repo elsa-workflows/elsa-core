@@ -8,16 +8,17 @@ namespace Elsa.ProtoActor.Common;
 
 public class ProtoActorSystem
 {
-    public IClusterProvider ClusterProvider { get; set; }
-    public GrpcNetRemoteConfig RemoteConfig { get; set; }
-    public ActorSystemConfig ActorSystemConfig { get; set; } = ActorSystemConfig.Setup();
-    public IIdentityLookup IdentityLookup { get; set; }
-
-    public ClusterConfigurationSettings ClusterConfigurationSettings { get; set; } = new();
+    public ProtoActorSystem()
+    {
+    }
     
-    public string Name { get; set; }
-
-    public ProtoActorSystem(IClusterProvider clusterProvider, GrpcNetRemoteConfig remoteConfig, ActorSystemConfig actorSystemConfig, IIdentityLookup identityLookup, string name, ClusterConfigurationSettings clusterConfigurationSettings)
+    public ProtoActorSystem(
+        IClusterProvider clusterProvider, 
+        GrpcNetRemoteConfig remoteConfig, 
+        ActorSystemConfig actorSystemConfig, 
+        IIdentityLookup identityLookup, 
+        string name, 
+        ClusterConfigurationSettings clusterConfigurationSettings)
     {
         ClusterProvider = clusterProvider;
         RemoteConfig = remoteConfig;
@@ -27,7 +28,10 @@ public class ProtoActorSystem
         ClusterConfigurationSettings = clusterConfigurationSettings;
     }
 
-    public ProtoActorSystem()
-    {
-    }
+    public IClusterProvider ClusterProvider { get; set; }
+    public GrpcNetRemoteConfig RemoteConfig { get; set; }
+    public ActorSystemConfig ActorSystemConfig { get; set; } = ActorSystemConfig.Setup();
+    public IIdentityLookup IdentityLookup { get; set; }
+    public ClusterConfigurationSettings ClusterConfigurationSettings { get; set; } = new();
+    public string Name { get; set; }
 }

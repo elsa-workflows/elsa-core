@@ -5,18 +5,19 @@ using Elsa.Runtime.Protos;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Runtime.Services;
+using Proto.Cluster;
 
 namespace Elsa.ProtoActor.Implementations;
 
 public class ProtoActorWorkflowRuntime : IWorkflowRuntime
 {
-    private readonly GrainClientFactory _grainClientFactory;
+    private readonly Cluster _cluster;
     private readonly IIdentityGenerator _identityGenerator;
     private readonly IHasher _hasher;
 
-    public ProtoActorWorkflowRuntime(GrainClientFactory grainClientFactory, IIdentityGenerator identityGenerator, IHasher hasher)
+    public ProtoActorWorkflowRuntime(Cluster cluster, IIdentityGenerator identityGenerator, IHasher hasher)
     {
-        _grainClientFactory = grainClientFactory;
+        _cluster = cluster;
         _identityGenerator = identityGenerator;
         _hasher = hasher;
     }
@@ -36,7 +37,7 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
         };
 
         var workflowInstanceId = _identityGenerator.GenerateId();
-        var client = _grainClientFactory.CreateWorkflowGrainClient(workflowInstanceId);
+        var client = _cluster.GetWorkflowGrain(workflowInstanceId);
         var response = await client.Start(request, cancellationToken);
 
         return new StartWorkflowResult(workflowInstanceId);
@@ -51,7 +52,7 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
             Input = options.Input?.Serialize()
         };
 
-        var client = _grainClientFactory.CreateWorkflowGrainClient(instanceId);
+        var client = _cluster.GetWorkflowGrain(instanceId);
         var response = await client.Resume(request, cancellationToken);
 
         return new ResumeWorkflowResult();
@@ -60,7 +61,7 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
     public async Task<TriggerWorkflowsResult> TriggerWorkflowsAsync(object bookmarkPayload, TriggerWorkflowsOptions options, CancellationToken cancellationToken = default)
     {
         var hash = _hasher.Hash(bookmarkPayload);
-        var client = _grainClientFactory.CreateBookmarkGrainClient(hash);
+        var client = _cluster.GetBookmarkGrain(hash);
         var bookmarksResponse = await client.Resolve(new ResolveBookmarkRequest(), cancellationToken);
         var bookmarks = bookmarksResponse!.Bookmarks;
 

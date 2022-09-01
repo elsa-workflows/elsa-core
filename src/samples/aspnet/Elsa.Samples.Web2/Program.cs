@@ -23,7 +23,10 @@ var services = builder.Services;
 services
     .AddElsa(elsa => elsa
         .UseWorkflows()
-        .UseRuntime(runtime => runtime.UseProtoActor(f=> f.WithLocalhostProvider(opt => opt.Name = "my-cluster")))
+        .UseRuntime(runtime => runtime.UseProtoActor(f=>
+        {
+            f.ClusterName = "my-cluster";
+        }))
         .UseManagement(management => management
             .AddActivity<Sequence>()
             .AddActivity<WriteLine>()
