@@ -7,6 +7,6 @@ namespace Elsa.Workflows.Runtime.Services;
 /// </summary>
 public interface IBookmarkManager
 {
-    Task DeleteBookmarksAsync(IEnumerable<WorkflowBookmark> bookmarks, CancellationToken cancellationToken = default);
-    Task SaveBookmarksAsync(IEnumerable<WorkflowBookmark> bookmarks, CancellationToken cancellationToken = default);
+    Task DeleteBookmarksAsync(IEnumerable<WorkflowBookmark> workflowBookmarks, CancellationToken cancellationToken = default);
+    Task SaveBookmarksAsync(IEnumerable<WorkflowBookmark> workflowBookmarks, CancellationToken cancellationToken = default);
 }

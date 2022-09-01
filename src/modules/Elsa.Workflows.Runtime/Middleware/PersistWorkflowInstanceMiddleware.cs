@@ -163,12 +163,12 @@ public class PersistWorkflowInstanceMiddleware : WorkflowExecutionMiddleware
         var diff = Diff.For(bookmarksSnapshot, context.Bookmarks.ToList());
 
         // Delete removed bookmarks.
-        var removedBookmarks = diff.Removed.Select(x => WorkflowBookmark.FromBookmark(x, workflowInstance)).ToList();
-        await _bookmarkManager.DeleteBookmarksAsync(removedBookmarks, cancellationToken);
+        var removedBookmarks = diff.Removed;
+        //await _bookmarkManager.DeleteBookmarksAsync(removedBookmarks, cancellationToken);
 
         // Persist created bookmarks.
-        var createdBookmarks = diff.Added.Select(x => WorkflowBookmark.FromBookmark(x, workflowInstance)).ToList();
-        await _bookmarkManager.SaveBookmarksAsync(createdBookmarks, cancellationToken);
+        var createdBookmarks = diff.Added;
+        //await _bookmarkManager.SaveBookmarksAsync(createdBookmarks, cancellationToken);
 
         // Publish an event so that observers can update their workers.
         await _eventPublisher.PublishAsync(new WorkflowBookmarksIndexed(new IndexedWorkflowBookmarks(workflowState, createdBookmarks, removedBookmarks)), cancellationToken);

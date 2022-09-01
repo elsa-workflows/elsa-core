@@ -38,31 +38,49 @@ public class WorkflowRunner : IWorkflowRunner
 
     public async Task<RunWorkflowResult> RunAsync(IActivity activity, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
     {
-        var workflow = Workflow.FromActivity(activity);
-        return await RunAsync(workflow, input, cancellationToken);
+        var instanceId = _identityGenerator.GenerateId();
+        return await RunAsync(instanceId, activity, input, cancellationToken);
     }
 
     public async Task<RunWorkflowResult> RunAsync(IWorkflow workflow, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
     {
-        var builder = _workflowBuilderFactory.CreateBuilder();
-        var workflowDefinition = await builder.BuildWorkflowAsync(workflow, cancellationToken);
-        return await RunAsync(workflowDefinition, input, cancellationToken);
+        var instanceId = _identityGenerator.GenerateId();
+        return await RunAsync(workflow, instanceId, input, cancellationToken);
     }
 
     public async Task<RunWorkflowResult> RunAsync<T>(IDictionary<string, object>? input = default, CancellationToken cancellationToken = default) where T : IWorkflow
     {
-        var builder = _workflowBuilderFactory.CreateBuilder();
-        var workflowDefinition = await builder.BuildWorkflowAsync<T>(cancellationToken);
-        return await RunAsync(workflowDefinition, input, cancellationToken);
+        var instanceId = _identityGenerator.GenerateId();
+        return await RunAsync<T>(instanceId, input, cancellationToken);
     }
 
-    public async Task<RunWorkflowResult> RunAsync(Workflow workflow, IDictionary<string, object>? input, CancellationToken cancellationToken = default)
+    public async Task<RunWorkflowResult> RunAsync(string instanceId, IActivity activity, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
+    {
+        var workflow = Workflow.FromActivity(activity);
+        return await RunAsync(workflow, instanceId, input, cancellationToken);
+    }
+
+    public async Task<RunWorkflowResult> RunAsync(IWorkflow workflow, string instanceId, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
+    {
+        var builder = _workflowBuilderFactory.CreateBuilder();
+        var workflowDefinition = await builder.BuildWorkflowAsync(workflow, cancellationToken);
+        return await RunAsync(workflowDefinition, instanceId, input, cancellationToken);
+    }
+
+    public async Task<RunWorkflowResult> RunAsync<T>(string instanceId, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default) where T : IWorkflow
+    {
+        var builder = _workflowBuilderFactory.CreateBuilder();
+        var workflowDefinition = await builder.BuildWorkflowAsync<T>(cancellationToken);
+        return await RunAsync(workflowDefinition, instanceId, input, cancellationToken);
+    }
+
+    public async Task<RunWorkflowResult> RunAsync(Workflow workflow, string instanceId, IDictionary<string, object>? input, CancellationToken cancellationToken = default)
     {
         // Create a child scope.
         using var scope = _serviceScopeFactory.CreateScope();
 
         // Setup a workflow execution context.
-        var workflowExecutionContext = await CreateWorkflowExecutionContextAsync(scope.ServiceProvider, workflow, default, default, input, default, cancellationToken);
+        var workflowExecutionContext = await CreateWorkflowExecutionContextAsync(scope.ServiceProvider, workflow, instanceId, default, default, input, default, cancellationToken);
 
         // Schedule the first activity.
         workflowExecutionContext.ScheduleRoot();
@@ -76,7 +94,7 @@ public class WorkflowRunner : IWorkflowRunner
         using var scope = _serviceScopeFactory.CreateScope();
 
         // Create workflow execution context.
-        var workflowExecutionContext = await CreateWorkflowExecutionContextAsync(scope.ServiceProvider, workflow, workflowState, default, input, default, cancellationToken);
+        var workflowExecutionContext = await CreateWorkflowExecutionContextAsync(scope.ServiceProvider, workflow, workflowState.Id, workflowState, default, input, default, cancellationToken);
         
         // Schedule the first node.
         workflowExecutionContext.ScheduleRoot();
@@ -90,7 +108,7 @@ public class WorkflowRunner : IWorkflowRunner
         using var scope = _serviceScopeFactory.CreateScope();
 
         // Create workflow execution context.
-        var workflowExecutionContext = await CreateWorkflowExecutionContextAsync(scope.ServiceProvider, workflow, workflowState, bookmark, input, default, cancellationToken);
+        var workflowExecutionContext = await CreateWorkflowExecutionContextAsync(scope.ServiceProvider, workflow, workflowState.Id, workflowState, bookmark, input, default, cancellationToken);
 
         if (bookmark != null) 
             workflowExecutionContext.ScheduleBookmark(bookmark);
@@ -116,6 +134,7 @@ public class WorkflowRunner : IWorkflowRunner
     private async Task<WorkflowExecutionContext> CreateWorkflowExecutionContextAsync(
         IServiceProvider serviceProvider,
         Workflow workflow,
+        string instanceId,
         WorkflowState? workflowState,
         Bookmark? bookmark,
         IDictionary<string, object>? input,
@@ -134,9 +153,8 @@ public class WorkflowRunner : IWorkflowRunner
         var scheduler = _schedulerFactory.CreateScheduler();
 
         // Setup a workflow execution context.
-        var id = workflowState?.Id ?? _identityGenerator.GenerateId();
         var correlationId = workflowState?.CorrelationId;
-        var workflowExecutionContext = new WorkflowExecutionContext(serviceProvider, id, correlationId, workflow, graph, scheduler, bookmark, input, executeActivityDelegate, cancellationToken);
+        var workflowExecutionContext = new WorkflowExecutionContext(serviceProvider, instanceId, correlationId, workflow, graph, scheduler, bookmark, input, executeActivityDelegate, cancellationToken);
 
         // Restore workflow execution context from state, if provided.
         if (workflowState != null) _workflowStateSerializer.DeserializeState(workflowExecutionContext, workflowState);

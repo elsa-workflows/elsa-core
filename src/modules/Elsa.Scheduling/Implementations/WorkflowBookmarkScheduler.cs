@@ -8,6 +8,7 @@ using Elsa.Jobs.Services;
 using Elsa.Scheduling.Activities;
 using Elsa.Scheduling.Jobs;
 using Elsa.Scheduling.Services;
+using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Persistence.Entities;
 using Elsa.Workflows.Persistence.Extensions;
 
@@ -23,7 +24,7 @@ public class WorkflowBookmarkScheduler : IWorkflowBookmarkScheduler
         _jobScheduler = jobScheduler;
     }
 
-    public async Task ScheduleBookmarksAsync(string workflowInstanceId, IEnumerable<WorkflowBookmark> bookmarks, CancellationToken cancellationToken = default)
+    public async Task ScheduleBookmarksAsync(string workflowInstanceId, IEnumerable<Bookmark> bookmarks, CancellationToken cancellationToken = default)
     {
         var bookmarkList = bookmarks.ToList();
 
@@ -56,7 +57,7 @@ public class WorkflowBookmarkScheduler : IWorkflowBookmarkScheduler
         }
     }
 
-    public async Task UnscheduleBookmarksAsync(string workflowInstanceId, IEnumerable<WorkflowBookmark> bookmarks, CancellationToken cancellationToken = default)
+    public async Task UnscheduleBookmarksAsync(string workflowInstanceId, IEnumerable<Bookmark> bookmarks, CancellationToken cancellationToken = default)
     {
         var bookmarkList = bookmarks.ToList();
         var delayBookmarks = bookmarkList.Filter<Delay>().ToList();

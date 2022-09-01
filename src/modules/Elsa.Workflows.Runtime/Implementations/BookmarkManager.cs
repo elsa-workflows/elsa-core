@@ -17,18 +17,20 @@ public class BookmarkManager : IBookmarkManager
         _eventPublisher = eventPublisher;
     }
 
-    public async Task DeleteBookmarksAsync(IEnumerable<WorkflowBookmark> bookmarks, CancellationToken cancellationToken = default)
+    public async Task DeleteBookmarksAsync(IEnumerable<WorkflowBookmark> workflowBookmarks, CancellationToken cancellationToken = default)
     {
-        var list = bookmarks.ToList();
+        var list = workflowBookmarks.ToList();
         var ids = list.Select(x => x.Id).ToList();
+        var bookmarks = list.Select(x => x.ToBookmark()).ToList();
         await _bookmarkStore.DeleteManyAsync(ids, cancellationToken);
-        await _eventPublisher.PublishAsync(new WorkflowBookmarksDeleted(list), cancellationToken);
+        await _eventPublisher.PublishAsync(new WorkflowBookmarksDeleted(bookmarks), cancellationToken);
     }
 
-    public async Task SaveBookmarksAsync(IEnumerable<WorkflowBookmark> bookmarks, CancellationToken cancellationToken = default)
+    public async Task SaveBookmarksAsync(IEnumerable<WorkflowBookmark> workflowBookmarks, CancellationToken cancellationToken = default)
     {
-        var list = bookmarks.ToList();
+        var list = workflowBookmarks.ToList();
+        var bookmarks = list.Select(x => x.ToBookmark()).ToList();
         await _bookmarkStore.SaveManyAsync(list, cancellationToken);
-        await _eventPublisher.PublishAsync(new WorkflowBookmarksSaved(list), cancellationToken);
+        await _eventPublisher.PublishAsync(new WorkflowBookmarksSaved(bookmarks), cancellationToken);
     }
 }
