@@ -1,36 +1,53 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Elsa.Runtime.Protos;
 using Proto;
+using Proto.Cluster;
+using Proto.Persistence;
+using Proto.Persistence.SnapshotStrategies;
 
 namespace Elsa.ProtoActor.Grains;
 
+using Persistence = Proto.Persistence.Persistence;
+
 public class BookmarkGrain : BookmarkGrainBase
 {
-    private readonly ICollection<StoredBookmark> _bookmarks = new List<StoredBookmark>();
+    private ICollection<StoredBookmark> _bookmarks = new List<StoredBookmark>();
+    private readonly Persistence _persistence;
 
-    public BookmarkGrain(IContext context) : base(context)
+    public BookmarkGrain(IProvider provider, IContext context) : base(context)
     {
+        _persistence = Persistence.WithEventSourcingAndSnapshotting(
+            provider,
+            provider,
+            BookmarkHash,
+            ApplyEvent,
+            ApplySnapshot,
+            new TimeStrategy(TimeSpan.FromSeconds(10)),
+            GetState);
     }
 
-    public override Task<Unit> Store(StoreBookmarkRequest request)
+    private string BookmarkHash => Context.ClusterIdentity()!.Identity;
+    public override async Task OnStarted() => await _persistence.RecoverStateAsync();
+
+    public override async Task<Unit> Store(StoreBookmarkRequest request)
     {
-        _bookmarks.Add(new StoredBookmark
+        var bookmark = new StoredBookmark
         {
             BookmarkId = request.BookmarkId,
             WorkflowInstanceId = request.WorkflowInstanceId
-        });
+        };
 
-        return Task.FromResult(new Unit());
+        await _persistence.PersistEventAsync(new BookmarkStored(bookmark));
+        return new Unit();
     }
 
-    public override Task<Unit> Remove(RemoveBookmarkRequest request)
+    public override async Task<Unit> Remove(RemoveBookmarkRequest request)
     {
-        var bookmark = _bookmarks.FirstOrDefault(x => x.BookmarkId == request.BookmarkId);
-        if (bookmark != null) _bookmarks.Remove(bookmark);
-
-        return Task.FromResult(new Unit());
+        await _persistence.PersistEventAsync(new BookmarkRemoved(request.BookmarkId));
+        return new Unit();
     }
 
     public override Task<ResolveBookmarkResponse> Resolve(ResolveBookmarkRequest request)
@@ -40,4 +57,33 @@ public class BookmarkGrain : BookmarkGrainBase
 
         return Task.FromResult(response);
     }
+
+    private void AddBookmark(StoredBookmark bookmark) => _bookmarks.Add(bookmark);
+
+    private void RemoveBookmark(string bookmarkId)
+    {
+        var bookmark = _bookmarks.FirstOrDefault(x => x.BookmarkId == bookmarkId);
+        if (bookmark != null) _bookmarks.Remove(bookmark);
+    }
+
+    private void ApplySnapshot(Snapshot snapshot)
+    {
+        var bookmarkSnapshot = (BookmarkSnapshot)snapshot.State;
+        _bookmarks = bookmarkSnapshot.Bookmarks;
+    }
+
+    private void ApplyEvent(Event @event)
+    {
+        switch (@event.Data)
+        {
+            case BookmarkStored bookmarkStored:
+                AddBookmark(bookmarkStored.Bookmark);
+                break;
+            case BookmarkRemoved bookmarkRemoved:
+                RemoveBookmark(bookmarkRemoved.BookmarkId);
+                break;
+        }
+    }
+
+    private object GetState() => new BookmarkSnapshot(_bookmarks);
 }

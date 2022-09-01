@@ -14,8 +14,7 @@ message StartWorkflowRequest {
 }
 
 message StartWorkflowResponse {
-  bool NotFound = 1;
-  bool Finished = 2;
+  RunWorkflowResult Result = 1;
 }
 
 message ResumeWorkflowRequest {
@@ -25,13 +24,12 @@ message ResumeWorkflowRequest {
 }
 
 message ResumeWorkflowResponse {
-  ResumeWorkflowStatus Status = 1;
+  RunWorkflowResult Result = 1;
 }
 
-enum ResumeWorkflowStatus {
+enum RunWorkflowResult {
   Finished = 0;
   Suspended = 1;
-  BookmarkNotFound = 2;
 }
 
 message StoreBookmarkRequest {
