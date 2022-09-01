@@ -90,8 +90,8 @@ public class ProtoActorFeature : FeatureBase
 
         // Actors.
         services
-            .AddSingleton(sp => new WorkflowGrainActor((context, _) => ActivatorUtilities.CreateInstance<WorkflowGrain>(sp, context)))
-            .AddSingleton(sp => new BookmarkGrainActor((context, _) => ActivatorUtilities.CreateInstance<BookmarkGrain>(sp, context)))
+            .AddTransient(sp => new WorkflowGrainActor((context, _) => ActivatorUtilities.CreateInstance<WorkflowGrain>(sp, context)))
+            .AddTransient(sp => new BookmarkGrainActor((context, _) => ActivatorUtilities.CreateInstance<BookmarkGrain>(sp, context)))
             ;
 
         // Client factory.
