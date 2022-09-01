@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
@@ -64,16 +65,37 @@ public class WorkflowGrain : WorkflowGrainBase
     {
         var input = request.Input?.Deserialize();
         var cancellationToken = Context.CancellationToken;
-        var workflowResult = await _workflowRunner.RunAsync(_workflow, _workflowState, input, cancellationToken);
+        var bookmark = _bookmarks.FirstOrDefault(x => x.Id == request.BookmarkId);
+
+        if (bookmark == null)
+            return new ResumeWorkflowResponse
+            {
+                Status = ResumeWorkflowStatus.BookmarkNotFound
+            };
+
+        var workflowResult = await _workflowRunner.RunAsync(_workflow, _workflowState, bookmark, input, cancellationToken);
         var finished = workflowResult.WorkflowState.Status == WorkflowStatus.Finished;
 
         _workflowState = workflowResult.WorkflowState;
+
+        await BurnBookmarkAsync(bookmark, cancellationToken);
         await StoreBookmarksAsync(workflowResult.Bookmarks, cancellationToken);
 
         return new ResumeWorkflowResponse
         {
-            Finished = finished
+            Status = finished ? ResumeWorkflowStatus.Finished : ResumeWorkflowStatus.Suspended
         };
+    }
+
+    private async Task BurnBookmarkAsync(Bookmark bookmark, CancellationToken cancellationToken)
+    {
+        var hash = bookmark.Hash;
+        var bookmarkClient = Context.GetBookmarkGrain(hash);
+        
+        await bookmarkClient.Remove(new RemoveBookmarkRequest
+        {
+            BookmarkId = bookmark.Id
+        }, cancellationToken);
     }
 
     private async Task StoreBookmarksAsync(ICollection<Bookmark> bookmarks, CancellationToken cancellationToken)

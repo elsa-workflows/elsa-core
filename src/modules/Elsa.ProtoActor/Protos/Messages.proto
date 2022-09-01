@@ -25,7 +25,13 @@ message ResumeWorkflowRequest {
 }
 
 message ResumeWorkflowResponse {
-  bool Finished = 1;
+  ResumeWorkflowStatus Status = 1;
+}
+
+enum ResumeWorkflowStatus {
+  Finished = 0;
+  Suspended = 1;
+  BookmarkNotFound = 2;
 }
 
 message StoreBookmarkRequest {
@@ -33,12 +39,20 @@ message StoreBookmarkRequest {
   string BookmarkId = 2;
 }
 
+message RemoveBookmarkRequest {
+  string BookmarkId = 1;
+}
+
 message ResolveBookmarkRequest {
 }
 
 message ResolveBookmarkResponse {
-  string BookmarkId = 1;
-  string WorkflowInstanceId = 2;
+  repeated StoredBookmark Bookmarks = 1;
+}
+
+message StoredBookmark {
+  string WorkflowInstanceId = 1;
+  string BookmarkId = 2;
 }
 
 message Json {

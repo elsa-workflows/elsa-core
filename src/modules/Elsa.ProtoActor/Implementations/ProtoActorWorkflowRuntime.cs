@@ -61,10 +61,15 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
     {
         var hash = _hasher.Hash(bookmarkPayload);
         var client = _grainClientFactory.CreateBookmarkGrainClient(hash);
-        var resolvedBookmark = await client.Resolve(new ResolveBookmarkRequest(), cancellationToken);
-        var workflowInstanceId = resolvedBookmark!.WorkflowInstanceId;
-        var resumeResult = await ResumeWorkflowAsync(workflowInstanceId, resolvedBookmark.BookmarkId, new ResumeWorkflowOptions(options.Input), cancellationToken);
+        var bookmarksResponse = await client.Resolve(new ResolveBookmarkRequest(), cancellationToken);
+        var bookmarks = bookmarksResponse!.Bookmarks;
 
+        foreach (var bookmark in bookmarks)
+        {
+            var workflowInstanceId = bookmark.WorkflowInstanceId;
+            var resumeResult = await ResumeWorkflowAsync(workflowInstanceId, bookmark.BookmarkId, new ResumeWorkflowOptions(options.Input), cancellationToken);    
+        }
+        
         return new TriggerWorkflowsResult();
     }
 }
