@@ -8,7 +8,7 @@ namespace Elsa.Workflows.Core.ActivityNodeResolvers;
 public class OutboundActivityPortResolver : IActivityPortResolver
 {
     public int Priority => -1;
-    public bool GetSupportsActivity(IActivity activity) => activity is Activity;
+    public bool GetSupportsActivity(IActivity activity) => true;
 
     public ValueTask<IEnumerable<IActivity>> GetPortsAsync(IActivity activity, CancellationToken cancellationToken = default) =>
         new(GetSinglePorts(activity)

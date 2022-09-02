@@ -1,3 +1,4 @@
+using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Persistence.Entities;
 
 namespace Elsa.Workflows.Runtime.Services;
@@ -7,6 +8,9 @@ namespace Elsa.Workflows.Runtime.Services;
 /// </summary>
 public interface IBookmarkManager
 {
-    Task DeleteBookmarksAsync(IEnumerable<WorkflowBookmark> workflowBookmarks, CancellationToken cancellationToken = default);
-    Task SaveBookmarksAsync(IEnumerable<WorkflowBookmark> workflowBookmarks, CancellationToken cancellationToken = default);
+    Task DeleteAsync(IEnumerable<Bookmark> bookmarks, CancellationToken cancellationToken = default);
+    Task SaveAsync(WorkflowInstance workflowInstance, IEnumerable<Bookmark> bookmarks, CancellationToken cancellationToken = default);
+    Task<Bookmark?> FindByIdAsync(string id, CancellationToken cancellationToken = default);
+    Task<IEnumerable<Bookmark>> FindManyByWorkflowInstanceIdAsync(string workflowInstanceId, CancellationToken cancellationToken = default);
+    Task<IEnumerable<WorkflowBookmark>> FindManyByHashAsync(string bookmarkName, string hash, CancellationToken cancellationToken = default);
 }
