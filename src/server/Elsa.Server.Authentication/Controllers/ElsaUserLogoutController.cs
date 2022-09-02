@@ -34,14 +34,16 @@ namespace Elsa.Server.Authentication.Controllers
         [HttpGet]
         public async Task Handle()
         {
-            if (ElsaAuthenticationContext.AuthenticationStyles.Contains(AuthenticationStyles.ServerManagedCookie))
-            {
-                await _httpContextAccessor.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            }
             if (ElsaAuthenticationContext.AuthenticationStyles.Contains(AuthenticationStyles.OpenIdConnect))
             {
                 await _httpContextAccessor.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
                 await _httpContextAccessor.HttpContext.SignOutAsync(OpenIdConnectDefaults.AuthenticationScheme);
+            }
+            if (ElsaAuthenticationContext.AuthenticationStyles.Contains(AuthenticationStyles.ServerManagedCookie))
+            {
+                await _httpContextAccessor.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+                _httpContextAccessor.HttpContext.Response.Redirect("/");
             }
         }
     }
