@@ -203,5 +203,29 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
         protected abstract Expression<Func<T, bool>> MapSpecification(ISpecification<T> specification);
 
         protected Expression<Func<T, bool>> AutoMapSpecification(ISpecification<T> specification) => specification.ToExpression();
+
+        public async Task<IEnumerable<TOut>> FindManyAsync<TOut>(ISpecification<T> specification, Expression<Func<T, TOut>> funcMapping, IOrderBy<T>? orderBy = null, IPaging? paging = null, CancellationToken cancellationToken = default) where TOut : class
+        {
+            var filter = MapSpecification(specification);
+
+            return await DoQuery(async dbContext =>
+            {
+                var dbSet = dbContext.Set<T>();
+                var queryable = dbSet.Where(filter);
+
+                if (orderBy != null)
+                {
+                    var orderByExpression = orderBy.OrderByExpression;
+                    queryable = orderBy.SortDirection == SortDirection.Ascending ? queryable.OrderBy(orderByExpression) : queryable.OrderByDescending(orderByExpression);
+                }
+
+                if (paging != null)
+                    queryable = queryable.Skip(paging.Skip).Take(paging.Take);
+
+                var queryableDto = queryable.Select(funcMapping).AsQueryable();
+                return await queryableDto.ToListAsync();
+
+            }, cancellationToken);
+        }
     }
 }
