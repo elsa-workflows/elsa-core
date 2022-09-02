@@ -1,3 +1,4 @@
+using Elsa.Server.Authentication.Contexts;
 using Elsa.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -33,8 +34,15 @@ namespace Elsa.Server.Authentication.Controllers
         [HttpGet]
         public async Task Handle()
         {
-            await _httpContextAccessor.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            await _httpContextAccessor.HttpContext.SignOutAsync(OpenIdConnectDefaults.AuthenticationScheme);
+            if (ElsaAuthenticationContext.AuthenticationStyles.Contains(AuthenticationStyles.ServerManagedCookie))
+            {
+                await _httpContextAccessor.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            }
+            if (ElsaAuthenticationContext.AuthenticationStyles.Contains(AuthenticationStyles.OpenIdConnect))
+            {
+                await _httpContextAccessor.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                await _httpContextAccessor.HttpContext.SignOutAsync(OpenIdConnectDefaults.AuthenticationScheme);
+            }
         }
     }
 }
