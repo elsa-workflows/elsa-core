@@ -15,18 +15,18 @@ public class ResumeWorkflowJob : Job
     {
     }
 
-    public ResumeWorkflowJob(string workflowInstanceId, Bookmark bookmark)
+    public ResumeWorkflowJob(string workflowInstanceId, string bookmarkId)
     {
         WorkflowInstanceId = workflowInstanceId;
-        Bookmark = bookmark;
+        BookmarkId = bookmarkId;
     }
 
     public string WorkflowInstanceId { get; set; } = default!;
-    public Bookmark Bookmark { get; set; } = default!;
+    public string BookmarkId { get; set; } = default!;
 
     protected override async ValueTask ExecuteAsync(JobExecutionContext context)
     {
-        var request = new DispatchWorkflowInstanceRequest(WorkflowInstanceId, Bookmark);
+        var request = new DispatchWorkflowInstanceRequest(WorkflowInstanceId, BookmarkId);
         var workflowDispatcher = context.GetRequiredService<IWorkflowDispatcher>();
         await workflowDispatcher.DispatchAsync(request, context.CancellationToken);
     }

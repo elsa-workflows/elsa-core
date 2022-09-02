@@ -9,7 +9,7 @@ public abstract class ElsaEndpointWithoutRequest<TResponse> : EndpointWithoutReq
         if (!EndpointSecurityOptions.SecurityIsEnabled)
             AllowAnonymous();
         else
-            Permissions((new[] { PermissionNames.All }).Concat(permissions).ToArray());
+            Permissions(new[] { PermissionNames.All }.Concat(permissions).ToArray());
     }
 }
 
@@ -20,7 +20,7 @@ public class ElsaEndpoint<TRequest, TResponse> : Endpoint<TRequest, TResponse> w
         if (!EndpointSecurityOptions.SecurityIsEnabled)
             AllowAnonymous();
         else
-            Permissions((new[] { PermissionNames.All }).Concat(permissions).ToArray());
+            Permissions(new[] { PermissionNames.All }.Concat(permissions).ToArray());
     }
 }
 
@@ -31,7 +31,7 @@ public class ElsaEndpoint<TRequest, TResponse, TMapper> : Endpoint<TRequest, TRe
         if (!EndpointSecurityOptions.SecurityIsEnabled)
             AllowAnonymous();
         else
-            Permissions((new[] { PermissionNames.All }).Concat(permissions).ToArray());
+            Permissions(new[] { PermissionNames.All }.Concat(permissions).ToArray());
     }
 }
 
@@ -42,6 +42,6 @@ public class ElsaEndpoint<TRequest> : Endpoint<TRequest> where TRequest : notnul
         if (!EndpointSecurityOptions.SecurityIsEnabled)
             AllowAnonymous();
         else
-            Permissions((new[] { PermissionNames.All }).Concat(permissions).ToArray());
+            Permissions(new[] { PermissionNames.All }.Concat(permissions).ToArray());
     }
 }

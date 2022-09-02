@@ -15,55 +15,80 @@ using Microsoft.Extensions.Logging;
 using Proto;
 using Proto.Cluster;
 using Proto.DependencyInjection;
+using Proto.Persistence;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
 
-namespace Elsa.ProtoActor.Configuration;
+namespace Elsa.ProtoActor.Features;
 
 [DependsOn(typeof(WorkflowRuntimeFeature))]
 public class ProtoActorFeature : FeatureBase
 {
     public ProtoActorFeature(IModule module) : base(module)
     {
+        ConfigureActorSystem = (sp, config) =>
+        {
+            if (WithDeveloperLogging) config.WithDeveloperLogging();
+            if (WithMetrics) config.WithMetrics();
+        };
+
+        ConfigureActorBuilder = (_, builder) => builder
+            .WithClusterName(ClusterName)
+            .UseLocalhostProvider(ClusterName, true)
+            ;
     }
 
     public override void Configure()
     {
-        // Configure runtime with ProtoActor workflow invoker.
-        Module.Configure<WorkflowRuntimeFeature>().WorkflowInvokerFactory =
-            sp => ActivatorUtilities.CreateInstance<ProtoActorWorkflowInvoker>(sp);
+        // Configure runtime with ProtoActor workflow runtime.
+        Module.Configure<WorkflowRuntimeFeature>().WorkflowRuntime = sp => ActivatorUtilities.CreateInstance<ProtoActorWorkflowRuntime>(sp);
     }
 
-    public ProtoActorFeature ConfigureProtoActorBuilder(Func<IServiceProvider, ProtoActorSystem> factory)
+    public string ClusterName { get; set; } = "elsa-cluster";
+    public bool WithDeveloperLogging { get; set; } = true;
+    public bool WithMetrics { get; set; } = true;
+    public Action<IServiceProvider, ActorSystemConfig> ConfigureActorSystem { get; set; }
+    public Action<IServiceProvider, ProtoActorBuilder> ConfigureActorBuilder { get; set; }
+    public Func<IServiceProvider, IProvider> PersistenceProvider { get; set; } = _ => new InMemoryProvider();
+
+    public override void ConfigureHostedServices()
     {
-        ProtoActorBuilderFactory = factory;
-        return this;
+        Services.AddHostedService<WorkflowServerHost>();
     }
-
-    //configure the default one
-    public Func<IServiceProvider, ProtoActorSystem> ProtoActorBuilderFactory { get; set; } =
-        _ => new ProtoActorBuilder().UseLocalhostProvider("elsa-cluster", true) .Build();
 
     public override void Apply()
     {
         var services = Services;
-        services.AddSingleton(ProtoActorBuilderFactory);
+        
+        // Register ProtoActorSystem.
+        services.AddSingleton(sp =>
+        {
+            var actorSystemConfig = ActorSystemConfig.Setup();
+            var actorBuilder = new ProtoActorBuilder();
+
+            ConfigureActorSystem(sp, actorSystemConfig);
+            ConfigureActorBuilder(sp, actorBuilder);
+
+            return actorBuilder.Build();
+        });
 
         // Logging.
         Log.SetLoggerFactory(LoggerFactory.Create(l => l.AddConsole().SetMinimumLevel(LogLevel.Warning)));
+        
+        // Persistence.
+        services.AddSingleton(PersistenceProvider);
 
         services.AddSingleton(sp =>
         {
             var protoActorSystem = sp.GetService<ProtoActorSystem>();
-
             var system = new ActorSystem(protoActorSystem!.ActorSystemConfig).WithServiceProvider(sp);
 
             var remoteConfig = protoActorSystem.RemoteConfig
                 .WithProtoMessages(MessagesReflection.Descriptor)
                 .WithProtoMessages(EmptyReflection.Descriptor);
 
-            var workflowDefinitionProps = system.DI().PropsFor<WorkflowDefinitionGrainActor>();
-            var workflowInstanceProps = system.DI().PropsFor<WorkflowInstanceGrainActor>();
+            var workflowGrainProps = system.DI().PropsFor<WorkflowGrainActor>();
+            var bookmarkGrainProps = system.DI().PropsFor<BookmarkGrainActor>();
 
             var clusterConfig =
                     ClusterConfig
@@ -72,8 +97,9 @@ public class ProtoActorFeature : FeatureBase
                         .WithActorRequestTimeout(protoActorSystem.ClusterConfigurationSettings.ActorRequestTimeout)
                         .WithActorActivationTimeout(protoActorSystem.ClusterConfigurationSettings.ActorActivationTimeout)
                         .WithActorSpawnTimeout(protoActorSystem.ClusterConfigurationSettings.ActorSpawnTimeout)
-                        .WithClusterKind(WorkflowDefinitionGrainActor.Kind, workflowDefinitionProps)
-                        .WithClusterKind(WorkflowInstanceGrainActor.Kind, workflowInstanceProps);
+                        .WithClusterKind(WorkflowGrainActor.Kind, workflowGrainProps)
+                        .WithClusterKind(BookmarkGrainActor.Kind, bookmarkGrainProps)
+                ;
 
             system
                 .WithRemote(remoteConfig)
@@ -87,17 +113,8 @@ public class ProtoActorFeature : FeatureBase
 
         // Actors.
         services
-            .AddSingleton(sp => new WorkflowDefinitionGrainActor((context, _) =>
-                ActivatorUtilities.CreateInstance<WorkflowDefinitionGrain>(sp, context)))
-            .AddSingleton(sp => new WorkflowInstanceGrainActor((context, _) =>
-                ActivatorUtilities.CreateInstance<WorkflowInstanceGrain>(sp, context)));
-
-        // Client factory.
-        services.AddSingleton<GrainClientFactory>();
-    }
-
-    public override void ConfigureHostedServices()
-    {
-        Services.AddHostedService<WorkflowServerHost>();
+            .AddTransient(sp => new WorkflowGrainActor((context, _) => ActivatorUtilities.CreateInstance<WorkflowGrain>(sp, context)))
+            .AddTransient(sp => new BookmarkGrainActor((context, _) => ActivatorUtilities.CreateInstance<BookmarkGrain>(sp, context)))
+            ;
     }
 }

@@ -29,7 +29,7 @@ public class Retract : ElsaEndpoint<Request, WorkflowDefinitionResponse, Workflo
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
-        var definition = (await _store.FindByDefinitionIdAsync(request.DefinitionId, VersionOptions.LatestOrPublished, cancellationToken)).FirstOrDefault();
+        var definition = (await _store.FindManyByDefinitionIdAsync(request.DefinitionId, VersionOptions.LatestOrPublished, cancellationToken)).FirstOrDefault();
 
         if (definition == null)
         {

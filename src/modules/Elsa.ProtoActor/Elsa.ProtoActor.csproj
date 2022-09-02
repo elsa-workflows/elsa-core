@@ -6,7 +6,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Google.Protobuf" Version="3.20.1" />
+        <PackageReference Include="Google.Protobuf" Version="3.21.5" />
         <PackageReference Include="Grpc.Tools" Version="2.45.0">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -16,14 +16,15 @@
     </ItemGroup>
 
     <ItemGroup Label="ProtoActor">
-        <PackageReference Include="Proto.Actor" Version="0.29.1-alpha.0.6" />
-        <PackageReference Include="Proto.Cluster" Version="0.29.1-alpha.0.6" />
-        <PackageReference Include="Proto.Cluster.CodeGen" Version="0.29.1-alpha.0.6" />
-        <PackageReference Include="Proto.Cluster.Consul" Version="0.29.1-alpha.0.6" />
-        <PackageReference Include="Proto.Cluster.Identity.Redis" Version="0.29.1-alpha.0.6" />
-        <PackageReference Include="Proto.Cluster.TestProvider" Version="0.29.1-alpha.0.6" />
-        <PackageReference Include="Proto.Remote" Version="0.29.1-alpha.0.6" />
-        <PackageReference Include="Proto.Remote.GrpcCore" Version="0.27.1-alpha.0.45" />
+        <PackageReference Include="Proto.Actor" Version="0.33.0" />
+        <PackageReference Include="Proto.Cluster" Version="0.33.0" />
+        <PackageReference Include="Proto.Cluster.CodeGen" Version="0.33.0" />
+        <PackageReference Include="Proto.Cluster.Consul" Version="0.33.0" />
+        <PackageReference Include="Proto.Cluster.Identity.Redis" Version="0.33.0" />
+        <PackageReference Include="Proto.Cluster.TestProvider" Version="0.33.0" />
+        <PackageReference Include="Proto.Persistence" Version="0.33.0" />
+        <PackageReference Include="Proto.Remote" Version="0.33.0" />
+<!--        <PackageReference Include="Proto.Remote.GrpcCore" Version="0.27.1-alpha.0.45" />-->
     </ItemGroup>
 
     <ItemGroup>

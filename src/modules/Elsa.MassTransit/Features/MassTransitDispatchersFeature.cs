@@ -17,6 +17,6 @@ public class MassTransitDispatchersFeature : FeatureBase
 
     public override void Configure()
     {
-        Module.Configure<WorkflowRuntimeFeature>(f => f.WorkflowDispatcherFactory = ActivatorUtilities.GetServiceOrCreateInstance<MassTransitWorkflowDispatcher>);
+        Module.Configure<WorkflowRuntimeFeature>(f => f.WorkflowDispatcher = ActivatorUtilities.GetServiceOrCreateInstance<MassTransitWorkflowDispatcher>);
     }
 }

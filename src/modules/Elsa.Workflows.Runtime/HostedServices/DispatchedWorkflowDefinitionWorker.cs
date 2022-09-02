@@ -9,16 +9,16 @@ namespace Elsa.Workflows.Runtime.HostedServices;
 public class DispatchedWorkflowDefinitionWorker : BackgroundService
 {
     private readonly ChannelReader<DispatchWorkflowDefinitionRequest> _channelReader;
-    private readonly IWorkflowInvoker _workflowInvoker;
+    private readonly IWorkflowRuntime _workflowRuntime;
     private readonly ILogger _logger;
 
     public DispatchedWorkflowDefinitionWorker(
         ChannelReader<DispatchWorkflowDefinitionRequest> channelReader,
-        IWorkflowInvoker workflowInvoker,
+        IWorkflowRuntime workflowRuntime,
         ILogger<DispatchedWorkflowDefinitionWorker> logger)
     {
         _channelReader = channelReader;
-        _workflowInvoker = workflowInvoker;
+        _workflowRuntime = workflowRuntime;
         _logger = logger;
     }
 
@@ -27,10 +27,11 @@ public class DispatchedWorkflowDefinitionWorker : BackgroundService
         await foreach (var (definitionId, versionOptions, input, correlationId) in _channelReader.ReadAllAsync(cancellationToken))
         {
             var request = new InvokeWorkflowDefinitionRequest(definitionId, versionOptions, input, correlationId);
+            var options = new StartWorkflowOptions(correlationId, input, versionOptions);
 
             try
             {
-                await _workflowInvoker.InvokeAsync(request, cancellationToken);
+                await _workflowRuntime.StartWorkflowAsync(request.DefinitionId, options, cancellationToken);
             }
             catch (Exception e)
             {

@@ -27,7 +27,7 @@ public class ListVersions : EndpointWithoutRequest
     {
         var definitionId = Route<string>("definitionId")!;
 
-        var result = await _store.FindByDefinitionIdAsync(definitionId, VersionOptions.All, ct);
+        var result = await _store.FindManyByDefinitionIdAsync(definitionId, VersionOptions.All, ct);
         if (!result.Any())
         {
             await SendNotFoundAsync(ct);

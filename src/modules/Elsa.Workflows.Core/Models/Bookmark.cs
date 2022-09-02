@@ -3,7 +3,7 @@ namespace Elsa.Workflows.Core.Models;
 public record Bookmark(
     string Id,
     string Name,
-    string? Hash,
+    string Hash,
     string? Data,
     string ActivityId,
     string ActivityInstanceId,

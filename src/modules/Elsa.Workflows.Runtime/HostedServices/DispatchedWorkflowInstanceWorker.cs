@@ -9,28 +9,28 @@ namespace Elsa.Workflows.Runtime.HostedServices;
 public class DispatchedWorkflowInstanceWorker : BackgroundService
 {
     private readonly ChannelReader<DispatchWorkflowInstanceRequest> _channelReader;
-    private readonly IWorkflowInvoker _workflowInvoker;
+    private readonly IWorkflowRuntime _workflowRuntime;
     private readonly ILogger _logger;
 
     public DispatchedWorkflowInstanceWorker(
         ChannelReader<DispatchWorkflowInstanceRequest> channelReader,
-        IWorkflowInvoker workflowInvoker,
+        IWorkflowRuntime workflowRuntime,
         ILogger<DispatchedWorkflowInstanceWorker> logger)
     {
         _channelReader = channelReader;
-        _workflowInvoker = workflowInvoker;
+        _workflowRuntime = workflowRuntime;
         _logger = logger;
     }
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        await foreach (var (instanceId, bookmark, input, correlationId) in _channelReader.ReadAllAsync(cancellationToken))
+        await foreach (var (instanceId, bookmarkId, input, correlationId) in _channelReader.ReadAllAsync(cancellationToken))
         {
-            var request = new InvokeWorkflowInstanceRequest(instanceId, bookmark, input, correlationId);
-
+            var options = new ResumeWorkflowOptions(input);
+            
             try
             {
-                await _workflowInvoker.InvokeAsync(request, cancellationToken);
+                await _workflowRuntime.ResumeWorkflowAsync(instanceId, bookmarkId, options, cancellationToken);
             }
             catch (Exception e)
             {

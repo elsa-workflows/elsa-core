@@ -8,12 +8,12 @@ namespace Elsa.Jobs.Activities.Handlers;
 
 public class JobExecutedHandler : INotificationHandler<JobExecuted>
 {
-    private readonly IWorkflowService _workflowService;
-
-    public JobExecutedHandler(IWorkflowService workflowService)
-    {
-        _workflowService = workflowService;
-    }
+    // private readonly IWorkflowService _workflowService;
+    //
+    // public JobExecutedHandler(IWorkflowService workflowService)
+    // {
+    //     _workflowService = workflowService;
+    // }
     
     public async Task HandleAsync(JobExecuted notification, CancellationToken cancellationToken)
     {
@@ -21,6 +21,6 @@ public class JobExecutedHandler : INotificationHandler<JobExecuted>
         var jobType = notification.Job.GetType();
         var jobTypeName = JobTypeNameHelper.GenerateTypeName(jobType);
         var bookmarkName = jobTypeName;
-        await _workflowService.DispatchStimulusAsync(bookmarkName, payload, cancellationToken: cancellationToken);
+        //await _workflowService.DispatchStimulusAsync(bookmarkName, payload, cancellationToken: cancellationToken);
     }
 }

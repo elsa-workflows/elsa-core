@@ -7,14 +7,13 @@ import {StudioService, AuthContext, EventBus} from "../../services";
 
 @Service()
 export class LoginPlugin implements Plugin {
-  private eventBus: EventBus;
-  private studioService: StudioService;
+  private readonly eventBus: EventBus;
+  private readonly studioService: StudioService;
 
   constructor() {
     this.eventBus = Container.get(EventBus);
     this.studioService = Container.get(StudioService);
     this.eventBus.on(EventTypes.HttpClient.ClientCreated, this.onHttpClientCreated);
-    this.eventBus.on(EventTypes.HttpClient.Unauthorized, this.onUnauthorized)
   }
 
   async initialize(): Promise<void> {
@@ -27,6 +26,7 @@ export class LoginPlugin implements Plugin {
 
   private onHttpClientCreated = async (e) => {
     const service: MiddlewareService = e.service;
+    const studioService = this.studioService;
 
     service.register({
       async onRequest(request) {
@@ -37,12 +37,16 @@ export class LoginPlugin implements Plugin {
           request.headers = {...request.headers, 'Authorization': `Bearer ${token}`};
 
         return request;
+      },
+
+      async onResponseError(error) {
+        debugger;
+        if (error.response.status !== 401)
+          return;
+
+        studioService.show(() => <elsa-login-page/>);
       }
     });
-  };
-
-  private onUnauthorized = async () => {
-    this.studioService.show(() => <elsa-login-page/>);
   };
 
 }

@@ -6,58 +6,51 @@ option csharp_namespace = "Elsa.Runtime.Protos";
 // Empty response type.
 message Unit {}
 
-message ExecuteWorkflowDefinitionRequest {
-  string id = 1;
+message StartWorkflowRequest {
+  string definitionId = 1;
   string versionOptions = 2;
-  optional Input input = 3;
-  optional string CorrelationId = 4;
+  optional string correlationId = 3;
+  optional Input input = 4;
 }
 
-message ExecuteWorkflowDefinitionResponse {
-  Json workflowState = 1;
-  repeated Bookmark bookmarks = 2;
+message StartWorkflowResponse {
+  RunWorkflowResult Result = 1;
 }
 
-message ExecuteExistingWorkflowInstanceRequest {
+message ResumeWorkflowRequest {
   string instanceId = 1;
-  optional Bookmark bookmark = 2;
+  string bookmarkId = 2;
   optional Input input = 3;
 }
 
-message ExecuteNewWorkflowInstanceRequest {
-  string definitionId = 1;
-  string versionOptions = 2;
-  optional Input input = 3;
-  optional string CorrelationId = 4;
+message ResumeWorkflowResponse {
+  RunWorkflowResult Result = 1;
 }
 
-message ExecuteWorkflowRequest {
-  string definitionId = 1;
-  string versionOptions = 2;
-  string workflowState = 3;
-  optional Bookmark bookmark = 4;
-  optional Input input = 5;
+enum RunWorkflowResult {
+  Finished = 0;
+  Suspended = 1;
 }
 
-message ExecuteWorkflowInstanceResponse {
-  Json workflowState = 1;
-  repeated Bookmark bookmarks = 2;
+message StoreBookmarksRequest {
+  string WorkflowInstanceId = 1;
+  repeated string BookmarkIds = 2;
 }
 
-message HandleStimulusRequest {
-  string activityTypeName = 1;
-  optional string hash = 2;
-  optional Input input = 3;
+message RemoveBookmarksByWorkflowRequest {
+  string WorkflowInstanceId = 1;
 }
 
-message Bookmark {
-  string id = 1;
-  string name = 2;
-  optional string hash = 3;
-  optional string payload = 4;
-  string activityId = 5;
-  string activityInstanceId = 6;
-  optional google.protobuf.StringValue callbackMethodName = 7;
+message ResolveBookmarksRequest {
+}
+
+message ResolveBookmarksResponse {
+  repeated StoredBookmark Bookmarks = 1;
+}
+
+message StoredBookmark {
+  string WorkflowInstanceId = 1;
+  string BookmarkId = 2;
 }
 
 message Json {

@@ -1,0 +1,82 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Elsa.ProtoActor.Extensions;
+using Elsa.Runtime.Protos;
+using Proto;
+using Proto.Cluster;
+using Proto.Persistence;
+using Proto.Persistence.SnapshotStrategies;
+
+namespace Elsa.ProtoActor.Grains;
+
+using Persistence = Proto.Persistence.Persistence;
+
+public class BookmarkGrain : BookmarkGrainBase
+{
+    private ICollection<StoredBookmark> _bookmarks = new List<StoredBookmark>();
+    private readonly Persistence _persistence;
+
+    public BookmarkGrain(IProvider provider, IContext context) : base(context)
+    {
+        _persistence = Persistence.WithEventSourcingAndSnapshotting(
+            provider,
+            provider,
+            BookmarkHash,
+            ApplyEvent,
+            ApplySnapshot,
+            new TimeStrategy(TimeSpan.FromSeconds(10)),
+            GetState);
+    }
+
+    private string BookmarkHash => Context.ClusterIdentity()!.Identity;
+    public override async Task OnStarted() => await _persistence.RecoverStateAsync();
+
+    public override async Task<Unit> Store(StoreBookmarksRequest request)
+    {
+        var bookmarks = request.BookmarkIds.Select(x => new StoredBookmark
+        {
+            WorkflowInstanceId = request.WorkflowInstanceId,
+            BookmarkId = x
+        }).ToList();
+
+        await _persistence.PersistEventAsync(new BookmarksStored(bookmarks));
+        return new Unit();
+    }
+
+    public override async Task<Unit> RemoveByWorkflow(RemoveBookmarksByWorkflowRequest request)
+    {
+        await _persistence.PersistEventAsync(new BookmarksRemovedByWorkflow(request.WorkflowInstanceId));
+        return new Unit();
+    }
+
+    public override Task<ResolveBookmarksResponse> Resolve(ResolveBookmarksRequest request)
+    {
+        var response = new ResolveBookmarksResponse();
+        response.Bookmarks.AddRange(_bookmarks);
+
+        return Task.FromResult(response);
+    }
+    
+    private void ApplySnapshot(Snapshot snapshot)
+    {
+        var bookmarkSnapshot = (BookmarkSnapshot)snapshot.State;
+        _bookmarks = bookmarkSnapshot.Bookmarks;
+    }
+
+    private void ApplyEvent(Event @event)
+    {
+        switch (@event.Data)
+        {
+            case BookmarksStored bookmarksStored:
+                _bookmarks.AddRange(bookmarksStored.Bookmarks);
+                break;
+            case BookmarksRemovedByWorkflow bookmarksRemovedByWorkflow:
+                _bookmarks.RemoveWhere(x => x.WorkflowInstanceId == bookmarksRemovedByWorkflow.WorkflowInstanceId);
+                break;
+        }
+    }
+
+    private object GetState() => new BookmarkSnapshot(_bookmarks);
+}

@@ -8,6 +8,7 @@ using Elsa.Jobs.Services;
 using Elsa.Scheduling.Activities;
 using Elsa.Scheduling.Jobs;
 using Elsa.Scheduling.Services;
+using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Persistence.Entities;
 using Elsa.Workflows.Persistence.Extensions;
 
@@ -23,7 +24,7 @@ public class WorkflowBookmarkScheduler : IWorkflowBookmarkScheduler
         _jobScheduler = jobScheduler;
     }
 
-    public async Task ScheduleBookmarksAsync(string workflowInstanceId, IEnumerable<WorkflowBookmark> bookmarks, CancellationToken cancellationToken = default)
+    public async Task ScheduleBookmarksAsync(string workflowInstanceId, IEnumerable<Bookmark> bookmarks, CancellationToken cancellationToken = default)
     {
         var bookmarkList = bookmarks.ToList();
 
@@ -40,7 +41,7 @@ public class WorkflowBookmarkScheduler : IWorkflowBookmarkScheduler
         {
             var payload = JsonSerializer.Deserialize<DelayPayload>(bookmark.Data!)!;
             var resumeAt = payload.ResumeAt;
-            var job = new ResumeWorkflowJob(workflowInstanceId, bookmark.ToBookmark());
+            var job = new ResumeWorkflowJob(workflowInstanceId, bookmark.Id);
             var schedule = new SpecificInstantSchedule(resumeAt);
             await _jobScheduler.ScheduleAsync(job, bookmark.Id, schedule, groupKeys, cancellationToken);
         }
@@ -50,13 +51,13 @@ public class WorkflowBookmarkScheduler : IWorkflowBookmarkScheduler
         {
             var payload = JsonSerializer.Deserialize<StartAtPayload>(bookmark.Data!)!;
             var executeAt = payload.ExecuteAt;
-            var job = new ResumeWorkflowJob(workflowInstanceId, bookmark.ToBookmark());
+            var job = new ResumeWorkflowJob(workflowInstanceId, bookmark.Id);
             var schedule = new SpecificInstantSchedule(executeAt);
             await _jobScheduler.ScheduleAsync(job, bookmark.Id, schedule, groupKeys, cancellationToken);
         }
     }
 
-    public async Task UnscheduleBookmarksAsync(string workflowInstanceId, IEnumerable<WorkflowBookmark> bookmarks, CancellationToken cancellationToken = default)
+    public async Task UnscheduleBookmarksAsync(string workflowInstanceId, IEnumerable<Bookmark> bookmarks, CancellationToken cancellationToken = default)
     {
         var bookmarkList = bookmarks.ToList();
         var delayBookmarks = bookmarkList.Filter<Delay>().ToList();

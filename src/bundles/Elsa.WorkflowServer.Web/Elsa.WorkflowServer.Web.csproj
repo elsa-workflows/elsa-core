@@ -28,4 +28,8 @@
       <ProjectReference Include="..\..\modules\Elsa.Workflows.Persistence.EntityFrameworkCore\Elsa.Workflows.Persistence.EntityFrameworkCore.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="Proto.Persistence.Sqlite" Version="0.33.0" />
+    </ItemGroup>
+
 </Project>

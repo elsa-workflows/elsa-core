@@ -37,7 +37,8 @@ public class ScheduleWorkflowsHostedService : BackgroundService
         foreach (var bookmarksGroup in groupedBookmarks)
         {
             var workflowInstanceId = bookmarksGroup.Key;
-            await _workflowBookmarkScheduler.ScheduleBookmarksAsync(workflowInstanceId, bookmarksGroup, cancellationToken);
+            var bookmarks = bookmarksGroup.Select(x => x.ToBookmark());
+            await _workflowBookmarkScheduler.ScheduleBookmarksAsync(workflowInstanceId, bookmarks, cancellationToken);
         }
     }
 }

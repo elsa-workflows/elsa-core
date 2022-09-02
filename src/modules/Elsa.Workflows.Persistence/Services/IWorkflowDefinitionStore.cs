@@ -12,9 +12,14 @@ public interface IWorkflowDefinitionStore
     Task<WorkflowDefinition?> FindByIdAsync(string id, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Finds a workflow definition by its logical definition ID and specified version options.
+    /// Finds all workflow definitions by its logical definition ID and specified version options.
     /// </summary>
-    Task<IEnumerable<WorkflowDefinition>> FindByDefinitionIdAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default);
+    Task<IEnumerable<WorkflowDefinition>> FindManyByDefinitionIdAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Finds the workflow definition by its logical definition ID and specified version options.
+    /// </summary>
+    Task<WorkflowDefinition?> FindByDefinitionIdAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Finds a workflow definition by name and specified version options.
