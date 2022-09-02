@@ -141,7 +141,7 @@ public class WorkflowRunner : IWorkflowRunner
         ExecuteActivityDelegate? executeActivityDelegate,
         CancellationToken cancellationToken)
     {
-        var root = workflow.Root;
+        var root = workflow;
 
         // Build graph.
         var graph = await _activityWalker.WalkAsync(root, cancellationToken);

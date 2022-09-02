@@ -33,7 +33,7 @@ public class Workflow : Composite, ICloneable
     {
     }
 
-    public static Workflow FromActivity(IActivity root) => new(root);
+    public static Workflow FromActivity(IActivity root) => root is Workflow workflow ? workflow : new(root);
 
     /// <summary>
     /// Creates a new memory register initialized with this workflow's variables.
