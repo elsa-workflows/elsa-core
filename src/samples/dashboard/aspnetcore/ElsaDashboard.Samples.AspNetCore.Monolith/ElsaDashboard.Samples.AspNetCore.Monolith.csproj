@@ -5,7 +5,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="6.0.8" />
         <PackageReference Include="System.Text.Encodings.Web" Version="6.0.0" />
     </ItemGroup>
 
