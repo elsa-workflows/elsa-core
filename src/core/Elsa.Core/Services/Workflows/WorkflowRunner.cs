@@ -52,7 +52,7 @@ namespace Elsa.Services.Workflows
             CancellationToken cancellationToken = default)
         {
             using var loggingScope = _logger.BeginScope(new Dictionary<string, object> { ["WorkflowInstanceId"] = workflowInstance.Id });
-            using var workflowExecutionScope = _serviceScopeFactory.CreateScope();
+            await using var workflowExecutionScope = _serviceScopeFactory.CreateAsyncScope();
 
             var input = await _workflowStorageService.LoadAsync(workflowInstance, cancellationToken);
 

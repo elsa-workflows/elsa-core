@@ -65,7 +65,7 @@ namespace Elsa.Metadata
 
             if (outcomesObj is Type providerType && typeof(IOutcomesProvider).IsAssignableFrom(providerType))
             {
-                using var scope = _serviceScopeFactory.CreateScope();
+                await using var scope = _serviceScopeFactory.CreateAsyncScope();
                 var provider = (IOutcomesProvider) ActivatorUtilities.GetServiceOrCreateInstance(scope.ServiceProvider, providerType);
                 var providedOutcomes = await provider.GetOutcomesAsync(cancellationToken);
                 return providedOutcomes.ToArray();
@@ -137,6 +137,7 @@ namespace Elsa.Metadata
                     (activityPropertyAttribute.Name ?? propertyInfo.Name).Pascalize(),
                     propertyInfo.PropertyType,
                     activityPropertyAttribute.Hint,
+                    activityPropertyAttribute.IsBrowsable,
                     activityPropertyAttribute.DefaultWorkflowStorageProvider,
                     activityPropertyAttribute.DisableWorkflowProviderSelection
                 );

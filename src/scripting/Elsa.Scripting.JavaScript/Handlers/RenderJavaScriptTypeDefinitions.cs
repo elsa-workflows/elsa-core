@@ -5,10 +5,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Scripting.JavaScript.Events;
+using Elsa.Scripting.JavaScript.Options;
 using Elsa.Scripting.JavaScript.Providers;
 using Elsa.Services;
 using Elsa.Services.Models;
 using MediatR;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Scripting.JavaScript.Handlers
 {
@@ -16,11 +18,13 @@ namespace Elsa.Scripting.JavaScript.Handlers
     {
         private readonly IActivityTypeService _activityTypeService;
         private readonly IEnumerable<IActivityTypeDefinitionRenderer> _activityTypeDefinitionRenderers;
+        private readonly ScriptOptions _scriptOptions;
 
-        public RenderJavaScriptTypeDefinitions(IActivityTypeService activityTypeService, IEnumerable<IActivityTypeDefinitionRenderer> activityTypeDefinitionRenderers)
+        public RenderJavaScriptTypeDefinitions(IActivityTypeService activityTypeService, IEnumerable<IActivityTypeDefinitionRenderer> activityTypeDefinitionRenderers, IOptions<ScriptOptions> scriptOptions)
         {
             _activityTypeService = activityTypeService;
             _activityTypeDefinitionRenderers = activityTypeDefinitionRenderers.OrderByDescending(x => x.Priority).ToList();
+            _scriptOptions = scriptOptions.Value;
         }
 
         public async Task Handle(RenderingTypeScriptDefinitions notification, CancellationToken cancellationToken)
@@ -32,7 +36,10 @@ namespace Elsa.Scripting.JavaScript.Handlers
             output.AppendLine("declare function setVariable(name: string, value?: any): void;");
             output.AppendLine("declare function getVariable(name: string): any;");
             output.AppendLine("declare function getTransientVariable(name: string): any;");
-            output.AppendLine("declare function getConfig(section: string): any;");
+
+            if (_scriptOptions.EnableConfigurationAccess)
+                output.AppendLine("declare function getConfig(section: string): any;");
+
             output.AppendLine("declare function isNullOrWhiteSpace(text: string): boolean;");
             output.AppendLine("declare function isNullOrEmpty(text: string): boolean;");
             output.AppendLine("declare function getWorkflowDefinitionIdByName(name: string): string;");
@@ -99,7 +106,7 @@ namespace Elsa.Scripting.JavaScript.Handlers
 
             async Task RenderActivityTypeDeclarationAsync(ActivityDefinition activityDefinition, ActivityType type, StringBuilder writer)
             {
-                var descriptor = await type.DescribeAsync();
+                var descriptor = await _activityTypeService.DescribeActivityType(type);
                 var renderer = _activityTypeDefinitionRenderers.First(x => x.GetCanRenderType(type));
                 await renderer.RenderTypeDeclarationAsync(notification, type, descriptor, activityDefinition, writer, cancellationToken);
             }
