@@ -62,7 +62,7 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
     {
         var hash = _hasher.Hash(bookmarkPayload);
         var client = _cluster.GetBookmarkGrain(hash);
-        var bookmarksResponse = await client.Resolve(new ResolveBookmarkRequest(), cancellationToken);
+        var bookmarksResponse = await client.Resolve(new ResolveBookmarksRequest(), cancellationToken);
         var bookmarks = bookmarksResponse!.Bookmarks;
 
         foreach (var bookmark in bookmarks)

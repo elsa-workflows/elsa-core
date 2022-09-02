@@ -11,7 +11,7 @@ service WorkflowGrain {
 }
 
 service BookmarkGrain {
-  rpc Store(StoreBookmarkRequest) returns (Unit);
-  rpc Remove(RemoveBookmarkRequest) returns (Unit);
-  rpc Resolve (ResolveBookmarkRequest) returns (ResolveBookmarkResponse);
+  rpc Store(StoreBookmarksRequest) returns (Unit);
+  rpc RemoveByWorkflow(RemoveBookmarksByWorkflowRequest) returns (Unit);
+  rpc Resolve (ResolveBookmarksRequest) returns (ResolveBookmarksResponse);
 }

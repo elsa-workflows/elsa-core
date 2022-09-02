@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Elsa.ProtoActor.Extensions;
 using Elsa.Runtime.Protos;
 using Proto;
 using Proto.Cluster;
@@ -32,40 +33,32 @@ public class BookmarkGrain : BookmarkGrainBase
     private string BookmarkHash => Context.ClusterIdentity()!.Identity;
     public override async Task OnStarted() => await _persistence.RecoverStateAsync();
 
-    public override async Task<Unit> Store(StoreBookmarkRequest request)
+    public override async Task<Unit> Store(StoreBookmarksRequest request)
     {
-        var bookmark = new StoredBookmark
+        var bookmarks = request.BookmarkIds.Select(x => new StoredBookmark
         {
-            BookmarkId = request.BookmarkId,
-            WorkflowInstanceId = request.WorkflowInstanceId
-        };
+            WorkflowInstanceId = request.WorkflowInstanceId,
+            BookmarkId = x
+        }).ToList();
 
-        await _persistence.PersistEventAsync(new BookmarkStored(bookmark));
+        await _persistence.PersistEventAsync(new BookmarksStored(bookmarks));
         return new Unit();
     }
 
-    public override async Task<Unit> Remove(RemoveBookmarkRequest request)
+    public override async Task<Unit> RemoveByWorkflow(RemoveBookmarksByWorkflowRequest request)
     {
-        await _persistence.PersistEventAsync(new BookmarkRemoved(request.BookmarkId));
+        await _persistence.PersistEventAsync(new BookmarksRemovedByWorkflow(request.WorkflowInstanceId));
         return new Unit();
     }
 
-    public override Task<ResolveBookmarkResponse> Resolve(ResolveBookmarkRequest request)
+    public override Task<ResolveBookmarksResponse> Resolve(ResolveBookmarksRequest request)
     {
-        var response = new ResolveBookmarkResponse();
+        var response = new ResolveBookmarksResponse();
         response.Bookmarks.AddRange(_bookmarks);
 
         return Task.FromResult(response);
     }
-
-    private void AddBookmark(StoredBookmark bookmark) => _bookmarks.Add(bookmark);
-
-    private void RemoveBookmark(string bookmarkId)
-    {
-        var bookmark = _bookmarks.FirstOrDefault(x => x.BookmarkId == bookmarkId);
-        if (bookmark != null) _bookmarks.Remove(bookmark);
-    }
-
+    
     private void ApplySnapshot(Snapshot snapshot)
     {
         var bookmarkSnapshot = (BookmarkSnapshot)snapshot.State;
@@ -76,11 +69,11 @@ public class BookmarkGrain : BookmarkGrainBase
     {
         switch (@event.Data)
         {
-            case BookmarkStored bookmarkStored:
-                AddBookmark(bookmarkStored.Bookmark);
+            case BookmarksStored bookmarksStored:
+                _bookmarks.AddRange(bookmarksStored.Bookmarks);
                 break;
-            case BookmarkRemoved bookmarkRemoved:
-                RemoveBookmark(bookmarkRemoved.BookmarkId);
+            case BookmarksRemovedByWorkflow bookmarksRemovedByWorkflow:
+                _bookmarks.RemoveWhere(x => x.WorkflowInstanceId == bookmarksRemovedByWorkflow.WorkflowInstanceId);
                 break;
         }
     }

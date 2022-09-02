@@ -32,19 +32,19 @@ enum RunWorkflowResult {
   Suspended = 1;
 }
 
-message StoreBookmarkRequest {
+message StoreBookmarksRequest {
   string WorkflowInstanceId = 1;
-  string BookmarkId = 2;
+  repeated string BookmarkIds = 2;
 }
 
-message RemoveBookmarkRequest {
-  string BookmarkId = 1;
+message RemoveBookmarksByWorkflowRequest {
+  string WorkflowInstanceId = 1;
 }
 
-message ResolveBookmarkRequest {
+message ResolveBookmarksRequest {
 }
 
-message ResolveBookmarkResponse {
+message ResolveBookmarksResponse {
   repeated StoredBookmark Bookmarks = 1;
 }
 
