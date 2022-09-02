@@ -15,7 +15,6 @@ using Elsa.Labels.EntityFrameworkCore.Extensions;
 using Elsa.Labels.EntityFrameworkCore.Sqlite;
 using Elsa.Labels.Extensions;
 using Elsa.Liquid.Extensions;
-using Elsa.ProtoActor.Extensions;
 using Elsa.Scheduling.Extensions;
 using Elsa.WorkflowContexts.Extensions;
 using Elsa.Workflows.Api.Extensions;
@@ -32,8 +31,6 @@ using Elsa.WorkflowServer.Web.Jobs;
 using FastEndpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.Data.Sqlite;
-using Proto.Persistence.Sqlite;
 using Event = Elsa.Workflows.Core.Activities.Event;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -68,7 +65,7 @@ services
             identity.CreateDefaultUser = true;
             identity.IdentityOptions = options => identitySection.Bind(options);
         })
-        .UseRuntime(runtime => runtime.UseProtoActor(proto => proto.PersistenceProvider = _ => new SqliteProvider(new SqliteConnectionStringBuilder(dbConnectionString))))
+        //.UseRuntime(runtime => runtime.UseProtoActor(proto => proto.PersistenceProvider = _ => new SqliteProvider(new SqliteConnectionStringBuilder(dbConnectionString))))
         .UseJobActivities()
         .UseScheduling()
         .UseWorkflowPersistence(p => p.UseEntityFrameworkCore(ef => ef.UseSqlite(dbConnectionString)))

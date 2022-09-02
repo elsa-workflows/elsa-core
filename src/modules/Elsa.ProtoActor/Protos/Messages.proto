@@ -42,6 +42,7 @@ message RemoveBookmarksByWorkflowRequest {
 }
 
 message ResolveBookmarksRequest {
+  string BookmarkName = 1;
 }
 
 message ResolveBookmarksResponse {
