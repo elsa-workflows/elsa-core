@@ -10,6 +10,7 @@ namespace Elsa.Server.Authentication.ExtensionOptions
 {
     public class ElsaOpenIdConnectOptions : AuthenticationOptions
     {  
+
         public string DefaultChallengeScheme { get; set; } = OpenIdConnectDefaults.AuthenticationScheme;
         public override string LoginPath { get; set;} = "/signin-oidc";
         public string Authority { get; set; }

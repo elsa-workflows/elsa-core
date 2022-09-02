@@ -70,6 +70,7 @@ export class ElsaStudioDashboard {
     }
 
     return (
+      
       <div class="elsa-h-screen elsa-bg-gray-100">
         <nav class="elsa-bg-gray-800">
           <div class="elsa-px-4 sm:elsa-px-6 lg:elsa-px-8">
@@ -86,9 +87,7 @@ export class ElsaStudioDashboard {
                   </div>
                 </div>
               </div>
-              <elsa-dropdown-button text={'ibrahim'} items={ddlitems} btnClass='elsa-bg-gray-800 elsa-text-gray-300 elsa-w-full   elsa-shadow-sm elsa-px-4 elsa-py-2 elsa-inline-flex elsa-justify-center elsa-text-sm elsa-font-medium'
-                                 origin={DropdownButtonOrigin.TopRight}
-                                 onItemSelected={e => alert('gg')}/>
+              <elsa-user-context-menu></elsa-user-context-menu>
             </div>
           </div>
 
@@ -105,19 +104,4 @@ export class ElsaStudioDashboard {
     );
   }
 }
-const renderIcon = function () {
-  return <svg class="elsa-mr-3 elsa-h-5 elsa-w-5 elsa-text-gray-400" fill="none" viewBox="0 0 24 24"
-              stroke="currentColor">
-    <circle cx="12" cy="12" r="10"/>
-    <polygon points="10 8 16 12 10 16 10 8"/>
-  </svg>
-};
-
-const ddlitems: Array<DropdownButtonItem> = [{'text':"log out" , value : "account/logout" }].map(x => {
-  const text = x ?? t('Filters.Status.All');
-  const item: DropdownButtonItem = {text: x.text, isSelected: false, value: x.value};
-
-  return item
-});
-
 Tunnel.injectProps(ElsaStudioDashboard, ['culture', 'basePath']);

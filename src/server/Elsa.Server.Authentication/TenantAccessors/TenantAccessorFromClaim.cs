@@ -21,8 +21,8 @@ namespace Elsa.Server.Authentication.TenantAccessors
 
         public async Task<string> GetTenantIdAsync(CancellationToken cancellationToken = default)
         {
-            var result = _httpContextAccessor.HttpContext.User.Claims.Where(x => x.Type == _calimName).FirstOrDefault();
-            return result.Value;
+            var result = _httpContextAccessor.HttpContext.User?.Claims.Where(x => x.Type == _calimName).FirstOrDefault() ?? null;
+            return result.Value ?? null;
         }
     }
 }

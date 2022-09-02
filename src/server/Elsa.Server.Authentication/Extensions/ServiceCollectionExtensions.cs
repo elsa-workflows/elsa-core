@@ -1,4 +1,5 @@
 using Elsa.Server.Api;
+using Elsa.Server.Authentication.Contexts;
 using Elsa.Server.Authentication.Controllers;
 using Elsa.Server.Authentication.ExtensionOptions;
 using Elsa.Server.Authentication.TenantAccessors;
@@ -27,13 +28,17 @@ namespace Elsa.Server.Authentication.Extensions
         {
             var elsaCookieOptions = new ElsaCookieOptions();
             configureOptions?.Invoke(elsaCookieOptions);
-            services.AddAuthentication(options => {
+            services.AddAuthentication(options =>
+            {
                 options.DefaultScheme = elsaCookieOptions.DefaultScheme;
-            }).AddCookie(option => {
+            }).AddCookie(option =>
+            {
                 option.LoginPath = elsaCookieOptions.LoginPath;
                 option.Cookie.SameSite = elsaCookieOptions.SameSite;
                 option.Cookie.Name = elsaCookieOptions.DefaultScheme;
             });
+
+            ElsaAuthenticationContext.AuthenticationStyles.ToList().Add(AuthenticationStyles.ServerManagedCookie);
             return services;
         }
         public static IServiceCollection AddElsaOpenIdConnect(this IServiceCollection services,string authenticationScheme , Action<ElsaOpenIdConnectOptions>? configureOptions = default)
@@ -60,6 +65,7 @@ namespace Elsa.Server.Authentication.Extensions
                 options.ClientSecret = elsaOpenIdConnectOptions.ClientSecret;
                 options.GetClaimsFromUserInfoEndpoint = elsaOpenIdConnectOptions.GetClaimsFromUserInfoEndpoint;
             });
+            ElsaAuthenticationContext.AuthenticationStyles.Add(AuthenticationStyles.OpenIdConnect);
             return services;
         }
         public static IServiceCollection AddElsaJwtBearerAuthentication(this IServiceCollection services, Action<ElsaJwtOptions>? configureOptions = default)
@@ -79,21 +85,26 @@ namespace Elsa.Server.Authentication.Extensions
                     ValidAudience= elsaJwtOptions.Audience,
                 };
             });
+            ElsaAuthenticationContext.AuthenticationStyles.ToList().Add(AuthenticationStyles.JwtBearerToken);
+            return services;
+        }
+        public static IServiceCollection AddElsaUserEndpoints(this IServiceCollection services)
+        {
+            services.AddControllers().AddApplicationPart((typeof(ElsaUserInfoController).Assembly));
             return services;
         }
         public static IServiceCollection AddTenantAccessorFromClaim(this IServiceCollection services,string claimName)
         {
             services.AddScoped<ITenantAccessor>(x=>new TenantAccessorFromClaim(x.GetService<IHttpContextAccessor>(), claimName));
-            return services;
-        }
-        public static IServiceCollection AddElsaUserEndpoints(this IServiceCollection services)
-        {
-            services.AddControllers().AddApplicationPart((typeof(ElsaAuthenticationController).Assembly));
+            ElsaAuthenticationContext.CurrentTenantAccessorName = nameof(TenantAccessorFromClaim);
+            ElsaAuthenticationContext.TenantAccessorKeyName = claimName;
             return services;
         }
         public static IServiceCollection AddTenantAccessorFromHeader(this IServiceCollection services, string header)
         {
             services.AddScoped<ITenantAccessor>(x => new TenantAccessorFromHeader(x.GetService<IHttpContextAccessor>(), header));
+            ElsaAuthenticationContext.CurrentTenantAccessorName = nameof(TenantAccessorFromHeader);
+            ElsaAuthenticationContext.TenantAccessorKeyName = header;
             return services;
         }
     }
