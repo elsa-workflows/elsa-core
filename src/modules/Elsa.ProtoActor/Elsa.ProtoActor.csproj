@@ -23,9 +23,8 @@
         <PackageReference Include="Proto.Cluster.Identity.Redis" Version="0.33.0" />
         <PackageReference Include="Proto.Cluster.TestProvider" Version="0.33.0" />
         <PackageReference Include="Proto.Persistence" Version="0.33.0" />
-        <PackageReference Include="Proto.Persistence.Sqlite" Version="0.33.0" />
         <PackageReference Include="Proto.Remote" Version="0.33.0" />
-        <PackageReference Include="Proto.Remote.GrpcCore" Version="0.27.1-alpha.0.45" />
+<!--        <PackageReference Include="Proto.Remote.GrpcCore" Version="0.27.1-alpha.0.45" />-->
     </ItemGroup>
 
     <ItemGroup>

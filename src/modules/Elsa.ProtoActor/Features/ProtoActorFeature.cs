@@ -10,14 +10,12 @@ using Elsa.ProtoActor.Implementations;
 using Elsa.Runtime.Protos;
 using Elsa.Workflows.Runtime.Features;
 using Google.Protobuf.WellKnownTypes;
-using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Proto;
 using Proto.Cluster;
 using Proto.DependencyInjection;
 using Proto.Persistence;
-using Proto.Persistence.Sqlite;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
 
