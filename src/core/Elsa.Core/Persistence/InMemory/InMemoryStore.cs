@@ -95,7 +95,15 @@ namespace Elsa.Persistence.InMemory
             var dictionary = await GetDictionaryAsync();
             return dictionary.Values.AsQueryable().FirstOrDefault(specification.ToExpression());
         }
-        
+
+        public async Task<IEnumerable<TOut>> FindManyAsync<TOut>(ISpecification<T> specification
+            , System.Linq.Expressions.Expression<System.Func<T, TOut>> funcMapping
+            , IOrderBy<T>? orderBy = null, IPaging? paging = null, CancellationToken cancellationToken = default) where TOut : class
+        {
+            var dictionary = await GetDictionaryAsync();
+            var query = dictionary.Values.AsQueryable().Apply(specification).Apply(orderBy).Apply(paging);
+            return query.Select(funcMapping).ToList();
+        }
         private async Task<IDictionary<string, T>> GetDictionaryAsync() => await MemoryCache.GetOrCreateAsync(CacheKey, _ => Task.FromResult(new ConcurrentDictionary<string, T>()));
         private void SetDictionary(IDictionary<string, T> dictionary) => MemoryCache.Set(CacheKey, dictionary);
     }
