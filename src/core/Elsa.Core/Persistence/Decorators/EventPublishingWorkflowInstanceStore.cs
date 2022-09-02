@@ -58,11 +58,12 @@ namespace Elsa.Persistence.Decorators
 
         public async Task<int> DeleteManyAsync(ISpecification<WorkflowInstance> specification, CancellationToken cancellationToken = default)
         {
-            var instances = await FindManyAsync(specification, cancellationToken: cancellationToken).ToList();
+            var instancesId = await FindManyAsync<string>(specification, (wf)=> wf.Id,cancellationToken: cancellationToken).ToList();
             var count = await _store.DeleteManyAsync(specification, cancellationToken);
 
-            if (instances.Any())
+            if (instancesId.Any())
             {
+                var instances = instancesId.Select(id => new WorkflowInstance() { Id = id });
                 foreach (var instance in instances)
                     await _mediator.Publish(new WorkflowInstanceDeleted(instance), cancellationToken);
 
