@@ -51,6 +51,7 @@ public class ProtoActorFeature : FeatureBase
     public bool WithMetrics { get; set; } = true;
     public Action<IServiceProvider, ActorSystemConfig> ConfigureActorSystem { get; set; }
     public Action<IServiceProvider, ProtoActorBuilder> ConfigureActorBuilder { get; set; }
+    public Func<IServiceProvider, IProvider> PersistenceProvider { get; set; } = _ => new InMemoryProvider();
 
     public override void ConfigureHostedServices()
     {
@@ -77,7 +78,7 @@ public class ProtoActorFeature : FeatureBase
         Log.SetLoggerFactory(LoggerFactory.Create(l => l.AddConsole().SetMinimumLevel(LogLevel.Warning)));
         
         // Persistence.
-        services.AddSingleton<IProvider, SqliteProvider>(sp => new SqliteProvider(new SqliteConnectionStringBuilder("Data Source=elsa.sqlite.db;Cache=Shared;")));
+        services.AddSingleton(PersistenceProvider);
 
         services.AddSingleton(sp =>
         {
