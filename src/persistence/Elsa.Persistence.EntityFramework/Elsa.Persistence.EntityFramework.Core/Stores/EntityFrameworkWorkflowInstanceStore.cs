@@ -45,10 +45,9 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
 
         public override async Task<int> DeleteManyAsync(ISpecification<WorkflowInstance> specification, CancellationToken cancellationToken = default)
         {
-            var workflowInstances = (await FindManyAsync(specification, cancellationToken: cancellationToken)).ToList();
-            var workflowInstanceIds = workflowInstances.Select(x => x.Id).ToArray();
+            var workflowInstanceIds = (await FindManyAsync<string>(specification,(wf)=> wf.Id,  cancellationToken: cancellationToken)).ToList();
             await DeleteManyByIdsAsync(workflowInstanceIds, cancellationToken);
-            return workflowInstances.Count;
+            return workflowInstanceIds.Count;
         }
 
         public async Task DeleteManyByIdsAsync(IEnumerable<string> ids, CancellationToken cancellationToken = default)
