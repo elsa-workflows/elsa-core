@@ -66,19 +66,9 @@ public class HttpTriggerMiddleware
         );
 
         var input = new Dictionary<string, object>() { [HttpEndpoint.InputKey] = requestModel };
-        // var stimulus = Stimulus.Standard<HttpEndpoint>(hash, input);
-        // var executionResults = (await workflowService.ExecuteStimulusAsync(stimulus, abortToken)).ToList();
-        //
-        // if (!executionResults.Any())
-        // {
-        //     await _next(httpContext);
-        //     return;
-        // }
-
-        //await WriteResponseAsync(httpContext, executionResults, abortToken);
     }
 
-    private static async Task WriteResponseAsync(HttpContext httpContext, IEnumerable<ExecuteWorkflowInstructionResult> executionResults, CancellationToken cancellationToken)
+    private static async Task WriteResponseAsync(HttpContext httpContext, CancellationToken cancellationToken)
     {
         var response = httpContext.Response;
 
@@ -89,7 +79,7 @@ public class HttpTriggerMiddleware
 
             var model = new
             {
-                workflowInstanceIds = executionResults.Select(x => x.RunWorkflowResult.WorkflowState.Id).ToArray()
+                workflowInstanceIds = Array.Empty<string>(),
             };
 
             var json = JsonSerializer.Serialize(model);
