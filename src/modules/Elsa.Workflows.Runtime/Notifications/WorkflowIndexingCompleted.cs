@@ -1,6 +1,7 @@
 using Elsa.Mediator.Services;
+using Elsa.Workflows.Runtime.Models;
 
-namespace Elsa.Workflows.Runtime.Models;
+namespace Elsa.Workflows.Runtime.Notifications;
 
 /// <summary>
 /// Published when the all workflows' triggers have been indexed.

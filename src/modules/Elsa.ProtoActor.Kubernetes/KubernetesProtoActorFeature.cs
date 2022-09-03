@@ -2,7 +2,6 @@ using System;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
-using Elsa.ProtoActor.Common;
 using Elsa.ProtoActor.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;

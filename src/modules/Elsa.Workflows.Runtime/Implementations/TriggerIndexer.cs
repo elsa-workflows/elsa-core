@@ -11,6 +11,7 @@ using Elsa.Workflows.Persistence.Comparers;
 using Elsa.Workflows.Persistence.Entities;
 using Elsa.Workflows.Persistence.Services;
 using Elsa.Workflows.Runtime.Models;
+using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Runtime.Services;
 using Microsoft.Extensions.Logging;
 using Open.Linq.AsyncExtensions;

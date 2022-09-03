@@ -105,7 +105,7 @@ activityRegistryPopulator.PopulateRegistryAsync(typeof(JobActivityProvider));
 // Configure workflow engine execution pipeline.
 serviceProvider.ConfigureDefaultWorkflowExecutionPipeline(pipeline =>
     pipeline
-        .UseWorkflowExecutionEvents()
+        .UsePersistentVariables()
         .UseWorkflowContexts()
         .UseStackBasedActivityScheduler()
 );

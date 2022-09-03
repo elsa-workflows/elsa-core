@@ -1,8 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-
-namespace Elsa.ProtoActor.Extensions;
+namespace Elsa.Common.Extensions;
 
 public static class CollectionExtensions
 {

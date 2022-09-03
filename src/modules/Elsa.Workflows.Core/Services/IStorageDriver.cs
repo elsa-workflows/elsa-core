@@ -1,3 +1,4 @@
+using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.State;
 
 namespace Elsa.Workflows.Core.Services;
@@ -14,4 +15,4 @@ public interface IStorageDriver
     ValueTask DeleteAsync(string id, DataDriveContext context);
 }
 
-public record DataDriveContext(WorkflowState WorkflowState, CancellationToken CancellationToken);
+public record DataDriveContext(WorkflowExecutionContext WorkflowExecutionContext, CancellationToken CancellationToken);

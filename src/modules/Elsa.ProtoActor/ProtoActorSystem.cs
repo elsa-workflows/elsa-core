@@ -1,10 +1,10 @@
-﻿using Elsa.ProtoActor.Common.Options;
+﻿using Elsa.ProtoActor.Options;
 using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Identity;
 using Proto.Remote.GrpcNet;
 
-namespace Elsa.ProtoActor.Common;
+namespace Elsa.ProtoActor;
 
 public class ProtoActorSystem
 {

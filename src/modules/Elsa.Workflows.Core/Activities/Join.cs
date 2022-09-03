@@ -1,3 +1,4 @@
+using Elsa.Common.Extensions;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 
@@ -76,9 +77,8 @@ public class Join : Activity
         var ancestors = joinNode.Ancestors().Select(x => x.Activity.Id);
         var siblingsAndCousins = joinNode.SiblingsAndCousins().Select(x => x.Activity.Id);
         var activitiesInPath = ancestors.Concat(siblingsAndCousins).ToHashSet();
-        var bookmarksToRemove = workflowExecutionContext.Bookmarks.Where(x => activitiesInPath.Contains(x.ActivityId)).ToList();
-
+        
         // Remove any bookmarks of any ancestors.
-        workflowExecutionContext.UnregisterBookmarks(bookmarksToRemove);
+        workflowExecutionContext.Bookmarks.RemoveWhere(x => activitiesInPath.Contains(x.ActivityId));
     }
 }

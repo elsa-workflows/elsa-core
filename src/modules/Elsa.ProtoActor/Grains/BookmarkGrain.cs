@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Elsa.Common.Extensions;
 using Elsa.ProtoActor.Extensions;
 using Elsa.Runtime.Protos;
 using Proto;

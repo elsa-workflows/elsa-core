@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using Elsa.Common.Extensions;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,7 +15,6 @@ public class WorkflowExecutionContext
     private readonly IServiceProvider _serviceProvider;
     private readonly IList<ActivityNode> _nodes;
     private readonly IList<ActivityCompletionCallbackEntry> _completionCallbackEntries = new List<ActivityCompletionCallbackEntry>();
-    private readonly List<Bookmark> _bookmarks = new();
 
     public WorkflowExecutionContext(
         IServiceProvider serviceProvider,
@@ -23,7 +23,6 @@ public class WorkflowExecutionContext
         Workflow workflow,
         ActivityNode graph,
         IActivityScheduler scheduler,
-        Bookmark? bookmark,
         IDictionary<string, object>? input,
         ExecuteActivityDelegate? executeDelegate,
         CancellationToken cancellationToken)
@@ -36,7 +35,6 @@ public class WorkflowExecutionContext
         CorrelationId = correlationId;
         _nodes = graph.Flatten().Distinct().ToList();
         Scheduler = scheduler;
-        Bookmark = bookmark;
         Input = input ?? new Dictionary<string, object>();
         ExecuteDelegate = executeDelegate;
         CancellationToken = cancellationToken;
@@ -56,7 +54,7 @@ public class WorkflowExecutionContext
     public IDictionary<string, ActivityNode> NodeIdLookup { get; }
     public IDictionary<IActivity, ActivityNode> NodeActivityLookup { get; }
     public IActivityScheduler Scheduler { get; }
-    public Bookmark? Bookmark { get; }
+    public ICollection<Bookmark> Bookmarks { get; set; } = new List<Bookmark>();
     public IDictionary<string, object> Input { get; }
 
     /// <summary>
@@ -72,7 +70,6 @@ public class WorkflowExecutionContext
 
     public ExecuteActivityDelegate? ExecuteDelegate { get; set; }
     public CancellationToken CancellationToken { get; }
-    public ICollection<Bookmark> Bookmarks => new ReadOnlyCollection<Bookmark>(_bookmarks);
     public ICollection<ActivityCompletionCallbackEntry> CompletionCallbacks => new ReadOnlyCollection<ActivityCompletionCallbackEntry>(_completionCallbackEntries);
     public ICollection<ActivityExecutionContext> ActivityExecutionContexts { get; set; } = new List<ActivityExecutionContext>();
 
@@ -127,23 +124,7 @@ public class WorkflowExecutionContext
         return value;
     }
 
-    public void RegisterBookmarks(IEnumerable<Bookmark> bookmarks) => _bookmarks.AddRange(bookmarks);
-
-    public void UnregisterBookmarks(IEnumerable<Bookmark> bookmarks)
-    {
-        foreach (var bookmark in bookmarks)
-            _bookmarks.Remove(bookmark);
-    }
-
-    /// <summary>
-    /// Clears all bookmarks from all <see cref="ActivityExecutionContexts"/>.
-    /// </summary>
-    public void ClearBookmarks()
-    {
-        _bookmarks.Clear();
-        foreach (var activityExecutionContext in ActivityExecutionContexts) activityExecutionContext.ClearBookmarks();
-    }
-
+    
     public void TransitionTo(WorkflowSubStatus subStatus)
     {
         var targetStatus = GetMainStatus(subStatus);

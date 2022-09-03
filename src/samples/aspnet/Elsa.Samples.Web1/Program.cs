@@ -61,9 +61,8 @@ var serviceProvider = app.Services;
 // Configure workflow engine execution pipeline.
 serviceProvider.ConfigureDefaultWorkflowExecutionPipeline(pipeline =>
     pipeline
-        .UseWorkflowExecutionEvents()
         .UseWorkflowExecutionLogPersistence()
-        .UsePersistence()
+        .UsePersistentVariables()
         .UseWorkflowContexts()
         .UseStackBasedActivityScheduler()
 );

@@ -40,11 +40,11 @@ public class ForkTests
         var result = await _workflowRunner.RunAsync(workflow);
         
         // Collect one of the bookmarks to resume the workflow.
-        var bookmark = result.Bookmarks.FirstOrDefault(x => x.ActivityId == "Event2");
+        var bookmark = result.WorkflowState.Bookmarks.FirstOrDefault(x => x.ActivityId == "Event2");
         Assert.NotNull(bookmark);
         
         // Resume the workflow.
-        await _workflowRunner.RunAsync(workflow, result.WorkflowState, bookmark);
+        await _workflowRunner.RunAsync(workflow, result.WorkflowState, bookmark!.Id);
         
         // Verify output.
         var lines = _capturingTextWriter.Lines.ToList();

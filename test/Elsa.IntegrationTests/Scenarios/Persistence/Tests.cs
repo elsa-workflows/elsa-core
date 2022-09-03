@@ -27,7 +27,7 @@ public class WorkflowInstancePersistenceTests
         _workflowBookmarkStore = services.GetRequiredService<MemoryStore<WorkflowBookmark>>();
         
         services.ConfigureDefaultWorkflowExecutionPipeline(pipeline => pipeline
-            .UsePersistence()
+            .UsePersistentVariables()
             .UseStackBasedActivityScheduler());
     }
 

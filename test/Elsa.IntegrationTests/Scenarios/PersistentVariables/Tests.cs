@@ -28,7 +28,7 @@ public class WorkflowInstancePersistenceTests
         _workflowRunner = services.GetRequiredService<IWorkflowRunner>();
 
         services.ConfigureDefaultWorkflowExecutionPipeline(pipeline => pipeline
-            .UsePersistence()
+            .UsePersistentVariables()
             .UseStackBasedActivityScheduler());
     }
 
@@ -63,9 +63,9 @@ public class WorkflowInstancePersistenceTests
             // Run/resume the workflow.
             var result = workflowState == null 
                 ? await _workflowRunner.RunAsync(workflow) 
-                : await _workflowRunner.RunAsync(workflow, workflowState, bookmark);
+                : await _workflowRunner.RunAsync(workflow, workflowState, bookmark!.Id);
 
-            bookmark = result.Bookmarks.FirstOrDefault();
+            bookmark = result.WorkflowState.Bookmarks.FirstOrDefault();
 
             if (bookmark == null)
                 break;

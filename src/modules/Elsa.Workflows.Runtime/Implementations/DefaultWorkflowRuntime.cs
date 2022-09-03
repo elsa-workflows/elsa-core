@@ -1,12 +1,9 @@
-using Elsa.Common.Services;
 using Elsa.Mediator.Services;
 using Elsa.Models;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Core.State;
-using Elsa.Workflows.Persistence.Entities;
-using Elsa.Workflows.Persistence.Services;
 using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Runtime.Services;
@@ -18,28 +15,25 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
 {
     private readonly IWorkflowRunner _workflowRunner;
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
-    private readonly IWorkflowInstanceStore _workflowInstanceStore;
-    private readonly IBookmarkManager _bookmarkManager;
+    private readonly IWorkflowStateStore _workflowStateStore;
+    private readonly IBookmarkStore _bookmarkStore;
     private readonly IHasher _hasher;
     private readonly IEventPublisher _eventPublisher;
-    private readonly ISystemClock _systemClock;
 
     public DefaultWorkflowRuntime(
         IWorkflowRunner workflowRunner,
         IWorkflowDefinitionService workflowDefinitionService,
-        IWorkflowInstanceStore workflowInstanceStore,
-        IBookmarkManager bookmarkManager,
+        IWorkflowStateStore workflowStateStore,
+        IBookmarkStore bookmarkStore,
         IHasher hasher,
-        IEventPublisher eventPublisher,
-        ISystemClock systemClock)
+        IEventPublisher eventPublisher)
     {
         _workflowRunner = workflowRunner;
         _workflowDefinitionService = workflowDefinitionService;
-        _workflowInstanceStore = workflowInstanceStore;
-        _bookmarkManager = bookmarkManager;
+        _workflowStateStore = workflowStateStore;
+        _bookmarkStore = bookmarkStore;
         _hasher = hasher;
         _eventPublisher = eventPublisher;
-        _systemClock = systemClock;
     }
 
     public async Task<StartWorkflowResult> StartWorkflowAsync(string definitionId, StartWorkflowOptions options, CancellationToken cancellationToken = default)
@@ -56,116 +50,86 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         var workflowState = workflowResult.WorkflowState;
         var finished = workflowResult.WorkflowState.Status == WorkflowStatus.Finished;
 
-        var workflowInstance = await SaveWorkflowInstanceAsync(workflowDefinition, workflowState, cancellationToken);
-        await UpdateBookmarksAsync(workflowInstance, new List<Bookmark>(), workflowResult.Bookmarks, cancellationToken);
+        await SaveWorkflowStateAsync(workflowState, cancellationToken);
+        await UpdateBookmarksAsync(workflowState, new List<Bookmark>(), workflowResult.WorkflowState.Bookmarks, cancellationToken);
 
-        return new StartWorkflowResult(workflowInstance.Id);
+        return new StartWorkflowResult(workflowState.Id);
     }
 
     public async Task<ResumeWorkflowResult> ResumeWorkflowAsync(string instanceId, string bookmarkId, ResumeWorkflowOptions options, CancellationToken cancellationToken = default)
     {
-        var workflowInstance = await _workflowInstanceStore.FindByIdAsync(instanceId, cancellationToken);
+        var workflowState = await _workflowStateStore.LoadAsync(instanceId, cancellationToken);
 
-        if (workflowInstance == null)
+        if (workflowState == null)
             throw new Exception($"Workflow instance {instanceId} not found");
 
-        var workflowDefinition = await _workflowDefinitionService.FindAsync(workflowInstance.DefinitionId, VersionOptions.SpecificVersion(workflowInstance.Version), cancellationToken);
+        var identity = workflowState.WorkflowIdentity;
+        var workflowDefinition = await _workflowDefinitionService.FindAsync(identity.DefinitionId, VersionOptions.SpecificVersion(identity.Version), cancellationToken);
 
         if (workflowDefinition == null)
             throw new Exception("Specified workflow definition and version does not exist");
 
         var input = options.Input;
+        var existingStoredBookmarks = await _bookmarkStore.LoadAsync(workflowState.Id, cancellationToken).AsTask().ToList();
 
-        var existingBookmarks = await _bookmarkManager.FindManyByWorkflowInstanceIdAsync(workflowInstance.Id, cancellationToken).ToList();
-        var bookmark = existingBookmarks.FirstOrDefault(x => x.Id == bookmarkId);
-
-        if (bookmark == null)
-            throw new Exception("Bookmark not found");
+        var existingBookmarks = existingStoredBookmarks
+            .Select(storedBookmark => workflowState.Bookmarks.FirstOrDefault(bookmark => bookmark.Id == storedBookmark.BookmarkId))
+            .Where(x => x != null)
+            .Select(x => x!)
+            .ToList();
 
         var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
-        var workflowState = workflowInstance.WorkflowState;
-        var workflowResult = await _workflowRunner.RunAsync(workflow, workflowState, bookmark, input, cancellationToken);
+        var workflowResult = await _workflowRunner.RunAsync(workflow, workflowState, bookmarkId, input, cancellationToken);
         var finished = workflowResult.WorkflowState.Status == WorkflowStatus.Finished;
 
-        workflowInstance = await SaveWorkflowInstanceAsync(workflowDefinition, workflowState, cancellationToken);
-        await UpdateBookmarksAsync(workflowInstance, existingBookmarks, workflowResult.Bookmarks, cancellationToken);
+        await SaveWorkflowStateAsync(workflowState, cancellationToken);
+        await UpdateBookmarksAsync(workflowState, existingBookmarks, workflowResult.WorkflowState.Bookmarks, cancellationToken);
 
         return new ResumeWorkflowResult();
     }
 
-    public async Task<TriggerWorkflowsResult> TriggerWorkflowsAsync(string bookmarkName, object bookmarkPayload, TriggerWorkflowsOptions options, CancellationToken cancellationToken = default)
+    public async Task<TriggerWorkflowsResult> TriggerWorkflowsAsync(string activityTypeName, object bookmarkPayload, TriggerWorkflowsOptions options, CancellationToken cancellationToken = default)
     {
         var hash = _hasher.Hash(bookmarkPayload);
-        var bookmarks = await _bookmarkManager.FindManyByHashAsync(bookmarkName, hash, cancellationToken);
+        var bookmarks = await _bookmarkStore.LoadAsync(activityTypeName, hash, cancellationToken);
 
         foreach (var bookmark in bookmarks)
         {
             var workflowInstanceId = bookmark.WorkflowInstanceId;
-            var resumeResult = await ResumeWorkflowAsync(workflowInstanceId, bookmark.Id, new ResumeWorkflowOptions(options.Input), cancellationToken);    
+            var resumeResult = await ResumeWorkflowAsync(workflowInstanceId, bookmark.BookmarkId, new ResumeWorkflowOptions(options.Input), cancellationToken);
         }
 
         return new TriggerWorkflowsResult();
     }
 
-    private async Task<WorkflowInstance> SaveWorkflowInstanceAsync(WorkflowDefinition workflowDefinition, WorkflowState workflowState, CancellationToken cancellationToken)
+    private async Task SaveWorkflowStateAsync(WorkflowState workflowState, CancellationToken cancellationToken) => await _workflowStateStore.SaveAsync(workflowState.Id, workflowState, cancellationToken);
+
+    private async Task UpdateBookmarksAsync(WorkflowState workflowState, ICollection<Bookmark> previousBookmarks, ICollection<Bookmark> newBookmarks, CancellationToken cancellationToken)
     {
-        var workflowInstance = FromWorkflowState(workflowState, workflowDefinition);
-        await _workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);
-        return workflowInstance;
+        await RemoveBookmarksAsync(workflowState.Id, previousBookmarks, cancellationToken);
+        await StoreBookmarksAsync(workflowState.Id, newBookmarks, cancellationToken);
+        await PublishChangedBookmarksAsync(workflowState, previousBookmarks, newBookmarks, cancellationToken);
     }
 
-    private WorkflowInstance FromWorkflowState(WorkflowState workflowState, WorkflowDefinition workflowDefinition)
+    private async Task StoreBookmarksAsync(string workflowInstanceId, ICollection<Bookmark> bookmarks, CancellationToken cancellationToken)
     {
-        var workflowInstance = new WorkflowInstance
-        {
-            Id = workflowState.Id,
-            DefinitionId = workflowDefinition.DefinitionId,
-            DefinitionVersionId = workflowDefinition.Id,
-            Version = workflowDefinition.Version,
-            WorkflowState = workflowState,
-            Status = workflowState.Status,
-            SubStatus = workflowState.SubStatus,
-            CorrelationId = workflowState.CorrelationId,
-            Name = null,
-        };
+        var groupedBookmarks = bookmarks.GroupBy(x => x.Hash);
 
-        // Update timestamps.
-        var now = _systemClock.UtcNow;
-
-        if (workflowInstance.Status == WorkflowStatus.Finished)
+        foreach (var groupedBookmark in groupedBookmarks)
         {
-            switch (workflowInstance.SubStatus)
-            {
-                case WorkflowSubStatus.Cancelled:
-                    workflowInstance.CancelledAt = now;
-                    break;
-                case WorkflowSubStatus.Faulted:
-                    workflowInstance.FaultedAt = now;
-                    break;
-                case WorkflowSubStatus.Finished:
-                    workflowInstance.FinishedAt = now;
-                    break;
-            }
+            var bookmarkIds = groupedBookmark.Select(x => x.Id).ToList();
+            await _bookmarkStore.SaveAsync(groupedBookmark.Key!, workflowInstanceId, bookmarkIds, cancellationToken);
         }
-
-        return workflowInstance;
     }
 
-    private async Task UpdateBookmarksAsync(WorkflowInstance workflowInstance, ICollection<Bookmark> previousBookmarks, ICollection<Bookmark> newBookmarks, CancellationToken cancellationToken)
+    private async Task RemoveBookmarksAsync(string workflowInstanceId, IEnumerable<Bookmark> bookmarks, CancellationToken cancellationToken)
     {
-        await RemoveBookmarksAsync(previousBookmarks, cancellationToken);
-        await StoreBookmarksAsync(workflowInstance, newBookmarks, cancellationToken);
-        await PublishChangedBookmarksAsync(workflowInstance.WorkflowState, previousBookmarks, newBookmarks, cancellationToken);
-    }
+        var groupedBookmarks = bookmarks.GroupBy(x => x.Hash);
 
-    private async Task StoreBookmarksAsync(WorkflowInstance workflowInstance, ICollection<Bookmark> bookmarks, CancellationToken cancellationToken)
-    {
-        await _bookmarkManager.SaveAsync(workflowInstance, bookmarks, cancellationToken);
-    }
-
-    private async Task RemoveBookmarksAsync(IEnumerable<Bookmark> bookmarks, CancellationToken cancellationToken)
-    {
-        await _bookmarkManager.DeleteAsync(bookmarks, cancellationToken);
+        foreach (var groupedBookmark in groupedBookmarks)
+        {
+            await _bookmarkStore.DeleteAsync(groupedBookmark.Key!, workflowInstanceId, cancellationToken);
+        }
     }
 
     private async Task PublishChangedBookmarksAsync(WorkflowState workflowState, ICollection<Bookmark> originalBookmarks, ICollection<Bookmark> updatedBookmarks, CancellationToken cancellationToken)

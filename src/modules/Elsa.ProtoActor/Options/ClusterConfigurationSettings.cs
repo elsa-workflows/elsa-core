@@ -1,4 +1,6 @@
-namespace Elsa.ProtoActor.Common.Options;
+using System;
+
+namespace Elsa.ProtoActor.Options;
 
 public class ClusterConfigurationSettings
 {
