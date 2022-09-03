@@ -21,7 +21,6 @@ public class EFCoreWorkflowPersistenceFeature : EFCorePersistenceFeature<Workflo
     {
         Module.Configure<WorkflowPersistenceFeature>().WithWorkflowDefinitionStore(sp => sp.GetRequiredService<EFCoreWorkflowDefinitionStore>())
             .WithWorkflowInstanceStore(sp => sp.GetRequiredService<EFCoreWorkflowInstanceStore>())
-            .WithWorkflowBookmarkStore(sp => sp.GetRequiredService<EFCoreWorkflowBookmarkStore>())
             .WithWorkflowTriggerStore(sp => sp.GetRequiredService<EFCoreWorkflowTriggerStore>())
             .WithWorkflowExecutionLogStore(sp => sp.GetRequiredService<EFCoreWorkflowExecutionLogStore>())
             ;
@@ -33,7 +32,6 @@ public class EFCoreWorkflowPersistenceFeature : EFCorePersistenceFeature<Workflo
 
         AddStore<WorkflowDefinition, EFCoreWorkflowDefinitionStore>(Services);
         AddStore<WorkflowInstance, EFCoreWorkflowInstanceStore>(Services);
-        AddStore<WorkflowBookmark, EFCoreWorkflowBookmarkStore>(Services);
         AddStore<WorkflowTrigger, EFCoreWorkflowTriggerStore>(Services);
         AddStore<WorkflowExecutionLogRecord, EFCoreWorkflowExecutionLogStore>(Services);
 

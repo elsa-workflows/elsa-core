@@ -12,18 +12,15 @@ public class MemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
     private readonly MemoryStore<WorkflowDefinition> _store;
     private readonly MemoryStore<WorkflowInstance> _instanceStore;
     private readonly MemoryStore<WorkflowTrigger> _triggerStore;
-    private readonly MemoryStore<WorkflowBookmark> _bookmarkStore;
 
     public MemoryWorkflowDefinitionStore(
         MemoryStore<WorkflowDefinition> store,
         MemoryStore<WorkflowInstance> instanceStore,
-        MemoryStore<WorkflowTrigger> triggerStore,
-        MemoryStore<WorkflowBookmark> bookmarkStore)
+        MemoryStore<WorkflowTrigger> triggerStore)
     {
         _store = store;
         _instanceStore = instanceStore;
         _triggerStore = triggerStore;
-        _bookmarkStore = bookmarkStore;
     }
 
     public Task<WorkflowDefinition?> FindByIdAsync(string id, CancellationToken cancellationToken = default)
@@ -92,14 +89,12 @@ public class MemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
     {
         _triggerStore.DeleteWhere(x => x.WorkflowDefinitionId == definitionId);
         _instanceStore.DeleteWhere(x => x.DefinitionId == definitionId);
-        _bookmarkStore.DeleteWhere(x => x.WorkflowDefinitionId == definitionId);
         var result = _store.DeleteWhere(x => x.DefinitionId == definitionId);
         return Task.FromResult(result);
     }
     
     public Task<int> DeleteByDefinitionIdAndVersionAsync(string definitionId, int version, CancellationToken cancellationToken = default)
     {
-        _bookmarkStore.DeleteWhere(x => x.WorkflowDefinitionId == definitionId && x.WorkflowVersion == version);
         _instanceStore.DeleteWhere(x => x.DefinitionId == definitionId && x.Version == version);
         var result = _store.DeleteWhere(x => x.DefinitionId == definitionId && x.Version == version);
         return Task.FromResult(result);
@@ -110,7 +105,6 @@ public class MemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
         var definitionIdList = definitionIds.ToList();
         _triggerStore.DeleteWhere(x => definitionIdList.Contains(x.WorkflowDefinitionId));
         _instanceStore.DeleteWhere(x => definitionIdList.Contains(x.DefinitionId));
-        _bookmarkStore.DeleteWhere(x => definitionIdList.Contains(x.WorkflowDefinitionId));
         var result = _store.DeleteWhere(x => definitionIdList.Contains(x.DefinitionId));
         return Task.FromResult(result);
     }

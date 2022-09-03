@@ -3,7 +3,7 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Mediator.Extensions;
-using Elsa.Scheduling.HostedServices;
+using Elsa.Scheduling.Handlers;
 using Elsa.Scheduling.Implementations;
 using Elsa.Scheduling.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,16 +17,11 @@ public class SchedulingFeature : FeatureBase
     {
     }
 
-    public override void ConfigureHostedServices()
-    {
-        Module.ConfigureHostedService<ScheduleWorkflowsHostedService>();
-    }
-
     public override void Apply()
     {
         Services
             .AddSingleton<IWorkflowTriggerScheduler, WorkflowTriggerScheduler>()
             .AddSingleton<IWorkflowBookmarkScheduler, WorkflowBookmarkScheduler>()
-            .AddNotificationHandlersFrom<ScheduleWorkflowsHostedService>();
+            .AddNotificationHandlersFrom<ScheduleWorkflows>();
     }
 }

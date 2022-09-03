@@ -8,20 +8,21 @@ namespace Elsa.ProtoActor;
 
 public class ProtoActorBuilder
 {
-    ProtoActorSystem protoActorSystem = new ();
+    readonly ProtoActorSystem _protoActorSystem = new ();
+    
     public ProtoActorBuilder WithClusterProvider(IClusterProvider clusterProvider)
     {
-        protoActorSystem.ClusterProvider = clusterProvider;
+        _protoActorSystem.ClusterProvider = clusterProvider;
         return this;
     }
 
     public ProtoActorBuilder WithRemoteConfig(GrpcNetRemoteConfig remoteConfig)
     {
-        protoActorSystem.RemoteConfig = remoteConfig;
+        _protoActorSystem.RemoteConfig = remoteConfig;
         return this;
     }
 
-    public ProtoActorSystem Build() => protoActorSystem;
+    public ProtoActorSystem Build() => _protoActorSystem;
     
     public ProtoActorBuilder WithOptions()
     {
@@ -30,25 +31,25 @@ public class ProtoActorBuilder
 
     public ProtoActorBuilder WithIdentity(IIdentityLookup identityLookup)
     {
-        protoActorSystem.IdentityLookup = identityLookup;
+        _protoActorSystem.IdentityLookup = identityLookup;
         return this;
     }
     
     public ProtoActorBuilder WithClusterName(string name)
     {
-        protoActorSystem.Name = name;
+        _protoActorSystem.Name = name;
         return this;
     }
     
     public ProtoActorBuilder WithClusterConfiguration(ClusterConfigurationSettings settings)
     {
-        protoActorSystem.ClusterConfigurationSettings = settings;
+        _protoActorSystem.ClusterConfigurationSettings = settings;
         return this;
     }
 
     public ProtoActorBuilder WithActorSystemConfig(ActorSystemConfig actorSystemConfig)
     {
-        protoActorSystem.ActorSystemConfig = actorSystemConfig;
+        _protoActorSystem.ActorSystemConfig = actorSystemConfig;
         return this;
     }
 }

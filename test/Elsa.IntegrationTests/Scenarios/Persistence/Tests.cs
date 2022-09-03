@@ -17,15 +17,13 @@ public class WorkflowInstancePersistenceTests
     private readonly IWorkflowRunner _workflowRunner;
     private readonly CapturingTextWriter _capturingTextWriter = new();
     private readonly MemoryStore<WorkflowInstance> _workflowInstanceStore;
-    private readonly MemoryStore<WorkflowBookmark> _workflowBookmarkStore;
 
     public WorkflowInstancePersistenceTests(ITestOutputHelper testOutputHelper)
     {
         var services = new TestApplicationBuilder(testOutputHelper).WithCapturingTextWriter(_capturingTextWriter).Build();
         _workflowRunner = services.GetRequiredService<IWorkflowRunner>();
         _workflowInstanceStore = services.GetRequiredService<MemoryStore<WorkflowInstance>>();
-        _workflowBookmarkStore = services.GetRequiredService<MemoryStore<WorkflowBookmark>>();
-        
+
         services.ConfigureDefaultWorkflowExecutionPipeline(pipeline => pipeline
             .UsePersistentVariables()
             .UseStackBasedActivityScheduler());
@@ -38,14 +36,5 @@ public class WorkflowInstancePersistenceTests
         var workflowInstance = _workflowInstanceStore.Find(x => x.Id == result.WorkflowState.Id);
 
         Assert.NotNull(workflowInstance);
-    }
-    
-    [Fact(DisplayName = "Bookmarks are persisted")]
-    public async Task Test2()
-    {
-        await _workflowRunner.RunAsync<SequentialWorkflow>();
-        var workflowBookmark = _workflowBookmarkStore.Find(x => x.ActivityId == "Resume");
-
-        Assert.NotNull(workflowBookmark);
     }
 }

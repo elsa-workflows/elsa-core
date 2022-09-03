@@ -11,16 +11,13 @@ namespace Elsa.Workflows.Persistence.EntityFrameworkCore.Implementations;
 public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
 {
     private readonly IStore<WorkflowsDbContext, WorkflowInstance> _store;
-    private readonly IStore<WorkflowsDbContext, WorkflowBookmark> _bookmarkStore;
     private readonly IStore<WorkflowsDbContext, WorkflowExecutionLogRecord> _executionLogRecordStore;
 
     public EFCoreWorkflowInstanceStore(
         IStore<WorkflowsDbContext, WorkflowInstance> store,
-        IStore<WorkflowsDbContext, WorkflowBookmark> bookmarkStore,
         IStore<WorkflowsDbContext, WorkflowExecutionLogRecord> executionLogRecordStore)
     {
         _store = store;
-        _bookmarkStore = bookmarkStore;
         _executionLogRecordStore = executionLogRecordStore;
     }
 
@@ -39,14 +36,12 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     public async Task<int> DeleteManyAsync(IEnumerable<string> ids, CancellationToken cancellationToken = default)
     {
         var idList = ids.ToList();
-        await _bookmarkStore.DeleteWhereAsync(x => idList.Contains(x.WorkflowDefinitionId), cancellationToken);
         await _executionLogRecordStore.DeleteWhereAsync(x => idList.Contains(x.WorkflowDefinitionId), cancellationToken);
         return await _store.DeleteWhereAsync(x => idList.Contains(x.Id), cancellationToken);
     }
 
     public async Task DeleteManyByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default)
     {
-        await _bookmarkStore.DeleteWhereAsync(x => x.WorkflowDefinitionId == definitionId, cancellationToken);
         await _executionLogRecordStore.DeleteWhereAsync(x => x.WorkflowDefinitionId == definitionId, cancellationToken);
         await _store.DeleteWhereAsync(x => x.DefinitionId == definitionId, cancellationToken);
     }
