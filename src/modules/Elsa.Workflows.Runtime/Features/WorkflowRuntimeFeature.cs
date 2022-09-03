@@ -3,6 +3,7 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Mediator.Extensions;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Runtime.Extensions;
 using Elsa.Workflows.Runtime.HostedServices;
@@ -25,6 +26,11 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// A list of workflow builders configured during application startup.
     /// </summary>
     public IDictionary<string, Func<IServiceProvider, ValueTask<IWorkflow>>> Workflows { get; set; } = new Dictionary<string, Func<IServiceProvider, ValueTask<IWorkflow>>>();
+    
+    /// <summary>
+    /// A list of <see cref="IWorkflowStateExporter"/> providers. Each provider will be invoked when running a workflow.
+    /// </summary>
+    public ISet<Func<IServiceProvider, IWorkflowStateExporter>> WorkflowStateExporters { get; set; } = new HashSet<Func<IServiceProvider, IWorkflowStateExporter>>();
 
     /// <summary>
     /// A factory that instantiates a concrete <see cref="IWorkflowInvoker"/>.
@@ -39,6 +45,12 @@ public class WorkflowRuntimeFeature : FeatureBase
     public WorkflowRuntimeFeature AddWorkflow<T>() where T : IWorkflow
     {
         Workflows.Add<T>();
+        return this;
+    }
+    
+    public WorkflowRuntimeFeature AddWorkflowSateExporter<T>() where T : IWorkflowStateExporter
+    {
+        WorkflowStateExporters.Add<T>();
         return this;
     }
 
@@ -58,6 +70,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddSingleton<IBookmarkManager, BookmarkManager>()
             .AddSingleton<IWorkflowInstanceFactory, WorkflowInstanceFactory>()
             .AddSingleton<IWorkflowDefinitionService, WorkflowDefinitionService>()
+            .AddSingleton<IWorkflowStateExporterService, WorkflowStateExporterService>()
             .AddSingleton(WorkflowRuntime)
             .AddSingleton(WorkflowDispatcher)
             
@@ -72,6 +85,10 @@ public class WorkflowRuntimeFeature : FeatureBase
             .CreateChannel<DispatchWorkflowInstanceRequest>()
             ;
 
-        Services.Configure<WorkflowRuntimeOptions>(options => options.Workflows = Workflows);
+        Services.Configure<WorkflowRuntimeOptions>(options =>
+        {
+            options.Workflows = Workflows;
+            options.WorkflowStateExporters = WorkflowStateExporters;
+        });
     }
 }
