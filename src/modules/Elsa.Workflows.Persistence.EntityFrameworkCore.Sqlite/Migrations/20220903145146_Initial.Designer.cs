@@ -11,76 +11,13 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elsa.Workflows.Persistence.EntityFrameworkCore.Sqlite.Migrations
 {
     [DbContext(typeof(WorkflowsDbContext))]
-    [Migration("20220828110255_Initial")]
+    [Migration("20220903145146_Initial")]
     partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "6.0.3");
-
-            modelBuilder.Entity("Elsa.Workflows.Persistence.Entities.WorkflowBookmark", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ActivityId")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ActivityInstanceId")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("CallbackMethodName")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("CorrelationId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Data")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Hash")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("WorkflowDefinitionId")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("WorkflowInstanceId")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("WorkflowVersion")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ActivityId")
-                        .HasDatabaseName("IX_WorkflowBookmark_ActivityId");
-
-                    b.HasIndex("CorrelationId")
-                        .HasDatabaseName("IX_WorkflowBookmark_CorrelationId");
-
-                    b.HasIndex("Hash")
-                        .HasDatabaseName("IX_WorkflowBookmark_Hash");
-
-                    b.HasIndex("Name")
-                        .HasDatabaseName("IX_WorkflowBookmark_Name");
-
-                    b.HasIndex("WorkflowDefinitionId")
-                        .HasDatabaseName("IX_WorkflowBookmark_WorkflowDefinitionId");
-
-                    b.HasIndex("WorkflowInstanceId")
-                        .HasDatabaseName("IX_WorkflowBookmark_WorkflowInstanceId");
-
-                    b.ToTable("WorkflowBookmarks");
-                });
+            modelBuilder.HasAnnotation("ProductVersion", "6.0.8");
 
             modelBuilder.Entity("Elsa.Workflows.Persistence.Entities.WorkflowDefinition", b =>
                 {
