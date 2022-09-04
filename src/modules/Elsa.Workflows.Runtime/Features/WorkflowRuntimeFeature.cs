@@ -74,7 +74,6 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddSingleton<ITriggerIndexer, TriggerIndexer>()
             .AddSingleton<IWorkflowInstanceFactory, WorkflowInstanceFactory>()
             .AddSingleton<IWorkflowDefinitionService, WorkflowDefinitionService>()
-            .AddSingleton<IWorkflowStateExporterService, WorkflowStateExporterService>()
             .AddSingleton(WorkflowRuntime)
             .AddSingleton(WorkflowDispatcher)
             .AddSingleton(WorkflowStateStore)

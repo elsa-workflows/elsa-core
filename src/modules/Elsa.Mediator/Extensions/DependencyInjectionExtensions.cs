@@ -88,8 +88,8 @@ public static class DependencyInjectionExtensions
     public static IServiceCollection CreateChannel<T>(this IServiceCollection services) =>
         services
             .AddSingleton(CreateChannel<T>())
-            .AddSingleton(CreateChannelReader<T>)
-            .AddSingleton(CreateChannelWriter<T>);
+            .AddTransient(CreateChannelReader<T>)
+            .AddTransient(CreateChannelWriter<T>);
     
 
     private static IServiceCollection AddHandlersFromInternal<TService, TMarker>(this IServiceCollection services) => services.AddHandlersFromInternal<TService>(typeof(TMarker));

@@ -1,5 +1,5 @@
+using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.State;
-using Elsa.Workflows.Management.Entities;
 
 namespace Elsa.Workflows.Runtime.Services;
 
@@ -9,5 +9,5 @@ namespace Elsa.Workflows.Runtime.Services;
 /// </summary>
 public interface IWorkflowStateExporter
 {
-    ValueTask ExportAsync(WorkflowDefinition definition, WorkflowState workflowState, CancellationToken cancellationToken);
+    ValueTask ExportAsync(Workflow workflow, WorkflowState workflowState, CancellationToken cancellationToken);
 }
