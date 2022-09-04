@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Elsa.Workflows.Core.Models;
 
 public record Bookmark(
@@ -8,4 +10,10 @@ public record Bookmark(
     string ActivityId,
     string ActivityInstanceId,
     string? CallbackMethodName = default
-);
+)
+{
+    [JsonConstructor]
+    public Bookmark() : this("", "", "", null, "", "")
+    {
+    }
+}
