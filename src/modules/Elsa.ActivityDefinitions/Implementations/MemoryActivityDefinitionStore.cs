@@ -52,7 +52,7 @@ public class MemoryActivityDefinitionStore : IActivityDefinitionStore
 
     public Task SaveAsync(ActivityDefinition record, CancellationToken cancellationToken = default)
     {
-        _store.Save(record);
+        _store.Save(record, x => x.Id);
         return Task.CompletedTask;
     }
 

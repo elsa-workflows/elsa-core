@@ -72,13 +72,13 @@ public class MemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
 
     public Task SaveAsync(WorkflowDefinition record, CancellationToken cancellationToken = default)
     {
-        _store.Save(record);
+        _store.Save(record, GetId);
         return Task.CompletedTask;
     }
 
     public Task SaveManyAsync(IEnumerable<WorkflowDefinition> records, CancellationToken cancellationToken = default)
     {
-        _store.SaveMany(records);
+        _store.SaveMany(records, GetId);
         return Task.CompletedTask;
     }
 
@@ -125,26 +125,5 @@ public class MemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
         return Task.FromResult(exists);
     }
 
-    private IQueryable<WorkflowDefinition> FilterByLabels(IQueryable<WorkflowDefinition> query, IEnumerable<string>? labelNames)
-    {
-        // var labelList = labelNames?.Select(x => x.ToLowerInvariant()).ToList();
-        //
-        // // Do we need to filter by labels?
-        // if (labelList == null || !labelList.Any())
-        //     return query;
-        //
-        // // Translate label names to label IDs.
-        // var labelIds = _labelStore.FindMany(x => labelList.Contains(x.NormalizedName)).Select(x => x.Id);
-        //
-        // // We need to build a query that requires a workflow definition to be associated with ALL labels ("and").
-        // foreach (var labelId in labelIds)
-        //     query =
-        //         from workflowDefinition in query
-        //         join label in _workflowDefinitionLabelStore.List().AsQueryable()
-        //             on workflowDefinition.Id equals label.WorkflowDefinitionVersionId
-        //         where labelId == label.LabelId
-        //         select workflowDefinition;
-
-        return query;
-    }
+    private string GetId(WorkflowDefinition workflowDefinition) => workflowDefinition.Id;
 }

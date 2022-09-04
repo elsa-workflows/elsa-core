@@ -7,7 +7,7 @@ namespace Elsa.Common.Extensions;
 
 public static class DependencyInjectionExtensions
 {
-    public static IServiceCollection AddMemoryStore<TEntity, TStore>(this IServiceCollection services) where TEntity : Entity where TStore : class
+    public static IServiceCollection AddMemoryStore<TEntity, TStore>(this IServiceCollection services) where TStore : class
     {
          services.TryAddSingleton<MemoryStore<TEntity>>();
          services.TryAddSingleton<TStore>();

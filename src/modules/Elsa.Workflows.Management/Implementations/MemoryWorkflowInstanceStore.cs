@@ -24,13 +24,13 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
 
     public Task SaveAsync(WorkflowInstance record, CancellationToken cancellationToken = default)
     {
-        _store.Save(record);
+        _store.Save(record, x => x.Id);
         return Task.CompletedTask;
     }
 
     public Task SaveManyAsync(IEnumerable<WorkflowInstance> records, CancellationToken cancellationToken = default)
     {
-        _store.SaveMany(records);
+        _store.SaveMany(records, GetId);
         return Task.CompletedTask;
     }
 
@@ -103,4 +103,6 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
         var pagedList = Page.Of(summaries, totalCount);
         return Task.FromResult(pagedList);
     }
+
+    private string GetId(WorkflowInstance workflowInstance) => workflowInstance.Id;
 }

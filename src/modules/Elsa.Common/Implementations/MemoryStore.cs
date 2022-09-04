@@ -2,15 +2,15 @@ using Elsa.Common.Entities;
 
 namespace Elsa.Common.Implementations;
 
-public class MemoryStore<TEntity> where TEntity : Entity
+public class MemoryStore<TEntity>
 {
     private IDictionary<string, TEntity> Entities { get; set; } = new Dictionary<string, TEntity>();
-    public void Save(TEntity entity) => Entities[entity.Id] = entity;
+    public void Save(TEntity entity, Func<TEntity, string> idAccessor) => Entities[idAccessor(entity)] = entity;
 
-    public void SaveMany(IEnumerable<TEntity> entities)
+    public void SaveMany(IEnumerable<TEntity> entities, Func<TEntity, string> idAccessor)
     {
         foreach (var entity in entities)
-            Save(entity);
+            Save(entity, idAccessor);
     }
 
     public TEntity? Find(Func<TEntity, bool> predicate) => Entities.Values.Where(predicate).FirstOrDefault();
@@ -60,7 +60,7 @@ public class MemoryStore<TEntity> where TEntity : Entity
         return count;
     }
 
-    public int DeleteMany(IEnumerable<TEntity> entities)
+    public int DeleteMany(IEnumerable<TEntity> entities, Func<TEntity, string> idAccessor)
     {
         var count = 0;
         var list = entities.ToList();
@@ -68,7 +68,8 @@ public class MemoryStore<TEntity> where TEntity : Entity
         foreach (var entity in list)
         {
             count++;
-            Entities.Remove(entity.Id);
+            var id = idAccessor(entity);
+            Entities.Remove(id);
         }
 
         return count;

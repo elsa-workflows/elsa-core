@@ -15,13 +15,13 @@ public class MemoryWorkflowTriggerStore : IWorkflowTriggerStore
 
     public Task SaveAsync(WorkflowTrigger record, CancellationToken cancellationToken = default)
     {
-        _store.Save(record);
+        _store.Save(record, x => x.Id);
         return Task.CompletedTask;
     }
 
     public Task SaveManyAsync(IEnumerable<WorkflowTrigger> records, CancellationToken cancellationToken = default)
     {
-        _store.SaveMany(records);
+        _store.SaveMany(records, x => x.Id);
         return Task.CompletedTask;
     }
 
@@ -48,8 +48,8 @@ public class MemoryWorkflowTriggerStore : IWorkflowTriggerStore
 
     public Task ReplaceAsync(IEnumerable<WorkflowTrigger> removed, IEnumerable<WorkflowTrigger> added, CancellationToken cancellationToken = default)
     {
-        _store.DeleteMany(removed);
-        _store.SaveMany(added);
+        _store.DeleteMany(removed, x => x.Id);
+        _store.SaveMany(added, x => x.Id);
 
         return Task.CompletedTask;
     }

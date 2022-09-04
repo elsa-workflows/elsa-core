@@ -17,13 +17,13 @@ public class MemoryWorkflowExecutionLogStore : IWorkflowExecutionLogStore
     
     public Task SaveAsync(WorkflowExecutionLogRecord record, CancellationToken cancellationToken = default)
     {
-        _store.Save(record);
+        _store.Save(record, x => x.Id);
         return Task.CompletedTask;
     }
 
     public Task SaveManyAsync(IEnumerable<WorkflowExecutionLogRecord> records, CancellationToken cancellationToken = default)
     {
-        _store.SaveMany(records);
+        _store.SaveMany(records, x => x.Id);
         return Task.CompletedTask;
     }
 
