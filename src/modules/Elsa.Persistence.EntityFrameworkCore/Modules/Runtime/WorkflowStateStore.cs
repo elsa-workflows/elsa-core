@@ -41,8 +41,6 @@ public class EFCoreWorkflowStateStore : IWorkflowStateStore
 
         entry.Property<string>("Data").CurrentValue = json;
         entry.Property<DateTimeOffset>("UpdatedAt").CurrentValue = now;
-        entry.Property<string>("DefinitionId").CurrentValue = state.WorkflowIdentity.DefinitionId;
-        entry.Property<int>("Version").CurrentValue = state.WorkflowIdentity.Version;
 
         var entities = new[] { state };
         await dbContext.BulkInsertOrUpdateAsync(entities, new BulkConfig { EnableShadowProperties = true }, cancellationToken: cancellationToken);

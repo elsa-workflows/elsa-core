@@ -151,39 +151,39 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.Runtime.Migrations
                 column: "WorkflowVersion");
 
             migrationBuilder.CreateIndex(
-                name: "IX_WorkflowInstance_CreatedAt",
-                table: "WorkflowStates",
-                column: "CreatedAt");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_WorkflowInstance_Status_DefinitionId",
-                table: "WorkflowStates",
-                columns: new[] { "Status", "DefinitionId" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_WorkflowInstance_Status_SubStatus",
-                table: "WorkflowStates",
-                columns: new[] { "Status", "SubStatus" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_WorkflowInstance_Status_SubStatus_DefinitionId_Version",
-                table: "WorkflowStates",
-                columns: new[] { "Status", "SubStatus", "DefinitionId", "Version" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_WorkflowInstance_UpdatedAt",
-                table: "WorkflowStates",
-                column: "UpdatedAt");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_WorkflowState_CorrelationId",
                 table: "WorkflowStates",
                 column: "CorrelationId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_WorkflowState_CreatedAt",
+                table: "WorkflowStates",
+                column: "CreatedAt");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_WorkflowState_DefinitionId",
                 table: "WorkflowStates",
                 column: "DefinitionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowState_Status_DefinitionId",
+                table: "WorkflowStates",
+                columns: new[] { "Status", "DefinitionId" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowState_Status_SubStatus",
+                table: "WorkflowStates",
+                columns: new[] { "Status", "SubStatus" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowState_Status_SubStatus_DefinitionId_Version",
+                table: "WorkflowStates",
+                columns: new[] { "Status", "SubStatus", "DefinitionId", "Version" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowState_UpdatedAt",
+                table: "WorkflowStates",
+                column: "UpdatedAt");
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowTrigger_Hash",

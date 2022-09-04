@@ -72,8 +72,8 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         return Load(dbContext, query.Where(w => w.DefinitionId == definitionId).OrderByDescending(w => w.Version).FirstOrDefault());
     }
 
-    public async Task SaveAsync(WorkflowDefinition record, CancellationToken cancellationToken = default) => await _store.SaveAsync(record, cancellationToken);
-    public async Task SaveManyAsync(IEnumerable<WorkflowDefinition> records, CancellationToken cancellationToken = default) => await _store.SaveManyAsync(records, cancellationToken);
+    public async Task SaveAsync(WorkflowDefinition record, CancellationToken cancellationToken = default) => await _store.SaveAsync(record, Save, cancellationToken);
+    public async Task SaveManyAsync(IEnumerable<WorkflowDefinition> records, CancellationToken cancellationToken = default) => await _store.SaveManyAsync(records, Save, cancellationToken);
 
     public async Task<int> DeleteByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default)
     {
@@ -110,9 +110,9 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         if (versionOptions != null) query = query.WithVersion(versionOptions.Value);
         if (!string.IsNullOrWhiteSpace(materializerName)) query = query.Where(x => x.MaterializerName == materializerName);
 
-        query = query.OrderBy(x => x.Name); //.Distinct();
+        query = query.OrderBy(x => x.Name);
 
-        return await query.PaginateAsync(x => WorkflowDefinitionSummary.FromDefinition(Load(dbContext, x)!), pageArgs);
+        return await query.PaginateAsync(x => WorkflowDefinitionSummary.FromDefinition(x), pageArgs);
     }
 
     public async Task<bool> GetExistsAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
@@ -122,7 +122,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         return await _store.AnyAsync(predicate, cancellationToken);
     }
 
-    private void Save(ManagementDbContext dbContext, WorkflowDefinition entity)
+    private WorkflowDefinition Save(ManagementDbContext dbContext, WorkflowDefinition entity)
     {
         var data = new
         {
@@ -135,6 +135,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         var json = JsonSerializer.Serialize(data, options);
 
         dbContext.Entry(entity).Property("Data").CurrentValue = json;
+        return entity;
     }
 
     private WorkflowDefinition? Load(ManagementDbContext dbContext, WorkflowDefinition? entity)

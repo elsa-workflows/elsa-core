@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.Runtime.Migrations
 {
     [DbContext(typeof(RuntimeDbContext))]
-    [Migration("20220904140649_Initial")]
+    [Migration("20220904142936_Initial")]
     partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -56,22 +56,22 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.Runtime.Migrations
                         .HasDatabaseName("IX_WorkflowState_CorrelationId");
 
                     b.HasIndex("CreatedAt")
-                        .HasDatabaseName("IX_WorkflowInstance_CreatedAt");
+                        .HasDatabaseName("IX_WorkflowState_CreatedAt");
 
                     b.HasIndex("DefinitionId")
                         .HasDatabaseName("IX_WorkflowState_DefinitionId");
 
                     b.HasIndex("UpdatedAt")
-                        .HasDatabaseName("IX_WorkflowInstance_UpdatedAt");
+                        .HasDatabaseName("IX_WorkflowState_UpdatedAt");
 
                     b.HasIndex("Status", "DefinitionId")
-                        .HasDatabaseName("IX_WorkflowInstance_Status_DefinitionId");
+                        .HasDatabaseName("IX_WorkflowState_Status_DefinitionId");
 
                     b.HasIndex("Status", "SubStatus")
-                        .HasDatabaseName("IX_WorkflowInstance_Status_SubStatus");
+                        .HasDatabaseName("IX_WorkflowState_Status_SubStatus");
 
                     b.HasIndex("Status", "SubStatus", "DefinitionId", "Version")
-                        .HasDatabaseName("IX_WorkflowInstance_Status_SubStatus_DefinitionId_Version");
+                        .HasDatabaseName("IX_WorkflowState_Status_SubStatus_DefinitionId_Version");
 
                     b.ToTable("WorkflowStates");
                 });

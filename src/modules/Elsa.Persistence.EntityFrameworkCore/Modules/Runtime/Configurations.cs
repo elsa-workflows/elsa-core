@@ -22,10 +22,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Modules.Runtime
             builder.Ignore(x => x.ActivityOutput);
             builder.Ignore(x => x.CompletionCallbacks);
             builder.Ignore(x => x.PersistentVariables);
-            builder.Ignore(x => x.WorkflowIdentity);
             builder.Ignore(x => x.ActivityExecutionContexts);
-            builder.Property<string>("DefinitionId");
-            builder.Property<int>("Version");
             builder.Property<string>("Data");
             builder.Property<DateTimeOffset>("CreatedAt");
             builder.Property<DateTimeOffset>("UpdatedAt");
@@ -33,12 +30,12 @@ namespace Elsa.Persistence.EntityFrameworkCore.Modules.Runtime
             builder.Property(x => x.SubStatus).HasConversion<EnumToStringConverter<WorkflowSubStatus>>();
             builder.HasIndex(x => x.CorrelationId).HasDatabaseName($"IX_{nameof(WorkflowState)}_{nameof(WorkflowState.CorrelationId)}");
             builder.HasIndex("DefinitionId").HasDatabaseName($"IX_{nameof(WorkflowState)}_DefinitionId");
-            builder.HasIndex("Status", "SubStatus", "DefinitionId", "Version").HasDatabaseName($"IX_{nameof(WorkflowInstance)}_Status_SubStatus_DefinitionId_Version");
-            builder.HasIndex("Status", "SubStatus").HasDatabaseName($"IX_{nameof(WorkflowInstance)}_Status_SubStatus");
-            builder.HasIndex("Status", "DefinitionId").HasDatabaseName($"IX_{nameof(WorkflowInstance)}_Status_DefinitionId");
-            builder.HasIndex(x => new { x.Status, x.SubStatus }).HasDatabaseName($"IX_{nameof(WorkflowInstance)}_{nameof(WorkflowInstance.Status)}_{nameof(WorkflowInstance.SubStatus)}");
-            builder.HasIndex("CreatedAt").HasDatabaseName($"IX_{nameof(WorkflowInstance)}_CreatedAt");
-            builder.HasIndex("UpdatedAt").HasDatabaseName($"IX_{nameof(WorkflowInstance)}_UpdatedAt");
+            builder.HasIndex("Status", "SubStatus", "DefinitionId", "Version").HasDatabaseName($"IX_{nameof(WorkflowState)}_Status_SubStatus_DefinitionId_Version");
+            builder.HasIndex("Status", "SubStatus").HasDatabaseName($"IX_{nameof(WorkflowState)}_Status_SubStatus");
+            builder.HasIndex("Status", "DefinitionId").HasDatabaseName($"IX_{nameof(WorkflowState)}_Status_DefinitionId");
+            builder.HasIndex(x => new { x.Status, x.SubStatus }).HasDatabaseName($"IX_{nameof(WorkflowState)}_{nameof(WorkflowState.Status)}_{nameof(WorkflowState.SubStatus)}");
+            builder.HasIndex("CreatedAt").HasDatabaseName($"IX_{nameof(WorkflowState)}_CreatedAt");
+            builder.HasIndex("UpdatedAt").HasDatabaseName($"IX_{nameof(WorkflowState)}_UpdatedAt");
         }
 
         public void Configure(EntityTypeBuilder<WorkflowTrigger> builder)
