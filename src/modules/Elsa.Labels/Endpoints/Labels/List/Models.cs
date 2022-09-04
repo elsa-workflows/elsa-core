@@ -1,5 +1,5 @@
+using Elsa.Common.Models;
 using Elsa.Labels.Entities;
-using Elsa.Models;
 
 namespace Elsa.Labels.Endpoints.Labels.List;
 

@@ -47,6 +47,9 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// </summary>
     public Func<IServiceProvider, IBookmarkStore> BookmarkStore { get; set; } = sp => ActivatorUtilities.CreateInstance<MemoryBookmarkStore>(sp);
     
+    public Func<IServiceProvider, IWorkflowTriggerStore> WorkflowTriggerStore { get; set; } = sp => ActivatorUtilities.CreateInstance<MemoryWorkflowTriggerStore>(sp);
+    public Func<IServiceProvider, IWorkflowExecutionLogStore> WorkflowExecutionLogStore { get; set; } = sp => ActivatorUtilities.CreateInstance<MemoryWorkflowExecutionLogStore>(sp);
+    
     public WorkflowRuntimeFeature AddWorkflow<T>() where T : IWorkflow
     {
         Workflows.Add<T>();
@@ -73,6 +76,8 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddSingleton(WorkflowDispatcher)
             .AddSingleton(WorkflowStateStore)
             .AddSingleton(BookmarkStore)
+            .AddSingleton(WorkflowTriggerStore)
+            .AddSingleton(WorkflowExecutionLogStore)
             
             // Workflow definition providers.
             .AddWorkflowDefinitionProvider<ClrWorkflowDefinitionProvider>()

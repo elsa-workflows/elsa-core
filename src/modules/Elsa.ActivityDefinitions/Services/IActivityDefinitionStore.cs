@@ -1,6 +1,6 @@
 using Elsa.ActivityDefinitions.Entities;
 using Elsa.ActivityDefinitions.Models;
-using Elsa.Models;
+using Elsa.Common.Models;
 
 namespace Elsa.ActivityDefinitions.Services;
 

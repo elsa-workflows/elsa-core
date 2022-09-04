@@ -1,8 +1,8 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Abstractions;
-using Elsa.Models;
-using Elsa.Persistence.Common.Entities;
+using Elsa.Common.Entities;
+using Elsa.Common.Models;
 using Elsa.Workflows.Management.Services;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.List;

@@ -1,6 +1,6 @@
-using Elsa.Models;
-using Elsa.Persistence.Common.Entities;
-using Elsa.Persistence.Common.Implementations;
+using Elsa.Common.Entities;
+using Elsa.Common.Implementations;
+using Elsa.Common.Models;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Services;

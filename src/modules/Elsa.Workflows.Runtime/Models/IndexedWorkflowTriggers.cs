@@ -1,5 +1,5 @@
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Runtime.Entities;
 
 namespace Elsa.Workflows.Runtime.Models;
 

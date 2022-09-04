@@ -1,5 +1,4 @@
 using System.Collections.ObjectModel;
-using Elsa.Common.Extensions;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Services;
 using Microsoft.Extensions.DependencyInjection;

@@ -3,13 +3,13 @@ using Elsa.Http.Extensions;
 using Elsa.JavaScript.Extensions;
 using Elsa.Jobs.Extensions;
 using Elsa.Liquid.Extensions;
+using Elsa.Persistence.EntityFrameworkCore.Modules.Runtime;
+using Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.Runtime;
 using Elsa.Samples.Web1.Workflows;
 using Elsa.Scheduling.Extensions;
 using Elsa.WorkflowContexts.Extensions;
 using Elsa.Workflows.Api.Extensions;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution.Components;
-using Elsa.Workflows.Persistence.EntityFrameworkCore.Extensions;
-using Elsa.Workflows.Persistence.EntityFrameworkCore.Sqlite;
 using Elsa.Workflows.Runtime.Extensions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
@@ -27,21 +27,24 @@ var sqlServerConnectionString = configuration.GetConnectionString("SqlServer");
 // Add Elsa services.
 services
     .AddElsa(elsa => elsa
-        .UseEntityFrameworkCorePersistence(ef => ef.UseSqlite())
-        .UseRuntime(runtime => runtime
-            .AddWorkflow<HelloWorldWorkflow>()
-            .AddWorkflow<HttpWorkflow>()
-            .AddWorkflow<ForkedHttpWorkflow>()
-            .AddWorkflow<CompositeActivitiesWorkflow>()
-            .AddWorkflow<SendMessageWorkflow>()
-            .AddWorkflow<ReceiveMessageWorkflow>()
-            .AddWorkflow<RunJavaScriptWorkflow>()
-            .AddWorkflow<WorkflowContextsWorkflow>()
-            .AddWorkflow<SubmitJobWorkflow>()
-            .AddWorkflow<DelayWorkflow>()
-            .AddWorkflow<OrderProcessingWorkflow>()
-            .AddWorkflow<StartAtTriggerWorkflow>()
-            .AddWorkflow<StartAtBookmarkWorkflow>())
+        .UseRuntime(runtime =>
+        {
+            runtime
+                .UseEntityFrameworkCore(ef => ef.UseSqlite())
+                .AddWorkflow<HelloWorldWorkflow>()
+                .AddWorkflow<HttpWorkflow>()
+                .AddWorkflow<ForkedHttpWorkflow>()
+                .AddWorkflow<CompositeActivitiesWorkflow>()
+                .AddWorkflow<SendMessageWorkflow>()
+                .AddWorkflow<ReceiveMessageWorkflow>()
+                .AddWorkflow<RunJavaScriptWorkflow>()
+                .AddWorkflow<WorkflowContextsWorkflow>()
+                .AddWorkflow<SubmitJobWorkflow>()
+                .AddWorkflow<DelayWorkflow>()
+                .AddWorkflow<OrderProcessingWorkflow>()
+                .AddWorkflow<StartAtTriggerWorkflow>()
+                .AddWorkflow<StartAtBookmarkWorkflow>();
+        })
         .UseJobs()
         .UseScheduling()
         .UseWorkflowApiEndpoints()

@@ -1,4 +1,4 @@
-using Elsa.Persistence.Common.Entities;
+using Elsa.Common.Entities;
 using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Workflows.Management.Entities;

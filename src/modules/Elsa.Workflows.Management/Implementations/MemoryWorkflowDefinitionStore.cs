@@ -1,6 +1,6 @@
-using Elsa.Models;
-using Elsa.Persistence.Common.Extensions;
-using Elsa.Persistence.Common.Implementations;
+using Elsa.Common.Extensions;
+using Elsa.Common.Implementations;
+using Elsa.Common.Models;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Services;
@@ -11,16 +11,13 @@ public class MemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
 {
     private readonly MemoryStore<WorkflowDefinition> _store;
     private readonly MemoryStore<WorkflowInstance> _instanceStore;
-    private readonly MemoryStore<WorkflowTrigger> _triggerStore;
 
     public MemoryWorkflowDefinitionStore(
         MemoryStore<WorkflowDefinition> store,
-        MemoryStore<WorkflowInstance> instanceStore,
-        MemoryStore<WorkflowTrigger> triggerStore)
+        MemoryStore<WorkflowInstance> instanceStore)
     {
         _store = store;
         _instanceStore = instanceStore;
-        _triggerStore = triggerStore;
     }
 
     public Task<WorkflowDefinition?> FindByIdAsync(string id, CancellationToken cancellationToken = default)
@@ -87,7 +84,6 @@ public class MemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
 
     public Task<int> DeleteByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default)
     {
-        _triggerStore.DeleteWhere(x => x.WorkflowDefinitionId == definitionId);
         _instanceStore.DeleteWhere(x => x.DefinitionId == definitionId);
         var result = _store.DeleteWhere(x => x.DefinitionId == definitionId);
         return Task.FromResult(result);
@@ -103,7 +99,6 @@ public class MemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
     public Task<int> DeleteByDefinitionIdsAsync(IEnumerable<string> definitionIds, CancellationToken cancellationToken = default)
     {
         var definitionIdList = definitionIds.ToList();
-        _triggerStore.DeleteWhere(x => definitionIdList.Contains(x.WorkflowDefinitionId));
         _instanceStore.DeleteWhere(x => definitionIdList.Contains(x.DefinitionId));
         var result = _store.DeleteWhere(x => definitionIdList.Contains(x.DefinitionId));
         return Task.FromResult(result);

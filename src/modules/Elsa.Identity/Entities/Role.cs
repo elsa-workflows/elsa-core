@@ -1,4 +1,4 @@
-using Elsa.Persistence.Common.Entities;
+using Elsa.Common.Entities;
 
 namespace Elsa.Identity.Entities;
 

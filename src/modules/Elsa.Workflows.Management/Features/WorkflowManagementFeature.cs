@@ -1,10 +1,10 @@
+using Elsa.Common.Extensions;
 using Elsa.Common.Features;
 using Elsa.Expressions.Services;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Mediator.Features;
-using Elsa.Persistence.Common.Extensions;
 using Elsa.Workflows.Core.Features;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.Services;
@@ -31,8 +31,6 @@ public class WorkflowManagementFeature : FeatureBase
     public HashSet<Type> ActivityTypes { get; } = new();
     public Func<IServiceProvider, IWorkflowDefinitionStore> WorkflowDefinitionStore { get; set; } = sp => sp.GetRequiredService<MemoryWorkflowDefinitionStore>();
     public Func<IServiceProvider, IWorkflowInstanceStore> WorkflowInstanceStore { get; set; } = sp => sp.GetRequiredService<MemoryWorkflowInstanceStore>();
-    public Func<IServiceProvider, IWorkflowTriggerStore> WorkflowTriggerStore { get; set; } = sp => sp.GetRequiredService<MemoryWorkflowTriggerStore>();
-    public Func<IServiceProvider, IWorkflowExecutionLogStore> WorkflowExecutionLogStore { get; set; } = sp => sp.GetRequiredService<MemoryWorkflowExecutionLogStore>();
 
     public WorkflowManagementFeature AddActivity<T>() where T : IActivity
     {
@@ -45,11 +43,7 @@ public class WorkflowManagementFeature : FeatureBase
         Services
             .AddMemoryStore<WorkflowDefinition, MemoryWorkflowDefinitionStore>()
             .AddMemoryStore<WorkflowInstance, MemoryWorkflowInstanceStore>()
-            .AddMemoryStore<WorkflowTrigger, MemoryWorkflowTriggerStore>()
-            .AddMemoryStore<WorkflowExecutionLogRecord, MemoryWorkflowExecutionLogStore>()
             .AddSingleton(WorkflowInstanceStore)
-            .AddSingleton(WorkflowTriggerStore)
-            .AddSingleton(WorkflowExecutionLogStore)
             .AddSingleton(WorkflowDefinitionStore)
             .AddSingleton<IWorkflowDefinitionPublisher, WorkflowDefinitionPublisher>()
             .AddSingleton<IWorkflowDefinitionManager, WorkflowDefinitionManager>()

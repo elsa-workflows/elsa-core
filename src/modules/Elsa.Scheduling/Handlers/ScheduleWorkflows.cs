@@ -2,7 +2,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Mediator.Services;
 using Elsa.Scheduling.Services;
-using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Notifications;
 
 namespace Elsa.Scheduling.Handlers;

@@ -5,7 +5,7 @@ using Elsa.Http.Models;
 using Elsa.Http.Services;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Runtime.Entities;
 
 namespace Elsa.Http.Extensions;
 

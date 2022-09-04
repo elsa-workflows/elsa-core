@@ -22,7 +22,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\src\common\Elsa.Persistence.Common\Elsa.Persistence.Common.csproj" />
       <ProjectReference Include="..\..\src\modules\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
       <ProjectReference Include="..\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj" />
     </ItemGroup>

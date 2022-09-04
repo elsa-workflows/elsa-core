@@ -1,5 +1,5 @@
+using Elsa.Common.Models;
 using Elsa.Mediator.Services;
-using Elsa.Models;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;

@@ -13,7 +13,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\common\Elsa.Persistence.Common\Elsa.Persistence.Common.csproj" />
       <ProjectReference Include="..\Elsa.Mediator\Elsa.Mediator.csproj" />
       <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
     </ItemGroup>
