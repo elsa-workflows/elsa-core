@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.Runtime.Migrations
 {
     [DbContext(typeof(RuntimeDbContext))]
-    [Migration("20220904140422_Initial")]
+    [Migration("20220904140649_Initial")]
     partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
