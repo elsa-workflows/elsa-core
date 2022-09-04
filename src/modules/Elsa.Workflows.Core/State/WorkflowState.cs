@@ -13,9 +13,14 @@ public class WorkflowState
     public string Id { get; set; } = default!;
     
     /// <summary>
-    /// The workflow definition identity.
+    /// The workflow definition ID.
     /// </summary>
-    public WorkflowIdentity WorkflowIdentity { get; set; } = default!;
+    public string DefinitionId { get; set; } = default!;
+    
+    /// <summary>
+    /// The workflow definition version.
+    /// </summary>
+    public int Version { get; set; } = default!;
 
     /// <summary>
     /// The correlation ID of the workflow, if any.

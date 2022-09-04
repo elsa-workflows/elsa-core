@@ -63,8 +63,9 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         if (workflowState == null)
             throw new Exception($"Workflow instance {instanceId} not found");
 
-        var identity = workflowState.WorkflowIdentity;
-        var workflowDefinition = await _workflowDefinitionService.FindAsync(identity.DefinitionId, VersionOptions.SpecificVersion(identity.Version), cancellationToken);
+        var definitionId = workflowState.DefinitionId;
+        var version = workflowState.Version;
+        var workflowDefinition = await _workflowDefinitionService.FindAsync(definitionId, VersionOptions.SpecificVersion(version), cancellationToken);
 
         if (workflowDefinition == null)
             throw new Exception("Specified workflow definition and version does not exist");
@@ -119,7 +120,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         {
             var key = groupedBookmark.Key;
             var bookmarkIds = groupedBookmark.Select(x => x.Id).ToList();
-            await _bookmarkStore.SaveAsync( key.Name, key.Hash, workflowInstanceId, bookmarkIds, cancellationToken);
+            await _bookmarkStore.SaveAsync(key.Name, key.Hash, workflowInstanceId, bookmarkIds, cancellationToken);
         }
     }
 

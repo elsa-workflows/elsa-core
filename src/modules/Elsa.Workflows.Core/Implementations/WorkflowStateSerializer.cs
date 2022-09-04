@@ -21,7 +21,8 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
         var state = new WorkflowState
         {
             Id = workflowExecutionContext.Id,
-            WorkflowIdentity = workflowExecutionContext.Workflow.Identity,
+            DefinitionId = workflowExecutionContext.Workflow.Identity.DefinitionId,
+            Version = workflowExecutionContext.Workflow.Identity.Version,
             CorrelationId = workflowExecutionContext.CorrelationId,
             Status = workflowExecutionContext.Status,
             SubStatus = workflowExecutionContext.SubStatus,
