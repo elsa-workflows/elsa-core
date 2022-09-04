@@ -1,8 +1,8 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Elsa.Workflows.Api.Models;
+using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Mappers;
-using Elsa.Workflows.Persistence.Entities;
 using Elsa.Workflows.Runtime.Services;
 using FastEndpoints;
 

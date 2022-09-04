@@ -1,13 +1,13 @@
 using Elsa.ActivityDefinitions.Entities;
 using Elsa.ActivityDefinitions.Implementations;
 using Elsa.ActivityDefinitions.Services;
+using Elsa.Common.Extensions;
 using Elsa.Common.Features;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Mediator.Extensions;
 using Elsa.Mediator.Features;
-using Elsa.Persistence.Common.Extensions;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,12 +23,6 @@ public class ActivityDefinitionsFeature : FeatureBase
     }
 
     public Func<IServiceProvider, IActivityDefinitionStore> ActivityDefinitionStore { get; set; } = sp => sp.GetRequiredService<MemoryActivityDefinitionStore>();
-
-    public ActivityDefinitionsFeature WithActivityDefinitionStore(Func<IServiceProvider, IActivityDefinitionStore> factory)
-    {
-        ActivityDefinitionStore = factory;
-        return this;
-    }
     
     public override void Apply()
     {

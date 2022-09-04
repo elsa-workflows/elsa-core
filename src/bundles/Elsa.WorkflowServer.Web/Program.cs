@@ -1,5 +1,3 @@
-using Elsa.ActivityDefinitions.EntityFrameworkCore.Extensions;
-using Elsa.ActivityDefinitions.EntityFrameworkCore.Sqlite;
 using Elsa.Extensions;
 using Elsa.Features.Extensions;
 using Elsa.Http;
@@ -11,10 +9,17 @@ using Elsa.JavaScript.Extensions;
 using Elsa.Jobs.Activities.Extensions;
 using Elsa.Jobs.Activities.Implementations;
 using Elsa.Jobs.Activities.Services;
-using Elsa.Labels.EntityFrameworkCore.Extensions;
-using Elsa.Labels.EntityFrameworkCore.Sqlite;
 using Elsa.Labels.Extensions;
 using Elsa.Liquid.Extensions;
+using Elsa.Persistence.EntityFrameworkCore.Modules.ActivityDefinitions;
+using Elsa.Persistence.EntityFrameworkCore.Modules.Labels;
+using Elsa.Persistence.EntityFrameworkCore.Modules.Management;
+using Elsa.Persistence.EntityFrameworkCore.Modules.Runtime;
+using Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.ActivityDefinitions;
+using Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.Labels;
+using Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.Management;
+using Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.Runtime;
+using Elsa.Requirements;
 using Elsa.Scheduling.Extensions;
 using Elsa.WorkflowContexts.Extensions;
 using Elsa.Workflows.Api.Extensions;
@@ -23,20 +28,16 @@ using Elsa.Workflows.Core.Activities.Flowchart.Activities;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution.Components;
 using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Management.Services;
-using Elsa.Workflows.Persistence.EntityFrameworkCore.Extensions;
-using Elsa.Workflows.Persistence.EntityFrameworkCore.Sqlite;
-using Elsa.Workflows.Persistence.Extensions;
 using Elsa.Workflows.Runtime.Extensions;
 using Elsa.WorkflowServer.Web.Jobs;
 using FastEndpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
-using Event = Elsa.Workflows.Core.Activities.Event;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 var configuration = builder.Configuration;
-var dbConnectionString = configuration.GetConnectionString("Sqlite");
+var sqliteConnectionString = configuration.GetConnectionString("Sqlite");
 var identityOptions = new IdentityOptions();
 var identitySection = configuration.GetSection("Identity");
 identitySection.Bind(identityOptions);
@@ -45,6 +46,7 @@ identitySection.Bind(identityOptions);
 services
     .AddElsa(elsa => elsa
         .UseManagement(management => management
+            .UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString))
             .AddActivity<WriteLine>()
             .AddActivity<ReadLine>()
             .AddActivity<If>()
@@ -65,15 +67,15 @@ services
             identity.CreateDefaultUser = true;
             identity.IdentityOptions = options => identitySection.Bind(options);
         })
-        //.UseRuntime(runtime => runtime.UseProtoActor(proto => proto.PersistenceProvider = _ => new SqliteProvider(new SqliteConnectionStringBuilder(dbConnectionString))))
+        //.UseRuntime(runtime => runtime.UseProtoActor(proto => proto.PersistenceProvider = _ => new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString))))
+        .UseRuntime(runtime => runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
+        .UseLabels(labels => labels.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
+        .UseActivityDefinitions(feature => feature.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
         .UseJobActivities()
         .UseScheduling()
-        .UseWorkflowPersistence(p => p.UseEntityFrameworkCore(ef => ef.UseSqlite(dbConnectionString)))
         .UseWorkflowApiEndpoints()
         .UseJavaScript()
         .UseLiquid()
-        .UseLabels(labels => labels.UseEntityFrameworkCore(ef => ef.UseSqlite()))
-        .UseCustomActivities(feature => feature.UseEntityFrameworkCore(ef => ef.UseSqlite()))
         .UseHttp()
     );
 
@@ -105,7 +107,7 @@ activityRegistryPopulator.PopulateRegistryAsync(typeof(JobActivityProvider));
 // Configure workflow engine execution pipeline.
 serviceProvider.ConfigureDefaultWorkflowExecutionPipeline(pipeline =>
     pipeline
-        .UseWorkflowExecutionEvents()
+        .UsePersistentVariables()
         .UseWorkflowContexts()
         .UseStackBasedActivityScheduler()
 );

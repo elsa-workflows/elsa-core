@@ -42,7 +42,7 @@ services
         .UseJavaScript()
         .UseLiquid()
         .UseHttp()
-        .UseCustomActivities()
+        .UseActivityDefinitions()
     );
 
 // Register serialization configurator for configuring what types to allow to be serialized.

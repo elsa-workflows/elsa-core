@@ -1,4 +1,3 @@
-using Elsa.ProtoActor.Common;
 using Proto;
 using Proto.Cluster.Partition;
 using Proto.Cluster.Testing;

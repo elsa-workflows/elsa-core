@@ -18,7 +18,6 @@
         <ProjectReference Include="..\..\common\Elsa.Formatting\Elsa.Formatting.csproj" />
         <ProjectReference Include="..\Elsa.Mediator\Elsa.Mediator.csproj" />
         <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
-        <ProjectReference Include="..\Elsa.Workflows.Persistence\Elsa.Workflows.Persistence.csproj" />
         <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
     </ItemGroup>
 

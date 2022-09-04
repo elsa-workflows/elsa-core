@@ -41,6 +41,6 @@ public class FinishTests
     public async Task Test3()
     {
         var result = await _workflowRunner.RunAsync<FinishSequentialWorkflow>();
-        Assert.Empty(result.Bookmarks);
+        Assert.Empty(result.WorkflowState.Bookmarks);
     }
 }

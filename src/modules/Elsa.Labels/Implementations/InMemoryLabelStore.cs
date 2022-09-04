@@ -1,8 +1,8 @@
+using Elsa.Common.Extensions;
+using Elsa.Common.Implementations;
+using Elsa.Common.Models;
 using Elsa.Labels.Entities;
 using Elsa.Labels.Services;
-using Elsa.Models;
-using Elsa.Persistence.Common.Extensions;
-using Elsa.Persistence.Common.Implementations;
 
 namespace Elsa.Labels.Implementations;
 
@@ -19,13 +19,13 @@ public class InMemoryLabelStore : ILabelStore
 
     public Task SaveAsync(Label record, CancellationToken cancellationToken = default)
     {
-        _labelStore.Save(record);
+        _labelStore.Save(record, x => x.Id);
         return Task.CompletedTask;
     }
 
     public Task SaveManyAsync(IEnumerable<Label> records, CancellationToken cancellationToken = default)
     {
-        _labelStore.SaveMany(records);
+        _labelStore.SaveMany(records, x => x.Id);
         return Task.CompletedTask;
     }
 

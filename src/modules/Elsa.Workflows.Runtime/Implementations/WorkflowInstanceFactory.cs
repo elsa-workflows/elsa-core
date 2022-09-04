@@ -1,10 +1,10 @@
+using Elsa.Common.Models;
 using Elsa.Common.Services;
-using Elsa.Models;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Core.State;
-using Elsa.Workflows.Persistence.Entities;
-using Elsa.Workflows.Persistence.Services;
+using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Runtime.Services;
 
 namespace Elsa.Workflows.Runtime.Implementations;

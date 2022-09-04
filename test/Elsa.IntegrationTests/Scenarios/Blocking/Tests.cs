@@ -37,10 +37,10 @@ public class Tests
         
         // Start workflow.
         var result = await _workflowRunner.RunAsync(workflow);
-        var bookmark = result.Bookmarks.FirstOrDefault(x => x.ActivityId == "Resume");
+        var bookmark = result.WorkflowState.Bookmarks.FirstOrDefault(x => x.ActivityId == "Resume");
 
         // Resume workflow.
-        await _workflowRunner.RunAsync(workflow, result.WorkflowState, bookmark);
+        await _workflowRunner.RunAsync(workflow, result.WorkflowState, bookmark!.Id);
         
         // Verify expected output.
         var lines = _capturingTextWriter.Lines.ToList();

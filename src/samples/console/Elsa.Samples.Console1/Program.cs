@@ -29,7 +29,7 @@ class Program
 
             // Configure workflow engine execution pipeline.
             .ConfigureDefaultWorkflowExecutionPipeline(pipeline => pipeline
-                .UsePersistence()
+                .UsePersistentVariables()
                 .UseStackBasedActivityScheduler()
             );
 
@@ -56,7 +56,7 @@ class Program
         var workflowRunner = serviceProvider.GetRequiredService<IWorkflowRunner>();
         var workflowExecutionResult = await workflowRunner.RunAsync(workflow);
         var workflowState = workflowExecutionResult.WorkflowState;
-        var bookmarks = new List<Bookmark>(workflowExecutionResult.Bookmarks);
+        var bookmarks = new List<Bookmark>(workflowState.Bookmarks);
 
         while (bookmarks.Any())
         {
@@ -75,9 +75,9 @@ class Program
 
                 Console.ReadLine();
 
-                var resumeResult = await workflowRunner.RunAsync(workflow, workflowState, bookmark);
+                var resumeResult = await workflowRunner.RunAsync(workflow, workflowState, bookmark.Id);
                 workflowState = resumeResult.WorkflowState;
-                bookmarks = resumeResult.Bookmarks.ToList();
+                bookmarks = workflowState.Bookmarks.ToList();
             }
         }
     }

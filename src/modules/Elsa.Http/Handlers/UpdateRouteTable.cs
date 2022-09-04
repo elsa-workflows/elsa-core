@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Elsa.Http.Extensions;
 using Elsa.Http.Services;
 using Elsa.Mediator.Services;
-using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Notifications;
 
 namespace Elsa.Http.Handlers

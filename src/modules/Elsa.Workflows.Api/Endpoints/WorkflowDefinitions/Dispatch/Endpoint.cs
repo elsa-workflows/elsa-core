@@ -1,8 +1,8 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Abstractions;
-using Elsa.Models;
-using Elsa.Workflows.Persistence.Services;
+using Elsa.Common.Models;
+using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Services;
 

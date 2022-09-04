@@ -3,11 +3,11 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Abstractions;
-using Elsa.Models;
+using Elsa.Common.Models;
 using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Management.Mappers;
-using Elsa.Workflows.Persistence.Services;
+using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Runtime.Services;
 using Humanizer;
 
