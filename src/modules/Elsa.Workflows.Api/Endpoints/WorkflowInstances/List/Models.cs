@@ -1,7 +1,7 @@
 using System.Collections.Generic;
-using Elsa.Persistence.Common.Entities;
+using Elsa.Common.Entities;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Persistence.Models;
+using Elsa.Workflows.Management.Models;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.List;
 

@@ -45,6 +45,9 @@ public static class WorkflowExecutionContextExtensions
 
         // If no resumption point was specified, use Noop to prevent the regular "ExecuteAsync" method to be invoked.
         workflowExecutionContext.ExecuteDelegate = bookmark.CallbackMethodName != null ? bookmarkedActivity.GetResumeActivityDelegate(bookmark.CallbackMethodName) : WorkflowExecutionContext.Complete;
+        
+        // Remove the bookmark.
+        workflowExecutionContext.Bookmarks.Remove(bookmark);
     }
 
     /// <summary>

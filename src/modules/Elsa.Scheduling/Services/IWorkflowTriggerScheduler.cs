@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Workflows.Persistence.Entities;
+using Elsa.Workflows.Runtime.Entities;
 
 namespace Elsa.Scheduling.Services;
 

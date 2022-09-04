@@ -13,6 +13,6 @@ public interface IWorkflowRunner
     Task<RunWorkflowResult> RunAsync<T>(string instanceId, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default) where T : IWorkflow;
     Task<RunWorkflowResult> RunAsync(Workflow workflow, string instanceId, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default);
     Task<RunWorkflowResult> RunAsync(Workflow workflow, WorkflowState workflowState, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default);
-    Task<RunWorkflowResult> RunAsync(Workflow workflow, WorkflowState workflowState, Bookmark? bookmark, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default);
+    Task<RunWorkflowResult> RunAsync(Workflow workflow, WorkflowState workflowState, string? bookmarkId, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default);
     Task<RunWorkflowResult> RunAsync(WorkflowExecutionContext workflowExecutionContext);
 }

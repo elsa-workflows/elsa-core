@@ -30,8 +30,8 @@ public class WorkflowStateStorageDriver : IStorageDriver
         return ValueTask.CompletedTask;
     }
 
-    private IDictionary<string, object> GetVariablesDictionary(DataDriveContext context) => context.WorkflowState.Properties.GetOrAdd(VariablesDictionaryStateKey, () => new Dictionary<string, object>());
-    private void SetVariablesDictionary(DataDriveContext context, IDictionary<string, object> dictionary) => context.WorkflowState.Properties[VariablesDictionaryStateKey] = dictionary;
+    private IDictionary<string, object> GetVariablesDictionary(DataDriveContext context) => context.WorkflowExecutionContext.Properties.GetOrAdd(VariablesDictionaryStateKey, () => new Dictionary<string, object>());
+    private void SetVariablesDictionary(DataDriveContext context, IDictionary<string, object> dictionary) => context.WorkflowExecutionContext.Properties[VariablesDictionaryStateKey] = dictionary;
 
     private void UpdateVariablesDictionary(DataDriveContext context, Action<IDictionary<string, object>> update)
     {

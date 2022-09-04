@@ -1,7 +1,7 @@
 using System;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.State;
-using Elsa.Workflows.Persistence.Models;
+using Elsa.Workflows.Management.Models;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.Get;
 

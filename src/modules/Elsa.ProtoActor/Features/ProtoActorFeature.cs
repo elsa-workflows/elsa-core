@@ -2,7 +2,6 @@ using System;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
-using Elsa.ProtoActor.Common;
 using Elsa.ProtoActor.Extensions;
 using Elsa.ProtoActor.Grains;
 using Elsa.ProtoActor.HostedServices;

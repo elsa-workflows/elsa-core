@@ -58,11 +58,11 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
         return new ResumeWorkflowResult();
     }
 
-    public async Task<TriggerWorkflowsResult> TriggerWorkflowsAsync(string bookmarkName, object bookmarkPayload, TriggerWorkflowsOptions options, CancellationToken cancellationToken = default)
+    public async Task<TriggerWorkflowsResult> TriggerWorkflowsAsync(string activityTypeName, object bookmarkPayload, TriggerWorkflowsOptions options, CancellationToken cancellationToken = default)
     {
         var hash = _hasher.Hash(bookmarkPayload);
         var client = _cluster.GetBookmarkGrain(hash);
-        var request = new ResolveBookmarksRequest() { BookmarkName = bookmarkName };
+        var request = new ResolveBookmarksRequest() { BookmarkName = activityTypeName };
         var bookmarksResponse = await client.Resolve(request, cancellationToken);
         var bookmarks = bookmarksResponse!.Bookmarks;
 

@@ -1,6 +1,6 @@
+using Elsa.Common.Implementations;
 using Elsa.Labels.Entities;
 using Elsa.Labels.Services;
-using Elsa.Persistence.Common.Implementations;
 
 namespace Elsa.Labels.Implementations;
 
@@ -15,13 +15,13 @@ public class InMemoryWorkflowDefinitionLabelStore : IWorkflowDefinitionLabelStor
 
     public Task SaveAsync(WorkflowDefinitionLabel record, CancellationToken cancellationToken = default)
     {
-        _store.Save(record);
+        _store.Save(record, x => x.Id);
         return Task.CompletedTask;
     }
 
     public Task SaveManyAsync(IEnumerable<WorkflowDefinitionLabel> records, CancellationToken cancellationToken = default)
     {
-        _store.SaveMany(records);
+        _store.SaveMany(records, x => x.Id);
         return Task.CompletedTask;
     }
 
@@ -45,8 +45,8 @@ public class InMemoryWorkflowDefinitionLabelStore : IWorkflowDefinitionLabelStor
 
     public Task ReplaceAsync(IEnumerable<WorkflowDefinitionLabel> removed, IEnumerable<WorkflowDefinitionLabel> added, CancellationToken cancellationToken = default)
     {
-        _store.DeleteMany(removed);
-        _store.SaveMany(added);
+        _store.DeleteMany(removed, x => x.Id);
+        _store.SaveMany(added, x => x.Id);
         return Task.CompletedTask;
     }
 

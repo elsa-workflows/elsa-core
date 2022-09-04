@@ -1,6 +1,6 @@
+using Elsa.Common.Implementations;
 using Elsa.Identity.Entities;
 using Elsa.Identity.Services;
-using Elsa.Persistence.Common.Implementations;
 
 namespace Elsa.Identity.Implementations;
 
@@ -15,7 +15,7 @@ public class MemoryRoleStore : IRoleStore
     
     public Task AddAsync(Role role, CancellationToken cancellationToken = default)
     {
-        _store.Save(role);
+        _store.Save(role, x => x.Id);
         return Task.CompletedTask;
     }
 

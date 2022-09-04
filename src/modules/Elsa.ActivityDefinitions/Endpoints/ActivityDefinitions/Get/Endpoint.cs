@@ -3,7 +3,7 @@ using Elsa.Abstractions;
 using Elsa.ActivityDefinitions.Entities;
 using Elsa.ActivityDefinitions.Models;
 using Elsa.ActivityDefinitions.Services;
-using Elsa.Models;
+using Elsa.Common.Models;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Mappers;

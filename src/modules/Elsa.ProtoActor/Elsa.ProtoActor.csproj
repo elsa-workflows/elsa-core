@@ -24,13 +24,9 @@
         <PackageReference Include="Proto.Cluster.TestProvider" Version="0.33.0" />
         <PackageReference Include="Proto.Persistence" Version="0.33.0" />
         <PackageReference Include="Proto.Remote" Version="0.33.0" />
-<!--        <PackageReference Include="Proto.Remote.GrpcCore" Version="0.27.1-alpha.0.45" />-->
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Elsa.ProtoActor.Common\Elsa.ProtoActor.Common.csproj" />
-        <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
-        <ProjectReference Include="..\Elsa.Workflows.Persistence\Elsa.Workflows.Persistence.csproj" />
         <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
     </ItemGroup>
 

@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Elsa.Workflows.Persistence.Models;
+using Elsa.Workflows.Management.Models;
 using FastEndpoints;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.List;

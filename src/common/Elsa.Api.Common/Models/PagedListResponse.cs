@@ -1,3 +1,5 @@
+using Elsa.Common.Models;
+
 namespace Elsa.Models;
 
 public class PagedListResponse<T>

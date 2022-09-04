@@ -1,6 +1,6 @@
+using Elsa.Common.Implementations;
 using Elsa.Identity.Entities;
 using Elsa.Identity.Services;
-using Elsa.Persistence.Common.Implementations;
 
 namespace Elsa.Identity.Implementations;
 
@@ -15,7 +15,7 @@ public class MemoryUserStore : IUserStore
     
     public Task SaveAsync(User user, CancellationToken cancellationToken = default)
     {
-        _store.Save(user);
+        _store.Save(user, x => x.Id);
         return Task.CompletedTask;
     }
 

@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Elsa.Common.Extensions;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Behaviors;
 using Elsa.Workflows.Core.Models;
@@ -74,8 +75,7 @@ public class Fork : Activity
         var forkNode = context.ActivityNode;
         var branchNodes = forkNode.Children;
         var branchDescendantActivityIds = branchNodes.SelectMany(x => x.Flatten()).Select(x => x.Activity.Id).ToHashSet();
-        var bookmarksToRemove = workflowExecutionContext.Bookmarks.Where(x => branchDescendantActivityIds.Contains(x.ActivityId)).ToList();
-
-        workflowExecutionContext.UnregisterBookmarks(bookmarksToRemove);
+        
+        workflowExecutionContext.Bookmarks.RemoveWhere(x => branchDescendantActivityIds.Contains(x.ActivityId));
     }
 }

@@ -1,9 +1,9 @@
 using Elsa.ActivityDefinitions.Entities;
 using Elsa.ActivityDefinitions.Models;
 using Elsa.ActivityDefinitions.Services;
-using Elsa.Models;
-using Elsa.Persistence.Common.Extensions;
-using Elsa.Persistence.Common.Implementations;
+using Elsa.Common.Extensions;
+using Elsa.Common.Implementations;
+using Elsa.Common.Models;
 
 namespace Elsa.ActivityDefinitions.Implementations;
 
@@ -52,7 +52,7 @@ public class MemoryActivityDefinitionStore : IActivityDefinitionStore
 
     public Task SaveAsync(ActivityDefinition record, CancellationToken cancellationToken = default)
     {
-        _store.Save(record);
+        _store.Save(record, x => x.Id);
         return Task.CompletedTask;
     }
 

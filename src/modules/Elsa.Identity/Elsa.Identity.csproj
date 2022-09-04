@@ -13,7 +13,6 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\common\Elsa.Api.Common\Elsa.Api.Common.csproj" />
-      <ProjectReference Include="..\..\common\Elsa.Persistence.Common\Elsa.Persistence.Common.csproj" />
     </ItemGroup>
 
 </Project>

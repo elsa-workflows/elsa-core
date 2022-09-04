@@ -1,6 +1,7 @@
 using Elsa.Abstractions;
 using Elsa.ActivityDefinitions.Models;
 using Elsa.ActivityDefinitions.Services;
+using Elsa.Common.Models;
 using Elsa.Models;
 
 namespace Elsa.ActivityDefinitions.Endpoints.ActivityDefinitions.List;

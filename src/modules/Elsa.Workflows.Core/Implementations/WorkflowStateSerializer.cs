@@ -21,9 +21,12 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
         var state = new WorkflowState
         {
             Id = workflowExecutionContext.Id,
+            DefinitionId = workflowExecutionContext.Workflow.Identity.DefinitionId,
+            Version = workflowExecutionContext.Workflow.Identity.Version,
             CorrelationId = workflowExecutionContext.CorrelationId,
             Status = workflowExecutionContext.Status,
-            SubStatus = workflowExecutionContext.SubStatus
+            SubStatus = workflowExecutionContext.SubStatus,
+            Bookmarks = workflowExecutionContext.Bookmarks
         };
 
         SerializeProperties(state, workflowExecutionContext);
@@ -39,6 +42,7 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
         workflowExecutionContext.Id = state.Id;
         workflowExecutionContext.CorrelationId = state.CorrelationId;
         workflowExecutionContext.SubStatus = state.SubStatus;
+        workflowExecutionContext.Bookmarks = state.Bookmarks;
         DeserializeProperties(state, workflowExecutionContext);
         DeserializeActivityExecutionContexts(state, workflowExecutionContext);
         DeserializeCompletionCallbacks(state, workflowExecutionContext);

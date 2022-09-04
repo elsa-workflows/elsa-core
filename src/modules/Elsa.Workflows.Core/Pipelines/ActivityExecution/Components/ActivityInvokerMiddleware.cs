@@ -1,3 +1,4 @@
+using Elsa.Common.Extensions;
 using Elsa.Common.Services;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
@@ -54,7 +55,7 @@ public class ActivityInvokerMiddleware : IActivityExecutionMiddleware
         if (context.Bookmarks.Any())
         {
             // Store bookmarks.
-            workflowExecution.RegisterBookmarks(context.Bookmarks);
+            workflowExecution.Bookmarks.AddRange(context.Bookmarks);
         }
     }
 }

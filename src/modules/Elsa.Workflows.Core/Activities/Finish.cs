@@ -17,7 +17,7 @@ public class Finish : Activity
     {
         context.ClearCompletionCallbacks();
         context.WorkflowExecutionContext.Scheduler.Clear();
-        context.WorkflowExecutionContext.ClearBookmarks();
+        context.WorkflowExecutionContext.Bookmarks.Clear();
         context.WorkflowExecutionContext.TransitionTo(WorkflowSubStatus.Finished);
     }
 }

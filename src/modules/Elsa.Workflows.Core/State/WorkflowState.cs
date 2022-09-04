@@ -13,10 +13,20 @@ public class WorkflowState
     public string Id { get; set; } = default!;
     
     /// <summary>
+    /// The workflow definition ID.
+    /// </summary>
+    public string DefinitionId { get; set; } = default!;
+    
+    /// <summary>
+    /// The workflow definition version.
+    /// </summary>
+    public int Version { get; set; } = default!;
+
+    /// <summary>
     /// The correlation ID of the workflow, if any.
     /// </summary>
     public string? CorrelationId { get; set; }
-    
+
     /// <summary>
     /// The status of the workflow.
     /// </summary>
@@ -26,6 +36,11 @@ public class WorkflowState
     /// The sub status of the workflow.
     /// </summary>
     public WorkflowSubStatus SubStatus { get; set; }
+
+    /// <summary>
+    /// Collected bookmarks.
+    /// </summary>
+    public ICollection<Bookmark> Bookmarks { get; set; } = new List<Bookmark>();
     
     /// <summary>
     /// A dictionary of activity output.

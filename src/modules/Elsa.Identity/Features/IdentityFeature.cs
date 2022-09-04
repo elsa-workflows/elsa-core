@@ -1,3 +1,4 @@
+using Elsa.Common.Extensions;
 using Elsa.Common.Features;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
@@ -7,7 +8,6 @@ using Elsa.Identity.HostedServices;
 using Elsa.Identity.Implementations;
 using Elsa.Identity.Options;
 using Elsa.Identity.Services;
-using Elsa.Persistence.Common.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Identity.Features;

@@ -1,4 +1,4 @@
-using Elsa.Workflows.Persistence.Entities;
+using Elsa.Workflows.Management.Entities;
 using FastEndpoints;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.Get;

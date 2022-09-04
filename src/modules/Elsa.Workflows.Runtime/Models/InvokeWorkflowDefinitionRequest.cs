@@ -1,4 +1,4 @@
-using Elsa.Models;
+using Elsa.Common.Models;
 
 namespace Elsa.Workflows.Runtime.Models;
 

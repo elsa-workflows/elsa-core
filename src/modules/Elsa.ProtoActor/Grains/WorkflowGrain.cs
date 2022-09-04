@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Common.Models;
 using Elsa.Mediator.Services;
-using Elsa.Models;
 using Elsa.ProtoActor.Extensions;
 using Elsa.Runtime.Protos;
 using Elsa.Workflows.Core.Helpers;
@@ -96,7 +96,7 @@ public class WorkflowGrain : WorkflowGrainBase
         _definitionId = definitionId;
         _input = input;
 
-        await UpdateBookmarksAsync(workflowResult.Bookmarks, cancellationToken);
+        await UpdateBookmarksAsync(_workflowState.Bookmarks, cancellationToken);
         await SaveSnapshotAsync();
 
         return new StartWorkflowResponse
@@ -109,20 +109,14 @@ public class WorkflowGrain : WorkflowGrainBase
     {
         var input = request.Input?.Deserialize();
         var bookmarkId = request.BookmarkId;
-
         var cancellationToken = Context.CancellationToken;
-        var bookmark = _bookmarks.FirstOrDefault(x => x.Id == bookmarkId);
-
-        if (bookmark == null)
-            throw new Exception("Bookmark not found");
-
-        var workflowResult = await _workflowRunner.RunAsync(_workflow, _workflowState, bookmark, input, cancellationToken);
+        var workflowResult = await _workflowRunner.RunAsync(_workflow, _workflowState, bookmarkId, input, cancellationToken);
         var finished = workflowResult.WorkflowState.Status == WorkflowStatus.Finished;
 
         _workflowState = workflowResult.WorkflowState;
         _input = input;
 
-        await UpdateBookmarksAsync(workflowResult.Bookmarks, cancellationToken);
+        await UpdateBookmarksAsync(_workflowState.Bookmarks, cancellationToken);
         await SaveSnapshotAsync();
 
         return new ResumeWorkflowResponse

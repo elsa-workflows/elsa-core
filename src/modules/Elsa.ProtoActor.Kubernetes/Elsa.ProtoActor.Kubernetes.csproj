@@ -11,7 +11,7 @@
     </ItemGroup>
 
     <ItemGroup Label="ProtoActor">
-        <PackageReference Include="Proto.Cluster.Kubernetes" Version="0.29.1-alpha.0.6" />
+        <PackageReference Include="Proto.Cluster.Kubernetes" Version="0.33.0" />
     </ItemGroup>
 
     <ItemGroup>
