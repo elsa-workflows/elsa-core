@@ -1,4 +1,5 @@
 ﻿using Elsa.Persistence.EntityFrameworkCore.Modules.ActivityDefinitions;
+using Elsa.Persistence.EntityFrameworkCore.Sqlite.Abstractions;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.ActivityDefinitions;
 

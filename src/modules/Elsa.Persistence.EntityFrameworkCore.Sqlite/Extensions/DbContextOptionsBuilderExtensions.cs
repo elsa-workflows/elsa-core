@@ -1,7 +1,7 @@
 ﻿using Elsa.Persistence.EntityFrameworkCore.Common;
 using Microsoft.EntityFrameworkCore;
 
-namespace Elsa.Persistence.EntityFrameworkCore.Sqlite
+namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Extensions
 {
     public static class DbContextOptionsBuilderExtensions
     {

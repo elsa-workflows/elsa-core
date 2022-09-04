@@ -1,4 +1,5 @@
 ﻿using Elsa.Persistence.EntityFrameworkCore.Modules.Labels;
+using Elsa.Persistence.EntityFrameworkCore.Sqlite.Extensions;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.Labels
 {
