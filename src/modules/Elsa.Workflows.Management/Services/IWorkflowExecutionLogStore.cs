@@ -1,7 +1,7 @@
 using Elsa.Models;
-using Elsa.Workflows.Persistence.Entities;
+using Elsa.Workflows.Management.Entities;
 
-namespace Elsa.Workflows.Persistence.Services;
+namespace Elsa.Workflows.Management.Services;
 
 public interface IWorkflowExecutionLogStore
 {

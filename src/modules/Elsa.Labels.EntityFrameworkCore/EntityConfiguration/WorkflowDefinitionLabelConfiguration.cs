@@ -1,5 +1,5 @@
 using Elsa.Labels.Entities;
-using Elsa.Workflows.Persistence.Entities;
+using Elsa.Workflows.Management.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

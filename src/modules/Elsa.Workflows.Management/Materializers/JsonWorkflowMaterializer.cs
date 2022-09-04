@@ -2,9 +2,9 @@ using System.Text.Json;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Management.Services;
-using Elsa.Workflows.Persistence.Entities;
-using Elsa.Workflows.Persistence.Extensions;
 
 namespace Elsa.Workflows.Management.Materializers;
 

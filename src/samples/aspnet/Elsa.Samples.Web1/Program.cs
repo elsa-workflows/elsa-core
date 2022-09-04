@@ -10,7 +10,6 @@ using Elsa.Workflows.Api.Extensions;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution.Components;
 using Elsa.Workflows.Persistence.EntityFrameworkCore.Extensions;
 using Elsa.Workflows.Persistence.EntityFrameworkCore.Sqlite;
-using Elsa.Workflows.Persistence.Extensions;
 using Elsa.Workflows.Runtime.Extensions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
@@ -28,7 +27,7 @@ var sqlServerConnectionString = configuration.GetConnectionString("SqlServer");
 // Add Elsa services.
 services
     .AddElsa(elsa => elsa
-        .UseWorkflowPersistence(persistence => persistence.UseEntityFrameworkCore(ef => ef.UseSqlite()))
+        .UseEntityFrameworkCorePersistence(ef => ef.UseSqlite())
         .UseRuntime(runtime => runtime
             .AddWorkflow<HelloWorldWorkflow>()
             .AddWorkflow<HttpWorkflow>()

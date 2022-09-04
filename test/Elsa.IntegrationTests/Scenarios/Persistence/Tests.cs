@@ -4,7 +4,7 @@ using Elsa.Persistence.Common.Implementations;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution.Components;
 using Elsa.Workflows.Core.Services;
-using Elsa.Workflows.Persistence.Entities;
+using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Runtime.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;

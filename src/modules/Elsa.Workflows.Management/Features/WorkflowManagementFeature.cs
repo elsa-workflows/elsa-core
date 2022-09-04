@@ -4,16 +4,17 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Mediator.Features;
+using Elsa.Persistence.Common.Extensions;
 using Elsa.Workflows.Core.Features;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Implementations;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Management.Providers;
 using Elsa.Workflows.Management.Serialization;
 using Elsa.Workflows.Management.Services;
-using Elsa.Workflows.Persistence.Features;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Management.Features;
@@ -21,7 +22,6 @@ namespace Elsa.Workflows.Management.Features;
 [DependsOn(typeof(MediatorFeature))]
 [DependsOn(typeof(SystemClockFeature))]
 [DependsOn(typeof(WorkflowsFeature))]
-[DependsOn(typeof(WorkflowPersistenceFeature))]
 public class WorkflowManagementFeature : FeatureBase
 {
     public WorkflowManagementFeature(IModule module) : base(module)
@@ -29,6 +29,10 @@ public class WorkflowManagementFeature : FeatureBase
     }
     
     public HashSet<Type> ActivityTypes { get; } = new();
+    public Func<IServiceProvider, IWorkflowDefinitionStore> WorkflowDefinitionStore { get; set; } = sp => sp.GetRequiredService<MemoryWorkflowDefinitionStore>();
+    public Func<IServiceProvider, IWorkflowInstanceStore> WorkflowInstanceStore { get; set; } = sp => sp.GetRequiredService<MemoryWorkflowInstanceStore>();
+    public Func<IServiceProvider, IWorkflowTriggerStore> WorkflowTriggerStore { get; set; } = sp => sp.GetRequiredService<MemoryWorkflowTriggerStore>();
+    public Func<IServiceProvider, IWorkflowExecutionLogStore> WorkflowExecutionLogStore { get; set; } = sp => sp.GetRequiredService<MemoryWorkflowExecutionLogStore>();
 
     public WorkflowManagementFeature AddActivity<T>() where T : IActivity
     {
@@ -39,6 +43,14 @@ public class WorkflowManagementFeature : FeatureBase
     public override void Apply()
     {
         Services
+            .AddMemoryStore<WorkflowDefinition, MemoryWorkflowDefinitionStore>()
+            .AddMemoryStore<WorkflowInstance, MemoryWorkflowInstanceStore>()
+            .AddMemoryStore<WorkflowTrigger, MemoryWorkflowTriggerStore>()
+            .AddMemoryStore<WorkflowExecutionLogRecord, MemoryWorkflowExecutionLogStore>()
+            .AddSingleton(WorkflowInstanceStore)
+            .AddSingleton(WorkflowTriggerStore)
+            .AddSingleton(WorkflowExecutionLogStore)
+            .AddSingleton(WorkflowDefinitionStore)
             .AddSingleton<IWorkflowDefinitionPublisher, WorkflowDefinitionPublisher>()
             .AddSingleton<IWorkflowDefinitionManager, WorkflowDefinitionManager>()
             .AddSingleton<IActivityDescriber, ActivityDescriber>()

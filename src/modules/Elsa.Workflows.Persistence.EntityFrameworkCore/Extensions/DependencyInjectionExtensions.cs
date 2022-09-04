@@ -1,13 +1,13 @@
+using Elsa.Features.Services;
 using Elsa.Workflows.Persistence.EntityFrameworkCore.Features;
-using Elsa.Workflows.Persistence.Features;
 
 namespace Elsa.Workflows.Persistence.EntityFrameworkCore.Extensions;
 
 public static class DependencyInjectionExtensions
 {
-    public static WorkflowPersistenceFeature UseEntityFrameworkCore(this WorkflowPersistenceFeature feature, Action<EFCoreWorkflowPersistenceFeature> configure)
+    public static IModule UseEntityFrameworkCorePersistence(this IModule module, Action<EFCoreWorkflowPersistenceFeature> configure)
     {
-        feature.Module.Configure(configure);
-        return feature;
+        module.Configure(configure);
+        return module;
     }
 }

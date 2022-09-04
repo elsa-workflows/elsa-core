@@ -3,8 +3,8 @@ using System.Text.Json.Serialization;
 using Elsa.Persistence.EntityFrameworkCore.Common.Services;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.State;
-using Elsa.Workflows.Persistence.Entities;
-using Elsa.Workflows.Persistence.Models;
+using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Models;
 
 namespace Elsa.Workflows.Persistence.EntityFrameworkCore.Handlers;
 
@@ -41,7 +41,7 @@ public class WorkflowInstanceSerializer : IEntitySerializer<WorkflowsDbContext, 
         entity.Fault = data.Fault;
     }
 
-    // Can't use records when using System.Text.Json serialization and reference handling. Hence, using a class with default constructor.
+    // Can't use records when using System.Text.Json serialization and reference handling.
     private class WorkflowInstanceState
     {
         public WorkflowInstanceState()

@@ -3,9 +3,9 @@ using Elsa.Models;
 using Elsa.Persistence.Common.Extensions;
 using Elsa.Persistence.EntityFrameworkCore.Common.Extensions;
 using Elsa.Persistence.EntityFrameworkCore.Common.Services;
-using Elsa.Workflows.Persistence.Entities;
-using Elsa.Workflows.Persistence.Models;
-using Elsa.Workflows.Persistence.Services;
+using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Models;
+using Elsa.Workflows.Management.Services;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Workflows.Persistence.EntityFrameworkCore.Implementations;

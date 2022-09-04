@@ -25,11 +25,7 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// A list of workflow builders configured during application startup.
     /// </summary>
     public IDictionary<string, Func<IServiceProvider, ValueTask<IWorkflow>>> Workflows { get; set; } = new Dictionary<string, Func<IServiceProvider, ValueTask<IWorkflow>>>();
-
-    /// <summary>
-    /// A list of <see cref="IWorkflowStateExporter"/> providers. Each provider will be invoked when running a workflow.
-    /// </summary>
-    public ISet<Func<IServiceProvider, IWorkflowStateExporter>> WorkflowStateExporters { get; set; } = new HashSet<Func<IServiceProvider, IWorkflowStateExporter>>();
+    
 
     /// <summary>
     /// A factory that instantiates a concrete <see cref="IWorkflowInvoker"/>.
@@ -54,12 +50,6 @@ public class WorkflowRuntimeFeature : FeatureBase
     public WorkflowRuntimeFeature AddWorkflow<T>() where T : IWorkflow
     {
         Workflows.Add<T>();
-        return this;
-    }
-    
-    public WorkflowRuntimeFeature AddWorkflowSateExporter<T>() where T : IWorkflowStateExporter
-    {
-        WorkflowStateExporters.Add<T>();
         return this;
     }
 
@@ -98,7 +88,6 @@ public class WorkflowRuntimeFeature : FeatureBase
         Services.Configure<WorkflowRuntimeOptions>(options =>
         {
             options.Workflows = Workflows;
-            options.WorkflowStateExporters = WorkflowStateExporters;
         });
     }
 }

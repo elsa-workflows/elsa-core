@@ -4,7 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Abstractions;
 using Elsa.Models;
-using Elsa.Workflows.Persistence.Services;
+using Elsa.Workflows.Management.Services;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.List;

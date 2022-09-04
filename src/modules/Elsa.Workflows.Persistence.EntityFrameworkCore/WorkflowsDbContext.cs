@@ -1,5 +1,6 @@
 ﻿using Elsa.Persistence.EntityFrameworkCore.Common.Abstractions;
-using Elsa.Workflows.Persistence.Entities;
+using Elsa.Workflows.Core.State;
+using Elsa.Workflows.Management.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Workflows.Persistence.EntityFrameworkCore;
@@ -11,6 +12,7 @@ public class WorkflowsDbContext : ElsaDbContextBase
     }
 
     public DbSet<WorkflowDefinition> WorkflowDefinitions { get; set; } = default!;
+    public DbSet<WorkflowState> WorkflowStates { get; set; } = default!;
     public DbSet<WorkflowInstance> WorkflowInstances { get; set; } = default!;
     public DbSet<WorkflowTrigger> WorkflowTriggers { get; set; } = default!;
     public DbSet<WorkflowExecutionLogRecord> WorkflowExecutionLogRecords { get; set; } = default!;

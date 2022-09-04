@@ -1,9 +1,8 @@
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
-using Elsa.Workflows.Persistence.Entities;
 
-namespace Elsa.Workflows.Persistence.Extensions;
+namespace Elsa.Workflows.Management.Extensions;
 
 public static class WorkflowBookmarkExtensions
 {

@@ -9,8 +9,8 @@ using Elsa.Scheduling.Activities;
 using Elsa.Scheduling.Jobs;
 using Elsa.Scheduling.Services;
 using Elsa.Workflows.Core;
-using Elsa.Workflows.Persistence.Entities;
-using Elsa.Workflows.Persistence.Extensions;
+using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Extensions;
 
 namespace Elsa.Scheduling.Implementations;
 

@@ -1,5 +1,5 @@
 using Elsa.Workflows.Core.State;
-using Elsa.Workflows.Persistence.Entities;
+using Elsa.Workflows.Management.Entities;
 
 namespace Elsa.Workflows.Runtime.Services;
 

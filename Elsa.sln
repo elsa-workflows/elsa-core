@@ -90,8 +90,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Workflows.Core", "src\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Workflows.Management", "src\modules\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj", "{2DD5D66B-85E9-4AF9-911C-C9F963234159}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Workflows.Persistence", "src\modules\Elsa.Workflows.Persistence\Elsa.Workflows.Persistence.csproj", "{67F1DED6-80A6-40AF-AE18-A342C5784E4A}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Workflows.Persistence.EntityFrameworkCore", "src\modules\Elsa.Workflows.Persistence.EntityFrameworkCore\Elsa.Workflows.Persistence.EntityFrameworkCore.csproj", "{DA2ECA09-3844-4846-8269-0050D603142E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Workflows.Persistence.EntityFrameworkCore.Sqlite", "src\modules\Elsa.Workflows.Persistence.EntityFrameworkCore.Sqlite\Elsa.Workflows.Persistence.EntityFrameworkCore.Sqlite.csproj", "{7B9E8C76-814B-4912-A66E-7E0855B46389}"
@@ -266,10 +264,6 @@ Global
 		{2DD5D66B-85E9-4AF9-911C-C9F963234159}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2DD5D66B-85E9-4AF9-911C-C9F963234159}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2DD5D66B-85E9-4AF9-911C-C9F963234159}.Release|Any CPU.Build.0 = Release|Any CPU
-		{67F1DED6-80A6-40AF-AE18-A342C5784E4A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{67F1DED6-80A6-40AF-AE18-A342C5784E4A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{67F1DED6-80A6-40AF-AE18-A342C5784E4A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{67F1DED6-80A6-40AF-AE18-A342C5784E4A}.Release|Any CPU.Build.0 = Release|Any CPU
 		{DA2ECA09-3844-4846-8269-0050D603142E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{DA2ECA09-3844-4846-8269-0050D603142E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DA2ECA09-3844-4846-8269-0050D603142E}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -377,7 +371,6 @@ Global
 		{C9539BD8-D2AE-4A8D-8281-71A05B3FBF31} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 		{169E2C9B-6687-427F-A278-30BF849BFEDC} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 		{2DD5D66B-85E9-4AF9-911C-C9F963234159} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
-		{67F1DED6-80A6-40AF-AE18-A342C5784E4A} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 		{DA2ECA09-3844-4846-8269-0050D603142E} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 		{7B9E8C76-814B-4912-A66E-7E0855B46389} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 		{8A050229-DB79-4E0B-9AFF-7565E87F2954} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}

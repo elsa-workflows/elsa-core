@@ -6,7 +6,6 @@ using Elsa.Models;
 using Elsa.Workflows.Api.Mappers;
 using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Management.Services;
-using Elsa.Workflows.Persistence.Services;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Publish;
 

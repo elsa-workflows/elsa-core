@@ -6,7 +6,6 @@ using Elsa.Abstractions;
 using Elsa.Models;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Management.Services;
-using Elsa.Workflows.Persistence.Services;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.BulkPublish;
 

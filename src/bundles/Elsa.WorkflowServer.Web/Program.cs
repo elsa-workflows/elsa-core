@@ -25,7 +25,6 @@ using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Persistence.EntityFrameworkCore.Extensions;
 using Elsa.Workflows.Persistence.EntityFrameworkCore.Sqlite;
-using Elsa.Workflows.Persistence.Extensions;
 using Elsa.Workflows.Runtime.Extensions;
 using Elsa.WorkflowServer.Web.Jobs;
 using FastEndpoints;
@@ -68,7 +67,7 @@ services
         //.UseRuntime(runtime => runtime.UseProtoActor(proto => proto.PersistenceProvider = _ => new SqliteProvider(new SqliteConnectionStringBuilder(dbConnectionString))))
         .UseJobActivities()
         .UseScheduling()
-        .UseWorkflowPersistence(p => p.UseEntityFrameworkCore(ef => ef.UseSqlite(dbConnectionString)))
+        .UseEntityFrameworkCorePersistence(ef => ef.UseSqlite(dbConnectionString))
         .UseWorkflowApiEndpoints()
         .UseJavaScript()
         .UseLiquid()

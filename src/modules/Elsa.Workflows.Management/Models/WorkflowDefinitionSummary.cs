@@ -1,6 +1,6 @@
-using Elsa.Workflows.Persistence.Entities;
+using Elsa.Workflows.Management.Entities;
 
-namespace Elsa.Workflows.Persistence.Models;
+namespace Elsa.Workflows.Management.Models;
 
 public record WorkflowDefinitionSummary(string Id, string DefinitionId, string? Name, string? Description, int? Version, bool IsLatest, bool IsPublished, string MaterializerName, DateTimeOffset CreatedAt)
 {
