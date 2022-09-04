@@ -13,8 +13,12 @@ using Elsa.Labels.Extensions;
 using Elsa.Liquid.Extensions;
 using Elsa.Persistence.EntityFrameworkCore.Modules.ActivityDefinitions;
 using Elsa.Persistence.EntityFrameworkCore.Modules.Labels;
+using Elsa.Persistence.EntityFrameworkCore.Modules.Management;
+using Elsa.Persistence.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.ActivityDefinitions;
 using Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.Labels;
+using Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.Management;
+using Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.Runtime;
 using Elsa.Requirements;
 using Elsa.Scheduling.Extensions;
 using Elsa.WorkflowContexts.Extensions;
@@ -42,6 +46,7 @@ identitySection.Bind(identityOptions);
 services
     .AddElsa(elsa => elsa
         .UseManagement(management => management
+            .UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString))
             .AddActivity<WriteLine>()
             .AddActivity<ReadLine>()
             .AddActivity<If>()
@@ -63,13 +68,14 @@ services
             identity.IdentityOptions = options => identitySection.Bind(options);
         })
         //.UseRuntime(runtime => runtime.UseProtoActor(proto => proto.PersistenceProvider = _ => new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString))))
+        .UseRuntime(runtime => runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
+        .UseLabels(labels => labels.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
+        .UseActivityDefinitions(feature => feature.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
         .UseJobActivities()
         .UseScheduling()
         .UseWorkflowApiEndpoints()
         .UseJavaScript()
         .UseLiquid()
-        .UseLabels(labels => labels.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
-        .UseActivityDefinitions(feature => feature.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
         .UseHttp()
     );
 
