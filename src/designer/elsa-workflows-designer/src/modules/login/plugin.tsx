@@ -52,7 +52,6 @@ export class LoginPlugin implements Plugin {
       },
 
       async onResponseError(error) {
-        debugger;
         if (error.response.status !== 401)
           return;
 
