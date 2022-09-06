@@ -68,7 +68,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
             throw new Exception($"Workflow instance {instanceId} not found");
 
         var definitionId = workflowState.DefinitionId;
-        var version = workflowState.Version;
+        var version = workflowState.DefinitionVersion;
         var workflowDefinition = await _workflowDefinitionService.FindAsync(definitionId, VersionOptions.SpecificVersion(version), cancellationToken);
 
         if (workflowDefinition == null)

@@ -53,6 +53,9 @@ public class WorkflowRuntimeFeature : FeatureBase
     public Func<IServiceProvider, IWorkflowTriggerStore> WorkflowTriggerStore { get; set; } = sp => sp.GetRequiredService<MemoryWorkflowTriggerStore>();
     public Func<IServiceProvider, IWorkflowExecutionLogStore> WorkflowExecutionLogStore { get; set; } = sp => sp.GetRequiredService<MemoryWorkflowExecutionLogStore>();
 
+    public Func<IServiceProvider, IWorkflowStateExporter> WorkflowStateExporter { get; set; } =
+        sp => sp.GetRequiredService<NoopWorkflowStateExporter>(); 
+
     public WorkflowRuntimeFeature AddWorkflow<T>() where T : IWorkflow
     {
         Workflows.Add<T>();
@@ -63,8 +66,6 @@ public class WorkflowRuntimeFeature : FeatureBase
         Module
             .ConfigureHostedService<RegisterDescriptors>()
             .ConfigureHostedService<RegisterExpressionSyntaxDescriptors>()
-            .ConfigureHostedService<DispatchedWorkflowDefinitionWorker>()
-            .ConfigureHostedService<DispatchedWorkflowInstanceWorker>()
             .ConfigureHostedService<PopulateWorkflowDefinitionStore>();
 
     public override void Apply()
@@ -89,13 +90,14 @@ public class WorkflowRuntimeFeature : FeatureBase
 
             // Workflow definition providers.
             .AddWorkflowDefinitionProvider<ClrWorkflowDefinitionProvider>()
+            
+            // Workflow state exporter.
+            .AddSingleton<NoopWorkflowStateExporter>()
+            .AddSingleton<AsyncWorkflowStateExporter>()
+            .AddSingleton(WorkflowStateExporter)
 
             // Domain event handlers.
             .AddNotificationHandlersFrom(typeof(WorkflowRuntimeFeature))
-
-            // Channels for dispatching workflows in-memory.
-            .CreateChannel<DispatchWorkflowDefinitionRequest>()
-            .CreateChannel<DispatchWorkflowInstanceRequest>()
             ;
 
         Services.Configure<WorkflowRuntimeOptions>(options => { options.Workflows = Workflows; });

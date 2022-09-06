@@ -7,10 +7,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.ActivityDefinitions.Migrations
+namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations.ActivityDefinitions
 {
     [DbContext(typeof(ActivityDefinitionsDbContext))]
-    [Migration("20220904142923_Initial")]
+    [Migration("20220906152713_Initial")]
     partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

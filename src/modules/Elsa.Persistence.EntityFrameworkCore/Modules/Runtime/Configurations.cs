@@ -29,10 +29,10 @@ namespace Elsa.Persistence.EntityFrameworkCore.Modules.Runtime
             builder.Property(x => x.Status).HasConversion<EnumToStringConverter<WorkflowStatus>>();
             builder.Property(x => x.SubStatus).HasConversion<EnumToStringConverter<WorkflowSubStatus>>();
             builder.HasIndex(x => x.CorrelationId).HasDatabaseName($"IX_{nameof(WorkflowState)}_{nameof(WorkflowState.CorrelationId)}");
-            builder.HasIndex("DefinitionId").HasDatabaseName($"IX_{nameof(WorkflowState)}_DefinitionId");
-            builder.HasIndex("Status", "SubStatus", "DefinitionId", "Version").HasDatabaseName($"IX_{nameof(WorkflowState)}_Status_SubStatus_DefinitionId_Version");
-            builder.HasIndex("Status", "SubStatus").HasDatabaseName($"IX_{nameof(WorkflowState)}_Status_SubStatus");
-            builder.HasIndex("Status", "DefinitionId").HasDatabaseName($"IX_{nameof(WorkflowState)}_Status_DefinitionId");
+            builder.HasIndex(x=>x.DefinitionId).HasDatabaseName($"IX_{nameof(WorkflowState)}_{nameof(WorkflowState.DefinitionId)}");
+            builder.HasIndex(x => new { x.Status, x.SubStatus, x.DefinitionId, x.DefinitionVersion }).HasDatabaseName($"IX_{nameof(WorkflowState)}_{nameof(WorkflowState.Status)}_{nameof(WorkflowState.SubStatus)}_{nameof(WorkflowState.DefinitionId)}_{nameof(WorkflowState.DefinitionVersion)}");
+            builder.HasIndex(x => new { x.Status, x.SubStatus }).HasDatabaseName($"IX_{nameof(WorkflowState)}_{nameof(WorkflowState.Status)}_{nameof(WorkflowState.SubStatus)}");
+            builder.HasIndex(x => new { x.Status, x.DefinitionId}).HasDatabaseName($"IX_{nameof(WorkflowState)}_{nameof(WorkflowState.Status)}_{nameof(WorkflowState.DefinitionId)}");
             builder.HasIndex(x => new { x.Status, x.SubStatus }).HasDatabaseName($"IX_{nameof(WorkflowState)}_{nameof(WorkflowState.Status)}_{nameof(WorkflowState.SubStatus)}");
             builder.HasIndex("CreatedAt").HasDatabaseName($"IX_{nameof(WorkflowState)}_CreatedAt");
             builder.HasIndex("UpdatedAt").HasDatabaseName($"IX_{nameof(WorkflowState)}_UpdatedAt");

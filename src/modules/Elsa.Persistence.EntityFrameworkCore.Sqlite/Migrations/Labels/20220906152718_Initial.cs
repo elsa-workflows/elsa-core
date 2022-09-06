@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.Labels.Migrations
+namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations.Labels
 {
     public partial class Initial : Migration
     {

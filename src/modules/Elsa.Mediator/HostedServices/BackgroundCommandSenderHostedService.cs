@@ -12,27 +12,53 @@ public class BackgroundCommandSenderHostedService : BackgroundService
 {
     private readonly ChannelReader<ICommand> _channelReader;
     private readonly ICommandSender _commandSender;
+    private readonly IList<Channel<ICommand>> _outputs;
     private readonly ILogger _logger;
 
-    public BackgroundCommandSenderHostedService(ChannelReader<ICommand> channelReader, ICommandSender commandSender, ILogger<BackgroundCommandSenderHostedService> logger)
+    public BackgroundCommandSenderHostedService(int workerCount, ChannelReader<ICommand> channelReader, ICommandSender commandSender, ILogger<BackgroundCommandSenderHostedService> logger)
     {
         _channelReader = channelReader;
         _commandSender = commandSender;
         _logger = logger;
+        _outputs = new List<Channel<ICommand>>(workerCount);
     }
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        await foreach (var request in _channelReader.ReadAllAsync(cancellationToken))
+        var index = 0;
+        
+        for (var i = 0; i < _outputs.Count; i++)
+        {
+            var output = Channel.CreateUnbounded<ICommand>();
+            _outputs[i] = output;
+            _ = ReadOutputAsync(output, cancellationToken);
+        }
+        
+        await foreach (var command in _channelReader.ReadAllAsync(cancellationToken))
+        {
+            var output = _outputs[index];
+            await output.Writer.WriteAsync(command, cancellationToken);
+            index = (index + 1) % _outputs.Count;
+        }
+
+        foreach (var output in _outputs)
+        {
+            output.Writer.Complete();
+        }
+    }
+
+    private async Task ReadOutputAsync(Channel<ICommand> output, CancellationToken cancellationToken)
+    {
+        await foreach (var command in output.Reader.ReadAllAsync(cancellationToken))
         {
             try
             {
-                await _commandSender.ExecuteAsync(request, cancellationToken);
+                await _commandSender.ExecuteAsync(command, cancellationToken);
             }
             catch (Exception e)
             {
                 _logger.LogError(e, "An unhandled exception occured while processing the queue");
-            }
+            }        
         }
     }
 }

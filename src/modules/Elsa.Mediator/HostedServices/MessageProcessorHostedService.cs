@@ -1,4 +1,5 @@
 using System.Threading.Channels;
+using Elsa.Mediator.Services;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -10,53 +11,67 @@ namespace Elsa.Mediator.HostedServices;
 public class MessageProcessorHostedService<T> : BackgroundService
 {
     private readonly Channel<T> _channel;
+    private readonly IConsumer<T> _consumer;
     private readonly ILogger _logger;
-    private readonly IList<Channel<T>> _outputs;
     private readonly IList<MessageWorker<T>> _workers;
 
-    public MessageProcessorHostedService(int workerCount, Channel<T> channel, ILogger<MessageProcessorHostedService<T>> logger)
+    public MessageProcessorHostedService(int workerCount, Channel<T> channel, IConsumer<T> consumer, ILogger<MessageProcessorHostedService<T>> logger)
     {
         _channel = channel;
+        _consumer = consumer;
         _logger = logger;
-        _outputs = new List<Channel<T>>(workerCount);
         _workers = new List<MessageWorker<T>>(workerCount);
-        
-        for (var i = 0; i < workerCount; i++) 
-            _outputs[i] = Channel.CreateUnbounded<T>();
-        
-        for (var i = 0; i < workerCount; i++) 
-            _workers[i] = new MessageWorker<T>(Channel.CreateUnbounded<T>());
     }
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
         var index = 0;
         
+        for (var i = 0; i < _workers.Count; i++)
+        {
+            var worker = new MessageWorker<T>(Channel.CreateUnbounded<T>(), _consumer);
+            _workers[i] = worker;
+            _ = worker.StartAsync(cancellationToken);
+        }
+        
         await foreach (var message in _channel.Reader.ReadAllAsync(cancellationToken))
         {
-            await _outputs[index].Writer.WriteAsync(message, cancellationToken);
-            index = (index + 1) % _outputs.Count;
+            var worker = _workers[index];
+            await worker.DeliverMessageAsync(message, cancellationToken);
+            index = (index + 1) % _workers.Count;
         }
-
-        foreach (var output in _outputs) 
-            output.Writer.Complete();
+   
+        foreach (var worker in _workers) 
+            worker.Complete();
+        
+        _workers.Clear();
     }
 }
 
 public class MessageWorker<T>
 {
     private readonly Channel<T> _channel;
-    private readonly Func<T, Task> _consume;
+    private readonly IConsumer<T> _consumer;
 
-    public MessageWorker(Channel<T> channel, Func<T, Task> consume)
+    public MessageWorker(Channel<T> channel, IConsumer<T> consumer)
     {
         _channel = channel;
-        _consume = consume;
+        _consumer = consumer;
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         await foreach (var message in _channel.Reader.ReadAllAsync(cancellationToken)) 
-            await _consume(message);
+            await _consumer.ConsumeAsync(message, cancellationToken);
+    }
+
+    public async Task DeliverMessageAsync(T message, CancellationToken cancellationToken)
+    {
+        await _channel.Writer.WriteAsync(message, cancellationToken);
+    }
+
+    public void Complete()
+    {
+        _channel.Writer.Complete();
     }
 }

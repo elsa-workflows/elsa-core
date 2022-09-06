@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.Labels.Migrations
+namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations.Labels
 {
     [DbContext(typeof(LabelsDbContext))]
     partial class LabelsDbContextModelSnapshot : ModelSnapshot

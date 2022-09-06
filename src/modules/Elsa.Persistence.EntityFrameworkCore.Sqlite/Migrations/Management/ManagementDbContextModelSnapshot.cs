@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.Management.Migrations
+namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations.Management
 {
     [DbContext(typeof(ManagementDbContext))]
     partial class ManagementDbContextModelSnapshot : ModelSnapshot

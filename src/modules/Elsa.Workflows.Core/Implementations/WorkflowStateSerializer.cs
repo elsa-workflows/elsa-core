@@ -22,7 +22,7 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
         {
             Id = workflowExecutionContext.Id,
             DefinitionId = workflowExecutionContext.Workflow.Identity.DefinitionId,
-            Version = workflowExecutionContext.Workflow.Identity.Version,
+            DefinitionVersion = workflowExecutionContext.Workflow.Identity.Version,
             CorrelationId = workflowExecutionContext.CorrelationId,
             Status = workflowExecutionContext.Status,
             SubStatus = workflowExecutionContext.SubStatus,

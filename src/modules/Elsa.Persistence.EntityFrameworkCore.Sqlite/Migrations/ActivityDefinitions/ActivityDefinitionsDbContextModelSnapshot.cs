@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.ActivityDefinitions.Migrations
+namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations.ActivityDefinitions
 {
     [DbContext(typeof(ActivityDefinitionsDbContext))]
     partial class ActivityDefinitionsDbContextModelSnapshot : ModelSnapshot

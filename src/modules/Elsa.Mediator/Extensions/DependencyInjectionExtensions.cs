@@ -12,7 +12,10 @@ using Elsa.Mediator.Services;
 using Elsa.Features.Services;
 using Elsa.Mediator.Features;
 using Elsa.Mediator.HostedServices;
+using Elsa.Mediator.Options;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Mediator.Extensions;
 
@@ -24,8 +27,10 @@ public static class DependencyInjectionExtensions
         return module;
     }
     
-    public static IServiceCollection AddMediator(this IServiceCollection services)
-    {
+    public static IServiceCollection AddMediator(this IServiceCollection services, Action<MediatorOptions>? configure = default)
+    { 
+        services.Configure(configure ?? (_ => { }));
+        
         return services
             .AddSingleton<IMediator, DefaultMediator>()
             .AddSingleton<IRequestSender>(sp => sp.GetRequiredService<IMediator>())
@@ -36,11 +41,36 @@ public static class DependencyInjectionExtensions
             .AddSingleton<IRequestPipeline, RequestPipeline>()
             .AddSingleton<ICommandPipeline, CommandPipeline>()
             .AddSingleton<INotificationPipeline, NotificationPipeline>()
-            .AddHostedService<BackgroundCommandSenderHostedService>()
-            .AddHostedService<BackgroundEventPublisherHostedService>()
+            
+            .AddHostedService(sp =>
+            {
+                var options = sp.GetRequiredService<IOptions<MediatorOptions>>().Value;
+                return ActivatorUtilities.CreateInstance<BackgroundCommandSenderHostedService>(sp, options.CommandWorkerCount);
+            })
+            
+            .AddHostedService(sp =>
+            {
+                var options = sp.GetRequiredService<IOptions<MediatorOptions>>().Value;
+                return ActivatorUtilities.CreateInstance<BackgroundEventPublisherHostedService>(sp, options.NotificationWorkerCount);
+            })
+            
             .CreateChannel<ICommand>()
             .CreateChannel<INotification>()
             ;
+    }
+
+    public static IServiceCollection AddConsumer<T, TConsumer>(this IServiceCollection services, int workers = 1) where TConsumer : class, IConsumer<T>
+    {
+        services.AddSingleton<IConsumer<T>, TConsumer>();
+
+        services.AddHostedService(sp =>
+        {
+            var channel = Channel.CreateUnbounded<T>();
+            var consumer = sp.GetRequiredService<IConsumer<T>>();
+            var logger = sp.GetRequiredService<ILogger<MessageProcessorHostedService<T>>>();
+            return new MessageProcessorHostedService<T>(workers, channel, consumer, logger);
+        });
+        return services;
     }
 
     public static IServiceCollection AddCommandHandler<THandler, TCommand>(this IServiceCollection services)
@@ -91,7 +121,6 @@ public static class DependencyInjectionExtensions
             .AddTransient(CreateChannelReader<T>)
             .AddTransient(CreateChannelWriter<T>);
     
-
     private static IServiceCollection AddHandlersFromInternal<TService, TMarker>(this IServiceCollection services) => services.AddHandlersFromInternal<TService>(typeof(TMarker));
     private static IServiceCollection AddHandlersFromInternal<TService>(this IServiceCollection services, Type assemblyMarkerType) => services.AddHandlersFromInternal<TService>(assemblyMarkerType.Assembly);
 

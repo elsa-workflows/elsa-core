@@ -3,16 +3,18 @@ using System;
 using Elsa.Persistence.EntityFrameworkCore.Modules.Runtime;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.Runtime.Migrations
+namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations.Runtime
 {
     [DbContext(typeof(RuntimeDbContext))]
-    partial class RuntimeDbContextModelSnapshot : ModelSnapshot
+    [Migration("20220906152726_Initial")]
+    partial class Initial
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "6.0.8");
@@ -32,7 +34,11 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.Runtime.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("DefinitionId")
+                        .IsRequired()
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("DefinitionVersion")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -44,9 +50,6 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.Runtime.Migrations
 
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("TEXT");
-
-                    b.Property<int>("Version")
-                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
@@ -68,8 +71,8 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.Runtime.Migrations
                     b.HasIndex("Status", "SubStatus")
                         .HasDatabaseName("IX_WorkflowState_Status_SubStatus");
 
-                    b.HasIndex("Status", "SubStatus", "DefinitionId", "Version")
-                        .HasDatabaseName("IX_WorkflowState_Status_SubStatus_DefinitionId_Version");
+                    b.HasIndex("Status", "SubStatus", "DefinitionId", "DefinitionVersion")
+                        .HasDatabaseName("IX_WorkflowState_Status_SubStatus_DefinitionId_DefinitionVersion");
 
                     b.ToTable("WorkflowStates");
                 });
