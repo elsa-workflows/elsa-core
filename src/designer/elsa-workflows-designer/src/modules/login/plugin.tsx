@@ -3,12 +3,14 @@ import {h} from "@stencil/core";
 import {Service as MiddlewareService} from 'axios-middleware';
 import {EventTypes, Plugin} from "../../models";
 import {Container, Service} from "typedi";
-import {StudioService, AuthContext, EventBus} from "../../services";
+import {StudioService, AuthContext, EventBus, ElsaClient, ElsaApiClientProvider} from "../../services";
+import descriptorsStore from '../../data/descriptors-store';
 
 @Service()
 export class LoginPlugin implements Plugin {
   private readonly eventBus: EventBus;
   private readonly studioService: StudioService;
+  private elsaClient: ElsaClient;
 
   constructor() {
     this.eventBus = Container.get(EventBus);
@@ -21,6 +23,16 @@ export class LoginPlugin implements Plugin {
 
     if (!authContext.getIsSignedIn()) {
       this.studioService.show(() => <elsa-login-page/>);
+    }
+    else {
+      const elsaClientProvider = Container.get(ElsaApiClientProvider);
+      this.elsaClient = await elsaClientProvider.getElsaClient();
+
+      const activityDescriptors = await this.elsaClient.descriptors.activities.list();
+      const storageDrivers = await this.elsaClient.descriptors.storageDrivers.list();
+
+      descriptorsStore.activityDescriptors = activityDescriptors;
+      descriptorsStore.storageDrivers = storageDrivers;
     }
   }
 
