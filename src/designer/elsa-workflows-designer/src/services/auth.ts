@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import {Container, Service} from "typedi";
-import cookies from 'js-cookie'
+import cookies from 'js-cookie';
 import authStore from "../data/auth-store";
 import {EventBus} from "./event-bus";
 import {EventTypes} from "../models";
