@@ -65,7 +65,6 @@ export class WorkflowDefinitionEditor {
   @Watch('workflowDefinition')
   async onWorkflowDefinitionChanged(value: WorkflowDefinition) {
     await this.importWorkflow(value);
-    await this.loadWorkflowVersions();
   }
 
   @Listen('resize', {target: 'window'})
@@ -122,7 +121,6 @@ export class WorkflowDefinitionEditor {
   @Method()
   async updateWorkflowDefinition(workflowDefinition: WorkflowDefinition): Promise<void> {
     this.workflowDefinitionState = workflowDefinition;
-    await this.loadWorkflowVersions();
   }
 
   @Method()
@@ -145,15 +143,32 @@ export class WorkflowDefinitionEditor {
     return workflowDefinition;
   }
 
-  loadWorkflowVersions = async () => {
+  @Method()
+  async loadWorkflowVersions(): Promise<void> {
     if(this.workflowDefinitionState.definitionId != null && this.workflowDefinitionState.definitionId.length > 0)
     {
-      this.workflowVersions = await this.workflowDefinitionApi.getVersions(this.workflowDefinitionState.definitionId);
+      const workflowVersions = await this.workflowDefinitionApi.getVersions(this.workflowDefinitionState.definitionId);
+      this.workflowVersions = workflowVersions.sort(x => x.version).reverse();
     }
     else {
       this.workflowVersions = [];
     }
   }
+
+  sortByProperty(property) {
+    var sortOrder = 1;
+    if(property[0] === "-") {
+        sortOrder = -1;
+        property = property.substr(1);
+    }
+    return function (a,b) {
+        /* next line works with strings and numbers, 
+         * and you may want to customize it to your needs
+         */
+        var result = (a[property] < b[property]) ? -1 : (a[property] > b[property]) ? 1 : 0;
+        return result * sortOrder;
+    }
+}
 
   async componentWillLoad() {
     await this.updateWorkflowDefinition(this.workflowDefinition);

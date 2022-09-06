@@ -93,6 +93,7 @@ export class WorkflowDefinitionsPlugin implements Plugin {
   private saveWorkflowDefinition = async (definition: WorkflowDefinition, publish: boolean): Promise<WorkflowDefinition> => {
     const updatedWorkflow = await this.workflowDefinitionManager.saveWorkflow(definition, publish);
     await this.workflowDefinitionEditorElement.updateWorkflowDefinition(updatedWorkflow);
+    await this.workflowDefinitionEditorElement.loadWorkflowVersions();
     return updatedWorkflow;
   }
 
@@ -115,11 +116,16 @@ export class WorkflowDefinitionsPlugin implements Plugin {
       return;
     }
 
-    if(updatedWorkflowDefinition.version == e.detail.latestVersionNumber)
+    if(updatedWorkflowDefinition.version == e.detail.latestVersionNumber || updatedWorkflowDefinition.isPublished)
     {
       const currentWorkflowDefinition = await this.api.get({definitionId: updatedWorkflowDefinition.definitionId, versionOptions: {version: updatedWorkflowDefinition.version}});
       if(!isEqual(currentWorkflowDefinition.root.activities, updatedWorkflowDefinition.root.activities))
+      {   
+        if(updatedWorkflowDefinition.isPublished)
+          updatedWorkflowDefinition.version = e.detail.latestVersionNumber;
+        
         await this.saveWorkflowDefinition(updatedWorkflowDefinition, false);
+      }
     }
   }
 

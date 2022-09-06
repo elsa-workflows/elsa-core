@@ -1,8 +1,7 @@
-import {Component, Event, EventEmitter, h, Host, Method, Prop, State, Watch} from '@stencil/core';
+import {Component, Event, EventEmitter, h, Prop, Watch} from '@stencil/core';
 import {Container} from "typedi";
 import {EventBus} from "../../../services";
 import {WorkflowDefinition} from "../models/entities";
-import {VersionedEntity} from "../../../models";
 import {WorkflowDefinitionsApi} from "../../workflow-definitions/services/api";
 import {DeleteIcon, RevertIcon, PublishedIcon} from "../../../components/icons/tooling";
 import moment from "moment";
@@ -74,7 +73,7 @@ export class WorkflowDefinitionVersionHistory {
                     <button onClick={e => this.onViewVersionClick(e, v)}
                             type="button"
                             disabled={this.selectedVersion.version == v.version}
-                            class="btn btn-secondary">
+                            class={this.selectedVersion.version == v.version ? "btn btn-secondary" : "btn btn-primary"}>
                       View
                     </button>
                   </td>
@@ -83,7 +82,7 @@ export class WorkflowDefinitionVersionHistory {
                       <elsa-context-menu
                         menuItems={[
                           {text: 'Delete', clickHandler: e => this.onDeleteVersionClick(e, v), icon: <DeleteIcon/>},
-                          {text: 'Reverse', clickHandler: e => this.onRevertVersionClick(e, v), icon: <RevertIcon/>},
+                          {text: 'Revert', clickHandler: e => this.onRevertVersionClick(e, v), icon: <RevertIcon/>},
                         ]}
                       />
                     }

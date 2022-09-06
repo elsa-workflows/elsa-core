@@ -240,6 +240,7 @@ export namespace Components {
         "getCanvas": () => Promise<HTMLElsaCanvasElement>;
         "getWorkflowDefinition": () => Promise<WorkflowDefinition>;
         "importWorkflow": (workflowDefinition: WorkflowDefinition) => Promise<void>;
+        "loadWorkflowVersions": () => Promise<void>;
         "monacoLibPath": string;
         "newWorkflow": () => Promise<WorkflowDefinition>;
         "registerActivityDrivers": (register: (registry: ActivityDriverRegistry) => void) => Promise<void>;
