@@ -79,7 +79,7 @@ export class WorkflowDefinitionVersionHistory {
                     <button onClick={e => this.onViewVersionClick(e, v)}
                             type="button"
                             disabled={this.selectedVersion.version == v.version}
-                            class={this.selectedVersion.version == v.version ? "btn btn-secondary" : "btn btn-primary"}>
+                            class={this.selectedVersion.version == v.version ? "btn btn-primary" : "btn btn-secondary"}>
                       View
                     </button>
                   </td>
