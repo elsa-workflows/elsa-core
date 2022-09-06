@@ -64,6 +64,12 @@ export class WorkflowDefinitionVersionHistory {
           </thead>
           <tbody>
           {this.workflowVersions.map(v => {
+              let menuItems = [];
+              menuItems.push({text: 'Delete', clickHandler: e => this.onDeleteVersionClick(e, v), icon: <DeleteIcon/>});
+              
+              if(!v.isLatest)
+                menuItems.push({text: 'Revert', clickHandler: e => this.onRevertVersionClick(e, v), icon: <RevertIcon/>});
+
               return (
                 <tr>
                   <td>{v.isPublished ? <PublishedIcon/> : ""}</td>
@@ -78,14 +84,7 @@ export class WorkflowDefinitionVersionHistory {
                     </button>
                   </td>
                   <td>
-                    {v.isPublished || v.isPublished ? undefined : 
-                      <elsa-context-menu
-                        menuItems={[
-                          {text: 'Delete', clickHandler: e => this.onDeleteVersionClick(e, v), icon: <DeleteIcon/>},
-                          {text: 'Revert', clickHandler: e => this.onRevertVersionClick(e, v), icon: <RevertIcon/>},
-                        ]}
-                      />
-                    }
+                    {v.isPublished || v.isPublished ? undefined : <elsa-context-menu menuItems={menuItems}/>}
                   </td>
                 </tr>
               );
