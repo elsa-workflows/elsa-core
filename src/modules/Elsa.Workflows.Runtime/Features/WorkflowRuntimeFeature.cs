@@ -97,7 +97,8 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddSingleton(WorkflowStateExporter)
 
             // Domain event handlers.
-            .AddNotificationHandlersFrom(typeof(WorkflowRuntimeFeature))
+            .AddNotificationHandlersFrom<WorkflowRuntimeFeature>()
+            .AddCommandHandlersFrom<WorkflowRuntimeFeature>()
             ;
 
         Services.Configure<WorkflowRuntimeOptions>(options => { options.Workflows = Workflows; });

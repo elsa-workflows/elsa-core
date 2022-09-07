@@ -10,6 +10,7 @@ namespace Elsa.Mediator.HostedServices;
 /// </summary>
 public class BackgroundCommandSenderHostedService : BackgroundService
 {
+    private readonly int _workerCount;
     private readonly ChannelReader<ICommand> _channelReader;
     private readonly ICommandSender _commandSender;
     private readonly IList<Channel<ICommand>> _outputs;
@@ -17,6 +18,7 @@ public class BackgroundCommandSenderHostedService : BackgroundService
 
     public BackgroundCommandSenderHostedService(int workerCount, ChannelReader<ICommand> channelReader, ICommandSender commandSender, ILogger<BackgroundCommandSenderHostedService> logger)
     {
+        _workerCount = workerCount;
         _channelReader = channelReader;
         _commandSender = commandSender;
         _logger = logger;
@@ -27,10 +29,10 @@ public class BackgroundCommandSenderHostedService : BackgroundService
     {
         var index = 0;
         
-        for (var i = 0; i < _outputs.Count; i++)
+        for (var i = 0; i < _workerCount; i++)
         {
             var output = Channel.CreateUnbounded<ICommand>();
-            _outputs[i] = output;
+            _outputs.Add(output);
             _ = ReadOutputAsync(output, cancellationToken);
         }
         
@@ -38,7 +40,7 @@ public class BackgroundCommandSenderHostedService : BackgroundService
         {
             var output = _outputs[index];
             await output.Writer.WriteAsync(command, cancellationToken);
-            index = (index + 1) % _outputs.Count;
+            index = (index + 1) % _workerCount;
         }
 
         foreach (var output in _outputs)
