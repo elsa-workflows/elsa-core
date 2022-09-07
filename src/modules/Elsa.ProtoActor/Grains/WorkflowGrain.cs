@@ -88,6 +88,9 @@ public class WorkflowGrain : WorkflowGrainBase
 
         _workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
         var version = workflowDefinition.Version;
+
+        await _eventPublisher.PublishAsync(new WorkflowExecuting(_workflow), cancellationToken);
+        
         var workflowResult = await _workflowRunner.RunAsync(_workflow, WorkflowInstanceId, _input, cancellationToken);
         var finished = workflowResult.WorkflowState.Status == WorkflowStatus.Finished;
 
@@ -98,6 +101,7 @@ public class WorkflowGrain : WorkflowGrainBase
 
         await UpdateBookmarksAsync(_workflowState.Bookmarks, cancellationToken);
         await SaveSnapshotAsync();
+        await _eventPublisher.PublishAsync(new WorkflowExecuted(_workflow, _workflowState), cancellationToken);
 
         return new StartWorkflowResponse
         {
@@ -110,6 +114,9 @@ public class WorkflowGrain : WorkflowGrainBase
         var input = request.Input?.Deserialize();
         var bookmarkId = request.BookmarkId;
         var cancellationToken = Context.CancellationToken;
+        
+        await _eventPublisher.PublishAsync(new WorkflowExecuting(_workflow), cancellationToken);
+        
         var workflowResult = await _workflowRunner.RunAsync(_workflow, _workflowState, bookmarkId, input, cancellationToken);
         var finished = workflowResult.WorkflowState.Status == WorkflowStatus.Finished;
 
@@ -118,6 +125,7 @@ public class WorkflowGrain : WorkflowGrainBase
 
         await UpdateBookmarksAsync(_workflowState.Bookmarks, cancellationToken);
         await SaveSnapshotAsync();
+        await _eventPublisher.PublishAsync(new WorkflowExecuted(_workflow, _workflowState), cancellationToken);
 
         return new ResumeWorkflowResponse
         {

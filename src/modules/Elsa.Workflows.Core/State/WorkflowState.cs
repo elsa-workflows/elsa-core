@@ -20,7 +20,7 @@ public class WorkflowState
     /// <summary>
     /// The workflow definition version.
     /// </summary>
-    public int Version { get; set; } = default!;
+    public int DefinitionVersion { get; set; } = default!;
 
     /// <summary>
     /// The correlation ID of the workflow, if any.

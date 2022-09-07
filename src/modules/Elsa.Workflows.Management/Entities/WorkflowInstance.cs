@@ -7,9 +7,9 @@ namespace Elsa.Workflows.Management.Entities;
 
 public class WorkflowInstance : Entity
 {
-    public string DefinitionId { get; init; } = default!;
-    public string DefinitionVersionId { get; init; } = default!;
-    public int Version { get; init; }
+    public string DefinitionId { get; set; } = default!;
+    public string DefinitionVersionId { get; set; } = default!;
+    public int Version { get; set; }
     public WorkflowState WorkflowState { get; set; } = default!;
     public WorkflowStatus Status { get; set; }
     

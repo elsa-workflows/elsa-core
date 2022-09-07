@@ -41,6 +41,7 @@ packages/
 
 #Rider
 .idea
+.run
 
 #wwwroot
 wwwroot/
@@ -59,6 +60,7 @@ App_Data/
 *.db
 *.db-shm
 *.db-wal
+.DS_Store
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd

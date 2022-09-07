@@ -29,6 +29,7 @@ using Elsa.Workflows.Core.Pipelines.WorkflowExecution.Components;
 using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Runtime.Extensions;
+using Elsa.Workflows.Runtime.Implementations;
 using Elsa.WorkflowServer.Web.Jobs;
 using FastEndpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -68,7 +69,11 @@ services
             identity.IdentityOptions = options => identitySection.Bind(options);
         })
         //.UseRuntime(runtime => runtime.UseProtoActor(proto => proto.PersistenceProvider = _ => new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString))))
-        .UseRuntime(runtime => runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
+        .UseRuntime(runtime =>
+        {
+            runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
+            runtime.WorkflowStateExporter = sp => sp.GetRequiredService<AsyncWorkflowStateExporter>();
+        })
         .UseLabels(labels => labels.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
         .UseActivityDefinitions(feature => feature.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
         .UseJobActivities()

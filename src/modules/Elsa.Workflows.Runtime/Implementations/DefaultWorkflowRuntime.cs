@@ -46,12 +46,16 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
             throw new Exception("Specified workflow definition and version does not exist");
 
         var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
+
+        await _eventPublisher.PublishAsync(new WorkflowExecuting(workflow), cancellationToken);
+        
         var workflowResult = await _workflowRunner.RunAsync(workflow, input, cancellationToken);
         var workflowState = workflowResult.WorkflowState;
         var finished = workflowResult.WorkflowState.Status == WorkflowStatus.Finished;
 
         await SaveWorkflowStateAsync(workflowState, cancellationToken);
         await UpdateBookmarksAsync(workflowState, new List<Bookmark>(), workflowResult.WorkflowState.Bookmarks, cancellationToken);
+        await _eventPublisher.PublishAsync(new WorkflowExecuted(workflow, workflowState), cancellationToken);
 
         return new StartWorkflowResult(workflowState.Id);
     }
@@ -64,7 +68,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
             throw new Exception($"Workflow instance {instanceId} not found");
 
         var definitionId = workflowState.DefinitionId;
-        var version = workflowState.Version;
+        var version = workflowState.DefinitionVersion;
         var workflowDefinition = await _workflowDefinitionService.FindAsync(definitionId, VersionOptions.SpecificVersion(version), cancellationToken);
 
         if (workflowDefinition == null)
@@ -80,11 +84,15 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
             .ToList();
 
         var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
+        
+        await _eventPublisher.PublishAsync(new WorkflowExecuting(workflow), cancellationToken);
+        
         var workflowResult = await _workflowRunner.RunAsync(workflow, workflowState, bookmarkId, input, cancellationToken);
         var finished = workflowResult.WorkflowState.Status == WorkflowStatus.Finished;
 
         await SaveWorkflowStateAsync(workflowState, cancellationToken);
         await UpdateBookmarksAsync(workflowState, existingBookmarks, workflowResult.WorkflowState.Bookmarks, cancellationToken);
+        await _eventPublisher.PublishAsync(new WorkflowExecuted(workflow, workflowState), cancellationToken);
 
         return new ResumeWorkflowResult();
     }

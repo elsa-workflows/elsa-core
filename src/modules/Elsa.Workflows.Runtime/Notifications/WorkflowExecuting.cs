@@ -3,4 +3,4 @@ using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Workflows.Runtime.Notifications;
 
-public record WorkflowExecuting(WorkflowExecutionContext WorkflowExecutionContext) : INotification;
+public record WorkflowExecuting(Workflow Workflow) : INotification;
