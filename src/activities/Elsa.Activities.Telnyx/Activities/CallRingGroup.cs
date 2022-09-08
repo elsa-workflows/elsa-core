@@ -159,6 +159,10 @@ namespace Elsa.Activities.Telnyx.Activities
             SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string? AnsweringMachineDetection { get; set; } = "disabled";
 
+        [ActivityInput(
+            Hint = "The text to speak when a user answers a call while the call was already bridged to another user.",
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid },
+            DefaultValue = "Thank you for answering the call, however a coworker has already answered. The call will now be disconnected.")]
         public string AlreadyPickedUpText
         {
             get => GetState<string>(() => "Thank you for answering the call, however a coworker has already answered. The call will now be disconnected.");
@@ -371,7 +375,7 @@ namespace Elsa.Activities.Telnyx.Activities
             CollectedDialResponses = collection;
             context.JournalData.Add("Collected Dial Responses", collection);
         }
-        
+
         private async Task CancelPendingCallsAsync(ActivityExecutionContext context)
         {
             var answeredCallControlIds = CallAnsweredPayloads.Select(x => x.CallControlId).ToHashSet();
