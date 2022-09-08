@@ -11,17 +11,17 @@ namespace Elsa.Server.Authentication.TenantAccessors
     public class TenantAccessorFromClaim : ITenantAccessor
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
-        private readonly string _calimName;
+        private readonly string calimName;
 
         public TenantAccessorFromClaim(IHttpContextAccessor httpContextAccessor,string calimName)
         {
             _httpContextAccessor = httpContextAccessor;
-            _calimName = calimName;
+            this.calimName = calimName;
         }
 
         public async Task<string> GetTenantIdAsync(CancellationToken cancellationToken = default)
         {
-            var result = _httpContextAccessor.HttpContext.User?.Claims.Where(x => x.Type == _calimName).FirstOrDefault() ?? null;
+            var result = _httpContextAccessor.HttpContext.User?.Claims.Where(x => x.Type == calimName).FirstOrDefault() ?? null;
             return result.Value ?? null;
         }
     }
