@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Telnyx.Client.Models;
 using Elsa.Activities.Telnyx.Client.Services;
+using Elsa.Activities.Telnyx.Extensions;
 using Elsa.Activities.Telnyx.Models;
 using Elsa.Activities.Telnyx.Services;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
@@ -17,6 +18,7 @@ using Elsa.Expressions;
 using Elsa.Metadata;
 using Elsa.Services;
 using Elsa.Services.Models;
+using Humanizer;
 using Microsoft.Extensions.Logging;
 using NodaTime;
 using Refit;
@@ -288,7 +290,7 @@ namespace Elsa.Activities.Telnyx.Activities
                                     .WithTo(ResolveExtensionAsync)
                                     .WithTimeoutSecs(() => (int)RingTime.TotalSeconds)
                                     .WithFrom(() => From)
-                                    .WithFromDisplayName(() => FromDisplayName),
+                                    .WithFromDisplayName(() => FromDisplayName.SanitizeCallerName()),
                                 dial =>
                                 {
                                     dial
@@ -361,7 +363,7 @@ namespace Elsa.Activities.Telnyx.Activities
                                 .WithTo(ResolveExtensionAsync)
                                 .WithTimeoutSecs(() => (int)RingTime.TotalSeconds)
                                 .WithFrom(() => From)
-                                .WithFromDisplayName(() => FromDisplayName)
+                                .WithFromDisplayName(() => FromDisplayName.SanitizeCallerName())
                             )
                             .Then(CollectCallControlIds));
                 });
