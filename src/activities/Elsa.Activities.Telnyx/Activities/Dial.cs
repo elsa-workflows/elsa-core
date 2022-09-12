@@ -200,7 +200,7 @@ namespace Elsa.Activities.Telnyx.Activities
                 connectionId,
                 To,
                 fromNumber,
-                FromDisplayName,
+                FromDisplayName.SanitizeCallerName(),
                 AnsweringMachineDetection,
                 AnsweringMachineDetectionConfig,
                 clientState,
