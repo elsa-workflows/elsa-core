@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Telnyx.Client.Models;
 using Elsa.Activities.Telnyx.Client.Services;
-using Elsa.Activities.Telnyx.Extensions;
 using Elsa.Activities.Telnyx.Models;
 using Elsa.Activities.Telnyx.Services;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
@@ -18,7 +17,6 @@ using Elsa.Expressions;
 using Elsa.Metadata;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Humanizer;
 using Microsoft.Extensions.Logging;
 using NodaTime;
 using Refit;
@@ -257,7 +255,9 @@ namespace Elsa.Activities.Telnyx.Activities
                 });
 
             // No Response exit node.
-            builder.Add<If>(@if => @if.WithCondition(() => MusicOnHold != null), @if =>
+            builder
+                .Add(async context => await CancelPendingCallsAsync(context)).WithName("ExitWithNoResponse").WithDisplayName("Cancel Pending Calls 2")
+                .Then<If>(@if => @if.WithCondition(() => MusicOnHold != null), @if =>
                 {
                     @if.When(OutcomeNames.True)
                         .Then<StopAudioPlayback>(stopAudioPlayback =>
@@ -272,8 +272,7 @@ namespace Elsa.Activities.Telnyx.Activities
                         });
 
                     @if.When(OutcomeNames.False).Finish(TelnyxOutcomeNames.NoResponse);
-                })
-                .WithName("ExitWithNoResponse");
+                });
         }
 
         private void BuildPrioritizedHuntFlow(IOutcomeBuilder builder) =>
@@ -290,20 +289,26 @@ namespace Elsa.Activities.Telnyx.Activities
                                     .WithTo(ResolveExtensionAsync)
                                     .WithTimeoutSecs(() => (int)RingTime.TotalSeconds)
                                     .WithFrom(() => From)
-                                    .WithFromDisplayName(() => FromDisplayName.SanitizeCallerName()),
+                                    .WithFromDisplayName(() => FromDisplayName),
                                 dial =>
                                 {
                                     dial
                                         .When(TelnyxOutcomeNames.Answered)
                                         .If(() => MusicOnHold != null, @if =>
                                         {
-                                            @if.When(OutcomeNames.True).Then<StopAudioPlayback>();
-                                            @if.When(OutcomeNames.False).ThenNamed("BridgeCalls1");
+                                            @if.When(OutcomeNames.True).Then<StopAudioPlayback>(stopAudioPlayback =>
+                                            {
+                                                stopAudioPlayback.When(TelnyxOutcomeNames.CallIsNoLongerActive).ThenNamed("FinishPrioritizedHunt");
+                                            });
                                         })
-                                        .Add<BridgeCalls>(branch: bridgeCalls =>
-                                            bridgeCalls.When(TelnyxOutcomeNames.Bridged)
-                                                .Finish(activity => activity.WithOutcome(TelnyxOutcomeNames.Connected).WithOutput(context => context.GetInput<BridgedCallsOutput>())))
+                                        .Then<BridgeCalls>(branch: bridgeCalls =>
+                                        {
+                                            bridgeCalls.When(TelnyxOutcomeNames.Bridged).ThenNamed("FinishPrioritizedHunt");
+                                            bridgeCalls.When(TelnyxOutcomeNames.CallIsNoLongerActive).ThenNamed("FinishPrioritizedHunt");
+                                        })
                                         .WithName("BridgeCalls1");
+
+                                    dial.Add<Finish>(activity => activity.WithOutcome(TelnyxOutcomeNames.Connected).WithOutput(context => context.GetInput<BridgedCallsOutput>())).WithName("FinishPrioritizedHunt");
                                 }
                             );
                     })
@@ -331,19 +336,35 @@ namespace Elsa.Activities.Telnyx.Activities
                                     speakText =>
                                     {
                                         speakText.When(TelnyxOutcomeNames.FinishedSpeaking)
-                                            .Then<HangupCall>(hangupCall => hangupCall
-                                                .Set(x => x.CallControlId, () => CallAnsweredPayloads.Last().CallControlId));
+                                            .Then<HangupCall>(
+                                                hangupCall => hangupCall.Set(x => x.CallControlId, () => CallAnsweredPayloads.Last().CallControlId),
+                                                hangupCall =>
+                                                {
+                                                    hangupCall.When(TelnyxOutcomeNames.CallIsNoLongerActive).ThenNamed("CancelPendingCalls1");
+                                                });
+
+                                        speakText.When(TelnyxOutcomeNames.CallIsNoLongerActive).ThenNamed("CancelPendingCalls1");
                                     });
                             },
                             whenFalse => whenFalse
-                                .If(() => MusicOnHold != null, @if => @if.When(OutcomeNames.True).Then<StopAudioPlayback>())
+                                .If(() => MusicOnHold != null, @if =>
+                                {
+                                    @if.When(OutcomeNames.True)
+                                        .Then<StopAudioPlayback>(stopAudioPlayback => stopAudioPlayback.When(TelnyxOutcomeNames.CallIsNoLongerActive).ThenNamed("CancelPendingCalls1"));
+                                })
                                 .Then<BridgeCalls>(bridge => bridge
                                     .WithCallControlIdA(() => CallControlId)
                                     .WithCallControlIdB(() => CallAnsweredPayloads.First().CallControlId), bridge =>
                                 {
                                     bridge
                                         .When(TelnyxOutcomeNames.Bridged)
-                                        .Then(async context => await CancelPendingCallsAsync(context))
+                                        .ThenNamed("CancelPendingCalls1");
+
+                                    bridge
+                                        .When(TelnyxOutcomeNames.CallIsNoLongerActive).ThenNamed("CancelPendingCalls1");
+
+                                    bridge
+                                        .Add(async context => await CancelPendingCallsAsync(context)).WithName("CancelPendingCalls1").WithDisplayName("Cancel Pending Calls")
                                         .Finish(activity => activity.WithOutcome(TelnyxOutcomeNames.Connected).WithOutput(context => context.GetInput<BridgedCallsOutput>()));
                                 }).WithName("BridgeCalls2"));
 
@@ -363,7 +384,7 @@ namespace Elsa.Activities.Telnyx.Activities
                                 .WithTo(ResolveExtensionAsync)
                                 .WithTimeoutSecs(() => (int)RingTime.TotalSeconds)
                                 .WithFrom(() => From)
-                                .WithFromDisplayName(() => FromDisplayName.SanitizeCallerName())
+                                .WithFromDisplayName(() => FromDisplayName)
                             )
                             .Then(CollectCallControlIds));
                 });
