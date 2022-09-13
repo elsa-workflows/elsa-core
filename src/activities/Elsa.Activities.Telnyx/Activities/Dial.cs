@@ -196,7 +196,6 @@ namespace Elsa.Activities.Telnyx.Activities
                 throw new MissingCallControlAppIdException("No Call Control ID specified and no default value configured");
 
             var fromNumber = context.GetFromNumber(From);
-
             var clientState = new ClientStatePayload(context.CorrelationId!).ToBase64();
 
             var request = new DialRequest(

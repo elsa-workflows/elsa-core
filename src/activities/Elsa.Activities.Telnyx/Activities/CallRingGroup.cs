@@ -217,9 +217,9 @@ namespace Elsa.Activities.Telnyx.Activities
             set => SetState(value);
         }
 
-        private IList<CallAnsweredPayload> CallAnsweredPayloads
+        private IDictionary<string, CallAnsweredPayload> CallAnsweredPayloads
         {
-            get => GetState<IList<CallAnsweredPayload>>(() => new List<CallAnsweredPayload>());
+            get => GetState(() => new Dictionary<string, CallAnsweredPayload>());
             set => SetState(value);
         }
 
@@ -236,6 +236,12 @@ namespace Elsa.Activities.Telnyx.Activities
         }
 
         private bool LeavingMessage
+        {
+            get => GetState<bool>();
+            set => SetState(value);
+        }
+
+        private bool Bridged
         {
             get => GetState<bool>();
             set => SetState(value);
@@ -395,8 +401,7 @@ namespace Elsa.Activities.Telnyx.Activities
                                 {
                                     dial
                                         .When(TelnyxOutcomeNames.Answered)
-                                        .If(() => MusicOnHold != null,
-                                            @if => { @if.When(OutcomeNames.True).Then<StopAudioPlayback>(stopAudioPlayback => { stopAudioPlayback.When(TelnyxOutcomeNames.CallIsNoLongerActive).ThenNamed("FinishPrioritizedHunt"); }); })
+                                        .Then<StopAudioPlayback>(stopAudioPlayback => { stopAudioPlayback.When(TelnyxOutcomeNames.CallIsNoLongerActive).ThenNamed("FinishPrioritizedHunt"); })
                                         .Then<BridgeCalls>(branch: bridgeCalls =>
                                         {
                                             bridgeCalls.When(TelnyxOutcomeNames.Bridged).ThenNamed("FinishPrioritizedHunt");
@@ -425,40 +430,37 @@ namespace Elsa.Activities.Telnyx.Activities
 
                             // In case this event is received due to e.g. redelivery attempts from Telnyx, we need to make sure this is not the initial "answered" event.
                             if (payload.CallLegId != context.GetCallLegId(""))
-                                CallAnsweredPayloads.Add(payload);
+                                CallAnsweredPayloads[payload.To] = payload;
                         })
                         .If(() => CallAnsweredPayloads.Count > 1,
                             whenTrue =>
                             {
                                 // The call was already answered, so play a friendly message indicating this fact and then hang up.
                                 whenTrue
-                                    .Then<SpeakText>(speakText => speakText.WithCallControlId(() => CallAnsweredPayloads.Last().CallControlId).WithPayload(() => AlreadyPickedUpText),
+                                    .Then<SpeakText>(speakText => speakText.WithCallControlId(() => CallAnsweredPayloads.Last().Value.CallControlId).WithPayload(() => AlreadyPickedUpText),
                                         speakText =>
                                         {
                                             speakText.When(TelnyxOutcomeNames.FinishedSpeaking)
                                                 .Then<HangupCall>(
-                                                    hangupCall => hangupCall.Set(x => x.CallControlId, () => CallAnsweredPayloads.Last().CallControlId),
+                                                    hangupCall => hangupCall.Set(x => x.CallControlId, () => CallAnsweredPayloads.Last().Value.CallControlId),
                                                     hangupCall => { hangupCall.When(TelnyxOutcomeNames.CallIsNoLongerActive).ThenNamed("CancelPendingCalls1"); });
 
                                             speakText.When(TelnyxOutcomeNames.CallIsNoLongerActive).ThenNamed("CancelPendingCalls1");
                                         });
                             },
                             whenFalse => whenFalse
-                                .If(() => MusicOnHold != null, @if =>
-                                {
-                                    @if.When(OutcomeNames.True)
-                                        .Then<StopAudioPlayback>(stopAudioPlayback => stopAudioPlayback.When(TelnyxOutcomeNames.CallIsNoLongerActive).ThenNamed("CancelPendingCalls1"));
-                                })
+                                .Then<StopAudioPlayback>(stopAudioPlayback => stopAudioPlayback.When(TelnyxOutcomeNames.CallIsNoLongerActive).ThenNamed("CancelPendingCalls1"))
                                 .If(() => LeavingMessage,
                                     ifTrue => ifTrue.Break(),
                                     ifFalse =>
                                         ifFalse
                                             .Then<BridgeCalls>(bridge => bridge
                                                 .WithCallControlIdA(() => CallControlId)
-                                                .WithCallControlIdB(() => CallAnsweredPayloads.First().CallControlId), bridge =>
+                                                .WithCallControlIdB(() => CallAnsweredPayloads.First().Value.CallControlId), bridge =>
                                             {
                                                 bridge
                                                     .When(TelnyxOutcomeNames.Bridged)
+                                                    .Then(() => Bridged = true)
                                                     .ThenNamed("CancelPendingCalls1");
 
                                                 bridge
@@ -466,7 +468,11 @@ namespace Elsa.Activities.Telnyx.Activities
 
                                                 bridge
                                                     .Add(async context => await CancelPendingCallsAsync(context)).WithName("CancelPendingCalls1").WithDisplayName("Cancel Pending Calls")
-                                                    .Finish(activity => activity.WithOutcome(TelnyxOutcomeNames.Connected).WithOutput(context => context.GetInput<BridgedCallsOutput>()));
+                                                    .Finish(activity => activity.WithOutcome(TelnyxOutcomeNames.Connected).WithOutput(async context =>
+                                                    {
+                                                        var output = await context.GetNamedActivityPropertyAsync<BridgeCalls, BridgedCallsOutput>("BridgeCalls2", x => x.Output!);
+                                                        return output;
+                                                    }));
                                             }).WithName("BridgeCalls2")))
                         ;
 
@@ -482,7 +488,7 @@ namespace Elsa.Activities.Telnyx.Activities
 
                     fork
                         .When("Dial Everyone")
-                        .IfFalse(() => CallAnsweredPayloads.Any(), ifFalse =>
+                        .IfFalse(() => Bridged, ifFalse =>
                             ifFalse.ParallelForEach(async context => await EvaluateExtensionNumbersAsync(context), iterate => iterate
                                 .Then<Dial>(a => a
                                     .WithSuspendWorkflow(false)
@@ -507,7 +513,7 @@ namespace Elsa.Activities.Telnyx.Activities
 
         private async Task CancelPendingCallsAsync(ActivityExecutionContext context)
         {
-            var answeredCallControlIds = CallAnsweredPayloads.Select(x => x.CallControlId).ToHashSet();
+            var answeredCallControlIds = CallAnsweredPayloads.Select(x => x.Value.CallControlId).ToHashSet();
             var outgoingCalls = CollectedDialResponses.Where(x => !answeredCallControlIds.Contains(x.CallControlId)).ToList();
             var client = context.GetService<ITelnyxClient>();
 
@@ -524,6 +530,8 @@ namespace Elsa.Activities.Telnyx.Activities
                     _logger.LogTrace(e, "Error while trying to hang up an outgoing call");
                 }
             }
+
+            CallAnsweredPayloads.Clear();
         }
 
         private async Task<ICollection<string>> EvaluateExtensionNumbersAsync(ActivityExecutionContext context)
