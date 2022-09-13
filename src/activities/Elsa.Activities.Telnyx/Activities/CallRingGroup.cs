@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Telnyx.Client.Models;
 using Elsa.Activities.Telnyx.Client.Services;
+using Elsa.Activities.Telnyx.Extensions;
 using Elsa.Activities.Telnyx.Models;
 using Elsa.Activities.Telnyx.Services;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
@@ -15,6 +17,7 @@ using Elsa.Builders;
 using Elsa.Design;
 using Elsa.Expressions;
 using Elsa.Metadata;
+using Elsa.Scripting.JavaScript.Services;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.Logging;
@@ -42,6 +45,13 @@ namespace Elsa.Activities.Telnyx.Activities
         public IList<string> Extensions
         {
             get => GetState<IList<string>>(() => new List<string>());
+            set => SetState(value);
+        }
+        
+        [ActivityInput(UIHint = ActivityInputUIHints.CodeEditor, DefaultSyntax = SyntaxNames.JavaScript, SupportedSyntaxes = new[] { SyntaxNames.JavaScript })]
+        public string? ExtensionsExpression
+        {
+            get => GetState<string>();
             set => SetState(value);
         }
 
@@ -368,7 +378,7 @@ namespace Elsa.Activities.Telnyx.Activities
 
         private void BuildPrioritizedHuntFlow(IOutcomeBuilder builder) =>
             builder
-                .ForEach(() => Extensions, iterate => iterate
+                .ForEach(async context => await EvaluateExtensionNumbersAsync(context), iterate => iterate
                     .If(() => CallerHangup || LeavingMessage, @if =>
                     {
                         @if.When(OutcomeNames.True)
@@ -377,7 +387,7 @@ namespace Elsa.Activities.Telnyx.Activities
                         @if.When(OutcomeNames.False)
                             .Then<Dial>(dial => dial
                                     .WithConnectionId(() => CallControlAppId)
-                                    .WithTo(ResolveExtensionAsync)
+                                    .WithTo(context => context.GetVariable<string>("CurrentValue"))
                                     .WithTimeoutSecs(() => (int)RingTime.TotalSeconds)
                                     .WithFrom(() => From)
                                     .WithFromDisplayName(() => FromDisplayName),
@@ -413,8 +423,8 @@ namespace Elsa.Activities.Telnyx.Activities
                         {
                             var payload = context.GetInput<CallAnsweredPayload>()!;
                             
-                            // In case this event is received due to e.g. redelivery attempts from Telnyx, we need to make sure this is not the initial "answered" event. 
-                            if(context.CorrelationId != payload.CallSessionId)
+                            // In case this event is received due to e.g. redelivery attempts from Telnyx, we need to make sure this is not the initial "answered" event.
+                            if(payload.CallLegId != context.GetCallLegId(""))
                                 CallAnsweredPayloads.Add(payload);
                         })
                         .If(() => CallAnsweredPayloads.Count >= 1,
@@ -472,11 +482,11 @@ namespace Elsa.Activities.Telnyx.Activities
 
                     fork
                         .When("Dial Everyone")
-                        .ParallelForEach(() => Extensions, iterate => iterate
+                        .ParallelForEach(async context => await EvaluateExtensionNumbersAsync(context), iterate => iterate
                             .Then<Dial>(a => a
                                 .WithSuspendWorkflow(false)
                                 .WithConnectionId(() => CallControlAppId)
-                                .WithTo(ResolveExtensionAsync)
+                                .WithTo(context => context.Input as string)
                                 .WithTimeoutSecs(() => (int)RingTime.TotalSeconds)
                                 .WithFrom(() => From)
                                 .WithFromDisplayName(() => FromDisplayName)
@@ -515,15 +525,39 @@ namespace Elsa.Activities.Telnyx.Activities
             }
         }
 
-        private static async ValueTask<string?> ResolveExtensionAsync(ActivityExecutionContext context)
+        private async Task<ICollection<string>> EvaluateExtensionNumbersAsync(ActivityExecutionContext context)
         {
-            if (context.Resuming)
-                return await context.GetActivityPropertyAsync<Dial, string>(x => x.To)!;
+            var expression = ExtensionsExpression;
 
-            var extension = context.GetInput<string>()!;
+            if (string.IsNullOrWhiteSpace(expression))
+                return await ResolveExtensionsAsync(context, Extensions);
+
+            var javaScriptService = context.GetService<IJavaScriptService>();
+            var extensions = (ICollection<string>?)await javaScriptService.EvaluateAsync(expression, Extensions.GetType(), context);
+
+            return await ResolveExtensionsAsync(context, extensions ?? Array.Empty<string>());
+        }
+
+        private static async Task<ICollection<string>> ResolveExtensionsAsync(ActivityExecutionContext context, IEnumerable<string> extensions)
+        {
+            var numbers = new List<string>();
+
+            foreach (var extension in extensions)
+            {
+                var number = await ResolveExtensionAsync(context, extension);
+                
+                if(!string.IsNullOrWhiteSpace(number))
+                    numbers.Add(number);
+            }
+
+            return numbers;
+        }
+
+        private static async Task<string?> ResolveExtensionAsync(ActivityExecutionContext context, string extension)
+        {
             var extensionProvider = context.GetService<IExtensionProvider>();
             var resolvedExtension = await extensionProvider.GetAsync(extension, context.CancellationToken);
-            return resolvedExtension?.Destination ?? extension;
+            return resolvedExtension?.Destination;
         }
 
         private static bool IsNullOrZero(Duration? duration) => duration == null || duration.Value == Duration.Zero;

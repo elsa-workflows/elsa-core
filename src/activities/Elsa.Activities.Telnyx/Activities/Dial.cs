@@ -149,6 +149,9 @@ namespace Elsa.Activities.Telnyx.Activities
             
             if (!context.HasCallControlId())
                 context.SetCallControlId(payload!.CallControlId);
+            
+            if(!context.HasCallLegId())
+                context.SetCallLegId(payload!.CallLegId);
 
             return payload switch
             {
