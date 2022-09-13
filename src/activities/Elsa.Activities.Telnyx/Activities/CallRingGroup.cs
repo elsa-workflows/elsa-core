@@ -47,7 +47,7 @@ namespace Elsa.Activities.Telnyx.Activities
             get => GetState<IList<string>>(() => new List<string>());
             set => SetState(value);
         }
-        
+
         [ActivityInput(UIHint = ActivityInputUIHints.CodeEditor, DefaultSyntax = SyntaxNames.JavaScript, SupportedSyntaxes = new[] { SyntaxNames.JavaScript })]
         public string? ExtensionsExpression
         {
@@ -366,7 +366,7 @@ namespace Elsa.Activities.Telnyx.Activities
 
                             stopAudioPlayback
                                 .When(TelnyxOutcomeNames.CallIsNoLongerActive)
-                                .If(() => LeavingMessage, 
+                                .If(() => LeavingMessage,
                                     ifTrue => ifTrue.Timer(Duration.FromMinutes(1)), // HACK: For some reason, the composite activity finishes too early before the recording is finished. 
                                     ifFalse => ifFalse.Finish(TelnyxOutcomeNames.NoResponse));
                         });
@@ -422,17 +422,17 @@ namespace Elsa.Activities.Telnyx.Activities
                         .Then(context =>
                         {
                             var payload = context.GetInput<CallAnsweredPayload>()!;
-                            
+
                             // In case this event is received due to e.g. redelivery attempts from Telnyx, we need to make sure this is not the initial "answered" event.
-                            if(payload.CallLegId != context.GetCallLegId(""))
+                            if (payload.CallLegId != context.GetCallLegId(""))
                                 CallAnsweredPayloads.Add(payload);
                         })
-                        .If(() => CallAnsweredPayloads.Count >= 1,
+                        .If(() => CallAnsweredPayloads.Count > 1,
                             whenTrue =>
                             {
                                 // The call was already answered, so play a friendly message indicating this fact and then hang up.
                                 whenTrue
-                                    .Then<SpeakText>(speakText => speakText.WithPayload(() => AlreadyPickedUpText),
+                                    .Then<SpeakText>(speakText => speakText.WithCallControlId(() => CallAnsweredPayloads.Last().CallControlId).WithPayload(() => AlreadyPickedUpText),
                                         speakText =>
                                         {
                                             speakText.When(TelnyxOutcomeNames.FinishedSpeaking)
@@ -472,7 +472,7 @@ namespace Elsa.Activities.Telnyx.Activities
 
                     fork
                         .When("Timeout")
-                        .If(() => LeavingMessage,
+                        .If(() => LeavingMessage || CallAnsweredPayloads.Any(),
                             ifTrue => ifTrue.Break(),
                             ifFalse => ifFalse
                                 .StartIn(() => RingTime)
@@ -482,16 +482,17 @@ namespace Elsa.Activities.Telnyx.Activities
 
                     fork
                         .When("Dial Everyone")
-                        .ParallelForEach(async context => await EvaluateExtensionNumbersAsync(context), iterate => iterate
-                            .Then<Dial>(a => a
-                                .WithSuspendWorkflow(false)
-                                .WithConnectionId(() => CallControlAppId)
-                                .WithTo(context => context.Input as string)
-                                .WithTimeoutSecs(() => (int)RingTime.TotalSeconds)
-                                .WithFrom(() => From)
-                                .WithFromDisplayName(() => FromDisplayName)
-                            )
-                            .Then(CollectCallControlIds));
+                        .IfFalse(() => CallAnsweredPayloads.Any(), ifFalse =>
+                            ifFalse.ParallelForEach(async context => await EvaluateExtensionNumbersAsync(context), iterate => iterate
+                                .Then<Dial>(a => a
+                                    .WithSuspendWorkflow(false)
+                                    .WithConnectionId(() => CallControlAppId)
+                                    .WithTo(context => context.Input as string)
+                                    .WithTimeoutSecs(() => (int)RingTime.TotalSeconds)
+                                    .WithFrom(() => From)
+                                    .WithFromDisplayName(() => FromDisplayName)
+                                )
+                                .Then(CollectCallControlIds)));
                 });
 
         private void CollectCallControlIds(ActivityExecutionContext context)
@@ -545,8 +546,8 @@ namespace Elsa.Activities.Telnyx.Activities
             foreach (var extension in extensions)
             {
                 var number = await ResolveExtensionAsync(context, extension);
-                
-                if(!string.IsNullOrWhiteSpace(number))
+
+                if (!string.IsNullOrWhiteSpace(number))
                     numbers.Add(number);
             }
 
