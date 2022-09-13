@@ -262,6 +262,11 @@ namespace Elsa.Activities.Telnyx.Activities
                                 .ThenNamed("ExitWithNoResponse");
 
                             @if.When(OutcomeNames.False)
+                                .Then(async context =>
+                                {
+                                    var payload = (CallHangupPayload)(await context.GetNamedActivityPropertyAsync("CallerHangupEvent", "Output"))!;
+                                    CallAnsweredPayloads.Remove(payload.To);
+                                })
                                 .ThenNamed("CallerHangupEvent");
                         });
 
@@ -454,27 +459,28 @@ namespace Elsa.Activities.Telnyx.Activities
                                     ifTrue => ifTrue.Break(),
                                     ifFalse =>
                                         ifFalse
-                                            .Then<BridgeCalls>(bridge => bridge
-                                                .WithCallControlIdA(() => CallControlId)
-                                                .WithCallControlIdB(() => CallAnsweredPayloads.First().Value.CallControlId), bridge =>
-                                            {
-                                                bridge
-                                                    .When(TelnyxOutcomeNames.Bridged)
-                                                    .Then(() => Bridged = true)
-                                                    .ThenNamed("CancelPendingCalls1");
+                                            .IfTrue(() => CallAnsweredPayloads.Any(), ifTrue => ifTrue
+                                                .Then<BridgeCalls>(bridge => bridge
+                                                    .WithCallControlIdA(() => CallControlId)
+                                                    .WithCallControlIdB(() => CallAnsweredPayloads.First().Value.CallControlId), bridge =>
+                                                {
+                                                    bridge
+                                                        .When(TelnyxOutcomeNames.Bridged)
+                                                        .Then(() => Bridged = true)
+                                                        .ThenNamed("CancelPendingCalls1");
 
-                                                bridge
-                                                    .When(TelnyxOutcomeNames.CallIsNoLongerActive).ThenNamed("CancelPendingCalls1");
+                                                    bridge
+                                                        .When(TelnyxOutcomeNames.CallIsNoLongerActive).ThenNamed("CancelPendingCalls1");
 
-                                                bridge
-                                                    .Add(async context => await CancelPendingCallsAsync(context)).WithName("CancelPendingCalls1").WithDisplayName("Cancel Pending Calls")
-                                                    .Finish(activity => activity.WithOutcome(TelnyxOutcomeNames.Connected).WithOutput(async context =>
-                                                    {
-                                                        var output = await context.GetNamedActivityPropertyAsync<BridgeCalls, BridgedCallsOutput>("BridgeCalls2", x => x.Output!);
-                                                        return output;
-                                                    }));
-                                            }).WithName("BridgeCalls2")))
-                        ;
+                                                    bridge
+                                                        .Add(async context => await CancelPendingCallsAsync(context)).WithName("CancelPendingCalls1").WithDisplayName("Cancel Pending Calls")
+                                                        .Finish(activity => activity.WithOutcome(TelnyxOutcomeNames.Connected).WithOutput(async context =>
+                                                        {
+                                                            var output = await context.GetNamedActivityPropertyAsync<BridgeCalls, BridgedCallsOutput>("BridgeCalls2", x => x.Output!);
+                                                            return output;
+                                                        }));
+                                                }).WithName("BridgeCalls2"))));
+                    ;
 
                     fork
                         .When("Timeout")
