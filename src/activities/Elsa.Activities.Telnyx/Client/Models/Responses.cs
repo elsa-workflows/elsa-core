@@ -17,7 +17,7 @@ namespace Elsa.Activities.Telnyx.Client.Models
         string LineType,
         string Lrn,
         string Ocn,
-        LocalDate PortedDate,
+        LocalDate? PortedDate,
         string PortedStatus,
         string Spid,
         string SpidCarrierName,
