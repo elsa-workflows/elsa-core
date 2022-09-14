@@ -32,12 +32,14 @@ namespace Elsa.Activities.Telnyx.Activities
         Outcomes = new[] { TelnyxOutcomeNames.Connected, TelnyxOutcomeNames.NoResponse },
         DisplayName = "Call Ring Group"
     )]
-    public class CallRingGroup : CompositeActivity, IActivityPropertyDefaultValueProvider
+    public class CallRingGroup : CompositeActivity, IActivityPropertyDefaultValueProvider, IActivityPropertyOptionsProvider
     {
+        private readonly IEnumerable<IDestinationPhoneNumberProvider> _destinationPhoneNumberProviders;
         private readonly ILogger _logger;
 
-        public CallRingGroup(ILogger<CallRingGroup> logger)
+        public CallRingGroup(IEnumerable<IDestinationPhoneNumberProvider> destinationPhoneNumberProviders, ILogger<CallRingGroup> logger)
         {
+            _destinationPhoneNumberProviders = destinationPhoneNumberProviders;
             _logger = logger;
         }
 
@@ -48,10 +50,25 @@ namespace Elsa.Activities.Telnyx.Activities
             set => SetState(value);
         }
 
-        [ActivityInput(UIHint = ActivityInputUIHints.CodeEditor, DefaultSyntax = SyntaxNames.JavaScript, SupportedSyntaxes = new[] { SyntaxNames.JavaScript })]
-        public string? ExtensionsExpression
+        [ActivityInput(
+            UIHint = ActivityInputUIHints.Dropdown,
+            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid },
+            OptionsProvider = typeof(CallRingGroup)
+        )]
+        public string? DestinationPhoneNumbersProviderName
         {
             get => GetState<string>();
+            set => SetState(value);
+        }
+        
+        [ActivityInput(
+            UIHint = ActivityInputUIHints.SingleLine,
+            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid },
+            OptionsProvider = typeof(CallRingGroup)
+        )]
+        public object? DestinationPhoneNumbersProviderContext
+        {
+            get => GetState<object>();
             set => SetState(value);
         }
 
@@ -542,15 +559,18 @@ namespace Elsa.Activities.Telnyx.Activities
 
         private async Task<ICollection<string>> EvaluateExtensionNumbersAsync(ActivityExecutionContext context)
         {
-            var expression = ExtensionsExpression;
+            if (!string.IsNullOrWhiteSpace(DestinationPhoneNumbersProviderName))
+            {
+                var provider = _destinationPhoneNumberProviders.FirstOrDefault(x => x.Name == DestinationPhoneNumbersProviderName);
+                
+                if(provider == null)
+                    return ArraySegment<string>.Empty;
 
-            if (string.IsNullOrWhiteSpace(expression))
-                return await ResolveExtensionsAsync(context, Extensions);
-
-            var javaScriptService = context.GetService<IJavaScriptService>();
-            var extensions = (ICollection<string>?)await javaScriptService.EvaluateAsync(expression, Extensions.GetType(), context);
-
-            return await ResolveExtensionsAsync(context, extensions ?? Array.Empty<string>());
+                var numbers = await provider.GetDestinationPhoneNumbersAsync(new DestinationPhoneNumberProviderContext(context, DestinationPhoneNumbersProviderContext));
+                return numbers.ToList();
+            }
+            
+            return await ResolveExtensionsAsync(context, Extensions);
         }
 
         private static async Task<ICollection<string>> ResolveExtensionsAsync(ActivityExecutionContext context, IEnumerable<string> extensions)
@@ -584,5 +604,15 @@ namespace Elsa.Activities.Telnyx.Activities
                 nameof(RingTime) => Duration.FromSeconds(20),
                 _ => default!
             };
+
+        public object? GetOptions(PropertyInfo property)
+        {
+            if (property.Name != nameof(DestinationPhoneNumbersProviderName))
+                return null;
+
+            var items = _destinationPhoneNumberProviders.Select(x => new SelectListItem(x.DisplayName, x.Name)).ToList();
+            items.Insert(0, new SelectListItem("-", ""));
+            return new SelectList(items);
+        }
     }
 }
