@@ -368,6 +368,7 @@ namespace Elsa.Activities.Telnyx.Activities
                         {
                             innerFork.When("Ring")
                                 .While(() => !CallerHangup, iterate => iterate
+                                    .Timer(Duration.FromSeconds(5)) // Give other parts of activity a chance to execute.
                                     .Switch(cases =>
                                     {
                                         cases.Add(RingGroupStrategy.PrioritizedHunt.ToString(), () => Strategy == RingGroupStrategy.PrioritizedHunt, BuildPrioritizedHuntFlow);
@@ -383,25 +384,10 @@ namespace Elsa.Activities.Telnyx.Activities
             // No Response exit node.
             builder
                 .Add(async context => await CancelPendingCallsAsync(context)).WithName("ExitWithNoResponse").WithDisplayName("Cancel Pending Calls 2")
-                .Then<If>(@if => @if.WithCondition(() => MusicOnHold != null), @if =>
-                {
-                    @if.When(OutcomeNames.True)
-                        .Then<StopAudioPlayback>(stopAudioPlayback =>
-                        {
-                            stopAudioPlayback
-                                .When(TelnyxOutcomeNames.CallPlaybackEnded)
-                                .IfFalse(() => LeavingMessage, ifFalse => ifFalse.Finish(TelnyxOutcomeNames.NoResponse));
-
-                            stopAudioPlayback
-                                .When(TelnyxOutcomeNames.CallIsNoLongerActive)
-                                .If(() => LeavingMessage,
-                                    ifTrue => ifTrue.Timer(Duration.FromMinutes(1)), // HACK: For some reason, the composite activity finishes too early before the recording is finished. 
-                                    ifFalse => ifFalse.Finish(TelnyxOutcomeNames.NoResponse));
-                        });
-
-                    @if.When(OutcomeNames.False)
-                        .IfFalse(() => LeavingMessage, ifFalse => ifFalse.Finish(TelnyxOutcomeNames.NoResponse));
-                });
+                .Then<StopAudioPlayback>()
+                .If(() => LeavingMessage,
+                    ifTrue => ifTrue.Timer(Duration.FromMinutes(1)).Finish(TelnyxOutcomeNames.NoResponse), // HACK: For some reason, the composite activity finishes too early before the recording is finished. 
+                    ifFalse => ifFalse.Finish(TelnyxOutcomeNames.NoResponse));
         }
 
         private void BuildPrioritizedHuntFlow(IOutcomeBuilder builder) =>
@@ -554,7 +540,8 @@ namespace Elsa.Activities.Telnyx.Activities
                 }
             }
 
-            CallAnsweredPayloads.Clear();
+            CallAnsweredPayloads = new Dictionary<string, CallAnsweredPayload>();
+            CollectedDialResponses = new List<DialResponse>();
         }
 
         private async Task<ICollection<string>> EvaluateExtensionNumbersAsync(ActivityExecutionContext context)
