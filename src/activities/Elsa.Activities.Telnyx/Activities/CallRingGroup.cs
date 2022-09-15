@@ -426,7 +426,7 @@ namespace Elsa.Activities.Telnyx.Activities
                             if (payload.CallLegId != context.GetCallLegId(""))
                                 CallAnsweredPayloads[payload.To] = payload;
                         })
-                        .If(() => CallAnsweredPayloads.Count > 1,
+                        .If(() => CallAnsweredPayloads.Count > 1 && Bridged,
                             whenTrue =>
                             {
                                 // The call was already answered, so play a friendly message indicating this fact and then hang up.
@@ -448,7 +448,7 @@ namespace Elsa.Activities.Telnyx.Activities
                                     ifTrue => ifTrue.Break(),
                                     ifFalse =>
                                         ifFalse
-                                            .IfTrue(() => CallAnsweredPayloads.Any(), ifTrue => ifTrue
+                                            .IfTrue(() => CallAnsweredPayloads.Any() && !Bridged, ifTrue => ifTrue
                                                 .Then<BridgeCalls>(bridge => bridge
                                                     .WithCallControlIdA(() => CallControlId)
                                                     .WithCallControlIdB(() => CallAnsweredPayloads.First().Value.CallControlId), bridge =>
@@ -463,16 +463,18 @@ namespace Elsa.Activities.Telnyx.Activities
 
                                                     bridge
                                                         .Add(async context => await CancelPendingCallsAsync(context)).WithName("CancelPendingCalls1").WithDisplayName("Cancel Pending Calls")
-                                                        .Finish(activity => activity.WithOutcome(TelnyxOutcomeNames.Connected).WithOutput(async context =>
-                                                        {
-                                                            var output = await context.GetNamedActivityPropertyAsync<BridgeCalls, BridgedCallsOutput>("BridgeCalls2", x => x.Output!);
-                                                            return output;
-                                                        }));
+                                                        .If(() => Bridged, 
+                                                            ifTrue => ifTrue.Finish(activity => activity.WithOutcome(TelnyxOutcomeNames.Connected).WithOutput(async context =>
+                                                            {
+                                                                var output = await context.GetNamedActivityPropertyAsync<BridgeCalls, BridgedCallsOutput>("BridgeCalls2", x => x.Output!);
+                                                                return output;
+                                                            })), 
+                                                            ifFalse => ifFalse.Finish(TelnyxOutcomeNames.NoResponse));
                                                 }).WithName("BridgeCalls2"))));
 
                     fork
                         .When("Timeout")
-                        .If(() => LeavingMessage || CallAnsweredPayloads.Any(),
+                        .If(() => LeavingMessage || Bridged,
                             ifTrue => ifTrue.Break(),
                             ifFalse => ifFalse
                                 .StartIn(() => RingTime)
@@ -507,6 +509,9 @@ namespace Elsa.Activities.Telnyx.Activities
 
         private async Task CancelPendingCallsAsync(ActivityExecutionContext context)
         {
+            if(!Bridged)
+                return;
+            
             var answeredCallControlIds = CallAnsweredPayloads.Select(x => x.Value.CallControlId).ToHashSet();
             var outgoingCalls = CollectedDialResponses.Where(x => !answeredCallControlIds.Contains(x.CallControlId)).ToList();
             var client = context.GetService<ITelnyxClient>();
