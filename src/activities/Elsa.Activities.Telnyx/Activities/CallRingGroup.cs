@@ -60,7 +60,7 @@ namespace Elsa.Activities.Telnyx.Activities
             get => GetState<string>();
             set => SetState(value);
         }
-        
+
         [ActivityInput(
             UIHint = ActivityInputUIHints.SingleLine,
             SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid },
@@ -268,7 +268,7 @@ namespace Elsa.Activities.Telnyx.Activities
         {
             // Root.
             builder
-                .Then<Fork>(fork => fork.WithBranches("Call", "Hold", "Hangup"), fork =>
+                .Then<Fork>(fork => fork.WithBranches("Hold", "Call", "Dtmf Received", "Hangup", "Queue Timeout"), fork =>
                 {
                     fork.When("Hangup")
                         .ThenTypeNamed(CallHangupPayload.ActivityTypeName).WithName("CallerHangupEvent")
@@ -287,104 +287,90 @@ namespace Elsa.Activities.Telnyx.Activities
                                 .ThenNamed("CallerHangupEvent");
                         });
 
-                    fork
-                        .When("Hold")
-                        .Then<Fork>(fork => fork.WithBranches("Loop", "Dtmf Received"), fork =>
-                        {
-                            fork.When("Dtmf Received")
-                                .ThenTypeNamed(CallDtmfReceivedPayload.ActivityTypeName).WithName("CallDtmfReceived")
-                                .If(context => context.GetInput<CallDtmfReceivedPayload>()!.Digit == LeaveMessageDigit.ToString(),
-                                    ifTrue =>
-                                    {
-                                        ifTrue
-                                            .Then(() => LeavingMessage = true).WithDisplayName("LeavingMessage = True")
-                                            .Then(async context => await CancelPendingCallsAsync(context))
-                                            .Then<Fork>(fork => fork.WithBranches("Stop Music", "Leave Message"), fork =>
-                                            {
-                                                fork.When("Stop Music")
-                                                    .Then<StopAudioPlayback>(stopAudioPlayback => stopAudioPlayback.When(TelnyxOutcomeNames.CallIsNoLongerActive)
-                                                        .IfFalse(() => LeavingMessage, ifFalse => ifFalse.ThenNamed("ExitWithNoResponse")));
-
-                                                fork.When("Leave Message")
-                                                    .Then<SpeakText>(speakText => speakText.WithPayload(() => LeaveMessageText), speakText =>
-                                                    {
-                                                        speakText.When(TelnyxOutcomeNames.CallIsNoLongerActive).ThenNamed("ExitWithNoResponse");
-
-                                                        speakText.When(TelnyxOutcomeNames.FinishedSpeaking)
-                                                            .Then<StartRecording>(startRecording => startRecording.WithPlayBeep(true), startRecording =>
-                                                            {
-                                                                startRecording.When(TelnyxOutcomeNames.CallIsNoLongerActive).ThenNamed("ExitWithNoResponse");
-
-                                                                startRecording.When(TelnyxOutcomeNames.FinishedRecording)
-                                                                    .Then(async context =>
-                                                                    {
-                                                                        var recordingPayload = await context.GetNamedActivityPropertyAsync<StartRecording, CallRecordingSaved>("StartRecordingMessage", x => x.SavedRecordingPayload!);
-                                                                        SavedMessageRecording = recordingPayload;
-                                                                    })
-                                                                    .Finish(TelnyxOutcomeNames.NoResponse);
-                                                            }).WithName("StartRecordingMessage");
-                                                    });
-                                            });
-                                    },
-                                    ifFalse => { ifFalse.ThenNamed("CallDtmfReceived"); })
-                                .ThenNamed("CallDtmfReceived");
-
-                            fork.When("Loop")
-                                .Then<SpeakText>(speakText => speakText.WithPayload(() => TextToSpeak), speakText =>
+                    fork.When("Dtmf Received")
+                        .IfTrue(() => AllowLeaveMessage, ifTrue => ifTrue
+                            .ThenTypeNamed(CallDtmfReceivedPayload.ActivityTypeName).WithName("CallDtmfReceived")
+                            .If(context => context.GetInput<CallDtmfReceivedPayload>()!.Digit == LeaveMessageDigit.ToString(),
+                                ifTrue =>
                                 {
-                                    speakText.When(TelnyxOutcomeNames.CallIsNoLongerActive).ThenNamed("ExitWithNoResponse");
+                                    ifTrue
+                                        .Then(() => LeavingMessage = true).WithDisplayName("LeavingMessage = True")
+                                        .Then(async context => await CancelPendingCallsAsync(context))
+                                        .Then<Fork>(fork => fork.WithBranches("Stop Music", "Leave Message"), fork =>
+                                        {
+                                            fork.When("Stop Music")
+                                                .Then<StopAudioPlayback>(stopAudioPlayback => stopAudioPlayback.When(TelnyxOutcomeNames.CallIsNoLongerActive)
+                                                    .IfFalse(() => LeavingMessage, ifFalse => ifFalse.ThenNamed("ExitWithNoResponse")));
 
-                                    speakText.When(TelnyxOutcomeNames.FinishedSpeaking)
-                                        .If(() => MusicOnHold != null && !LeavingMessage, @if =>
-                                        {
-                                            @if
-                                                .When(OutcomeNames.True)
-                                                .Then<PlayAudio>(playAudio => playAudio.WithAudioUrl(() => MusicOnHold).WithLoop("infinity"), playAudio => playAudio
-                                                    .When(TelnyxOutcomeNames.CallIsNoLongerActive)
-                                                    .ThenNamed("ExitWithNoResponse"));
-                                        }).WithName("PleaseHold")
-                                        .Timer(() => SpeakEvery ?? Duration.FromSeconds(30))
-                                        .If(() => MusicOnHold != null, @if =>
-                                        {
-                                            @if.When(OutcomeNames.True)
-                                                .Then<StopAudioPlayback>(stopAudioPlayback =>
+                                            fork.When("Leave Message")
+                                                .Then<SpeakText>(speakText => speakText.WithPayload(() => LeaveMessageText), speakText =>
                                                 {
-                                                    stopAudioPlayback.When(TelnyxOutcomeNames.CallIsNoLongerActive).ThenNamed("ExitWithNoResponse");
-                                                    stopAudioPlayback.When(TelnyxOutcomeNames.CallPlaybackEnded).ThenNamed("SpeakPleaseHold");
-                                                });
+                                                    speakText.When(TelnyxOutcomeNames.CallIsNoLongerActive).ThenNamed("ExitWithNoResponse");
 
-                                            @if.When(OutcomeNames.False).ThenNamed("SpeakPleaseHold");
-                                        })
-                                        .Add<SpeakText>(speakText2 => speakText2.WithPayload(() => TextToSpeakWhileDialing), speakText2 =>
-                                        {
-                                            speakText2.When(TelnyxOutcomeNames.CallIsNoLongerActive).ThenNamed("ExitWithNoResponse");
-                                            speakText2.When(TelnyxOutcomeNames.FinishedSpeaking).ThenNamed("PleaseHold");
-                                        }).WithName("SpeakPleaseHold");
-                                });
+                                                    speakText.When(TelnyxOutcomeNames.FinishedSpeaking)
+                                                        .Then<StartRecording>(startRecording => startRecording.WithPlayBeep(true), startRecording =>
+                                                        {
+                                                            startRecording.When(TelnyxOutcomeNames.CallIsNoLongerActive).ThenNamed("ExitWithNoResponse");
+
+                                                            startRecording.When(TelnyxOutcomeNames.FinishedRecording)
+                                                                .Then(async context =>
+                                                                {
+                                                                    var recordingPayload = await context.GetNamedActivityPropertyAsync<StartRecording, CallRecordingSaved>("StartRecordingMessage", x => x.SavedRecordingPayload!);
+                                                                    SavedMessageRecording = recordingPayload;
+                                                                })
+                                                                .Finish(TelnyxOutcomeNames.NoResponse);
+                                                        }).WithName("StartRecordingMessage");
+                                                });
+                                        });
+                                },
+                                ifFalse => { ifFalse.ThenNamed("CallDtmfReceived"); })
+                            .ThenNamed("CallDtmfReceived"));
+
+                    fork.When("Hold")
+                        .Then<SpeakText>(speakText => speakText.WithPayload(() => TextToSpeak), speakText =>
+                        {
+                            speakText.When(TelnyxOutcomeNames.CallIsNoLongerActive).ThenNamed("ExitWithNoResponse");
+
+                            speakText.When(TelnyxOutcomeNames.FinishedSpeaking)
+                                .If(() => MusicOnHold != null && !LeavingMessage, @if =>
+                                {
+                                    @if
+                                        .When(OutcomeNames.True)
+                                        .Then<PlayAudio>(playAudio => playAudio.WithAudioUrl(() => MusicOnHold).WithLoop("infinity"), playAudio => playAudio
+                                            .When(TelnyxOutcomeNames.CallIsNoLongerActive)
+                                            .ThenNamed("ExitWithNoResponse"));
+                                }).WithName("PleaseHold")
+                                .Timer(() => SpeakEvery ?? Duration.FromSeconds(30))
+                                .Then<StopAudioPlayback>(stopAudioPlayback =>
+                                {
+                                    stopAudioPlayback.When(TelnyxOutcomeNames.CallIsNoLongerActive).ThenNamed("ExitWithNoResponse");
+                                    stopAudioPlayback.When(TelnyxOutcomeNames.CallPlaybackEnded).ThenNamed("SpeakPleaseHold");
+                                })
+                                .Add<SpeakText>(speakText2 => speakText2.WithPayload(() => TextToSpeakWhileDialing), speakText2 =>
+                                {
+                                    speakText2.When(TelnyxOutcomeNames.CallIsNoLongerActive).ThenNamed("ExitWithNoResponse");
+                                    speakText2.When(TelnyxOutcomeNames.FinishedSpeaking).ThenNamed("PleaseHold");
+                                }).WithName("SpeakPleaseHold");
                         });
 
                     fork.When("Call")
-                        .Then<Fork>(innerFork => innerFork.WithBranches("Ring", "Queue Timeout"), innerFork =>
-                        {
-                            innerFork.When("Ring")
-                                .While(() => !CallerHangup, iterate => iterate
-                                    .Timer(Duration.FromSeconds(5)) // Give other parts of activity a chance to execute.
-                                    .Switch(cases =>
-                                    {
-                                        cases.Add(RingGroupStrategy.PrioritizedHunt.ToString(), () => Strategy == RingGroupStrategy.PrioritizedHunt, BuildPrioritizedHuntFlow);
-                                        cases.Add(RingGroupStrategy.RingAll.ToString(), () => Strategy == RingGroupStrategy.RingAll, BuildRingAllFlow);
-                                    }))
-                                .IfTrue(() => IsNullOrZero(MaxQueueWaitTime), ifTrue => ifTrue.ThenNamed("ExitWithNoResponse"));
+                        .While(() => !CallerHangup, iterate => iterate
+                            .Timer(Duration.FromSeconds(5)) // Give other parts of activity a chance to execute.
+                            .Switch(cases =>
+                            {
+                                cases.Add(RingGroupStrategy.PrioritizedHunt.ToString(), () => Strategy == RingGroupStrategy.PrioritizedHunt, BuildPrioritizedHuntFlow);
+                                cases.Add(RingGroupStrategy.RingAll.ToString(), () => Strategy == RingGroupStrategy.RingAll, BuildRingAllFlow);
+                            })
+                        .ThenNamed("ExitWithNoResponse"));
 
-                            innerFork.When("Queue Timeout")
-                                .IfFalse(() => IsNullOrZero(MaxQueueWaitTime), ifFalse => ifFalse.StartIn(() => MaxQueueWaitTime!.Value).ThenNamed("ExitWithNoResponse"));
-                        });
+                    fork.When("Queue Timeout")
+                        .IfFalse(() => IsNullOrZero(MaxQueueWaitTime), ifFalse => ifFalse.StartIn(() => MaxQueueWaitTime!.Value).ThenNamed("ExitWithNoResponse"));
                 });
 
             // No Response exit node.
             builder
                 .Add(async context => await CancelPendingCallsAsync(context)).WithName("ExitWithNoResponse").WithDisplayName("Cancel Pending Calls 2")
-                .Then<StopAudioPlayback>()
+                .Then<StopAudioPlayback>(stopAudioPlayback => stopAudioPlayback.Finish())
                 .If(() => LeavingMessage,
                     ifTrue => ifTrue.Timer(Duration.FromMinutes(1)).Finish(TelnyxOutcomeNames.NoResponse), // HACK: For some reason, the composite activity finishes too early before the recording is finished. 
                     ifFalse => ifFalse.Finish(TelnyxOutcomeNames.NoResponse));
@@ -483,7 +469,6 @@ namespace Elsa.Activities.Telnyx.Activities
                                                             return output;
                                                         }));
                                                 }).WithName("BridgeCalls2"))));
-                    ;
 
                     fork
                         .When("Timeout")
@@ -549,14 +534,14 @@ namespace Elsa.Activities.Telnyx.Activities
             if (!string.IsNullOrWhiteSpace(DestinationPhoneNumbersProviderName))
             {
                 var provider = _destinationPhoneNumberProviders.FirstOrDefault(x => x.Name == DestinationPhoneNumbersProviderName);
-                
-                if(provider == null)
+
+                if (provider == null)
                     return ArraySegment<string>.Empty;
 
                 var numbers = await provider.GetDestinationPhoneNumbersAsync(new DestinationPhoneNumberProviderContext(context, DestinationPhoneNumbersProviderContext));
                 return numbers.ToList();
             }
-            
+
             return await ResolveExtensionsAsync(context, Extensions);
         }
 
