@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Telnyx.Client.Models;
@@ -17,7 +16,6 @@ using Elsa.Builders;
 using Elsa.Design;
 using Elsa.Expressions;
 using Elsa.Metadata;
-using Elsa.Scripting.JavaScript.Services;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.Logging;
@@ -361,7 +359,9 @@ namespace Elsa.Activities.Telnyx.Activities
                                 cases.Add(RingGroupStrategy.PrioritizedHunt.ToString(), () => Strategy == RingGroupStrategy.PrioritizedHunt, BuildPrioritizedHuntFlow);
                                 cases.Add(RingGroupStrategy.RingAll.ToString(), () => Strategy == RingGroupStrategy.RingAll, BuildRingAllFlow);
                             })
-                        .ThenNamed("ExitWithNoResponse"));
+                            .If(() => Bridged, 
+                                ifTrue => ifTrue.Finish(TelnyxOutcomeNames.Connected), 
+                                ifFalse => ifFalse.ThenNamed("ExitWithNoResponse")).WithName("Bridged?"));
 
                     fork.When("Queue Timeout")
                         .IfFalse(() => IsNullOrZero(MaxQueueWaitTime), ifFalse => ifFalse.StartIn(() => MaxQueueWaitTime!.Value).ThenNamed("ExitWithNoResponse"));
@@ -370,7 +370,7 @@ namespace Elsa.Activities.Telnyx.Activities
             // No Response exit node.
             builder
                 .Add(async context => await CancelPendingCallsAsync(context)).WithName("ExitWithNoResponse").WithDisplayName("Cancel Pending Calls 2")
-                .Then<StopAudioPlayback>(stopAudioPlayback => stopAudioPlayback.Finish())
+                .Then<StopAudioPlayback>()
                 .If(() => LeavingMessage,
                     ifTrue => ifTrue.Timer(Duration.FromMinutes(1)).Finish(TelnyxOutcomeNames.NoResponse), // HACK: For some reason, the composite activity finishes too early before the recording is finished. 
                     ifFalse => ifFalse.Finish(TelnyxOutcomeNames.NoResponse));
@@ -509,9 +509,6 @@ namespace Elsa.Activities.Telnyx.Activities
 
         private async Task CancelPendingCallsAsync(ActivityExecutionContext context)
         {
-            if(!Bridged)
-                return;
-            
             var answeredCallControlIds = CallAnsweredPayloads.Select(x => x.Value.CallControlId).ToHashSet();
             var outgoingCalls = CollectedDialResponses.Where(x => !answeredCallControlIds.Contains(x.CallControlId)).ToList();
             var client = context.GetService<ITelnyxClient>();
