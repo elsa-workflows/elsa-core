@@ -32,11 +32,13 @@ namespace Elsa.Activities.Telnyx.Activities
     )]
     public class CallRingGroup : CompositeActivity, IActivityPropertyDefaultValueProvider, IActivityPropertyOptionsProvider
     {
+        private readonly ITelnyxClient _telnyxClient;
         private readonly IEnumerable<IDestinationPhoneNumberProvider> _destinationPhoneNumberProviders;
         private readonly ILogger _logger;
 
-        public CallRingGroup(IEnumerable<IDestinationPhoneNumberProvider> destinationPhoneNumberProviders, ILogger<CallRingGroup> logger)
+        public CallRingGroup(ITelnyxClient telnyxClient, IEnumerable<IDestinationPhoneNumberProvider> destinationPhoneNumberProviders, ILogger<CallRingGroup> logger)
         {
+            _telnyxClient = telnyxClient;
             _destinationPhoneNumberProviders = destinationPhoneNumberProviders;
             _logger = logger;
         }
@@ -378,6 +380,19 @@ namespace Elsa.Activities.Telnyx.Activities
         protected override async ValueTask OnExitAsync(ActivityExecutionContext context, object? output)
         {
             await CancelPendingCallsAsync(context);
+            
+            foreach (var answeredPayload in CallAnsweredPayloads.Values)
+            {
+                try
+                {
+                    await _telnyxClient.Calls.HangupCallAsync(answeredPayload.CallControlId, new HangupCallRequest(null, null));
+                }
+                catch (Exception e)
+                {
+                    _logger.LogDebug(e, "Failed to hangup call because it is not longer available");
+                    throw;
+                }
+            }
         }
 
         private void BuildPrioritizedHuntFlow(IOutcomeBuilder builder) =>
