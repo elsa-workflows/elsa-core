@@ -353,14 +353,13 @@ namespace Elsa.Activities.Telnyx.Activities
 
                     fork.When("Call")
                         .While(() => !CallerHangup, iterate => iterate
-                            .Timer(Duration.FromSeconds(5)) // Give other parts of activity a chance to execute.
                             .Switch(cases =>
                             {
                                 cases.Add(RingGroupStrategy.PrioritizedHunt.ToString(), () => Strategy == RingGroupStrategy.PrioritizedHunt, BuildPrioritizedHuntFlow);
                                 cases.Add(RingGroupStrategy.RingAll.ToString(), () => Strategy == RingGroupStrategy.RingAll, BuildRingAllFlow);
                             })
-                            .If(() => Bridged, 
-                                ifTrue => ifTrue.Finish(TelnyxOutcomeNames.Connected), 
+                            .If(() => Bridged,
+                                ifTrue => ifTrue.Finish(TelnyxOutcomeNames.Connected),
                                 ifFalse => ifFalse.ThenNamed("ExitWithNoResponse")).WithName("Bridged?"));
 
                     fork.When("Queue Timeout")
@@ -374,6 +373,11 @@ namespace Elsa.Activities.Telnyx.Activities
                 .If(() => LeavingMessage,
                     ifTrue => ifTrue.Timer(Duration.FromMinutes(1)).Finish(TelnyxOutcomeNames.NoResponse), // HACK: For some reason, the composite activity finishes too early before the recording is finished. 
                     ifFalse => ifFalse.Finish(TelnyxOutcomeNames.NoResponse));
+        }
+
+        protected override async ValueTask OnExitAsync(ActivityExecutionContext context, object? output)
+        {
+            await CancelPendingCallsAsync(context);
         }
 
         private void BuildPrioritizedHuntFlow(IOutcomeBuilder builder) =>
@@ -426,51 +430,48 @@ namespace Elsa.Activities.Telnyx.Activities
                             if (payload.CallLegId != context.GetCallLegId(""))
                                 CallAnsweredPayloads[payload.To] = payload;
                         })
-                        .If(() => CallAnsweredPayloads.Count > 1 && Bridged,
-                            whenTrue =>
+                        .IfTrue(() => CallerHangup, ifTrue => ifTrue
+                            .Then<SpeakText>(speakText => speakText.WithCallControlId(() => CallAnsweredPayloads.Last().Value.CallControlId).WithPayload("The caller is no longer available."), speakText =>
                             {
-                                // The call was already answered, so play a friendly message indicating this fact and then hang up.
-                                whenTrue
-                                    .Then<SpeakText>(speakText => speakText.WithCallControlId(() => CallAnsweredPayloads.Last().Value.CallControlId).WithPayload(() => AlreadyPickedUpText),
-                                        speakText =>
-                                        {
-                                            speakText.When(TelnyxOutcomeNames.FinishedSpeaking)
-                                                .Then<HangupCall>(
-                                                    hangupCall => hangupCall.Set(x => x.CallControlId, () => CallAnsweredPayloads.Last().Value.CallControlId),
-                                                    hangupCall => { hangupCall.When(TelnyxOutcomeNames.CallIsNoLongerActive).ThenNamed("CancelPendingCalls1"); });
-
-                                            speakText.When(TelnyxOutcomeNames.CallIsNoLongerActive).ThenNamed("CancelPendingCalls1");
-                                        });
-                            },
+                                speakText.When(TelnyxOutcomeNames.FinishedSpeaking)
+                                    .Then<HangupCall>(hangupCall => hangupCall.Set(x => x.CallControlId, () => CallAnsweredPayloads.Last().Value.CallControlId));
+                            }).Break()
+                        )
+                        .If(() => CallAnsweredPayloads.Count > 1 && Bridged,
+                            whenTrue => whenTrue
+                                .Then<SpeakText>(speakText => speakText.WithCallControlId(() => CallAnsweredPayloads.Last().Value.CallControlId).WithPayload(() => AlreadyPickedUpText),
+                                    speakText => speakText.When(TelnyxOutcomeNames.FinishedSpeaking)
+                                        .Then<HangupCall>(hangupCall => hangupCall.Set(x => x.CallControlId, () => CallAnsweredPayloads.Last().Value.CallControlId))),
                             whenFalse => whenFalse
                                 .Then<StopAudioPlayback>(stopAudioPlayback => stopAudioPlayback.When(TelnyxOutcomeNames.CallIsNoLongerActive).ThenNamed("CancelPendingCalls1"))
                                 .If(() => LeavingMessage,
                                     ifTrue => ifTrue.Break(),
                                     ifFalse =>
                                         ifFalse
-                                            .IfTrue(() => CallAnsweredPayloads.Any() && !Bridged, ifTrue => ifTrue
-                                                .Then<BridgeCalls>(bridge => bridge
-                                                    .WithCallControlIdA(() => CallControlId)
-                                                    .WithCallControlIdB(() => CallAnsweredPayloads.First().Value.CallControlId), bridge =>
-                                                {
-                                                    bridge
-                                                        .When(TelnyxOutcomeNames.Bridged)
-                                                        .Then(() => Bridged = true)
-                                                        .ThenNamed("CancelPendingCalls1");
+                                            .IfFalse(() => Bridged, ifFalse =>
+                                                ifFalse.ForEach(() => CallAnsweredPayloads.Values, iterate => iterate
+                                                    .Then<BridgeCalls>(bridge => bridge
+                                                        .WithCallControlIdA(() => CallControlId)
+                                                        .WithCallControlIdB(context => context.GetVariable<CallAnsweredPayload>("CurrentValue")!.CallControlId), bridge =>
+                                                    {
+                                                        bridge
+                                                            .When(TelnyxOutcomeNames.Bridged)
+                                                            .Then(() => Bridged = true)
+                                                            .Then(async context => await CancelPendingCallsAsync(context)).WithName("CancelPendingCalls1").WithDisplayName("Cancel Pending Calls")
+                                                            .Then(() => CallAnsweredPayloads = new Dictionary<string, CallAnsweredPayload>()).WithDisplayName("Clear Answered Payloads")
+                                                            .Break();
 
-                                                    bridge
-                                                        .When(TelnyxOutcomeNames.CallIsNoLongerActive).ThenNamed("CancelPendingCalls1");
+                                                        bridge
+                                                            .When(TelnyxOutcomeNames.CallIsNoLongerActive)
+                                                            .If(() => Bridged,
+                                                                ifTrue => ifTrue.Finish(activity => activity.WithOutcome(TelnyxOutcomeNames.Connected).WithOutput(async context =>
+                                                                {
+                                                                    var output = await context.GetNamedActivityPropertyAsync<BridgeCalls, BridgedCallsOutput>("BridgeCalls2", x => x.Output!);
+                                                                    return output;
+                                                                })),
+                                                                ifFalse => ifFalse.Finish(TelnyxOutcomeNames.NoResponse));
+                                                    }).WithName("BridgeCalls2")))));
 
-                                                    bridge
-                                                        .Add(async context => await CancelPendingCallsAsync(context)).WithName("CancelPendingCalls1").WithDisplayName("Cancel Pending Calls")
-                                                        .If(() => Bridged, 
-                                                            ifTrue => ifTrue.Finish(activity => activity.WithOutcome(TelnyxOutcomeNames.Connected).WithOutput(async context =>
-                                                            {
-                                                                var output = await context.GetNamedActivityPropertyAsync<BridgeCalls, BridgedCallsOutput>("BridgeCalls2", x => x.Output!);
-                                                                return output;
-                                                            })), 
-                                                            ifFalse => ifFalse.Finish(TelnyxOutcomeNames.NoResponse));
-                                                }).WithName("BridgeCalls2"))));
 
                     fork
                         .When("Timeout")
@@ -484,7 +485,7 @@ namespace Elsa.Activities.Telnyx.Activities
 
                     fork
                         .When("Dial Everyone")
-                        .IfFalse(() => Bridged, ifFalse =>
+                        .IfFalse(() => Bridged && !CallerHangup, ifFalse =>
                             ifFalse.ParallelForEach(async context => await EvaluateExtensionNumbersAsync(context), iterate => iterate
                                 .Then<Dial>(a => a
                                     .WithSuspendWorkflow(false)
@@ -527,7 +528,6 @@ namespace Elsa.Activities.Telnyx.Activities
                 }
             }
 
-            CallAnsweredPayloads = new Dictionary<string, CallAnsweredPayload>();
             CollectedDialResponses = new List<DialResponse>();
         }
 
