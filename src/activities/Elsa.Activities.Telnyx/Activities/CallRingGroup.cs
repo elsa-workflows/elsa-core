@@ -377,7 +377,7 @@ namespace Elsa.Activities.Telnyx.Activities
                     ifFalse => ifFalse.Finish(TelnyxOutcomeNames.NoResponse));
         }
 
-        protected override async ValueTask OnExitAsync(ActivityExecutionContext context, object? output)
+        protected override async ValueTask OnExitAsync(ActivityExecutionContext context, object? output, IList<string> outcomes)
         {
             await CancelPendingCallsAsync(context);
             

@@ -230,7 +230,7 @@ namespace Elsa.Activities.Telnyx.Activities
                 });
         }
 
-        protected override async ValueTask OnExitAsync(ActivityExecutionContext context, object? output)
+        protected override async ValueTask OnExitAsync(ActivityExecutionContext context, object? output, IList<string> outcomes)
         {
             // Hang up any pending calls.
             context.JournalData.Add("Exiting", true);
