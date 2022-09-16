@@ -80,6 +80,8 @@ namespace Elsa.Services
             await OnExitAsync(context, output);
 
             Output = output;
+            context.WorkflowExecutionContext.ClearScheduledActivities(Id);
+            await context.WorkflowExecutionContext.RemoveBlockingActivitiesAsync(Id);
             return Outcomes(outcomes);
         }
 
