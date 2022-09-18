@@ -168,6 +168,7 @@ export namespace Components {
     }
     interface ElsaModalDialog {
         "actions": Array<ActionDefinition>;
+        "autoHide": boolean;
         "content": () => any;
         "hide": (animate?: boolean) => Promise<void>;
         "show": (animate?: boolean) => Promise<void>;
@@ -829,6 +830,7 @@ declare namespace LocalJSX {
     }
     interface ElsaModalDialog {
         "actions"?: Array<ActionDefinition>;
+        "autoHide"?: boolean;
         "content"?: () => any;
         "onActionInvoked"?: (event: CustomEvent<ActionInvokedArgs>) => void;
         "onHidden"?: (event: CustomEvent<any>) => void;

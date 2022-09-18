@@ -14,6 +14,7 @@ export class ModalDialog {
   @Prop() actions: Array<ActionDefinition> = [];
   @Prop() size: string = 'sm:max-w-6xl';
   @Prop() type: ModalType = ModalType.Default;
+  @Prop() autoHide: boolean = true;
   @Prop() content: () => any = () => <div/>;
   @Event() shown: EventEmitter;
   @Event() hidden: EventEmitter;
@@ -128,7 +129,8 @@ export class ModalDialog {
                   return <button type={buttonType}
                                  onClick={e => {
                                     clickHandler(e, action);
-                                    this.hideInternal(true);
+                                    if(this.autoHide)
+                                      this.hideInternal(true);
                                 }}
                                  class={`${cssClass} mt-3 w-full inline-flex justify-center rounded-md border shadow-sm px-4 py-2 text-base font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm`}>
                     {action.text}

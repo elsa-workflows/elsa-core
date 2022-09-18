@@ -7,11 +7,12 @@ import {ModalType} from "../../../components/shared/modal-dialog";
 @Service()
 export class ModalDialogService {
 
-  show(content: () => any, actions?: Array<ActionDefinition>, modalType?: ModalType): ModalDialogInstance {
+  show(content: () => any, actions?: Array<ActionDefinition>, modalType?: ModalType, autoHide?: boolean): ModalDialogInstance {
     const newInstance: ModalDialogInstance = {
       content: content,
       actions: actions ?? [],
-      modalType: modalType ?? ModalType.Default
+      modalType: modalType ?? ModalType.Default,
+      autoHide: autoHide ?? true
     };
 
     let instances: Array<ModalDialogInstance> = state.instances;

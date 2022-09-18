@@ -4,6 +4,7 @@ export interface ModalDialogInstance {
   content: () => any;
   actions: Array<ActionDefinition>;
   modalType: ModalType;
+  autoHide: boolean;
 }
 
 export type ActionClickArgs = (e: Event, action: ActionDefinition) => void;
