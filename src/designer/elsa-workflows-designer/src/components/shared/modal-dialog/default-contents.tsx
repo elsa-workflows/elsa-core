@@ -2,7 +2,7 @@ import {h} from '@stencil/core';
 import { WarningIcon } from '../../icons/tooling';
 
 export class DefaultContents {
-    public static Delete = (message: string): any => {
+    public static Warning = (message: string): any => {
         return(
             <div class="p-6 text-center">
                 <WarningIcon/>

@@ -7,7 +7,7 @@ import {PagerData} from '../../../components/shared/pager/pager';
 import {updateSelectedWorkflowDefinitions} from '../services/utils';
 import {WorkflowDefinitionSummary} from "../models/entities";
 import {WorkflowDefinitionsApi, WorkflowDefinitionsOrderBy} from "../services/api";
-import {DefaultActions} from "../../../components/shared/modal-dialog";
+import {ModalDialogService, DefaultActions, DefaultContents, ModalType} from "../../../components/shared/modal-dialog";
 
 @Component({
   tag: 'elsa-workflow-definition-browser',
@@ -21,9 +21,11 @@ export class WorkflowDefinitionBrowser {
 
   private readonly api: WorkflowDefinitionsApi;
   private selectAllCheckbox: HTMLInputElement;
+  private readonly modalDialogService: ModalDialogService;
 
   constructor() {
     this.api = Container.get(WorkflowDefinitionsApi);
+    this.modalDialogService = Container.get(ModalDialogService);
   }
 
   @Event() workflowDefinitionSelected: EventEmitter<WorkflowDefinitionSummary>;
@@ -56,28 +58,43 @@ export class WorkflowDefinitionBrowser {
   }
 
   private async onDeleteClick(e: MouseEvent, workflowDefinition: WorkflowDefinitionSummary) {
-    // const result = await this.confirmDialog.show(t('DeleteConfirmationModel.Title'), t('DeleteConfirmationModel.Message'));
-    //
-    // if (!result)
-    //   return;
-
-    await this.api.delete(workflowDefinition);
-    await this.loadWorkflowDefinitions();
+    this.modalDialogService.show(
+      () => DefaultContents.Warning("Are you sure you want to delete this workflow definition?"), 
+      [DefaultActions.Delete(()=>{}), DefaultActions.Cancel()],
+      ModalType.Confirmation);
   }
 
   private onDeleteManyClick = async () => {
-    await this.api.deleteMany({definitionIds: this.selectedWorkflowDefinitionIds});
-    await this.loadWorkflowDefinitions();
+    this.modalDialogService.show(
+      () => DefaultContents.Warning("Are you sure you want to delete selected workflow definitions?"), 
+      [DefaultActions.Delete(async () => 
+        {
+          await this.api.deleteMany({definitionIds: this.selectedWorkflowDefinitionIds});
+          await this.loadWorkflowDefinitions();
+        }), DefaultActions.Cancel()],
+      ModalType.Confirmation);
   };
 
   private onPublishManyClick = async () => {
-    await this.api.publishMany({definitionIds: this.selectedWorkflowDefinitionIds});
-    await this.loadWorkflowDefinitions();
+    this.modalDialogService.show(
+      () => DefaultContents.Warning("Are you sure you want to publish selected workflow definitions?"), 
+      [DefaultActions.Publish(async () => 
+        {
+          await this.api.publishMany({definitionIds: this.selectedWorkflowDefinitionIds});
+          await this.loadWorkflowDefinitions();
+        }), DefaultActions.Cancel()],
+      ModalType.Confirmation);
   };
 
   private onUnpublishManyClick = async () => {
-    await this.api.unpublishMany({definitionIds: this.selectedWorkflowDefinitionIds});
-    await this.loadWorkflowDefinitions();
+    this.modalDialogService.show(
+      () => DefaultContents.Warning("Are you sure you want to unpublish selected workflow definitions?"), 
+      [DefaultActions.Unpublish(async () => 
+        {
+          await this.api.unpublishMany({definitionIds: this.selectedWorkflowDefinitionIds});
+          await this.loadWorkflowDefinitions();
+        }), DefaultActions.Cancel()],
+      ModalType.Confirmation);
   };
 
   private onWorkflowDefinitionClick = async (e: MouseEvent, workflowDefinition: WorkflowDefinitionSummary) => {

@@ -28,15 +28,6 @@ export class WorkflowDefinitionVersionHistory {
   @Event() deleteVersionClicked: EventEmitter<WorkflowDefinition>;
   @Event() revertVersionClicked: EventEmitter<WorkflowDefinition>;
 
-  @Watch('workflowDefinition')
-  async onWorkflowDefinitionChanged(value: WorkflowDefinition) {
-    
-  }
-
-  async componentWillLoad() {
-  
-  }
-
   onViewVersionClick = (e: Event, version: WorkflowDefinition) => {
     e.preventDefault();
     this.versionSelected.emit(version);
@@ -45,9 +36,9 @@ export class WorkflowDefinitionVersionHistory {
   onDeleteVersionClick = async (e: Event, version: WorkflowDefinition) => {
     e.preventDefault();
     this.modalDialogService.show(
-      () => DefaultContents.Delete("Are you sure you want to delete this version?"), 
+      () => DefaultContents.Warning("Are you sure you want to delete this version?"), 
       [DefaultActions.Delete(() => this.deleteVersionClicked.emit(version)), DefaultActions.Cancel()],
-      ModalType.DeleteConfirmation);
+      ModalType.Confirmation);
   };
 
   onRevertVersionClick = (e: Event, version: WorkflowDefinition) => {

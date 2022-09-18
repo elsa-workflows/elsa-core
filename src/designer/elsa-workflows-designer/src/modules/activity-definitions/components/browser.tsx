@@ -7,7 +7,7 @@ import {PagedList, VersionOptions} from "../../../models";
 import {DeleteIcon, EditIcon, PublishIcon, UnPublishIcon} from "../../../components/icons/tooling";
 import {PagerData} from "../../../components/shared/pager/pager";
 import {updateSelectedActivityDefinitions} from "../services/utils";
-import {DefaultActions} from "../../../components/shared/modal-dialog";
+import {ModalDialogService, DefaultActions, DefaultContents, ModalType} from "../../../components/shared/modal-dialog";
 
 @Component({
   tag: 'elsa-activity-definition-browser',
@@ -21,6 +21,11 @@ export class ActivityDefinitionBrowser {
 
   private activityDefinitionsApi: ActivityDefinitionsApi;
   private selectAllCheckbox: HTMLInputElement;
+  private readonly modalDialogService: ModalDialogService;
+
+  constructor() {
+    this.modalDialogService = Container.get(ModalDialogService);
+  }
 
   @Event() public activityDefinitionSelected: EventEmitter<ActivityDefinitionSummary>;
   @Event() public newActivityDefinitionSelected: EventEmitter;
@@ -54,28 +59,47 @@ export class ActivityDefinitionBrowser {
   }
 
   private async onDeleteClick(e: MouseEvent, ActivityDefinition: ActivityDefinitionSummary) {
-    // const result = await this.confirmDialog.show(t('DeleteConfirmationModel.Title'), t('DeleteConfirmationModel.Message'));
-    //
-    // if (!result)
-    //   return;
-
-    await this.activityDefinitionsApi.delete(ActivityDefinition);
-    await this.loadActivityDefinitions();
+    this.modalDialogService.show(
+      () => DefaultContents.Warning("Are you sure you want to delete this activity definition?"), 
+      [DefaultActions.Delete(async () => 
+        {
+          await this.activityDefinitionsApi.delete(ActivityDefinition);
+          await this.loadActivityDefinitions();
+        }), DefaultActions.Cancel()],
+      ModalType.Confirmation);
   }
 
   private onDeleteManyClick = async () => {
-    await this.activityDefinitionsApi.deleteMany({definitionIds: this.selectedActivityDefinitionIds});
-    await this.loadActivityDefinitions();
+    this.modalDialogService.show(
+      () => DefaultContents.Warning("Are you sure you want to delete selected activity definitions?"), 
+      [DefaultActions.Delete(async () => 
+        {
+          await this.activityDefinitionsApi.deleteMany({definitionIds: this.selectedActivityDefinitionIds});
+          await this.loadActivityDefinitions();
+        }), DefaultActions.Cancel()],
+      ModalType.Confirmation);
   };
 
   private onPublishManyClick = async () => {
-    await this.activityDefinitionsApi.publishMany({definitionIds: this.selectedActivityDefinitionIds});
-    await this.loadActivityDefinitions();
+    this.modalDialogService.show(
+      () => DefaultContents.Warning("Are you sure you want to publish selected activity definitions?"), 
+      [DefaultActions.Publish(async () => 
+        {
+          await this.activityDefinitionsApi.publishMany({definitionIds: this.selectedActivityDefinitionIds});
+          await this.loadActivityDefinitions();
+        }), DefaultActions.Cancel()],
+      ModalType.Confirmation);
   };
 
   private onUnpublishManyClick = async () => {
-    await this.activityDefinitionsApi.unpublishMany({definitionIds: this.selectedActivityDefinitionIds});
-    await this.loadActivityDefinitions();
+    this.modalDialogService.show(
+      () => DefaultContents.Warning("Are you sure you want to unpublish selected activity definitions?"), 
+      [DefaultActions.Unpublish(async () => 
+        {
+          await this.activityDefinitionsApi.unpublishMany({definitionIds: this.selectedActivityDefinitionIds});
+          await this.loadActivityDefinitions();
+        }), DefaultActions.Cancel()],
+      ModalType.Confirmation);   
   };
 
   private onActivityDefinitionClick = async (e: MouseEvent, ActivityDefinition: ActivityDefinitionSummary) => {
