@@ -70,6 +70,8 @@ namespace Elsa.Activities.Telnyx.Activities
             );
 
             var callControlId = context.GetCallControlId(CallControlId);
+            
+            context.JournalData["CallControlId"] = callControlId;
 
             try
             {
