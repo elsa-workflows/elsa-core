@@ -21,7 +21,7 @@ namespace Elsa.Activities.Rpa.Web
 
         [ActivityInput(
             UIHint = ActivityInputUIHints.MultiText,
-            SupportedSyntaxes = new[] { SyntaxNames.Literal }
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string Text { get; set; } = default!;
 
