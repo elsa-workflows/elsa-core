@@ -19,7 +19,7 @@ import { Flowchart, FlowchartNavigationItem } from "./modules/flowchart/models";
 import { Graph } from "@antv/x6";
 import { AddActivityArgs as AddActivityArgs1, RenameActivityArgs as RenameActivityArgs1, UpdateActivityArgs as UpdateActivityArgs1 } from "./components/designer/canvas/canvas";
 import { ActivityNodeShape } from "./modules/flowchart/shapes";
-import { ActionDefinition, ActionInvokedArgs } from "./components/shared/modal-dialog";
+import { ActionDefinition, ActionInvokedArgs, ModalType } from "./components/shared/modal-dialog";
 import { ExpressionChangedArs } from "./components/designer/input-control-switch/input-control-switch";
 import { ActionDefinition as ActionDefinition1, ActionInvokedArgs as ActionInvokedArgs1 } from "./components/shared/modal-dialog/models";
 import { MonacoLib, MonacoValueChangedArgs } from "./components/shared/monaco-editor/monaco-editor";
@@ -172,6 +172,7 @@ export namespace Components {
         "hide": (animate?: boolean) => Promise<void>;
         "show": (animate?: boolean) => Promise<void>;
         "size": string;
+        "type": ModalType;
     }
     interface ElsaModalDialogContainer {
     }
@@ -833,6 +834,7 @@ declare namespace LocalJSX {
         "onHidden"?: (event: CustomEvent<any>) => void;
         "onShown"?: (event: CustomEvent<any>) => void;
         "size"?: string;
+        "type"?: ModalType;
     }
     interface ElsaModalDialogContainer {
     }

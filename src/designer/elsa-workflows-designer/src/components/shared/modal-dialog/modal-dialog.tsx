@@ -1,6 +1,7 @@
 import {Component, Host, h, State, Listen, Method, Event, EventEmitter, Prop} from '@stencil/core';
 import {enter, leave} from 'el-transition'
 import {ActionDefinition, ActionInvokedArgs, ActionType} from "./models";
+import {ModalType} from "../../../components/shared/modal-dialog";
 
 @Component({
   tag: 'elsa-modal-dialog',
@@ -11,7 +12,8 @@ export class ModalDialog {
   private modal: HTMLElement
 
   @Prop() actions: Array<ActionDefinition> = [];
-  @Prop() size: string = 'sm:w-full sm:max-w-6xl';
+  @Prop() size: string = 'sm:max-w-6xl';
+  @Prop() type: ModalType = ModalType.Default;
   @Prop() content: () => any = () => <div/>;
   @Event() shown: EventEmitter;
   @Event() hidden: EventEmitter;
@@ -60,6 +62,12 @@ export class ModalDialog {
   async handleKeyDown(e: KeyboardEvent) {
     if (this.isVisible && e.key === 'Escape') {
       await this.hide(true);
+    }
+  }
+
+  componentWillRender() {
+    if(this.type == ModalType.Default){
+      this.size += " sm:w-full";
     }
   }
 
