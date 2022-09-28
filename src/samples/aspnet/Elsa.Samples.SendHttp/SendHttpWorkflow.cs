@@ -1,7 +1,9 @@
 using Elsa.Activities.Http;
 using Elsa.Builders;
 using System;
+using System.Dynamic;
 using System.Text.Json;
+using Elsa.Activities.Primitives;
 
 namespace Elsa.Samples.SendHttp
 {
@@ -18,8 +20,9 @@ namespace Elsa.Samples.SendHttp
                     .WithMethod("GET")
                     .WithReadContent(true))
                 .WithName("TestHttpRequest")
+                .SetVariable("MyVariable", async context => await context.GetNamedActivityPropertyAsync<SendHttpRequest, object>("TestHttpRequest", x => x.ResponseContent))
                 .WriteHttpResponse(setup => setup.WithStatusCode(System.Net.HttpStatusCode.OK)
-                    .WithContent(async context => JsonSerializer.Serialize(await context.GetNamedActivityPropertyAsync<SendHttpRequest, object>("TestHttpRequest", x => x.ResponseContent))));
+                    .WithContent(context => context.GetVariable<dynamic>("MyVariable")!.title));
         }
     }
 }
