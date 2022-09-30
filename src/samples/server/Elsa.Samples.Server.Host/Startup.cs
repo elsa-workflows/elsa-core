@@ -16,6 +16,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NodaTime;
 using NodaTime.Serialization.JsonNet;
+using Elsa.Retention.Specifications;
 
 namespace Elsa.Samples.Server.Host
 {
@@ -108,6 +109,12 @@ namespace Elsa.Samples.Server.Host
                     // Bind options from configuration.
                     elsaSection.GetSection("Retention").Bind(options);
 
+
+                    // Configure a custom specification filter (server side) pipeline that deletes cancelled, faulted and completed workflows.
+                    options.ConfigureSpecificationFilter = filter => filter.AddAndSpecification(
+                        new WorkflowStatusFilterSpecification(WorkflowStatus.Cancelled, WorkflowStatus.Faulted, WorkflowStatus.Finished))
+                    ;
+                    
                     // Configure a custom filter pipeline that deletes completed AND faulted workflows.
                     options.ConfigurePipeline = pipeline => pipeline
                         .AddFilter(new WorkflowStatusFilter(WorkflowStatus.Cancelled, WorkflowStatus.Faulted, WorkflowStatus.Finished))
