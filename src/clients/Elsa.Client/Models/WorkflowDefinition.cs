@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Runtime.Serialization;
+using NodaTime;
 
 namespace Elsa.Client.Models
 {
@@ -33,8 +34,14 @@ namespace Elsa.Client.Models
         /// </summary>
         [DataMember(Order = 16)]
         public string? Tag { get; set; }
+        
+        /// <summary>
+        /// The timestamp this workflow definition was created.
+        /// </summary>
+        [DataMember(Order = 17)]
+        public Instant CreatedAt { get; set; }
 
-        [DataMember(Order = 17)] public ICollection<ActivityDefinition> Activities { get; set; }
-        [DataMember(Order = 18)] public ICollection<ConnectionDefinition> Connections { get; set; }
+        [DataMember(Order = 18)] public ICollection<ActivityDefinition> Activities { get; set; }
+        [DataMember(Order = 19)] public ICollection<ConnectionDefinition> Connections { get; set; }
     }
 }

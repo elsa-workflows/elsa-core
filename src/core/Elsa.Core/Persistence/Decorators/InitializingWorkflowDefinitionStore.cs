@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -61,6 +61,7 @@ namespace Elsa.Persistence.Decorators
 
         public Task<WorkflowDefinition?> FindAsync(ISpecification<WorkflowDefinition> specification, CancellationToken cancellationToken) => _store.FindAsync(specification, cancellationToken);
 
+        
         private WorkflowDefinition Initialize(WorkflowDefinition workflowDefinition)
         {
             if (string.IsNullOrWhiteSpace(workflowDefinition.Id))
