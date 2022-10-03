@@ -28,10 +28,10 @@ public class ProtoActorSystem
         ClusterConfigurationSettings = clusterConfigurationSettings;
     }
 
-    public IClusterProvider ClusterProvider { get; set; }
-    public GrpcNetRemoteConfig RemoteConfig { get; set; }
+    public IClusterProvider ClusterProvider { get; set; } = default!;
+    public GrpcNetRemoteConfig RemoteConfig { get; set; } = default!;
     public ActorSystemConfig ActorSystemConfig { get; set; } = ActorSystemConfig.Setup();
-    public IIdentityLookup IdentityLookup { get; set; }
+    public IIdentityLookup IdentityLookup { get; set; }= default!;
     public ClusterConfigurationSettings ClusterConfigurationSettings { get; set; } = new();
-    public string Name { get; set; }
+    public string Name { get; set; }= default!;
 }

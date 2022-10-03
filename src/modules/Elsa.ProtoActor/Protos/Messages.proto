@@ -15,6 +15,7 @@ message StartWorkflowRequest {
 
 message StartWorkflowResponse {
   RunWorkflowResult Result = 1;
+  repeated BookmarkDto Bookmarks = 2;
 }
 
 message ResumeWorkflowRequest {
@@ -25,7 +26,20 @@ message ResumeWorkflowRequest {
 
 message ResumeWorkflowResponse {
   RunWorkflowResult Result = 1;
+  repeated BookmarkDto Bookmarks = 2;
 }
+
+message ExportWorkflowStateRequest {}
+
+message ExportWorkflowStateResponse {
+  Json SerializedWorkflowState = 1;
+}
+
+message ImportWorkflowStateRequest {
+  Json SerializedWorkflowState = 1;
+}
+
+message ImportWorkflowStateResponse {}
 
 enum RunWorkflowResult {
   Finished = 0;
@@ -52,6 +66,16 @@ message ResolveBookmarksResponse {
 message StoredBookmark {
   string WorkflowInstanceId = 1;
   string BookmarkId = 2;
+}
+
+message BookmarkDto {
+  string Id = 1;
+  string Name = 2;
+  string Hash = 3;
+  optional string Data = 4;
+  string ActivityId = 5;
+  string ActivityInstanceId = 6;
+  optional string CallbackMethodName = 7;
 }
 
 message Json {

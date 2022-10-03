@@ -33,10 +33,10 @@ public static class ObjectConverter
         options.ReferenceHandler = ReferenceHandler.Preserve;
         options.PropertyNameCaseInsensitive = true;
         options.Converters.Add(new JsonStringEnumConverter());
-        
+
         if (value is DahomeyJsonNode { ValueKind: JsonValueKind.Object } dahomyJsonObject)
             return ToObject(dahomyJsonObject, targetType, options);
-        
+
         if (value is JsonElement { ValueKind: JsonValueKind.Object } jsonObject)
             return jsonObject.Deserialize(targetType, options);
 
@@ -56,7 +56,9 @@ public static class ObjectConverter
         var targetTypeConverter = TypeDescriptor.GetConverter(underlyingTargetType);
 
         if (targetTypeConverter.CanConvertFrom(underlyingSourceType))
-            return targetTypeConverter.IsValid(value) ? targetTypeConverter.ConvertFrom(value) : targetType.GetDefaultValue();
+            return targetTypeConverter.IsValid(value)
+                ? targetTypeConverter.ConvertFrom(value)
+                : targetType.GetDefaultValue();
 
         var sourceTypeConverter = TypeDescriptor.GetConverter(underlyingSourceType);
 
@@ -65,8 +67,14 @@ public static class ObjectConverter
 
         if (underlyingTargetType.IsEnum)
         {
-            if (underlyingSourceType != typeof(string))
+            if (underlyingSourceType == typeof(string))
+                return Enum.Parse(underlyingTargetType, (string)value);
+
+            if (underlyingSourceType == typeof(int))
                 return Enum.ToObject(underlyingTargetType, value);
+            
+            if (underlyingSourceType == typeof(double))
+                return Enum.ToObject(underlyingTargetType, Convert.ChangeType(value, typeof(int)));
         }
 
         try
@@ -75,7 +83,9 @@ public static class ObjectConverter
         }
         catch (InvalidCastException e)
         {
-            throw new TypeConversionException($"Failed to convert an object of type {sourceType} to {underlyingTargetType}", value, underlyingTargetType, e);
+            throw new TypeConversionException(
+                $"Failed to convert an object of type {sourceType} to {underlyingTargetType}", value,
+                underlyingTargetType, e);
         }
     }
 

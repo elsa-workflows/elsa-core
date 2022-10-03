@@ -21,7 +21,7 @@ public class EFCoreRuntimePersistenceFeature : PersistenceFeatureBase<RuntimeDbC
         Module.Configure<WorkflowRuntimeFeature>(feature =>
         {
             feature.WorkflowStateStore = sp => sp.GetRequiredService<EFCoreWorkflowStateStore>();
-            feature.WorkflowTriggerStore = sp => sp.GetRequiredService<EFCoreWorkflowTriggerStore>();
+            feature.WorkflowTriggerStore = sp => sp.GetRequiredService<EfCoreTriggerStore>();
             feature.BookmarkStore = sp => sp.GetRequiredService<EFCoreBookmarkStore>();
             feature.WorkflowExecutionLogStore = sp => sp.GetRequiredService<EFCoreWorkflowExecutionLogStore>();
         });
@@ -32,7 +32,7 @@ public class EFCoreRuntimePersistenceFeature : PersistenceFeatureBase<RuntimeDbC
         base.Apply();
 
         AddStore<WorkflowState, EFCoreWorkflowStateStore>();
-        AddStore<WorkflowTrigger, EFCoreWorkflowTriggerStore>();
+        AddStore<StoredTrigger, EfCoreTriggerStore>();
         AddStore<StoredBookmark, EFCoreBookmarkStore>();
         AddStore<WorkflowExecutionLogRecord, EFCoreWorkflowExecutionLogStore>();
     }

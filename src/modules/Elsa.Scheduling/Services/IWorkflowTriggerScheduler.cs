@@ -10,6 +10,6 @@ namespace Elsa.Scheduling.Services;
 /// </summary>
 public interface IWorkflowTriggerScheduler
 {
-    Task ScheduleTriggersAsync(IEnumerable<WorkflowTrigger> triggers, CancellationToken cancellationToken = default);
-    Task UnscheduleTriggersAsync(IEnumerable<WorkflowTrigger> triggers, CancellationToken cancellationToken = default);
+    Task ScheduleTriggersAsync(IEnumerable<StoredTrigger> triggers, CancellationToken cancellationToken = default);
+    Task UnscheduleTriggersAsync(IEnumerable<StoredTrigger> triggers, CancellationToken cancellationToken = default);
 }

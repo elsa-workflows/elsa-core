@@ -62,6 +62,6 @@ public class HttpEndpoint : Trigger<HttpRequestModel>
         // Generate bookmark data for path and selected methods.
         var path = context.Get(Path);
         var methods = context.Get(SupportedMethods);
-        return methods!.Select(x => new HttpEndpointBookmarkData(path!, x.ToLowerInvariant())).Cast<object>().ToArray();
+        return methods!.Select(x => new HttpEndpointBookmarkPayload(path!, x.ToLowerInvariant())).Cast<object>().ToArray();
     }
 }

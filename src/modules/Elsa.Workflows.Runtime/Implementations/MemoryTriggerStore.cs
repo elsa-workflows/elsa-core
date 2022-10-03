@@ -4,28 +4,28 @@ using Elsa.Workflows.Runtime.Services;
 
 namespace Elsa.Workflows.Runtime.Implementations;
 
-public class MemoryWorkflowTriggerStore : IWorkflowTriggerStore
+public class MemoryTriggerStore : ITriggerStore
 {
-    private readonly MemoryStore<WorkflowTrigger> _store;
+    private readonly MemoryStore<StoredTrigger> _store;
 
-    public MemoryWorkflowTriggerStore(MemoryStore<WorkflowTrigger> store)
+    public MemoryTriggerStore(MemoryStore<StoredTrigger> store)
     {
         _store = store;
     }
 
-    public Task SaveAsync(WorkflowTrigger record, CancellationToken cancellationToken = default)
+    public Task SaveAsync(StoredTrigger record, CancellationToken cancellationToken = default)
     {
         _store.Save(record, x => x.Id);
         return Task.CompletedTask;
     }
 
-    public Task SaveManyAsync(IEnumerable<WorkflowTrigger> records, CancellationToken cancellationToken = default)
+    public Task SaveManyAsync(IEnumerable<StoredTrigger> records, CancellationToken cancellationToken = default)
     {
         _store.SaveMany(records, x => x.Id);
         return Task.CompletedTask;
     }
 
-    public Task<IEnumerable<WorkflowTrigger>> FindManyByNameAsync(string name, string? hash, CancellationToken cancellationToken = default)
+    public Task<IEnumerable<StoredTrigger>> FindAsync(string name, string? hash, CancellationToken cancellationToken = default)
     {
         var triggers = _store.Query(query =>
         {
@@ -37,16 +37,16 @@ public class MemoryWorkflowTriggerStore : IWorkflowTriggerStore
             return query;
         });
 
-        return Task.FromResult<IEnumerable<WorkflowTrigger>>(triggers.ToList());
+        return Task.FromResult<IEnumerable<StoredTrigger>>(triggers.ToList());
     }
 
-    public Task<IEnumerable<WorkflowTrigger>> FindManyByWorkflowDefinitionIdAsync(string workflowDefinitionId, CancellationToken cancellationToken = default)
+    public Task<IEnumerable<StoredTrigger>> FindManyByWorkflowDefinitionIdAsync(string workflowDefinitionId, CancellationToken cancellationToken = default)
     {
         var triggers = _store.Query(query => query.Where(x => x.WorkflowDefinitionId == workflowDefinitionId));
-        return Task.FromResult<IEnumerable<WorkflowTrigger>>(triggers.ToList());
+        return Task.FromResult<IEnumerable<StoredTrigger>>(triggers.ToList());
     }
 
-    public Task ReplaceAsync(IEnumerable<WorkflowTrigger> removed, IEnumerable<WorkflowTrigger> added, CancellationToken cancellationToken = default)
+    public Task ReplaceAsync(IEnumerable<StoredTrigger> removed, IEnumerable<StoredTrigger> added, CancellationToken cancellationToken = default)
     {
         _store.DeleteMany(removed, x => x.Id);
         _store.SaveMany(added, x => x.Id);

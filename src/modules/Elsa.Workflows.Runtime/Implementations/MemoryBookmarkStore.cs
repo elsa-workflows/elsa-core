@@ -15,13 +15,13 @@ public class MemoryBookmarkStore : IBookmarkStore
         return ValueTask.CompletedTask;
     }
 
-    public ValueTask<IEnumerable<StoredBookmark>> LoadAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
+    public ValueTask<IEnumerable<StoredBookmark>> FindAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
     {
         var bookmarks = _bookmarks.Values.SelectMany(x => x).Where(x => x.WorkflowInstanceId == workflowInstanceId).ToList();
         return new(bookmarks);
     }
 
-    public ValueTask<IEnumerable<StoredBookmark>> LoadAsync(string activityTypeName, string hash, CancellationToken cancellationToken = default)
+    public ValueTask<IEnumerable<StoredBookmark>> FindAsync(string activityTypeName, string hash, CancellationToken cancellationToken = default)
     {
         var bookmarks = _bookmarks.TryGetValue((activityTypeName, hash), out var value) ? value : Enumerable.Empty<StoredBookmark>(); 
         return new(bookmarks);

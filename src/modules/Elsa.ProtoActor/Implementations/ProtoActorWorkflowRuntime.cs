@@ -1,9 +1,12 @@
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.ProtoActor.Extensions;
 using Elsa.Runtime.Protos;
 using Elsa.Workflows.Core;
+using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Runtime.Services;
 using Proto.Cluster;
 
@@ -55,7 +58,7 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
         var client = _cluster.GetWorkflowGrain(instanceId);
         var response = await client.Resume(request, cancellationToken);
 
-        return new ResumeWorkflowResult();
+        return new ResumeWorkflowResult(new List<Bookmark>());
     }
 
     public async Task<TriggerWorkflowsResult> TriggerWorkflowsAsync(string activityTypeName, object bookmarkPayload, TriggerWorkflowsOptions options, CancellationToken cancellationToken = default)
@@ -72,6 +75,18 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
             var resumeResult = await ResumeWorkflowAsync(workflowInstanceId, bookmark.BookmarkId, new ResumeWorkflowOptions(options.Input), cancellationToken);
         }
 
-        return new TriggerWorkflowsResult();
+        return new TriggerWorkflowsResult(new List<TriggeredWorkflow>());
+    }
+
+    public Task<WorkflowState?> ExportWorkflowStateAsync(string instanceId, CancellationToken cancellationToken = default)
+    {
+        var client = _cluster.GetWorkflowGrain(instanceId);
+        //return await client.ExportWorkflowtate();
+        return null;
+    }
+
+    public Task ImportWorkflowStateAsync(WorkflowState workflowState, CancellationToken cancellationToken = default)
+    {
+        throw new System.NotImplementedException();
     }
 }

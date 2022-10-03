@@ -5,10 +5,13 @@ using System.Net.Mime;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Common.Models;
 using Elsa.Http.Models;
 using Elsa.Http.Options;
 using Elsa.Http.Services;
+using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Runtime.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Routing;
@@ -21,12 +24,24 @@ public class HttpTriggerMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly IHasher _hasher;
+    private readonly IWorkflowRuntime _workflowRuntime;
+    private readonly IWorkflowHostFactory _workflowHostFactory;
+    private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly HttpActivityOptions _options;
 
-    public HttpTriggerMiddleware(RequestDelegate next, IHasher hasher, IOptions<HttpActivityOptions> options)
+    public HttpTriggerMiddleware(
+        RequestDelegate next,
+        IHasher hasher,
+        IWorkflowRuntime workflowRuntime,
+        IWorkflowHostFactory workflowHostFactory,
+        IWorkflowDefinitionService workflowDefinitionService,
+        IOptions<HttpActivityOptions> options)
     {
         _next = next;
         _hasher = hasher;
+        _workflowRuntime = workflowRuntime;
+        _workflowHostFactory = workflowHostFactory;
+        _workflowDefinitionService = workflowDefinitionService;
         _options = options.Value;
     }
 
@@ -50,8 +65,8 @@ public class HttpTriggerMiddleware
 
         var request = httpContext.Request;
         var method = request.Method!.ToLowerInvariant();
-        var abortToken = httpContext.RequestAborted;
-        var hash = _hasher.Hash(new HttpEndpointBookmarkData(path, method));
+        var cancellationToken = httpContext.RequestAborted;
+        var hash = _hasher.Hash(new HttpEndpointBookmarkPayload(path, method));
         var routeData = GetRouteData(httpContext, routeMatcher, path);
 
         var requestModel = new HttpRequestModel(
@@ -63,7 +78,71 @@ public class HttpTriggerMiddleware
             request.Headers.ToDictionary(x => x.Key, x => x.Value.ToString())
         );
 
-        var input = new Dictionary<string, object>() { [HttpEndpoint.InputKey] = requestModel };
+        var input = new Dictionary<string, object> { [HttpEndpoint.InputKey] = requestModel };
+
+        // TODO: Get correlation ID from query string or header etc.
+        var correlationId = default(string);
+
+        // Trigger the workflow.
+        var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>();
+        var bookmarkPayload = new HttpEndpointBookmarkPayload(path, method);
+        var triggerOptions = new TriggerWorkflowsOptions(correlationId, input);
+
+        var triggerResult = await _workflowRuntime.TriggerWorkflowsAsync(
+            activityTypeName,
+            bookmarkPayload,
+            triggerOptions,
+            cancellationToken);
+
+        // Check to see if we received any WriteHttpResponse activity bookmarks. If we do, acquire a lock on the workflow instance and resume it from here within an actual HTTP context so that the activity can complete its HTTP response.
+        var writeHttpResponseTypeName = ActivityTypeNameHelper.GenerateTypeName<WriteHttpResponse>();
+
+        var query =
+            from triggeredWorkflow in triggerResult.TriggeredWorkflows
+            from bookmark in triggeredWorkflow.Bookmarks
+            where bookmark.Name == writeHttpResponseTypeName
+            select (triggeredWorkflow.InstanceId, bookmark.Id);
+
+        var workflowExecutionResults = new Stack<(string InstanceId, string BookmarkId)>(query);
+
+        while (workflowExecutionResults.TryPop(out var result))
+        {
+            // Resume the workflow "in-process".
+            var workflowState = await _workflowRuntime.ExportWorkflowStateAsync(
+                result.InstanceId,
+                cancellationToken);
+
+            if (workflowState == null)
+            {
+                // TODO: log this, shouldn't normally happen.
+                continue;
+            }
+
+            var workflowDefinition = await _workflowDefinitionService.FindAsync(
+                workflowState.DefinitionId,
+                VersionOptions.SpecificVersion(workflowState.DefinitionVersion),
+                cancellationToken);
+
+            if (workflowDefinition == null)
+            {
+                // TODO: Log this, shouldn't normally happen.
+                continue;
+            }
+
+            var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(
+                workflowDefinition,
+                cancellationToken);
+
+            var workflowHost = await _workflowHostFactory.CreateAsync(workflow, workflowState, cancellationToken);
+
+            await workflowHost.ResumeWorkflowAsync(
+                result.BookmarkId,
+                null,
+                cancellationToken);
+            
+            // Import the updated workflow state into the runtime.
+            await _workflowRuntime.ImportWorkflowStateAsync(workflowState, cancellationToken);
+        }
     }
 
     private static async Task WriteResponseAsync(HttpContext httpContext, CancellationToken cancellationToken)

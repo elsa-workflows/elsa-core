@@ -13,24 +13,27 @@ namespace Elsa.Workflows.Runtime.Implementations;
 
 public class DefaultWorkflowRuntime : IWorkflowRuntime
 {
-    private readonly IWorkflowRunner _workflowRunner;
+    private readonly IWorkflowHostFactory _workflowHostFactory;
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly IWorkflowStateStore _workflowStateStore;
+    private readonly ITriggerStore _triggerStore;
     private readonly IBookmarkStore _bookmarkStore;
     private readonly IHasher _hasher;
     private readonly IEventPublisher _eventPublisher;
 
     public DefaultWorkflowRuntime(
-        IWorkflowRunner workflowRunner,
+        IWorkflowHostFactory workflowHostFactory,
         IWorkflowDefinitionService workflowDefinitionService,
         IWorkflowStateStore workflowStateStore,
+        ITriggerStore triggerStore,
         IBookmarkStore bookmarkStore,
         IHasher hasher,
         IEventPublisher eventPublisher)
     {
-        _workflowRunner = workflowRunner;
+        _workflowHostFactory = workflowHostFactory;
         _workflowDefinitionService = workflowDefinitionService;
         _workflowStateStore = workflowStateStore;
+        _triggerStore = triggerStore;
         _bookmarkStore = bookmarkStore;
         _hasher = hasher;
         _eventPublisher = eventPublisher;
@@ -46,16 +49,13 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
             throw new Exception("Specified workflow definition and version does not exist");
 
         var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
+        var workflowHost = await _workflowHostFactory.CreateAsync(workflow, cancellationToken);
 
-        await _eventPublisher.PublishAsync(new WorkflowExecuting(workflow), cancellationToken);
-        
-        var workflowResult = await _workflowRunner.RunAsync(workflow, input, cancellationToken);
-        var workflowState = workflowResult.WorkflowState;
-        var finished = workflowResult.WorkflowState.Status == WorkflowStatus.Finished;
+        await workflowHost.StartWorkflowAsync(input, cancellationToken);
+        var workflowState = workflowHost.WorkflowState;
 
         await SaveWorkflowStateAsync(workflowState, cancellationToken);
-        await UpdateBookmarksAsync(workflowState, new List<Bookmark>(), workflowResult.WorkflowState.Bookmarks, cancellationToken);
-        await _eventPublisher.PublishAsync(new WorkflowExecuted(workflow, workflowState), cancellationToken);
+        await UpdateBookmarksAsync(workflowState, new List<Bookmark>(), workflowState.Bookmarks, cancellationToken);
 
         return new StartWorkflowResult(workflowState.Id);
     }
@@ -75,7 +75,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
             throw new Exception("Specified workflow definition and version does not exist");
 
         var input = options.Input;
-        var existingStoredBookmarks = await _bookmarkStore.LoadAsync(workflowState.Id, cancellationToken).AsTask().ToList();
+        var existingStoredBookmarks = await _bookmarkStore.FindAsync(workflowState.Id, cancellationToken).AsTask().ToList();
 
         var existingBookmarks = existingStoredBookmarks
             .Select(storedBookmark => workflowState.Bookmarks.FirstOrDefault(bookmark => bookmark.Id == storedBookmark.BookmarkId))
@@ -84,31 +84,54 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
             .ToList();
 
         var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
+        var workflowHost = await _workflowHostFactory.CreateAsync(workflow, workflowState, cancellationToken);
         
-        await _eventPublisher.PublishAsync(new WorkflowExecuting(workflow), cancellationToken);
+        await workflowHost.ResumeWorkflowAsync(bookmarkId, input, cancellationToken);
+        workflowState = workflowHost.WorkflowState;
         
-        var workflowResult = await _workflowRunner.RunAsync(workflow, workflowState, bookmarkId, input, cancellationToken);
-        var finished = workflowResult.WorkflowState.Status == WorkflowStatus.Finished;
-
         await SaveWorkflowStateAsync(workflowState, cancellationToken);
-        await UpdateBookmarksAsync(workflowState, existingBookmarks, workflowResult.WorkflowState.Bookmarks, cancellationToken);
-        await _eventPublisher.PublishAsync(new WorkflowExecuted(workflow, workflowState), cancellationToken);
+        await UpdateBookmarksAsync(workflowState, existingBookmarks, workflowState.Bookmarks, cancellationToken);
 
-        return new ResumeWorkflowResult();
+        return new ResumeWorkflowResult(workflowState.Bookmarks);
     }
 
     public async Task<TriggerWorkflowsResult> TriggerWorkflowsAsync(string activityTypeName, object bookmarkPayload, TriggerWorkflowsOptions options, CancellationToken cancellationToken = default)
     {
+        var triggeredWorkflows = new List<TriggeredWorkflow>();
         var hash = _hasher.Hash(bookmarkPayload);
-        var bookmarks = await _bookmarkStore.LoadAsync(activityTypeName, hash, cancellationToken);
+        
+        // Trigger new workflows.
+        var triggers = await _triggerStore.FindAsync(activityTypeName, hash, cancellationToken);
 
+        foreach (var trigger in triggers)
+        {
+            var startResult = await StartWorkflowAsync(trigger.WorkflowDefinitionId,
+                new StartWorkflowOptions(options.CorrelationId, options.Input, VersionOptions.Published), cancellationToken);
+        }
+        
+        // Resume bookmarks.
+        
+        var bookmarks = await _bookmarkStore.FindAsync(activityTypeName, hash, cancellationToken);
+        
         foreach (var bookmark in bookmarks)
         {
             var workflowInstanceId = bookmark.WorkflowInstanceId;
             var resumeResult = await ResumeWorkflowAsync(workflowInstanceId, bookmark.BookmarkId, new ResumeWorkflowOptions(options.Input), cancellationToken);
+            
+            triggeredWorkflows.Add(new TriggeredWorkflow(workflowInstanceId, resumeResult.Bookmarks));
         }
 
-        return new TriggerWorkflowsResult();
+        return new TriggerWorkflowsResult(triggeredWorkflows);
+    }
+
+    public async Task<WorkflowState?> ExportWorkflowStateAsync(string instanceId, CancellationToken cancellationToken = default)
+    {
+        return await _workflowStateStore.LoadAsync(instanceId, cancellationToken);
+    }
+
+    public async Task ImportWorkflowStateAsync(WorkflowState workflowState, CancellationToken cancellationToken = default)
+    {
+        await _workflowStateStore.SaveAsync(workflowState.Id, workflowState, cancellationToken);
     }
 
     private async Task SaveWorkflowStateAsync(WorkflowState workflowState, CancellationToken cancellationToken) => await _workflowStateStore.SaveAsync(workflowState.Id, workflowState, cancellationToken);

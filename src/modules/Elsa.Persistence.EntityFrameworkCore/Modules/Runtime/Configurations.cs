@@ -11,7 +11,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Modules.Runtime
 {
     public class Configurations :
         IEntityTypeConfiguration<WorkflowState>,
-        IEntityTypeConfiguration<WorkflowTrigger>,
+        IEntityTypeConfiguration<StoredTrigger>,
         IEntityTypeConfiguration<WorkflowExecutionLogRecord>,
         IEntityTypeConfiguration<StoredBookmark>
     {
@@ -38,11 +38,11 @@ namespace Elsa.Persistence.EntityFrameworkCore.Modules.Runtime
             builder.HasIndex("UpdatedAt").HasDatabaseName($"IX_{nameof(WorkflowState)}_UpdatedAt");
         }
 
-        public void Configure(EntityTypeBuilder<WorkflowTrigger> builder)
+        public void Configure(EntityTypeBuilder<StoredTrigger> builder)
         {
-            builder.HasIndex(x => x.WorkflowDefinitionId).HasDatabaseName($"IX_{nameof(WorkflowTrigger)}_{nameof(WorkflowTrigger.WorkflowDefinitionId)}");
-            builder.HasIndex(x => x.Name).HasDatabaseName($"IX_{nameof(WorkflowTrigger)}_{nameof(WorkflowTrigger.Name)}");
-            builder.HasIndex(x => x.Hash).HasDatabaseName($"IX_{nameof(WorkflowTrigger)}_{nameof(WorkflowTrigger.Hash)}");
+            builder.HasIndex(x => x.WorkflowDefinitionId).HasDatabaseName($"IX_{nameof(StoredTrigger)}_{nameof(StoredTrigger.WorkflowDefinitionId)}");
+            builder.HasIndex(x => x.Name).HasDatabaseName($"IX_{nameof(StoredTrigger)}_{nameof(StoredTrigger.Name)}");
+            builder.HasIndex(x => x.Hash).HasDatabaseName($"IX_{nameof(StoredTrigger)}_{nameof(StoredTrigger.Hash)}");
         }
 
         public void Configure(EntityTypeBuilder<WorkflowExecutionLogRecord> builder)

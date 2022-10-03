@@ -15,10 +15,10 @@ public class EFCoreBookmarkStore : IBookmarkStore
         await _store.SaveManyAsync(storedBookmarks, cancellationToken);
     }
 
-    public async ValueTask<IEnumerable<StoredBookmark>> LoadAsync(string workflowInstanceId, CancellationToken cancellationToken = default) => 
+    public async ValueTask<IEnumerable<StoredBookmark>> FindAsync(string workflowInstanceId, CancellationToken cancellationToken = default) => 
         await _store.FindManyAsync(x => x.WorkflowInstanceId == workflowInstanceId, cancellationToken);
 
-    public async ValueTask<IEnumerable<StoredBookmark>> LoadAsync(string activityTypeName, string hash, CancellationToken cancellationToken = default) => 
+    public async ValueTask<IEnumerable<StoredBookmark>> FindAsync(string activityTypeName, string hash, CancellationToken cancellationToken = default) => 
         await _store.FindManyAsync(x => x.ActivityTypeName == activityTypeName && x.Hash == hash, cancellationToken);
 
     public async ValueTask DeleteAsync(string activityTypeName, string hash, string workflowInstanceId, CancellationToken cancellationToken = default) => 

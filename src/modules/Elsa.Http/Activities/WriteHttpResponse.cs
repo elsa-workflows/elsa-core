@@ -16,6 +16,16 @@ public class WriteHttpResponse : Activity
     {
         var httpContextAccessor = context.GetRequiredService<IHttpContextAccessor>();
         var httpContext = httpContextAccessor.HttpContext;
+
+        if (httpContext == null)
+        {
+            // We're executing in a non-HTTP context (like in a virtual actor).
+            // Create a bookmark to allow the invoker to get the export state and resume execution from there.
+
+            context.CreateBookmark();
+            return;
+        }
+        
         var response = httpContext.Response;
 
         response.StatusCode = (int)context.Get(StatusCode);
