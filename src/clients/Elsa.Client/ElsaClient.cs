@@ -10,8 +10,10 @@ namespace Elsa.Client
             IWorkflowDefinitionsApi workflowDefinitions,
             IWorkflowRegistryApi workflowRegistry,
             IWorkflowInstancesApi workflowInstances,
+            IWorkflowsApi workflows,
             IWebhookDefinitionsApi webhookDefinitions,
-            IScriptingApi scriptingApi)
+            IScriptingApi scriptingApi
+            )
         {
             Activities = activities;
             WorkflowDefinitions = workflowDefinitions;
@@ -19,12 +21,14 @@ namespace Elsa.Client
             WorkflowInstances = workflowInstances;
             WebhookDefinitions = webhookDefinitions;
             Scripting = scriptingApi;
+            Workflows = workflows;
         }
 
         public IActivitiesApi Activities { get; }
         public IWorkflowDefinitionsApi WorkflowDefinitions { get; }
         public IWorkflowRegistryApi WorkflowRegistry { get; }
         public IWorkflowInstancesApi WorkflowInstances { get; }
+        public IWorkflowsApi Workflows { get; }
         public IWebhookDefinitionsApi WebhookDefinitions { get; }
         public IScriptingApi Scripting { get; }
     }

@@ -26,6 +26,7 @@ namespace Elsa.Client.Extensions
 
             services
                 .AddApiClient<IActivitiesApi>(refitSettings, httpClientFactory)
+                .AddApiClient<IWorkflowsApi>(refitSettings, httpClientFactory)
                 .AddApiClient<IWorkflowDefinitionsApi>(refitSettings, httpClientFactory)
                 .AddApiClient<IWorkflowRegistryApi>(refitSettings, httpClientFactory)
                 .AddApiClient<IWorkflowInstancesApi>(refitSettings, httpClientFactory)
