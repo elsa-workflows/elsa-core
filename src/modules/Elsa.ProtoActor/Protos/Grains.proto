@@ -8,6 +8,8 @@ import "Messages.proto";
 service WorkflowGrain {
   rpc Start (StartWorkflowRequest) returns (StartWorkflowResponse);
   rpc Resume (ResumeWorkflowRequest) returns (ResumeWorkflowResponse);
+  rpc ExportState(ExportWorkflowStateRequest) returns (ExportWorkflowStateResponse);
+  rpc ImportState(ImportWorkflowStateRequest) returns (ImportWorkflowStateResponse);
 }
 
 service BookmarkGrain {

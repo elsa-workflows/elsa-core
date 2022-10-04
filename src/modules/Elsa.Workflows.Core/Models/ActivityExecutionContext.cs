@@ -113,11 +113,11 @@ public class ActivityExecutionContext
 
     public Bookmark CreateBookmark(object? payload = default, ExecuteActivityDelegate? callback = default)
     {
-        var hasher = GetRequiredService<IHasher>();
+        var bookmarkHasher = GetRequiredService<IBookmarkHasher>();
         var identityGenerator = GetRequiredService<IIdentityGenerator>();
         var payloadSerializer = GetRequiredService<IBookmarkPayloadSerializer>();
         var payloadJson = payload != null ? payloadSerializer.Serialize(payload) : default;
-        var hash = payloadJson != null ? hasher.Hash(payloadJson) : default;
+        var hash = bookmarkHasher.Hash(Activity.Type, payloadJson);
 
         var bookmark = new Bookmark(
             identityGenerator.GenerateId(),

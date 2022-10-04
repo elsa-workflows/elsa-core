@@ -25,7 +25,7 @@ public class WorkflowTriggerScheduler : IWorkflowTriggerScheduler
         _jobScheduler = jobScheduler;
     }
 
-    public async Task ScheduleTriggersAsync(IEnumerable<WorkflowTrigger> triggers, CancellationToken cancellationToken = default)
+    public async Task ScheduleTriggersAsync(IEnumerable<StoredTrigger> triggers, CancellationToken cancellationToken = default)
     {
         var triggerList = triggers.ToList();
 
@@ -51,7 +51,7 @@ public class WorkflowTriggerScheduler : IWorkflowTriggerScheduler
         }
     }
 
-    public async Task UnscheduleTriggersAsync(IEnumerable<WorkflowTrigger> triggers, CancellationToken cancellationToken = default)
+    public async Task UnscheduleTriggersAsync(IEnumerable<StoredTrigger> triggers, CancellationToken cancellationToken = default)
     {
         var triggerList = triggers.ToList();
 

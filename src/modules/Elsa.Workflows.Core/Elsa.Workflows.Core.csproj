@@ -21,6 +21,11 @@
       <ProjectReference Include="..\Elsa.Common\Elsa.Common.csproj" />
       <ProjectReference Include="..\Elsa.Expressions\Elsa.Expressions.csproj" />
       <ProjectReference Include="..\..\common\Elsa.Features\Elsa.Features.csproj" />
+      <ProjectReference Include="..\Elsa.Mediator\Elsa.Mediator.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Notifications" />
     </ItemGroup>
 
 </Project>

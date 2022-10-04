@@ -1,10 +1,10 @@
 namespace Elsa.Workflows.Core.Models;
 
-public class EventBookmarkData
+public class EventBookmarkPayload
 {
     private readonly string _eventName = default!;
 
-    public EventBookmarkData(string eventName)
+    public EventBookmarkPayload(string eventName)
     {
         EventName = eventName;
     }

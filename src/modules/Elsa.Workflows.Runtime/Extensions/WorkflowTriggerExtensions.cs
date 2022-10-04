@@ -6,7 +6,7 @@ namespace Elsa.Workflows.Runtime.Extensions;
 
 public static class WorkflowTriggerExtensions
 {
-    public static IEnumerable<WorkflowTrigger> Filter<T>(this IEnumerable<WorkflowTrigger> triggers) where T : ITrigger
+    public static IEnumerable<StoredTrigger> Filter<T>(this IEnumerable<StoredTrigger> triggers) where T : ITrigger
     {
         var triggerName = ActivityTypeNameHelper.GenerateTypeName<T>();
         return triggers.Where(x => x.Name == triggerName);

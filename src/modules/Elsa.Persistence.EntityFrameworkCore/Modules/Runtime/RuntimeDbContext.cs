@@ -14,7 +14,7 @@ public class RuntimeDbContext : DbContextBase
     }
     
     public DbSet<WorkflowState> WorkflowStates { get; set; } = default!;
-    public DbSet<WorkflowTrigger> WorkflowTriggers { get; set; } = default!;
+    public DbSet<StoredTrigger> WorkflowTriggers { get; set; } = default!;
     public DbSet<WorkflowExecutionLogRecord> WorkflowExecutionLogRecords { get; set; } = default!;
     public DbSet<StoredBookmark> Bookmarks { get; set; } = default!;
 
@@ -22,7 +22,7 @@ public class RuntimeDbContext : DbContextBase
     {
         var config = new Configurations();
         modelBuilder.ApplyConfiguration<WorkflowState>(config);
-        modelBuilder.ApplyConfiguration<WorkflowTrigger>(config);
+        modelBuilder.ApplyConfiguration<StoredTrigger>(config);
         modelBuilder.ApplyConfiguration<WorkflowExecutionLogRecord>(config);
         modelBuilder.ApplyConfiguration<StoredBookmark>(config);
     }
