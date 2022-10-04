@@ -65,7 +65,7 @@ namespace Elsa
                     var desiredCollectionItemType = targetType.GenericTypeArguments[0];
                     var desiredCollectionType = typeof(ICollection<>).MakeGenericType(desiredCollectionItemType);
 
-                    if (targetType.IsAssignableFrom(desiredCollectionType))
+                    if (targetType.IsAssignableFrom(desiredCollectionType) || desiredCollectionType.IsAssignableFrom(targetType))
                     {
                         var collectionType = typeof(List<>).MakeGenericType(desiredCollectionItemType);
                         var collection = (IList)Activator.CreateInstance(collectionType);
