@@ -15,7 +15,7 @@ public interface IWorkflowRuntime
 
 public record StartWorkflowOptions(string? CorrelationId = default, IDictionary<string, object>? Input = default, VersionOptions VersionOptions = default);
 public record ResumeWorkflowOptions(IDictionary<string, object>? Input = default);
-public record StartWorkflowResult(string InstanceId);
+public record StartWorkflowResult(string InstanceId, ICollection<Bookmark> Bookmarks);
 public record ResumeWorkflowResult(ICollection<Bookmark> Bookmarks);
 public record TriggerWorkflowsOptions(string? CorrelationId = default, IDictionary<string, object>? Input = default);
 public record TriggerWorkflowsResult(ICollection<TriggeredWorkflow> TriggeredWorkflows);

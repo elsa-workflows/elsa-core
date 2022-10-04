@@ -27,7 +27,7 @@ public class TriggerIndexer : ITriggerIndexer
     private readonly ITriggerStore _triggerStore;
     private readonly IEventPublisher _eventPublisher;
     private readonly IServiceProvider _serviceProvider;
-    private readonly IHasher _hasher;
+    private readonly IBookmarkHasher _hasher;
     private readonly ILogger _logger;
 
     public TriggerIndexer(
@@ -38,7 +38,7 @@ public class TriggerIndexer : ITriggerIndexer
         ITriggerStore triggerStore,
         IEventPublisher eventPublisher,
         IServiceProvider serviceProvider,
-        IHasher hasher,
+        IBookmarkHasher hasher,
         ILogger<TriggerIndexer> logger)
     {
         _activityWalker = activityWalker;
@@ -143,7 +143,7 @@ public class TriggerIndexer : ITriggerIndexer
             Id = _identityGenerator.GenerateId(),
             WorkflowDefinitionId = workflow.Identity.DefinitionId,
             Name = triggerTypeName,
-            Hash = _hasher.Hash(x),
+            Hash = _hasher.Hash(triggerTypeName, x),
             Data = JsonSerializer.Serialize(x)
         });
 

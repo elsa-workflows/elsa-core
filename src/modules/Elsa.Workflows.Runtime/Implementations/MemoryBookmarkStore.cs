@@ -6,30 +6,30 @@ namespace Elsa.Workflows.Runtime.Implementations;
 
 public class MemoryBookmarkStore : IBookmarkStore
 {
-    private readonly ConcurrentDictionary<(string ActivityTypeName, string Hash), ICollection<StoredBookmark>> _bookmarks = new();
+    private readonly ConcurrentDictionary<string, ICollection<StoredBookmark>> _bookmarks = new();
 
     public ValueTask SaveAsync(string activityTypeName, string hash, string workflowInstanceId, IEnumerable<string> bookmarkIds, CancellationToken cancellationToken = default)
     {
         var storedBookmarks = bookmarkIds.Select(x => new StoredBookmark(activityTypeName, hash, workflowInstanceId, x)).ToList();
-        _bookmarks.AddOrUpdate((activityTypeName, hash), new List<StoredBookmark>(storedBookmarks), (s, bookmarks) => bookmarks.Concat(storedBookmarks).ToList());
+        _bookmarks.AddOrUpdate(hash, new List<StoredBookmark>(storedBookmarks), (s, bookmarks) => bookmarks.Concat(storedBookmarks).ToList());
         return ValueTask.CompletedTask;
     }
 
-    public ValueTask<IEnumerable<StoredBookmark>> FindAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
+    public ValueTask<IEnumerable<StoredBookmark>> FindByWorkflowInstanceAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
     {
         var bookmarks = _bookmarks.Values.SelectMany(x => x).Where(x => x.WorkflowInstanceId == workflowInstanceId).ToList();
         return new(bookmarks);
     }
 
-    public ValueTask<IEnumerable<StoredBookmark>> FindAsync(string activityTypeName, string hash, CancellationToken cancellationToken = default)
+    public ValueTask<IEnumerable<StoredBookmark>> FindByHashAsync(string hash, CancellationToken cancellationToken = default)
     {
-        var bookmarks = _bookmarks.TryGetValue((activityTypeName, hash), out var value) ? value : Enumerable.Empty<StoredBookmark>(); 
+        var bookmarks = _bookmarks.TryGetValue(hash, out var value) ? value : Enumerable.Empty<StoredBookmark>(); 
         return new(bookmarks);
     }
 
-    public ValueTask DeleteAsync(string activityTypeName, string hash, string workflowInstanceId, CancellationToken cancellationToken = default)
+    public ValueTask DeleteAsync(string hash, string workflowInstanceId, CancellationToken cancellationToken = default)
     {
-        var key = (activityTypeName, hash);
+        var key = hash;
         
         if(!_bookmarks.TryGetValue(key, out var bookmarks))
             return ValueTask.CompletedTask;

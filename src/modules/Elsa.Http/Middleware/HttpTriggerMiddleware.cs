@@ -23,15 +23,16 @@ namespace Elsa.Http.Middleware;
 public class HttpTriggerMiddleware
 {
     private readonly RequestDelegate _next;
-    private readonly IHasher _hasher;
+    private readonly IBookmarkHasher _hasher;
     private readonly IWorkflowRuntime _workflowRuntime;
     private readonly IWorkflowHostFactory _workflowHostFactory;
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly HttpActivityOptions _options;
+    private readonly string _activityTypeName = ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>();
 
     public HttpTriggerMiddleware(
         RequestDelegate next,
-        IHasher hasher,
+        IBookmarkHasher hasher,
         IWorkflowRuntime workflowRuntime,
         IWorkflowHostFactory workflowHostFactory,
         IWorkflowDefinitionService workflowDefinitionService,
@@ -66,7 +67,6 @@ public class HttpTriggerMiddleware
         var request = httpContext.Request;
         var method = request.Method!.ToLowerInvariant();
         var cancellationToken = httpContext.RequestAborted;
-        var hash = _hasher.Hash(new HttpEndpointBookmarkPayload(path, method));
         var routeData = GetRouteData(httpContext, routeMatcher, path);
 
         var requestModel = new HttpRequestModel(
@@ -84,12 +84,11 @@ public class HttpTriggerMiddleware
         var correlationId = default(string);
 
         // Trigger the workflow.
-        var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>();
         var bookmarkPayload = new HttpEndpointBookmarkPayload(path, method);
         var triggerOptions = new TriggerWorkflowsOptions(correlationId, input);
 
         var triggerResult = await _workflowRuntime.TriggerWorkflowsAsync(
-            activityTypeName,
+            _activityTypeName,
             bookmarkPayload,
             triggerOptions,
             cancellationToken);

@@ -213,7 +213,7 @@ public class WorkflowGrain : WorkflowGrainBase
     private async Task SaveSnapshotAsync() => await _persistence.PersistSnapshotAsync(GetState());
     private object GetState() => new WorkflowSnapshot(_definitionId, _version, _workflowState, _input);
     
-    private IEnumerable<BookmarkDto> Map(IEnumerable<Bookmark> bookmarks) =>
+    private static IEnumerable<BookmarkDto> Map(IEnumerable<Bookmark> bookmarks) =>
         bookmarks.Select(x => new BookmarkDto
         {
             Id = x.Id,
@@ -221,7 +221,7 @@ public class WorkflowGrain : WorkflowGrainBase
             ActivityId = x.ActivityId,
             ActivityInstanceId = x.ActivityInstanceId,
             Hash = x.Hash,
-            Data = x.Data,
-            CallbackMethodName = x.CallbackMethodName
+            Data = x.Data.EmptyIfNull(),
+            CallbackMethodName = x.CallbackMethodName.EmptyIfNull()
         });
 }

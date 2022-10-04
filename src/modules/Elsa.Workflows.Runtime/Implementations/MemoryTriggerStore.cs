@@ -25,28 +25,22 @@ public class MemoryTriggerStore : ITriggerStore
         return Task.CompletedTask;
     }
 
-    public Task<IEnumerable<StoredTrigger>> FindAsync(string name, string? hash, CancellationToken cancellationToken = default)
+    public Task<IEnumerable<StoredTrigger>> FindAsync(string hash, CancellationToken cancellationToken = default)
     {
-        var triggers = _store.Query(query =>
-        {
-            query = query.Where(x => x.Name == name);
-
-            if (hash != null)
-                query = query.Where(x => x.Hash == hash);
-
-            return query;
-        });
-
+        var triggers = _store.Query(query => query.Where(x => x.Hash == hash));
         return Task.FromResult<IEnumerable<StoredTrigger>>(triggers.ToList());
     }
 
-    public Task<IEnumerable<StoredTrigger>> FindManyByWorkflowDefinitionIdAsync(string workflowDefinitionId, CancellationToken cancellationToken = default)
+    public Task<IEnumerable<StoredTrigger>> FindManyByWorkflowDefinitionIdAsync(
+        string workflowDefinitionId,
+        CancellationToken cancellationToken = default)
     {
         var triggers = _store.Query(query => query.Where(x => x.WorkflowDefinitionId == workflowDefinitionId));
         return Task.FromResult<IEnumerable<StoredTrigger>>(triggers.ToList());
     }
 
-    public Task ReplaceAsync(IEnumerable<StoredTrigger> removed, IEnumerable<StoredTrigger> added, CancellationToken cancellationToken = default)
+    public Task ReplaceAsync(IEnumerable<StoredTrigger> removed, IEnumerable<StoredTrigger> added,
+        CancellationToken cancellationToken = default)
     {
         _store.DeleteMany(removed, x => x.Id);
         _store.SaveMany(added, x => x.Id);

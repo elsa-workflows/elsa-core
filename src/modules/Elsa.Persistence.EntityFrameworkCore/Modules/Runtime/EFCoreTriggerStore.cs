@@ -4,11 +4,11 @@ using Elsa.Workflows.Runtime.Services;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Modules.Runtime;
 
-public class EfCoreTriggerStore : ITriggerStore
+public class EFCoreTriggerStore : ITriggerStore
 {
     private readonly Store<RuntimeDbContext, StoredTrigger> _store;
 
-    public EfCoreTriggerStore(Store<RuntimeDbContext, StoredTrigger> store)
+    public EFCoreTriggerStore(Store<RuntimeDbContext, StoredTrigger> store)
     {
         _store = store;
     }
@@ -16,16 +16,10 @@ public class EfCoreTriggerStore : ITriggerStore
     public async Task SaveAsync(StoredTrigger record, CancellationToken cancellationToken = default) => await _store.SaveAsync(record, cancellationToken);
     public async Task SaveManyAsync(IEnumerable<StoredTrigger> records, CancellationToken cancellationToken = default) => await _store.SaveManyAsync(records, cancellationToken);
 
-    public async Task<IEnumerable<StoredTrigger>> FindAsync(string name, string? hash, CancellationToken cancellationToken = default) =>
-        await _store.QueryAsync(query =>
-        {
-            query = query.Where(x => x.Name == name);
-
-            if (hash != null)
-                query = query.Where(x => x.Hash == hash);
-
-            return query;
-        }, cancellationToken);
+    public async Task<IEnumerable<StoredTrigger>> FindAsync(
+        string hash, 
+        CancellationToken cancellationToken = default) =>
+        await _store.QueryAsync(query => query.Where(x => x.Hash == hash), cancellationToken);
 
     public async Task<IEnumerable<StoredTrigger>> FindManyByWorkflowDefinitionIdAsync(string workflowDefinitionId, CancellationToken cancellationToken = default) =>
         await _store.QueryAsync(query => query.Where(x => x.WorkflowDefinitionId == workflowDefinitionId), cancellationToken);
