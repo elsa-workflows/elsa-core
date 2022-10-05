@@ -2482,12 +2482,20 @@ select {
   right: 0.25rem;
 }
 
+.elsa-right-1\/2 {
+  right: 50%;
+}
+
 .elsa-top-20 {
   top: 5rem;
 }
 
 .elsa-top-4 {
   top: 1rem;
+}
+
+.elsa-top-8 {
+  top: 2rem;
 }
 
 .elsa-bottom-0 {
@@ -2524,6 +2532,10 @@ select {
 
 .elsa-right-10 {
   right: 2.5rem;
+}
+
+.elsa-z-1 {
+  z-index: 1;
 }
 
 .elsa-z-10 {
@@ -2883,6 +2895,10 @@ select {
   max-width: 65ch;
 }
 
+.elsa-flex-auto {
+  flex: 0 0 auto;
+}
+
 .elsa-flex-1 {
   flex: 1 1 0%;
 }
@@ -2907,6 +2923,11 @@ select {
 .elsa-translate-x-0 {
   --tw-translate-x: 0px;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
+
+.elsa-translate-x--1\/2 {
+  transform: translateX(-50%);
 }
 
 .elsa-translate-y-4 {
@@ -8174,8 +8195,6 @@ select {
   padding-right: 1.25rem;
 }
 
-}
-
 .elsa-pr-28 {
   padding-right: 7rem;
 }
@@ -12047,6 +12066,14 @@ svg.jtk-connector.jtk-hover path {
   color: rgb(96 165 250 / var(--tw-text-opacity));
 }
 
+svg.jtk-connector.jtk-hover::before {
+  display: block;
+  width: 4px;
+  height: 4px;
+  background: red;
+  content: '';
+}
+
 .elsa-w-2-5 {
   width: 0.625rem;
 }
@@ -12071,6 +12098,10 @@ svg.jtk-connector.jtk-hover path {
 
 .hidden {
   display: none;
+}
+
+.elsa-break-words {
+  overflow-wrap: break-word;
 }
 
 .focus-within\:elsa-text-gray-600:focus-within {

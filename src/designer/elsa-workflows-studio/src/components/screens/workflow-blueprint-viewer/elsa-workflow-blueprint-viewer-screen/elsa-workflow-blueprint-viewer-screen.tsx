@@ -82,7 +82,8 @@ export class ElsaWorkflowBlueprintViewerScreen {
 
   componentDidLoad() {
     if (!this.designer) {
-      this.designer = this.el.querySelector("elsa-designer-tree") as HTMLElsaDesignerTreeElement;
+      // this.designer = this.el.querySelector("elsa-designer-tree") as HTMLElsaDesignerTreeElement;
+      this.designer = this.el.querySelector('elsa-designer-tree-test') as HTMLElsaDesignerTreeElement;
       this.designer.model = this.workflowModel;
     }
   }
@@ -150,9 +151,15 @@ export class ElsaWorkflowBlueprintViewerScreen {
   renderCanvas() {
     return (
       <div class="elsa-flex-1 elsa-flex">
-        <elsa-designer-tree
+        {/* <elsa-designer-tree
           model={this.workflowModel}
           class="elsa-flex-1"
+          ref={el => this.designer = el}
+          mode={WorkflowDesignerMode.Blueprint}
+        /> */}
+        <elsa-designer-tree-test
+          model={this.workflowModel}
+          class="canvas-container"
           ref={el => this.designer = el}
           mode={WorkflowDesignerMode.Blueprint}
         />

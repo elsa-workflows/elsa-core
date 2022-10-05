@@ -1,4 +1,5 @@
-﻿import {Map} from '../utils/utils';
+﻿import { Map } from '../utils/utils';
+import { Port } from './core';
 
 export interface WorkflowDefinition {
   id?: string;
@@ -112,7 +113,7 @@ export interface WorkflowInstance {
   contextType?: string;
   contextId?: string;
   name?: string;
-  createdAt?: Date
+  createdAt?: Date;
   lastExecutedAt?: Date;
   finishedAt?: Date;
   faultedAt?: Date;
@@ -138,7 +139,7 @@ export interface WorkflowInstanceSummary {
   contextType?: string;
   contextId?: string;
   name?: string;
-  createdAt?: Date
+  createdAt?: Date;
   lastExecutedAt?: Date;
   finishedAt?: Date;
   cancelledAt?: Date;
@@ -151,6 +152,8 @@ export interface ActivityDefinition {
   name: string;
   displayName: string;
   description: string;
+  top?: number;
+  left?: number;
   persistWorkflow: boolean;
   loadWorkflowContext: boolean;
   saveWorkflowContext: boolean;
@@ -218,14 +221,14 @@ export interface WorkflowContextOptions {
 
 export enum WorkflowContextFidelity {
   Burst = 'Burst',
-  Activity = 'Activity'
+  Activity = 'Activity',
 }
 
 export enum WorkflowPersistenceBehavior {
   Suspended = 'Suspended',
   WorkflowBurst = ' WorkflowBurst',
   WorkflowPassCompleted = 'WorkflowPassCompleted',
-  ActivityExecuted = 'ActivityExecuted'
+  ActivityExecuted = 'ActivityExecuted',
 }
 
 export interface VersionOptions {
@@ -243,13 +246,13 @@ export enum WorkflowStatus {
   Finished = 'Finished',
   Suspended = 'Suspended',
   Faulted = 'Faulted',
-  Cancelled = 'Cancelled'
+  Cancelled = 'Cancelled',
 }
 
 export enum OrderBy {
   Started = 'Started',
   LastExecuted = 'LastExecuted',
-  Finished = 'Finished'
+  Finished = 'Finished',
 }
 
 export interface SimpleException {
@@ -278,6 +281,9 @@ export interface ActivityDescriptor {
   inputProperties: Array<ActivityPropertyDescriptor>;
   outputProperties: Array<ActivityPropertyDescriptor>;
   customAttributes: any;
+  version?: number;
+  isContainer?: boolean;
+  ports?: Array<Port>;
 }
 
 export interface ActivityPropertyDescriptor {
@@ -294,6 +300,7 @@ export interface ActivityPropertyDescriptor {
   defaultWorkflowStorageProvider?: string;
   disableWorkflowProviderSelection: boolean;
   considerValuesAsOutcomes: boolean;
+  type?: string;
 }
 
 export interface WorkflowStorageDescriptor {
@@ -320,7 +327,7 @@ export interface ListModel<T> {
 export enum ActivityTraits {
   Action = 1,
   Trigger = 2,
-  Job = 4
+  Job = 4,
 }
 
 export interface SelectList {
@@ -360,31 +367,42 @@ export interface WorkflowTestActivityMessage {
 }
 
 export const getVersionOptionsString = (versionOptions?: VersionOptions) => {
-
-  if (!versionOptions)
-    return '';
+  if (!versionOptions) return '';
 
   return versionOptions.allVersions
     ? 'AllVersions'
     : versionOptions.isDraft
-      ? 'Draft'
-      : versionOptions.isLatest
-        ? 'Latest'
-        : versionOptions.isPublished
-          ? 'Published'
-          : versionOptions.isLatestOrPublished
-            ? 'LatestOrPublished'
-            : versionOptions.version.toString();
+    ? 'Draft'
+    : versionOptions.isLatest
+    ? 'Latest'
+    : versionOptions.isPublished
+    ? 'Published'
+    : versionOptions.isLatestOrPublished
+    ? 'LatestOrPublished'
+    : versionOptions.version.toString();
 };
 
 export enum WorkflowTestActivityMessageStatus {
   Done = 'Done',
   Waiting = 'Waiting',
   Failed = 'Failed',
-  Modified = 'Modified'
+  Modified = 'Modified',
 }
 
 export interface IntellisenseContext {
   activityTypeName: string;
   propertyName: string;
+}
+
+export type Lambda<T = any> = string | T
+export interface ActivityDefinitions {
+  type?: string;
+  displayName: string;
+  description?: string;
+  runtimeDescription?: Lambda<string>;
+  category: string;
+  icon?: string;
+  propertiesDescriptor?: Array<ActivityPropertyDescriptor>;
+  outcomes?: Lambda<Array<string>>;
+  properties?: Array<ActivityPropertyDescriptor>
 }
