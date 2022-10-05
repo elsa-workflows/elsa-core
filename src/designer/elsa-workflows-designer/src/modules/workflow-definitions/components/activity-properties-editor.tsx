@@ -11,7 +11,7 @@ import {
 import {InputDriverRegistry} from "../../../services";
 import {Container} from "typedi";
 import {ActivityInputContext} from "../../../services/node-input-driver";
-import {FormEntry} from "../../../components/shared/forms/form-entry";
+import {CheckboxFormEntry, FormEntry} from "../../../components/shared/forms/form-entry";
 import {isNullOrWhitespace} from "../../../utils";
 import descriptorsStore from "../../../data/descriptors-store";
 
@@ -204,6 +204,23 @@ export class ActivityPropertiesEditor {
     });
   }
 
+  private onCanStartWorkflowChanged(e: any) {
+    const activity: Activity = this.activity;
+    const inputElement = e.target as HTMLInputElement;
+
+    activity.canStartWorkflow = inputElement.checked;
+
+    const activityDescriptor = this.findActivityDescriptor();
+    const activityId = activity.id;
+
+    this.activityUpdated.emit({
+      newId: activityId,
+      originalId: activityId,
+      activity,
+      activityDescriptor
+    });
+  }
+
   private onInputPropertyEditorChanged = (inputDescriptor: InputDescriptor, propertyValue: any, syntax: string) => {
     const activity = this.activity;
     const activityId = activity.id;
@@ -259,6 +276,7 @@ export class ActivityPropertiesEditor {
     const {activity,} = this.renderContext;
     const activityId = activity.id;
     const displayText: string = activity.metadata?.displayText ?? '';
+    const canStartWorkflow: boolean = activity.canStartWorkflow;
     const key = `${activityId}`;
 
     return <div key={key}>
@@ -269,6 +287,10 @@ export class ActivityPropertiesEditor {
       <FormEntry fieldId="ActivityDisplayText" label="Display Text" hint="The text to display on the activity in the designer.">
         <input type="text" name="ActivityDisplayText" id="ActivityDisplayText" value={displayText} onChange={e => this.onActivityDisplayTextChanged(e)}/>
       </FormEntry>
+
+      <CheckboxFormEntry fieldId="CanStartWorkflow" label="Can start workflow" hint="When enabled, this activity can be used as a trigger to automatically start the workflow.">
+        <input type="checkbox" name="CanStartWorkflow" id="CanStartWorkflow" value={"true"} checked={canStartWorkflow} onChange={e => this.onCanStartWorkflowChanged(e)}/>
+      </CheckboxFormEntry>
 
     </div>
   };
