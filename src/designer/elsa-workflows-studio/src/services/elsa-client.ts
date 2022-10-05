@@ -326,10 +326,12 @@ export const createElsaClient = async function (serverUrl: string): Promise<Elsa
     authenticationApi:{
       getUserDetails: async () => {
         const response = await httpClient.get<UserDetail>('v1/elsaAuthentication/userinfo');
-        if(response.request.responseURL.toString().includes('v1/elsaAuthentication/userinfo'))
-        return response.data;
-        else
-        return null;
+        if("text/html; charset=utf-8" !== response.headers['content-type'] && response.data.isAuthenticated)
+          {
+            return response.data;
+          }else{
+            return null;
+          }
       },
       getAuthenticationConfguration: async () => {
         const response = await httpClient.get<AuthenticationConfguration>('v1/ElsaAuthentication/options');
@@ -550,6 +552,7 @@ export interface ActivityStats {
 export interface UserDetail {
   name: string;
   tenantId : string;
+  isAuthenticated : boolean;
 }
 
 export interface AuthenticationConfguration  {

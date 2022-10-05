@@ -12,6 +12,19 @@
 | `serverUrl` | `serverurl` |             | `string` | `undefined` |
 
 
+## Methods
+
+### `menuItemSelected(item: DropdownButtonItem) => Promise<void>`
+
+
+
+#### Returns
+
+Type: `Promise<void>`
+
+
+
+
 ## Dependencies
 
 ### Used by

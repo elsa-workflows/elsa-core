@@ -32,9 +32,9 @@ namespace Elsa.Server.Authentication.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> Handle()
         {
-           var name = _httpContextAccessor.HttpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name || c.Type == "name")?.Value ?? "user";
+           var name = _httpContextAccessor.HttpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name || c.Type == "name")?.Value ?? null;
            var tenantId  = await _tenantAccessor.GetTenantIdAsync() ?? null;
-            return Ok(new { name = name, tenantId = tenantId });
+            return Ok(new { IsAuthenticated =_httpContextAccessor.HttpContext.User?.Identity?.IsAuthenticated ?? false,name = name, tenantId = tenantId });
         }
     }
 }

@@ -28,20 +28,24 @@ export class ElsaUserContextMenu {
  }
 
  logoutStrategy = {
-  "OpenIdConnect" : " window.location.href = 'v1/ElsaAuthentication/logout'",
-  "ServerManagedCookie" : "window.location.href = 'v1/ElsaAuthentication/logout'",
+  "OpenIdConnect" : function(){
+    window.location.href = 'v1/ElsaAuthentication/logout';
+  },
+  "ServerManagedCookie" : function(){
+    window.location.href = 'v1/ElsaAuthentication/logout';
+  },
   "JwtBearerToken":""
  };
 
 
 
 @Method()
- menuItemSelected(item : DropdownButtonItem)
+ async menuItemSelected(item : DropdownButtonItem)
  {
   if(item.value == 'logout')
   {
     this.authenticationConfguration.authenticationStyles.forEach(x=>{
-      eval(this.logoutStrategy[x]);
+      this.logoutStrategy[x]();
     });
   }
  }
