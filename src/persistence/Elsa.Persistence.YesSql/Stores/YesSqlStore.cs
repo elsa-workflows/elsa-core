@@ -168,5 +168,16 @@ namespace Elsa.Persistence.YesSql.Stores
         protected IQuery<TDocument> Query(ISession session) => session.Query<TDocument>(CollectionName);
         protected IQuery<TDocument, TIndex> Query<TIndex>(ISession session, Expression<Func<TIndex, bool>> predicate) where TIndex : class, IIndex => session.Query<TDocument, TIndex>(predicate, CollectionName);
         protected IQuery<TDocument, TIndex> Query<TIndex>(ISession session) where TIndex : class, IIndex => session.Query<TDocument, TIndex>(CollectionName);
+
+        public async Task<IEnumerable<TOut>> FindManyAsync<TOut>(ISpecification<T> specification, Expression<Func<T, TOut>> funcMapping, IOrderBy<T>? orderBy = null, IPaging? paging = null, CancellationToken cancellationToken = default) where TOut : class
+        {
+            await using var session = SessionProvider.CreateSession();
+            _stopwatch.Restart();
+            var documents = await Query(session, specification, orderBy, paging, cancellationToken).ListAsync();
+            var mappedDocuments = Map(documents).AsQueryable().Select(funcMapping);
+            _stopwatch.Stop();
+            Logger.LogDebug("FindManyAsync took {TimeElapsed}", _stopwatch.Elapsed);
+            return mappedDocuments;
+        }
     }
 }

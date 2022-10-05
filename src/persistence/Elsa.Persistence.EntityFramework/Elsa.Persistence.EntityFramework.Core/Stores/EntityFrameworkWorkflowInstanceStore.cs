@@ -10,6 +10,7 @@ using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Core.Services;
 using Elsa.Persistence.Specifications;
 using Elsa.Serialization;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
@@ -44,10 +45,9 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
 
         public override async Task<int> DeleteManyAsync(ISpecification<WorkflowInstance> specification, CancellationToken cancellationToken = default)
         {
-            var workflowInstances = (await FindManyAsync(specification, cancellationToken: cancellationToken)).ToList();
-            var workflowInstanceIds = workflowInstances.Select(x => x.Id).ToArray();
+            var workflowInstanceIds = (await FindManyAsync<string>(specification,(wf)=> wf.Id,  cancellationToken: cancellationToken)).ToList();
             await DeleteManyByIdsAsync(workflowInstanceIds, cancellationToken);
-            return workflowInstances.Count;
+            return workflowInstanceIds.Count;
         }
 
         public async Task DeleteManyByIdsAsync(IEnumerable<string> ids, CancellationToken cancellationToken = default)
@@ -56,9 +56,11 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
 
             await DoWork(async dbContext =>
             {
-                await dbContext.Set<WorkflowExecutionLogRecord>().AsQueryable().Where(x => idList.Contains(x.WorkflowInstanceId)).BatchDeleteWithWorkAroundAsync(dbContext, cancellationToken);
-                await dbContext.Set<Bookmark>().AsQueryable().Where(x => idList.Contains(x.WorkflowInstanceId)).BatchDeleteWithWorkAroundAsync(dbContext, cancellationToken);
-                await dbContext.Set<WorkflowInstance>().AsQueryable().Where(x => idList.Contains(x.Id)).BatchDeleteWithWorkAroundAsync(dbContext, cancellationToken);
+#pragma warning disable IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code
+                await dbContext.Set<WorkflowExecutionLogRecord>().AsQueryable().Where(x => idList.Contains(x.WorkflowInstanceId)).Select(x=>x.Id).AsQueryable().BatchDeleteWithWorkAroundAsync(dbContext, cancellationToken);
+                await dbContext.Set<Bookmark>().AsQueryable().Where(x => idList.Contains(x.WorkflowInstanceId)).Select(x => x.Id).AsQueryable().BatchDeleteWithWorkAroundAsync(dbContext, cancellationToken);
+                await dbContext.Set<WorkflowInstance>().AsQueryable().Where(x => idList.Contains(x.Id)).Select(x => x.Id).AsQueryable().BatchDeleteWithWorkAroundAsync(dbContext, cancellationToken);
+#pragma warning restore IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code
             }, cancellationToken);
         }
 

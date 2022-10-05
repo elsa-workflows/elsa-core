@@ -149,6 +149,9 @@ namespace Elsa.Activities.Telnyx.Activities
             
             if (!context.HasCallControlId())
                 context.SetCallControlId(payload!.CallControlId);
+            
+            if(!context.HasCallLegId())
+                context.SetCallLegId(payload!.CallLegId);
 
             return payload switch
             {
@@ -193,14 +196,13 @@ namespace Elsa.Activities.Telnyx.Activities
                 throw new MissingCallControlAppIdException("No Call Control ID specified and no default value configured");
 
             var fromNumber = context.GetFromNumber(From);
-
             var clientState = new ClientStatePayload(context.CorrelationId!).ToBase64();
 
             var request = new DialRequest(
                 connectionId,
                 To,
                 fromNumber,
-                FromDisplayName,
+                FromDisplayName.SanitizeCallerName(),
                 AnsweringMachineDetection,
                 AnsweringMachineDetectionConfig,
                 clientState,

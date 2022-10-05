@@ -65,6 +65,7 @@ namespace Elsa.Activities.Telnyx.Extensions
             
             services
                 .AddApiClient<ICallsApi>(refitSettings, httpClientFactory, configureHttpClientBuilder)
+                .AddApiClient<INumberLookupApi>(refitSettings, httpClientFactory, configureHttpClientBuilder)
                 .AddTransient<ITelnyxClient, TelnyxClient>();
 
             return elsaOptions;

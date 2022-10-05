@@ -244,10 +244,10 @@ namespace Elsa.Services.Models
         public void AddEntry(string eventName, string? message, object? data)
         {
             var jObjectData = data != null ? JObject.FromObject(data) : null;
-            WorkflowExecutionLog.AddEntry(WorkflowInstance.Id, ActivityId, ActivityBlueprint.Type, eventName, message, WorkflowInstance.TenantId, null, jObjectData);
+            WorkflowExecutionLog.AddEntry(WorkflowInstance.Id, ActivityId, ActivityBlueprint.Type, eventName, message, WorkflowInstance.TenantId, ActivityBlueprint.Source, jObjectData);
         }
 
-        public void AddEntry(string eventName, string? message, JObject? data) => WorkflowExecutionLog.AddEntry(WorkflowInstance.Id, ActivityId, ActivityBlueprint.Type, eventName, message, WorkflowInstance.TenantId, null, data);
+        public void AddEntry(string eventName, string? message, JObject? data) => WorkflowExecutionLog.AddEntry(WorkflowInstance.Id, ActivityId, ActivityBlueprint.Type, eventName, message, WorkflowInstance.TenantId, ActivityBlueprint.Source, data);
 
         private ICompositeActivityBlueprint GetContainerActivity()
         {
