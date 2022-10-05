@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Retention.Jobs;
@@ -33,10 +33,14 @@ namespace Elsa.Retention.HostedServices
         {
             using var scope = _serviceScopeFactory.CreateScope();
             var job = scope.ServiceProvider.GetRequiredService<CleanupJob>();
+            var started = false;
 
             while (!stoppingToken.IsCancellationRequested)
             {
-                await Task.Delay(_interval, stoppingToken);
+                if (started)
+                    await Task.Delay(_interval, stoppingToken);
+                else
+                    started = true;
                 await using var handle = await _distributedLockProvider.AcquireLockAsync(nameof(CleanupHostedService), cancellationToken: stoppingToken);
 
                 if (handle == null)

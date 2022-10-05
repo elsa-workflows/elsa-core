@@ -47,6 +47,9 @@ namespace Elsa.Activities.Telnyx.Activities
 
             if (!context.HasCallControlId())
                 context.SetCallControlId(callInitiatedPayload.CallControlId);
+            
+            if (!context.HasCallLegId())
+                context.SetCallLegId(callInitiatedPayload.CallLegId);
 
             if (!context.HasFromNumber())
                 context.SetFromNumber(callInitiatedPayload.To);

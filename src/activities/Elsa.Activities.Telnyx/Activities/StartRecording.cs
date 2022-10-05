@@ -19,7 +19,7 @@ namespace Elsa.Activities.Telnyx.Activities
     [Job(
         Category = Constants.Category,
         Description = "Start recording the call.",
-        Outcomes = new[] { TelnyxOutcomeNames.FinishedRecording, TelnyxOutcomeNames.CallIsNoLongerActive, OutcomeNames.Done },
+        Outcomes = new[] { TelnyxOutcomeNames.FinishedRecording, TelnyxOutcomeNames.CallIsNoLongerActive },
         DisplayName = "Start Recording"
     )]
     public class StartRecording : Activity

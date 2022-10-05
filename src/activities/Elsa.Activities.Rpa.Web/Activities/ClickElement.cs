@@ -4,6 +4,7 @@ using Elsa.Services.Models;
 using System;
 using System.Threading.Tasks;
 using OpenQA.Selenium.Support.Extensions;
+using Elsa.Expressions;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.Rpa.Web
@@ -16,7 +17,8 @@ namespace Elsa.Activities.Rpa.Web
         }
 
         
-        [ActivityInput(Hint = "Indicates whether not to perform an interactive click but just emulates a click via javascript call")]
+        [ActivityInput(Hint = "Indicates whether not to perform an interactive click but just emulates a click via javascript call",
+            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public bool? UseJavascriptClick { get; set; }
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {

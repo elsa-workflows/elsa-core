@@ -1,3 +1,6 @@
 namespace Elsa.Activities.Telnyx.Client.Models;
 
-public record PlayAudioResponse(string Result);
+public class PlayAudioResponse
+{
+    public string Result { get; set; } = default!;
+}

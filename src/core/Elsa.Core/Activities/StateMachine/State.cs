@@ -36,7 +36,7 @@ namespace Elsa.Activities.StateMachine
         {
             context.SetVariable("CurrentState", StateName);
             context.JournalData.Add("Current State", StateName);
-            return Outcomes(Transitions);
+            return Outcome(StateName);
         }
     }
 }

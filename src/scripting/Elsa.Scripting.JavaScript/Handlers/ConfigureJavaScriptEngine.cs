@@ -119,10 +119,21 @@ namespace Elsa.Scripting.JavaScript.Handlers
         private object? ProcessVariable(object? value) =>
             value switch
             {
-                JArray jArray => jArray.Select(x => x.ToObject<ExpandoObject>()).ToList(),
+                JArray jArray => jArray.Select(ProcessVariable).ToList(),
                 JObject jObject => jObject.ToObject<ExpandoObject>(),
                 ExpandoObject expandoObject => JObject.FromObject(expandoObject),
                 ICollection<ExpandoObject> expandoObjects => new JArray(expandoObjects.Select(JObject.FromObject)),
+                JToken jToken => jToken.Type switch
+                {
+                  JTokenType.Boolean => jToken.Value<bool>(),
+                  JTokenType.Bytes => jToken.Value<byte[]>(),
+                  JTokenType.Date => jToken.Value<DateTimeOffset>(),
+                  JTokenType.Float => jToken.Value<float>(),
+                  JTokenType.Guid => jToken.Value<Guid>(),
+                  JTokenType.Integer => jToken.Value<int>(),
+                  JTokenType.Object => jToken.ToObject<ExpandoObject>(),
+                  _ => jToken.ToString()
+                },
                 _ => value
             };
 
