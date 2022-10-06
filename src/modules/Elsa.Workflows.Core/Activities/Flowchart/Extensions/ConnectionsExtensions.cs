@@ -19,4 +19,10 @@ public static class ConnectionsExtensions
                 yield return descendant;
         }
     }
+    
+    public static IEnumerable<Connection> InboundConnections(this ICollection<Connection> allConnections, IActivity activity) => 
+        allConnections.Where(x => x.Target == activity).ToList();
+
+    public static IEnumerable<IActivity> InboundActivities(this ICollection<Connection> allConnections, IActivity activity) => 
+        allConnections.InboundConnections(activity).Select(x => x.Source);
 }
