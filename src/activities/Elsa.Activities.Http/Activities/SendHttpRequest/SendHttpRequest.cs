@@ -288,7 +288,8 @@ namespace Elsa.Activities.Http
             return request;
         }
 
-        private async Task<string?> GetAuthorizationHeader() {
+        private async Task<string?> GetAuthorizationHeader()
+        {
             if (_authorizationHeaderHandlers.Count == 0 || string.IsNullOrEmpty(Authorization)) {
                 return Authorization;
             }

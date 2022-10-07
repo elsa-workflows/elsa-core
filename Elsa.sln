@@ -419,8 +419,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Scripting.Sql", "src\s
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.LoadAndRunFromDatabaseConsole", "src\samples\console\Elsa.Samples.LoadAndRunFromDatabaseConsole\Elsa.Samples.LoadAndRunFromDatabaseConsole.csproj", "{507FE3FC-F775-46CF-8820-B80C6FCFD348}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Secrets.OAuth2", "src\modules\secrets\Elsa.Secrets.OAuth2\Elsa.Secrets.OAuth2.csproj", "{1CC8BA81-8F36-4C0C-BDD3-F426570DB11E}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.BuildAndDispatchConsole", "src\samples\console\Elsa.Samples.BuildAndDispatchConsole\Elsa.Samples.BuildAndDispatchConsole.csproj", "{1CA56484-4B92-46DA-AFC5-8602FDBFAAA2}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.InProcessBackgroundMediator", "src\samples\aspnet\Elsa.Samples.InProcessBackgroundMediator\Elsa.Samples.InProcessBackgroundMediator.csproj", "{0319DAB2-388A-4DA1-8F62-2F0A0127F01C}"
