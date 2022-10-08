@@ -48,7 +48,7 @@ export class ElsaWebhookDefinitionEditorScreen {
     const webhookId = newValue;
     let webhookDefinition: WebhookDefinition = ElsaWebhookDefinitionEditorScreen.createWebhookDefinition();
     webhookDefinition.id = webhookId;    
-    const client = createElsaWebhooksClient(this.serverUrl);
+    const client = await createElsaWebhooksClient(this.serverUrl);
 
     if (webhookId && webhookId.length > 0) {
       try {
@@ -80,7 +80,7 @@ export class ElsaWebhookDefinitionEditorScreen {
     if (!this.serverUrl || this.serverUrl.length == 0)
       return;
 
-    const client = createElsaWebhooksClient(this.serverUrl);
+    const client = await createElsaWebhooksClient(this.serverUrl);
     
     let webhookDefinition = this.webhookDefinitionInternal;
 

@@ -1,38 +1,16 @@
-import axios, {AxiosInstance, AxiosRequestConfig} from "axios";
-import {Service} from 'axios-middleware';
-import * as collection from 'lodash/collection';
-import {eventBus} from '../../../services/event-bus';
-import {EventTypes, PagedList} from "../../../models";
+import {AxiosInstance} from "axios";
+import {PagedList} from "../../../models";
 import {WebhookDefinition, WebhookDefinitionSummary} from "../models";
+import {createHttpClient} from "../../../services/elsa-client"
 
-let _httpClient: AxiosInstance = null;
 let _elsaWebhooksClient: ElsaWebhooksClient = null;
 
-export const createHttpClient = function(baseAddress: string) : AxiosInstance
-{
-  if(!!_httpClient)
-    return _httpClient;
-
-  const config: AxiosRequestConfig = {
-    baseURL: baseAddress
-  };
-
-  eventBus.emit(EventTypes.HttpClientConfigCreated, this, {config});
-
-  const httpClient = axios.create(config);
-  const service = new Service(httpClient);
-
-  eventBus.emit(EventTypes.HttpClientCreated, this, {service, httpClient});
-
-  return _httpClient = httpClient;
-}
-
-export const createElsaWebhooksClient = function (serverUrl: string): ElsaWebhooksClient {
+export const createElsaWebhooksClient = async function (serverUrl: string): Promise<ElsaWebhooksClient> {
 
   if (!!_elsaWebhooksClient)
     return _elsaWebhooksClient;
 
-  const httpClient: AxiosInstance = createHttpClient(serverUrl);
+  const httpClient: AxiosInstance = await createHttpClient(serverUrl);
 
   _elsaWebhooksClient = {
     webhookDefinitionsApi: {

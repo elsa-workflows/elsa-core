@@ -29,13 +29,13 @@ export class ElsaWebhookDefinitionsListScreen {
     if (!result)
       return;
 
-    const elsaClient = createElsaWebhooksClient(this.serverUrl);
+    const elsaClient = await createElsaWebhooksClient(this.serverUrl);
     await elsaClient.webhookDefinitionsApi.delete(webhookDefinition.id);
     await this.loadWebhookDefinitions();
   }
 
   async loadWebhookDefinitions() {
-    const elsaClient = createElsaWebhooksClient(this.serverUrl);
+    const elsaClient = await createElsaWebhooksClient(this.serverUrl);
     const page = 0;
     const pageSize = 50;
     this.webhookDefinitions = await elsaClient.webhookDefinitionsApi.list(page, pageSize);
