@@ -13,7 +13,7 @@ public class FlowScope
     public FlowScope(string ownerActivityId)
     {
         OwnerActivityId = ownerActivityId;
-        Activities.Add(ownerActivityId, new ActivityFlowState(ownerActivityId, true));
+        Activities.Add(ownerActivityId, new ActivityFlowState(ownerActivityId, 1));
     }
 
     /// <summary>
@@ -27,37 +27,49 @@ public class FlowScope
     public IDictionary<string, ActivityFlowState> Activities { get; set; } =
         new Dictionary<string, ActivityFlowState>();
 
-    public void AddActivities(IEnumerable<IActivity> activities, bool executed = false)
+    public void AddActivities(IEnumerable<IActivity> activities, long executionCount = 0)
     {
         foreach (var activity in activities)
-            AddActivity(activity, executed);
+            AddActivity(activity, executionCount);
     }
     
-    public void AddActivity(IActivity activity, bool executed = false)
+    public void AddActivity(IActivity activity, long executionCount = 0) => EnsureActivity(activity, executionCount);
+
+    public ActivityFlowState EnsureActivity(IActivity activity, long executionCount = 0)
     {
-        if (!Activities.ContainsKey(activity.Id))
-            Activities.Add(activity.Id, new ActivityFlowState(activity.Id, executed));
+        if (Activities.ContainsKey(activity.Id)) 
+            return Activities[activity.Id];
+        
+        var state = new ActivityFlowState(activity.Id, executionCount);
+        Activities.Add(activity.Id, state);
+        return state;
+
     }
     
     public void RegisterActivityExecution(IActivity activity)
     {
-        Activities[activity.Id] = new ActivityFlowState(activity.Id, true);
-    }
+        var state = Activities.TryGetValue(activity.Id, out var s) ? s : default;
 
-    public void MarkAsExecuted(IActivity activity)
-    {
-        if (Activities.TryGetValue(activity.Id, out var state))
-            state.HasExecuted = true;
+        if (state == null)
+        {
+            state = new ActivityFlowState(activity.Id);
+            Activities[activity.Id] = state;
+        }
+
+        state.ExecutionCount++;
     }
 
     /// <summary>
     /// Return a list excluding any activities that already executed.
     /// </summary>
     public IEnumerable<IActivity> ExcludeExecutedActivities(IEnumerable<IActivity> activities) =>
-        activities.Where(x => !Activities.ContainsKey(x.Id) || !Activities[x.Id].HasExecuted);
+        activities.Where(x => !Activities.ContainsKey(x.Id) || Activities[x.Id].ExecutionCount == 0);
 
-    public bool HasPendingActivities() => Activities.Values.Any(x => !x.HasExecuted);
+    public bool HasPendingActivities()
+    {
+        var sample = Activities.Values.First().ExecutionCount;
+        return Activities.Values.Any(x => x.ExecutionCount != sample);
+    }
 
-    public bool HaveExecuted(IEnumerable<IActivity> activities) => activities.All(activity =>
-        Activities.TryGetValue(activity.Id, out var f) && f.HasExecuted);
+    public long GetExecutionCount(IActivity activity) => EnsureActivity(activity).ExecutionCount;
 }

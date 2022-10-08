@@ -64,20 +64,23 @@ public class Flowchart : Container
         
         if (children.Any())
         {
-            
             scope.AddActivities(children);
-
-            // Only schedule children that have not yet already executed in the current scope.
-            var filteredChildren = scope.ExcludeExecutedActivities(children).ToList();
-            children = filteredChildren;
-
-            var executedActivities = scope.Activities.Values.Where(x => x.HasExecuted).Select(x => x.ActivityId).ToList();
             
-            // Schedule each child, but only if all of its inbound activities have already executed.
+            // Schedule each child, but only if all of its left inbound activities have already executed.
             foreach (var activity in children)
             {
-                var inboundActivities = Connections.InboundActivities(activity).ToList();
-                var haveInboundActivitiesExecuted = inboundActivities.All(x => executedActivities.Contains(x.Id));
+                var inboundActivities = Connections.LeftInboundActivities(activity).ToList();
+
+                // If the completed activity is not part of the left inbound path, always allow its children to be scheduled.
+                if (!inboundActivities.Contains(completedActivity))
+                {
+                    flowchartActivityExecutionContext.ScheduleActivity(activity);
+                    continue;
+                }
+                
+                var executionCount = scope.GetExecutionCount(activity);
+                
+                var haveInboundActivitiesExecuted = inboundActivities.All(x => scope.GetExecutionCount(x) > executionCount);
                 
                 if(haveInboundActivitiesExecuted)
                     flowchartActivityExecutionContext.ScheduleActivity(activity);

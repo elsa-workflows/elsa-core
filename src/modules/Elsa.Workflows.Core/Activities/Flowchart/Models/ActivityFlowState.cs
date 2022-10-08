@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace Elsa.Workflows.Core.Activities.Flowchart.Models;
 
-[DebuggerDisplay("Activity = {ActivityId}, HasExecuted = {HasExecuted}")]
+[DebuggerDisplay("ActivityId = {ActivityId}, ExecutionCount = {ExecutionCount}")]
 public class ActivityFlowState
 {
     [JsonConstructor]
@@ -11,12 +11,12 @@ public class ActivityFlowState
     {
     }
 
-    public ActivityFlowState(string activityId, bool hasExecuted = false)
+    public ActivityFlowState(string activityId, long executionCount = 0)
     {
         ActivityId = activityId;
-        HasExecuted = hasExecuted;
+        ExecutionCount = executionCount;
     }
     
     public string ActivityId { get; set; } = default!;
-    public bool HasExecuted { get; set; }
+    public long ExecutionCount { get; set; }
 }
