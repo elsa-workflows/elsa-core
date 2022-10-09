@@ -109,9 +109,9 @@ public class WorkflowExecutionContext
             _completionCallbackEntries.Remove(entry);
     }
 
-    public ActivityNode FindActivityNodeById(string nodeId) => NodeIdLookup[nodeId];
+    public ActivityNode FindNodeById(string nodeId) => NodeIdLookup[nodeId];
     public ActivityNode FindNodeByActivity(IActivity activity) => NodeActivityLookup[activity];
-    public IActivity FindActivityById(string activityId) => FindActivityNodeById(activityId).Activity;
+    public IActivity FindActivityById(string activityId) => FindNodeById(activityId).Activity;
     public T? GetProperty<T>(string key) => Properties.TryGetValue(key, out var value) ? (T?)value : default(T);
     public void SetProperty<T>(string key, T value) => Properties[key] = value!;
 
@@ -132,6 +132,16 @@ public class WorkflowExecutionContext
             throw new Exception($"Cannot transition from {Status} to {targetStatus}");
 
         SubStatus = subStatus;
+    }
+
+    public ActivityExecutionContext CreateActivityExecutionContext(IActivity activity, ActivityExecutionContext? parentContext = default)
+    {
+        var parentExpressionExecutionContext = parentContext?.ExpressionExecutionContext;
+        var applicationProperties = ExpressionExecutionContextExtensions.CreateApplicationPropertiesFrom(Workflow, TransientProperties, Input);
+        var parentMemory = parentContext?.ExpressionExecutionContext.Memory ?? MemoryRegister;
+        var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, parentMemory, parentExpressionExecutionContext, applicationProperties, CancellationToken);
+        var activityExecutionContext = new ActivityExecutionContext(this, default, expressionExecutionContext, activity, CancellationToken);
+        return activityExecutionContext;
     }
 
     private WorkflowStatus GetMainStatus(WorkflowSubStatus subStatus) =>

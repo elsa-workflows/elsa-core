@@ -98,7 +98,8 @@ public class ActivityDescriber : IActivityDescriber
         {
             var inputAttribute = propertyInfo.GetCustomAttribute<InputAttribute>();
             var descriptionAttribute = propertyInfo.GetCustomAttribute<DescriptionAttribute>();
-            var wrappedPropertyType = propertyInfo.PropertyType.GenericTypeArguments[0];
+            var propertyType = propertyInfo.PropertyType;
+            var wrappedPropertyType = !typeof(Input).IsAssignableFrom(propertyType) ? propertyType : propertyInfo.PropertyType.GenericTypeArguments[0];
 
             yield return new InputDescriptor
             (

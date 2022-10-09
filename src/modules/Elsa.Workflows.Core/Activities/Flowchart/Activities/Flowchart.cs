@@ -1,3 +1,4 @@
+using Elsa.Workflows.Core.Activities.Flowchart.Contracts;
 using Elsa.Workflows.Core.Activities.Flowchart.Extensions;
 using Elsa.Workflows.Core.Activities.Flowchart.Models;
 using Elsa.Workflows.Core.Attributes;
@@ -59,13 +60,13 @@ public class Flowchart : Container
         var outboundConnections = Connections.Where(outboundConnectionsQuery).ToList();
         var children = outboundConnections.Select(x => x.Target).ToList();
         var scope = flowchartActivityExecutionContext.GetProperty(ScopeProperty, () => new FlowScope());
-        
+
         scope.RegisterActivityExecution(completedActivity);
-        
+
         if (children.Any())
         {
             scope.AddActivities(children);
-            
+
             // Schedule each child, but only if all of its left inbound activities have already executed.
             foreach (var activity in children)
             {
@@ -77,12 +78,11 @@ public class Flowchart : Container
                     flowchartActivityExecutionContext.ScheduleActivity(activity);
                     continue;
                 }
-                
-                var executionCount = scope.GetExecutionCount(activity);
-                
-                var haveInboundActivitiesExecuted = inboundActivities.All(x => scope.GetExecutionCount(x) > executionCount);
-                
-                if(haveInboundActivitiesExecuted)
+
+                var workflowExecutionContext = flowchartActivityExecutionContext.WorkflowExecutionContext;
+                var haveInboundActivitiesExecuted = await GetShouldScheduleActivityAsync(workflowExecutionContext, scope, activity, inboundActivities);
+
+                if (haveInboundActivitiesExecuted)
                     flowchartActivityExecutionContext.ScheduleActivity(activity);
             }
         }
@@ -97,5 +97,22 @@ public class Flowchart : Container
         }
 
         context.StopPropagation();
+    }
+
+    private async Task<bool> GetShouldScheduleActivityAsync(WorkflowExecutionContext workflowExecutionContext, FlowScope scope, IActivity activity, ICollection<IActivity> inboundActivities)
+    {
+        // Give the activity a chance to tell us itself if it wants to be scheduled.
+        if (activity is IJoinNode joinNode)
+        {
+            var joinActivityExecutionContext = workflowExecutionContext.CreateActivityExecutionContext(activity);
+            await joinActivityExecutionContext.EvaluateInputPropertiesAsync();
+            return joinNode.GetShouldExecute(new FlowJoinContext(joinActivityExecutionContext, scope, this, activity, inboundActivities));
+        }
+
+        // Default join strategy is to wait for all left-inbound activities to have executed.
+        var executionCount = scope.GetExecutionCount(activity);
+        var haveInboundActivitiesExecuted = inboundActivities.All(x => scope.GetExecutionCount(x) > executionCount);
+
+        return haveInboundActivitiesExecuted;
     }
 }

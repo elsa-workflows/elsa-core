@@ -21,22 +21,10 @@ public class ActivityInvoker : IActivityInvoker
         ActivityExecutionContext? owner,
         IEnumerable<MemoryBlockReference>? memoryReferences = default)
     {
-        var cancellationToken = workflowExecutionContext.CancellationToken;
-
-        // Get a handle to the parent execution context.
-        var parentActivityExecutionContext = owner;
-        var parentExpressionExecutionContext = parentActivityExecutionContext?.ExpressionExecutionContext;
-
         // Setup an activity execution context.
         var workflowMemory = workflowExecutionContext.MemoryRegister;
-        var workflow = workflowExecutionContext.Workflow;
-        var transientProperties = workflowExecutionContext.TransientProperties;
-        var input = workflowExecutionContext.Input;
-        var applicationProperties = ExpressionExecutionContextExtensions.CreateApplicationPropertiesFrom(workflow, transientProperties, input);
-        var parentMemory = parentActivityExecutionContext?.ExpressionExecutionContext.Memory ?? workflowMemory;
         var activityMemory = new MemoryRegister(workflowMemory);
-        var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, parentMemory, parentExpressionExecutionContext, applicationProperties, cancellationToken);
-        var activityExecutionContext = new ActivityExecutionContext(workflowExecutionContext, parentActivityExecutionContext, expressionExecutionContext, activity, cancellationToken);
+        var activityExecutionContext = workflowExecutionContext.CreateActivityExecutionContext(activity, owner);
 
         // Declare memory.
         if (memoryReferences != null)
