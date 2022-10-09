@@ -140,7 +140,7 @@ public class WorkflowExecutionContext
         var applicationProperties = ExpressionExecutionContextExtensions.CreateApplicationPropertiesFrom(Workflow, TransientProperties, Input);
         var parentMemory = parentContext?.ExpressionExecutionContext.Memory ?? MemoryRegister;
         var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, parentMemory, parentExpressionExecutionContext, applicationProperties, CancellationToken);
-        var activityExecutionContext = new ActivityExecutionContext(this, default, expressionExecutionContext, activity, CancellationToken);
+        var activityExecutionContext = new ActivityExecutionContext(this, parentContext, expressionExecutionContext, activity, CancellationToken);
         return activityExecutionContext;
     }
 

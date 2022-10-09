@@ -27,16 +27,24 @@ public class FlowJoin : Activity, IJoinNode
     {
         var activityExecutionContext = context.ActivityExecutionContext;
         var mode = activityExecutionContext.Get(Mode);
-        
-        if (mode == JoinMode.WaitAny)
-            return true;
-
-        // Wait for all left-inbound activities to have executed.
         var scope = context.Scope;
         var executionCount = scope.GetExecutionCount(context.Activity);
         var inboundActivities = context.InboundActivities;
-        var haveAllInboundActivitiesExecuted = inboundActivities.All(x => scope.GetExecutionCount(x) > executionCount);
+        
+        if (mode == JoinMode.WaitAny)
+        {
+            // Only return true if we didn't execute before.
+            var hasAnyInboundActivityExecuted = inboundActivities.Any(x => scope.GetExecutionCount(x) > executionCount);
+            return hasAnyInboundActivityExecuted;
+        }
+        else
+        {
+            // Wait for all left-inbound activities to have executed.
+            var haveAllInboundActivitiesExecuted = inboundActivities.All(x => scope.GetExecutionCount(x) > executionCount);
 
-        return haveAllInboundActivitiesExecuted;
+            return haveAllInboundActivitiesExecuted;    
+        }
+
+        
     }
 }
