@@ -11,8 +11,7 @@ namespace Elsa.Workflows.Core.Activities.Flowchart.Activities;
 [Activity("Elsa", "Flow", "A flowchart is a collection of activities and connections between them.")]
 public class Flowchart : Container
 {
-    private const string ScopesProperty = "Scopes";
-    private const string ScopeProperty = "Scope";
+    internal const string ScopeProperty = "Scope";
 
     public Flowchart()
     {
@@ -79,11 +78,19 @@ public class Flowchart : Container
                     continue;
                 }
 
-                var workflowExecutionContext = flowchartActivityExecutionContext.WorkflowExecutionContext;
-                var haveInboundActivitiesExecuted = await GetShouldScheduleActivityAsync(workflowExecutionContext, scope, activity, inboundActivities);
+                // If the activity is anything but a join activity, only schedule it if all of its left-inbound activities have executed, effectively implementing a "wait all" join. 
+                if (activity is not IJoinNode)
+                {
+                    var executionCount = scope.GetExecutionCount(activity);
+                    var haveInboundActivitiesExecuted = inboundActivities.All(x => scope.GetExecutionCount(x) > executionCount);
 
-                if (haveInboundActivitiesExecuted)
+                    if (haveInboundActivitiesExecuted)
+                        flowchartActivityExecutionContext.ScheduleActivity(activity);
+                }
+                else
+                {
                     flowchartActivityExecutionContext.ScheduleActivity(activity);
+                }
             }
         }
 
@@ -97,22 +104,5 @@ public class Flowchart : Container
         }
 
         context.StopPropagation();
-    }
-
-    private async Task<bool> GetShouldScheduleActivityAsync(WorkflowExecutionContext workflowExecutionContext, FlowScope scope, IActivity activity, ICollection<IActivity> inboundActivities)
-    {
-        // Give the activity a chance to tell us itself if it wants to be scheduled.
-        if (activity is IJoinNode joinNode)
-        {
-            var joinActivityExecutionContext = workflowExecutionContext.CreateActivityExecutionContext(activity);
-            await joinActivityExecutionContext.EvaluateInputPropertiesAsync();
-            return joinNode.GetShouldExecute(new FlowJoinContext(joinActivityExecutionContext, scope, this, activity, inboundActivities));
-        }
-
-        // Default join strategy is to wait for all left-inbound activities to have executed.
-        var executionCount = scope.GetExecutionCount(activity);
-        var haveInboundActivitiesExecuted = inboundActivities.All(x => scope.GetExecutionCount(x) > executionCount);
-
-        return haveInboundActivitiesExecuted;
     }
 }
