@@ -1,5 +1,6 @@
 using System.Reflection;
 using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Services;
@@ -38,13 +39,14 @@ public class PropertyOptionsResolver : IPropertyOptionsResolver
     {
         var isNullable = activityPropertyInfo.PropertyType.IsNullableType();
         var propertyType = isNullable ? activityPropertyInfo.PropertyType.GetTypeOfNullable() : activityPropertyInfo.PropertyType;
+        var wrappedPropertyType = !typeof(Input).IsAssignableFrom(propertyType) ? propertyType : activityPropertyInfo.PropertyType.GenericTypeArguments[0];
 
         items = null;
 
-        if (!propertyType.IsEnum)
+        if (!wrappedPropertyType.IsEnum)
             return false;
             
-        items = propertyType.GetEnumNames().Select(x => new SelectListItem(x.Humanize(LetterCasing.Title), x)).ToList();
+        items = wrappedPropertyType.GetEnumNames().Select(x => new SelectListItem(x.Humanize(LetterCasing.Title), x)).ToList();
 
         if (isNullable)
             items.Insert(0, new SelectListItem("-", ""));

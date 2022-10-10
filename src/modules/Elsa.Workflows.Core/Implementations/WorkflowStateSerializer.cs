@@ -78,7 +78,7 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
         foreach (var entry in state.ActivityOutput)
         {
             var activityId = entry.Key;
-            var node = workflowExecutionContext.FindActivityNodeById(activityId);
+            var node = workflowExecutionContext.FindNodeById(activityId);
             var activityType = node.Activity.GetType();
 
             foreach (var outputEntry in entry.Value)
@@ -96,7 +96,7 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
         foreach (var completionCallbackEntry in state.CompletionCallbacks)
         {
             var owner = workflowExecutionContext.ActivityExecutionContexts.First(x => x.Id == completionCallbackEntry.OwnerId);
-            var child = workflowExecutionContext.FindActivityNodeById(completionCallbackEntry.ChildId).Activity;
+            var child = workflowExecutionContext.FindNodeById(completionCallbackEntry.ChildId).Activity;
             var callbackName = completionCallbackEntry.MethodName;
             var callbackDelegate = owner.Activity.GetActivityCompletionCallback(callbackName);
             workflowExecutionContext.AddCompletionCallback(owner, child, callbackDelegate);
@@ -133,21 +133,11 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
     {
         ActivityExecutionContext CreateActivityExecutionContext(ActivityExecutionContextState activityExecutionContextState)
         {
-            var cancellationToken = workflowExecutionContext.CancellationToken;
             var activity = workflowExecutionContext.FindActivityById(activityExecutionContextState.ScheduledActivityId);
-            var workflowMemory = workflowExecutionContext.MemoryRegister;
-            var workflow = workflowExecutionContext.Workflow;
-            var expressionInput = workflowExecutionContext.Input;
-            var transientProperties = workflowExecutionContext.TransientProperties;
-            var applicationProperties = ExpressionExecutionContextExtensions.CreateApplicationPropertiesFrom(workflow, transientProperties, expressionInput);
-            var activityMemory = new MemoryRegister(workflowMemory);
-            var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, activityMemory, null, applicationProperties, cancellationToken);
             var properties = activityExecutionContextState.Properties;
-            var activityExecutionContext = new ActivityExecutionContext(workflowExecutionContext, default, expressionExecutionContext, activity, cancellationToken)
-            {
-                Id = activityExecutionContextState.Id,
-                ApplicationProperties = properties
-            };
+            var activityExecutionContext = workflowExecutionContext.CreateActivityExecutionContext(activity);
+            activityExecutionContext.Id = activityExecutionContextState.Id;
+            activityExecutionContext.ApplicationProperties = properties;
             return activityExecutionContext;
         }
 

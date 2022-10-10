@@ -60,6 +60,7 @@ services
             .AddActivity<Flowchart>()
             .AddActivity<FlowDecision>()
             .AddActivity<FlowSwitch>()
+            .AddActivity<FlowJoin>()
             .AddActivity<Elsa.Scheduling.Activities.Delay>()
             .AddActivity<Elsa.Scheduling.Activities.Timer>()
             .AddActivity<ForEach>()

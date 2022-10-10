@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json.Serialization;
 using Elsa.Workflows.Core.Behaviors;
 using Elsa.Workflows.Core.Helpers;
@@ -5,6 +6,7 @@ using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Core.Models;
 
+[DebuggerDisplay("{Type} - {Id}")]
 public abstract class ActivityBase : IActivity, ISignalHandler
 {
     private readonly ICollection<SignalHandlerRegistration> _signalHandlers = new List<SignalHandlerRegistration>();
