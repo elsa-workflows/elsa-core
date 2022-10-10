@@ -27,9 +27,19 @@ public static class ConnectionsExtensions
 
         return filteredConnections;
     }
+    
+    public static IEnumerable<Connection> LeftAncestorConnections(this ICollection<Connection> connections, IActivity activity)
+    {
+        // We only take "left" inbound connections, which means we exclude descendent connections looping back. 
+        var descendantConnections = connections.Descendants(activity).ToList();
+        var filteredConnections = connections.Ancestors(activity).Except(descendantConnections).ToList();
+
+        return filteredConnections;
+    }
 
     public static IEnumerable<IActivity> InboundActivities(this ICollection<Connection> connections, IActivity activity) => connections.InboundConnections(activity).Select(x => x.Source);
     public static IEnumerable<IActivity> LeftInboundActivities(this ICollection<Connection> connections, IActivity activity) => connections.LeftInboundConnections(activity).Select(x => x.Source);
+    public static IEnumerable<IActivity> LeftAncestorActivities(this ICollection<Connection> connections, IActivity activity) => connections.LeftAncestorConnections(activity).Select(x => x.Source);
 
     private static IEnumerable<Connection> Descendants(this ICollection<Connection> connections, IActivity parent, ISet<IActivity> visitedActivities)
     {

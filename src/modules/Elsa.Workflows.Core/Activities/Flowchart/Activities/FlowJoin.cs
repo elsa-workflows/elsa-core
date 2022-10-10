@@ -47,7 +47,7 @@ public class FlowJoin : ActivityBase, IJoinNode
     {
         // Clear any bookmarks created between this join and its most recent fork.
         var connections = flowchart.Connections;
-        var inboundActivities = connections.LeftInboundActivities(this).Select(x => x.Id).ToList();
+        var inboundActivities = connections.LeftAncestorActivities(this).Select(x => x.Id).ToList();
         context.WorkflowExecutionContext.Bookmarks.RemoveWhere(x => inboundActivities.Contains(x.ActivityId));
     }
 }
