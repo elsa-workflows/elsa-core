@@ -210,7 +210,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
   async componentDidLoad() {
     if (!this.designer) {
       // this.designer = this.el.querySelector('elsa-designer-tree') as HTMLElsaDesignerTreeElement;
-      this.designer = this.el.querySelector('elsa-designer-tree-test') as HTMLElsaDesignerTreeElement;
+      this.designer = this.el.querySelector('elsa-designer') as HTMLElsaDesignerTreeElement;
       this.designer.model = this.workflowModel;
     }
   }
@@ -756,7 +756,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
           class="elsa-flex-1"
           ref={el => (this.designer = el)}
         /> */}
-        <elsa-designer-tree-test
+        <elsa-designer
           model={this.workflowModel}
           mode={this.workflowDesignerMode}
           layoutDirection={this.layoutDirection}

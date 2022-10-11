@@ -5,6 +5,7 @@
 }
 
 .workflow-canvas {
+  position: relative;
   display: block;
   width: 100%;
   height: 100%;
@@ -60,14 +61,6 @@ button.expand svg {
 
 /* -------------------------------------------- */
 
-/* .workflow-canvas {
-  position: relative;
-  display: block;
-  touch-action: none;
-  width: auto;
-  height: 100vh;
-} */
-
 .workflow-canvas .noselect {
   -webkit-touch-callout: none; /* iOS Safari */
   -webkit-user-select: none; /* Safari */
@@ -78,20 +71,12 @@ button.expand svg {
 }
 
 .workflow-canvas .activity {
-  /* display: block; */
-  /* border: 1px solid #cccccc; */
-  /* border-radius: 0.5em; */
+  border-radius: 0.25rem;
   min-width: 80px;
   min-height: 48px;
   max-width: 250px;
   text-align: left;
   z-index: 2;
-  position: absolute;
-  /* background-color: #f1f1f1; */
-  /* color: #3d3d3d; */
-  /* font-family: helvetica, sans-serif; */
-  /* padding: 1em; */
-  /* font-size: 0.7em; */
   cursor: grab;
   transition: box-shadow 0.15s ease-in;
 }

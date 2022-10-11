@@ -38,8 +38,8 @@ import {
 } from "jsplumb";
 
 @Component({
-  tag: 'elsa-designer-tree-test',
-  styleUrls: ['elsa-designer-tree-test.css'],
+  tag: 'elsa-designer',
+  styleUrls: ['elsa-designer.css'],
   assetsDirs: ['assets'],
   shadow: false,
 })
@@ -131,7 +131,6 @@ export class ElsaWorkflowDesigner {
     if(this.mode == WorkflowDesignerMode.Edit) {
 
       if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
-        console.log('ctrlC')
         let activitiesList: Array<any> = [];
         const activityDescriptors: Array<ActivityDescriptor> = state.activityDescriptors;
 
@@ -788,6 +787,7 @@ export class ElsaWorkflowDesigner {
     // eventBus.detach(EventTypes.HideModalDialog, this.onCopyPasteActivityEnabled);
     // eventBus.detach(EventTypes.ShowWorkflowSettings, this.onCopyPasteActivityDisabled);
     // eventBus.detach(EventTypes.WorkflowExecuted, this.onWorkflowExecuted);
+    this.jsPlumb.reset();
   }
 
   onActivityPicked = async args => {
@@ -813,7 +813,7 @@ export class ElsaWorkflowDesigner {
     }
   };
 
-    // onPasteActivity = async args => {
+  // onPasteActivity = async args => {
   //   const activityModel = args as ActivityModel;
   //
   //   this.selectedActivities = {};
@@ -830,18 +830,6 @@ export class ElsaWorkflowDesigner {
   //   this.ignoreCopyPasteActivities = true
   // }
 
-  // createOutcomeActivityOptions() {
-  //   return {shape: 'circle', label: this.renderOutcomeButton(), labelType: 'html', class: 'add', width: 32, height: 32};
-  // }
-
-  // renderOutcomeButton() {
-  //   const cssClass = this.mode == WorkflowDesignerMode.Edit ? 'hover:elsa-text-blue-500 elsa-cursor-pointer' : 'elsa-cursor-default';
-  //   return `<svg class="elsa-h-8 elsa-w-8 elsa-text-gray-400 ${cssClass}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-  //       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-  //     </svg>`;
-  // }
-
-
   renderActivity(activity: ActivityModel) {
     const activityDisplayContexts = this.activityDisplayContexts || {};
     const displayContext = activityDisplayContexts[activity.activityId] || undefined;
@@ -849,9 +837,11 @@ export class ElsaWorkflowDesigner {
     const activityBorderColor = !!this.activityBorderColor ? this.activityBorderColor(activity) : 'gray';
     const selectedColor = !!this.activityBorderColor ? activityBorderColor : 'blue';
     const cssClass = !!this.selectedActivities[activity.activityId] ? `elsa-border-${selectedColor}-600` : `elsa-border-${activityBorderColor}-200 hover:elsa-border-${selectedColor}-600`;
-    const displayName = displayContext != undefined ? displayContext.displayName : activity.displayName;
+    const customName = displayContext.activityModel.name;
+    const displayName = displayContext != undefined ? (customName || displayContext.displayName) : activity.displayName;
     const typeName = activity.type;
     const expanded = displayContext && displayContext.expanded;
+
 
     return (
     <div class={`activity-body elsa-border-2 elsa-border-solid elsa-rounded elsa-bg-white elsa-text-left elsa-text-black elsa-text-lg elsa-select-none elsa-max-w-md elsa-shadow-sm elsa-relative ${cssClass} elsa-min-h-12`}>
@@ -1131,6 +1121,7 @@ export class ElsaWorkflowDesigner {
     let translateHeight =
       ((document.documentElement.clientHeight - 64) * (1 - this.layoutState.scale)) / 2;
 
+      this.jsPlumb.repaintEverything();
     return (
       <Host
         onWheel={this.onCanvasMousewheel}
