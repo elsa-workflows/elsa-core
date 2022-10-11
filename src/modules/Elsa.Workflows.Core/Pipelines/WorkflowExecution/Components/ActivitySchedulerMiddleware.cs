@@ -25,7 +25,7 @@ public class ActivitySchedulerMiddleware : WorkflowExecutionMiddleware
         while (scheduler.HasAny)
         {
             // Pop next work item for execution.
-            var currentWorkItem = scheduler.Pop();
+            var currentWorkItem = scheduler.Take();
 
             // Execute work item.
             await currentWorkItem.Execute();

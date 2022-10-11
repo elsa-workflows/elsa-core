@@ -26,7 +26,7 @@ public static class WorkflowExecutionContextExtensions
         var activityInvoker = workflowExecutionContext.GetRequiredService<IActivityInvoker>();
         var workflow = workflowExecutionContext.Workflow;
         var workItem = new ActivityWorkItem(workflow.Root.Id, async () => await activityInvoker.InvokeAsync(workflowExecutionContext, workflow.Root));
-        workflowExecutionContext.Scheduler.Push(workItem);
+        workflowExecutionContext.Scheduler.Schedule(workItem);
     }
 
     /// <summary>
@@ -41,7 +41,7 @@ public static class WorkflowExecutionContextExtensions
         // Schedule the activity to resume.
         var activityInvoker = workflowExecutionContext.GetRequiredService<IActivityInvoker>();
         var workItem = new ActivityWorkItem(bookmarkedActivity.Id, async () => await activityInvoker.InvokeAsync(bookmarkedActivityContext));
-        workflowExecutionContext.Scheduler.Push(workItem);
+        workflowExecutionContext.Scheduler.Schedule(workItem);
 
         // If no resumption point was specified, use Noop to prevent the regular "ExecuteAsync" method to be invoked.
         workflowExecutionContext.ExecuteDelegate = bookmark.CallbackMethodName != null ? bookmarkedActivity.GetResumeActivityDelegate(bookmark.CallbackMethodName) : WorkflowExecutionContext.Complete;
@@ -62,7 +62,7 @@ public static class WorkflowExecutionContextExtensions
     {
         var activityInvoker = workflowExecutionContext.GetRequiredService<IActivityInvoker>();
         var workItem = new ActivityWorkItem(activity.Id, async () => await activityInvoker.InvokeAsync(workflowExecutionContext, activity, owner, references), tag);
-        workflowExecutionContext.Scheduler.Push(workItem);
+        workflowExecutionContext.Scheduler.Schedule(workItem);
 
         if (completionCallback != null)
             workflowExecutionContext.AddCompletionCallback(owner, activity, completionCallback);
