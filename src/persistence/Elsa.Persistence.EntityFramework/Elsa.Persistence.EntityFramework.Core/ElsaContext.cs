@@ -16,7 +16,7 @@ namespace Elsa.Persistence.EntityFramework.Core
         {
         }
 
-        public virtual string Schema => ElsaSchema;
+        public virtual string? Schema => Database.IsSqlite() ? default : ElsaSchema;
         public DbSet<WorkflowDefinition> WorkflowDefinitions { get; set; } = default!;
         public DbSet<WorkflowInstance> WorkflowInstances { get; set; } = default!;
         public DbSet<WorkflowExecutionLogRecord> WorkflowExecutionLogRecords { get; set; } = default!;
