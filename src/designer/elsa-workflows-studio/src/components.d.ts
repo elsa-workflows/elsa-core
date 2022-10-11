@@ -17,7 +17,6 @@ import { PagerData } from "./components/controls/elsa-pager/elsa-pager";
 import { ToastNotificationOptions } from "./components/shared/elsa-toast-notification/elsa-toast-notification";
 import { WebhookDefinition } from "./modules/elsa-webhooks/models";
 import { ActivityStats } from ".";
-import { SelectItem } from "./components/field-editors/select-field/models";
 export namespace Components {
     interface ElsaActivityEditorModal {
         "culture": string;
@@ -406,39 +405,6 @@ export namespace Components {
         "serverUrl": string;
         "workflowDefinition": WorkflowDefinition;
         "workflowTestActivityId": string;
-    }
-    interface WfBooleanField {
-        "checked": boolean;
-        "hint": string;
-        "label": string;
-        "name": string;
-    }
-    interface WfExpressionField {
-        "hint": string;
-        "label": string;
-        "multiline": boolean;
-        "name": string;
-        "syntax": string;
-        "value": string;
-    }
-    interface WfListField {
-        "hint": string;
-        "items": string;
-        "label": string;
-        "name": string;
-    }
-    interface WfSelectField {
-        "hint": string;
-        "items": Array<SelectItem>;
-        "label": string;
-        "name": string;
-        "value": string;
-    }
-    interface WfTextField {
-        "hint": string;
-        "label": string;
-        "name": string;
-        "value": string;
     }
 }
 declare global {
@@ -850,36 +816,6 @@ declare global {
         prototype: HTMLElsaWorkflowTestPanelElement;
         new (): HTMLElsaWorkflowTestPanelElement;
     };
-    interface HTMLWfBooleanFieldElement extends Components.WfBooleanField, HTMLStencilElement {
-    }
-    var HTMLWfBooleanFieldElement: {
-        prototype: HTMLWfBooleanFieldElement;
-        new (): HTMLWfBooleanFieldElement;
-    };
-    interface HTMLWfExpressionFieldElement extends Components.WfExpressionField, HTMLStencilElement {
-    }
-    var HTMLWfExpressionFieldElement: {
-        prototype: HTMLWfExpressionFieldElement;
-        new (): HTMLWfExpressionFieldElement;
-    };
-    interface HTMLWfListFieldElement extends Components.WfListField, HTMLStencilElement {
-    }
-    var HTMLWfListFieldElement: {
-        prototype: HTMLWfListFieldElement;
-        new (): HTMLWfListFieldElement;
-    };
-    interface HTMLWfSelectFieldElement extends Components.WfSelectField, HTMLStencilElement {
-    }
-    var HTMLWfSelectFieldElement: {
-        prototype: HTMLWfSelectFieldElement;
-        new (): HTMLWfSelectFieldElement;
-    };
-    interface HTMLWfTextFieldElement extends Components.WfTextField, HTMLStencilElement {
-    }
-    var HTMLWfTextFieldElement: {
-        prototype: HTMLWfTextFieldElement;
-        new (): HTMLWfTextFieldElement;
-    };
     interface HTMLElementTagNameMap {
         "elsa-activity-editor-modal": HTMLElsaActivityEditorModalElement;
         "elsa-activity-picker-modal": HTMLElsaActivityPickerModalElement;
@@ -949,11 +885,6 @@ declare global {
         "elsa-workflow-registry-list-screen": HTMLElsaWorkflowRegistryListScreenElement;
         "elsa-workflow-settings-modal": HTMLElsaWorkflowSettingsModalElement;
         "elsa-workflow-test-panel": HTMLElsaWorkflowTestPanelElement;
-        "wf-boolean-field": HTMLWfBooleanFieldElement;
-        "wf-expression-field": HTMLWfExpressionFieldElement;
-        "wf-list-field": HTMLWfListFieldElement;
-        "wf-select-field": HTMLWfSelectFieldElement;
-        "wf-text-field": HTMLWfTextFieldElement;
     }
 }
 declare namespace LocalJSX {
@@ -1353,39 +1284,6 @@ declare namespace LocalJSX {
         "workflowDefinition"?: WorkflowDefinition;
         "workflowTestActivityId"?: string;
     }
-    interface WfBooleanField {
-        "checked"?: boolean;
-        "hint"?: string;
-        "label"?: string;
-        "name"?: string;
-    }
-    interface WfExpressionField {
-        "hint"?: string;
-        "label"?: string;
-        "multiline"?: boolean;
-        "name"?: string;
-        "syntax"?: string;
-        "value"?: string;
-    }
-    interface WfListField {
-        "hint"?: string;
-        "items"?: string;
-        "label"?: string;
-        "name"?: string;
-    }
-    interface WfSelectField {
-        "hint"?: string;
-        "items"?: Array<SelectItem>;
-        "label"?: string;
-        "name"?: string;
-        "value"?: string;
-    }
-    interface WfTextField {
-        "hint"?: string;
-        "label"?: string;
-        "name"?: string;
-        "value"?: string;
-    }
     interface IntrinsicElements {
         "elsa-activity-editor-modal": ElsaActivityEditorModal;
         "elsa-activity-picker-modal": ElsaActivityPickerModal;
@@ -1455,11 +1353,6 @@ declare namespace LocalJSX {
         "elsa-workflow-registry-list-screen": ElsaWorkflowRegistryListScreen;
         "elsa-workflow-settings-modal": ElsaWorkflowSettingsModal;
         "elsa-workflow-test-panel": ElsaWorkflowTestPanel;
-        "wf-boolean-field": WfBooleanField;
-        "wf-expression-field": WfExpressionField;
-        "wf-list-field": WfListField;
-        "wf-select-field": WfSelectField;
-        "wf-text-field": WfTextField;
     }
 }
 export { LocalJSX as JSX };
@@ -1534,11 +1427,6 @@ declare module "@stencil/core" {
             "elsa-workflow-registry-list-screen": LocalJSX.ElsaWorkflowRegistryListScreen & JSXBase.HTMLAttributes<HTMLElsaWorkflowRegistryListScreenElement>;
             "elsa-workflow-settings-modal": LocalJSX.ElsaWorkflowSettingsModal & JSXBase.HTMLAttributes<HTMLElsaWorkflowSettingsModalElement>;
             "elsa-workflow-test-panel": LocalJSX.ElsaWorkflowTestPanel & JSXBase.HTMLAttributes<HTMLElsaWorkflowTestPanelElement>;
-            "wf-boolean-field": LocalJSX.WfBooleanField & JSXBase.HTMLAttributes<HTMLWfBooleanFieldElement>;
-            "wf-expression-field": LocalJSX.WfExpressionField & JSXBase.HTMLAttributes<HTMLWfExpressionFieldElement>;
-            "wf-list-field": LocalJSX.WfListField & JSXBase.HTMLAttributes<HTMLWfListFieldElement>;
-            "wf-select-field": LocalJSX.WfSelectField & JSXBase.HTMLAttributes<HTMLWfSelectFieldElement>;
-            "wf-text-field": LocalJSX.WfTextField & JSXBase.HTMLAttributes<HTMLWfTextFieldElement>;
         }
     }
 }
