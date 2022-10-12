@@ -115,10 +115,13 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
                 var tuple = dbContext.Set<T>().Where(filter).Select(x => x.Id).ToParametrizedSql();
                 var entityLetter = dbContext.Set<T>().EntityType.GetTableName()!.ToLowerInvariant()[0];
                 
+                // TODO: Is there a smarter way of knowing the enclosing characters based on the current DB provider, instead of blindly replacing as is done now?
                 var whereClause = tuple.Item1
                     .Substring(tuple.Item1.IndexOf("WHERE", StringComparison.OrdinalIgnoreCase))
                     .Replace($"\"{entityLetter}\".", "")
-                    .Replace($"`{entityLetter}`.", "");
+                    .Replace($"`{entityLetter}`.", "")
+                    .Replace($"[{entityLetter}].", "")
+                    ;
 
                 for (var i = 0; i < tuple.Item2.Count(); i++)
                 {
