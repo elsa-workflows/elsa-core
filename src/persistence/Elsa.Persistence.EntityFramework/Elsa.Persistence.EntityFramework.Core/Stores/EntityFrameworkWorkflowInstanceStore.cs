@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
@@ -45,7 +46,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
 
         public override async Task<int> DeleteManyAsync(ISpecification<WorkflowInstance> specification, CancellationToken cancellationToken = default)
         {
-            var workflowInstanceIds = (await FindManyAsync<string>(specification,(wf)=> wf.Id,  cancellationToken: cancellationToken)).ToList();
+            var workflowInstanceIds = (await FindManyAsync<string>(specification, (wf) => wf.Id, cancellationToken: cancellationToken)).ToList();
             await DeleteManyByIdsAsync(workflowInstanceIds, cancellationToken);
             return workflowInstanceIds.Count;
         }
@@ -54,13 +55,15 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
         {
             var idList = ids.ToList();
 
+            if (!idList.Any())
+                return;
+
             await DoWork(async dbContext =>
             {
-#pragma warning disable IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code
-                await dbContext.Set<WorkflowExecutionLogRecord>().AsQueryable().Where(x => idList.Contains(x.WorkflowInstanceId)).Select(x=>x.Id).AsQueryable().BatchDeleteWithWorkAroundAsync(dbContext, cancellationToken);
-                await dbContext.Set<Bookmark>().AsQueryable().Where(x => idList.Contains(x.WorkflowInstanceId)).Select(x => x.Id).AsQueryable().BatchDeleteWithWorkAroundAsync(dbContext, cancellationToken);
-                await dbContext.Set<WorkflowInstance>().AsQueryable().Where(x => idList.Contains(x.Id)).Select(x => x.Id).AsQueryable().BatchDeleteWithWorkAroundAsync(dbContext, cancellationToken);
-#pragma warning restore IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code
+                var placeholders = string.Join(",", Enumerable.Range(0, idList.Count).Select(i => "{" + i + "}"));
+                await dbContext.Database.ExecuteSqlRawAsync($"delete from {dbContext.WorkflowExecutionLogRecords.EntityType.GetSchemaQualifiedTableName()} where WorkflowInstanceId in ({placeholders})", idList, cancellationToken);
+                await dbContext.Database.ExecuteSqlRawAsync($"delete from {dbContext.Bookmarks.EntityType.GetSchemaQualifiedTableName()} where WorkflowInstanceId in ({placeholders})", idList, cancellationToken);
+                await dbContext.Database.ExecuteSqlRawAsync($"delete from {dbContext.WorkflowInstances.EntityType.GetSchemaQualifiedTableName()} where Id in ({placeholders})", idList, cancellationToken);
             }, cancellationToken);
         }
 
