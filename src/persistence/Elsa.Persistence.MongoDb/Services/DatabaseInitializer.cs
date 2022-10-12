@@ -9,9 +9,9 @@ namespace Elsa.Persistence.MongoDb.Services
 {
     public class DatabaseInitializer : IStartupTask
     {
-        private readonly ElsaMongoDbContext _mongoContext;
+        private readonly IElsaMongoDbContext _mongoContext;
 
-        public DatabaseInitializer(ElsaMongoDbContext mongoContext)
+        public DatabaseInitializer(IElsaMongoDbContext mongoContext)
         {
             _mongoContext = mongoContext;
         }
