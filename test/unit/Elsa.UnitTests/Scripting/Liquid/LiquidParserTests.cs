@@ -24,7 +24,7 @@ namespace Elsa.Scripting.Liquid
             var parser = new LiquidParser(new OptionsWrapper<LiquidOptions>(options));
             var template = parser.Parse("{% render 'header' %}");
 
-            var root = Path.Combine(Path.GetDirectoryName(GetType().Assembly.Location), "Scripting\\Liquid");
+            var root = Path.Combine(Path.GetDirectoryName(GetType().Assembly.Location), "Scripting", "Liquid");
 
             var context = new TemplateContext(options)
             {
