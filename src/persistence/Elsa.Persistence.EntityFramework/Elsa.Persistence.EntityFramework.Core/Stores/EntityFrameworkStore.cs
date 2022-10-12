@@ -114,7 +114,11 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
             {
                 var tuple = dbContext.Set<T>().Where(filter).Select(x => x.Id).ToParametrizedSql();
                 var entityLetter = dbContext.Set<T>().EntityType.GetTableName()!.ToLowerInvariant()[0];
-                var whereClause = tuple.Item1.Substring(tuple.Item1.IndexOf("WHERE", StringComparison.OrdinalIgnoreCase)).Replace($"\"{entityLetter}\".", "");
+                
+                var whereClause = tuple.Item1
+                    .Substring(tuple.Item1.IndexOf("WHERE", StringComparison.OrdinalIgnoreCase))
+                    .Replace($"\"{entityLetter}\".", "")
+                    .Replace($"`{entityLetter}`.", "");
 
                 for (var i = 0; i < tuple.Item2.Count(); i++)
                 {
