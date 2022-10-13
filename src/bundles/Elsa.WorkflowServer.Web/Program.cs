@@ -62,6 +62,7 @@ services
             .AddActivity<Switch>()
             .AddActivity<RunJavaScript>()
             .AddActivity<Event>()
+            .AddActivity<SendHttpRequest>()
         )
         .Use<IdentityFeature>(identity =>
         {

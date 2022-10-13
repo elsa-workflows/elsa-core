@@ -36,6 +36,16 @@ services
 // Razor Pages.
 services.AddRazorPages();
 
+services.AddCors(options =>
+{
+    options.AddPolicy("AllowSpecificOrigin",
+        builder => builder.AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+    );
+
+});
+
 // Configure middleware pipeline.
 var app = builder.Build();
 
@@ -53,5 +63,11 @@ app.UseRouting();
 app.UseAuthorization();
 app.UseHttpActivities();
 app.MapRazorPages();
+
+app.UseCors(x => x
+    .AllowAnyMethod()
+    .AllowAnyHeader()
+    .SetIsOriginAllowed(origin => true) // allow any origin 
+    .AllowCredentials());
 
 app.Run();
