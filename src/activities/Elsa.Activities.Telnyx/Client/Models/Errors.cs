@@ -2,8 +2,17 @@
 
 namespace Elsa.Activities.Telnyx.Client.Models
 {
-    public record ErrorResponse(IList<Error> Errors);
-    public record Error(int Code, string Title, string Detail);
+    public class ErrorResponse
+    {
+        public IList<Error> Errors { get; set; } = default!;
+    }
+
+    public class Error
+    {
+        public int Code { get; set; }
+        public string Title { get; set; } = default!;
+        public string Detail { get; set; } = default!;
+    }
 
     public static class ErrorCodes
     {

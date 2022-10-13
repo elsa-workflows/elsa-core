@@ -16,8 +16,8 @@ namespace Elsa.Persistence.EntityFramework.Core.Extensions
                 // Oracle also https://github.com/borisdj/EFCore.BulkExtensions/issues/375
                 var records = await queryable.ToListAsync(cancellationToken);
 
-                foreach (var @record in records) 
-                    elsaContext.Remove(@record);
+                foreach (var record in records) 
+                    elsaContext.Remove(record);
 
                 return records.Count;
             }

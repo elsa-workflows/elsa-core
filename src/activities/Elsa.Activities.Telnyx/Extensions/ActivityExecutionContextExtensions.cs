@@ -6,6 +6,7 @@ namespace Elsa.Activities.Telnyx.Extensions
     public static class ActivityExecutionContextExtensions
     {
         private const string CallControlIdVariableName = "TelnyxCallControlId";
+        private const string CallLegIdVariableName = "TelnyxCallLegId";
         private const string FromNumberVariableName = "TelnyxFromNumber";
         private const string CallerNumberVariableName = "TelnyxCallerNumber";
 
@@ -57,5 +58,25 @@ namespace Elsa.Activities.Telnyx.Extensions
         public static string? GetCallerNumber(this ActivityExecutionContext context) => context.GetVariable<string>(CallerNumberVariableName);
 
         public static bool HasFromNumber(this ActivityExecutionContext context) => context.HasVariable(FromNumberVariableName);
+        
+        public static string GetCallLegId(this ActivityExecutionContext context, string? value)
+        {
+            if (!string.IsNullOrWhiteSpace(value))
+                return value;
+
+            value = context.GetVariable<string>(CallLegIdVariableName);
+
+            if (!string.IsNullOrWhiteSpace(value))
+                return value;
+
+            throw new MissingCallControlIdException("No Call Leg ID specified");
+        }
+
+        /// <summary>
+        /// Sets a workflow variable with the specified call control ID value.
+        /// </summary>
+        public static void SetCallLegId(this ActivityExecutionContext context, string value) => context.SetVariable(CallLegIdVariableName, value);
+        
+        public static bool HasCallLegId(this ActivityExecutionContext context) => !string.IsNullOrWhiteSpace(context.GetVariable(CallLegIdVariableName) as string);
     }
 }

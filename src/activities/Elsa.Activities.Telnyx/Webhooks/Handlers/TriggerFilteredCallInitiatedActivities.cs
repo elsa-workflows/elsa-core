@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Telnyx.Activities;
 using Elsa.Activities.Telnyx.Extensions;
@@ -37,8 +38,20 @@ namespace Elsa.Activities.Telnyx.Webhooks.Handlers
             var fromBookmark = new FilteredCallInitiatedFromBookmark(payload.From);
             var fromQuery = new WorkflowsQuery(nameof(FilteredCallInitiated), fromBookmark, correlationId);
 
-            await _workflowLaunchpad.CollectAndDispatchWorkflowsAsync(toQuery, new WorkflowInput(webhook), cancellationToken);
-            await _workflowLaunchpad.CollectAndDispatchWorkflowsAsync(fromQuery, new WorkflowInput(webhook), cancellationToken);
+            var fromWorkflows = await _workflowLaunchpad.FindWorkflowsAsync(toQuery, cancellationToken);
+            var toWorkflows = await _workflowLaunchpad.FindWorkflowsAsync(fromQuery, cancellationToken);
+            var foundWorkflows = fromWorkflows.Concat(toWorkflows).ToList();
+
+            if (foundWorkflows.Any())
+            {
+                await _workflowLaunchpad.DispatchPendingWorkflowsAsync(foundWorkflows, new WorkflowInput(webhook), cancellationToken);
+                return;
+            }
+            
+            // Invoke the catch-all workflow, if any.
+            var catchAllBookmark = new FilteredCallInitiatedCatchAllBookmark();
+            var catchAllQuery = new WorkflowsQuery(nameof(FilteredCallInitiated), catchAllBookmark, correlationId);
+            await _workflowLaunchpad.CollectAndDispatchWorkflowsAsync(catchAllQuery, new WorkflowInput(webhook), cancellationToken);
         }
     }
 }

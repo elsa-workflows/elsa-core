@@ -6,7 +6,7 @@ using MongoDB.Driver;
 
 namespace Elsa.Persistence.MongoDb.Services
 {
-    public class ElsaMongoDbContext
+    public class ElsaMongoDbContext : IElsaMongoDbContext
     {
         public ElsaMongoDbContext(IOptions<ElsaMongoDbOptions> options)
         {
@@ -16,10 +16,10 @@ namespace Elsa.Persistence.MongoDb.Services
 
             if (databaseName == null)
                 throw new Exception("Please specify a database name, either via the connection string or via the DatabaseName setting.");
-            
+
             MongoDatabase = mongoClient.GetDatabase(databaseName);
         }
-        
+
         protected IMongoDatabase MongoDatabase { get; }
 
         public IMongoCollection<WorkflowDefinition> WorkflowDefinitions => MongoDatabase.GetCollection<WorkflowDefinition>(CollectionNames.WorkflowDefinitions);
