@@ -498,6 +498,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
   };
 
   private onNodeContextMenu = async (e: PositionEventArgs<JQuery.ContextMenuEvent>) => {
+    debugger;
     const node = e.node as ActivityNodeShape;
     const activity = e.node.data as Activity;
 

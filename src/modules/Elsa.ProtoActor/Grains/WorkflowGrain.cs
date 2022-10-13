@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Common.Models;
@@ -9,6 +10,7 @@ using Elsa.ProtoActor.Extensions;
 using Elsa.Runtime.Protos;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Runtime.Models;
@@ -17,11 +19,10 @@ using Elsa.Workflows.Runtime.Services;
 using Proto;
 using Proto.Cluster;
 using Proto.Persistence;
+using Bookmark = Elsa.Workflows.Core.Models.Bookmark;
 using RunWorkflowResult = Elsa.Runtime.Protos.RunWorkflowResult;
 
 namespace Elsa.ProtoActor.Grains;
-
-using Persistence = Proto.Persistence.Persistence;
 
 /// <summary>
 /// Executes a workflow.
@@ -29,27 +30,27 @@ using Persistence = Proto.Persistence.Persistence;
 public class WorkflowGrain : WorkflowGrainBase
 {
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
-    private readonly IWorkflowRunner _workflowRunner;
-    private readonly IEventPublisher _eventPublisher;
+    private readonly IWorkflowHostFactory _workflowHostFactory;
+    private readonly SerializerOptionsProvider _serializerOptionsProvider;
     private readonly Persistence _persistence;
 
     private string _definitionId = default!;
     private int _version;
     private IDictionary<string, object>? _input;
-    private Workflow _workflow = default!;
+    private IWorkflowHost _workflowHost = default!;
     private WorkflowState _workflowState = default!;
-    private ICollection<Bookmark> _bookmarks = new List<Bookmark>();
+    //private ICollection<Bookmark> _bookmarks = default!;
 
     public WorkflowGrain(
         IWorkflowDefinitionService workflowDefinitionService,
-        IWorkflowRunner workflowRunner,
-        IEventPublisher eventPublisher,
+        IWorkflowHostFactory workflowHostFactory,
+        SerializerOptionsProvider serializerOptionsProvider,
         IProvider provider,
         IContext context) : base(context)
     {
         _workflowDefinitionService = workflowDefinitionService;
-        _workflowRunner = workflowRunner;
-        _eventPublisher = eventPublisher;
+        _workflowHostFactory = workflowHostFactory;
+        _serializerOptionsProvider = serializerOptionsProvider;
         _persistence = Persistence.WithSnapshotting(provider, WorkflowInstanceId, ApplySnapshot);
     }
 
@@ -71,7 +72,21 @@ public class WorkflowGrain : WorkflowGrainBase
             throw new Exception("Workflow definition is no longer available");
 
         // Materialize the workflow.
-        _workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
+        var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
+        
+        // Create an initial workflow state.
+        if (_workflowState == null!)
+        {
+            _workflowState = new WorkflowState
+            {
+                DefinitionId = workflow.Identity.DefinitionId,
+                DefinitionVersion = workflow.Identity.Version,
+                //Bookmarks = _bookmarks
+            };
+        }
+        
+        // Create a workflow host.
+        _workflowHost = await _workflowHostFactory.CreateAsync(workflow, _workflowState, cancellationToken);
     }
 
     public override async Task<StartWorkflowResponse> Start(StartWorkflowRequest request)
@@ -86,61 +101,80 @@ public class WorkflowGrain : WorkflowGrainBase
         if (workflowDefinition == null)
             throw new Exception("Specified workflow definition and version does not exist");
 
-        _workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
-        var version = workflowDefinition.Version;
-
-        await _eventPublisher.PublishAsync(new WorkflowExecuting(_workflow), cancellationToken);
-        
-        var workflowResult = await _workflowRunner.RunAsync(_workflow, WorkflowInstanceId, _input, cancellationToken);
-        var finished = workflowResult.WorkflowState.Status == WorkflowStatus.Finished;
-
-        _workflowState = workflowResult.WorkflowState;
-        _version = version;
+        var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
+        _version = workflow.Version;
         _definitionId = definitionId;
         _input = input;
+        
+        // Create a workflow host.
+        _workflowHost = await _workflowHostFactory.CreateAsync(workflow, cancellationToken);
 
-        await UpdateBookmarksAsync(_workflowState.Bookmarks, cancellationToken);
+        var startWorkflowResult = await _workflowHost.StartWorkflowAsync(WorkflowInstanceId, input, cancellationToken);
+
+        _workflowState = _workflowHost.WorkflowState;
+        
+        await UpdateBookmarksAsync(startWorkflowResult.BookmarksDiff, cancellationToken);
         await SaveSnapshotAsync();
-        await _eventPublisher.PublishAsync(new WorkflowExecuted(_workflow, _workflowState), cancellationToken);
 
         return new StartWorkflowResponse
         {
-            Result = finished ? RunWorkflowResult.Finished : RunWorkflowResult.Suspended
+            Result = _workflowHost.WorkflowState.Status == WorkflowStatus.Finished ? RunWorkflowResult.Finished : RunWorkflowResult.Suspended,
+            Bookmarks = { Map(_workflowHost.WorkflowState.Bookmarks) }
         };
     }
 
     public override async Task<ResumeWorkflowResponse> Resume(ResumeWorkflowRequest request)
     {
-        var input = request.Input?.Deserialize();
+        _input = request.Input?.Deserialize();
         var bookmarkId = request.BookmarkId;
         var cancellationToken = Context.CancellationToken;
-        
-        await _eventPublisher.PublishAsync(new WorkflowExecuting(_workflow), cancellationToken);
-        
-        var workflowResult = await _workflowRunner.RunAsync(_workflow, _workflowState, bookmarkId, input, cancellationToken);
-        var finished = workflowResult.WorkflowState.Status == WorkflowStatus.Finished;
 
-        _workflowState = workflowResult.WorkflowState;
-        _input = input;
+        var resumeWorkflowResult = await _workflowHost.ResumeWorkflowAsync(bookmarkId, _input, cancellationToken);
+        var finished = _workflowHost.WorkflowState.Status == WorkflowStatus.Finished;
 
-        await UpdateBookmarksAsync(_workflowState.Bookmarks, cancellationToken);
+        _workflowState = _workflowHost.WorkflowState;
+        
+        await UpdateBookmarksAsync(resumeWorkflowResult.BookmarksDiff, cancellationToken);
         await SaveSnapshotAsync();
-        await _eventPublisher.PublishAsync(new WorkflowExecuted(_workflow, _workflowState), cancellationToken);
 
         return new ResumeWorkflowResponse
         {
-            Result = finished ? RunWorkflowResult.Finished : RunWorkflowResult.Suspended
+            Result = finished ? RunWorkflowResult.Finished : RunWorkflowResult.Suspended,
+            Bookmarks = { Map(_workflowHost.WorkflowState.Bookmarks) }
         };
     }
 
-    private async Task UpdateBookmarksAsync(ICollection<Bookmark> bookmarks, CancellationToken cancellationToken)
+    public override Task<ExportWorkflowStateResponse> ExportState(ExportWorkflowStateRequest request)
     {
-        var originalBookmarks = _bookmarks;
-        _bookmarks = bookmarks;
+        var options = _serializerOptionsProvider.CreatePersistenceOptions(); 
+        var json = JsonSerializer.Serialize(_workflowHost.WorkflowState, options);
+        
+        var response = new ExportWorkflowStateResponse
+        {
+            SerializedWorkflowState = new Json
+            {
+                Text = json
+            }
+        };
 
-        await RemoveBookmarksAsync(originalBookmarks, cancellationToken);
-        await StoreBookmarksAsync(bookmarks, cancellationToken);
-        await PublishChangedBookmarksAsync(originalBookmarks, bookmarks, cancellationToken);
+        return Task.FromResult(response);
+    }
+
+    public override Task<ImportWorkflowStateResponse> ImportState(ImportWorkflowStateRequest request)
+    {
+        var options = _serializerOptionsProvider.CreatePersistenceOptions();
+        var workflowState = JsonSerializer.Deserialize<WorkflowState>(request.SerializedWorkflowState.Text, options)!;
+
+        _workflowState = workflowState;
+        _workflowHost.WorkflowState = workflowState;
+        
+        return Task.FromResult(new ImportWorkflowStateResponse());
+    }
+
+    private async Task UpdateBookmarksAsync(Diff<Bookmark> bookmarksDiff, CancellationToken cancellationToken)
+    {
+        await RemoveBookmarksAsync(bookmarksDiff.Removed, cancellationToken);
+        await StoreBookmarksAsync(bookmarksDiff.Added, cancellationToken);
     }
     
     private async Task StoreBookmarksAsync(ICollection<Bookmark> bookmarks, CancellationToken cancellationToken)
@@ -175,15 +209,19 @@ public class WorkflowGrain : WorkflowGrainBase
         }
     }
 
-    private async Task PublishChangedBookmarksAsync(ICollection<Bookmark> originalBookmarks, ICollection<Bookmark> updatedBookmarks, CancellationToken cancellationToken)
-    {
-        var diff = Diff.For(originalBookmarks, updatedBookmarks);
-        var removedBookmarks = diff.Removed;
-        var createdBookmarks = diff.Added;
-        await _eventPublisher.PublishAsync(new WorkflowBookmarksIndexed(new IndexedWorkflowBookmarks(_workflowState, createdBookmarks, removedBookmarks)), cancellationToken);
-    }
-
-    private void ApplySnapshot(Snapshot snapshot) => (_definitionId, _version, _workflowState, _bookmarks, _input) = (WorkflowSnapshot)snapshot.State;
+    private void ApplySnapshot(Snapshot snapshot) => (_definitionId, _version, _workflowState, _input) = (WorkflowSnapshot)snapshot.State;
     private async Task SaveSnapshotAsync() => await _persistence.PersistSnapshotAsync(GetState());
-    private object GetState() => new WorkflowSnapshot(_definitionId, _version, _workflowState, _bookmarks, _input);
+    private object GetState() => new WorkflowSnapshot(_definitionId, _version, _workflowState, _input);
+    
+    private static IEnumerable<BookmarkDto> Map(IEnumerable<Bookmark> bookmarks) =>
+        bookmarks.Select(x => new BookmarkDto
+        {
+            Id = x.Id,
+            Name = x.Name,
+            ActivityId = x.ActivityId,
+            ActivityInstanceId = x.ActivityInstanceId,
+            Hash = x.Hash,
+            Data = x.Data.EmptyIfNull(),
+            CallbackMethodName = x.CallbackMethodName.EmptyIfNull()
+        });
 }

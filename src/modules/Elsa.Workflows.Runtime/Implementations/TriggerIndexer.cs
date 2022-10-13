@@ -24,10 +24,10 @@ public class TriggerIndexer : ITriggerIndexer
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly IExpressionEvaluator _expressionEvaluator;
     private readonly IIdentityGenerator _identityGenerator;
-    private readonly IWorkflowTriggerStore _workflowTriggerStore;
+    private readonly ITriggerStore _triggerStore;
     private readonly IEventPublisher _eventPublisher;
     private readonly IServiceProvider _serviceProvider;
-    private readonly IHasher _hasher;
+    private readonly IBookmarkHasher _hasher;
     private readonly ILogger _logger;
 
     public TriggerIndexer(
@@ -35,16 +35,16 @@ public class TriggerIndexer : ITriggerIndexer
         IWorkflowDefinitionService workflowDefinitionService,
         IExpressionEvaluator expressionEvaluator,
         IIdentityGenerator identityGenerator,
-        IWorkflowTriggerStore workflowTriggerStore,
+        ITriggerStore triggerStore,
         IEventPublisher eventPublisher,
         IServiceProvider serviceProvider,
-        IHasher hasher,
+        IBookmarkHasher hasher,
         ILogger<TriggerIndexer> logger)
     {
         _activityWalker = activityWalker;
         _expressionEvaluator = expressionEvaluator;
         _identityGenerator = identityGenerator;
-        _workflowTriggerStore = workflowTriggerStore;
+        _triggerStore = triggerStore;
         _eventPublisher = eventPublisher;
         _serviceProvider = serviceProvider;
         _hasher = hasher;
@@ -66,13 +66,13 @@ public class TriggerIndexer : ITriggerIndexer
         // Collect new triggers **if workflow is published**.
         var newTriggers = workflow.Publication.IsPublished
             ? await GetTriggersAsync(workflow, cancellationToken).ToListAsync(cancellationToken)
-            : new List<WorkflowTrigger>(0);
+            : new List<StoredTrigger>(0);
 
         // Diff triggers.
         var diff = Diff.For(currentTriggers, newTriggers, new WorkflowTriggerHashEqualityComparer());
 
         // Replace triggers for the specified workflow.
-        await _workflowTriggerStore.ReplaceAsync(diff.Removed, diff.Added, cancellationToken);
+        await _triggerStore.ReplaceAsync(diff.Removed, diff.Added, cancellationToken);
 
         var indexedWorkflow = new IndexedWorkflowTriggers(workflow, diff.Added, diff.Removed, diff.Unchanged);
 
@@ -81,10 +81,10 @@ public class TriggerIndexer : ITriggerIndexer
         return indexedWorkflow;
     }
 
-    private async Task<IEnumerable<WorkflowTrigger>> GetCurrentTriggersAsync(string workflowDefinitionId, CancellationToken cancellationToken) =>
-        await _workflowTriggerStore.FindManyByWorkflowDefinitionIdAsync(workflowDefinitionId, cancellationToken);
+    private async Task<IEnumerable<StoredTrigger>> GetCurrentTriggersAsync(string workflowDefinitionId, CancellationToken cancellationToken) =>
+        await _triggerStore.FindManyByWorkflowDefinitionIdAsync(workflowDefinitionId, cancellationToken);
 
-    private async IAsyncEnumerable<WorkflowTrigger> GetTriggersAsync(Workflow workflow, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    private async IAsyncEnumerable<StoredTrigger> GetTriggersAsync(Workflow workflow, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var context = new WorkflowIndexingContext(workflow, cancellationToken);
         var nodes = await _activityWalker.WalkAsync(workflow.Root, cancellationToken);
@@ -105,7 +105,7 @@ public class TriggerIndexer : ITriggerIndexer
         }
     }
 
-    private async Task<IEnumerable<WorkflowTrigger>> GetTriggersAsync(WorkflowIndexingContext context, IActivity activity)
+    private async Task<IEnumerable<StoredTrigger>> GetTriggersAsync(WorkflowIndexingContext context, IActivity activity)
     {
         // If the activity implements ITrigger, request its trigger data. Otherwise, create one trigger datum.
         if (activity is ITrigger trigger)
@@ -117,10 +117,10 @@ public class TriggerIndexer : ITriggerIndexer
         return new[] { simpleTrigger };
     }
 
-    private WorkflowTrigger CreateWorkflowTrigger(WorkflowIndexingContext context, IActivity activity)
+    private StoredTrigger CreateWorkflowTrigger(WorkflowIndexingContext context, IActivity activity)
     {
         var workflow = context.Workflow;
-        return new WorkflowTrigger
+        return new StoredTrigger
         {
             Id = _identityGenerator.GenerateId(),
             WorkflowDefinitionId = workflow.Identity.DefinitionId,
@@ -128,7 +128,7 @@ public class TriggerIndexer : ITriggerIndexer
         };
     }
 
-    private async Task<ICollection<WorkflowTrigger>> CreateWorkflowTriggersAsync(WorkflowIndexingContext context, ITrigger trigger)
+    private async Task<ICollection<StoredTrigger>> CreateWorkflowTriggersAsync(WorkflowIndexingContext context, ITrigger trigger)
     {
         var workflow = context.Workflow;
         var cancellationToken = context.CancellationToken;
@@ -138,12 +138,12 @@ public class TriggerIndexer : ITriggerIndexer
         var triggerData = await TryGetTriggerDataAsync(trigger, triggerIndexingContext);
         var triggerTypeName = trigger.Type;
 
-        var triggers = triggerData.Select(x => new WorkflowTrigger
+        var triggers = triggerData.Select(x => new StoredTrigger
         {
             Id = _identityGenerator.GenerateId(),
             WorkflowDefinitionId = workflow.Identity.DefinitionId,
             Name = triggerTypeName,
-            Hash = _hasher.Hash(x),
+            Hash = _hasher.Hash(triggerTypeName, x),
             Data = JsonSerializer.Serialize(x)
         });
 

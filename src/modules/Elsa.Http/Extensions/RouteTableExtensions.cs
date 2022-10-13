@@ -12,7 +12,7 @@ namespace Elsa.Http.Extensions;
 public static class RouteTableExtensions
 {
     
-    public static void AddRoutes(this IRouteTable routeTable, IEnumerable<WorkflowTrigger> triggers)
+    public static void AddRoutes(this IRouteTable routeTable, IEnumerable<StoredTrigger> triggers)
     {
         var paths = Filter(triggers).Select(Deserialize).Select(x => x.Path).ToList();
         routeTable.AddRange(paths);
@@ -24,7 +24,7 @@ public static class RouteTableExtensions
         routeTable.AddRange(paths);
     }
 
-    public static void RemoveRoutes(this IRouteTable routeTable, IEnumerable<WorkflowTrigger> triggers)
+    public static void RemoveRoutes(this IRouteTable routeTable, IEnumerable<StoredTrigger> triggers)
     {
         var paths = Filter(triggers).Select(Deserialize).Select(x => x.Path).ToList();
         routeTable.RemoveRange(paths);
@@ -36,9 +36,9 @@ public static class RouteTableExtensions
         routeTable.RemoveRange(paths);
     }
 
-    private static IEnumerable<WorkflowTrigger> Filter(IEnumerable<WorkflowTrigger> triggers) => triggers.Where(x => x.Name == ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>());
+    private static IEnumerable<StoredTrigger> Filter(IEnumerable<StoredTrigger> triggers) => triggers.Where(x => x.Name == ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>());
     private static IEnumerable<Bookmark> Filter(IEnumerable<Bookmark> triggers) => triggers.Where(x => x.Name == ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>());
-    private static HttpEndpointBookmarkData Deserialize(WorkflowTrigger trigger) => Deserialize(trigger.Data!);
-    private static HttpEndpointBookmarkData Deserialize(Bookmark bookmark) => Deserialize(bookmark.Data!);
-    private static HttpEndpointBookmarkData Deserialize(string model) => JsonSerializer.Deserialize<HttpEndpointBookmarkData>(model)!;
+    private static HttpEndpointBookmarkPayload Deserialize(StoredTrigger trigger) => Deserialize(trigger.Data!);
+    private static HttpEndpointBookmarkPayload Deserialize(Bookmark bookmark) => Deserialize(bookmark.Data!);
+    private static HttpEndpointBookmarkPayload Deserialize(string model) => JsonSerializer.Deserialize<HttpEndpointBookmarkPayload>(model)!;
 }

@@ -28,7 +28,7 @@ public class Trigger : ElsaEndpoint<Request, Response>
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
-        var eventBookmark = new EventBookmarkData(request.EventName);
+        var eventBookmark = new EventBookmarkPayload(request.EventName);
         var bookmarkName = ActivityTypeNameHelper.GenerateTypeName<Event>();
         var result = await _workflowRuntime.TriggerWorkflowsAsync(bookmarkName, eventBookmark, new TriggerWorkflowsOptions(), cancellationToken);
         

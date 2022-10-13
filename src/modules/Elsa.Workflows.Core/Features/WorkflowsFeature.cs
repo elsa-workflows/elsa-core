@@ -65,6 +65,7 @@ public class WorkflowsFeature : FeatureBase
             .AddSingleton<IWorkflowStateSerializer, WorkflowStateSerializer>()
             .AddSingleton<IActivitySchedulerFactory, ActivitySchedulerFactory>()
             .AddSingleton<IHasher, Hasher>()
+            .AddSingleton<IBookmarkHasher, BookmarkHasher>()
             .AddSingleton<IIdentityGenerator, RandomIdentityGenerator>()
             .AddSingleton<IBookmarkPayloadSerializer, BookmarkPayloadSerializer>()
             .AddTransient<WorkflowBuilder>()

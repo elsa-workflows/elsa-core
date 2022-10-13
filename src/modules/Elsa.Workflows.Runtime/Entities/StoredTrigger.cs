@@ -5,7 +5,7 @@ namespace Elsa.Workflows.Runtime.Entities;
 /// <summary>
 /// Represents a trigger associated with a workflow definition.
 /// </summary>
-public class WorkflowTrigger : Entity
+public class StoredTrigger : Entity
 {
     public string WorkflowDefinitionId { get; set; } = default!;
     public string Name { get; set; } = default!;

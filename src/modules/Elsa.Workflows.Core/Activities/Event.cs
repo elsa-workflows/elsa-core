@@ -35,6 +35,6 @@ public class Event : Trigger<object?>
     protected override void Execute(ActivityExecutionContext context)
     {
         var eventName = context.Get(EventName)!;
-        context.CreateBookmark(new EventBookmarkData(eventName));
+        context.CreateBookmark(new EventBookmarkPayload(eventName));
     }
 }

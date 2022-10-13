@@ -50,7 +50,7 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// </summary>
     public Func<IServiceProvider, IBookmarkStore> BookmarkStore { get; set; } = sp => sp.GetRequiredService<MemoryBookmarkStore>();
 
-    public Func<IServiceProvider, IWorkflowTriggerStore> WorkflowTriggerStore { get; set; } = sp => sp.GetRequiredService<MemoryWorkflowTriggerStore>();
+    public Func<IServiceProvider, ITriggerStore> WorkflowTriggerStore { get; set; } = sp => sp.GetRequiredService<MemoryTriggerStore>();
     public Func<IServiceProvider, IWorkflowExecutionLogStore> WorkflowExecutionLogStore { get; set; } = sp => sp.GetRequiredService<MemoryWorkflowExecutionLogStore>();
 
     public Func<IServiceProvider, IWorkflowStateExporter> WorkflowStateExporter { get; set; } =
@@ -75,6 +75,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddSingleton<ITriggerIndexer, TriggerIndexer>()
             .AddSingleton<IWorkflowInstanceFactory, WorkflowInstanceFactory>()
             .AddSingleton<IWorkflowDefinitionService, WorkflowDefinitionService>()
+            .AddSingleton<IWorkflowHostFactory, WorkflowHostFactory>()
             .AddSingleton(WorkflowRuntime)
             .AddSingleton(WorkflowDispatcher)
             .AddSingleton(WorkflowStateStore)
@@ -85,7 +86,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             // Memory Stores
             .AddMemoryStore<WorkflowState, MemoryWorkflowStateStore>()
             .AddMemoryStore<StoredBookmark, MemoryBookmarkStore>()
-            .AddMemoryStore<WorkflowTrigger, MemoryWorkflowTriggerStore>()
+            .AddMemoryStore<StoredTrigger, MemoryTriggerStore>()
             .AddMemoryStore<WorkflowExecutionLogRecord, MemoryWorkflowExecutionLogStore>()
 
             // Workflow definition providers.

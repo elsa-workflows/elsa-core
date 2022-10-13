@@ -19,6 +19,7 @@ using Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.ActivityDefinitions;
 using Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.Labels;
 using Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.Management;
 using Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.Runtime;
+using Elsa.ProtoActor.Extensions;
 using Elsa.Requirements;
 using Elsa.Scheduling.Extensions;
 using Elsa.WorkflowContexts.Extensions;
@@ -34,6 +35,9 @@ using Elsa.WorkflowServer.Web.Jobs;
 using FastEndpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Data.Sqlite;
+using Proto.Persistence.Sqlite;
+using Event = Elsa.Workflows.Core.Activities.Event;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -56,6 +60,7 @@ services
             .AddActivity<Flowchart>()
             .AddActivity<FlowDecision>()
             .AddActivity<FlowSwitch>()
+            .AddActivity<FlowJoin>()
             .AddActivity<Elsa.Scheduling.Activities.Delay>()
             .AddActivity<Elsa.Scheduling.Activities.Timer>()
             .AddActivity<ForEach>()
@@ -69,9 +74,9 @@ services
             identity.CreateDefaultUser = true;
             identity.IdentityOptions = options => identitySection.Bind(options);
         })
-        //.UseRuntime(runtime => runtime.UseProtoActor(proto => proto.PersistenceProvider = _ => new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString))))
         .UseRuntime(runtime =>
         {
+            runtime.UseProtoActor(proto => proto.PersistenceProvider = _ => new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString)));
             runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
             runtime.WorkflowStateExporter = sp => sp.GetRequiredService<AsyncWorkflowStateExporter>();
         })
