@@ -22,33 +22,10 @@ export interface ActivityModel {
   left?: number;
   top?: number;
   state?: any;
-  metadata?: any;
-  canStartWorkflow?: boolean;
-  applicationProperties?: any;
 }
 
 export interface ConnectionModel {
   sourceId: string;
   targetId: string;
   outcome?: string;
-  sourcePort?: string;
-  targetPort?: string;
-}
-
-export interface Flowchart extends Container {
-  start: string;
-  connections: Array<ConnectionModel>;
-  version?: number;
-}
-
-export interface Container extends ActivityModel {
-  activities: Array<ActivityModel>;
-  variables: Array<Variable>;
-}
-
-export interface Variable {
-  name: string;
-  type: string;
-  value?: any;
-  storageDriverId?: string;
 }

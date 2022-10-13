@@ -1,4 +1,4 @@
-@import '../../../node_modules/jsplumb/css/jsplumbtoolkit-defaults.css';
+@import '../../../../node_modules/jsplumb/css/jsplumbtoolkit-defaults.css';
 
 :host {
   display: block;

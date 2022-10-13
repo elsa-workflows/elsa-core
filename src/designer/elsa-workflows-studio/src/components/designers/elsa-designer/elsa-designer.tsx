@@ -9,7 +9,7 @@ import {
   Map,
   removeActivity,
   removeConnection
-} from '../../utils/utils';
+} from '../../../utils/utils';
 import {
   ActivityDescriptor,
   ActivityDesignDisplayContext,
@@ -21,11 +21,11 @@ import {
   WorkflowPersistenceBehavior,
   ActivityDefinitions,
 
-} from '../../models';
-import {eventBus} from '../../services';
-import state from '../../utils/store';
-import {ActivityIcon} from '../icons/activity-icon';
-import {ActivityContextMenuState, LayoutDirection, WorkflowDesignerMode, LayoutState} from "../designers/tree/elsa-designer-tree/models";
+} from '../../../models';
+import {eventBus} from '../../../services';
+import state from '../../../utils/store';
+import {ActivityIcon} from '../../icons/activity-icon';
+import {ActivityContextMenuState, LayoutDirection, WorkflowDesignerMode, LayoutState} from "../tree/elsa-designer-tree/models";
 
 import dagre from "dagre";
 import {JsPlumbUtils} from "./jsplumb-utils";
@@ -126,8 +126,7 @@ export class ElsaWorkflowDesigner {
 // Ctrl+C, Ctrl+V Copy/Paste activity
   @Listen('keydown', {target: 'window'})
   async handleKeyDown(e: KeyboardEvent) {
-    // if (this.ignoreCopyPasteActivities)
-    //   return;
+
     if(this.mode == WorkflowDesignerMode.Edit) {
 
       if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
@@ -139,25 +138,7 @@ export class ElsaWorkflowDesigner {
             const activity = this.selectedActivities[key];
             const position = {left: activity.left, top: activity.top};
             const activityDescriptor = activityDescriptors.find(descriptor => descriptor.type === activity.type);
-
-            // const newActivity = {
-            //   activityId: uuid(),
-            //   type: activityDescriptor.type,
-            //   outcomes: activityDescriptor.outcomes,
-            //   displayName: activityDescriptor.displayName,
-            //   properties: [],
-            //   propertyStorageProviders: {},
-            //   left: position.left + 24 || 0,
-            //   top: position.top + 32 || 0
-            // };
-
-            // for (const property of activityDescriptor.inputProperties) {
-            //   activity.properties[property.name] = {
-            //     syntax: '',
-            //     expression: '',
-            //   };
-            // };
-            const newActivity = { activityDescriptor, position }
+            const newActivity = { activityDescriptor, position };
             activitiesList.push(newActivity);
           }
         })
@@ -188,7 +169,7 @@ export class ElsaWorkflowDesigner {
               expression: '',
             };
           };
-          // this.addActivity(this.copiedActivity, null, null, this.parentActivityOutcome);
+
           this.addActivity(newActivity, null, null, this.parentActivityOutcome);
         }
       }
