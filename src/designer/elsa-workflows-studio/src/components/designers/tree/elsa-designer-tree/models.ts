@@ -22,3 +22,14 @@ export enum LayoutDirection {
   RightLeft = 'rightleft',
   BottomTop = 'bottomtop'
 }
+
+export interface LayoutState {
+  dragging: boolean,
+  nodeDragging: boolean,
+  ratio: number,
+  scale: number,
+  left: number,
+  top: number,
+  initX: number,
+  initY: number
+}
