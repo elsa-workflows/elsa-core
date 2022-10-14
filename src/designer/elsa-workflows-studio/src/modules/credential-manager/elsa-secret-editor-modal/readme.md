@@ -16,7 +16,7 @@
 
 ### Used by
 
- - [credential-manager-items-list](../pages)
+ - [elsa-credential-manager-items-list](../pages)
 
 ### Depends on
 
@@ -28,7 +28,7 @@
 graph TD;
   elsa-secret-editor-modal --> elsa-modal-dialog
   elsa-secret-editor-modal --> elsa-control
-  credential-manager-items-list --> elsa-secret-editor-modal
+  elsa-credential-manager-items-list --> elsa-secret-editor-modal
   style elsa-secret-editor-modal fill:#f9f,stroke:#333,stroke-width:4px
 ```
 
