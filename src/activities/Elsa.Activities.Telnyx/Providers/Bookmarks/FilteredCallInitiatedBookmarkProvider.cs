@@ -55,8 +55,8 @@ namespace Elsa.Activities.Telnyx.Providers.Bookmarks
 
         private async IAsyncEnumerable<FilteredCallInitiatedBookmark> CreateBookmarksAsync(BookmarkProviderContext<FilteredCallInitiated> context, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
-            var to = (await context.ReadActivityPropertyAsync(x => x.To, cancellationToken) ?? Array.Empty<string>()).Where(x => !string.IsNullOrWhiteSpace(x));
-            var from = (await context.ReadActivityPropertyAsync(x => x.From, cancellationToken) ?? Array.Empty<string>()).Where(x => !string.IsNullOrWhiteSpace(x));
+            var to = (await context.ReadActivityPropertyAsync(x => x.To, cancellationToken) ?? Array.Empty<string>()).Where(x => !string.IsNullOrWhiteSpace(x) && x != "*");
+            var from = (await context.ReadActivityPropertyAsync(x => x.From, cancellationToken) ?? Array.Empty<string>()).Where(x => !string.IsNullOrWhiteSpace(x) && x != "*");
 
             foreach (var number in to)
                 yield return new FilteredCallInitiatedToBookmark(number);
