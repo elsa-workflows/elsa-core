@@ -4,7 +4,6 @@ environment:
     elsa_version: 2.10.0
     elsa_build_version: 0.0.0
     nodejs_version: "14.6.0"
-    CLI_VERSION: 7.0.100-rc.2.22477.23
     # AppVeyor installs Java on its build agents by default, but it
     # picks an old version that's not compatible with SonarQube.
     # This brings it up to date.
@@ -47,11 +46,6 @@ cache:
     - '%APPDATA%\npm-cache'
 
 install:
-    -   ps: $env:DOTNET_INSTALL_DIR = "$pwd\.dotnetsdk"
-    -   ps: mkdir $env:DOTNET_INSTALL_DIR -Force | Out-Null
-    -   ps: Invoke-WebRequest -Uri "https://dotnet.microsoft.com/download/dotnet/scripts/v1/dotnet-install.ps1" -OutFile "$($env:DOTNET_INSTALL_DIR)/dotnet-install.ps1"
-    -   ps: '& "$($env:DOTNET_INSTALL_DIR)/dotnet-install.ps1" -Version $env:CLI_VERSION -InstallDir $env:DOTNET_INSTALL_DIR'
-    -   ps: $env:Path = "$env:DOTNET_INSTALL_DIR;$env:Path"
     -   ps: >-
             cd .\src\designer\elsa-workflows-studio
 
