@@ -23,8 +23,18 @@ namespace Elsa.Persistence.EntityFramework.Core
         => Database.IsSqlite();
 #endif
 
-        public virtual string? Schema => IsSqlite ? default : ElsaSchema;
+        public virtual string? Schema
+        {
+            get
+            {
+                if (Database.IsSqlite())
+                    return default;
+                if (Database.IsMySql()) // MySql does not support the EF Core concept of schema (Pomelo Doc)
+                    return default;
 
+                return ElsaSchema;
+            }
+        }
         public DbSet<WorkflowDefinition> WorkflowDefinitions { get; set; } = default!;
         public DbSet<WorkflowInstance> WorkflowInstances { get; set; } = default!;
         public DbSet<WorkflowExecutionLogRecord> WorkflowExecutionLogRecords { get; set; } = default!;
