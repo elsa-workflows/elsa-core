@@ -14,7 +14,7 @@ namespace Elsa.Scripting.JavaScript.Services
 
         public NullResultConverter(IConvertsJintEvaluationResult wrapped)
         {
-            this._wrapped = wrapped ?? throw new ArgumentNullException(nameof(wrapped));
+            _wrapped = wrapped ?? throw new ArgumentNullException(nameof(wrapped));
         }
     }
 }
