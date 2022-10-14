@@ -18,8 +18,6 @@ public class StringHttpRequestContentWriter : IHttpRequestContentWriter
     public HttpContent GetContent<T>(T content, string? contentType = null)
     {
         var serializedContent = JsonSerializer.Serialize(content);
-        return new StringContent(serializedContent, Encoding.
-            
-            UTF8, contentType);
+        return new StringContent(serializedContent, Encoding. UTF8, contentType);
     }
 }

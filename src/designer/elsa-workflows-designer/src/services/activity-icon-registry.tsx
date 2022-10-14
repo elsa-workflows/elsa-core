@@ -16,6 +16,7 @@ import {
 } from "../components/icons/activities";
 import {WriteHttpResponseIcon} from "../components/icons/activities/write-http-response";
 import {FlowJoinIcon} from "../components/icons/activities/flow-join";
+import {SendHttpRequestIcon} from "../components/icons/activities/send-http-request"
 
 export type ActivityType = string;
 export type ActivityIcon = (ActivityIconSettings?) => any;
@@ -39,6 +40,7 @@ export class ActivityIconRegistry {
     this.add('Elsa.Event', settings => <EventIcon size={settings?.size}/>);
     this.add('Elsa.RunJavaScript', settings => <RunJavaScriptIcon size={settings?.size}/>);
     this.add('Elsa.FlowJoin', settings => <FlowJoinIcon size={settings?.size}/>);
+    this.add('Elsa.SendHttpRequest', settings => <SendHttpRequestIcon size={settings?.size}/>);
   }
 
   public add(activityType: ActivityType, icon: ActivityIcon) {

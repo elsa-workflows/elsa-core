@@ -36,12 +36,9 @@ public class SendHttpRequest : Activity
     )]
     public Input<string?> ContentType { get; set; } = default!;
     
-    [Input]
+    [Input(Category = "Security")]
     public Input<string?> Authorization { get; set; } = default!;
-    
-    [Input(
-        UIHint = InputUIHints.Checkbox
-    )]
+
     public Input<bool> ReadContent { get; set; } = new(false);
     
     [Input(
@@ -50,7 +47,8 @@ public class SendHttpRequest : Activity
     )]
     public Input<string?> ResponseContentParserName { get; set; } = default!;
     
-    public Input<HttpRequestHeaders?> RequestHeaders { get; set; } = new(new HttpRequestHeaders());
+    [Input(Category = "Security")]
+    public Input<Dictionary<string, string>?> RequestHeaders { get; set; } = new(new HttpRequestHeaders());
     
     [Output]
     public Output<object>? ResponseContent { get; set; }
@@ -144,6 +142,11 @@ public class SendHttpRequest : Activity
     private IHttpRequestContentWriter SelectContentWriter(string contentType,
         IEnumerable<IHttpRequestContentWriter> _requestContentWriters)
     {
+        if (string.IsNullOrWhiteSpace(contentType))
+        {
+            return new StringHttpRequestContentWriter();
+        }
+        
         return _requestContentWriters.First(w => w.SupportsContentType(contentType));
     }
 }
