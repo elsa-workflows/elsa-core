@@ -23,7 +23,7 @@ init:
             }
             else
             {
-                $env:elsa_build_version="$($env:elsa_version)-preview.$($env:APPVEYOR_BUILD_NUMBER)"
+                $env:elsa_build_version="$($env:elsa_version)-preview-net5.$($env:APPVEYOR_BUILD_NUMBER)"
             }
 
 version: 2.9.1.{build}
