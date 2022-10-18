@@ -136,4 +136,4 @@ deploy:
         symbol_server: https://www.myget.org/F/elsa-2/api/v2/symbolpackage # remove to push symbols to SymbolSource.org
         artifact: /.*(\.|\.s)nupkg/
         on:
-            branch: master
+            branch: 2.9.x-net5
