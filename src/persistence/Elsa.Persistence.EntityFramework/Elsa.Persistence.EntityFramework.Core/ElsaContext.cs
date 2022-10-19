@@ -27,7 +27,7 @@ namespace Elsa.Persistence.EntityFramework.Core
         {
             get
             {
-                if (Database.IsSqlite())
+                if (IsSqlite)
                     return default;
                 if (Database.IsMySql()) // MySql does not support the EF Core concept of schema (Pomelo Doc)
                     return default;
