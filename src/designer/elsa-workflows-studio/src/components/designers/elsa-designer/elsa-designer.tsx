@@ -428,9 +428,10 @@ export class ElsaWorkflowDesigner {
 
   getOutcomes = (activity: ActivityModel, definition: ActivityDefinitions): Array<string> => {
     let outcomes = [];
+    const displayContext = this.activityDisplayContexts[activity.activityId];
 
     if (!!definition) {
-      const lambda = definition.outcomes;
+      const lambda = displayContext.outcomes || definition.outcomes;
 
       if (lambda instanceof Array) {
         outcomes = lambda as Array<string>;
@@ -823,7 +824,6 @@ export class ElsaWorkflowDesigner {
     const typeName = activity.type;
     const expanded = displayContext && displayContext.expanded;
 
-
     return (
     <div class={`activity-body elsa-border-2 elsa-border-solid elsa-rounded elsa-bg-white elsa-text-left elsa-text-black elsa-text-lg elsa-select-none elsa-max-w-md elsa-shadow-sm elsa-relative ${cssClass} elsa-min-h-12`}>
       <div class="elsa-min-h-12">
@@ -1111,7 +1111,7 @@ export class ElsaWorkflowDesigner {
         onMouseUp={this.onCanvasMouseUpLeave}
         onMouseLeave={this.onCanvasMouseUpLeave}
       >
-        {this.mode == WorkflowDesignerMode.Edit && <button onClick={ e => this.onAddActivity(e)} class="elsa-absolute elsa-z-1 elsa-h-12 elsa-px-6 elsa-border elsa-border-transparent elsa-text-base elsa-font-medium elsa-rounded-md elsa-text-white elsa-bg-green-600 hover:elsa-bg-green-500 focus:elsa-outline-none focus:elsa-border-green-700 focus:elsa-shadow-outline-green active:elsa-bg-green-700 elsa-transition elsa-ease-in-out elsa-duration-150 elsa-translate-x--1/2 elsa-top-8 elsa-right-1/2 ">Start</button>}
+        {this.mode == WorkflowDesignerMode.Edit && <button onClick={ e => this.onAddActivity(e)} class="elsa-absolute elsa-z-1 elsa-h-12 elsa-px-6 elsa-border elsa-border-transparent elsa-text-base elsa-font-medium elsa-rounded-md elsa-text-white elsa-bg-green-600 hover:elsa-bg-green-500 focus:elsa-outline-none focus:elsa-border-green-700 focus:elsa-shadow-outline-green active:elsa-bg-green-700 elsa-transition elsa-ease-in-out elsa-duration-150 elsa-translate-x--1/2 elsa-top-8 elsa-right-1/2 ">Add Activity</button>}
         <div class="workflow-canvas elsa-relative" id="workflow-canvas" ref={el => (this.el = el)} style={{
             transformOrigin: "0px 0px 0px",
             transform: `translate(${translateWidth}px, ${translateHeight}px) scale(${this.layoutState.scale})`
