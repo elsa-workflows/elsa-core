@@ -1,6 +1,6 @@
 import {Component, Event, h, Prop, State} from '@stencil/core';
 import {createElsaClient} from "../../../../services";
-import {OrderBy, PagedList, VersionOptions, WorkflowDefinitionSummary} from "../../../../models";
+import {PagedList, VersionOptions, WorkflowDefinitionSummary} from "../../../../models";
 import {injectHistory, LocationSegments, RouterHistory} from "@stencil/router";
 import {i18n} from "i18next";
 import {loadTranslations} from "../../../i18n/i18n-loader";
@@ -25,7 +25,6 @@ export class ElsaWorkflowDefinitionsListScreen {
   @Prop() culture: string;
   @Prop() basePath: string;
   @State() workflowDefinitions: PagedList<WorkflowDefinitionSummary> = {items: [], page: 1, pageSize: 50, totalCount: 0};
-  @State() publishedWorkflowDefinitions: WorkflowDefinitionSummary[] = [];
   @State() currentPage: number = 0;
   @State() currentPageSize: number = ElsaWorkflowDefinitionsListScreen.DEFAULT_PAGE_SIZE;
   @State() currentSearchTerm?: string;
@@ -117,12 +116,8 @@ export class ElsaWorkflowDefinitionsListScreen {
     const elsaClient = await this.createClient();
     const page = this.currentPage;
     const pageSize = this.currentPageSize;
-    const latestVersionOptions: VersionOptions = {isLatest: true};
-    const publishedVersionOptions: VersionOptions = {isPublished: true};
-    const latestWorkflowDefinitions = await elsaClient.workflowDefinitionsApi.list(page, pageSize, latestVersionOptions,this.currentSearchTerm);
-    const publishedWorkflowDefinitionIds = latestWorkflowDefinitions.items.filter(x => x.isPublished).map(x => x.definitionId);
-    this.publishedWorkflowDefinitions = await elsaClient.workflowDefinitionsApi.getMany(publishedWorkflowDefinitionIds, publishedVersionOptions);
-    this.workflowDefinitions = latestWorkflowDefinitions;
+    const latestOrPublishedVersionOptions: VersionOptions = {isLatestOrPublished: true};
+    this.workflowDefinitions = await elsaClient.workflowDefinitionsApi.list(page, pageSize, latestOrPublishedVersionOptions, this.currentSearchTerm);
   }
 
   createClient() {
@@ -163,8 +158,6 @@ export class ElsaWorkflowDefinitionsListScreen {
           </div>
         </div>
 
-
-
         <div class="elsa-align-middle elsa-inline-block elsa-min-w-full elsa-border-b elsa-border-gray-200">
           <table class="elsa-min-w-full">
             <thead>
@@ -188,7 +181,7 @@ export class ElsaWorkflowDefinitionsListScreen {
             {workflowDefinitions.map(workflowDefinition => {
               const latestVersionNumber = workflowDefinition.version;
               const {isPublished} = workflowDefinition;
-              const publishedVersion: WorkflowDefinitionSummary = isPublished ? workflowDefinition : this.publishedWorkflowDefinitions.find(x => x.definitionId == workflowDefinition.definitionId);
+              const publishedVersion: WorkflowDefinitionSummary = isPublished ? workflowDefinition : this.workflowDefinitions.items.find(x => x.definitionId == workflowDefinition.definitionId);
               const publishedVersionNumber = !!publishedVersion ? publishedVersion.version : '-';
               let workflowDisplayName = workflowDefinition.displayName;
 
