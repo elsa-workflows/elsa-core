@@ -119,7 +119,7 @@ deploy:
     -   provider: NuGet
         name: NuGet
         api_key:
-            secure: KKRDla0gYKmprH/5dN/dJag/n6uAdHU6Uq8CME4ONzz2AOsMPtzS+EI/MVuSNilD
+            secure: 1Cj/i/BQFk3GN6iV2zyvoUxCowhIbKAGab+py1qn1oAO98qdbT/GWEaFofVh2Ph6
         skip_symbols: false
         symbol_server: https://www.nuget.org/api/v2/symbolpackage # remove to push symbols to SymbolSource.org
         artifact: /Elsa.*(\.|\.s)nupkg/
@@ -131,7 +131,7 @@ deploy:
         name: MyGet
         server: https://www.myget.org/F/elsa-2/api/v2/package
         api_key:
-            secure: 3d4m2WJ8keM1DH4MTWC8hWghdM95ggAt9VI2dgAanSSczAq3/2Fopd76kV8Ly766
+            secure: q/BL44D5KIMecFP4hzIb/OvWIZ37NfRo7PamDQv8XWfyoqCSn8F4y32wRB0ZbF0d
         skip_symbols: false
         symbol_server: https://www.myget.org/F/elsa-2/api/v2/symbolpackage # remove to push symbols to SymbolSource.org
         artifact: /Elsa.*(\.|\.s)nupkg/
