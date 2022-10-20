@@ -2,6 +2,7 @@ using Elsa.Activities.Rpa.Web.Options;
 using Elsa.Activities.Rpa.Web.Services;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,7 +20,8 @@ namespace Elsa.Activities.Rpa.Web
         internal readonly IBrowserFactory _factory;
         internal readonly RpaWebOptions _options;
         
-        [ActivityInput(Hint = "The driver ID assigned when instantiating the browser.")]
+        [ActivityInput(Hint = "The driver ID assigned when instantiating the browser. You can use JS functions to retrieve it such as: getVariable() function or activities.{OpenBrowserActivityName}.driverId",
+            DefaultSyntax = SyntaxNames.JavaScript, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string? DriverId { get; set; }
         protected IActivityExecutionResult? Result { get; set; }
         

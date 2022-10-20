@@ -230,7 +230,7 @@ namespace Elsa.Activities.Telnyx.Activities
                 });
         }
 
-        protected override async ValueTask OnExitAsync(ActivityExecutionContext context, object? output)
+        protected override async ValueTask OnExitAsync(ActivityExecutionContext context, object? output, IList<string> outcomes)
         {
             // Hang up any pending calls.
             context.JournalData.Add("Exiting", true);
@@ -267,7 +267,6 @@ namespace Elsa.Activities.Telnyx.Activities
                         {
                             dial
                                 .When(TelnyxOutcomeNames.Answered)
-                                .Then(context => context.SetCallControlId(context.GetInput<CallAnsweredPayload>()!.CallControlId))
                                 .Then<SpeakText>(speakText => speakText
                                         .WithLanguage(() => Language)
                                         .WithPayload(() => Payload)
@@ -312,7 +311,7 @@ namespace Elsa.Activities.Telnyx.Activities
                         .Then(context =>
                         {
                             AgentCallAnsweredPayload = context.GetInput<CallAnsweredPayload>()!;
-                            context.SetCallControlId(AgentCallAnsweredPayload.CallControlId);
+                            //context.SetCallControlId(AgentCallAnsweredPayload.CallControlId);
                         })
                         .Then<SpeakText>(speakText => speakText
                                 .WithLanguage(() => Language)

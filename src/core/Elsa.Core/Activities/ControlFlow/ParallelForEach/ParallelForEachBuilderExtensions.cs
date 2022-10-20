@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using Elsa.Builders;
 using Elsa.Services.Models;
 
@@ -19,6 +20,14 @@ namespace Elsa.Activities.ControlFlow
             [CallerFilePath] string? sourceFile = default) =>
             builder.Then(setup, branch => iterate(branch.When(OutcomeNames.Iterate)), lineNumber, sourceFile);
 
+        public static IActivityBuilder ParallelForEach<T>(
+            this IBuilder builder,
+            Func<ActivityExecutionContext, ValueTask<ICollection<T>>> items,
+            Action<IOutcomeBuilder> iterate,
+            [CallerLineNumber] int lineNumber = default,
+            [CallerFilePath] string? sourceFile = default) =>
+            builder.ParallelForEach(activity => activity.Set(x => x.Items, async context => (ICollection<object>)(await items(context)).Select(x => (object)x!).ToList()), iterate, lineNumber, sourceFile);
+        
         public static IActivityBuilder ParallelForEach<T>(
             this IBuilder builder,
             Func<ActivityExecutionContext, ICollection<T>> items,

@@ -84,7 +84,15 @@ namespace Elsa.Builders
         {
             WorkflowBuilder.Connect(
                 () => this,
-                () => WorkflowBuilder.Activities.First(x => x.Name == activityName));
+                () =>
+                {
+                    var target = WorkflowBuilder.Activities.FirstOrDefault(x => x.Name == activityName);
+
+                    if (target == null)
+                        throw new Exception($"Cannot connect to the specified activity with name \"{activityName}\" because it does not exist in the workflow. Did you make a typo?");
+                    
+                    return target;
+                });
 
             return this;
         }

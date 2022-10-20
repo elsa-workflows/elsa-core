@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Elsa.Activities.Telnyx.Client.Models;
 using Elsa.Activities.Telnyx.Models;
 using Elsa.Activities.Telnyx.Webhooks.Models;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
@@ -30,7 +31,13 @@ namespace Elsa.Activities.Telnyx.Scripting.JavaScript
                 typeof(CallRecordingUrls),
                 typeof(CallSpeakEnded),
                 typeof(CallSpeakStarted),
-                typeof(CallMachineGreetingEnded)
+                typeof(CallMachineGreetingEnded),
+                
+                typeof(DialResponse),
+                typeof(NumberLookupResponse),
+                typeof(CallerName),
+                typeof(Carrier),
+                typeof(Portability)
             };
         }
     }

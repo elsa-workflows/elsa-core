@@ -77,9 +77,11 @@ namespace Elsa.Services
                 output = finishOutput.Output;
             }
             
-            await OnExitAsync(context, output);
+            await OnExitAsync(context, output, outcomes);
 
             Output = output;
+            context.WorkflowExecutionContext.ClearScheduledActivities(Id);
+            await context.WorkflowExecutionContext.RemoveBlockingActivitiesAsync(Id);
             return Outcomes(outcomes);
         }
 
@@ -89,9 +91,9 @@ namespace Elsa.Services
             return new();
         }
 
-        protected virtual ValueTask OnExitAsync(ActivityExecutionContext context, object? output)
+        protected virtual ValueTask OnExitAsync(ActivityExecutionContext context, object? output, IList<string> outcomes)
         {
-            OnExit(context, output);
+            OnExit(context, output, outcomes);
             return new();
         }
 
@@ -99,7 +101,7 @@ namespace Elsa.Services
         {
         }
         
-        protected virtual void OnExit(ActivityExecutionContext context, object? output)
+        protected virtual void OnExit(ActivityExecutionContext context, object? output, IList<string> outcomes)
         {
         }
     }
