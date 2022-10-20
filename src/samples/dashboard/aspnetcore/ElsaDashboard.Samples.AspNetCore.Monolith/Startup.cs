@@ -27,7 +27,7 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith
 
             // Elsa Server settings.
             var elsaSection = Configuration.GetSection("Elsa");
-            
+
             services
                 .AddElsa(options => options
                     .UseEntityFrameworkPersistence(ef => ef.UseSqlite())
@@ -41,7 +41,6 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith
                     .AddFeatures(new[] { typeof(Startup) }, Configuration)
                     .WithContainerName(elsaSection.GetSection("Server:ContainerName").Get<string>())
                 );
-
             services
                 .AddElsaSwagger()
                 .AddElsaApiEndpoints()
@@ -76,7 +75,6 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith
             {
                 // Maps a SignalR hub for the designer to connect to when testing workflows.
                 endpoints.MapWorkflowTestHub();
-                
                 // Elsa Server uses ASP.NET Core Controllers.
                 endpoints.MapControllers();
 
