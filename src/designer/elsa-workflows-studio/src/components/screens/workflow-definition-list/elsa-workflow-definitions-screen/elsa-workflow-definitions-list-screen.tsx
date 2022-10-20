@@ -125,7 +125,9 @@ export class ElsaWorkflowDefinitionsListScreen {
   }
 
   render() {
-    const workflowDefinitions = this.workflowDefinitions.items;
+    const allDefinitions = this.workflowDefinitions.items;
+    const latestDefinitions = allDefinitions.filter(x => x.isLatest);
+    const publishedDefinitions = allDefinitions.filter(x => x.isPublished);
     const totalCount = this.workflowDefinitions.totalCount;
     const i18next = this.i18next;
     const IntlMessage = GetIntlMessage(i18next);
@@ -178,10 +180,10 @@ export class ElsaWorkflowDefinitionsListScreen {
             </tr>
             </thead>
             <tbody class="elsa-bg-white elsa-divide-y elsa-divide-gray-100">
-            {workflowDefinitions.map(workflowDefinition => {
+            {latestDefinitions.map(workflowDefinition => {
               const latestVersionNumber = workflowDefinition.version;
               const {isPublished} = workflowDefinition;
-              const publishedVersion: WorkflowDefinitionSummary = isPublished ? workflowDefinition : this.workflowDefinitions.items.find(x => x.definitionId == workflowDefinition.definitionId);
+              const publishedVersion: WorkflowDefinitionSummary = isPublished ? workflowDefinition : publishedDefinitions.find(x => x.definitionId == workflowDefinition.definitionId);
               const publishedVersionNumber = !!publishedVersion ? publishedVersion.version : '-';
               let workflowDisplayName = workflowDefinition.displayName;
 
