@@ -122,7 +122,7 @@ deploy:
             secure: KKRDla0gYKmprH/5dN/dJag/n6uAdHU6Uq8CME4ONzz2AOsMPtzS+EI/MVuSNilD
         skip_symbols: false
         symbol_server: https://www.nuget.org/api/v2/symbolpackage # remove to push symbols to SymbolSource.org
-        artifact: /.*(\.|\.s)nupkg/
+        artifact: /Elsa.*(\.|\.s)nupkg/
         on:
             APPVEYOR_REPO_TAG: true
 
@@ -134,6 +134,6 @@ deploy:
             secure: q/BL44D5KIMecFP4hzIb/OvWIZ37NfRo7PamDQv8XWfyoqCSn8F4y32wRB0ZbF0d
         skip_symbols: false
         symbol_server: https://www.myget.org/F/elsa-2/api/v2/symbolpackage # remove to push symbols to SymbolSource.org
-        artifact: /.*(\.|\.s)nupkg/
+        artifact: /Elsa.*(\.|\.s)nupkg/
         on:
             branch: 2.9.x-net5
