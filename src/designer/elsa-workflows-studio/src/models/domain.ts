@@ -1,4 +1,5 @@
 ﻿import { Map } from '../utils/utils';
+import { Port } from './core';
 
 export interface WorkflowDefinition {
   id?: string;
@@ -153,6 +154,8 @@ export interface ActivityDefinition {
   description: string;
   top?: number;
   left?: number;
+  x?: number;
+  y?: number;
   persistWorkflow: boolean;
   loadWorkflowContext: boolean;
   saveWorkflowContext: boolean;
@@ -280,6 +283,9 @@ export interface ActivityDescriptor {
   inputProperties: Array<ActivityPropertyDescriptor>;
   outputProperties: Array<ActivityPropertyDescriptor>;
   customAttributes: any;
+  version?: number;
+  isContainer?: boolean;
+  ports?: Array<Port>;
 }
 
 export interface ActivityPropertyDescriptor {

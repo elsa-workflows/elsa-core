@@ -8,7 +8,7 @@ import cssnano from 'cssnano';
 const purgecss = require('@fullhuman/postcss-purgecss')({
   content: ['./src/**/*.tsx', './src/**/*.html'],
   defaultExtractor: content => content.match(/[A-Za-z0-9-_:/]+/g) || [],
-  safelist: ['jtk-connector', 'jtk-endpoint', 'jtk-hover'],
+  safelist: ['jtk-connector', 'jtk-endpoint', 'x6-node', 'x6-port-out', 'x6-port-label'],
 });
 
 export const config: Config = {

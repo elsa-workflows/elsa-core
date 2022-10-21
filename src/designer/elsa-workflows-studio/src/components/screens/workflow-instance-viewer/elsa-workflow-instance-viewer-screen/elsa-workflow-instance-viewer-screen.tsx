@@ -138,7 +138,7 @@ export class ElsaWorkflowInstanceViewerScreen {
   componentDidLoad() {
     if (!this.designer) {
       // this.designer = this.el.querySelector("elsa-designer-tree") as HTMLElsaDesignerTreeElement;
-      this.designer = this.el.querySelector('elsa-designer') as HTMLElsaDesignerTreeElement;
+      this.designer = this.el.querySelector("elsa-designer-test") as HTMLElsaDesignerTestElement;
       this.designer.model = this.workflowModel;
     }
   }
@@ -386,7 +386,7 @@ export class ElsaWorkflowInstanceViewerScreen {
                             onActivityDeselected={e => this.onActivityDeselected(e)}
                             onActivityContextMenuButtonClicked={e => this.onActivityContextMenuButtonClicked(e)}
         /> */}
-        <elsa-designer
+        {/* <elsa-designer-tree-test
           model={this.workflowModel}
           mode={WorkflowDesignerMode.Instance}
           layoutDirection={this.layoutDirection}
@@ -401,6 +401,20 @@ export class ElsaWorkflowInstanceViewerScreen {
           onActivityDeselected={e => this.onActivityDeselected(e)}
           class="canvas-container"
           ref={el => (this.designer = el)}
+        /> */}
+        <elsa-designer-test
+          model={this.workflowModel}
+          class="elsa-flex-1"
+          ref={el => this.designer = el}
+          layoutDirection={this.layoutDirection}
+          mode={WorkflowDesignerMode.Instance}
+          activityContextMenuButton={this.renderActivityStatsButton}
+          activityBorderColor={this.getActivityBorderColor}
+          activityContextMenu={this.activityContextMenuState}
+          selectedActivityIds={[this.selectedActivityId]}
+          onActivitySelected={e => this.onActivitySelected(e)}
+          onActivityDeselected={e => this.onActivityDeselected(e)}
+          onActivityContextMenuButtonClicked={e => this.onActivityContextMenuButtonClicked(e)}
         />
         {this.renderActivityPerformanceMenu()}
       </div>

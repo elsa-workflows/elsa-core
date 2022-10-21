@@ -29,7 +29,6 @@ import { loadTranslations } from '../../../i18n/i18n-loader';
 import { resources } from './localizations';
 import * as collection from 'lodash/collection';
 import { tr } from 'cronstrue/dist/i18n/locales/tr';
-import {v4 as uuid} from 'uuid';
 
 @Component({
   tag: 'elsa-workflow-definition-editor-screen',
@@ -95,7 +94,6 @@ export class ElsaWorkflowDefinitionEditorScreen {
   helpDialog: HTMLElsaModalDialogElement;
   activityContextMenu: HTMLDivElement;
   componentCustomButton: HTMLDivElement;
-  copiedActivity = { activityDescriptor: null, position: null };
 
   //connectionContextMenu: HTMLDivElement;
 
@@ -210,7 +208,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
   async componentDidLoad() {
     if (!this.designer) {
       // this.designer = this.el.querySelector('elsa-designer-tree') as HTMLElsaDesignerTreeElement;
-      this.designer = this.el.querySelector('elsa-designer') as HTMLElsaDesignerTreeElement;
+      this.designer = this.el.querySelector("elsa-designer-test") as HTMLElsaDesignerTestElement;
       this.designer.model = this.workflowModel;
     }
   }
@@ -319,8 +317,8 @@ export class ElsaWorkflowDefinitionEditorScreen {
         name: x.name,
         displayName: x.displayName,
         description: x.description,
-        left: x.left,
-        top: x.top,
+        x: x.x,
+        y: x.y,
         persistWorkflow: x.persistWorkflow,
         loadWorkflowContext: x.loadWorkflowContext,
         saveWorkflowContext: x.saveWorkflowContext,
@@ -425,8 +423,8 @@ export class ElsaWorkflowDefinitionEditorScreen {
       activityId: source.activityId,
       description: source.description,
       displayName: source.displayName,
-      top: source.top,
-      left: source.left,
+      x: source.x,
+      y: source.y,
       name: source.name,
       type: source.type,
       properties: source.properties,
@@ -594,65 +592,65 @@ export class ElsaWorkflowDefinitionEditorScreen {
     this.clearSubsequentWorkflowTestMessages(targetActivityId);
   }
 
-  // renderActivityStatsButton = (activity: ActivityModel): string => {
+  renderActivityStatsButton = (activity: ActivityModel): string => {
 
-  //   const testActivityMessage = this.workflowTestActivityMessages.find(x => x.activityId == activity.activityId);
-  //   if (testActivityMessage == undefined) return '';
-
-  //   let icon: string;
-
-  //   switch (testActivityMessage.status) {
-  //     case WorkflowTestActivityMessageStatus.Done:
-  //     default:
-  //       icon = `<svg class="elsa-h-8 elsa-w-8 elsa-text-green-500"  fill="none" viewBox="0 0 24 24" stroke="currentColor">
-  //                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-  //               </svg>`;
-  //       break;
-  //     case WorkflowTestActivityMessageStatus.Waiting:
-  //       icon = `<svg version="1.1" class="svg-loader" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 80 80" xml:space="preserve">
-  //                 <path id="spinner" fill="#7eb0de" d="M40,72C22.4,72,8,57.6,8,40C8,22.4,
-  //                 22.4,8,40,8c17.6,0,32,14.4,32,32c0,1.1-0.9,2-2,2
-  //                 s-2-0.9-2-2c0-15.4-12.6-28-28-28S12,24.6,12,40s12.6,
-  //                 28,28,28c1.1,0,2,0.9,2,2S41.1,72,40,72z">
-  //                   <animateTransform attributeType="xml" attributeName="transform" type="rotate" from="0 40 40" to="360 40 40" dur="0.75s" repeatCount="indefinite" />
-  //                 </path>
-  //                 </path>
-  //             </svg>`;
-  //       break;
-  //     case WorkflowTestActivityMessageStatus.Failed:
-  //       icon = `<svg class="elsa-h-8 elsa-w-8 elsa-text-red-500"  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  //                 <circle cx="12" cy="12" r="10" />
-  //                 <line x1="15" y1="9" x2="9" y2="15" />
-  //                 <line x1="9" y1="9" x2="15" y2="15" />
-  //               </svg>`;
-  //       break;
-  //     case WorkflowTestActivityMessageStatus.Modified:
-  //       icon = `<svg class="h-6 w-6 elsa-text-yellow-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  //                   <circle cx="12" cy="12" r="10"></circle>
-  //                   <line x1="12" y1="16" x2="12" y2="12"></line>
-  //                   <line x1="12" y1="8" x2="12.01" y2="8"></line>
-  //               </svg>`;
-  //       break;
-  //   }
-
-  //   return `<div class="context-menu-wrapper elsa-flex-shrink-0">
-  //           <button aria-haspopup="true"
-  //                   class="elsa-w-8 elsa-h-8 elsa-inline-flex elsa-items-center elsa-justify-center elsa-text-gray-400 elsa-rounded-full elsa-bg-transparent hover:elsa-text-gray-500 focus:elsa-outline-none focus:elsa-text-gray-500 focus:elsa-bg-gray-100 elsa-transition elsa-ease-in-out elsa-duration-150">
-  //             ${icon}
-  //           </button>
-  //         </div>`;
-  // };
-
-  renderActivityStatsButton = (activity: ActivityModel): HTMLElement | string => {
     const testActivityMessage = this.workflowTestActivityMessages.find(x => x.activityId == activity.activityId);
     if (testActivityMessage == undefined) return '';
 
-    let icon: HTMLElement;
+    let icon: string;
 
     switch (testActivityMessage.status) {
       case WorkflowTestActivityMessageStatus.Done:
       default:
-        icon = <svg class="elsa-h-6 elsa-w-6 elsa-text-green-500"  fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        icon = `<svg class="elsa-h-8 elsa-w-8 elsa-text-green-500"  fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>`;
+        break;
+      case WorkflowTestActivityMessageStatus.Waiting:
+        icon = `<svg version="1.1" class="svg-loader" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 80 80" xml:space="preserve">
+                  <path id="spinner" fill="#7eb0de" d="M40,72C22.4,72,8,57.6,8,40C8,22.4,
+                  22.4,8,40,8c17.6,0,32,14.4,32,32c0,1.1-0.9,2-2,2
+                  s-2-0.9-2-2c0-15.4-12.6-28-28-28S12,24.6,12,40s12.6,
+                  28,28,28c1.1,0,2,0.9,2,2S41.1,72,40,72z">
+                    <animateTransform attributeType="xml" attributeName="transform" type="rotate" from="0 40 40" to="360 40 40" dur="0.75s" repeatCount="indefinite" />
+                  </path>
+                  </path>
+              </svg>`;
+        break;
+      case WorkflowTestActivityMessageStatus.Failed:
+        icon = `<svg class="elsa-h-8 elsa-w-8 elsa-text-red-500"  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="15" y1="9" x2="9" y2="15" />
+                  <line x1="9" y1="9" x2="15" y2="15" />
+                </svg>`;
+        break;
+      case WorkflowTestActivityMessageStatus.Modified:
+        icon = `<svg class="h-6 w-6 elsa-text-yellow-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>`;
+        break;
+    }
+
+    return `<div class="context-menu-wrapper elsa-flex-shrink-0">
+            <button aria-haspopup="true"
+                    class="elsa-w-8 elsa-h-8 elsa-inline-flex elsa-items-center elsa-justify-center elsa-text-gray-400 elsa-rounded-full elsa-bg-transparent hover:elsa-text-gray-500 focus:elsa-outline-none focus:elsa-text-gray-500 focus:elsa-bg-gray-100 elsa-transition elsa-ease-in-out elsa-duration-150">
+              ${icon}
+            </button>
+          </div>`;
+  };
+
+  renderActivityStatsButtonTest = (activity: ActivityModel): string => {
+    const testActivityMessage = this.workflowTestActivityMessages.find(x => x.activityId == activity.activityId);
+    if (testActivityMessage == undefined) return '';
+
+    let icon: string;
+
+    switch (testActivityMessage.status) {
+      case WorkflowTestActivityMessageStatus.Done:
+      default:
+        icon = <svg class="elsa-h-8 elsa-w-8 elsa-text-green-500"  fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>;
         break;
@@ -667,7 +665,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
               </svg>;
         break;
       case WorkflowTestActivityMessageStatus.Failed:
-        icon = <svg class="elsa-h-6 elsa-w-6 elsa-text-red-500"  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        icon = <svg class="elsa-h-8 elsa-w-8 elsa-text-red-500"  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <circle cx="12" cy="12" r="10" />
                   <line x1="15" y1="9" x2="9" y2="15" />
                   <line x1="9" y1="9" x2="15" y2="15" />
@@ -682,9 +680,9 @@ export class ElsaWorkflowDefinitionEditorScreen {
         break;
     }
 
-    return <div class="context-menu-wrapper elsa-flex-shrink-0 elsa-text-center">
+    return <div class="context-menu-wrapper elsa-flex-shrink-0">
             <button aria-haspopup="true"
-                    class="elsa-align-middle elsa-ml-1 elsa-w-5 elsa-h-6 elsa-inline-flex elsa-items-center elsa-justify-center elsa-text-gray-400 elsa-rounded-full elsa-bg-transparent hover:elsa-text-gray-500 focus:elsa-outline-none focus:elsa-text-gray-500 focus:elsa-bg-gray-100 elsa-transition elsa-ease-in-out elsa-duration-150">
+                    class="elsa-w-8 elsa-h-8 elsa-inline-flex elsa-items-center elsa-justify-center elsa-text-gray-400 elsa-rounded-full elsa-bg-transparent hover:elsa-text-gray-500 focus:elsa-outline-none focus:elsa-text-gray-500 focus:elsa-bg-gray-100 elsa-transition elsa-ease-in-out elsa-duration-150">
               {icon}
             </button>
           </div>;
@@ -710,21 +708,21 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
   renderCanvas() {
 
-    // const activityContextMenuButton = (activity: ActivityModel) =>
-    //   `<div class="context-menu-wrapper elsa-flex-shrink-0">
-    //         <button aria-haspopup="true"
-    //                 class="elsa-w-8 elsa-h-8 elsa-inline-flex elsa-items-center elsa-justify-center elsa-text-gray-400 elsa-rounded-full elsa-bg-transparent hover:elsa-text-gray-500 focus:elsa-outline-none focus:elsa-text-gray-500 focus:elsa-bg-gray-100 elsa-transition elsa-ease-in-out elsa-duration-150">
-    //           <svg class="elsa-h-6 elsa-w-6 elsa-text-gray-400" width="24" height="24" viewBox="0 0 24 24" stroke-width="2"
-    //                stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-    //             <path stroke="none" d="M0 0h24v24H0z"/>
-    //             <circle cx="5" cy="12" r="1"/>
-    //             <circle cx="12" cy="12" r="1"/>
-    //             <circle cx="19" cy="12" r="1"/>
-    //           </svg>
-    //         </button>
-    //       </div>`;
-
     const activityContextMenuButton = (activity: ActivityModel) =>
+      `<div class="context-menu-wrapper elsa-flex-shrink-0">
+            <button aria-haspopup="true"
+                    class="elsa-w-8 elsa-h-8 elsa-inline-flex elsa-items-center elsa-justify-center elsa-text-gray-400 elsa-rounded-full elsa-bg-transparent hover:elsa-text-gray-500 focus:elsa-outline-none focus:elsa-text-gray-500 focus:elsa-bg-gray-100 elsa-transition elsa-ease-in-out elsa-duration-150">
+              <svg class="elsa-h-6 elsa-w-6 elsa-text-gray-400" width="24" height="24" viewBox="0 0 24 24" stroke-width="2"
+                   stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z"/>
+                <circle cx="5" cy="12" r="1"/>
+                <circle cx="12" cy="12" r="1"/>
+                <circle cx="19" cy="12" r="1"/>
+              </svg>
+            </button>
+          </div>`;
+
+    const activityContextMenuButtonTest = (activity: ActivityModel) =>
       <div class="context-menu-wrapper elsa-flex-shrink-0 elsa-h-4">
         <button aria-haspopup="true"
                 class="elsa-w-8 elsa-h-4 elsa-inline-flex elsa-items-center elsa-justify-center elsa-text-gray-400 elsa-rounded-full elsa-bg-transparent hover:elsa-text-gray-500 focus:elsa-outline-none focus:elsa-text-gray-500 focus:elsa-bg-gray-100 elsa-transition elsa-ease-in-out elsa-duration-150">
@@ -756,7 +754,24 @@ export class ElsaWorkflowDefinitionEditorScreen {
           class="elsa-flex-1"
           ref={el => (this.designer = el)}
         /> */}
-        <elsa-designer
+
+          {/* <elsa-designer-tree-test
+            model={this.workflowModel}
+            mode={this.workflowDesignerMode}
+            layoutDirection={this.layoutDirection}
+            activityContextMenuButton={this.workflowDesignerMode == WorkflowDesignerMode.Edit ? activityContextMenuButtonTest : this.renderActivityStatsButtonTest}
+            onActivityContextMenuButtonClicked={e => this.onActivityContextMenuButtonClicked(e)}
+            onActivityContextMenuButtonTestClicked={e => this.onActivityContextMenuButtonTestClicked(e)}
+            activityContextMenu={this.workflowDesignerMode == WorkflowDesignerMode.Edit ? this.activityContextMenuState : this.activityContextMenuTestState}
+            enableMultipleConnectionsFromSingleSource={false}
+            selectedActivityIds={[this.selectedActivityId]}
+            onActivitySelected={e => this.onActivitySelected(e)}
+            onActivityDeselected={e => this.onActivityDeselected(e)}
+            class="canvas-container"
+            ref={el => (this.designer = el)}
+          /> */}
+
+        <elsa-designer-test
           model={this.workflowModel}
           mode={this.workflowDesignerMode}
           layoutDirection={this.layoutDirection}
@@ -768,8 +783,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
           selectedActivityIds={[this.selectedActivityId]}
           onActivitySelected={e => this.onActivitySelected(e)}
           onActivityDeselected={e => this.onActivityDeselected(e)}
-          copiedActivity={this.copiedActivity}
-          class="canvas-container"
+          class="elsa-workflow-wrapper"
           ref={el => (this.designer = el)}
         />
         {this.renderWorkflowSettingsButton()}
@@ -954,41 +968,6 @@ export class ElsaWorkflowDefinitionEditorScreen {
     );
   };
 
-  //  --------------
-  onCopyActivity = (e: MouseEvent) => {
-    e.preventDefault();
-    const { activity } = this.activityContextMenuState;
-    const position = {left: activity.left, top: activity.top};
-
-    const activityDescriptors: Array<ActivityDescriptor> = state.activityDescriptors;
-    const activityDescriptor = activityDescriptors.find(descriptor => descriptor.type === activity.type);
-    // TODO: uncomment:
-    // this.newActivity(activityDescriptor, position);
-    this.copiedActivity = { activityDescriptor, position };
-  }
-
-  newActivity(activityDescriptor: ActivityDescriptor, position: any): void {
-    const activity: ActivityModel = {
-      activityId: uuid(),
-      type: activityDescriptor.type,
-      outcomes: activityDescriptor.outcomes,
-      displayName: activityDescriptor.displayName,
-      properties: [],
-      propertyStorageProviders: {},
-      left: position.left + 24 || 0,
-      top: position.top + 32 || 0
-    };
-
-    for (const property of activityDescriptor.inputProperties) {
-      activity.properties[property.name] = {
-        syntax: '',
-        expression: '',
-      };
-    }
-    //  TODO: uncomment:
-    // this.copiedActivity = activity;
-  }
-
   renderActivityContextMenu() {
     const t = this.t;
     const selectedActivities = Object.keys(this.activityContextMenuState.selectedActivities ?? {});
@@ -1007,17 +986,6 @@ export class ElsaWorkflowDefinitionEditorScreen {
         ref={el => (this.activityContextMenu = el)}
       >
         <div class="elsa-rounded-md elsa-bg-white elsa-shadow-xs" role="menu" aria-orientation="vertical" aria-labelledby="pinned-project-options-menu-0">
-          <div class="elsa-py-1">
-            <a
-              onClick={e => this.onCopyActivity(e)}
-              href="#"
-              class="elsa-block elsa-px-4 elsa-py-2 elsa-text-sm elsa-leading-5 elsa-text-gray-700 hover:elsa-bg-gray-100 hover:elsa-text-gray-900 focus:elsa-outline-none focus:elsa-bg-gray-100 focus:elsa-text-gray-900"
-              role="menuitem"
-            >
-              Copy
-            </a>
-          </div>
-          <div class="elsa-border-t elsa-border-gray-100" />
           <div class="elsa-py-1">
             <a
               onClick={e => this.onEditActivityClick(e)}

@@ -11,6 +11,8 @@ namespace Elsa.Models
         public string? Description { get; set; }
         public int? Left { get; set; }
         public int? Top { get; set; }
+        public int? X { get; set; }
+        public int? Y { get; set; }
         public bool PersistWorkflow { get; set; }
         public bool LoadWorkflowContext { get; set; }
         public bool SaveWorkflowContext { get; set; }

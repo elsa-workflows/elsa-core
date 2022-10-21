@@ -230,3 +230,13 @@ export async function awaitElement(selector) {
   }
   return document.querySelector(selector);
 }
+
+export interface Hash<TValue> {
+  [key: string]: TValue;
+}
+
+export const stripActivityNameSpace = (name: string): string => {
+  const lastDotIndex = name.lastIndexOf('.');
+  return lastDotIndex < 0 ? name : name.substr(lastDotIndex + 1);
+};
+

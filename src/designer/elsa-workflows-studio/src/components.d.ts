@@ -5,7 +5,7 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
-import { ActivityDefinitionProperty, ActivityDescriptor, ActivityModel, ActivityPropertyDescriptor, ElsaStudio, IntellisenseContext, OrderBy, SelectListItem, VersionOptions, WorkflowBlueprint, WorkflowDefinition, WorkflowDefinitionVersion, WorkflowExecutionLogRecord, WorkflowFault, WorkflowInstance, WorkflowModel, WorkflowStatus } from "./models";
+import { ActivityDefinitionProperty, ActivityDeletedArgs, ActivityDescriptor, ActivityModel, ActivityPropertyDescriptor, ContainerSelectedArgs, ElsaStudio, GraphUpdatedArgs, IntellisenseContext, OrderBy, SelectListItem, VersionOptions, WorkflowBlueprint, WorkflowDefinition, WorkflowDefinitionVersion, WorkflowExecutionLogRecord, WorkflowFault, WorkflowInstance, WorkflowModel, WorkflowStatus } from "./models";
 import { LocationSegments, MatchResults, RouterHistory } from "@stencil/router";
 import { MenuItem } from "./components/controls/elsa-context-menu/models";
 import { VNode } from "@stencil/core";
@@ -83,6 +83,22 @@ export namespace Components {
     }
     interface ElsaDesignerPanel {
         "culture": string;
+    }
+    interface ElsaDesignerTest {
+        "activityBorderColor"?: (activity: ActivityModel) => string;
+        "activityContextMenu"?: ActivityContextMenuState;
+        "activityContextMenuButton"?: (activity: ActivityModel) => string;
+        "activityContextTestMenu"?: ActivityContextMenuState;
+        "connectionContextMenu"?: ActivityContextMenuState;
+        "enableMultipleConnectionsFromSingleSource": boolean;
+        "layoutDirection": LayoutDirection;
+        "mode": WorkflowDesignerMode;
+        "model": WorkflowModel;
+        "removeActivity": (activity: ActivityModel) => Promise<void>;
+        "removeSelectedActivities": () => Promise<void>;
+        "selectedActivityIds": Array<string>;
+        "showActivityEditor": (activity: ActivityModel, animate: boolean) => Promise<void>;
+        "updateLayout": () => Promise<void>;
     }
     interface ElsaDesignerTree {
         "activityBorderColor"?: (activity: ActivityModel) => string;
@@ -486,6 +502,12 @@ declare global {
         prototype: HTMLElsaDesignerPanelElement;
         new (): HTMLElsaDesignerPanelElement;
     };
+    interface HTMLElsaDesignerTestElement extends Components.ElsaDesignerTest, HTMLStencilElement {
+    }
+    var HTMLElsaDesignerTestElement: {
+        prototype: HTMLElsaDesignerTestElement;
+        new (): HTMLElsaDesignerTestElement;
+    };
     interface HTMLElsaDesignerTreeElement extends Components.ElsaDesignerTree, HTMLStencilElement {
     }
     var HTMLElsaDesignerTreeElement: {
@@ -830,6 +852,7 @@ declare global {
         "elsa-cron-expression-property": HTMLElsaCronExpressionPropertyElement;
         "elsa-designer": HTMLElsaDesignerElement;
         "elsa-designer-panel": HTMLElsaDesignerPanelElement;
+        "elsa-designer-test": HTMLElsaDesignerTestElement;
         "elsa-designer-tree": HTMLElsaDesignerTreeElement;
         "elsa-dictionary-property": HTMLElsaDictionaryPropertyElement;
         "elsa-dropdown-button": HTMLElsaDropdownButtonElement;
@@ -956,6 +979,27 @@ declare namespace LocalJSX {
         "culture"?: string;
         "onFeatureChanged"?: (event: CustomEvent<string>) => void;
         "onFeatureStatusChanged"?: (event: CustomEvent<string>) => void;
+    }
+    interface ElsaDesignerTest {
+        "activityBorderColor"?: (activity: ActivityModel) => string;
+        "activityContextMenu"?: ActivityContextMenuState;
+        "activityContextMenuButton"?: (activity: ActivityModel) => string;
+        "activityContextTestMenu"?: ActivityContextMenuState;
+        "connectionContextMenu"?: ActivityContextMenuState;
+        "enableMultipleConnectionsFromSingleSource"?: boolean;
+        "layoutDirection"?: LayoutDirection;
+        "mode"?: WorkflowDesignerMode;
+        "model"?: WorkflowModel;
+        "onActivityContextMenuButtonClicked"?: (event: CustomEvent<ActivityContextMenuState>) => void;
+        "onActivityContextMenuButtonTestClicked"?: (event: CustomEvent<ActivityContextMenuState>) => void;
+        "onActivityDeleted"?: (event: CustomEvent<ActivityDeletedArgs>) => void;
+        "onActivityDeselected"?: (event: CustomEvent<ActivityModel>) => void;
+        "onActivitySelected"?: (event: CustomEvent<ActivityModel>) => void;
+        "onConnectionContextMenuButtonClicked"?: (event: CustomEvent<ActivityContextMenuState>) => void;
+        "onContainerSelected"?: (event: CustomEvent<ContainerSelectedArgs>) => void;
+        "onGraphUpdated"?: (event: CustomEvent<GraphUpdatedArgs>) => void;
+        "onWorkflow-changed"?: (event: CustomEvent<WorkflowModel>) => void;
+        "selectedActivityIds"?: Array<string>;
     }
     interface ElsaDesignerTree {
         "activityBorderColor"?: (activity: ActivityModel) => string;
@@ -1298,6 +1342,7 @@ declare namespace LocalJSX {
         "elsa-cron-expression-property": ElsaCronExpressionProperty;
         "elsa-designer": ElsaDesigner;
         "elsa-designer-panel": ElsaDesignerPanel;
+        "elsa-designer-test": ElsaDesignerTest;
         "elsa-designer-tree": ElsaDesignerTree;
         "elsa-dictionary-property": ElsaDictionaryProperty;
         "elsa-dropdown-button": ElsaDropdownButton;
@@ -1372,6 +1417,7 @@ declare module "@stencil/core" {
             "elsa-cron-expression-property": LocalJSX.ElsaCronExpressionProperty & JSXBase.HTMLAttributes<HTMLElsaCronExpressionPropertyElement>;
             "elsa-designer": LocalJSX.ElsaDesigner & JSXBase.HTMLAttributes<HTMLElsaDesignerElement>;
             "elsa-designer-panel": LocalJSX.ElsaDesignerPanel & JSXBase.HTMLAttributes<HTMLElsaDesignerPanelElement>;
+            "elsa-designer-test": LocalJSX.ElsaDesignerTest & JSXBase.HTMLAttributes<HTMLElsaDesignerTestElement>;
             "elsa-designer-tree": LocalJSX.ElsaDesignerTree & JSXBase.HTMLAttributes<HTMLElsaDesignerTreeElement>;
             "elsa-dictionary-property": LocalJSX.ElsaDictionaryProperty & JSXBase.HTMLAttributes<HTMLElsaDictionaryPropertyElement>;
             "elsa-dropdown-button": LocalJSX.ElsaDropdownButton & JSXBase.HTMLAttributes<HTMLElsaDropdownButtonElement>;

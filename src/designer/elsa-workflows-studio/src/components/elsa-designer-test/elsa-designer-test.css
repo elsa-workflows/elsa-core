@@ -1,0 +1,72 @@
+:host {
+  display: block;
+}
+
+.workflow-canvas {
+  background-color: #fbfbfb;
+  width: 100%;
+  height: calc(100vh - 64px);
+  box-sizing: border-box;
+}
+
+.node.activity, .node.start, .node.add .label-container {
+  fill: transparent;
+}
+
+.node.activity .label-container, .node.start .label-container {
+  stroke: none;
+}
+
+.edgePath {
+  stroke: black;
+  cursor: pointer;
+  /* z-index: -1; */
+}
+
+.outcome {
+  background-color: #fbfbfb;
+}
+
+.edgePath path.path {
+  stroke: #333;
+  fill: transparent !important;
+  stroke-width: 0.5px;
+}
+
+.label-clickable {
+  fill: transparent !important;
+  stroke: #4677f8;
+  stroke-width: 12.5px !important;
+  opacity: 0;
+}
+
+.edgePath:hover path.path {
+  stroke: red;
+}
+
+.start-btn {
+  left: 50vw;
+  width: fit-content;
+  display: inline-block;
+  top: 1rem;
+}
+
+.elsa-workflow-wrapper {
+  width: 100%;
+  height: calc(100vh - 64px);
+  overflow: hidden;
+}
+
+.x6-graph-scroller {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.x6-port-out .x6-port-label {
+  opacity: 0;
+  transition: opacity 0.2s ease-in;
+}
+
+.x6-port-out:hover .x6-port-label {
+  opacity: 1;
+}
