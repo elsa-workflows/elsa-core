@@ -12,6 +12,7 @@ using MediatR;
 using NodaTime;
 using Open.Linq.AsyncExtensions;
 using WorkflowDefinitionIdSpecification = Elsa.Persistence.Specifications.WorkflowInstances.WorkflowDefinitionIdSpecification;
+using WorkflowDefinitionIdSpecification2 = Elsa.Persistence.Specifications.WorkflowDefinitions.WorkflowDefinitionIdSpecification;
 
 namespace Elsa.Services.Workflows
 {
@@ -198,7 +199,24 @@ namespace Elsa.Services.Workflows
                 var definition = await _workflowDefinitionStore.FindByDefinitionIdAsync(workflowDefinitionId, versionOptions, cancellationToken);
 
                 if (definition != null)
+                {
+                    if (definition.IsLatest)
+                    {
+                        var otherVersions = await _workflowDefinitionStore.FindManyAsync(new WorkflowDefinitionIdSpecification2(workflowDefinitionId, VersionOptions.All))
+                                                                          .Where(d => d.Version != definition.Version);
+
+                        var newLatest = otherVersions.FirstOrDefault(d => d.IsPublished) ?? otherVersions.FirstOrDefault();
+
+                        if (newLatest != null)
+                        {
+                            newLatest.IsLatest = true;
+
+                            await _workflowDefinitionStore.SaveAsync(newLatest, cancellationToken);
+                        }
+                    }
+
                     await DeleteAsync(definition, cancellationToken);
+                }
             }
         }
 
