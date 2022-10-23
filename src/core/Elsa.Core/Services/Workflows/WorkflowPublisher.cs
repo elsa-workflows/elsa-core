@@ -202,7 +202,10 @@ namespace Elsa.Services.Workflows
                 {
                     if (definition.IsLatest)
                     {
-                        var otherVersions = await _workflowDefinitionStore.FindManyAsync(new WorkflowDefinitionIdSpecification2(workflowDefinitionId, VersionOptions.All))
+                        var otherVersions = await _workflowDefinitionStore.FindManyAsync(
+                                                                              new WorkflowDefinitionIdSpecification2(workflowDefinitionId, VersionOptions.All),
+                                                                              new OrderBy<WorkflowDefinition>(x => x.CreatedAt, SortDirection.Descending),
+                                                                              cancellationToken: cancellationToken)
                                                                           .Where(d => d.Version != definition.Version);
 
                         var newLatest = otherVersions.FirstOrDefault(d => d.IsPublished) ?? otherVersions.FirstOrDefault();
