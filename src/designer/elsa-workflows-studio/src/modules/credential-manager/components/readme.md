@@ -19,7 +19,7 @@
 
 ### Used by
 
- - [credential-manager-items-list](../pages)
+ - [elsa-credential-manager-items-list](../pages)
 
 ### Depends on
 
@@ -30,12 +30,12 @@
 ### Graph
 ```mermaid
 graph TD;
-  credential-manager-list-screen --> elsa-context-menu
-  credential-manager-list-screen --> elsa-confirm-dialog
-  credential-manager-list-screen --> context-consumer
+  elsa-credential-manager-list-screen --> elsa-context-menu
+  elsa-credential-manager-list-screen --> elsa-confirm-dialog
+  elsa-credential-manager-list-screen --> context-consumer
   elsa-confirm-dialog --> elsa-modal-dialog
-  credential-manager-items-list --> credential-manager-list-screen
-  style credential-manager-list-screen fill:#f9f,stroke:#333,stroke-width:4px
+  elsa-credential-manager-items-list --> elsa-credential-manager-list-screen
+  style elsa-credential-manager-list-screen fill:#f9f,stroke:#333,stroke-width:4px
 ```
 
 ----------------------------------------------

@@ -10,6 +10,7 @@ import {DropdownButtonItem, DropdownButtonOrigin} from "./models";
 export class ElsaContextMenu {
     @Prop() text: string;
     @Prop() icon?: any;
+    @Prop() btnClass?: string = " elsa-w-full elsa-bg-white elsa-border elsa-border-gray-300 elsa-rounded-md elsa-shadow-sm elsa-px-4 elsa-py-2 elsa-inline-flex elsa-justify-center elsa-text-sm elsa-font-medium elsa-text-gray-700 hover:elsa-bg-gray-50 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500"
     @Prop() origin: DropdownButtonOrigin = DropdownButtonOrigin.TopLeft;
     @Prop() items: Array<DropdownButtonItem> = [];
 
@@ -56,7 +57,7 @@ export class ElsaContextMenu {
         return (
             <div class="elsa-relative" ref={el => this.element = el}>
                 <button onClick={e => this.toggleMenu()} type="button"
-                        class="elsa-w-full elsa-bg-white elsa-border elsa-border-gray-300 elsa-rounded-md elsa-shadow-sm elsa-px-4 elsa-py-2 elsa-inline-flex elsa-justify-center elsa-text-sm elsa-font-medium elsa-text-gray-700 hover:elsa-bg-gray-50 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500"
+                        class={this.btnClass}
                         aria-haspopup="true" aria-expanded="false">
                     {this.renderIcon()}
                     {this.text}

@@ -1,20 +1,31 @@
 using System;
 using System.Collections.Generic;
+#if NET7_0_OR_GREATER
+using System.Diagnostics.CodeAnalysis;
+#endif
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
+#if !NET7_0_OR_GREATER
 using EFCore.BulkExtensions;
+#endif
 using Elsa.Models;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Core.Services;
 using Elsa.Persistence.Specifications;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Elsa.Persistence.EntityFramework.Core.Stores
 {
-    public abstract class EntityFrameworkStore<T, TContext> : IStore<T> where T : class, IEntity where TContext:DbContext
+    public abstract class EntityFrameworkStore<
+#if NET7_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors | DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields | DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.NonPublicProperties | DynamicallyAccessedMemberTypes.Interfaces)]
+#endif
+    T, TContext> : IStore<T> where T : class, IEntity where TContext:DbContext
     {
         private readonly IMapper _mapper;
         private readonly SemaphoreSlim _semaphore = new(1);
@@ -112,16 +123,15 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
             var filter = MapSpecification(specification);
             return await DoWork(async dbContext =>
             {
+#if NET7_0_OR_GREATER
+                return await dbContext.Set<T>().Where(filter).ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
+#else
                 var tuple = dbContext.Set<T>().Where(filter).Select(x => x.Id).ToParametrizedSql();
                 var entityLetter = dbContext.Set<T>().EntityType.GetTableName()!.ToLowerInvariant()[0];
-                
-                // TODO: Is there a smarter way of knowing the enclosing characters based on the current DB provider, instead of blindly replacing as is done now?
+                var helper = dbContext.GetService<ISqlGenerationHelper>();
                 var whereClause = tuple.Item1
                     .Substring(tuple.Item1.IndexOf("WHERE", StringComparison.OrdinalIgnoreCase))
-                    .Replace($"\"{entityLetter}\".", "")
-                    .Replace($"`{entityLetter}`.", "")
-                    .Replace($"[{entityLetter}].", "")
-                    ;
+                    .Replace($"{helper.DelimitIdentifier(entityLetter.ToString())}.", string.Empty);
 
                 for (var i = 0; i < tuple.Item2.Count(); i++)
                 {
@@ -131,6 +141,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
                 
                 var parameters = tuple.Item2.Select(x => x.Value).ToArray();
                 return await dbContext.Database.ExecuteSqlRawAsync($"DELETE FROM {dbContext.Set<T>().EntityType.GetSchemaQualifiedTableName()} {whereClause}", parameters, cancellationToken);
+#endif
             }, cancellationToken);
         }
 

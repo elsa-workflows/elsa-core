@@ -425,9 +425,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.BuildAndDispat
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.InProcessBackgroundMediator", "src\samples\aspnet\Elsa.Samples.InProcessBackgroundMediator\Elsa.Samples.InProcessBackgroundMediator.csproj", "{0319DAB2-388A-4DA1-8F62-2F0A0127F01C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.ExtendHttpEndpoint", "src\samples\aspnet\Elsa.Samples.ExtendHttpEndpoint\Elsa.Samples.ExtendHttpEndpoint.csproj", "{62B28070-1AEC-49E2-A614-D505B0933E23}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.Auth0Http", "src\samples\aspnet\Elsa.Samples.Auth0Http\Elsa.Samples.Auth0Http.csproj", "{AB8C9005-3579-4C03-BC36-5BB1A04AE968}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Server.Authentication", "src\server\Elsa.Server.Authentication\Elsa.Server.Authentication.csproj", "{E4D5B3F6-9DF1-4BAD-82BE-228656CD519D}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.ExtendHttpEndpoint", "src\samples\aspnet\Elsa.Samples.ExtendHttpEndpoint\Elsa.Samples.ExtendHttpEndpoint.csproj", "{62B28070-1AEC-49E2-A614-D505B0933E23}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -1031,14 +1033,18 @@ Global
 		{0319DAB2-388A-4DA1-8F62-2F0A0127F01C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0319DAB2-388A-4DA1-8F62-2F0A0127F01C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0319DAB2-388A-4DA1-8F62-2F0A0127F01C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{62B28070-1AEC-49E2-A614-D505B0933E23}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{62B28070-1AEC-49E2-A614-D505B0933E23}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{62B28070-1AEC-49E2-A614-D505B0933E23}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{62B28070-1AEC-49E2-A614-D505B0933E23}.Release|Any CPU.Build.0 = Release|Any CPU
 		{AB8C9005-3579-4C03-BC36-5BB1A04AE968}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{AB8C9005-3579-4C03-BC36-5BB1A04AE968}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AB8C9005-3579-4C03-BC36-5BB1A04AE968}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AB8C9005-3579-4C03-BC36-5BB1A04AE968}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E4D5B3F6-9DF1-4BAD-82BE-228656CD519D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E4D5B3F6-9DF1-4BAD-82BE-228656CD519D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E4D5B3F6-9DF1-4BAD-82BE-228656CD519D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E4D5B3F6-9DF1-4BAD-82BE-228656CD519D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{62B28070-1AEC-49E2-A614-D505B0933E23}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{62B28070-1AEC-49E2-A614-D505B0933E23}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{62B28070-1AEC-49E2-A614-D505B0933E23}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{62B28070-1AEC-49E2-A614-D505B0933E23}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1231,8 +1237,9 @@ Global
 		{507FE3FC-F775-46CF-8820-B80C6FCFD348} = {FC9F520F-BA51-4AD2-BFEE-EF787798E734}
 		{1CA56484-4B92-46DA-AFC5-8602FDBFAAA2} = {FC9F520F-BA51-4AD2-BFEE-EF787798E734}
 		{0319DAB2-388A-4DA1-8F62-2F0A0127F01C} = {22E75696-6FE9-436A-9097-EE21C603F818}
-		{62B28070-1AEC-49E2-A614-D505B0933E23} = {22E75696-6FE9-436A-9097-EE21C603F818}
 		{AB8C9005-3579-4C03-BC36-5BB1A04AE968} = {22E75696-6FE9-436A-9097-EE21C603F818}
+		{E4D5B3F6-9DF1-4BAD-82BE-228656CD519D} = {468E498C-59DB-4541-8D8A-0D89DE9083AB}
+		{62B28070-1AEC-49E2-A614-D505B0933E23} = {22E75696-6FE9-436A-9097-EE21C603F818}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}
