@@ -395,7 +395,7 @@ export class ElsaWorkflowDesigner {
         activity.left = params.pos[0];
         activity.top = params.pos[1];
 
-        await this.updateActivityInternal(activity);
+        this.updateActivity(activity);
       }
     });
   };
@@ -466,14 +466,6 @@ export class ElsaWorkflowDesigner {
 
   private findActivityById = (id: string): ActivityModel => this.workflowModel.activities.find(x => x.activityId === id);
 
-  private updateActivityInternal = async (activity: ActivityModel) => {
-    const activities = [...this.workflow.activities];
-    const index = activities.findIndex(x => x.activityId == activity.activityId);
-
-    activities[index] = { ...activity };
-
-    this.workflow = { ...this.workflow, activities };
-  };
 
   private getLayout = (nodes: any, edges: any) => {
     const graph = new dagre.graphlib.Graph();
@@ -918,7 +910,7 @@ export class ElsaWorkflowDesigner {
   }
 
   onClickActivityBody(e: MouseEvent, activity: ActivityModel) {
-    const {activityId} = activity
+    const {activityId} = activity;
 
     if (this.mode == WorkflowDesignerMode.Edit && this.parentActivityId && this.parentActivityOutcome) {
       this.addConnection(this.parentActivityId, activityId, this.parentActivityOutcome);
@@ -984,7 +976,7 @@ export class ElsaWorkflowDesigner {
     }
   };
 
-  onCanvasMousemove = (e: MouseEvent) => {
+  onCanvasMouseMove = (e: MouseEvent) => {
     if (!this.layoutState.dragging) {
       return;
     }
@@ -1007,7 +999,7 @@ export class ElsaWorkflowDesigner {
     }
   };
 
-  onCanvasMousedown = (e: MouseEvent) => {
+  onCanvasMouseDown = (e: MouseEvent) => {
     this.layoutState = {
       dragging: true,
       nodeDragging: this.layoutState.nodeDragging,
@@ -1025,8 +1017,8 @@ export class ElsaWorkflowDesigner {
       let _left = this.layoutState.left + e.pageX - this.layoutState.initX;
       let _top = this.layoutState.top + e.pageY - this.layoutState.initY;
 
-     this.el.style.left = this.layoutState.left + "px";
-     this.el.style.top = this.layoutState.top + "px";
+     this.el.style.left = _left + "px";
+     this.el.style.top = _top + "px";
 
     this.layoutState = {
       dragging: false,
@@ -1038,34 +1030,8 @@ export class ElsaWorkflowDesigner {
       initX:  e.pageX,
       initY:  e.pageY
     };
-
-    } else if (this.layoutState.nodeDragging) {
-      // node onMouseDown
-      this.upDateNode();
     }
   };
-
-  upDateNode = (options?: any) => {
-    let nodes = this.workflowModel.activities
-
-    if (options) {
-      this.el.style.left = "0px";
-      this.el.style.top = "0px";
-    }
-    options = options || {};
-
-    this.workflowModel.activities.map((el) => {
-      for (let i = 0, l = nodes.length; i < l; i++) {
-        let nodeDom = nodes[i];
-          if (nodeDom.activityId == el.activityId) {
-              el.top = nodeDom.top,
-              el.left = nodeDom.left
-            break;
-          }
-        }
-        return el;
-    })
-  }
 
   render() {
     const activitiesList = this.getActivitiesList();
@@ -1102,12 +1068,13 @@ export class ElsaWorkflowDesigner {
     let translateHeight =
       ((document.documentElement.clientHeight - 64) * (1 - this.layoutState.scale)) / 2;
 
-      this.jsPlumb.repaintEverything();
+    this.jsPlumb.repaintEverything();
+
     return (
       <Host
         onWheel={this.onCanvasMousewheel}
-        onMouseMove={this.onCanvasMousemove}
-        onMouseDown={this.onCanvasMousedown}
+        onMouseMove={this.onCanvasMouseMove}
+        onMouseDown={this.onCanvasMouseDown}
         onMouseUp={this.onCanvasMouseUpLeave}
         onMouseLeave={this.onCanvasMouseUpLeave}
       >
@@ -1136,7 +1103,7 @@ export class ElsaWorkflowDesigner {
                 <div id={`wf-activity-${activity.activityId}`}
                   data-activity-id={activity.activityId} class="activity"
                   style={{'left': `${activity.left}px`, 'top': `${activity.top}px`}}
-                  onClick={ e => this.onClickActivityBody(e, activity)}
+                  onClick={e => this.onClickActivityBody(e, activity)}
                   onMouseDown={e => this.onNodeMouseDown(e)}
                   onMouseUp={e => this.onNodeMouseUp(e, activity)}
                 >

@@ -6,9 +6,8 @@
 
 .workflow-canvas {
   position: relative;
-  display: block;
-  width: 100%;
-  height: 100%;
+  width: 200%;
+  height: 200%;
 
 }
 
@@ -31,7 +30,6 @@
 .edgePath {
   stroke: black;
   cursor: pointer;
-  /* z-index: -1; */
 }
 
 .outcome {
