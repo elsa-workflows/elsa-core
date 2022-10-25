@@ -1,3 +1,5 @@
+using System.Linq;
+using System.Threading.Tasks;
 using Elsa.Common.Extensions;
 using Elsa.Workflows.Core.Activities.Flowchart.Contracts;
 using Elsa.Workflows.Core.Activities.Flowchart.Extensions;

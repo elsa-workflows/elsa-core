@@ -1,3 +1,5 @@
+using System.Linq;
+using System.Threading.Tasks;
 using Elsa.Common.Extensions;
 using Elsa.Common.Services;
 using Elsa.Workflows.Core.Models;
@@ -7,7 +9,7 @@ using Delegate = System.Delegate;
 
 namespace Elsa.Workflows.Core.Pipelines.ActivityExecution.Components;
 
-public static class InvokeDriversMiddlewareExtensions
+public static class ActivityInvokerMiddlewareExtensions
 {
     public static IActivityExecutionBuilder UseDefaultActivityInvoker(this IActivityExecutionBuilder builder) => builder.UseMiddleware<ActivityInvokerMiddleware>();
 }
@@ -15,19 +17,17 @@ public static class InvokeDriversMiddlewareExtensions
 public class ActivityInvokerMiddleware : IActivityExecutionMiddleware
 {
     private readonly ActivityMiddlewareDelegate _next;
-    private readonly ISystemClock _systemClock;
     private readonly ILogger _logger;
 
-    public ActivityInvokerMiddleware(ActivityMiddlewareDelegate next, ISystemClock systemClock, ILogger<ActivityInvokerMiddleware> logger)
+    public ActivityInvokerMiddleware(ActivityMiddlewareDelegate next, ILogger<ActivityInvokerMiddleware> logger)
     {
         _next = next;
-        _systemClock = systemClock;
         _logger = logger;
     }
 
     public async ValueTask InvokeAsync(ActivityExecutionContext context)
     {
-        var workflowExecution = context.WorkflowExecutionContext;
+        var workflowExecutionContext = context.WorkflowExecutionContext;
 
         // Evaluate input properties.
         await context.EvaluateInputPropertiesAsync();
@@ -35,27 +35,21 @@ public class ActivityInvokerMiddleware : IActivityExecutionMiddleware
 
         // Execute activity.
         var methodInfo = typeof(IActivity).GetMethod(nameof(IActivity.ExecuteAsync))!;
-        var executeDelegate = workflowExecution.ExecuteDelegate ?? (ExecuteActivityDelegate)Delegate.CreateDelegate(typeof(ExecuteActivityDelegate), activity, methodInfo);
-
-        // Record executing event.
-        _logger.LogTrace("Executing activity {ActivityId}", activity.Id);
-
+        var executeDelegate = workflowExecutionContext.ExecuteDelegate ?? (ExecuteActivityDelegate)Delegate.CreateDelegate(typeof(ExecuteActivityDelegate), activity, methodInfo);
+        
         await executeDelegate(context);
 
-        // Record executed event.
-        _logger.LogTrace("Executed activity {ActivityId}", activity.Id);
-
         // Reset execute delegate.
-        workflowExecution.ExecuteDelegate = null;
+        workflowExecutionContext.ExecuteDelegate = null;
 
         // Invoke next middleware.
         await _next(context);
 
-        // Exit if any bookmarks were created.
+        // If the activity created any bookmarks, copy them into the workflow execution context.
         if (context.Bookmarks.Any())
         {
             // Store bookmarks.
-            workflowExecution.Bookmarks.AddRange(context.Bookmarks);
+            workflowExecutionContext.Bookmarks.AddRange(context.Bookmarks);
         }
     }
 }

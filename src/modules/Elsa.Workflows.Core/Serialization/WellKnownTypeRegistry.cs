@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Core.Serialization;

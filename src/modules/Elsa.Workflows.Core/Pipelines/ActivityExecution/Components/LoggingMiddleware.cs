@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Threading.Tasks;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
 using Microsoft.Extensions.Logging;
@@ -20,12 +21,12 @@ public class LoggingMiddleware : IActivityExecutionMiddleware
 
     public async ValueTask InvokeAsync(ActivityExecutionContext context)
     {
-        var node = context.ActivityNode;
-        _logger.LogDebug("Executing node {Node}", node.GetType().Name);
+        var activity = context.Activity;
+        _logger.LogDebug("Executing activity {ActivityType}", activity.Type);
         _stopwatch.Restart();
         await _next(context);
         _stopwatch.Stop();
-        _logger.LogDebug("Executed node {Node} in {Elapsed}", node.GetType().Name, _stopwatch.Elapsed);
+        _logger.LogDebug("Executed activity {ActivityType} in {Elapsed}", activity.Type, _stopwatch.Elapsed);
     }
 }
 

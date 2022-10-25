@@ -1,8 +1,14 @@
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.State;
 
 namespace Elsa.Workflows.Core.Services;
 
+/// <summary>
+/// Runs a given workflow by scheduling its root activity.
+/// </summary>
 public interface IWorkflowRunner
 {
     Task<RunWorkflowResult> RunAsync(IActivity activity, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default);

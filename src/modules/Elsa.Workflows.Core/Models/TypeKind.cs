@@ -1,3 +1,5 @@
+using System;
+
 namespace Elsa.Workflows.Core.Models;
 
 [Flags]

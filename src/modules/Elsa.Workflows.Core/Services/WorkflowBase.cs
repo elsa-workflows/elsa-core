@@ -1,3 +1,6 @@
+using System.Threading;
+using System.Threading.Tasks;
+
 namespace Elsa.Workflows.Core.Services;
 
 public abstract class WorkflowBase : IWorkflow
