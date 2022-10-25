@@ -79,6 +79,9 @@ export namespace Components {
     interface ElsaCheckListInput {
         "inputContext": ActivityInputContext;
     }
+    interface ElsaCheckboxInput {
+        "inputContext": ActivityInputContext;
+    }
     interface ElsaCodeEditorInput {
         "inputContext": ActivityInputContext;
     }
@@ -357,6 +360,12 @@ declare global {
     var HTMLElsaCheckListInputElement: {
         prototype: HTMLElsaCheckListInputElement;
         new (): HTMLElsaCheckListInputElement;
+    };
+    interface HTMLElsaCheckboxInputElement extends Components.ElsaCheckboxInput, HTMLStencilElement {
+    }
+    var HTMLElsaCheckboxInputElement: {
+        prototype: HTMLElsaCheckboxInputElement;
+        new (): HTMLElsaCheckboxInputElement;
     };
     interface HTMLElsaCodeEditorInputElement extends Components.ElsaCodeEditorInput, HTMLStencilElement {
     }
@@ -650,6 +659,7 @@ declare global {
         "elsa-button-group": HTMLElsaButtonGroupElement;
         "elsa-canvas": HTMLElsaCanvasElement;
         "elsa-check-list-input": HTMLElsaCheckListInputElement;
+        "elsa-checkbox-input": HTMLElsaCheckboxInputElement;
         "elsa-code-editor-input": HTMLElsaCodeEditorInputElement;
         "elsa-context-menu": HTMLElsaContextMenuElement;
         "elsa-copy-button": HTMLElsaCopyButtonElement;
@@ -737,6 +747,9 @@ declare namespace LocalJSX {
         "interactiveMode"?: boolean;
     }
     interface ElsaCheckListInput {
+        "inputContext"?: ActivityInputContext;
+    }
+    interface ElsaCheckboxInput {
         "inputContext"?: ActivityInputContext;
     }
     interface ElsaCodeEditorInput {
@@ -980,6 +993,7 @@ declare namespace LocalJSX {
         "elsa-button-group": ElsaButtonGroup;
         "elsa-canvas": ElsaCanvas;
         "elsa-check-list-input": ElsaCheckListInput;
+        "elsa-checkbox-input": ElsaCheckboxInput;
         "elsa-code-editor-input": ElsaCodeEditorInput;
         "elsa-context-menu": ElsaContextMenu;
         "elsa-copy-button": ElsaCopyButton;
@@ -1042,6 +1056,7 @@ declare module "@stencil/core" {
             "elsa-button-group": LocalJSX.ElsaButtonGroup & JSXBase.HTMLAttributes<HTMLElsaButtonGroupElement>;
             "elsa-canvas": LocalJSX.ElsaCanvas & JSXBase.HTMLAttributes<HTMLElsaCanvasElement>;
             "elsa-check-list-input": LocalJSX.ElsaCheckListInput & JSXBase.HTMLAttributes<HTMLElsaCheckListInputElement>;
+            "elsa-checkbox-input": LocalJSX.ElsaCheckboxInput & JSXBase.HTMLAttributes<HTMLElsaCheckboxInputElement>;
             "elsa-code-editor-input": LocalJSX.ElsaCodeEditorInput & JSXBase.HTMLAttributes<HTMLElsaCodeEditorInputElement>;
             "elsa-context-menu": LocalJSX.ElsaContextMenu & JSXBase.HTMLAttributes<HTMLElsaContextMenuElement>;
             "elsa-copy-button": LocalJSX.ElsaCopyButton & JSXBase.HTMLAttributes<HTMLElsaCopyButtonElement>;

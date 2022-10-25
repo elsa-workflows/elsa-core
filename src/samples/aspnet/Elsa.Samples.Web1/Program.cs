@@ -30,7 +30,7 @@ services
         .UseRuntime(runtime =>
         {
             runtime
-                .UseEntityFrameworkCore(ef => ef.UseSqlite())
+                .UseEntityFrameworkCore(f =>f.UseSqlite())
                 .AddWorkflow<HelloWorldWorkflow>()
                 .AddWorkflow<HttpWorkflow>()
                 .AddWorkflow<ForkedHttpWorkflow>()
@@ -61,13 +61,13 @@ var app = builder.Build();
 var serviceProvider = app.Services;
 
 // Configure workflow engine execution pipeline.
-serviceProvider.ConfigureDefaultWorkflowExecutionPipeline(pipeline =>
-    pipeline
-        .UseWorkflowExecutionLogPersistence()
-        .UsePersistentVariables()
-        .UseWorkflowContexts()
-        .UseStackBasedActivityScheduler()
-);
+// serviceProvider.ConfigureDefaultWorkflowExecutionPipeline(pipeline =>
+//     pipeline
+//         .UseWorkflowExecutionLogPersistence()
+//         .UsePersistentVariables()
+//         .UseWorkflowContexts()
+//         .UseStackBasedActivityScheduler()
+// );
 
 if (app.Environment.IsDevelopment())
     app.UseDeveloperExceptionPage();

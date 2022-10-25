@@ -1,9 +1,11 @@
 using System;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
+using Elsa.Http.ContentWriters;
 using Elsa.Http.Handlers;
 using Elsa.Http.Implementations;
 using Elsa.Http.Options;
+using Elsa.Http.Parsers;
 using Elsa.Http.Services;
 using Elsa.Mediator.Extensions;
 using Microsoft.Extensions.DependencyInjection;
@@ -43,9 +45,18 @@ public class HttpFeature : FeatureBase
         Services.Configure<HttpActivityOptions>(options => options.BasePath = BasePath);
 
         Services
+            .AddHttpClient()
             .AddSingleton<IRouteMatcher, RouteMatcher>()
             .AddSingleton<IRouteTable, RouteTable>()
             .AddNotificationHandlersFrom<UpdateRouteTable>()
-            .AddHttpContextAccessor();
+            .AddHttpContextAccessor()
+            
+            // Add Content Parsers
+            .AddSingleton<IHttpResponseContentReader, JsonElementHttpResponseContentReader>()
+
+            //Add Request Content Writers
+            .AddSingleton<IHttpRequestContentWriter, StringHttpRequestContentWriter>()
+            .AddSingleton<IHttpRequestContentWriter, FormUrlEncodedHttpRequestContentWriter>()
+            ;
     }
 }
