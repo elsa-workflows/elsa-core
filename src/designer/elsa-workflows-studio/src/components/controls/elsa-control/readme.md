@@ -17,7 +17,7 @@
 ### Used by
 
  - [elsa-activity-editor-modal](../../screens/workflow-definition-editor/elsa-activity-editor-modal)
- - [elsa-secret-editor-modal](../../../modules/credential-manager/elsa-secret-editor-model)
+ - [elsa-secret-editor-modal](../../../modules/credential-manager/elsa-secret-editor-modal)
 
 ### Graph
 ```mermaid

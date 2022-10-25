@@ -323,6 +323,24 @@ export const createElsaClient = async function (serverUrl: string): Promise<Elsa
         return response.data.features;
       }
     },
+    authenticationApi:{
+      getUserDetails: async () => {
+        const response = await httpClient.get<UserDetail>('v1/elsaAuthentication/userinfo');
+        if("text/html; charset=utf-8" !== response.headers['content-type'] && response.data.isAuthenticated)
+          {
+            return response.data;
+          }else{
+            return null;
+          }
+      },
+      getAuthenticationConfguration: async () => {
+        const response = await httpClient.get<AuthenticationConfguration>('v1/ElsaAuthentication/options');
+        return response.data;
+      },
+
+      
+
+    }
   }
 
   return _elsaClient;
@@ -342,10 +360,15 @@ export interface ElsaClient {
   workflowChannelsApi: WorkflowChannelsApi;
   workflowTestApi: WorkflowTestApi;
   featuresApi: FeaturesApi;
+  authenticationApi : AuthenticationApi;
 }
 
 export interface ActivitiesApi {
   list(): Promise<Array<ActivityDescriptor>>;
+}
+export interface AuthenticationApi {
+  getUserDetails(): Promise<UserDetail>;
+  getAuthenticationConfguration(): Promise<AuthenticationConfguration>;
 }
 
 export interface FeaturesApi {
@@ -525,6 +548,20 @@ export interface ActivityStats {
   lastExecutedAt: Date;
   eventCounts: Array<ActivityEventCount>;
 }
+
+export interface UserDetail {
+  name: string;
+  tenantId : string;
+  isAuthenticated : boolean;
+}
+
+export interface AuthenticationConfguration  {
+  authenticationStyles: string[];
+  currentTenantAccessorName : string;
+  tenantAccessorKeyName:string;
+}
+
+
 
 interface ActivityEventCount {
   eventName: string;
