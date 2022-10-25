@@ -45,7 +45,7 @@ public static class WorkflowExecutionContextExtensions
         var workItem = new ActivityWorkItem(bookmarkedActivity.Id, async () => await activityInvoker.InvokeAsync(bookmarkedActivityContext));
         workflowExecutionContext.Scheduler.Schedule(workItem);
 
-        // If no resumption point was specified, use Noop to prevent the regular "ExecuteAsync" method to be invoked.
+        // If no resumption point was specified, use "Complete" to prevent the regular "ExecuteAsync" method to be invoked and instead complete the activity.
         workflowExecutionContext.ExecuteDelegate = bookmark.CallbackMethodName != null ? bookmarkedActivity.GetResumeActivityDelegate(bookmark.CallbackMethodName) : WorkflowExecutionContext.Complete;
         
         // Remove the bookmark.

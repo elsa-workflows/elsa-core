@@ -1,16 +1,17 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Core.Services;
 
-namespace Elsa.Workflows.Core.Pipelines.WorkflowExecution.Components;
+namespace Elsa.Workflows.Core.Middleware.Workflows;
 
 public static class UseActivitySchedulerMiddlewareExtensions
 {
     /// <summary>
     /// Installs middleware that executes scheduled work items (activities). 
     /// </summary>
-    public static IWorkflowExecutionBuilder UseStackBasedActivityScheduler(this IWorkflowExecutionBuilder builder) => builder.UseMiddleware<ActivitySchedulerMiddleware>();
+    public static IWorkflowExecutionBuilder UseActivityScheduler(this IWorkflowExecutionBuilder builder) => builder.UseMiddleware<ActivitySchedulerMiddleware>();
 }
 
 public class ActivitySchedulerMiddleware : WorkflowExecutionMiddleware
@@ -22,6 +23,9 @@ public class ActivitySchedulerMiddleware : WorkflowExecutionMiddleware
     public override async ValueTask InvokeAsync(WorkflowExecutionContext context)
     {
         var scheduler = context.Scheduler;
+        
+        // Transition into the Executing state.
+        context.TransitionTo(WorkflowSubStatus.Executing);
 
         // As long as there are activities scheduled, keep executing them.
         while (scheduler.HasAny)
@@ -39,6 +43,10 @@ public class ActivitySchedulerMiddleware : WorkflowExecutionMiddleware
             if (!context.Bookmarks.Any())
             {
                 context.TransitionTo(WorkflowSubStatus.Finished);
+            }
+            else
+            {
+                context.TransitionTo(WorkflowSubStatus.Suspended);
             }
         }
 

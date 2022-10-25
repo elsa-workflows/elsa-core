@@ -31,6 +31,7 @@ public class ActivityDescriptor
     /// Whether this activity type is selectable from activity pickers.
     /// </summary>
     public bool IsBrowsable { get; set; }
+
 }
 
 public record ActivityConstructorContext(JsonElement Element, JsonSerializerOptions SerializerOptions);

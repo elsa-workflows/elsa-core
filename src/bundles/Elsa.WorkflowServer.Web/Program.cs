@@ -26,7 +26,7 @@ using Elsa.WorkflowContexts.Extensions;
 using Elsa.Workflows.Api.Extensions;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Activities.Flowchart.Activities;
-using Elsa.Workflows.Core.Pipelines.WorkflowExecution.Components;
+using Elsa.Workflows.Core.Middleware.Workflows;
 using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Runtime.Extensions;
@@ -119,7 +119,7 @@ serviceProvider.ConfigureDefaultWorkflowExecutionPipeline(pipeline =>
     pipeline
         .UsePersistentVariables()
         .UseWorkflowContexts()
-        .UseStackBasedActivityScheduler()
+        .UseActivityScheduler()
 );
 
 if (app.Environment.IsDevelopment())

@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Core.Activities.Flowchart.Activities;
+namespace Elsa.Workflows.Core.Activities.Flowchart.Models;
 
 public enum JoinMode
 {

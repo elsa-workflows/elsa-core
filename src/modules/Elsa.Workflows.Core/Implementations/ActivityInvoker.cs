@@ -10,12 +10,10 @@ namespace Elsa.Workflows.Core.Implementations;
 public class ActivityInvoker : IActivityInvoker
 {
     private readonly IActivityExecutionPipeline _pipeline;
-    private readonly IServiceProvider _serviceProvider;
 
-    public ActivityInvoker(IActivityExecutionPipeline pipeline, IServiceProvider serviceProvider)
+    public ActivityInvoker(IActivityExecutionPipeline pipeline)
     {
         _pipeline = pipeline;
-        _serviceProvider = serviceProvider;
     }
 
     public async Task InvokeAsync(
@@ -33,7 +31,7 @@ public class ActivityInvoker : IActivityInvoker
         if (memoryReferences != null)
             activityMemory.Declare(memoryReferences);
 
-        // Push the activity context into the workflow context.
+        // Add the activity context into the workflow context.
         workflowExecutionContext.ActivityExecutionContexts.Add(activityExecutionContext);
 
         // Execute the activity execution pipeline.
