@@ -62,8 +62,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         return new StartWorkflowResult(workflowState.Id, workflowHost.WorkflowState.Bookmarks);
     }
 
-    public async Task<ResumeWorkflowResult> ResumeWorkflowAsync(string instanceId, string bookmarkId,
-        ResumeWorkflowOptions options, CancellationToken cancellationToken = default)
+    public async Task<ResumeWorkflowResult> ResumeWorkflowAsync(string instanceId, string bookmarkId, ResumeWorkflowOptions options, CancellationToken cancellationToken = default)
     {
         var workflowState = await _workflowStateStore.LoadAsync(instanceId, cancellationToken);
 
@@ -83,15 +82,12 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
 
         var input = options.Input;
 
-        var existingStoredBookmarks = await _bookmarkStore.FindByWorkflowInstanceAsync(
-                workflowState.Id,
-                cancellationToken)
+        var existingStoredBookmarks = await _bookmarkStore.FindByWorkflowInstanceAsync(workflowState.Id, cancellationToken)
             .AsTask()
             .ToList();
 
         var existingBookmarks = existingStoredBookmarks
-            .Select(storedBookmark =>
-                workflowState.Bookmarks.FirstOrDefault(bookmark => bookmark.Id == storedBookmark.BookmarkId))
+            .Select(storedBookmark => workflowState.Bookmarks.FirstOrDefault(bookmark => bookmark.Id == storedBookmark.BookmarkId))
             .Where(x => x != null)
             .Select(x => x!)
             .ToList();
@@ -106,6 +102,33 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         await UpdateBookmarksAsync(workflowState, existingBookmarks, workflowState.Bookmarks, cancellationToken);
 
         return new ResumeWorkflowResult(workflowState.Bookmarks);
+    }
+
+    public async Task<ICollection<ResumedWorkflow>> ResumeWorkflowsAsync(string activityTypeName, object bookmarkPayload, ResumeWorkflowOptions options, CancellationToken cancellationToken = default)
+    {
+        var hash = _hasher.Hash(activityTypeName, bookmarkPayload);
+        var bookmarks = await _bookmarkStore.FindByHashAsync(hash, cancellationToken);
+        return await ResumeWorkflowsAsync(bookmarks, options, cancellationToken);
+    }
+    
+    public async Task<ICollection<ResumedWorkflow>> ResumeWorkflowsAsync(IEnumerable<StoredBookmark> bookmarks, ResumeWorkflowOptions options, CancellationToken cancellationToken = default)
+    {
+        var resumedWorkflows = new List<ResumedWorkflow>();
+        
+        foreach (var bookmark in bookmarks)
+        {
+            var workflowInstanceId = bookmark.WorkflowInstanceId;
+
+            var resumeResult = await ResumeWorkflowAsync(
+                workflowInstanceId,
+                bookmark.BookmarkId,
+                new ResumeWorkflowOptions(options.Input),
+                cancellationToken);
+
+            resumedWorkflows.Add(new ResumedWorkflow(workflowInstanceId, resumeResult.Bookmarks));
+        }
+
+        return resumedWorkflows;
     }
 
     public async Task<TriggerWorkflowsResult> TriggerWorkflowsAsync(
@@ -131,22 +154,10 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         }
 
         // Resume bookmarks.
-
-        var bookmarks = await _bookmarkStore.FindByHashAsync(hash, cancellationToken);
-
-        foreach (var bookmark in bookmarks)
-        {
-            var workflowInstanceId = bookmark.WorkflowInstanceId;
-
-            var resumeResult = await ResumeWorkflowAsync(
-                workflowInstanceId,
-                bookmark.BookmarkId,
-                new ResumeWorkflowOptions(options.Input),
-                cancellationToken);
-
-            triggeredWorkflows.Add(new TriggeredWorkflow(workflowInstanceId, resumeResult.Bookmarks));
-        }
-
+        var bookmarks = (await _bookmarkStore.FindByHashAsync(hash, cancellationToken)).ToList();
+        var resumedWorkflows = await ResumeWorkflowsAsync(bookmarks, new ResumeWorkflowOptions(options.Input), cancellationToken);
+        
+        triggeredWorkflows.AddRange(resumedWorkflows.Select(x => new TriggeredWorkflow(x.InstanceId, x.Bookmarks)));
         return new TriggerWorkflowsResult(triggeredWorkflows);
     }
 
