@@ -30,6 +30,11 @@ public interface IActivity
     public bool CanStartWorkflow { get; set; }
     
     /// <summary>
+    /// A value indicating whether this activity can be executed asynchronously in the background.
+    /// </summary>
+    public bool RunAsynchronously { get; set; }
+    
+    /// <summary>
     /// Can contain application-specific information about this activity.
     /// </summary>
     IDictionary<string, object> ApplicationProperties { get; set; }

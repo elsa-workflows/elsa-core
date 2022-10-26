@@ -48,7 +48,8 @@ public class JobBasedActivityInvokerMiddleware : DefaultActivityInvokerMiddlewar
         var shouldRunInBackground = 
             !context.TransientProperties.ContainsKey(IsBackgroundExecution)
             && context.WorkflowExecutionContext.ExecuteDelegate == null
-            && kind is ActivityKind.Job or ActivityKind.Task; // TODO: If Task, check the activity's configuration itself to see if the user configured async or sync mode.
+            && kind is ActivityKind.Job or ActivityKind.Task
+            && activity.RunAsynchronously;
 
         // Schedule activity normally if this is not a job or task configured to run in the background.
         if (!shouldRunInBackground)

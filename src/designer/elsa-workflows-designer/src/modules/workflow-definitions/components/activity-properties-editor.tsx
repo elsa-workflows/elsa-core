@@ -1,13 +1,6 @@
 import {Component, Event, EventEmitter, h, Method, Prop, State} from '@stencil/core';
 import {camelCase} from 'lodash';
-import {
-  Activity,
-  ActivityDescriptor, ActivityOutput,
-  InputDescriptor, OutputDescriptor, PropertyDescriptor, RenderActivityInputContext,
-  RenderActivityPropsContext,
-  TabChangedArgs,
-  TabDefinition, Variable
-} from '../../../models';
+import {Activity, ActivityDescriptor, ActivityKind, ActivityOutput, InputDescriptor, OutputDescriptor, PropertyDescriptor, RenderActivityInputContext, RenderActivityPropsContext, TabChangedArgs, TabDefinition, Variable} from '../../../models';
 import {InputDriverRegistry} from "../../../services";
 import {Container} from "typedi";
 import {ActivityInputContext} from "../../../services/node-input-driver";
@@ -108,6 +101,7 @@ export class ActivityPropertiesEditor {
 
   render() {
     const {activity, activityDescriptor} = this.renderContext;
+    const isTask = activityDescriptor.kind == ActivityKind.Task;
 
     const commonTab: TabDefinition = {
       displayText: 'General',
@@ -131,6 +125,17 @@ export class ActivityPropertiesEditor {
       };
 
       tabs.push(outputTab);
+    }
+
+    if(isTask)
+    {
+      const taskTab: TabDefinition = {
+        displayText: 'Task',
+        order:12,
+        content: () => this.renderTaskTab()
+      };
+
+      tabs.push(taskTab);
     }
 
     let selectedTabIndex = this.selectedTabIndex;
@@ -193,15 +198,7 @@ export class ActivityPropertiesEditor {
       displayText: inputElement.value
     };
 
-    const activityDescriptor = this.findActivityDescriptor();
-    const activityId = activity.id;
-
-    this.activityUpdated.emit({
-      newId: activityId,
-      originalId: activityId,
-      activity,
-      activityDescriptor
-    });
+    this.updateActivity();
   }
 
   private onCanStartWorkflowChanged(e: any) {
@@ -210,22 +207,21 @@ export class ActivityPropertiesEditor {
 
     activity.canStartWorkflow = inputElement.checked;
 
-    const activityDescriptor = this.findActivityDescriptor();
-    const activityId = activity.id;
+    this.updateActivity();
+  }
 
-    this.activityUpdated.emit({
-      newId: activityId,
-      originalId: activityId,
-      activity,
-      activityDescriptor
-    });
+  private onRunAsynchronouslyChanged(e: any) {
+    const activity: Activity = this.activity;
+    const inputElement = e.target as HTMLInputElement;
+
+    activity.runAsynchronously = inputElement.checked;
+
+    this.updateActivity();
   }
 
   private onInputPropertyEditorChanged = (inputDescriptor: InputDescriptor, propertyValue: any, syntax: string) => {
     const activity = this.activity;
-    const activityId = activity.id;
     const propertyName = inputDescriptor.name;
-    const activityDescriptor = this.findActivityDescriptor();
     const camelCasePropertyName = camelCase(propertyName);
 
     activity[camelCasePropertyName] = {
@@ -236,21 +232,12 @@ export class ActivityPropertiesEditor {
       }
     };
 
-    this.activityUpdated.emit({
-      newId: activityId,
-      originalId: activityId,
-      activity,
-      activityDescriptor,
-      propertyName: camelCasePropertyName,
-      propertyDescriptor: inputDescriptor
-    });
+    this.updateActivity(propertyName);
   }
 
   private onOutputPropertyEditorChanged = (outputDescriptor: OutputDescriptor, variableName: string) => {
     const activity = this.activity;
-    const activityId = activity.id;
     const propertyName = outputDescriptor.name;
-    const activityDescriptor = this.findActivityDescriptor();
     const camelCasePropertyName = camelCase(propertyName);
 
     const property: ActivityOutput = {
@@ -262,18 +249,26 @@ export class ActivityPropertiesEditor {
 
     activity[camelCasePropertyName] = property;
 
+    this.updateActivity(propertyName);
+  }
+
+  private updateActivity = (propertyName?: string, propertyDescriptor?: PropertyDescriptor) => {
+    const activityDescriptor = this.findActivityDescriptor();
+    const activity = this.activity;
+    const activityId = activity.id;
+
     this.activityUpdated.emit({
       newId: activityId,
       originalId: activityId,
       activity,
       activityDescriptor,
-      propertyName: camelCasePropertyName,
-      propertyDescriptor: outputDescriptor
+      propertyName: propertyName,
+      propertyDescriptor: propertyDescriptor
     });
   }
 
   private renderCommonTab = () => {
-    const {activity,} = this.renderContext;
+    const {activity} = this.renderContext;
     const activityId = activity.id;
     const displayText: string = activity.metadata?.displayText ?? '';
     const canStartWorkflow: boolean = activity.canStartWorkflow;
@@ -346,6 +341,20 @@ export class ActivityPropertiesEditor {
           </FormEntry>
         </div>;
       })}
+    </div>
+  };
+
+  private renderTaskTab = () => {
+    const {activity} = this.renderContext;
+    const activityId = activity.id;
+    const runAsynchronously: boolean = activity.runAsynchronously;
+    const key = `${activityId}:task`;
+
+    return <div key={key}>
+      <CheckboxFormEntry fieldId="RunAsynchronously" label="Execute asynchronously" hint="When enabled, this activity will execute asynchronously and suspend workflow execution until the activity is finished.">
+        <input type="checkbox" name="RunAsynchronously" id="RunAsynchronously" value={"true"} checked={runAsynchronously} onChange={e => this.onRunAsynchronouslyChanged(e)}/>
+      </CheckboxFormEntry>
+
     </div>
   };
 }

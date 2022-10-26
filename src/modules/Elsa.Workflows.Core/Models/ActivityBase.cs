@@ -33,6 +33,7 @@ public abstract class ActivityBase : IActivity, ISignalHandler
     public string Type { get; set; }
     public int Version { get; set; }
     public bool CanStartWorkflow { get; set; }
+    public bool RunAsynchronously { get; set; }
     public IDictionary<string, object> ApplicationProperties { get; set; } = new Dictionary<string, object>();
     public IDictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
 
