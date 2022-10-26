@@ -20,6 +20,7 @@ public class WorkflowRunner : IWorkflowRunner
     private readonly IWorkflowBuilderFactory _workflowBuilderFactory;
     private readonly IActivitySchedulerFactory _schedulerFactory;
     private readonly IIdentityGenerator _identityGenerator;
+    private readonly IWorkflowExecutionContextFactory _workflowExecutionContextFactory;
 
     public WorkflowRunner(
         IServiceScopeFactory serviceScopeFactory,
@@ -29,7 +30,8 @@ public class WorkflowRunner : IWorkflowRunner
         IIdentityGraphService identityGraphService,
         IWorkflowBuilderFactory workflowBuilderFactory,
         IActivitySchedulerFactory schedulerFactory,
-        IIdentityGenerator identityGenerator)
+        IIdentityGenerator identityGenerator,
+        IWorkflowExecutionContextFactory workflowExecutionContextFactory)
     {
         _serviceScopeFactory = serviceScopeFactory;
         _activityWalker = activityWalker;
@@ -39,6 +41,7 @@ public class WorkflowRunner : IWorkflowRunner
         _workflowBuilderFactory = workflowBuilderFactory;
         _schedulerFactory = schedulerFactory;
         _identityGenerator = identityGenerator;
+        _workflowExecutionContextFactory = workflowExecutionContextFactory;
     }
 
     public async Task<RunWorkflowResult> RunAsync(IActivity activity, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
@@ -85,7 +88,7 @@ public class WorkflowRunner : IWorkflowRunner
         using var scope = _serviceScopeFactory.CreateScope();
 
         // Setup a workflow execution context.
-        var workflowExecutionContext = await CreateWorkflowExecutionContextAsync(scope.ServiceProvider, workflow, instanceId, default, input, default, cancellationToken);
+        var workflowExecutionContext = await CreateWorkflowExecutionContextAsync(workflow, instanceId, default, input, default, cancellationToken);
 
         // Schedule the first activity.
         workflowExecutionContext.ScheduleRoot();
@@ -99,7 +102,7 @@ public class WorkflowRunner : IWorkflowRunner
         using var scope = _serviceScopeFactory.CreateScope();
 
         // Create workflow execution context.
-        var workflowExecutionContext = await CreateWorkflowExecutionContextAsync(scope.ServiceProvider, workflow, workflowState.Id, workflowState, input, default, cancellationToken);
+        var workflowExecutionContext = await CreateWorkflowExecutionContextAsync(workflow, workflowState.Id, workflowState, input, default, cancellationToken);
 
         // Schedule the first node.
         workflowExecutionContext.ScheduleRoot();
@@ -113,7 +116,7 @@ public class WorkflowRunner : IWorkflowRunner
         using var scope = _serviceScopeFactory.CreateScope();
 
         // Create workflow execution context.
-        var workflowExecutionContext = await CreateWorkflowExecutionContextAsync(scope.ServiceProvider, workflow, workflowState.Id, workflowState, input, default, cancellationToken);
+        var workflowExecutionContext = await CreateWorkflowExecutionContextAsync(workflow, workflowState.Id, workflowState, input, default, cancellationToken);
 
         // Schedule the bookmark, if any.
         if (bookmarkId != null)
@@ -143,32 +146,11 @@ public class WorkflowRunner : IWorkflowRunner
     }
 
     private async Task<WorkflowExecutionContext> CreateWorkflowExecutionContextAsync(
-        IServiceProvider serviceProvider,
         Workflow workflow,
         string instanceId,
         WorkflowState? workflowState,
         IDictionary<string, object>? input,
         ExecuteActivityDelegate? executeActivityDelegate,
-        CancellationToken cancellationToken)
-    {
-        var root = workflow;
-
-        // Build graph.
-        var graph = await _activityWalker.WalkAsync(root, cancellationToken);
-
-        // Assign identities.
-        _identityGraphService.AssignIdentities(graph);
-
-        // Create scheduler.
-        var scheduler = _schedulerFactory.CreateScheduler();
-
-        // Setup a workflow execution context.
-        var correlationId = workflowState?.CorrelationId;
-        var workflowExecutionContext = new WorkflowExecutionContext(serviceProvider, instanceId, correlationId, workflow, graph, scheduler, input, executeActivityDelegate, cancellationToken);
-
-        // Restore workflow execution context from state, if provided.
-        if (workflowState != null) _workflowStateSerializer.DeserializeState(workflowExecutionContext, workflowState);
-
-        return workflowExecutionContext;
-    }
+        CancellationToken cancellationToken) =>
+        await _workflowExecutionContextFactory.CreateAsync(workflow, instanceId, workflowState, input, executeActivityDelegate, cancellationToken);
 }

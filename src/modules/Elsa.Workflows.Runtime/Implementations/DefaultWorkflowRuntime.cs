@@ -103,7 +103,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
 
         return new ResumeWorkflowResult(workflowState.Bookmarks);
     }
-
+    
     public async Task<ICollection<ResumedWorkflow>> ResumeWorkflowsAsync(string activityTypeName, object bookmarkPayload, ResumeWorkflowOptions options, CancellationToken cancellationToken = default)
     {
         var hash = _hasher.Hash(activityTypeName, bookmarkPayload);

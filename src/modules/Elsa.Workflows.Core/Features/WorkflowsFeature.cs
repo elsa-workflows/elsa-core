@@ -68,6 +68,7 @@ public class WorkflowsFeature : FeatureBase
             .AddSingleton<IHasher, Hasher>()
             .AddSingleton<IBookmarkHasher, BookmarkHasher>()
             .AddSingleton<IIdentityGenerator, RandomIdentityGenerator>()
+            .AddSingleton<IWorkflowExecutionContextFactory, DefaultWorkflowExecutionContextFactory>()
             .AddSingleton<IBookmarkPayloadSerializer, BookmarkPayloadSerializer>()
             .AddTransient<WorkflowBuilder>()
             .AddSingleton(typeof(Func<IWorkflowBuilder>), sp => () => sp.GetRequiredService<WorkflowBuilder>())

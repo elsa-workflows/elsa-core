@@ -27,6 +27,12 @@ public class MemoryBookmarkStore : IBookmarkStore
         return new(bookmarks);
     }
 
+    public ValueTask<IEnumerable<StoredBookmark>> FindByWorkflowInstanceAndHashAsync(string workflowInstanceId, string hash, CancellationToken cancellationToken)
+    {
+        var bookmarks = _bookmarks.Values.SelectMany(x => x).Where(x => x.WorkflowInstanceId == workflowInstanceId && x.Hash == hash).ToList();
+        return new(bookmarks);
+    }
+
     public ValueTask DeleteAsync(string hash, string workflowInstanceId, CancellationToken cancellationToken = default)
     {
         var key = hash;

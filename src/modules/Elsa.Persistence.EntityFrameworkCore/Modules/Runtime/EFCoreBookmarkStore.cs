@@ -15,25 +15,19 @@ public class EFCoreBookmarkStore : IBookmarkStore
         string workflowInstanceId,
         IEnumerable<string> bookmarkIds, CancellationToken cancellationToken = default)
     {
-        var storedBookmarks = bookmarkIds.Select(x => new StoredBookmark(activityTypeName, hash, workflowInstanceId, x))
-            .ToList();
+        var storedBookmarks = bookmarkIds.Select(x => new StoredBookmark(activityTypeName, hash, workflowInstanceId, x)).ToList();
         await _store.SaveManyAsync(storedBookmarks, cancellationToken);
     }
 
-    public async ValueTask<IEnumerable<StoredBookmark>> FindByWorkflowInstanceAsync(
-        string workflowInstanceId,
-        CancellationToken cancellationToken = default) =>
+    public async ValueTask<IEnumerable<StoredBookmark>> FindByWorkflowInstanceAsync(string workflowInstanceId, CancellationToken cancellationToken = default) =>
         await _store.FindManyAsync(x => x.WorkflowInstanceId == workflowInstanceId, cancellationToken);
 
-    public async ValueTask<IEnumerable<StoredBookmark>> FindByHashAsync(string hash,
-        CancellationToken cancellationToken = default) =>
+    public async ValueTask<IEnumerable<StoredBookmark>> FindByHashAsync(string hash, CancellationToken cancellationToken = default) =>
         await _store.FindManyAsync(x => x.Hash == hash, cancellationToken);
 
-    public async ValueTask DeleteAsync(
-        string hash,
-        string workflowInstanceId,
-        CancellationToken cancellationToken = default) =>
-        await _store.DeleteWhereAsync(
-            x => x.WorkflowInstanceId == workflowInstanceId && x.Hash == hash,
-            cancellationToken);
+    public async ValueTask<IEnumerable<StoredBookmark>> FindByWorkflowInstanceAndHashAsync(string workflowInstanceId, string hash, CancellationToken cancellationToken) => 
+        await _store.FindManyAsync(x => x.WorkflowInstanceId == workflowInstanceId && x.Hash == hash, cancellationToken);
+
+    public async ValueTask DeleteAsync(string hash, string workflowInstanceId, CancellationToken cancellationToken = default) =>
+        await _store.DeleteWhereAsync(x => x.WorkflowInstanceId == workflowInstanceId && x.Hash == hash, cancellationToken);
 }

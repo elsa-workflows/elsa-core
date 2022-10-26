@@ -1,4 +1,6 @@
-using System.Threading.Tasks;
+using Elsa.Jobs.Activities.Jobs;
+using Elsa.Jobs.Activities.Models;
+using Elsa.Jobs.Extensions;
 using Elsa.Jobs.Services;
 using Elsa.Workflows.Core.Middleware.Activities;
 using Elsa.Workflows.Core.Models;
@@ -6,7 +8,7 @@ using Elsa.Workflows.Core.Pipelines.ActivityExecution;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Services;
 
-namespace Elsa.Jobs.Middleware.Activities;
+namespace Elsa.Jobs.Activities.Middleware.Activities;
 
 public static class JobBasedActivityInvokerMiddlewareExtensions
 {
@@ -24,8 +26,8 @@ public class JobBasedActivityInvokerMiddleware : DefaultActivityInvokerMiddlewar
     private readonly IJobQueue _jobQueue;
 
     public JobBasedActivityInvokerMiddleware(
-        ActivityMiddlewareDelegate next, 
-        IActivityRegistry activityRegistry, 
+        ActivityMiddlewareDelegate next,
+        IActivityRegistry activityRegistry,
         IActivityDescriber activityDescriber,
         IJobFactory jobFactory,
         IJobQueue jobQueue) : base(next)
@@ -43,13 +45,22 @@ public class JobBasedActivityInvokerMiddleware : DefaultActivityInvokerMiddlewar
         var kind = activityDescriptor.Kind;
         var shouldRunInBackground = kind is ActivityKind.Job or ActivityKind.Task; // TODO: If Task, check the activity's configuration itself to see if the user configured async or sync mode.
 
+        // Schedule activity normally if this is not a job or task configured to run in the background.
         if (!shouldRunInBackground)
         {
             await base.ExecuteActivityAsync(context);
             return;
         }
+
+        // Schedule a job that will execute this activity.
+        var job = _jobFactory.Create<ExecuteBackgroundActivityJob>();
+        var bookmarkPayload = new BackgroundActivityPayload(job.Id);
+        var bookmark = context.CreateBookmark(bookmarkPayload);
         
-        // Schedule a job that then executes this activity within the context of the entire workflow.
-        //context.CreateBookmark()
+        job.Activity = activity;
+        job.WorkflowInstanceId = context.WorkflowExecutionContext.Id;
+        job.BookmarkId = bookmark.Id;
+        
+        await _jobQueue.SubmitJobAsync(job, cancellationToken: context.CancellationToken);
     }
 }
