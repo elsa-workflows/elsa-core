@@ -52,11 +52,23 @@ export class InputControlSwitch {
       this.closeContextMenu();
   }
 
-   componentWillLoad() {
+  componentWillLoad() {
     this.currentExpression = this.expression;
   }
 
-   render() {
+  render() {
+
+    if (!this.label && !this.shouldRenderMonaco()) {
+      return <div class="p-4">
+        <div class="flex">
+          <div class="flex-1">
+            {this.renderEditor()}
+          </div>
+          {this.renderContextMenuWidget()}
+        </div>
+      </div>
+    }
+
     return <div class="p-4">
       <div class="mb-1">
         <div class="flex">
@@ -71,9 +83,6 @@ export class InputControlSwitch {
   }
 
   private renderLabel() {
-    if (!this.label)
-      return undefined;
-
     const fieldId = this.fieldName;
     const fieldLabel = this.label || fieldId;
 
@@ -118,11 +127,8 @@ export class InputControlSwitch {
     </div>;
   }
 
-  private renderContextMenuButton = () => {
-    const selectedSyntax = this.syntax;
-    const showMonaco = !!selectedSyntax && selectedSyntax != 'Literal' && !!this.supportedSyntaxes.find(x => x === selectedSyntax);
-    return showMonaco ? <span>{this.syntax}</span> : <SyntaxSelectorIcon/>;
-  };
+  private shouldRenderMonaco = () => !!this.syntax && this.syntax != 'Literal' && !!this.supportedSyntaxes.find(x => x === this.syntax)
+  private renderContextMenuButton = () => this.shouldRenderMonaco() ? <span>{this.syntax}</span> : <SyntaxSelectorIcon/>;
 
   private renderEditor = () => {
     const selectedSyntax = this.syntax;

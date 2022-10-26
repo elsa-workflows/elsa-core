@@ -34,9 +34,11 @@ export class Checkbox {
     const isChecked = this.isChecked;
 
     return (
-      <elsa-input-control-switch label={displayName} hint={hint} syntax={syntax} expression={value}
-                                 onExpressionChanged={this.onExpressionChanged}>
-        <input type="checkbox" name={fieldName} id={fieldId} value={value} checked={isChecked} onChange={this.onPropertyEditorChanged}/>
+      <elsa-input-control-switch hint={hint} syntax={syntax} expression={value} onExpressionChanged={this.onExpressionChanged}>
+        <div class="flex space-x-1">
+          <input type="checkbox" name={fieldName} id={fieldId} value={value} checked={isChecked} onChange={this.onPropertyEditorChanged}/>
+          <label htmlFor={fieldId}>{displayName}</label>
+        </div>
       </elsa-input-control-switch>
     );
   }
