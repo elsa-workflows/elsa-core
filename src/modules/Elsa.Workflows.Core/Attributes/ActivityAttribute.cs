@@ -1,4 +1,5 @@
 using System;
+using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Workflows.Core.Attributes;
 
@@ -23,7 +24,7 @@ public class ActivityAttribute : Attribute
     {
         Namespace = @namespace;
         Type = type;
-        Version = version;
+        Version = version;  
         Description = description;
         Category = category;
     }
@@ -34,5 +35,5 @@ public class ActivityAttribute : Attribute
     public string? Description { get; set; }
     public string? DisplayName { get; set; }
     public string? Category { get; set; }
-    public bool CanRunInBackground { get; set; }
+    public ActivityKind Kind { get; set; } = ActivityKind.Action;
 }

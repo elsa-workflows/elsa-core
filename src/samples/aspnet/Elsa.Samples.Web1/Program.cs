@@ -66,7 +66,7 @@ serviceProvider.ConfigureDefaultWorkflowExecutionPipeline(pipeline =>
         .UseWorkflowExecutionLogPersistence()
         .UsePersistentVariables()
         .UseWorkflowContexts()
-        .UseActivityScheduler()
+        .UseDefaultActivityScheduler()
 );
 
 if (app.Environment.IsDevelopment())

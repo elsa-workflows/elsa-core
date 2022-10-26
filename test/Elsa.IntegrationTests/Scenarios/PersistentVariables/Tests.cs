@@ -29,7 +29,7 @@ public class WorkflowInstancePersistenceTests
 
         services.ConfigureDefaultWorkflowExecutionPipeline(pipeline => pipeline
             .UsePersistentVariables()
-            .UseActivityScheduler());
+            .UseDefaultActivityScheduler());
     }
 
     [Fact(DisplayName = "Persistent variables are persisted after workflow gets blocked")]

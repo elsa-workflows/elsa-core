@@ -23,15 +23,17 @@ public class ActivityInvoker : IActivityInvoker
         IEnumerable<MemoryBlockReference>? memoryReferences = default)
     {
         // Setup an activity execution context.
-        var workflowMemory = workflowExecutionContext.MemoryRegister;
-        var activityMemory = new MemoryRegister(workflowMemory);
         var activityExecutionContext = workflowExecutionContext.CreateActivityExecutionContext(activity, owner);
 
         // Declare memory.
         if (memoryReferences != null)
+        {
+            var workflowMemory = workflowExecutionContext.MemoryRegister;
+            var activityMemory = new MemoryRegister(workflowMemory);
             activityMemory.Declare(memoryReferences);
+        }
 
-        // Add the activity context into the workflow context.
+        // Add the activity context to the workflow context.
         workflowExecutionContext.ActivityExecutionContexts.Add(activityExecutionContext);
 
         // Execute the activity execution pipeline.

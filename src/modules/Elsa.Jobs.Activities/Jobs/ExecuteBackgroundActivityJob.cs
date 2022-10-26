@@ -1,5 +1,6 @@
 using Elsa.Common.Models;
 using Elsa.Jobs.Abstractions;
+using Elsa.Jobs.Activities.Middleware.Activities;
 using Elsa.Jobs.Models;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Runtime.Services;
@@ -31,6 +32,11 @@ public class ExecuteBackgroundActivityJob : Job
 
         var workflow = await workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
         var workflowExecutionContext = await workflowExecutionContextFactory.CreateAsync(workflow, workflowState.Id, workflowState, cancellationToken: cancellationToken);
-        await activityInvoker.InvokeAsync(workflowExecutionContext, Activity);
+        var activityExecutionContext = workflowExecutionContext.CreateActivityExecutionContext(Activity);
+
+        // Set a transient property for the activity middleware to prevent it from scheduling another background activity execution job.
+        activityExecutionContext.TransientProperties[JobBasedActivityInvokerMiddleware.IsBackgroundExecution] = true;
+        
+        await activityInvoker.InvokeAsync(activityExecutionContext);
     }
 }

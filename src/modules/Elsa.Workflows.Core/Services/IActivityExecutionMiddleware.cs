@@ -7,3 +7,4 @@ public interface IActivityExecutionMiddleware
 {
     ValueTask InvokeAsync(ActivityExecutionContext context);
 }
+

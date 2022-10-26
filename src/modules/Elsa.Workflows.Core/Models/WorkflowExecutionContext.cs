@@ -87,6 +87,7 @@ public class WorkflowExecutionContext
     public T GetOrCreateService<T>() where T : notnull => ActivatorUtilities.GetServiceOrCreateInstance<T>(_serviceProvider);
     public object GetOrCreateService(Type serviceType) => ActivatorUtilities.GetServiceOrCreateInstance(_serviceProvider, serviceType);
     public T? GetService<T>() where T : notnull => _serviceProvider.GetService<T>();
+    public IEnumerable<T> GetServices<T>() where T : notnull => _serviceProvider.GetServices<T>();
     public object? GetService(Type serviceType) => _serviceProvider.GetService(serviceType);
 
     public void AddCompletionCallback(ActivityExecutionContext owner, IActivity child, ActivityCompletionCallback completionCallback)

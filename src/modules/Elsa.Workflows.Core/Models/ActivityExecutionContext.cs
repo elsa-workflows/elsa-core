@@ -52,7 +52,7 @@ public class ActivityExecutionContext
     /// A transient dictionary of values that can be associated with the activity.
     /// These properties only exist while the activity executes and are not persisted. 
     /// </summary>
-    public IDictionary<string, object> TransientProperties { get; set; } = new Dictionary<string, object>();
+    public IDictionary<object, object> TransientProperties { get; set; } = new Dictionary<object, object>();
 
     /// <summary>
     /// Returns the <see cref="ActivityNode"/> metadata about the current activity.
@@ -166,6 +166,7 @@ public class ActivityExecutionContext
     public T GetOrCreateService<T>() where T : notnull => WorkflowExecutionContext.GetOrCreateService<T>();
     public object GetOrCreateService(Type serviceType) => WorkflowExecutionContext.GetOrCreateService(serviceType);
     public T? GetService<T>() where T : notnull => WorkflowExecutionContext.GetService<T>();
+    public IEnumerable<T> GetServices<T>() where T : notnull => WorkflowExecutionContext.GetServices<T>();
     public object? GetService(Type serviceType) => WorkflowExecutionContext.GetService(serviceType);
     public T? Get<T>(Input<T>? input) => input == null ? default : Get<T>(input.MemoryBlockReference);
 

@@ -8,6 +8,7 @@ using Elsa.JavaScript.Activities;
 using Elsa.JavaScript.Extensions;
 using Elsa.Jobs.Activities.Extensions;
 using Elsa.Jobs.Activities.Implementations;
+using Elsa.Jobs.Activities.Middleware.Activities;
 using Elsa.Jobs.Activities.Services;
 using Elsa.Labels.Extensions;
 using Elsa.Liquid.Extensions;
@@ -120,8 +121,11 @@ serviceProvider.ConfigureDefaultWorkflowExecutionPipeline(pipeline =>
     pipeline
         .UsePersistentVariables()
         .UseWorkflowContexts()
-        .UseActivityScheduler()
+        .UseDefaultActivityScheduler()
 );
+
+// Configure activity execution pipeline to use the job-based activity invoker.
+serviceProvider.ConfigureDefaultActivityExecutionPipeline(pipeline => pipeline.UseJobBasedActivityInvoker());
 
 if (app.Environment.IsDevelopment())
     app.UseDeveloperExceptionPage();

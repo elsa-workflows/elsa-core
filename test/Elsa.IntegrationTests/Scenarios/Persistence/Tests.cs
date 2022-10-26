@@ -26,7 +26,7 @@ public class WorkflowInstancePersistenceTests
 
         services.ConfigureDefaultWorkflowExecutionPipeline(pipeline => pipeline
             .UsePersistentVariables()
-            .UseActivityScheduler());
+            .UseDefaultActivityScheduler());
     }
 
     [Fact(DisplayName = "Executing a workflow creates a workflow instance")]

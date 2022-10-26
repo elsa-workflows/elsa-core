@@ -20,6 +20,7 @@ public static class JobBasedActivityInvokerMiddlewareExtensions
 /// </summary>
 public class JobBasedActivityInvokerMiddleware : DefaultActivityInvokerMiddleware
 {
+    internal static readonly object IsBackgroundExecution = new();
     private readonly IActivityRegistry _activityRegistry;
     private readonly IActivityDescriber _activityDescriber;
     private readonly IJobFactory _jobFactory;
@@ -43,7 +44,11 @@ public class JobBasedActivityInvokerMiddleware : DefaultActivityInvokerMiddlewar
         var activity = context.Activity;
         var activityDescriptor = _activityRegistry.Find(activity.Type) ?? await _activityDescriber.DescribeActivityAsync(activity.GetType(), context.CancellationToken);
         var kind = activityDescriptor.Kind;
-        var shouldRunInBackground = kind is ActivityKind.Job or ActivityKind.Task; // TODO: If Task, check the activity's configuration itself to see if the user configured async or sync mode.
+        
+        var shouldRunInBackground = 
+            !context.TransientProperties.ContainsKey(IsBackgroundExecution)
+            && context.WorkflowExecutionContext.ExecuteDelegate == null
+            && kind is ActivityKind.Job or ActivityKind.Task; // TODO: If Task, check the activity's configuration itself to see if the user configured async or sync mode.
 
         // Schedule activity normally if this is not a job or task configured to run in the background.
         if (!shouldRunInBackground)

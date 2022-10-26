@@ -75,7 +75,7 @@ public class ActivityDescriber : IActivityDescriber
             Type = fullTypeName,
             Version = typeVersion,
             DisplayName = displayName,
-            Kind = isTrigger ? ActivityKind.Trigger : ActivityKind.Action,
+            Kind = isTrigger ? ActivityKind.Trigger : activityAttr?.Kind ?? ActivityKind.Action,
             Ports = allPorts.ToList(),
             Inputs = DescribeInputProperties(inputProperties).ToList(),
             Outputs = DescribeOutputProperties(outputProperties).ToList(),
