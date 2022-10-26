@@ -30,7 +30,7 @@ services
         .UseRuntime(runtime =>
         {
             runtime
-                .UseEntityFrameworkCore(ef => ef.UseSqlite())
+                .UseEntityFrameworkCore(f =>f.UseSqlite())
                 .AddWorkflow<HelloWorldWorkflow>()
                 .AddWorkflow<HttpWorkflow>()
                 .AddWorkflow<ForkedHttpWorkflow>()
