@@ -49,7 +49,6 @@ export class ElsaWorkflowDesigner {
     connections: [],
     persistenceBehavior: WorkflowPersistenceBehavior.WorkflowBurst
   };
-  @Prop() selectedActivityIds: Array<string> = [];
   @Prop() activityContextMenuButton?: (activity: ActivityModel) => string;
   @Prop() activityBorderColor?: (activity: ActivityModel) => string;
   @Prop() activityContextMenu?: ActivityContextMenuState;
@@ -110,7 +109,7 @@ export class ElsaWorkflowDesigner {
     connections: []
   };
 
-  @Prop() copiedActivity: any;
+  @Prop() copiedActivities: any[];
 
   el: HTMLElement;
   parentActivityId?: string;
@@ -144,34 +143,42 @@ export class ElsaWorkflowDesigner {
         })
 
         if (activitiesList.length > 0) {
-          this.copiedActivity = activitiesList[0];
+          this.copiedActivities = activitiesList;
         };
       }
       if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+        let newWorkflowModel = this.workflowModel;
 
-        if(this.copiedActivity.activityDescriptor) {
-
-          const { activityDescriptor, position } = this.copiedActivity
-          let newActivity = {
-            activityId: uuid(),
-            type: activityDescriptor.type,
-            outcomes: activityDescriptor.outcomes,
-            displayName: activityDescriptor.displayName,
-            properties: [],
-            propertyStorageProviders: {},
-            left: position.left + 24 || 0,
-            top: position.top + 32 || 0
-          };
-
-          for (const property of activityDescriptor.inputProperties) {
-            newActivity.properties[property.name] = {
-              syntax: '',
-              expression: '',
+        if(this.copiedActivities.length) {
+          for (const copiedActivity of this.copiedActivities) {
+            const { activityDescriptor, position } = copiedActivity;
+            let newActivity = {
+              activityId: uuid(),
+              type: activityDescriptor.type,
+              outcomes: activityDescriptor.outcomes,
+              displayName: activityDescriptor.displayName,
+              properties: [],
+              propertyStorageProviders: {},
+              left: position.left + 24 || 0,
+              top: position.top + 32 || 0
             };
+
+            for (const property of activityDescriptor.inputProperties) {
+              newActivity.properties[property.name] = {
+                syntax: '',
+                expression: '',
+              };
+            };
+
+            const result = await this.addActivity(newWorkflowModel, newActivity, null, null, this.parentActivityOutcome, false);
+            newWorkflowModel = result;
           };
 
-          this.addActivity(newActivity, null, null, this.parentActivityOutcome);
+          this.updateWorkflowModel(newWorkflowModel);
         }
+      }
+      if (e.key == 'Delete') {
+        this.removeSelectedActivities();
       }
     }
   }
@@ -198,18 +205,6 @@ export class ElsaWorkflowDesigner {
     this.updateWorkflowModel(newValue, false);
   }
 
-  @Watch('selectedActivityIds')
-  handleSelectedActivityIdsChanged(newValue: Array<string>) {
-    const ids = newValue || [];
-    const selectedActivities = this.workflowModel.activities.filter(x => ids.includes(x.activityId));
-    const map: Map<ActivityModel> = {};
-
-    for (const activity of selectedActivities)
-      map[activity.activityId] = activity;
-
-    this.selectedActivities = map;
-  }
-
   @Watch('activityContextMenu')
   handleActivityContextMenuChanged(newValue: ActivityContextMenuState) {
     this.activityContextMenuState = newValue;
@@ -232,9 +227,13 @@ export class ElsaWorkflowDesigner {
 
   @Method()
   async removeSelectedActivities() {
+    const selectedActivitiesKeys = Object.keys(this.selectedActivities);
+    if (!selectedActivitiesKeys.length) {
+      return;
+    }
     let model = {...this.workflowModel};
 
-    Object.keys(this.selectedActivities).forEach((key) => {
+    selectedActivitiesKeys.forEach((key) => {
       model = this.removeActivityInternal(this.selectedActivities[key], model);
     });
 
@@ -653,10 +652,10 @@ export class ElsaWorkflowDesigner {
     return activity;
   }
 
-  async addActivity(activity: ActivityModel, sourceActivityId?: string, targetActivityId?: string, outcome?: string) {
+  async addActivity(oldWorkflowModel: WorkflowModel, activity: ActivityModel, sourceActivityId?: string, targetActivityId?: string, outcome?: string, update = true): Promise<WorkflowModel> {
     outcome = outcome || 'Done';
 
-    const workflowModel = {...this.workflowModel, activities: [...this.workflowModel.activities, activity]};
+    const workflowModel = {...oldWorkflowModel, activities: [...oldWorkflowModel.activities, activity]};
     const activityDisplayContext = await this.getActivityDisplayContext(activity);
 
     if (targetActivityId) {
@@ -710,9 +709,12 @@ export class ElsaWorkflowDesigner {
       }
     }
 
-    this.updateWorkflowModel(workflowModel);
+    if (update ) {
+      this.updateWorkflowModel(workflowModel);
+    }
     this.parentActivityId = null;
     this.parentActivityOutcome = null;
+    return workflowModel;
   }
 
   getRootActivities(): Array<ActivityModel> {
@@ -779,7 +781,7 @@ export class ElsaWorkflowDesigner {
       const connectFromRoot = !this.parentActivityOutcome || this.parentActivityOutcome == '';
       const sourceId = connectFromRoot ? null : this.parentActivityId;
       const targetId = connectFromRoot ? this.parentActivityId : null;
-      this.addActivity(activityModel, sourceId, targetId, this.parentActivityOutcome);
+      this.addActivity(this.workflowModel, activityModel, sourceId, targetId, this.parentActivityOutcome);
       this.addingActivity = false;
     } else {
       console.debug(`updating activity with ID ${activityModel.activityId}`)

@@ -70,14 +70,13 @@ export namespace Components {
         "activityContextMenuButton"?: (activity: ActivityModel) => string;
         "activityContextTestMenu"?: ActivityContextMenuState;
         "connectionContextMenu"?: ActivityContextMenuState;
-        "copiedActivity": any;
+        "copiedActivities": any[];
         "enableMultipleConnectionsFromSingleSource": boolean;
         "layoutDirection": LayoutDirection;
         "mode": WorkflowDesignerMode;
         "model": WorkflowModel;
         "removeActivity": (activity: ActivityModel) => Promise<void>;
         "removeSelectedActivities": () => Promise<void>;
-        "selectedActivityIds": Array<string>;
         "showActivityEditor": (activity: ActivityModel, animate: boolean) => Promise<void>;
         "workflow": WorkflowModel;
     }
@@ -96,7 +95,6 @@ export namespace Components {
         "model": WorkflowModel;
         "removeActivity": (activity: ActivityModel) => Promise<void>;
         "removeSelectedActivities": () => Promise<void>;
-        "selectedActivityIds": Array<string>;
         "showActivityEditor": (activity: ActivityModel, animate: boolean) => Promise<void>;
     }
     interface ElsaDictionaryProperty {
@@ -950,7 +948,7 @@ declare namespace LocalJSX {
         "activityContextMenuButton"?: (activity: ActivityModel) => string;
         "activityContextTestMenu"?: ActivityContextMenuState;
         "connectionContextMenu"?: ActivityContextMenuState;
-        "copiedActivity"?: any;
+        "copiedActivities"?: any[];
         "enableMultipleConnectionsFromSingleSource"?: boolean;
         "layoutDirection"?: LayoutDirection;
         "mode"?: WorkflowDesignerMode;
@@ -961,7 +959,6 @@ declare namespace LocalJSX {
         "onActivitySelected"?: (event: CustomEvent<ActivityModel>) => void;
         "onConnectionContextMenuButtonClicked"?: (event: CustomEvent<ActivityContextMenuState>) => void;
         "onWorkflow-changed"?: (event: CustomEvent<WorkflowModel>) => void;
-        "selectedActivityIds"?: Array<string>;
         "workflow"?: WorkflowModel;
     }
     interface ElsaDesignerPanel {
@@ -985,7 +982,6 @@ declare namespace LocalJSX {
         "onActivitySelected"?: (event: CustomEvent<ActivityModel>) => void;
         "onConnectionContextMenuButtonClicked"?: (event: CustomEvent<ActivityContextMenuState>) => void;
         "onWorkflow-changed"?: (event: CustomEvent<WorkflowModel>) => void;
-        "selectedActivityIds"?: Array<string>;
     }
     interface ElsaDictionaryProperty {
         "activityModel"?: ActivityModel;

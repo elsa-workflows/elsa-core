@@ -39,7 +39,7 @@ export class ElsaWorkflowDesigner {
     connections: [],
     persistenceBehavior: WorkflowPersistenceBehavior.WorkflowBurst
   };
-  @Prop() selectedActivityIds: Array<string> = [];
+  // @Prop() selectedActivityIds: Array<string> = [];
   @Prop() activityContextMenuButton?: (activity: ActivityModel) => string;
   @Prop() activityBorderColor?: (activity: ActivityModel) => string;
   @Prop() activityContextMenu?: ActivityContextMenuState;
@@ -123,7 +123,7 @@ export class ElsaWorkflowDesigner {
     this.updateWorkflowModel(newValue, false);
   }
 
-  @Watch('selectedActivityIds')
+  /*@Watch('selectedActivityIds')
   handleSelectedActivityIdsChanged(newValue: Array<string>) {
     const ids = newValue || [];
     const selectedActivities = this.workflowModel.activities.filter(x => ids.includes(x.activityId));
@@ -134,7 +134,7 @@ export class ElsaWorkflowDesigner {
 
     this.selectedActivities = map;
     this.safeRender();
-  }
+  }*/
 
   @Watch('activityContextMenu')
   handleActivityContextMenuChanged(newValue: ActivityContextMenuState) {

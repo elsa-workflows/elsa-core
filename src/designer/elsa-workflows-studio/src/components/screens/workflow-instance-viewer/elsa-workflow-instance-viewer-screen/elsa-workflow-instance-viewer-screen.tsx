@@ -396,7 +396,6 @@ export class ElsaWorkflowInstanceViewerScreen {
           // !!!! onActivityContextMenuButtonClicked={e => this.onActivityContextMenuButtonClicked(e)}
           // !!!! onActivityContextMenuButtonTestClicked={e => this.onActivityContextMenuButtonTestClicked(e)}
           activityContextMenu={this.activityContextMenuState}
-          selectedActivityIds={[this.selectedActivityId]}
           onActivitySelected={e => this.onActivitySelected(e)}
           onActivityDeselected={e => this.onActivityDeselected(e)}
           class="canvas-container"

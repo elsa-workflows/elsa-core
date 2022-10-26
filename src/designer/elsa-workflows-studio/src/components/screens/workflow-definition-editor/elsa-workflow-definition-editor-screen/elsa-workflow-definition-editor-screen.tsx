@@ -95,7 +95,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
   helpDialog: HTMLElsaModalDialogElement;
   activityContextMenu: HTMLDivElement;
   componentCustomButton: HTMLDivElement;
-  copiedActivity = { activityDescriptor: null, position: null };
+  copiedActivities = [];
 
   //connectionContextMenu: HTMLDivElement;
 
@@ -765,10 +765,9 @@ export class ElsaWorkflowDefinitionEditorScreen {
           onActivityContextMenuButtonTestClicked={e => this.onActivityContextMenuButtonTestClicked(e)}
           activityContextMenu={this.workflowDesignerMode == WorkflowDesignerMode.Edit ? this.activityContextMenuState : this.activityContextMenuTestState}
           enableMultipleConnectionsFromSingleSource={false}
-          selectedActivityIds={[this.selectedActivityId]}
           onActivitySelected={e => this.onActivitySelected(e)}
           onActivityDeselected={e => this.onActivityDeselected(e)}
-          copiedActivity={this.copiedActivity}
+          copiedActivities={this.copiedActivities}
           class="canvas-container"
           ref={el => (this.designer = el)}
         />
@@ -964,7 +963,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
     const activityDescriptor = activityDescriptors.find(descriptor => descriptor.type === activity.type);
     // TODO: uncomment:
     // this.newActivity(activityDescriptor, position);
-    this.copiedActivity = { activityDescriptor, position };
+    this.copiedActivities = [{ activityDescriptor, position }];
   }
 
   newActivity(activityDescriptor: ActivityDescriptor, position: any): void {
