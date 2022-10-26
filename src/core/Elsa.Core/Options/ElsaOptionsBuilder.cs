@@ -112,6 +112,12 @@ namespace Elsa.Options
             return this;
         }
 
+        public ElsaOptionsBuilder UseTenantSignaler()
+        {
+            ElsaOptions.UseTenantSignaler = true;
+            return this;
+        }
+
         public ElsaOptionsBuilder AddWorkflow(IWorkflow workflow)
         {
             Services.AddSingleton(workflow);

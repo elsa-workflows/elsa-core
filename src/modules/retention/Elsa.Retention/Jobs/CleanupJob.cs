@@ -44,29 +44,25 @@ namespace Elsa.Retention.Jobs
         {
             var threshold = _clock.GetCurrentInstant().Minus(_options.TimeToLive);
             var specification = new WorkflowCreatedBeforeSpecification(threshold);
-            var currentPage = 0;
             var take = _options.BatchSize;
             var orderBy = new OrderBy<WorkflowInstance>(x => x.CreatedAt, SortDirection.Descending);
-            var collectedWorkflowInstanceIds = new List<string>();
+            
 
             // Collect workflow instances to be deleted.
             while (true)
             {
-                var paging = Paging.Page(currentPage++, take);
+                var paging = new Paging(0, take); ;
 
                 var workflowInstances = await _workflowInstanceStore
-                    .FindManyAsync(specification, orderBy, paging, cancellationToken)
+                    .FindManyAsync<string>(specification,(wf)=>wf.Id ,orderBy, paging, cancellationToken)
                     .ToList();
 
-                var filteredWorkflowInstances = await _retentionFilterPipeline.FilterAsync(workflowInstances, cancellationToken).ToList();
-                collectedWorkflowInstanceIds.AddRange(filteredWorkflowInstances.Select(x => x.Id));
+                // Delete collected workflow instances.
+                await DeleteManyAsync(workflowInstances, cancellationToken);
 
                 if (workflowInstances.Count < take)
                     break;
             }
-            
-            // Delete collected workflow instances.
-            await DeleteManyAsync(collectedWorkflowInstanceIds, cancellationToken);
         }
 
         private async Task DeleteManyAsync(ICollection<string> workflowInstanceIds, CancellationToken cancellationToken)
@@ -75,5 +71,5 @@ namespace Elsa.Retention.Jobs
             var specification = new WorkflowInstanceIdsSpecification(workflowInstanceIds);
             await _workflowInstanceStore.DeleteManyAsync(specification, cancellationToken);
         }
-    }
+    }    
 }

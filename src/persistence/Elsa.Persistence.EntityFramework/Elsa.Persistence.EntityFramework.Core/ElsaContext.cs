@@ -16,7 +16,15 @@ namespace Elsa.Persistence.EntityFramework.Core
         {
         }
 
-        public virtual string Schema => ElsaSchema;
+        private bool IsSqlite
+#if NET7_0_OR_GREATER
+        => Database.ProviderName is "Microsoft.EntityFrameworkCore.Sqlite";
+#else
+        => Database.IsSqlite();
+#endif
+
+        public virtual string? Schema => IsSqlite ? default : ElsaSchema;
+
         public DbSet<WorkflowDefinition> WorkflowDefinitions { get; set; } = default!;
         public DbSet<WorkflowInstance> WorkflowInstances { get; set; } = default!;
         public DbSet<WorkflowExecutionLogRecord> WorkflowExecutionLogRecords { get; set; } = default!;
@@ -30,7 +38,7 @@ namespace Elsa.Persistence.EntityFramework.Core
 
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(ElsaContext).Assembly);
 
-            if (Database.IsSqlite())
+            if (IsSqlite)
             {
                 // SQLite does not have proper support for DateTimeOffset via Entity Framework Core, see the limitations
                 // here: https://docs.microsoft.com/en-us/ef/core/providers/sqlite/limitations#query-limitations

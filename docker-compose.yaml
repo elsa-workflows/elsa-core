@@ -31,6 +31,19 @@ services:
             - '3306:3306'
         expose:
             - '3306'
+                
+    mysql-arm:
+        image: arm64v8/mysql:8
+        restart: always
+        environment:
+            MYSQL_DATABASE: 'Elsa'
+            MYSQL_USER: 'user'
+            MYSQL_PASSWORD: 'password'
+            MYSQL_ROOT_PASSWORD: 'password'
+        ports:
+            - '3306:3306'
+        expose:
+            - '3306'
 
     azureblobstorage:
         image: mcr.microsoft.com/azure-blob-storage

@@ -19,7 +19,12 @@ namespace Elsa.Activities.Http.Scripting.JavaScript
 
                 foreach (var activityDefinition in httpEndpointActivities)
                 {
-                    var targetTypeName = activityDefinition.Properties.First(x => x.Name == nameof(HttpEndpoint.TargetType)).Expressions.Values.FirstOrDefault();
+                    var property = activityDefinition.Properties.FirstOrDefault(x => x.Name == nameof(HttpEndpoint.TargetType));
+
+                    if (property == null)
+                        continue;
+
+                    var targetTypeName = property.Expressions.Values.FirstOrDefault();
 
                     if (string.IsNullOrWhiteSpace(targetTypeName))
                         continue;

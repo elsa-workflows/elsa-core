@@ -43,7 +43,7 @@ Type: `Promise<void>`
  - [elsa-activity-editor-modal](../../screens/workflow-definition-editor/elsa-activity-editor-modal)
  - [elsa-activity-picker-modal](../../screens/workflow-definition-editor/elsa-activity-picker-modal)
  - [elsa-confirm-dialog](../elsa-confirm-dialog)
- - [elsa-secret-editor-modal](../../../modules/credential-manager/elsa-secret-editor-model)
+ - [elsa-secret-editor-modal](../../../modules/credential-manager/elsa-secret-editor-modal)
  - [elsa-secrets-picker-modal](../../../modules/credential-manager/elsa-secrets-picker-modal)
  - [elsa-workflow-definition-editor-screen](../../screens/workflow-definition-editor/elsa-workflow-definition-editor-screen)
  - [elsa-workflow-settings-modal](../../screens/workflow-definition-editor/elsa-workflow-settings-modal)
