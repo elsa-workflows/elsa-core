@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
+using Elsa.Jobs.Options;
 using Elsa.Jobs.Services;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Jobs.HostedServices;
 
@@ -20,13 +22,13 @@ public class JobQueueHostedService : BackgroundService
     private readonly IList<Channel<IJob>> _outputs;
     private readonly ILogger _logger;
 
-    public JobQueueHostedService(int workerCount, ChannelReader<IJob> channelReader, IJobRunner jobRunner, ILogger<JobQueueHostedService> logger)
+    public JobQueueHostedService(IOptions<JobsOptions> options, ChannelReader<IJob> channelReader, IJobRunner jobRunner, ILogger<JobQueueHostedService> logger)
     {
-        _workerCount = workerCount;
+        _workerCount = options.Value.WorkerCount;
         _channelReader = channelReader;
         _jobRunner = jobRunner;
         _logger = logger;
-        _outputs = new List<Channel<IJob>>(workerCount);
+        _outputs = new List<Channel<IJob>>(_workerCount);
     }
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)

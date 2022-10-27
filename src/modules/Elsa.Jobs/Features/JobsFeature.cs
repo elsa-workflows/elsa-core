@@ -6,6 +6,7 @@ using Elsa.Features.Services;
 using Elsa.Jobs.Extensions;
 using Elsa.Jobs.HostedServices;
 using Elsa.Jobs.Implementations;
+using Elsa.Jobs.Options;
 using Elsa.Jobs.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -20,6 +21,7 @@ public class JobsFeature : FeatureBase
 
     public Func<IServiceProvider, IJobQueue> JobQueueFactory { get; set; } = ActivatorUtilities.GetServiceOrCreateInstance<LocalJobQueue>;
     public Func<IServiceProvider, IJobScheduler> JobSchedulerFactory { get; set; } = ActivatorUtilities.GetServiceOrCreateInstance<LocalJobScheduler>;
+    public Action<JobsOptions>? ConfigureOptions { get; set; }
 
     public override void Configure()
     {
@@ -31,15 +33,13 @@ public class JobsFeature : FeatureBase
 
     public override void ConfigureHostedServices()
     {
-        Services.AddHostedService<JobQueueHostedService>(sp =>
-        {
-            var workerCount = 10; // TODO: make configurable.
-            return ActivatorUtilities.CreateInstance<JobQueueHostedService>(sp, workerCount);
-        });
+        Services.AddHostedService<JobQueueHostedService>();
     }
 
     public override void Apply()
     {
+        Services.Configure(ConfigureOptions ?? (_ => { }));
+
         Services
             .AddSingleton(JobQueueFactory)
             .AddSingleton(JobSchedulerFactory)

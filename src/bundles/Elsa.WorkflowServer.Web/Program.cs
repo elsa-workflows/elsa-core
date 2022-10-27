@@ -10,6 +10,7 @@ using Elsa.Jobs.Activities.Extensions;
 using Elsa.Jobs.Activities.Implementations;
 using Elsa.Jobs.Activities.Middleware.Activities;
 using Elsa.Jobs.Activities.Services;
+using Elsa.Jobs.Extensions;
 using Elsa.Labels.Extensions;
 using Elsa.Liquid.Extensions;
 using Elsa.Persistence.EntityFrameworkCore.Modules.ActivityDefinitions;
@@ -85,6 +86,7 @@ services
         })
         .UseLabels(labels => labels.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
         .UseActivityDefinitions(feature => feature.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
+        .UseJobs(jobs => jobs.ConfigureOptions = options => options.WorkerCount = 10)
         .UseJobActivities()
         .UseScheduling()
         .UseWorkflowApiEndpoints()
