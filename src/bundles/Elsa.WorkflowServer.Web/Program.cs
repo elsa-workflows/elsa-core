@@ -32,6 +32,7 @@ using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Runtime.Extensions;
 using Elsa.Workflows.Runtime.Implementations;
+using Elsa.WorkflowServer.Web.Activities;
 using Elsa.WorkflowServer.Web.Jobs;
 using FastEndpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -69,6 +70,7 @@ services
             .AddActivity<RunJavaScript>()
             .AddActivity<Event>()
             .AddActivity<SendHttpRequest>()
+            .AddActivity<ProcessVideo>()
         )
         .Use<IdentityFeature>(identity =>
         {

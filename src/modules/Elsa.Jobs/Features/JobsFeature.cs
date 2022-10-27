@@ -31,7 +31,11 @@ public class JobsFeature : FeatureBase
 
     public override void ConfigureHostedServices()
     {
-        Services.AddHostedService<JobQueueHostedService>();
+        Services.AddHostedService<JobQueueHostedService>(sp =>
+        {
+            var workerCount = 10; // TODO: make configurable.
+            return ActivatorUtilities.CreateInstance<JobQueueHostedService>(sp, workerCount);
+        });
     }
 
     public override void Apply()
