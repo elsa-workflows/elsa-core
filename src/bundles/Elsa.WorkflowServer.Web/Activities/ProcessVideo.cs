@@ -11,8 +11,13 @@ public class ProcessVideo : Activity
 {
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
+        const int frameCount = 15;
         Console.WriteLine("Begin processing...");
-        await Task.Delay(15000);
+        for(var frame = 0; frame < frameCount; frame++)
+        {
+            await Task.Delay(500);
+            Console.WriteLine("Processing frame {0}", frame + 1);
+        }
         Console.WriteLine("Finished processing");
     }
 }

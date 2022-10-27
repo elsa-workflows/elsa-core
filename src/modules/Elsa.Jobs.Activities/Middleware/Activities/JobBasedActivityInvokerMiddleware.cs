@@ -44,11 +44,11 @@ public class JobBasedActivityInvokerMiddleware : DefaultActivityInvokerMiddlewar
         var activity = context.Activity;
         var activityDescriptor = _activityRegistry.Find(activity.Type) ?? await _activityDescriber.DescribeActivityAsync(activity.GetType(), context.CancellationToken);
         var kind = activityDescriptor.Kind;
-        
-        var shouldRunInBackground = 
+
+        var shouldRunInBackground =
             !context.TransientProperties.ContainsKey(IsBackgroundExecution)
-            && context.WorkflowExecutionContext.ExecuteDelegate == null
-            && kind is ActivityKind.Job || (kind == ActivityKind.Task && activity.RunAsynchronously);
+            && (context.WorkflowExecutionContext.ExecuteDelegate == null
+                && (kind is ActivityKind.Job || (kind == ActivityKind.Task && activity.RunAsynchronously)));
 
         // Schedule activity normally if this is not a job or task configured to run in the background.
         if (!shouldRunInBackground)
@@ -61,11 +61,11 @@ public class JobBasedActivityInvokerMiddleware : DefaultActivityInvokerMiddlewar
         var job = _jobFactory.Create<ExecuteBackgroundActivityJob>();
         var bookmarkPayload = new BackgroundActivityPayload(job.Id);
         var bookmark = context.CreateBookmark(bookmarkPayload);
-        
+
         job.Activity = activity;
         job.WorkflowInstanceId = context.WorkflowExecutionContext.Id;
         job.BookmarkId = bookmark.Id;
-        
+
         await _jobQueue.SubmitJobAsync(job, cancellationToken: context.CancellationToken);
     }
 }
