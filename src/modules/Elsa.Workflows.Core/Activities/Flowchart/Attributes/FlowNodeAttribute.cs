@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+
 namespace Elsa.Workflows.Core.Activities.Flowchart.Attributes;
 
 [AttributeUsage(AttributeTargets.Class)]

@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
 
 namespace Elsa.Workflows.Core.Services;

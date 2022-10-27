@@ -1,5 +1,7 @@
+using System;
+using System.Threading.Tasks;
+using Elsa.Workflows.Core.Middleware.Workflows;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Pipelines.WorkflowExecution.Components;
 using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Core.Pipelines.WorkflowExecution;
@@ -23,6 +25,6 @@ public class WorkflowExecutionPipeline : IWorkflowExecutionPipeline
     public async Task ExecuteAsync(WorkflowExecutionContext context) => await Pipeline(context);
 
     private WorkflowMiddlewareDelegate CreateDefaultPipeline() => Setup(x => x
-        .UseStackBasedActivityScheduler()
+        .UseDefaultActivityScheduler()
     );
 }

@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
@@ -7,12 +10,10 @@ namespace Elsa.Workflows.Core.Implementations;
 public class ActivityInvoker : IActivityInvoker
 {
     private readonly IActivityExecutionPipeline _pipeline;
-    private readonly IServiceProvider _serviceProvider;
 
-    public ActivityInvoker(IActivityExecutionPipeline pipeline, IServiceProvider serviceProvider)
+    public ActivityInvoker(IActivityExecutionPipeline pipeline)
     {
         _pipeline = pipeline;
-        _serviceProvider = serviceProvider;
     }
 
     public async Task InvokeAsync(
@@ -22,15 +23,17 @@ public class ActivityInvoker : IActivityInvoker
         IEnumerable<MemoryBlockReference>? memoryReferences = default)
     {
         // Setup an activity execution context.
-        var workflowMemory = workflowExecutionContext.MemoryRegister;
-        var activityMemory = new MemoryRegister(workflowMemory);
         var activityExecutionContext = workflowExecutionContext.CreateActivityExecutionContext(activity, owner);
 
         // Declare memory.
         if (memoryReferences != null)
+        {
+            var workflowMemory = workflowExecutionContext.MemoryRegister;
+            var activityMemory = new MemoryRegister(workflowMemory);
             activityMemory.Declare(memoryReferences);
+        }
 
-        // Push the activity context into the workflow context.
+        // Add the activity context to the workflow context.
         workflowExecutionContext.ActivityExecutionContexts.Add(activityExecutionContext);
 
         // Execute the activity execution pipeline.

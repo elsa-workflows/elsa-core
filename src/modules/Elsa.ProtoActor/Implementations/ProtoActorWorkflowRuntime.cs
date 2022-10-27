@@ -83,6 +83,36 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
         return new ResumeWorkflowResult(bookmarks);
     }
 
+    public async Task<ICollection<ResumedWorkflow>> ResumeWorkflowsAsync(string activityTypeName, object bookmarkPayload, ResumeWorkflowOptions options, CancellationToken cancellationToken = default)
+    {
+        var hash = _hasher.Hash(activityTypeName, bookmarkPayload);
+        var client = _cluster.GetBookmarkGrain(hash);
+        var request = new ResolveBookmarksRequest { BookmarkName = activityTypeName };
+        var bookmarksResponse = await client.Resolve(request, cancellationToken);
+        var bookmarks = bookmarksResponse!.Bookmarks;
+        return await ResumeWorkflowsAsync(bookmarks, options, cancellationToken);
+    }
+    
+    public async Task<ICollection<ResumedWorkflow>> ResumeWorkflowsAsync(IEnumerable<StoredBookmark> bookmarks, ResumeWorkflowOptions options, CancellationToken cancellationToken = default)
+    {
+        var resumedWorkflows = new List<ResumedWorkflow>();
+        
+        foreach (var bookmark in bookmarks)
+        {
+            var workflowInstanceId = bookmark.WorkflowInstanceId;
+
+            var resumeResult = await ResumeWorkflowAsync(
+                workflowInstanceId,
+                bookmark.BookmarkId,
+                new ResumeWorkflowOptions(options.Input),
+                cancellationToken);
+
+            resumedWorkflows.Add(new ResumedWorkflow(workflowInstanceId, resumeResult.Bookmarks));
+        }
+
+        return resumedWorkflows;
+    }
+
     public async Task<TriggerWorkflowsResult> TriggerWorkflowsAsync(
         string activityTypeName,
         object bookmarkPayload,
@@ -107,7 +137,7 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
 
         // Resume existing workflow instances.
         var client = _cluster.GetBookmarkGrain(hash);
-        var request = new ResolveBookmarksRequest() { BookmarkName = activityTypeName };
+        var request = new ResolveBookmarksRequest { BookmarkName = activityTypeName };
         var bookmarksResponse = await client.Resolve(request, cancellationToken);
         var bookmarks = bookmarksResponse!.Bookmarks;
 

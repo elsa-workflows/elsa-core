@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Workflows.Core.Services;
@@ -29,6 +31,7 @@ public class ActivityDescriptor
     /// Whether this activity type is selectable from activity pickers.
     /// </summary>
     public bool IsBrowsable { get; set; }
+
 }
 
 public record ActivityConstructorContext(JsonElement Element, JsonSerializerOptions SerializerOptions);

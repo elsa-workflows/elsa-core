@@ -8,7 +8,9 @@ using Elsa.JavaScript.Activities;
 using Elsa.JavaScript.Extensions;
 using Elsa.Jobs.Activities.Extensions;
 using Elsa.Jobs.Activities.Implementations;
+using Elsa.Jobs.Activities.Middleware.Activities;
 using Elsa.Jobs.Activities.Services;
+using Elsa.Jobs.Extensions;
 using Elsa.Labels.Extensions;
 using Elsa.Liquid.Extensions;
 using Elsa.Persistence.EntityFrameworkCore.Modules.ActivityDefinitions;
@@ -26,11 +28,12 @@ using Elsa.WorkflowContexts.Extensions;
 using Elsa.Workflows.Api.Extensions;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Activities.Flowchart.Activities;
-using Elsa.Workflows.Core.Pipelines.WorkflowExecution.Components;
+using Elsa.Workflows.Core.Middleware.Workflows;
 using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Runtime.Extensions;
 using Elsa.Workflows.Runtime.Implementations;
+using Elsa.WorkflowServer.Web.Activities;
 using Elsa.WorkflowServer.Web.Jobs;
 using FastEndpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -68,6 +71,7 @@ services
             .AddActivity<RunJavaScript>()
             .AddActivity<Event>()
             .AddActivity<SendHttpRequest>()
+            .AddActivity<ProcessVideo>()
         )
         .Use<IdentityFeature>(identity =>
         {
@@ -82,6 +86,7 @@ services
         })
         .UseLabels(labels => labels.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
         .UseActivityDefinitions(feature => feature.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
+        .UseJobs(jobs => jobs.ConfigureOptions = options => options.WorkerCount = 10)
         .UseJobActivities()
         .UseScheduling()
         .UseWorkflowApiEndpoints()
@@ -120,8 +125,11 @@ serviceProvider.ConfigureDefaultWorkflowExecutionPipeline(pipeline =>
     pipeline
         .UsePersistentVariables()
         .UseWorkflowContexts()
-        .UseStackBasedActivityScheduler()
+        .UseDefaultActivityScheduler()
 );
+
+// Configure activity execution pipeline to use the job-based activity invoker.
+serviceProvider.ConfigureDefaultActivityExecutionPipeline(pipeline => pipeline.UseJobBasedActivityInvoker());
 
 if (app.Environment.IsDevelopment())
     app.UseDeveloperExceptionPage();

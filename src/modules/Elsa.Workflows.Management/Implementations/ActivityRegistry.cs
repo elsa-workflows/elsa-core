@@ -36,8 +36,10 @@ public class ActivityRegistry : IActivityRegistry
 
     public IEnumerable<ActivityDescriptor> ListAll() => _activityDescriptors.Values;
     public IEnumerable<ActivityDescriptor> ListByProvider(Type providerType) => _providedActivityDescriptors.TryGetValue(providerType, out var descriptors) ? descriptors : ArraySegment<ActivityDescriptor>.Empty;
-    public ActivityDescriptor? Find(Func<ActivityDescriptor, bool> predicate) => _activityDescriptors.Values.FirstOrDefault(predicate);
+    public ActivityDescriptor? Find(string type) => _activityDescriptors.TryGetValue((type, 0), out var descriptor) ? descriptor : null;
     public ActivityDescriptor? Find(string type, int version) => _activityDescriptors.TryGetValue((type, version), out var descriptor) ? descriptor : null;
+    public ActivityDescriptor? Find(Func<ActivityDescriptor, bool> predicate) => _activityDescriptors.Values.FirstOrDefault(predicate);
+    
 
     private void Add(ActivityDescriptor descriptor, ICollection<ActivityDescriptor> target)
     {

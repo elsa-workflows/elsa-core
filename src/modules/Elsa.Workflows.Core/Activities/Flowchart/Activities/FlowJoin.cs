@@ -1,3 +1,5 @@
+using System.Linq;
+using System.Threading.Tasks;
 using Elsa.Common.Extensions;
 using Elsa.Workflows.Core.Activities.Flowchart.Contracts;
 using Elsa.Workflows.Core.Activities.Flowchart.Extensions;
@@ -10,7 +12,7 @@ namespace Elsa.Workflows.Core.Activities.Flowchart.Activities;
 [Activity("Elsa", "Flow", "Merge multiple branches into a single branch of execution.")]
 public class FlowJoin : ActivityBase, IJoinNode
 {
-    [Input] public Input<JoinMode> Mode { get; set; } = new(JoinMode.WaitAll);
+    [Input] public Input<Models.JoinMode> Mode { get; set; } = new(Models.JoinMode.WaitAll);
 
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
@@ -23,14 +25,14 @@ public class FlowJoin : ActivityBase, IJoinNode
 
         switch (mode)
         {
-            case JoinMode.WaitAll:
+            case Models.JoinMode.WaitAll:
                 // If all left-inbound activities have executed, complete & continue.
                 var haveAllInboundActivitiesExecuted = inboundActivities.All(x => flowScope.GetExecutionCount(x) > executionCount);
 
                 if (haveAllInboundActivitiesExecuted)
                     await context.CompleteActivityAsync();
                 break;
-            case JoinMode.WaitAny:
+            case Models.JoinMode.WaitAny:
                 // Only complete if we haven't already executed.
                 var alreadyExecuted = inboundActivities.Max(x => flowScope.GetExecutionCount(x)) == executionCount;
 

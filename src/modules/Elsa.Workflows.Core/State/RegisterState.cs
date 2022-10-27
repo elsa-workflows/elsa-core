@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Elsa.Expressions.Models;
 
 // ReSharper disable AutoPropertyCanBeMadeGetOnly.Global

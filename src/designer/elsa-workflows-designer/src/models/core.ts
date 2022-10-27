@@ -3,7 +3,9 @@ import {Expression} from "./expressions";
 
 export enum ActivityKind {
   Action = 'Action',
-  Trigger = 'Trigger'
+  Trigger = 'Trigger',
+  Job = 'Job',
+  Task = 'Task'
 }
 
 export type Lookup<T> = { [key: string]: T };
@@ -14,6 +16,7 @@ export interface Activity {
   version: number;
   metadata: any;
   canStartWorkflow?: boolean;
+  runAsynchronously?: boolean;
   applicationProperties: any;
 
   [name: string]: any;

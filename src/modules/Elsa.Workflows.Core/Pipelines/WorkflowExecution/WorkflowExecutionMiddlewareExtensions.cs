@@ -1,3 +1,4 @@
+using System.Linq;
 using Elsa.Workflows.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
 

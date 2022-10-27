@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Services;

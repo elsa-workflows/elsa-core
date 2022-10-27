@@ -1,5 +1,9 @@
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Text.Json.Serialization;
+using System.Threading.Tasks;
 using Elsa.Workflows.Core.Behaviors;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Services;
@@ -29,6 +33,7 @@ public abstract class ActivityBase : IActivity, ISignalHandler
     public string Type { get; set; }
     public int Version { get; set; }
     public bool CanStartWorkflow { get; set; }
+    public bool RunAsynchronously { get; set; }
     public IDictionary<string, object> ApplicationProperties { get; set; } = new Dictionary<string, object>();
     public IDictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
 

@@ -1,3 +1,6 @@
+using System;
+using System.Threading.Tasks;
+
 namespace Elsa.Workflows.Core.Models;
 
 public class ActivityWorkItem

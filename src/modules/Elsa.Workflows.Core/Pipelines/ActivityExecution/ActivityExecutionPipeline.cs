@@ -1,5 +1,7 @@
+using System;
+using System.Threading.Tasks;
+using Elsa.Workflows.Core.Middleware.Activities;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Pipelines.ActivityExecution.Components;
 using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Core.Pipelines.ActivityExecution;

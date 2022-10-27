@@ -52,7 +52,7 @@ public static class ObjectConverter
 
         if (underlyingSourceType == underlyingTargetType)
             return value;
-
+        
         var targetTypeConverter = TypeDescriptor.GetConverter(underlyingTargetType);
 
         if (targetTypeConverter.CanConvertFrom(underlyingSourceType))
@@ -77,15 +77,28 @@ public static class ObjectConverter
                 return Enum.ToObject(underlyingTargetType, Convert.ChangeType(value, typeof(int)));
         }
 
+        if (underlyingSourceType == typeof(string) && !underlyingTargetType.IsPrimitive)
+        {
+            var stringValue = (string)value;
+
+            try
+            {
+                if (stringValue.TrimStart().StartsWith("{"))
+                    return JsonSerializer.Deserialize(stringValue, underlyingTargetType);
+            }
+            catch (Exception e)
+            {
+                throw new TypeConversionException($"Failed to deserialize {stringValue} to {underlyingTargetType}", value, underlyingTargetType, e);
+            }
+        }
+        
         try
         {
             return Convert.ChangeType(value, underlyingTargetType);
         }
         catch (InvalidCastException e)
         {
-            throw new TypeConversionException(
-                $"Failed to convert an object of type {sourceType} to {underlyingTargetType}", value,
-                underlyingTargetType, e);
+            throw new TypeConversionException($"Failed to convert an object of type {sourceType} to {underlyingTargetType}", value, underlyingTargetType, e);
         }
     }
 

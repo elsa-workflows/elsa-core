@@ -4,9 +4,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Elsa.Extensions;
 using Elsa.Samples.Console1.Workflows;
+using Elsa.Workflows.Core.Middleware.Activities;
+using Elsa.Workflows.Core.Middleware.Workflows;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Pipelines.ActivityExecution.Components;
-using Elsa.Workflows.Core.Pipelines.WorkflowExecution.Components;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Runtime.Extensions;
 using Microsoft.Extensions.DependencyInjection;
@@ -30,7 +30,7 @@ class Program
             // Configure workflow engine execution pipeline.
             .ConfigureDefaultWorkflowExecutionPipeline(pipeline => pipeline
                 .UsePersistentVariables()
-                .UseStackBasedActivityScheduler()
+                .UseDefaultActivityScheduler()
             );
 
         var workflow1 = new Func<IActivity>(HelloWorldWorkflow.Create);

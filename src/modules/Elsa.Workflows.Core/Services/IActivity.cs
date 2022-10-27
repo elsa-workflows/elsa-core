@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Workflows.Core.Services;
@@ -26,6 +28,11 @@ public interface IActivity
     /// A value indicating whether this activity can start instances of the workflow it is a part of.
     /// </summary>
     public bool CanStartWorkflow { get; set; }
+    
+    /// <summary>
+    /// A value indicating whether this activity can be executed asynchronously in the background.
+    /// </summary>
+    public bool RunAsynchronously { get; set; }
     
     /// <summary>
     /// Can contain application-specific information about this activity.

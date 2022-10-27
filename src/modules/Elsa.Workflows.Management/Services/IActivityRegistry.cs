@@ -10,6 +10,7 @@ public interface IActivityRegistry
     void ClearProvider(Type providerType);
     IEnumerable<ActivityDescriptor> ListAll();
     IEnumerable<ActivityDescriptor> ListByProvider(Type providerType);
-    ActivityDescriptor? Find(Func<ActivityDescriptor, bool> predicate);
+    ActivityDescriptor? Find(string type);
     ActivityDescriptor? Find(string type, int version);
+    ActivityDescriptor? Find(Func<ActivityDescriptor, bool> predicate);
 }

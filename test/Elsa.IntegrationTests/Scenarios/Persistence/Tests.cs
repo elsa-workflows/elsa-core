@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 using Elsa.Common.Implementations;
 using Elsa.Extensions;
 using Elsa.Testing.Shared;
-using Elsa.Workflows.Core.Pipelines.WorkflowExecution.Components;
+using Elsa.Workflows.Core.Middleware.Workflows;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Runtime.Extensions;
@@ -26,7 +26,7 @@ public class WorkflowInstancePersistenceTests
 
         services.ConfigureDefaultWorkflowExecutionPipeline(pipeline => pipeline
             .UsePersistentVariables()
-            .UseStackBasedActivityScheduler());
+            .UseDefaultActivityScheduler());
     }
 
     [Fact(DisplayName = "Executing a workflow creates a workflow instance")]
