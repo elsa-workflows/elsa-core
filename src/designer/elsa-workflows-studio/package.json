@@ -30,7 +30,8 @@
     "test.watch": "stencil test --spec --e2e --watchAll",
     "generate": "stencil generate",
     "build:tailwind:dev": "cross-env NODE_ENV=development tailwind build -i ./tailwind.css -o ./src/globals/tailwind.css",
-    "build:tailwind:prod": "cross-env NODE_ENV=production tailwind build -i ./tailwind.css -o ./src/globals/tailwind.css"
+    "build:tailwind:prod": "cross-env NODE_ENV=production tailwind build -i ./tailwind.css -o ./src/globals/tailwind.css",
+    "prestart": "./config.index.js"
   },
   "dependencies": {
     "@auth0/auth0-spa-js": "^1.22.2",

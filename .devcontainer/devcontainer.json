@@ -25,7 +25,7 @@
 	},
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	// "forwardPorts": [5000, 5001],
+	"forwardPorts": [3333, 11000],
 
 	// [Optional] To reuse of your local HTTPS dev cert:
 	//
@@ -51,7 +51,7 @@
 	//      "mounts": [ "source=${env:HOME}${env:USERPROFILE}/.aspnet/https,target=/home/vscode/.aspnet/https,type=bind" ],
 
 	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "dotnet dev-certs https --trust",
+	"postCreateCommand": "dotnet dev-certs https --trust;gh codespace ports visibility 11000:public -c $CODESPACE_NAME",
 
 	// Comment out to connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
 	"remoteUser": "vscode",
@@ -61,7 +61,10 @@
 		},
 		"11000": {
 			"label": "Elsa-API",
-			"protocol": "https"			
+			"protocol": "https"	
 		}
+	},
+	"features": {
+		"github-cli": "latest"
 	}
 }
