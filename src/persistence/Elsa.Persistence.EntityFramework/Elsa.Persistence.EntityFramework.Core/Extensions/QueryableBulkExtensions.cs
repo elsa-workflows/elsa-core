@@ -1,11 +1,7 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-
-#if !NET7_0_OR_GREATER
 using EFCore.BulkExtensions;
-#endif
-
 using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Persistence.EntityFramework.Core.Extensions
@@ -13,10 +9,6 @@ namespace Elsa.Persistence.EntityFramework.Core.Extensions
     public static class QueryableBulkExtensions
     {
         public static async Task<int> BatchDeleteWithWorkAroundAsync<T>(this IQueryable<T> queryable, DbContext elsaContext, CancellationToken cancellationToken = default) where T : class
-
-#if NET7_0_OR_GREATER
-            => await queryable.ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
-#else
         {
             if (elsaContext.Database.IsPostgres() || elsaContext.Database.IsMySql() || elsaContext.Database.IsOracle())
             {
@@ -32,6 +24,5 @@ namespace Elsa.Persistence.EntityFramework.Core.Extensions
 
             return await queryable.BatchDeleteAsync(cancellationToken);
         }
-#endif
     }
 }

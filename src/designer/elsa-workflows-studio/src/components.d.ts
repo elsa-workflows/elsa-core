@@ -89,6 +89,7 @@ export namespace Components {
         "serverUrl": string;
     }
     interface ElsaDropdownButton {
+        "btnClass"?: string;
         "icon"?: any;
         "items": Array<DropdownButtonItem>;
         "origin": DropdownButtonOrigin;
@@ -949,6 +950,7 @@ declare namespace LocalJSX {
         "serverUrl"?: string;
     }
     interface ElsaDropdownButton {
+        "btnClass"?: string;
         "icon"?: any;
         "items"?: Array<DropdownButtonItem>;
         "onItemSelected"?: (event: CustomEvent<DropdownButtonItem>) => void;

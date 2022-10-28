@@ -1,10 +1,9 @@
 image: Visual Studio 2022
 
 environment:
-    elsa_version: 2.9.1
+    elsa_version: 2.9.2
     elsa_build_version: 0.0.0
     nodejs_version: "14.6.0"
-    CLI_VERSION: 7.0.100-rc.2.22477.23
     # AppVeyor installs Java on its build agents by default, but it
     # picks an old version that's not compatible with SonarQube.
     # This brings it up to date.
@@ -23,10 +22,10 @@ init:
             }
             else
             {
-                $env:elsa_build_version="$($env:elsa_version)-preview.$($env:APPVEYOR_BUILD_NUMBER)"
+                $env:elsa_build_version="$($env:elsa_version)-preview-net5.$($env:APPVEYOR_BUILD_NUMBER)"
             }
 
-version: 2.9.1.{build}
+version: 2.9.2.{build}
 
 pull_requests:
     do_not_increment_build_number: true
@@ -47,11 +46,6 @@ cache:
     - '%APPDATA%\npm-cache'
 
 install:
-    -   ps: $env:DOTNET_INSTALL_DIR = "$pwd\.dotnetsdk"
-    -   ps: mkdir $env:DOTNET_INSTALL_DIR -Force | Out-Null
-    -   ps: Invoke-WebRequest -Uri "https://dotnet.microsoft.com/download/dotnet/scripts/v1/dotnet-install.ps1" -OutFile "$($env:DOTNET_INSTALL_DIR)/dotnet-install.ps1"
-    -   ps: '& "$($env:DOTNET_INSTALL_DIR)/dotnet-install.ps1" -Version $env:CLI_VERSION -InstallDir $env:DOTNET_INSTALL_DIR'
-    -   ps: $env:Path = "$env:DOTNET_INSTALL_DIR;$env:Path"
     -   ps: >-
             cd .\src\designer\elsa-workflows-studio
 
@@ -136,4 +130,4 @@ deploy:
         symbol_server: https://www.myget.org/F/elsa-2/api/v2/symbolpackage # remove to push symbols to SymbolSource.org
         artifact: /Elsa.*(\.|\.s)nupkg/
         on:
-            branch: master
+            branch: 2.9.x-net5

@@ -16,12 +16,7 @@ namespace Elsa.Persistence.EntityFramework.Core
         {
         }
 
-        private bool IsSqlite
-#if NET7_0_OR_GREATER
-        => Database.ProviderName is "Microsoft.EntityFrameworkCore.Sqlite";
-#else
-        => Database.IsSqlite();
-#endif
+        private bool IsSqlite => Database.IsSqlite();
 
         public virtual string? Schema
         {
@@ -48,7 +43,7 @@ namespace Elsa.Persistence.EntityFramework.Core
 
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(ElsaContext).Assembly);
 
-            if (IsSqlite)
+            if (Database.IsSqlite())
             {
                 // SQLite does not have proper support for DateTimeOffset via Entity Framework Core, see the limitations
                 // here: https://docs.microsoft.com/en-us/ef/core/providers/sqlite/limitations#query-limitations

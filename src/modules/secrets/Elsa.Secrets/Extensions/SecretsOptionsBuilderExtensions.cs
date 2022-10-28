@@ -24,7 +24,7 @@ namespace Elsa.Secrets.Extensions
                 .AddScoped<ISecretsManager, SecretsManager>()
                 .AddScoped<ISecretsProvider, SecretsProvider>()
                 .Decorate<ISecretsStore, EventPublishingSecretsStore>()
-                .AddNotificationHandlersFrom<DescribingActivityTypeHandler>(); ;
+                .AddNotificationHandlersFrom<DescribingActivityTypeHandler>();
 
             return elsaOptions;
         }
