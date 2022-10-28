@@ -128,7 +128,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
                 }
                 
                 var parameters = tuple.Item2.Select(x => x.Value).ToArray();
-                return await dbContext.Database.ExecuteSqlRawAsync($"DELETE FROM {dbContext.Set<T>().EntityType.GetSchemaQualifiedTableName()} {whereClause}", parameters, cancellationToken);
+                return await dbContext.Database.ExecuteSqlRawAsync($"DELETE FROM {dbContext.Set<T>().EntityType.GetSchemaQualifiedTableNameWithQuotes()} {whereClause}", parameters, cancellationToken);
             }, cancellationToken);
         }
 
