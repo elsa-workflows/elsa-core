@@ -1,6 +1,5 @@
 using System;
 using Elsa.Retention.Contracts;
-using Elsa.Retention.Filters;
 using Elsa.Retention.Specifications;
 using NodaTime;
 
@@ -24,15 +23,8 @@ namespace Elsa.Retention.Options
         public int BatchSize { get; set; } = 100;
 
         /// <summary>
-        /// An action that configures the retention filter pipeline. Can be replaced with your own action to configure a custom pipeline with custom filters. 
-        /// </summary>
-        public Action<IRetentionFilterPipeline> ConfigurePipeline { get; set; } = pipeline => pipeline.AddFilter<CompletedWorkflowFilter>();
-
-
-        /// <summary>
         /// An action that configures the specification filter pipeline (server side). Can be replaced with your own action to configure a custom pipeline with custom specifications. 
         /// </summary>
         public Action<IRetentionSpecificationFilter> ConfigureSpecificationFilter { get; set; } = specification => specification.AddAndSpecification(new CompletedWorkflowFilterSpecification());
-
     }
 }
