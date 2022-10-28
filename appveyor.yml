@@ -113,7 +113,7 @@ deploy:
     -   provider: NuGet
         name: NuGet
         api_key:
-            secure: 1Cj/i/BQFk3GN6iV2zyvoUxCowhIbKAGab+py1qn1oAO98qdbT/GWEaFofVh2Ph6
+            secure: uMFx5IwBzcjYIJVy+F+zbLl01Ei7MoxEOut9zWXVAu/SjaITJNTg6PAE1zFWi1TZ
         skip_symbols: false
         symbol_server: https://www.nuget.org/api/v2/symbolpackage # remove to push symbols to SymbolSource.org
         artifact: /Elsa.*(\.|\.s)nupkg/
