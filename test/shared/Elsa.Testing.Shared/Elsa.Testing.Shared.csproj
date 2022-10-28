@@ -18,6 +18,12 @@
         <PackageReference Include="Autofixture.AutoMoq" Version="4.17.0"/>
         <PackageReference Include="autofixture.xunit2" Version="4.17.0"/>
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.1"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.10"/>
+        <PackageReference Include="AutoFixture" Version="4.17.0"/>
+        <PackageReference Include="Autofixture.AutoMoq" Version="4.17.0"/>
+        <PackageReference Include="autofixture.xunit2" Version="4.17.0"/>
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.1"/>
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0"/>
         <PackageReference Include="NodaTime" Version="3.0.9"/>
         <PackageReference Include="System.ComponentModel.TypeConverter" Version="4.3.0"/>

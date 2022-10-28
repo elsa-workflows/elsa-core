@@ -1,7 +1,7 @@
 image: Visual Studio 2022
 
 environment:
-    elsa_version: 2.10.0
+    elsa_version: 2.9.2
     elsa_build_version: 0.0.0
     nodejs_version: "14.6.0"
     # AppVeyor installs Java on its build agents by default, but it
@@ -22,10 +22,10 @@ init:
             }
             else
             {
-                $env:elsa_build_version="$($env:elsa_version)-preview.$($env:APPVEYOR_BUILD_NUMBER)"
+                $env:elsa_build_version="$($env:elsa_version)-preview-net5.$($env:APPVEYOR_BUILD_NUMBER)"
             }
 
-version: 2.10.0.{build}
+version: 2.9.2.{build}
 
 pull_requests:
     do_not_increment_build_number: true
@@ -113,10 +113,10 @@ deploy:
     -   provider: NuGet
         name: NuGet
         api_key:
-            secure: KKRDla0gYKmprH/5dN/dJag/n6uAdHU6Uq8CME4ONzz2AOsMPtzS+EI/MVuSNilD
+            secure: 1Cj/i/BQFk3GN6iV2zyvoUxCowhIbKAGab+py1qn1oAO98qdbT/GWEaFofVh2Ph6
         skip_symbols: false
         symbol_server: https://www.nuget.org/api/v2/symbolpackage # remove to push symbols to SymbolSource.org
-        artifact: /.*(\.|\.s)nupkg/
+        artifact: /Elsa.*(\.|\.s)nupkg/
         on:
             APPVEYOR_REPO_TAG: true
 
@@ -128,6 +128,6 @@ deploy:
             secure: q/BL44D5KIMecFP4hzIb/OvWIZ37NfRo7PamDQv8XWfyoqCSn8F4y32wRB0ZbF0d
         skip_symbols: false
         symbol_server: https://www.myget.org/F/elsa-2/api/v2/symbolpackage # remove to push symbols to SymbolSource.org
-        artifact: /.*(\.|\.s)nupkg/
+        artifact: /Elsa.*(\.|\.s)nupkg/
         on:
-            branch: master
+            branch: 2.9.x-net5
