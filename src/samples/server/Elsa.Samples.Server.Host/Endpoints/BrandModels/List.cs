@@ -11,8 +11,7 @@ namespace Elsa.Samples.Server.Host.Endpoints.BrandModels;
 [Route("api/samples/brands/{brand}/models")]
 [Produces(MediaTypeNames.Application.Json)]
 public class List : Controller
-{
-
+{   
     [HttpGet]
     public IActionResult Handle(string brand)
     {
