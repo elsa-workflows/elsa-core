@@ -7,9 +7,10 @@
 
 ## Properties
 
-| Property  | Attribute | Description | Type     | Default     |
-| --------- | --------- | ----------- | -------- | ----------- |
-| `culture` | `culture` |             | `string` | `undefined` |
+| Property        | Attribute        | Description | Type     | Default     |
+| --------------- | ---------------- | ----------- | -------- | ----------- |
+| `culture`       | `culture`        |             | `string` | `undefined` |
+| `serverVersion` | `server-version` |             | `string` | `undefined` |
 
 
 ## Dependencies
