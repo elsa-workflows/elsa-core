@@ -10,6 +10,6 @@ public class Break : Activity
 {
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        await context.SignalAsync(new BreakSignal());
+        await context.SendSignalAsync(new BreakSignal());
     }
 }

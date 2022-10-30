@@ -39,6 +39,6 @@ public class Tests
         
         // Verify expected output.
         var lines = _capturingTextWriter.Lines.ToList();
-        Assert.Equal(new[] { "Branch 1", "Branch 2", "Branch 1 - Resumed" }, lines);
+        Assert.Equal(new[] { "Branch 2", "Branch 1", "Branch 1 - Resumed" }, lines);
     }
 }

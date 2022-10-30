@@ -199,7 +199,7 @@ public class ActivityExecutionContext
         var entriesToRemove = WorkflowExecutionContext.CompletionCallbacks.Where(x => x.Owner == this);
         WorkflowExecutionContext.RemoveCompletionCallbacks(entriesToRemove);
     }
-    
+
     private MemoryBlock? GetBlock(MemoryBlockReference locationBlockReference) =>
         ExpressionExecutionContext.Memory.TryGetBlock(locationBlockReference.Id, out var location)
             ? location

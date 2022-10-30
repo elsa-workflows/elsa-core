@@ -128,7 +128,7 @@ public static class ActivityExecutionContextExtensions
     /// <summary>
     /// Send a signal up the current branch.
     /// </summary>
-    public static async ValueTask SignalAsync(this ActivityExecutionContext context, object signal)
+    public static async ValueTask SendSignalAsync(this ActivityExecutionContext context, object signal)
     {
         var ancestorContexts = new[] { context }.Concat(context.GetAncestors());
 
@@ -152,10 +152,19 @@ public static class ActivityExecutionContextExtensions
     public static async ValueTask CompleteActivityAsync(this ActivityExecutionContext context, object? result = default)
     {
         // Send a signal.
-        await context.SignalAsync(new ActivityCompleted(result));
+        await context.SendSignalAsync(new ActivityCompleted(result));
 
         // Remove the context.
         context.WorkflowExecutionContext.ActivityExecutionContexts.Remove(context);
+    }
+    
+    /// <summary>
+    /// Cancel the activity. For blocking activities, it means their bookmarks will be removed. For job activities, the background work will be cancelled.
+    /// </summary>
+    public static async Task CancelActivityAsync(this ActivityExecutionContext context)
+    {
+        context.ClearBookmarks();
+        await context.SendSignalAsync(new CancelSignal());
     }
 
     public static ILogger GetLogger(this ActivityExecutionContext context) => (ILogger)context.GetRequiredService(typeof(ILogger<>).MakeGenericType(context.Activity.GetType()));

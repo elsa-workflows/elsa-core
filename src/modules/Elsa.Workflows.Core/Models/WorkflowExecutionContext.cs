@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Common.Extensions;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -129,7 +130,7 @@ public class WorkflowExecutionContext
         return value;
     }
 
-    
+
     public void TransitionTo(WorkflowSubStatus subStatus)
     {
         var targetStatus = GetMainStatus(subStatus);
@@ -150,6 +151,16 @@ public class WorkflowExecutionContext
         return activityExecutionContext;
     }
 
+    public async Task CancelActivityAsync(string activityId)
+    {
+        var activityExecutionContext = ActivityExecutionContexts.FirstOrDefault(x => x.Id == activityId);
+
+        if (activityExecutionContext != null) 
+            await activityExecutionContext.CancelActivityAsync();
+
+        Bookmarks.RemoveWhere(x => x.ActivityId == activityId);
+    }
+
     private WorkflowStatus GetMainStatus(WorkflowSubStatus subStatus) =>
         subStatus switch
         {
@@ -166,6 +177,6 @@ public class WorkflowExecutionContext
         var currentMainStatus = GetMainStatus(currentSubStatus);
         return currentMainStatus != WorkflowStatus.Finished;
     }
-    
+
     private IEnumerable<MemoryRegister> GetMergedRegistersView() => new[] { MemoryRegister }.Concat(ActivityExecutionContexts.Select(x => x.ExpressionExecutionContext.Memory)).ToList();
 }
