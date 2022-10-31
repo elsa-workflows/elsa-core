@@ -383,10 +383,8 @@ namespace Elsa.Services.Workflows
             {
                 var result = await activityOperation(activityExecutionContext, activity);
 
-                if (result is FaultResult)
+                if (result is FaultResult faultResult)
                 {
-                    var faultResult = (result as FaultResult);
-
                     if (faultResult?.Exception != null)
                         throw faultResult.Exception;
 
