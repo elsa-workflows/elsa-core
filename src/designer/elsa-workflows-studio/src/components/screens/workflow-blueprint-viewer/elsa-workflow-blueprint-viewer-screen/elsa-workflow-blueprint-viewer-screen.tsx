@@ -165,7 +165,7 @@ export class ElsaWorkflowBlueprintViewerScreen {
         /> */}
         <elsa-designer-test
           model={this.workflowModel}
-          class="elsa-flex-1"
+          class="elsa-workflow-wrapper"
           ref={el => this.designer = el}
           mode={WorkflowDesignerMode.Blueprint}
         />

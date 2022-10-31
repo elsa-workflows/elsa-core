@@ -404,7 +404,7 @@ export class ElsaWorkflowInstanceViewerScreen {
         /> */}
         <elsa-designer-test
           model={this.workflowModel}
-          class="elsa-flex-1"
+          class="elsa-workflow-wrapper"
           ref={el => this.designer = el}
           layoutDirection={this.layoutDirection}
           mode={WorkflowDesignerMode.Instance}

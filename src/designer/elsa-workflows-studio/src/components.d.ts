@@ -5,7 +5,7 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
-import { ActivityDefinitionProperty, ActivityDeletedArgs, ActivityDescriptor, ActivityModel, ActivityPropertyDescriptor, ContainerSelectedArgs, ElsaStudio, GraphUpdatedArgs, IntellisenseContext, OrderBy, SelectListItem, VersionOptions, WorkflowBlueprint, WorkflowDefinition, WorkflowDefinitionVersion, WorkflowExecutionLogRecord, WorkflowFault, WorkflowInstance, WorkflowModel, WorkflowStatus } from "./models";
+import { ActivityDefinitionProperty, ActivityDescriptor, ActivityModel, ActivityPropertyDescriptor, ElsaStudio, IntellisenseContext, OrderBy, SelectListItem, VersionOptions, WorkflowBlueprint, WorkflowDefinition, WorkflowDefinitionVersion, WorkflowExecutionLogRecord, WorkflowFault, WorkflowInstance, WorkflowModel, WorkflowStatus } from "./models";
 import { LocationSegments, MatchResults, RouterHistory } from "@stencil/router";
 import { MenuItem } from "./components/controls/elsa-context-menu/models";
 import { VNode } from "@stencil/core";
@@ -992,12 +992,9 @@ declare namespace LocalJSX {
         "model"?: WorkflowModel;
         "onActivityContextMenuButtonClicked"?: (event: CustomEvent<ActivityContextMenuState>) => void;
         "onActivityContextMenuButtonTestClicked"?: (event: CustomEvent<ActivityContextMenuState>) => void;
-        "onActivityDeleted"?: (event: CustomEvent<ActivityDeletedArgs>) => void;
         "onActivityDeselected"?: (event: CustomEvent<ActivityModel>) => void;
         "onActivitySelected"?: (event: CustomEvent<ActivityModel>) => void;
         "onConnectionContextMenuButtonClicked"?: (event: CustomEvent<ActivityContextMenuState>) => void;
-        "onContainerSelected"?: (event: CustomEvent<ContainerSelectedArgs>) => void;
-        "onGraphUpdated"?: (event: CustomEvent<GraphUpdatedArgs>) => void;
         "onWorkflow-changed"?: (event: CustomEvent<WorkflowModel>) => void;
         "selectedActivityIds"?: Array<string>;
     }
