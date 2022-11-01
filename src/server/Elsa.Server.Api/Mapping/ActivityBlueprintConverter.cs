@@ -26,6 +26,8 @@ namespace Elsa.Server.Api.Mapping
             destination.SaveWorkflowContext = source.SaveWorkflowContext;
             destination.InputProperties = GetInputProperties(source, context);
             destination.OutputProperties = GetOutputProperties(source, context);
+            destination.X = source.X;
+            destination.Y = source.Y;
 
             return destination;
         }

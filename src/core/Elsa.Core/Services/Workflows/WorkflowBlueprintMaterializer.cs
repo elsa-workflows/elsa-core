@@ -192,7 +192,9 @@ namespace Elsa.Services.Workflows
                     PersistWorkflow = activityDefinition.PersistWorkflow,
                     LoadWorkflowContext = activityDefinition.LoadWorkflowContext,
                     SaveWorkflowContext = activityDefinition.SaveWorkflowContext,
-                    PropertyStorageProviders = activityDefinition.PropertyStorageProviders
+                    PropertyStorageProviders = activityDefinition.PropertyStorageProviders,
+                    X = activityDefinition.X,
+                    Y = activityDefinition.Y
                 });
             }
 
