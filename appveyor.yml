@@ -22,7 +22,7 @@ init:
             }
             else
             {
-                $env:elsa_build_version="$($env:elsa_version)-preview-net5.$($env:APPVEYOR_BUILD_NUMBER)"
+                $env:elsa_build_version="$($env:elsa_version)-preview.$($env:APPVEYOR_BUILD_NUMBER)"
             }
 
 version: 2.9.2.{build}
@@ -130,4 +130,4 @@ deploy:
         symbol_server: https://www.myget.org/F/elsa-2/api/v2/symbolpackage # remove to push symbols to SymbolSource.org
         artifact: /Elsa.*(\.|\.s)nupkg/
         on:
-            branch: 2.9.x-net5
+            branch: 2.9.x
