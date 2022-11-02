@@ -26,10 +26,7 @@ import {
   // FlowchartNavigationItem,
   Flowchart,
   FlowchartNavigationItem,
-  PortMode,
-  PortProviderContext,
-  ActivityX6,
-  // ActivityDeletedArgs,
+  ActivityDeletedArgs,
   // ContainerSelectedArgs,
   // ActivitySelectedArgs,
   // ConnectionCreatedEventArgs,
@@ -345,7 +342,7 @@ export class ElsaWorkflowDesigner {
   container: HTMLElement;
   graph: Graph;
 
-  // @Event() activityDeleted: EventEmitter<ActivityDeletedArgs>;
+  @Event() activityDeleted: EventEmitter<ActivityDeletedArgs>;
 
   @State() private currentPath: Array<FlowchartNavigationItem> = [];
   @State() private activityLookup: Hash<ActivityModel> = {};
@@ -417,7 +414,6 @@ export class ElsaWorkflowDesigner {
     graph.on('node:change:*', this.onGraphChanged);
     graph.on('node:added', this.onGraphChanged);
     graph.on('node:removed', this.onNodeRemoved);
-    graph.on('node:removed', this.onGraphChanged);
     graph.on('edge:added', this.onGraphChanged);
     // graph.on('edge:removed', this.onGraphChanged);
     // graph.on('edge:connected', this.onGraphChanged);
@@ -643,8 +639,10 @@ export class ElsaWorkflowDesigner {
     return state.activityDescriptors.find(x => x.type == typeName)}
 
   private onNodeRemoved = (e: any) => {
-    const activity = e.node.data as ActivityModel;
-    // this.activityDeleted.emit({activity});
+    const activity = e.node.activity as ActivityModel;
+    this.removeActivity(activity);
+    this.activityDeselected.emit(activity);
+    this.activityDeleted.emit({activity});
   };
 
   private onDeleteActivityClicked = (node: ActivityNodeShape) => {
