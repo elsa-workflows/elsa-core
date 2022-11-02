@@ -20,5 +20,10 @@ namespace Elsa.Activities.Http.Options
 
         public Func<IServiceProvider, IHttpEndpointAuthorizationHandler> HttpEndpointAuthorizationHandlerFactory { get; set; } = ActivatorUtilities.GetServiceOrCreateInstance<AllowAnonymousHttpEndpointAuthorizationHandler>;
         public Func<IServiceProvider, IHttpEndpointWorkflowFaultHandler> HttpEndpointWorkflowFaultHandlerFactory { get; set; } = ActivatorUtilities.GetServiceOrCreateInstance<DefaultHttpEndpointWorkflowFaultHandler>;
+        
+        /// <summary>
+        /// The name of the parser to use by default. Applies to the <see cref="SendHttpRequest"/> activity.
+        /// </summary>
+        public string? DefaultContentParserName { get; set; }
     }
 }
