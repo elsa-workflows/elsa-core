@@ -130,4 +130,4 @@ deploy:
         symbol_server: https://www.myget.org/F/elsa-2/api/v2/symbolpackage # remove to push symbols to SymbolSource.org
         artifact: /Elsa.*(\.|\.s)nupkg/
         on:
-            branch: 2.9.x-net5
+            branch: master
