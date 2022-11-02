@@ -204,7 +204,7 @@ namespace Elsa.Activities.Http
                 }
                 else
                 {
-                    ResponseContent = await response.Content?.ReadAsStringAsync()!;
+                    ResponseContent = response.Content != null ? await response.Content.ReadAsStringAsync() : "";
                 }
             }
 
