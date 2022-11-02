@@ -232,7 +232,7 @@ namespace Elsa.Activities.Http
                     if (defaultParser != null)
                         return defaultParser;
                 }
-                
+
                 var simpleContentType = contentType?.Split(';').First() ?? "";
                 var parser = _parsers.OrderByDescending(x => x.Priority).ToList();
 
