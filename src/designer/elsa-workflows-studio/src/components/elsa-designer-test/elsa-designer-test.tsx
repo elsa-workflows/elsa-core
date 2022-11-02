@@ -297,7 +297,7 @@ export class ElsaWorkflowDesigner {
 
     this.workflowModel.activities.forEach((item: any) => {
       cells.push(this.graph.createNode(this.createGraphActivity(item)))
-  })
+    });
 
     this.graph.resetCells(cells);
     this.graph.centerContent();
@@ -636,6 +636,7 @@ export class ElsaWorkflowDesigner {
     this.graph.freeze();
     this.graph.fromJSON(model, {silent: false});
     this.graph.unfreeze();
+    this.enableEvents(false);
   }
 
   private getActivityDescriptor = (typeName: string): ActivityDescriptor => {
@@ -955,7 +956,9 @@ export class ElsaWorkflowDesigner {
       outcomes: activityDescriptor.outcomes,
       displayName: activityDescriptor.displayName,
       properties: [],
-      propertyStorageProviders: {}
+      propertyStorageProviders: {},
+      x: Math.round(this.graph.getContentBBox().x),
+      y: Math.round(this.graph.getContentBBox().y)
     };
 
     for (const property of activityDescriptor.inputProperties) {
@@ -1026,6 +1029,8 @@ export class ElsaWorkflowDesigner {
     }
 
     this.updateWorkflowModel(workflowModel);
+    this.activityDisplayContexts[activity.activityId] = activityDisplayContext;
+    this.updateGraph();
     this.parentActivityId = null;
     this.parentActivityOutcome = null;
   }
@@ -1054,7 +1059,10 @@ export class ElsaWorkflowDesigner {
     const index = activities.findIndex(x => x.activityId === activity.activityId);
     activities[index] = activity;
     this.updateWorkflowModel({...workflowModel, activities: activities});
-    await this.updateGraph();
+
+    const activityDisplayContext = await this.getActivityDisplayContext(activity);
+    this.activityDisplayContexts[activity.activityId] = activityDisplayContext;
+    this.updateGraph();
   }
 
   async showActivityPicker() {
@@ -1176,13 +1184,15 @@ export class ElsaWorkflowDesigner {
   onActivityPicked = async args => {
     const activityDescriptor = args as ActivityDescriptor;
     const activityModel = this.newActivity(activityDescriptor);
-    this.addingActivity = true;
-    await this.showActivityEditorInternal(activityModel, false);
+
+    const connectFromRoot = !this.parentActivityOutcome || this.parentActivityOutcome == '';
+    const sourceId = connectFromRoot ? null : this.parentActivityId;
+    const targetId = connectFromRoot ? this.parentActivityId : null;
+    this.addActivity(activityModel, sourceId, targetId, this.parentActivityOutcome);
   };
 
   onUpdateActivity = args => {
     const activityModel = args as ActivityModel;
-    console.info("UPDDEEETTT ");
 
     if (this.addingActivity) {
       console.debug(`adding activity with ID ${activityModel.activityId}`)

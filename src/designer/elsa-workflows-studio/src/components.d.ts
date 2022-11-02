@@ -1120,6 +1120,7 @@ declare namespace LocalJSX {
     }
     interface ElsaMultiTextProperty {
         "activityModel"?: ActivityModel;
+        "onValueChange"?: (event: CustomEvent<Array<string | number | boolean | SelectListItem>>) => void;
         "propertyDescriptor"?: ActivityPropertyDescriptor;
         "propertyModel"?: ActivityDefinitionProperty;
         "serverUrl"?: string;
@@ -1216,6 +1217,7 @@ declare namespace LocalJSX {
     }
     interface ElsaSwitchCasesProperty {
         "activityModel"?: ActivityModel;
+        "onValueChange"?: (event: CustomEvent<Array<any>>) => void;
         "propertyDescriptor"?: ActivityPropertyDescriptor;
         "propertyModel"?: ActivityDefinitionProperty;
     }

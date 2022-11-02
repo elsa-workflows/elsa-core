@@ -20,6 +20,7 @@ export const EventTypes = {
   ShowWorkflowSettings: 'show-workflow-settings',
   ActivityPicked: 'activity-picked',
   UpdateActivity: 'update-activity',
+  UpdateActivityProperties: 'update-activity-properties',
   UpdateWorkflowSettings: 'update-workflow-settings',
   WorkflowModelChanged: 'workflow-model-changed',
   ActivityDesignDisplaying: 'activity-design-displaying',

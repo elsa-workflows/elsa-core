@@ -71,10 +71,6 @@ export class ElsaActivityEditorPanel {
     for (const property of inputProperties) propertyDisplayManager.update(activity, property, formData);
   }
 
-  componentDidUpdate() {
-    console.info('Activity:', this.activityModel);
-  }
-
   async componentWillRender() {
     const activityDescriptor: ActivityDescriptor = this.activityDescriptor || {
       displayName: '',
@@ -168,7 +164,8 @@ export class ElsaActivityEditorPanel {
     this.renderProps = {};
   };
 
-  onChange = async (e: Event) => {
+  onChange = async (e?: Event) => {
+    console.info("CHANGE FROM PANEL");
     const formData = new FormData(this.formElement);
     this.updateActivity(formData);
     await eventBus.emit(EventTypes.UpdateActivity, this, this.activityModel);
@@ -312,8 +309,8 @@ export class ElsaActivityEditorPanel {
   renderPropertyEditor(activity: ActivityModel, property: ActivityPropertyDescriptor) {
     const key = `activity-property-input:${activity.activityId}:${property.name}`;
 
-    const display = propertyDisplayManager.display(activity, property);
+    const display = propertyDisplayManager.display(activity, property, this.onChange);
     const id = `${property.name}Control`;
-    return <elsa-control key={key} id={id} class="sm:elsa-col-span-6" content={display} />;
+    return <elsa-control key={key} id={id} class="sm:elsa-col-span-6" content={display}/>;
   }
 }
