@@ -21,6 +21,9 @@ export namespace Components {
     interface ElsaActivityEditorModal {
         "culture": string;
     }
+    interface ElsaActivityEditorPanel {
+        "culture": string;
+    }
     interface ElsaActivityPickerModal {
     }
     interface ElsaCheckListProperty {
@@ -145,7 +148,9 @@ export namespace Components {
         "workflowDefinitionId": string;
     }
     interface ElsaFlyoutPanel {
+        "autoExpand": boolean;
         "expandButtonPosition": number;
+        "hidden": boolean;
         "selectTab": (tab: string, expand?: boolean) => Promise<void>;
     }
     interface ElsaInputTags {
@@ -429,6 +434,12 @@ declare global {
     var HTMLElsaActivityEditorModalElement: {
         prototype: HTMLElsaActivityEditorModalElement;
         new (): HTMLElsaActivityEditorModalElement;
+    };
+    interface HTMLElsaActivityEditorPanelElement extends Components.ElsaActivityEditorPanel, HTMLStencilElement {
+    }
+    var HTMLElsaActivityEditorPanelElement: {
+        prototype: HTMLElsaActivityEditorPanelElement;
+        new (): HTMLElsaActivityEditorPanelElement;
     };
     interface HTMLElsaActivityPickerModalElement extends Components.ElsaActivityPickerModal, HTMLStencilElement {
     }
@@ -840,6 +851,7 @@ declare global {
     };
     interface HTMLElementTagNameMap {
         "elsa-activity-editor-modal": HTMLElsaActivityEditorModalElement;
+        "elsa-activity-editor-panel": HTMLElsaActivityEditorPanelElement;
         "elsa-activity-picker-modal": HTMLElsaActivityPickerModalElement;
         "elsa-check-list-property": HTMLElsaCheckListPropertyElement;
         "elsa-checkbox-property": HTMLElsaCheckboxPropertyElement;
@@ -912,6 +924,9 @@ declare global {
 }
 declare namespace LocalJSX {
     interface ElsaActivityEditorModal {
+        "culture"?: string;
+    }
+    interface ElsaActivityEditorPanel {
         "culture"?: string;
     }
     interface ElsaActivityPickerModal {
@@ -1047,7 +1062,9 @@ declare namespace LocalJSX {
         "workflowDefinitionId"?: string;
     }
     interface ElsaFlyoutPanel {
+        "autoExpand"?: boolean;
         "expandButtonPosition"?: number;
+        "hidden"?: boolean;
     }
     interface ElsaInputTags {
         "fieldId"?: string;
@@ -1327,6 +1344,7 @@ declare namespace LocalJSX {
     }
     interface IntrinsicElements {
         "elsa-activity-editor-modal": ElsaActivityEditorModal;
+        "elsa-activity-editor-panel": ElsaActivityEditorPanel;
         "elsa-activity-picker-modal": ElsaActivityPickerModal;
         "elsa-check-list-property": ElsaCheckListProperty;
         "elsa-checkbox-property": ElsaCheckboxProperty;
@@ -1402,6 +1420,7 @@ declare module "@stencil/core" {
     export namespace JSX {
         interface IntrinsicElements {
             "elsa-activity-editor-modal": LocalJSX.ElsaActivityEditorModal & JSXBase.HTMLAttributes<HTMLElsaActivityEditorModalElement>;
+            "elsa-activity-editor-panel": LocalJSX.ElsaActivityEditorPanel & JSXBase.HTMLAttributes<HTMLElsaActivityEditorPanelElement>;
             "elsa-activity-picker-modal": LocalJSX.ElsaActivityPickerModal & JSXBase.HTMLAttributes<HTMLElsaActivityPickerModalElement>;
             "elsa-check-list-property": LocalJSX.ElsaCheckListProperty & JSXBase.HTMLAttributes<HTMLElsaCheckListPropertyElement>;
             "elsa-checkbox-property": LocalJSX.ElsaCheckboxProperty & JSXBase.HTMLAttributes<HTMLElsaCheckboxPropertyElement>;

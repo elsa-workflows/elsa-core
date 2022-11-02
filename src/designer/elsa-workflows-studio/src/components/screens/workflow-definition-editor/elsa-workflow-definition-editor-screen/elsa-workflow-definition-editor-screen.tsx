@@ -444,7 +444,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
     };
   }
 
-  handleContextMenuChange(state: ActivityContextMenuState) {
+  async handleContextMenuChange(state: ActivityContextMenuState) {
     this.activityContextMenuState = state;
   }
 
@@ -514,6 +514,10 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
   async onActivityContextMenuButtonClicked(e: CustomEvent<ActivityContextMenuState>) {
     this.activityContextMenuState = e.detail;
+  }
+
+  async onActivityDirectEdit(e: CustomEvent<ActivityContextMenuState>) {
+    await this.designer.showActivityEditor(e.detail.activity, true);
   }
 
   async onActivityContextMenuButtonTestClicked(e: CustomEvent<ActivityContextMenuState>) {
@@ -776,7 +780,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
           mode={this.workflowDesignerMode}
           layoutDirection={this.layoutDirection}
           activityContextMenuButton={this.workflowDesignerMode == WorkflowDesignerMode.Edit ? activityContextMenuButton : this.renderActivityStatsButton}
-          onActivityContextMenuButtonClicked={e => this.onActivityContextMenuButtonClicked(e)}
+          onActivityContextMenuButtonClicked={e => this.onActivityDirectEdit(e)}
           onActivityContextMenuButtonTestClicked={e => this.onActivityContextMenuButtonTestClicked(e)}
           activityContextMenu={this.workflowDesignerMode == WorkflowDesignerMode.Edit ? this.activityContextMenuState : this.activityContextMenuTestState}
           enableMultipleConnectionsFromSingleSource={false}
@@ -788,7 +792,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
         />
         {this.renderWorkflowSettingsButton()}
         {this.renderWorkflowHelpButton()}
-        {this.renderPanel()}
+        {this.renderWorkflowPanel()}
         {this.renderActivityContextMenu()}
         {/*{this.renderConnectionContextMenu()}*/}
         <elsa-workflow-settings-modal workflowDefinition={this.workflowDefinition} />
@@ -1046,7 +1050,9 @@ export class ElsaWorkflowDefinitionEditorScreen {
   }
 
   renderActivityEditor() {
-    return <elsa-activity-editor-modal culture={this.culture} />;
+    // TODO: render modal or panel depending on configuration
+    return <elsa-activity-editor-panel culture={this.culture} hidden={!this.selectedActivityId} />;
+    // return <elsa-activity-editor-modal culture={this.culture} />;
   }
 
   renderWorkflowSettingsButton() {
@@ -1181,11 +1187,14 @@ export class ElsaWorkflowDefinitionEditorScreen {
     };
   }
 
-  private renderPanel() {
+  private renderWorkflowPanel() {
     const workflowDefinition = this.workflowDefinition;
 
+    // TODO: Enable hide only in the case, we are using the new x6 workflow
+    const hide = !!this.selectedActivityId;
+
     return (
-      <elsa-flyout-panel expandButtonPosition={3}>
+      <elsa-flyout-panel expandButtonPosition={3} hidden={hide}>
         <elsa-tab-header tab="general" slot="header">
           General
         </elsa-tab-header>

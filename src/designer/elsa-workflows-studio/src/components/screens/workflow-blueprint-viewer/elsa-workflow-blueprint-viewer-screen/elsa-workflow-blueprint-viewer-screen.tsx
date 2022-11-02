@@ -89,6 +89,7 @@ export class ElsaWorkflowBlueprintViewerScreen {
   }
 
   async loadActivityDescriptors() {
+    console.info("LOADING ACTIVITY DESCIPTORS");
     const client = await createElsaClient(this.serverUrl);
     state.activityDescriptors = await client.activitiesApi.list();
   }

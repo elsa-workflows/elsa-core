@@ -8,7 +8,7 @@ import {ActivityModel, Port} from "../models";
 export class DefaultPortProvider implements PortProvider {
   getOutboundPorts(context: PortProviderContext): Array<Port> {
     const {activityDescriptor} = context;
-    return [...activityDescriptor.ports];
+    return [...(activityDescriptor.ports || [])];
   }
 
   resolvePort(portName: string, context: PortProviderContext): ActivityModel | Array<ActivityModel> {

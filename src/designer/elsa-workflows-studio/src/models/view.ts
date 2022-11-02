@@ -37,6 +37,7 @@ export interface ConnectionModel {
 }
 
 export interface Flowchart extends Container {
+  id: string,
   start: string;
   connections: Array<ConnectionModel>;
   version?: number;

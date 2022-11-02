@@ -25,6 +25,10 @@ import {
   // GraphUpdatedArgs,
   // FlowchartNavigationItem,
   Flowchart,
+  FlowchartNavigationItem,
+  PortMode,
+  PortProviderContext,
+  ActivityX6,
   // ActivityDeletedArgs,
   // ContainerSelectedArgs,
   // ActivitySelectedArgs,
@@ -48,11 +52,11 @@ import {ActivityContextMenuState, LayoutDirection, WorkflowDesignerMode} from ".
 import {first} from 'lodash';
 import {createGraph} from './graph-factory';
 import {Edge, Graph, Model, Node, NodeView, Point, Cell} from '@antv/x6';
-import descriptorsStore from "../../data/descriptors-store";
 // import  { generateUniqueActivityName } from "../../utils/generate-activity-name";
 import  { ActivityNodeShape } from "./shapes";
+import {Container} from "typedi";
 
-const FlowchartTypeName = 'Elsa.Flowchart';
+const FlowchartTypeName = 'Workflow';
 
 @Component({
   tag: 'elsa-designer-test',
@@ -66,6 +70,7 @@ export class ElsaWorkflowDesigner {
     connections: [],
     persistenceBehavior: WorkflowPersistenceBehavior.WorkflowBurst
   };
+
   @Prop() selectedActivityIds: Array<string> = [];
   @Prop() activityContextMenuButton?: (activity: ActivityModel) => string;
   @Prop() activityBorderColor?: (activity: ActivityModel) => string;
@@ -127,6 +132,10 @@ export class ElsaWorkflowDesigner {
   oldActivityDisplayContexts: Map<ActivityDesignDisplayContext> = null;
   selectedActivities: Map<ActivityModel> = {};
   ignoreCopyPasteActivities: boolean = false;
+
+  constructor() {
+    this.portProviderRegistry = Container.get(PortProviderRegistry);
+  }
 
   handleContextMenuChange(state: ActivityContextMenuState) {
     this.ignoreCopyPasteActivities = true;
@@ -287,12 +296,19 @@ export class ElsaWorkflowDesigner {
     })
 
     this.workflowModel.activities.forEach((item: any) => {
-      const displayContext = this.activityDisplayContexts[item.activityId];
-      const activityDefinitions: Array<ActivityDescriptor> = state.activityDescriptors;
-      const definition = activityDefinitions.find(x => x.type == item.type);
-      const outcomes: Array<string> = this.mode === WorkflowDesignerMode.Blueprint ? item.outcomes : this.getOutcomes(item, definition);
+      cells.push(this.graph.createNode(this.createGraphActivity(item)))
+  })
 
-      let ports = [{group: 'in', id: uuid(), attrs: {}},]
+    this.graph.resetCells(cells);
+    this.graph.centerContent();
+  }
+
+  private createGraphActivity = (item: ActivityModel) => {
+    const displayContext = this.activityDisplayContexts[item.activityId];
+    const activityDefinitions: Array<ActivityDescriptor> = state.activityDescriptors;
+    const definition = activityDefinitions.find(x => x.type == item.type);
+    const outcomes: Array<string> = this.mode === WorkflowDesignerMode.Blueprint ? item.outcomes : this.getOutcomes(item, definition);
+    let ports = [{group: 'in', id: uuid(), attrs: {}},]
       outcomes.forEach(outcome => ports.push({
         id: outcome,
         group: 'out',
@@ -303,27 +319,21 @@ export class ElsaWorkflowDesigner {
         }
       }));
 
-      cells.push(this.graph.createNode(
-       { id: item.activityId,
-          shape: 'activity',
-          x: item.x || 0,
-          y: item.y || 0,
-          type: item.type,
-          activity: item,
-          ports: {
-            items: ports
-          },
-          component: this.renderActivity(item),
-          selectedActivities: this.selectedActivities,
-          activityDescriptor: displayContext.activityDescriptor,
-          displayContext: displayContext,
-          activityDisplayContexts: this.activityDisplayContexts
-       }
-      ))
-  })
-
-    this.graph.resetCells(cells);
-    this.graph.centerContent();
+    return { id: item.activityId,
+      shape: 'activity',
+      x: item.x || 0,
+      y: item.y || 0,
+      type: item.type,
+      activity: item,
+      ports: {
+        items: ports
+      },
+      component: this.renderActivity(item),
+      selectedActivities: this.selectedActivities,
+      activityDescriptor: displayContext.activityDescriptor,
+      displayContext: displayContext,
+      activityDisplayContexts: this.activityDisplayContexts
+   };
   }
 
   private readonly portProviderRegistry: PortProviderRegistry;
@@ -337,7 +347,7 @@ export class ElsaWorkflowDesigner {
 
   // @Event() activityDeleted: EventEmitter<ActivityDeletedArgs>;
 
-  // @State() private currentPath: Array<FlowchartNavigationItem> = [];
+  @State() private currentPath: Array<FlowchartNavigationItem> = [];
   @State() private activityLookup: Hash<ActivityModel> = {};
   @State() private activityNodes: Array<ActivityNode> = [];
 
@@ -408,7 +418,7 @@ export class ElsaWorkflowDesigner {
     graph.on('node:added', this.onGraphChanged);
     graph.on('node:removed', this.onNodeRemoved);
     graph.on('node:removed', this.onGraphChanged);
-    // graph.on('edge:added', this.onGraphChanged);
+    graph.on('edge:added', this.onGraphChanged);
     // graph.on('edge:removed', this.onGraphChanged);
     // graph.on('edge:connected', this.onGraphChanged);
 
@@ -459,27 +469,15 @@ export class ElsaWorkflowDesigner {
      if (this.mode == WorkflowDesignerMode.Edit && this.parentActivityId && this.parentActivityOutcome) {
       this.addConnection(this.parentActivityId, node.id, this.parentActivityOutcome);
     } else {
-      // When clicking an activity with shift:
-      if (e.e.shiftKey) {
-        if (!!this.selectedActivities[activity.activityId])
-          delete this.selectedActivities[activity.activityId];
-        else {
-          this.selectedActivities[activity.activityId] = activity;
-          this.activitySelected.emit(activity);
-        }
-      }
-      // When clicking an activity:
+      if (!!this.selectedActivities[activity.activityId])
+        delete this.selectedActivities[activity.activityId];
       else {
-        if (!!this.selectedActivities[activity.activityId])
-          delete this.selectedActivities[activity.activityId];
-        else {
-          for (const key in this.selectedActivities) {
-            this.activityDeselected.emit(this.selectedActivities[key]);
-          }
-          this.selectedActivities = {};
-          this.selectedActivities[activity.activityId] = activity;
-          this.activitySelected.emit(activity);
+        for (const key in this.selectedActivities) {
+          this.activityDeselected.emit(this.selectedActivities[key]);
         }
+        this.selectedActivities = {};
+        this.selectedActivities[activity.activityId] = activity;
+        this.activitySelected.emit(activity);
       }
 
       // // Delay the rerender of the tree to permit the double click action to be captured
@@ -534,6 +532,10 @@ export class ElsaWorkflowDesigner {
     //   activity: currentContainer,
     // };
     // return this.containerSelected.emit(args);
+    for (const key in this.selectedActivities) {
+      this.activityDeselected.emit(this.selectedActivities[key]);
+    }
+    this.selectedActivities = {};
   };
 
   private onGraphChanged = async (e) => {
@@ -542,10 +544,8 @@ export class ElsaWorkflowDesigner {
     //   return;
     // }
 
-
-    // await this.updateModel();
     // this.graphUpdated.emit();
-    await this.updateLayout();
+    // await this.updateLayout();
   }
 
   addConnectionTest(sourceActivityId: string, targetActivityId: string, outcome: string) {
@@ -603,109 +603,43 @@ export class ElsaWorkflowDesigner {
       }
   }}
 
-  private updateModel = async () => {
-    // const model = this.getFlowchartModel();
-    // console.log("model:", model)
-    // let currentLevel = this.getCurrentContainerInternal();
-
-    // console.log("currentLevel:", currentLevel)
-    // if (!currentLevel) {
-    //   currentLevel = await this.createContainer();
-    // }
-
-    // currentLevel.activities = model.activities;
-    // currentLevel.connections = model.connections;
-    // currentLevel.start = model.start;
-
-    // const currentPath = this.currentPath;
-    // const currentNavigationItem = currentPath[currentPath.length - 1];
-    // const currentPortName = currentNavigationItem?.portName;
-    // const currentScope = this.activityLookup[currentNavigationItem.activityId] as ActivityModel;
-    // const currentScopeDescriptor = this.getActivityDescriptor(currentScope.type);
-
-    // console.log("currentPortName:", currentPortName)
-
-    // if (!!currentPortName) {
-    //   const portProvider = this.portProviderRegistry.get(currentScope.type);
-    //   portProvider.assignPort(currentPortName, currentLevel, {activity: currentScope, activityDescriptor: currentScopeDescriptor});
-    // } else {
-    //   this.activity = currentLevel;
-    // }
-
-    this.updateLookups();
-  }
-
-  private getActivityDescriptor = (typeName: string): ActivityDescriptor => {
-    return descriptorsStore.activityDescriptors.find(x => x.type == typeName)}
-
-  private getFlowchartDescriptor = () => this.getActivityDescriptor(FlowchartTypeName);
-
-  private createContainer = async (): Promise<Flowchart> => {
-    const descriptor = this.getFlowchartDescriptor();
-    const activityId = await this.generateUniqueActivityName(descriptor);
-
+  private createEdge = (connection: ConnectionModel): Edge.Metadata => {
     return {
-      type: descriptor.type,
-      version: descriptor.version,
-      activityId: activityId,
-      start: null,
-      activities: [],
-      connections: [],
-      metadata: {},
-      variables: [],
-      applicationProperties: {},
-      // canStartWorkflow: false
+      shape: 'elsa-edge',
+      zIndex: -1,
+      data: connection,
+      source: connection.sourceId,
+      target: connection.targetId,
+      sourcePort: connection.outcome,
+      targetPort: connection.outcome
     };
   }
 
-  // private getFlowchartModel = (): WorkflowModel => {
-  //   const graph = this.graph;
-  //   const graphModel = graph.toJSON();
-  //   const activities = graphModel.cells.filter(x => x.shape == 'activity').map(x => x.data as ActivityModel);
-  //   const connections = graphModel.cells.filter(x => x.shape == 'elsa-edge' && !!x.data).map(x => x.data as ConnectionModel);
+  private updateGraph = () => {
+    const activities = this.workflowModel.activities;
+    const connections = this.workflowModel.connections;
+    const edges: Array<Edge.Metadata> = [];
 
-  //   let rootActivities = activities.filter(activity => {
-  //     const hasInboundConnections = connections.find(c => c.targetId == activity.activityId) != null;
-  //     return !hasInboundConnections;
-  //   });
+    // Create an X6 node for each activity.
+    const nodes: Array<Node.Metadata> = activities.map(activity => this.createGraphActivity(activity));
 
-  //   const startActivity = first(rootActivities);
+    // Create X6 edges for each connection in the flowchart.
+    for (const connection of connections) {
+      const edge: Edge.Metadata = this.createEdge(connection);
+      edges.push(edge);
+    }
 
-  //   return {
-  //     activities,
-  //     connections,
-  //     start: startActivity?.id
-  //   };
-  // };
+    const model: Model.FromJSONData = {nodes, edges};
 
-  // private getCurrentContainerInternal(): Flowchart {
-  //   const currentItem = this.currentPath.length > 0 ? this.currentPath[this.currentPath.length - 1] : null;
-
-  //   if (!currentItem)
-  //     return this.activity;
-
-  //   const activity = this.activityLookup[currentItem.activityId] as Flowchart;
-  //   const activityDescriptor = descriptorsStore.activityDescriptors.find(x => x.type == activity.type);
-
-  //   if (activityDescriptor.isContainer)
-  //     return activity;
-
-  //   const portProvider = this.portProviderRegistry.get(activity.type);
-  //   return portProvider.resolvePort(currentItem.portName, {activity, activityDescriptor}) as Flowchart;
-  // }
-
-  private generateUniqueActivityName = async (activityDescriptor: ActivityDescriptor): Promise<string> => {
-    // console.log("generateUniqueActivityName activityDescriptor:", activityDescriptor)
-    // console.log("generateUniqueActivityName this.activityNodes:", this.activityNodes)
-    // return await generateUniqueActivityName(this.activityNodes, activityDescriptor);
-    return ''
-  };
-
-  private updateLookups = () => {
-    this.activityNodes = flatten(walkActivities(this.activity));
-    this.activityLookup = createActivityLookup(this.activityNodes);
+    this.disableEvents();
+    // Freeze then unfreeze prevents an error from occurring when importing JSON a second time (e.g. after loading a new workflow.
+    this.graph.freeze();
+    this.graph.fromJSON(model, {silent: false});
+    this.graph.unfreeze();
   }
 
+  private getActivityDescriptor = (typeName: string): ActivityDescriptor => {
+    return state.activityDescriptors.find(x => x.type == typeName)}
 
   private onNodeRemoved = (e: any) => {
     const activity = e.node.data as ActivityModel;
@@ -941,7 +875,7 @@ export class ElsaWorkflowDesigner {
   updateWorkflowModel(model: WorkflowModel, emitEvent: boolean = true) {
     this.workflowModel = this.cleanWorkflowModel(model);
     this.oldActivityDisplayContexts = this.activityDisplayContexts;
-    this.activityDisplayContexts = null;
+    // this.activityDisplayContexts = null;
 
     if (emitEvent)
       this.workflowChanged.emit(model);
@@ -1114,12 +1048,13 @@ export class ElsaWorkflowDesigner {
     this.parentActivityOutcome = null;
   }
 
-  updateActivity(activity: ActivityModel) {
+  async updateActivity(activity: ActivityModel) {
     let workflowModel = {...this.workflowModel};
     const activities = [...workflowModel.activities];
     const index = activities.findIndex(x => x.activityId === activity.activityId);
     activities[index] = activity;
     this.updateWorkflowModel({...workflowModel, activities: activities});
+    await this.updateGraph();
   }
 
   async showActivityPicker() {
@@ -1247,6 +1182,7 @@ export class ElsaWorkflowDesigner {
 
   onUpdateActivity = args => {
     const activityModel = args as ActivityModel;
+    console.info("UPDDEEETTT ");
 
     if (this.addingActivity) {
       console.debug(`adding activity with ID ${activityModel.activityId}`)
@@ -1487,36 +1423,21 @@ export class ElsaWorkflowDesigner {
   renderActivity(activity: ActivityModel) {
     const activityDisplayContexts = this.activityDisplayContexts || {};
     const displayContext = activityDisplayContexts[activity.activityId] || undefined;
-    const activityContextMenuButton = !!this.activityContextMenuButton ? this.activityContextMenuButton(activity) : '';
     const activityBorderColor = !!this.activityBorderColor ? this.activityBorderColor(activity) : 'gray';
     const selectedColor = !!this.activityBorderColor ? activityBorderColor : 'blue';
     const cssClass = !!this.selectedActivities[activity.activityId] ? `elsa-border-${selectedColor}-600` : `elsa-border-${activityBorderColor}-200 hover:elsa-border-${selectedColor}-600`;
     const displayName = displayContext != undefined ? displayContext.displayName : activity.displayName;
     const typeName = activity.type;
-    const expanded = displayContext && displayContext.expanded;
 
     return `<div class="elsa-border-2 elsa-border-solid ${cssClass}">
-      <div class="elsa-p-3">
-        <div class="elsa-flex elsa-justify-between elsa-space-x-4">
+      <div class="elsa-p-2 elsa-pr-5">
+        <div class="elsa-flex elsa-justify-between elsa-space-x-4 mr-4">
           <div class="elsa-flex-shrink-0">
             ${displayContext?.activityIcon || ''}
           </div>
           <div class="elsa-flex-1 elsa-font-medium elsa-leading-8 elsa-overflow-hidden">
             <p class="elsa-overflow-ellipsis elsa-text-base">${displayName}</p>
             ${typeName !== displayName ? `<p class="elsa-text-gray-400 elsa-text-sm">${typeName}</p>` : ''}
-          </div>
-          <div class="elsa--mt-2">
-            <div class="context-menu-button-container">
-              ${activityContextMenuButton}
-            </div>
-            <button type="button" class="expand elsa-ml-1 elsa-text-gray-400 elsa-rounded-full elsa-bg-transparent hover:elsa-text-gray-500 focus:elsa-outline-none focus:elsa-text-gray-500 focus:elsa-bg-gray-100 elsa-transition elsa-ease-in-out elsa-duration-150">
-              ${!expanded ? `<svg xmlns="http://www.w3.org/2000/svg" class="elsa-w-6 elsa-h-6 elsa-text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-              </svg>` : ''}
-              ${expanded ? `<svg xmlns="http://www.w3.org/2000/svg" class="elsa-h-6 elsa-w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
-              </svg>` : ''}
-            </button>
           </div>
         </div>
         ${this.renderActivityBody(displayContext)}

@@ -50,7 +50,7 @@ export class ActivityNodeShape extends Shape.HTML {
     this.html = {
       render(node: Cell) {
 
-        console.log("node:", node)
+        // console.log("node:", node)
 
         return self.createHtml();
 
