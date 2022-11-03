@@ -27,6 +27,8 @@ import {
 import Tunnel from "../../../../data/dashboard";
 import {featuresDataManager} from "../../../../services";
 
+const useX6Workflow: boolean = process.env.ENABLE_X6_WORKFLOW === 'true';
+
 @Component({
   tag: 'elsa-workflow-instance-viewer-screen',
   shadow: false,
@@ -137,8 +139,11 @@ export class ElsaWorkflowInstanceViewerScreen {
 
   componentDidLoad() {
     if (!this.designer) {
-      // this.designer = this.el.querySelector("elsa-designer-tree") as HTMLElsaDesignerTreeElement;
-      this.designer = this.el.querySelector("elsa-designer-test") as HTMLElsaDesignerTestElement;
+      if (useX6Workflow) {
+        this.designer = this.el.querySelector("elsa-designer-x6") as HTMLElsaDesignerX6Element;
+      } else {
+        this.designer = this.el.querySelector('elsa-designer-tree') as HTMLElsaDesignerTreeElement;
+      }
       this.designer.model = this.workflowModel;
     }
   }
@@ -375,49 +380,38 @@ export class ElsaWorkflowInstanceViewerScreen {
   renderCanvas() {
     return (
       <div class="elsa-flex-1 elsa-flex">
-        {/* <elsa-designer-tree model={this.workflowModel}
-                            class="elsa-flex-1"
-                            ref={el => this.designer = el}
-                            layoutDirection={this.layoutDirection}
-                            mode={WorkflowDesignerMode.Instance}
-                            activityContextMenuButton={this.renderActivityStatsButton}
-                            activityBorderColor={this.getActivityBorderColor}
-                            activityContextMenu={this.activityContextMenuState}
-                            selectedActivityIds={[this.selectedActivityId]}
-                            onActivitySelected={e => this.onActivitySelected(e)}
-                            onActivityDeselected={e => this.onActivityDeselected(e)}
-                            onActivityContextMenuButtonClicked={e => this.onActivityContextMenuButtonClicked(e)}
-        /> */}
-        {/* <elsa-designer-tree-test
-          model={this.workflowModel}
-          mode={WorkflowDesignerMode.Instance}
-          layoutDirection={this.layoutDirection}
-          activityContextMenuButton={this.renderActivityStatsButtonTest}
-          activityBorderColor={this.getActivityBorderColor}
-          onActivityContextMenuButtonTestClicked={e => this.onActivityContextMenuButtonClicked(e)}
-          // !!!! onActivityContextMenuButtonClicked={e => this.onActivityContextMenuButtonClicked(e)}
-          // !!!! onActivityContextMenuButtonTestClicked={e => this.onActivityContextMenuButtonTestClicked(e)}
-          activityContextMenu={this.activityContextMenuState}
-          selectedActivityIds={[this.selectedActivityId]}
-          onActivitySelected={e => this.onActivitySelected(e)}
-          onActivityDeselected={e => this.onActivityDeselected(e)}
-          class="canvas-container"
-          ref={el => (this.designer = el)}
-        /> */}
-        <elsa-designer-test
-          model={this.workflowModel}
-          class="elsa-workflow-wrapper"
-          ref={el => this.designer = el}
-          layoutDirection={this.layoutDirection}
-          mode={WorkflowDesignerMode.Instance}
-          activityContextMenuButton={this.renderActivityStatsButton}
-          activityBorderColor={this.getActivityBorderColor}
-          activityContextMenu={this.activityContextMenuState}
-          selectedActivityIds={[this.selectedActivityId]}
-          onActivitySelected={e => this.onActivitySelected(e)}
-          onActivityDeselected={e => this.onActivityDeselected(e)}
-          onActivityContextMenuButtonClicked={e => this.onActivityContextMenuButtonClicked(e)}
-        />
+        {!useX6Workflow && (
+          <elsa-designer-tree
+            model={this.workflowModel}
+            class="elsa-flex-1"
+            ref={el => (this.designer = el)}
+            layoutDirection={this.layoutDirection}
+            mode={WorkflowDesignerMode.Instance}
+            activityContextMenuButton={this.renderActivityStatsButton}
+            activityBorderColor={this.getActivityBorderColor}
+            activityContextMenu={this.activityContextMenuState}
+            selectedActivityIds={[this.selectedActivityId]}
+            onActivitySelected={e => this.onActivitySelected(e)}
+            onActivityDeselected={e => this.onActivityDeselected(e)}
+            onActivityContextMenuButtonClicked={e => this.onActivityContextMenuButtonClicked(e)}
+          />
+        )}
+        {useX6Workflow && (
+          <elsa-designer-x6
+            model={this.workflowModel}
+            class="elsa-workflow-wrapper"
+            ref={el => (this.designer = el)}
+            layoutDirection={this.layoutDirection}
+            mode={WorkflowDesignerMode.Instance}
+            activityContextMenuButton={this.renderActivityStatsButton}
+            activityBorderColor={this.getActivityBorderColor}
+            activityContextMenu={this.activityContextMenuState}
+            selectedActivityIds={[this.selectedActivityId]}
+            onActivitySelected={e => this.onActivitySelected(e)}
+            onActivityDeselected={e => this.onActivityDeselected(e)}
+            onActivityContextMenuButtonClicked={e => this.onActivityContextMenuButtonClicked(e)}
+          />
+        )}
         {this.renderActivityPerformanceMenu()}
       </div>
     );

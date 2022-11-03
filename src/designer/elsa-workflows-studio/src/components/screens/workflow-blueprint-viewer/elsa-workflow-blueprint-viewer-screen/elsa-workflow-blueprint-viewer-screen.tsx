@@ -14,6 +14,8 @@ import state from '../../../../utils/store';
 import {WorkflowDesignerMode} from "../../../designers/tree/elsa-designer-tree/models";
 import Tunnel from "../../../../data/dashboard";
 
+const useX6Workflow: boolean = process.env.ENABLE_X6_WORKFLOW === 'true';
+
 @Component({
   tag: 'elsa-workflow-blueprint-viewer-screen',
   shadow: false,
@@ -82,14 +84,16 @@ export class ElsaWorkflowBlueprintViewerScreen {
 
   componentDidLoad() {
     if (!this.designer) {
-      // this.designer = this.el.querySelector("elsa-designer-tree") as HTMLElsaDesignerTreeElement;
-      this.designer = this.el.querySelector("elsa-designer-test") as HTMLElsaDesignerTestElement;
+      if (useX6Workflow) {
+        this.designer = this.el.querySelector("elsa-designer-x6") as HTMLElsaDesignerX6Element;
+      } else {
+        this.designer = this.el.querySelector('elsa-designer-tree') as HTMLElsaDesignerTreeElement;
+      }
       this.designer.model = this.workflowModel;
     }
   }
 
   async loadActivityDescriptors() {
-    console.info("LOADING ACTIVITY DESCIPTORS");
     const client = await createElsaClient(this.serverUrl);
     state.activityDescriptors = await client.activitiesApi.list();
   }
@@ -154,24 +158,22 @@ export class ElsaWorkflowBlueprintViewerScreen {
   renderCanvas() {
     return (
       <div class="elsa-flex-1 elsa-flex">
-        {/* <elsa-designer-tree
-          model={this.workflowModel}
-          class="elsa-flex-1"
-          ref={el => this.designer = el}
-          mode={WorkflowDesignerMode.Blueprint}
-        /> */}
-        {/* <elsa-designer-tree-test
-          model={this.workflowModel}
-          class="canvas-container"
-          ref={el => this.designer = el}
-          mode={WorkflowDesignerMode.Blueprint}
-        /> */}
-        <elsa-designer-test
-          model={this.workflowModel}
-          class="elsa-workflow-wrapper"
-          ref={el => this.designer = el}
-          mode={WorkflowDesignerMode.Blueprint}
-        />
+        {!useX6Workflow && (
+          <elsa-designer-tree
+            model={this.workflowModel}
+            class="elsa-flex-1"
+            ref={el => this.designer = el}
+            mode={WorkflowDesignerMode.Blueprint}
+          />
+        )}
+        {useX6Workflow && (
+          <elsa-designer-x6
+            model={this.workflowModel}
+            class="elsa-workflow-wrapper"
+            ref={el => this.designer = el}
+            mode={WorkflowDesignerMode.Blueprint}
+          />
+        )}
         <elsa-flyout-panel>
           <elsa-tab-header tab="general" slot="header">General</elsa-tab-header>
           <elsa-tab-content tab="general" slot="content">

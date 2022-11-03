@@ -40,8 +40,8 @@ import {Container} from "typedi";
 const FlowchartTypeName = 'Workflow';
 
 @Component({
-  tag: 'elsa-designer-test',
-  styleUrls: ['elsa-designer-test.css'],
+  tag: 'elsa-designer-x6',
+  styleUrls: ['elsa-designer-x6.css'],
   assetsDirs: ['assets'],
   shadow: false,
 })
@@ -244,30 +244,7 @@ export class ElsaWorkflowDesigner {
   }
 
   private init = () => {
-    const cells: Cell[] = []
-    this.workflowModel.connections.forEach((item: any) => {
-        cells.push(this.graph.createEdge(
-            {
-              shape: 'elsa-edge',
-              target: item.targetId,
-              source: { cell: item.sourceId, port: item.outcome },
-              labels:
-              [{
-                attrs: {
-                  label: { text: item.outcome }
-                },
-              }],
-              outcome: item.outcome,
-              zIndex: -1
-          }
-        ))
-    })
-
-    this.workflowModel.activities.forEach((item: any) => {
-      cells.push(this.graph.createNode(this.createGraphActivity(item)))
-    });
-
-    this.graph.resetCells(cells);
+    this.updateGraph();
     this.graph.centerContent();
   }
 

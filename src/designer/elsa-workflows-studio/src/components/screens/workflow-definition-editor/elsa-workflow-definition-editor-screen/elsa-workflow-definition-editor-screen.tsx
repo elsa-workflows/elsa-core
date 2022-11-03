@@ -30,6 +30,8 @@ import { resources } from './localizations';
 import * as collection from 'lodash/collection';
 import { tr } from 'cronstrue/dist/i18n/locales/tr';
 
+const useX6Workflow: boolean = process.env.ENABLE_X6_WORKFLOW === 'true';
+
 @Component({
   tag: 'elsa-workflow-definition-editor-screen',
   styleUrl: 'elsa-workflow-definition-editor-screen.css',
@@ -207,8 +209,11 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
   async componentDidLoad() {
     if (!this.designer) {
-      // this.designer = this.el.querySelector('elsa-designer-tree') as HTMLElsaDesignerTreeElement;
-      this.designer = this.el.querySelector("elsa-designer-test") as HTMLElsaDesignerTestElement;
+      if (useX6Workflow) {
+        this.designer = this.el.querySelector("elsa-designer-x6") as HTMLElsaDesignerX6Element;
+      } else {
+        this.designer = this.el.querySelector('elsa-designer-tree') as HTMLElsaDesignerTreeElement;
+      }
       this.designer.model = this.workflowModel;
     }
   }
@@ -743,27 +748,12 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
     return (
       <div class="elsa-flex-1 elsa-flex elsa-relative">
-        {/* <elsa-designer-tree
-          model={this.workflowModel}
-          mode={this.workflowDesignerMode}
-          layoutDirection={this.layoutDirection}
-          activityContextMenuButton={this.workflowDesignerMode == WorkflowDesignerMode.Edit ? activityContextMenuButton : this.renderActivityStatsButton}
-          onActivityContextMenuButtonClicked={e => this.onActivityContextMenuButtonClicked(e)}
-          onActivityContextMenuButtonTestClicked={e => this.onActivityContextMenuButtonTestClicked(e)}
-          activityContextMenu={this.workflowDesignerMode == WorkflowDesignerMode.Edit ? this.activityContextMenuState : this.activityContextMenuTestState}
-          enableMultipleConnectionsFromSingleSource={false}
-          selectedActivityIds={[this.selectedActivityId]}
-          onActivitySelected={e => this.onActivitySelected(e)}
-          onActivityDeselected={e => this.onActivityDeselected(e)}
-          class="elsa-flex-1"
-          ref={el => (this.designer = el)}
-        /> */}
-
-          {/* <elsa-designer-tree-test
+        {!useX6Workflow && (
+          <elsa-designer-tree
             model={this.workflowModel}
             mode={this.workflowDesignerMode}
             layoutDirection={this.layoutDirection}
-            activityContextMenuButton={this.workflowDesignerMode == WorkflowDesignerMode.Edit ? activityContextMenuButtonTest : this.renderActivityStatsButtonTest}
+            activityContextMenuButton={this.workflowDesignerMode == WorkflowDesignerMode.Edit ? activityContextMenuButton : this.renderActivityStatsButton}
             onActivityContextMenuButtonClicked={e => this.onActivityContextMenuButtonClicked(e)}
             onActivityContextMenuButtonTestClicked={e => this.onActivityContextMenuButtonTestClicked(e)}
             activityContextMenu={this.workflowDesignerMode == WorkflowDesignerMode.Edit ? this.activityContextMenuState : this.activityContextMenuTestState}
@@ -771,25 +761,28 @@ export class ElsaWorkflowDefinitionEditorScreen {
             selectedActivityIds={[this.selectedActivityId]}
             onActivitySelected={e => this.onActivitySelected(e)}
             onActivityDeselected={e => this.onActivityDeselected(e)}
-            class="canvas-container"
+            class="elsa-flex-1"
             ref={el => (this.designer = el)}
-          /> */}
+          />
+        )}
+        {useX6Workflow && (
+          <elsa-designer-x6
+            model={this.workflowModel}
+            mode={this.workflowDesignerMode}
+            layoutDirection={this.layoutDirection}
+            activityContextMenuButton={this.workflowDesignerMode == WorkflowDesignerMode.Edit ? activityContextMenuButton : this.renderActivityStatsButton}
+            onActivityContextMenuButtonClicked={e => this.onActivityDirectEdit(e)}
+            onActivityContextMenuButtonTestClicked={e => this.onActivityContextMenuButtonTestClicked(e)}
+            activityContextMenu={this.workflowDesignerMode == WorkflowDesignerMode.Edit ? this.activityContextMenuState : this.activityContextMenuTestState}
+            enableMultipleConnectionsFromSingleSource={false}
+            selectedActivityIds={[this.selectedActivityId]}
+            onActivitySelected={e => this.onActivitySelected(e)}
+            onActivityDeselected={e => this.onActivityDeselected(e)}
+            class="elsa-workflow-wrapper"
+            ref={el => (this.designer = el)}
+          />
+        )}
 
-        <elsa-designer-test
-          model={this.workflowModel}
-          mode={this.workflowDesignerMode}
-          layoutDirection={this.layoutDirection}
-          activityContextMenuButton={this.workflowDesignerMode == WorkflowDesignerMode.Edit ? activityContextMenuButton : this.renderActivityStatsButton}
-          onActivityContextMenuButtonClicked={e => this.onActivityDirectEdit(e)}
-          onActivityContextMenuButtonTestClicked={e => this.onActivityContextMenuButtonTestClicked(e)}
-          activityContextMenu={this.workflowDesignerMode == WorkflowDesignerMode.Edit ? this.activityContextMenuState : this.activityContextMenuTestState}
-          enableMultipleConnectionsFromSingleSource={false}
-          selectedActivityIds={[this.selectedActivityId]}
-          onActivitySelected={e => this.onActivitySelected(e)}
-          onActivityDeselected={e => this.onActivityDeselected(e)}
-          class="elsa-workflow-wrapper"
-          ref={el => (this.designer = el)}
-        />
         {this.renderWorkflowSettingsButton()}
         {this.renderWorkflowHelpButton()}
         {this.renderWorkflowPanel()}
@@ -1050,9 +1043,10 @@ export class ElsaWorkflowDefinitionEditorScreen {
   }
 
   renderActivityEditor() {
-    // TODO: render modal or panel depending on configuration
-    return <elsa-activity-editor-panel culture={this.culture} hidden={!this.selectedActivityId} />;
-    // return <elsa-activity-editor-modal culture={this.culture} />;
+    if (useX6Workflow) {
+      return <elsa-activity-editor-panel culture={this.culture} hidden={!this.selectedActivityId} />;
+    }
+    return <elsa-activity-editor-modal culture={this.culture} />;
   }
 
   renderWorkflowSettingsButton() {
@@ -1190,8 +1184,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
   private renderWorkflowPanel() {
     const workflowDefinition = this.workflowDefinition;
 
-    // TODO: Enable hide only in the case, we are using the new x6 workflow
-    const hide = !!this.selectedActivityId;
+    const hide = !useX6Workflow && !!this.selectedActivityId;
 
     return (
       <elsa-flyout-panel expandButtonPosition={3} hidden={hide}>
