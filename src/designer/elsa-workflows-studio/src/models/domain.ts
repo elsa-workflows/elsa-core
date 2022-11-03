@@ -61,6 +61,8 @@ export interface ActivityBlueprint {
   inputProperties: Variables;
   outputProperties: Variables;
   propertyStorageProviders: Map<string>;
+  x?: number;
+  y?: number;
 }
 
 export interface Connection {

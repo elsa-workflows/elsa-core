@@ -124,12 +124,14 @@ export class ElsaWorkflowBlueprintViewerScreen {
       displayName: source.displayName || source.name || source.type,
       name: source.name,
       type: source.type,
+      x: source.x,
+      y: source.y,
       properties: properties,
       outcomes: [...activityDescriptor.outcomes],
       persistWorkflow: source.persistWorkflow,
       saveWorkflowContext: source.saveWorkflowContext,
       loadWorkflowContext: source.loadWorkflowContext,
-      propertyStorageProviders: source.propertyStorageProviders
+      propertyStorageProviders: source.propertyStorageProviders,
     }
   }
 

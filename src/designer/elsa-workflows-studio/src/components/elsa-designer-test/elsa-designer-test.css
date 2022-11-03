@@ -9,39 +9,8 @@
   box-sizing: border-box;
 }
 
-.node.activity, .node.start, .node.add .label-container {
-  fill: transparent;
-}
-
-.node.activity .label-container, .node.start .label-container {
-  stroke: none;
-}
-
-.edgePath {
-  stroke: black;
-  cursor: pointer;
-  /* z-index: -1; */
-}
-
 .outcome {
   background-color: #fbfbfb;
-}
-
-.edgePath path.path {
-  stroke: #333;
-  fill: transparent !important;
-  stroke-width: 0.5px;
-}
-
-.label-clickable {
-  fill: transparent !important;
-  stroke: #4677f8;
-  stroke-width: 12.5px !important;
-  opacity: 0;
-}
-
-.edgePath:hover path.path {
-  stroke: red;
 }
 
 .start-btn {
@@ -57,7 +26,8 @@
   overflow: hidden;
 }
 
-.x6-graph-scroller {
+.workflow-canvas .x6-graph-scroller {
+  position: relative;
   width: 100% !important;
   height: 100% !important;
 }

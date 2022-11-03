@@ -1,11 +1,12 @@
 import {CellView, Graph, Node} from '@antv/x6';
-import {v4 as uuid} from 'uuid';
+import { ConnectionModel } from '../../models';
 import './ports';
 import {ActivityNodeShape} from './shapes';
 
 export function createGraph(
   container: HTMLElement,
   interacting: CellView.Interacting,
+  pasteActivities: (activities?: Array<any>, connections?: Array<ConnectionModel>) => void,
   disableEvents: () => void,
   enableEvents: (emitWorkflowChanged: boolean) => Promise<void>): Graph {
 
@@ -116,16 +117,6 @@ export function createGraph(
       }
     },
     onPortRendered(args) {
-      // const selectors = args.contentSelectors;
-      // const container = selectors && selectors.foContent;
-      // console.log(" onPortRendered:", args)
-
-      // if (container) {
-      //   const port = document.createElement('div');
-      //   port.className = 'elsa-rounded-full elsa-border elsa-border-2 elsa-border-blue-600 elsa-h-8 elsa-w-8';
-      //   port.innerHTML = `<p>done</p>`;
-      //   (container as HTMLElement).append(port);
-      // }
     },
     highlighting: {
       magnetAdsorbed: {
@@ -182,18 +173,7 @@ export function createGraph(
 
   graph.on('edge:removed', ({ edge }) => {
 
-    // const target = edge.getTargetNode()
-    // console.log("!! edge:", edge)
-    // if (target instanceof ActivityNodeShape) {
-
-    //   target.updateInPorts(graph)
-    // }
   })
-
-  // graph.on('edge:added', ({ edge }) => {
-  //   console.log('edge:added:', edge)
-
-  // })
 
   graph.bindKey(['meta+c', 'ctrl+c'], () => {
     const cells = graph.getSelectedCells()
@@ -214,17 +194,41 @@ export function createGraph(
   graph.bindKey(['meta+v', 'ctrl+v'], async () => {
     if (!graph.isClipboardEmpty()) {
 
-      disableEvents();
-      const cells = graph.paste({offset: 32});
+      disableEvents()
+      const cells = graph.getCellsInClipboard()
+      let copiedNodes: Array<any> = []
+      let copiedEges: Array<any> = []
 
       for (const cell of cells) {
-        cell.data.id = uuid();
+        if(cell instanceof ActivityNodeShape) {
+          let activity = cell.activity
+
+          const activityItem = {
+            activityId: cell.id,
+            type: activity.type,
+            outcomes: activity.outcomes,
+            x: activity.x,
+            y: activity.y
+          }
+          copiedNodes.push(activityItem)
+        } else {
+          let source = cell.source
+          let target = cell.target
+
+          const connectionItem = {
+            targetId: target.cell,
+            sourceId: source.cell,
+            outcome: source.port
+          }
+          copiedEges.push(connectionItem)
+        }
       }
 
-      await enableEvents(true);
-      graph.cleanSelection();
-      graph.select(cells);
+      if(copiedNodes.length > 0 || copiedEges.length > 0) pasteActivities(copiedNodes, copiedEges)
 
+      await enableEvents(true)
+      graph.cleanSelection()
+      // graph.select(cells)
     }
     return false
   });

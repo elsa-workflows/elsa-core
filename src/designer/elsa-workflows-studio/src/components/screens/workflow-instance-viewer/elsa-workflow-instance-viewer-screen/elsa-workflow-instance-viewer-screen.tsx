@@ -190,7 +190,9 @@ export class ElsaWorkflowInstanceViewerScreen {
       persistWorkflow: activityBlueprint.persistWorkflow,
       saveWorkflowContext: activityBlueprint.saveWorkflowContext,
       loadWorkflowContext: activityBlueprint.loadWorkflowContext,
-      propertyStorageProviders: activityBlueprint.propertyStorageProviders
+      propertyStorageProviders: activityBlueprint.propertyStorageProviders,
+      x: activityBlueprint.x,
+      y: activityBlueprint.y,
     }
   }
 
