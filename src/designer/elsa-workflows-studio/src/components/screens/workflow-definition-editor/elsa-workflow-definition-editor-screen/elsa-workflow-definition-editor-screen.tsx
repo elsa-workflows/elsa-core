@@ -1184,7 +1184,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
   private renderWorkflowPanel() {
     const workflowDefinition = this.workflowDefinition;
 
-    const hide = !useX6Workflow && !!this.selectedActivityId;
+    const hide = useX6Workflow && !!this.selectedActivityId;
 
     return (
       <elsa-flyout-panel expandButtonPosition={3} hidden={hide}>

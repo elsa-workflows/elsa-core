@@ -44,6 +44,7 @@ export class ElsaActivityEditorPanel {
   i18next: i18n;
   formContext: FormContext;
   formElement: HTMLFormElement;
+  @State() updateCounter = 0;
 
   // Force a new key every time we show the editor to make sure Stencil creates new components.
   // This prevents the issue where the designer has e.g. one activity where the user edits the properties, cancels out, then opens the editor again, seeing the entered value still there.
@@ -67,7 +68,6 @@ export class ElsaActivityEditorPanel {
     const activity = this.activityModel;
     const activityDescriptor = this.activityDescriptor;
     const inputProperties: Array<ActivityPropertyDescriptor> = activityDescriptor.inputProperties;
-
     for (const property of inputProperties) propertyDisplayManager.update(activity, property, formData);
   }
 
@@ -156,16 +156,16 @@ export class ElsaActivityEditorPanel {
   }
 
   onShowActivityEditor = async (activity: ActivityModel, animate: boolean) => {
-    this.activityModel = JSON.parse(JSON.stringify(activity));
+    this.activityModel = activity;
     this.activityDescriptor = state.activityDescriptors.find(x => x.type == activity.type);
     this.workflowStorageDescriptors = state.workflowStorageDescriptors;
     this.formContext = new FormContext(this.activityModel, newValue => (this.activityModel = newValue));
     this.timestamp = new Date();
     this.renderProps = {};
+    this.updateCounter++;
   };
 
   onChange = async (e?: Event) => {
-    console.info("CHANGE FROM PANEL");
     const formData = new FormData(this.formElement);
     this.updateActivity(formData);
     await eventBus.emit(EventTypes.UpdateActivity, this, this.activityModel);
@@ -177,13 +177,13 @@ export class ElsaActivityEditorPanel {
 
     return (
       <form onChange={this.onChange} ref={el => this.formElement = el}>
-        <elsa-flyout-panel expandButtonPosition={3} autoExpand>
+        <elsa-flyout-panel autoExpand silent updateCounter={this.updateCounter}>
           {tabs.map(tab => [
             <elsa-tab-header tab={tab.tabName} slot="header">
               {tab.tabName}
             </elsa-tab-header>,
             <elsa-tab-content tab={tab.tabName} slot="content">
-              <div class="elsa-pt-4">
+              <div class="elsa-pt-4 elsa-ml-1">
                 <elsa-control content={tab.renderContent()} />
               </div>
             </elsa-tab-content>,

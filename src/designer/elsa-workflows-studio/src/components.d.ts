@@ -152,6 +152,8 @@ export namespace Components {
         "expandButtonPosition": number;
         "hidden": boolean;
         "selectTab": (tab: string, expand?: boolean) => Promise<void>;
+        "silent": boolean;
+        "updateCounter": number;
     }
     interface ElsaInputTags {
         "fieldId"?: string;
@@ -1066,6 +1068,8 @@ declare namespace LocalJSX {
         "autoExpand"?: boolean;
         "expandButtonPosition"?: number;
         "hidden"?: boolean;
+        "silent"?: boolean;
+        "updateCounter"?: number;
     }
     interface ElsaInputTags {
         "fieldId"?: string;
