@@ -158,20 +158,6 @@ export class ElsaWorkflowDesigner {
     this.activityContextMenuTestState = newValue;
   }
 
-  // @Listen('keydown', {target: 'window'})
-  // async handleKeyDown(event: KeyboardEvent) {
-  //   if (this.ignoreCopyPasteActivities)
-  //     return;
-  //
-  //   if ((event.ctrlKey || event.metaKey) && event.key === 'c') {
-  //     await this.copyActivitiesToClipboard();
-  //   }
-  //   if ((event.ctrlKey || event.metaKey) && event.key === 'v') {
-  //
-  //     await this.pasteActivitiesFromClipboard();
-  //   }
-  // }
-
   @Method()
   async removeActivity(activity: ActivityModel) {
     this.removeActivityInternal(activity);
@@ -192,20 +178,6 @@ export class ElsaWorkflowDesigner {
   async showActivityEditor(activity: ActivityModel, animate: boolean) {
     await this.showActivityEditorInternal(activity, animate);
   }
-
-  // async copyActivitiesToClipboard() {
-  //   await navigator.clipboard.writeText(JSON.stringify(this.selectedActivities));
-  //   await eventBus.emit(EventTypes.ClipboardCopied, this);
-  // }
-
-  // async pasteActivitiesFromClipboard() {
-  //   let copiedActivities: Array<ActivityModel> = [];
-  //
-  //   await navigator.clipboard.readText().then(data => {
-  //     copiedActivities = JSON.parse(data);
-  //   });
-  //   await this.addActivitiesFromClipboard(copiedActivities)
-  // }
 
   getOutcomes = (activity: ActivityModel, definition: ActivityDefinitions): Array<string> => {
     let outcomes = [];
@@ -321,6 +293,7 @@ export class ElsaWorkflowDesigner {
   private createAndInitializeGraph = async () => {
     const graph = this.graph = createGraph(this.container,
       {},
+      this.enableChanges,
       this.pasteActivities,
       this.disableEvents,
       this.enableEvents);
@@ -331,14 +304,56 @@ export class ElsaWorkflowDesigner {
     graph.on('edge:connected', this.onEdgeConnected);
     graph.on('edge:removed', this.connectionDetachedTest);
     graph.on('node:moved', this.onNodeMoved);
-    // graph.on('node:change:*', this.onGraphChanged);
-    // graph.on('node:added', this.onGraphChanged);
     graph.on('node:removed', this.onNodeRemoved);
-    // graph.on('edge:added', this.onGraphChanged);
-    // graph.on('edge:removed', this.onGraphChanged);
-    // graph.on('edge:connected', this.onGraphChanged);
+    graph.on('cell:change:*', this.onChangeCells);
 
     await this.updateLayout();
+  }
+
+  enabledChanges: boolean = false; // Whether to revert changes or not.
+
+  private enableChanges = () => this.enabledChanges = true;
+
+  onChangeCells = (e) => {
+    // Node:
+    if( this.enabledChanges && e.cell instanceof ActivityNodeShape) {
+
+      let workflowActivities = this.workflowModel.activities;
+      const cell = e.cell as ActivityNodeShape;
+      let changedActivity: ActivityModel = workflowActivities.find(activity => cell.id === activity.activityId);
+
+      if (e.key === 'position') {
+        const current = e.current;
+        changedActivity.x = current.x;
+        changedActivity.y = current.y;
+      }
+      if ( e.key === 'zIndex') {
+        changedActivity.x = cell.activity.x;
+        changedActivity.y = cell.activity.y;
+      }
+      this.updateActivityInternal(changedActivity);
+
+    // Edge:
+    } else if (this.enabledChanges) {
+      let workflowConnections = this.workflowModel.connections;
+      const connection = e.cell;
+
+      const changedConnection = {
+        targetId: connection.target.cell,
+        sourceId: connection.source.cell,
+        outcome: connection.source.port
+      }
+
+      if(e.key === "labels") {
+        let filteredConnections = workflowConnections.filter(x => !(x.sourceId === changedConnection.sourceId && x.outcome === changedConnection.outcome))
+        this.updateWorkflowModel({...this.workflowModel, connections: filteredConnections});
+      }
+      if(e.key === 'target') {
+        this.addConnection(changedConnection.sourceId, changedConnection.targetId, changedConnection.outcome)
+      }
+    }
+
+    this.enabledChanges = false;
   }
 
   private pasteActivities = async (activities?: Array<ActivityModel>, connections?: Array<ConnectionModel>) => {
@@ -405,11 +420,6 @@ export class ElsaWorkflowDesigner {
     const node = e.node as ActivityNodeShape;
     const activity = node.activity as ActivityModel;
 
-    // const args: ActivitySelectedArgs = {
-    //   activity: activity,
-    // };
-    // this.activitySelected.emit(args);
-
      // If a parent activity was selected to connect to:
      if (this.mode == WorkflowDesignerMode.Edit && this.parentActivityId && this.parentActivityOutcome) {
       this.addConnection(this.parentActivityId, node.id, this.parentActivityOutcome);
@@ -428,7 +438,6 @@ export class ElsaWorkflowDesigner {
 
     if (this.mode == WorkflowDesignerMode.Edit || this.mode == WorkflowDesignerMode.Instance) {
 
-      //  '.context-menu-button-container button'
       e.e.stopPropagation();
       this.handleContextMenuChange({
         x: e.e.clientX,
@@ -440,10 +449,6 @@ export class ElsaWorkflowDesigner {
     }
 
     if (this.mode == WorkflowDesignerMode.Test) {
-
-        //'.context-menu-button-container button'
-        //   e.stopPropagation();
-        //   this.handleContextMenuTestChange({x: e.clientX, y: e.clientY, shown: true, activity: node.activity});
     }
   };
 
@@ -455,22 +460,7 @@ export class ElsaWorkflowDesigner {
     this.handleConnectionContextMenuChange({x: e.clientX, y: e.clientY, shown: true, activity: e.node.activity});
   }
 
-  // private onGraphClick = async (e: PositionEventArgs<JQuery.ClickEvent>) => {
-  //   const currentContainer = this.getCurrentContainerInternal();
-
-  //   const args: ContainerSelectedArgs = {
-  //     activity: currentContainer,
-  //   };
-  //   return this.containerSelected.emit(args);
-  // };
-
   private onGraphClick = async () => {
-    // const currentContainer = this.getCurrentContainerInternal();
-
-    // const args: ContainerSelectedArgs = {
-    //   activity: currentContainer,
-    // };
-    // return this.containerSelected.emit(args);
     for (const key in this.selectedActivities) {
       this.activityDeselected.emit(this.selectedActivities[key]);
     }
@@ -650,32 +640,6 @@ export class ElsaWorkflowDesigner {
     this.workflowModel = this.model;
   }
 
-  // componentDidLoad() {
-  //   this.svgD3Selected = d3.select(this.svg);
-  //   this.innerD3Selected = d3.select(this.inner);
-  //   this.safeRender();
-  // }
-
-  // safeRender() {
-  //   // Rebuild D3 model if component completed its initial load.
-  //   if (!this.svgD3Selected)
-  //     return;
-
-  //   const rect = this.el.getBoundingClientRect();
-  //   if (rect.height === 0 || rect.width === 0) {
-  //     const observer = new ResizeObserver(entries => {
-  //       for (let entry of entries) {
-  //         // this.renderTree();
-  //         observer.unobserve(this.el);
-  //       }
-  //     });
-
-  //     observer.observe(this.el);
-  //   } else {
-  //     // this.renderTree();
-  //   }
-  // }
-
   async componentWillRender() {
     if (!!this.activityDisplayContexts)
       return;
@@ -687,7 +651,6 @@ export class ElsaWorkflowDesigner {
       displayContexts[model.activityId] = await this.getActivityDisplayContext(model);
 
     this.activityDisplayContexts = displayContexts;
-    // this.safeRender();
   }
 
   async getActivityDisplayContext(activityModel: ActivityModel): Promise<ActivityDesignDisplayContext> {
@@ -741,7 +704,6 @@ export class ElsaWorkflowDesigner {
   updateWorkflowModel(model: WorkflowModel, emitEvent: boolean = true) {
     this.workflowModel = this.cleanWorkflowModel(model);
     this.oldActivityDisplayContexts = this.activityDisplayContexts;
-    // this.activityDisplayContexts = null;
 
     if (emitEvent)
       this.workflowChanged.emit(model);
@@ -998,23 +960,6 @@ export class ElsaWorkflowDesigner {
       this.updateActivityExternal(activityModel);
     }
   };
-
-  // onPasteActivity = async args => {
-  //   const activityModel = args as ActivityModel;
-  //
-  //   this.selectedActivities = {};
-  //   activityModel.outcomes[0] = this.parentActivityOutcome;
-  //   this.selectedActivities[activityModel.activityId] = activityModel;
-  //   await this.pasteActivitiesFromClipboard();
-  // };
-  //
-  // onCopyPasteActivityEnabled = () => {
-  //   this.ignoreCopyPasteActivities = false
-  // }
-  //
-  // onCopyPasteActivityDisabled = () => {
-  //   this.ignoreCopyPasteActivities = true
-  // }
 
   onWorkflowExecuted = () => {
   }

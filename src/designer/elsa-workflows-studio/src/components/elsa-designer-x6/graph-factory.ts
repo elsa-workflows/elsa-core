@@ -6,6 +6,7 @@ import {ActivityNodeShape} from './shapes';
 export function createGraph(
   container: HTMLElement,
   interacting: CellView.Interacting,
+  enableChanges: () => void,
   pasteActivities: (activities?: Array<any>, connections?: Array<ConnectionModel>) => void,
   disableEvents: () => void,
   enableEvents: (emitWorkflowChanged: boolean) => Promise<void>): Graph {
@@ -236,8 +237,9 @@ export function createGraph(
   });
 
   //undo redo
-  graph.bindKey(['meta+z', 'ctrl+z'], () => {
+  graph.bindKey(['meta+z', 'ctrl+z'], (e) => {
     if (graph.history.canUndo()) {
+      enableChanges()
       graph.history.undo()
     }
     return false
@@ -245,6 +247,7 @@ export function createGraph(
 
   graph.bindKey(['meta+y', 'ctrl+y'], () => {
     if (graph.history.canRedo()) {
+      enableChanges()
       graph.history.redo()
     }
     return false
