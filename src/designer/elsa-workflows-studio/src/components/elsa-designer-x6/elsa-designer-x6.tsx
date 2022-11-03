@@ -141,7 +141,6 @@ export class ElsaWorkflowDesigner {
       map[activity.activityId] = activity;
 
     this.selectedActivities = map;
-    // this.safeRender();
   }
 
   @Watch('activityContextMenu')
@@ -317,35 +316,13 @@ export class ElsaWorkflowDesigner {
     this.silent = false;
 
     if (emitWorkflowChanged === true) {
-      // await this.onGraphChanged();
+      // await this.updateGraph();
     }
   };
 
   private createAndInitializeGraph = async () => {
-    const graph = this.graph = createGraph(this.container, {
-        // nodeMovable: () => this.interactiveMode,
-        // edgeMovable: () => this.interactiveMode,
-        // arrowheadMovable: () => this.interactiveMode,
-        // edgeLabelMovable: () => this.interactiveMode,
-        // magnetConnectable: () => this.interactiveMode,
-        // useEdgeTools: () => this.interactiveMode,
-        // toolsAddable: () => this.interactiveMode,
-        // stopDelegateOnDragging: () => this.interactiveMode,
-        // vertexAddable: () => this.interactiveMode,
-        // vertexDeletable: () => this.interactiveMode,
-        // vertexMovable: () => this.interactiveMode,
-        // nodeMovable: () => true,
-        // edgeMovable: () => true,
-        // arrowheadMovable: () => true,
-        // edgeLabelMovable: () => true,
-        // magnetConnectable: () => true,
-        // useEdgeTools: () => true,
-        // toolsAddable: () => true,
-        // stopDelegateOnDragging: () => true,
-        // vertexAddable: () => true,
-        // vertexDeletable: () => true,
-        // vertexMovable: () => true,
-      },
+    const graph = this.graph = createGraph(this.container,
+      {},
       this.pasteActivities,
       this.disableEvents,
       this.enableEvents);
@@ -380,7 +357,7 @@ export class ElsaWorkflowDesigner {
         type: activityDescriptor.type,
         outcomes: activityDescriptor.outcomes || activity.outcomes,
         displayName: activityDescriptor.displayName,
-        properties: [],
+        properties: activity.properties,
         propertyStorageProviders: {},
         x: activity.x + 32,
         y: activity.y + 32,

@@ -208,7 +208,8 @@ export function createGraph(
             type: activity.type,
             outcomes: activity.outcomes,
             x: activity.x,
-            y: activity.y
+            y: activity.y,
+            properties: activity.properties,
           }
           copiedNodes.push(activityItem)
         } else {
