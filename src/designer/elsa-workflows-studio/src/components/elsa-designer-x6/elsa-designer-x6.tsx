@@ -398,7 +398,7 @@ export class ElsaWorkflowDesigner {
     activity.x = nodePosition.x;
     activity.y = nodePosition.y;
 
-    this.updateActivity(activity);
+    this.updateActivityInternal(activity);
   }
 
   private onNodeClick = async (e) => {
@@ -640,7 +640,7 @@ export class ElsaWorkflowDesigner {
 
   connectedCallback() {
     eventBus.on(EventTypes.ActivityPicked, this.onActivityPicked);
-    eventBus.on(EventTypes.UpdateActivity, this.onUpdateActivity);
+    eventBus.on(EventTypes.UpdateActivity, this.onUpdateActivityExternal);
     //eventBus.on(EventTypes.PasteActivity, this.onPasteActivity);
     // eventBus.on(EventTypes.HideModalDialog, this.onCopyPasteActivityEnabled);
     // eventBus.on(EventTypes.ShowWorkflowSettings, this.onCopyPasteActivityDisabled);
@@ -649,7 +649,7 @@ export class ElsaWorkflowDesigner {
 
   disconnectedCallback() {
     eventBus.detach(EventTypes.ActivityPicked, this.onActivityPicked);
-    eventBus.detach(EventTypes.UpdateActivity, this.onUpdateActivity);
+    eventBus.detach(EventTypes.UpdateActivity, this.onUpdateActivityExternal);
     //eventBus.detach(EventTypes.PasteActivity, this.onPasteActivity);
     // eventBus.detach(EventTypes.HideModalDialog, this.onCopyPasteActivityEnabled);
     // eventBus.detach(EventTypes.ShowWorkflowSettings, this.onCopyPasteActivityDisabled);
@@ -832,8 +832,8 @@ export class ElsaWorkflowDesigner {
       displayName: activityDescriptor.displayName,
       properties: [],
       propertyStorageProviders: {},
-      x: Math.round(this.graph.getContentBBox().x),
-      y: Math.round(this.graph.getContentBBox().y)
+      x: Math.round(this.graph.getContentBBox().left),
+      y: Math.round(this.graph.getContentBBox().top)
     };
 
     for (const property of activityDescriptor.inputProperties) {
@@ -908,6 +908,8 @@ export class ElsaWorkflowDesigner {
     this.updateGraph();
     this.parentActivityId = null;
     this.parentActivityOutcome = null;
+    const bbox = this.graph.getAllCellsBBox();
+    this.graph.zoomToRect({ x: activity.x - 50, y: activity.y - 50, width: bbox.width, height: bbox.height });
   }
 
   getRootActivities(): Array<ActivityModel> {
@@ -928,12 +930,21 @@ export class ElsaWorkflowDesigner {
     this.parentActivityOutcome = null;
   }
 
-  async updateActivity(activity: ActivityModel) {
+  updateActivityInternal(activity: ActivityModel) {
     let workflowModel = {...this.workflowModel};
     const activities = [...workflowModel.activities];
     const index = activities.findIndex(x => x.activityId === activity.activityId);
     activities[index] = activity;
     this.updateWorkflowModel({...workflowModel, activities: activities});
+  }
+
+  async updateActivityExternal(activity: ActivityModel) {
+    var originalActivity = this.findActivityById(activity.activityId);
+    // Do not allow external updates to change activity position, because position can only be changed internally by the graph
+    activity.x = originalActivity.x;
+    activity.y = originalActivity.y;
+
+    this.updateActivityInternal(activity);
 
     const activityDisplayContext = await this.getActivityDisplayContext(activity);
     this.activityDisplayContexts[activity.activityId] = activityDisplayContext;
@@ -960,7 +971,7 @@ export class ElsaWorkflowDesigner {
     this.addActivity(activityModel, sourceId, targetId, this.parentActivityOutcome);
   };
 
-  onUpdateActivity = args => {
+  onUpdateActivityExternal = args => {
     const activityModel = args as ActivityModel;
 
     if (this.addingActivity) {
@@ -972,7 +983,7 @@ export class ElsaWorkflowDesigner {
       this.addingActivity = false;
     } else {
       console.debug(`updating activity with ID ${activityModel.activityId}`)
-      this.updateActivity(activityModel);
+      this.updateActivityExternal(activityModel);
     }
   };
 

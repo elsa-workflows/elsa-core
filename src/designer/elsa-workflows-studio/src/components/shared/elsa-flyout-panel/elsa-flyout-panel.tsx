@@ -12,19 +12,27 @@ export class ElsaFlyoutPanel {
   @Prop() expandButtonPosition = 1;
   @Prop() autoExpand = false;
   @Prop() hidden = false;
+  @Prop() silent = false;
+  @Prop() updateCounter = 0; // This is required, so that the component would update tab click events when tabs change from outside
   @State() expanded: boolean;
   @State() currentTab: string;
-  @State() headerTabs: HTMLElsaTabHeaderElement[];
-  @State() contentTabs: HTMLElsaTabContentElement[];
+  headerTabs: HTMLElsaTabHeaderElement[];
+  contentTabs: HTMLElsaTabContentElement[];
   el: HTMLElement;
 
   async componentDidLoad() {
     this.expanded = this.autoExpand;
+    this.updateTabs();
+  }
+
+  async updateTabs() {
     this.headerTabs = Array.from(this.el.querySelectorAll('elsa-tab-header'));
     this.headerTabs.forEach(element => {
       element.onclick = () => {
         this.selectTab(element.tab);
-        eventBus.emit(EventTypes.FlyoutPanelTabSelected, this, element.tab);
+        if (!this.silent) {
+          eventBus.emit(EventTypes.FlyoutPanelTabSelected, this, element.tab);
+        }
       };
     })
     this.contentTabs = Array.from(this.el.querySelectorAll('elsa-tab-content'));
@@ -32,6 +40,10 @@ export class ElsaFlyoutPanel {
       this.currentTab = this.headerTabs[0].tab;
       await this.selectTab(this.currentTab);
     }
+  }
+
+  async componentDidRender() {
+    this.updateTabs();
   }
 
   render() {

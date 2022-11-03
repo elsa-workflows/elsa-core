@@ -73,3 +73,7 @@ The first step for all three of these strategies is to [publish to NPM](https://
 - Run `npm install my-component --save`
 - Add an import to the npm packages `import my-component;`
 - Then you can use the element anywhere in your template, JSX, html etc
+
+
+### Using X6 workflows
+To use X6 workflows instead of the default ones, then add '--x6graph' argument to npm build scripts
