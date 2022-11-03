@@ -247,7 +247,7 @@ export class ElsaWorkflowDesigner {
     this.graph.centerContent();
   }
 
-  private createGraphActivity = (item: ActivityModel) => {
+  private createGraphActivity = (item: ActivityModel): Node.Metadata => {
     const displayContext = this.activityDisplayContexts[item.activityId];
     const activityDefinitions: Array<ActivityDescriptor> = state.activityDescriptors;
     const definition = activityDefinitions.find(x => x.type == item.type);
@@ -262,8 +262,8 @@ export class ElsaWorkflowDesigner {
           },
         }
       }));
-
-    return { id: item.activityId,
+    const node: Node.Metadata = {
+      id: item.activityId,
       shape: 'activity',
       x: item.x || 0,
       y: item.y || 0,
@@ -273,11 +273,11 @@ export class ElsaWorkflowDesigner {
         items: ports
       },
       component: this.renderActivity(item),
-      selectedActivities: this.selectedActivities,
       activityDescriptor: displayContext.activityDescriptor,
       displayContext: displayContext,
       activityDisplayContexts: this.activityDisplayContexts
-   };
+    }
+    return node;
   }
 
   private readonly portProviderRegistry: PortProviderRegistry;
@@ -295,7 +295,6 @@ export class ElsaWorkflowDesigner {
   @State() private activityLookup: Hash<ActivityModel> = {};
   @State() private activityNodes: Array<ActivityNode> = [];
 
-  // @Event() graphUpdated: EventEmitter<GraphUpdatedArgs>;
   // @Event() containerSelected: EventEmitter<ContainerSelectedArgs>;
 
   @Method()
@@ -305,7 +304,6 @@ export class ElsaWorkflowDesigner {
     this.graph.resize(width, height);
     this.graph.updateBackground();
   }
-
 
   async componentDidLoad() {
     await this.createAndInitializeGraph();
@@ -343,12 +341,13 @@ export class ElsaWorkflowDesigner {
     await this.updateLayout();
   }
 
-  private pasteActivities = async (activities?: Array<any>, connections?: Array<ConnectionModel>) => {
+  private pasteActivities = async (activities?: Array<ActivityModel>, connections?: Array<ConnectionModel>) => {
     const activityDescriptors: Array<ActivityDescriptor> = state.activityDescriptors;
 
     let workflowActivities = this.workflowModel.activities;
     let workflowConnections = this.workflowModel.connections;
 
+    const newActivityIds = [];
     for (const activity of activities) {
       const activityDescriptor = activityDescriptors.find(descriptor => descriptor.type === activity.type);
 
@@ -372,6 +371,7 @@ export class ElsaWorkflowDesigner {
       workflowActivities.push(newActivity);
       const activityDisplayContext = await this.getActivityDisplayContext(newActivity);
       this.activityDisplayContexts[newActivity.activityId] = activityDisplayContext;
+      newActivityIds.push(newActivity.activityId);
     }
 
     for (const connection of connections ) {
@@ -476,16 +476,6 @@ export class ElsaWorkflowDesigner {
     }
     this.selectedActivities = {};
   };
-
-  // private onGraphChanged = async (e) => {
-    // if (this.silent) {
-    //   await this.enableEvents(false);
-    //   return;
-    // }
-
-    // this.graphUpdated.emit();
-  //   await this.updateLayout();
-  // }
 
   addConnectionTest(sourceActivityId: string, targetActivityId: string, outcome: string) {
     const workflowModel = {...this.workflowModel};
@@ -909,7 +899,29 @@ export class ElsaWorkflowDesigner {
     this.parentActivityId = null;
     this.parentActivityOutcome = null;
     const bbox = this.graph.getAllCellsBBox();
-    this.graph.zoomToRect({ x: activity.x - 50, y: activity.y - 50, width: bbox.width, height: bbox.height });
+    this.graph.zoomToRect({ x: activity.x - 50, y: activity.y - 50, width: Math.max(1200, bbox.width), height: Math.max(800, bbox.height) });
+    this.selectActivityCell(activity);
+  }
+
+  selectActivityCell(activity: ActivityModel) {
+    const newCell = this.graph.getCells().find(x => x.id === activity.activityId);
+    this.graph.select(newCell);
+
+    for (const key in this.selectedActivities) {
+      this.activityDeselected.emit(this.selectedActivities[key]);
+    }
+
+    this.selectedActivities = {};
+    this.selectedActivities[activity.activityId] = activity;
+    this.activitySelected.emit(activity);
+
+    this.handleContextMenuChange({
+      x: activity.x,
+      y: activity.y,
+      shown: true,
+      activity: activity,
+      selectedActivities: this.selectedActivities
+    });
   }
 
   getRootActivities(): Array<ActivityModel> {
