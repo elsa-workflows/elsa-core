@@ -26,24 +26,24 @@ public class MessageProcessorHostedService<T> : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
         var index = 0;
-        
+
         for (var i = 0; i < _workers.Count; i++)
         {
             var worker = new MessageWorker<T>(Channel.CreateUnbounded<T>(), _consumer);
             _workers[i] = worker;
             _ = worker.StartAsync(cancellationToken);
         }
-        
+
         await foreach (var message in _channel.Reader.ReadAllAsync(cancellationToken))
         {
             var worker = _workers[index];
             await worker.DeliverMessageAsync(message, cancellationToken);
             index = (index + 1) % _workers.Count;
         }
-   
-        foreach (var worker in _workers) 
+
+        foreach (var worker in _workers)
             worker.Complete();
-        
+
         _workers.Clear();
     }
 }
@@ -61,7 +61,7 @@ public class MessageWorker<T>
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        await foreach (var message in _channel.Reader.ReadAllAsync(cancellationToken)) 
+        await foreach (var message in _channel.Reader.ReadAllAsync(cancellationToken))
             await _consumer.ConsumeAsync(message, cancellationToken);
     }
 

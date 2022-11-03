@@ -25,12 +25,12 @@ public class NotificationPipelineBuilder : INotificationPipelineBuilder
         _components.Add(middleware);
         return this;
     }
-        
+
     public NotificationMiddlewareDelegate Build()
     {
         NotificationMiddlewareDelegate pipeline = _ => new ValueTask();
 
-        foreach (var component in _components.Reverse()) 
+        foreach (var component in _components.Reverse())
             pipeline = component(pipeline);
 
         return pipeline;

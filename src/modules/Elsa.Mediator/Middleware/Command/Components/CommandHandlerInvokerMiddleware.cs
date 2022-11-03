@@ -34,12 +34,12 @@ public class CommandHandlerInvokerMiddleware : ICommandMiddleware
         var cancellationToken = context.CancellationToken;
         var task = (Task)handleMethod.Invoke(handler, new object?[] { command, cancellationToken })!;
         await task;
-        
+
         // Get result of task.
         var taskWithReturnType = typeof(Task<>).MakeGenericType(resultType);
         var resultProperty = taskWithReturnType.GetProperty(nameof(Task<object>.Result))!;
         context.Result = resultProperty.GetValue(task);
-        
+
         // Invoke next middleware.
         await _next(context);
     }

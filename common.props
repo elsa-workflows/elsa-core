@@ -1,7 +1,7 @@
 <Project>
   <PropertyGroup>
     <LangVersion>latest</LangVersion>
-    <Authors>Elsa Workflows Team</Authors>
+    <Authors>Elsa Workflows Community</Authors>
     <Copyright>2022</Copyright> 
     <PackageProjectUrl>https://github.com/elsa-workflows/elsa-core</PackageProjectUrl>
     <RepositoryUrl>https://github.com/elsa-workflows/elsa-core</RepositoryUrl>
@@ -9,7 +9,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageIconUrl>https://elsaworkflows.io/nuget-icon.png</PackageIconUrl>
+    <PackageIconUrl>https://v3.elsaworkflows.io/nuget-icon.png</PackageIconUrl>
       
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AnalysisModeDocumentation>Default</AnalysisModeDocumentation>

@@ -1,10 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+    <Import Project="..\..\..\common.props"/>
+    <Import Project="..\..\..\configureawait.props"/>
+
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-        <LangVersion>latest</LangVersion>
+        <Description>
+            Provides workflow runtime functionality.
+        </Description>
+        <PackageTags>elsa, module, workflows</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>

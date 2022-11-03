@@ -1,11 +1,17 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+    <Import Project="..\..\..\common.props" />
+    <Import Project="..\..\..\configureawait.props" />
+
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
+        <Description>
+            Provides services and utility functions common to Elsa modules.
+            For example, it provides a system clock and a memory store implementation.
+        </Description>
+        <PackageTags>elsa, module, common</PackageTags>
     </PropertyGroup>
-
+    
     <ItemGroup>
       <ProjectReference Include="..\..\common\Elsa.Features\Elsa.Features.csproj" />
     </ItemGroup>

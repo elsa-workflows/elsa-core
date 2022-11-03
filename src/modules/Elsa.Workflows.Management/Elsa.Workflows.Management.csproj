@@ -1,20 +1,25 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+    <Import Project="..\..\..\common.props"/>
+    <Import Project="..\..\..\configureawait.props"/>
+
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
+        <Description>
+            Provides workflow management functionality.
+        </Description>
+        <PackageTags>elsa, module, workflows</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Humanizer.Core" Version="2.14.1" />
-        <PackageReference Include="System.Linq.Async" Version="6.0.1" />
-        <PackageReference Include="System.Text.Json" Version="6.0.2" />
+        <PackageReference Include="Humanizer.Core" Version="2.14.1"/>
+        <PackageReference Include="System.Linq.Async" Version="6.0.1"/>
+        <PackageReference Include="System.Text.Json" Version="6.0.2"/>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Elsa.Mediator\Elsa.Mediator.csproj" />
-      <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
+        <ProjectReference Include="..\Elsa.Mediator\Elsa.Mediator.csproj"/>
+        <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj"/>
     </ItemGroup>
 
 </Project>

@@ -12,7 +12,7 @@ public class DefaultMessageSender : IMessageSender
     {
         _serviceProvider = serviceProvider;
     }
-    
+
     public async Task SendAsync<T>(T message, CancellationToken cancellationToken)
     {
         var channel = _serviceProvider.GetRequiredService<Channel<T>>();

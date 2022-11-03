@@ -34,12 +34,12 @@ public class RequestHandlerInvokerMiddleware : IRequestMiddleware
         var cancellationToken = context.CancellationToken;
         var task = (Task)handleMethod.Invoke(handler, new object?[] { request, cancellationToken })!;
         await task;
-        
+
         // Get result of task.
         var taskWithReturnType = typeof(Task<>).MakeGenericType(responseType);
         var resultProperty = taskWithReturnType.GetProperty(nameof(Task<object>.Result))!;
         context.Response = resultProperty.GetValue(task);
-        
+
         // Invoke next middleware.
         await _next(context);
     }

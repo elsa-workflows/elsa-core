@@ -1,5 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+    <Import Project="..\..\..\common.props"/>
+    <Import Project="..\..\..\configureawait.props"/>
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <Description>
+            Provides an activity provider that turns Jobs into activities and provides custom middleware that enables activities to run in the background, enabling true asyncrhonou execution of activities on a workflow.
+        </Description>
+        <PackageTags>elsa, module, jobs, background tasks</PackageTags>
+    </PropertyGroup>
+
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
@@ -7,10 +18,10 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Elsa.Jobs\Elsa.Jobs.csproj" />
-      <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
-      <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj" />
-      <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
+        <ProjectReference Include="..\Elsa.Jobs\Elsa.Jobs.csproj"/>
+        <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj"/>
+        <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj"/>
+        <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj"/>
     </ItemGroup>
 
 </Project>

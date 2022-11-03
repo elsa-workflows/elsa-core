@@ -1,9 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+    <Import Project="..\..\..\common.props"/>
+    <Import Project="..\..\..\configureawait.props"/>
+    
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
+        <Description>
+            Provides infrastructure for registering and executing workflow expressions.
+            Out of the box, it provides a DelegateExpression and LiteralExpression. 
+        </Description>
+        <PackageTags>elsa, module, scripting, expressions</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>

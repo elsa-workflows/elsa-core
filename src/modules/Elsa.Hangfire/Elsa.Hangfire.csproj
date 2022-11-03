@@ -1,9 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+    <Import Project="..\..\..\common.props"/>
+    <Import Project="..\..\..\configureawait.props"/>
+
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
+        <Description>
+            Provides Hangfire integration and an implementation of Elsa's IJobQueue implementation.
+        </Description>
+        <PackageTags>elsa, module, hangfire</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>

@@ -1,18 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <Import Project="..\..\..\common.props" />
-    <Import Project="..\..\..\configureawait.props" />
+    <Import Project="..\..\..\common.props"/>
+    <Import Project="..\..\..\configureawait.props"/>
 
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
         <Description>
-            Provides a default identity solution for Elsa Workflows.
+            Provides a default identity solution.
         </Description>
         <PackageTags>elsa, module, identity</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\common\Elsa.Api.Common\Elsa.Api.Common.csproj" />
+        <ProjectReference Include="..\..\common\Elsa.Api.Common\Elsa.Api.Common.csproj"/>
     </ItemGroup>
 
 </Project>

@@ -4,31 +4,32 @@
         <OutputType>Exe</OutputType>
         <TargetFramework>net6.0</TargetFramework>
         <Nullable>enable</Nullable>
+        <IsPackable>false</IsPackable>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.1" />
-        <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="6.0.0" />
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="6.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="6.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.1"/>
+        <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="6.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="6.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="6.0.0"/>
     </ItemGroup>
 
     <ItemGroup>
-        <None Remove="Sample1.elsa" />
-        <EmbeddedResource Include="Demo1.elsa" />
-        <EmbeddedResource Include="Demo3a.elsa" />
-        <EmbeddedResource Include="Demo2.elsa" />
-        <EmbeddedResource Include="Demo3b.elsa" />
-        <EmbeddedResource Include="Demo4.elsa" />
-        <EmbeddedResource Include="Sample1.elsa" />
+        <None Remove="Sample1.elsa"/>
+        <EmbeddedResource Include="Demo1.elsa"/>
+        <EmbeddedResource Include="Demo3a.elsa"/>
+        <EmbeddedResource Include="Demo2.elsa"/>
+        <EmbeddedResource Include="Demo3b.elsa"/>
+        <EmbeddedResource Include="Demo4.elsa"/>
+        <EmbeddedResource Include="Sample1.elsa"/>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\..\bundles\Elsa\Elsa.csproj" />
-      <ProjectReference Include="..\..\..\modules\Elsa.Dsl\Elsa.Dsl.csproj" />
-      <ProjectReference Include="..\..\..\modules\Elsa.Http\Elsa.Http.csproj" />
-      <ProjectReference Include="..\..\..\modules\Elsa.Scheduling\Elsa.Scheduling.csproj" />
+        <ProjectReference Include="..\..\..\bundles\Elsa\Elsa.csproj"/>
+        <ProjectReference Include="..\..\..\modules\Elsa.Dsl\Elsa.Dsl.csproj"/>
+        <ProjectReference Include="..\..\..\modules\Elsa.Http\Elsa.Http.csproj"/>
+        <ProjectReference Include="..\..\..\modules\Elsa.Scheduling\Elsa.Scheduling.csproj"/>
     </ItemGroup>
 
 </Project>

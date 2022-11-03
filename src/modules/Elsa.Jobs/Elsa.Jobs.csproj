@@ -1,10 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+    <Import Project="..\..\..\common.props"/>
+    <Import Project="..\..\..\configureawait.props"/>
+
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
-        <Nullable>enable</Nullable>
-        <LangVersion>Latest</LangVersion>
-        <RootNamespace>Elsa.Jobs</RootNamespace>
+        <Description>
+            Provides infrastructure to execute background jobs. Comes with an in-memory job queue provider out of the box.
+        </Description>
+        <PackageTags>elsa, module, jobs, background tasks</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>

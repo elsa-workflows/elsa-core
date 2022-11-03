@@ -28,14 +28,14 @@ public class BackgroundCommandSenderHostedService : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
         var index = 0;
-        
+
         for (var i = 0; i < _workerCount; i++)
         {
             var output = Channel.CreateUnbounded<ICommand>();
             _outputs.Add(output);
             _ = ReadOutputAsync(output, cancellationToken);
         }
-        
+
         await foreach (var command in _channelReader.ReadAllAsync(cancellationToken))
         {
             var output = _outputs[index];
@@ -60,7 +60,7 @@ public class BackgroundCommandSenderHostedService : BackgroundService
             catch (Exception e)
             {
                 _logger.LogError(e, "An unhandled exception occured while processing the queue");
-            }        
+            }
         }
     }
 }

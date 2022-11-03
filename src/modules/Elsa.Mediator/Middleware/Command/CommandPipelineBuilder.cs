@@ -25,12 +25,12 @@ public class CommandPipelineBuilder : ICommandPipelineBuilder
         _components.Add(middleware);
         return this;
     }
-        
+
     public CommandMiddlewareDelegate Build()
     {
         CommandMiddlewareDelegate pipeline = _ => new ValueTask();
 
-        foreach (var component in _components.Reverse()) 
+        foreach (var component in _components.Reverse())
             pipeline = component(pipeline);
 
         return pipeline;

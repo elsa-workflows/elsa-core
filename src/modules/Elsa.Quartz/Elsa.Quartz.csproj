@@ -1,9 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+    <Import Project="..\..\..\common.props"/>
+    <Import Project="..\..\..\configureawait.props"/>
+
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
+        <Description>
+            Provides integration with the Quartz.NET library and provide am implementation of Elsa's IJobScheduler using Quartz.NET.
+        </Description>
+        <PackageTags>elsa, module, runtime, protoactor, kubernetes</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>

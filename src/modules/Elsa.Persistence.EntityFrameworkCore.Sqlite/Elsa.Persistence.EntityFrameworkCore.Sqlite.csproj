@@ -1,9 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+    <Import Project="..\..\..\common.props"/>
+    <Import Project="..\..\..\configureawait.props"/>
+
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
+        <Description>
+            Provides a SQLite migrations for various modules.
+        </Description>
+        <PackageTags>elsa, module, persistence, efcore, sqlite</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>

@@ -5,7 +5,7 @@ namespace Elsa.Mediator.Middleware.Command;
 
 public static class MiddlewareExtensions
 {
-    public static ICommandPipelineBuilder UseMiddleware<TMiddleware>(this ICommandPipelineBuilder builder, params object[] args) where TMiddleware: ICommandMiddleware
+    public static ICommandPipelineBuilder UseMiddleware<TMiddleware>(this ICommandPipelineBuilder builder, params object[] args) where TMiddleware : ICommandMiddleware
     {
         var middleware = typeof(TMiddleware);
 

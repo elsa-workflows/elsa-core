@@ -5,7 +5,7 @@ namespace Elsa.Mediator.Middleware.Notification;
 
 public static class MiddlewareExtensions
 {
-    public static INotificationPipelineBuilder UseMiddleware<TMiddleware>(this INotificationPipelineBuilder builder, params object[] args) where TMiddleware: INotificationMiddleware
+    public static INotificationPipelineBuilder UseMiddleware<TMiddleware>(this INotificationPipelineBuilder builder, params object[] args) where TMiddleware : INotificationMiddleware
     {
         var middleware = typeof(TMiddleware);
 

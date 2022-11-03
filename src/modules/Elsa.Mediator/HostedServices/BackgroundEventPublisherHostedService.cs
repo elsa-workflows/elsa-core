@@ -26,14 +26,14 @@ public class BackgroundEventPublisherHostedService : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
         var index = 0;
-        
+
         for (var i = 0; i < _outputs.Count; i++)
         {
             var output = Channel.CreateUnbounded<INotification>();
             _outputs[i] = output;
             _ = ReadOutputAsync(output, cancellationToken);
         }
-        
+
         await foreach (var notification in _channelReader.ReadAllAsync(cancellationToken))
         {
             var output = _outputs[index];
@@ -46,7 +46,7 @@ public class BackgroundEventPublisherHostedService : BackgroundService
             output.Writer.Complete();
         }
     }
-    
+
     private async Task ReadOutputAsync(Channel<INotification> output, CancellationToken cancellationToken)
     {
         await foreach (var notification in output.Reader.ReadAllAsync(cancellationToken))
@@ -58,7 +58,7 @@ public class BackgroundEventPublisherHostedService : BackgroundService
             catch (Exception e)
             {
                 _logger.LogError(e, "An unhandled exception occured while processing the queue");
-            }        
+            }
         }
     }
 }

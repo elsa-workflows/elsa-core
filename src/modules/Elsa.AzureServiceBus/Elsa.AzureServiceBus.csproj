@@ -1,9 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+    <Import Project="..\..\..\common.props" />
+    <Import Project="..\..\..\configureawait.props" />
+
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
+        <Description>
+            Provides Azure Service Bus integration and activities.
+        </Description>
+        <PackageTags>elsa, module, azure service bus, service bus</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>

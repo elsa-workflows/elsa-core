@@ -26,36 +26,33 @@ public static class DependencyInjectionExtensions
         module.Configure(configure);
         return module;
     }
-    
+
     public static IServiceCollection AddMediator(this IServiceCollection services, Action<MediatorOptions>? configure = default)
-    { 
+    {
         services.Configure(configure ?? (_ => { }));
-        
+
         return services
-            .AddSingleton<IMediator, DefaultMediator>()
-            .AddSingleton<IRequestSender>(sp => sp.GetRequiredService<IMediator>())
-            .AddSingleton<ICommandSender>(sp => sp.GetRequiredService<IMediator>())
-            .AddSingleton<IEventPublisher>(sp => sp.GetRequiredService<IMediator>())
-            .AddSingleton<IBackgroundCommandSender, BackgroundCommandSender>()
-            .AddSingleton<IBackgroundEventPublisher, BackgroundEventPublisher>()
-            .AddSingleton<IRequestPipeline, RequestPipeline>()
-            .AddSingleton<ICommandPipeline, CommandPipeline>()
-            .AddSingleton<INotificationPipeline, NotificationPipeline>()
-            
-            .AddHostedService(sp =>
-            {
-                var options = sp.GetRequiredService<IOptions<MediatorOptions>>().Value;
-                return ActivatorUtilities.CreateInstance<BackgroundCommandSenderHostedService>(sp, options.CommandWorkerCount);
-            })
-            
-            .AddHostedService(sp =>
-            {
-                var options = sp.GetRequiredService<IOptions<MediatorOptions>>().Value;
-                return ActivatorUtilities.CreateInstance<BackgroundEventPublisherHostedService>(sp, options.NotificationWorkerCount);
-            })
-            
-            .CreateChannel<ICommand>()
-            .CreateChannel<INotification>()
+                .AddSingleton<IMediator, DefaultMediator>()
+                .AddSingleton<IRequestSender>(sp => sp.GetRequiredService<IMediator>())
+                .AddSingleton<ICommandSender>(sp => sp.GetRequiredService<IMediator>())
+                .AddSingleton<IEventPublisher>(sp => sp.GetRequiredService<IMediator>())
+                .AddSingleton<IBackgroundCommandSender, BackgroundCommandSender>()
+                .AddSingleton<IBackgroundEventPublisher, BackgroundEventPublisher>()
+                .AddSingleton<IRequestPipeline, RequestPipeline>()
+                .AddSingleton<ICommandPipeline, CommandPipeline>()
+                .AddSingleton<INotificationPipeline, NotificationPipeline>()
+                .AddHostedService(sp =>
+                {
+                    var options = sp.GetRequiredService<IOptions<MediatorOptions>>().Value;
+                    return ActivatorUtilities.CreateInstance<BackgroundCommandSenderHostedService>(sp, options.CommandWorkerCount);
+                })
+                .AddHostedService(sp =>
+                {
+                    var options = sp.GetRequiredService<IOptions<MediatorOptions>>().Value;
+                    return ActivatorUtilities.CreateInstance<BackgroundEventPublisherHostedService>(sp, options.NotificationWorkerCount);
+                })
+                .CreateChannel<ICommand>()
+                .CreateChannel<INotification>()
             ;
     }
 
@@ -120,7 +117,7 @@ public static class DependencyInjectionExtensions
             .AddSingleton(CreateChannel<T>())
             .AddTransient(CreateChannelReader<T>)
             .AddTransient(CreateChannelWriter<T>);
-    
+
     private static IServiceCollection AddHandlersFromInternal<TService, TMarker>(this IServiceCollection services) => services.AddHandlersFromInternal<TService>(typeof(TMarker));
     private static IServiceCollection AddHandlersFromInternal<TService>(this IServiceCollection services, Type assemblyMarkerType) => services.AddHandlersFromInternal<TService>(assemblyMarkerType.Assembly);
 
@@ -134,7 +131,7 @@ public static class DependencyInjectionExtensions
 
         return services;
     }
-    
+
     private static Channel<T> CreateChannel<T>() => Channel.CreateUnbounded<T>(new UnboundedChannelOptions());
     private static ChannelReader<T> CreateChannelReader<T>(IServiceProvider serviceProvider) => serviceProvider.GetRequiredService<Channel<T>>().Reader;
     private static ChannelWriter<T> CreateChannelWriter<T>(IServiceProvider serviceProvider) => serviceProvider.GetRequiredService<Channel<T>>().Writer;

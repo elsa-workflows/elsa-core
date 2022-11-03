@@ -1,19 +1,24 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+    <Import Project="..\..\..\common.props"/>
+    <Import Project="..\..\..\configureawait.props"/>
+
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
+        <Description>
+            Provides integration with MassTransit and comes with a MassTransit implementation of Elsa's IServiceBus abstraction.
+        </Description>
+        <PackageTags>elsa, module, service bus, masstransit</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\common\Elsa.ServiceBus.Abstractions\Elsa.ServiceBus.Abstractions.csproj" />
-      <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
+        <ProjectReference Include="..\..\common\Elsa.ServiceBus.Abstractions\Elsa.ServiceBus.Abstractions.csproj"/>
+        <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="MassTransit" Version="8.0.1" />
-      <PackageReference Include="MassTransit.Extensions.DependencyInjection" Version="7.3.1" />
+        <PackageReference Include="MassTransit" Version="8.0.1"/>
+        <PackageReference Include="MassTransit.Extensions.DependencyInjection" Version="7.3.1"/>
     </ItemGroup>
 
 </Project>

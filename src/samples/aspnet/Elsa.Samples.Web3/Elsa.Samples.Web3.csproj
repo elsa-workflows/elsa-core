@@ -4,17 +4,17 @@
         <TargetFramework>net6.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
-        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+        <IsPackable>false</IsPackable>
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\..\bundles\Elsa\Elsa.csproj" />
-      <ProjectReference Include="..\..\..\modules\Elsa.Jobs\Elsa.Jobs.csproj" />
-      <ProjectReference Include="..\..\..\modules\Elsa.Hangfire\Elsa.Hangfire.csproj" />
-      <ProjectReference Include="..\..\..\modules\Elsa.Http\Elsa.Http.csproj" />
-      <ProjectReference Include="..\..\..\modules\Elsa.Liquid\Elsa.Liquid.csproj" />
-      <ProjectReference Include="..\..\..\modules\Elsa.ProtoActor\Elsa.ProtoActor.csproj" />
-      <ProjectReference Include="..\..\..\modules\Elsa.Quartz\Elsa.Quartz.csproj" />
-      <ProjectReference Include="..\..\..\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj" />
+        <ProjectReference Include="..\..\..\bundles\Elsa\Elsa.csproj"/>
+        <ProjectReference Include="..\..\..\modules\Elsa.Jobs\Elsa.Jobs.csproj"/>
+        <ProjectReference Include="..\..\..\modules\Elsa.Hangfire\Elsa.Hangfire.csproj"/>
+        <ProjectReference Include="..\..\..\modules\Elsa.Http\Elsa.Http.csproj"/>
+        <ProjectReference Include="..\..\..\modules\Elsa.Liquid\Elsa.Liquid.csproj"/>
+        <ProjectReference Include="..\..\..\modules\Elsa.ProtoActor\Elsa.ProtoActor.csproj"/>
+        <ProjectReference Include="..\..\..\modules\Elsa.Quartz\Elsa.Quartz.csproj"/>
+        <ProjectReference Include="..\..\..\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj"/>
     </ItemGroup>
 </Project>

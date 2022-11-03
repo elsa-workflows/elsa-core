@@ -1,9 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+    <Import Project="..\..\..\common.props"/>
+    <Import Project="..\..\..\configureawait.props"/>
+
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
-        <Nullable>enable</Nullable>
-        <LangVersion>Latest</LangVersion>
+        <Description>
+            Provides scheduling activities such as Timer, Delay and StartAt.
+        </Description>
+        <PackageTags>elsa, module, scheduling</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>

@@ -5,7 +5,7 @@ namespace Elsa.Mediator.Middleware.Request;
 
 public static class MiddlewareExtensions
 {
-    public static IRequestPipelineBuilder UseMiddleware<TMiddleware>(this IRequestPipelineBuilder builder, params object[] args) where TMiddleware: IRequestMiddleware
+    public static IRequestPipelineBuilder UseMiddleware<TMiddleware>(this IRequestPipelineBuilder builder, params object[] args) where TMiddleware : IRequestMiddleware
     {
         var middleware = typeof(TMiddleware);
 

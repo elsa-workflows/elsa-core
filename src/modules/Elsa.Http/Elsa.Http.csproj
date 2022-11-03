@@ -1,25 +1,30 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+    <Import Project="..\..\..\common.props"/>
+    <Import Project="..\..\..\configureawait.props"/>
+
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
-        <Nullable>enable</Nullable>
-        <LangVersion>Latest</LangVersion>
+        <Description>
+            Provides HTTP activities to listen for and send out HTTP requests.
+        </Description>
+        <PackageTags>elsa, module, http</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="6.0.3" />
-        <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.2.2" />
-        <PackageReference Include="Microsoft.AspNetCore.Http.Extensions" Version="2.2.0" />
-        <PackageReference Include="Microsoft.AspNetCore.Routing" Version="2.2.2" />
-        <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="6.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Http" Version="6.0.0" />
+        <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="6.0.3"/>
+        <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.2.2"/>
+        <PackageReference Include="Microsoft.AspNetCore.Http.Extensions" Version="2.2.0"/>
+        <PackageReference Include="Microsoft.AspNetCore.Routing" Version="2.2.2"/>
+        <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="6.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.Http" Version="6.0.0"/>
     </ItemGroup>
-    
+
     <ItemGroup>
-        <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
-        <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj" />
-        <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
-        <ProjectReference Include="..\Elsa.JavaScript\Elsa.JavaScript.csproj" />
+        <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj"/>
+        <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj"/>
+        <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj"/>
+        <ProjectReference Include="..\Elsa.JavaScript\Elsa.JavaScript.csproj"/>
     </ItemGroup>
 
 </Project>

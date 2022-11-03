@@ -25,12 +25,12 @@ public class RequestPipelineBuilder : IRequestPipelineBuilder
         _components.Add(middleware);
         return this;
     }
-        
+
     public RequestMiddlewareDelegate Build()
     {
         RequestMiddlewareDelegate pipeline = _ => new ValueTask();
 
-        foreach (var component in _components.Reverse()) 
+        foreach (var component in _components.Reverse())
             pipeline = component(pipeline);
 
         return pipeline;

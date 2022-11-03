@@ -1,20 +1,25 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+    <Import Project="..\..\..\common.props"/>
+    <Import Project="..\..\..\configureawait.props"/>
+
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
+        <Description>
+            Provides funtionality to tag workflows with labels and filter by them.
+        </Description>
+        <PackageTags>elsa, module, labels</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Open.Linq.AsyncExtensions" Version="1.2.0" />
+        <PackageReference Include="Open.Linq.AsyncExtensions" Version="1.2.0"/>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\common\Elsa.Api.Common\Elsa.Api.Common.csproj" />
-      <ProjectReference Include="..\Elsa.Mediator\Elsa.Mediator.csproj" />
-      <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
-      <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj" />
+        <ProjectReference Include="..\..\common\Elsa.Api.Common\Elsa.Api.Common.csproj"/>
+        <ProjectReference Include="..\Elsa.Mediator\Elsa.Mediator.csproj"/>
+        <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj"/>
+        <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj"/>
     </ItemGroup>
 
 </Project>
