@@ -196,6 +196,7 @@ export function createGraph(
 
       disableEvents()
       const cells = graph.getCellsInClipboard()
+      graph.paste({offset: 32})
       let copiedNodes: Array<any> = []
       let copiedEges: Array<any> = []
 
@@ -229,7 +230,7 @@ export function createGraph(
 
       await enableEvents(true)
       graph.cleanSelection()
-      // graph.select(cells)
+      graph.select(cells)
     }
     return false
   });
