@@ -67,23 +67,6 @@ export namespace Components {
         "propertyDescriptor": ActivityPropertyDescriptor;
         "propertyModel": ActivityDefinitionProperty;
     }
-    interface ElsaDesigner {
-        "activityBorderColor"?: (activity: ActivityModel) => string;
-        "activityContextMenu"?: ActivityContextMenuState;
-        "activityContextMenuButton"?: (activity: ActivityModel) => string;
-        "activityContextTestMenu"?: ActivityContextMenuState;
-        "connectionContextMenu"?: ActivityContextMenuState;
-        "copiedActivity": any;
-        "enableMultipleConnectionsFromSingleSource": boolean;
-        "layoutDirection": LayoutDirection;
-        "mode": WorkflowDesignerMode;
-        "model": WorkflowModel;
-        "removeActivity": (activity: ActivityModel) => Promise<void>;
-        "removeSelectedActivities": () => Promise<void>;
-        "selectedActivityIds": Array<string>;
-        "showActivityEditor": (activity: ActivityModel, animate: boolean) => Promise<void>;
-        "workflow": WorkflowModel;
-    }
     interface ElsaDesignerPanel {
         "culture": string;
     }
@@ -503,12 +486,6 @@ declare global {
         prototype: HTMLElsaCronExpressionPropertyElement;
         new (): HTMLElsaCronExpressionPropertyElement;
     };
-    interface HTMLElsaDesignerElement extends Components.ElsaDesigner, HTMLStencilElement {
-    }
-    var HTMLElsaDesignerElement: {
-        prototype: HTMLElsaDesignerElement;
-        new (): HTMLElsaDesignerElement;
-    };
     interface HTMLElsaDesignerPanelElement extends Components.ElsaDesignerPanel, HTMLStencilElement {
     }
     var HTMLElsaDesignerPanelElement: {
@@ -864,7 +841,6 @@ declare global {
         "elsa-credential-manager-items-list": HTMLElsaCredentialManagerItemsListElement;
         "elsa-credential-manager-list-screen": HTMLElsaCredentialManagerListScreenElement;
         "elsa-cron-expression-property": HTMLElsaCronExpressionPropertyElement;
-        "elsa-designer": HTMLElsaDesignerElement;
         "elsa-designer-panel": HTMLElsaDesignerPanelElement;
         "elsa-designer-tree": HTMLElsaDesignerTreeElement;
         "elsa-designer-x6": HTMLElsaDesignerX6Element;
@@ -971,26 +947,6 @@ declare namespace LocalJSX {
         "activityModel"?: ActivityModel;
         "propertyDescriptor"?: ActivityPropertyDescriptor;
         "propertyModel"?: ActivityDefinitionProperty;
-    }
-    interface ElsaDesigner {
-        "activityBorderColor"?: (activity: ActivityModel) => string;
-        "activityContextMenu"?: ActivityContextMenuState;
-        "activityContextMenuButton"?: (activity: ActivityModel) => string;
-        "activityContextTestMenu"?: ActivityContextMenuState;
-        "connectionContextMenu"?: ActivityContextMenuState;
-        "copiedActivity"?: any;
-        "enableMultipleConnectionsFromSingleSource"?: boolean;
-        "layoutDirection"?: LayoutDirection;
-        "mode"?: WorkflowDesignerMode;
-        "model"?: WorkflowModel;
-        "onActivityContextMenuButtonClicked"?: (event: CustomEvent<ActivityContextMenuState>) => void;
-        "onActivityContextMenuButtonTestClicked"?: (event: CustomEvent<ActivityContextMenuState>) => void;
-        "onActivityDeselected"?: (event: CustomEvent<ActivityModel>) => void;
-        "onActivitySelected"?: (event: CustomEvent<ActivityModel>) => void;
-        "onConnectionContextMenuButtonClicked"?: (event: CustomEvent<ActivityContextMenuState>) => void;
-        "onWorkflow-changed"?: (event: CustomEvent<WorkflowModel>) => void;
-        "selectedActivityIds"?: Array<string>;
-        "workflow"?: WorkflowModel;
     }
     interface ElsaDesignerPanel {
         "culture"?: string;
@@ -1362,7 +1318,6 @@ declare namespace LocalJSX {
         "elsa-credential-manager-items-list": ElsaCredentialManagerItemsList;
         "elsa-credential-manager-list-screen": ElsaCredentialManagerListScreen;
         "elsa-cron-expression-property": ElsaCronExpressionProperty;
-        "elsa-designer": ElsaDesigner;
         "elsa-designer-panel": ElsaDesignerPanel;
         "elsa-designer-tree": ElsaDesignerTree;
         "elsa-designer-x6": ElsaDesignerX6;
@@ -1438,7 +1393,6 @@ declare module "@stencil/core" {
             "elsa-credential-manager-items-list": LocalJSX.ElsaCredentialManagerItemsList & JSXBase.HTMLAttributes<HTMLElsaCredentialManagerItemsListElement>;
             "elsa-credential-manager-list-screen": LocalJSX.ElsaCredentialManagerListScreen & JSXBase.HTMLAttributes<HTMLElsaCredentialManagerListScreenElement>;
             "elsa-cron-expression-property": LocalJSX.ElsaCronExpressionProperty & JSXBase.HTMLAttributes<HTMLElsaCronExpressionPropertyElement>;
-            "elsa-designer": LocalJSX.ElsaDesigner & JSXBase.HTMLAttributes<HTMLElsaDesignerElement>;
             "elsa-designer-panel": LocalJSX.ElsaDesignerPanel & JSXBase.HTMLAttributes<HTMLElsaDesignerPanelElement>;
             "elsa-designer-tree": LocalJSX.ElsaDesignerTree & JSXBase.HTMLAttributes<HTMLElsaDesignerTreeElement>;
             "elsa-designer-x6": LocalJSX.ElsaDesignerX6 & JSXBase.HTMLAttributes<HTMLElsaDesignerX6Element>;
