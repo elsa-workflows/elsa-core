@@ -793,6 +793,7 @@ export class ElsaWorkflowDesigner {
   }
 
   newActivity(activityDescriptor: ActivityDescriptor): ActivityModel {
+    const bbox = this.graph.getAllCellsBBox() ?? this.graph.getContentBBox();
     const activity: ActivityModel = {
       activityId: uuid(),
       type: activityDescriptor.type,
@@ -800,8 +801,8 @@ export class ElsaWorkflowDesigner {
       displayName: activityDescriptor.displayName,
       properties: [],
       propertyStorageProviders: {},
-      x: Math.round(this.graph.getContentBBox().left),
-      y: Math.round(this.graph.getContentBBox().top)
+      x: Math.round(bbox.x),
+      y: Math.round(bbox.y)
     };
 
     for (const property of activityDescriptor.inputProperties) {
@@ -876,12 +877,13 @@ export class ElsaWorkflowDesigner {
     this.updateGraph();
     this.parentActivityId = null;
     this.parentActivityOutcome = null;
-    const bbox = this.graph.getAllCellsBBox();
+    const bbox = this.graph.getAllCellsBBox() ?? this.graph.getContentBBox();
     this.graph.zoomToRect({ x: activity.x - 50, y: activity.y - 50, width: Math.max(1200, bbox.width), height: Math.max(800, bbox.height) });
     this.selectActivityCell(activity);
   }
 
   selectActivityCell(activity: ActivityModel) {
+    this.graph.resetSelection();
     const newCell = this.graph.getCells().find(x => x.id === activity.activityId);
     this.graph.select(newCell);
 
