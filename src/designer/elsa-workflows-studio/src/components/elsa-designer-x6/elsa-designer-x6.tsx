@@ -390,12 +390,28 @@ export class ElsaWorkflowDesigner {
     }
 
     for (const connection of connections ) {
-      workflowConnections.push(connection)
+      workflowConnections.push(connection);
     }
 
     let workflowModel = {...this.workflowModel, activities: workflowActivities, connections: workflowConnections};
     this.updateWorkflowModel(workflowModel);
     this.updateGraph();
+
+    // To select nodes after pasting.
+    this.selectNodes(activities);
+  }
+
+  private selectNodes = (activities: Array<ActivityModel>) => {
+    let selectedNodes: Array<Node> = [];
+    const nodes = this.graph.getNodes();
+
+    for (const activity of activities) {
+      const newNode =  nodes.find(node => node.id === activity.activityId);
+
+      if(newNode) selectedNodes.push(newNode);
+    }
+
+    if(selectedNodes.length > 0)  this.graph.select(selectedNodes);
   }
 
   private removeConnectionTest(workflowModel: WorkflowModel, sourceId: string, outcome: string): WorkflowModel {

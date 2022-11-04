@@ -231,7 +231,6 @@ export function createGraph(
 
       await enableEvents(true)
       graph.cleanSelection()
-      graph.select(cells)
     }
     return false
   });
