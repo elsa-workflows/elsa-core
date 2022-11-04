@@ -874,7 +874,10 @@ export class ElsaWorkflowDesigner {
 
     this.updateWorkflowModel(workflowModel);
     this.activityDisplayContexts[activity.activityId] = activityDisplayContext;
-    this.updateGraph();
+
+    var newNode = this.createGraphActivity(activity);
+    this.graph.addNode(newNode, {merge: true});
+
     this.parentActivityId = null;
     this.parentActivityOutcome = null;
     const bbox = this.graph.getAllCellsBBox() ?? this.graph.getContentBBox();
