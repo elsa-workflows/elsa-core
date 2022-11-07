@@ -17,6 +17,7 @@ import {AxiosInstance} from "axios";
 import {EventTypes} from "../../../../models";
 import {ToastNotificationOptions} from "../../../shared/elsa-toast-notification/elsa-toast-notification";
 import {getOrCreateProperty, htmlToElement} from "../../../../utils/utils";
+import state from '../../../../utils/store';
 
 @Component({
   tag: 'elsa-studio-root',
@@ -28,6 +29,7 @@ export class ElsaStudioRoot {
   @Prop({attribute: 'monaco-lib-path', reflect: true}) monacoLibPath: string;
   @Prop({attribute: 'culture', reflect: true}) culture: string;
   @Prop({attribute: 'base-path', reflect: true}) basePath: string = '';
+  @Prop({attribute: 'use-x6-graphs', reflect: true}) useX6Graphs: boolean = false;
   @Prop() features: any;
   @Prop() config: string;
   @State() featuresConfig: any;
@@ -68,6 +70,8 @@ export class ElsaStudioRoot {
   }
 
   async componentWillLoad() {
+    state.useX6Graphs = this.useX6Graphs;
+
     const elsaClientFactory: () => Promise<ElsaClient> = () => createElsaClient(this.serverUrl);
     const httpClientFactory: () => Promise<AxiosInstance> = () => createHttpClient(this.serverUrl);
 

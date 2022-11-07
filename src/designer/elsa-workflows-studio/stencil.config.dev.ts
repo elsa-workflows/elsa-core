@@ -1,7 +1,4 @@
 import {Config} from '@stencil/core';
-import replace from '@rollup/plugin-replace';
-
-const enableX6 = (process.argv && process.argv.indexOf('--x6graph') > -1) ? "'true'" : "'false'";
 
 export const config: Config = {
   namespace: 'elsa-workflows-studio',
@@ -17,5 +14,5 @@ export const config: Config = {
     },
   ],
   globalStyle: 'src/globals/tailwind.css',
-  plugins: [replace({'process.env.ENABLE_X6_WORKFLOW': enableX6})]
+  plugins: []
 };

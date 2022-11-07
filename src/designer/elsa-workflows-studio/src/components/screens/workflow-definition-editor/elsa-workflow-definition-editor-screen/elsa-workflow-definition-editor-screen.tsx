@@ -30,8 +30,6 @@ import { resources } from './localizations';
 import * as collection from 'lodash/collection';
 import { tr } from 'cronstrue/dist/i18n/locales/tr';
 
-const useX6Workflow: boolean = process.env.ENABLE_X6_WORKFLOW === 'true';
-
 @Component({
   tag: 'elsa-workflow-definition-editor-screen',
   styleUrl: 'elsa-workflow-definition-editor-screen.css',
@@ -209,7 +207,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
   async componentDidLoad() {
     if (!this.designer) {
-      if (useX6Workflow) {
+      if (state.useX6Graphs) {
         this.designer = this.el.querySelector("elsa-designer-x6") as HTMLElsaDesignerX6Element;
       } else {
         this.designer = this.el.querySelector('elsa-designer-tree') as HTMLElsaDesignerTreeElement;
@@ -748,7 +746,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
     return (
       <div class="elsa-flex-1 elsa-flex elsa-relative">
-        {!useX6Workflow && (
+        {!state.useX6Graphs && (
           <elsa-designer-tree
             model={this.workflowModel}
             mode={this.workflowDesignerMode}
@@ -765,7 +763,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
             ref={el => (this.designer = el)}
           />
         )}
-        {useX6Workflow && (
+        {state.useX6Graphs && (
           <elsa-designer-x6
             model={this.workflowModel}
             mode={this.workflowDesignerMode}
@@ -1043,7 +1041,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
   }
 
   renderActivityEditor() {
-    if (useX6Workflow) {
+    if (state.useX6Graphs) {
       return <elsa-activity-editor-panel culture={this.culture} hidden={!this.selectedActivityId} />;
     }
     return <elsa-activity-editor-modal culture={this.culture} />;
@@ -1184,7 +1182,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
   private renderWorkflowPanel() {
     const workflowDefinition = this.workflowDefinition;
 
-    const hide = useX6Workflow && !!this.selectedActivityId;
+    const hide = state.useX6Graphs && !!this.selectedActivityId;
 
     return (
       <elsa-flyout-panel expandButtonPosition={3} hidden={hide}>

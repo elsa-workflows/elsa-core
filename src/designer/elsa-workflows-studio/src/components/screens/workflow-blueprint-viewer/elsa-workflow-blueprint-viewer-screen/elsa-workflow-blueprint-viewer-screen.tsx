@@ -14,8 +14,6 @@ import state from '../../../../utils/store';
 import {WorkflowDesignerMode} from "../../../designers/tree/elsa-designer-tree/models";
 import Tunnel from "../../../../data/dashboard";
 
-const useX6Workflow: boolean = process.env.ENABLE_X6_WORKFLOW === 'true';
-
 @Component({
   tag: 'elsa-workflow-blueprint-viewer-screen',
   shadow: false,
@@ -84,7 +82,7 @@ export class ElsaWorkflowBlueprintViewerScreen {
 
   componentDidLoad() {
     if (!this.designer) {
-      if (useX6Workflow) {
+      if (state.useX6Graphs) {
         this.designer = this.el.querySelector("elsa-designer-x6") as HTMLElsaDesignerX6Element;
       } else {
         this.designer = this.el.querySelector('elsa-designer-tree') as HTMLElsaDesignerTreeElement;
@@ -158,7 +156,7 @@ export class ElsaWorkflowBlueprintViewerScreen {
   renderCanvas() {
     return (
       <div class="elsa-flex-1 elsa-flex">
-        {!useX6Workflow && (
+        {!state.useX6Graphs && (
           <elsa-designer-tree
             model={this.workflowModel}
             class="elsa-flex-1"
@@ -166,7 +164,7 @@ export class ElsaWorkflowBlueprintViewerScreen {
             mode={WorkflowDesignerMode.Blueprint}
           />
         )}
-        {useX6Workflow && (
+        {state.useX6Graphs && (
           <elsa-designer-x6
             model={this.workflowModel}
             class="elsa-workflow-wrapper"

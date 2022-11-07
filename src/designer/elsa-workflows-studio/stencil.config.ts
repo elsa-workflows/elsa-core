@@ -3,14 +3,12 @@ import {postcss} from '@stencil/postcss';
 import postcssImport from 'postcss-import';
 import tailwindcss from 'tailwindcss';
 import cssnano from 'cssnano';
-import replace from '@rollup/plugin-replace';
 
 // @ts-ignore
 const dev: boolean = process.argv && process.argv.indexOf('--dev') > -1;
 
 // @ts-ignore
 const tailwindDev: boolean = process.argv && process.argv.indexOf('--tailwind:dev') > -1;
-const enableX6 = (process.argv && process.argv.indexOf('--x6graph') > -1) ? "'true'" : "'false'";
 
 // @ts-ignore
 const purgecss = require('@fullhuman/postcss-purgecss')({
@@ -47,9 +45,8 @@ export const config: Config = {
   ],
   globalStyle: 'src/globals/tailwind.css',
   plugins: tailwindDev
-    ? [replace({'process.env.ENABLE_X6_WORKFLOW': enableX6})]
-    : [replace({'process.env.ENABLE_X6_WORKFLOW': enableX6}),
-      postcss({
+    ? []
+    : [postcss({
         plugins: [
           postcssImport,
           tailwindcss,

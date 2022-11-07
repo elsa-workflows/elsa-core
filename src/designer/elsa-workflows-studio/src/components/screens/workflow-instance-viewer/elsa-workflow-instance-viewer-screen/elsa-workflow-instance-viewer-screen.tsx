@@ -27,8 +27,6 @@ import {
 import Tunnel from "../../../../data/dashboard";
 import {featuresDataManager} from "../../../../services";
 
-const useX6Workflow: boolean = process.env.ENABLE_X6_WORKFLOW === 'true';
-
 @Component({
   tag: 'elsa-workflow-instance-viewer-screen',
   shadow: false,
@@ -139,7 +137,7 @@ export class ElsaWorkflowInstanceViewerScreen {
 
   componentDidLoad() {
     if (!this.designer) {
-      if (useX6Workflow) {
+      if (state.useX6Graphs) {
         this.designer = this.el.querySelector("elsa-designer-x6") as HTMLElsaDesignerX6Element;
       } else {
         this.designer = this.el.querySelector('elsa-designer-tree') as HTMLElsaDesignerTreeElement;
@@ -380,7 +378,7 @@ export class ElsaWorkflowInstanceViewerScreen {
   renderCanvas() {
     return (
       <div class="elsa-flex-1 elsa-flex">
-        {!useX6Workflow && (
+        {!state.useX6Graphs && (
           <elsa-designer-tree
             model={this.workflowModel}
             class="elsa-flex-1"
@@ -396,7 +394,7 @@ export class ElsaWorkflowInstanceViewerScreen {
             onActivityContextMenuButtonClicked={e => this.onActivityContextMenuButtonClicked(e)}
           />
         )}
-        {useX6Workflow && (
+        {state.useX6Graphs && (
           <elsa-designer-x6
             model={this.workflowModel}
             class="elsa-workflow-wrapper"

@@ -252,6 +252,7 @@ export namespace Components {
         "features": any;
         "monacoLibPath": string;
         "serverUrl": string;
+        "useX6Graphs": boolean;
     }
     interface ElsaStudioWebhookDefinitionsEdit {
         "match": MatchResults;
@@ -1147,6 +1148,7 @@ declare namespace LocalJSX {
         "onInitialized"?: (event: CustomEvent<ElsaStudio>) => void;
         "onInitializing"?: (event: CustomEvent<ElsaStudio>) => void;
         "serverUrl"?: string;
+        "useX6Graphs"?: boolean;
     }
     interface ElsaStudioWebhookDefinitionsEdit {
         "match"?: MatchResults;
