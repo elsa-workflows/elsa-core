@@ -286,7 +286,6 @@ export class ElsaWorkflowDesigner {
     this.silent = false;
 
     if (emitWorkflowChanged === true) {
-      // await this.updateGraph();
     }
   };
 
@@ -312,6 +311,7 @@ export class ElsaWorkflowDesigner {
   private onUndoRedo = () => {
     const allCells = this.graph.getCells();
     let workflowModel = {...this.workflowModel};
+    let graphActivities: Array<ActivityModel> = [];
 
     for (const cell of allCells) {
       if(cell instanceof ActivityNodeShape) {
@@ -321,18 +321,9 @@ export class ElsaWorkflowDesigner {
         activity.x = cellPosition.x;
         activity.y = cellPosition.y;
 
-        let activities = [...workflowModel.activities];
+        if(cell.id !== activity.activityId) activity.activityId = cell.id;
 
-        const existingNode = activities.find(x => x.activityId === activity.activityId);
-
-        if (existingNode) {
-          const index = activities.findIndex(x => x.activityId === activity.activityId);
-          activities[index] = activity;
-        } else {
-          activities = [...workflowModel.activities, activity];
-        }
-
-        workflowModel = {...workflowModel, activities: activities}
+        graphActivities.push(activity);
 
       } else {
         // Edge
@@ -351,6 +342,7 @@ export class ElsaWorkflowDesigner {
         workflowModel.connections = [...workflowModel.connections, restoredConnection];
       }
     }
+    workflowModel.activities = graphActivities;
 
     this.updateWorkflowModel(workflowModel);
     this.parentActivityId = null;
@@ -396,7 +388,6 @@ export class ElsaWorkflowDesigner {
 
     let workflowModel = {...this.workflowModel, activities: workflowActivities, connections: workflowConnections};
     this.updateWorkflowModel(workflowModel);
-    this.updateGraph();
 
     // To select nodes after pasting.
     this.selectNodes(activities);
@@ -415,13 +406,6 @@ export class ElsaWorkflowDesigner {
     if(selectedNodes.length > 0)  this.graph.select(selectedNodes);
   }
 
-  private removeConnectionTest(workflowModel: WorkflowModel, sourceId: string, outcome: string): WorkflowModel {
-    return {
-      ...workflowModel,
-      connections: workflowModel.connections.filter(x => !(x.sourceId === sourceId && x.outcome === outcome))
-    };
-  }
-
   private onNodeMoved = async (e) => {
     const node = e.node as ActivityNodeShape;
     const activity = node.activity as ActivityModel;
@@ -429,6 +413,8 @@ export class ElsaWorkflowDesigner {
 
     activity.x = nodePosition.x;
     activity.y = nodePosition.y;
+
+    if(node.id !== activity.activityId) activity.activityId = node.id;
 
     this.updateActivityInternal(activity);
   }
@@ -484,12 +470,12 @@ export class ElsaWorkflowDesigner {
     this.selectedActivities = {};
   };
 
-  private  connectionDetached = async (e: { edge: Edge }) => {
+  private connectionDetached = async (e: { edge: Edge }) => {
     const edge = e.edge;
     let workflowModel = {...this.workflowModel};
     const sourceId = edge.getSourceCellId();
     const outcome: string = edge.getSourcePortId();
-    workflowModel = this.removeConnectionTest(workflowModel, sourceId, outcome);
+    workflowModel = removeConnection(workflowModel, sourceId, outcome);
     this.updateWorkflowModel(workflowModel);
   };
 
@@ -923,12 +909,6 @@ export class ElsaWorkflowDesigner {
 
   async showActivityPicker() {
     await eventBus.emit(EventTypes.ShowActivityPicker);
-  }
-
-  removeConnection(sourceId: string, outcome: string) {
-    let workflowModel = {...this.workflowModel};
-    workflowModel = removeConnection(workflowModel, sourceId, outcome);
-    this.updateWorkflowModel(workflowModel);
   }
 
   onActivityPicked = async args => {
