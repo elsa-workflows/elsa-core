@@ -293,7 +293,7 @@ export class ElsaWorkflowDesigner {
   private createAndInitializeGraph = async () => {
     const graph = this.graph = createGraph(this.container,
       {},
-      this.enableChanges,
+      this.onUndoRedo,
       this.pasteActivities,
       this.disableEvents,
       this.enableEvents);
@@ -302,58 +302,59 @@ export class ElsaWorkflowDesigner {
     graph.on('node:click', this.onNodeClick);
     graph.on('node:contextmenu', this.onNodeContextMenu);
     graph.on('edge:connected', this.onEdgeConnected);
-    graph.on('edge:removed', this.connectionDetachedTest);
+    graph.on('edge:removed', this. connectionDetached);
     graph.on('node:moved', this.onNodeMoved);
     graph.on('node:removed', this.onNodeRemoved);
-    graph.on('cell:change:*', this.onChangeCells);
 
     await this.updateLayout();
   }
 
-  enabledChanges: boolean = false; // Whether to revert changes or not.
+  private onUndoRedo = () => {
+    const allCells = this.graph.getCells();
+    let workflowModel = {...this.workflowModel};
 
-  private enableChanges = () => this.enabledChanges = true;
+    for (const cell of allCells) {
+      if(cell instanceof ActivityNodeShape) {
+        // Node
+        const cellPosition = cell.position({relative: false});
+        const activity = cell.activity;
+        activity.x = cellPosition.x;
+        activity.y = cellPosition.y;
 
-  onChangeCells = (e) => {
-    // Node:
-    if( this.enabledChanges && e.cell instanceof ActivityNodeShape) {
+        let activities = [...workflowModel.activities];
 
-      let workflowActivities = this.workflowModel.activities;
-      const cell = e.cell as ActivityNodeShape;
-      let changedActivity: ActivityModel = workflowActivities.find(activity => cell.id === activity.activityId);
+        const existingNode = activities.find(x => x.activityId === activity.activityId);
 
-      if (e.key === 'position') {
-        const current = e.current;
-        changedActivity.x = current.x;
-        changedActivity.y = current.y;
-      }
-      if ( e.key === 'zIndex') {
-        changedActivity.x = cell.activity.x;
-        changedActivity.y = cell.activity.y;
-      }
-      this.updateActivityInternal(changedActivity);
+        if (existingNode) {
+          const index = activities.findIndex(x => x.activityId === activity.activityId);
+          activities[index] = activity;
+        } else {
+          activities = [...workflowModel.activities, activity];
+        }
 
-    // Edge:
-    } else if (this.enabledChanges) {
-      let workflowConnections = this.workflowModel.connections;
-      const connection = e.cell;
+        workflowModel = {...workflowModel, activities: activities}
 
-      const changedConnection = {
-        targetId: connection.target.cell,
-        sourceId: connection.source.cell,
-        outcome: connection.source.port
-      }
+      } else {
+        // Edge
+        // Using ctl+z after edge deleting returns cell.getData() as undefined, need to use cell.getProp()
+        const connectionProps = cell.getProp();
 
-      if(e.key === "labels") {
-        let filteredConnections = workflowConnections.filter(x => !(x.sourceId === changedConnection.sourceId && x.outcome === changedConnection.outcome))
-        this.updateWorkflowModel({...this.workflowModel, connections: filteredConnections});
-      }
-      if(e.key === 'target') {
-        this.addConnection(changedConnection.sourceId, changedConnection.targetId, changedConnection.outcome)
+        const restoredConnection: ConnectionModel = {
+          targetId: connectionProps.target.cell,
+          sourceId: connectionProps.source.cell,
+          outcome: connectionProps.source.port
+        }
+
+        if (!this.enableMultipleConnectionsFromSingleSource)
+          workflowModel.connections = [...workflowModel.connections.filter(x => !(x.sourceId === restoredConnection.sourceId && x.outcome === restoredConnection.outcome))];
+
+        workflowModel.connections = [...workflowModel.connections, restoredConnection];
       }
     }
 
-    this.enabledChanges = false;
+    this.updateWorkflowModel(workflowModel);
+    this.parentActivityId = null;
+    this.parentActivityOutcome = null;
   }
 
   private pasteActivities = async (activities?: Array<ActivityModel>, connections?: Array<ConnectionModel>) => {
@@ -483,24 +484,7 @@ export class ElsaWorkflowDesigner {
     this.selectedActivities = {};
   };
 
-  addConnectionTest(sourceActivityId: string, targetActivityId: string, outcome: string) {
-    const workflowModel = {...this.workflowModel};
-    const newConnection: ConnectionModel = {
-      sourceId: sourceActivityId,
-      targetId: targetActivityId,
-      outcome: outcome};
-    let connections = workflowModel.connections;
-
-    if (!this.enableMultipleConnectionsFromSingleSource)
-      connections = [...workflowModel.connections.filter(x => !(x.sourceId === sourceActivityId && x.outcome === outcome))];
-
-    workflowModel.connections = [...connections, newConnection];
-    this.updateWorkflowModel(workflowModel);
-    this.parentActivityId = null;
-    this.parentActivityOutcome = null;
-  }
-
-  private connectionDetachedTest = async (e: { edge: Edge }) => {
+  private  connectionDetached = async (e: { edge: Edge }) => {
     const edge = e.edge;
     let workflowModel = {...this.workflowModel};
     const sourceId = edge.getSourceCellId();
@@ -517,7 +501,7 @@ export class ElsaWorkflowDesigner {
     const targetId = edge.getTargetCellId();
     const sourcePort = edge.getSourcePortId();
 
-    this.addConnectionTest(sourceNode.id, targetId, sourcePort);
+    this.addConnection(sourceNode.id, targetId, sourcePort);
 
     if (!this.enableMultipleConnectionsFromSingleSource) {
       const existingConnection = workflowModel.connections.find(x => x.sourceId === sourceNode.id && x.targetId == targetId);
@@ -578,9 +562,6 @@ export class ElsaWorkflowDesigner {
     this.enableEvents(false);
   }
 
-  // private getActivityDescriptor = (typeName: string): ActivityDescriptor => {
-  //   return state.activityDescriptors.find(x => x.type == typeName)}
-
   private onNodeRemoved = (e: any) => {
     const activity = e.node.activity as ActivityModel;
     this.removeActivity(activity);
@@ -591,15 +572,6 @@ export class ElsaWorkflowDesigner {
   async onAddActivity(e: Event) {
     e.preventDefault();
     if (this.mode !== WorkflowDesignerMode.Test) await this.showActivityPicker();
-  }
-
-  private findActivityByElement = (element: Element): ActivityModel => {
-    const id =  ElsaWorkflowDesigner.getActivityId(element);
-    return this.findActivityById(id);
-  };
-
-  private static getActivityId(element: Element): string {
-    return element.attributes['data-cell-id'].value;
   }
 
   private findActivityById = (id: string): ActivityModel => this.workflowModel.activities.find(x => x.activityId === id);
@@ -913,7 +885,10 @@ export class ElsaWorkflowDesigner {
 
   addConnection(sourceActivityId: string, targetActivityId: string, outcome: string) {
     const workflowModel = {...this.workflowModel};
-    const newConnection: ConnectionModel = {sourceId: sourceActivityId, targetId: targetActivityId, outcome: outcome};
+    const newConnection: ConnectionModel = {
+      sourceId: sourceActivityId,
+      targetId: targetActivityId,
+      outcome: outcome};
     let connections = workflowModel.connections;
 
     if (!this.enableMultipleConnectionsFromSingleSource)
