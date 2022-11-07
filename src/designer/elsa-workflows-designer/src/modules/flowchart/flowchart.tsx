@@ -21,6 +21,7 @@ import FromJSONData = Model.FromJSONData;
 import PointLike = Point.PointLike;
 import FlowchartTunnel, {FlowchartState} from "./state";
 import {generateUniqueActivityName} from "../../utils/generate-activity-name";
+import { DagreLayout, OutNode} from '@antv/layout';
 
 const FlowchartTypeName = 'Elsa.Flowchart';
 
@@ -108,6 +109,58 @@ export class FlowchartComponent implements ContainerActivityComponent {
   async zoomToFit() {
     const graph = this.graph;
     graph.zoomToFit();
+  }
+
+  @Method()
+  async scrollToStart() {
+    const flowchartModel = this.getFlowchartModel();
+    const startActivity = flowchartModel.activities.find(x => x.id == flowchartModel.start);
+    if(startActivity != null){
+      const point: PointLike = this.graph.localToGraph(startActivity.metadata.designer.x, startActivity.metadata.designer.y);
+      this.graph.scrollToPoint(point.x, point.y);
+    }
+  }
+
+  @Method()
+  async autoLayout() {
+
+    const dagreLayout = new DagreLayout({
+      type: 'dagre',
+      rankdir: 'TB',
+      align: 'UL',
+      ranksep: 30,
+      nodesep: 15,
+      controlPoints: true,
+    });
+    
+    let flowchartModel = this.getFlowchartModel();
+
+    let nodes = [];
+    let edges = [];
+
+    flowchartModel.activities.forEach(activity => {
+      const activityElement = document.querySelectorAll("[activity-id=\"" + activity.id + "\"]")[0].getBoundingClientRect();
+      nodes.push({id: activity.id, size: {width: activityElement.width, height: activityElement.height}, x: activity.metadata.designer.position.x, y: activity.metadata.designer.position.y})
+    });
+
+    flowchartModel.connections.forEach((connection, index) => {
+      edges.push({id:index, source: connection.source, target: connection.target});
+    });
+
+    let data = {nodes: nodes, edges: edges}
+    let newLayout = dagreLayout.layout(data);
+
+    newLayout.nodes.forEach(node => {
+      let outNode = node as OutNode;
+      let activity = flowchartModel.activities.find(x => x.id == node.id);
+      activity.metadata.designer.position.x = outNode.x;
+      activity.metadata.designer.position.y = outNode.y;
+
+      this.updateActivity({id: activity.id, originalId: activity.id, activity: activity});
+    });
+
+    this.import(this.activity);
+    this.scrollToStart();
   }
 
   @Method()

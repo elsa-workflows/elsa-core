@@ -115,6 +115,7 @@ export class WorkflowDefinitionEditor {
     await this.updateWorkflowDefinition(workflowDefinition);
     await this.canvas.importGraph(workflowDefinition.root);
     await this.eventBus.emit(WorkflowEditorEventTypes.WorkflowDefinition.Imported, this, {workflowDefinition});
+    await this.canvas.scrollToStart();
   }
 
   // Updates the workflow definition without importing it into the designer.
@@ -233,6 +234,8 @@ export class WorkflowDefinitionEditor {
 
   private onZoomToFit = async () => await this.canvas.zoomToFit()
 
+  private onAutoLayout = async () => await this.canvas.autoLayout()
+
   private onActivityUpdated = async (e: CustomEvent<ActivityUpdatedArgs>) => {
     await this.canvas.updateActivity({
       id: e.detail.newId,
@@ -276,7 +279,7 @@ export class WorkflowDefinitionEditor {
 
     return (
       <div class="absolute inset-0" ref={el => this.container = el}>
-        <elsa-workflow-definition-editor-toolbar zoomToFit={this.onZoomToFit}/>
+        <elsa-workflow-definition-editor-toolbar zoomToFit={this.onZoomToFit} autoLayout={this.onAutoLayout}/>
         <elsa-panel
           class="elsa-activity-picker-container z-30"
           position={PanelPosition.Left}

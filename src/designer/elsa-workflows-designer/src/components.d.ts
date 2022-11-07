@@ -17,6 +17,7 @@ import { ContextMenuAnchorPoint, MenuItem, MenuItemGroup } from "./components/sh
 import { DropdownButtonItem, DropdownButtonOrigin } from "./components/shared/dropdown-button/models";
 import { Flowchart, FlowchartNavigationItem } from "./modules/flowchart/models";
 import { Graph } from "@antv/x6";
+import { OutNode } from "@antv/layout";
 import { AddActivityArgs as AddActivityArgs1, RenameActivityArgs as RenameActivityArgs1, UpdateActivityArgs as UpdateActivityArgs1 } from "./components/designer/canvas/canvas";
 import { ActivityNodeShape } from "./modules/flowchart/shapes";
 import { ActionDefinition, ActionInvokedArgs, ModalType } from "./components/shared/modal-dialog";
@@ -65,6 +66,7 @@ export namespace Components {
     }
     interface ElsaCanvas {
         "addActivity": (args: AddActivityArgs) => Promise<Activity>;
+        "autoLayout": () => Promise<void>;
         "exportGraph": () => Promise<Activity>;
         "getRootComponent": () => Promise<ContainerActivityComponent>;
         "importGraph": (root: Activity) => Promise<void>;
@@ -72,6 +74,7 @@ export namespace Components {
         "newRoot": () => Promise<Activity>;
         "renameActivity": (args: RenameActivityArgs) => Promise<void>;
         "reset": () => Promise<void>;
+        "scrollToStart": () => Promise<void>;
         "updateActivity": (args: UpdateActivityArgs) => Promise<void>;
         "updateLayout": () => Promise<void>;
         "zoomToFit": () => Promise<void>;
@@ -116,6 +119,7 @@ export namespace Components {
     }
     interface ElsaFlowchart {
         "addActivity": (args: AddActivityArgs) => Promise<Activity>;
+        "autoLayout": () => Promise<void>;
         "export": () => Promise<Activity>;
         "getCurrentLevel": () => Promise<Activity>;
         "getGraph": () => Promise<Graph>;
@@ -124,6 +128,7 @@ export namespace Components {
         "newRoot": () => Promise<Activity>;
         "renameActivity": (args: RenameActivityArgs) => Promise<void>;
         "reset": () => Promise<void>;
+        "scrollToStart": () => Promise<void>;
         "updateActivity": (args: UpdateActivityArgs) => Promise<void>;
         "updateLayout": () => Promise<void>;
         "zoomToFit": () => Promise<void>;
@@ -253,6 +258,7 @@ export namespace Components {
         "workflowDefinition"?: WorkflowDefinition;
     }
     interface ElsaWorkflowDefinitionEditorToolbar {
+        "autoLayout": () => Promise<void>;
         "zoomToFit": () => Promise<void>;
     }
     interface ElsaWorkflowDefinitionEditorToolbox {
@@ -926,6 +932,7 @@ declare namespace LocalJSX {
         "workflowDefinition"?: WorkflowDefinition;
     }
     interface ElsaWorkflowDefinitionEditorToolbar {
+        "autoLayout"?: () => Promise<void>;
         "zoomToFit"?: () => Promise<void>;
     }
     interface ElsaWorkflowDefinitionEditorToolbox {

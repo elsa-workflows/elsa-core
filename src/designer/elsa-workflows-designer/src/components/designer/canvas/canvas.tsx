@@ -67,6 +67,16 @@ export class Canvas {
   }
 
   @Method()
+  public async autoLayout(): Promise<void> {
+    return await this.root.autoLayout();
+  }
+
+  @Method()
+  public async scrollToStart(): Promise<void> {
+    return await this.root.scrollToStart();
+  }
+
+  @Method()
   public async importGraph(root: Activity): Promise<void> {
     return await this.root.import(root);
   }
