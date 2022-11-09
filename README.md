@@ -24,7 +24,7 @@ Workflows can be defined using code and using the visual workflow designer.
 
 ## Documentation
 
-Documentation can be found [here](https://elsa-workflows.github.io/elsa-core/docs/next/quickstarts/quickstarts-console-hello-world).
+Documentation can be found [here](https://v2.elsaworkflows.io/).
 
 ## Getting Started
 
