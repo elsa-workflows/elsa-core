@@ -648,53 +648,6 @@ export class ElsaWorkflowDefinitionEditorScreen {
           </div>`;
   };
 
-  renderActivityStatsButtonTest = (activity: ActivityModel): string => {
-    const testActivityMessage = this.workflowTestActivityMessages.find(x => x.activityId == activity.activityId);
-    if (testActivityMessage == undefined) return '';
-
-    let icon: string;
-
-    switch (testActivityMessage.status) {
-      case WorkflowTestActivityMessageStatus.Done:
-      default:
-        icon = <svg class="elsa-h-8 elsa-w-8 elsa-text-green-500"  fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>;
-        break;
-      case WorkflowTestActivityMessageStatus.Waiting:
-        icon = <svg version="1.1" class="svg-loader" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" viewBox="0 0 80 80">
-                  <path id="spinner" fill="#7eb0de" d="M40,72C22.4,72,8,57.6,8,40C8,22.4,
-                  22.4,8,40,8c17.6,0,32,14.4,32,32c0,1.1-0.9,2-2,2
-                  s-2-0.9-2-2c0-15.4-12.6-28-28-28S12,24.6,12,40s12.6,
-                  28,28,28c1.1,0,2,0.9,2,2S41.1,72,40,72z">
-                    <animateTransform attributeType="xml" attributeName="transform" type="rotate" from="0 40 40" to="360 40 40" dur="0.75s" repeatCount="indefinite" />
-                  </path>
-              </svg>;
-        break;
-      case WorkflowTestActivityMessageStatus.Failed:
-        icon = <svg class="elsa-h-8 elsa-w-8 elsa-text-red-500"  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="15" y1="9" x2="9" y2="15" />
-                  <line x1="9" y1="9" x2="15" y2="15" />
-                </svg>;
-        break;
-      case WorkflowTestActivityMessageStatus.Modified:
-        icon = <svg class="h-6 w-6 elsa-text-yellow-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="16" x2="12" y2="12"></line>
-                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                </svg>;
-        break;
-    }
-
-    return <div class="context-menu-wrapper elsa-flex-shrink-0">
-            <button aria-haspopup="true"
-                    class="elsa-w-8 elsa-h-8 elsa-inline-flex elsa-items-center elsa-justify-center elsa-text-gray-400 elsa-rounded-full elsa-bg-transparent hover:elsa-text-gray-500 focus:elsa-outline-none focus:elsa-text-gray-500 focus:elsa-bg-gray-100 elsa-transition elsa-ease-in-out elsa-duration-150">
-              {icon}
-            </button>
-          </div>;
-  };
-
   render() {
     const tunnelState: WorkflowEditorState = {
       serverUrl: this.serverUrl,
@@ -714,7 +667,6 @@ export class ElsaWorkflowDefinitionEditorScreen {
   }
 
   renderCanvas() {
-
     const activityContextMenuButton = (activity: ActivityModel) =>
       `<div class="context-menu-wrapper elsa-flex-shrink-0">
             <button aria-haspopup="true"
@@ -728,21 +680,6 @@ export class ElsaWorkflowDefinitionEditorScreen {
               </svg>
             </button>
           </div>`;
-
-    const activityContextMenuButtonTest = (activity: ActivityModel) =>
-      <div class="context-menu-wrapper elsa-flex-shrink-0 elsa-h-4">
-        <button aria-haspopup="true"
-                class="elsa-w-8 elsa-h-4 elsa-inline-flex elsa-items-center elsa-justify-center elsa-text-gray-400 elsa-rounded-full elsa-bg-transparent hover:elsa-text-gray-500 focus:elsa-outline-none focus:elsa-text-gray-500 focus:elsa-bg-gray-100 elsa-transition elsa-ease-in-out elsa-duration-150">
-          <svg class="elsa-h-6 elsa-w-6 elsa-text-gray-400" width="24" height="24" viewBox="0 0 24 24" stroke-width="2"
-                stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <path stroke="none" d="M0 0h24v24H0z"/>
-            <circle cx="5" cy="12" r="1"/>
-            <circle cx="12" cy="12" r="1"/>
-            <circle cx="19" cy="12" r="1"/>
-          </svg>
-        </button>
-      </div>;
-
 
     return (
       <div class="elsa-flex-1 elsa-flex elsa-relative">

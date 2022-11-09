@@ -91,6 +91,7 @@ export class ElsaWorkflowDesigner {
   @Watch('model')
   handleModelChanged(newValue: WorkflowModel) {
     this.updateWorkflowModel(newValue, false);
+    this.updateGraph();
   }
 
   @Watch('selectedActivityIds')
