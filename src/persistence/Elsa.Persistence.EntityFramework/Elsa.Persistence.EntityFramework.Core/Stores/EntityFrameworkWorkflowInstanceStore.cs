@@ -61,9 +61,9 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
             await DoWork(async dbContext =>
             {
                 var placeholders = string.Join(",", Enumerable.Range(0, idList.Count).Select(i => "{" + i + "}"));
-                await dbContext.Database.ExecuteSqlRawAsync($"delete from {dbContext.WorkflowExecutionLogRecords.EntityType.GetSchemaQualifiedTableName()} where WorkflowInstanceId in ({placeholders})", idList, cancellationToken);
-                await dbContext.Database.ExecuteSqlRawAsync($"delete from {dbContext.Bookmarks.EntityType.GetSchemaQualifiedTableName()} where WorkflowInstanceId in ({placeholders})", idList, cancellationToken);
-                await dbContext.Database.ExecuteSqlRawAsync($"delete from {dbContext.WorkflowInstances.EntityType.GetSchemaQualifiedTableName()} where Id in ({placeholders})", idList, cancellationToken);
+                await dbContext.Database.ExecuteSqlRawAsync($"delete from {dbContext.WorkflowExecutionLogRecords.EntityType.GetSchemaQualifiedTableNameWithQuotes()} where WorkflowInstanceId in ({placeholders})", idList, cancellationToken);
+                await dbContext.Database.ExecuteSqlRawAsync($"delete from {dbContext.Bookmarks.EntityType.GetSchemaQualifiedTableNameWithQuotes()} where WorkflowInstanceId in ({placeholders})", idList, cancellationToken);
+                await dbContext.Database.ExecuteSqlRawAsync($"delete from {dbContext.WorkflowInstances.EntityType.GetSchemaQualifiedTableNameWithQuotes()} where Id in ({placeholders})", idList, cancellationToken);
             }, cancellationToken);
         }
 

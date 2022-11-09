@@ -11,6 +11,8 @@ using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Core.Services;
 using Elsa.Persistence.Specifications;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Elsa.Persistence.EntityFramework.Core.Stores
 {
@@ -114,14 +116,10 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
             {
                 var tuple = dbContext.Set<T>().Where(filter).Select(x => x.Id).ToParametrizedSql();
                 var entityLetter = dbContext.Set<T>().EntityType.GetTableName()!.ToLowerInvariant()[0];
-                
-                // TODO: Is there a smarter way of knowing the enclosing characters based on the current DB provider, instead of blindly replacing as is done now?
+                var helper = dbContext.GetService<ISqlGenerationHelper>();
                 var whereClause = tuple.Item1
                     .Substring(tuple.Item1.IndexOf("WHERE", StringComparison.OrdinalIgnoreCase))
-                    .Replace($"\"{entityLetter}\".", "")
-                    .Replace($"`{entityLetter}`.", "")
-                    .Replace($"[{entityLetter}].", "")
-                    ;
+                    .Replace($"{helper.DelimitIdentifier(entityLetter.ToString())}.", string.Empty);
 
                 for (var i = 0; i < tuple.Item2.Count(); i++)
                 {
@@ -130,7 +128,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
                 }
                 
                 var parameters = tuple.Item2.Select(x => x.Value).ToArray();
-                return await dbContext.Database.ExecuteSqlRawAsync($"DELETE FROM {dbContext.Set<T>().EntityType.GetSchemaQualifiedTableName()} {whereClause}", parameters, cancellationToken);
+                return await dbContext.Database.ExecuteSqlRawAsync($"DELETE FROM {dbContext.Set<T>().EntityType.GetSchemaQualifiedTableNameWithQuotes()} {whereClause}", parameters, cancellationToken);
             }, cancellationToken);
         }
 

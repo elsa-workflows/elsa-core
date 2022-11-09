@@ -44,6 +44,19 @@ services:
             - '3306:3306'
         expose:
             - '3306'
+                
+    azure-sql:
+        image: "mcr.microsoft.com/azure-sql-edge"
+        hostname: "azure-sql"
+        environment:
+            ACCEPT_EULA: 1
+            MSSQL_SA_PASSWORD: ":8jNZdK7cK"
+            MSSQL_USER: "SA"
+            MSSQL_PID: "Developer"
+        volumes:
+            - "mssql-azuresql-edge-data:/var/opt/mssql"
+        ports:
+            - "1433:1433"
 
     azureblobstorage:
         image: mcr.microsoft.com/azure-blob-storage
@@ -67,3 +80,4 @@ services:
 
 volumes:
     pgdata:
+    mssql-azuresql-edge-data:

@@ -126,8 +126,8 @@ namespace Elsa.Activities.Http
             }
             set
             {
-                // once upon a time there were two additional parser but were obsoleted
-                // because they did the same thing as existing ones
+                // Once upon a time there were two additional parsers but were obsoleted
+                // because they did the same thing as existing ones,
                 // automatically changing to appropriate name here so old workflows continue to work
                 if (value == "Expando Object")
                     responseContentParserName = ".NET Type";

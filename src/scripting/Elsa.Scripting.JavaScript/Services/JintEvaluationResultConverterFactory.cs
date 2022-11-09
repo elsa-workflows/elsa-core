@@ -20,6 +20,7 @@ namespace Elsa.Scripting.JavaScript.Services
             service = GetListSourceConvertingService(service);
             service = GetExpandoConvertingService(service);
             service = GetTypeConverterConvertingService(service);
+            service = GetSameTypeConvertingService(service);
             service = GetNullConvertingService(service);
 
             return service;
@@ -37,6 +38,7 @@ namespace Elsa.Scripting.JavaScript.Services
         }
 
         private static IConvertsJintEvaluationResult GetTypeConverterConvertingService(IConvertsJintEvaluationResult wrapped) => new TypeConverterResultConverter(wrapped);
+        private static IConvertsJintEvaluationResult GetSameTypeConvertingService(IConvertsJintEvaluationResult wrapped) => new SameTypeResultConverter(wrapped);
         private static IConvertsJintEvaluationResult GetNullConvertingService(IConvertsJintEvaluationResult wrapped) => new NullResultConverter(wrapped);
     }
 }

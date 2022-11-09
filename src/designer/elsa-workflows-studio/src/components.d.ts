@@ -92,6 +92,7 @@ export namespace Components {
         "serverUrl": string;
     }
     interface ElsaDropdownButton {
+        "btnClass"?: string;
         "icon"?: any;
         "items": Array<DropdownButtonItem>;
         "origin": DropdownButtonOrigin;
@@ -282,6 +283,10 @@ export namespace Components {
     interface ElsaToastNotification {
         "hide": () => Promise<void>;
         "show": (options: ToastNotificationOptions) => Promise<void>;
+    }
+    interface ElsaUserContextMenu {
+        "menuItemSelected": (item: DropdownButtonItem) => Promise<void>;
+        "serverUrl": string;
     }
     interface ElsaVersionHistoryPanel {
         "serverUrl": string;
@@ -709,6 +714,12 @@ declare global {
         prototype: HTMLElsaToastNotificationElement;
         new (): HTMLElsaToastNotificationElement;
     };
+    interface HTMLElsaUserContextMenuElement extends Components.ElsaUserContextMenu, HTMLStencilElement {
+    }
+    var HTMLElsaUserContextMenuElement: {
+        prototype: HTMLElsaUserContextMenuElement;
+        new (): HTMLElsaUserContextMenuElement;
+    };
     interface HTMLElsaVersionHistoryPanelElement extends Components.ElsaVersionHistoryPanel, HTMLStencilElement {
     }
     var HTMLElsaVersionHistoryPanelElement: {
@@ -879,6 +890,7 @@ declare global {
         "elsa-tab-content": HTMLElsaTabContentElement;
         "elsa-tab-header": HTMLElsaTabHeaderElement;
         "elsa-toast-notification": HTMLElsaToastNotificationElement;
+        "elsa-user-context-menu": HTMLElsaUserContextMenuElement;
         "elsa-version-history-panel": HTMLElsaVersionHistoryPanelElement;
         "elsa-webhook-definition-editor-notifications": HTMLElsaWebhookDefinitionEditorNotificationsElement;
         "elsa-webhook-definition-editor-screen": HTMLElsaWebhookDefinitionEditorScreenElement;
@@ -979,6 +991,7 @@ declare namespace LocalJSX {
         "serverUrl"?: string;
     }
     interface ElsaDropdownButton {
+        "btnClass"?: string;
         "icon"?: any;
         "items"?: Array<DropdownButtonItem>;
         "onItemSelected"?: (event: CustomEvent<DropdownButtonItem>) => void;
@@ -1175,6 +1188,9 @@ declare namespace LocalJSX {
     }
     interface ElsaToastNotification {
     }
+    interface ElsaUserContextMenu {
+        "serverUrl"?: string;
+    }
     interface ElsaVersionHistoryPanel {
         "onDeleteVersionClicked"?: (event: CustomEvent<WorkflowDefinitionVersion>) => void;
         "onRevertVersionClicked"?: (event: CustomEvent<WorkflowDefinitionVersion>) => void;
@@ -1357,6 +1373,7 @@ declare namespace LocalJSX {
         "elsa-tab-content": ElsaTabContent;
         "elsa-tab-header": ElsaTabHeader;
         "elsa-toast-notification": ElsaToastNotification;
+        "elsa-user-context-menu": ElsaUserContextMenu;
         "elsa-version-history-panel": ElsaVersionHistoryPanel;
         "elsa-webhook-definition-editor-notifications": ElsaWebhookDefinitionEditorNotifications;
         "elsa-webhook-definition-editor-screen": ElsaWebhookDefinitionEditorScreen;
@@ -1432,6 +1449,7 @@ declare module "@stencil/core" {
             "elsa-tab-content": LocalJSX.ElsaTabContent & JSXBase.HTMLAttributes<HTMLElsaTabContentElement>;
             "elsa-tab-header": LocalJSX.ElsaTabHeader & JSXBase.HTMLAttributes<HTMLElsaTabHeaderElement>;
             "elsa-toast-notification": LocalJSX.ElsaToastNotification & JSXBase.HTMLAttributes<HTMLElsaToastNotificationElement>;
+            "elsa-user-context-menu": LocalJSX.ElsaUserContextMenu & JSXBase.HTMLAttributes<HTMLElsaUserContextMenuElement>;
             "elsa-version-history-panel": LocalJSX.ElsaVersionHistoryPanel & JSXBase.HTMLAttributes<HTMLElsaVersionHistoryPanelElement>;
             "elsa-webhook-definition-editor-notifications": LocalJSX.ElsaWebhookDefinitionEditorNotifications & JSXBase.HTMLAttributes<HTMLElsaWebhookDefinitionEditorNotificationsElement>;
             "elsa-webhook-definition-editor-screen": LocalJSX.ElsaWebhookDefinitionEditorScreen & JSXBase.HTMLAttributes<HTMLElsaWebhookDefinitionEditorScreenElement>;
