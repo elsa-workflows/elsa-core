@@ -8,6 +8,3 @@ export * from './features-data-manager';
 export * from './plugin-manager';
 export * from './property-display-driver';
 export * from './property-display-manager';
-export * from './port-provider-registry';
-export * from './activity-walker';
-export * from './activity-driver';

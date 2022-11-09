@@ -1,5 +1,4 @@
 ﻿import { Map } from '../utils/utils';
-import { Port } from './core';
 
 export interface WorkflowDefinition {
   id?: string;
@@ -287,7 +286,6 @@ export interface ActivityDescriptor {
   customAttributes: any;
   version?: number;
   isContainer?: boolean;
-  ports?: Array<Port>;
 }
 
 export interface ActivityPropertyDescriptor {
@@ -396,17 +394,4 @@ export enum WorkflowTestActivityMessageStatus {
 export interface IntellisenseContext {
   activityTypeName: string;
   propertyName: string;
-}
-
-export type Lambda<T = any> = string | T
-export interface ActivityDefinitions {
-  type?: string;
-  displayName: string;
-  description?: string;
-  runtimeDescription?: Lambda<string>;
-  category: string;
-  icon?: string;
-  propertiesDescriptor?: Array<ActivityPropertyDescriptor>;
-  outcomes?: Lambda<Array<string>>;
-  properties?: Array<ActivityPropertyDescriptor>
 }

@@ -1,5 +1,5 @@
 import {CellView, Graph, Node} from '@antv/x6';
-import { ConnectionModel } from '../../models';
+import { ConnectionModel } from '../../../models';
 import './ports';
 import {ActivityNodeShape} from './shapes';
 
@@ -7,9 +7,7 @@ export function createGraph(
   container: HTMLElement,
   interacting: CellView.Interacting,
   onUndoRedo: () => void,
-  pasteActivities: (activities?: Array<any>, connections?: Array<ConnectionModel>) => void,
-  disableEvents: () => void,
-  enableEvents: (emitWorkflowChanged: boolean) => Promise<void>): Graph {
+  pasteActivities: (activities?: Array<any>, connections?: Array<ConnectionModel>) => void): Graph {
 
   const graph = new Graph({
     container: container,
@@ -44,8 +42,7 @@ export function createGraph(
     selecting: {
       enabled: true,
       showNodeSelectionBox: true,
-      rubberband: true,
-      modifiers: 'shift',
+      rubberband: true
     },
     scroller: {
       enabled: true,
@@ -195,7 +192,6 @@ export function createGraph(
   graph.bindKey(['meta+v', 'ctrl+v'], async () => {
     if (!graph.isClipboardEmpty()) {
 
-      disableEvents()
       const cells = graph.getCellsInClipboard()
       graph.paste({offset: 32})
       let copiedNodes: Array<any> = []
@@ -227,9 +223,10 @@ export function createGraph(
         }
       }
 
-      if(copiedNodes.length > 0 || copiedEges.length > 0) pasteActivities(copiedNodes, copiedEges)
+      if(copiedNodes.length > 0 || copiedEges.length > 0) {
+        pasteActivities(copiedNodes, copiedEges)
+      }
 
-      await enableEvents(true)
       graph.cleanSelection()
     }
     return false

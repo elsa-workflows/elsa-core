@@ -1,5 +1,4 @@
-import { ActivityDescriptor } from './domain';
-import { ActivityModel } from './view';
+import { ActivityDescriptor, ActivityModel } from '../../../models';
 
 export interface Port {
   name: string;
@@ -8,7 +7,7 @@ export interface Port {
 }
 
 export interface PortProviderContext {
-  activityDescriptor: ActivityDescriptor;
+    activityDescriptor: ActivityDescriptor;
   activity: ActivityModel;
 }
 

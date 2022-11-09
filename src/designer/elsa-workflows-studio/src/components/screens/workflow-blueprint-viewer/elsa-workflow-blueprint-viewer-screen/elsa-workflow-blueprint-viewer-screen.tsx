@@ -83,7 +83,7 @@ export class ElsaWorkflowBlueprintViewerScreen {
   componentDidLoad() {
     if (!this.designer) {
       if (state.useX6Graphs) {
-        this.designer = this.el.querySelector("elsa-designer-x6") as HTMLElsaDesignerX6Element;
+        this.designer = this.el.querySelector("x6-designer") as HTMLX6DesignerElement;
       } else {
         this.designer = this.el.querySelector('elsa-designer-tree') as HTMLElsaDesignerTreeElement;
       }
@@ -165,7 +165,7 @@ export class ElsaWorkflowBlueprintViewerScreen {
           />
         )}
         {state.useX6Graphs && (
-          <elsa-designer-x6
+          <x6-designer
             model={this.workflowModel}
             class="elsa-workflow-wrapper"
             ref={el => this.designer = el}

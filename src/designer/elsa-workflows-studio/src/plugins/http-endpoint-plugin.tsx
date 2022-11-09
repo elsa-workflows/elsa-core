@@ -76,7 +76,6 @@ export class HttpEndpointPlugin implements ElsaPlugin {
 
     const props = activityModel.properties || [];
     const prop = props.find(x => x.name == 'Schema') || { name: 'Schema', expressions: { 'Literal': '', syntax: SyntaxNames.Literal } };
-    console.info("OOPDAAATTIIN ");
     prop.expressions[SyntaxNames.Literal] = context.data;
     eventBus.emit(EventTypes.UpdateActivity, this, prop);
   }

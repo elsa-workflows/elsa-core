@@ -1,5 +1,5 @@
 import {Cell, Graph, Shape} from '@antv/x6';
-import {ActivityModel, ActivityDescriptor, ActivityDesignDisplayContext} from '../../models';
+import {ActivityModel, ActivityDescriptor, ActivityDesignDisplayContext} from '../../../models';
 
 export class ActivityNodeShape extends Shape.HTML {
 

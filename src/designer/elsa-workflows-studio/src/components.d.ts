@@ -85,22 +85,6 @@ export namespace Components {
         "selectedActivityIds": Array<string>;
         "showActivityEditor": (activity: ActivityModel, animate: boolean) => Promise<void>;
     }
-    interface ElsaDesignerX6 {
-        "activityBorderColor"?: (activity: ActivityModel) => string;
-        "activityContextMenu"?: ActivityContextMenuState;
-        "activityContextMenuButton"?: (activity: ActivityModel) => string;
-        "activityContextTestMenu"?: ActivityContextMenuState;
-        "connectionContextMenu"?: ActivityContextMenuState;
-        "enableMultipleConnectionsFromSingleSource": boolean;
-        "layoutDirection": LayoutDirection;
-        "mode": WorkflowDesignerMode;
-        "model": WorkflowModel;
-        "removeActivity": (activity: ActivityModel) => Promise<void>;
-        "removeSelectedActivities": () => Promise<void>;
-        "selectedActivityIds": Array<string>;
-        "showActivityEditor": (activity: ActivityModel, animate: boolean) => Promise<void>;
-        "updateLayout": () => Promise<void>;
-    }
     interface ElsaDictionaryProperty {
         "activityModel": ActivityModel;
         "propertyDescriptor": ActivityPropertyDescriptor;
@@ -413,6 +397,22 @@ export namespace Components {
         "workflowDefinition": WorkflowDefinition;
         "workflowTestActivityId": string;
     }
+    interface X6Designer {
+        "activityBorderColor"?: (activity: ActivityModel) => string;
+        "activityContextMenu"?: ActivityContextMenuState;
+        "activityContextMenuButton"?: (activity: ActivityModel) => string;
+        "activityContextTestMenu"?: ActivityContextMenuState;
+        "connectionContextMenu"?: ActivityContextMenuState;
+        "enableMultipleConnectionsFromSingleSource": boolean;
+        "layoutDirection": LayoutDirection;
+        "mode": WorkflowDesignerMode;
+        "model": WorkflowModel;
+        "removeActivity": (activity: ActivityModel) => Promise<void>;
+        "removeSelectedActivities": () => Promise<void>;
+        "selectedActivityIds": Array<string>;
+        "showActivityEditor": (activity: ActivityModel, animate: boolean) => Promise<void>;
+        "updateLayout": () => Promise<void>;
+    }
 }
 declare global {
     interface HTMLElsaActivityEditorModalElement extends Components.ElsaActivityEditorModal, HTMLStencilElement {
@@ -498,12 +498,6 @@ declare global {
     var HTMLElsaDesignerTreeElement: {
         prototype: HTMLElsaDesignerTreeElement;
         new (): HTMLElsaDesignerTreeElement;
-    };
-    interface HTMLElsaDesignerX6Element extends Components.ElsaDesignerX6, HTMLStencilElement {
-    }
-    var HTMLElsaDesignerX6Element: {
-        prototype: HTMLElsaDesignerX6Element;
-        new (): HTMLElsaDesignerX6Element;
     };
     interface HTMLElsaDictionaryPropertyElement extends Components.ElsaDictionaryProperty, HTMLStencilElement {
     }
@@ -829,6 +823,12 @@ declare global {
         prototype: HTMLElsaWorkflowTestPanelElement;
         new (): HTMLElsaWorkflowTestPanelElement;
     };
+    interface HTMLX6DesignerElement extends Components.X6Designer, HTMLStencilElement {
+    }
+    var HTMLX6DesignerElement: {
+        prototype: HTMLX6DesignerElement;
+        new (): HTMLX6DesignerElement;
+    };
     interface HTMLElementTagNameMap {
         "elsa-activity-editor-modal": HTMLElsaActivityEditorModalElement;
         "elsa-activity-editor-panel": HTMLElsaActivityEditorPanelElement;
@@ -844,7 +844,6 @@ declare global {
         "elsa-cron-expression-property": HTMLElsaCronExpressionPropertyElement;
         "elsa-designer-panel": HTMLElsaDesignerPanelElement;
         "elsa-designer-tree": HTMLElsaDesignerTreeElement;
-        "elsa-designer-x6": HTMLElsaDesignerX6Element;
         "elsa-dictionary-property": HTMLElsaDictionaryPropertyElement;
         "elsa-dropdown-button": HTMLElsaDropdownButtonElement;
         "elsa-dropdown-property": HTMLElsaDropdownPropertyElement;
@@ -899,6 +898,7 @@ declare global {
         "elsa-workflow-registry-list-screen": HTMLElsaWorkflowRegistryListScreenElement;
         "elsa-workflow-settings-modal": HTMLElsaWorkflowSettingsModalElement;
         "elsa-workflow-test-panel": HTMLElsaWorkflowTestPanelElement;
+        "x6-designer": HTMLX6DesignerElement;
     }
 }
 declare namespace LocalJSX {
@@ -966,25 +966,6 @@ declare namespace LocalJSX {
         "model"?: WorkflowModel;
         "onActivityContextMenuButtonClicked"?: (event: CustomEvent<ActivityContextMenuState>) => void;
         "onActivityContextMenuButtonTestClicked"?: (event: CustomEvent<ActivityContextMenuState>) => void;
-        "onActivityDeselected"?: (event: CustomEvent<ActivityModel>) => void;
-        "onActivitySelected"?: (event: CustomEvent<ActivityModel>) => void;
-        "onConnectionContextMenuButtonClicked"?: (event: CustomEvent<ActivityContextMenuState>) => void;
-        "onWorkflow-changed"?: (event: CustomEvent<WorkflowModel>) => void;
-        "selectedActivityIds"?: Array<string>;
-    }
-    interface ElsaDesignerX6 {
-        "activityBorderColor"?: (activity: ActivityModel) => string;
-        "activityContextMenu"?: ActivityContextMenuState;
-        "activityContextMenuButton"?: (activity: ActivityModel) => string;
-        "activityContextTestMenu"?: ActivityContextMenuState;
-        "connectionContextMenu"?: ActivityContextMenuState;
-        "enableMultipleConnectionsFromSingleSource"?: boolean;
-        "layoutDirection"?: LayoutDirection;
-        "mode"?: WorkflowDesignerMode;
-        "model"?: WorkflowModel;
-        "onActivityContextMenuButtonClicked"?: (event: CustomEvent<ActivityContextMenuState>) => void;
-        "onActivityContextMenuButtonTestClicked"?: (event: CustomEvent<ActivityContextMenuState>) => void;
-        "onActivityDeleted"?: (event: CustomEvent<ActivityDeletedArgs>) => void;
         "onActivityDeselected"?: (event: CustomEvent<ActivityModel>) => void;
         "onActivitySelected"?: (event: CustomEvent<ActivityModel>) => void;
         "onConnectionContextMenuButtonClicked"?: (event: CustomEvent<ActivityContextMenuState>) => void;
@@ -1307,6 +1288,25 @@ declare namespace LocalJSX {
         "workflowDefinition"?: WorkflowDefinition;
         "workflowTestActivityId"?: string;
     }
+    interface X6Designer {
+        "activityBorderColor"?: (activity: ActivityModel) => string;
+        "activityContextMenu"?: ActivityContextMenuState;
+        "activityContextMenuButton"?: (activity: ActivityModel) => string;
+        "activityContextTestMenu"?: ActivityContextMenuState;
+        "connectionContextMenu"?: ActivityContextMenuState;
+        "enableMultipleConnectionsFromSingleSource"?: boolean;
+        "layoutDirection"?: LayoutDirection;
+        "mode"?: WorkflowDesignerMode;
+        "model"?: WorkflowModel;
+        "onActivityContextMenuButtonClicked"?: (event: CustomEvent<ActivityContextMenuState>) => void;
+        "onActivityContextMenuButtonTestClicked"?: (event: CustomEvent<ActivityContextMenuState>) => void;
+        "onActivityDeleted"?: (event: CustomEvent<ActivityDeletedArgs>) => void;
+        "onActivityDeselected"?: (event: CustomEvent<ActivityModel>) => void;
+        "onActivitySelected"?: (event: CustomEvent<ActivityModel>) => void;
+        "onConnectionContextMenuButtonClicked"?: (event: CustomEvent<ActivityContextMenuState>) => void;
+        "onWorkflow-changed"?: (event: CustomEvent<WorkflowModel>) => void;
+        "selectedActivityIds"?: Array<string>;
+    }
     interface IntrinsicElements {
         "elsa-activity-editor-modal": ElsaActivityEditorModal;
         "elsa-activity-editor-panel": ElsaActivityEditorPanel;
@@ -1322,7 +1322,6 @@ declare namespace LocalJSX {
         "elsa-cron-expression-property": ElsaCronExpressionProperty;
         "elsa-designer-panel": ElsaDesignerPanel;
         "elsa-designer-tree": ElsaDesignerTree;
-        "elsa-designer-x6": ElsaDesignerX6;
         "elsa-dictionary-property": ElsaDictionaryProperty;
         "elsa-dropdown-button": ElsaDropdownButton;
         "elsa-dropdown-property": ElsaDropdownProperty;
@@ -1377,6 +1376,7 @@ declare namespace LocalJSX {
         "elsa-workflow-registry-list-screen": ElsaWorkflowRegistryListScreen;
         "elsa-workflow-settings-modal": ElsaWorkflowSettingsModal;
         "elsa-workflow-test-panel": ElsaWorkflowTestPanel;
+        "x6-designer": X6Designer;
     }
 }
 export { LocalJSX as JSX };
@@ -1397,7 +1397,6 @@ declare module "@stencil/core" {
             "elsa-cron-expression-property": LocalJSX.ElsaCronExpressionProperty & JSXBase.HTMLAttributes<HTMLElsaCronExpressionPropertyElement>;
             "elsa-designer-panel": LocalJSX.ElsaDesignerPanel & JSXBase.HTMLAttributes<HTMLElsaDesignerPanelElement>;
             "elsa-designer-tree": LocalJSX.ElsaDesignerTree & JSXBase.HTMLAttributes<HTMLElsaDesignerTreeElement>;
-            "elsa-designer-x6": LocalJSX.ElsaDesignerX6 & JSXBase.HTMLAttributes<HTMLElsaDesignerX6Element>;
             "elsa-dictionary-property": LocalJSX.ElsaDictionaryProperty & JSXBase.HTMLAttributes<HTMLElsaDictionaryPropertyElement>;
             "elsa-dropdown-button": LocalJSX.ElsaDropdownButton & JSXBase.HTMLAttributes<HTMLElsaDropdownButtonElement>;
             "elsa-dropdown-property": LocalJSX.ElsaDropdownProperty & JSXBase.HTMLAttributes<HTMLElsaDropdownPropertyElement>;
@@ -1452,6 +1451,7 @@ declare module "@stencil/core" {
             "elsa-workflow-registry-list-screen": LocalJSX.ElsaWorkflowRegistryListScreen & JSXBase.HTMLAttributes<HTMLElsaWorkflowRegistryListScreenElement>;
             "elsa-workflow-settings-modal": LocalJSX.ElsaWorkflowSettingsModal & JSXBase.HTMLAttributes<HTMLElsaWorkflowSettingsModalElement>;
             "elsa-workflow-test-panel": LocalJSX.ElsaWorkflowTestPanel & JSXBase.HTMLAttributes<HTMLElsaWorkflowTestPanelElement>;
+            "x6-designer": LocalJSX.X6Designer & JSXBase.HTMLAttributes<HTMLX6DesignerElement>;
         }
     }
 }

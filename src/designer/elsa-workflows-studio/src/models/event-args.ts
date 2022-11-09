@@ -1,5 +1,4 @@
 import {Edge, Graph, Node} from "@antv/x6";
-import { Port } from "./core";
 import { ActivityModel, ConnectionModel } from "./view";
 
 export interface ActivitySelectedArgs {
@@ -19,13 +18,11 @@ export interface GraphUpdatedArgs {
 
 export interface EditChildActivityArgs {
   parentActivityId: string;
-  port: Port;
 }
 
 export interface ChildActivitySelectedArgs {
   parentActivity: ActivityModel;
   childActivity: ActivityModel;
-  port: Port;
 }
 
 export const FlowchartEvents = {
