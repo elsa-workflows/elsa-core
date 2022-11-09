@@ -25,6 +25,6 @@ jobs:
       - name: Authenticate
         run: dotnet nuget add source --username sfmskywalker --password ${{ secrets.ACTIONS_PAT }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/elsa-core/index.json"
       - name: Push
-        run: dotnet nuget push "*/**/*.nupkg" --api-key ${{secrets.ACTIONS_PAT}} --source "github"
+        run: dotnet nuget push "*.nupkg" --api-key ${{secrets.ACTIONS_PAT}} --source "github"
         env:
           GITHUB_TOKEN: ${{ secrets.ACTIONS_PAT }}
