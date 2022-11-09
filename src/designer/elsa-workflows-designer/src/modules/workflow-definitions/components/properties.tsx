@@ -7,7 +7,7 @@ import {FormEntry} from "../../../components/shared/forms/form-entry";
 import {isNullOrWhitespace} from "../../../utils";
 import {InfoList} from "../../../components/shared/forms/info-list";
 import {TabChangedArgs, Variable, VersionedEntity} from "../../../models";
-import {WorkflowDefinitionsApi} from "../../workflow-definitions/services/api";
+import {WorkflowDefinitionsApi} from "../services/api";
 
 @Component({
   tag: 'elsa-workflow-definition-properties-editor',
