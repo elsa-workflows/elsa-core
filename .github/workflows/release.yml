@@ -1,3 +1,4 @@
+name: Deploy Elsa 3 packages
 on:
   push:
     tags:

@@ -1,3 +1,4 @@
+name: Build & test Elsa 3 packages
 on:
   push:
     branches:
