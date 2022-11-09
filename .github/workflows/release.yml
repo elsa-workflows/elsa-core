@@ -2,7 +2,7 @@ name: Deploy Elsa 3 packages
 on:
   push:
     tags:
-      - "v3.0.0-test1"
+      - "v3.0.0-test2"
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -23,8 +23,8 @@ jobs:
       - name: Pack
         run: dotnet pack --configuration Release /p:Version=${VERSION} --no-build --output .
       - name: Authenticate
-        run: dotnet nuget add source --username sfmskywalker --password ${{ secrets.ACTIONS_PAT }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/elsa-workflows/index.json"
+        run: dotnet nuget add source --username sfmskywalker --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/elsa-workflows/index.json"
       - name: Push
-        run: dotnet nuget push "*.nupkg" --api-key ${{secrets.ACTIONS_PAT}} --source "github"
+        run: dotnet nuget push "*.nupkg" --api-key ${{ secrets.GITHUB_TOKEN }} --source "github"
         env:
-          GITHUB_TOKEN: ${{ secrets.ACTIONS_PAT }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
