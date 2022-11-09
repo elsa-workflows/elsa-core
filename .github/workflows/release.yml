@@ -1,6 +1,8 @@
 name: Deploy Elsa 3 packages
 on:
   push:
+    branches:
+      - v3
     tags:
       - "v3.0.0-test3"
 jobs:
@@ -24,6 +26,6 @@ jobs:
         run: dotnet pack --configuration Release /p:Version=${VERSION} --no-build --output .
       - name: Push
         #run: dotnet nuget push "*.nupkg" --api-key ${{ secrets.FEEDS_IO_PAT }} --source "github"
-        run: nuget push *.nupkg ${{ secrets.FEEDS_IO_PAT }} -Source https://f.feedz.io/elsa-workflows/v3/nuget/index.json -ApiKey
+        run: nuget push *.nupkg -ApiKey ${{ secrets.FEEDS_IO_PAT }} -Source https://f.feedz.io/elsa-workflows/v3/nuget/index.json -ApiKey
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
