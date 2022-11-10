@@ -1,6 +1,4 @@
-using System;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Behaviors;
@@ -9,73 +7,73 @@ using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Core.Activities;
 
-public enum ForOperator
-{
-    LessThan,
-    LessThanOrEqual,
-    GreaterThan,
-    GreaterThanOrEqual
-}
-
 [Activity("Elsa", "Control Flow", "Iterate over a sequence of steps between a start and an end number.")]
-public class For : Activity
+public class For : ActivityBase
 {
     private const string CurrentStepProperty = "CurrentStep";
-    
+
     [JsonConstructor]
     public For()
     {
         Behaviors.Add<BreakBehavior>(this);
-        Behaviors.Remove<AutoCompleteBehavior>();
     }
 
-    public For(int start, int end, ForOperator forOperator = ForOperator.LessThanOrEqual) : this()
+    public For(int start, int end) : this()
     {
         Start = new Input<int>(start);
         End = new Input<int>(end);
-        Operator = new Input<ForOperator>(forOperator);
     }
-    
+
     public Input<int> Start { get; set; } = new(0);
     public Input<int> End { get; set; } = new(0);
     public Input<int> Step { get; set; } = new(1);
-    public Input<ForOperator> Operator { get; set; } = new(ForOperator.LessThanOrEqual);
-    [Port] public IActivity? Body { get; set; }
 
+    /// <summary>
+    /// Controls whether the end step is upper/lowerbound inclusive or exclusive. True (inclusive) by default.
+    /// </summary>
+    public Input<bool> OuterBoundInclusive { get; set; } = new(true);
+
+    /// <summary>
+    /// The activity to execute for each iteration.
+    /// </summary>
+    [Port]
+    public IActivity? Body { get; set; }
+
+    /// <summary>
+    /// Stores the current value for each iteration. 
+    /// </summary>
     [JsonIgnore]
     [Output]
     public Output<MemoryBlockReference?> CurrentValue { get; set; } = new();
 
-    protected override void Execute(ActivityExecutionContext context)
+    /// <inheritdoc />
+    protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var iterateNode = Body;
 
         if (iterateNode == null)
             return;
-        
-        HandleIteration(context);
+
+        await HandleIteration(context);
     }
-        
-    private void HandleIteration(ActivityExecutionContext context)
+
+    private async ValueTask HandleIteration(ActivityExecutionContext context)
     {
         var iterateNode = Body!;
         var end = context.Get(End);
         var currentValue = context.GetProperty<int?>(CurrentStepProperty);
-
-        // Initialize or increment.
         var start = context.Get(Start);
         var step = context.Get(Step);
-        var op = context.Get(Operator); 
-        currentValue = currentValue == null ? start : currentValue + step;
+        var inclusive = context.Get(OuterBoundInclusive);
+        var increment = end >= start;
 
-        var loop = op switch
-        {
-            ForOperator.LessThan => currentValue < end,
-            ForOperator.LessThanOrEqual => currentValue <= end,
-            ForOperator.GreaterThan => currentValue > end,
-            ForOperator.GreaterThanOrEqual => currentValue >= end,
-            _ => throw new NotSupportedException()
-        };
+        currentValue = currentValue == null ? start : increment ? currentValue + step : currentValue - step;
+
+        var loop =
+            increment && inclusive ? currentValue <= end
+            : increment && !inclusive ? currentValue < end
+            : !increment && inclusive ? currentValue >= end
+            : !increment && !inclusive && currentValue > end;
 
         if (loop)
         {
@@ -83,16 +81,16 @@ public class For : Activity
 
             // Update internal step.
             context.SetProperty(CurrentStepProperty, currentValue);
-            
+
             // Update loop variable.
             context.Set(CurrentValue, currentValue);
-            //CurrentValue?.Set(context.ExpressionExecutionContext, currentValue);
+        }
+        else
+        {
+            // Report activity completion.
+            await context.CompleteActivityAsync();
         }
     }
 
-    private ValueTask OnChildComplete(ActivityExecutionContext context, ActivityExecutionContext childContext)
-    {
-        HandleIteration(context);
-        return ValueTask.CompletedTask;
-    }
+    private async ValueTask OnChildComplete(ActivityExecutionContext context, ActivityExecutionContext childContext) => await HandleIteration(context);
 }
