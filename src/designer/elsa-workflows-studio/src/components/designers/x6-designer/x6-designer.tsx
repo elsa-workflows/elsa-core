@@ -28,8 +28,9 @@ import state from '../../../utils/store';
 import {ActivityIcon} from '../../icons/activity-icon';
 import {ActivityContextMenuState, LayoutDirection, WorkflowDesignerMode} from "../tree/elsa-designer-tree/models";
 import {createGraph} from './graph-factory';
-import {Edge, Graph, Model, Node} from '@antv/x6';
-import  { ActivityNodeShape } from "./shapes";
+import {Edge, Graph, Model, Node, Point} from '@antv/x6';
+// import {DagreLayout} from '@antv/layout';
+import  {ActivityNodeShape} from "./shapes";
 
 @Component({
   tag: 'x6-designer',
@@ -141,6 +142,45 @@ export class ElsaWorkflowDesigner {
   async showActivityEditor(activity: ActivityModel, animate: boolean) {
     await this.showActivityEditorInternal(activity, animate);
   }
+
+  // This could be used if we get the dagre package conflict solved
+  /*async autoLayout() {
+    const dagreLayout = new DagreLayout({
+      type: 'dagre',
+      rankdir: 'TB',
+      align: 'UL',
+      ranksep: 30,
+      nodesep: 15,
+      controlPoints: true,
+    });
+
+    let flowchartModel = this.workflowModel;
+
+    let nodes = [];
+    let edges = [];
+
+    flowchartModel.activities.forEach(activity => {
+      const activityElement = document.querySelectorAll("[activity-id=\"" + activity.activityId + "\"]")[0].getBoundingClientRect();
+      nodes.push({id: activity.activityId, size: {width: activityElement.width, height: activityElement.height}, x: activity.metadata.designer.position.x, y: activity.metadata.designer.position.y})
+    });
+
+    flowchartModel.connections.forEach((connection, index) => {
+      edges.push({id:index, source: connection.sourceId, target: connection.targetId});
+    });
+
+    let data = {nodes: nodes, edges: edges}
+    let newLayout = dagreLayout.layout(data);
+
+    newLayout.nodes.forEach(node => {
+      let outNode = node as any;
+      let activity = flowchartModel.activities.find(x => x.activityId == node.id);
+      activity.x = outNode.x;
+      activity.y = outNode.y;
+    });
+
+    this.updateGraph();
+    this.graph.zoomToFit();
+  }*/
 
   el: HTMLElement;
   parentActivityId?: string;
@@ -708,7 +748,9 @@ export class ElsaWorkflowDesigner {
   }
 
   newActivity(activityDescriptor: ActivityDescriptor): ActivityModel {
-    const bbox = this.graph.getAllCellsBBox() ?? this.graph.getContentBBox();
+    const graphRect = this.el.getBoundingClientRect();
+    const point: Point = this.graph.pageToLocal(graphRect.left + 64, graphRect.top + 64);
+
     const activity: ActivityModel = {
       activityId: uuid(),
       type: activityDescriptor.type,
@@ -716,8 +758,8 @@ export class ElsaWorkflowDesigner {
       displayName: activityDescriptor.displayName,
       properties: [],
       propertyStorageProviders: {},
-      x: Math.round(bbox.x),
-      y: Math.round(bbox.y)
+      x: Math.round(point.x),
+      y: Math.round(point.y)
     };
 
     for (const property of activityDescriptor.inputProperties) {
@@ -795,8 +837,6 @@ export class ElsaWorkflowDesigner {
 
     this.parentActivityId = null;
     this.parentActivityOutcome = null;
-    const bbox = this.graph.getAllCellsBBox() ?? this.graph.getContentBBox();
-    this.graph.zoomToRect({ x: activity.x - 50, y: activity.y - 50, width: Math.max(1200, bbox.width), height: Math.max(800, bbox.height) });
     this.selectActivityNode(activity);
   }
 
@@ -965,18 +1005,17 @@ export class ElsaWorkflowDesigner {
     return (
       <Host>
         {this.mode == WorkflowDesignerMode.Edit && <button type="button" onClick={ e => this.onAddActivity(e)} class="start-btn elsa-absolute elsa-z-1 elsa-h-12 elsa-px-6 elsa-border elsa-border-transparent elsa-text-base elsa-font-medium elsa-rounded-md elsa-text-white elsa-bg-green-600 hover:elsa-bg-green-500 focus:elsa-outline-none focus:elsa-border-green-700 focus:elsa-shadow-outline-green active:elsa-bg-green-700 elsa-transition elsa-ease-in-out elsa-duration-150 elsa-translate-x--1/2 elsa-top-8">Add activity</button>}
+        {this.mode == WorkflowDesignerMode.Test ?
+          <div>
+            <div id="left" style={{border:`4px solid orange`, position:`fixed`, height: `calc(100vh - 64px)`, width:`4px`, top:`64`, bottom:`0`, left:`0`}}/>
+            <div id="right" style={{border:`4px solid orange`, position:`fixed`, height: `calc(100vh - 64px)`, width:`4px`, top:`64`, bottom:`0`, right:`0`}}/>
+            <div id="top" style={{border:`4px solid orange`, position:`fixed`, height:`4px`, left:`0`, right:`0`, top:`30`}}/>
+            <div id="bottom" style={{border:`4px solid orange`, position:`fixed`, height:`4px`, left:`0`, right:`0`, bottom:`0`}}/>
+          </div>
+          :
+          undefined
+        }
         <div class="workflow-canvas elsa-flex-1 elsa-flex" ref={el => (this.el = el)}>
-          {this.mode == WorkflowDesignerMode.Test ?
-            <div>
-              <div id="left" style={{border:`4px solid orange`, position:`fixed`, height: `calc(100vh - 64px)`, width:`4px`, top:`64`, bottom:`0`, left:`0`}}/>
-              <div id="right" style={{border:`4px solid orange`, position:`fixed`, height: `calc(100vh - 64px)`, width:`4px`, top:`64`, bottom:`0`, right:`0`}}/>
-              <div id="top" style={{border:`4px solid orange`, position:`fixed`, height:`4px`, left:`0`, right:`0`, top:`30`}}/>
-              <div id="bottom" style={{border:`4px solid orange`, position:`fixed`, height:`4px`, left:`0`, right:`0`, bottom:`0`}}/>
-            </div>
-            :
-            undefined
-          }
-
           <div ref={el => (this.container = el)}></div>
         </div>
       </Host>
