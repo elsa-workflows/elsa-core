@@ -15,7 +15,6 @@ ProjectSection(SolutionItems) = preProject
 	common.props = common.props
 	configureawait.props = configureawait.props
 	.github\workflows\ci.yml = .github\workflows\ci.yml
-	.github\workflows\release.yml = .github\workflows\release.yml
 	.gitignore = .gitignore
 EndProjectSection
 EndProject
