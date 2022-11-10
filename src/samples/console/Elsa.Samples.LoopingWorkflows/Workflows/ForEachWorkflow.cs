@@ -1,4 +1,3 @@
-using Elsa.Expressions.Models;
 using Elsa.Scheduling.Activities;
 using Elsa.Scheduling.Models;
 using Elsa.Workflows.Core.Activities;

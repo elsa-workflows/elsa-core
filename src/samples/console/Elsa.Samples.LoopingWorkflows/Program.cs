@@ -20,3 +20,6 @@ await workflowRunner.RunAsync(ForWorkflow.Create());
 
 // Run the For Each workflow.
 await workflowRunner.RunAsync(ForEachWorkflow.Create());
+
+// Run the While workflow.
+await workflowRunner.RunAsync(WhileWorkflow.Create());
