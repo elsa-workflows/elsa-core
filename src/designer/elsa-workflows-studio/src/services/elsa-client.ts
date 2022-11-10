@@ -323,6 +323,12 @@ export const createElsaClient = async function (serverUrl: string): Promise<Elsa
         return response.data.features;
       }
     },
+    versionApi: {
+      get: async () => {
+        const response = await httpClient.get<VersionModel>('v1/version');
+        return response.data.version;
+      }
+    },
     authenticationApi:{
       getUserDetails: async () => {
         const response = await httpClient.get<UserDetail>('v1/elsaAuthentication/userinfo');
@@ -336,10 +342,7 @@ export const createElsaClient = async function (serverUrl: string): Promise<Elsa
       getAuthenticationConfguration: async () => {
         const response = await httpClient.get<AuthenticationConfguration>('v1/ElsaAuthentication/options');
         return response.data;
-      },
-
-      
-
+      }
     }
   }
 
@@ -360,6 +363,7 @@ export interface ElsaClient {
   workflowChannelsApi: WorkflowChannelsApi;
   workflowTestApi: WorkflowTestApi;
   featuresApi: FeaturesApi;
+  versionApi: VersionApi;
   authenticationApi : AuthenticationApi;
 }
 
@@ -373,6 +377,10 @@ export interface AuthenticationApi {
 
 export interface FeaturesApi {
   list(): Promise<Array<string>>;
+}
+
+export interface VersionApi {
+  get(): Promise<string>;
 }
 
 export interface WorkflowDefinitionsApi {
@@ -574,4 +582,8 @@ interface ActivityFault {
 
 interface FeaturesModel {
   features: Array<string>;
+}
+
+interface VersionModel {
+  version: string;
 }

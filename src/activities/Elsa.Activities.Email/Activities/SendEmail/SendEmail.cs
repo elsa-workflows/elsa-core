@@ -26,7 +26,7 @@ namespace Elsa.Activities.Email
     [Action(
         Category = "Email",
         Description = "Send an email message.",
-        Outcomes = new[] { OutcomeNames.Done, "Unexpected Error" }
+        Outcomes = new[] { OutcomeNames.Done, "Success", "Unexpected Error" }
     )]
     public class SendEmail : Activity
     {
