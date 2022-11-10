@@ -19,14 +19,9 @@ export interface ActivityModel {
   loadWorkflowContext?: boolean;
   saveWorkflowContext?: boolean;
   propertyStorageProviders?: Map<string>;
-  left?: number;
-  top?: number;
   x?: number;
   y?: number;
   state?: any;
-  metadata?: any;
-  canStartWorkflow?: boolean;
-  applicationProperties?: any;
 }
 
 export interface ConnectionModel {
@@ -34,23 +29,4 @@ export interface ConnectionModel {
   targetId: string;
   outcome?: string;
   targetPort?: string;
-}
-
-export interface Flowchart extends Container {
-  id: string,
-  start: string;
-  connections: Array<ConnectionModel>;
-  version?: number;
-}
-
-export interface Container extends ActivityModel {
-  activities: Array<ActivityModel>;
-  variables: Array<Variable>;
-}
-
-export interface Variable {
-  name: string;
-  type: string;
-  value?: any;
-  storageDriverId?: string;
 }
