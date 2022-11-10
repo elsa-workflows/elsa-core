@@ -15,7 +15,7 @@ jobs:
           git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
           git branch --remote --contains | grep origin/v3
       - name: Set VERSION variable
-        run: echo "VERSION=3.0.0-test4.${{github.run_number}}" >> $GITHUB_ENV
+        run: echo "VERSION=3.0.0-preview.${{github.run_number}}" >> $GITHUB_ENV
       - name: Build
         run: dotnet build --configuration Release /p:Version=${VERSION}
       - name: Test
@@ -23,7 +23,6 @@ jobs:
       - name: Pack
         run: dotnet pack --configuration Release /p:Version=${VERSION} --no-build --output .
       - name: Push
-        #run: dotnet nuget push "*.nupkg" --api-key ${{ secrets.FEEDS_IO_PAT }} --source "github"
         run: dotnet nuget push *.nupkg --api-key ${{ secrets.FEEDS_IO_PAT }} --source https://f.feedz.io/elsa-workflows/v3/nuget/index.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
