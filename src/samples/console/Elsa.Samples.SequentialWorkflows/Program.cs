@@ -10,9 +10,6 @@ var services = new ServiceCollection();
 // Add Elsa services.
 services.AddElsa();
 
-// Configure logging.
-services.AddLogging(logging => logging.AddConsole().SetMinimumLevel(LogLevel.Debug));
-
 // Build service container.
 var serviceProvider = services.BuildServiceProvider();
 

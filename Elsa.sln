@@ -114,6 +114,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.SequentialWork
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.ConditionalWorkflows", "src\samples\console\Elsa.Samples.ConditionalWorkflows\Elsa.Samples.ConditionalWorkflows.csproj", "{70D3ACE9-EB41-4B36-949C-08B8C22B99F7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.LoopingWorkflows", "src\samples\console\Elsa.Samples.LoopingWorkflows\Elsa.Samples.LoopingWorkflows.csproj", "{997F5709-61E0-4874-BFC3-07974685E02E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -288,6 +290,10 @@ Global
 		{70D3ACE9-EB41-4B36-949C-08B8C22B99F7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{70D3ACE9-EB41-4B36-949C-08B8C22B99F7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{70D3ACE9-EB41-4B36-949C-08B8C22B99F7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{997F5709-61E0-4874-BFC3-07974685E02E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{997F5709-61E0-4874-BFC3-07974685E02E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{997F5709-61E0-4874-BFC3-07974685E02E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{997F5709-61E0-4874-BFC3-07974685E02E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{155227F0-A33B-40AA-A4B4-06F813EB921B} = {61017E64-6D00-49CB-9E81-5002DC8F7D5F}
@@ -339,5 +345,6 @@ Global
 		{D253AFC2-9496-4538-B424-47CC579B7A96} = {873BFC3E-63C2-4495-A503-5EC05DCD84E4}
 		{74B9AFE0-EB4B-4AD2-BF25-90753203EFF8} = {873BFC3E-63C2-4495-A503-5EC05DCD84E4}
 		{70D3ACE9-EB41-4B36-949C-08B8C22B99F7} = {873BFC3E-63C2-4495-A503-5EC05DCD84E4}
+		{997F5709-61E0-4874-BFC3-07974685E02E} = {873BFC3E-63C2-4495-A503-5EC05DCD84E4}
 	EndGlobalSection
 EndGlobal

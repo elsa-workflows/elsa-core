@@ -1,5 +1,5 @@
 ﻿using Elsa.Extensions;
-using Elsa.Workflows.Core.Activities;
+using Elsa.Samples.LoopingWorkflows.Workflows;
 using Elsa.Workflows.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -12,11 +12,8 @@ services.AddElsa();
 // Build service container.
 var serviceProvider = services.BuildServiceProvider();
 
-// Create a workflow.
-var workflow = new WriteLine("Hello World!");
-
 // Resolve a workflow runner to run the workflow.
 var workflowRunner = serviceProvider.GetRequiredService<IWorkflowRunner>();
 
-// Run the workflow.
-await workflowRunner.RunAsync(workflow);
+// Run the ForWorkflow.
+await workflowRunner.RunAsync(ForWorkflow.Create());
