@@ -15,5 +15,8 @@ var serviceProvider = services.BuildServiceProvider();
 // Resolve a workflow runner to run the workflow.
 var workflowRunner = serviceProvider.GetRequiredService<IWorkflowRunner>();
 
-// Run the ForWorkflow.
+// Run the For workflow.
 await workflowRunner.RunAsync(ForWorkflow.Create());
+
+// Run the For Each workflow.
+await workflowRunner.RunAsync(ForEachWorkflow.Create());
