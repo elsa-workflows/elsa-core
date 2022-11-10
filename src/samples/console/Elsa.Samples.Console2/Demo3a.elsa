@@ -1,9 +1,0 @@
-let readLine1 = ReadLine;
-
-Sequence {
-    Activities: [ 
-        WriteLine { Text: "Please enter your name" },
-        readLine1,
-        WriteLine { Text: js => `Hello ${readLine}` } // TODO: Enable workflow variables.
-   ]
-};

@@ -53,7 +53,7 @@ public abstract class Activity<T> : ActivityWithResult
     {
     }
 
-    protected Activity(Output? output) : base(output)
+    protected Activity(Output<T>? output) : base(output)
     {
     }
 
@@ -61,11 +61,5 @@ public abstract class Activity<T> : ActivityWithResult
     {
         Result = new Output<T>(output);
         return this;
-    }
-
-    public new Output<T>? Result
-    {
-        get => base.Result as Output<T>;
-        set => base.Result = value;
     }
 }

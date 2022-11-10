@@ -1,8 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Elsa.Formatting.Services;
+using Elsa.Common.Services;
 
-namespace Elsa.Formatting.Formatters;
+namespace Elsa.Common.Implementations;
 
 public class JsonFormatter : IFormatter
 {

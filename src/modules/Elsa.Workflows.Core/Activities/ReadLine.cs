@@ -17,7 +17,7 @@ public class ReadLine : Activity<string>
     {
     }
     
-    public ReadLine(Output? output) : base(output)
+    public ReadLine(Output<string>? output) : base(output)
     {
     }
 

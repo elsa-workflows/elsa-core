@@ -1,7 +1,7 @@
-namespace Elsa.Formatting.Services;
+namespace Elsa.Common.Services;
 
 /// <summary>
-/// Represents a formatter that can serialize an object to a string and deserialize a string into an object.
+/// Represents a formatter that can serialize an object to and from a string.
 /// </summary>
 public interface IFormatter
 {

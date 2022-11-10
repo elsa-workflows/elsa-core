@@ -1,3 +1,0 @@
-print("Please enter your name");
-variable name = read();
-print(js => `Hello ${name}`);
