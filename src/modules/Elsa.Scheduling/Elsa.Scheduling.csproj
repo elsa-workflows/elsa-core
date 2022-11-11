@@ -8,7 +8,7 @@
         <Description>
             Provides scheduling activities such as Timer, Delay and StartAt.
         </Description>
-        <PackageTags>elsa, module, scheduling</PackageTags>
+        <PackageTags>elsa module scheduling</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>

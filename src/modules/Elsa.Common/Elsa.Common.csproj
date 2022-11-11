@@ -9,7 +9,7 @@
             Provides services and utility functions common to Elsa modules.
             For example, it provides a system clock and a memory store implementation.
         </Description>
-        <PackageTags>elsa, module, common</PackageTags>
+        <PackageTags>elsa module common</PackageTags>
     </PropertyGroup>
     
     <ItemGroup>

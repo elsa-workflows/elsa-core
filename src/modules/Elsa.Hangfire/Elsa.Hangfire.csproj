@@ -8,7 +8,7 @@
         <Description>
             Provides Hangfire integration and an implementation of Elsa's IJobQueue implementation.
         </Description>
-        <PackageTags>elsa, module, hangfire</PackageTags>
+        <PackageTags>elsa module hangfire jobs scheduling</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>

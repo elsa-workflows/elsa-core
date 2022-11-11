@@ -8,7 +8,7 @@
         <Description>
             Provides Azure Service Bus integration and activities.
         </Description>
-        <PackageTags>elsa, module, azure service bus, service bus</PackageTags>
+        <PackageTags>elsa module azure-service-bus service-bus</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>

@@ -8,7 +8,7 @@
         <Description>
             Provides core workflowing functionality. Basically the heart of Elsa Workflows.
         </Description>
-        <PackageTags>elsa, module, workflows</PackageTags>
+        <PackageTags>elsa module common workflows</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>

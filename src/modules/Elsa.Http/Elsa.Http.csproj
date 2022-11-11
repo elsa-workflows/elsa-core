@@ -8,7 +8,7 @@
         <Description>
             Provides HTTP activities to listen for and send out HTTP requests.
         </Description>
-        <PackageTags>elsa, module, http</PackageTags>
+        <PackageTags>elsa module http activities</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>

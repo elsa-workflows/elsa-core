@@ -8,7 +8,7 @@
         <Description>
             Provides integration with the Quartz.NET library and provide am implementation of Elsa's IJobScheduler using Quartz.NET.
         </Description>
-        <PackageTags>elsa, module, runtime, protoactor, kubernetes</PackageTags>
+        <PackageTags>elsa module scheduling quartz</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>

@@ -8,7 +8,7 @@
         <Description>
             Provides workflow context APIs to Elsa workflows.
         </Description>
-        <PackageTags>elsa, module, workflow context</PackageTags>
+        <PackageTags>elsa module workflows</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>

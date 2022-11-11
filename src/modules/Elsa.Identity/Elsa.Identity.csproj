@@ -8,7 +8,7 @@
         <Description>
             Provides a default identity solution.
         </Description>
-        <PackageTags>elsa, module, identity</PackageTags>
+        <PackageTags>elsa module identity security</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>

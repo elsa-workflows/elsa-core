@@ -8,7 +8,7 @@
         <Description>
             Provides a mediator service inspired by MediatR.
         </Description>
-        <PackageTags>elsa, module, common, mediator</PackageTags>
+        <PackageTags>elsa module common mediator</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>

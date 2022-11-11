@@ -8,7 +8,7 @@
         <Description>
             Provides a Liquid expression provider.
         </Description>
-        <PackageTags>elsa, module, expressions, templating, liquid</PackageTags>
+        <PackageTags>elsa module expressions templating liquid</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>

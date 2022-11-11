@@ -8,7 +8,7 @@
         <Description>
             Provides funtionality to tag workflows with labels and filter by them.
         </Description>
-        <PackageTags>elsa, module, labels</PackageTags>
+        <PackageTags>elsa module labels</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>

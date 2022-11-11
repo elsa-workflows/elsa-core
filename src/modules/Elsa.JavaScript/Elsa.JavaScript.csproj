@@ -8,7 +8,7 @@
         <Description>
             Provides a JavaScript expression provider.
         </Description>
-        <PackageTags>elsa, module, expressions, scripting, javascript</PackageTags>
+        <PackageTags>elsa module expressions scripting javascript</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>

@@ -8,7 +8,7 @@
         <Description>
             Provides an activity provider that turns Jobs into activities and provides custom middleware that enables activities to run in the background, enabling true asyncrhonou execution of activities on a workflow.
         </Description>
-        <PackageTags>elsa, module, jobs, background tasks</PackageTags>
+        <PackageTags>elsa module jobs activities</PackageTags>
     </PropertyGroup>
 
     <PropertyGroup>

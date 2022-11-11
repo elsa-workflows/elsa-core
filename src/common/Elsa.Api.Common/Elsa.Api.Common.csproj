@@ -9,13 +9,13 @@
             Provides common features to modules that expose API endpoints.
         </Description>
         <RootNamespace>Elsa</RootNamespace>
-        <PackageTags>elsa, api</PackageTags>
+        <PackageTags>elsa api common</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="FastEndpoints" Version="5.0.0" />
-      <PackageReference Include="FastEndpoints.Security" Version="5.0.0" />
-      <PackageReference Include="FastEndpoints.Swagger" Version="5.0.0" />
+      <PackageReference Include="FastEndpoints" Version="5.4.0" />
+      <PackageReference Include="FastEndpoints.Security" Version="5.4.0" />
+      <PackageReference Include="FastEndpoints.Swagger" Version="5.4.0" />
     </ItemGroup>
 
     <ItemGroup>

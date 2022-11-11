@@ -8,7 +8,7 @@
         <Description>
             Provides workflow runtime functionality.
         </Description>
-        <PackageTags>elsa, module, workflows</PackageTags>
+        <PackageTags>elsa module workflows runtime</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>

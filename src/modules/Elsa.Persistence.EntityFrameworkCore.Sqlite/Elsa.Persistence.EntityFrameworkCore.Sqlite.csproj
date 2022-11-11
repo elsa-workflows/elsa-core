@@ -8,7 +8,7 @@
         <Description>
             Provides a SQLite migrations for various modules.
         </Description>
-        <PackageTags>elsa, module, persistence, efcore, sqlite</PackageTags>
+        <PackageTags>elsa module persistence efcore sqlite</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>

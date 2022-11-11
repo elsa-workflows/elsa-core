@@ -9,7 +9,7 @@
             Bundles the most commonly-used packages when building an Elsa workflows application. 
         </Description>
         <RootNamespace>Elsa</RootNamespace>
-        <PackageTags>elsa</PackageTags>
+        <PackageTags>elsa bundle</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>

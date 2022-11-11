@@ -8,7 +8,7 @@
         <Description>
             Provides infrastructure to execute background jobs. Comes with an in-memory job queue provider out of the box.
         </Description>
-        <PackageTags>elsa, module, jobs, background tasks</PackageTags>
+        <PackageTags>elsa module jobs</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>

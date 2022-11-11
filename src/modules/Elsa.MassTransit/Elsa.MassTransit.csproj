@@ -8,7 +8,7 @@
         <Description>
             Provides integration with MassTransit and comes with a MassTransit implementation of Elsa's IServiceBus abstraction.
         </Description>
-        <PackageTags>elsa, module, service bus, masstransit</PackageTags>
+        <PackageTags>elsa module service-bus masstransit</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>

@@ -9,7 +9,7 @@
             Provides abstractions representing a service bus that can be used by other Elsa modules.
             Concrete implementations are provided by different packages such as Elsa.MassTransit.
         </Description>
-        <PackageTags>elsa, common, service bus</PackageTags>
+        <PackageTags>elsa common service-bus</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>

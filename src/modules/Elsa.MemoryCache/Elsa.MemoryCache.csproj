@@ -8,7 +8,7 @@
         <Description>
             An Elsa module that does nothing but register the MemoryCache with the service container.
         </Description>
-        <PackageTags>elsa, module, memory cache</PackageTags>
+        <PackageTags>elsa module caching</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>

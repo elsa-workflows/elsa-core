@@ -9,7 +9,7 @@
             Provides infrastructure for registering and executing workflow expressions.
             Out of the box, it provides a DelegateExpression and LiteralExpression. 
         </Description>
-        <PackageTags>elsa, module, scripting, expressions</PackageTags>
+        <PackageTags>elsa module scripting expressions</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>

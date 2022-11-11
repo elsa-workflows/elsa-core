@@ -8,7 +8,7 @@
         <Description>
             Provides a Kubernetes provider for the ProtoActor runtime.
         </Description>
-        <PackageTags>elsa, module, runtime, protoactor, kubernetes</PackageTags>
+        <PackageTags>elsa module runtime protoactor actors kubernetes</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>
