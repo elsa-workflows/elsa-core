@@ -29,8 +29,8 @@ import {ActivityIcon} from '../../icons/activity-icon';
 import {ActivityContextMenuState, LayoutDirection, WorkflowDesignerMode} from "../tree/elsa-designer-tree/models";
 import {createGraph} from './graph-factory';
 import {Edge, Graph, Model, Node, Point} from '@antv/x6';
-// import {DagreLayout} from '@antv/layout';
 import  {ActivityNodeShape} from "./shapes";
+import dagre from "dagre";
 
 @Component({
   tag: 'x6-designer',
@@ -143,44 +143,38 @@ export class ElsaWorkflowDesigner {
     await this.showActivityEditorInternal(activity, animate);
   }
 
-  // This could be used if we get the dagre package conflict solved
-  /*async autoLayout() {
-    const dagreLayout = new DagreLayout({
-      type: 'dagre',
-      rankdir: 'TB',
-      align: 'UL',
-      ranksep: 30,
-      nodesep: 15,
-      controlPoints: true,
+  autoLayout() {
+    const graph = new dagre.graphlib.Graph();
+    graph.setGraph({ rankdir: "TB", nodesep: 15, ranksep: 30, align: "UL" });
+
+    graph.setDefaultEdgeLabel(() => ({}));
+
+    this.workflowModel.activities.forEach(activity => {
+      const activityElement = document.querySelectorAll("g[data-cell-id=\"" + activity.activityId + "\"]")[0].getBoundingClientRect();
+      graph.setNode(activity.activityId, {
+        label: activity.activityId,
+        width: Math.max(200, activityElement.width),
+        height: Math.max(68, activityElement.height),
+      });
     });
 
-    let flowchartModel = this.workflowModel;
-
-    let nodes = [];
-    let edges = [];
-
-    flowchartModel.activities.forEach(activity => {
-      const activityElement = document.querySelectorAll("[activity-id=\"" + activity.activityId + "\"]")[0].getBoundingClientRect();
-      nodes.push({id: activity.activityId, size: {width: activityElement.width, height: activityElement.height}, x: activity.metadata.designer.position.x, y: activity.metadata.designer.position.y})
+    this.workflowModel.connections.forEach(connection => {
+      graph.setEdge(connection.sourceId, connection.targetId);
     });
 
-    flowchartModel.connections.forEach((connection, index) => {
-      edges.push({id:index, source: connection.sourceId, target: connection.targetId});
-    });
 
-    let data = {nodes: nodes, edges: edges}
-    let newLayout = dagreLayout.layout(data);
+    dagre.layout(graph);
 
-    newLayout.nodes.forEach(node => {
-      let outNode = node as any;
-      let activity = flowchartModel.activities.find(x => x.activityId == node.id);
-      activity.x = outNode.x;
-      activity.y = outNode.y;
+    this.workflowModel.activities.forEach(activity => {
+      const node = graph.node(activity.activityId);
+      activity.x = Math.round(node.x);
+      activity.y = Math.round(node.y);
     });
 
     this.updateGraph();
-    this.graph.zoomToFit();
-  }*/
+
+    console.log("Auto-layout applied");
+  };
 
   el: HTMLElement;
   parentActivityId?: string;
@@ -224,6 +218,19 @@ export class ElsaWorkflowDesigner {
       displayContexts[model.activityId] = await this.getActivityDisplayContext(model);
 
     this.activityDisplayContexts = displayContexts;
+  }
+
+  componentDidRender() {
+    if (this.isAutoLayoutRequired) {
+      setTimeout(() => this.autoLayout(), 100);
+    }
+  }
+
+  get isAutoLayoutRequired(): boolean {
+    if (this.workflowModel.activities.length < 2) {
+      return false;
+    }
+    return this.workflowModel.activities.findIndex(x => !!x.x || !!x.y) === -1;
   }
 
   handleContextMenuChange(state: ActivityContextMenuState) {
