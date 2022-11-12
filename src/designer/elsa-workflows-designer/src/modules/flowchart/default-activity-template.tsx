@@ -105,7 +105,7 @@ export class DefaultActivityTemplate {
 
   private renderPorts = (activity?: Activity) => {
 
-    if (this.displayTypeIsPicker)
+    if (this.displayTypeIsPicker || !this.activityDescriptor)
       return;
 
     const activityDescriptor = this.activityDescriptor;

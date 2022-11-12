@@ -5,7 +5,7 @@ import {WorkflowDefinition} from "../models/entities";
 import {WorkflowDefinitionsApi} from "../../workflow-definitions/services/api";
 import {DeleteIcon, RevertIcon, PublishedIcon} from "../../../components/icons/tooling";
 import moment from "moment";
-import {ModalDialogService, DefaultActions, DefaultContents, ModalType} from "../../../components/shared/modal-dialog";
+import {ModalDialogService, DefaultModalActions, DefaultContents, ModalType} from "../../../components/shared/modal-dialog";
 
 @Component({
   tag: 'elsa-workflow-definition-version-history',
@@ -36,8 +36,8 @@ export class WorkflowDefinitionVersionHistory {
   onDeleteVersionClick = async (e: Event, version: WorkflowDefinition) => {
     e.preventDefault();
     this.modalDialogService.show(
-      () => DefaultContents.Warning("Are you sure you want to delete this version?"), 
-      [DefaultActions.Delete(() => this.deleteVersionClicked.emit(version)), DefaultActions.Cancel()],
+      () => DefaultContents.Warning("Are you sure you want to delete this version?"),
+      [DefaultModalActions.Delete(() => this.deleteVersionClicked.emit(version)), DefaultModalActions.Cancel()],
       ModalType.Confirmation);
   };
 
@@ -63,7 +63,7 @@ export class WorkflowDefinitionVersionHistory {
           {this.workflowVersions.map(v => {
               let menuItems = [];
               menuItems.push({text: 'Delete', clickHandler: e => this.onDeleteVersionClick(e, v), icon: <DeleteIcon/>});
-              
+
               if(!v.isLatest)
                 menuItems.push({text: 'Revert', clickHandler: e => this.onRevertVersionClick(e, v), icon: <RevertIcon/>});
 

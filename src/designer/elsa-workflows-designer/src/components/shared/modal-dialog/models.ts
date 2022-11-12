@@ -1,86 +1,89 @@
-import {ModalType} from "../../../components/shared/modal-dialog";
+import {ModalType} from "./modal-type";
 
 export interface ModalDialogInstance {
   content: () => any;
-  actions: Array<ActionDefinition>;
+  actions: Array<ModalActionDefinition>;
   modalType: ModalType;
   autoHide: boolean;
+  modalDialogRef?: HTMLElement;
+  modalDialogContentRef?: HTMLElement;
+  actionInvoked?: (args: ModalActionClickArgs) => void;
 }
 
-export type ActionClickArgs = (e: Event, action: ActionDefinition) => void;
+export interface ModalActionClickArgs {
+  e: Event;
+  action: ModalActionDefinition;
+  instance: ModalDialogInstance
+}
 
-export interface ActionDefinition {
+export interface ModalActionDefinition {
   text: string;
   name?: string;
   isPrimary?: boolean;
   isDangerous?: boolean;
-  type?: ActionType;
-  onClick?: ActionClickArgs;
-  display?: (button: ActionDefinition) => any;
+  type?: ModalActionType;
+  onClick?: (args: ModalActionClickArgs) => void;
+  display?: (button: ModalActionDefinition) => any;
 }
 
-export interface ActionInvokedArgs {
-  action: ActionDefinition;
-}
-
-export enum ActionType {
+export enum ModalActionType {
   Button,
   Submit,
   Cancel
 }
 
-export class DefaultActions {
+export class DefaultModalActions {
 
-  public static Cancel = (handler?: ActionClickArgs): ActionDefinition => ({
+  public static Cancel = (handler?: (args: ModalActionClickArgs) => void): ModalActionDefinition => ({
     text: 'Cancel',
     name: 'Cancel',
-    type: ActionType.Cancel,
+    type: ModalActionType.Cancel,
     onClick: handler
   });
 
-  public static Close = (handler?: ActionClickArgs): ActionDefinition => ({
+  public static Close = (handler?: (args: ModalActionClickArgs) => void): ModalActionDefinition => ({
     text: 'Close',
     name: 'Close',
-    type: ActionType.Cancel,
+    type: ModalActionType.Cancel,
     onClick: handler
   });
 
-  public static Save = (handler?: ActionClickArgs): ActionDefinition => ({
+  public static Save = (handler?: (args: ModalActionClickArgs) => void): ModalActionDefinition => ({
     text: 'Save',
     name: 'Save',
-    type: ActionType.Submit,
+    type: ModalActionType.Submit,
     isPrimary: true,
     onClick: handler
   });
 
-  public static Delete = (handler?: ActionClickArgs): ActionDefinition => ({
+  public static Delete = (handler?: (args: ModalActionClickArgs) => void): ModalActionDefinition => ({
     text: 'Delete',
     name: 'Delete',
-    type: ActionType.Button,
+    type: ModalActionType.Button,
     isDangerous: true,
     onClick: handler
   });
 
-  public static Publish = (handler?: ActionClickArgs): ActionDefinition => ({
+  public static Publish = (handler?: (args: ModalActionClickArgs) => void): ModalActionDefinition => ({
     text: 'Publish',
     name: 'Publish',
-    type: ActionType.Button,
+    type: ModalActionType.Button,
     isDangerous: true,
     onClick: handler
   });
 
-  public static Unpublish = (handler?: ActionClickArgs): ActionDefinition => ({
+  public static Unpublish = (handler?: (args: ModalActionClickArgs) => void): ModalActionDefinition => ({
     text: 'Unpublish',
     name: 'Unpublish',
-    type: ActionType.Button,
+    type: ModalActionType.Button,
     isDangerous: true,
     onClick: handler
   });
 
-  public static New = (handler?: ActionClickArgs): ActionDefinition => ({
+  public static New = (handler?: (args: ModalActionClickArgs) => void): ModalActionDefinition => ({
     text: 'New',
     name: 'New',
-    type: ActionType.Button,
+    type: ModalActionType.Button,
     isPrimary: true,
     onClick: handler
   });

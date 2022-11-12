@@ -1,7 +1,7 @@
-import {Component, Host, h, State, Listen, Method, Event, EventEmitter, Prop} from '@stencil/core';
+import {Component, Host, h, State, Listen, Method, Event, Element, EventEmitter, Prop} from '@stencil/core';
 import {enter, leave} from 'el-transition'
-import {ActionDefinition, ActionInvokedArgs, ActionType} from "./models";
-import {ModalType} from "../../../components/shared/modal-dialog";
+import {ModalActionClickArgs, ModalActionDefinition, ModalActionType, ModalDialogInstance} from "./models";
+import {ModalType} from "./modal-type";
 
 @Component({
   tag: 'elsa-modal-dialog',
@@ -11,15 +11,17 @@ export class ModalDialog {
   private overlay: HTMLElement
   private modal: HTMLElement
 
-  @Prop() actions: Array<ActionDefinition> = [];
+  @Prop() modalDialogInstance: ModalDialogInstance;
+  @Prop() actions: Array<ModalActionDefinition> = [];
   @Prop() size: string = 'sm:max-w-6xl';
   @Prop() type: ModalType = ModalType.Default;
   @Prop() autoHide: boolean = true;
   @Prop() content: () => any = () => <div/>;
   @Event() shown: EventEmitter;
   @Event() hidden: EventEmitter;
-  @Event() actionInvoked: EventEmitter<ActionInvokedArgs>;
+  @Event() actionInvoked: EventEmitter<ModalActionClickArgs>;
   @State() private isVisible: boolean = true;
+  @Element() element;
 
   @Method()
   async show(animate: boolean = true) {
@@ -67,20 +69,23 @@ export class ModalDialog {
   }
 
   componentWillRender() {
-    if(this.type == ModalType.Default){
+    if (this.type == ModalType.Default) {
       this.size += " sm:w-full";
     }
   }
 
   componentDidRender() {
-    if(this.isVisible) {
+    if (this.isVisible) {
       enter(this.overlay);
       enter(this.modal).then(this.shown.emit);
     }
+
+    this.modalDialogInstance.modalDialogContentRef = this.element.querySelector('.modal-content').children[0];
   }
 
   render() {
     const actions = this.actions;
+    const content = this.content();
 
     return (
       <Host class={{'hidden': !this.isVisible, 'block': true}}>
@@ -106,7 +111,7 @@ export class ModalDialog {
                  class={`hidden inline-block sm:align-top bg-white rounded-lg text-left overflow-visible shadow-xl transform transition-all sm:my-8 sm:align-top ${this.size}`}
                  role="dialog" aria-modal="true" aria-labelledby="modal-headline">
               <div class="modal-content">
-                {this.content()}
+                {content}
               </div>
 
               <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
@@ -121,17 +126,17 @@ export class ModalDialog {
                     : action.isDangerous ? 'text-white bg-red-600 hover:bg-red-700 border-transparent focus:ring-red-500'
                       : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-blue-500';
 
-                  const buttonType = action.type == ActionType.Submit ? 'submit' : 'button';
+                  const buttonType = action.type == ModalActionType.Submit ? 'submit' : 'button';
                   const cancelHandler = () => this.hideInternal(true);
-                  const defaultHandler = (e: any, action: ActionDefinition) => this.actionInvoked.emit({action: action});
-                  const clickHandler = !!action.onClick ? action.onClick : action.type == ActionType.Cancel ? cancelHandler : defaultHandler;
+                  const defaultHandler = (args: ModalActionClickArgs) => this.actionInvoked.emit(args);
+                  const clickHandler = !!action.onClick ? action.onClick : action.type == ModalActionType.Cancel ? cancelHandler : defaultHandler;
 
                   return <button type={buttonType}
                                  onClick={e => {
-                                    clickHandler(e, action);
-                                    if(this.autoHide)
-                                      this.hideInternal(true);
-                                }}
+                                   clickHandler({e, action, instance: this.modalDialogInstance});
+                                   if (this.autoHide)
+                                     this.hideInternal(true);
+                                 }}
                                  class={`${cssClass} mt-3 w-full inline-flex justify-center rounded-md border shadow-sm px-4 py-2 text-base font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm`}>
                     {action.text}
                   </button>

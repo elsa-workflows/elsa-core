@@ -1,8 +1,8 @@
-import {Component, h, Prop, State, Event, EventEmitter, Watch} from "@stencil/core";
+import {Component, Event, EventEmitter, h, Prop, State, Watch} from "@stencil/core";
 import {DeleteIcon, EditIcon} from "../../icons/tooling";
 import {StorageDriverDescriptor, Variable} from "../../../models";
 import descriptorsStore from "../../../data/descriptors-store";
-import {ModalDialogInstance, ModalDialogService} from "../../shared/modal-dialog";
+import {ModalActionClickArgs, ModalActionDefinition, ModalActionType, ModalDialogInstance, ModalDialogService} from "../../shared/modal-dialog";
 import {Container} from "typedi";
 
 @Component({
@@ -11,10 +11,19 @@ import {Container} from "typedi";
 })
 export class VariablesEditor {
   private readonly modalDialogService: ModalDialogService;
+  private readonly saveAction: ModalActionDefinition;
   private modalDialogInstance: ModalDialogInstance;
 
   constructor() {
     this.modalDialogService = Container.get(ModalDialogService);
+
+    this.saveAction = {
+      name: 'Save',
+      type: ModalActionType.Submit,
+      text: 'Save',
+      isPrimary: true,
+      onClick: this.onVariableChanged
+    };
   }
 
   @Prop() variables?: Array<Variable>;
@@ -101,12 +110,13 @@ export class VariablesEditor {
   private onAddVariableClick = async () => {
     const newVariableName = this.generateNewVariableName();
     const variable = {name: newVariableName, type: 'Object', value: null};
-    this.modalDialogInstance = this.modalDialogService.show(() => <elsa-variable-editor-dialog-content variable={variable} onVariableChanged={this.onVariableChanged} />)
+
+    this.modalDialogInstance = this.modalDialogService.show(() => <elsa-variable-editor-dialog-content variable={variable} />, [this.saveAction])
   };
 
   private onEditClick = async (e: Event, variable: Variable) => {
     e.preventDefault();
-    this.modalDialogInstance = this.modalDialogService.show(() => <elsa-variable-editor-dialog-content variable={variable} onVariableChanged={this.onVariableChanged}/>);
+    this.modalDialogInstance = this.modalDialogService.show(() => <elsa-variable-editor-dialog-content variable={variable} />, [this.saveAction]);
   };
 
   private onDeleteClick = (e: Event, variable: Variable) => {
@@ -115,8 +125,13 @@ export class VariablesEditor {
     this.updateVariablesState(variables);
   };
 
-  private onVariableChanged = (e: CustomEvent<Variable>) => {
-    const updatedVariable = e.detail;
+  private onSaveClick = () => {
+
+  }
+
+  private onVariableChanged = async (a: ModalActionClickArgs) => {
+    debugger;
+    const updatedVariable = await (a.instance.modalDialogContentRef as HTMLElsaVariableEditorDialogContentElement).getVariable();
     let variables = this.variables;
     const variableExists = !!variables.find(x => x == updatedVariable);
 

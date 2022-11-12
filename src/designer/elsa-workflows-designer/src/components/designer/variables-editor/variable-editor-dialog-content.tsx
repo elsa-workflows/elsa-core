@@ -9,8 +9,15 @@ import descriptorsStore from '../../../data/descriptors-store';
   shadow: false
 })
 export class VariableEditorDialogContent {
+  private formElement: HTMLFormElement;
+
   @Prop() variable: Variable;
   @Event() variableChanged: EventEmitter<Variable>;
+
+  @Method()
+  async getVariable(): Promise<Variable> {
+    return this.getVariableInternal(this.formElement);
+  }
 
   render() {
     const variable: Variable = this.variable ?? {name: '', type: 'Object'};
@@ -20,7 +27,7 @@ export class VariableEditorDialogContent {
 
     return (
       <div>
-        <form class="h-full flex flex-col bg-white" onSubmit={e => this.onSubmit(e)} method="post">
+        <form ref={el => this.formElement = el} class="h-full flex flex-col bg-white" onSubmit={e => this.onSubmit(e)} method="post">
           <div class="pt-4">
             <h2 class="text-lg font-medium ml-4 mb-2">Edit Variable</h2>
             <div class="align-middle inline-block min-w-full border-b border-gray-200">
@@ -58,8 +65,15 @@ export class VariableEditorDialogContent {
   }
 
   private onSubmit = async (e: Event) => {
+    debugger;
     e.preventDefault();
-    const formData = new FormData(e.target as HTMLFormElement);
+    const form = e.target as HTMLFormElement;
+    const variable = this.getVariableInternal(form);
+    this.variableChanged.emit(variable);
+  };
+
+  private getVariableInternal = (form: HTMLFormElement): Variable => {
+    const formData = new FormData(form as HTMLFormElement);
     const name = formData.get('variableName') as string;
     const value = formData.get('variableValue') as string;
     const type = formData.get('variableType') as string;
@@ -71,7 +85,7 @@ export class VariableEditorDialogContent {
     variable.value = value;
     variable.storageDriverId = isNullOrWhitespace(driverId) ? null : driverId;
 
-    this.variableChanged.emit(variable);
+    return variable;
   };
 
 }

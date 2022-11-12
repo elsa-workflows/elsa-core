@@ -17,7 +17,7 @@ import {PublishClickedArgs} from "./components/publish-button";
 import {ActivityDefinitionManager} from "./services/manager";
 import {ActivityDefinition, ActivityDefinitionSummary, ActivityDefinitionUpdatedArgs} from "./models";
 import {ActivityDefinitionsApi} from "./services/api";
-import {DefaultActions, ModalDialogInstance, ModalDialogService} from "../../components/shared/modal-dialog";
+import {DefaultModalActions, ModalDialogInstance, ModalDialogService} from "../../components/shared/modal-dialog";
 
 const FlowchartTypeName = 'Elsa.Flowchart';
 
@@ -114,8 +114,8 @@ export class ActivityDefinitionsPlugin implements Plugin {
   }
 
   private onBrowseActivityDefinitions = async () => {
-    const closeAction = DefaultActions.Close();
-    const newAction = DefaultActions.New(this.onNewActivityDefinitionClick);
+    const closeAction = DefaultModalActions.Close();
+    const newAction = DefaultModalActions.New(this.onNewActivityDefinitionClick);
     const actions = [closeAction, newAction];
 
     this.activityDefinitionBrowserInstance = this.modalDialogService.show(() =>

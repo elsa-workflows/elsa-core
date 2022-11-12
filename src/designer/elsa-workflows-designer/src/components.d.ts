@@ -20,9 +20,10 @@ import { Graph } from "@antv/x6";
 import { OutNode } from "@antv/layout";
 import { AddActivityArgs as AddActivityArgs1, RenameActivityArgs as RenameActivityArgs1, UpdateActivityArgs as UpdateActivityArgs1 } from "./components/designer/canvas/canvas";
 import { ActivityNodeShape } from "./modules/flowchart/shapes";
-import { ActionDefinition, ActionInvokedArgs, ModalType } from "./components/shared/modal-dialog";
+import { PanelActionClickArgs, PanelActionDefinition } from "./components/shared/form-panel/models";
 import { ExpressionChangedArs } from "./components/designer/input-control-switch/input-control-switch";
-import { ActionDefinition as ActionDefinition1, ActionInvokedArgs as ActionInvokedArgs1 } from "./components/shared/modal-dialog/models";
+import { ModalActionClickArgs, ModalActionDefinition, ModalDialogInstance } from "./components/shared/modal-dialog/models";
+import { ModalType } from "./components/shared/modal-dialog/modal-type";
 import { MonacoLib, MonacoValueChangedArgs } from "./components/shared/monaco-editor/monaco-editor";
 import { PagerData } from "./components/shared/pager/pager";
 import { PanelPosition, PanelStateChangedArgs } from "./components/panel/models";
@@ -134,7 +135,7 @@ export namespace Components {
         "zoomToFit": () => Promise<void>;
     }
     interface ElsaFormPanel {
-        "actions": Array<ActionDefinition>;
+        "actions": Array<PanelActionDefinition>;
         "mainTitle": string;
         "selectedTabIndex"?: number;
         "subTitle": string;
@@ -175,10 +176,11 @@ export namespace Components {
     interface ElsaLoginPage {
     }
     interface ElsaModalDialog {
-        "actions": Array<ActionDefinition>;
+        "actions": Array<ModalActionDefinition>;
         "autoHide": boolean;
         "content": () => any;
         "hide": (animate?: boolean) => Promise<void>;
+        "modalDialogInstance": ModalDialogInstance;
         "show": (animate?: boolean) => Promise<void>;
         "size": string;
         "type": ModalType;
@@ -219,7 +221,7 @@ export namespace Components {
         "inputContext": ActivityInputContext;
     }
     interface ElsaSlideOverPanel {
-        "actions": Array<ActionDefinition>;
+        "actions": Array<PanelActionDefinition>;
         "expand": boolean;
         "headerText": string;
         "hide": () => Promise<void>;
@@ -239,6 +241,7 @@ export namespace Components {
         "tooltipPosition"?: string;
     }
     interface ElsaVariableEditorDialogContent {
+        "getVariable": () => Promise<Variable>;
         "variable": Variable;
     }
     interface ElsaVariablesEditor {
@@ -799,9 +802,9 @@ declare namespace LocalJSX {
         "onGraphUpdated"?: (event: CustomEvent<GraphUpdatedArgs>) => void;
     }
     interface ElsaFormPanel {
-        "actions"?: Array<ActionDefinition>;
+        "actions"?: Array<PanelActionDefinition>;
         "mainTitle"?: string;
-        "onActionInvoked"?: (event: CustomEvent<ActionInvokedArgs>) => void;
+        "onActionInvoked"?: (event: CustomEvent<PanelActionClickArgs>) => void;
         "onSelectedTabIndexChanged"?: (event: CustomEvent<TabChangedArgs>) => void;
         "onSubmitted"?: (event: CustomEvent<FormData>) => void;
         "selectedTabIndex"?: number;
@@ -848,10 +851,11 @@ declare namespace LocalJSX {
     interface ElsaLoginPage {
     }
     interface ElsaModalDialog {
-        "actions"?: Array<ActionDefinition>;
+        "actions"?: Array<ModalActionDefinition>;
         "autoHide"?: boolean;
         "content"?: () => any;
-        "onActionInvoked"?: (event: CustomEvent<ActionInvokedArgs>) => void;
+        "modalDialogInstance"?: ModalDialogInstance;
+        "onActionInvoked"?: (event: CustomEvent<ModalActionClickArgs>) => void;
         "onHidden"?: (event: CustomEvent<any>) => void;
         "onShown"?: (event: CustomEvent<any>) => void;
         "size"?: string;
@@ -896,7 +900,7 @@ declare namespace LocalJSX {
         "inputContext"?: ActivityInputContext;
     }
     interface ElsaSlideOverPanel {
-        "actions"?: Array<ActionDefinition>;
+        "actions"?: Array<PanelActionDefinition>;
         "expand"?: boolean;
         "headerText"?: string;
         "onCollapsed"?: (event: CustomEvent<any>) => void;

@@ -1,6 +1,6 @@
 import {Component, Event, EventEmitter, h, Method, Prop, State, Watch} from '@stencil/core';
 import {TabDefinition} from '../../../models';
-import {ActionDefinition, ActionType} from "../../shared/modal-dialog";
+import {PanelActionDefinition, PanelActionType} from "../../shared/form-panel/models";
 
 @Component({
   tag: 'elsa-slide-over-panel'
@@ -12,7 +12,7 @@ export class SlideOverPanel {
   @Prop() public headerText: string;
   @Prop() public tabs: Array<TabDefinition> = [];
   @Prop({mutable: true}) public selectedTab?: TabDefinition;
-  @Prop() public actions: Array<ActionDefinition> = [];
+  @Prop() public actions: Array<PanelActionDefinition> = [];
   @Prop() public expand: boolean;
   @Event() public collapsed: EventEmitter;
 
@@ -154,16 +154,16 @@ export class SlideOverPanel {
                           return action.display(action);
 
                         const cssClass = action.isPrimary ? 'text-white bg-blue-600 hover:bg-blue-700 border-transparent' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50';
-                        const buttonType = action.type == ActionType.Submit ? 'submit' : 'button';
+                        const buttonType = action.type == PanelActionType.Submit ? 'submit' : 'button';
                         const cancelHandler = async () => await this.hide();
 
                         const emptyHandler = () => {
                         };
 
-                        const clickHandler = !!action.onClick ? action.onClick : action.type == ActionType.Cancel ? cancelHandler : emptyHandler;
+                        const clickHandler = !!action.onClick ? action.onClick : action.type == PanelActionType.Cancel ? cancelHandler : emptyHandler;
 
                         return <button type={buttonType}
-                                       onClick={e => clickHandler(e, action)}
+                                       onClick={e => clickHandler({e, action})}
                                        class={`${cssClass} py-2 px-4 border rounded-md shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}>
                           {action.text}
                         </button>

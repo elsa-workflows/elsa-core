@@ -11,7 +11,7 @@ import {getSubStatusColor, updateSelectedWorkflowInstances} from "../services/ut
 import {formatTimestamp} from "../../../utils";
 import {DeleteIcon, EditIcon} from "../../../components/icons/tooling";
 import {PagerData} from "../../../components/shared/pager/pager";
-import {DefaultActions} from "../../../components/shared/modal-dialog";
+import {DefaultModalActions} from "../../../components/shared/modal-dialog";
 
 @Component({
   tag: 'elsa-workflow-instance-browser',
@@ -57,7 +57,7 @@ export class WorkflowInstanceBrowser {
     const publishedOrLatestWorkflows = this.publishedOrLatestWorkflows;
     const workflowInstances = this.workflowInstances;
     const totalCount = workflowInstances.totalCount
-    const closeAction = DefaultActions.Close();
+    const closeAction = DefaultModalActions.Close();
     const actions = [closeAction];
 
     const filterProps: FilterProps = {

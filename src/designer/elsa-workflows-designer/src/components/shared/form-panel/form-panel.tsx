@@ -1,7 +1,7 @@
 import {Component, Event, EventEmitter, h, Prop} from '@stencil/core';
 import {TabChangedArgs, TabDefinition} from '../../../models';
 import {isNullOrWhitespace} from "../../../utils";
-import {ActionDefinition, ActionInvokedArgs, ActionType} from "../../shared/modal-dialog";
+import {PanelActionClickArgs, PanelActionDefinition, PanelActionType} from "./models";
 
 @Component({
   tag: 'elsa-form-panel'
@@ -11,11 +11,11 @@ export class FormPanel {
   @Prop() public subTitle: string;
   @Prop() public tabs: Array<TabDefinition> = [];
   @Prop({mutable: true}) public selectedTabIndex?: number;
-  @Prop() public actions: Array<ActionDefinition> = [];
+  @Prop() public actions: Array<PanelActionDefinition> = [];
 
   @Event() public submitted: EventEmitter<FormData>;
   @Event() public selectedTabIndexChanged: EventEmitter<TabChangedArgs>;
-  @Event() public actionInvoked: EventEmitter<ActionInvokedArgs>;
+  @Event() public actionInvoked: EventEmitter<PanelActionClickArgs>;
 
   public render() {
     return this.renderPanel();
@@ -95,13 +95,13 @@ export class FormPanel {
                     : action.isDangerous ? 'text-white bg-red-600 hover:bg-red-700 border-transparent focus:ring-red-500'
                       : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-blue-500';
 
-                  const buttonType = action.type == ActionType.Submit ? 'submit' : 'button';
+                  const buttonType = action.type == PanelActionType.Submit ? 'submit' : 'button';
 
                   const cancelHandler = () => {
                   };
 
-                  const defaultHandler = (e: any, action: ActionDefinition) => this.actionInvoked.emit({action: action});
-                  const clickHandler = !!action.onClick ? action.onClick : action.type == ActionType.Cancel ? cancelHandler : defaultHandler;
+                  const defaultHandler = (e: any, action: PanelActionDefinition) => this.actionInvoked.emit({e, action: action});
+                  const clickHandler = !!action.onClick ? action.onClick : action.type == PanelActionType.Cancel ? cancelHandler : defaultHandler;
 
                   return <button type={buttonType}
                                  onClick={e => clickHandler(e, action)}
