@@ -2,7 +2,7 @@ import {Component, Event, EventEmitter, h, Prop, Watch} from '@stencil/core';
 import {Container} from "typedi";
 import {EventBus} from "../../../services";
 import {WorkflowDefinition} from "../models/entities";
-import {WorkflowDefinitionsApi} from "../../workflow-definitions/services/api";
+import {WorkflowDefinitionsApi} from "../services/api";
 import {DeleteIcon, RevertIcon, PublishedIcon} from "../../../components/icons/tooling";
 import moment from "moment";
 import {ModalDialogService, DefaultModalActions, DefaultContents, ModalType} from "../../../components/shared/modal-dialog";
@@ -37,8 +37,10 @@ export class WorkflowDefinitionVersionHistory {
     e.preventDefault();
     this.modalDialogService.show(
       () => DefaultContents.Warning("Are you sure you want to delete this version?"),
-      [DefaultModalActions.Delete(() => this.deleteVersionClicked.emit(version)), DefaultModalActions.Cancel()],
-      ModalType.Confirmation);
+      {
+        modalType: ModalType.Confirmation,
+        actions: [DefaultModalActions.Delete(() => this.deleteVersionClicked.emit(version)), DefaultModalActions.Cancel()]
+      });
   };
 
   onRevertVersionClick = (e: Event, version: WorkflowDefinition) => {
@@ -51,20 +53,20 @@ export class WorkflowDefinitionVersionHistory {
       <div>
         <table>
           <thead>
-            <tr>
-              <th/>
-              <th>Version</th>
-              <th>Created</th>
-              <th/>
-              <th/>
-            </tr>
+          <tr>
+            <th/>
+            <th>Version</th>
+            <th>Created</th>
+            <th/>
+            <th/>
+          </tr>
           </thead>
           <tbody>
           {this.workflowVersions.map(v => {
               let menuItems = [];
               menuItems.push({text: 'Delete', clickHandler: e => this.onDeleteVersionClick(e, v), icon: <DeleteIcon/>});
 
-              if(!v.isLatest)
+              if (!v.isLatest)
                 menuItems.push({text: 'Revert', clickHandler: e => this.onRevertVersionClick(e, v), icon: <RevertIcon/>});
 
               return (

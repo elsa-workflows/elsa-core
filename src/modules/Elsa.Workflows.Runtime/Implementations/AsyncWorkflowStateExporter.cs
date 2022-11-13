@@ -21,6 +21,9 @@ public class AsyncWorkflowStateExporter : IWorkflowStateExporter, ICommandHandle
     private readonly IWorkflowInstanceStore _workflowInstanceStore;
     private readonly ISystemClock _systemClock;
     
+    /// <summary>
+    /// Constructor.
+    /// </summary>
     public AsyncWorkflowStateExporter(
         IBackgroundCommandSender backgroundCommandSender,
         IWorkflowDefinitionStore workflowDefinitionStore, 
@@ -60,11 +63,12 @@ public class AsyncWorkflowStateExporter : IWorkflowStateExporter, ICommandHandle
 
         workflowInstance.DefinitionId = workflowState.DefinitionId;
         workflowInstance.DefinitionVersionId = definition.Id;
+        workflowInstance.Version = workflowState.DefinitionVersion;
         workflowInstance.Status = workflowState.Status;
         workflowInstance.SubStatus = workflowState.SubStatus;
         workflowInstance.CorrelationId = workflowState.CorrelationId;
         workflowInstance.LastExecutedAt = now;
-        
+
         // TODO: Store timestamps such as CancelledAt, FaultedAt, etc.
 
         await _workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);

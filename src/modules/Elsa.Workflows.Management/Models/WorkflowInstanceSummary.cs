@@ -18,19 +18,25 @@ public record WorkflowInstanceSummary(
     DateTimeOffset? CancelledAt,
     DateTimeOffset? FaultedAt)
 {
-    public static WorkflowInstanceSummary FromInstance(WorkflowInstance workflowInstance) => new(
-        workflowInstance.Id,
-        workflowInstance.DefinitionId,
-        workflowInstance.DefinitionVersionId,
-        workflowInstance.Version,
-        workflowInstance.Status,
-        workflowInstance.SubStatus,
-        workflowInstance.CorrelationId,
-        workflowInstance.Name,
-        workflowInstance.CreatedAt,
-        workflowInstance.LastExecutedAt,
-        workflowInstance.FinishedAt,
-        workflowInstance.CancelledAt,
-        workflowInstance.FaultedAt
-    );
+    /// <summary>
+    /// Returns a summary view of the specified <see cref="WorkflowInstance"/>.
+    /// </summary>
+    public static WorkflowInstanceSummary FromInstance(WorkflowInstance workflowInstance)
+    {
+        return new(
+            workflowInstance.Id,
+            workflowInstance.DefinitionId,
+            workflowInstance.DefinitionVersionId,
+            workflowInstance.Version,
+            workflowInstance.Status,
+            workflowInstance.SubStatus,
+            workflowInstance.CorrelationId,
+            workflowInstance.Name,
+            workflowInstance.CreatedAt,
+            workflowInstance.LastExecutedAt,
+            workflowInstance.FinishedAt,
+            workflowInstance.CancelledAt,
+            workflowInstance.FaultedAt
+        );
+    }
 }

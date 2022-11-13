@@ -61,45 +61,49 @@ export class ActivityDefinitionBrowser {
   private async onDeleteClick(e: MouseEvent, ActivityDefinition: ActivityDefinitionSummary) {
     this.modalDialogService.show(
       () => DefaultContents.Warning("Are you sure you want to delete this activity definition?"),
-      [DefaultModalActions.Delete(async () =>
-        {
+      {
+        actions: [DefaultModalActions.Delete(async () => {
           await this.activityDefinitionsApi.delete(ActivityDefinition);
           await this.loadActivityDefinitions();
         }), DefaultModalActions.Cancel()],
-      ModalType.Confirmation);
+        modalType: ModalType.Confirmation
+      });
   }
 
   private onDeleteManyClick = async () => {
     this.modalDialogService.show(
       () => DefaultContents.Warning("Are you sure you want to delete selected activity definitions?"),
-      [DefaultModalActions.Delete(async () =>
-        {
+      {
+        actions: [DefaultModalActions.Delete(async () => {
           await this.activityDefinitionsApi.deleteMany({definitionIds: this.selectedActivityDefinitionIds});
           await this.loadActivityDefinitions();
         }), DefaultModalActions.Cancel()],
-      ModalType.Confirmation);
+        modalType: ModalType.Confirmation
+      });
   };
 
   private onPublishManyClick = async () => {
     this.modalDialogService.show(
       () => DefaultContents.Warning("Are you sure you want to publish selected activity definitions?"),
-      [DefaultModalActions.Publish(async () =>
-        {
+      {
+        actions: [DefaultModalActions.Publish(async () => {
           await this.activityDefinitionsApi.publishMany({definitionIds: this.selectedActivityDefinitionIds});
           await this.loadActivityDefinitions();
         }), DefaultModalActions.Cancel()],
-      ModalType.Confirmation);
+        modalType: ModalType.Confirmation
+      });
   };
 
   private onUnpublishManyClick = async () => {
     this.modalDialogService.show(
       () => DefaultContents.Warning("Are you sure you want to unpublish selected activity definitions?"),
-      [DefaultModalActions.Unpublish(async () =>
-        {
+      {
+        actions: [DefaultModalActions.Unpublish(async () => {
           await this.activityDefinitionsApi.unpublishMany({definitionIds: this.selectedActivityDefinitionIds});
           await this.loadActivityDefinitions();
         }), DefaultModalActions.Cancel()],
-      ModalType.Confirmation);
+        modalType: ModalType.Confirmation
+      });
   };
 
   private onActivityDefinitionClick = async (e: MouseEvent, ActivityDefinition: ActivityDefinitionSummary) => {

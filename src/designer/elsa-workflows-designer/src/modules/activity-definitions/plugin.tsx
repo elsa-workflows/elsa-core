@@ -119,8 +119,8 @@ export class ActivityDefinitionsPlugin implements Plugin {
     const actions = [closeAction, newAction];
 
     this.activityDefinitionBrowserInstance = this.modalDialogService.show(() =>
-      <elsa-activity-definition-browser onActivityDefinitionSelected={this.onActivityDefinitionSelected} onNewActivityDefinitionSelected={this.onNewActivityDefinitionClick}/>,
-      actions)
+        <elsa-activity-definition-browser onActivityDefinitionSelected={this.onActivityDefinitionSelected} onNewActivityDefinitionSelected={this.onNewActivityDefinitionClick}/>,
+      {actions})
   }
 
   private onActivityDefinitionSelected = async (e: CustomEvent<ActivityDefinitionSummary>) => {

@@ -1,6 +1,7 @@
-import {Component, Host, h} from '@stencil/core';
+import {Component, h, Host} from '@stencil/core';
 import state from './state';
 import {ModalDialogInstance} from "./models";
+import {ModalType} from "./modal-type";
 
 @Component({
   tag: 'elsa-modal-dialog-container',
@@ -20,10 +21,15 @@ export class ModalDialogContainer {
     return (
       <Host>
         {instances.map(instance => {
-          const actions = instance.actions ?? [];
+          const options = instance.options;
+          const actions = options?.actions ?? [];
+          const modalType = options?.modalType ?? ModalType.Default;
+          const size = options?.size ?? 'sm:max-w-6xl';
+
           return (<elsa-modal-dialog
             ref={el => instance.modalDialogRef = el}
-            type={instance.modalType}
+            type={modalType}
+            size={size}
             modalDialogInstance={instance}
             content={instance.content}
             actions={actions}

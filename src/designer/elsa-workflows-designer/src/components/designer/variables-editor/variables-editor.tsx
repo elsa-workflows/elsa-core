@@ -111,12 +111,12 @@ export class VariablesEditor {
     const newVariableName = this.generateNewVariableName();
     const variable = {name: newVariableName, type: 'Object', value: null};
 
-    this.modalDialogInstance = this.modalDialogService.show(() => <elsa-variable-editor-dialog-content variable={variable} />, [this.saveAction])
+    this.modalDialogInstance = this.modalDialogService.show(() => <elsa-variable-editor-dialog-content variable={variable}/>, {actions: [this.saveAction]})
   };
 
   private onEditClick = async (e: Event, variable: Variable) => {
     e.preventDefault();
-    this.modalDialogInstance = this.modalDialogService.show(() => <elsa-variable-editor-dialog-content variable={variable} />, [this.saveAction]);
+    this.modalDialogInstance = this.modalDialogService.show(() => <elsa-variable-editor-dialog-content variable={variable}/>, {actions: [this.saveAction]});
   };
 
   private onDeleteClick = (e: Event, variable: Variable) => {
@@ -125,12 +125,7 @@ export class VariablesEditor {
     this.updateVariablesState(variables);
   };
 
-  private onSaveClick = () => {
-
-  }
-
   private onVariableChanged = async (a: ModalActionClickArgs) => {
-    debugger;
     const updatedVariable = await (a.instance.modalDialogContentRef as HTMLElsaVariableEditorDialogContentElement).getVariable();
     let variables = this.variables;
     const variableExists = !!variables.find(x => x == updatedVariable);

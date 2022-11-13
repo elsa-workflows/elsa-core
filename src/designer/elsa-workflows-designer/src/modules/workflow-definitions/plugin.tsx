@@ -136,7 +136,7 @@ export class WorkflowDefinitionsPlugin implements Plugin {
 
     this.workflowDefinitionBrowserInstance = this.modalDialogService.show(() =>
       <elsa-workflow-definition-browser onWorkflowDefinitionSelected={this.onWorkflowDefinitionSelected} onNewWorkflowDefinitionSelected={this.onNewWorkflowDefinitionClick}/>,
-      actions)
+      {actions})
   }
 
   private onWorkflowDefinitionSelected = async (e: CustomEvent<WorkflowDefinitionSummary>) => {

@@ -60,41 +60,47 @@ export class WorkflowDefinitionBrowser {
   private async onDeleteClick(e: MouseEvent, workflowDefinition: WorkflowDefinitionSummary) {
     this.modalDialogService.show(
       () => DefaultContents.Warning("Are you sure you want to delete this workflow definition?"),
-      [DefaultModalActions.Delete(()=>{}), DefaultModalActions.Cancel()],
-      ModalType.Confirmation);
+      {
+        actions: [DefaultModalActions.Delete(() => {
+        }), DefaultModalActions.Cancel()],
+        modalType: ModalType.Confirmation
+      });
   }
 
   private onDeleteManyClick = async () => {
     this.modalDialogService.show(
       () => DefaultContents.Warning("Are you sure you want to delete selected workflow definitions?"),
-      [DefaultModalActions.Delete(async () =>
-        {
+      {
+        actions: [DefaultModalActions.Delete(async () => {
           await this.api.deleteMany({definitionIds: this.selectedWorkflowDefinitionIds});
           await this.loadWorkflowDefinitions();
         }), DefaultModalActions.Cancel()],
-      ModalType.Confirmation);
+        modalType: ModalType.Confirmation
+      });
   };
 
   private onPublishManyClick = async () => {
     this.modalDialogService.show(
       () => DefaultContents.Warning("Are you sure you want to publish selected workflow definitions?"),
-      [DefaultModalActions.Publish(async () =>
-        {
+      {
+        actions: [DefaultModalActions.Publish(async () => {
           await this.api.publishMany({definitionIds: this.selectedWorkflowDefinitionIds});
           await this.loadWorkflowDefinitions();
         }), DefaultModalActions.Cancel()],
-      ModalType.Confirmation);
+        modalType: ModalType.Confirmation
+      });
   };
 
   private onUnpublishManyClick = async () => {
     this.modalDialogService.show(
       () => DefaultContents.Warning("Are you sure you want to unpublish selected workflow definitions?"),
-      [DefaultModalActions.Unpublish(async () =>
-        {
+      {
+        actions: [DefaultModalActions.Unpublish(async () => {
           await this.api.unpublishMany({definitionIds: this.selectedWorkflowDefinitionIds});
           await this.loadWorkflowDefinitions();
         }), DefaultModalActions.Cancel()],
-      ModalType.Confirmation);
+        modalType: ModalType.Confirmation
+      });
   };
 
   private onWorkflowDefinitionClick = async (e: MouseEvent, workflowDefinition: WorkflowDefinitionSummary) => {
@@ -103,8 +109,6 @@ export class WorkflowDefinitionBrowser {
   };
 
   private async loadWorkflowDefinitions() {
-    const latestVersionOptions: VersionOptions = {isLatest: true};
-    const publishedVersionOptions: VersionOptions = {isPublished: true};
 
     // TODO: Load only json-based workflow definitions for now.
     // Later, also allow CLR-based workflows to be "edited" (publish / unpublish / position activities / set variables, etc.)
@@ -123,7 +127,7 @@ export class WorkflowDefinitionBrowser {
     this.publishedWorkflowDefinitions = await this.api.list({
       materializerName,
       definitionIds: unpublishedWorkflowDefinitionIds,
-      versionOptions: publishedVersionOptions,
+      versionOptions: {isPublished: true},
     });
 
     this.workflowDefinitions = latestWorkflowDefinitions;

@@ -49,7 +49,7 @@ export class WorkflowInstanceBrowser {
   @State() private orderBy?: OrderBy;
 
   async componentWillLoad() {
-    await this.loadWorkflows();
+    await this.loadWorkflowDefinitions();
     await this.loadWorkflowInstances();
   }
 
@@ -57,8 +57,6 @@ export class WorkflowInstanceBrowser {
     const publishedOrLatestWorkflows = this.publishedOrLatestWorkflows;
     const workflowInstances = this.workflowInstances;
     const totalCount = workflowInstances.totalCount
-    const closeAction = DefaultModalActions.Close();
-    const actions = [closeAction];
 
     const filterProps: FilterProps = {
       pageSizeFilter: {
@@ -184,9 +182,10 @@ export class WorkflowInstanceBrowser {
     };
 
     this.workflowInstances = await this.workflowInstancesApi.list(request);
+    debugger;
   }
 
-  private loadWorkflows = async () => {
+  private loadWorkflowDefinitions = async () => {
     const versionOptions: VersionOptions = {allVersions: true};
     const workflows = await this.workflowDefinitionsApi.list({versionOptions});
     this.publishedOrLatestWorkflows = this.selectLatestWorkflows(workflows.items);

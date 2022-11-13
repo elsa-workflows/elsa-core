@@ -91,7 +91,7 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
             _ => query
         };
 
-        return await query.PaginateAsync(x => WorkflowInstanceSummary.FromInstance(Load(dbContext, x)!), pageArgs);
+        return await query.PaginateAsync(x => WorkflowInstanceSummary.FromInstance(x), pageArgs);
     }
 
     public WorkflowInstance Save(ManagementDbContext dbContext, WorkflowInstance entity)

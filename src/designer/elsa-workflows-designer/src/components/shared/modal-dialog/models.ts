@@ -2,9 +2,7 @@ import {ModalType} from "./modal-type";
 
 export interface ModalDialogInstance {
   content: () => any;
-  actions: Array<ModalActionDefinition>;
-  modalType: ModalType;
-  autoHide: boolean;
+  options?: ShowModalDialogOptions;
   modalDialogRef?: HTMLElement;
   modalDialogContentRef?: HTMLElement;
   actionInvoked?: (args: ModalActionClickArgs) => void;
@@ -30,6 +28,13 @@ export enum ModalActionType {
   Button,
   Submit,
   Cancel
+}
+
+export interface ShowModalDialogOptions {
+  actions?: Array<ModalActionDefinition>;
+  modalType?: ModalType;
+  autoHide?: boolean;
+  size?: string;
 }
 
 export class DefaultModalActions {
