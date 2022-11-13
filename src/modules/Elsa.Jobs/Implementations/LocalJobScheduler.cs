@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using Elsa.Common.Services;
 using Elsa.Jobs.ScheduledJobs;
 using Elsa.Jobs.Schedules;

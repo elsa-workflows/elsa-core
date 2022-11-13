@@ -1,4 +1,3 @@
-using System;
 using Elsa.Common.Features;
 using Elsa.Expressions;
 using Elsa.Expressions.Extensions;

@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 using Elsa.Expressions.Models;
 using Elsa.Http.Models;
 using Elsa.Workflows.Core;

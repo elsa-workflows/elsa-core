@@ -1,5 +1,3 @@
-using System.Net.Http;
-
 namespace Elsa.Http.ContentWriters;
 
 public interface IHttpRequestContentWriter

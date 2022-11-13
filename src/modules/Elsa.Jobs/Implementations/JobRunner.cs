@@ -1,6 +1,3 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using Elsa.Jobs.Models;
 using Elsa.Jobs.Notifications;
 using Elsa.Jobs.Services;

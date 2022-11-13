@@ -2,7 +2,6 @@
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 // Setup service container.
 var services = new ServiceCollection();

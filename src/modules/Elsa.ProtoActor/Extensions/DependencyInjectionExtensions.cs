@@ -1,4 +1,3 @@
-using System;
 using Elsa.ProtoActor.Features;
 using Elsa.ProtoActor.Options;
 using Elsa.Workflows.Runtime.Features;

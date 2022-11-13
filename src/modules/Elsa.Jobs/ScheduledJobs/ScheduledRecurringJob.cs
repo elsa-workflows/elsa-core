@@ -1,5 +1,3 @@
-using System;
-using System.Threading;
 using Elsa.Common.Services;
 using Elsa.Jobs.Services;
 using Timer = System.Timers.Timer;

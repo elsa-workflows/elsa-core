@@ -1,5 +1,3 @@
-using System;
-
 namespace Elsa.Jobs.Services;
 
 /// <summary>

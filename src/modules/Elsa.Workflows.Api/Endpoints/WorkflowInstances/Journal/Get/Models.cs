@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using FastEndpoints;
 
 // ReSharper disable NotAccessedPositionalProperty.Global

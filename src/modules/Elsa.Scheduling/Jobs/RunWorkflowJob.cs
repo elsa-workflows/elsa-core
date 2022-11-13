@@ -1,6 +1,4 @@
-using System.Collections.Generic;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 using Elsa.Common.Models;
 using Elsa.Jobs.Abstractions;
 using Elsa.Jobs.Models;

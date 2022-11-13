@@ -1,4 +1,3 @@
-using System;
 using System.Threading.Channels;
 using Elsa.Features.Services;
 using Elsa.Jobs.Features;

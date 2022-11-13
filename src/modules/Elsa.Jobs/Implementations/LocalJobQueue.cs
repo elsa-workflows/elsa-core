@@ -1,6 +1,4 @@
-using System.Threading;
 using System.Threading.Channels;
-using System.Threading.Tasks;
 using Elsa.Jobs.Services;
 
 namespace Elsa.Jobs.Implementations;

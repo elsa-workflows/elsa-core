@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Elsa.Workflows.Core.State;
 
 namespace Elsa.Workflows.Core.Models;

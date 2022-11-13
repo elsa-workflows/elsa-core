@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using System.Linq;
 using Elsa.Workflows.Core.Activities.Flowchart.Models;
 using Elsa.Workflows.Core.Services;
 

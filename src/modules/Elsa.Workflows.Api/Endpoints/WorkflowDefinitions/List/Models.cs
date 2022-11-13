@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Elsa.Workflows.Management.Models;
 using FastEndpoints;
 

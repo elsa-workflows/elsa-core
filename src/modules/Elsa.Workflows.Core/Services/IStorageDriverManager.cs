@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace Elsa.Workflows.Core.Services;
 
 public interface IStorageDriverManager

@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.BulkRetract;
 
 public class Request

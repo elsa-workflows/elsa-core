@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 using Elsa.Jobs.Models;
 
 namespace Elsa.Jobs.Services;

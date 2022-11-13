@@ -1,4 +1,3 @@
-using System;
 using Elsa.Extensions;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Implementations;

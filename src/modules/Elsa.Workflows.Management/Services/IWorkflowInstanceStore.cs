@@ -6,6 +6,9 @@ using Elsa.Workflows.Management.Models;
 
 namespace Elsa.Workflows.Management.Services;
 
+/// <summary>
+/// Represents a store of workflow instances.
+/// </summary>
 public interface IWorkflowInstanceStore
 {
     Task<WorkflowInstance?> FindByIdAsync(string id, CancellationToken cancellationToken = default);

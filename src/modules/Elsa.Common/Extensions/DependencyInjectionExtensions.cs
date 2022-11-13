@@ -1,4 +1,3 @@
-using Elsa.Common.Entities;
 using Elsa.Common.Implementations;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;

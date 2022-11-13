@@ -1,4 +1,3 @@
-using System;
 using Elsa.Jobs.Services;
 
 namespace Elsa.Jobs.Implementations;

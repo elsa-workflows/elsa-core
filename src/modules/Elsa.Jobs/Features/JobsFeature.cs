@@ -1,4 +1,3 @@
-using System;
 using Elsa.Common.Features;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;

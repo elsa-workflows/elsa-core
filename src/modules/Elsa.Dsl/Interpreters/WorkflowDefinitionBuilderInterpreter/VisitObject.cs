@@ -1,6 +1,4 @@
-﻿using System;
-using System.Linq;
-using Elsa.Workflows.Core.Services;
+﻿using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Dsl.Interpreters;
 

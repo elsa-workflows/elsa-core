@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Workflows.Api.Endpoints.ActivityDescriptors.List;

@@ -1,5 +1,3 @@
-using System;
-
 namespace Elsa.Dsl.Models;
 
 public class DefinedVariable

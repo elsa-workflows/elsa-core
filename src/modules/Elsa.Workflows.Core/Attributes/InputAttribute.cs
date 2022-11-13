@@ -1,5 +1,3 @@
-using System;
-
 namespace Elsa.Workflows.Core.Attributes;
 
 /// <summary>

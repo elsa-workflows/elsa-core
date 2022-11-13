@@ -1,6 +1,3 @@
-using System.Threading;
-using System.Threading.Tasks;
-
 namespace Elsa.Jobs.Services;
 
 public interface IJobScheduler

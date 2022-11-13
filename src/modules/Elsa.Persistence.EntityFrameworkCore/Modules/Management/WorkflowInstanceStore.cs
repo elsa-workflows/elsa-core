@@ -12,17 +12,24 @@ using Elsa.Workflows.Management.Services;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Modules.Management;
 
+/// <summary>
+/// An EF Core implementation of <see cref="IWorkflowInstanceStore"/>.
+/// </summary>
 public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
 {
     private readonly Store<ManagementDbContext, WorkflowInstance> _store;
     private readonly SerializerOptionsProvider _serializerOptionsProvider;
 
+    /// <summary>
+    /// Constructor.
+    /// </summary>
     public EFCoreWorkflowInstanceStore(Store<ManagementDbContext, WorkflowInstance> store, SerializerOptionsProvider serializerOptionsProvider)
     {
         _store = store;
         _serializerOptionsProvider = serializerOptionsProvider;
     }
 
+    /// <inheritdoc />
     public async Task<WorkflowInstance?> FindByIdAsync(string id, CancellationToken cancellationToken = default) =>
         await _store.FindAsync(x => x.Id == id, Load, cancellationToken);
 

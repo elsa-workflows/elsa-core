@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace Elsa.Workflows.Core.State;
 
 public class ActivityExecutionContextState

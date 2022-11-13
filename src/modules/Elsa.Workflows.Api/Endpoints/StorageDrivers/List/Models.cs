@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace Elsa.Workflows.Api.Endpoints.StorageDrivers.List;
 
 public class Response

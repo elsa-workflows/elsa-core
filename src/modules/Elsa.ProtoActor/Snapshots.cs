@@ -1,6 +1,4 @@
-using System.Collections.Generic;
 using Elsa.Runtime.Protos;
-using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.State;
 
 namespace Elsa.ProtoActor;

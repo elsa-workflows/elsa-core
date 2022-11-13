@@ -1,5 +1,3 @@
-using System;
-
 namespace Elsa.ProtoActor.Options;
 
 public class DeveloperLoggingOptions

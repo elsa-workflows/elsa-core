@@ -1,4 +1,3 @@
-using System.Threading;
 using Cronos;
 using Elsa.Common.Services;
 using Elsa.Jobs.Services;

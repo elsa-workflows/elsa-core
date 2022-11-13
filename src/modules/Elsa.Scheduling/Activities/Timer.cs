@@ -1,5 +1,4 @@
-﻿using System;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 using Elsa.Common.Services;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;

@@ -1,6 +1,5 @@
 using System.Net.Mime;
 using System.Text.Json;
-using System.Threading.Tasks;
 using Elsa.Http.Models;
 using Elsa.Http.Services;
 using Microsoft.AspNetCore.Http;

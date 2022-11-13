@@ -1,5 +1,4 @@
-﻿using System;
-using Elsa.Features.Extensions;
+﻿using Elsa.Features.Extensions;
 using Elsa.ProtoActor.Features;
 
 namespace Elsa.ProtoActor.Kubernetes;

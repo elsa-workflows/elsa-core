@@ -1,4 +1,3 @@
-using System;
 using System.Reflection;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Services;

@@ -1,5 +1,3 @@
-using System;
-
 namespace Elsa.Workflows.Core.Models;
 
 public record WorkflowExecutionLogEntry(

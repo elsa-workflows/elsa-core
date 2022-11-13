@@ -1,7 +1,3 @@
-using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
-
 namespace Elsa.Http.Parsers;
 
 public class PlainTextHttpResponseContentReader : IHttpResponseContentReader

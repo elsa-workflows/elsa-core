@@ -1,5 +1,3 @@
-using System.IO;
-
 namespace Elsa.Workflows.Core.Services;
 
 /// <summary>

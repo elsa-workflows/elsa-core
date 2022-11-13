@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using Antlr4.Runtime.Tree;
+﻿using Antlr4.Runtime.Tree;
 using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Dsl.Interpreters;

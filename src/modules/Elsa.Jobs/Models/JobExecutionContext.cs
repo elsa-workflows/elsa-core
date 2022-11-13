@@ -1,5 +1,3 @@
-using System;
-using System.Threading;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Jobs.Models;
