@@ -60,11 +60,7 @@ Graph.registerEdge(
       line: {
         stroke: '#C2C8D5',
         strokeWidth: 1,
-        targetMarker: null,
-        // targetMarker: {
-        //   name: 'classic',
-        //   size: 7,
-        // },
+        targetMarker: null
       },
     },
   },

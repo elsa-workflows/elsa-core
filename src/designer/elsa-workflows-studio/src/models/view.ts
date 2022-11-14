@@ -4,7 +4,6 @@ export interface WorkflowModel {
   activities: Array<ActivityModel>;
   connections: Array<ConnectionModel>;
   persistenceBehavior?: WorkflowPersistenceBehavior;
-  start?: string;
 }
 
 export interface ActivityModel {

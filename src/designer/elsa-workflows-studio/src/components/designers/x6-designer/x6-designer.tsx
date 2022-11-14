@@ -1,4 +1,4 @@
-import {Component, Event, EventEmitter, h, Host, Method, Prop, State, Watch} from '@stencil/core';
+import {Component, Event, Element, EventEmitter, h, Host, Method, Prop, State, Watch} from '@stencil/core';
 import {v4 as uuid} from 'uuid';
 import {
   addConnection,
@@ -39,6 +39,16 @@ import dagre from "dagre";
   shadow: false,
 })
 export class ElsaWorkflowDesigner {
+  container: HTMLElement;
+  graph: Graph;
+  @Element() el: HTMLElement;
+  parentActivityId?: string;
+  parentActivityOutcome?: string;
+  addingActivity: boolean = false;
+  selectedActivities: Map<ActivityModel> = {};
+  ignoreCopyPasteActivities: boolean = false;
+  ignoreNextExternalGraphUpdate: boolean = false;
+
   @Prop() model: WorkflowModel = {
     activities: [],
     connections: [],
@@ -92,7 +102,11 @@ export class ElsaWorkflowDesigner {
   @Watch('model')
   handleModelChanged(newValue: WorkflowModel) {
     this.updateWorkflowModel(newValue, false);
-    this.updateGraph();
+    if (!this.ignoreNextExternalGraphUpdate) {
+      this.updateGraph();
+    } else {
+      this.ignoreNextExternalGraphUpdate = false;
+    }
   }
 
   @Watch('selectedActivityIds')
@@ -162,7 +176,6 @@ export class ElsaWorkflowDesigner {
       graph.setEdge(connection.sourceId, connection.targetId);
     });
 
-
     dagre.layout(graph);
 
     this.workflowModel.activities.forEach(activity => {
@@ -175,16 +188,6 @@ export class ElsaWorkflowDesigner {
 
     console.log("Auto-layout applied");
   };
-
-  el: HTMLElement;
-  parentActivityId?: string;
-  parentActivityOutcome?: string;
-  addingActivity: boolean = false;
-  activityDisplayContexts: Map<ActivityDesignDisplayContext> = null;
-  oldActivityDisplayContexts: Map<ActivityDesignDisplayContext> = null;
-  selectedActivities: Map<ActivityModel> = {};
-  ignoreCopyPasteActivities: boolean = false;
-
   connectedCallback() {
     eventBus.on(EventTypes.ActivityPicked, this.onActivityPicked);
     eventBus.on(EventTypes.UpdateActivity, this.onUpdateActivityExternal);
@@ -205,19 +208,6 @@ export class ElsaWorkflowDesigner {
 
   componentWillLoad() {
     this.workflowModel = this.model;
-  }
-
-  async componentWillRender() {
-    if (!!this.activityDisplayContexts)
-      return;
-
-    const activityModels = this.workflowModel.activities;
-    const displayContexts: Map<ActivityDesignDisplayContext> = {};
-
-    for (const model of activityModels)
-      displayContexts[model.activityId] = await this.getActivityDisplayContext(model);
-
-    this.activityDisplayContexts = displayContexts;
   }
 
   componentDidRender() {
@@ -252,10 +242,9 @@ export class ElsaWorkflowDesigner {
 
   getOutcomes = (activity: ActivityModel, definition: ActivityDescriptor): Array<string> => {
     let outcomes = [];
-    const displayContext = this.activityDisplayContexts[activity.activityId];
 
     if (!!definition) {
-      const lambda = displayContext?.outcomes || definition.outcomes;
+      const lambda = definition.outcomes;
 
       if (lambda instanceof Array) {
         outcomes = lambda as Array<string>;
@@ -278,42 +267,6 @@ export class ElsaWorkflowDesigner {
 
     return !!outcomes ? outcomes : [];
   }
-
-  private createGraphActivity = (item: ActivityModel): Node.Metadata => {
-    const displayContext = this.activityDisplayContexts[item.activityId];
-    const activityDefinitions: Array<ActivityDescriptor> = state.activityDescriptors;
-    const definition = activityDefinitions.find(x => x.type == item.type);
-    const outcomes: Array<string> = this.mode === WorkflowDesignerMode.Blueprint ? item.outcomes : this.getOutcomes(item, definition);
-    let ports = [{group: 'in', id: uuid(), attrs: {}},]
-      outcomes.forEach(outcome => ports.push({
-        id: outcome,
-        group: 'out',
-        attrs: {
-          text: {
-            text: outcome
-          },
-        }
-      }));
-    const node: Node.Metadata = {
-      id: item.activityId,
-      shape: 'activity',
-      x: item.x || 0,
-      y: item.y || 0,
-      type: item.type,
-      activity: item,
-      ports: {
-        items: ports
-      },
-      component: this.renderActivity(item),
-      activityDescriptor: displayContext.activityDescriptor,
-      displayContext: displayContext,
-      activityDisplayContexts: this.activityDisplayContexts
-    }
-    return node;
-  }
-
-  container: HTMLElement;
-  graph: Graph;
 
   @Event() activityDeleted: EventEmitter<ActivityDeletedArgs>;
 
@@ -417,8 +370,6 @@ export class ElsaWorkflowDesigner {
         };
       };
       workflowActivities.push(newActivity);
-      const activityDisplayContext = await this.getActivityDisplayContext(newActivity);
-      this.activityDisplayContexts[newActivity.activityId] = activityDisplayContext;
       newActivityIds.push(newActivity.activityId);
     }
 
@@ -458,6 +409,7 @@ export class ElsaWorkflowDesigner {
 
     if(node.id !== activity.activityId) activity.activityId = node.id;
 
+    this.ignoreNextExternalGraphUpdate = true;
     this.updateActivityInternal(activity);
   }
 
@@ -561,6 +513,38 @@ export class ElsaWorkflowDesigner {
       }
   }}
 
+  private createGraphNode = (item: ActivityModel): Node.Metadata => {
+    const desciptors: Array<ActivityDescriptor> = state.activityDescriptors;
+    const descriptor = desciptors.find(x => x.type == item.type);
+    const outcomes: Array<string> = this.mode === WorkflowDesignerMode.Blueprint ? item.outcomes : this.getOutcomes(item, descriptor);
+    let ports = [{ group: 'in', id: "source", attrs: {} }];
+    outcomes.forEach(outcome =>
+      ports.push({
+        id: outcome,
+        group: 'out',
+        attrs: {
+          text: {
+            text: outcome
+          }
+        }
+      })
+    );
+    const node: Node.Metadata = {
+      id: item.activityId,
+      shape: 'activity',
+      x: item.x || 0,
+      y: item.y || 0,
+      type: item.type,
+      activity: item,
+      ports: {
+        items: ports
+      },
+      component: this.renderActivity(item),
+      activityDescriptor: descriptor
+    }
+    return node;
+  }
+
   private createEdge = (connection: ConnectionModel): Edge.Metadata => {
     return {
       shape: 'elsa-edge',
@@ -584,7 +568,7 @@ export class ElsaWorkflowDesigner {
     const edges: Array<Edge.Metadata> = [];
 
     // Create an X6 node for each activity.
-    const nodes: Array<Node.Metadata> = activities.map(activity => this.createGraphActivity(activity));
+    const nodes: Array<Node.Metadata> = activities.map(activity => this.createGraphNode(activity));
 
     // Create X6 edges for each connection in the flowchart.
     for (const connection of connections) {
@@ -632,35 +616,6 @@ export class ElsaWorkflowDesigner {
     this.parentActivityOutcome = null;
   }
 
-  async getActivityDisplayContext(activityModel: ActivityModel): Promise<ActivityDesignDisplayContext> {
-    const activityDescriptors: Array<ActivityDescriptor> = state.activityDescriptors;
-    let descriptor = activityDescriptors.find(x => x.type == activityModel.type);
-    let descriptorExists = !!descriptor;
-    const oldContextData = (this.oldActivityDisplayContexts && this.oldActivityDisplayContexts[activityModel.activityId]) || {expanded: false};
-
-    if (!descriptorExists)
-      descriptor = this.createNotFoundActivityDescriptor(activityModel);
-
-    const description = descriptorExists ? activityModel.description : `(Not Found) ${descriptorExists}`;
-    const bodyText = description && description.length > 0 ? description : undefined;
-    const bodyDisplay = bodyText ? `<p>${bodyText}</p>` : undefined;
-    const color = (descriptor.traits &= ActivityTraits.Trigger) == ActivityTraits.Trigger ? 'rose' : 'sky';
-    const displayName = descriptorExists ? activityModel.displayName : `(Not Found) ${activityModel.displayName}`;
-
-    const displayContext: ActivityDesignDisplayContext = {
-      activityModel: activityModel,
-      activityDescriptor: descriptor,
-      activityIcon: <ActivityIcon color={color}/>,
-      bodyDisplay: bodyDisplay,
-      displayName: displayName,
-      outcomes: [...activityModel.outcomes],
-      expanded: oldContextData.expanded
-    };
-
-    await eventBus.emit(EventTypes.ActivityDesignDisplaying, this, displayContext);
-    return displayContext;
-  }
-
   createNotFoundActivityDescriptor(activityModel: ActivityModel): ActivityDescriptor {
     return {
       outcomes: ['Done'],
@@ -682,7 +637,6 @@ export class ElsaWorkflowDesigner {
 
   updateWorkflowModel(model: WorkflowModel, emitEvent: boolean = true) {
     this.workflowModel = this.cleanWorkflowModel(model);
-    this.oldActivityDisplayContexts = this.activityDisplayContexts;
 
     if (emitEvent)
       this.workflowChanged.emit(model);
@@ -783,7 +737,6 @@ export class ElsaWorkflowDesigner {
     outcome = outcome || 'Done';
 
     const workflowModel = {...this.workflowModel, activities: [...this.workflowModel.activities, activity]};
-    const activityDisplayContext = await this.getActivityDisplayContext(activity);
 
     if (targetActivityId) {
       const existingConnection = workflowModel.connections.find(x => x.targetId == targetActivityId && x.outcome == outcome);
@@ -822,7 +775,7 @@ export class ElsaWorkflowDesigner {
         const connection: ConnectionModel = {
           sourceId: activity.activityId,
           targetId: existingConnection.targetId,
-          outcome: activityDisplayContext.outcomes[0]
+          outcome: activity.outcomes[0]
         };
 
         workflowModel.connections.push(connection);
@@ -837,9 +790,8 @@ export class ElsaWorkflowDesigner {
     }
 
     this.updateWorkflowModel(workflowModel);
-    this.activityDisplayContexts[activity.activityId] = activityDisplayContext;
 
-    var newNode = this.createGraphActivity(activity);
+    var newNode = this.createGraphNode(activity);
     this.graph.addNode(newNode, {merge: true});
 
     this.parentActivityId = null;
@@ -901,9 +853,6 @@ export class ElsaWorkflowDesigner {
     activity.y = originalActivity.y;
 
     this.updateActivityInternal(activity);
-
-    const activityDisplayContext = await this.getActivityDisplayContext(activity);
-    this.activityDisplayContexts[activity.activityId] = activityDisplayContext;
     this.updateGraph();
   }
 
@@ -961,52 +910,36 @@ export class ElsaWorkflowDesigner {
   }
 
   renderActivity(activity: ActivityModel) {
-    const activityDisplayContexts = this.activityDisplayContexts || {};
-    const displayContext = activityDisplayContexts[activity.activityId] || undefined;
     const activityBorderColor = !!this.activityBorderColor ? this.activityBorderColor(activity) : 'gray';
     const selectedColor = !!this.activityBorderColor ? activityBorderColor : 'blue';
     const cssClass = !!this.selectedActivities[activity.activityId] ? `elsa-border-${selectedColor}-600` : `elsa-border-${activityBorderColor}-200 hover:elsa-border-${selectedColor}-600`;
-    const displayName = displayContext != undefined ? displayContext.displayName : activity.displayName;
     const typeName = activity.type;
+
+    const activityDescriptors: Array<ActivityDescriptor> = state.activityDescriptors;
+    let descriptor = activityDescriptors.find(x => x.type == activity.type);
+
+    if (!descriptor) {
+      descriptor = this.createNotFoundActivityDescriptor(activity);
+    }
+
+    const displayName = !!descriptor ? activity.displayName : `(Not Found) ${activity.displayName}`;
+    const color = (descriptor.traits &= ActivityTraits.Trigger) == ActivityTraits.Trigger ? 'rose' : 'sky';
+    const activityIcon = <ActivityIcon color={color} />;
 
     return `<div class="elsa-border-2 elsa-border-solid ${cssClass}">
       <div class="elsa-p-2 elsa-pr-5">
         <div class="elsa-flex elsa-justify-between elsa-space-x-4 mr-4">
           <div class="elsa-flex-shrink-0">
-            ${displayContext?.activityIcon || ''}
+            ${activityIcon}
           </div>
           <div class="elsa-flex-1 elsa-font-medium elsa-leading-8 elsa-overflow-hidden">
             <p class="elsa-overflow-ellipsis elsa-text-base">${displayName}</p>
             ${typeName !== displayName ? `<p class="elsa-text-gray-400 elsa-text-sm">${typeName}</p>` : ''}
           </div>
         </div>
-        ${this.renderActivityBody(displayContext)}
       </div>
     </div>`;
   }
-
-  renderActivityBody(displayContext: ActivityDesignDisplayContext) {
-    if (displayContext && displayContext.expanded) {
-      return (
-        `<div class="elsa-border-t elsa-border-t-solid">
-          <div class="elsa-p-4 elsa-text-gray-400 elsa-text-sm">
-            <div class="elsa-mb-2">${!!displayContext?.bodyDisplay ? displayContext.bodyDisplay : ''}</div>
-            <div>
-              <span class="elsa-inline-flex elsa-items-center elsa-px-2.5 elsa-py-0.5 elsa-rounded-full elsa-text-xs elsa-font-medium elsa-bg-gray-100 elsa-text-gray-500">
-                <svg class="-elsa-ml-0.5 elsa-mr-1.5 elsa-h-2 elsa-w-2 elsa-text-gray-400" fill="currentColor" viewBox="0 0 8 8">
-                  <circle cx="4" cy="4" r="3" />
-                </svg>
-                ${displayContext != undefined ? displayContext.activityModel.activityId : ''}
-              </span>
-            </div>
-          </div>
-        </div>`
-      );
-    }
-
-    return '';
-  }
-
 
   render() {
     return (
@@ -1022,7 +955,7 @@ export class ElsaWorkflowDesigner {
           :
           undefined
         }
-        <div class="workflow-canvas elsa-flex-1 elsa-flex" ref={el => (this.el = el)}>
+        <div class="workflow-canvas elsa-flex-1 elsa-flex">
           <div ref={el => (this.container = el)}></div>
         </div>
       </Host>
