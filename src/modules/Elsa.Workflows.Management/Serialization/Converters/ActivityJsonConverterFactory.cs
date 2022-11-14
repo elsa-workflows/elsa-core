@@ -8,12 +8,10 @@ namespace Elsa.Workflows.Management.Serialization.Converters;
 
 public class ActivityJsonConverterFactory : JsonConverterFactory
 {
-    private readonly IActivityRegistry _activityRegistry;
     private readonly IServiceProvider _serviceProvider;
 
-    public ActivityJsonConverterFactory(IActivityRegistry activityRegistry, IServiceProvider serviceProvider)
+    public ActivityJsonConverterFactory(IServiceProvider serviceProvider)
     {
-        _activityRegistry = activityRegistry;
         _serviceProvider = serviceProvider;
     }
 
@@ -21,5 +19,5 @@ public class ActivityJsonConverterFactory : JsonConverterFactory
     // The ActivityJsonConverter will create concrete activity objects, which then uses regular serialization
     public override bool CanConvert(Type typeToConvert) => typeToConvert == typeof(IActivity);
 
-    public override JsonConverter? CreateConverter(Type typeToConvert, JsonSerializerOptions options) => ActivatorUtilities.CreateInstance<ActivityJsonConverter>(_serviceProvider);
+    public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options) => ActivatorUtilities.CreateInstance<ActivityJsonConverter>(_serviceProvider);
 }
