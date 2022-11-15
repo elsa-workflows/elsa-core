@@ -60,11 +60,6 @@ export class ActivityNodeShape extends Shape.HTML {
   }
 
   updateSize() {
-    const activityDescriptor = this.activityDescriptor as ActivityDescriptor;
-
-    // if (!activityDescriptor)
-    //   return;
-
     const wrapper = document.createElement('div');
     wrapper.className = 'w-full flex items-center pl-10 pr-2 py-2 absolute';
     wrapper.style.left = '-1000px';
@@ -81,7 +76,6 @@ export class ActivityNodeShape extends Shape.HTML {
 
       // If the custom element has no width or height yet, it means it has not yet rendered.
       if (activityElementRect.width == 0 || activityElementRect.height == 0) {
-
         // Request an animation frame and call ourselves back immediately after.
         window.requestAnimationFrame(tryUpdateSize);
         return;

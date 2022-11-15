@@ -72,9 +72,9 @@ export interface ActivityPickedEventArgs {
 export interface ActivityDesignDisplayContext {
   activityModel: ActivityModel;
   activityDescriptor: ActivityDescriptor;
-  activityIcon: any;
+  activityIcon?: any;
   displayName?: string;
-  bodyDisplay: string;
+  bodyDisplay?: string;
   outcomes: Array<string>;
   expanded?: boolean;
 }

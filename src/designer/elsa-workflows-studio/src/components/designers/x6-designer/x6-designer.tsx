@@ -48,6 +48,8 @@ export class ElsaWorkflowDesigner {
   selectedActivities: Map<ActivityModel> = {};
   ignoreCopyPasteActivities: boolean = false;
   ignoreNextExternalGraphUpdate: boolean = false;
+  containerObserver: ResizeObserver;
+  activityDisplayContexts: Map<ActivityDesignDisplayContext> = null;
 
   @Prop() model: WorkflowModel = {
     activities: [],
@@ -136,6 +138,11 @@ export class ElsaWorkflowDesigner {
     this.activityContextMenuTestState = newValue;
   }
 
+  @Watch('mode')
+  handleActivityContextMenuButtonChanged() {
+    this.updateGraph();
+  }
+
   @Method()
   async removeActivity(activity: ActivityModel) {
     this.removeActivityInternal(activity);
@@ -157,7 +164,7 @@ export class ElsaWorkflowDesigner {
     await this.showActivityEditorInternal(activity, animate);
   }
 
-  autoLayout() {
+  applyAutoLayout() {
     const graph = new dagre.graphlib.Graph();
     graph.setGraph({ rankdir: "TB", nodesep: 15, ranksep: 30, align: "UL" });
 
@@ -167,8 +174,8 @@ export class ElsaWorkflowDesigner {
       const activityElement = document.querySelectorAll("g[data-cell-id=\"" + activity.activityId + "\"]")[0].getBoundingClientRect();
       graph.setNode(activity.activityId, {
         label: activity.activityId,
-        width: Math.max(200, activityElement.width),
-        height: Math.max(68, activityElement.height),
+        width: activityElement.width,
+        height: activityElement.height,
       });
     });
 
@@ -184,7 +191,9 @@ export class ElsaWorkflowDesigner {
       activity.y = Math.round(node.y);
     });
 
+    this.updateWorkflowModel(this.workflowModel);
     this.updateGraph();
+    this.graph.centerContent();
 
     console.log("Auto-layout applied");
   };
@@ -194,7 +203,7 @@ export class ElsaWorkflowDesigner {
     //eventBus.on(EventTypes.PasteActivity, this.onPasteActivity);
     // eventBus.on(EventTypes.HideModalDialog, this.onCopyPasteActivityEnabled);
     // eventBus.on(EventTypes.ShowWorkflowSettings, this.onCopyPasteActivityDisabled);
-    // eventBus.on(EventTypes.WorkflowExecuted, this.onWorkflowExecuted);
+    eventBus.on(EventTypes.TestActivityMessageReceived, this.updateGraph);
   }
 
   disconnectedCallback() {
@@ -203,17 +212,24 @@ export class ElsaWorkflowDesigner {
     //eventBus.detach(EventTypes.PasteActivity, this.onPasteActivity);
     // eventBus.detach(EventTypes.HideModalDialog, this.onCopyPasteActivityEnabled);
     // eventBus.detach(EventTypes.ShowWorkflowSettings, this.onCopyPasteActivityDisabled);
-    // eventBus.detach(EventTypes.WorkflowExecuted, this.onWorkflowExecuted);
+    eventBus.detach(EventTypes.TestActivityMessageReceived, this.updateGraph);
   }
 
   componentWillLoad() {
     this.workflowModel = this.model;
   }
 
-  componentDidRender() {
-    if (this.isAutoLayoutRequired) {
-      setTimeout(() => this.autoLayout(), 100);
-    }
+  async componentWillRender() {
+    if (!!this.activityDisplayContexts)
+      return;
+
+    const activityModels = this.workflowModel.activities;
+    const displayContexts: Map<ActivityDesignDisplayContext> = {};
+
+    for (const model of activityModels)
+      displayContexts[model.activityId] = await this.getActivityDisplayContext(model);
+
+    this.activityDisplayContexts = displayContexts;
   }
 
   get isAutoLayoutRequired(): boolean {
@@ -242,9 +258,10 @@ export class ElsaWorkflowDesigner {
 
   getOutcomes = (activity: ActivityModel, definition: ActivityDescriptor): Array<string> => {
     let outcomes = [];
+    const displayContext = this.activityDisplayContexts[activity.activityId];
 
     if (!!definition) {
-      const lambda = definition.outcomes;
+      const lambda = displayContext.outcomes || definition.outcomes;
 
       if (lambda instanceof Array) {
         outcomes = lambda as Array<string>;
@@ -280,6 +297,21 @@ export class ElsaWorkflowDesigner {
 
   async componentDidLoad() {
     await this.createAndInitializeGraph();
+
+    // Below fixes issues, that arise when navigating from another page to this one - the graph not being fully loaded in the DOM at the correct time
+    const containerObserver = new ResizeObserver(() => {
+      if (this.container.clientHeight > 0) {
+        this.onContainerLoaded();
+        containerObserver.unobserve(this.container);
+      }
+    });
+    containerObserver.observe(this.container);
+  }
+
+  private onContainerLoaded() {
+    if (this.isAutoLayoutRequired) {
+      setTimeout(() => this.applyAutoLayout(), 100);
+    }
     this.updateGraph();
     this.graph.centerContent();
   }
@@ -337,6 +369,7 @@ export class ElsaWorkflowDesigner {
     }
     workflowModel.activities = graphActivities;
 
+    this.ignoreNextExternalGraphUpdate = true;
     this.updateWorkflowModel(workflowModel);
     this.parentActivityId = null;
     this.parentActivityOutcome = null;
@@ -371,6 +404,8 @@ export class ElsaWorkflowDesigner {
       };
       workflowActivities.push(newActivity);
       newActivityIds.push(newActivity.activityId);
+
+      this.activityDisplayContexts[newActivity.activityId] = await this.getActivityDisplayContext(newActivity);
     }
 
     for (const connection of connections ) {
@@ -516,8 +551,9 @@ export class ElsaWorkflowDesigner {
   private createGraphNode = (item: ActivityModel): Node.Metadata => {
     const desciptors: Array<ActivityDescriptor> = state.activityDescriptors;
     const descriptor = desciptors.find(x => x.type == item.type);
+
     const outcomes: Array<string> = this.mode === WorkflowDesignerMode.Blueprint ? item.outcomes : this.getOutcomes(item, descriptor);
-    let ports = [{ group: 'in', id: "source", attrs: {} }];
+    let ports = [{ group: 'in', id: uuid(), attrs: {} }];
     outcomes.forEach(outcome =>
       ports.push({
         id: outcome,
@@ -539,8 +575,7 @@ export class ElsaWorkflowDesigner {
       ports: {
         items: ports
       },
-      component: this.renderActivity(item),
-      activityDescriptor: descriptor
+      component: this.renderActivity(item)
     }
     return node;
   }
@@ -550,8 +585,10 @@ export class ElsaWorkflowDesigner {
       shape: 'elsa-edge',
       zIndex: -1,
       data: connection,
-      source: {cell: connection.sourceId, port: connection.outcome},
+      source: connection.sourceId,
+      sourcePort: connection.outcome,
       target: connection.targetId,
+      targetPort: connection.targetPort,
       outcome: connection.outcome,
       labels:
         [{
@@ -560,6 +597,28 @@ export class ElsaWorkflowDesigner {
           },
         }],
     };
+  }
+
+  async getActivityDisplayContext(activityModel: ActivityModel): Promise<ActivityDesignDisplayContext> {
+    const activityDescriptors: Array<ActivityDescriptor> = state.activityDescriptors;
+    let descriptor = activityDescriptors.find(x => x.type == activityModel.type);
+
+    if (!descriptor)
+      descriptor = this.createNotFoundActivityDescriptor(activityModel);
+
+    const displayContext: ActivityDesignDisplayContext = {
+      activityModel: activityModel,
+      activityDescriptor: descriptor,
+      outcomes: [...activityModel.outcomes]
+    };
+
+    await eventBus.emit(EventTypes.ActivityDesignDisplaying, this, displayContext);
+
+    //Remove duplicates
+    displayContext.outcomes = displayContext.outcomes.filter(function(item, pos) {
+      return displayContext.outcomes.indexOf(item) == pos;
+    });
+    return displayContext;
   }
 
   private updateGraph = () => {
@@ -789,6 +848,8 @@ export class ElsaWorkflowDesigner {
       }
     }
 
+    this.activityDisplayContexts[activity.activityId] = await this.getActivityDisplayContext(activity);
+
     this.updateWorkflowModel(workflowModel);
 
     var newNode = this.createGraphNode(activity);
@@ -886,34 +947,12 @@ export class ElsaWorkflowDesigner {
     }
   };
 
-  createActivityOptions(activity: ActivityModel) {
-    return {
-      shape: 'rect',
-      label: this.renderActivity(activity),
-      rx: 5,
-      ry: 5,
-      labelType: 'html',
-      class: 'activity',
-      activity,
-    };
-  }
-
-  createOutcomeActivityOptions() {
-    return {shape: 'circle', label: this.renderOutcomeButton(), labelType: 'html', class: 'add', width: 32, height: 32};
-  }
-
-  renderOutcomeButton() {
-    const cssClass = this.mode == WorkflowDesignerMode.Edit ? 'hover:elsa-text-blue-500 elsa-cursor-pointer' : 'elsa-cursor-default';
-    return `<svg class="elsa-h-8 elsa-w-8 elsa-text-gray-400 ${cssClass}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>`;
-  }
-
   renderActivity(activity: ActivityModel) {
     const activityBorderColor = !!this.activityBorderColor ? this.activityBorderColor(activity) : 'gray';
     const selectedColor = !!this.activityBorderColor ? activityBorderColor : 'blue';
     const cssClass = !!this.selectedActivities[activity.activityId] ? `elsa-border-${selectedColor}-600` : `elsa-border-${activityBorderColor}-200 hover:elsa-border-${selectedColor}-600`;
     const typeName = activity.type;
+    let activityContextMenuButton = !!this.activityContextMenuButton ? this.activityContextMenuButton(activity) : '';
 
     const activityDescriptors: Array<ActivityDescriptor> = state.activityDescriptors;
     let descriptor = activityDescriptors.find(x => x.type == activity.type);
@@ -927,7 +966,7 @@ export class ElsaWorkflowDesigner {
     const activityIcon = <ActivityIcon color={color} />;
 
     return `<div class="elsa-border-2 elsa-border-solid ${cssClass}">
-      <div class="elsa-p-2 elsa-pr-5">
+      <div class="elsa-p-2 elsa-pr-3">
         <div class="elsa-flex elsa-justify-between elsa-space-x-4 mr-4">
           <div class="elsa-flex-shrink-0">
             ${activityIcon}
@@ -935,6 +974,9 @@ export class ElsaWorkflowDesigner {
           <div class="elsa-flex-1 elsa-font-medium elsa-leading-8 elsa-overflow-hidden">
             <p class="elsa-overflow-ellipsis elsa-text-base">${displayName}</p>
             ${typeName !== displayName ? `<p class="elsa-text-gray-400 elsa-text-sm">${typeName}</p>` : ''}
+          </div>
+          <div class="context-menu-button-container">
+            ${activityContextMenuButton}
           </div>
         </div>
       </div>
@@ -944,13 +986,20 @@ export class ElsaWorkflowDesigner {
   render() {
     return (
       <Host>
-        {this.mode == WorkflowDesignerMode.Edit && <button type="button" onClick={ e => this.onAddActivity(e)} class="start-btn elsa-absolute elsa-z-1 elsa-h-12 elsa-px-6 elsa-border elsa-border-transparent elsa-text-base elsa-font-medium elsa-rounded-md elsa-text-white elsa-bg-green-600 hover:elsa-bg-green-500 focus:elsa-outline-none focus:elsa-border-green-700 focus:elsa-shadow-outline-green active:elsa-bg-green-700 elsa-transition elsa-ease-in-out elsa-duration-150 elsa-translate-x--1/2 elsa-top-8">Add activity</button>}
+         {this.mode !== WorkflowDesignerMode.Test &&
+          <div class="start-btn elsa-absolute elsa-z-1 ">
+            {this.mode == WorkflowDesignerMode.Edit &&
+              <button type="button" onClick={ e => this.onAddActivity(e)} class="elsa-h-12 elsa-px-6 elsa-mx-3 elsa-border elsa-border-transparent elsa-text-base elsa-font-medium elsa-rounded-md elsa-text-white elsa-bg-green-600 hover:elsa-bg-green-500 focus:elsa-outline-none focus:elsa-border-green-700 focus:elsa-shadow-outline-green active:elsa-bg-green-700 elsa-transition elsa-ease-in-out elsa-duration-150 elsa-top-8">Add activity</button>
+            }
+            <button type="button" onClick={ e => this.applyAutoLayout()} class="elsa-h-12 elsa-px-6 elsa-mx-3 elsa-border elsa-border-transparent elsa-text-base elsa-font-medium elsa-rounded-md elsa-text-white elsa-bg-green-600 hover:elsa-bg-green-500 focus:elsa-outline-none focus:elsa-border-green-700 focus:elsa-shadow-outline-green active:elsa-bg-green-700 elsa-transition elsa-ease-in-out elsa-duration-150 elsa-top-8">Auto-layout</button>
+          </div>
+        }
         {this.mode == WorkflowDesignerMode.Test ?
           <div>
-            <div id="left" style={{border:`4px solid orange`, position:`fixed`, height: `calc(100vh - 64px)`, width:`4px`, top:`64`, bottom:`0`, left:`0`}}/>
-            <div id="right" style={{border:`4px solid orange`, position:`fixed`, height: `calc(100vh - 64px)`, width:`4px`, top:`64`, bottom:`0`, right:`0`}}/>
-            <div id="top" style={{border:`4px solid orange`, position:`fixed`, height:`4px`, left:`0`, right:`0`, top:`30`}}/>
-            <div id="bottom" style={{border:`4px solid orange`, position:`fixed`, height:`4px`, left:`0`, right:`0`, bottom:`0`}}/>
+            <div id="left" style={{'z-index': '1', border:`4px solid orange`, position:`fixed`, height: `calc(100vh - 64px)`, width:`4px`, top:`64`, bottom:`0`, left:`0`}}/>
+            <div id="right" style={{'z-index': '1', border:`4px solid orange`, position:`fixed`, height: `calc(100vh - 64px)`, width:`4px`, top:`64`, bottom:`0`, right:`0`}}/>
+            <div id="top" style={{'z-index': '1', border:`4px solid orange`, position:`fixed`, height:`4px`, left:`0`, right:`0`, top:`30`}}/>
+            <div id="bottom" style={{'z-index': '1', border:`4px solid orange`, position:`fixed`, height:`4px`, left:`0`, right:`0`, bottom:`0`}}/>
           </div>
           :
           undefined

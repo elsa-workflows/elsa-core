@@ -14,10 +14,15 @@
 }
 
 .start-btn {
-  left: 50vw;
-  width: fit-content;
-  display: inline-block;
+  display: flex;
   top: 1rem;
+  width: 100%;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.start-btn > * {
+  pointer-events: initial;
 }
 
 .elsa-workflow-wrapper {

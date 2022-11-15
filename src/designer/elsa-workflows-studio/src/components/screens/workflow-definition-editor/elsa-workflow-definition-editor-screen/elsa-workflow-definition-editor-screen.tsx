@@ -705,7 +705,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
             model={this.workflowModel}
             mode={this.workflowDesignerMode}
             layoutDirection={this.layoutDirection}
-            activityContextMenuButton={this.workflowDesignerMode == WorkflowDesignerMode.Edit ? activityContextMenuButton : this.renderActivityStatsButton}
+            activityContextMenuButton={this.workflowDesignerMode == WorkflowDesignerMode.Edit ? (() => '') : this.renderActivityStatsButton}
             onActivityContextMenuButtonClicked={e => this.onActivityDirectEdit(e)}
             onActivityContextMenuButtonTestClicked={e => this.onActivityContextMenuButtonTestClicked(e)}
             activityContextMenu={this.workflowDesignerMode == WorkflowDesignerMode.Edit ? this.activityContextMenuState : this.activityContextMenuTestState}
