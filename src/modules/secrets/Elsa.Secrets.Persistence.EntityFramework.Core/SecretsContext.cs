@@ -25,7 +25,11 @@ namespace Elsa.Secrets.Persistence.EntityFramework.Core
 
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(SecretsContext).Assembly);
 
+#if NET7_0_OR_GREATER
+            if (Database.ProviderName is "Microsoft.EntityFrameworkCore.Sqlite")
+#else
             if (Database.IsSqlite())
+#endif
             {
                 foreach (var entityType in modelBuilder.Model.GetEntityTypes())
                 {

@@ -54,7 +54,9 @@ namespace Elsa.Samples.Server.Host
                 typeof(Elsa.Activities.Mqtt.Startup),
                 typeof(Persistence.EntityFramework.Sqlite.Startup),
                 typeof(Persistence.EntityFramework.SqlServer.Startup),
+#if !NET7_0_OR_GREATER
                 typeof(Persistence.EntityFramework.MySql.Startup),
+#endif
                 typeof(Persistence.EntityFramework.PostgreSql.Startup),
                 typeof(Persistence.MongoDb.Startup),
                 typeof(Persistence.YesSql.SqliteStartup),
@@ -66,7 +68,9 @@ namespace Elsa.Samples.Server.Host
                 typeof(Elsa.Activities.Webhooks.Startup),
                 typeof(Webhooks.Persistence.EntityFramework.Sqlite.Startup),
                 typeof(Webhooks.Persistence.EntityFramework.SqlServer.Startup),
+#if !NET7_0_OR_GREATER
                 typeof(Webhooks.Persistence.EntityFramework.MySql.Startup),
+#endif
                 typeof(Webhooks.Persistence.EntityFramework.PostgreSql.Startup),
                 typeof(Webhooks.Persistence.MongoDb.Startup),
                 typeof(Webhooks.Persistence.YesSql.SqliteStartup),
@@ -75,7 +79,9 @@ namespace Elsa.Samples.Server.Host
                 typeof(Webhooks.Persistence.YesSql.PostgreSqlStartup),
                 typeof(WorkflowSettings.Persistence.EntityFramework.Sqlite.Startup),
                 typeof(WorkflowSettings.Persistence.EntityFramework.SqlServer.Startup),
+#if !NET7_0_OR_GREATER
                 typeof(WorkflowSettings.Persistence.EntityFramework.MySql.Startup),
+#endif
                 typeof(WorkflowSettings.Persistence.EntityFramework.PostgreSql.Startup),
                 typeof(WorkflowSettings.Persistence.MongoDb.Startup),
                 typeof(WorkflowSettings.Persistence.YesSql.SqliteStartup),
