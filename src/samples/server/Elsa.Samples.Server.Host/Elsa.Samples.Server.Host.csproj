@@ -2,7 +2,7 @@
     <Import Project="..\..\..\..\configureawait.props" />
 
     <PropertyGroup>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
         <LangVersion>latest</LangVersion>
         <IsPackable>false</IsPackable>
         <Nullable>enable</Nullable>
@@ -29,7 +29,6 @@
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.UserTask\Elsa.Activities.UserTask.csproj" />
         <ProjectReference Include="..\..\..\activities\webhooks\Elsa.Activities.Webhooks\Elsa.Activities.Webhooks.csproj" />
         <ProjectReference Include="..\..\..\activities\webhooks\Elsa.Webhooks.Api\Elsa.Webhooks.Api.csproj" />
-        <ProjectReference Include="..\..\..\activities\webhooks\Elsa.Webhooks.Persistence.EntityFramework.MySql\Elsa.Webhooks.Persistence.EntityFramework.MySql.csproj" />
         <ProjectReference Include="..\..\..\activities\webhooks\Elsa.Webhooks.Persistence.EntityFramework.PostgreSql\Elsa.Webhooks.Persistence.EntityFramework.PostgreSql.csproj" />
         <ProjectReference Include="..\..\..\activities\webhooks\Elsa.Webhooks.Persistence.EntityFramework.Sqlite\Elsa.Webhooks.Persistence.EntityFramework.Sqlite.csproj" />
         <ProjectReference Include="..\..\..\activities\webhooks\Elsa.Webhooks.Persistence.EntityFramework.SqlServer\Elsa.Webhooks.Persistence.EntityFramework.SqlServer.csproj" />
@@ -46,14 +45,12 @@
         <ProjectReference Include="..\..\..\modules\workflowtesting\Elsa.WorkflowTesting\Elsa.WorkflowTesting.csproj" />
         <ProjectReference Include="..\..\..\modules\retention\Elsa.Retention\Elsa.Retention.csproj" />
         <ProjectReference Include="..\..\..\modules\workflowsettings\Elsa.WorkflowSettings.Api\Elsa.WorkflowSettings.Api.csproj" />
-        <ProjectReference Include="..\..\..\modules\workflowsettings\Elsa.WorkflowSettings.Persistence.EntityFramework.MySql\Elsa.WorkflowSettings.Persistence.EntityFramework.MySql.csproj" />
         <ProjectReference Include="..\..\..\modules\workflowsettings\Elsa.WorkflowSettings.Persistence.EntityFramework.PostgreSql\Elsa.WorkflowSettings.Persistence.EntityFramework.PostgreSql.csproj" />
         <ProjectReference Include="..\..\..\modules\workflowsettings\Elsa.WorkflowSettings.Persistence.EntityFramework.Sqlite\Elsa.WorkflowSettings.Persistence.EntityFramework.Sqlite.csproj" />
         <ProjectReference Include="..\..\..\modules\workflowsettings\Elsa.WorkflowSettings.Persistence.EntityFramework.SqlServer\Elsa.WorkflowSettings.Persistence.EntityFramework.SqlServer.csproj" />
         <ProjectReference Include="..\..\..\modules\workflowsettings\Elsa.WorkflowSettings.Persistence.MongoDb\Elsa.WorkflowSettings.Persistence.MongoDb.csproj" />
         <ProjectReference Include="..\..\..\modules\workflowsettings\Elsa.WorkflowSettings.Persistence.YesSql\Elsa.WorkflowSettings.Persistence.YesSql.csproj" />
         <ProjectReference Include="..\..\..\modules\workflowsettings\Elsa.WorkflowSettings\Elsa.WorkflowSettings.csproj" />
-        <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.MySql\Elsa.Persistence.EntityFramework.MySql.csproj" />
         <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.PostgreSql\Elsa.Persistence.EntityFramework.PostgreSql.csproj" />
         <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.Sqlite\Elsa.Persistence.EntityFramework.Sqlite.csproj" />
         <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.SqlServer\Elsa.Persistence.EntityFramework.SqlServer.csproj" />
@@ -65,6 +62,12 @@
         <ProjectReference Include="..\..\..\server\Elsa.Server.Orleans\Elsa.Server.Orleans.csproj" />
         <ProjectReference Include="..\..\..\servicebus\Elsa.Rebus.AzureServiceBus\Elsa.Rebus.AzureServiceBus.csproj" />
         <ProjectReference Include="..\..\..\servicebus\Elsa.Rebus.RabbitMq\Elsa.Rebus.RabbitMq.csproj" />
+    </ItemGroup>
+
+    <ItemGroup  Condition=" '$(TargetFramework)' == 'net6.0'">
+        <ProjectReference Include="..\..\..\activities\webhooks\Elsa.Webhooks.Persistence.EntityFramework.MySql\Elsa.Webhooks.Persistence.EntityFramework.MySql.csproj" />
+        <ProjectReference Include="..\..\..\modules\workflowsettings\Elsa.WorkflowSettings.Persistence.EntityFramework.MySql\Elsa.WorkflowSettings.Persistence.EntityFramework.MySql.csproj" />        
+        <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.MySql\Elsa.Persistence.EntityFramework.MySql.csproj" />        
     </ItemGroup>
 
     <ItemGroup>
