@@ -10,5 +10,5 @@ public interface ITrigger : IActivity
     /// <summary>
     /// Implementors should return a list of objects where each object represents a bookmark datum. For each datum, a trigger is created.
     /// </summary>
-    ValueTask<IEnumerable<object>> GetTriggerDataAsync(TriggerIndexingContext context);
+    ValueTask<IEnumerable<object>> GetTriggerPayloadsAsync(TriggerIndexingContext context);
 }

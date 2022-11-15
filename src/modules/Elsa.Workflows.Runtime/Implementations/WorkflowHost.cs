@@ -1,3 +1,7 @@
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Elsa.Mediator.Services;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
@@ -36,18 +40,16 @@ public class WorkflowHost : IWorkflowHost
     public Workflow Workflow { get; set; }
     public WorkflowState WorkflowState { get; set; }
 
-    public async Task<StartWorkflowHostResult> StartWorkflowAsync(IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
+    public async Task<StartWorkflowHostResult> StartWorkflowAsync(StartWorkflowHostOptions? options = default, CancellationToken cancellationToken = default)
     {
-        var instanceId = _identityGenerator.GenerateId();
-        return await StartWorkflowAsync(instanceId, input, cancellationToken);
-    }
-
-    public async Task<StartWorkflowHostResult> StartWorkflowAsync(string instanceId, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
-    {
+        var instanceId = options?.InstanceId ?? _identityGenerator.GenerateId();
+        var correlationId = options?.CorrelationId;
         await _eventPublisher.PublishAsync(new WorkflowExecuting(Workflow), cancellationToken);
 
         var originalBookmarks = WorkflowState.Bookmarks.ToList();
-        var workflowResult = await _workflowRunner.RunAsync(instanceId, Workflow, input, cancellationToken);
+        var input = options?.Input;
+        var runOptions = new RunWorkflowOptions(instanceId, correlationId, Input: input);
+        var workflowResult = await _workflowRunner.RunAsync(Workflow, runOptions, cancellationToken);
 
         WorkflowState = workflowResult.WorkflowState;
 
@@ -60,7 +62,7 @@ public class WorkflowHost : IWorkflowHost
         return new StartWorkflowHostResult(diff);
     }
 
-    public async Task<ResumeWorkflowHostResult> ResumeWorkflowAsync(string bookmarkId, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
+    public async Task<ResumeWorkflowHostResult> ResumeWorkflowAsync(string bookmarkId, ResumeWorkflowHostOptions? options = default, CancellationToken cancellationToken = default)
     {
         await _eventPublisher.PublishAsync(new WorkflowExecuting(Workflow), cancellationToken);
 
@@ -72,7 +74,10 @@ public class WorkflowHost : IWorkflowHost
             return new ResumeWorkflowHostResult(Diff.For(originalBookmarks, new List<Bookmark>(0)));
         }
 
-        var workflowResult = await _workflowRunner.RunAsync(Workflow, WorkflowState, bookmarkId, input, cancellationToken);
+        var instanceId = WorkflowState.Id;
+        var input = options?.Input;
+        var runOptions = new RunWorkflowOptions(instanceId, BookmarkId: bookmarkId, Input: input);
+        var workflowResult = await _workflowRunner.RunAsync(Workflow, WorkflowState, runOptions, cancellationToken);
 
         WorkflowState = workflowResult.WorkflowState;
 

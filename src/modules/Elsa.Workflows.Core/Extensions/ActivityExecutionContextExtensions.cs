@@ -1,5 +1,7 @@
 using System.Linq.Expressions;
+using System.Text.Json;
 using Elsa.Common.Services;
+using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Services;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
@@ -10,9 +12,25 @@ namespace Elsa.Workflows.Core;
 
 public static class ActivityExecutionContextExtensions
 {
-    public static bool TryGetInput<T>(this ActivityExecutionContext context, string key, out T value) => context.Input!.TryGetValue(key, out value!);
-    public static T GetInput<T>(this ActivityExecutionContext context) => context.GetInput<T>(typeof(T).Name);
-    public static T GetInput<T>(this ActivityExecutionContext context, string key) => (T)context.Input[key];
+    public static bool TryGetInput<T>(this ActivityExecutionContext context, string key, out T value, JsonSerializerOptions? serializerOptions = default)
+    {
+        if(context.Input.TryGetValue(key, out var v))
+        {
+            value = v.ConvertTo<T>(serializerOptions)!;
+            return true;
+        }
+
+        value = default!;
+        return false;
+    }
+
+    public static T GetInput<T>(this ActivityExecutionContext context, JsonSerializerOptions? serializerOptions = default) => context.GetInput<T>(typeof(T).Name, serializerOptions);
+    public static T GetInput<T>(this ActivityExecutionContext context, string key, JsonSerializerOptions? serializerOptions = default) => context.Input[key].ConvertTo<T>(serializerOptions)!;
+    
+    /// <summary>
+    /// Returns true if this activity is triggered for the first time and not being resumed.
+    /// </summary>
+    public static bool IsFirstPass(this ActivityExecutionContext context) => context.WorkflowExecutionContext.ExecuteDelegate != null;
 
     public static WorkflowExecutionLogEntry AddExecutionLogEntry(this ActivityExecutionContext context, string eventName, string? message = default, string? source = default, object? payload = default)
     {

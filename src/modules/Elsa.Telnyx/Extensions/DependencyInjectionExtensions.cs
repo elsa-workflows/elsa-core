@@ -6,13 +6,9 @@ using Elsa.Mediator.Extensions;
 using Elsa.Telnyx.Client.Implementations;
 using Elsa.Telnyx.Client.Services;
 using Elsa.Telnyx.Converters;
-using Elsa.Telnyx.Filters;
 using Elsa.Telnyx.Handlers;
 using Elsa.Telnyx.Options;
 using Elsa.Telnyx.Services;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Refit;
 
@@ -39,9 +35,7 @@ namespace Elsa.Telnyx.Extensions
             // Services.
             services
                 .AddNotificationHandlersFrom<TriggerWebhookActivities>()
-                .AddScoped<IWebhookHandler, WebhookHandler>()
-                .AddSingleton<IWebhookFilter, AttributeBasedWebhookFilter>()
-                .AddSingleton<IWebhookFilter, CallInitiatedWebhookFilter>();
+                .AddScoped<IWebhookHandler, WebhookHandler>();
             
             // Telnyx API Client.
             var refitSettings = CreateRefitSettings();
@@ -98,7 +92,7 @@ namespace Elsa.Telnyx.Extensions
                 PropertyNamingPolicy = new SnakeCaseNamingPolicy(),
             };
             
-            serializerSettings.Converters.Add(new PayloadJsonConverterFactory());
+            serializerSettings.Converters.Add(new WebhookDataJsonConverter());
 
             return new RefitSettings
             {

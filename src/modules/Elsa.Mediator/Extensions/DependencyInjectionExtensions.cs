@@ -124,7 +124,7 @@ public static class DependencyInjectionExtensions
     private static IServiceCollection AddHandlersFromInternal<TService>(this IServiceCollection services, Assembly assembly)
     {
         var serviceType = typeof(TService);
-        var types = assembly.ExportedTypes.Where(x => serviceType.IsAssignableFrom(x));
+        var types = assembly.DefinedTypes.Where(x => serviceType.IsAssignableFrom(x));
 
         foreach (var type in types)
             services.AddSingleton(serviceType, type);

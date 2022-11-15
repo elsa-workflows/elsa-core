@@ -1,8 +1,8 @@
 using Elsa.Abstractions;
 using Elsa.Workflows.Core.Activities;
-using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Runtime.Extensions;
 using Elsa.Workflows.Runtime.Services;
 
 namespace Elsa.Workflows.Api.Endpoints.Events.Trigger;
@@ -27,8 +27,7 @@ public class Trigger : ElsaEndpoint<Request, Response>
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
         var eventBookmark = new EventBookmarkPayload(request.EventName);
-        var bookmarkName = ActivityTypeNameHelper.GenerateTypeName<Event>();
-        var result = await _workflowRuntime.TriggerWorkflowsAsync(bookmarkName, eventBookmark, new TriggerWorkflowsOptions(), cancellationToken);
+        await _workflowRuntime.TriggerWorkflowsAsync<Event>(eventBookmark, new TriggerWorkflowsRuntimeOptions(), cancellationToken);
         
         if (!HttpContext.Response.HasStarted)
         {

@@ -18,6 +18,9 @@ public class ActivityDefinitionActivityProvider : IActivityProvider
     private readonly IActivityDefinitionStore _store;
     private readonly IActivityFactory _activityFactory;
 
+    /// <summary>
+    /// Constructor.
+    /// </summary>
     public ActivityDefinitionActivityProvider(IActivityDefinitionStore store, IActivityFactory activityFactory)
     {
         _store = store;

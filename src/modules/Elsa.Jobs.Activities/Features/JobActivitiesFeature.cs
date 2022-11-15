@@ -6,7 +6,7 @@ using Elsa.Jobs.Activities.Services;
 using Elsa.Jobs.Features;
 using Elsa.Mediator.Extensions;
 using Elsa.Mediator.Features;
-using Elsa.Workflows.Management.Services;
+using Elsa.Workflows.Management.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Jobs.Activities.Features;
@@ -23,7 +23,7 @@ public class JobActivitiesFeature : FeatureBase
     {
         Services
             .AddSingleton<IJobRegistry, JobRegistry>()
-            .AddSingleton<IActivityProvider, JobActivityProvider>()
+            .AddActivityProvider<JobActivityProvider>()
             ;
 
         Services.AddNotificationHandlersFrom(GetType());

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Elsa.Mediator.Services;
 using Elsa.Workflows.Runtime.Models;
 

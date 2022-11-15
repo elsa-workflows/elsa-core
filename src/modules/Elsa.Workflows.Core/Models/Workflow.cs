@@ -22,6 +22,7 @@ public class Workflow : Composite, ICloneable
         Metadata = metadata;
         ApplicationProperties = applicationProperties;
         Root = root;
+        Version = identity.Version;
     }
 
     public Workflow(IActivity root)

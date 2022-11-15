@@ -1,19 +1,26 @@
-﻿using Elsa.Mediator.Services;
+﻿using System.Reflection;
+using Elsa.Mediator.Services;
+using Elsa.Telnyx.Activities;
+using Elsa.Telnyx.Attributes;
+using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Events;
 using Elsa.Telnyx.Extensions;
-using Elsa.Telnyx.Services;
+using Elsa.Workflows.Runtime.Services;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Telnyx.Handlers
 {
+    /// <summary>
+    /// Triggers all workflows starting with or blocked on a <see cref="WebhookEvent"/> activity.
+    /// </summary>
     internal class TriggerWebhookActivities : INotificationHandler<TelnyxWebhookReceived>
     {
-        private readonly IWebhookFilterService _webhookFilterService;
+        private readonly IWorkflowRuntime _workflowRuntime;
         private readonly ILogger _logger;
 
-        public TriggerWebhookActivities(IWebhookFilterService webhookFilterService, ILogger<TriggerWebhookActivities> logger)
+        public TriggerWebhookActivities(IWorkflowRuntime workflowRuntime, ILogger<TriggerWebhookActivities> logger)
         {
-            _webhookFilterService = webhookFilterService;
+            _workflowRuntime = workflowRuntime;
             _logger = logger;
         }
 
@@ -22,18 +29,14 @@ namespace Elsa.Telnyx.Handlers
             var webhook = notification.Webhook;
             var eventType = webhook.Data.EventType;
             var payload = webhook.Data.Payload;
-            var activityType = _webhookFilterService.GetActivityTypeName(payload);
+            var activityType = payload.GetType().GetCustomAttribute<WebhookAttribute>()?.ActivityType;
 
             if (activityType == null)
-            {
-                _logger.LogWarning("The received event '{EventType}' is an unsupported event", webhook.Data.EventType);
                 return;
-            }
 
             var correlationId = payload.GetCorrelationId();
-            // var bookmark = new NotificationBookmark(eventType);
-            // var context = new WorkflowsQuery(activityType, bookmark, correlationId);
-            // await _workflowLaunchpad.CollectAndDispatchWorkflowsAsync(context, new WorkflowInput(webhook), cancellationToken).ToList();
+            var bookmarkPayload = new WebhookEventBookmarkPayload(eventType);
+            await _workflowRuntime.TriggerWorkflowsAsync(activityType, bookmarkPayload, new TriggerWorkflowsRuntimeOptions(correlationId), cancellationToken);
         }
     }
 }

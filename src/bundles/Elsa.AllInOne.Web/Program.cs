@@ -24,7 +24,7 @@ services
     .AddElsa(elsa => elsa
         .UseWorkflows()
         .UseRuntime()
-        .UseManagement(management => management
+        .UseWorkflowManagement(management => management
             .AddActivity<Sequence>()
             .AddActivity<WriteLine>()
             .AddActivity<ReadLine>()

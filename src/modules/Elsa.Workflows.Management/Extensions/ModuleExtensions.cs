@@ -4,9 +4,15 @@ using Elsa.Workflows.Management.Features;
 
 namespace Elsa.Workflows.Management.Extensions;
 
-public static class DependencyInjectionExtensions
+/// <summary>
+/// Provides extensions to the specified <see cref="IModule"/>/
+/// </summary>
+public static class ModuleExtensions
 {
-    public static IModule UseManagement(this IModule module, Action<WorkflowManagementFeature>? configure = default)
+    /// <summary>
+    /// Adds the workflow management feature to the specified module. 
+    /// </summary>
+    public static IModule UseWorkflowManagement(this IModule module, Action<WorkflowManagementFeature>? configure = default)
     {
         module.Configure<WorkflowManagementFeature>(management =>
         {

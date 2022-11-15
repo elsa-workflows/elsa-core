@@ -1,4 +1,6 @@
 using System.Collections.Concurrent;
+using System.Threading;
+using System.Threading.Tasks;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Runtime.Services;
 

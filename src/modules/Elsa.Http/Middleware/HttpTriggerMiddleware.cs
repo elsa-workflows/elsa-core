@@ -80,7 +80,7 @@ public class HttpTriggerMiddleware
 
         // Trigger the workflow.
         var bookmarkPayload = new HttpEndpointBookmarkPayload(path, method);
-        var triggerOptions = new TriggerWorkflowsOptions(correlationId, input);
+        var triggerOptions = new TriggerWorkflowsRuntimeOptions(correlationId, input);
 
         var triggerResult = await _workflowRuntime.TriggerWorkflowsAsync(
             _activityTypeName,

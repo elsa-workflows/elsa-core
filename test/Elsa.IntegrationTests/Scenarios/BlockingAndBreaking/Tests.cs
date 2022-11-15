@@ -32,7 +32,8 @@ public class Tests
 
         // Resume one of the branches.
         var bookmark = result1.WorkflowState.Bookmarks.FirstOrDefault(x => x.ActivityId == "Branch 1");
-        var result2 = await _workflowRunner.RunAsync(workflow, result1.WorkflowState, bookmark!.Id);
+        var runOptions = new RunWorkflowOptions(BookmarkId: bookmark!.Id);
+        var result2 = await _workflowRunner.RunAsync(workflow, result1.WorkflowState, runOptions);
         
         // Assert that all bookmarks have been cleared.
         Assert.Empty(result2.WorkflowState.Bookmarks);

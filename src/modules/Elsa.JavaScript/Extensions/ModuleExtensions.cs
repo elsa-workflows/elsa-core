@@ -3,7 +3,7 @@ using Elsa.JavaScript.Features;
 
 namespace Elsa.JavaScript.Extensions;
 
-public static class DependencyInjectionExtensions
+public static class ModuleExtensions
 {
     public static IModule UseJavaScript(this IModule module, Action<JavaScriptFeature>? configure = default)
     {

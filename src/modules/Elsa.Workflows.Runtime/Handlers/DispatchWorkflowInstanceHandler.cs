@@ -1,3 +1,5 @@
+using System.Threading;
+using System.Threading.Tasks;
 using Elsa.Mediator.Models;
 using Elsa.Mediator.Services;
 using Elsa.Workflows.Runtime.Commands;
@@ -16,7 +18,7 @@ public class DispatchWorkflowInstanceHandler : ICommandHandler<DispatchWorkflowI
     
     public async Task<Unit> HandleAsync(DispatchWorkflowInstance command, CancellationToken cancellationToken)
     {
-        var options = new ResumeWorkflowOptions(command.Input);
+        var options = new ResumeWorkflowRuntimeOptions(command.Input);
         await _workflowRuntime.ResumeWorkflowAsync(command.InstanceId, command.BookmarkId, options, cancellationToken);
         
         return Unit.Instance;

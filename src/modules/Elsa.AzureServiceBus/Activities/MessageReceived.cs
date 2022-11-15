@@ -55,8 +55,10 @@ public class MessageReceived : Trigger<object>
     /// </summary>
     public IFormatter? Formatter { get; set; }
 
-    protected override object GetTriggerDatum(TriggerIndexingContext context) => GetBookmarkPayload(context.ExpressionExecutionContext);
+    /// <inheritdoc />
+    protected override object GetTriggerPayload(TriggerIndexingContext context) => GetBookmarkPayload(context.ExpressionExecutionContext);
 
+    /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         // If we did not receive external input, it means we are just now encountering this activity.

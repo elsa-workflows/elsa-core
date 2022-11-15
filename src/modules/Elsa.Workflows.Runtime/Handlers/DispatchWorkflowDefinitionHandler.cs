@@ -1,3 +1,5 @@
+using System.Threading;
+using System.Threading.Tasks;
 using Elsa.Mediator.Models;
 using Elsa.Mediator.Services;
 using Elsa.Workflows.Runtime.Commands;
@@ -16,7 +18,7 @@ public class DispatchWorkflowDefinitionHandler : ICommandHandler<DispatchWorkflo
     
     public async Task<Unit> HandleAsync(DispatchWorkflowDefinition command, CancellationToken cancellationToken)
     {
-        var options = new StartWorkflowOptions(command.CorrelationId, command.Input, command.VersionOptions);
+        var options = new StartWorkflowRuntimeOptions(command.CorrelationId, command.Input, command.VersionOptions);
             
         await _workflowRuntime.StartWorkflowAsync(command.DefinitionId, options, cancellationToken);
         

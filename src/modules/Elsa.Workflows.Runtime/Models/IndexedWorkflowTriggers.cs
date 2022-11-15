@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Runtime.Entities;
 

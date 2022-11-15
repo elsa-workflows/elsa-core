@@ -1,5 +1,10 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 using Elsa.Expressions.Models;
 using Elsa.Expressions.Services;
 using Elsa.Mediator.Services;
@@ -107,7 +112,7 @@ public class TriggerIndexer : ITriggerIndexer
 
     private async Task<IEnumerable<StoredTrigger>> GetTriggersAsync(WorkflowIndexingContext context, IActivity activity)
     {
-        // If the activity implements ITrigger, request its trigger data. Otherwise, create one trigger datum.
+        // If the activity implements ITrigger, request its trigger data. Otherwise.
         if (activity is ITrigger trigger)
             return await CreateWorkflowTriggersAsync(context, trigger);
 
@@ -184,7 +189,7 @@ public class TriggerIndexer : ITriggerIndexer
     {
         try
         {
-            return (await trigger.GetTriggerDataAsync(context)).ToList();
+            return (await trigger.GetTriggerPayloadsAsync(context)).ToList();
         }
         catch (Exception e)
         {

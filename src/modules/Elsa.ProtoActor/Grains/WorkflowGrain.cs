@@ -100,7 +100,8 @@ public class WorkflowGrain : WorkflowGrainBase
         // Create a workflow host.
         _workflowHost = await _workflowHostFactory.CreateAsync(workflow, cancellationToken);
 
-        var startWorkflowResult = await _workflowHost.StartWorkflowAsync(WorkflowInstanceId, input, cancellationToken);
+        var startWorkflowOptions = new StartWorkflowHostOptions(WorkflowInstanceId, correlationId, input);
+        var startWorkflowResult = await _workflowHost.StartWorkflowAsync(startWorkflowOptions, cancellationToken);
 
         _workflowState = _workflowHost.WorkflowState;
         
@@ -119,8 +120,8 @@ public class WorkflowGrain : WorkflowGrainBase
         _input = request.Input?.Deserialize();
         var bookmarkId = request.BookmarkId;
         var cancellationToken = Context.CancellationToken;
-
-        var resumeWorkflowResult = await _workflowHost.ResumeWorkflowAsync(bookmarkId, _input, cancellationToken);
+        var resumeWorkflowHostOptions = new ResumeWorkflowHostOptions(_input);
+        var resumeWorkflowResult = await _workflowHost.ResumeWorkflowAsync(bookmarkId, resumeWorkflowHostOptions, cancellationToken);
         var finished = _workflowHost.WorkflowState.Status == WorkflowStatus.Finished;
 
         _workflowState = _workflowHost.WorkflowState;

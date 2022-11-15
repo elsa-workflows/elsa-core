@@ -28,9 +28,10 @@ public class DefaultWorkflowExecutionContextFactory : IWorkflowExecutionContextF
     
     public async Task<WorkflowExecutionContext> CreateAsync(
         Workflow workflow, 
-        string instanceId, 
+        string instanceId,
         WorkflowState? workflowState, 
-        IDictionary<string, object>? input = default, 
+        IDictionary<string, object>? input = default,
+        string? correlationId = default,
         ExecuteActivityDelegate? executeActivityDelegate = default, 
         CancellationToken cancellationToken = default)
     {
@@ -46,7 +47,6 @@ public class DefaultWorkflowExecutionContextFactory : IWorkflowExecutionContextF
         var scheduler = _schedulerFactory.CreateScheduler();
 
         // Setup a workflow execution context.
-        var correlationId = workflowState?.CorrelationId;
         var workflowExecutionContext = new WorkflowExecutionContext(_serviceProvider, instanceId, correlationId, workflow, graph, scheduler, input, executeActivityDelegate, cancellationToken);
 
         // Restore workflow execution context from state, if provided.

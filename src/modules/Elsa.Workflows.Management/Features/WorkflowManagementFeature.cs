@@ -9,6 +9,7 @@ using Elsa.Workflows.Core.Features;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Management.Implementations;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Options;
@@ -43,6 +44,7 @@ public class WorkflowManagementFeature : FeatureBase
         Services
             .AddMemoryStore<WorkflowDefinition, MemoryWorkflowDefinitionStore>()
             .AddMemoryStore<WorkflowInstance, MemoryWorkflowInstanceStore>()
+            .AddActivityProvider<TypedActivityProvider>()
             .AddSingleton(WorkflowInstanceStore)
             .AddSingleton(WorkflowDefinitionStore)
             .AddSingleton<IWorkflowDefinitionPublisher, WorkflowDefinitionPublisher>()
@@ -52,7 +54,6 @@ public class WorkflowManagementFeature : FeatureBase
             .AddSingleton<IActivityRegistryPopulator, ActivityRegistryPopulator>()
             .AddSingleton<IPropertyDefaultValueResolver, PropertyDefaultValueResolver>()
             .AddSingleton<IPropertyOptionsResolver, PropertyOptionsResolver>()
-            .AddSingleton<IActivityProvider, TypedActivityProvider>()
             .AddSingleton<IActivityFactory, ActivityFactory>()
             .AddSingleton<IExpressionSyntaxRegistry, ExpressionSyntaxRegistry>()
             .AddSingleton<IExpressionSyntaxProvider, DefaultExpressionSyntaxProvider>()
@@ -60,7 +61,8 @@ public class WorkflowManagementFeature : FeatureBase
             .AddSingleton<ISerializationOptionsConfigurator, SerializationOptionsConfigurator>()
             .AddSingleton<IWorkflowMaterializer, ClrWorkflowMaterializer>()
             .AddSingleton<IWorkflowMaterializer, JsonWorkflowMaterializer>()
-            .AddSingleton<SerializerOptionsProvider>();
+            .AddSingleton<SerializerOptionsProvider>()
+            ;
 
         Services.Configure<ApiOptions>(options =>
         {

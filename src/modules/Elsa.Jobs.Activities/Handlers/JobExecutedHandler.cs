@@ -23,7 +23,7 @@ public class JobExecutedHandler : INotificationHandler<JobExecuted>
         // When ExecuteBackgroundActivityJob finished, we know exactly what workflow to resume.
         if (job is ExecuteBackgroundActivityJob executeBackgroundActivityJob)
         {
-            await _workflowRuntime.ResumeWorkflowAsync(executeBackgroundActivityJob.WorkflowInstanceId, executeBackgroundActivityJob.BookmarkId, new ResumeWorkflowOptions(), cancellationToken);
+            await _workflowRuntime.ResumeWorkflowAsync(executeBackgroundActivityJob.WorkflowInstanceId, executeBackgroundActivityJob.BookmarkId, new ResumeWorkflowRuntimeOptions(), cancellationToken);
         }
         else
         {
@@ -31,7 +31,7 @@ public class JobExecutedHandler : INotificationHandler<JobExecuted>
             var jobType = notification.Job.GetType();
             var payload = new EnqueuedJobPayload(job.Id);
             var jobTypeName = JobTypeNameHelper.GenerateTypeName(jobType);
-            await _workflowRuntime.ResumeWorkflowsAsync(jobTypeName, payload, new ResumeWorkflowOptions(), cancellationToken);    
+            await _workflowRuntime.ResumeWorkflowsAsync(jobTypeName, payload, new ResumeWorkflowRuntimeOptions(), cancellationToken);    
         }
     }
 }

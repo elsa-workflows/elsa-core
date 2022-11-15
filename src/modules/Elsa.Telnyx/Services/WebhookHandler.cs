@@ -1,8 +1,8 @@
-﻿using System.IO.Pipelines;
-using System.Text;
+﻿using System.Text;
 using System.Text.Json;
 using Dahomey.Json.NamingPolicies;
 using Elsa.Mediator.Services;
+using Elsa.Telnyx.Converters;
 using Elsa.Telnyx.Events;
 using Elsa.Telnyx.Extensions;
 using Elsa.Telnyx.Models;
@@ -34,34 +34,27 @@ namespace Elsa.Telnyx.Services
             var json = await ReadRequestBodyAsync(httpContext);
             var webhook = JsonSerializer.Deserialize<TelnyxWebhook>(json, SerializerSettings)!;
             var correlationId = webhook.Data.Payload.GetCorrelationId();
-            
-            if (!string.IsNullOrEmpty(correlationId))
-            {
-                using var loggingScope = _logger.BeginScope(new Dictionary<string, object> { ["CorrelationId"] = correlationId });
-                _logger.LogDebug("Telnyx webhook payload received: {@Webhook}", webhook);
-                await _mediator.PublishAsync(new TelnyxWebhookReceived(webhook), cancellationToken);
-            }
-            else
-            {
-                _logger.LogDebug("Telnyx webhook payload received: {@Webhook}", webhook);
-                await _mediator.PublishAsync(new TelnyxWebhookReceived(webhook), cancellationToken);
-            }
+
+            using var loggingScope = _logger.BeginScope(new Dictionary<string, object> { ["CorrelationId"] = correlationId });
+            _logger.LogDebug("Telnyx webhook payload received: {@Webhook}", webhook);
+            await _mediator.PublishAsync(new TelnyxWebhookReceived(webhook), cancellationToken);
         }
 
         private static async Task<string> ReadRequestBodyAsync(HttpContext httpContext)
         {
-            var cancellationToken = httpContext.RequestAborted;
-            var readResult = default(ReadResult);
+            string body;
+            var req = httpContext.Request;
 
-            try
-            {
-                readResult = await httpContext.Request.BodyReader.ReadAsync(cancellationToken);
-                return Encoding.UTF8.GetString(readResult.Buffer);
-            }
-            finally
-            {
-                httpContext.Request.BodyReader.AdvanceTo(readResult.Buffer.End);
-            }
+            // Allows using several time the stream in ASP.Net Core
+            req.EnableBuffering();
+
+            // Arguments: Stream, Encoding, detect encoding, buffer size AND, the most important: keep stream opened.
+            using (var reader = new StreamReader(req.Body, Encoding.UTF8, true, 1024, true)) 
+                body = await reader.ReadToEndAsync();
+
+            // Rewind, so the core is not lost when it looks at the body for the request
+            req.Body.Position = 0;
+            return body;
         }
 
         private static JsonSerializerOptions CreateSerializerSettings()
@@ -70,6 +63,8 @@ namespace Elsa.Telnyx.Services
             {
                 PropertyNamingPolicy = new SnakeCaseNamingPolicy()
             };
+            
+            settings.Converters.Add(new WebhookDataJsonConverter());
             return settings;
         }
     }

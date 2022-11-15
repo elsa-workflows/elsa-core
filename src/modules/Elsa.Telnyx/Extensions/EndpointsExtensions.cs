@@ -14,7 +14,7 @@ namespace Elsa.Telnyx.Extensions
         /// <summary>
         /// Maps the specified route to the Telnyx webhook handler.
         /// </summary>
-        public static IEndpointConventionBuilder MapTelnyxWebhook(this IEndpointRouteBuilder endpoints, string routePattern = "telnyx-hook")
+        public static IEndpointConventionBuilder UseTelnyxWebhooks(this IEndpointRouteBuilder endpoints, string routePattern = "telnyx-hook")
         {
             return endpoints.MapPost(routePattern, HandleTelnyxRequest);
         }

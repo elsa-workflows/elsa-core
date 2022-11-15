@@ -1,7 +1,4 @@
 ﻿namespace Elsa.Telnyx.Models
 {
-    public abstract class TelnyxRecord
-    {
-        public string RecordType { get; set; } = default!;
-    }
+    public abstract record TelnyxRecord(string RecordType);
 }

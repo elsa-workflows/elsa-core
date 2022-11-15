@@ -10,6 +10,7 @@ public interface IWorkflowExecutionContextFactory
         string instanceId,
         WorkflowState? workflowState,
         IDictionary<string, object>? input = default,
+        string? correlationId = default,
         ExecuteActivityDelegate? executeActivityDelegate = default,
         CancellationToken cancellationToken = default);
 }

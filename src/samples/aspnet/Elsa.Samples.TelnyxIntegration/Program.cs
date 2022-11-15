@@ -18,6 +18,7 @@ using Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.Runtime;
 using Elsa.ProtoActor.Extensions;
 using Elsa.Requirements;
 using Elsa.Scheduling.Extensions;
+using Elsa.Telnyx.Extensions;
 using Elsa.WorkflowContexts.Extensions;
 using Elsa.Workflows.Api.Extensions;
 using Elsa.Workflows.Core.Activities;
@@ -44,7 +45,7 @@ identitySection.Bind(identityOptions);
 // Add Elsa services.
 services
     .AddElsa(elsa => elsa
-        .UseManagement(management => management
+        .UseWorkflowManagement(management => management
             .UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString))
             .AddActivity<WriteLine>()
             .AddActivity<ReadLine>()
@@ -78,6 +79,7 @@ services
         .UseWorkflowApiEndpoints()
         .UseJavaScript()
         .UseLiquid()
+        .UseTelnyx(telnyx => telnyx.ConfigureTelnyxOptions = options => configuration.GetSection("Telnyx").Bind(options))
     );
 
 services.AddFastEndpoints();
@@ -118,6 +120,9 @@ app.UseCors();
 
 // Health checks.
 app.MapHealthChecks("/");
+
+// Telnyx webhook endpoint.
+app.UseTelnyxWebhooks();
 
 app.UseAuthentication();
 app.UseAuthorization();

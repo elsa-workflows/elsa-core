@@ -44,7 +44,8 @@ public class ForkTests
         Assert.NotNull(bookmark);
         
         // Resume the workflow.
-        await _workflowRunner.RunAsync(workflow, result.WorkflowState, bookmark!.Id);
+        var runOptions = new RunWorkflowOptions(BookmarkId: bookmark!.Id);
+        await _workflowRunner.RunAsync(workflow, result.WorkflowState, runOptions);
         
         // Verify output.
         var lines = _capturingTextWriter.Lines.ToList();

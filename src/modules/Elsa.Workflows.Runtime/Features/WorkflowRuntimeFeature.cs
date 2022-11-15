@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Elsa.Common.Extensions;
 using Elsa.Common.Features;
 using Elsa.Features.Abstractions;
