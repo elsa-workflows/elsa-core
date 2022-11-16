@@ -42,7 +42,7 @@ public class ActivityExecutionContext
     /// <summary>
     /// A dictionary of values that can be associated with the activity. 
     /// </summary>
-    public IDictionary<string, object> ApplicationProperties { get; set; } = new Dictionary<string, object>();
+    public IDictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
     
     /// <summary>
     /// A transient dictionary of values that can be associated with the activity.
@@ -111,6 +111,10 @@ public class ActivityExecutionContext
 
     public Bookmark CreateBookmark(ExecuteActivityDelegate callback) => CreateBookmark(default, callback);
 
+    /// <summary>
+    /// Creates a bookmark so that this activity can be resumed at a later time.
+    /// Creating a bookmark will automatically suspend the workflow after all pending activities have executed.
+    /// </summary>
     public Bookmark CreateBookmark(object? payload = default, ExecuteActivityDelegate? callback = default)
     {
         var bookmarkHasher = GetRequiredService<IBookmarkHasher>();
@@ -132,28 +136,43 @@ public class ActivityExecutionContext
         return bookmark;
     }
     
+    /// <summary>
+    /// Clear all bookmarks.
+    /// </summary>
     public void ClearBookmarks() => _bookmarks.Clear();
 
-    public T? GetProperty<T>(string key) => ApplicationProperties!.TryGetValue<T?>(key, out var value) ? value : default;
+    /// <summary>
+    /// Returns a property value associated with the current activity context. 
+    /// </summary>
+    public T? GetProperty<T>(string key) => Properties!.TryGetValue<T?>(key, out var value) ? value : default;
     
+    /// <summary>
+    /// Returns a property value associated with the current activity context. 
+    /// </summary>
     public T GetProperty<T>(string key, Func<T> defaultValue)
     {
-        if (ApplicationProperties.TryGetValue<T?>(key, out var value)) 
+        if (Properties.TryGetValue<T?>(key, out var value)) 
             return value!;
         
         value = defaultValue();
-        ApplicationProperties[key] = value!;
+        Properties[key] = value!;
 
         return value!;
     }
 
-    public void SetProperty<T>(string key, T? value) => ApplicationProperties[key] = value!;
+    /// <summary>
+    /// Stores a property associated with the current activity context. 
+    /// </summary>
+    public void SetProperty<T>(string key, T? value) => Properties[key] = value!;
 
+    /// <summary>
+    /// Updates a property associated with the current activity context. 
+    /// </summary>
     public T UpdateProperty<T>(string key, Func<T?, T> updater) where T : notnull
     {
         var value = GetProperty<T?>(key);
         value = updater(value);
-        ApplicationProperties[key] = value;
+        Properties[key] = value;
         return value;
     }
 

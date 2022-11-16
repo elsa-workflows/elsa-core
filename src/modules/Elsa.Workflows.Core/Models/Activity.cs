@@ -39,6 +39,29 @@ public abstract class ActivityWithResult : Activity
     public Output? Result { get; set; }
 }
 
+public abstract class ActivityBaseWithResult : ActivityBase
+{
+    protected ActivityBaseWithResult()
+    {
+    }
+
+    protected ActivityBaseWithResult(string activityType) : base(activityType)
+    {
+    }
+
+    protected ActivityBaseWithResult(MemoryBlockReference? output)
+    {
+        if (output != null) Result = new Output(output);
+    }
+
+    protected ActivityBaseWithResult(Output? output)
+    {
+        Result = output;
+    }
+
+    public Output? Result { get; set; }
+}
+
 public abstract class Activity<T> : ActivityWithResult
 {
     protected Activity()
@@ -56,10 +79,23 @@ public abstract class Activity<T> : ActivityWithResult
     protected Activity(Output<T>? output) : base(output)
     {
     }
+}
 
-    public Activity<T> CaptureResult(MemoryBlockReference output)
+public abstract class ActivityBase<T> : ActivityBaseWithResult
+{
+    protected ActivityBase()
     {
-        Result = new Output<T>(output);
-        return this;
+    }
+
+    protected ActivityBase(string activityType) : base(activityType)
+    {
+    }
+
+    protected ActivityBase(MemoryBlockReference? output) : base(output)
+    {
+    }
+
+    protected ActivityBase(Output<T>? output) : base(output)
+    {
     }
 }

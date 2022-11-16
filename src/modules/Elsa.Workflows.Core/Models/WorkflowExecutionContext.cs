@@ -125,6 +125,7 @@ public class WorkflowExecutionContext
         return value;
     }
 
+    public bool HasProperty(string name) => Properties.ContainsKey(name);
 
     public void TransitionTo(WorkflowSubStatus subStatus)
     {

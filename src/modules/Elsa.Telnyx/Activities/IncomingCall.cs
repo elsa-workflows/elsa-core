@@ -1,5 +1,6 @@
 using Elsa.Expressions.Models;
 using Elsa.Telnyx.Bookmarks;
+using Elsa.Telnyx.Extensions;
 using Elsa.Telnyx.Helpers;
 using Elsa.Telnyx.Models;
 using Elsa.Telnyx.Payloads.Call;
@@ -48,7 +49,14 @@ namespace Elsa.Telnyx.Activities
             var webhookModel = context.GetInput<TelnyxWebhook>(WebhookSerializerOptions.Create());
             var callInitiatedPayload = (CallInitiatedPayload)webhookModel.Data.Payload;
 
+            // Correlate workflow with call session ID.
+            // TODO: Add support for multiple correlation ID keys.
             context.WorkflowExecutionContext.CorrelationId = callInitiatedPayload.CallSessionId;
+            
+            // Associate workflow with inbound call control ID.
+            context.SetMainCallControlId(callInitiatedPayload.CallControlId);
+            
+            // Store webhook payload as output.
             context.Set(Result, callInitiatedPayload);
 
             await context.CompleteActivityAsync();

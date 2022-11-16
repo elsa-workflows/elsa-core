@@ -1,120 +1,125 @@
 ﻿namespace Elsa.Telnyx.Client.Models
 {
-    public record AnswerCallRequest(string? BillingGroupId, string? ClientState, string? CommandId, string? WebhookUrl, string? WebhookUrlMethod);
+    public record AnswerCallRequest(
+        string? BillingGroupId = default,
+        string? ClientState = default,
+        string? CommandId = default,
+        string? WebhookUrl = default,
+        string? WebhookUrlMethod = default);
 
-    public record HangupCallRequest(string? ClientState, string? CommandId);
+    public record HangupCallRequest(string? ClientState = default, string? CommandId = default);
 
     public record GatherUsingAudioRequest(
         Uri AudioUrl,
-        string? ClientState,
-        string? CommandId,
-        int? InterDigitTimeoutMillis,
-        Uri? InvalidAudioUrl,
-        int? MaximumDigits,
-        int? MaximumTries,
-        int? MinimumDigits,
-        string? TerminatingDigit,
-        int? TimeoutMillis,
-        string? ValidDigits
+        string? ClientState = default,
+        string? CommandId = default,
+        int? InterDigitTimeoutMillis = default,
+        Uri? InvalidAudioUrl = default,
+        int? MaximumDigits = default,
+        int? MaximumTries = default,
+        int? MinimumDigits = default,
+        string? TerminatingDigit = default,
+        int? TimeoutMillis = default,
+        string? ValidDigits = default
     );
 
     public record GatherUsingSpeakRequest(
-        string? ClientState,
-        string? CommandId,
         string Language,
         string Voice,
         string Payload,
-        string? PayloadType,
-        string? ServiceLevel,
-        int? InterDigitTimeoutMillis,
-        int? MaximumDigits,
-        int? MaximumTries,
-        int? MinimumDigits,
-        string? TerminatingDigit,
-        int? TimeoutMillis,
-        string? ValidDigits
+        string? PayloadType = default,
+        string? ServiceLevel = default,
+        int? InterDigitTimeoutMillis = default,
+        int? MaximumDigits = default,
+        int? MaximumTries = default,
+        int? MinimumDigits = default,
+        string? TerminatingDigit = default,
+        int? TimeoutMillis = default,
+        string? ValidDigits = default,
+        string? ClientState = default,
+        string? CommandId = default
     );
 
     public record TransferCallRequest(
         string To,
-        string? From,
-        string? FromDisplayName,
-        Uri? AudioUrl,
-        string? AnsweringMachineDetection,
-        AnsweringMachineConfig? AnsweringMachineConfig,
-        string? ClientState,
-        string? TargetLegClientState,
-        string? CommandId,
-        IList<Header>? CustomHeaders,
-        string? SipAuthUsername,
-        string? SipAuthPassword,
-        int? TimeLimitSecs,
-        int? TimeoutSecs,
-        string? WebhookUrl,
-        string? WebhookUrlMethod
+        string? From = default,
+        string? FromDisplayName = default,
+        Uri? AudioUrl = default,
+        string? AnsweringMachineDetection = default,
+        AnsweringMachineConfig? AnsweringMachineConfig = default,
+        int? TimeLimitSecs = default,
+        int? TimeoutSecs = default,
+        string? TargetLegClientState = default,
+        IList<Header>? CustomHeaders = default,
+        string? SipAuthUsername = default,
+        string? SipAuthPassword = default,
+        string? ClientState = default,
+        string? CommandId = default,
+        string? WebhookUrl = default,
+        string? WebhookUrlMethod = default
     );
 
     public record DialRequest(
         string ConnectionId,
         string To,
-        string? From,
-        string? FromDisplayName,
-        string? AnsweringMachineDetection,
-        AnsweringMachineConfig? AnsweringMachineConfig,
-        string? ClientState,
-        string? CommandId,
-        IList<Header>? CustomHeaders,
-        string? SipAuthUsername,
-        string? SipAuthPassword,
-        int? TimeLimitSecs,
-        int? TimeoutSecs,
-        string? WebhookUrl,
-        string? WebhookUrlMethod
+        string? From = default,
+        string? FromDisplayName = default,
+        string? AnsweringMachineDetection = default,
+        AnsweringMachineConfig? AnsweringMachineConfig = default,
+        string? ClientState = default,
+        string? CommandId = default,
+        IList<Header>? CustomHeaders = default,
+        string? SipAuthUsername = default,
+        string? SipAuthPassword = default,
+        int? TimeLimitSecs = default,
+        int? TimeoutSecs = default,
+        string? WebhookUrl = default,
+        string? WebhookUrlMethod = default
     );
 
     public record BridgeCallsRequest(
         string CallControlId,
-        string? ClientState,
-        string? CommandId,
-        string? ParkAfterUnbridge
+        string? ClientState = default,
+        string? CommandId = default,
+        string? ParkAfterUnbridge = default
     );
 
     public record PlayAudioRequest(
         Uri AudioUrl,
-        string? ClientState,
-        string? CommandId,
-        object? Loop,
         bool Overlay,
-        string? TargetLegs
+        object? Loop = default,
+        string? TargetLegs = default,
+        string? ClientState = default,
+        string? CommandId = default
     );
-    
+
     public record StopAudioPlaybackRequest(
-        string? ClientState,
-        string? CommandId,
-        string? Stop
+        string? Stop = default,
+        string? ClientState = default,
+        string? CommandId = default
     );
 
     public record StartRecordingRequest(
         string Channels,
         string Format,
-        string? ClientState,
-        string? CommandId,
-        bool? PlayBeep
+        bool? PlayBeep = default,
+        string? ClientState = default,
+        string? CommandId = default
     );
 
     public record StopRecordingRequest(
-        string? ClientState,
-        string? CommandId
+        string? ClientState = default,
+        string? CommandId = default
     );
 
     public record SpeakTextRequest(
         string Language,
         string Voice,
         string Payload,
-        string? PayloadType,
-        string? ServiceLevel,
-        string? ClientState,
-        string? CommandId,
-        string? Stop
+        string? PayloadType = default,
+        string? ServiceLevel = default,
+        string? Stop = default,
+        string? ClientState = default,
+        string? CommandId = default
     );
 }

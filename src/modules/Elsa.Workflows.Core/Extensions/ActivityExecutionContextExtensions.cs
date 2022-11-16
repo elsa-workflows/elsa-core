@@ -3,6 +3,7 @@ using System.Text.Json;
 using Elsa.Common.Services;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Services;
+using Elsa.Workflows.Core.Activities.Flowchart.Models;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Core.Signals;
@@ -14,7 +15,7 @@ public static class ActivityExecutionContextExtensions
 {
     public static bool TryGetInput<T>(this ActivityExecutionContext context, string key, out T value, JsonSerializerOptions? serializerOptions = default)
     {
-        if(context.Input.TryGetValue(key, out var v))
+        if (context.Input.TryGetValue(key, out var v))
         {
             value = v.ConvertTo<T>(serializerOptions)!;
             return true;
@@ -26,7 +27,7 @@ public static class ActivityExecutionContextExtensions
 
     public static T GetInput<T>(this ActivityExecutionContext context, JsonSerializerOptions? serializerOptions = default) => context.GetInput<T>(typeof(T).Name, serializerOptions);
     public static T GetInput<T>(this ActivityExecutionContext context, string key, JsonSerializerOptions? serializerOptions = default) => context.Input[key].ConvertTo<T>(serializerOptions)!;
-    
+
     /// <summary>
     /// Returns true if this activity is triggered for the first time and not being resumed.
     /// </summary>
@@ -171,7 +172,12 @@ public static class ActivityExecutionContextExtensions
         // Remove the context.
         context.WorkflowExecutionContext.ActivityExecutionContexts.Remove(context);
     }
-    
+
+    /// <summary>
+    /// Complete the current activity with the specified outcome.
+    /// </summary>
+    public static ValueTask CompleteActivityWithOutcomesAsync(this ActivityExecutionContext context, params string[] outcomes) => context.CompleteActivityAsync(new Outcomes(outcomes));
+
     /// <summary>
     /// Cancel the activity. For blocking activities, it means their bookmarks will be removed. For job activities, the background work will be cancelled.
     /// </summary>
