@@ -313,7 +313,9 @@ export class ElsaWorkflowDesigner {
       setTimeout(() => this.applyAutoLayout(), 100);
     }
     this.updateGraph();
-    this.graph.centerContent();
+    if (this.workflowModel.activities.length) {
+      this.graph.centerContent();
+    }
   }
 
   private createAndInitializeGraph = async () => {
