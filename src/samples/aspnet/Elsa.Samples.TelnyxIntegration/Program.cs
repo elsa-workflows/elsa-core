@@ -68,7 +68,10 @@ services
         })
         .UseRuntime(runtime =>
         {
-            runtime.UseProtoActor(proto => proto.PersistenceProvider = _ => new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString)));
+            runtime.UseProtoActor(proto =>
+            {
+                //proto.PersistenceProvider = _ => new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString));
+            });
             runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
             runtime.WorkflowStateExporter = sp => sp.GetRequiredService<AsyncWorkflowStateExporter>();
         })
