@@ -1,13 +1,9 @@
 using Elsa.Common.Models;
-using Elsa.Mediator.Services;
-using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Runtime.Models;
-using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Runtime.Services;
-using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Workflows.Runtime.Implementations;
 
@@ -19,7 +15,6 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
     private readonly ITriggerStore _triggerStore;
     private readonly IBookmarkStore _bookmarkStore;
     private readonly IBookmarkHasher _hasher;
-    private readonly IEventPublisher _eventPublisher;
 
     public DefaultWorkflowRuntime(
         IWorkflowHostFactory workflowHostFactory,
@@ -27,8 +22,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         IWorkflowStateStore workflowStateStore,
         ITriggerStore triggerStore,
         IBookmarkStore bookmarkStore,
-        IBookmarkHasher hasher,
-        IEventPublisher eventPublisher)
+        IBookmarkHasher hasher)
     {
         _workflowHostFactory = workflowHostFactory;
         _workflowDefinitionService = workflowDefinitionService;
@@ -36,7 +30,6 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         _triggerStore = triggerStore;
         _bookmarkStore = bookmarkStore;
         _hasher = hasher;
-        _eventPublisher = eventPublisher;
     }
 
     public async Task<StartWorkflowResult> StartWorkflowAsync(string definitionId, StartWorkflowRuntimeOptions options, CancellationToken cancellationToken = default)
@@ -57,7 +50,6 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         var workflowState = workflowHost.WorkflowState;
 
         await SaveWorkflowStateAsync(workflowState, cancellationToken);
-        await UpdateBookmarksAsync(workflowState, new List<Bookmark>(), workflowState.Bookmarks, cancellationToken);
 
         return new StartWorkflowResult(workflowState.Id, workflowHost.WorkflowState.Bookmarks);
     }
@@ -81,17 +73,6 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
             throw new Exception("Specified workflow definition and version does not exist");
 
         var input = options.Input;
-
-        var existingStoredBookmarks = await _bookmarkStore.FindByWorkflowInstanceAsync(workflowState.Id, cancellationToken)
-            .AsTask()
-            .ToList();
-
-        var existingBookmarks = existingStoredBookmarks
-            .Select(storedBookmark => workflowState.Bookmarks.FirstOrDefault(bookmark => bookmark.Id == storedBookmark.BookmarkId))
-            .Where(x => x != null)
-            .Select(x => x!)
-            .ToList();
-
         var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
         var workflowHost = await _workflowHostFactory.CreateAsync(workflow, workflowState, cancellationToken);
         var resumeWorkflowOptions = new ResumeWorkflowHostOptions(input);
@@ -100,7 +81,6 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         workflowState = workflowHost.WorkflowState;
 
         await SaveWorkflowStateAsync(workflowState, cancellationToken);
-        await UpdateBookmarksAsync(workflowState, existingBookmarks, workflowState.Bookmarks, cancellationToken);
 
         return new ResumeWorkflowResult(workflowState.Bookmarks);
     }
@@ -173,15 +153,14 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         await _workflowStateStore.SaveAsync(workflowState.Id, workflowState, cancellationToken);
     }
 
+    public async Task UpdateBookmarksAsync(UpdateBookmarksContext context, CancellationToken cancellationToken = default)
+    {
+        await RemoveBookmarksAsync(context.InstanceId, context.Diff.Removed, cancellationToken);
+        await StoreBookmarksAsync(context.InstanceId, context.Diff.Added, context.CorrelationId, cancellationToken);
+    }
+
     private async Task SaveWorkflowStateAsync(WorkflowState workflowState, CancellationToken cancellationToken) =>
         await _workflowStateStore.SaveAsync(workflowState.Id, workflowState, cancellationToken);
-
-    private async Task UpdateBookmarksAsync(WorkflowState workflowState, ICollection<Bookmark> previousBookmarks, ICollection<Bookmark> newBookmarks, CancellationToken cancellationToken)
-    {
-        await RemoveBookmarksAsync(workflowState.Id, previousBookmarks, cancellationToken);
-        await StoreBookmarksAsync(workflowState.Id, newBookmarks, workflowState.CorrelationId, cancellationToken);
-        await PublishChangedBookmarksAsync(workflowState, previousBookmarks, newBookmarks, cancellationToken);
-    }
 
     private async Task StoreBookmarksAsync(string workflowInstanceId, ICollection<Bookmark> bookmarks, string? correlationId, CancellationToken cancellationToken)
     {
@@ -207,17 +186,5 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
             var key = groupedBookmark.Key;
             await _bookmarkStore.DeleteAsync(key, workflowInstanceId, cancellationToken);
         }
-    }
-
-    private async Task PublishChangedBookmarksAsync(WorkflowState workflowState,
-        ICollection<Bookmark> originalBookmarks, ICollection<Bookmark> updatedBookmarks,
-        CancellationToken cancellationToken)
-    {
-        var diff = Diff.For(originalBookmarks, updatedBookmarks);
-        var removedBookmarks = diff.Removed;
-        var createdBookmarks = diff.Added;
-        await _eventPublisher.PublishAsync(
-            new WorkflowBookmarksIndexed(
-                new IndexedWorkflowBookmarks(workflowState, createdBookmarks, removedBookmarks)), cancellationToken);
     }
 }

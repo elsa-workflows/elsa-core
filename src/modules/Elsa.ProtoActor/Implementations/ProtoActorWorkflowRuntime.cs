@@ -83,13 +83,13 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
     {
         var hash = _hasher.Hash(activityTypeName, bookmarkPayload);
         var client = _cluster.GetBookmarkGrain(hash);
-        
+
         var request = new ResolveBookmarksRequest
         {
-            ActivityTypeName = activityTypeName, 
+            ActivityTypeName = activityTypeName,
             CorrelationId = options.CorrelationId ?? ""
         };
-        
+
         var bookmarksResponse = await client.Resolve(request, cancellationToken);
         var bookmarks = bookmarksResponse!.Bookmarks;
         return await ResumeWorkflowsAsync(bookmarks, options, cancellationToken);
@@ -126,13 +126,13 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
 
         // Resume existing workflow instances.
         var client = _cluster.GetBookmarkGrain(hash);
-        
+
         var request = new ResolveBookmarksRequest
         {
             ActivityTypeName = activityTypeName,
             CorrelationId = options.CorrelationId ?? ""
         };
-        
+
         var bookmarksResponse = await client.Resolve(request, cancellationToken);
         var bookmarks = bookmarksResponse!.Bookmarks;
 
@@ -177,8 +177,8 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
         return workflowState;
     }
 
-    public async Task ImportWorkflowStateAsync(WorkflowState workflowState,
-        CancellationToken cancellationToken = default)
+    /// <inheritdoc />
+    public async Task ImportWorkflowStateAsync(WorkflowState workflowState, CancellationToken cancellationToken = default)
     {
         var options = _serializerOptionsProvider.CreatePersistenceOptions();
         var client = _cluster.GetWorkflowGrain(workflowState.Id);
@@ -193,6 +193,45 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
         };
 
         await client.ImportState(request, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task UpdateBookmarksAsync(UpdateBookmarksContext context, CancellationToken cancellationToken = default)
+    {
+        await RemoveBookmarksAsync(context.InstanceId, context.Diff.Removed, cancellationToken);
+        await StoreBookmarksAsync(context.InstanceId, context.Diff.Added, cancellationToken);
+    }
+
+    private async Task StoreBookmarksAsync(string instanceId, ICollection<Bookmark> bookmarks, CancellationToken cancellationToken = default)
+    {
+        var groupedBookmarks = bookmarks.GroupBy(x => x.Hash);
+
+        foreach (var groupedBookmark in groupedBookmarks)
+        {
+            var bookmarkClient = _cluster.GetBookmarkGrain(groupedBookmark.Key);
+
+            var storeBookmarkRequest = new StoreBookmarksRequest
+            {
+                WorkflowInstanceId = instanceId
+            };
+
+            storeBookmarkRequest.BookmarkIds.AddRange(groupedBookmark.Select(x => x.Id));
+            await bookmarkClient.Store(storeBookmarkRequest, cancellationToken);
+        }
+    }
+
+    private async Task RemoveBookmarksAsync(string instanceId, IEnumerable<Bookmark> bookmarks, CancellationToken cancellationToken = default)
+    {
+        var groupedBookmarks = bookmarks.GroupBy(x => x.Hash);
+
+        foreach (var groupedBookmark in groupedBookmarks)
+        {
+            var bookmarkClient = _cluster.GetBookmarkGrain(groupedBookmark.Key);
+            await bookmarkClient.RemoveByWorkflow(new RemoveBookmarksByWorkflowRequest
+            {
+                WorkflowInstanceId = instanceId
+            }, cancellationToken);
+        }
     }
 
     private static IEnumerable<Bookmark> Map(IEnumerable<BookmarkDto> bookmarkDtos) =>

@@ -10,7 +10,6 @@ public record ActivityCompletionCallbackEntry(ActivityExecutionContext Owner, IA
 
 public class WorkflowExecutionContext
 {
-    internal static ValueTask Noop(ActivityExecutionContext context) => new();
     internal static ValueTask Complete(ActivityExecutionContext context) => context.CompleteActivityAsync();
     private readonly IServiceProvider _serviceProvider;
     private readonly IList<ActivityNode> _nodes;

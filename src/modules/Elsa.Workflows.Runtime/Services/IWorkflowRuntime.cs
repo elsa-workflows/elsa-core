@@ -1,4 +1,5 @@
 using Elsa.Common.Models;
+using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.State;
 
@@ -12,6 +13,7 @@ public interface IWorkflowRuntime
     Task<TriggerWorkflowsResult> TriggerWorkflowsAsync(string activityTypeName, object bookmarkPayload, TriggerWorkflowsRuntimeOptions options, CancellationToken cancellationToken = default);
     Task<WorkflowState?> ExportWorkflowStateAsync(string instanceId, CancellationToken cancellationToken = default);
     Task ImportWorkflowStateAsync(WorkflowState workflowState, CancellationToken cancellationToken = default);
+    Task UpdateBookmarksAsync(UpdateBookmarksContext context, CancellationToken cancellationToken = default);
 }
 
 public record StartWorkflowRuntimeOptions(string? CorrelationId = default, IDictionary<string, object>? Input = default, VersionOptions VersionOptions = default);
@@ -22,3 +24,4 @@ public record TriggerWorkflowsRuntimeOptions(string? CorrelationId = default, ID
 public record TriggerWorkflowsResult(ICollection<TriggeredWorkflow> TriggeredWorkflows);
 public record ResumedWorkflow(string InstanceId, ICollection<Bookmark> Bookmarks);
 public record TriggeredWorkflow(string InstanceId, ICollection<Bookmark> Bookmarks);
+public record UpdateBookmarksContext(string InstanceId, Diff<Bookmark> Diff, string? CorrelationId);

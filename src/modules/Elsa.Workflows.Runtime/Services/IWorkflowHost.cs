@@ -20,4 +20,4 @@ public record ResumeWorkflowHostOptions(IDictionary<string, object>? Input = def
 
 public record StartWorkflowHostResult(Diff<Bookmark> BookmarksDiff);
 
-public record ResumeWorkflowHostResult(Diff<Bookmark> BookmarksDiff);
+public record ResumeWorkflowHostResult;

@@ -2,7 +2,6 @@ using System.Text.Json;
 using Elsa.Common.Models;
 using Elsa.ProtoActor.Extensions;
 using Elsa.Runtime.Protos;
-using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.State;
@@ -30,8 +29,8 @@ public class WorkflowGrain : WorkflowGrainBase
     private IDictionary<string, object>? _input;
     private IWorkflowHost _workflowHost = default!;
     private WorkflowState _workflowState = default!;
-    //private ICollection<Bookmark> _bookmarks = default!;
 
+    /// <inheritdoc />
     public WorkflowGrain(
         IWorkflowDefinitionService workflowDefinitionService,
         IWorkflowHostFactory workflowHostFactory,
@@ -47,6 +46,7 @@ public class WorkflowGrain : WorkflowGrainBase
 
     private string WorkflowInstanceId => Context.ClusterIdentity()!.Identity;
 
+    /// <inheritdoc />
     public override async Task OnStarted()
     {
         await _persistence.RecoverStateAsync();
@@ -101,11 +101,10 @@ public class WorkflowGrain : WorkflowGrainBase
         _workflowHost = await _workflowHostFactory.CreateAsync(workflow, cancellationToken);
 
         var startWorkflowOptions = new StartWorkflowHostOptions(WorkflowInstanceId, correlationId, input);
-        var startWorkflowResult = await _workflowHost.StartWorkflowAsync(startWorkflowOptions, cancellationToken);
+        await _workflowHost.StartWorkflowAsync(startWorkflowOptions, cancellationToken);
 
         _workflowState = _workflowHost.WorkflowState;
         
-        await UpdateBookmarksAsync(startWorkflowResult.BookmarksDiff, cancellationToken);
         await SaveSnapshotAsync();
 
         return new StartWorkflowResponse
@@ -121,12 +120,11 @@ public class WorkflowGrain : WorkflowGrainBase
         var bookmarkId = request.BookmarkId;
         var cancellationToken = Context.CancellationToken;
         var resumeWorkflowHostOptions = new ResumeWorkflowHostOptions(_input);
-        var resumeWorkflowResult = await _workflowHost.ResumeWorkflowAsync(bookmarkId, resumeWorkflowHostOptions, cancellationToken);
+        await _workflowHost.ResumeWorkflowAsync(bookmarkId, resumeWorkflowHostOptions, cancellationToken);
         var finished = _workflowHost.WorkflowState.Status == WorkflowStatus.Finished;
 
         _workflowState = _workflowHost.WorkflowState;
         
-        await UpdateBookmarksAsync(resumeWorkflowResult.BookmarksDiff, cancellationToken);
         await SaveSnapshotAsync();
 
         return new ResumeWorkflowResponse
@@ -161,44 +159,6 @@ public class WorkflowGrain : WorkflowGrainBase
         _workflowHost.WorkflowState = workflowState;
         
         return Task.FromResult(new ImportWorkflowStateResponse());
-    }
-
-    private async Task UpdateBookmarksAsync(Diff<Bookmark> bookmarksDiff, CancellationToken cancellationToken)
-    {
-        await RemoveBookmarksAsync(bookmarksDiff.Removed, cancellationToken);
-        await StoreBookmarksAsync(bookmarksDiff.Added, cancellationToken);
-    }
-    
-    private async Task StoreBookmarksAsync(ICollection<Bookmark> bookmarks, CancellationToken cancellationToken)
-    {
-        var groupedBookmarks = bookmarks.GroupBy(x => x.Hash);
-
-        foreach (var groupedBookmark in groupedBookmarks)
-        {
-            var bookmarkClient = Context.GetBookmarkGrain(groupedBookmark.Key);
-
-            var storeBookmarkRequest = new StoreBookmarksRequest
-            {
-                WorkflowInstanceId = WorkflowInstanceId
-            };
-
-            storeBookmarkRequest.BookmarkIds.AddRange(groupedBookmark.Select(x => x.Id));
-            await bookmarkClient.Store(storeBookmarkRequest, cancellationToken);
-        }
-    }
-
-    private async Task RemoveBookmarksAsync(IEnumerable<Bookmark> bookmarks, CancellationToken cancellationToken)
-    {
-        var groupedBookmarks = bookmarks.GroupBy(x => x.Hash);
-
-        foreach (var groupedBookmark in groupedBookmarks)
-        {
-            var bookmarkClient = Context.GetBookmarkGrain(groupedBookmark.Key);
-            await bookmarkClient.RemoveByWorkflow(new RemoveBookmarksByWorkflowRequest
-            {
-                WorkflowInstanceId = WorkflowInstanceId
-            }, cancellationToken);
-        }
     }
 
     private void ApplySnapshot(Snapshot snapshot) => (_definitionId, _version, _workflowState, _input) = (WorkflowSnapshot)snapshot.State;

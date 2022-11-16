@@ -106,6 +106,7 @@ var serviceProvider = app.Services;
 serviceProvider.ConfigureDefaultWorkflowExecutionPipeline(pipeline =>
     pipeline
         .UsePersistentVariables()
+        .UseBookmarkPersistence()
         .UseWorkflowContexts()
         .UseDefaultActivityScheduler()
 );

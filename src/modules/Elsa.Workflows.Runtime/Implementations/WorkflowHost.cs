@@ -3,7 +3,6 @@ using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Core.State;
-using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Runtime.Services;
 using Microsoft.Extensions.Logging;
@@ -51,8 +50,7 @@ public class WorkflowHost : IWorkflowHost
 
         var updatedBookmarks = WorkflowState.Bookmarks;
         var diff = Diff.For(originalBookmarks, updatedBookmarks);
-
-        await PublishChangedBookmarksAsync(diff, cancellationToken);
+        
         await _eventPublisher.PublishAsync(new WorkflowExecuted(Workflow, WorkflowState), cancellationToken);
 
         return new StartWorkflowHostResult(diff);
@@ -62,12 +60,10 @@ public class WorkflowHost : IWorkflowHost
     {
         await _eventPublisher.PublishAsync(new WorkflowExecuting(Workflow), cancellationToken);
 
-        var originalBookmarks = WorkflowState.Bookmarks.ToList();
-
         if (WorkflowState.Status != WorkflowStatus.Running)
         {
             _logger.LogWarning("Attempt to resume workflow {WorkflowInstanceId} that is not in the Running state. The actual state is {ActualWorkflowStatus}", WorkflowState.Id, WorkflowState.Status);
-            return new ResumeWorkflowHostResult(Diff.For(originalBookmarks, new List<Bookmark>(0)));
+            return new ResumeWorkflowHostResult();
         }
 
         var instanceId = WorkflowState.Id;
@@ -76,19 +72,8 @@ public class WorkflowHost : IWorkflowHost
         var workflowResult = await _workflowRunner.RunAsync(Workflow, WorkflowState, runOptions, cancellationToken);
 
         WorkflowState = workflowResult.WorkflowState;
-
-        var updatedBookmarks = WorkflowState.Bookmarks;
-        var diff = Diff.For(originalBookmarks, updatedBookmarks);
-        await PublishChangedBookmarksAsync(diff, cancellationToken);
         await _eventPublisher.PublishAsync(new WorkflowExecuted(Workflow, WorkflowState), cancellationToken);
 
-        return new ResumeWorkflowHostResult(diff);
-    }
-
-    private async Task PublishChangedBookmarksAsync(Diff<Bookmark> diff, CancellationToken cancellationToken)
-    {
-        var removedBookmarks = diff.Removed;
-        var createdBookmarks = diff.Added;
-        await _eventPublisher.PublishAsync(new WorkflowBookmarksIndexed(new IndexedWorkflowBookmarks(WorkflowState, createdBookmarks, removedBookmarks)), cancellationToken);
+        return new ResumeWorkflowHostResult();
     }
 }

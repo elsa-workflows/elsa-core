@@ -25,8 +25,7 @@ public static class DependencyInjectionExtensions
             .WithDeadLetterRequestLogging(true);
     }
 
-    public static ActorSystemConfig ConfigureActorSystemConfig(this ActorSystemConfig systemConfig,
-        Action<ActorSystemConfig> callback)
+    public static ActorSystemConfig ConfigureActorSystemConfig(this ActorSystemConfig systemConfig, Action<ActorSystemConfig> callback)
     {
         callback(systemConfig);
         return systemConfig;

@@ -9,6 +9,8 @@ using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Core.Activities.Flowchart.Models;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Core.Signals;
 using Refit;
 
 namespace Elsa.Telnyx.Activities;
@@ -21,6 +23,13 @@ namespace Elsa.Telnyx.Activities;
 [WebhookDriven(WebhookEventTypes.CallAnswered)]
 public class AnswerCall : ActivityBase<CallAnsweredPayload>
 {
+    /// <inheritdoc />
+    public AnswerCall()
+    {
+        // To avoid Telnyx sending a webhook before the workflow got a chance to persist bookmarks, we wait calling out to Telnyx until after.
+        OnSignalReceived<BookmarksPersistedSignal>(InvokeTelnyxAsync);
+    }
+
     /// <summary>
     /// The call control ID to answer. Leave blank when the workflow is driven by an incoming call and you wish to pick up that one.
     /// </summary>
@@ -29,20 +38,27 @@ public class AnswerCall : ActivityBase<CallAnsweredPayload>
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        var telnyxClient = context.GetRequiredService<ITelnyxClient>();
-            
+        context.CreateBookmark(new WebhookEventBookmarkPayload(WebhookEventTypes.CallAnswered), ResumeAsync);
+    }
+    
+    /// <summary>
+    /// Invokes Telnyx' API to answer the call.
+    /// </summary>
+    private async ValueTask InvokeTelnyxAsync(BookmarksPersistedSignal signal, SignalContext context)
+    {
+        var activityExecutionContext = context.ReceiverActivityExecutionContext;
+        var callControlId = activityExecutionContext.GetCallControlId(CallControlId) ?? throw new Exception("CallControlId is required.");
+        var request = new AnswerCallRequest();
+        var telnyxClient = activityExecutionContext.GetRequiredService<ITelnyxClient>();
+        
         try
         {
-            var callControlId = context.GetCallControlId(CallControlId) ?? throw new Exception("CallControlId is required.");
-            var request = new AnswerCallRequest();
-            await telnyxClient.Calls.AnswerCallAsync(callControlId, request, context.CancellationToken);
-
-            context.CreateBookmark(new WebhookEventBookmarkPayload(WebhookEventTypes.CallAnswered), ResumeAsync);
+            await telnyxClient.Calls.AnswerCallAsync(callControlId, request, context.CancellationToken);    
         }
         catch (ApiException e)
         {
             if (!await e.CallIsNoLongerActiveAsync()) throw;
-            await context.CompleteActivityAsync(new Outcomes("Disconnected"));
+            await activityExecutionContext.CompleteActivityAsync(new Outcomes("Disconnected"));
         }
     }
 
