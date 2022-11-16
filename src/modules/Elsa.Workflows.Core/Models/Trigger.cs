@@ -34,7 +34,7 @@ public abstract class Trigger : ActivityBase, ITrigger
     protected virtual object GetTriggerPayload(TriggerIndexingContext context) => new();
 }
 
-public abstract class Trigger<TResult> : Activity<TResult>, ITrigger
+public abstract class Trigger<TResult> : ActivityBase<TResult>, ITrigger
 {
     protected Trigger()
     {
