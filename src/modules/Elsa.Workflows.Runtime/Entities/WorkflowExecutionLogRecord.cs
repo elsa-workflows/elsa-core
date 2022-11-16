@@ -1,4 +1,3 @@
-using System;
 using Elsa.Common.Entities;
 
 namespace Elsa.Workflows.Runtime.Entities

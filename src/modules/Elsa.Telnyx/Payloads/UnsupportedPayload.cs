@@ -1,8 +1,7 @@
 ﻿using Elsa.Telnyx.Payloads.Abstract;
 
-namespace Elsa.Telnyx.Payloads
+namespace Elsa.Telnyx.Payloads;
+
+public sealed record UnsupportedPayload : Payload
 {
-    public sealed record UnsupportedPayload : Payload
-    {
-    }
 }

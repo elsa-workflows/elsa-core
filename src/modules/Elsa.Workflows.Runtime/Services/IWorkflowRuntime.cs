@@ -1,6 +1,3 @@
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using Elsa.Common.Models;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.State;
@@ -18,7 +15,7 @@ public interface IWorkflowRuntime
 }
 
 public record StartWorkflowRuntimeOptions(string? CorrelationId = default, IDictionary<string, object>? Input = default, VersionOptions VersionOptions = default);
-public record ResumeWorkflowRuntimeOptions(IDictionary<string, object>? Input = default);
+public record ResumeWorkflowRuntimeOptions(string? CorrelationId = default, IDictionary<string, object>? Input = default);
 public record StartWorkflowResult(string InstanceId, ICollection<Bookmark> Bookmarks);
 public record ResumeWorkflowResult(ICollection<Bookmark> Bookmarks);
 public record TriggerWorkflowsRuntimeOptions(string? CorrelationId = default, IDictionary<string, object>? Input = default);

@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Elsa.Workflows.Runtime.Entities;
 
 namespace Elsa.Workflows.Runtime.Comparers;

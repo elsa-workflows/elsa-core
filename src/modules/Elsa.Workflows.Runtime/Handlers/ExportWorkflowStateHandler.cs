@@ -1,12 +1,10 @@
-using System.Threading;
-using System.Threading.Tasks;
 using Elsa.Mediator.Services;
 using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Runtime.Services;
 
 namespace Elsa.Workflows.Runtime.Handlers;
 
-public class ExportWorkflowStateHandler : INotificationHandler<WorkflowExecuted>
+internal class ExportWorkflowStateHandler : INotificationHandler<WorkflowExecuted>
 {
     private readonly IWorkflowStateExporter _exporter;
 

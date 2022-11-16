@@ -1,8 +1,7 @@
-﻿namespace Elsa.Telnyx.Client.Services
+﻿namespace Elsa.Telnyx.Client.Services;
+
+public interface ITelnyxClient
 {
-    public interface ITelnyxClient
-    {
-        ICallsApi Calls { get; }
-        INumberLookupApi NumberLookup { get; }
-    }
+    ICallsApi Calls { get; }
+    INumberLookupApi NumberLookup { get; }
 }

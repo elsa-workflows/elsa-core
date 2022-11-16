@@ -30,8 +30,6 @@ using Elsa.Workflows.Runtime.Implementations;
 using FastEndpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.Data.Sqlite;
-using Proto.Persistence.Sqlite;
 using Event = Elsa.Workflows.Core.Activities.Event;
 
 var builder = WebApplication.CreateBuilder(args);

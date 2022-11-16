@@ -13,9 +13,11 @@ public class EFCoreBookmarkStore : IBookmarkStore
         string activityTypeName,
         string hash,
         string workflowInstanceId,
-        IEnumerable<string> bookmarkIds, CancellationToken cancellationToken = default)
+        IEnumerable<string> bookmarkIds,
+        string? correlationId,
+        CancellationToken cancellationToken = default)
     {
-        var storedBookmarks = bookmarkIds.Select(x => new StoredBookmark(activityTypeName, hash, workflowInstanceId, x)).ToList();
+        var storedBookmarks = bookmarkIds.Select(x => new StoredBookmark(activityTypeName, hash, workflowInstanceId, x, correlationId)).ToList();
         await _store.SaveManyAsync(storedBookmarks, cancellationToken);
     }
 
@@ -27,6 +29,9 @@ public class EFCoreBookmarkStore : IBookmarkStore
 
     public async ValueTask<IEnumerable<StoredBookmark>> FindByWorkflowInstanceAndHashAsync(string workflowInstanceId, string hash, CancellationToken cancellationToken) => 
         await _store.FindManyAsync(x => x.WorkflowInstanceId == workflowInstanceId && x.Hash == hash, cancellationToken);
+    
+    public async ValueTask<IEnumerable<StoredBookmark>> FindByCorrelationAndHashAsync(string correlationId, string hash, CancellationToken cancellationToken) => 
+        await _store.FindManyAsync(x => x.CorrelationId == correlationId && x.Hash == hash, cancellationToken);
 
     public async ValueTask DeleteAsync(string hash, string workflowInstanceId, CancellationToken cancellationToken = default) =>
         await _store.DeleteWhereAsync(x => x.WorkflowInstanceId == workflowInstanceId && x.Hash == hash, cancellationToken);

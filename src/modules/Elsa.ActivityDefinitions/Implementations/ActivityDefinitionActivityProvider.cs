@@ -47,6 +47,7 @@ public class ActivityDefinitionActivityProvider : IActivityProvider
             Category = definition.Category.WithDefault("Custom"),
             Kind = ActivityKind.Action,
             IsBrowsable = definition.IsPublished,
+            ActivityType = typeof(ActivityDefinitionActivity),
             Constructor = context =>
             {
                 var activity = (ActivityDefinitionActivity)_activityFactory.Create(typeof(ActivityDefinitionActivity), context);

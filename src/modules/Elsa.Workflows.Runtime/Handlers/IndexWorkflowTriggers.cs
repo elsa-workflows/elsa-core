@@ -1,12 +1,10 @@
-using System.Threading;
-using System.Threading.Tasks;
 using Elsa.Workflows.Management.Notifications;
 using Elsa.Mediator.Services;
 using Elsa.Workflows.Runtime.Services;
 
 namespace Elsa.Workflows.Runtime.Handlers;
 
-public class IndexWorkflowTriggers : INotificationHandler<WorkflowDefinitionPublished>, INotificationHandler<WorkflowDefinitionRetracted>
+internal class IndexWorkflowTriggers : INotificationHandler<WorkflowDefinitionPublished>, INotificationHandler<WorkflowDefinitionRetracted>
 {
     private readonly ITriggerIndexer _triggerIndexer;
     public IndexWorkflowTriggers(ITriggerIndexer triggerIndexer) => _triggerIndexer = triggerIndexer;

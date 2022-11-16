@@ -1,9 +1,8 @@
-﻿namespace Elsa.Telnyx.Exceptions
+﻿namespace Elsa.Telnyx.Exceptions;
+
+public class MissingFromNumberException : TelnyxException
 {
-    public class MissingFromNumberException : TelnyxException
+    public MissingFromNumberException(string message, Exception? innerException = default) : base(message, innerException)
     {
-        public MissingFromNumberException(string message, Exception? innerException = default) : base(message, innerException)
-        {
-        }
     }
 }

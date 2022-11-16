@@ -34,6 +34,7 @@ public class BookmarkGrain : BookmarkGrainBase
         var bookmarks = request.BookmarkIds.Select(x => new StoredBookmark
         {
             WorkflowInstanceId = request.WorkflowInstanceId,
+            CorrelationId = request.CorrelationId,
             BookmarkId = x
         }).ToList();
 
@@ -50,7 +51,12 @@ public class BookmarkGrain : BookmarkGrainBase
     public override Task<ResolveBookmarksResponse> Resolve(ResolveBookmarksRequest request)
     {
         var response = new ResolveBookmarksResponse();
-        response.Bookmarks.AddRange(_bookmarks);
+        var query = response.Bookmarks.AsQueryable();
+
+        if (!string.IsNullOrEmpty(request.CorrelationId))
+            query = query.Where(x => x.CorrelationId == request.CorrelationId);
+        
+        response.Bookmarks.AddRange(query);
 
         return Task.FromResult(response);
     }

@@ -1,9 +1,8 @@
-﻿namespace Elsa.Telnyx.Exceptions
+﻿namespace Elsa.Telnyx.Exceptions;
+
+public class TelnyxException : Exception
 {
-    public class TelnyxException : Exception
+    public TelnyxException(string message, Exception? innerException = default) : base(message, innerException)
     {
-        public TelnyxException(string message, Exception? innerException = default) : base(message, innerException)
-        {
-        }
     }
 }

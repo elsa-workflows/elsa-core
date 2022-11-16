@@ -1,9 +1,8 @@
-﻿namespace Elsa.Telnyx.Exceptions
+﻿namespace Elsa.Telnyx.Exceptions;
+
+public class MissingCallControlAppIdException : TelnyxException
 {
-    public class MissingCallControlAppIdException : TelnyxException
+    public MissingCallControlAppIdException(string message, Exception? innerException = default) : base(message, innerException)
     {
-        public MissingCallControlAppIdException(string message, Exception? innerException = default) : base(message, innerException)
-        {
-        }
     }
 }

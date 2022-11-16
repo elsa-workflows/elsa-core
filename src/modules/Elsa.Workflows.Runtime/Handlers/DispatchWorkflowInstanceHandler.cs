@@ -1,5 +1,3 @@
-using System.Threading;
-using System.Threading.Tasks;
 using Elsa.Mediator.Models;
 using Elsa.Mediator.Services;
 using Elsa.Workflows.Runtime.Commands;
@@ -7,7 +5,7 @@ using Elsa.Workflows.Runtime.Services;
 
 namespace Elsa.Workflows.Runtime.Handlers;
 
-public class DispatchWorkflowInstanceHandler : ICommandHandler<DispatchWorkflowInstance>
+internal class DispatchWorkflowInstanceHandler : ICommandHandler<DispatchWorkflowInstance>
 {
     private readonly IWorkflowRuntime _workflowRuntime;
 
@@ -15,12 +13,12 @@ public class DispatchWorkflowInstanceHandler : ICommandHandler<DispatchWorkflowI
     {
         _workflowRuntime = workflowRuntime;
     }
-    
+
     public async Task<Unit> HandleAsync(DispatchWorkflowInstance command, CancellationToken cancellationToken)
     {
-        var options = new ResumeWorkflowRuntimeOptions(command.Input);
+        var options = new ResumeWorkflowRuntimeOptions(command.CorrelationId, command.Input);
         await _workflowRuntime.ResumeWorkflowAsync(command.InstanceId, command.BookmarkId, options, cancellationToken);
-        
+
         return Unit.Instance;
     }
 }

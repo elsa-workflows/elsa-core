@@ -39,7 +39,7 @@ public class ActivityRegistry : IActivityRegistry
     public ActivityDescriptor? Find(string type) => _activityDescriptors.TryGetValue((type, 0), out var descriptor) ? descriptor : null;
     public ActivityDescriptor? Find(string type, int version) => _activityDescriptors.TryGetValue((type, version), out var descriptor) ? descriptor : null;
     public ActivityDescriptor? Find(Func<ActivityDescriptor, bool> predicate) => _activityDescriptors.Values.FirstOrDefault(predicate);
-    
+    public IEnumerable<ActivityDescriptor> FindMany(Func<ActivityDescriptor, bool> predicate) => _activityDescriptors.Values.Where(predicate);
 
     private void Add(ActivityDescriptor descriptor, ICollection<ActivityDescriptor> target)
     {

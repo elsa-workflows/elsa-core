@@ -1,8 +1,7 @@
-namespace Elsa.Telnyx.Models
+namespace Elsa.Telnyx.Models;
+
+public class TelnyxWebhookMeta
 {
-    public class TelnyxWebhookMeta
-    {
-        public int Attempt { get; set; }
-        public string DeliveredTo { get; set; } = default!;
-    }
+    public int Attempt { get; set; }
+    public string DeliveredTo { get; set; } = default!;
 }

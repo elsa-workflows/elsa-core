@@ -1,11 +1,9 @@
 ﻿using Elsa.Telnyx.Attributes;
 
-namespace Elsa.Telnyx.Payloads.Call
+namespace Elsa.Telnyx.Payloads.Call;
+
+[Webhook(WebhookEventTypes.CallSpeakStarted, ActivityTypeName, "Call Speak Started", "Triggered when speaking has started.")]
+public sealed record CallSpeakStarted : CallPayload
 {
-    [Webhook(EventType, ActivityTypeName, "Call Speak Started", "Triggered when speaking has started.")]
-    public sealed record CallSpeakStarted : CallPayload
-    {
-        public const string EventType = "call.speak.started";
-        public const string ActivityTypeName = "CallSpeakStarted";
-    }
+    public const string ActivityTypeName = "CallSpeakStarted";
 }

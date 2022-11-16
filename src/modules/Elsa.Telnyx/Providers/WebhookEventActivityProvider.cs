@@ -58,6 +58,7 @@ public class WebhookEventActivityProvider : IActivityProvider
             Category = category,
             Kind = ActivityKind.Job,
             IsBrowsable = true,
+            ActivityType = typeof(WebhookEvent),
             Constructor = context =>
             {
                 var activity = _activityFactory.Create<WebhookEvent>(context);

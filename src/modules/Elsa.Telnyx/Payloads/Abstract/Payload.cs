@@ -1,7 +1,6 @@
-﻿namespace Elsa.Telnyx.Payloads.Abstract
+﻿namespace Elsa.Telnyx.Payloads.Abstract;
+
+public abstract record Payload
 {
-    public abstract record Payload
-    {
-        public string? ClientState { get; set; }
-    }
+    public string? ClientState { get; set; }
 }

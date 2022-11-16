@@ -1,5 +1,4 @@
 using System.Text.RegularExpressions;
-using Elsa.Workflows.Core.Models;
 using Humanizer;
 
 namespace Elsa.Telnyx.Extensions;

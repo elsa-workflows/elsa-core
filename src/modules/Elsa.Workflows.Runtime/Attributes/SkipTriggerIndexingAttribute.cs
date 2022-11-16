@@ -1,4 +1,3 @@
-using System;
 using Elsa.Workflows.Runtime.Implementations;
 
 namespace Elsa.Workflows.Runtime.Attributes;
