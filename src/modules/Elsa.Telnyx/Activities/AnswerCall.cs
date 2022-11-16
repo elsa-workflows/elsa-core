@@ -1,5 +1,4 @@
-﻿using Elsa.Telnyx;
-using Elsa.Telnyx.Client.Models;
+﻿using Elsa.Telnyx.Client.Models;
 using Elsa.Telnyx.Client.Services;
 using Elsa.Telnyx.Extensions;
 using Elsa.Telnyx.Payloads.Call;
@@ -10,7 +9,7 @@ using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 using Refit;
 
-namespace Elsa.Activities.Telnyx.Activities
+namespace Elsa.Telnyx.Activities
 {
     /// <summary>
     /// Answer an incoming call. You must issue this command before executing subsequent commands on an incoming call.

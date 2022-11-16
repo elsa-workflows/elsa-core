@@ -1,5 +1,4 @@
-﻿using Elsa.Telnyx;
-using Elsa.Telnyx.Client.Models;
+﻿using Elsa.Telnyx.Client.Models;
 using Elsa.Telnyx.Client.Services;
 using Elsa.Telnyx.Extensions;
 using Elsa.Telnyx.Payloads.Call;
@@ -10,7 +9,7 @@ using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Models;
 using Refit;
 
-namespace Elsa.Activities.Telnyx.Activities
+namespace Elsa.Telnyx.Activities
 {
     /// <summary>
     /// Convert text to speech and play it on the call until the required DTMF signals are gathered to build interactive menus.
