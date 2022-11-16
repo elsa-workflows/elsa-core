@@ -10,6 +10,7 @@ using Elsa.Telnyx.Handlers;
 using Elsa.Telnyx.Options;
 using Elsa.Telnyx.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Refit;
 
 namespace Elsa.Telnyx.Extensions
@@ -61,7 +62,7 @@ namespace Elsa.Telnyx.Extensions
             {
                 var httpClientBuilder = services.AddRefitClient<T>(refitSettings).ConfigureHttpClient((sp, client) =>
                 {
-                    var options = sp.GetRequiredService<TelnyxOptions>();
+                    var options = sp.GetRequiredService<IOptions<TelnyxOptions>>().Value;
                     client.BaseAddress = options.ApiUrl;
                     client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", options.ApiKey);
                 });
@@ -73,7 +74,7 @@ namespace Elsa.Telnyx.Extensions
                 services.AddScoped(sp =>
                 {
                     var httpClient = httpClientFactory(sp);
-                    var options = sp.GetRequiredService<TelnyxOptions>();
+                    var options = sp.GetRequiredService<IOptions<TelnyxOptions>>().Value;
                     httpClient.BaseAddress ??= options.ApiUrl;
                     httpClient.DefaultRequestHeaders.Authorization ??= new AuthenticationHeaderValue("Bearer", options.ApiKey);
 
