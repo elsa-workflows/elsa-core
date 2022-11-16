@@ -31,7 +31,7 @@ public static class ActivityExecutionContextExtensions
     /// <summary>
     /// Returns true if this activity is triggered for the first time and not being resumed.
     /// </summary>
-    public static bool IsFirstPass(this ActivityExecutionContext context) => context.WorkflowExecutionContext.ExecuteDelegate != null;
+    public static bool IsFirstPass(this ActivityExecutionContext context) => context.WorkflowExecutionContext.ExecuteDelegate == null;
 
     public static WorkflowExecutionLogEntry AddExecutionLogEntry(this ActivityExecutionContext context, string eventName, string? message = default, string? source = default, object? payload = default)
     {
