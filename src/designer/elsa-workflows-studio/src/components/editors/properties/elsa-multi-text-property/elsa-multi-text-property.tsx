@@ -1,10 +1,10 @@
-import {Component, h, Prop, State} from '@stencil/core';
+import {Component, h, Prop, State, Event, EventEmitter} from '@stencil/core';
 import {
   ActivityDefinitionProperty,
   ActivityPropertyDescriptor,
   SyntaxNames,
   SelectListItem,
-  SelectList, ActivityModel
+  SelectList, ActivityModel, EventTypes
 } from "../../../../models";
 import {parseJson} from "../../../../utils/utils";
 import Tunnel from "../../../../data/workflow-editor";
@@ -21,6 +21,7 @@ export class ElsaMultiTextProperty {
   @Prop() propertyModel: ActivityDefinitionProperty;
   @Prop({mutable: true}) serverUrl: string;
   @State() currentValue?: string;
+  @Event() valueChange: EventEmitter<Array<string | number | boolean | SelectListItem>>;
 
   selectList: SelectList = {items: [], isFlagsEnum: false};
 
@@ -37,6 +38,7 @@ export class ElsaMultiTextProperty {
       return item.value;
     })
 
+    this.valueChange.emit(newValue);
     this.currentValue = JSON.stringify(newValues);
     this.propertyModel.expressions[SyntaxNames.Json] = this.currentValue;
   }

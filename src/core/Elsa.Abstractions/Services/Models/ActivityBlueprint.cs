@@ -46,5 +46,7 @@ namespace Elsa.Services.Models
         public IDictionary<string, string> PropertyStorageProviders { get; set; } = new Dictionary<string, string>();
         public string? Source { get; set; }
         public override string ToString() => Type;
+        public int? X { get; set; }
+        public int? Y { get; set; }
     }
 }

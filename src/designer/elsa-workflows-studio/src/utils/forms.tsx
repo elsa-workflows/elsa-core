@@ -26,7 +26,7 @@ export function textInput(context: FormContext, fieldName: string, label: string
       </label>
       <div class="elsa-mt-1">
         {readonlyField ? <input type="text" readonly id={fieldId} name={fieldName} value={value}
-                                class="focus:elsa-ring-blue-500 focus:elsa-border-blue-500 block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300"/>
+               class="focus:elsa-ring-blue-500 focus:elsa-border-blue-500 block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300"/>
           : <input type="text" id={fieldId} name={fieldName} value={value} onChange={e => onTextInputChange(e, context)}
                    class="focus:elsa-ring-blue-500 focus:elsa-border-blue-500 block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300"/>}
       </div>

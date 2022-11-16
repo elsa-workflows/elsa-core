@@ -1,0 +1,47 @@
+:host {
+  display: block;
+}
+
+.workflow-canvas {
+  background-color: #fbfbfb;
+  width: 100%;
+  height: calc(100vh - 64px);
+  box-sizing: border-box;
+}
+
+.outcome {
+  background-color: #fbfbfb;
+}
+
+.start-btn {
+  display: flex;
+  top: 1rem;
+  width: 100%;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.start-btn > * {
+  pointer-events: initial;
+}
+
+.elsa-workflow-wrapper {
+  width: 100%;
+  height: calc(100vh - 64px);
+  overflow: hidden;
+}
+
+.workflow-canvas .x6-graph-scroller {
+  position: relative;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.x6-port-out .x6-port-label {
+  opacity: 0;
+  transition: opacity 0.2s ease-in;
+}
+
+.x6-port-out:hover .x6-port-label {
+  opacity: 1;
+}

@@ -82,7 +82,11 @@ export class ElsaWorkflowBlueprintViewerScreen {
 
   componentDidLoad() {
     if (!this.designer) {
-      this.designer = this.el.querySelector("elsa-designer-tree") as HTMLElsaDesignerTreeElement;
+      if (state.useX6Graphs) {
+        this.designer = this.el.querySelector("x6-designer") as HTMLX6DesignerElement;
+      } else {
+        this.designer = this.el.querySelector('elsa-designer-tree') as HTMLElsaDesignerTreeElement;
+      }
       this.designer.model = this.workflowModel;
     }
   }
@@ -122,12 +126,14 @@ export class ElsaWorkflowBlueprintViewerScreen {
       displayName: source.displayName || source.name || source.type,
       name: source.name,
       type: source.type,
+      x: source.x,
+      y: source.y,
       properties: properties,
       outcomes: [...activityDescriptor.outcomes],
       persistWorkflow: source.persistWorkflow,
       saveWorkflowContext: source.saveWorkflowContext,
       loadWorkflowContext: source.loadWorkflowContext,
-      propertyStorageProviders: source.propertyStorageProviders
+      propertyStorageProviders: source.propertyStorageProviders,
     }
   }
 
@@ -150,12 +156,22 @@ export class ElsaWorkflowBlueprintViewerScreen {
   renderCanvas() {
     return (
       <div class="elsa-flex-1 elsa-flex">
-        <elsa-designer-tree
-          model={this.workflowModel}
-          class="elsa-flex-1"
-          ref={el => this.designer = el}
-          mode={WorkflowDesignerMode.Blueprint}
-        />
+        {!state.useX6Graphs && (
+          <elsa-designer-tree
+            model={this.workflowModel}
+            class="elsa-flex-1"
+            ref={el => this.designer = el}
+            mode={WorkflowDesignerMode.Blueprint}
+          />
+        )}
+        {state.useX6Graphs && (
+          <x6-designer
+            model={this.workflowModel}
+            class="elsa-workflow-wrapper"
+            ref={el => this.designer = el}
+            mode={WorkflowDesignerMode.Blueprint}
+          />
+        )}
         <elsa-flyout-panel>
           <elsa-tab-header tab="general" slot="header">General</elsa-tab-header>
           <elsa-tab-content tab="general" slot="content">
