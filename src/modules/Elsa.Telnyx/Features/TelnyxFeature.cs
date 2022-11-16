@@ -9,6 +9,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Telnyx.Features;
 
+/// <summary>
+/// Enables Telnyx integration.
+/// </summary>
 public class TelnyxFeature : FeatureBase
 {
     public TelnyxFeature(IModule module) : base(module)
@@ -21,7 +24,7 @@ public class TelnyxFeature : FeatureBase
 
     public override void Configure()
     {
-        Module.UseWorkflowManagement(management => management.AddActivity<IncomingCall>());
+        Module.UseWorkflowManagement(management => management.AddActivitiesFrom<IncomingCall>());
     }
 
     public override void Apply()
