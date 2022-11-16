@@ -115,7 +115,7 @@ deploy:
         api_key:
             secure: uMFx5IwBzcjYIJVy+F+zbLl01Ei7MoxEOut9zWXVAu/SjaITJNTg6PAE1zFWi1TZ
         skip_symbols: false
-        symbol_server: https://www.nuget.org/api/v2/symbolpackage # remove to push symbols to SymbolSource.org
+        symbol_server: https://api.nuget.org/v3/index.json # remove to push symbols to SymbolSource.org
         artifact: /Elsa.*(\.|\.s)nupkg/
         on:
             APPVEYOR_REPO_TAG: true
