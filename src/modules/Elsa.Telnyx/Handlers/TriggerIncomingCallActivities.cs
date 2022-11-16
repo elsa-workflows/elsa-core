@@ -3,6 +3,7 @@ using Elsa.Telnyx.Activities;
 using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Events;
 using Elsa.Telnyx.Extensions;
+using Elsa.Telnyx.Payloads.Abstract;
 using Elsa.Telnyx.Payloads.Call;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Helpers;
@@ -33,7 +34,7 @@ internal class TriggerIncomingCallActivities : INotificationHandler<TelnyxWebhoo
         if (payload is not CallInitiatedPayload callInitiatedPayload)
             return;
 
-        var correlationId = payload.GetCorrelationId();
+        var correlationId = ((Payload)webhook.Data.Payload).GetCorrelationId();;
         var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<IncomingCall>();
         var input = new Dictionary<string, object>().AddInput(webhook);
 

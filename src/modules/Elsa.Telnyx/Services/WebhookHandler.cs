@@ -6,6 +6,7 @@ using Elsa.Telnyx.Converters;
 using Elsa.Telnyx.Events;
 using Elsa.Telnyx.Extensions;
 using Elsa.Telnyx.Models;
+using Elsa.Telnyx.Payloads.Abstract;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
@@ -33,7 +34,7 @@ namespace Elsa.Telnyx.Services
             var cancellationToken = httpContext.RequestAborted;
             var json = await ReadRequestBodyAsync(httpContext);
             var webhook = JsonSerializer.Deserialize<TelnyxWebhook>(json, SerializerSettings)!;
-            var correlationId = webhook.Data.Payload.GetCorrelationId();
+            var correlationId = ((Payload)webhook.Data.Payload).GetCorrelationId();
 
             using var loggingScope = _logger.BeginScope(new Dictionary<string, object> { ["CorrelationId"] = correlationId });
             _logger.LogDebug("Telnyx webhook payload received: {@Webhook}", webhook);

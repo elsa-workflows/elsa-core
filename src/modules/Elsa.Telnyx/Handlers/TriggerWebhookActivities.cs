@@ -5,6 +5,7 @@ using Elsa.Telnyx.Attributes;
 using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Events;
 using Elsa.Telnyx.Extensions;
+using Elsa.Telnyx.Payloads.Abstract;
 using Elsa.Workflows.Runtime.Services;
 using Microsoft.Extensions.Logging;
 
@@ -34,7 +35,7 @@ namespace Elsa.Telnyx.Handlers
             if (activityType == null)
                 return;
 
-            var correlationId = payload.GetCorrelationId();
+            var correlationId = ((Payload)webhook.Data.Payload).GetCorrelationId();
             var bookmarkPayload = new WebhookEventBookmarkPayload(eventType);
             await _workflowRuntime.TriggerWorkflowsAsync(activityType, bookmarkPayload, new TriggerWorkflowsRuntimeOptions(correlationId), cancellationToken);
         }
