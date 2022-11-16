@@ -38,6 +38,18 @@ public class WorkflowManagementFeature : FeatureBase
         ActivityTypes.Add(typeof(T));
         return this;
     }
+    
+    public WorkflowManagementFeature AddActivitiesFrom<TMarker>()
+    {
+        var activityTypes = typeof(TMarker).Assembly.GetExportedTypes().Where(x => typeof(IActivity).IsAssignableFrom(x)).ToList();
+        return AddActivities(activityTypes);
+    }
+    
+    public WorkflowManagementFeature AddActivities(IEnumerable<Type> activityTypes)
+    {
+        ActivityTypes.AddRange(activityTypes);
+        return this;
+    }
 
     public override void Apply()
     {
