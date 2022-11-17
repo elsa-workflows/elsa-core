@@ -1,6 +1,9 @@
-﻿using Elsa.Telnyx.Client.Models;
+﻿using Elsa.Telnyx.Attributes;
+using Elsa.Telnyx.Bookmarks;
+using Elsa.Telnyx.Client.Models;
 using Elsa.Telnyx.Client.Services;
 using Elsa.Telnyx.Extensions;
+using Elsa.Telnyx.Payloads.Call;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
@@ -10,6 +13,7 @@ using Refit;
 namespace Elsa.Telnyx.Activities;
 
 [Activity(Constants.Namespace, "Convert text to speech and play it back on the call.", Kind = ActivityKind.Task)]
+[WebhookDriven(WebhookEventTypes.CallSpeakEnded)]
 public class SpeakText : Activity
 {
     /// <summary>
@@ -91,7 +95,7 @@ public class SpeakText : Activity
         try
         {
             await telnyxClient.Calls.SpeakTextAsync(callControlId, request, context.CancellationToken);
-            context.CreateBookmark(ResumeAsync);
+            context.CreateBookmark(new WebhookEventBookmarkPayload(WebhookEventTypes.CallSpeakEnded), ResumeAsync);
         }
         catch (ApiException e)
         {

@@ -1,9 +1,7 @@
 using Elsa.Mediator.Services;
-using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
-using Elsa.Workflows.Core.Signals;
 using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Runtime.Services;
