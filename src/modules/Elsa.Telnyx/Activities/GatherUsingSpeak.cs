@@ -1,4 +1,6 @@
-﻿using Elsa.Telnyx.Client.Models;
+﻿using Elsa.Telnyx.Attributes;
+using Elsa.Telnyx.Bookmarks;
+using Elsa.Telnyx.Client.Models;
 using Elsa.Telnyx.Client.Services;
 using Elsa.Telnyx.Extensions;
 using Elsa.Telnyx.Payloads.Call;
@@ -7,6 +9,7 @@ using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Models;
+using Elsa.Workflows.Runtime.Services;
 using Refit;
 
 namespace Elsa.Telnyx.Activities;
@@ -16,7 +19,8 @@ namespace Elsa.Telnyx.Activities;
 /// </summary>
 [Activity(Constants.Namespace, "Convert text to speech and play it on the call until the required DTMF signals are gathered to build interactive menus.", Kind = ActivityKind.Task)]
 [FlowNode("Valid input", "Invalid input", "Disconnected")]
-public class GatherUsingSpeak : ActivityBase<CallGatherEndedPayload>
+[WebhookDriven(WebhookEventTypes.CallGatherEnded)]
+public class GatherUsingSpeak : ActivityBase<CallGatherEndedPayload>, IBookmarksPersistedHandler
 {
     /// <summary>
     /// The call control ID of the call from which to gather input. Leave empty to use the ambient call control ID, if there is any.
@@ -131,9 +135,11 @@ public class GatherUsingSpeak : ActivityBase<CallGatherEndedPayload>
         DefaultValue = 60000
     )]
     public Input<int?>? TimeoutMillis { get; set; } = new(60000);
-
-    /// <inheritdoc />
-    protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
+    
+    /// <summary>
+    /// Calls out to Telnyx to start gathering input.
+    /// </summary>
+    public async ValueTask BookmarksPersistedAsync(ActivityExecutionContext context)
     {
         var request = new GatherUsingSpeakRequest(
             Language.Get(context) ?? throw new Exception("Language is required."),
@@ -156,7 +162,6 @@ public class GatherUsingSpeak : ActivityBase<CallGatherEndedPayload>
         try
         {
             await telnyxClient.Calls.GatherUsingSpeakAsync(callControlId, request, context.CancellationToken);
-            context.CreateBookmark(ResumeAsync);
         }
         catch (ApiException e)
         {
@@ -165,10 +170,14 @@ public class GatherUsingSpeak : ActivityBase<CallGatherEndedPayload>
         }
     }
 
+    /// <inheritdoc />
+    protected override void Execute(ActivityExecutionContext context) => context.CreateBookmark(new WebhookEventBookmarkPayload(WebhookEventTypes.CallGatherEnded), ResumeAsync);
+
     private async ValueTask ResumeAsync(ActivityExecutionContext context)
     {
         var payload = context.GetInput<CallGatherEndedPayload>();
         var outcome = payload.Status == "valid" ? "Valid input" : "Invalid input";
+        context.Set(Result, payload);
         await context.CompleteActivityWithOutcomesAsync(outcome);
     }
 }

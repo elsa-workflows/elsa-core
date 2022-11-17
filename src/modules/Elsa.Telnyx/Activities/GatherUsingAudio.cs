@@ -1,4 +1,6 @@
-﻿using Elsa.Telnyx.Client.Models;
+﻿using Elsa.Telnyx.Attributes;
+using Elsa.Telnyx.Bookmarks;
+using Elsa.Telnyx.Client.Models;
 using Elsa.Telnyx.Client.Services;
 using Elsa.Telnyx.Extensions;
 using Elsa.Telnyx.Payloads.Call;
@@ -6,6 +8,7 @@ using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Runtime.Services;
 using Refit;
 
 namespace Elsa.Telnyx.Activities;
@@ -15,7 +18,8 @@ namespace Elsa.Telnyx.Activities;
 /// </summary>
 [Activity(Constants.Namespace, "Play an audio file on the call until the required DTMF signals are gathered to build interactive menus.", Kind = ActivityKind.Task)]
 [FlowNode("Valid input", "Invalid input", "Disconnected")]
-public class GatherUsingAudio : ActivityBase<CallGatherEndedPayload>
+[WebhookDriven(WebhookEventTypes.CallGatherEnded)]
+public class GatherUsingAudio : ActivityBase<CallGatherEndedPayload>, IBookmarksPersistedHandler
 {
     /// <summary>
     /// The call control ID of the call from which to gather input. Leave empty to use the ambient call control ID, if there is any.
@@ -96,9 +100,11 @@ public class GatherUsingAudio : ActivityBase<CallGatherEndedPayload>
         DefaultValue = 60000
     )]
     public Input<int?>? TimeoutMillis { get; set; } = new(60000);
-
-    /// <inheritdoc />
-    protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
+    
+    /// <summary>
+    /// Calls out to Telnyx to actually begin gathering input.
+    /// </summary>
+    public async ValueTask BookmarksPersistedAsync(ActivityExecutionContext context)
     {
         var request = new GatherUsingAudioRequest(
             AudioUrl.Get(context) ?? throw new Exception("AudioUrl is required."),
@@ -120,19 +126,16 @@ public class GatherUsingAudio : ActivityBase<CallGatherEndedPayload>
         try
         {
             await telnyxClient.Calls.GatherUsingAudioAsync(callControlId, request, context.CancellationToken);
-            context.CreateBookmark(ResumeAsync);
         }
         catch (ApiException e)
         {
-            if (await e.CallIsNoLongerActiveAsync())
-            {
-                await context.CompleteActivityWithOutcomesAsync("Disconnected");
-                return;
-            }
-
-            throw;
+            if (!await e.CallIsNoLongerActiveAsync()) throw;
+            await context.CompleteActivityWithOutcomesAsync("Disconnected");
         }
     }
+
+    /// <inheritdoc />
+    protected override void Execute(ActivityExecutionContext context) => context.CreateBookmark(new WebhookEventBookmarkPayload(WebhookEventTypes.CallGatherEnded), ResumeAsync);
 
     private async ValueTask ResumeAsync(ActivityExecutionContext context)
     {
