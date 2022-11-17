@@ -37,7 +37,7 @@ public class BookmarkGrain : BookmarkGrainBase
             CorrelationId = request.CorrelationId,
             BookmarkId = x
         }).ToList();
-
+        
         await _persistence.PersistEventAsync(new BookmarksStored(bookmarks));
         return new Unit();
     }
@@ -51,7 +51,7 @@ public class BookmarkGrain : BookmarkGrainBase
     public override Task<ResolveBookmarksResponse> Resolve(ResolveBookmarksRequest request)
     {
         var response = new ResolveBookmarksResponse();
-        var query = response.Bookmarks.AsQueryable();
+        var query = _bookmarks.AsQueryable();
 
         if (!string.IsNullOrEmpty(request.CorrelationId))
             query = query.Where(x => x.CorrelationId == request.CorrelationId);
