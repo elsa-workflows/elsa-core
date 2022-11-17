@@ -8,6 +8,7 @@ namespace Elsa.Workflows.Core.Models;
 public class ActivityExecutionContext
 {
     private readonly List<Bookmark> _bookmarks = new();
+    private long _executionCount;
 
     public ActivityExecutionContext(
         WorkflowExecutionContext workflowExecutionContext,
@@ -59,6 +60,11 @@ public class ActivityExecutionContext
     /// A list of bookmarks created by the current activity.
     /// </summary>
     public IReadOnlyCollection<Bookmark> Bookmarks => new ReadOnlyCollection<Bookmark>(_bookmarks);
+
+    /// <summary>
+    /// The number of times this <see cref="ActivityExecutionContext"/> has executed.
+    /// </summary>
+    public long ExecutionCount => _executionCount;
 
     /// <summary>
     /// Gets or sets a value that indicates if the workflow should continue executing or not.
@@ -214,6 +220,8 @@ public class ActivityExecutionContext
         var entriesToRemove = WorkflowExecutionContext.CompletionCallbacks.Where(x => x.Owner == this);
         WorkflowExecutionContext.RemoveCompletionCallbacks(entriesToRemove);
     }
+
+    internal void IncrementExecutionCount() => _executionCount++;
 
     private MemoryBlock? GetBlock(MemoryBlockReference locationBlockReference) =>
         ExpressionExecutionContext.Memory.TryGetBlock(locationBlockReference.Id, out var location)

@@ -100,7 +100,7 @@ public class WorkflowGrain : WorkflowGrainBase
         // Create a workflow host.
         _workflowHost = await _workflowHostFactory.CreateAsync(workflow, cancellationToken);
 
-        var startWorkflowOptions = new StartWorkflowHostOptions(WorkflowInstanceId, correlationId, input);
+        var startWorkflowOptions = new StartWorkflowHostOptions(WorkflowInstanceId, correlationId, input, request.TriggerActivityId);
         await _workflowHost.StartWorkflowAsync(startWorkflowOptions, cancellationToken);
 
         _workflowState = _workflowHost.WorkflowState;

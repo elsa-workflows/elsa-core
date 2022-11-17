@@ -1,4 +1,6 @@
-﻿using Elsa.Telnyx.Client.Models;
+﻿using Elsa.Telnyx.Attributes;
+using Elsa.Telnyx.Bookmarks;
+using Elsa.Telnyx.Client.Models;
 using Elsa.Telnyx.Client.Services;
 using Elsa.Telnyx.Extensions;
 using Elsa.Workflows.Core;
@@ -6,6 +8,7 @@ using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Models;
+using Elsa.Workflows.Runtime.Services;
 using Refit;
 
 namespace Elsa.Telnyx.Activities;
@@ -15,7 +18,8 @@ namespace Elsa.Telnyx.Activities;
 /// </summary>
 [Activity(Constants.Namespace, "Play an audio file on the call.", Kind = ActivityKind.Task)]
 [FlowNode("Playback started", "Disconnected")]
-public class PlayAudio : ActivityBase
+[WebhookDriven(WebhookEventTypes.CallPlaybackStarted)]
+public class PlayAudio : ActivityBase, IBookmarksPersistedHandler
 {
     /// <summary>
     /// Unique identifier and token for controlling the call.
@@ -67,7 +71,10 @@ public class PlayAudio : ActivityBase
     )]
     public Input<string?>? TargetLegs { get; set; }
 
-    protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
+    /// <summary>
+    /// Calls out to Telnyx to start playing an audio file.
+    /// </summary>
+    public async ValueTask BookmarksPersistedAsync(ActivityExecutionContext context)
     {
         var loop = Loop.Get(context);
 
@@ -84,13 +91,18 @@ public class PlayAudio : ActivityBase
         try
         {
             await telnyxClient.Calls.PlayAudioAsync(callControlId, request, context.CancellationToken);
-            context.CreateBookmark(ResumeAsync);
         }
         catch (ApiException e)
         {
             if (!await e.CallIsNoLongerActiveAsync()) throw;
             await context.CompleteActivityWithOutcomesAsync("Disconnected");
         }
+    }
+
+    /// <inheritdoc />
+    protected override void Execute(ActivityExecutionContext context)
+    {
+        context.CreateBookmark(new WebhookEventBookmarkPayload(WebhookEventTypes.CallPlaybackStarted), ResumeAsync);
     }
 
     private async ValueTask ResumeAsync(ActivityExecutionContext context) => await context.CompleteActivityWithOutcomesAsync("Playback started");

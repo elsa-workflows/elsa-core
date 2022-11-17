@@ -48,7 +48,8 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
             DefinitionId = definitionId,
             VersionOptions = versionOptions.ToString(),
             CorrelationId = correlationId.WithDefault(""),
-            Input = input?.Serialize()
+            Input = input?.Serialize(),
+            TriggerActivityId = options.TriggerActivityId
         };
 
         var workflowInstanceId = _identityGenerator.GenerateId();
@@ -156,7 +157,7 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
         {
             var startResult = await StartWorkflowAsync(
                 trigger.WorkflowDefinitionId,
-                new StartWorkflowRuntimeOptions(options.CorrelationId, options.Input, VersionOptions.Published),
+                new StartWorkflowRuntimeOptions(options.CorrelationId, options.Input, VersionOptions.Published, trigger.ActivityId),
                 cancellationToken);
 
             triggeredWorkflows.Add(new TriggeredWorkflow(startResult.InstanceId, startResult.Bookmarks));

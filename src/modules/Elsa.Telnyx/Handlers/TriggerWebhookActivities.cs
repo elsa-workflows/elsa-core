@@ -31,14 +31,15 @@ internal class TriggerWebhookActivities : INotificationHandler<TelnyxWebhookRece
         var webhook = notification.Webhook;
         var eventType = webhook.Data.EventType;
         var payload = webhook.Data.Payload;
-        var activityType = payload.GetType().GetCustomAttribute<WebhookAttribute>()?.ActivityType;
+        var ns = Constants.Namespace;
+        var activityType = $"{ns}.{payload.GetType().GetCustomAttribute<WebhookAttribute>()?.ActivityType}";
 
         if (activityType == null)
             return;
 
         var correlationId = ((Payload)webhook.Data.Payload).GetCorrelationId();
         var bookmarkPayload = new WebhookEventBookmarkPayload(eventType);
-        var input = new Dictionary<string, object>().AddInput(webhook);
+        var input = new Dictionary<string, object>().AddInput(nameof(Payload), webhook);
         await _workflowRuntime.TriggerWorkflowsAsync(activityType, bookmarkPayload, new TriggerWorkflowsRuntimeOptions(correlationId, input), cancellationToken);
     }
 }

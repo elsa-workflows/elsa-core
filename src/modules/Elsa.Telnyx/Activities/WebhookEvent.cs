@@ -1,9 +1,11 @@
 ﻿using System.ComponentModel;
 using Elsa.Telnyx.Bookmarks;
+using Elsa.Telnyx.Helpers;
 using Elsa.Telnyx.Payloads.Abstract;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Serialization;
 
 namespace Elsa.Telnyx.Activities;
 
@@ -27,19 +29,19 @@ public class WebhookEvent : ActivityBase
 
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        if (!context.IsFirstPass())
+        if (context.IsTriggerOfWorkflow())
+            await Resume(context);
+        else
         {
             var eventType = context.Get(EventType)!;
             var payload = new WebhookEventBookmarkPayload(eventType);
             context.CreateBookmark(payload, Resume);
         }
-        else
-            await Resume(context);
     }
 
     private async ValueTask Resume(ActivityExecutionContext context)
     {
-        var input = context.GetInput<Payload>();
+        var input = context.GetInput<Payload>(WebhookSerializerOptions.Create());
         Payload = input;
         await CompleteAsync(context);
     }

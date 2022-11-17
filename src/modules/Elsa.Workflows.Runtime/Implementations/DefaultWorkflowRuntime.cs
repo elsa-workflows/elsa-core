@@ -45,7 +45,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
         var workflowHost = await _workflowHostFactory.CreateAsync(workflow, cancellationToken);
 
-        var startWorkflowOptions = new StartWorkflowHostOptions(default, correlationId, input);
+        var startWorkflowOptions = new StartWorkflowHostOptions(default, correlationId, input, options.TriggerActivityId);
         await workflowHost.StartWorkflowAsync(startWorkflowOptions, cancellationToken);
         var workflowState = workflowHost.WorkflowState;
 
@@ -129,7 +129,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         {
             var startResult = await StartWorkflowAsync(
                 trigger.WorkflowDefinitionId,
-                new StartWorkflowRuntimeOptions(options.CorrelationId, options.Input, VersionOptions.Published),
+                new StartWorkflowRuntimeOptions(options.CorrelationId, options.Input, VersionOptions.Published, trigger.ActivityId),
                 cancellationToken);
 
             triggeredWorkflows.Add(new TriggeredWorkflow(startResult.InstanceId, startResult.Bookmarks));

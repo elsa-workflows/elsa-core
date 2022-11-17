@@ -35,6 +35,9 @@ public class DefaultActivityInvokerMiddleware : IActivityExecutionMiddleware
 
         // Reset execute delegate.
         workflowExecutionContext.ExecuteDelegate = null;
+        
+        // Update execution count.
+        context.IncrementExecutionCount();
 
         // Invoke next middleware.
         await _next(context);

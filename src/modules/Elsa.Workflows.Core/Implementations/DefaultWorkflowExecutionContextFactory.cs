@@ -26,13 +26,13 @@ public class DefaultWorkflowExecutionContextFactory : IWorkflowExecutionContextF
         _serviceProvider = serviceProvider;
     }
     
-    public async Task<WorkflowExecutionContext> CreateAsync(
-        Workflow workflow, 
+    public async Task<WorkflowExecutionContext> CreateAsync(Workflow workflow,
         string instanceId,
-        WorkflowState? workflowState, 
+        WorkflowState? workflowState,
         IDictionary<string, object>? input = default,
         string? correlationId = default,
-        ExecuteActivityDelegate? executeActivityDelegate = default, 
+        ExecuteActivityDelegate? executeActivityDelegate = default,
+        string? triggerActivityId = default,
         CancellationToken cancellationToken = default)
     {
         var root = workflow;
@@ -47,7 +47,7 @@ public class DefaultWorkflowExecutionContextFactory : IWorkflowExecutionContextF
         var scheduler = _schedulerFactory.CreateScheduler();
 
         // Setup a workflow execution context.
-        var workflowExecutionContext = new WorkflowExecutionContext(_serviceProvider, instanceId, correlationId, workflow, graph, scheduler, input, executeActivityDelegate, cancellationToken);
+        var workflowExecutionContext = new WorkflowExecutionContext(_serviceProvider, instanceId, correlationId, workflow, graph, scheduler, input, executeActivityDelegate, triggerActivityId, cancellationToken);
 
         // Restore workflow execution context from state, if provided.
         if (workflowState != null) _workflowStateSerializer.DeserializeState(workflowExecutionContext, workflowState);

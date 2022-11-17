@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations.Runtime
 {
     [DbContext(typeof(RuntimeDbContext))]
-    [Migration("20220906152726_Initial")]
+    [Migration("20221117150532_Initial")]
     partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -75,6 +75,43 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations.Runtime
                         .HasDatabaseName("IX_WorkflowState_Status_SubStatus_DefinitionId_DefinitionVersion");
 
                     b.ToTable("WorkflowStates");
+                });
+
+            modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.StoredTrigger", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ActivityId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Data")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Hash")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("WorkflowDefinitionId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Hash")
+                        .HasDatabaseName("IX_StoredTrigger_Hash");
+
+                    b.HasIndex("Name")
+                        .HasDatabaseName("IX_StoredTrigger_Name");
+
+                    b.HasIndex("WorkflowDefinitionId")
+                        .HasDatabaseName("IX_StoredTrigger_WorkflowDefinitionId");
+
+                    b.ToTable("WorkflowTriggers");
                 });
 
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.WorkflowExecutionLogRecord", b =>
@@ -156,39 +193,6 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     b.ToTable("WorkflowExecutionLogRecords");
                 });
 
-            modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.WorkflowTrigger", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Data")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Hash")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("WorkflowDefinitionId")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Hash")
-                        .HasDatabaseName("IX_WorkflowTrigger_Hash");
-
-                    b.HasIndex("Name")
-                        .HasDatabaseName("IX_WorkflowTrigger_Name");
-
-                    b.HasIndex("WorkflowDefinitionId")
-                        .HasDatabaseName("IX_WorkflowTrigger_WorkflowDefinitionId");
-
-                    b.ToTable("WorkflowTriggers");
-                });
-
             modelBuilder.Entity("Elsa.Workflows.Runtime.Models.StoredBookmark", b =>
                 {
                     b.Property<string>("BookmarkId")
@@ -196,6 +200,9 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations.Runtime
 
                     b.Property<string>("ActivityTypeName")
                         .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CorrelationId")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Hash")

@@ -7,10 +7,11 @@ option csharp_namespace = "Elsa.Runtime.Protos";
 message Unit {}
 
 message StartWorkflowRequest {
-  string definitionId = 1;
-  string versionOptions = 2;
-  optional string correlationId = 3;
+  string DefinitionId = 1;
+  string VersionOptions = 2;
+  optional string CorrelationId = 3;
   optional Input input = 4;
+  optional string TriggerActivityId = 5;
 }
 
 message StartWorkflowResponse {

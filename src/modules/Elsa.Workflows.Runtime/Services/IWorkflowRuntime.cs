@@ -16,7 +16,7 @@ public interface IWorkflowRuntime
     Task UpdateBookmarksAsync(UpdateBookmarksContext context, CancellationToken cancellationToken = default);
 }
 
-public record StartWorkflowRuntimeOptions(string? CorrelationId = default, IDictionary<string, object>? Input = default, VersionOptions VersionOptions = default);
+public record StartWorkflowRuntimeOptions(string? CorrelationId = default, IDictionary<string, object>? Input = default, VersionOptions VersionOptions = default, string? TriggerActivityId = default);
 public record ResumeWorkflowRuntimeOptions(string? CorrelationId = default, IDictionary<string, object>? Input = default);
 public record StartWorkflowResult(string InstanceId, ICollection<Bookmark> Bookmarks);
 public record ResumeWorkflowResult(ICollection<Bookmark> Bookmarks);

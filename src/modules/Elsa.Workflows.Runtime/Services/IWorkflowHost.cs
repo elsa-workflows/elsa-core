@@ -15,7 +15,7 @@ public interface IWorkflowHost
     Task<ResumeWorkflowHostResult> ResumeWorkflowAsync(string bookmarkId, ResumeWorkflowHostOptions? options = default, CancellationToken cancellationToken = default);
 }
 
-public record StartWorkflowHostOptions(string? InstanceId = default, string? CorrelationId = default, IDictionary<string, object>? Input = default);
+public record StartWorkflowHostOptions(string? InstanceId = default, string? CorrelationId = default, IDictionary<string, object>? Input = default, string? TriggerActivityId = default);
 public record ResumeWorkflowHostOptions(IDictionary<string, object>? Input = default);
 
 public record StartWorkflowHostResult(Diff<Bookmark> BookmarksDiff);

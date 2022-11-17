@@ -33,7 +33,7 @@ public class IncomingCall : Trigger<CallInitiatedPayload>
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        if (context.IsFirstPass())
+        if (context.IsTriggerOfWorkflow())
         {
             await ResumeAsync(context);
         }

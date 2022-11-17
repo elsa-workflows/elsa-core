@@ -39,13 +39,13 @@ public class WebhookEventActivityProvider : IActivityProvider
     private ActivityDescriptor CreateDescriptor(Type payloadType)
     {
         var webhookAttribute = payloadType.GetCustomAttribute<WebhookAttribute>() ?? throw new Exception($"No WebhookAttribute found on payload type {payloadType}");
-        var ns = "Telnyx";
+        var ns = Constants.Namespace;
         var typeName = webhookAttribute.ActivityType;
         var fullTypeName = $"{ns}.{typeName}";
         var displayNameAttr = payloadType.GetCustomAttribute<DisplayNameAttribute>();
         var displayName = displayNameAttr?.DisplayName ?? webhookAttribute.DisplayName;
         var categoryAttr = payloadType.GetCustomAttribute<CategoryAttribute>();
-        var category = categoryAttr?.Category ?? "Telnyx";
+        var category = categoryAttr?.Category ?? Constants.Category;
         var descriptionAttr = payloadType.GetCustomAttribute<DescriptionAttribute>();
         var description = descriptionAttr?.Description ?? webhookAttribute?.Description;
 

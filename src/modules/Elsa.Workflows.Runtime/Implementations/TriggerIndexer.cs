@@ -124,7 +124,8 @@ public class TriggerIndexer : ITriggerIndexer
         {
             Id = _identityGenerator.GenerateId(),
             WorkflowDefinitionId = workflow.Identity.DefinitionId,
-            Name = activity.Type
+            Name = activity.Type,
+            ActivityId = activity.Id
         };
     }
 
@@ -143,6 +144,7 @@ public class TriggerIndexer : ITriggerIndexer
             Id = _identityGenerator.GenerateId(),
             WorkflowDefinitionId = workflow.Identity.DefinitionId,
             Name = triggerTypeName,
+            ActivityId = trigger.Id,
             Hash = _hasher.Hash(triggerTypeName, x),
             Data = JsonSerializer.Serialize(x)
         });

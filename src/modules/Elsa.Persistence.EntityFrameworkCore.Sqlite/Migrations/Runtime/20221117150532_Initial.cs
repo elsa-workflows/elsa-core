@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -15,7 +16,8 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     BookmarkId = table.Column<string>(type: "TEXT", nullable: false),
                     ActivityTypeName = table.Column<string>(type: "TEXT", nullable: false),
                     Hash = table.Column<string>(type: "TEXT", nullable: false),
-                    WorkflowInstanceId = table.Column<string>(type: "TEXT", nullable: false)
+                    WorkflowInstanceId = table.Column<string>(type: "TEXT", nullable: false),
+                    CorrelationId = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -71,6 +73,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     Id = table.Column<string>(type: "TEXT", nullable: false),
                     WorkflowDefinitionId = table.Column<string>(type: "TEXT", nullable: false),
                     Name = table.Column<string>(type: "TEXT", nullable: false),
+                    ActivityId = table.Column<string>(type: "TEXT", nullable: false),
                     Hash = table.Column<string>(type: "TEXT", nullable: true),
                     Data = table.Column<string>(type: "TEXT", nullable: true)
                 },
@@ -185,17 +188,17 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations.Runtime
                 column: "UpdatedAt");
 
             migrationBuilder.CreateIndex(
-                name: "IX_WorkflowTrigger_Hash",
+                name: "IX_StoredTrigger_Hash",
                 table: "WorkflowTriggers",
                 column: "Hash");
 
             migrationBuilder.CreateIndex(
-                name: "IX_WorkflowTrigger_Name",
+                name: "IX_StoredTrigger_Name",
                 table: "WorkflowTriggers",
                 column: "Name");
 
             migrationBuilder.CreateIndex(
-                name: "IX_WorkflowTrigger_WorkflowDefinitionId",
+                name: "IX_StoredTrigger_WorkflowDefinitionId",
                 table: "WorkflowTriggers",
                 column: "WorkflowDefinitionId");
         }

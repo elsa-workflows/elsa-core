@@ -9,6 +9,7 @@ public class StoredTrigger : Entity
 {
     public string WorkflowDefinitionId { get; set; } = default!;
     public string Name { get; set; } = default!;
+    public string ActivityId { get; set; } = default!;
     public string? Hash { get; set; }
     public string? Data { get; set; }
 }

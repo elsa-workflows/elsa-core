@@ -15,8 +15,7 @@ public class WorkflowExecutionContext
     private readonly IList<ActivityNode> _nodes;
     private readonly IList<ActivityCompletionCallbackEntry> _completionCallbackEntries = new List<ActivityCompletionCallbackEntry>();
 
-    public WorkflowExecutionContext(
-        IServiceProvider serviceProvider,
+    public WorkflowExecutionContext(IServiceProvider serviceProvider,
         string id,
         string? correlationId,
         Workflow workflow,
@@ -24,6 +23,7 @@ public class WorkflowExecutionContext
         IActivityScheduler scheduler,
         IDictionary<string, object>? input,
         ExecuteActivityDelegate? executeDelegate,
+        string? triggerActivityId,
         CancellationToken cancellationToken)
     {
         _serviceProvider = serviceProvider;
@@ -36,6 +36,7 @@ public class WorkflowExecutionContext
         Scheduler = scheduler;
         Input = input ?? new Dictionary<string, object>();
         ExecuteDelegate = executeDelegate;
+        TriggerActivityId = triggerActivityId;
         CancellationToken = cancellationToken;
         NodeIdLookup = _nodes.ToDictionary(x => x.NodeId);
         NodeActivityLookup = _nodes.ToDictionary(x => x.Activity);
@@ -68,6 +69,7 @@ public class WorkflowExecutionContext
     public IDictionary<object, object> TransientProperties { get; set; } = new Dictionary<object, object>();
 
     public ExecuteActivityDelegate? ExecuteDelegate { get; set; }
+    public string? TriggerActivityId { get; set; }
     public CancellationToken CancellationToken { get; }
     public ICollection<ActivityCompletionCallbackEntry> CompletionCallbacks => new ReadOnlyCollection<ActivityCompletionCallbackEntry>(_completionCallbackEntries);
     public ICollection<ActivityExecutionContext> ActivityExecutionContexts { get; set; } = new List<ActivityExecutionContext>();

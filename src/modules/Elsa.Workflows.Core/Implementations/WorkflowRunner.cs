@@ -59,7 +59,8 @@ public class WorkflowRunner : IWorkflowRunner
         var instanceId = options?.InstanceId ?? _identityGenerator.GenerateId();
         var input = options?.Input;
         var correlationId = options?.CorrelationId;
-        var workflowExecutionContext = await CreateWorkflowExecutionContextAsync(workflow, instanceId, correlationId, default, input, default, cancellationToken);
+        var triggerActivityId = options?.TriggerActivityId;
+        var workflowExecutionContext = await CreateWorkflowExecutionContextAsync(workflow, instanceId, correlationId, default, input, default, triggerActivityId, cancellationToken);
 
         // Schedule the first activity.
         workflowExecutionContext.ScheduleRoot();
@@ -75,7 +76,8 @@ public class WorkflowRunner : IWorkflowRunner
         // Create workflow execution context.
         var input = options?.Input;
         var correlationId = options?.CorrelationId ?? workflowState.CorrelationId;
-        var workflowExecutionContext = await CreateWorkflowExecutionContextAsync(workflow, workflowState.Id, correlationId, workflowState, input, default, cancellationToken);
+        var triggerActivityId = options?.TriggerActivityId;
+        var workflowExecutionContext = await CreateWorkflowExecutionContextAsync(workflow, workflowState.Id, correlationId, workflowState, input, default, triggerActivityId, cancellationToken);
 
         var bookmarkId = options?.BookmarkId;
 
@@ -118,6 +120,7 @@ public class WorkflowRunner : IWorkflowRunner
         WorkflowState? workflowState,
         IDictionary<string, object>? input,
         ExecuteActivityDelegate? executeActivityDelegate,
+        string? triggerActivityId,
         CancellationToken cancellationToken) =>
-        await _workflowExecutionContextFactory.CreateAsync(workflow, instanceId, workflowState, input, correlationId, executeActivityDelegate, cancellationToken);
+        await _workflowExecutionContextFactory.CreateAsync(workflow, instanceId, workflowState, input, correlationId, executeActivityDelegate, triggerActivityId, cancellationToken);
 }

@@ -96,7 +96,7 @@ public class Flowchart : Container
 
         if (!children.Any())
         {
-            // If there are no more pending activities in any of the scopes, mark this activity as completed.
+            // If there are no more pending activities, mark this activity as completed.
             var hasPendingChildren = scope.HasPendingActivities();
 
             if (!hasPendingChildren)
