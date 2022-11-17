@@ -199,10 +199,10 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
     public async Task UpdateBookmarksAsync(UpdateBookmarksContext context, CancellationToken cancellationToken = default)
     {
         await RemoveBookmarksAsync(context.InstanceId, context.Diff.Removed, cancellationToken);
-        await StoreBookmarksAsync(context.InstanceId, context.Diff.Added, cancellationToken);
+        await StoreBookmarksAsync(context.InstanceId, context.Diff.Added, context.CorrelationId, cancellationToken);
     }
 
-    private async Task StoreBookmarksAsync(string instanceId, ICollection<Bookmark> bookmarks, CancellationToken cancellationToken = default)
+    private async Task StoreBookmarksAsync(string instanceId, ICollection<Bookmark> bookmarks, string? correlationId, CancellationToken cancellationToken = default)
     {
         var groupedBookmarks = bookmarks.GroupBy(x => x.Hash);
 
@@ -212,7 +212,8 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
 
             var storeBookmarkRequest = new StoreBookmarksRequest
             {
-                WorkflowInstanceId = instanceId
+                WorkflowInstanceId = instanceId,
+                CorrelationId = correlationId
             };
 
             storeBookmarkRequest.BookmarkIds.AddRange(groupedBookmark.Select(x => x.Id));
