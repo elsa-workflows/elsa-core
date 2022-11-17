@@ -46,11 +46,11 @@ public class PersistBookmarkMiddleware : WorkflowExecutionMiddleware
 
         // Publish domain event.
         await _eventPublisher.PublishAsync(new WorkflowBookmarksIndexed(new IndexedWorkflowBookmarks(context.Id, diff.Added, diff.Removed)), cancellationToken);
-        
-        // Send a signal to all activity execution contexts that their bookmarks have been persisted.
-        var activityExecutionContexts = context.ActivityExecutionContexts.ToList();
-        
-        foreach (var activityExecutionContext in activityExecutionContexts) 
-            await activityExecutionContext.SendSignalAsync(new BookmarksPersistedSignal());
+
+        // Notify all interested activities that the bookmarks have been persisted.
+        var activityExecutionContexts = context.ActivityExecutionContexts.Where(x => x.Activity is IBookmarksPersistedHandler).ToList();
+
+        foreach (var activityExecutionContext in activityExecutionContexts)
+            await ((IBookmarksPersistedHandler)activityExecutionContext.Activity).BookmarksPersistedAsync(activityExecutionContext);
     }
 }
