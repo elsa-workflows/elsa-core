@@ -116,8 +116,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
     const flowchartModel = this.getFlowchartModel();
     const startActivity = flowchartModel.activities.find(x => x.id == flowchartModel.start);
     if(startActivity != null){
-      const point: PointLike = this.graph.localToGraph(startActivity.metadata.designer.x, startActivity.metadata.designer.y);
-      this.graph.scrollToPoint(point.x, point.y);
+      this.graph.scrollToCell(this.graph.getCells()[0]);
     }
   }
 
