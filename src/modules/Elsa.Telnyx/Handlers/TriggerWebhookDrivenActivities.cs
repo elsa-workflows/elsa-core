@@ -30,7 +30,8 @@ internal class TriggerWebhookDrivenActivities : INotificationHandler<TelnyxWebho
     {
         var webhook = notification.Webhook;
         var eventType = webhook.Data.EventType;
-        var input = new Dictionary<string, object>().AddInput(webhook);
+        var eventPayload = webhook.Data.Payload;
+        var input = new Dictionary<string, object>().AddInput(eventPayload.GetType().Name, eventPayload);
         var activityDescriptors = FindActivityDescriptors(eventType);
         var correlationId = ((Payload)webhook.Data.Payload).GetCorrelationId();
         var bookmarkPayload = new WebhookEventBookmarkPayload(eventType);
