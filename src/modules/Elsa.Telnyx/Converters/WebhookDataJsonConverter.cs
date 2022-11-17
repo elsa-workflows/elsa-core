@@ -16,24 +16,6 @@ namespace Elsa.Telnyx.Converters;
 /// </summary>
 public class WebhookDataJsonConverter : JsonConverter<TelnyxWebhookData>
 {
-    /// <summary>
-    /// Constructor.
-    /// </summary>
-    public WebhookDataJsonConverter()
-    {
-        var payloadTypes = WebhookPayloadTypes.PayloadTypes;
-
-        var query =
-            from payloadType in payloadTypes
-            let payloadAttribute = payloadType.GetCustomAttribute<WebhookAttribute>()
-            where payloadAttribute != null
-            select (payloadType, payloadAttribute);
-
-        PayloadTypeDictionary = query.ToDictionary(x => x.payloadAttribute!.EventType, x => x.payloadType);
-    }
-        
-    private IDictionary<string, Type> PayloadTypeDictionary { get; }
-
     /// <inheritdoc />
     public override TelnyxWebhookData Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
@@ -42,8 +24,7 @@ public class WebhookDataJsonConverter : JsonConverter<TelnyxWebhookData>
         var id = dataModel.GetProperty("id", "Id").GetGuid();
         var occurredAt = dataModel.GetProperty("occurred_at", "OccurredAt").GetDateTimeOffset();
         var recordType = dataModel.GetProperty("record_type", "RecordType").GetString()!;
-        var payloadType = PayloadTypeDictionary.ContainsKey(eventType) ? PayloadTypeDictionary[eventType] : typeof(UnsupportedPayload);
-        var payload = (Payload)dataModel.GetProperty("payload", "Payload").Deserialize(payloadType, options)!;
+        var payload = PayloadSerializer.Deserialize(eventType, dataModel.GetProperty("payload", "Payload"), options);
 
         return new TelnyxWebhookData(eventType, id, occurredAt, recordType, payload);
     }

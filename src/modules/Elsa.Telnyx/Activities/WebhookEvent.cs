@@ -1,11 +1,11 @@
 ﻿using System.ComponentModel;
 using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Helpers;
+using Elsa.Telnyx.Models;
 using Elsa.Telnyx.Payloads.Abstract;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Serialization;
 
 namespace Elsa.Telnyx.Activities;
 
@@ -14,19 +14,15 @@ namespace Elsa.Telnyx.Activities;
 /// </summary>
 [Activity("Telnyx", "Telnyx", "A Telnyx webhook event that executes when a webhook event is received.", Kind = ActivityKind.Trigger)]
 [Browsable(false)]
-public class WebhookEvent : ActivityBase
+public class WebhookEvent : ActivityBase<Payload>
 {
     /// <summary>
     /// The Telnyx webhook event type to listen for.
     /// </summary>
     [Input(Description = "The Telnyx webhook event type to listen for")]
     public Input<string> EventType { get; set; } = default!;
-    
-    /// <summary>
-    /// The received webhook payload.
-    /// </summary>
-    [Output] public Payload? Payload { get; set; }
 
+    /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         if (context.IsTriggerOfWorkflow())
@@ -41,8 +37,8 @@ public class WebhookEvent : ActivityBase
 
     private async ValueTask Resume(ActivityExecutionContext context)
     {
-        var input = context.GetInput<Payload>(WebhookSerializerOptions.Create());
-        Payload = input;
+        var input = context.GetInput<TelnyxWebhook>(WebhookSerializerOptions.Create());
+        context.Set(Result, input.Data.Payload);
         await CompleteAsync(context);
     }
 }
