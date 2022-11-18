@@ -12,6 +12,8 @@ using Elsa.Persistence.EntityFramework.Core.Services;
 using Elsa.Persistence.Specifications;
 using Elsa.Serialization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
@@ -60,10 +62,11 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
 
             await DoWork(async dbContext =>
             {
+                var helper = dbContext.GetService<ISqlGenerationHelper>();
                 var placeholders = string.Join(",", Enumerable.Range(0, idList.Count).Select(i => "{" + i + "}"));
-                await dbContext.Database.ExecuteSqlRawAsync($"delete from {dbContext.WorkflowExecutionLogRecords.EntityType.GetSchemaQualifiedTableNameWithQuotes()} where WorkflowInstanceId in ({placeholders})", idList, cancellationToken);
-                await dbContext.Database.ExecuteSqlRawAsync($"delete from {dbContext.Bookmarks.EntityType.GetSchemaQualifiedTableNameWithQuotes()} where WorkflowInstanceId in ({placeholders})", idList, cancellationToken);
-                await dbContext.Database.ExecuteSqlRawAsync($"delete from {dbContext.WorkflowInstances.EntityType.GetSchemaQualifiedTableNameWithQuotes()} where Id in ({placeholders})", idList, cancellationToken);
+                await dbContext.Database.ExecuteSqlRawAsync($"delete from {dbContext.WorkflowExecutionLogRecords.EntityType.GetSchemaQualifiedTableNameWithQuotes(helper)} where WorkflowInstanceId in ({placeholders})", idList, cancellationToken);
+                await dbContext.Database.ExecuteSqlRawAsync($"delete from {dbContext.Bookmarks.EntityType.GetSchemaQualifiedTableNameWithQuotes(helper)} where WorkflowInstanceId in ({placeholders})", idList, cancellationToken);
+                await dbContext.Database.ExecuteSqlRawAsync($"delete from {dbContext.WorkflowInstances.EntityType.GetSchemaQualifiedTableNameWithQuotes(helper)} where Id in ({placeholders})", idList, cancellationToken);
             }, cancellationToken);
         }
 
