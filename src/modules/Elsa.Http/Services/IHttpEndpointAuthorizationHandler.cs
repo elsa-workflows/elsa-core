@@ -1,9 +1,8 @@
 using Elsa.Http.Models;
 
-namespace Elsa.Http.Services
+namespace Elsa.Http.Services;
+
+public interface IHttpEndpointAuthorizationHandler
 {
-    public interface IHttpEndpointAuthorizationHandler
-    {
-        ValueTask<bool> AuthorizeAsync(AuthorizeHttpEndpointContext context);
-    }
+    ValueTask<bool> AuthorizeAsync(AuthorizeHttpEndpointContext context);
 }
