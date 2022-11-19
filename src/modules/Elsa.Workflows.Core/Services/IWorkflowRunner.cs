@@ -16,4 +16,10 @@ public interface IWorkflowRunner
     Task<RunWorkflowResult> RunAsync(WorkflowExecutionContext workflowExecutionContext);
 }
 
-public record RunWorkflowOptions(string? InstanceId = default, string? CorrelationId = default, string? BookmarkId = default, IDictionary<string, object>? Input = default, string? TriggerActivityId = default);
+public record RunWorkflowOptions(
+    string? InstanceId = default, 
+    string? CorrelationId = default, 
+    string? BookmarkId = default, 
+    string? ActivityId = default, 
+    IDictionary<string, object>? Input = default, 
+    string? TriggerActivityId = default);

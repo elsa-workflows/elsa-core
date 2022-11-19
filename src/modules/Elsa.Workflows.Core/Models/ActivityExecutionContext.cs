@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Runtime.CompilerServices;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Services;
@@ -41,12 +42,12 @@ public class ActivityExecutionContext
     public CancellationToken CancellationToken { get; }
 
     /// <summary>
-    /// A dictionary of values that can be associated with the activity. 
+    /// A dictionary of values that can be associated with this activity execution context.
     /// </summary>
     public IDictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
-    
+
     /// <summary>
-    /// A transient dictionary of values that can be associated with the activity.
+    /// A transient dictionary of values that can be associated with this activity execution context.
     /// These properties only exist while the activity executes and are not persisted. 
     /// </summary>
     public IDictionary<object, object> TransientProperties { get; set; } = new Dictionary<object, object>();
@@ -141,7 +142,7 @@ public class ActivityExecutionContext
         AddBookmark(bookmark);
         return bookmark;
     }
-    
+
     /// <summary>
     /// Clear all bookmarks.
     /// </summary>
@@ -151,15 +152,15 @@ public class ActivityExecutionContext
     /// Returns a property value associated with the current activity context. 
     /// </summary>
     public T? GetProperty<T>(string key) => Properties!.TryGetValue<T?>(key, out var value) ? value : default;
-    
+
     /// <summary>
     /// Returns a property value associated with the current activity context. 
     /// </summary>
     public T GetProperty<T>(string key, Func<T> defaultValue)
     {
-        if (Properties.TryGetValue<T?>(key, out var value)) 
+        if (Properties.TryGetValue<T?>(key, out var value))
             return value!;
-        
+
         value = defaultValue();
         Properties[key] = value!;
 
