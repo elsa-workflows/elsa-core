@@ -6,18 +6,16 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Core.Models;
 
-public record ActivityCompletionCallbackEntry(ActivityExecutionContext Owner, IActivity Child, ActivityCompletionCallback CompletionCallback);
+public record ActivityCompletionCallbackEntry(ActivityExecutionContext Owner, IActivity Child, ActivityCompletionCallback? CompletionCallback);
 
 public class WorkflowExecutionContext
 {
-    internal static ValueTask Noop(ActivityExecutionContext context) => new();
     internal static ValueTask Complete(ActivityExecutionContext context) => context.CompleteActivityAsync();
     private readonly IServiceProvider _serviceProvider;
     private readonly IList<ActivityNode> _nodes;
     private readonly IList<ActivityCompletionCallbackEntry> _completionCallbackEntries = new List<ActivityCompletionCallbackEntry>();
 
-    public WorkflowExecutionContext(
-        IServiceProvider serviceProvider,
+    public WorkflowExecutionContext(IServiceProvider serviceProvider,
         string id,
         string? correlationId,
         Workflow workflow,
@@ -25,6 +23,7 @@ public class WorkflowExecutionContext
         IActivityScheduler scheduler,
         IDictionary<string, object>? input,
         ExecuteActivityDelegate? executeDelegate,
+        string? triggerActivityId,
         CancellationToken cancellationToken)
     {
         _serviceProvider = serviceProvider;
@@ -37,6 +36,7 @@ public class WorkflowExecutionContext
         Scheduler = scheduler;
         Input = input ?? new Dictionary<string, object>();
         ExecuteDelegate = executeDelegate;
+        TriggerActivityId = triggerActivityId;
         CancellationToken = cancellationToken;
         NodeIdLookup = _nodes.ToDictionary(x => x.NodeId);
         NodeActivityLookup = _nodes.ToDictionary(x => x.Activity);
@@ -69,6 +69,7 @@ public class WorkflowExecutionContext
     public IDictionary<object, object> TransientProperties { get; set; } = new Dictionary<object, object>();
 
     public ExecuteActivityDelegate? ExecuteDelegate { get; set; }
+    public string? TriggerActivityId { get; set; }
     public CancellationToken CancellationToken { get; }
     public ICollection<ActivityCompletionCallbackEntry> CompletionCallbacks => new ReadOnlyCollection<ActivityCompletionCallbackEntry>(_completionCallbackEntries);
     public ICollection<ActivityExecutionContext> ActivityExecutionContexts { get; set; } = new List<ActivityExecutionContext>();
@@ -86,13 +87,13 @@ public class WorkflowExecutionContext
     public IEnumerable<T> GetServices<T>() where T : notnull => _serviceProvider.GetServices<T>();
     public object? GetService(Type serviceType) => _serviceProvider.GetService(serviceType);
 
-    public void AddCompletionCallback(ActivityExecutionContext owner, IActivity child, ActivityCompletionCallback completionCallback)
+    public void AddCompletionCallback(ActivityExecutionContext owner, IActivity child, ActivityCompletionCallback? completionCallback = default)
     {
         var entry = new ActivityCompletionCallbackEntry(owner, child, completionCallback);
         _completionCallbackEntries.Add(entry);
     }
 
-    public ActivityCompletionCallback? PopCompletionCallback(ActivityExecutionContext owner, IActivity child)
+    public ActivityCompletionCallbackEntry? PopCompletionCallback(ActivityExecutionContext owner, IActivity child)
     {
         var entry = _completionCallbackEntries.FirstOrDefault(x => x.Owner == owner && x.Child == child);
 
@@ -100,7 +101,7 @@ public class WorkflowExecutionContext
             return default;
 
         RemoveCompletionCallback(entry);
-        return entry.CompletionCallback;
+        return entry;
     }
 
     public void RemoveCompletionCallback(ActivityCompletionCallbackEntry entry) => _completionCallbackEntries.Remove(entry);
@@ -125,6 +126,7 @@ public class WorkflowExecutionContext
         return value;
     }
 
+    public bool HasProperty(string name) => Properties.ContainsKey(name);
 
     public void TransitionTo(WorkflowSubStatus subStatus)
     {

@@ -107,7 +107,7 @@ public class TriggerIndexer : ITriggerIndexer
 
     private async Task<IEnumerable<StoredTrigger>> GetTriggersAsync(WorkflowIndexingContext context, IActivity activity)
     {
-        // If the activity implements ITrigger, request its trigger data. Otherwise, create one trigger datum.
+        // If the activity implements ITrigger, request its trigger data. Otherwise.
         if (activity is ITrigger trigger)
             return await CreateWorkflowTriggersAsync(context, trigger);
 
@@ -124,7 +124,8 @@ public class TriggerIndexer : ITriggerIndexer
         {
             Id = _identityGenerator.GenerateId(),
             WorkflowDefinitionId = workflow.Identity.DefinitionId,
-            Name = activity.Type
+            Name = activity.Type,
+            ActivityId = activity.Id
         };
     }
 
@@ -143,6 +144,7 @@ public class TriggerIndexer : ITriggerIndexer
             Id = _identityGenerator.GenerateId(),
             WorkflowDefinitionId = workflow.Identity.DefinitionId,
             Name = triggerTypeName,
+            ActivityId = trigger.Id,
             Hash = _hasher.Hash(triggerTypeName, x),
             Data = JsonSerializer.Serialize(x)
         });
@@ -184,7 +186,7 @@ public class TriggerIndexer : ITriggerIndexer
     {
         try
         {
-            return (await trigger.GetTriggerDataAsync(context)).ToList();
+            return (await trigger.GetTriggerPayloadsAsync(context)).ToList();
         }
         catch (Exception e)
         {

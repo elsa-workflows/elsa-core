@@ -34,7 +34,7 @@ public class Execute : ElsaEndpoint<Request, Response>
         }
 
         var correlationId = request.CorrelationId;
-        var startWorkflowOptions = new StartWorkflowOptions(correlationId, VersionOptions: VersionOptions.Published);
+        var startWorkflowOptions = new StartWorkflowRuntimeOptions(correlationId, VersionOptions: VersionOptions.Published);
         var result = await _workflowRuntime.StartWorkflowAsync(definitionId, startWorkflowOptions, cancellationToken);
 
         if (!HttpContext.Response.HasStarted)

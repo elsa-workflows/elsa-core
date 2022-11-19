@@ -80,7 +80,7 @@ public class HttpTriggerMiddleware
 
         // Trigger the workflow.
         var bookmarkPayload = new HttpEndpointBookmarkPayload(path, method);
-        var triggerOptions = new TriggerWorkflowsOptions(correlationId, input);
+        var triggerOptions = new TriggerWorkflowsRuntimeOptions(correlationId, input);
 
         var triggerResult = await _workflowRuntime.TriggerWorkflowsAsync(
             _activityTypeName,
@@ -128,11 +128,8 @@ public class HttpTriggerMiddleware
                 cancellationToken);
 
             var workflowHost = await _workflowHostFactory.CreateAsync(workflow, workflowState, cancellationToken);
-
-            await workflowHost.ResumeWorkflowAsync(
-                result.BookmarkId,
-                null,
-                cancellationToken);
+            var options = new ResumeWorkflowHostOptions(correlationId, result.BookmarkId);
+            await workflowHost.ResumeWorkflowAsync(options, cancellationToken);
             
             // Import the updated workflow state into the runtime.
             await _workflowRuntime.ImportWorkflowStateAsync(workflowState, cancellationToken);

@@ -1,6 +1,12 @@
 using System.Linq.Expressions;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Text.Json;
 using Elsa.Common.Services;
+using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Services;
+using Elsa.Workflows.Core.Activities.Flowchart.Models;
+using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Core.Signals;
@@ -10,9 +16,25 @@ namespace Elsa.Workflows.Core;
 
 public static class ActivityExecutionContextExtensions
 {
-    public static bool TryGetInput<T>(this ActivityExecutionContext context, string key, out T value) => context.Input!.TryGetValue(key, out value!);
-    public static T GetInput<T>(this ActivityExecutionContext context) => context.GetInput<T>(typeof(T).Name);
-    public static T GetInput<T>(this ActivityExecutionContext context, string key) => (T)context.Input[key];
+    public static bool TryGetInput<T>(this ActivityExecutionContext context, string key, out T value, JsonSerializerOptions? serializerOptions = default)
+    {
+        if (context.Input.TryGetValue(key, out var v))
+        {
+            value = v.ConvertTo<T>(serializerOptions)!;
+            return true;
+        }
+
+        value = default!;
+        return false;
+    }
+
+    public static T GetInput<T>(this ActivityExecutionContext context, JsonSerializerOptions? serializerOptions = default) => context.GetInput<T>(typeof(T).Name, serializerOptions);
+    public static T GetInput<T>(this ActivityExecutionContext context, string key, JsonSerializerOptions? serializerOptions = default) => context.Input[key].ConvertTo<T>(serializerOptions)!;
+
+    /// <summary>
+    /// Returns true if this activity is triggered for the first time and not being resumed.
+    /// </summary>
+    public static bool IsTriggerOfWorkflow(this ActivityExecutionContext context) => context.WorkflowExecutionContext.TriggerActivityId == context.Activity.Id;
 
     public static WorkflowExecutionLogEntry AddExecutionLogEntry(this ActivityExecutionContext context, string eventName, string? message = default, string? source = default, object? payload = default)
     {
@@ -79,6 +101,51 @@ public static class ActivityExecutionContextExtensions
         locationReference.Set(context, value);
 
         return input;
+    }
+    
+    /// <summary>
+    /// Schedules the specified activity with the provided callback.
+    /// If the activity is null, the callback is invoked immediately.
+    /// </summary>
+    public static async Task ScheduleActivityAsync(this ActivityExecutionContext context, IActivity? activity, ActivityCompletionCallback completionCallback)
+    {
+        if (activity == null)
+        {
+            await completionCallback(context, context);
+            return;
+        }
+
+        context.ScheduleActivity(activity, context, completionCallback);
+    }
+    
+    /// <summary>
+    /// Schedules the specified activity with the provided callback.
+    /// If the activity is null, the callback is invoked immediately.
+    /// </summary>
+    public static async Task ScheduleOutcomeAsync(this ActivityExecutionContext context, IActivity? activity, [CallerArgumentExpression("activity")] string portPropertyName = default!)
+    {
+        if (activity == null)
+        {
+            var outcome = context.GetOutcomeName(portPropertyName);
+            await context.CompleteActivityWithOutcomesAsync(outcome);
+            return;
+        }
+
+        context.ScheduleActivity(activity, context);
+    }
+
+    public static string GetOutcomeName(this ActivityExecutionContext context, string portPropertyName)
+    {
+        var owner = context.Activity;
+        var ports = owner.GetType().GetProperties().Where(x => typeof(IActivity).IsAssignableFrom(x.PropertyType)).ToList();
+
+        var portQuery =
+            from p in ports
+            where p.Name == portPropertyName
+            select p;
+
+        var portProperty = portQuery.First();
+        return portProperty.GetCustomAttribute<PortAttribute>()?.Name ?? portProperty.Name;
     }
 
     public static async Task<T?> EvaluateAsync<T>(this ActivityExecutionContext context, Input<T> input)
@@ -153,7 +220,12 @@ public static class ActivityExecutionContextExtensions
         // Remove the context.
         context.WorkflowExecutionContext.ActivityExecutionContexts.Remove(context);
     }
-    
+
+    /// <summary>
+    /// Complete the current activity with the specified outcome.
+    /// </summary>
+    public static ValueTask CompleteActivityWithOutcomesAsync(this ActivityExecutionContext context, params string[] outcomes) => context.CompleteActivityAsync(new Outcomes(outcomes));
+
     /// <summary>
     /// Cancel the activity. For blocking activities, it means their bookmarks will be removed. For job activities, the background work will be cancelled.
     /// </summary>

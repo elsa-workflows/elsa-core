@@ -17,14 +17,34 @@ public class Composite : ActivityBase
     [Port]
     public IActivity Root { get; set; } = new Sequence();
 
+    /// <inheritdoc />
     protected override void Execute(ActivityExecutionContext context)
     {
-        context.ScheduleActivity(Root, OnCompletedAsync);
+        ConfigureActivities(context);
+        context.ScheduleActivity(Root, OnRootCompletedAsync);
     }
 
-    protected virtual async ValueTask OnCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext)
+    /// <summary>
+    /// Override this method to configure activity properties before execution.
+    /// </summary>
+    protected virtual void ConfigureActivities(ActivityExecutionContext context)
     {
+    }
+
+    private async ValueTask OnRootCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext)
+    {
+        await OnCompletedAsync(context, childContext);
         await context.CompleteActivityAsync();
+    }
+
+    protected virtual  ValueTask OnCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext)
+    {
+        OnCompleted(context, childContext);
+        return new();
+    }
+
+    protected virtual  void OnCompleted(ActivityExecutionContext context, ActivityExecutionContext childContext)
+    {
     }
 
     protected static Inline From(Func<ActivityExecutionContext, ValueTask> activity) => new(activity);
@@ -40,7 +60,7 @@ public class Composite : ActivityBase
 /// <summary>
 /// Represents a composite activity that has a single <see cref="Root"/> activity and returns a result.
 /// </summary>
-public class Composite<T> : ActivityBase
+public class Composite<T> : ActivityBase<T>
 {
     /// <summary>
     /// The activity to schedule when this activity executes.
@@ -50,12 +70,31 @@ public class Composite<T> : ActivityBase
 
     protected override void Execute(ActivityExecutionContext context)
     {
-        context.ScheduleActivity(Root, OnCompletedAsync);
+        ConfigureActivities(context);
+        context.ScheduleActivity(Root, OnRootCompletedAsync);
+    }
+    
+    /// <summary>
+    /// Override this method to configure activity properties before execution.
+    /// </summary>
+    protected virtual void ConfigureActivities(ActivityExecutionContext context)
+    {
     }
 
-    protected virtual async ValueTask OnCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext)
+    private async ValueTask OnRootCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext)
     {
+        await OnCompletedAsync(context, childContext);
         await context.CompleteActivityAsync();
+    }
+
+    protected virtual ValueTask OnCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext)
+    {
+        OnCompleted(context, childContext);
+        return new();
+    }
+
+    protected virtual void OnCompleted(ActivityExecutionContext context, ActivityExecutionContext childContext)
+    {
     }
 
     protected static Inline From(Func<ActivityExecutionContext, ValueTask> activity) => new(activity);

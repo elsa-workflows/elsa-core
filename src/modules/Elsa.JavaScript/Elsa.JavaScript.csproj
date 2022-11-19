@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <Import Project="..\..\..\common.props"/>
-    <Import Project="..\..\..\configureawait.props"/>
+    <Import Project="..\..\..\common.props" />
+    <Import Project="..\..\..\configureawait.props" />
 
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
@@ -12,13 +12,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Elsa.Expressions\Elsa.Expressions.csproj"/>
-        <ProjectReference Include="..\Elsa.Mediator\Elsa.Mediator.csproj"/>
-        <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj"/>
+        <ProjectReference Include="..\Elsa.Expressions\Elsa.Expressions.csproj" />
+        <ProjectReference Include="..\Elsa.Mediator\Elsa.Mediator.csproj" />
+        <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Jint" Version="3.0.0-preview-328"/>
+        <PackageReference Include="Jint" Version="3.0.0-preview-328" />
     </ItemGroup>
 
 </Project>

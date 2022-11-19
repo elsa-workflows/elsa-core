@@ -23,21 +23,24 @@ public class InputJsonConverter<T> : JsonConverter<Input<T>>
     public override Input<T> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         if (!JsonDocument.TryParseValue(ref reader, out var doc))
-            throw new JsonException("Failed to parse JsonDocument");
+            return default!;
 
+        if (doc.RootElement.ValueKind != JsonValueKind.Object)
+            return default!;
+        
         if (!doc.RootElement.TryGetProperty("type", out var inputTargetTypeElement))
-            throw new JsonException("Failed to extract input type property");
+            return default!;
 
         var expressionElement = doc.RootElement.GetProperty("expression");
 
         if (!expressionElement.TryGetProperty("type", out var expressionTypeNameElement))
-            throw new JsonException("Failed to extract expression type property");
+            return default!;
 
         var expressionTypeName = expressionTypeNameElement.GetString() ?? "Literal";
         var expressionSyntaxDescriptor = _expressionSyntaxRegistry.Find(expressionTypeName);
 
         if (expressionSyntaxDescriptor == null)
-            throw new Exception($"Syntax with name {expressionTypeName} not found in registry");
+            return default!;
 
         var context = new ExpressionConstructorContext(expressionElement, options);
         var expression = expressionSyntaxDescriptor.CreateExpression(context);

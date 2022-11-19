@@ -119,7 +119,7 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
                 ParentContextId = activityExecutionContext.ParentActivityExecutionContext?.Id,
                 ScheduledActivityId = activityExecutionContext.Activity.Id,
                 OwnerActivityId = activityExecutionContext.ParentActivityExecutionContext?.Activity.Id,
-                Properties = activityExecutionContext.ApplicationProperties,
+                Properties = activityExecutionContext.Properties,
                 Register = registerState
             };
             return activityExecutionContextState;
@@ -136,7 +136,7 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
             var properties = activityExecutionContextState.Properties;
             var activityExecutionContext = workflowExecutionContext.CreateActivityExecutionContext(activity);
             activityExecutionContext.Id = activityExecutionContextState.Id;
-            activityExecutionContext.ApplicationProperties = properties;
+            activityExecutionContext.Properties = properties;
             return activityExecutionContext;
         }
 

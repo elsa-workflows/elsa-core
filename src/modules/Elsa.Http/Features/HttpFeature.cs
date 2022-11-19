@@ -17,16 +17,16 @@ public class HttpFeature : FeatureBase
     {
     }
 
-    public string BasePath { get; set; } = "/workflows";
+    public Action<HttpActivityOptions>? ConfigureHttpOptions { get; set; } 
     public Func<IServiceProvider, IHttpEndpointAuthorizationHandler> HttpEndpointAuthorizationHandlerFactory { get; set; } = ActivatorUtilities.GetServiceOrCreateInstance<AllowAnonymousHttpEndpointAuthorizationHandler>;
     public Func<IServiceProvider, IHttpEndpointWorkflowFaultHandler> HttpEndpointWorkflowFaultHandlerFactory { get; set; } = ActivatorUtilities.GetServiceOrCreateInstance<DefaultHttpEndpointWorkflowFaultHandler>;
-
-    public HttpFeature WithBasePath(string value)
+    
+    public HttpFeature WithHttpOptions(Action<HttpActivityOptions> value)
     {
-        BasePath = value;
+        ConfigureHttpOptions = value;
         return this;
     }
-
+    
     public HttpFeature WithAuthorizationHandlerFactory(Func<IServiceProvider, IHttpEndpointAuthorizationHandler> value)
     {
         HttpEndpointAuthorizationHandlerFactory = value;
@@ -41,12 +41,19 @@ public class HttpFeature : FeatureBase
 
     public override void Apply()
     {
-        Services.Configure<HttpActivityOptions>(options => options.BasePath = BasePath);
+        var configureOptions = ConfigureHttpOptions ?? (options =>
+        {
+            options.BasePath = "/workflows";
+            options.BaseUrl = new Uri("http://localhost");
+        });
+        
+        Services.Configure(configureOptions);
 
         Services
             .AddHttpClient()
             .AddSingleton<IRouteMatcher, RouteMatcher>()
             .AddSingleton<IRouteTable, RouteTable>()
+            .AddSingleton<IAbsoluteUrlProvider, DefaultAbsoluteUrlProvider>()
             .AddNotificationHandlersFrom<UpdateRouteTable>()
             .AddHttpContextAccessor()
             

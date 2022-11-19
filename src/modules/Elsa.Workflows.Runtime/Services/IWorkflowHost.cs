@@ -11,11 +11,14 @@ public interface IWorkflowHost
 {
     Workflow Workflow { get; set; }
     WorkflowState WorkflowState { get; set; }
-    Task<StartWorkflowHostResult> StartWorkflowAsync(IDictionary<string, object>? input = default, CancellationToken cancellationToken = default);
-    Task<StartWorkflowHostResult> StartWorkflowAsync(string instanceId, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default);
-    Task<ResumeWorkflowHostResult> ResumeWorkflowAsync(string bookmarkId, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default);
+    Task<StartWorkflowHostResult> StartWorkflowAsync(StartWorkflowHostOptions? options = default, CancellationToken cancellationToken = default);
+    Task<ResumeWorkflowHostResult> ResumeWorkflowAsync(ResumeWorkflowHostOptions? options = default, CancellationToken cancellationToken = default);
 }
+
+public record StartWorkflowHostOptions(string? InstanceId = default, string? CorrelationId = default, IDictionary<string, object>? Input = default, string? TriggerActivityId = default);
+
+public record ResumeWorkflowHostOptions(string? CorrelationId = default, string? BookmarkId = default, string? ActivityId = default, IDictionary<string, object>? Input = default);
 
 public record StartWorkflowHostResult(Diff<Bookmark> BookmarksDiff);
 
-public record ResumeWorkflowHostResult(Diff<Bookmark> BookmarksDiff);
+public record ResumeWorkflowHostResult;

@@ -18,6 +18,9 @@ public class ActivityDefinitionActivityProvider : IActivityProvider
     private readonly IActivityDefinitionStore _store;
     private readonly IActivityFactory _activityFactory;
 
+    /// <summary>
+    /// Constructor.
+    /// </summary>
     public ActivityDefinitionActivityProvider(IActivityDefinitionStore store, IActivityFactory activityFactory)
     {
         _store = store;
@@ -44,6 +47,7 @@ public class ActivityDefinitionActivityProvider : IActivityProvider
             Category = definition.Category.WithDefault("Custom"),
             Kind = ActivityKind.Action,
             IsBrowsable = definition.IsPublished,
+            ActivityType = typeof(ActivityDefinitionActivity),
             Constructor = context =>
             {
                 var activity = (ActivityDefinitionActivity)_activityFactory.Create(typeof(ActivityDefinitionActivity), context);

@@ -1,0 +1,45 @@
+﻿using System.Reflection;
+using Elsa.Mediator.Services;
+using Elsa.Telnyx.Activities;
+using Elsa.Telnyx.Attributes;
+using Elsa.Telnyx.Bookmarks;
+using Elsa.Telnyx.Events;
+using Elsa.Telnyx.Extensions;
+using Elsa.Telnyx.Payloads.Abstract;
+using Elsa.Workflows.Core;
+using Elsa.Workflows.Runtime.Services;
+using Microsoft.Extensions.Logging;
+
+namespace Elsa.Telnyx.Handlers;
+
+/// <summary>
+/// Triggers all workflows starting with or blocked on a <see cref="WebhookEvent"/> activity.
+/// </summary>
+internal class TriggerWebhookActivities : INotificationHandler<TelnyxWebhookReceived>
+{
+    private readonly IWorkflowRuntime _workflowRuntime;
+    private readonly ILogger _logger;
+
+    public TriggerWebhookActivities(IWorkflowRuntime workflowRuntime, ILogger<TriggerWebhookActivities> logger)
+    {
+        _workflowRuntime = workflowRuntime;
+        _logger = logger;
+    }
+
+    public async Task HandleAsync(TelnyxWebhookReceived notification, CancellationToken cancellationToken)
+    {
+        var webhook = notification.Webhook;
+        var eventType = webhook.Data.EventType;
+        var payload = webhook.Data.Payload;
+        var ns = Constants.Namespace;
+        var activityType = $"{ns}.{payload.GetType().GetCustomAttribute<WebhookAttribute>()?.ActivityType}";
+
+        if (activityType == null)
+            return;
+
+        var correlationId = ((Payload)webhook.Data.Payload).GetCorrelationId();
+        var bookmarkPayload = new WebhookEventBookmarkPayload(eventType);
+        var input = new Dictionary<string, object>().AddInput(webhook);
+        await _workflowRuntime.TriggerWorkflowsAsync(activityType, bookmarkPayload, new TriggerWorkflowsRuntimeOptions(correlationId, input), cancellationToken);
+    }
+}

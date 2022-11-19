@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Runtime.CompilerServices;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Services;
@@ -8,6 +9,7 @@ namespace Elsa.Workflows.Core.Models;
 public class ActivityExecutionContext
 {
     private readonly List<Bookmark> _bookmarks = new();
+    private long _executionCount;
 
     public ActivityExecutionContext(
         WorkflowExecutionContext workflowExecutionContext,
@@ -40,12 +42,12 @@ public class ActivityExecutionContext
     public CancellationToken CancellationToken { get; }
 
     /// <summary>
-    /// A dictionary of values that can be associated with the activity. 
+    /// A dictionary of values that can be associated with this activity execution context.
     /// </summary>
-    public IDictionary<string, object> ApplicationProperties { get; set; } = new Dictionary<string, object>();
-    
+    public IDictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
+
     /// <summary>
-    /// A transient dictionary of values that can be associated with the activity.
+    /// A transient dictionary of values that can be associated with this activity execution context.
     /// These properties only exist while the activity executes and are not persisted. 
     /// </summary>
     public IDictionary<object, object> TransientProperties { get; set; } = new Dictionary<object, object>();
@@ -59,6 +61,11 @@ public class ActivityExecutionContext
     /// A list of bookmarks created by the current activity.
     /// </summary>
     public IReadOnlyCollection<Bookmark> Bookmarks => new ReadOnlyCollection<Bookmark>(_bookmarks);
+
+    /// <summary>
+    /// The number of times this <see cref="ActivityExecutionContext"/> has executed.
+    /// </summary>
+    public long ExecutionCount => _executionCount;
 
     /// <summary>
     /// Gets or sets a value that indicates if the workflow should continue executing or not.
@@ -111,6 +118,10 @@ public class ActivityExecutionContext
 
     public Bookmark CreateBookmark(ExecuteActivityDelegate callback) => CreateBookmark(default, callback);
 
+    /// <summary>
+    /// Creates a bookmark so that this activity can be resumed at a later time.
+    /// Creating a bookmark will automatically suspend the workflow after all pending activities have executed.
+    /// </summary>
     public Bookmark CreateBookmark(object? payload = default, ExecuteActivityDelegate? callback = default)
     {
         var bookmarkHasher = GetRequiredService<IBookmarkHasher>();
@@ -131,29 +142,44 @@ public class ActivityExecutionContext
         AddBookmark(bookmark);
         return bookmark;
     }
-    
+
+    /// <summary>
+    /// Clear all bookmarks.
+    /// </summary>
     public void ClearBookmarks() => _bookmarks.Clear();
 
-    public T? GetProperty<T>(string key) => ApplicationProperties!.TryGetValue<T?>(key, out var value) ? value : default;
-    
+    /// <summary>
+    /// Returns a property value associated with the current activity context. 
+    /// </summary>
+    public T? GetProperty<T>(string key) => Properties!.TryGetValue<T?>(key, out var value) ? value : default;
+
+    /// <summary>
+    /// Returns a property value associated with the current activity context. 
+    /// </summary>
     public T GetProperty<T>(string key, Func<T> defaultValue)
     {
-        if (ApplicationProperties.TryGetValue<T?>(key, out var value)) 
+        if (Properties.TryGetValue<T?>(key, out var value))
             return value!;
-        
+
         value = defaultValue();
-        ApplicationProperties[key] = value!;
+        Properties[key] = value!;
 
         return value!;
     }
 
-    public void SetProperty<T>(string key, T? value) => ApplicationProperties[key] = value!;
+    /// <summary>
+    /// Stores a property associated with the current activity context. 
+    /// </summary>
+    public void SetProperty<T>(string key, T? value) => Properties[key] = value!;
 
+    /// <summary>
+    /// Updates a property associated with the current activity context. 
+    /// </summary>
     public T UpdateProperty<T>(string key, Func<T?, T> updater) where T : notnull
     {
         var value = GetProperty<T?>(key);
         value = updater(value);
-        ApplicationProperties[key] = value;
+        Properties[key] = value;
         return value;
     }
 
@@ -195,6 +221,8 @@ public class ActivityExecutionContext
         var entriesToRemove = WorkflowExecutionContext.CompletionCallbacks.Where(x => x.Owner == this);
         WorkflowExecutionContext.RemoveCompletionCallbacks(entriesToRemove);
     }
+
+    internal void IncrementExecutionCount() => _executionCount++;
 
     private MemoryBlock? GetBlock(MemoryBlockReference locationBlockReference) =>
         ExpressionExecutionContext.Memory.TryGetBlock(locationBlockReference.Id, out var location)

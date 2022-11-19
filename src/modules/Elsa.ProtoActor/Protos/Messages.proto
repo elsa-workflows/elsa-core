@@ -7,10 +7,11 @@ option csharp_namespace = "Elsa.Runtime.Protos";
 message Unit {}
 
 message StartWorkflowRequest {
-  string definitionId = 1;
-  string versionOptions = 2;
-  optional string correlationId = 3;
+  string DefinitionId = 1;
+  string VersionOptions = 2;
+  optional string CorrelationId = 3;
   optional Input input = 4;
+  optional string TriggerActivityId = 5;
 }
 
 message StartWorkflowResponse {
@@ -20,8 +21,10 @@ message StartWorkflowResponse {
 
 message ResumeWorkflowRequest {
   string instanceId = 1;
-  string bookmarkId = 2;
-  optional Input input = 3;
+  optional string correlationId = 2;
+  optional string bookmarkId = 3;
+  optional string activityId = 4;
+  optional Input input = 5;
 }
 
 message ResumeWorkflowResponse {
@@ -48,7 +51,8 @@ enum RunWorkflowResult {
 
 message StoreBookmarksRequest {
   string WorkflowInstanceId = 1;
-  repeated string BookmarkIds = 2;
+  string CorrelationId = 2;
+  repeated string BookmarkIds = 3;
 }
 
 message RemoveBookmarksByWorkflowRequest {
@@ -56,7 +60,8 @@ message RemoveBookmarksByWorkflowRequest {
 }
 
 message ResolveBookmarksRequest {
-  string BookmarkName = 1;
+  string ActivityTypeName = 1;
+  string CorrelationId = 2;
 }
 
 message ResolveBookmarksResponse {
@@ -65,7 +70,8 @@ message ResolveBookmarksResponse {
 
 message StoredBookmark {
   string WorkflowInstanceId = 1;
-  string BookmarkId = 2;
+  string CorrelationId = 2;
+  string BookmarkId = 3;
 }
 
 message BookmarkDto {

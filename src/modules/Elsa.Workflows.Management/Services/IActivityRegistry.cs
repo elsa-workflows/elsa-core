@@ -2,6 +2,9 @@ using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Workflows.Management.Services;
 
+/// <summary>
+/// Stores all activity descriptors available to the system.
+/// </summary>
 public interface IActivityRegistry
 {
     void Add(Type providerType, ActivityDescriptor descriptor);
@@ -13,4 +16,5 @@ public interface IActivityRegistry
     ActivityDescriptor? Find(string type);
     ActivityDescriptor? Find(string type, int version);
     ActivityDescriptor? Find(Func<ActivityDescriptor, bool> predicate);
+    IEnumerable<ActivityDescriptor> FindMany(Func<ActivityDescriptor, bool> predicate);
 }

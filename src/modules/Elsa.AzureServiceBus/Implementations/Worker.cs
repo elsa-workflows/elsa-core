@@ -39,7 +39,7 @@ public class Worker : IAsyncDisposable
     public string? Subscription { get; }
 
     /// <summary>
-    /// Maintains the number of workflows are relying on this worker. When it goes to zero, the worker will be removed.
+    /// Maintains the number of workflows that are relying on this worker. When it goes to zero, the worker will be removed.
     /// </summary>
     public int RefCount
     {

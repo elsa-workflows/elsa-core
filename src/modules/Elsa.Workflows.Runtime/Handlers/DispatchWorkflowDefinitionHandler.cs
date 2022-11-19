@@ -5,7 +5,7 @@ using Elsa.Workflows.Runtime.Services;
 
 namespace Elsa.Workflows.Runtime.Handlers;
 
-public class DispatchWorkflowDefinitionHandler : ICommandHandler<DispatchWorkflowDefinition>
+internal class DispatchWorkflowDefinitionHandler : ICommandHandler<DispatchWorkflowDefinition>
 {
     private readonly IWorkflowRuntime _workflowRuntime;
 
@@ -16,7 +16,7 @@ public class DispatchWorkflowDefinitionHandler : ICommandHandler<DispatchWorkflo
     
     public async Task<Unit> HandleAsync(DispatchWorkflowDefinition command, CancellationToken cancellationToken)
     {
-        var options = new StartWorkflowOptions(command.CorrelationId, command.Input, command.VersionOptions);
+        var options = new StartWorkflowRuntimeOptions(command.CorrelationId, command.Input, command.VersionOptions);
             
         await _workflowRuntime.StartWorkflowAsync(command.DefinitionId, options, cancellationToken);
         

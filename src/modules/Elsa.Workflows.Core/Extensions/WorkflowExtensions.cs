@@ -1,3 +1,4 @@
+using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Models;
 
@@ -38,9 +39,9 @@ public static class WorkflowExtensions
     }
 }
 
-public static class MemoryDatumReferenceExtensions
+public static class MemoryBlockReferenceExtensions
 {
-    public static object? Get(this MemoryBlockReference blockReference, ActivityExecutionContext context) => blockReference.Get(context.ExpressionExecutionContext);
-    public static T? Get<T>(this MemoryBlockReference blockReference, ActivityExecutionContext context) => (T?)blockReference.Get(context.ExpressionExecutionContext);
-    public static void Set(this MemoryBlockReference blockReference, ActivityExecutionContext context, object? value) => blockReference.Set(context.ExpressionExecutionContext, value);
+    public static object? Get(this MemoryBlockReference block, ActivityExecutionContext context) => block.Get(context.ExpressionExecutionContext);
+    public static T? Get<T>(this MemoryBlockReference block, ActivityExecutionContext context) => block.Get(context.ExpressionExecutionContext).ConvertTo<T>();
+    public static void Set(this MemoryBlockReference block, ActivityExecutionContext context, object? value) => block.Set(context.ExpressionExecutionContext, value);
 }

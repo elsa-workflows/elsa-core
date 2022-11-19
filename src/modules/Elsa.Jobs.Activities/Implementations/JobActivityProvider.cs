@@ -21,6 +21,9 @@ public class JobActivityProvider : IActivityProvider
     private readonly IActivityFactory _activityFactory;
     private readonly IJobRegistry _jobRegistry;
 
+    /// <summary>
+    /// Constructor.
+    /// </summary>
     public JobActivityProvider(IActivityFactory activityFactory, IJobRegistry jobRegistry)
     {
         _activityFactory = activityFactory;
@@ -58,6 +61,7 @@ public class JobActivityProvider : IActivityProvider
             Category = category,
             Kind = ActivityKind.Job,
             IsBrowsable = true,
+            ActivityType = typeof(JobActivity),
             Constructor = context =>
             {
                 var activity = _activityFactory.Create<JobActivity>(context);

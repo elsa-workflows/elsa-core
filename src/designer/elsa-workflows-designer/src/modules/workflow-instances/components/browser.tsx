@@ -182,7 +182,6 @@ export class WorkflowInstanceBrowser {
     };
 
     this.workflowInstances = await this.workflowInstancesApi.list(request);
-    debugger;
   }
 
   private loadWorkflowDefinitions = async () => {

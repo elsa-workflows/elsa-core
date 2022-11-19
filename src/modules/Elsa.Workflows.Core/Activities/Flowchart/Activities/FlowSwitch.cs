@@ -20,7 +20,7 @@ public class FlowSwitch : ActivityBase
         var matchingCase = await FindMatchingCaseAsync(context.ExpressionExecutionContext);
         var outcome = matchingCase?.Label ?? "Default";
 
-        await context.CompleteActivityAsync(new Outcome(outcome));
+        await context.CompleteActivityAsync(new Outcomes(outcome));
     }
 
     private async Task<FlowSwitchCase?> FindMatchingCaseAsync(ExpressionExecutionContext context)

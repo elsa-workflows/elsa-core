@@ -51,9 +51,9 @@ public class Flowchart : Container
         if (!isDirectChild)
             return;
 
-        // If a specific outcome was provided by the completed activity, use it to find the connection to the next activity.
-        Func<Connection, bool> outboundConnectionsQuery = signal.Result is Outcome outcome
-            ? connection => connection.Source == completedActivity && connection.SourcePort == outcome.Name
+        // If specific outcomes were provided by the completed activity, use them to find the connection to the next activity.
+        Func<Connection, bool> outboundConnectionsQuery = signal.Result is Outcomes outcomes
+            ? connection => connection.Source == completedActivity && outcomes.Names.Contains(connection.SourcePort)
             : connection => connection.Source == completedActivity;
 
         var outboundConnections = Connections.Where(outboundConnectionsQuery).ToList();
@@ -96,7 +96,7 @@ public class Flowchart : Container
 
         if (!children.Any())
         {
-            // If there are no more pending activities in any of the scopes, mark this activity as completed.
+            // If there are no more pending activities, mark this activity as completed.
             var hasPendingChildren = scope.HasPendingActivities();
 
             if (!hasPendingChildren)

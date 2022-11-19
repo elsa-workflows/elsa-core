@@ -7,5 +7,8 @@ namespace Elsa.Workflows.Management.Services;
 /// </summary>
 public interface IActivityProvider
 {
+    /// <summary>
+    /// Returns a list of <see cref="ActivityDescriptor"/> objects.
+    /// </summary>
     ValueTask<IEnumerable<ActivityDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default);
 }

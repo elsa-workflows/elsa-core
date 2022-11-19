@@ -21,6 +21,6 @@ public class FlowDecision : ActivityBase
         var result = context.Get(Condition);
         var outcome = result ? "True" : "False";
 
-        await context.CompleteActivityAsync(new Outcome(outcome));
+        await context.CompleteActivityAsync(new Outcomes(outcome));
     }
 }

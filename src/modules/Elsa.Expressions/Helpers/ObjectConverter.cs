@@ -11,9 +11,9 @@ namespace Elsa.Expressions.Helpers;
 
 public static class ObjectConverter
 {
-    public static T? ConvertTo<T>(this object? value) => value != null ? (T?)value.ConvertTo(typeof(T)) : default;
+    public static T? ConvertTo<T>(this object? value, JsonSerializerOptions? serializerOptions = null) => value != null ? (T?)value.ConvertTo(typeof(T), serializerOptions) : default;
 
-    public static object? ConvertTo(this object? value, Type targetType)
+    public static object? ConvertTo(this object? value, Type targetType, JsonSerializerOptions? serializerOptions = null)
     {
         if (value == null)
             return default!;
@@ -23,7 +23,7 @@ public static class ObjectConverter
         if (sourceType == targetType)
             return value;
 
-        var options = new JsonSerializerOptions();
+        var options = serializerOptions ?? new JsonSerializerOptions();
         options.SetupExtensions().SetReferenceHandling(ReferenceHandling.Preserve);
         var registry = options.GetDiscriminatorConventionRegistry();
         registry.ClearConventions();

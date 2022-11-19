@@ -63,7 +63,7 @@ public class WorkflowInstancePersistenceTests
             // Run/resume the workflow.
             var result = workflowState == null 
                 ? await _workflowRunner.RunAsync(workflow) 
-                : await _workflowRunner.RunAsync(workflow, workflowState, bookmark!.Id);
+                : await _workflowRunner.RunAsync(workflow, workflowState, new RunWorkflowOptions(BookmarkId: bookmark!.Id));
 
             bookmark = result.WorkflowState.Bookmarks.FirstOrDefault();
 

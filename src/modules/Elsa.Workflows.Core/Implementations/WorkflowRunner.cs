@@ -8,82 +8,59 @@ namespace Elsa.Workflows.Core.Implementations;
 public class WorkflowRunner : IWorkflowRunner
 {
     private readonly IServiceScopeFactory _serviceScopeFactory;
-    private readonly IActivityWalker _activityWalker;
     private readonly IWorkflowExecutionPipeline _pipeline;
     private readonly IWorkflowStateSerializer _workflowStateSerializer;
-    private readonly IIdentityGraphService _identityGraphService;
     private readonly IWorkflowBuilderFactory _workflowBuilderFactory;
-    private readonly IActivitySchedulerFactory _schedulerFactory;
     private readonly IIdentityGenerator _identityGenerator;
     private readonly IWorkflowExecutionContextFactory _workflowExecutionContextFactory;
 
     public WorkflowRunner(
         IServiceScopeFactory serviceScopeFactory,
-        IActivityWalker activityWalker,
         IWorkflowExecutionPipeline pipeline,
         IWorkflowStateSerializer workflowStateSerializer,
-        IIdentityGraphService identityGraphService,
         IWorkflowBuilderFactory workflowBuilderFactory,
-        IActivitySchedulerFactory schedulerFactory,
         IIdentityGenerator identityGenerator,
         IWorkflowExecutionContextFactory workflowExecutionContextFactory)
     {
         _serviceScopeFactory = serviceScopeFactory;
-        _activityWalker = activityWalker;
         _pipeline = pipeline;
         _workflowStateSerializer = workflowStateSerializer;
-        _identityGraphService = identityGraphService;
         _workflowBuilderFactory = workflowBuilderFactory;
-        _schedulerFactory = schedulerFactory;
         _identityGenerator = identityGenerator;
         _workflowExecutionContextFactory = workflowExecutionContextFactory;
     }
 
-    public async Task<RunWorkflowResult> RunAsync(IActivity activity, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
-    {
-        var instanceId = _identityGenerator.GenerateId();
-        return await RunAsync(instanceId, activity, input, cancellationToken);
-    }
-
-    public async Task<RunWorkflowResult> RunAsync(IWorkflow workflow, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
-    {
-        var instanceId = _identityGenerator.GenerateId();
-        return await RunAsync(workflow, instanceId, input, cancellationToken);
-    }
-
-    public async Task<RunWorkflowResult> RunAsync<T>(IDictionary<string, object>? input = default, CancellationToken cancellationToken = default) where T : IWorkflow
-    {
-        var instanceId = _identityGenerator.GenerateId();
-        return await RunAsync<T>(instanceId, input, cancellationToken);
-    }
-
-    public async Task<RunWorkflowResult> RunAsync(string instanceId, IActivity activity, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
+    public async Task<RunWorkflowResult> RunAsync(IActivity activity, RunWorkflowOptions? options = default, CancellationToken cancellationToken = default)
     {
         var workflow = Workflow.FromActivity(activity);
-        return await RunAsync(workflow, instanceId, input, cancellationToken);
+        return await RunAsync(workflow, options, cancellationToken);
     }
 
-    public async Task<RunWorkflowResult> RunAsync(IWorkflow workflow, string instanceId, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
+    public async Task<RunWorkflowResult> RunAsync(IWorkflow workflow, RunWorkflowOptions? options = default, CancellationToken cancellationToken = default)
     {
         var builder = _workflowBuilderFactory.CreateBuilder();
         var workflowDefinition = await builder.BuildWorkflowAsync(workflow, cancellationToken);
-        return await RunAsync(workflowDefinition, instanceId, input, cancellationToken);
+        return await RunAsync(workflowDefinition, options, cancellationToken);
     }
 
-    public async Task<RunWorkflowResult> RunAsync<T>(string instanceId, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default) where T : IWorkflow
+    public async Task<RunWorkflowResult> RunAsync<T>(RunWorkflowOptions? options = default, CancellationToken cancellationToken = default) where T : IWorkflow
     {
         var builder = _workflowBuilderFactory.CreateBuilder();
         var workflowDefinition = await builder.BuildWorkflowAsync<T>(cancellationToken);
-        return await RunAsync(workflowDefinition, instanceId, input, cancellationToken);
+        return await RunAsync(workflowDefinition, options, cancellationToken);
     }
 
-    public async Task<RunWorkflowResult> RunAsync(Workflow workflow, string instanceId, IDictionary<string, object>? input, CancellationToken cancellationToken = default)
+    public async Task<RunWorkflowResult> RunAsync(Workflow workflow, RunWorkflowOptions? options = default, CancellationToken cancellationToken = default)
     {
         // Create a child scope.
         using var scope = _serviceScopeFactory.CreateScope();
 
         // Setup a workflow execution context.
-        var workflowExecutionContext = await CreateWorkflowExecutionContextAsync(workflow, instanceId, default, input, default, cancellationToken);
+        var instanceId = options?.InstanceId ?? _identityGenerator.GenerateId();
+        var input = options?.Input;
+        var correlationId = options?.CorrelationId;
+        var triggerActivityId = options?.TriggerActivityId;
+        var workflowExecutionContext = await CreateWorkflowExecutionContextAsync(workflow, instanceId, correlationId, default, input, default, triggerActivityId, cancellationToken);
 
         // Schedule the first activity.
         workflowExecutionContext.ScheduleRoot();
@@ -91,35 +68,37 @@ public class WorkflowRunner : IWorkflowRunner
         return await RunAsync(workflowExecutionContext);
     }
 
-    public async Task<RunWorkflowResult> RunAsync(Workflow workflow, WorkflowState workflowState, IDictionary<string, object>? input, CancellationToken cancellationToken = default)
+    public async Task<RunWorkflowResult> RunAsync(Workflow workflow, WorkflowState workflowState, RunWorkflowOptions? options = default, CancellationToken cancellationToken = default)
     {
         // Create a child scope.
         using var scope = _serviceScopeFactory.CreateScope();
 
         // Create workflow execution context.
-        var workflowExecutionContext = await CreateWorkflowExecutionContextAsync(workflow, workflowState.Id, workflowState, input, default, cancellationToken);
+        var input = options?.Input;
+        var correlationId = options?.CorrelationId ?? workflowState.CorrelationId;
+        var triggerActivityId = options?.TriggerActivityId;
+        var workflowExecutionContext = await CreateWorkflowExecutionContextAsync(workflow, workflowState.Id, correlationId, workflowState, input, default, triggerActivityId, cancellationToken);
+        var bookmarkId = options?.BookmarkId;
+        var activityId = options?.ActivityId;
 
-        // Schedule the first node.
-        workflowExecutionContext.ScheduleRoot();
-
-        return await RunAsync(workflowExecutionContext);
-    }
-
-    public async Task<RunWorkflowResult> RunAsync(Workflow workflow, WorkflowState workflowState, string? bookmarkId, IDictionary<string, object>? input, CancellationToken cancellationToken = default)
-    {
-        // Create a child scope.
-        using var scope = _serviceScopeFactory.CreateScope();
-
-        // Create workflow execution context.
-        var workflowExecutionContext = await CreateWorkflowExecutionContextAsync(workflow, workflowState.Id, workflowState, input, default, cancellationToken);
-
-        // Schedule the bookmark, if any.
         if (bookmarkId != null)
         {
+            // Schedule the bookmark.
             var bookmark = workflowExecutionContext.Bookmarks.FirstOrDefault(x => x.Id == bookmarkId);
 
             if (bookmark != null)
                 workflowExecutionContext.ScheduleBookmark(bookmark);
+        }
+        else if (activityId != null)
+        {
+            // Schedule the activity.
+            var activity = workflowExecutionContext.FindActivityById(activityId);
+            workflowExecutionContext.ScheduleActivity(activity);
+        }
+        else
+        {
+            // Schedule the first node.
+            workflowExecutionContext.ScheduleRoot();
         }
 
         return await RunAsync(workflowExecutionContext);
@@ -143,9 +122,11 @@ public class WorkflowRunner : IWorkflowRunner
     private async Task<WorkflowExecutionContext> CreateWorkflowExecutionContextAsync(
         Workflow workflow,
         string instanceId,
+        string? correlationId,
         WorkflowState? workflowState,
         IDictionary<string, object>? input,
         ExecuteActivityDelegate? executeActivityDelegate,
+        string? triggerActivityId,
         CancellationToken cancellationToken) =>
-        await _workflowExecutionContextFactory.CreateAsync(workflow, instanceId, workflowState, input, executeActivityDelegate, cancellationToken);
+        await _workflowExecutionContextFactory.CreateAsync(workflow, instanceId, workflowState, input, correlationId, executeActivityDelegate, triggerActivityId, cancellationToken);
 }

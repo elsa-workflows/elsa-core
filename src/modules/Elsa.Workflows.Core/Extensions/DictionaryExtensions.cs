@@ -6,7 +6,7 @@ public static class DictionaryExtensions
 {
     public static bool TryGetValue<T>(this IDictionary<string, object> dictionary, string key, out T? value) => dictionary.TryGetValue<string, T>(key, out value);
     public static bool TryGetValue<T>(this IDictionary<object, object> dictionary, string key, out T? value) => dictionary.TryGetValue<object, T>(key, out value);
-    
+
     public static bool TryGetValue<TKey, T>(this IDictionary<TKey, object> dictionary, TKey key, out T? value)
     {
         if (!dictionary.TryGetValue(key, out var item))
@@ -32,6 +32,14 @@ public static class DictionaryExtensions
         value = valueFactory()!;
         dictionary.Add(key, value);
         return value;
+    }
+
+    public static IDictionary<string, object> AddInput<T>(this IDictionary<string, object> dictionary, T value) where T : notnull => dictionary.AddInput(typeof(T).Name, value);
+
+    public static IDictionary<string, object> AddInput(this IDictionary<string, object> dictionary, string key, object value)
+    {
+        dictionary.Add(key, value);
+        return dictionary;
     }
 
     private static T? ConvertValue<T>(object? value)

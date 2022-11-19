@@ -53,7 +53,7 @@ identitySection.Bind(identityOptions);
 // Add Elsa services.
 services
     .AddElsa(elsa => elsa
-        .UseManagement(management => management
+        .UseWorkflowManagement(management => management
             .UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString))
             .AddActivity<WriteLine>()
             .AddActivity<ReadLine>()
