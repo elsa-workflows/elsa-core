@@ -54,12 +54,12 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         return new StartWorkflowResult(workflowState.Id, workflowHost.WorkflowState.Bookmarks);
     }
 
-    public async Task<ResumeWorkflowResult> ResumeWorkflowAsync(string instanceId, string bookmarkId, ResumeWorkflowRuntimeOptions options, CancellationToken cancellationToken = default)
+    public async Task<ResumeWorkflowResult> ResumeWorkflowAsync(string workflowInstanceId, ResumeWorkflowRuntimeOptions options, CancellationToken cancellationToken = default)
     {
-        var workflowState = await _workflowStateStore.LoadAsync(instanceId, cancellationToken);
+        var workflowState = await _workflowStateStore.LoadAsync(workflowInstanceId, cancellationToken);
 
         if (workflowState == null)
-            throw new Exception($"Workflow instance {instanceId} not found");
+            throw new Exception($"Workflow instance {workflowInstanceId} not found");
 
         var definitionId = workflowState.DefinitionId;
         var version = workflowState.DefinitionVersion;
@@ -71,13 +71,12 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
 
         if (workflowDefinition == null)
             throw new Exception("Specified workflow definition and version does not exist");
-
-        var input = options.Input;
+        
         var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
         var workflowHost = await _workflowHostFactory.CreateAsync(workflow, workflowState, cancellationToken);
-        var resumeWorkflowOptions = new ResumeWorkflowHostOptions(input);
+        var resumeWorkflowOptions = new ResumeWorkflowHostOptions(options.CorrelationId, options.BookmarkId, options.ActivityId, options.Input);
 
-        await workflowHost.ResumeWorkflowAsync(bookmarkId, resumeWorkflowOptions, cancellationToken);
+        await workflowHost.ResumeWorkflowAsync(resumeWorkflowOptions, cancellationToken);
         workflowState = workflowHost.WorkflowState;
 
         await SaveWorkflowStateAsync(workflowState, cancellationToken);
@@ -100,12 +99,8 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         foreach (var bookmark in bookmarks)
         {
             var workflowInstanceId = bookmark.WorkflowInstanceId;
-
-            var resumeResult = await ResumeWorkflowAsync(
-                workflowInstanceId,
-                bookmark.BookmarkId,
-                runtimeOptions,
-                cancellationToken);
+            var resumeOptions = new ResumeWorkflowRuntimeOptions(runtimeOptions.CorrelationId, bookmark.BookmarkId, Input: runtimeOptions.Input);
+            var resumeResult = await ResumeWorkflowAsync(workflowInstanceId, resumeOptions, cancellationToken);
 
             resumedWorkflows.Add(new ResumedWorkflow(workflowInstanceId, resumeResult.Bookmarks));
         }
@@ -137,15 +132,15 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
 
         // Resume bookmarks.
         var bookmarks = (await _bookmarkStore.FindByHashAsync(hash, cancellationToken)).ToList();
-        var resumedWorkflows = await ResumeWorkflowsAsync(bookmarks, new ResumeWorkflowRuntimeOptions(options.CorrelationId, options.Input), cancellationToken);
+        var resumedWorkflows = await ResumeWorkflowsAsync(bookmarks, new ResumeWorkflowRuntimeOptions(options.CorrelationId, Input: options.Input), cancellationToken);
 
         triggeredWorkflows.AddRange(resumedWorkflows.Select(x => new TriggeredWorkflow(x.InstanceId, x.Bookmarks)));
         return new TriggerWorkflowsResult(triggeredWorkflows);
     }
 
-    public async Task<WorkflowState?> ExportWorkflowStateAsync(string instanceId, CancellationToken cancellationToken = default)
+    public async Task<WorkflowState?> ExportWorkflowStateAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
     {
-        return await _workflowStateStore.LoadAsync(instanceId, cancellationToken);
+        return await _workflowStateStore.LoadAsync(workflowInstanceId, cancellationToken);
     }
 
     public async Task ImportWorkflowStateAsync(WorkflowState workflowState, CancellationToken cancellationToken = default)

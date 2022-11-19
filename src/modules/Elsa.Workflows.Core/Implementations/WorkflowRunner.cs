@@ -78,21 +78,27 @@ public class WorkflowRunner : IWorkflowRunner
         var correlationId = options?.CorrelationId ?? workflowState.CorrelationId;
         var triggerActivityId = options?.TriggerActivityId;
         var workflowExecutionContext = await CreateWorkflowExecutionContextAsync(workflow, workflowState.Id, correlationId, workflowState, input, default, triggerActivityId, cancellationToken);
-
         var bookmarkId = options?.BookmarkId;
+        var activityId = options?.ActivityId;
 
-        if (bookmarkId == null)
-        {
-            // Schedule the first node.
-            workflowExecutionContext.ScheduleRoot();
-        }
-        else
+        if (bookmarkId != null)
         {
             // Schedule the bookmark.
             var bookmark = workflowExecutionContext.Bookmarks.FirstOrDefault(x => x.Id == bookmarkId);
 
             if (bookmark != null)
                 workflowExecutionContext.ScheduleBookmark(bookmark);
+        }
+        else if (activityId != null)
+        {
+            // Schedule the activity.
+            var activity = workflowExecutionContext.FindActivityById(activityId);
+            workflowExecutionContext.ScheduleActivity(activity);
+        }
+        else
+        {
+            // Schedule the first node.
+            workflowExecutionContext.ScheduleRoot();
         }
 
         return await RunAsync(workflowExecutionContext);

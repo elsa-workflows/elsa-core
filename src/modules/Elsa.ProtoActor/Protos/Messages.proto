@@ -21,8 +21,10 @@ message StartWorkflowResponse {
 
 message ResumeWorkflowRequest {
   string instanceId = 1;
-  string bookmarkId = 2;
-  optional Input input = 3;
+  optional string correlationId = 2;
+  optional string bookmarkId = 3;
+  optional string activityId = 4;
+  optional Input input = 5;
 }
 
 message ResumeWorkflowResponse {

@@ -49,7 +49,7 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
             VersionOptions = versionOptions.ToString(),
             CorrelationId = correlationId.WithDefault(""),
             Input = input?.Serialize(),
-            TriggerActivityId = options.TriggerActivityId
+            TriggerActivityId = options.TriggerActivityId.WithDefault("")
         };
 
         var workflowInstanceId = _identityGenerator.GenerateId();
@@ -61,19 +61,20 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
     }
 
     public async Task<ResumeWorkflowResult> ResumeWorkflowAsync(
-        string instanceId,
-        string bookmarkId,
+        string workflowInstanceId,
         ResumeWorkflowRuntimeOptions options,
         CancellationToken cancellationToken = default)
     {
         var request = new ResumeWorkflowRequest
         {
-            InstanceId = instanceId,
-            BookmarkId = bookmarkId,
+            InstanceId = workflowInstanceId,
+            CorrelationId = options.CorrelationId,
+            BookmarkId = options.BookmarkId,
+            ActivityId = options.ActivityId,
             Input = options.Input?.Serialize()
         };
 
-        var client = _cluster.GetWorkflowGrain(instanceId);
+        var client = _cluster.GetWorkflowGrain(workflowInstanceId);
         var response = await client.Resume(request, cancellationToken);
         var bookmarks = Map(response!.Bookmarks).ToList();
 
@@ -106,7 +107,6 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
 
             var resumeResult = await ResumeWorkflowAsync(
                 workflowInstanceId,
-                bookmark.BookmarkId,
                 runtimeOptions,
                 cancellationToken);
 
@@ -143,8 +143,7 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
 
             var resumeResult = await ResumeWorkflowAsync(
                 workflowInstanceId,
-                bookmark.BookmarkId,
-                new ResumeWorkflowRuntimeOptions(options.CorrelationId, options.Input),
+                new ResumeWorkflowRuntimeOptions(options.CorrelationId, bookmark.BookmarkId, null, options.Input),
                 cancellationToken);
 
             triggeredWorkflows.Add(new TriggeredWorkflow(workflowInstanceId, resumeResult.Bookmarks));
@@ -167,10 +166,10 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
     }
 
     public async Task<WorkflowState?> ExportWorkflowStateAsync(
-        string instanceId,
+        string workflowInstanceId,
         CancellationToken cancellationToken = default)
     {
-        var client = _cluster.GetWorkflowGrain(instanceId);
+        var client = _cluster.GetWorkflowGrain(workflowInstanceId);
         var response = await client.ExportState(new ExportWorkflowStateRequest(), cancellationToken);
         var json = response!.SerializedWorkflowState.Text;
         var options = _serializerOptionsProvider.CreatePersistenceOptions();

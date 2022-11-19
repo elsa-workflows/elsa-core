@@ -117,10 +117,12 @@ public class WorkflowGrain : WorkflowGrainBase
     public override async Task<ResumeWorkflowResponse> Resume(ResumeWorkflowRequest request)
     {
         _input = request.Input?.Deserialize();
-        var bookmarkId = request.BookmarkId;
+        var correlationId = request.CorrelationId;
+        var bookmarkId = request.BookmarkId.NullIfEmpty();
+        var activityId = request.ActivityId.NullIfEmpty();
         var cancellationToken = Context.CancellationToken;
-        var resumeWorkflowHostOptions = new ResumeWorkflowHostOptions(_input);
-        await _workflowHost.ResumeWorkflowAsync(bookmarkId, resumeWorkflowHostOptions, cancellationToken);
+        var resumeWorkflowHostOptions = new ResumeWorkflowHostOptions(correlationId, bookmarkId, activityId, _input);
+        await _workflowHost.ResumeWorkflowAsync(resumeWorkflowHostOptions, cancellationToken);
         var finished = _workflowHost.WorkflowState.Status == WorkflowStatus.Finished;
 
         _workflowState = _workflowHost.WorkflowState;

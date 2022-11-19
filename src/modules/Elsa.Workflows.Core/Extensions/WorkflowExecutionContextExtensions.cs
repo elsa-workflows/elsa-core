@@ -30,6 +30,16 @@ public static class WorkflowExecutionContextExtensions
     }
 
     /// <summary>
+    /// Schedules the specified activity of the workflow.
+    /// </summary>
+    public static void ScheduleActivity(this WorkflowExecutionContext workflowExecutionContext, IActivity activity)
+    {
+        var activityInvoker = workflowExecutionContext.GetRequiredService<IActivityInvoker>();
+        var workItem = new ActivityWorkItem(activity.Id, async () => await activityInvoker.InvokeAsync(workflowExecutionContext, activity));
+        workflowExecutionContext.Scheduler.Schedule(workItem);
+    }
+
+    /// <summary>
     /// Schedules the activity of the specified bookmark.
     /// </summary>
     public static void ScheduleBookmark(this WorkflowExecutionContext workflowExecutionContext, Bookmark bookmark)
@@ -45,7 +55,7 @@ public static class WorkflowExecutionContextExtensions
 
         // If no resumption point was specified, use "Complete" to prevent the regular "ExecuteAsync" method to be invoked and instead complete the activity.
         workflowExecutionContext.ExecuteDelegate = bookmark.CallbackMethodName != null ? bookmarkedActivity.GetResumeActivityDelegate(bookmark.CallbackMethodName) : WorkflowExecutionContext.Complete;
-        
+
         // Remove the bookmark.
         workflowExecutionContext.Bookmarks.Remove(bookmark);
     }
@@ -63,9 +73,7 @@ public static class WorkflowExecutionContextExtensions
         var activityInvoker = workflowExecutionContext.GetRequiredService<IActivityInvoker>();
         var workItem = new ActivityWorkItem(activity.Id, async () => await activityInvoker.InvokeAsync(workflowExecutionContext, activity, owner, references), tag);
         workflowExecutionContext.Scheduler.Schedule(workItem);
-
-        if (completionCallback != null)
-            workflowExecutionContext.AddCompletionCallback(owner, activity, completionCallback);
+        workflowExecutionContext.AddCompletionCallback(owner, activity, completionCallback);
     }
 
     /// <summary>

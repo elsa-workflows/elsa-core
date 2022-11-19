@@ -1,9 +1,12 @@
 using System.Linq.Expressions;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Elsa.Common.Services;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Services;
 using Elsa.Workflows.Core.Activities.Flowchart.Models;
+using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Core.Signals;
@@ -98,6 +101,51 @@ public static class ActivityExecutionContextExtensions
         locationReference.Set(context, value);
 
         return input;
+    }
+    
+    /// <summary>
+    /// Schedules the specified activity with the provided callback.
+    /// If the activity is null, the callback is invoked immediately.
+    /// </summary>
+    public static async Task ScheduleActivityAsync(this ActivityExecutionContext context, IActivity? activity, ActivityCompletionCallback completionCallback)
+    {
+        if (activity == null)
+        {
+            await completionCallback(context, context);
+            return;
+        }
+
+        context.ScheduleActivity(activity, context, completionCallback);
+    }
+    
+    /// <summary>
+    /// Schedules the specified activity with the provided callback.
+    /// If the activity is null, the callback is invoked immediately.
+    /// </summary>
+    public static async Task ScheduleOutcomeAsync(this ActivityExecutionContext context, IActivity? activity, [CallerArgumentExpression("activity")] string portPropertyName = default!)
+    {
+        if (activity == null)
+        {
+            var outcome = context.GetOutcomeName(portPropertyName);
+            await context.CompleteActivityWithOutcomesAsync(outcome);
+            return;
+        }
+
+        context.ScheduleActivity(activity, context);
+    }
+
+    public static string GetOutcomeName(this ActivityExecutionContext context, string portPropertyName)
+    {
+        var owner = context.Activity;
+        var ports = owner.GetType().GetProperties().Where(x => typeof(IActivity).IsAssignableFrom(x.PropertyType)).ToList();
+
+        var portQuery =
+            from p in ports
+            where p.Name == portPropertyName
+            select p;
+
+        var portProperty = portQuery.First();
+        return portProperty.GetCustomAttribute<PortAttribute>()?.Name ?? portProperty.Name;
     }
 
     public static async Task<T?> EvaluateAsync<T>(this ActivityExecutionContext context, Input<T> input)

@@ -8,16 +8,16 @@ namespace Elsa.Workflows.Runtime.Services;
 public interface IWorkflowRuntime
 {
     Task<StartWorkflowResult> StartWorkflowAsync(string definitionId, StartWorkflowRuntimeOptions options, CancellationToken cancellationToken = default);
-    Task<ResumeWorkflowResult> ResumeWorkflowAsync(string instanceId, string bookmarkId, ResumeWorkflowRuntimeOptions options, CancellationToken cancellationToken = default);
+    Task<ResumeWorkflowResult> ResumeWorkflowAsync(string workflowInstanceId, ResumeWorkflowRuntimeOptions options, CancellationToken cancellationToken = default);
     Task<ICollection<ResumedWorkflow>> ResumeWorkflowsAsync(string activityTypeName, object bookmarkPayload, ResumeWorkflowRuntimeOptions options, CancellationToken cancellationToken = default);
     Task<TriggerWorkflowsResult> TriggerWorkflowsAsync(string activityTypeName, object bookmarkPayload, TriggerWorkflowsRuntimeOptions options, CancellationToken cancellationToken = default);
-    Task<WorkflowState?> ExportWorkflowStateAsync(string instanceId, CancellationToken cancellationToken = default);
+    Task<WorkflowState?> ExportWorkflowStateAsync(string workflowInstanceId, CancellationToken cancellationToken = default);
     Task ImportWorkflowStateAsync(WorkflowState workflowState, CancellationToken cancellationToken = default);
     Task UpdateBookmarksAsync(UpdateBookmarksContext context, CancellationToken cancellationToken = default);
 }
 
 public record StartWorkflowRuntimeOptions(string? CorrelationId = default, IDictionary<string, object>? Input = default, VersionOptions VersionOptions = default, string? TriggerActivityId = default);
-public record ResumeWorkflowRuntimeOptions(string? CorrelationId = default, IDictionary<string, object>? Input = default);
+public record ResumeWorkflowRuntimeOptions(string? CorrelationId = default, string? BookmarkId = default, string? ActivityId = default, IDictionary<string, object>? Input = default);
 public record StartWorkflowResult(string InstanceId, ICollection<Bookmark> Bookmarks);
 public record ResumeWorkflowResult(ICollection<Bookmark> Bookmarks);
 public record TriggerWorkflowsRuntimeOptions(string? CorrelationId = default, IDictionary<string, object>? Input = default);

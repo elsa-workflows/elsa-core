@@ -56,7 +56,7 @@ public class WorkflowHost : IWorkflowHost
         return new StartWorkflowHostResult(diff);
     }
 
-    public async Task<ResumeWorkflowHostResult> ResumeWorkflowAsync(string bookmarkId, ResumeWorkflowHostOptions? options = default, CancellationToken cancellationToken = default)
+    public async Task<ResumeWorkflowHostResult> ResumeWorkflowAsync(ResumeWorkflowHostOptions? options = default, CancellationToken cancellationToken = default)
     {
         await _eventPublisher.PublishAsync(new WorkflowExecuting(Workflow), cancellationToken);
 
@@ -68,7 +68,7 @@ public class WorkflowHost : IWorkflowHost
 
         var instanceId = WorkflowState.Id;
         var input = options?.Input;
-        var runOptions = new RunWorkflowOptions(instanceId, BookmarkId: bookmarkId, Input: input);
+        var runOptions = new RunWorkflowOptions(instanceId, options?.CorrelationId, options?.BookmarkId, options?.ActivityId, input);
         var workflowResult = await _workflowRunner.RunAsync(Workflow, WorkflowState, runOptions, cancellationToken);
 
         WorkflowState = workflowResult.WorkflowState;

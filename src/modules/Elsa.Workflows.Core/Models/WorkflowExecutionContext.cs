@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Core.Models;
 
-public record ActivityCompletionCallbackEntry(ActivityExecutionContext Owner, IActivity Child, ActivityCompletionCallback CompletionCallback);
+public record ActivityCompletionCallbackEntry(ActivityExecutionContext Owner, IActivity Child, ActivityCompletionCallback? CompletionCallback);
 
 public class WorkflowExecutionContext
 {
@@ -87,13 +87,13 @@ public class WorkflowExecutionContext
     public IEnumerable<T> GetServices<T>() where T : notnull => _serviceProvider.GetServices<T>();
     public object? GetService(Type serviceType) => _serviceProvider.GetService(serviceType);
 
-    public void AddCompletionCallback(ActivityExecutionContext owner, IActivity child, ActivityCompletionCallback completionCallback)
+    public void AddCompletionCallback(ActivityExecutionContext owner, IActivity child, ActivityCompletionCallback? completionCallback = default)
     {
         var entry = new ActivityCompletionCallbackEntry(owner, child, completionCallback);
         _completionCallbackEntries.Add(entry);
     }
 
-    public ActivityCompletionCallback? PopCompletionCallback(ActivityExecutionContext owner, IActivity child)
+    public ActivityCompletionCallbackEntry? PopCompletionCallback(ActivityExecutionContext owner, IActivity child)
     {
         var entry = _completionCallbackEntries.FirstOrDefault(x => x.Owner == owner && x.Child == child);
 
@@ -101,7 +101,7 @@ public class WorkflowExecutionContext
             return default;
 
         RemoveCompletionCallback(entry);
-        return entry.CompletionCallback;
+        return entry;
     }
 
     public void RemoveCompletionCallback(ActivityCompletionCallbackEntry entry) => _completionCallbackEntries.Remove(entry);

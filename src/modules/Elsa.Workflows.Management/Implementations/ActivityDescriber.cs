@@ -1,6 +1,7 @@
 using System.Collections;
 using System.ComponentModel;
 using System.Reflection;
+using Elsa.Common.Extensions;
 using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Helpers;
@@ -59,9 +60,28 @@ public class ActivityDescriber : IActivityDescriber
             Mode = PortMode.Port,
             Name = x,
             DisplayName = x
-        }) ?? Enumerable.Empty<Port>();
+        }).ToDictionary(x => x.Name) ?? new Dictionary<string, Port>();
 
-        var allPorts = embeddedPorts.Concat(flowPorts);
+        if (flowNodeAttr != null)
+        {
+            var portProperties = activityType.GetProperties().Where(p => typeof(IActivity).IsAssignableFrom(p.PropertyType) && p.GetCustomAttribute<PortAttribute>() != null).ToList();
+
+            foreach (var portProperty in portProperties)
+            {
+                var portAttr = portProperty.GetCustomAttribute<PortAttribute>();
+
+                var port = new Port
+                {
+                    Mode = PortMode.Port,
+                    Name = portAttr?.Name ?? portProperty.Name,
+                    DisplayName = portAttr?.DisplayName ?? portProperty.Name
+                };
+
+                flowPorts[port.Name] = port;
+            }
+        }
+
+        var allPorts = embeddedPorts.Concat(flowPorts.Values);
         var properties = activityType.GetProperties();
         var inputProperties = properties.Where(x => typeof(Input).IsAssignableFrom(x.PropertyType) || x.GetCustomAttribute<InputAttribute>() != null).ToList();
         var outputProperties = properties.Where(x => typeof(Output).IsAssignableFrom(x.PropertyType)).DistinctBy(x => x.Name).ToList();
