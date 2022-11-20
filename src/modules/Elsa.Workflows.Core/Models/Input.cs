@@ -43,7 +43,7 @@ public class Input<T> : Input
     {
     }
     
-    public Input(Output output) : base(new OutputExpression(output), output.MemoryBlockReference, typeof(T))
+    public Input(Output output) : base(new OutputExpression(output), output.MemoryBlockReference(), typeof(T))
     {
     }
 

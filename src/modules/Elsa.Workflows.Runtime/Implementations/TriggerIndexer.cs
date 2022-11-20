@@ -165,7 +165,7 @@ public class TriggerIndexer : ITriggerIndexer
         // Evaluate activity inputs before requesting trigger data.
         foreach (var input in assignedInputs)
         {
-            var locationReference = input.MemoryBlockReference;
+            var locationReference = input.MemoryBlockReference();
 
             try
             {

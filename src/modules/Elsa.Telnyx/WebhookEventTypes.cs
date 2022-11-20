@@ -10,6 +10,7 @@ internal static class WebhookEventTypes
     public const string CallInitiated = "call.initiated";
     public const string CallMachineGreetingEnded = "call.machine.greeting.ended";
     public const string CallMachinePremiumGreetingEnded = "call.machine.premium.greeting.ended";
+    public const string CallMachineDetectionEnded = "call.machine.detection.ended";
     public const string CallMachinePremiumDetectionEnded = "call.machine.premium.detection.ended";
     public const string CallPlaybackStarted = "call.playback.started";
     public const string CallPlaybackEnded = "call.playback.ended";

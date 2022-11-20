@@ -36,24 +36,33 @@ public class IdentityGraphService : IIdentityGraphService
     private void AssignInputOutputs(IActivity activity)
     {
         var inputs = activity.GetInputs();
-        var assignedInputs = inputs.Where(x => x.MemoryBlockReference != null! && x.MemoryBlockReference.Id == null!).ToList();
+        
+        var assignedInputs = inputs.Where(x =>
+        {
+            var memoryBlockReference = x.MemoryBlockReference();
+            return memoryBlockReference.Id == null!;
+        }).ToList();
+        
         var seed = 0;
 
         foreach (var input in assignedInputs)
         {
-            var locationReference = input.MemoryBlockReference;
-
+            var locationReference = input.MemoryBlockReference();
             locationReference.Id = $"{activity.Id}:input-{++seed}";
         }
 
         seed = 0;
         var outputs = activity.GetOutputs();
-        var assignedOutputs = outputs.Where(x => x.Value.MemoryBlockReference != null! && x.Value.MemoryBlockReference.Id == null!).ToList();
+        
+        var assignedOutputs = outputs.Where(x =>
+        {
+            var memoryBlockReference = x.Value.MemoryBlockReference();
+            return memoryBlockReference != null! && memoryBlockReference.Id == null!;
+        }).ToList();
 
         foreach (var output in assignedOutputs)
         {
-            var memoryReference = output.Value.MemoryBlockReference;
-
+            var memoryReference = output.Value.MemoryBlockReference();
             memoryReference.Id = $"{activity.Id}:output-{++seed}";
         }
     }

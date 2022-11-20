@@ -95,8 +95,8 @@ public class ForEach<T> : ForEach
     [Input]
     public new Input<ICollection<T>> Items
     {
-        get => new(base.Items.Expression, base.Items.MemoryBlockReference);
-        set => base.Items = new Input<ICollection<object>>(value.Expression, value.MemoryBlockReference);
+        get => new(base.Items.Expression, base.Items.MemoryBlockReference());
+        set => base.Items = new Input<ICollection<object>>(value.Expression, value.MemoryBlockReference());
     }
 
     public new Output<T?> CurrentValue

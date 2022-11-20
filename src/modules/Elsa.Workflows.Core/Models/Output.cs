@@ -8,11 +8,13 @@ public class Output : Argument
     {
     }
 
-    public Output(MemoryBlockReference locationBlockReference) : base(locationBlockReference)
+    public Output(MemoryBlockReference memoryBlockReference) : base(memoryBlockReference)
     {
     }
-
-    //public ICollection<MemoryReference> Targets { get; } = new List<MemoryReference>();
+    
+    public Output(Func<MemoryBlockReference> memoryBlockReference) : base(memoryBlockReference)
+    {
+    }
 }
 
 public class Output<T> : Output
@@ -21,7 +23,11 @@ public class Output<T> : Output
     {
     }
     
-    public Output(MemoryBlockReference locationBlockReference) : base(locationBlockReference)
+    public Output(MemoryBlockReference memoryBlockReference) : base(memoryBlockReference)
+    {
+    }
+    
+    public Output(Func<MemoryBlockReference> memoryBlockReference) : base(memoryBlockReference)
     {
     }
 }

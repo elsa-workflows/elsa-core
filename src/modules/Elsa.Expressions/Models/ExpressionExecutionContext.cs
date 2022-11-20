@@ -36,9 +36,13 @@ public class ExpressionExecutionContext
     public ExpressionExecutionContext? ParentContext { get; set; }
     public CancellationToken CancellationToken { get; }
 
+    public MemoryBlock GetBlock(Func<MemoryBlockReference> blockReference) => GetBlock(blockReference());
     public MemoryBlock GetBlock(MemoryBlockReference blockReference) => GetMemoryDatumInternal(blockReference) ?? throw new Exception($"Failed to retrieve memory block with reference {blockReference.Id}");
+    public object Get(Func<MemoryBlockReference> blockReference) => Get(blockReference());
     public object Get(MemoryBlockReference blockReference) => GetBlock(blockReference).Value!;
+    public T Get<T>(Func<MemoryBlockReference> blockReference) => Get<T>(blockReference());
     public T Get<T>(MemoryBlockReference blockReference) => (T)Get(blockReference);
+    public void Set(Func<MemoryBlockReference> blockReference, object? value) => Set(blockReference(), value);
 
     public void Set(MemoryBlockReference blockReference, object? value)
     {

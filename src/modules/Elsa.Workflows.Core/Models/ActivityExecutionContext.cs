@@ -190,7 +190,7 @@ public class ActivityExecutionContext
     public T? GetService<T>() where T : notnull => WorkflowExecutionContext.GetService<T>();
     public IEnumerable<T> GetServices<T>() where T : notnull => WorkflowExecutionContext.GetServices<T>();
     public object? GetService(Type serviceType) => WorkflowExecutionContext.GetService(serviceType);
-    public T? Get<T>(Input<T>? input) => input == null ? default : Get<T>(input.MemoryBlockReference);
+    public T? Get<T>(Input<T>? input) => input == null ? default : Get<T>(input.MemoryBlockReference());
 
     public object? Get(MemoryBlockReference blockReference)
     {

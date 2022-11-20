@@ -1,4 +1,5 @@
-﻿using Elsa.Telnyx.Client.Models;
+﻿using Elsa.Telnyx.Bookmarks;
+using Elsa.Telnyx.Client.Models;
 using Elsa.Telnyx.Client.Services;
 using Elsa.Telnyx.Exceptions;
 using Elsa.Telnyx.Extensions;
@@ -8,6 +9,7 @@ using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Models;
 using Microsoft.Extensions.Options;
 
@@ -17,8 +19,7 @@ namespace Elsa.Telnyx.Activities;
 /// Dial a number or SIP URI.
 /// </summary>
 [Activity(Constants.Namespace, "Dial a number or SIP URI.", Kind = ActivityKind.Task)]
-[FlowNode("Answered", "Hangup")]
-public class Dial : ActivityBase
+public abstract class DialBase : ActivityBase
 {
     [Input(Description = "The DID or SIP URI to dial out and bridge to the given call.")]
     public Input<string?>? To { get; set; } = default!;
@@ -33,7 +34,7 @@ public class Dial : ActivityBase
     [Input(
         Description = "Enables Answering Machine Detection.",
         UIHint = InputUIHints.Dropdown,
-        Options = new[] { "disabled", "detect", "detect_beep", "detect_words", "greeting_end" },
+        Options = new[] { "disabled", "detect", "detect_beep", "detect_words", "greeting_end", "premium" },
         DefaultValue = "disabled")]
     public Input<string?>? AnsweringMachineDetection { get; set; } = new("disabled");
 
@@ -71,15 +72,15 @@ public class Dial : ActivityBase
         }
     }
 
-    private async ValueTask HandleAnsweredAsync(ActivityExecutionContext context) => await context.CompleteActivityWithOutcomesAsync("Answered");
-
-    private async ValueTask HandleHangupAsync(ActivityExecutionContext context) => await context.CompleteActivityWithOutcomesAsync("Hangup"); 
-
     private void HandleMachineGreetingEnded(ActivityExecutionContext context, CallMachineGreetingEndedBase payload)
     {
         context.Set(MachineDetectionResult, payload.Result);
-        context.CreateBookmark();
+        context.CreateBookmark(new WebhookEventBookmarkPayload(WebhookEventTypes.CallAnswered), ResumeAsync);
+        context.CreateBookmark(new WebhookEventBookmarkPayload(WebhookEventTypes.CallHangup), ResumeAsync);
     }
+
+    protected abstract ValueTask HandleAnsweredAsync(ActivityExecutionContext context);
+    protected abstract ValueTask HandleHangupAsync(ActivityExecutionContext context);
 
     private async Task DialAsync(ActivityExecutionContext context)
     {
@@ -100,8 +101,33 @@ public class Dial : ActivityBase
             AnsweringMachineDetection.Get(context),
             ClientState: clientState
         );
-            
+
         var telnyxClient = context.GetRequiredService<ITelnyxClient>();
         await telnyxClient.Calls.DialAsync(request, context.CancellationToken);
+    }
+}
+
+[FlowNode("Answered", "Hangup")]
+public class FlowDial : DialBase
+{
+    protected override async ValueTask HandleAnsweredAsync(ActivityExecutionContext context) => await context.CompleteActivityWithOutcomesAsync("Answered");
+    protected override async ValueTask HandleHangupAsync(ActivityExecutionContext context) => await context.CompleteActivityWithOutcomesAsync("Hangup");
+}
+
+public class Dial : DialBase
+{
+    [Port] public IActivity? Answered { get; set; }
+    [Port] public IActivity? Hangup { get; set; }
+
+    protected override ValueTask HandleAnsweredAsync(ActivityExecutionContext context)
+    {
+        context.ScheduleActivity(Answered);
+        return ValueTask.CompletedTask;
+    }
+
+    protected override ValueTask HandleHangupAsync(ActivityExecutionContext context)
+    {
+        context.ScheduleActivity(Hangup);
+        return ValueTask.CompletedTask;
     }
 }

@@ -4,7 +4,6 @@ using Elsa.Workflows.Core.Models;
 
 public class AskAge : Composite<int>
 {
-    private readonly WriteLine _prompt = new();
     private readonly Variable<string> _age = new();
 
     public Input<string> Prompt { get; set; } = new("Please tell me your age:");
@@ -16,15 +15,10 @@ public class AskAge : Composite<int>
             Variables = { _age },
             Activities =
             {
-                _prompt,
+                new WriteLine(context => Prompt.Get(context)),
                 new ReadLine(_age)
             }
         };
-    }
-
-    protected override void ConfigureActivities(ActivityExecutionContext context)
-    {
-        _prompt.Text = Prompt;
     }
 
     protected override void OnCompleted(ActivityExecutionContext context, ActivityExecutionContext childContext)

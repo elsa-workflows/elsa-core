@@ -64,7 +64,7 @@ public static class ActivityExecutionContextExtensions
 
         foreach (var input in assignedInputs)
         {
-            var memoryReference = input.MemoryBlockReference;
+            var memoryReference = input.MemoryBlockReference();
             var value = await evaluator.EvaluateAsync(input, expressionExecutionContext);
             memoryReference.Set(context, value);
         }
@@ -96,9 +96,9 @@ public static class ActivityExecutionContextExtensions
         var evaluator = context.GetRequiredService<IExpressionEvaluator>();
         var expressionExecutionContext = context.ExpressionExecutionContext;
 
-        var locationReference = input.MemoryBlockReference;
+        var memoryBlockReference = input.MemoryBlockReference();
         var value = await evaluator.EvaluateAsync(input, expressionExecutionContext);
-        locationReference.Set(context, value);
+        memoryBlockReference.Set(context, value);
 
         return input;
     }
@@ -151,9 +151,9 @@ public static class ActivityExecutionContextExtensions
     public static async Task<T?> EvaluateAsync<T>(this ActivityExecutionContext context, Input<T> input)
     {
         var evaluator = context.GetRequiredService<IExpressionEvaluator>();
-        var locationReference = input.MemoryBlockReference;
+        var memoryBlockReference = input.MemoryBlockReference();
         var value = await evaluator.EvaluateAsync(input, context.ExpressionExecutionContext);
-        locationReference.Set(context, value);
+        memoryBlockReference.Set(context, value);
         return value;
     }
 

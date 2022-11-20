@@ -7,7 +7,7 @@ using Elsa.Workflows.Runtime.Services;
 namespace Elsa.Workflows.Runtime.Middleware;
 
 /// <summary>
-/// Takes care of persisting a workflow instance after workflow execution.
+/// Takes care of persisting workflow execution log entries.
 /// </summary>
 public class PersistWorkflowExecutionLogMiddleware : WorkflowExecutionMiddleware
 {

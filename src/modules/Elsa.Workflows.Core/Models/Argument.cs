@@ -4,14 +4,18 @@ namespace Elsa.Workflows.Core.Models;
 
 public abstract class Argument
 {
-    protected Argument(){}
-    
-    protected Argument(MemoryBlockReference memoryBlockReference /*, Func<object?, object?>? valueConverter = default*/)
+    protected Argument()
     {
-        MemoryBlockReference = memoryBlockReference;
-        //ValueConverter = valueConverter;
     }
 
-    public MemoryBlockReference MemoryBlockReference { get; set; } = default!;
-    //public Func<object?, object?>? ValueConverter { get; set; }
+    protected Argument(MemoryBlockReference memoryBlockReference) : this(() => memoryBlockReference)
+    {
+    }
+    
+    protected Argument(Func<MemoryBlockReference> memoryBlockReference)
+    {
+        MemoryBlockReference = memoryBlockReference;
+    }
+
+    public Func<MemoryBlockReference> MemoryBlockReference { get; set; } = default!;
 }

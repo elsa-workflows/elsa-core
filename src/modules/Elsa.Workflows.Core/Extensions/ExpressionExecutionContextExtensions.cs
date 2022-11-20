@@ -45,6 +45,6 @@ public static class ExpressionExecutionContextExtensions
 
     public static void Set(this ExpressionExecutionContext context, Output? output, object? value)
     {
-        if(output != null) context.Set(output.MemoryBlockReference, value);
+        if(output != null) context.Set(output.MemoryBlockReference(), value);
     }
 }

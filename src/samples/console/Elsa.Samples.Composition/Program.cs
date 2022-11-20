@@ -14,20 +14,25 @@ services.AddElsa();
 var serviceProvider = services.BuildServiceProvider();
 
 // Declare a workflow variable for use in the workflow.
-var ageVariable = new Variable<int>();
+var personVariable = new Variable<Person>();
 
 // Declare a workflow.
 var workflow = new Sequence
 {
-    Variables = { ageVariable },
+    Variables = { personVariable },
     Activities =
     {
-        new AskAge
+        new AskDetails()
         {
-            Prompt = new Input<string>("What's your age?"),
-            Result = new Output(ageVariable)
+            NamePrompt = new Input<string>("What's your name?"),
+            AgePrompt = new Input<string>("What's your age?"),
+            Result = new Output(personVariable)
         },
-        new WriteLine(context => $"The age you told me is: {ageVariable.Get(context)}")
+        new WriteLine(context =>
+        {
+            var person = personVariable.Get(context)!;
+            return $"Your name is {person.Name} and you are {person.Age} years old.";
+        })
     }
 };
 
