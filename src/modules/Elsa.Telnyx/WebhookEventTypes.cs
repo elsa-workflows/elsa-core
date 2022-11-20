@@ -1,6 +1,6 @@
 namespace Elsa.Telnyx;
 
-internal static class WebhookEventTypes
+public static class WebhookEventTypes
 {
     public const string CallAnswered = "call.answered";
     public const string CallBridged = "call.bridged";

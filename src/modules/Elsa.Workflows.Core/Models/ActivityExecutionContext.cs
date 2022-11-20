@@ -107,10 +107,10 @@ public class ActivityExecutionContext
             ScheduleActivity(activity, completionCallback);
     }
 
-    public void CreateBookmarks(IEnumerable<object> bookmarkData, ExecuteActivityDelegate? callback = default)
+    public void CreateBookmarks(IEnumerable<object> payloads, ExecuteActivityDelegate? callback = default)
     {
-        foreach (var bookmarkDatum in bookmarkData)
-            CreateBookmark(bookmarkDatum, callback);
+        foreach (var payload in payloads)
+            CreateBookmark(payload, callback);
     }
 
     public void AddBookmarks(IEnumerable<Bookmark> bookmarks) => _bookmarks.AddRange(bookmarks);

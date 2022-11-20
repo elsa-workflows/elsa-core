@@ -7,15 +7,15 @@ using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Models;
 using Refit;
 
 namespace Elsa.Telnyx.Activities;
 
 [Activity(Constants.Namespace, "Convert text to speech and play it back on the call.", Kind = ActivityKind.Task)]
-[FlowNode("Finished speaking", "Disconnected")]
 [WebhookDriven(WebhookEventTypes.CallSpeakEnded)]
-public class SpeakText : Activity
+public abstract class SpeakTextBase : ActivityBase
 {
     /// <summary>
     /// Unique identifier and token for controlling the call.
@@ -101,12 +101,37 @@ public class SpeakText : Activity
         catch (ApiException e)
         {
             if (!await e.CallIsNoLongerActiveAsync()) throw;
-            await context.CompleteActivityWithOutcomesAsync("Disconnected");
+            await HandleDisconnected(context);
         }
     }
 
-    private async ValueTask ResumeAsync(ActivityExecutionContext context)
+    protected abstract ValueTask HandleDisconnected(ActivityExecutionContext context);
+    protected abstract ValueTask HandleFinishedSpeaking(ActivityExecutionContext context);
+
+    private async ValueTask ResumeAsync(ActivityExecutionContext context) => await HandleFinishedSpeaking(context);
+}
+
+[FlowNode("Finished speaking", "Disconnected")]
+public class FlowSpeakText : SpeakTextBase
+{
+    protected override async ValueTask HandleDisconnected(ActivityExecutionContext context) => await context.CompleteActivityWithOutcomesAsync("Disconnected");
+    protected override async ValueTask HandleFinishedSpeaking(ActivityExecutionContext context) => await context.CompleteActivityWithOutcomesAsync("Finished speaking");
+}
+
+public class SpeakText : SpeakTextBase
+{
+    [Port]public IActivity? FinishedSpeaking { get; set; }
+    [Port]public IActivity? Disconnected { get; set; }
+    
+    protected override ValueTask HandleDisconnected(ActivityExecutionContext context)
     {
-        await context.CompleteActivityWithOutcomesAsync("Finished speaking");
+        context.ScheduleActivity(Disconnected);
+        return ValueTask.CompletedTask;
+    }
+
+    protected override ValueTask HandleFinishedSpeaking(ActivityExecutionContext context)
+    {
+        context.CompleteActivityWithOutcomesAsync("Finished speaking");
+        return ValueTask.CompletedTask; 
     }
 }

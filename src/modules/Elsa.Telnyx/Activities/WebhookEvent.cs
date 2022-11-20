@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using System.Text.Json.Serialization;
 using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Helpers;
 using Elsa.Telnyx.Models;
@@ -16,6 +17,17 @@ namespace Elsa.Telnyx.Activities;
 [Browsable(false)]
 public class WebhookEvent : ActivityBase<Payload>
 {
+    [JsonConstructor]
+    public WebhookEvent()
+    {
+    }
+
+    public WebhookEvent(string eventType, Variable<Payload> result)
+    {
+        EventType = new (eventType);
+        Result = new(result);
+    }
+    
     /// <summary>
     /// The Telnyx webhook event type to listen for.
     /// </summary>
