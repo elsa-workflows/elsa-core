@@ -6,8 +6,8 @@ namespace Elsa.Persistence.EntityFrameworkCore.Modules.Labels;
 
 public class EFCoreWorkflowDefinitionLabelStore : IWorkflowDefinitionLabelStore
 {
-    private readonly Store<LabelsDbContext, WorkflowDefinitionLabel> _store;
-    public EFCoreWorkflowDefinitionLabelStore(Store<LabelsDbContext, WorkflowDefinitionLabel> store) => _store = store;
+    private readonly Store<LabelsElsaDbContext, WorkflowDefinitionLabel> _store;
+    public EFCoreWorkflowDefinitionLabelStore(Store<LabelsElsaDbContext, WorkflowDefinitionLabel> store) => _store = store;
 
     public async Task SaveAsync(WorkflowDefinitionLabel record, CancellationToken cancellationToken = default) => await _store.SaveAsync(record, cancellationToken);
     public async Task SaveManyAsync(IEnumerable<WorkflowDefinitionLabel> records, CancellationToken cancellationToken = default) => await _store.SaveManyAsync(records, cancellationToken);

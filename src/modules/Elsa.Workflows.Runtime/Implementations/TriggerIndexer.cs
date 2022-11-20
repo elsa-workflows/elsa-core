@@ -159,8 +159,7 @@ public class TriggerIndexer : ITriggerIndexer
         var register = context.GetOrCreateRegister(trigger);
         var cancellationToken = context.CancellationToken;
         var expressionInput = new Dictionary<string, object>();
-        var transientProperties = new Dictionary<object, object>();
-        var applicationProperties = ExpressionExecutionContextExtensions.CreateApplicationPropertiesFrom(context.Workflow, transientProperties, expressionInput);
+        var applicationProperties = ExpressionExecutionContextExtensions.CreateTriggerIndexingPropertiesFrom(context.Workflow, expressionInput);
         var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, register, default, applicationProperties, cancellationToken);
 
         // Evaluate activity inputs before requesting trigger data.

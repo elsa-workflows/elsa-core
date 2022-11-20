@@ -17,13 +17,13 @@ namespace Elsa.Persistence.EntityFrameworkCore.Modules.Management;
 /// </summary>
 public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
 {
-    private readonly Store<ManagementDbContext, WorkflowInstance> _store;
+    private readonly Store<ManagementElsaDbContext, WorkflowInstance> _store;
     private readonly SerializerOptionsProvider _serializerOptionsProvider;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public EFCoreWorkflowInstanceStore(Store<ManagementDbContext, WorkflowInstance> store, SerializerOptionsProvider serializerOptionsProvider)
+    public EFCoreWorkflowInstanceStore(Store<ManagementElsaDbContext, WorkflowInstance> store, SerializerOptionsProvider serializerOptionsProvider)
     {
         _store = store;
         _serializerOptionsProvider = serializerOptionsProvider;
@@ -94,23 +94,23 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
         return await query.PaginateAsync(x => WorkflowInstanceSummary.FromInstance(x), pageArgs);
     }
 
-    public WorkflowInstance Save(ManagementDbContext dbContext, WorkflowInstance entity)
+    public WorkflowInstance Save(ManagementElsaDbContext managementElsaDbContext, WorkflowInstance entity)
     {
         var data = new WorkflowInstanceState(entity.WorkflowState, entity.Fault);
         var options = _serializerOptionsProvider.CreatePersistenceOptions(ReferenceHandler.Preserve);
         var json = JsonSerializer.Serialize(data, options);
 
-        dbContext.Entry(entity).Property("Data").CurrentValue = json;
+        managementElsaDbContext.Entry(entity).Property("Data").CurrentValue = json;
         return entity;
     }
 
-    public WorkflowInstance? Load(ManagementDbContext dbContext, WorkflowInstance? entity)
+    public WorkflowInstance? Load(ManagementElsaDbContext managementElsaDbContext, WorkflowInstance? entity)
     {
         if (entity == null)
             return null;
 
         var data = new WorkflowInstanceState(entity.WorkflowState, entity.Fault);
-        var json = (string?)dbContext.Entry(entity).Property("Data").CurrentValue;
+        var json = (string?)managementElsaDbContext.Entry(entity).Property("Data").CurrentValue;
 
         if (!string.IsNullOrWhiteSpace(json))
         {

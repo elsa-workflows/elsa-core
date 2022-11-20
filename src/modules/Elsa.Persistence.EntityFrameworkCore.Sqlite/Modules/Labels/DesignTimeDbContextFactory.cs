@@ -4,6 +4,6 @@ using Elsa.Persistence.EntityFrameworkCore.Sqlite.Abstractions;
 namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.Labels;
 
 // ReSharper disable once UnusedType.Global
-public class DesignTimeDbContextFactory : SqliteDesignTimeDbContextFactoryBase<LabelsDbContext>
+public class DesignTimeDbContextFactory : SqliteDesignTimeDbContextFactoryBase<LabelsElsaDbContext>
 {
 }

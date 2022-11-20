@@ -8,11 +8,11 @@ namespace Elsa.WorkflowContexts.Extensions;
 public static class WorkflowExecutionContextExtensions
 {
     public static void SetWorkflowContext(this WorkflowExecutionContext workflowExecutionContext, WorkflowContext workflowContext, object value) => workflowExecutionContext.TransientProperties.SetWorkflowContext(workflowContext, value);
-    public static void SetWorkflowContext(this ExpressionExecutionContext expressionExecutionContext, WorkflowContext workflowContext, object value) => expressionExecutionContext.GetTransientProperties().SetWorkflowContext(workflowContext, value);
+    public static void SetWorkflowContext(this ExpressionExecutionContext expressionExecutionContext, WorkflowContext workflowContext, object value) => expressionExecutionContext.GetWorkflowExecutionContext().TransientProperties.SetWorkflowContext(workflowContext, value);
     public static T? GetWorkflowContext<T, TProvider>(this WorkflowExecutionContext workflowExecutionContext) => (T?)workflowExecutionContext.TransientProperties.GetWorkflowContextByProviderType(typeof(TProvider));
-    public static T? GetWorkflowContext<T, TProvider>(this ExpressionExecutionContext expressionExecutionContext) => (T?)expressionExecutionContext.GetTransientProperties().GetWorkflowContextByProviderType(typeof(TProvider));
+    public static T? GetWorkflowContext<T, TProvider>(this ExpressionExecutionContext expressionExecutionContext) => (T?)expressionExecutionContext.GetWorkflowExecutionContext().TransientProperties.GetWorkflowContextByProviderType(typeof(TProvider));
     public static object? GetWorkflowContext(this WorkflowExecutionContext workflowExecutionContext, WorkflowContext workflowContext) => workflowExecutionContext.TransientProperties.GetWorkflowContext(workflowContext);
-    public static object? GetWorkflowContext(this ExpressionExecutionContext expressionExecutionContext, WorkflowContext workflowContext) => expressionExecutionContext.GetTransientProperties().GetWorkflowContext(workflowContext);
+    public static object? GetWorkflowContext(this ExpressionExecutionContext expressionExecutionContext, WorkflowContext workflowContext) => expressionExecutionContext.GetWorkflowExecutionContext().TransientProperties.GetWorkflowContext(workflowContext);
 
     private static void SetWorkflowContext(this IDictionary<object, object> transientProperties, WorkflowContext workflowContext, object value)
     {

@@ -14,11 +14,11 @@ public class EFCoreWorkflowStateStore : IWorkflowStateStore
 {
     private readonly SerializerOptionsProvider _serializerOptionsProvider;
     private readonly ISystemClock _systemClock;
-    private readonly IDbContextFactory<RuntimeDbContext> _dbContextFactory;
+    private readonly IDbContextFactory<RuntimeElsaDbContext> _dbContextFactory;
 
     public EFCoreWorkflowStateStore(
-        IDbContextFactory<RuntimeDbContext> dbContextFactory, 
-        Store<RuntimeDbContext, WorkflowState> store, 
+        IDbContextFactory<RuntimeElsaDbContext> dbContextFactory, 
+        Store<RuntimeElsaDbContext, WorkflowState> store, 
         SerializerOptionsProvider serializerOptionsProvider, 
         ISystemClock systemClock)
     {

@@ -8,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.Persistence.EntityFrameworkCore.Modules.Management;
 
 [DependsOn(typeof(WorkflowManagementFeature))]
-public class EFCoreManagementPersistenceFeature : PersistenceFeatureBase<ManagementDbContext>
+public class EFCoreManagementPersistenceFeature : PersistenceFeatureBase<ManagementElsaDbContext>
 {
     public EFCoreManagementPersistenceFeature(IModule module) : base(module)
     {

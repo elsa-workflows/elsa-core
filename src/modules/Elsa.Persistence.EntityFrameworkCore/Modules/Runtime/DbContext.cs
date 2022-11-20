@@ -7,9 +7,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Modules.Runtime;
 
-public class RuntimeDbContext : DbContextBase
+public class RuntimeElsaDbContext : ElsaDbContextBase
 {
-    public RuntimeDbContext(DbContextOptions options) : base(options)
+    public RuntimeElsaDbContext(DbContextOptions options) : base(options)
     {
     }
     

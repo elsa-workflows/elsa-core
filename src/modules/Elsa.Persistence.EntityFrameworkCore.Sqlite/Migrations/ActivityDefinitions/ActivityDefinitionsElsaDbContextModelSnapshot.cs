@@ -8,13 +8,13 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations.ActivityDefinitions
 {
-    [DbContext(typeof(ActivityDefinitionsDbContext))]
-    partial class ActivityDefinitionsDbContextModelSnapshot : ModelSnapshot
+    [DbContext(typeof(ActivityDefinitionsElsaDbContext))]
+    partial class ActivityDefinitionsElsaDbContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "6.0.8");
+            modelBuilder.HasAnnotation("ProductVersion", "6.0.11");
 
             modelBuilder.Entity("Elsa.ActivityDefinitions.Entities.ActivityDefinition", b =>
                 {

@@ -10,7 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.Persistence.EntityFrameworkCore.Modules.Runtime;
 
 [DependsOn(typeof(WorkflowRuntimeFeature))]
-public class EFCoreRuntimePersistenceFeature : PersistenceFeatureBase<RuntimeDbContext>
+public class EFCoreRuntimePersistenceFeature : PersistenceFeatureBase<RuntimeElsaDbContext>
 {
     public EFCoreRuntimePersistenceFeature(IModule module) : base(module)
     {

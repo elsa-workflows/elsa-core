@@ -9,13 +9,13 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations.Runtime
 {
-    [DbContext(typeof(RuntimeDbContext))]
-    partial class RuntimeDbContextModelSnapshot : ModelSnapshot
+    [DbContext(typeof(RuntimeElsaDbContext))]
+    partial class RuntimeElsaDbContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "6.0.8");
+            modelBuilder.HasAnnotation("ProductVersion", "6.0.11");
 
             modelBuilder.Entity("Elsa.Workflows.Core.State.WorkflowState", b =>
                 {

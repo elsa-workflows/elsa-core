@@ -22,7 +22,9 @@ public class WorkflowContext<T, TProvider> : WorkflowContext where TProvider:IWo
     
     public T? Get(ExpressionExecutionContext context)
     {
-        var workflowContexts = (IDictionary<WorkflowContext, object?>)context.GetTransientProperties()["WorkflowContexts"]!;
+        var workflowExecutionContext = context.GetWorkflowExecutionContext();
+        var transientProperties = workflowExecutionContext.TransientProperties;
+        var workflowContexts = (IDictionary<WorkflowContext, object?>)transientProperties["WorkflowContexts"]!;
         return workflowContexts.TryGetValue(this, out var workflowContext) ? (T?)workflowContext : default;
     }
 }

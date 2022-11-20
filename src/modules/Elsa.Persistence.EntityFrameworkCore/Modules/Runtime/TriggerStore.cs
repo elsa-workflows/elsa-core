@@ -6,9 +6,9 @@ namespace Elsa.Persistence.EntityFrameworkCore.Modules.Runtime;
 
 public class EFCoreTriggerStore : ITriggerStore
 {
-    private readonly Store<RuntimeDbContext, StoredTrigger> _store;
+    private readonly Store<RuntimeElsaDbContext, StoredTrigger> _store;
 
-    public EFCoreTriggerStore(Store<RuntimeDbContext, StoredTrigger> store)
+    public EFCoreTriggerStore(Store<RuntimeElsaDbContext, StoredTrigger> store)
     {
         _store = store;
     }

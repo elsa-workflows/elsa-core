@@ -8,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.Persistence.EntityFrameworkCore.Modules.ActivityDefinitions;
 
 [DependsOn(typeof(ActivityDefinitionsFeature))]
-public class EFCoreActivityDefinitionsPersistenceFeature : PersistenceFeatureBase<ActivityDefinitionsDbContext>
+public class EFCoreActivityDefinitionsPersistenceFeature : PersistenceFeatureBase<ActivityDefinitionsElsaDbContext>
 {
     public EFCoreActivityDefinitionsPersistenceFeature(IModule module) : base(module)
     {

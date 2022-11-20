@@ -4,9 +4,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Modules.Management;
 
-public class ManagementDbContext : DbContextBase
+public class ManagementElsaDbContext : ElsaDbContextBase
 {
-    public ManagementDbContext(DbContextOptions options) : base(options)
+    public ManagementElsaDbContext(DbContextOptions options) : base(options)
     {
     }
 

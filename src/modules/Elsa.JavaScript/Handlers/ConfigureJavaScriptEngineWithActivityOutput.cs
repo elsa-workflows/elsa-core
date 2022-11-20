@@ -20,7 +20,7 @@ public class ConfigureJavaScriptEngineWithActivityOutput : INotificationHandler<
     public async Task HandleAsync(EvaluatingJavaScript notification, CancellationToken cancellationToken)
     {
         var engine = notification.Engine;
-        var workflow = notification.Context.GetWorkflow();
+        var workflow = notification.Context.GetWorkflowExecutionContext().Workflow;
         var nodes = await _activityWalker.WalkAsync(workflow.Root, cancellationToken);
         var graph = nodes.Flatten();
         var register = notification.Context.Memory;

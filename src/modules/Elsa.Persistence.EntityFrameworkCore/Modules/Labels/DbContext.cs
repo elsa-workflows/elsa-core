@@ -4,9 +4,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Modules.Labels;
 
-public class LabelsDbContext : DbContextBase
+public class LabelsElsaDbContext : ElsaDbContextBase
 {
-    public LabelsDbContext(DbContextOptions options) : base(options)
+    public LabelsElsaDbContext(DbContextOptions options) : base(options)
     {
     }
     

@@ -4,9 +4,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Modules.ActivityDefinitions;
 
-public class ActivityDefinitionsDbContext : DbContextBase
+public class ActivityDefinitionsElsaDbContext : ElsaDbContextBase
 {
-    public ActivityDefinitionsDbContext(DbContextOptions options) : base(options)
+    public ActivityDefinitionsElsaDbContext(DbContextOptions options) : base(options)
     {
     }
     

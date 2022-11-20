@@ -7,17 +7,18 @@ namespace Elsa.Persistence.EntityFrameworkCore.Common;
 /// <summary>
 /// An optional base class to implement with some opinions on certain converters to install for certain DB providers.
 /// </summary>
-public abstract class DbContextBase : DbContext
+public abstract class ElsaDbContextBase : DbContext
 {
     public const string ElsaSchema = "Elsa";
     public const string MigrationsHistoryTable = "__EFMigrationsHistory";
 
-    protected DbContextBase(DbContextOptions options) : base(options)
+    protected ElsaDbContextBase(DbContextOptions options) : base(options)
     {
     }
 
     protected virtual string Schema => ElsaSchema;
 
+    /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         if (!string.IsNullOrWhiteSpace(Schema))

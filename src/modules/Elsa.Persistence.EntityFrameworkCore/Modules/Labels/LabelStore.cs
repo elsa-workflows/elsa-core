@@ -8,10 +8,10 @@ namespace Elsa.Persistence.EntityFrameworkCore.Modules.Labels;
 
 public class EFCoreLabelStore : ILabelStore
 {
-    private readonly Store<LabelsDbContext, Label> _labelStore;
-    private readonly Store<LabelsDbContext, WorkflowDefinitionLabel> _workflowDefinitionLabelStore;
+    private readonly Store<LabelsElsaDbContext, Label> _labelStore;
+    private readonly Store<LabelsElsaDbContext, WorkflowDefinitionLabel> _workflowDefinitionLabelStore;
 
-    public EFCoreLabelStore(Store<LabelsDbContext, Label> labelStore, Store<LabelsDbContext, WorkflowDefinitionLabel> workflowDefinitionLabelStore)
+    public EFCoreLabelStore(Store<LabelsElsaDbContext, Label> labelStore, Store<LabelsElsaDbContext, WorkflowDefinitionLabel> workflowDefinitionLabelStore)
     {
         _labelStore = labelStore;
         _workflowDefinitionLabelStore = workflowDefinitionLabelStore;

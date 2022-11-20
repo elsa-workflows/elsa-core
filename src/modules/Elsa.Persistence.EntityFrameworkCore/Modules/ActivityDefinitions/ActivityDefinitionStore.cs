@@ -14,10 +14,10 @@ namespace Elsa.Persistence.EntityFrameworkCore.Modules.ActivityDefinitions;
 
 public class EFCoreActivityDefinitionStore : IActivityDefinitionStore
 {
-    private readonly Store<ActivityDefinitionsDbContext, ActivityDefinition> _store;
+    private readonly Store<ActivityDefinitionsElsaDbContext, ActivityDefinition> _store;
     private readonly SerializerOptionsProvider _serializerOptionsProvider;
 
-    public EFCoreActivityDefinitionStore(Store<ActivityDefinitionsDbContext, ActivityDefinition> store, SerializerOptionsProvider serializerOptionsProvider)
+    public EFCoreActivityDefinitionStore(Store<ActivityDefinitionsElsaDbContext, ActivityDefinition> store, SerializerOptionsProvider serializerOptionsProvider)
     {
         _store = store;
         _serializerOptionsProvider = serializerOptionsProvider;
@@ -77,7 +77,7 @@ public class EFCoreActivityDefinitionStore : IActivityDefinitionStore
         return await _store.DeleteWhereAsync(x => definitionIdList.Contains(x.DefinitionId), cancellationToken);
     }
 
-    public ActivityDefinition Save(ActivityDefinitionsDbContext dbContext, ActivityDefinition entity)
+    public ActivityDefinition Save(ActivityDefinitionsElsaDbContext activityDefinitionsElsaDbContext, ActivityDefinition entity)
     {
         var data = new
         {
@@ -89,17 +89,17 @@ public class EFCoreActivityDefinitionStore : IActivityDefinitionStore
         var options = _serializerOptionsProvider.CreatePersistenceOptions();
         var json = JsonSerializer.Serialize(data, options);
 
-        dbContext.Entry(entity).Property("Data").CurrentValue = json;
+        activityDefinitionsElsaDbContext.Entry(entity).Property("Data").CurrentValue = json;
         return entity;
     }
 
-    public ActivityDefinition? Load(ActivityDefinitionsDbContext dbContext, ActivityDefinition? entity)
+    public ActivityDefinition? Load(ActivityDefinitionsElsaDbContext activityDefinitionsElsaDbContext, ActivityDefinition? entity)
     {
         if (entity == null)
             return null;
         
         var data = new ActivityDefinitionState(entity.Variables, entity.Metadata, entity.ApplicationProperties);
-        var json = (string?)dbContext.Entry(entity).Property("Data").CurrentValue;
+        var json = (string?)activityDefinitionsElsaDbContext.Entry(entity).Property("Data").CurrentValue;
 
         if (!string.IsNullOrWhiteSpace(json))
         {

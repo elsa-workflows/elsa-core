@@ -2,6 +2,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Expressions.Models;
 
+/// <summary>
+/// Made available to activities to access shared state and store local state. 
+/// </summary>
 public class ExpressionExecutionContext
 {
     private readonly IServiceProvider _serviceProvider;
@@ -10,14 +13,13 @@ public class ExpressionExecutionContext
         IServiceProvider serviceProvider,
         MemoryRegister memory,
         ExpressionExecutionContext? parentContext = default,
-        IDictionary<object, object>? applicationProperties = default,
+        IDictionary<object, object>? transientProperties = default,
         CancellationToken cancellationToken = default)
     {
         _serviceProvider = serviceProvider;
         Memory = memory;
-        ApplicationProperties = applicationProperties ?? new Dictionary<object, object>();
+        TransientProperties = transientProperties ?? new Dictionary<object, object>();
         ParentContext = parentContext;
-
         CancellationToken = cancellationToken;
     }
 
@@ -26,7 +28,11 @@ public class ExpressionExecutionContext
     /// </summary>
     public MemoryRegister Memory { get; }
 
-    public IDictionary<object, object> ApplicationProperties { get; set; }
+    /// <summary>
+    /// A dictionary of transient properties.
+    /// </summary>
+    public IDictionary<object, object> TransientProperties { get; set; }
+
     public ExpressionExecutionContext? ParentContext { get; set; }
     public CancellationToken CancellationToken { get; }
 

@@ -6,8 +6,8 @@ namespace Elsa.Persistence.EntityFrameworkCore.Modules.Runtime;
 
 public class EFCoreBookmarkStore : IBookmarkStore
 {
-    private readonly Store<RuntimeDbContext, StoredBookmark> _store;
-    public EFCoreBookmarkStore(Store<RuntimeDbContext, StoredBookmark> store) => _store = store;
+    private readonly Store<RuntimeElsaDbContext, StoredBookmark> _store;
+    public EFCoreBookmarkStore(Store<RuntimeElsaDbContext, StoredBookmark> store) => _store = store;
 
     public async ValueTask SaveAsync(
         string activityTypeName,

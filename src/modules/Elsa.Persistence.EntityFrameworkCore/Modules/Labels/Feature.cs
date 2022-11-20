@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.Persistence.EntityFrameworkCore.Modules.Labels;
 
 [DependsOn(typeof(LabelsFeature))]
-public class EFCoreLabelPersistenceFeature : PersistenceFeatureBase<LabelsDbContext>
+public class EFCoreLabelPersistenceFeature : PersistenceFeatureBase<LabelsElsaDbContext>
 {
     public EFCoreLabelPersistenceFeature(IModule module) : base(module)
     {

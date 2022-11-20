@@ -2,21 +2,19 @@
 using Elsa.Persistence.EntityFrameworkCore.Modules.Labels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
 namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations.Labels
 {
-    [DbContext(typeof(LabelsDbContext))]
-    [Migration("20220906152718_Initial")]
-    partial class Initial
+    [DbContext(typeof(LabelsElsaDbContext))]
+    partial class LabelsElsaDbContextModelSnapshot : ModelSnapshot
     {
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "6.0.8");
+            modelBuilder.HasAnnotation("ProductVersion", "6.0.11");
 
             modelBuilder.Entity("Elsa.Labels.Entities.Label", b =>
                 {
