@@ -287,7 +287,7 @@ namespace Elsa.Activities.Workflows
             /// <summary>
             /// Run the specified workflow and continue once the child workflow finishes. 
             /// </summary>
-            Blocking,
+            Blocking
         }
     }
 }
