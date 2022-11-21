@@ -1,4 +1,6 @@
-﻿using Elsa.Common.Services;
+﻿using System.Text.Json.Serialization;
+using Elsa.Common.Services;
+using Elsa.Expressions.Models;
 using Elsa.Scheduling.Models;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
@@ -9,10 +11,19 @@ namespace Elsa.Scheduling.Activities;
 [Activity( "Elsa", "Scheduling", "Delay execution for the specified amount of time.")]
 public class Delay : Activity
 {
+    [JsonConstructor]
     public Delay()
     {
     }
 
+    public Delay(Func<ExpressionExecutionContext, TimeSpan> timeSpan) : this(new Input<TimeSpan>(timeSpan))
+    {
+    }
+    
+    public Delay(Func<ExpressionExecutionContext, ValueTask<TimeSpan>> timeSpan) : this(new Input<TimeSpan>(timeSpan))
+    {
+    }
+    
     public Delay(Input<TimeSpan> timeSpan) => TimeSpan = timeSpan;
     public Delay(TimeSpan timeSpan) => TimeSpan = new Input<TimeSpan>(timeSpan);
     public Delay(Variable<TimeSpan> timeSpan) => TimeSpan = new Input<TimeSpan>(timeSpan);

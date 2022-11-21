@@ -9,14 +9,13 @@ namespace Elsa.Workflows.Core.Activities;
 /// <summary>
 /// A base class for activities that control a collection of activities.
 /// </summary>
-public abstract class Container : Activity, IContainer
+public abstract class Container : ActivityBase, IContainer
 {
     protected Container()
     {
-        Behaviors.Remove<AutoCompleteBehavior>();
     }
-
-    protected Container(params IActivity[] activities) : this()
+    
+    protected Container(params IActivity[] activities)
     {
         Activities = activities;
     }
@@ -26,7 +25,7 @@ public abstract class Container : Activity, IContainer
         Variables = variables;
     }
 
-    [Port]public ICollection<IActivity> Activities { get; set; } = new HashSet<IActivity>();
+    [Port] public ICollection<IActivity> Activities { get; set; } = new HashSet<IActivity>();
     public ICollection<Variable> Variables { get; set; } = new Collection<Variable>();
 
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)

@@ -10,6 +10,8 @@ public static class OutputExtensions
     /// </summary>
     public static Input<T> CreateInput<T>(this Output output) => new(output);
     
-    public static void Set<T>(this Output<T?>? output, ActivityExecutionContext context, T? value) => context.Set(output, value);
-    public static void Set<T>(this Output<T?>? output, ExpressionExecutionContext context, T? value) => context.Set(output, value);
+    public static void Set<T>(this Output<T>? output, ActivityExecutionContext context, T? value) => context.Set(output, value);
+    public static void Set<T>(this Output<T>? output, ExpressionExecutionContext context, T? value) => context.Set(output, value);
+    public static void Set<T>(this Output<T>? output, ActivityExecutionContext context, Variable<T> value) => context.Set(output, value.Get(context));
+    public static void Set<T>(this Output<T>? output, ExpressionExecutionContext context, Variable<T> value) => context.Set(output, value.Get(context));
 }

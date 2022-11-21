@@ -6,17 +6,33 @@ using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Models;
 using Refit;
 
 namespace Elsa.Telnyx.Activities;
 
+[FlowNode("Recording finished", "Disconnected")]
+public class FlowStartRecording : StartRecordingBase
+{
+    protected override ValueTask HandleDisconnectedAsync(ActivityExecutionContext context) => context.CompleteActivityWithOutcomesAsync("Disconnected");
+    protected override ValueTask HandleCallRecordingSavedAsync(ActivityExecutionContext context) => context.CompleteActivityWithOutcomesAsync("Recording finished");
+}
+
+public class StartRecording : StartRecordingBase
+{
+    [Port] public IActivity? RecordingFinished { get; set; }
+    [Port] public IActivity? Disconnected { get; set; }
+
+    protected override async ValueTask HandleCallRecordingSavedAsync(ActivityExecutionContext context)  => await context.ScheduleActivityAsync(RecordingFinished, OnCompletedAsync);
+    protected override async ValueTask HandleDisconnectedAsync(ActivityExecutionContext context) => await context.ScheduleActivityAsync(Disconnected, OnCompletedAsync);
+}
+
 /// <summary>
 /// Start recording the call.
 /// </summary>
 [Activity(Constants.Namespace, "Start recording the call.", Kind = ActivityKind.Task)]
-[FlowNode("Recording finished", "Disconnected")]
-public class StartRecording : ActivityBase<CallRecordingSaved>
+public abstract class StartRecordingBase : ActivityBase<CallRecordingSavedPayload>
 {
     /// <summary>
     /// Unique identifier and token for controlling the call.
@@ -60,9 +76,9 @@ public class StartRecording : ActivityBase<CallRecordingSaved>
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var request = new StartRecordingRequest(
-            Channels.Get(context) ?? "single",
-            Format.Get(context) ?? "wav",
-            PlayBeep.Get(context)
+            Channels.TryGet(context) ?? "single",
+            Format.TryGet(context) ?? "wav",
+            PlayBeep.TryGet(context)
         );
 
         var callControlId = context.GetPrimaryCallControlId(CallControlId) ?? throw new Exception("CallControlId is required.");
@@ -76,14 +92,18 @@ public class StartRecording : ActivityBase<CallRecordingSaved>
         catch (ApiException e)
         {
             if (!await e.CallIsNoLongerActiveAsync()) throw;
-            await context.CompleteActivityWithOutcomesAsync("Disconnected");
+            await HandleDisconnectedAsync(context);
         }
     }
+    
+    protected abstract ValueTask HandleCallRecordingSavedAsync(ActivityExecutionContext context);
+    protected abstract ValueTask HandleDisconnectedAsync(ActivityExecutionContext context);
+    protected async ValueTask OnCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext) => await context.CompleteActivityAsync();
 
     private async ValueTask ResumeAsync(ActivityExecutionContext context)
     {
-        var payload = context.GetInput<CallRecordingSaved>();
+        var payload = context.GetInput<CallRecordingSavedPayload>();
         context.Set(Result, payload);
-        await context.CompleteActivityWithOutcomesAsync("Recording finished");
+        await HandleCallRecordingSavedAsync(context);
     }
 }

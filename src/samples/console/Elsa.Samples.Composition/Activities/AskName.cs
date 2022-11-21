@@ -1,6 +1,7 @@
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Services;
 
 public class AskName : Composite<string>
 {
@@ -12,12 +13,12 @@ public class AskName : Composite<string>
     {
         Root = new Sequence
         {
-            Variables = { _name },
-            Activities =
-            {
-                new WriteLine(context => Prompt.Get(context)),
-                new ReadLine(_name)
-            }
+            Variables = new List<Variable>{ _name },
+             Activities = new List<IActivity>()
+             {
+                 new WriteLine(context => Prompt.Get(context)),
+                 new ReadLine(_name)
+             }
         };
     }
 

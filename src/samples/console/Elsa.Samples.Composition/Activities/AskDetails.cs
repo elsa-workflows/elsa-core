@@ -15,19 +15,19 @@ public class AskDetails : Composite<Person>
         Root = new Sequence
         {
             Variables = { _name, _age },
-            Activities =
-            {
-                new AskName
-                {
-                    Prompt = new Input<string>(context => NamePrompt.Get(context)),
-                    Result = new Output(() => _name)
-                },
-                new AskAge
-                {
-                    Prompt = new Input<string>(context => AgePrompt.Get(context)),
-                    Result = new Output(() => _age)
-                }
-            }
+             Activities =
+             {
+                 new AskName
+                 {
+                     Prompt = new Input<string>(context => NamePrompt.Get(context)),
+                     Result = new Output(_name)
+                 },
+                 new AskAge
+                 {
+                     Prompt = new Input<string>(context => AgePrompt.Get(context)),
+                     Result = new Output(_age)
+                 }
+             }
         };
     }
 

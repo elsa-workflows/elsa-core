@@ -3,7 +3,7 @@ using Humanizer;
 
 namespace Elsa.Telnyx.Extensions;
 
-internal static class StringExtensions
+public static class StringExtensions
 {
     private static readonly Regex WhiteList = new(@"[^a-zA-Z0-9-_.!~+ ]");
     

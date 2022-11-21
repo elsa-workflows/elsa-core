@@ -19,6 +19,10 @@ public class SetVariable<T> : Activity
         Value = value;
     }
     
+    public SetVariable(Variable<T> variable, Variable<T> value) : this(variable, new Input<T>(value))
+    {
+    }
+    
     public SetVariable(Variable<T> variable, Func<ExpressionExecutionContext, T> value) : this(variable, new Input<T>(value))
     {
     }

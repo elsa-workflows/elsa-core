@@ -15,11 +15,23 @@ namespace Elsa.Workflows.Core.Activities;
 [Activity("Elsa", "Control Flow", "Evaluate a set of case conditions and schedule the activity for a matching case.")]
 public class Switch : ActivityBase
 {
+    /// <summary>
+    /// The value to switch on.
+    /// </summary>
+    [Input(Description = "The value to switch on.")]
+    public Input<object> Expression { get; set; } = default!;
+
+    /// <summary>
+    /// The value to switch on, made available as output for capturing.
+    /// </summary>
+    public Output<object>? Output { get; set; }
+    
     [Input(UIHint = "switch-editor")] public ICollection<SwitchCase> Cases { get; set; } = new List<SwitchCase>();
     public IActivity? Default { get; set; }
 
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
+        context.Set(Output, Expression);
         var matchingCase = await FindMatchingCaseAsync(context.ExpressionExecutionContext);
 
         if (matchingCase != null)

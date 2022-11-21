@@ -7,11 +7,28 @@ using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Runtime.Services;
 using Refit;
 
 namespace Elsa.Telnyx.Activities;
+
+[FlowNode("Playback started", "Disconnected")]
+public class FlowPlayAudio : PlayAudioBase
+{
+    protected override ValueTask HandlePlaybackStartedAsync(ActivityExecutionContext context) => context.CompleteActivityWithOutcomesAsync("Playback started");
+    protected override ValueTask HandleDisconnectedAsync(ActivityExecutionContext context) => context.CompleteActivityWithOutcomesAsync("Disconnected");
+}
+
+public class PlayAudio : PlayAudioBase
+{
+    [Port] public IActivity? PlaybackStarted { get; set; }
+    [Port] public IActivity? Disconnected { get; set; }
+
+    protected override async ValueTask HandlePlaybackStartedAsync(ActivityExecutionContext context) => await context.ScheduleActivityAsync(PlaybackStarted, OnCompletedAsync);
+    protected override async ValueTask HandleDisconnectedAsync(ActivityExecutionContext context) => await context.ScheduleActivityAsync(Disconnected, OnCompletedAsync);
+}
 
 /// <summary>
 /// Play an audio file on the call.
@@ -19,7 +36,7 @@ namespace Elsa.Telnyx.Activities;
 [Activity(Constants.Namespace, "Play an audio file on the call.", Kind = ActivityKind.Task)]
 [FlowNode("Playback started", "Disconnected")]
 [WebhookDriven(WebhookEventTypes.CallPlaybackStarted)]
-public class PlayAudio : ActivityBase, IBookmarksPersistedHandler
+public abstract class PlayAudioBase : ActivityBase, IBookmarksPersistedHandler
 {
     /// <summary>
     /// Unique identifier and token for controlling the call.
@@ -95,15 +112,15 @@ public class PlayAudio : ActivityBase, IBookmarksPersistedHandler
         catch (ApiException e)
         {
             if (!await e.CallIsNoLongerActiveAsync()) throw;
-            await context.CompleteActivityWithOutcomesAsync("Disconnected");
+            await HandleDisconnectedAsync(context);
         }
     }
 
     /// <inheritdoc />
-    protected override void Execute(ActivityExecutionContext context)
-    {
-        context.CreateBookmark(new WebhookEventBookmarkPayload(WebhookEventTypes.CallPlaybackStarted), ResumeAsync);
-    }
+    protected override void Execute(ActivityExecutionContext context) => context.CreateBookmark(new WebhookEventBookmarkPayload(WebhookEventTypes.CallPlaybackStarted), ResumeAsync);
 
-    private async ValueTask ResumeAsync(ActivityExecutionContext context) => await context.CompleteActivityWithOutcomesAsync("Playback started");
+    protected abstract ValueTask HandlePlaybackStartedAsync(ActivityExecutionContext context);
+    protected abstract ValueTask HandleDisconnectedAsync(ActivityExecutionContext context);
+    protected async ValueTask OnCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext) => await context.CompleteActivityAsync();
+    private async ValueTask ResumeAsync(ActivityExecutionContext context) => await HandlePlaybackStartedAsync(context);
 }

@@ -53,8 +53,9 @@ public class IncomingCall : Trigger<CallInitiatedPayload>
         // TODO: Add support for multiple correlation ID keys.
         context.WorkflowExecutionContext.CorrelationId = callInitiatedPayload.CallSessionId;
             
-        // Associate workflow with inbound call control ID.
+        // Associate workflow with inbound call control ID and from number.
         context.SetPrimaryCallControlId(callInitiatedPayload.CallControlId);
+        context.SetFrom(callInitiatedPayload.From);
             
         // Store webhook payload as output.
         context.Set(Result, callInitiatedPayload);

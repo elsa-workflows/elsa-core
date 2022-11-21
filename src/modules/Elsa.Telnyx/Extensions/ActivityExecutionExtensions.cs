@@ -4,10 +4,11 @@ using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Telnyx.Extensions;
 
-internal static class ActivityExecutionExtensions
+public static class ActivityExecutionExtensions
 {
     private const string PrimaryCallControlIdKey = "telnyx:primary-callcontrol-id";
     private const string SecondaryCallControlIdKey = "telnyx:secondary-callcontrol-id";
+    private const string FromKey = "telnyx:from";
     
     public static void SetPrimaryCallControlId(this ActivityExecutionContext context, string value) => context.WorkflowExecutionContext.SetProperty(PrimaryCallControlIdKey, value);
     public static string? GetPrimaryCallControlId(this ActivityExecutionContext context) => context.WorkflowExecutionContext.GetProperty<string>(PrimaryCallControlIdKey);
@@ -21,4 +22,8 @@ internal static class ActivityExecutionExtensions
     public static string? GetSecondaryCallControlId(this ActivityExecutionContext context, Input<string?>? callControlId) => context.GetSecondaryCallControlId(callControlId.Get(context));
     public static bool HasSecondaryCallControlId(this ActivityExecutionContext context) => context.WorkflowExecutionContext.HasProperty(SecondaryCallControlIdKey);
     public static string CreateCorrelatingClientState(this ActivityExecutionContext context) => new ClientStatePayload(context.WorkflowExecutionContext.CorrelationId!).ToBase64();
+    
+    public static void SetFrom(this ActivityExecutionContext context, string value) => context.WorkflowExecutionContext.SetProperty(FromKey, value);
+    public static string? GetFrom(this ActivityExecutionContext context) => context.WorkflowExecutionContext.GetProperty<string>(FromKey);
+    public static bool HasFrom(this ActivityExecutionContext context) => context.WorkflowExecutionContext.HasProperty(FromKey);
 }

@@ -77,7 +77,7 @@ public abstract class SpeakTextBase : ActivityBase
         Options = new[] { "", "basic", "premium" },
         Category = "Advanced"
     )]
-    public Input<string?>? ServiceLevel { get; set; }
+    public Input<string?> ServiceLevel { get; set; } = default!;
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
