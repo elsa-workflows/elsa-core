@@ -45,3 +45,14 @@
 .x6-port-out:hover .x6-port-label {
   opacity: 1;
 }
+
+.context-menu-button-container button {
+  position: relative;
+}
+.context-menu-button-container button:before {
+  content: '';
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  cursor: pointer;
+}

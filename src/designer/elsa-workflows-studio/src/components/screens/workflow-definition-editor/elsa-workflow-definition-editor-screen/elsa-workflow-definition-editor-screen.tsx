@@ -519,10 +519,6 @@ export class ElsaWorkflowDefinitionEditorScreen {
     this.activityContextMenuState = e.detail;
   }
 
-  async onActivityDirectEdit(e: CustomEvent<ActivityContextMenuState>) {
-    await this.designer.showActivityEditor(e.detail.activity, true);
-  }
-
   async onActivityContextMenuButtonTestClicked(e: CustomEvent<ActivityContextMenuState>) {
 
     this.activityContextMenuTestState = e.detail;
@@ -706,7 +702,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
             mode={this.workflowDesignerMode}
             layoutDirection={this.layoutDirection}
             activityContextMenuButton={this.workflowDesignerMode == WorkflowDesignerMode.Edit ? (() => '') : this.renderActivityStatsButton}
-            onActivityContextMenuButtonClicked={e => this.onActivityDirectEdit(e)}
+            onActivityContextMenuButtonClicked={e => this.onActivityContextMenuButtonClicked(e)}
             onActivityContextMenuButtonTestClicked={e => this.onActivityContextMenuButtonTestClicked(e)}
             activityContextMenu={this.workflowDesignerMode == WorkflowDesignerMode.Edit ? this.activityContextMenuState : this.activityContextMenuTestState}
             enableMultipleConnectionsFromSingleSource={false}
@@ -978,9 +974,6 @@ export class ElsaWorkflowDefinitionEditorScreen {
   }
 
   renderActivityEditor() {
-    if (state.useX6Graphs) {
-      return <elsa-activity-editor-panel culture={this.culture} hidden={!this.selectedActivityId} />;
-    }
     return <elsa-activity-editor-modal culture={this.culture} />;
   }
 
@@ -1119,10 +1112,8 @@ export class ElsaWorkflowDefinitionEditorScreen {
   private renderWorkflowPanel() {
     const workflowDefinition = this.workflowDefinition;
 
-    const hide = state.useX6Graphs && !!this.selectedActivityId;
-
     return (
-      <elsa-flyout-panel expandButtonPosition={3} hidden={hide}>
+      <elsa-flyout-panel expandButtonPosition={3}>
         <elsa-tab-header tab="general" slot="header">
           General
         </elsa-tab-header>

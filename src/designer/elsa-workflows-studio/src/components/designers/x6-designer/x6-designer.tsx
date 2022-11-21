@@ -27,7 +27,7 @@ import {
 import state from '../../../utils/store';
 import {ActivityIcon} from '../../icons/activity-icon';
 import {ActivityContextMenuState, LayoutDirection, WorkflowDesignerMode} from "../tree/elsa-designer-tree/models";
-import {createGraph} from './graph-factory';
+import {createGraph, addGraphEvents, removeGraphEvents} from './graph-factory';
 import {Edge, Graph, Model, Node, Point} from '@antv/x6';
 import  {ActivityNodeShape} from "./shapes";
 import dagre from "dagre";
@@ -48,8 +48,10 @@ export class ElsaWorkflowDesigner {
   selectedActivities: Map<ActivityModel> = {};
   ignoreCopyPasteActivities: boolean = false;
   ignoreNextExternalGraphUpdate: boolean = false;
+  ignoreNextNodeSelect: boolean = false;
   containerObserver: ResizeObserver;
   activityDisplayContexts: Map<ActivityDesignDisplayContext> = null;
+  workflowSaveTimer?: NodeJS.Timer = null;
 
   @Prop() model: WorkflowModel = {
     activities: [],
@@ -103,8 +105,12 @@ export class ElsaWorkflowDesigner {
 
   @Watch('model')
   handleModelChanged(newValue: WorkflowModel) {
-    this.updateWorkflowModel(newValue, false);
+    if (newValue.changeCounter && newValue.changeCounter < this.workflowModel.changeCounter) {
+      // This constraint stops the graph from saving needlessly, when moving multiple selected nodes together
+      return;
+    }
     if (!this.ignoreNextExternalGraphUpdate) {
+      this.updateWorkflowModel(newValue, false);
       this.updateGraph();
     } else {
       this.ignoreNextExternalGraphUpdate = false;
@@ -139,29 +145,91 @@ export class ElsaWorkflowDesigner {
   }
 
   @Watch('mode')
-  handleActivityContextMenuButtonChanged() {
-    this.updateGraph();
+  handleActivityContextMenuButtonChanged(newValue: WorkflowDesignerMode) {
+    if (this.mode !== WorkflowDesignerMode.Edit) {
+      this.graph.resetSelection();
+      this.graph.disableSelection();
+      this.graph.disableRubberband();
+      this.graph.disableHistory();
+      removeGraphEvents(this.graph);
+    } else {
+      this.graph.enableSelection();
+      this.graph.enableRubberband();
+      this.graph.enableHistory();
+      addGraphEvents(this.graph, this.onUndoRedo, this.pasteActivities, false);
+    }
+    setTimeout(() => this.updateGraph(), 1);
   }
 
   @Method()
   async removeActivity(activity: ActivityModel) {
-    this.removeActivityInternal(activity);
+    const cell = this.graph.getCells().find(x => x.id === activity.activityId);
+    if (cell) {
+      this.graph.removeCell(cell);
+    }
   }
 
   @Method()
   async removeSelectedActivities() {
-    let model = {...this.workflowModel};
-
-    Object.keys(this.selectedActivities).forEach((key) => {
-      model = this.removeActivityInternal(this.selectedActivities[key], model);
-    });
-
-    this.updateWorkflowModel(model);
+    const cells = this.graph.getCells().filter(x => this.selectedActivityIds.includes(x.id));
+    this.graph.removeCells(cells);
   }
 
   @Method()
   async showActivityEditor(activity: ActivityModel, animate: boolean) {
     await this.showActivityEditorInternal(activity, animate);
+  }
+
+  @Event() activityDeleted: EventEmitter<ActivityDeletedArgs>;
+
+  @Method()
+  async updateLayout(): Promise<void> {
+    const width = this.el.clientWidth;
+    const height = this.el.clientHeight;
+    this.graph.resize(width, height);
+    this.graph.updateBackground();
+  }
+
+  async componentDidLoad() {
+    await this.createAndInitializeGraph();
+
+    // Below fixes issues, that arise when navigating from another page to this one - the graph not being fully loaded in the DOM at the correct time
+    const containerObserver = new ResizeObserver(() => {
+      if (this.container.clientHeight > 0) {
+        this.onContainerLoaded();
+        containerObserver.unobserve(this.container);
+      }
+    });
+    containerObserver.observe(this.container);
+  }
+
+  private onContainerLoaded() {
+    if (this.isAutoLayoutRequired) {
+      setTimeout(() => this.applyAutoLayout(), 100);
+    }
+    this.updateGraph();
+    if (this.workflowModel.activities.length) {
+      this.graph.centerContent();
+    }
+  }
+
+  private createAndInitializeGraph = async () => {
+    const graph = this.graph = createGraph(this.container,
+      {},
+      this.onUndoRedo,
+      this.pasteActivities,
+      this.mode !== WorkflowDesignerMode.Edit);
+
+    graph.on('blank:click', this.onGraphClick);
+    graph.on('node:selected', this.onNodeSelected);
+    graph.on('node:unselected', this.onNodeUnselected);
+    graph.on('node:contextmenu', this.onNodeContextMenu);
+    graph.on('edge:connected', this.onEdgeConnected);
+    graph.on('edge:removed', this.onConnectionDetached);
+    graph.on('node:moved', this.onNodeMoved);
+    graph.on('node:removed', this.onNodeRemoved);
+
+    await this.updateLayout();
   }
 
   applyAutoLayout() {
@@ -174,8 +242,8 @@ export class ElsaWorkflowDesigner {
       const activityElement = document.querySelectorAll("g[data-cell-id=\"" + activity.activityId + "\"]")[0].getBoundingClientRect();
       graph.setNode(activity.activityId, {
         label: activity.activityId,
-        width: activityElement.width,
-        height: activityElement.height,
+        width: Math.max(220, activityElement.width),
+        height: Math.max(64, activityElement.height) + 24
       });
     });
 
@@ -187,12 +255,15 @@ export class ElsaWorkflowDesigner {
 
     this.workflowModel.activities.forEach(activity => {
       const node = graph.node(activity.activityId);
-      activity.x = Math.round(node.x);
-      activity.y = Math.round(node.y);
+
+      const cell = this.graph.getCellById(activity.activityId);
+      const deltaX = node.x - activity.x;
+      const deltaY = node.y - activity.y;
+      this.graph.positionCell(cell.translate(deltaX, deltaY), "top-left");
+      activity.x = Math.round(activity.x + deltaX);
+      activity.y = Math.round(activity.y + deltaY);
     });
 
-    this.updateWorkflowModel(this.workflowModel);
-    this.updateGraph();
     this.graph.centerContent();
 
     console.log("Auto-layout applied");
@@ -285,55 +356,7 @@ export class ElsaWorkflowDesigner {
     return !!outcomes ? outcomes : [];
   }
 
-  @Event() activityDeleted: EventEmitter<ActivityDeletedArgs>;
 
-  @Method()
-  async updateLayout(): Promise<void> {
-    const width = this.el.clientWidth;
-    const height = this.el.clientHeight;
-    this.graph.resize(width, height);
-    this.graph.updateBackground();
-  }
-
-  async componentDidLoad() {
-    await this.createAndInitializeGraph();
-
-    // Below fixes issues, that arise when navigating from another page to this one - the graph not being fully loaded in the DOM at the correct time
-    const containerObserver = new ResizeObserver(() => {
-      if (this.container.clientHeight > 0) {
-        this.onContainerLoaded();
-        containerObserver.unobserve(this.container);
-      }
-    });
-    containerObserver.observe(this.container);
-  }
-
-  private onContainerLoaded() {
-    if (this.isAutoLayoutRequired) {
-      setTimeout(() => this.applyAutoLayout(), 100);
-    }
-    this.updateGraph();
-    if (this.workflowModel.activities.length) {
-      this.graph.centerContent();
-    }
-  }
-
-  private createAndInitializeGraph = async () => {
-    const graph = this.graph = createGraph(this.container,
-      {},
-      this.onUndoRedo,
-      this.pasteActivities);
-
-    graph.on('blank:click', this.onGraphClick);
-    graph.on('node:click', this.onNodeClick);
-    graph.on('node:contextmenu', this.onNodeContextMenu);
-    graph.on('edge:connected', this.onEdgeConnected);
-    graph.on('edge:removed', this.onConnectionDetached);
-    graph.on('node:moved', this.onNodeMoved);
-    graph.on('node:removed', this.onNodeRemoved);
-
-    await this.updateLayout();
-  }
 
   private onUndoRedo = () => {
     const allCells = this.graph.getCells();
@@ -345,8 +368,8 @@ export class ElsaWorkflowDesigner {
         // Node
         const cellPosition = cell.position({relative: false});
         const activity = cell.activity;
-        activity.x = cellPosition.x;
-        activity.y = cellPosition.y;
+        activity.x = Math.round(cellPosition.x);
+        activity.y = Math.round(cellPosition.y);
 
         if(cell.id !== activity.activityId) activity.activityId = cell.id;
 
@@ -441,8 +464,8 @@ export class ElsaWorkflowDesigner {
     const activity = node.activity as ActivityModel;
     const nodePosition = node.position({relative: false});
 
-    activity.x = nodePosition.x;
-    activity.y = nodePosition.y;
+    activity.x = Math.round(nodePosition.x);
+    activity.y = Math.round(nodePosition.y);
 
     if(node.id !== activity.activityId) activity.activityId = node.id;
 
@@ -450,29 +473,33 @@ export class ElsaWorkflowDesigner {
     this.updateActivityInternal(activity);
   }
 
-  private onNodeClick = async (e) => {
+  private onNodeSelected = async (e) => {
+    if (this.ignoreNextNodeSelect) {
+      this.ignoreNextNodeSelect = false;
+      return;
+    }
     const node = e.node as ActivityNodeShape;
     const activity = node.activity as ActivityModel;
 
-     // If a parent activity was selected to connect to:
-     if (this.mode == WorkflowDesignerMode.Edit && this.parentActivityId && this.parentActivityOutcome) {
-      this.addConnection(this.parentActivityId, node.id, this.parentActivityOutcome);
-    } else {
-      if (!!this.selectedActivities[activity.activityId])
-        delete this.selectedActivities[activity.activityId];
-      else {
-        for (const key in this.selectedActivities) {
-          this.activityDeselected.emit(this.selectedActivities[key]);
-        }
-        this.selectedActivities = {};
-        this.selectedActivities[activity.activityId] = activity;
-        this.activitySelected.emit(activity);
-      }
+    this.selectedActivities[activity.activityId] = activity;
+    this.activitySelected.emit(activity);
+  };
+
+  private onNodeUnselected = async (e) => {
+    const node = e.node as ActivityNodeShape;
+    const activity = node.activity as ActivityModel;
+
+    if (!!this.selectedActivities[activity.activityId]) {
+      this.activityDeselected.emit(this.selectedActivities[activity.activityId]);
+      delete this.selectedActivities[activity.activityId];
     }
+  };
+
+  private onNodeContextMenu = (e) => {
+    e.e.preventDefault();
+    const node = e.node as ActivityNodeShape;
 
     if (this.mode == WorkflowDesignerMode.Edit || this.mode == WorkflowDesignerMode.Instance) {
-
-      e.e.stopPropagation();
       this.handleContextMenuChange({
         x: e.e.clientX,
         y: e.e.clientY,
@@ -481,17 +508,6 @@ export class ElsaWorkflowDesigner {
         selectedActivities: this.selectedActivities
       });
     }
-
-    if (this.mode == WorkflowDesignerMode.Test) {
-    }
-  };
-
-  private onNodeContextMenu = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    this.parentActivityId = e.node.activity.activityId;
-    this.parentActivityOutcome = e.node.outcome;
-    this.handleConnectionContextMenuChange({x: e.clientX, y: e.clientY, shown: true, activity: e.node.activity});
   }
 
   private onGraphClick = async () => {
@@ -512,7 +528,7 @@ export class ElsaWorkflowDesigner {
 
   private onNodeRemoved = (e: any) => {
     const activity = e.node.activity as ActivityModel;
-    this.removeActivity(activity);
+    this.removeActivityInternal(activity);
     this.activityDeselected.emit(activity);
     this.activityDeleted.emit({activity});
   };
@@ -623,10 +639,13 @@ export class ElsaWorkflowDesigner {
     return displayContext;
   }
 
-  private updateGraph = () => {
+  private updateGraph = async () => {
     const activities = this.workflowModel.activities;
     const connections = this.workflowModel.connections;
     const edges: Array<Edge.Metadata> = [];
+
+    for (const model of activities)
+      this.activityDisplayContexts[model.activityId] = await this.getActivityDisplayContext(model);
 
     // Create an X6 node for each activity.
     const nodes: Array<Node.Metadata> = activities.map(activity => this.createGraphNode(activity));
@@ -697,10 +716,22 @@ export class ElsaWorkflowDesigner {
   }
 
   updateWorkflowModel(model: WorkflowModel, emitEvent: boolean = true) {
+    if (emitEvent && this.mode !== WorkflowDesignerMode.Edit) {
+      this.updateGraph();
+      return;
+    }
     this.workflowModel = this.cleanWorkflowModel(model);
 
-    if (emitEvent)
-      this.workflowChanged.emit(model);
+    if (emitEvent) {
+      //Debounce the emitting of change event and saving of workflow
+      if (this.workflowSaveTimer) {
+        clearTimeout(this.workflowSaveTimer);
+      }
+      this.workflowSaveTimer = setTimeout(() => {
+        this.workflowModel.changeCounter = (this.workflowModel.changeCounter || 0) + 1;
+        this.workflowChanged.emit(this.workflowModel);
+      }, 100);
+    }
   }
 
   cleanWorkflowModel(model: WorkflowModel): WorkflowModel {
@@ -949,6 +980,36 @@ export class ElsaWorkflowDesigner {
     }
   };
 
+  handleActivityStatsClick(activity: ActivityModel) {
+    if (this.mode === WorkflowDesignerMode.Test) {
+      setTimeout(() => {
+        const nodeEl = this.container.querySelectorAll(`div[stats-activity-id="${activity.activityId}"] button`)[0];
+        nodeEl?.addEventListener("click", (evt: MouseEvent) => {
+          this.ignoreNextNodeSelect = true;
+          evt.stopPropagation();
+          this.activityContextMenuButtonTestClicked.emit({x: evt.clientX, y: evt.clientY, shown: true, activity: activity});
+        });
+      }, 1);
+    }
+    if (this.mode === WorkflowDesignerMode.Instance) {
+      setTimeout(() => {
+        const nodeEl = this.container.querySelectorAll(`div[stats-activity-id="${activity.activityId}"] button`)[0];
+        nodeEl?.addEventListener("click", (evt: MouseEvent) => {
+          this.ignoreNextNodeSelect = true;
+          evt.stopPropagation();
+
+          this.handleContextMenuChange({
+            x: evt.clientX,
+            y: evt.clientY,
+            shown: true,
+            activity: activity,
+            selectedActivities: this.selectedActivities
+          });
+        });
+      }, 1);
+    }
+  }
+
   renderActivity(activity: ActivityModel) {
     const activityBorderColor = !!this.activityBorderColor ? this.activityBorderColor(activity) : 'gray';
     const selectedColor = !!this.activityBorderColor ? activityBorderColor : 'blue';
@@ -967,6 +1028,8 @@ export class ElsaWorkflowDesigner {
     const color = (descriptor.traits &= ActivityTraits.Trigger) == ActivityTraits.Trigger ? 'rose' : 'sky';
     const activityIcon = <ActivityIcon color={color} />;
 
+    this.handleActivityStatsClick(activity);
+
     return `<div class="elsa-border-2 elsa-border-solid ${cssClass}">
       <div class="elsa-p-2 elsa-pr-3">
         <div class="elsa-flex elsa-justify-between elsa-space-x-4 mr-4">
@@ -977,7 +1040,7 @@ export class ElsaWorkflowDesigner {
             <p class="elsa-overflow-ellipsis elsa-text-base">${displayName}</p>
             ${typeName !== displayName ? `<p class="elsa-text-gray-400 elsa-text-sm">${typeName}</p>` : ''}
           </div>
-          <div class="context-menu-button-container">
+          <div class="context-menu-button-container" stats-activity-id="${activity.activityId}">
             ${activityContextMenuButton}
           </div>
         </div>
