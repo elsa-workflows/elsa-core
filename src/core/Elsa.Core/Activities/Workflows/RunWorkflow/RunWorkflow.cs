@@ -30,14 +30,17 @@ namespace Elsa.Activities.Workflows
         private readonly IWorkflowStorageService _workflowStorageService;
         private readonly IWorkflowReviver _workflowReviver;
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
+        private readonly IWorkflowDefinitionDispatcher _workflowDefinitionDispatcher;
+        
         public RunWorkflow(IStartsWorkflow startsWorkflow, IWorkflowRegistry workflowRegistry, IWorkflowStorageService workflowStorageService, IWorkflowReviver workflowReviver,
-            IWorkflowInstanceStore workflowInstanceStore)
+            IWorkflowInstanceStore workflowInstanceStore, IWorkflowDefinitionDispatcher workflowDefinitionDispatcher)
         {
             _startsWorkflow = startsWorkflow;
             _workflowRegistry = workflowRegistry;
             _workflowStorageService = workflowStorageService;
             _workflowReviver = workflowReviver;
             _workflowInstanceStore = workflowInstanceStore;
+            _workflowDefinitionDispatcher = workflowDefinitionDispatcher;
         }
 
         [ActivityInput(
@@ -122,8 +125,8 @@ namespace Elsa.Activities.Workflows
             var cancellationToken = context.CancellationToken;
 
             var workflowBlueprint = await FindWorkflowBlueprintAsync(cancellationToken);
-            WorkflowStatus? childWorkflowStatus;
-            WorkflowInstance? childWorkflowInstance;
+            WorkflowStatus? childWorkflowStatus = null;
+            WorkflowInstance? childWorkflowInstance = null;
 
             // Somehow the initial input changes when retrying, so we hash the values
             // when retrying this activity if faulted. If there is only one with this activity id in the workflow, we don't need to use the hash because
@@ -172,25 +175,38 @@ namespace Elsa.Activities.Workflows
             }
             else
             {
-
                 if (workflowBlueprint == null || workflowBlueprint.Id == context.WorkflowInstance.DefinitionId)
                     return Outcome("Not Found");
 
-                var result = await _startsWorkflow.StartWorkflowAsync(workflowBlueprint!, tenantId: TenantId, input: new WorkflowInput(Input), correlationId: CorrelationId, contextId: ContextId, cancellationToken: cancellationToken); ;
-                childWorkflowInstance = result.WorkflowInstance!;
-                childWorkflowStatus = childWorkflowInstance.WorkflowStatus;
-                ChildWorkflowInstanceId = childWorkflowInstance.Id;
+                if (Mode == RunWorkflowMode.DispatchAndForget)
+                {
+                    var startingActivity = workflowBlueprint.Activities.FirstOrDefault(x => !workflowBlueprint.GetInboundConnections(x.Id).Any());
+
+                    if (startingActivity == null)
+                        throw new Exception();
+                    
+                    await _workflowDefinitionDispatcher.DispatchAsync(
+                        new ExecuteWorkflowDefinitionRequest(workflowBlueprint.Id, startingActivity.Id, new WorkflowInput(Input), CorrelationId, ContextId, TenantId), cancellationToken: cancellationToken);
+                }
+                else
+                {
+                    var result = await _startsWorkflow.StartWorkflowAsync(workflowBlueprint!, tenantId: TenantId, input: new WorkflowInput(Input), correlationId: CorrelationId, contextId: ContextId, cancellationToken: cancellationToken); ;
+                    childWorkflowInstance = result.WorkflowInstance!;
+                    childWorkflowStatus = childWorkflowInstance.WorkflowStatus;
+                    ChildWorkflowInstanceId = childWorkflowInstance.Id;
+                    context.JournalData.Add("Workflow Instance ID", childWorkflowInstance.Id);
+                    context.JournalData.Add("Workflow Instance Status", childWorkflowInstance.WorkflowStatus);
+                }
 
                 context.JournalData.Add("Workflow Blueprint ID", workflowBlueprint.Id);
-                context.JournalData.Add("Workflow Instance ID", childWorkflowInstance.Id);
-                context.JournalData.Add("Workflow Instance Status", childWorkflowInstance.WorkflowStatus);
+
                 if (RetryFailedActivities)
                     AlreadyExecutedChildren.Add(HashHelper.Hash(context.Input), ChildWorkflowInstanceId);
             }
             
-
             return Mode switch
             {
+                RunWorkflowMode.DispatchAndForget => Done(),
                 RunWorkflowMode.FireAndForget => Done(),
                 RunWorkflowMode.Blocking when childWorkflowStatus == WorkflowStatus.Finished => await ResumeSynchronouslyAsync(context, childWorkflowInstance, cancellationToken),
                 RunWorkflowMode.Blocking when childWorkflowStatus == WorkflowStatus.Suspended => Suspend(),
@@ -259,6 +275,11 @@ namespace Elsa.Activities.Workflows
         public enum RunWorkflowMode
         {
             /// <summary>
+            /// Dispatches the specified workflow and directly continues.
+            /// </summary>
+            DispatchAndForget,
+            
+            /// <summary>
             /// Run the specified workflow and continue with the current one. 
             /// </summary>
             FireAndForget,
@@ -266,7 +287,7 @@ namespace Elsa.Activities.Workflows
             /// <summary>
             /// Run the specified workflow and continue once the child workflow finishes. 
             /// </summary>
-            Blocking
+            Blocking,
         }
     }
 }
