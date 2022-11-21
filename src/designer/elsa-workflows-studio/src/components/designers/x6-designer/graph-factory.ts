@@ -143,8 +143,8 @@ export function createGraph(
         if (args.key == 'tools')
           return false;
 
-        const supportedEvents = ['cell:added', 'cell:removed', 'edge:added', 'edge:change:*', 'edge:removed'];
-        return supportedEvents.indexOf(e) >= 0 || (e === 'cell:change:*' && args.key === 'position');
+        const supportedEvents = ['cell:added', 'cell:removed', 'cell:change:*'];
+        return supportedEvents.indexOf(e) >= 0;
       },
     },
   });

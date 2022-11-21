@@ -25,6 +25,12 @@
   pointer-events: initial;
 }
 
+.layout-btn {
+  display: flex;
+  left: 1rem;
+  bottom: 2rem;
+}
+
 .elsa-workflow-wrapper {
   width: 100%;
   height: calc(100vh - 64px);

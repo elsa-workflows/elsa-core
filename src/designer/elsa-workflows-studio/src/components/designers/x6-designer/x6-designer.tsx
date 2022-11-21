@@ -209,7 +209,7 @@ export class ElsaWorkflowDesigner {
     }
     this.updateGraph();
     if (this.workflowModel.activities.length) {
-      this.graph.centerContent();
+      setTimeout(() => this.graph.scrollToContent(), 10);
     }
   }
 
@@ -225,9 +225,13 @@ export class ElsaWorkflowDesigner {
     graph.on('node:unselected', this.onNodeUnselected);
     graph.on('node:contextmenu', this.onNodeContextMenu);
     graph.on('edge:connected', this.onEdgeConnected);
-    graph.on('edge:removed', this.onConnectionDetached);
-    graph.on('node:moved', this.onNodeMoved);
     graph.on('node:removed', this.onNodeRemoved);
+
+    graph.on('node:change:*', this.updateModelFromGraph);
+    graph.on('node:added', this.updateModelFromGraph);
+    graph.on('edge:added', this.updateModelFromGraph);
+    graph.on('edge:removed', this.updateModelFromGraph);
+    graph.on('edge:connected', this.updateModelFromGraph);
 
     await this.updateLayout();
   }
@@ -264,7 +268,7 @@ export class ElsaWorkflowDesigner {
       activity.y = Math.round(activity.y + deltaY);
     });
 
-    this.graph.centerContent();
+    this.graph.scrollToContent();
 
     console.log("Auto-layout applied");
   };
@@ -523,6 +527,7 @@ export class ElsaWorkflowDesigner {
     const sourceId = edge.getSourceCellId();
     const outcome: string = edge.getSourcePortId();
     workflowModel = removeConnection(workflowModel, sourceId, outcome);
+    this.ignoreNextExternalGraphUpdate = true;
     this.updateWorkflowModel(workflowModel);
   };
 
@@ -539,6 +544,7 @@ export class ElsaWorkflowDesigner {
   }
 
   private onEdgeConnected = async (e: { edge: Edge }) => {
+    console.info("connect edge");
     const edge = e.edge;
     let workflowModel = {...this.workflowModel};
 
@@ -562,6 +568,7 @@ export class ElsaWorkflowDesigner {
         edge.insertLabel(sourcePort)
 
         workflowModel.connections = [...workflowModel.connections, newConnection];
+        this.ignoreNextExternalGraphUpdate = true;
         this.updateWorkflowModel(workflowModel);
       }
   }}
@@ -617,6 +624,18 @@ export class ElsaWorkflowDesigner {
     };
   }
 
+  private getWorkflowModel = (): WorkflowModel => {
+    const graph = this.graph;
+    const graphModel = graph.toJSON();
+    const activities = graphModel.cells.filter(x => x.shape == 'activity').map(x => x.activity as ActivityModel);
+    const connections = graphModel.cells.filter(x => x.shape == 'elsa-edge' && !!x.data).map(x => x.data as ConnectionModel);
+
+    return {
+      activities,
+      connections
+    };
+  };
+
   async getActivityDisplayContext(activityModel: ActivityModel): Promise<ActivityDesignDisplayContext> {
     const activityDescriptors: Array<ActivityDescriptor> = state.activityDescriptors;
     let descriptor = activityDescriptors.find(x => x.type == activityModel.type);
@@ -639,7 +658,14 @@ export class ElsaWorkflowDesigner {
     return displayContext;
   }
 
+  private updateModelFromGraph = () => {
+    const workflowModel = this.getWorkflowModel();
+    this.ignoreNextExternalGraphUpdate = true;
+    this.updateWorkflowModel(workflowModel);
+  }
+
   private updateGraph = async () => {
+    console.info("updating graph");
     const activities = this.workflowModel.activities;
     const connections = this.workflowModel.connections;
     const edges: Array<Edge.Metadata> = [];
@@ -1051,12 +1077,14 @@ export class ElsaWorkflowDesigner {
   render() {
     return (
       <Host>
-         {this.mode !== WorkflowDesignerMode.Test &&
+        {this.mode == WorkflowDesignerMode.Edit &&
           <div class="start-btn elsa-absolute elsa-z-1 ">
-            {this.mode == WorkflowDesignerMode.Edit &&
-              <button type="button" onClick={ e => this.onAddActivity(e)} class="elsa-h-12 elsa-px-6 elsa-mx-3 elsa-border elsa-border-transparent elsa-text-base elsa-font-medium elsa-rounded-md elsa-text-white elsa-bg-green-600 hover:elsa-bg-green-500 focus:elsa-outline-none focus:elsa-border-green-700 focus:elsa-shadow-outline-green active:elsa-bg-green-700 elsa-transition elsa-ease-in-out elsa-duration-150 elsa-top-8">Add activity</button>
-            }
-            <button type="button" onClick={ e => this.applyAutoLayout()} class="elsa-h-12 elsa-px-6 elsa-mx-3 elsa-border elsa-border-transparent elsa-text-base elsa-font-medium elsa-rounded-md elsa-text-white elsa-bg-green-600 hover:elsa-bg-green-500 focus:elsa-outline-none focus:elsa-border-green-700 focus:elsa-shadow-outline-green active:elsa-bg-green-700 elsa-transition elsa-ease-in-out elsa-duration-150 elsa-top-8">Auto-layout</button>
+            <button type="button" onClick={ e => this.onAddActivity(e)} class="elsa-h-12 elsa-px-6 elsa-mx-3 elsa-border elsa-border-transparent elsa-text-base elsa-font-medium elsa-rounded-md elsa-text-white elsa-bg-green-600 hover:elsa-bg-green-500 focus:elsa-outline-none focus:elsa-border-green-700 focus:elsa-shadow-outline-green active:elsa-bg-green-700 elsa-transition elsa-ease-in-out elsa-duration-150 elsa-top-8">Add activity</button>
+          </div>
+        }
+        {this.mode !== WorkflowDesignerMode.Test &&
+          <div class="layout-btn elsa-absolute elsa-z-1 ">
+            <button type="button" onClick={ e => this.applyAutoLayout()} class="elsa-h-12 elsa-px-6 elsa-mx-3 elsa-border elsa-border-transparent elsa-text-base elsa-font-medium elsa-rounded-md elsa-text-white elsa-bg-yellow-600 hover:elsa-bg-yellow-500 focus:elsa-outline-none focus:elsa-border-yellow-50 focus:elsa-shadow-outline-green active:elsa-bg-yellow-500 elsa-transition elsa-ease-in-out elsa-duration-150 elsa-top-8">Auto-layout</button>
           </div>
         }
         {this.mode == WorkflowDesignerMode.Test ?
