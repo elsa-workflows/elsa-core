@@ -46,7 +46,8 @@ public class ActivityDescriber : IActivityDescriber
             from prop in activityType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
             where typeof(IActivity).IsAssignableFrom(prop.PropertyType) || typeof(IEnumerable<IActivity>).IsAssignableFrom(prop.PropertyType)
             let portAttr = prop.GetCustomAttribute<PortAttribute>()
-            where portAttr != null
+            let portBrowsableAttr = prop.GetCustomAttribute<BrowsableAttribute>()
+            where portAttr != null && (portBrowsableAttr == null || portBrowsableAttr.Browsable)
             select new Port
             {
                 Name = portAttr.Name ?? prop.Name,
@@ -61,25 +62,6 @@ public class ActivityDescriber : IActivityDescriber
             Name = x,
             DisplayName = x
         }).ToDictionary(x => x.Name) ?? new Dictionary<string, Port>();
-
-        if (flowNodeAttr != null)
-        {
-            var portProperties = activityType.GetProperties().Where(p => typeof(IActivity).IsAssignableFrom(p.PropertyType) && p.GetCustomAttribute<PortAttribute>() != null).ToList();
-
-            foreach (var portProperty in portProperties)
-            {
-                var portAttr = portProperty.GetCustomAttribute<PortAttribute>();
-
-                var port = new Port
-                {
-                    Mode = PortMode.Port,
-                    Name = portAttr?.Name ?? portProperty.Name,
-                    DisplayName = portAttr?.DisplayName ?? portProperty.Name
-                };
-
-                flowPorts[port.Name] = port;
-            }
-        }
 
         var allPorts = embeddedPorts.Concat(flowPorts.Values);
         var properties = activityType.GetProperties();

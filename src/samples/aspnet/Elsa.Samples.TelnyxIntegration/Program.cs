@@ -58,6 +58,7 @@ services
             .AddActivity<Switch>()
             .AddActivity<RunJavaScript>()
             .AddActivity<Event>()
+            .AddActivitiesFrom<Program>()
         )
         .Use<IdentityFeature>(identity =>
         {

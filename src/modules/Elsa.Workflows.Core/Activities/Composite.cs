@@ -1,7 +1,9 @@
+using System.ComponentModel;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Core.Signals;
 
 namespace Elsa.Workflows.Core.Activities;
 
@@ -15,6 +17,7 @@ public class Composite : ActivityBase
     /// The activity to schedule when this activity executes.
     /// </summary>
     [Port]
+    [Browsable(false)]
     public IActivity Root { get; set; } = new Sequence();
 
     /// <inheritdoc />
@@ -62,10 +65,16 @@ public class Composite : ActivityBase
 /// </summary>
 public class Composite<T> : ActivityBase<T>
 {
+    public Composite()
+    {
+        OnSignalReceived<CompleteCompositeSignal>(OnCompleteCompositeSignal);
+    }
+
     /// <summary>
     /// The activity to schedule when this activity executes.
     /// </summary>
     [Port]
+    [Browsable(false)]
     public IActivity Root { get; protected set; } = new Sequence();
 
     protected override void Execute(ActivityExecutionContext context)
@@ -105,4 +114,10 @@ public class Composite<T> : ActivityBase<T>
     protected static Inline<TResult> From<TResult>(Func<ValueTask<TResult>> activity, MemoryBlockReference? output = default) => new(activity, output);
     protected static Inline<TResult> From<TResult>(Func<ActivityExecutionContext, TResult> activity, MemoryBlockReference? output = default) => new(activity, output);
     protected static Inline<TResult> From<TResult>(Func<TResult> activity, MemoryBlockReference? output = default) => new(activity, output);
+    
+    private async ValueTask OnCompleteCompositeSignal(CompleteCompositeSignal signal, SignalContext context)
+    {
+        await context.ReceiverActivityExecutionContext.CompleteActivityAsync(signal.Result);
+        context.StopPropagation();
+    }
 }
