@@ -119,7 +119,7 @@ public class TransferCall : Activity
             TimeoutSecs.Get(context)
         );
 
-        var callControlId = context.GetCallControlId(CallControlId) ?? throw new Exception("CallControlId is required.");
+        var callControlId = context.GetPrimaryCallControlId(CallControlId) ?? throw new Exception("CallControlId is required.");
         var telnyxClient = context.GetRequiredService<ITelnyxClient>();
 
         try

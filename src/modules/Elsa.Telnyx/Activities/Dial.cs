@@ -56,8 +56,10 @@ public abstract class DialBase : ActivityBase
     {
         var payload = context.GetInput<CallPayload>();
 
-        if (!context.HasMainCallControlId())
-            context.SetMainCallControlId(payload.CallControlId);
+        if (!context.HasPrimaryCallControlId())
+            context.SetPrimaryCallControlId(payload.CallControlId);
+        else
+            context.SetSecondaryCallControlId(payload.CallControlId);
 
         switch (payload)
         {

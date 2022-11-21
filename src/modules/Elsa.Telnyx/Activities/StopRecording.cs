@@ -30,7 +30,7 @@ public class StopRecording : ActivityBase
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var request = new StopRecordingRequest();
-        var callControlId = context.GetCallControlId(CallControlId) ?? throw new Exception("CallControlId is required");
+        var callControlId = context.GetPrimaryCallControlId(CallControlId) ?? throw new Exception("CallControlId is required");
         var telnyxClient = context.GetRequiredService<ITelnyxClient>();
 
         try

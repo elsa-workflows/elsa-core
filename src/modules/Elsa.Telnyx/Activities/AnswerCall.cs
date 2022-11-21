@@ -53,7 +53,7 @@ public class AnswerCall : ActivityBase<CallAnsweredPayload>, IBookmarksPersisted
     /// </summary>
     private async ValueTask InvokeTelnyxAsync(ActivityExecutionContext context)
     {
-        var callControlId = context.GetCallControlId(CallControlId) ?? throw new Exception("CallControlId is required.");
+        var callControlId = context.GetPrimaryCallControlId(CallControlId) ?? throw new Exception("CallControlId is required.");
         var request = new AnswerCallRequest();
         var telnyxClient = context.GetRequiredService<ITelnyxClient>();
         

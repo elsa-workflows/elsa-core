@@ -90,7 +90,7 @@ public abstract class SpeakTextBase : ActivityBase
             ServiceLevel.Get(context).EmptyToNull()
         );
 
-        var callControlId = context.GetCallControlId(CallControlId) ?? throw new Exception("CallControlId is required.");
+        var callControlId = context.GetPrimaryCallControlId(CallControlId) ?? throw new Exception("CallControlId is required.");
         var telnyxClient = context.GetRequiredService<ITelnyxClient>();
 
         try
@@ -131,7 +131,7 @@ public class SpeakText : SpeakTextBase
 
     protected override ValueTask HandleFinishedSpeaking(ActivityExecutionContext context)
     {
-        context.CompleteActivityWithOutcomesAsync("Finished speaking");
+        context.ScheduleActivity(FinishedSpeaking);
         return ValueTask.CompletedTask; 
     }
 }

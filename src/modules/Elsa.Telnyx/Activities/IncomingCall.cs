@@ -54,7 +54,7 @@ public class IncomingCall : Trigger<CallInitiatedPayload>
         context.WorkflowExecutionContext.CorrelationId = callInitiatedPayload.CallSessionId;
             
         // Associate workflow with inbound call control ID.
-        context.SetMainCallControlId(callInitiatedPayload.CallControlId);
+        context.SetPrimaryCallControlId(callInitiatedPayload.CallControlId);
             
         // Store webhook payload as output.
         context.Set(Result, callInitiatedPayload);

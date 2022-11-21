@@ -7,16 +7,33 @@ using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Core.Activities.Flowchart.Models;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Services;
 using Refit;
 
 namespace Elsa.Telnyx.Activities;
+
+[FlowNode("Bridged", "Disconnected")]
+public class FlowBridgeCalls : BridgeCallsBase
+{
+    protected override ValueTask HandleDisconnectedAsync(ActivityExecutionContext context) => context.CompleteActivityAsync("Disconnected");
+    protected override ValueTask HandleBridgedAsync(ActivityExecutionContext context) => context.CompleteActivityAsync("Bridged");
+}
+
+public class BridgeCalls : BridgeCallsBase
+{
+    [Port]public IActivity? Disconnected { get; set; }
+    [Port]public IActivity? Bridged { get; set; }
+    
+    protected override async ValueTask HandleDisconnectedAsync(ActivityExecutionContext context) => await context.ScheduleActivityAsync(Disconnected, OnCompleted);
+    protected override async ValueTask HandleBridgedAsync(ActivityExecutionContext context) => await context.ScheduleActivityAsync(Bridged, OnCompleted);
+}
 
 /// <summary>
 /// Bridge two calls.
 /// </summary>
 [Activity(Constants.Namespace, "Bridge two calls.", Kind = ActivityKind.Task)]
 [FlowNode("Bridged", "Disconnected")]
-public class BridgeCalls : ActivityBase<BridgedCallsOutput>
+public abstract class BridgeCallsBase : ActivityBase<BridgedCallsOutput>
 {
     /// <summary>
     /// The source call control ID of one of the call to bridge with. Leave empty to use the ambient inbound call control Id, if there is one.
@@ -33,8 +50,8 @@ public class BridgeCalls : ActivityBase<BridgedCallsOutput>
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        var callControlIdA = context.GetCallControlId(CallControlIdA) ?? throw new Exception("CallControlA is required");
-        var callControlIdB = context.GetCallControlId(CallControlIdA) ?? throw new Exception("CallControlB is required");
+        var callControlIdA = context.GetPrimaryCallControlId(CallControlIdA) ?? throw new Exception("CallControlA is required");
+        var callControlIdB = context.GetSecondaryCallControlId(CallControlIdB) ?? throw new Exception("CallControlB is required");
         var request = new BridgeCallsRequest(callControlIdB);
         var telnyxClient = context.GetRequiredService<ITelnyxClient>();
 
@@ -51,11 +68,16 @@ public class BridgeCalls : ActivityBase<BridgedCallsOutput>
         }
     }
 
+    protected abstract ValueTask HandleDisconnectedAsync(ActivityExecutionContext context);
+    protected abstract ValueTask HandleBridgedAsync(ActivityExecutionContext context);
+
+    protected async ValueTask OnCompleted(ActivityExecutionContext context, ActivityExecutionContext childContext) => await context.CompleteActivityAsync();
+
     private async ValueTask ResumeAsync(ActivityExecutionContext context)
     {
         var payload = context.GetInput<CallBridgedPayload>()!;
-        var callControlIdA = context.GetCallControlId(CallControlIdA);
-        var callControlIdB = context.GetCallControlId(CallControlIdA);
+        var callControlIdA = context.GetPrimaryCallControlId(CallControlIdA);
+        var callControlIdB = context.GetPrimaryCallControlId(CallControlIdA);
 
         if (payload.CallControlId == callControlIdA) context.SetProperty("CallBridgedPayloadA", payload);
         if (payload.CallControlId == callControlIdB) context.SetProperty("CallBridgedPayloadB", payload);

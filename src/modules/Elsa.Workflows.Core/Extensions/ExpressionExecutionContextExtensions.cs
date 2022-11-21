@@ -6,6 +6,7 @@ namespace Elsa.Workflows.Core;
 public static class ExpressionExecutionContextExtensions
 {
     public static readonly object WorkflowExecutionContextKey = new();
+    public static readonly object ActivityExecutionContextKey = new();
     public static readonly object InputKey = new();
     public static readonly object WorkflowKey = new();
 
@@ -25,6 +26,7 @@ public static class ExpressionExecutionContextExtensions
         };
 
     public static WorkflowExecutionContext GetWorkflowExecutionContext(this ExpressionExecutionContext context) => (WorkflowExecutionContext)context.TransientProperties[WorkflowExecutionContextKey];
+    public static ActivityExecutionContext GetActivityExecutionContext(this ExpressionExecutionContext context) => (ActivityExecutionContext)context.TransientProperties[ActivityExecutionContextKey];
     public static IDictionary<string, object> GetInput(this ExpressionExecutionContext context) => (IDictionary<string, object>)context.TransientProperties[InputKey];
 
     public static T? Get<T>(this ExpressionExecutionContext context, Input<T>? input) => input != null ? (T?)context.GetBlock(input.MemoryBlockReference).Value : default;
