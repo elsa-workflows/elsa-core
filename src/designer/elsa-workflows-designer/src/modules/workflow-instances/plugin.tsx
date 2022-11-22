@@ -62,7 +62,6 @@ export class WorkflowInstancesPlugin implements Plugin {
     const version = e.detail.version;
     const workflowDefinition = await this.workflowDefinitionsApi.get({definitionId, versionOptions: {version}});
     const workflowInstance = await this.workflowInstancesApi.get({id: instanceId});
-    debugger;
     this.showWorkflowInstanceViewer(workflowDefinition, workflowInstance);
     this.modalDialogService.hide(this.workflowInstanceBrowserInstance);
   }

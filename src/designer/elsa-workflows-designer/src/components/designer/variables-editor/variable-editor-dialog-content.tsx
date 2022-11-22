@@ -65,7 +65,6 @@ export class VariableEditorDialogContent {
   }
 
   private onSubmit = async (e: Event) => {
-    debugger;
     e.preventDefault();
     const form = e.target as HTMLFormElement;
     const variable = this.getVariableInternal(form);

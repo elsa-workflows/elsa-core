@@ -32,3 +32,4 @@ export class WorkflowDefinitionManager {
     return await this.api.retract(request);
   }
 }
+

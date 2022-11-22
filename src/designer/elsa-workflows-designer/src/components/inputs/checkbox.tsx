@@ -50,7 +50,6 @@ export class Checkbox {
   }
 
   private onExpressionChanged = (e: CustomEvent<ExpressionChangedArs>) => {
-    debugger;
     this.inputContext.inputChanged(e.detail.expression, e.detail.syntax);
   }
 }
