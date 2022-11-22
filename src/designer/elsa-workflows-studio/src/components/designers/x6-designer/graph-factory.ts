@@ -1,5 +1,5 @@
 import {CellView, Graph, Node} from '@antv/x6';
-import {v4 as uuid} from 'uuid';
+import { ActivityModel } from '../../../models';
 import './ports';
 import {ActivityNodeShape} from './shapes';
 
@@ -205,8 +205,23 @@ export function addGraphEvents(graph,
         disableEvents();
         const cells = graph.paste({offset: 32});
 
+        var activityIdsMap = cells.filter(x => !!x.activity).reduce(function(map, x) {
+          map[x.activity.activityId] = x.id;
+          return map;
+        }, {});
         for (const cell of cells) {
-          cell.activity.activityId = uuid();
+          if (cell.activity) {
+            cell.activity.activityId = cell.id;
+
+            const cellPosition = cell.position({relative: false});
+            cell.activity.x = Math.round(cellPosition.x);
+            cell.activity.y = Math.round(cellPosition.y);
+          } else {
+            if (cell.data) {
+              cell.data.sourceId = activityIdsMap[cell.data.sourceId] || cell.data.sourceId;
+              cell.data.targetId = activityIdsMap[cell.data.targetId] || cell.data.targetId;
+            }
+          }
         }
 
         await enableEvents(true);
