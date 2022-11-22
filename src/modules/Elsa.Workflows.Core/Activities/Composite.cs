@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using Elsa.Expressions.Models;
+using Elsa.Workflows.Core.Activities.Flowchart.Models;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
@@ -10,14 +11,18 @@ namespace Elsa.Workflows.Core.Activities;
 /// <summary>
 /// Represents a composite activity that has a single <see cref="Root"/> activity. Like a workflow, but without workflow-level properties.
 /// </summary>
-[Activity("Elsa", "Workflows", "Execute a root activity that you can configure yourself")]
-public class Composite : ActivityBase
+public abstract class Composite : ActivityBase
 {
+    /// <inheritdoc />
+    protected Composite()
+    {
+        OnSignalReceived<CompleteCompositeSignal>(OnCompleteCompositeSignal);
+    }
+    
     /// <summary>
     /// The activity to schedule when this activity executes.
     /// </summary>
     [Port]
-    [Browsable(false)]
     public IActivity Root { get; set; } = new Sequence();
 
     /// <inheritdoc />
@@ -39,15 +44,37 @@ public class Composite : ActivityBase
         await OnCompletedAsync(context, childContext);
         await context.CompleteActivityAsync();
     }
+    
+    /// <summary>
+    /// Completes this composite activity.
+    /// </summary>
+    protected async Task CompleteAsync(ActivityExecutionContext context, object? result = default) => await context.SendSignalAsync(new CompleteCompositeSignal(result));
+    
+    /// <summary>
+    /// Completes this composite activity.
+    /// </summary>
+    protected async Task CompleteAsync(ActivityExecutionContext context, params string[] outcomes) => await CompleteAsync(context, new Outcomes(outcomes));
 
-    protected virtual  ValueTask OnCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext)
+    protected virtual ValueTask OnCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext)
     {
         OnCompleted(context, childContext);
         return new();
     }
 
-    protected virtual  void OnCompleted(ActivityExecutionContext context, ActivityExecutionContext childContext)
+    protected virtual void OnCompleted(ActivityExecutionContext context, ActivityExecutionContext childContext)
     {
+    }
+    
+    private async ValueTask OnCompleteCompositeSignal(CompleteCompositeSignal signal, SignalContext context)
+    {
+        var activityExecutionContext = context.ReceiverActivityExecutionContext;
+
+        // Remove the existing completed handler.
+        activityExecutionContext.WorkflowExecutionContext.PopCompletionCallback(activityExecutionContext, Root);
+
+        // Complete this activity.
+        await activityExecutionContext.CompleteActivityAsync(signal.Result);
+        context.StopPropagation();
     }
 
     protected static Inline From(Func<ActivityExecutionContext, ValueTask> activity) => new(activity);
@@ -82,7 +109,7 @@ public class Composite<T> : ActivityBase<T>
         ConfigureActivities(context);
         context.ScheduleActivity(Root, OnRootCompletedAsync);
     }
-    
+
     /// <summary>
     /// Override this method to configure activity properties before execution.
     /// </summary>
@@ -106,6 +133,28 @@ public class Composite<T> : ActivityBase<T>
     {
     }
 
+    /// <summary>
+    /// Completes this composite activity.
+    /// </summary>
+    protected async Task CompleteAsync(ActivityExecutionContext context, object? result = default) => await context.SendSignalAsync(new CompleteCompositeSignal(result));
+    
+    /// <summary>
+    /// Completes this composite activity.
+    /// </summary>
+    protected async Task CompleteAsync(ActivityExecutionContext context, params string[] outcomes) => await CompleteAsync(context, new Outcomes(outcomes));
+
+    private async ValueTask OnCompleteCompositeSignal(CompleteCompositeSignal signal, SignalContext context)
+    {
+        var activityExecutionContext = context.ReceiverActivityExecutionContext;
+
+        // Remove the existing completed handler.
+        activityExecutionContext.WorkflowExecutionContext.PopCompletionCallback(activityExecutionContext, Root);
+
+        // Complete this activity.
+        await activityExecutionContext.CompleteActivityAsync(signal.Result);
+        context.StopPropagation();
+    }
+
     protected static Inline From(Func<ActivityExecutionContext, ValueTask> activity) => new(activity);
     protected static Inline From(Func<ValueTask> activity) => new(activity);
     protected static Inline From(Action<ActivityExecutionContext> activity) => new(activity);
@@ -114,10 +163,4 @@ public class Composite<T> : ActivityBase<T>
     protected static Inline<TResult> From<TResult>(Func<ValueTask<TResult>> activity, MemoryBlockReference? output = default) => new(activity, output);
     protected static Inline<TResult> From<TResult>(Func<ActivityExecutionContext, TResult> activity, MemoryBlockReference? output = default) => new(activity, output);
     protected static Inline<TResult> From<TResult>(Func<TResult> activity, MemoryBlockReference? output = default) => new(activity, output);
-    
-    private async ValueTask OnCompleteCompositeSignal(CompleteCompositeSignal signal, SignalContext context)
-    {
-        await context.ReceiverActivityExecutionContext.CompleteActivityAsync(signal.Result);
-        context.StopPropagation();
-    }
 }
