@@ -522,7 +522,6 @@ export class ElsaWorkflowDesigner {
 
   private updateModelFromGraph = (e?: { edge: Edge, node: Node }) => {
     if (this.silent) {
-      this.enableEvents(false);
       return;
     }
 
@@ -623,7 +622,7 @@ export class ElsaWorkflowDesigner {
       this.updateGraph();
       return;
     }
-    this.workflowModel = this.cleanWorkflowModel(model);
+    this.workflowModel = model;
 
     if (emitEvent) {
       //Debounce the emitting of change event and saving of workflow
@@ -634,36 +633,6 @@ export class ElsaWorkflowDesigner {
         this.workflowChanged.emit(this.workflowModel);
       }, 100);
     }
-  }
-
-  cleanWorkflowModel(model: WorkflowModel): WorkflowModel {
-    // Detect duplicate activities and throw.
-    const activityIds = model.activities.map(x => x.activityId);
-    const count = ids => ids.reduce((a, b) => ({...a, [b]: (a[b] || 0) + 1}), {})
-    const duplicates = dict => Object.keys(dict).filter((a) => dict[a] > 1)
-    const duplicateIds = duplicates(count(activityIds));
-
-    if (duplicateIds.length > 0) {
-      console.error(duplicateIds);
-      throw Error(`Found duplicate activities. Throwing for now until we find the root cause.`);
-    }
-
-    model.connections = model.connections.filter(connection => {
-      const sourceId = connection.sourceId;
-      const targetId = connection.targetId;
-      const sourceExists = model.activities.findIndex(x => x.activityId == sourceId) != null;
-      const targetExists = model.activities.findIndex(x => x.activityId == targetId) != null;
-
-      if (!sourceExists)
-        connection.sourceId = null;
-
-      if (!targetExists)
-        connection.targetId = null;
-
-      return !!connection.sourceId || !!connection.targetId;
-    });
-
-    return model;
   }
 
   removeActivityInternal(activity: ActivityModel, model?: WorkflowModel) {
