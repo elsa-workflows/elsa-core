@@ -4,7 +4,6 @@ export interface WorkflowModel {
   activities: Array<ActivityModel>;
   connections: Array<ConnectionModel>;
   persistenceBehavior?: WorkflowPersistenceBehavior;
-  changeCounter?: number; //Only used in frontend to track changes and stop saving too often
 }
 
 export interface ActivityModel {

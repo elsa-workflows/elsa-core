@@ -34,7 +34,6 @@ Graph.registerPortLayout('dynamicIn', (portsPositionArgs, elemBBox) => {
 Graph.registerConnector(
   'elsa-connector',
   (s, e) => {
-    console.info("connector:", s, ",", e);
     const offset = 0;
     const deltaY = Math.abs(e.y - s.y)
     const control = Math.floor((deltaY / 3) * 2)

@@ -1,13 +1,13 @@
 import {CellView, Graph, Node} from '@antv/x6';
-import { ConnectionModel } from '../../../models';
+import {v4 as uuid} from 'uuid';
 import './ports';
 import {ActivityNodeShape} from './shapes';
 
 export function createGraph(
   container: HTMLElement,
   interacting: CellView.Interacting,
-  onUndoRedo: () => void,
-  pasteActivities: (activities?: Array<any>, connections?: Array<ConnectionModel>) => void,
+  disableEvents: () => void,
+  enableEvents: (emitWorkflowChanged: boolean) => void,
   disableEdit: boolean = false): Graph {
 
   const graph = new Graph({
@@ -143,20 +143,20 @@ export function createGraph(
         if (args.key == 'tools')
           return false;
 
-        const supportedEvents = ['cell:added', 'cell:removed', 'cell:change:*'];
+        const supportedEvents = ['cell:added', 'cell:removed', 'cell:change:*', 'edge:change:*'];
         return supportedEvents.indexOf(e) >= 0;
       },
     },
   });
 
-  addGraphEvents(graph, onUndoRedo, pasteActivities, disableEdit);
+  addGraphEvents(graph, disableEvents, enableEvents, disableEdit);
 
   return graph;
 };
 
 export function addGraphEvents(graph,
-  onUndoRedo: () => void,
-  pasteActivities: (activities?: Array<any>, connections?: Array<ConnectionModel>) => void,
+  disableEvents: () => void,
+  enableEvents: (emitWorkflowChanged: boolean) => void,
   disableEdit: boolean) {
   if (!disableEdit) {
     graph.on('node:mousedown', ({node}) => {
@@ -202,43 +202,16 @@ export function addGraphEvents(graph,
 
     graph.bindKey(['meta+v', 'ctrl+v'], async () => {
       if (!graph.isClipboardEmpty()) {
-
-        const cells = graph.getCellsInClipboard()
-        graph.paste({offset: 32})
-        let copiedNodes: Array<any> = []
-        let copiedEges: Array<any> = []
+        disableEvents();
+        const cells = graph.paste({offset: 32});
 
         for (const cell of cells) {
-          if(cell instanceof ActivityNodeShape) {
-            let activity = cell.activity
-
-            const activityItem = {
-              activityId: cell.id,
-              type: activity.type,
-              outcomes: activity.outcomes,
-              x: activity.x,
-              y: activity.y,
-              properties: activity.properties,
-            }
-            copiedNodes.push(activityItem)
-          } else {
-            let source = cell.source
-            let target = cell.target
-
-            const connectionItem = {
-              targetId: target.cell,
-              sourceId: source.cell,
-              outcome: source.port
-            }
-            copiedEges.push(connectionItem)
-          }
+          cell.activity.activityId = uuid();
         }
 
-        if(copiedNodes.length > 0 || copiedEges.length > 0) {
-          pasteActivities(copiedNodes, copiedEges)
-        }
-
-        graph.cleanSelection()
+        await enableEvents(true);
+        graph.cleanSelection();
+        graph.select(cells);
       }
       return false
     });
@@ -247,7 +220,6 @@ export function addGraphEvents(graph,
     graph.bindKey(['meta+z', 'ctrl+z'], () => {
       if (graph.history.canUndo()) {
         graph.history.undo()
-        onUndoRedo()
       }
       return false
     });
@@ -255,7 +227,6 @@ export function addGraphEvents(graph,
     graph.bindKey(['meta+y', 'ctrl+y'], () => {
       if (graph.history.canRedo()) {
         graph.history.redo()
-        onUndoRedo()
       }
       return false
     });
