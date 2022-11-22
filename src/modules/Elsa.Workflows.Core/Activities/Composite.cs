@@ -90,9 +90,9 @@ public abstract class Composite : ActivityBase
 /// <summary>
 /// Represents a composite activity that has a single <see cref="Root"/> activity and returns a result.
 /// </summary>
-public class Composite<T> : ActivityBase<T>
+public abstract class Composite<T> : ActivityBase<T>
 {
-    public Composite()
+    protected Composite()
     {
         OnSignalReceived<CompleteCompositeSignal>(OnCompleteCompositeSignal);
     }

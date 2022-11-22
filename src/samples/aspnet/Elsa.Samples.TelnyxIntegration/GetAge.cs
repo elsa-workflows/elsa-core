@@ -1,5 +1,6 @@
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
+using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Samples.TelnyxIntegration;
 
@@ -8,12 +9,21 @@ public class GetAge : Composite<int>
 {
     public GetAge()
     {
-        Root = new Inline(async context =>
+        var ageVariable = new Variable<int>();
+
+        Root = new Sequence
         {
-            var random = new Random();
-            var n = random.Next(2);
-            var outcome = n == 0 ? "Under 18" : "Over 18";
-            await CompleteAsync(context, outcome);
-        });
+            Variables = { ageVariable },
+            Activities =
+            {
+                From(() =>
+                {
+                    var random = new Random();
+                    return random.Next(36);
+                }, ageVariable),
+
+                new Complete(context => ageVariable.Get<int>(context) < 18 ? "Under 18" : "Over 18")
+            }
+        };
     }
 }
