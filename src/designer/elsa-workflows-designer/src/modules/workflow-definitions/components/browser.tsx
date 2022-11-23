@@ -61,7 +61,9 @@ export class WorkflowDefinitionBrowser {
     this.modalDialogService.show(
       () => DefaultContents.Warning("Are you sure you want to delete this workflow definition?"),
       {
-        actions: [DefaultModalActions.Delete(() => {
+        actions: [DefaultModalActions.Delete(async () => {
+           await this.api.delete(workflowDefinition);
+           await this.loadWorkflowDefinitions();
         }), DefaultModalActions.Cancel()],
         modalType: ModalType.Confirmation
       });
