@@ -1,3 +1,5 @@
+using System.ComponentModel;
+using System.Reflection;
 using Elsa.Common.Extensions;
 using Elsa.Common.Features;
 using Elsa.Expressions.Services;
@@ -41,7 +43,12 @@ public class WorkflowManagementFeature : FeatureBase
     
     public WorkflowManagementFeature AddActivitiesFrom<TMarker>()
     {
-        var activityTypes = typeof(TMarker).Assembly.GetExportedTypes().Where(x => typeof(IActivity).IsAssignableFrom(x)).ToList();
+        var activityTypes = typeof(TMarker).Assembly.GetExportedTypes().Where(x =>
+        {
+            var browsableAttr = x.GetCustomAttribute<BrowsableAttribute>();
+            var isBrowsable = browsableAttr == null || browsableAttr.Browsable; 
+            return typeof(IActivity).IsAssignableFrom(x) && !x.IsAbstract && !x.IsInterface && !x.IsGenericType && isBrowsable;
+        }).ToList();
         return AddActivities(activityTypes);
     }
     
