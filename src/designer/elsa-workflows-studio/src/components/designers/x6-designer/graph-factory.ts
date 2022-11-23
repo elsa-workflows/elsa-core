@@ -1,13 +1,14 @@
 import {CellView, Graph, Node} from '@antv/x6';
-import { ConnectionModel } from '../../../models';
+import { ActivityModel } from '../../../models';
 import './ports';
 import {ActivityNodeShape} from './shapes';
 
 export function createGraph(
   container: HTMLElement,
   interacting: CellView.Interacting,
-  onUndoRedo: () => void,
-  pasteActivities: (activities?: Array<any>, connections?: Array<ConnectionModel>) => void): Graph {
+  disableEvents: () => void,
+  enableEvents: (emitWorkflowChanged: boolean) => void,
+  disableEdit: boolean = false): Graph {
 
   const graph = new Graph({
     container: container,
@@ -41,8 +42,8 @@ export function createGraph(
     },
     selecting: {
       enabled: true,
-      showNodeSelectionBox: true,
-      rubberband: true
+      showNodeSelectionBox: !disableEdit,
+      rubberband: !disableEdit
     },
     scroller: {
       enabled: true,
@@ -54,28 +55,29 @@ export function createGraph(
     },
     connecting: {
       allowBlank: false,
-      allowMulti: true,
-      allowLoop: true,
-      allowNode: true,
+      allowMulti: !disableEdit,
+      allowLoop: !disableEdit,
+      allowNode: !disableEdit,
       allowEdge: false,
-      allowPort: true,
-      highlight: true,
+      allowPort: !disableEdit,
+      highlight: !disableEdit,
       router: {
         name: 'manhattan',
         args: {
           padding: 1,
-          startDirections: ['right'],
+          startDirections: ['right', 'bottom'],
           endDirections: ['left'],
         },
       },
+      //connector: 'elsa-connector',
       connector: {
         name: 'rounded',
         args: {
-          radius: 20
+          radius: 10
         },
       },
       snap: {
-        radius: 20,
+        radius: 10,
       },
       validateMagnet({magnet}) {
         return magnet.getAttribute('port-group') !== 'in';
@@ -135,133 +137,130 @@ export function createGraph(
       maxScale: 3,
     },
     history: {
-      enabled: true,
+      enabled: !disableEdit,
       beforeAddCommand: (e: string, args: any) => {
 
         if (args.key == 'tools')
           return false;
 
-        const supportedEvents = ['cell:added', 'cell:removed', 'cell:change:*', 'edge:added', 'edge:change:*', 'edge:removed'];
-
+        const supportedEvents = ['cell:added', 'cell:removed', 'cell:change:*', 'edge:change:*'];
         return supportedEvents.indexOf(e) >= 0;
       },
     },
   });
 
-  graph.on('node:mousedown', ({node}) => {
-    node.toFront();
-  });
+  addGraphEvents(graph, disableEvents, enableEvents, disableEdit);
 
-  graph.on('edge:mouseenter', ({edge}) => {
-    edge.addTools([
-      'source-arrowhead',
-      'target-arrowhead',
-      {
-        name: 'button-remove',
-        args: {
-          distance: -30,
+  return graph;
+};
+
+export function addGraphEvents(graph,
+  disableEvents: () => void,
+  enableEvents: (emitWorkflowChanged: boolean) => void,
+  disableEdit: boolean) {
+  if (!disableEdit) {
+    graph.on('node:mousedown', ({node}) => {
+      node.toFront();
+    });
+
+    graph.on('edge:mouseenter', ({edge}) => {
+      edge.addTools([
+        'source-arrowhead',
+        'target-arrowhead',
+        {
+          name: 'button-remove',
+          args: {
+            distance: -30,
+          },
         },
-      },
-    ])
-  });
+      ])
+    });
 
-  graph.on('edge:mouseleave', ({edge}) => {
-    edge.removeTools()
-  });
+    graph.on('edge:mouseleave', ({edge}) => {
+      edge.removeTools()
+    });
 
-  graph.on('edge:removed', ({ edge }) => {
+    graph.on('edge:removed', ({ edge }) => {
 
-  })
+    })
 
-  graph.bindKey(['meta+c', 'ctrl+c'], () => {
-    const cells = graph.getSelectedCells()
-    if (cells.length) {
-      graph.copy(cells)
-    }
-    return false
-  });
+    graph.bindKey(['meta+c', 'ctrl+c'], () => {
+      const cells = graph.getSelectedCells()
+      if (cells.length) {
+        graph.copy(cells)
+      }
+      return false
+    });
 
-  graph.bindKey(['meta+x', 'ctrl+x'], () => {
-    const cells = graph.getSelectedCells()
-    if (cells.length) {
-      graph.cut(cells)
-    }
-    return false
-  });
+    graph.bindKey(['meta+x', 'ctrl+x'], () => {
+      const cells = graph.getSelectedCells()
+      if (cells.length) {
+        graph.cut(cells)
+      }
+      return false
+    });
 
-  graph.bindKey(['meta+v', 'ctrl+v'], async () => {
-    if (!graph.isClipboardEmpty()) {
+    graph.bindKey(['meta+v', 'ctrl+v'], async () => {
+      if (!graph.isClipboardEmpty()) {
+        disableEvents();
+        const cells = graph.paste({offset: 32});
 
-      const cells = graph.getCellsInClipboard()
-      graph.paste({offset: 32})
-      let copiedNodes: Array<any> = []
-      let copiedEges: Array<any> = []
+        var activityIdsMap = cells.filter(x => !!x.activity).reduce(function(map, x) {
+          map[x.activity.activityId] = x.id;
+          return map;
+        }, {});
+        for (const cell of cells) {
+          if (cell.activity) {
+            cell.activity.activityId = cell.id;
 
-      for (const cell of cells) {
-        if(cell instanceof ActivityNodeShape) {
-          let activity = cell.activity
-
-          const activityItem = {
-            activityId: cell.id,
-            type: activity.type,
-            outcomes: activity.outcomes,
-            x: activity.x,
-            y: activity.y,
-            properties: activity.properties,
+            const cellPosition = cell.position({relative: false});
+            cell.activity.x = Math.round(cellPosition.x);
+            cell.activity.y = Math.round(cellPosition.y);
+          } else {
+            if (cell.data) {
+              cell.data.sourceId = activityIdsMap[cell.data.sourceId] || cell.data.sourceId;
+              cell.data.targetId = activityIdsMap[cell.data.targetId] || cell.data.targetId;
+            }
           }
-          copiedNodes.push(activityItem)
-        } else {
-          let source = cell.source
-          let target = cell.target
-
-          const connectionItem = {
-            targetId: target.cell,
-            sourceId: source.cell,
-            outcome: source.port
-          }
-          copiedEges.push(connectionItem)
         }
+
+        await enableEvents(true);
+        graph.cleanSelection();
+        graph.select(cells);
       }
+      return false
+    });
 
-      if(copiedNodes.length > 0 || copiedEges.length > 0) {
-        pasteActivities(copiedNodes, copiedEges)
+    //undo redo
+    graph.bindKey(['meta+z', 'ctrl+z'], () => {
+      if (graph.history.canUndo()) {
+        graph.history.undo()
       }
+      return false
+    });
 
-      graph.cleanSelection()
-    }
-    return false
-  });
+    graph.bindKey(['meta+y', 'ctrl+y'], () => {
+      if (graph.history.canRedo()) {
+        graph.history.redo()
+      }
+      return false
+    });
 
-  //undo redo
-  graph.bindKey(['meta+z', 'ctrl+z'], () => {
-    if (graph.history.canUndo()) {
-      graph.history.undo()
-      onUndoRedo()
-    }
-    return false
-  });
+    //delete
+    graph.bindKey('del', () => {
+      const cells = graph.getSelectedCells()
+      if (cells.length) {
+        graph.removeCells(cells)
+      }
+    });
+  }
 
-  graph.bindKey(['meta+y', 'ctrl+y'], () => {
-    if (graph.history.canRedo()) {
-      graph.history.redo()
-      onUndoRedo()
-    }
-    return false
-  });
 
   // select all;
   graph.bindKey(['meta+a', 'ctrl+a'], () => {
     const nodes = graph.getNodes()
     if (nodes) {
       graph.select(nodes)
-    }
-  });
-
-  //delete
-  graph.bindKey('del', () => {
-    const cells = graph.getSelectedCells()
-    if (cells.length) {
-      graph.removeCells(cells)
     }
   });
 
@@ -279,8 +278,24 @@ export function createGraph(
       graph.zoom(-0.1)
     }
   });
+}
 
-  return graph;
-};
+export function removeGraphEvents(
+  graph: Graph
+) {
+  graph.off('node:mousedown');
+  graph.off('edge:mouseenter');
+  graph.off('edge:mouseleave');
+  graph.off('edge:removed');
+  graph.unbindKey(['meta+c', 'ctrl+c']);
+  graph.unbindKey(['meta+x', 'ctrl+x']);
+  graph.unbindKey(['meta+v', 'ctrl+v']);
+  graph.unbindKey(['meta+z', 'ctrl+z']);
+  graph.unbindKey(['meta+y', 'ctrl+y']);
+  graph.unbindKey('del');
+  graph.unbindKey(['meta+a', 'ctrl+a']);
+  graph.unbindKey(['ctrl+1', 'meta+1']);
+  graph.unbindKey(['ctrl+2', 'meta+2']);
+}
 
 Graph.registerNode('activity', ActivityNodeShape, true);

@@ -25,6 +25,12 @@
   pointer-events: initial;
 }
 
+.layout-btn {
+  display: flex;
+  left: 1rem;
+  bottom: 2rem;
+}
+
 .elsa-workflow-wrapper {
   width: 100%;
   height: calc(100vh - 64px);
@@ -44,4 +50,15 @@
 
 .x6-port-out:hover .x6-port-label {
   opacity: 1;
+}
+
+.context-menu-button-container button {
+  position: relative;
+}
+.context-menu-button-container button:before {
+  content: '';
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  cursor: pointer;
 }
