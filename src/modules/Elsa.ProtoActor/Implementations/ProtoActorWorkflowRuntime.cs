@@ -213,7 +213,7 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
             var storeBookmarkRequest = new StoreBookmarksRequest
             {
                 WorkflowInstanceId = instanceId,
-                CorrelationId = correlationId
+                CorrelationId = correlationId.EmptyIfNull()
             };
 
             storeBookmarkRequest.BookmarkIds.AddRange(groupedBookmark.Select(x => x.Id));

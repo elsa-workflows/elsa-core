@@ -24,11 +24,6 @@ public static class ObjectConverter
             return value;
 
         var options = serializerOptions ?? new JsonSerializerOptions();
-        options.SetupExtensions().SetReferenceHandling(ReferenceHandling.Preserve);
-        var registry = options.GetDiscriminatorConventionRegistry();
-        registry.ClearConventions();
-        registry.RegisterConvention(new DefaultDiscriminatorConvention<string>(options, "_type"));
-
         options.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
         options.ReferenceHandler = ReferenceHandler.Preserve;
         options.PropertyNameCaseInsensitive = true;

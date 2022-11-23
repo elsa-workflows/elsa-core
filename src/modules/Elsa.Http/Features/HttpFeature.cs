@@ -1,4 +1,6 @@
+using Elsa.Common.Features;
 using Elsa.Features.Abstractions;
+using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Http.ContentWriters;
 using Elsa.Http.Handlers;
@@ -11,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Http.Features;
 
+[DependsOn(typeof(MemoryCacheFeature))]
 public class HttpFeature : FeatureBase
 {
     public HttpFeature(IModule module) : base(module)

@@ -218,13 +218,18 @@ public static class ActivityExecutionContextExtensions
         await context.SendSignalAsync(new ActivityCompleted(result));
 
         // Remove the context.
-        context.WorkflowExecutionContext.ActivityExecutionContexts.Remove(context);
+        context.WorkflowExecutionContext.RemoveActivityExecutionContext(context);
     }
 
     /// <summary>
     /// Complete the current activity with the specified outcome.
     /// </summary>
     public static ValueTask CompleteActivityWithOutcomesAsync(this ActivityExecutionContext context, params string[] outcomes) => context.CompleteActivityAsync(new Outcomes(outcomes));
+    
+    /// <summary>
+    /// Complete the current composite activity with the specified outcome.
+    /// </summary>
+    public static async ValueTask CompleteCompositeAsync(this ActivityExecutionContext context, params string[] outcomes) => await context.SendSignalAsync(new CompleteCompositeSignal(new Outcomes(outcomes)));
 
     /// <summary>
     /// Cancel the activity. For blocking activities, it means their bookmarks will be removed. For job activities, the background work will be cancelled.

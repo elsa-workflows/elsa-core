@@ -38,23 +38,28 @@ public class HttpEndpoint : Trigger<HttpRequestModel>
     )]
     public Input<string?> Policy { get; set; } = new(default(string?));
 
-    protected override IEnumerable<object> GetTriggerPayload(TriggerIndexingContext context) => GetBookmarkPayload(context.ExpressionExecutionContext);
+    /// <inheritdoc />
+    protected override IEnumerable<object> GetTriggerPayloads(TriggerIndexingContext context) => GetBookmarkPayloads(context.ExpressionExecutionContext);
 
-    protected override void Execute(ActivityExecutionContext context)
+    /// <inheritdoc />
+    protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         // If we did not receive external input, it means we are just now encountering this activity and we need to block execution by creating a bookmark.
         if (!context.TryGetInput<HttpRequestModel>(InputKey, out var request))
         {
             // Create bookmarks for when we receive the expected HTTP request.
-            context.CreateBookmarks(GetBookmarkPayload(context.ExpressionExecutionContext));
+            context.CreateBookmarks(GetBookmarkPayloads(context.ExpressionExecutionContext));
             return;
         }
 
         // Provide the received HTTP request as output.
         context.Set(Result, request);
+        
+        // Complete.
+        await context.CompleteActivityAsync();
     }
 
-    private IEnumerable<object> GetBookmarkPayload(ExpressionExecutionContext context)
+    private IEnumerable<object> GetBookmarkPayloads(ExpressionExecutionContext context)
     {
         // Generate bookmark data for path and selected methods.
         var path = context.Get(Path);

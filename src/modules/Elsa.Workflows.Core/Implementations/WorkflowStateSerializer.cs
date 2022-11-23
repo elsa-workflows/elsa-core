@@ -97,14 +97,14 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
             var owner = workflowExecutionContext.ActivityExecutionContexts.First(x => x.Id == completionCallbackEntry.OwnerId);
             var child = workflowExecutionContext.FindNodeById(completionCallbackEntry.ChildId).Activity;
             var callbackName = completionCallbackEntry.MethodName;
-            var callbackDelegate = owner.Activity.GetActivityCompletionCallback(callbackName);
+            var callbackDelegate = !string.IsNullOrEmpty(callbackName) ? owner.Activity.GetActivityCompletionCallback(callbackName) : default;
             workflowExecutionContext.AddCompletionCallback(owner, child, callbackDelegate);
         }
     }
 
     private void SerializeCompletionCallbacks(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
     {
-        var completionCallbacks = workflowExecutionContext.CompletionCallbacks.Select(x => new CompletionCallbackState(x.Owner.Id, x.Child.Id, x.CompletionCallback.Method.Name));
+        var completionCallbacks = workflowExecutionContext.CompletionCallbacks.Select(x => new CompletionCallbackState(x.Owner.Id, x.Child.Id, x.CompletionCallback?.Method.Name));
         state.CompletionCallbacks = completionCallbacks.ToList();
     }
 
