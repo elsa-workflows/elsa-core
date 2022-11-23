@@ -1,6 +1,6 @@
 namespace Elsa.Workflows.Core.Activities.Flowchart.Models;
 
-public enum JoinMode
+public enum FlowJoinMode
 {
     WaitAll,
     WaitAny

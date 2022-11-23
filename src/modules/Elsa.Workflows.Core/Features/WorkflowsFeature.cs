@@ -89,8 +89,8 @@ public class WorkflowsFeature : FeatureBase
             
             // Data drives.
             .AddSingleton<IStorageDriverManager, StorageDriverManager>()
-            .AddDataDrive<WorkflowStateStorageDriver>()
-            .AddDataDrive<MemoryStorageDriver>()
+            .AddStorageDriver<WorkflowStateStorageDriver>()
+            .AddStorageDriver<MemoryStorageDriver>()
 
             // Logging
             .AddLogging();

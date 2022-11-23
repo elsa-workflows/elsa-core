@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Elsa.Common.Extensions;
+using Elsa.Workflows.Core.Activities.Flowchart.Models;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Behaviors;
 using Elsa.Workflows.Core.Models;
@@ -8,18 +9,13 @@ using Elsa.Workflows.Core.Services;
 namespace Elsa.Workflows.Core.Activities;
 
 [Activity("Elsa", "Control Flow", "Branch execution into multiple branches.")]
-public class Fork : Activity
+public class Fork : ActivityBase
 {
-    public Fork()
-    {
-        Behaviors.Remove<AutoCompleteBehavior>();
-    }
-
     /// <summary>
     /// Controls when this activity yields control back to its parent activity.
     /// </summary>
     [Input]
-    public JoinMode JoinMode { get; set; } = JoinMode.WaitAny;
+    public ForkJoinMode JoinMode { get; set; } = ForkJoinMode.WaitAny;
 
     /// <summary>
     /// The branches to schedule.
@@ -27,6 +23,7 @@ public class Fork : Activity
     [Port]
     public ICollection<IActivity> Branches { get; set; } = new List<IActivity>();
 
+    /// <inheritdoc />
     protected override void Execute(ActivityExecutionContext context) => context.ScheduleActivities(Branches.Reverse(), CompleteChildAsync);
 
     private async ValueTask CompleteChildAsync(ActivityExecutionContext context, ActivityExecutionContext childContext)
@@ -46,7 +43,7 @@ public class Fork : Activity
 
         switch (joinMode)
         {
-            case JoinMode.WaitAny:
+            case ForkJoinMode.WaitAny:
             {
                 // Remove any and all bookmarks from other branches.
                 RemoveBookmarks(context);
@@ -55,7 +52,7 @@ public class Fork : Activity
                 await CompleteAsync(context);
             }
                 break;
-            case JoinMode.WaitAll:
+            case ForkJoinMode.WaitAll:
             {
                 var allSet = allChildActivityIds.All(x => completedActivityIds.Contains(x));
 

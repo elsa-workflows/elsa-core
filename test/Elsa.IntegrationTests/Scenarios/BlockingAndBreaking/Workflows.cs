@@ -21,7 +21,7 @@ public class BreakWhileBlockForkWorkflow : WorkflowBase
                     {
                         new Fork
                         {
-                            JoinMode = JoinMode.WaitAll,
+                            JoinMode = ForkJoinMode.WaitAll,
                             Branches =
                             {
                                 new Sequence

@@ -50,7 +50,7 @@ public class JoinAnyForkWorkflow : WorkflowBase
                             }
                         },
                     },
-                    JoinMode = JoinMode.WaitAny
+                    JoinMode = ForkJoinMode.WaitAny
                 },
                 new WriteLine("End")
             }
