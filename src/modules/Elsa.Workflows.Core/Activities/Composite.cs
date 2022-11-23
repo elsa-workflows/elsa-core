@@ -77,14 +77,19 @@ public abstract class Composite : ActivityBase
         context.StopPropagation();
     }
 
-    protected static Inline From(Func<ActivityExecutionContext, ValueTask> activity) => new(activity);
-    protected static Inline From(Func<ValueTask> activity) => new(activity);
-    protected static Inline From(Action<ActivityExecutionContext> activity) => new(activity);
-    protected static Inline From(Action activity) => new(activity);
-    protected static Inline<TResult> From<TResult>(Func<ActivityExecutionContext, ValueTask<TResult>> activity, MemoryBlockReference? output = default) => new(activity, output);
-    protected static Inline<TResult> From<TResult>(Func<ValueTask<TResult>> activity, MemoryBlockReference? output = default) => new(activity, output);
-    protected static Inline<TResult> From<TResult>(Func<ActivityExecutionContext, TResult> activity, MemoryBlockReference? output = default) => new(activity, output);
-    protected static Inline<TResult> From<TResult>(Func<TResult> activity, MemoryBlockReference? output = default) => new(activity, output);
+    protected static Inline Inline(Func<ActivityExecutionContext, ValueTask> activity) => new(activity);
+    protected static Inline Inline(Func<ValueTask> activity) => new(activity);
+    protected static Inline Inline(Action<ActivityExecutionContext> activity) => new(activity);
+    protected static Inline Inline(Action activity) => new(activity);
+    protected static Inline<TResult> Inline<TResult>(Func<ActivityExecutionContext, ValueTask<TResult>> activity, MemoryBlockReference? output = default) => new(activity, output);
+    protected static Inline<TResult> Inline<TResult>(Func<ValueTask<TResult>> activity, MemoryBlockReference? output = default) => new(activity, output);
+    protected static Inline<TResult> Inline<TResult>(Func<ActivityExecutionContext, TResult> activity, MemoryBlockReference? output = default) => new(activity, output);
+    protected static Inline<TResult> Inline<TResult>(Func<TResult> activity, MemoryBlockReference? output = default) => new(activity, output);
+
+    protected static SetVariable<T> SetVariable<T>(Variable<T> variable, T value) => new(variable, value);
+    protected static SetVariable<T> SetVariable<T>(Variable<T> variable, Func<ExpressionExecutionContext, T> value) => new(variable, value);
+    protected static SetVariable<T> SetVariable<T>(Variable<T> variable, Func<T> value) => new(variable, value);
+    protected static SetVariable<T> SetVariable<T>(Variable<T> variable, Variable<T> value) => new(variable, value);
 }
 
 /// <summary>

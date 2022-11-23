@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <Import Project="..\..\..\common.props"/>
-    <Import Project="..\..\..\configureawait.props"/>
+    <Import Project="..\..\..\common.props" />
+    <Import Project="..\..\..\configureawait.props" />
 
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
@@ -12,16 +12,15 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Fluid.Core" Version="2.2.14"/>
-        <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="6.0.1"/>
-        <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="6.0.0"/>
+        <PackageReference Include="Fluid.Core" Version="2.2.14" />
+        <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="6.0.1" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="6.0.0" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Elsa.Expressions\Elsa.Expressions.csproj"/>
-        <ProjectReference Include="..\Elsa.Mediator\Elsa.Mediator.csproj"/>
-        <ProjectReference Include="..\Elsa.MemoryCache\Elsa.MemoryCache.csproj"/>
-        <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj"/>
+        <ProjectReference Include="..\Elsa.Expressions\Elsa.Expressions.csproj" />
+        <ProjectReference Include="..\Elsa.Mediator\Elsa.Mediator.csproj" />
+        <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
     </ItemGroup>
 
 </Project>

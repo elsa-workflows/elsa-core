@@ -47,7 +47,18 @@ public class DefaultWorkflowExecutionContextFactory : IWorkflowExecutionContextF
         var scheduler = _schedulerFactory.CreateScheduler();
 
         // Setup a workflow execution context.
-        var workflowExecutionContext = new WorkflowExecutionContext(_serviceProvider, instanceId, correlationId, workflow, graph, scheduler, input, executeActivityDelegate, triggerActivityId, cancellationToken);
+        var workflowExecutionContext = new WorkflowExecutionContext(
+            _serviceProvider, 
+            instanceId, 
+            correlationId, 
+            workflow, 
+            graph, 
+            scheduler, 
+            input, 
+            executeActivityDelegate, 
+            triggerActivityId, 
+            default, 
+            cancellationToken);
 
         // Restore workflow execution context from state, if provided.
         if (workflowState != null) _workflowStateSerializer.DeserializeState(workflowExecutionContext, workflowState);

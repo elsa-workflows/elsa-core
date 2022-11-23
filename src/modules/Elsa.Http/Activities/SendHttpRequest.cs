@@ -11,7 +11,7 @@ using HttpRequestHeaders = Elsa.Http.Models.HttpRequestHeaders;
 
 namespace Elsa.Http;
 
-[Activity("Elsa", "HTTP", "Send Http Request.", DisplayName = "Send HTTP Request", Kind = ActivityKind.Task)]
+[Activity("Elsa", "HTTP", "Send Http Request.", DisplayName = "HTTP Request", Kind = ActivityKind.Task)]
 public class SendHttpRequest : Activity
 {
     [Input] public Input<Uri?> Url { get; set; } = default!;

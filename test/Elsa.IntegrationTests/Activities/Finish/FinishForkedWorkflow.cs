@@ -9,7 +9,7 @@ public class FinishForkedWorkflow : WorkflowBase
     {
         workflow.WithRoot(new Fork
         {
-            JoinMode = JoinMode.WaitAll,
+            JoinMode = ForkJoinMode.WaitAll,
             Branches =
             {
                 new Sequence

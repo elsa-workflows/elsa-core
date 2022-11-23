@@ -31,7 +31,7 @@ public class ActivityInvoker : IActivityInvoker
         }
 
         // Add the activity context to the workflow context.
-        workflowExecutionContext.ActivityExecutionContexts.Add(activityExecutionContext);
+        workflowExecutionContext.AddActivityExecutionContext(activityExecutionContext);
 
         // Execute the activity execution pipeline.
         await InvokeAsync(activityExecutionContext);

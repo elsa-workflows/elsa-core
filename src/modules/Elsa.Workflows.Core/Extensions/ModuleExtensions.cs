@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Core;
 
-public static class DependencyInjectionExtensions
+public static class ModuleExtensions
 {
     public static IModule UseWorkflows(this IModule configuration, Action<WorkflowsFeature>? configure = default)
     {
@@ -13,7 +13,7 @@ public static class DependencyInjectionExtensions
         return configuration;
     }
 
-    public static IServiceCollection AddDataDrive<T>(this IServiceCollection services) where T : class, IStorageDriver
+    public static IServiceCollection AddStorageDriver<T>(this IServiceCollection services) where T : class, IStorageDriver
     {
         return services.AddSingleton<IStorageDriver, T>();
     }

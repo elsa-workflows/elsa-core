@@ -13,7 +13,7 @@ public class CompletionCallbackState
     {
     }
 
-    public CompletionCallbackState(string ownerId, string childId, string methodName)
+    public CompletionCallbackState(string ownerId, string childId, string? methodName)
     {
         OwnerId = ownerId;
         ChildId = childId;
@@ -22,5 +22,5 @@ public class CompletionCallbackState
 
     public string OwnerId { get; init; } = default!;
     public string ChildId { get; init; } = default!;
-    public string MethodName { get; init; } = default!;
+    public string? MethodName { get; init; } = default!;
 }

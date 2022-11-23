@@ -12,12 +12,12 @@ public abstract class Trigger : ActivityBase, ITrigger
     {
     }
 
-    ValueTask<IEnumerable<object>> ITrigger.GetTriggerPayloadsAsync(TriggerIndexingContext context) => GetTriggerDataAsync(context);
+    ValueTask<IEnumerable<object>> ITrigger.GetTriggerPayloadsAsync(TriggerIndexingContext context) => GetTriggerPayloadsAsync(context);
 
     /// <summary>
     /// Override this method to return trigger data.  
     /// </summary>
-    protected virtual ValueTask<IEnumerable<object>> GetTriggerDataAsync(TriggerIndexingContext context)
+    protected virtual ValueTask<IEnumerable<object>> GetTriggerPayloadsAsync(TriggerIndexingContext context)
     {
         var hashes = GetTriggerPayloads(context);
         return ValueTask.FromResult(hashes);

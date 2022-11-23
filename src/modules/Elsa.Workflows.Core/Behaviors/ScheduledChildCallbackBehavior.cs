@@ -35,23 +35,5 @@ public class ScheduledChildCallbackBehavior : Behavior
         {
             await callbackEntry.CompletionCallback(activityExecutionContext, childActivityExecutionContext);
         }
-        else
-        {
-            var ports = Owner.GetType().GetProperties().Where(x => typeof(IActivity).IsAssignableFrom(x.PropertyType)).ToList();
-
-            var portQuery =
-                from p in ports
-                let i = (IActivity)p.GetValue(Owner)
-                where i == childActivity
-                select new { PortProperty = p, PortActivity = i };
-
-            var port = portQuery.FirstOrDefault();
-
-            if (port == null)
-                return;
-
-            var portName = port.PortProperty.GetCustomAttribute<PortAttribute>()?.Name ?? port.PortProperty.Name;
-            await activityExecutionContext.CompleteActivityWithOutcomesAsync(portName);
-        }
     }
 }

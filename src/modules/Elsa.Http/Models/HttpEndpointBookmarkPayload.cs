@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Elsa.Http.Models;
 
 public record HttpEndpointBookmarkPayload
@@ -5,6 +7,11 @@ public record HttpEndpointBookmarkPayload
     private readonly string _path = default!;
     private readonly string _method = default!;
 
+    [JsonConstructor]
+    public HttpEndpointBookmarkPayload()
+    {
+    }
+    
     public HttpEndpointBookmarkPayload(string path, string method)
     {
         Path = path;

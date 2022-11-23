@@ -12,6 +12,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Identity.Features;
 
+/// <summary>
+/// Provides identity feature to authenticate & authorize API requests.
+/// </summary>
 [DependsOn(typeof(SystemClockFeature))]
 public class IdentityFeature : FeatureBase
 {

@@ -1,6 +1,7 @@
 using Elsa.Extensions;
 using Elsa.Features.Extensions;
 using Elsa.Identity;
+using Elsa.Identity.Extensions;
 using Elsa.Identity.Features;
 using Elsa.Identity.Options;
 using Elsa.JavaScript.Activities;
@@ -60,7 +61,7 @@ services
             .AddActivity<Event>()
             .AddActivitiesFrom<Program>()
         )
-        .Use<IdentityFeature>(identity =>
+        .UseIdentity(identity =>
         {
             identity.CreateDefaultUser = true;
             identity.IdentityOptions = options => identitySection.Bind(options);

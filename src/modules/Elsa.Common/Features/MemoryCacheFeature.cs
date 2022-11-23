@@ -2,7 +2,7 @@
 using Elsa.Features.Services;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.MemoryCache.Features;
+namespace Elsa.Common.Features;
 
 public class MemoryCacheFeature : FeatureBase
 {
@@ -10,8 +10,5 @@ public class MemoryCacheFeature : FeatureBase
     {
     }
 
-    public override void Configure()
-    {
-        Services.AddMemoryCache();
-    }
+    public override void Configure() => Services.AddMemoryCache();
 }

@@ -14,8 +14,10 @@ public class WorkflowExecutionContext
     private readonly IServiceProvider _serviceProvider;
     private readonly IList<ActivityNode> _nodes;
     private readonly IList<ActivityCompletionCallbackEntry> _completionCallbackEntries = new List<ActivityCompletionCallbackEntry>();
+    private IList<ActivityExecutionContext> _activityExecutionContexts;
 
-    public WorkflowExecutionContext(IServiceProvider serviceProvider,
+    public WorkflowExecutionContext(
+        IServiceProvider serviceProvider,
         string id,
         string? correlationId,
         Workflow workflow,
@@ -24,6 +26,7 @@ public class WorkflowExecutionContext
         IDictionary<string, object>? input,
         ExecuteActivityDelegate? executeDelegate,
         string? triggerActivityId,
+        IEnumerable<ActivityExecutionContext>? activityExecutionContexts,
         CancellationToken cancellationToken)
     {
         _serviceProvider = serviceProvider;
@@ -33,6 +36,7 @@ public class WorkflowExecutionContext
         Id = id;
         CorrelationId = correlationId;
         _nodes = graph.Flatten().Distinct().ToList();
+        _activityExecutionContexts = activityExecutionContexts?.ToList() ?? new List<ActivityExecutionContext>();
         Scheduler = scheduler;
         Input = input ?? new Dictionary<string, object>();
         ExecuteDelegate = executeDelegate;
@@ -72,7 +76,12 @@ public class WorkflowExecutionContext
     public string? TriggerActivityId { get; set; }
     public CancellationToken CancellationToken { get; }
     public ICollection<ActivityCompletionCallbackEntry> CompletionCallbacks => new ReadOnlyCollection<ActivityCompletionCallbackEntry>(_completionCallbackEntries);
-    public ICollection<ActivityExecutionContext> ActivityExecutionContexts { get; set; } = new List<ActivityExecutionContext>();
+
+    public IReadOnlyCollection<ActivityExecutionContext> ActivityExecutionContexts
+    {
+        get => _activityExecutionContexts.ToList();
+        internal set => _activityExecutionContexts = value.ToList();
+    }
 
     /// <summary>
     /// A volatile collection of executed activity instance IDs. This collection is reset when workflow execution starts.
@@ -148,6 +157,9 @@ public class WorkflowExecutionContext
         expressionExecutionContext.TransientProperties[ExpressionExecutionContextExtensions.ActivityExecutionContextKey] = activityExecutionContext;
         return activityExecutionContext;
     }
+    
+    public void RemoveActivityExecutionContext(ActivityExecutionContext context) => _activityExecutionContexts.Remove(context);
+    public void AddActivityExecutionContext(ActivityExecutionContext context) => _activityExecutionContexts.Add(context);
 
     public async Task CancelActivityAsync(string activityId)
     {

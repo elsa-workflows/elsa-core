@@ -15,7 +15,7 @@ public static class WorkflowExecutionContextExtensions
         var list = contexts.ToList();
 
         // Remove each context.
-        foreach (var context in list) workflowExecutionContext.ActivityExecutionContexts.Remove(context);
+        foreach (var context in list) workflowExecutionContext.RemoveActivityExecutionContext(context);
     }
 
     /// <summary>

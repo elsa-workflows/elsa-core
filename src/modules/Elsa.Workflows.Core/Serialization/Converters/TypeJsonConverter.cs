@@ -39,7 +39,7 @@ public class TypeJsonConverter : JsonConverter<Type>
     public override void Write(Utf8JsonWriter writer, Type value, JsonSerializerOptions options)
     {
         // Handle collection types.
-        if (value.IsGenericType)
+        if (value.IsGenericType && value.GenericTypeArguments.Length == 1)
         {
             var elementType = value.GenericTypeArguments.First();
             var typedEnumerable = typeof(IEnumerable<>).MakeGenericType(elementType);
