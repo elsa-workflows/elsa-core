@@ -32,7 +32,7 @@ export interface Container extends Activity {
 
 export interface Variable {
   name: string;
-  type: string;
+  typeName: string;
   value?: any;
   storageDriverId?: string;
 }
@@ -91,6 +91,7 @@ export interface PropertyDescriptor {
 }
 
 export interface InputDescriptor extends PropertyDescriptor {
+  isWrapped?: boolean;
   uiHint?: string;
   options?: any;
   category?: string;

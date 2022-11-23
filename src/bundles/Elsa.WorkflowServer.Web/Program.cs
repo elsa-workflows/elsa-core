@@ -78,7 +78,7 @@ services
             identity.CreateDefaultUser = true;
             identity.IdentityOptions = options => identitySection.Bind(options);
         })
-        .UseRuntime(runtime =>
+        .UseWorkflowRuntime(runtime =>
         {
             runtime.UseProtoActor(proto => proto.PersistenceProvider = _ => new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString)));
             runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));

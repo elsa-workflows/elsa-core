@@ -48,8 +48,8 @@ public class SetVariable<T> : Activity
 [Activity("Elsa", "Primitives", "Set a workflow variable to a given value.")]
 public class SetVariable : Activity
 {
+    [Input] public Variable Variable { get; set; } = default!;
     [Input] public Input<object?> Value { get; set; } = new(default(object));
-    public Variable Variable { get; set; } = default!;
 
     protected override void Execute(ActivityExecutionContext context)
     {

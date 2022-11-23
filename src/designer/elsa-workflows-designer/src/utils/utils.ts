@@ -74,6 +74,11 @@ export const getInputPropertyValue = (inputContext: ActivityInputContext): Activ
   return inputContext.node[propName] as ActivityInput;
 };
 
+export const getPropertyValue = (inputContext: ActivityInputContext): any => {
+  const propName = getInputPropertyName(inputContext);
+  return inputContext.node[propName] as any
+};
+
 export const stripActivityNameSpace = (name: string): string => {
   const lastDotIndex = name.lastIndexOf('.');
   return lastDotIndex < 0 ? name : name.substr(lastDotIndex + 1);

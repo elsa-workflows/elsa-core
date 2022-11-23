@@ -34,6 +34,9 @@ public class VariableConverter : JsonConverter<Variable>
 
     public Variable? Map(VariableModel source)
     {
+        if (string.IsNullOrWhiteSpace(source.TypeName))
+            return null;
+        
         if (!_wellKnownTypeRegistry.TryGetTypeOrDefault(source.TypeName, out var type))
             return null;
 

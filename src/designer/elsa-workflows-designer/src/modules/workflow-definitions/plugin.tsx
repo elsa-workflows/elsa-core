@@ -110,18 +110,15 @@ export class WorkflowDefinitionsPlugin implements Plugin {
   private onWorkflowUpdated = async (e: CustomEvent<WorkflowDefinitionUpdatedArgs>) => {
     const updatedWorkflowDefinition = e.detail.workflowDefinition;
 
-    if(e.detail.latestVersionNumber == undefined)
-    {
+    if (e.detail.latestVersionNumber == undefined) {
       await this.saveWorkflowDefinition(updatedWorkflowDefinition, false);
       return;
     }
 
-    if(updatedWorkflowDefinition.version == e.detail.latestVersionNumber || updatedWorkflowDefinition.isPublished)
-    {
+    if (updatedWorkflowDefinition.version == e.detail.latestVersionNumber || updatedWorkflowDefinition.isPublished) {
       const currentWorkflowDefinition = await this.api.get({definitionId: updatedWorkflowDefinition.definitionId, versionOptions: {version: updatedWorkflowDefinition.version}});
-      if(!isEqual(currentWorkflowDefinition.root.activities, updatedWorkflowDefinition.root.activities))
-      {
-        if(updatedWorkflowDefinition.isPublished)
+      if (!isEqual(currentWorkflowDefinition.root.activities, updatedWorkflowDefinition.root.activities) || !isEqual(currentWorkflowDefinition.variables, updatedWorkflowDefinition.variables)) {
+        if (updatedWorkflowDefinition.isPublished)
           updatedWorkflowDefinition.version = e.detail.latestVersionNumber;
 
         await this.saveWorkflowDefinition(updatedWorkflowDefinition, false);
@@ -135,7 +132,7 @@ export class WorkflowDefinitionsPlugin implements Plugin {
     const actions = [closeAction, newAction];
 
     this.workflowDefinitionBrowserInstance = this.modalDialogService.show(() =>
-      <elsa-workflow-definition-browser onWorkflowDefinitionSelected={this.onWorkflowDefinitionSelected} onNewWorkflowDefinitionSelected={this.onNewWorkflowDefinitionClick}/>,
+        <elsa-workflow-definition-browser onWorkflowDefinitionSelected={this.onWorkflowDefinitionSelected} onNewWorkflowDefinitionSelected={this.onNewWorkflowDefinitionClick}/>,
       {actions})
   }
 

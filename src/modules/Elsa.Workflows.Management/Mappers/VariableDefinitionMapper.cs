@@ -16,7 +16,7 @@ public class VariableDefinitionMapper
 
     public Variable? Map(VariableDefinition source)
     {
-        if (!_wellKnownTypeRegistry.TryGetTypeOrDefault(source.Type, out var type))
+        if (!_wellKnownTypeRegistry.TryGetTypeOrDefault(source.TypeName, out var type))
             return null;
 
         var variableGenericType = typeof(Variable<>).MakeGenericType(type);

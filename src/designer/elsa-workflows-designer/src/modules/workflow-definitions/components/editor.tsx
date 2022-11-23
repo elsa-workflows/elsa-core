@@ -4,20 +4,19 @@ import {Container} from "typedi";
 import {PanelPosition, PanelStateChangedArgs} from '../../../components/panel/models';
 import {
   Activity,
-  ActivityDeletedArgs,
   ActivityDescriptor,
   ActivitySelectedArgs,
   ChildActivitySelectedArgs,
   ContainerSelectedArgs,
-  GraphUpdatedArgs, 
-  VersionedEntity
+  GraphUpdatedArgs
 } from '../../../models';
-import {ActivityIdUpdatedArgs, ActivityUpdatedArgs} from './activity-properties-editor';
+import {ActivityUpdatedArgs} from './activity-properties-editor';
 import {ActivityDriverRegistry, ActivityNameFormatter, EventBus, PluginRegistry, PortProviderRegistry} from '../../../services';
 import {MonacoEditorSettings} from "../../../services/monaco-editor-settings";
 import {ActivityPropertyChangedEventArgs, WorkflowDefinitionPropsUpdatedArgs, WorkflowDefinitionUpdatedArgs, WorkflowEditorEventTypes} from "../models/ui";
 import {WorkflowDefinition} from "../models/entities";
-import {WorkflowDefinitionsApi} from "../../workflow-definitions/services/api";
+import {WorkflowDefinitionsApi} from "../services/api"
+import WorkflowDefinitionEditorTunnel, {WorkflowDefinitionEditorState} from "../state";
 
 @Component({
   tag: 'elsa-workflow-definition-editor',
@@ -146,12 +145,10 @@ export class WorkflowDefinitionEditor {
 
   @Method()
   async loadWorkflowVersions(): Promise<void> {
-    if(this.workflowDefinitionState.definitionId != null && this.workflowDefinitionState.definitionId.length > 0)
-    {
+    if (this.workflowDefinitionState.definitionId != null && this.workflowDefinitionState.definitionId.length > 0) {
       const workflowVersions = await this.workflowDefinitionApi.getVersions(this.workflowDefinitionState.definitionId);
       this.workflowVersions = workflowVersions.sort(x => x.version).reverse();
-    }
-    else {
+    } else {
       this.workflowVersions = [];
     }
   }
@@ -256,7 +253,7 @@ export class WorkflowDefinitionEditor {
   onVersionSelected = async (e: CustomEvent<WorkflowDefinition>) => {
     const workflowToView = e.detail;
     const workflowDefinition = await this.workflowDefinitionApi.get({definitionId: workflowToView.definitionId, versionOptions: {version: workflowToView.version}});
-    this.importWorkflow(workflowDefinition);
+    await this.importWorkflow(workflowDefinition);
   };
 
   onDeleteVersionClicked = async (e: CustomEvent<WorkflowDefinition>) => {
@@ -264,7 +261,7 @@ export class WorkflowDefinitionEditor {
     await this.workflowDefinitionApi.deleteVersion({definitionId: workflowToDelete.definitionId, version: workflowToDelete.version});
     const latestWorkflowDefinition = await this.workflowDefinitionApi.get({definitionId: workflowToDelete.definitionId, versionOptions: {isLatest: true}});
     await this.loadWorkflowVersions();
-    this.importWorkflow(latestWorkflowDefinition);
+    await this.importWorkflow(latestWorkflowDefinition);
   };
 
   onRevertVersionClicked = async (e: CustomEvent<WorkflowDefinition>) => {
@@ -272,49 +269,54 @@ export class WorkflowDefinitionEditor {
     await this.workflowDefinitionApi.revertVersion({definitionId: workflowToRevert.definitionId, version: workflowToRevert.version});
     const workflowDefinition = await this.workflowDefinitionApi.get({definitionId: workflowToRevert.definitionId, versionOptions: {isLatest: true}});
     await this.loadWorkflowVersions();
-    this.importWorkflow(workflowDefinition);
+    await this.importWorkflow(workflowDefinition);
   };
 
   render() {
+    const state: WorkflowDefinitionEditorState = {
+      workflowDefinition: this.workflowDefinition
+    };
 
     return (
-      <div class="absolute inset-0" ref={el => this.container = el}>
-        <elsa-workflow-definition-editor-toolbar zoomToFit={this.onZoomToFit} autoLayout={this.onAutoLayout}/>
-        <elsa-panel
-          class="elsa-activity-picker-container z-30"
-          position={PanelPosition.Left}
-          onExpandedStateChanged={e => this.onActivityPickerPanelStateChanged(e.detail)}>
-          <elsa-workflow-definition-editor-toolbox ref={el => this.toolbox = el}/>
-        </elsa-panel>
-        <elsa-canvas
-          class="absolute" ref={el => this.canvas = el}
-          interactiveMode={true}
-          onDragOver={this.onDragOver}
-          onDrop={this.onDrop}/>
-        <elsa-panel
-          class="elsa-workflow-editor-container z-30"
-          position={PanelPosition.Right}
-          onExpandedStateChanged={e => this.onWorkflowEditorPanelStateChanged(e.detail)}>
-          <div class="object-editor-container">
-            <elsa-workflow-definition-properties-editor
-              workflowDefinition={this.workflowDefinitionState}
-              workflowVersions={this.workflowVersions}
-              onWorkflowPropsUpdated={e => this.onWorkflowPropsUpdated(e)}
-              onVersionSelected={e => this.onVersionSelected(e)}
-              onDeleteVersionClicked={e => this.onDeleteVersionClicked(e)}
-              onRevertVersionClicked={e => this.onRevertVersionClicked(e)}
-            />
-          </div>
-        </elsa-panel>
-        <elsa-panel
-          class="elsa-activity-editor-container"
-          position={PanelPosition.Bottom}
-          onExpandedStateChanged={e => this.onActivityEditorPanelStateChanged(e.detail)}>
-          <div class="activity-editor-container">
-            {this.renderSelectedObject()}
-          </div>
-        </elsa-panel>
-      </div>
+      <WorkflowDefinitionEditorTunnel.Provider state={state}>
+        <div class="absolute inset-0" ref={el => this.container = el}>
+          <elsa-workflow-definition-editor-toolbar zoomToFit={this.onZoomToFit} autoLayout={this.onAutoLayout}/>
+          <elsa-panel
+            class="elsa-activity-picker-container z-30"
+            position={PanelPosition.Left}
+            onExpandedStateChanged={e => this.onActivityPickerPanelStateChanged(e.detail)}>
+            <elsa-workflow-definition-editor-toolbox ref={el => this.toolbox = el}/>
+          </elsa-panel>
+          <elsa-canvas
+            class="absolute" ref={el => this.canvas = el}
+            interactiveMode={true}
+            onDragOver={this.onDragOver}
+            onDrop={this.onDrop}/>
+          <elsa-panel
+            class="elsa-workflow-editor-container z-30"
+            position={PanelPosition.Right}
+            onExpandedStateChanged={e => this.onWorkflowEditorPanelStateChanged(e.detail)}>
+            <div class="object-editor-container">
+              <elsa-workflow-definition-properties-editor
+                workflowDefinition={this.workflowDefinitionState}
+                workflowVersions={this.workflowVersions}
+                onWorkflowPropsUpdated={e => this.onWorkflowPropsUpdated(e)}
+                onVersionSelected={e => this.onVersionSelected(e)}
+                onDeleteVersionClicked={e => this.onDeleteVersionClicked(e)}
+                onRevertVersionClicked={e => this.onRevertVersionClicked(e)}
+              />
+            </div>
+          </elsa-panel>
+          <elsa-panel
+            class="elsa-activity-editor-container"
+            position={PanelPosition.Bottom}
+            onExpandedStateChanged={e => this.onActivityEditorPanelStateChanged(e.detail)}>
+            <div class="activity-editor-container">
+              {this.renderSelectedObject()}
+            </div>
+          </elsa-panel>
+        </div>
+      </WorkflowDefinitionEditorTunnel.Provider>
     );
   }
 }

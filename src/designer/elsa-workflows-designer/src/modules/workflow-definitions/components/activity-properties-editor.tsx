@@ -7,6 +7,7 @@ import {ActivityInputContext} from "../../../services/node-input-driver";
 import {CheckboxFormEntry, FormEntry} from "../../../components/shared/forms/form-entry";
 import {isNullOrWhitespace} from "../../../utils";
 import descriptorsStore from "../../../data/descriptors-store";
+import {Input} from "postcss";
 
 export interface ActivityUpdatedArgs {
   originalId: string;
@@ -127,11 +128,10 @@ export class ActivityPropertiesEditor {
       tabs.push(outputTab);
     }
 
-    if(isTask)
-    {
+    if (isTask) {
       const taskTab: TabDefinition = {
         displayText: 'Task',
-        order:12,
+        order: 12,
         content: () => this.renderTaskTab()
       };
 
@@ -222,15 +222,20 @@ export class ActivityPropertiesEditor {
   private onInputPropertyEditorChanged = (inputDescriptor: InputDescriptor, propertyValue: any, syntax: string) => {
     const activity = this.activity;
     const propertyName = inputDescriptor.name;
+    const isWrapped = inputDescriptor.isWrapped;
     const camelCasePropertyName = camelCase(propertyName);
 
-    activity[camelCasePropertyName] = {
-      type: inputDescriptor.type,
-      expression: {
-        type: syntax,
-        value: propertyValue // TODO: The "value" field is currently hardcoded, but we should be able to be more flexible and potentially have different fields for a given syntax.
-      }
-    };
+    if (isWrapped) {
+      activity[camelCasePropertyName] = {
+        type: inputDescriptor.type,
+        expression: {
+          type: syntax,
+          value: propertyValue // TODO: The "value" field is currently hardcoded, but we should be able to be more flexible and potentially have different fields for a given syntax.
+        }
+      };
+    } else {
+      activity[camelCasePropertyName] = propertyValue;
+    }
 
     this.updateActivity(propertyName);
   }

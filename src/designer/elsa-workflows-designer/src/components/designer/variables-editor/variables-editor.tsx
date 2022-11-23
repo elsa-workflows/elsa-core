@@ -67,7 +67,7 @@ export class VariablesEditor {
                 return (
                   <tr>
                     <td class="whitespace-nowrap">{variable.name}</td>
-                    <td class="whitespace-nowrap">{variable.type}</td>
+                    <td class="whitespace-nowrap">{variable.typeName}</td>
                     <td>{variable.value}</td>
                     <td>{storageName}</td>
                     <td class="pr-6">
@@ -109,7 +109,7 @@ export class VariablesEditor {
 
   private onAddVariableClick = async () => {
     const newVariableName = this.generateNewVariableName();
-    const variable = {name: newVariableName, type: 'Object', value: null};
+    const variable = {name: newVariableName, typeName: 'Object', value: null};
 
     this.modalDialogInstance = this.modalDialogService.show(() => <elsa-variable-editor-dialog-content variable={variable}/>, {actions: [this.saveAction]})
   };

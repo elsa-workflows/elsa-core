@@ -8,7 +8,7 @@ public class List : ElsaEndpointWithoutRequest<Response>
 {
     private readonly IActivityRegistry _registry;
 
-    public List(IActivityRegistry registry, IWellKnownTypeRegistry wellKnownTypeRegistry)
+    public List(IActivityRegistry registry)
     {
         _registry = registry;
     }

@@ -20,9 +20,9 @@ export class VariableEditorDialogContent {
   }
 
   render() {
-    const variable: Variable = this.variable ?? {name: '', type: 'Object'};
-    const variableType = variable.type;
-    const availableTypes: Array<string> = ['Object', 'String', 'Boolean', 'Int32', 'Int64', 'Single', 'Double']; // TODO: Fetch these from backend.
+    const variable: Variable = this.variable ?? {name: '', typeName: 'Object'};
+    const variableTypeName = variable.typeName;
+    const availableTypeNames: Array<string> = ['Object', 'String', 'Boolean', 'Int32', 'Int64', 'Single', 'Double']; // TODO: Fetch these from backend.
     const storageDrivers: Array<StorageDriverDescriptor> = [{id: null, displayName: '-'}, ...descriptorsStore.storageDrivers];
 
     return (
@@ -36,9 +36,9 @@ export class VariableEditorDialogContent {
                 <input type="text" name="variableName" id="variableName" value={variable.name}/>
               </FormEntry>
 
-              <FormEntry fieldId="variableType" label="Type" hint="The type of the variable.">
-                <select id="variableType" name="variableType">
-                  {availableTypes.map(type => <option value={type} selected={type == variableType}>{type}</option>)}
+              <FormEntry fieldId="variableTypeName" label="Type" hint="The type of the variable.">
+                <select id="variableTypeName" name="variableTypeName">
+                  {availableTypeNames.map(typeName => <option value={typeName} selected={typeName == variableTypeName}>{typeName}</option>)}
                 </select>
               </FormEntry>
 
@@ -65,7 +65,6 @@ export class VariableEditorDialogContent {
   }
 
   private onSubmit = async (e: Event) => {
-    debugger;
     e.preventDefault();
     const form = e.target as HTMLFormElement;
     const variable = this.getVariableInternal(form);
@@ -76,12 +75,12 @@ export class VariableEditorDialogContent {
     const formData = new FormData(form as HTMLFormElement);
     const name = formData.get('variableName') as string;
     const value = formData.get('variableValue') as string;
-    const type = formData.get('variableType') as string;
+    const type = formData.get('variableTypeName') as string;
     const driverId = formData.get('variableStorageDriverId') as string;
     const variable = this.variable;
 
     variable.name = name;
-    variable.type = type;
+    variable.typeName = type;
     variable.value = value;
     variable.storageDriverId = isNullOrWhitespace(driverId) ? null : driverId;
 

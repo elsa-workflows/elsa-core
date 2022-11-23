@@ -9,6 +9,7 @@ public class InputDescriptor : PropertyDescriptor
     public InputDescriptor(
         string name,
         Type type,
+        bool isWrapped,
         string uiHint,
         string displayName,
         string? description = default,
@@ -23,6 +24,7 @@ public class InputDescriptor : PropertyDescriptor
     {
         Name = name;
         Type = type;
+        IsWrapped = isWrapped;
         UIHint = uiHint;
         DisplayName = displayName;
         Description = description;
@@ -36,6 +38,7 @@ public class InputDescriptor : PropertyDescriptor
         IsBrowsable = isBrowsable;
     }
 
+    public bool IsWrapped { get; set; }
     public string UIHint { get; set; } = default!;
     public object? Options { get; set; }
     public string? Category { get; set; }

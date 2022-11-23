@@ -19,9 +19,9 @@ import {Hash} from "../../utils";
 import PositionEventArgs = NodeView.PositionEventArgs;
 import FromJSONData = Model.FromJSONData;
 import PointLike = Point.PointLike;
-import FlowchartTunnel, {FlowchartState} from "./state";
 import {generateUniqueActivityName} from "../../utils/generate-activity-name";
 import { DagreLayout, OutNode} from '@antv/layout';
+import FlowchartTunnel, {FlowchartState} from "./state";
 
 const FlowchartTypeName = 'Elsa.Flowchart';
 
@@ -131,7 +131,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
       nodesep: 15,
       controlPoints: true,
     });
-    
+
     let flowchartModel = this.getFlowchartModel();
 
     let nodes = [];
@@ -550,7 +550,6 @@ export class FlowchartComponent implements ContainerActivityComponent {
   };
 
   private onNodeContextMenu = async (e: PositionEventArgs<JQuery.ContextMenuEvent>) => {
-    debugger;
     const node = e.node as ActivityNodeShape;
     const activity = e.node.data as Activity;
 

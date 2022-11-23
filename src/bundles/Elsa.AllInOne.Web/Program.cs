@@ -23,7 +23,7 @@ var services = builder.Services;
 services
     .AddElsa(elsa => elsa
         .UseWorkflows()
-        .UseRuntime()
+        .UseWorkflowRuntime()
         .UseWorkflowManagement(management => management
             .AddActivity<Sequence>()
             .AddActivity<WriteLine>()

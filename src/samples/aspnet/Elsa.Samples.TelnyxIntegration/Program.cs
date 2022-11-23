@@ -1,8 +1,6 @@
 using Elsa.Extensions;
-using Elsa.Features.Extensions;
 using Elsa.Identity;
 using Elsa.Identity.Extensions;
-using Elsa.Identity.Features;
 using Elsa.Identity.Options;
 using Elsa.JavaScript.Activities;
 using Elsa.JavaScript.Extensions;
@@ -66,7 +64,7 @@ services
             identity.CreateDefaultUser = true;
             identity.IdentityOptions = options => identitySection.Bind(options);
         })
-        .UseRuntime(runtime =>
+        .UseWorkflowRuntime(runtime =>
         {
             runtime.UseProtoActor(proto =>
             {
