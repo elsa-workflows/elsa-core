@@ -254,6 +254,8 @@ export class ElsaWorkflowDesigner {
 
     dagre.layout(graph);
 
+    this.disableEvents();
+
     this.workflowModel.activities.forEach(activity => {
       const node = graph.node(activity.activityId);
 
@@ -261,11 +263,16 @@ export class ElsaWorkflowDesigner {
       const deltaX = node.x - activity.x;
       const deltaY = node.y - activity.y;
       this.graph.positionCell(cell.translate(deltaX, deltaY), "top-left");
-      activity.x = Math.round(activity.x + deltaX);
-      activity.y = Math.round(activity.y + deltaY);
+
+      const position = (cell as any).position({ relative: false });
+      activity.x = Math.round(position.x);
+      activity.y = Math.round(position.y);
+
+      (cell as any).activity = activity;
     });
 
     this.graph.scrollToContent();
+    this.enableEvents(true);
 
     console.log("Auto-layout applied");
   };
