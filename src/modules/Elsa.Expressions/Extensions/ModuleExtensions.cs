@@ -7,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Elsa.Expressions.Extensions;
 
-public static class DependencyInjectionExtensions
+public static class ModuleExtensions
 {
     public static IModule UseExpressions(this IModule configuration, Action<ExpressionsFeature>? configure = default)
     {
