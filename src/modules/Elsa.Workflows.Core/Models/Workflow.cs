@@ -1,9 +1,11 @@
+using System.ComponentModel;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Core.Models;
 
+[Browsable(false)]
 public class Workflow : Composite, ICloneable
 {
     public Workflow(
