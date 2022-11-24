@@ -22,7 +22,7 @@ var workflow = new Sequence
     Variables = { personVariable },
     Activities =
     {
-        new AskDetails()
+        new AskDetails
         {
             NamePrompt = new Input<string>("What's your name?"),
             AgePrompt = new Input<string>("What's your age?"),
