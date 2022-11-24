@@ -406,7 +406,9 @@ export class FlowchartComponent implements ContainerActivityComponent {
 
     this.activity = flowchart;
     this.activityLookup = createActivityLookup(activityNodes);
-    this.currentPath = [{activityId: flowchart.id, portName: null, index: 0}];
+
+    if(!this.currentPath || this.currentPath.length == 0)
+      this.currentPath = [{activityId: flowchart.id, portName: null, index: 0}];
 
     await this.setupGraph(flowchart);
   };
@@ -704,6 +706,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
     const path = this.currentPath;
     const index = path.indexOf(item);
 
+    debugger;
     this.currentPath = path.slice(0, index + 1);
 
     if (!!item.portName) {

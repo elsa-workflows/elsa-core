@@ -20,6 +20,7 @@ export class WorkflowNavigator {
 
   @Prop() items: Array<FlowchartNavigationItem> = [];
   @Prop() flowchart: Flowchart;
+
   @Event() navigate: EventEmitter<FlowchartNavigationItem>;
 
   render() {
@@ -47,7 +48,7 @@ export class WorkflowNavigator {
     const activityId = item.activityId;
     const activity = nodes.find(x => x.activity.id == activityId).activity;
     const activityDescriptor = descriptorsStore.activityDescriptors.find(x => x.type == activity.type);
-    const icon = this.iconRegistry.get(activity.type)();
+    const icon = this.iconRegistry.getOrDefault(activity.type)();
     const listElements = [];
     const isLastItem = index == this.items.length - 1;
 

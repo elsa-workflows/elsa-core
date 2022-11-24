@@ -1,5 +1,5 @@
 import {Component, h, Prop, State, Event, EventEmitter, Listen, Element} from "@stencil/core";
-import {ActivityIcon, ActivityIconRegistry, PortProviderRegistry} from "../../services";
+import {ActivityIconProducer, ActivityIconRegistry, PortProviderRegistry} from "../../services";
 import {Container} from "typedi";
 import {Activity, ActivityDescriptor, ActivityKind, ActivitySelectedArgs, ChildActivitySelectedArgs, EditChildActivityArgs, Port, PortMode} from "../../models";
 import descriptorsStore from "../../data/descriptors-store";
@@ -14,7 +14,7 @@ export class DefaultActivityTemplate {
   private readonly iconRegistry: ActivityIconRegistry;
   private readonly portProviderRegistry: PortProviderRegistry;
   private activityDescriptor: ActivityDescriptor;
-  private icon: ActivityIcon;
+  private icon: ActivityIconProducer;
   private portElements: Array<HTMLElement> = [];
 
   constructor() {
@@ -90,7 +90,7 @@ export class DefaultActivityTemplate {
     )
   }
 
-  private renderIcon = (icon?: ActivityIcon): string => {
+  private renderIcon = (icon?: ActivityIconProducer): string => {
     const iconCssClass = this.displayTypeIsPicker ? 'px-2' : 'px-4';
 
     if (!icon)
