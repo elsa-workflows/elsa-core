@@ -4,7 +4,6 @@ environment:
     elsa_version: 2.10.0
     elsa_build_version: 0.0.0
     nodejs_version: "14.6.0"
-    CLI_VERSION: 7.0.100-rc.2.22477.23
     # AppVeyor installs Java on its build agents by default, but it
     # picks an old version that's not compatible with SonarQube.
     # This brings it up to date.
@@ -47,11 +46,6 @@ cache:
     - '%APPDATA%\npm-cache'
 
 install:
-    -   ps: $env:DOTNET_INSTALL_DIR = "$pwd\.dotnetsdk"
-    -   ps: mkdir $env:DOTNET_INSTALL_DIR -Force | Out-Null
-    -   ps: Invoke-WebRequest -Uri "https://dotnet.microsoft.com/download/dotnet/scripts/v1/dotnet-install.ps1" -OutFile "$($env:DOTNET_INSTALL_DIR)/dotnet-install.ps1"
-    -   ps: '& "$($env:DOTNET_INSTALL_DIR)/dotnet-install.ps1" -Version $env:CLI_VERSION -InstallDir $env:DOTNET_INSTALL_DIR'
-    -   ps: $env:Path = "$env:DOTNET_INSTALL_DIR;$env:Path"
     -   ps: >-
             cd .\src\designer\elsa-workflows-studio
 
@@ -119,10 +113,10 @@ deploy:
     -   provider: NuGet
         name: NuGet
         api_key:
-            secure: KKRDla0gYKmprH/5dN/dJag/n6uAdHU6Uq8CME4ONzz2AOsMPtzS+EI/MVuSNilD
+            secure: uMFx5IwBzcjYIJVy+F+zbLl01Ei7MoxEOut9zWXVAu/SjaITJNTg6PAE1zFWi1TZ
         skip_symbols: false
-        symbol_server: https://www.nuget.org/api/v2/symbolpackage # remove to push symbols to SymbolSource.org
-        artifact: /.*(\.|\.s)nupkg/
+        symbol_server: https://api.nuget.org/v3/index.json # remove to push symbols to SymbolSource.org
+        artifact: /Elsa.*(\.|\.s)nupkg/
         on:
             APPVEYOR_REPO_TAG: true
 
@@ -134,6 +128,6 @@ deploy:
             secure: q/BL44D5KIMecFP4hzIb/OvWIZ37NfRo7PamDQv8XWfyoqCSn8F4y32wRB0ZbF0d
         skip_symbols: false
         symbol_server: https://www.myget.org/F/elsa-2/api/v2/symbolpackage # remove to push symbols to SymbolSource.org
-        artifact: /.*(\.|\.s)nupkg/
+        artifact: /Elsa.*(\.|\.s)nupkg/
         on:
             branch: master

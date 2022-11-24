@@ -1,7 +1,9 @@
+using Elsa.Models;
+
+using LinqKit;
+
 using System;
 using System.Linq.Expressions;
-using Elsa.Models;
-using LinqKit;
 
 namespace Elsa.Persistence.Specifications.WorkflowDefinitions;
 
@@ -11,6 +13,7 @@ public class WorkflowDefinitionNameSpecification : Specification<WorkflowDefinit
     {
         Name = name;
         VersionOptions = versionOptions;
+        TenantId = tenantId;
     }
 
     public string Name { get; set; }

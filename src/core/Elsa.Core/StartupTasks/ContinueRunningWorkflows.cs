@@ -15,7 +15,7 @@ using IDistributedLockProvider = Elsa.Services.IDistributedLockProvider;
 namespace Elsa.StartupTasks
 {
     /// <summary>
-    /// If there are workflows in the Running state while the server starts, it means the workflow instance never finished execution, e.g. because the workflow host terminated.
+    /// If there are workflows in the Running or Idle state while the server starts, it means the workflow instance never started or finished execution, e.g. because the workflow host terminated.
     /// This startup task resumes these workflows.
     /// </summary>
     public class ContinueRunningWorkflows : IStartupTask

@@ -51,7 +51,7 @@ namespace Elsa.Services.Workflows
             string? activityId = default,
             CancellationToken cancellationToken = default)
         {
-            using var loggingScope = _logger.BeginScope(new Dictionary<string, object> { ["WorkflowInstanceId"] = workflowInstance.Id });
+            using var loggingScope = _logger.BeginScope(new WorkflowInstanceLogScope(workflowInstance.Id));
             await using var workflowExecutionScope = _serviceScopeFactory.CreateAsyncScope();
 
             var input = await _workflowStorageService.LoadAsync(workflowInstance, cancellationToken);
@@ -325,14 +325,14 @@ namespace Elsa.Services.Workflows
 
                     workflowExecutionContext.CompletePass();
                     workflowInstance.LastExecutedActivityId = currentActivityId;
-                    
+
                     await CheckIfCompositeEventAsync(isComposite
                         , compositeScheduledValue
                         , new ActivityExecutionResultExecuted(result, activityExecutionContext)
                         , _mediator
                         , cancellationToken);
 
-                    if (workflowInstance.WorkflowStatus == WorkflowStatus.Faulted) 
+                    if (workflowInstance.WorkflowStatus == WorkflowStatus.Faulted)
                         await _mediator.Publish(new WorkflowFaulting(activityExecutionContext, activity), cancellationToken);
 
                     await _mediator.Publish(new WorkflowExecutionPassCompleted(workflowExecutionContext, activityExecutionContext), cancellationToken);
@@ -381,12 +381,22 @@ namespace Elsa.Services.Workflows
         {
             try
             {
-                return await activityOperation(activityExecutionContext, activity);
+                var result = await activityOperation(activityExecutionContext, activity);
+
+                if (result is FaultResult faultResult)
+                {
+                    if (faultResult?.Exception != null)
+                        throw faultResult.Exception;
+
+                    throw new Exception(faultResult?.Message);
+                }
+
+                return result;
             }
             catch (Exception e)
             {
                 _logger.LogWarning(e, "Failed to run activity {ActivityId} of workflow {WorkflowInstanceId}", activity.Id, activityExecutionContext.WorkflowInstance.Id);
-                
+
                 await _mediator.Publish(new ActivityFaulted(e, activityExecutionContext, activity), cancellationToken);
 
                 return new FaultResult(e);

@@ -1,4 +1,4 @@
-import {Component, h, Prop, State} from '@stencil/core';
+import {Component, EventEmitter, h, Prop, State, Event} from '@stencil/core';
 import {
   ActivityDefinitionProperty,
   ActivityModel,
@@ -20,6 +20,7 @@ export class ElsaSwitchCasesProperty {
   @Prop() propertyDescriptor: ActivityPropertyDescriptor;
   @Prop() propertyModel: ActivityDefinitionProperty;
   @State() cases: Array<SwitchCase> = [];
+  @Event() valueChange: EventEmitter<Array<any>>;
 
   supportedSyntaxes: Array<string> = [SyntaxNames.JavaScript, SyntaxNames.Liquid];
   multiExpressionEditor: HTMLElsaMultiExpressionEditorElement;
@@ -81,6 +82,7 @@ export class ElsaSwitchCasesProperty {
 
     this.propertyModel.expressions['Switch'] = json;
     this.cases = parsed;
+
   }
 
   onMultiExpressionEditorSyntaxChanged(e: CustomEvent<string>) {
