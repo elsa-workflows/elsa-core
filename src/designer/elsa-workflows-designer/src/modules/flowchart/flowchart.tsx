@@ -384,8 +384,10 @@ export class FlowchartComponent implements ContainerActivityComponent {
     const currentScopeDescriptor = this.getActivityDescriptor(currentScope.type);
 
     if (!!currentPortName) {
-      const portProvider = this.portProviderRegistry.get(currentScope.type);
-      portProvider.assignPort(currentPortName, currentLevel, {activity: currentScope, activityDescriptor: currentScopeDescriptor});
+      if(currentLevel != currentScope) {
+        const portProvider = this.portProviderRegistry.get(currentScope.type);
+        portProvider.assignPort(currentPortName, currentLevel, {activity: currentScope, activityDescriptor: currentScopeDescriptor});
+      }
     } else {
       this.activity = currentLevel;
     }
