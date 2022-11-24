@@ -1,7 +1,7 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFramework>net7.0</TargetFramework>
         <IsPackable>false</IsPackable>
         <Nullable>enable</Nullable>
     </PropertyGroup>
@@ -15,6 +15,7 @@
         <PackageReference Include="NodaTime.Testing" Version="3.0.9"/>
         <PackageReference Include="System.Text.Encodings.Web" Version="7.0.0"/>
         <PackageReference Include="System.Text.Encodings.Web" Version="6.0.0"/>
+        <PackageReference Include="System.Text.Encodings.Web" Version="7.0.0-rc.2.22472.3"/>
         <PackageReference Include="xunit" Version="2.4.1"/>
         <PackageReference Include="XunitXml.TestLogger" Version="3.0.66"/>
         <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3">
@@ -40,6 +41,10 @@
         <PackageReference Include="Hangfire.AspNetCore" Version="1.7.28"/>
         <PackageReference Include="Hangfire.InMemory" Version="0.3.4"/>
         <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="6.0.10"/>
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.0-rc.2.22472.3"/>
+        <PackageReference Include="Hangfire.AspNetCore" Version="1.7.28"/>
+        <PackageReference Include="Hangfire.InMemory" Version="0.3.4"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="7.0.0-rc.2.22472.11"/>
     </ItemGroup>
 
     <ItemGroup>
