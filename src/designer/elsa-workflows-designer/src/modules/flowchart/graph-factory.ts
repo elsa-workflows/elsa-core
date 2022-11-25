@@ -1,12 +1,14 @@
 import {CellView, Graph, Node, Shape} from '@antv/x6';
 import {v4 as uuid} from 'uuid';
 import './ports';
+import {Activity} from "../../models";
 
 export function createGraph(
   container: HTMLElement,
   interacting: CellView.Interacting,
   disableEvents: () => void,
-  enableEvents: (emitWorkflowChanged: boolean) => Promise<void>): Graph {
+  enableEvents: (emitWorkflowChanged: boolean) => Promise<void>,
+  generateUniqueName: (activityTypeName: string) => Promise<string>): Graph {
 
   const graph = new Graph({
     container: container,
@@ -187,8 +189,12 @@ export function createGraph(
       disableEvents();
       const cells = graph.paste({offset: 32});
 
+      debugger;
       for (const cell of cells) {
-        cell.data.id = uuid();
+        const activity = cell.data as Activity;
+        const activityTypeName = activity.type;
+        const uniqueName = await generateUniqueName(activityTypeName);
+        cell.data.id = uniqueName;
       }
 
       await enableEvents(true);

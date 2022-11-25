@@ -348,7 +348,8 @@ export class FlowchartComponent implements ContainerActivityComponent {
         vertexMovable: () => this.interactiveMode,
       },
       this.disableEvents,
-      this.enableEvents);
+      this.enableEvents,
+      this.generateUniqueActivityNameFromTypeName);
 
     graph.on('blank:click', this.onGraphClick);
     graph.on('node:click', this.onNodeClick);
@@ -521,6 +522,11 @@ export class FlowchartComponent implements ContainerActivityComponent {
 
   private generateUniqueActivityName = async (activityDescriptor: ActivityDescriptor): Promise<string> => {
     return await generateUniqueActivityName(this.activityNodes, activityDescriptor);
+  };
+
+  private generateUniqueActivityNameFromTypeName = async (activityTypeName: string): Promise<string> => {
+    const descriptor = descriptorsStore.activityDescriptors.find(x => x.type == activityTypeName);
+    return await this.generateUniqueActivityName(descriptor);
   };
 
   @Watch('interactiveMode')
