@@ -20,7 +20,7 @@ import PositionEventArgs = NodeView.PositionEventArgs;
 import FromJSONData = Model.FromJSONData;
 import PointLike = Point.PointLike;
 import {generateUniqueActivityName} from "../../utils/generate-activity-name";
-import { DagreLayout, OutNode} from '@antv/layout';
+import {DagreLayout, OutNode} from '@antv/layout';
 import {WorkflowDefinition} from "../workflow-definitions/models/entities";
 import FlowchartTunnel, {FlowchartState} from "./state";
 import WorkflowDefinitionTunnel, {WorkflowDefinitionState} from "../../state/workflow-definition-state";
@@ -59,6 +59,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
   @Event() graphUpdated: EventEmitter<GraphUpdatedArgs>;
 
   @State() private activityLookup: Hash<Activity> = {};
+  @State() private activities: Array<Activity> = [];
   @State() private activityNodes: Array<ActivityNode> = [];
   @State() private currentPath: Array<FlowchartNavigationItem> = [];
 
@@ -118,7 +119,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
   async scrollToStart() {
     const flowchartModel = this.getFlowchartModel();
     const startActivity = flowchartModel.activities.find(x => x.id == flowchartModel.start);
-    if(startActivity != null){
+    if (startActivity != null) {
       this.graph.scrollToCell(this.graph.getCells()[0]);
     }
   }
@@ -145,7 +146,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
     });
 
     flowchartModel.connections.forEach((connection, index) => {
-      edges.push({id:index, source: connection.source, target: connection.target});
+      edges.push({id: index, source: connection.source, target: connection.target});
     });
 
     let data = {nodes: nodes, edges: edges}
@@ -349,7 +350,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
       },
       this.disableEvents,
       this.enableEvents,
-      this.generateUniqueActivityNameFromTypeName);
+      this.getAllActivities);
 
     graph.on('blank:click', this.onGraphClick);
     graph.on('node:click', this.onNodeClick);
@@ -387,7 +388,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
     const currentScopeDescriptor = this.getActivityDescriptor(currentScope.type);
 
     if (!!currentPortName) {
-      if(currentLevel != currentScope) {
+      if (currentLevel != currentScope) {
         const portProvider = this.portProviderRegistry.get(currentScope.type);
         portProvider.assignPort(currentPortName, currentLevel, {activity: currentScope, activityDescriptor: currentScopeDescriptor});
       }
@@ -404,14 +405,13 @@ export class FlowchartComponent implements ContainerActivityComponent {
   }
 
   private importInternal = async (root: Activity) => {
-    debugger;
     const flowchart = root as Flowchart;
     const activityNodes = flatten(walkActivities(this.workflowDefinition.root));
 
     this.activity = flowchart;
     this.activityLookup = createActivityLookup(activityNodes);
 
-    if(!this.currentPath || this.currentPath.length == 0)
+    if (!this.currentPath || this.currentPath.length == 0)
       this.currentPath = [{activityId: flowchart.id, portName: null, index: 0}];
 
     await this.setupGraph(flowchart);
@@ -517,17 +517,15 @@ export class FlowchartComponent implements ContainerActivityComponent {
 
   private updateLookups = () => {
     this.activityNodes = flatten(walkActivities(this.workflowDefinition.root));
+    this.activities = this.activityNodes.map(x => x.activity);
     this.activityLookup = createActivityLookup(this.activityNodes);
   }
 
   private generateUniqueActivityName = async (activityDescriptor: ActivityDescriptor): Promise<string> => {
-    return await generateUniqueActivityName(this.activityNodes, activityDescriptor);
+    return await generateUniqueActivityName(this.activities, activityDescriptor);
   };
 
-  private generateUniqueActivityNameFromTypeName = async (activityTypeName: string): Promise<string> => {
-    const descriptor = descriptorsStore.activityDescriptors.find(x => x.type == activityTypeName);
-    return await this.generateUniqueActivityName(descriptor);
-  };
+  private getAllActivities = (): Array<Activity> => this.activities;
 
   @Watch('interactiveMode')
   private async onInteractiveModeChange(value: boolean) {
@@ -715,7 +713,6 @@ export class FlowchartComponent implements ContainerActivityComponent {
     const path = this.currentPath;
     const index = path.indexOf(item);
 
-    debugger;
     this.currentPath = path.slice(0, index + 1);
 
     if (!!item.portName) {
