@@ -3,7 +3,7 @@ import {h} from "@stencil/core";
 import {Container, Service} from "typedi";
 import {ActivityDescriptor, Plugin} from "../../models";
 import newButtonItemStore from "../../data/new-button-item-store";
-import {MenuItem} from "../../components/shared/context-menu/models";
+import {MenuItem, MenuItemGroup} from "../../components/shared/context-menu/models";
 import {Flowchart} from "../flowchart/models";
 import {generateUniqueActivityName} from '../../utils/generate-activity-name';
 import descriptorsStore from "../../data/descriptors-store";
@@ -43,13 +43,17 @@ export class ActivityDefinitionsPlugin implements Plugin {
       clickHandler: this.onNewActivityDefinitionClick
     }
 
+    const newItemGroup: MenuItemGroup = {
+      menuItems: [newActivityDefinitionItem]
+    };
+
     const activityDefinitionBrowserItem: ToolbarMenuItem = {
       text: 'Activity Definitions',
       onClick: this.onBrowseActivityDefinitions,
       order: 5
     };
 
-    newButtonItemStore.items = [...newButtonItemStore.items, newActivityDefinitionItem];
+    newButtonItemStore.items = [...newButtonItemStore.items, newItemGroup];
     toolbarButtonMenuItemStore.items = [...toolbarButtonMenuItemStore.items, activityDefinitionBrowserItem];
   }
 

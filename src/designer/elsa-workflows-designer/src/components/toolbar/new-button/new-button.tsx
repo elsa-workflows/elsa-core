@@ -1,7 +1,7 @@
 import {Component, Event, EventEmitter, Host, h, Listen, Prop} from '@stencil/core';
 import {leave, toggle} from 'el-transition'
 import newButtonItemStore from "../../../data/new-button-item-store";
-import {MenuItem} from "../../shared/context-menu/models";
+import {MenuItem, MenuItemGroup} from "../../shared/context-menu/models";
 
 @Component({
   tag: 'elsa-new-button',
@@ -30,12 +30,6 @@ export class NewButton {
     toggle(this.menu);
   }
 
-  private onNewWorkflowDefinitionClick(e: Event) {
-    e.preventDefault();
-    this.newClicked.emit();
-    leave(this.menu);
-  }
-
   private onItemClick = (e: MouseEvent, item: MenuItem) => {
     e.preventDefault();
 
@@ -47,7 +41,7 @@ export class NewButton {
 
   render() {
 
-    const items: Array<MenuItem> = newButtonItemStore.items;
+    const items: Array<MenuItemGroup> = newButtonItemStore.items;
 
     const mainItem: MenuItem = newButtonItemStore.mainItem ?? {
       text: 'New',
@@ -79,16 +73,21 @@ export class NewButton {
                  class="hidden origin-bottom-right absolute right-0 top-10 mb-2 -mr-1 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
 
               <div class="divide-y divide-gray-100 focus:outline-none" role="menu" aria-orientation="vertical" aria-labelledby="option-menu">
+              {items.map(groupItem => {
+                return <div class="py-1" role="none">
+                  {groupItem.menuItems.map(item => {
+                    return (
+                      <div class="py-1" role="none">
+                        <a href="#" onClick={e => this.onItemClick(e, item)}
+                           class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                           role="menuitem">
+                          {item.text}
+                        </a>
+                      </div>);
+                  })}
 
-                {items.map(item => (
-                  <div class="py-1" role="none">
-                    <a href="#" onClick={e => this.onItemClick(e, item)}
-                       class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                       role="menuitem">
-                      {item.text}
-                    </a>
-                  </div>))}
-
+                </div>
+              })}
               </div>
             </div>
           </span>

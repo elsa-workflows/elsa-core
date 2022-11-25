@@ -108,3 +108,10 @@ export function durationToString(duration: moment.Duration) {
           : `${duration.asMilliseconds()} ms`
     : null;
 }
+
+export function htmlToElement<TElement>(html: string): TElement {
+  const template = document.createElement('template');
+  html = html.trim(); // Never return a text node of whitespace as the result
+  template.innerHTML = html;
+  return template.content.firstChild as unknown as TElement;
+}
