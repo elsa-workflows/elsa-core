@@ -16,7 +16,7 @@ import {MonacoEditorSettings} from "../../../services/monaco-editor-settings";
 import {ActivityPropertyChangedEventArgs, WorkflowDefinitionPropsUpdatedArgs, WorkflowDefinitionUpdatedArgs, WorkflowEditorEventTypes} from "../models/ui";
 import {WorkflowDefinition} from "../models/entities";
 import {WorkflowDefinitionsApi} from "../services/api"
-import WorkflowDefinitionEditorTunnel, {WorkflowDefinitionEditorState} from "../state";
+import WorkflowDefinitionTunnel, {WorkflowDefinitionState} from "../../../state/workflow-definition-state";
 
 @Component({
   tag: 'elsa-workflow-definition-editor',
@@ -273,12 +273,12 @@ export class WorkflowDefinitionEditor {
   };
 
   render() {
-    const state: WorkflowDefinitionEditorState = {
+    const state: WorkflowDefinitionState = {
       workflowDefinition: this.workflowDefinition
     };
 
     return (
-      <WorkflowDefinitionEditorTunnel.Provider state={state}>
+      <WorkflowDefinitionTunnel.Provider state={state}>
         <div class="absolute inset-0" ref={el => this.container = el}>
           <elsa-workflow-definition-editor-toolbar zoomToFit={this.onZoomToFit} autoLayout={this.onAutoLayout}/>
           <elsa-panel
@@ -316,7 +316,7 @@ export class WorkflowDefinitionEditor {
             </div>
           </elsa-panel>
         </div>
-      </WorkflowDefinitionEditorTunnel.Provider>
+      </WorkflowDefinitionTunnel.Provider>
     );
   }
 }

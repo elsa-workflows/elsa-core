@@ -1,12 +1,19 @@
 import {CellView, Graph, Node, Shape} from '@antv/x6';
-import {v4 as uuid} from 'uuid';
 import './ports';
+import {Activity} from "../../models";
+import {Connection} from "./models";
+import descriptorsStore from "../../data/descriptors-store";
+import {generateUniqueActivityName} from "../../utils/generate-activity-name";
+import {Hash} from "../../utils";
+import {createActivityLookup} from "../../services";
 
 export function createGraph(
   container: HTMLElement,
   interacting: CellView.Interacting,
   disableEvents: () => void,
-  enableEvents: (emitWorkflowChanged: boolean) => Promise<void>): Graph {
+  enableEvents: (emitWorkflowChanged: boolean) => Promise<void>,
+  getAllActivities: () => Array<Activity>
+): Graph {
 
   const graph = new Graph({
     container: container,
@@ -186,9 +193,33 @@ export function createGraph(
 
       disableEvents();
       const cells = graph.paste({offset: 32});
+      const activityCells = cells.filter(x => x.shape == 'activity');
+      const connectionCells = cells.filter(x => x.shape == 'elsa-edge');
+      const allActivities = [...getAllActivities()];
+      const idMap = {};
 
-      for (const cell of cells) {
-        cell.data.id = uuid();
+      for (const cell of activityCells) {
+        const activity = {...cell.data} as Activity;
+        const activityTypeName = activity.type;
+        const activityDescriptor = descriptorsStore.activityDescriptors.find(x => x.type == activityTypeName);
+        const currentId = activity.id;
+        const idExists = allActivities.find(x => x.id == currentId);
+
+        if(idExists) {
+          const newId = await generateUniqueActivityName(allActivities, activityDescriptor);
+          idMap[currentId] = newId;
+          activity.id = newId;
+        }
+
+        cell.setData(activity)
+        allActivities.push(activity);
+      }
+
+      for (const cell of connectionCells) {
+        const connection = {...cell.data} as Connection;
+        connection.source = idMap[connection.source];
+        connection.target = idMap[connection.target];
+        cell.setData(connection);
       }
 
       await enableEvents(true);

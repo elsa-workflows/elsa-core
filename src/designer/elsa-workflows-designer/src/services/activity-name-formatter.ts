@@ -1,6 +1,6 @@
 import {Service} from 'typedi';
 import {camelCase, startCase, snakeCase, kebabCase} from 'lodash';
-import {ActivityDescriptor} from "../models";
+import {Activity, ActivityDescriptor} from "../models";
 import {stripActivityNameSpace} from "../utils";
 import {ActivityNode} from "./activity-walker";
 
@@ -9,7 +9,7 @@ export type ActivityNameStrategy = (context: ActivityNameFormatterContext) => st
 export interface ActivityNameFormatterContext {
   activityDescriptor: ActivityDescriptor;
   count: number;
-  activityNodes: Array<ActivityNode>;
+  activities: Array<Activity>;
 }
 
 @Service()
