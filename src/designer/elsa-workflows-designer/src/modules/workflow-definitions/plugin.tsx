@@ -3,7 +3,7 @@ import {h} from "@stencil/core";
 import {Container, Service} from "typedi";
 import {ActivityDescriptor, Plugin} from "../../models";
 import newButtonItemStore from "../../data/new-button-item-store";
-import {MenuItem} from "../../components/shared/context-menu/models";
+import {MenuItem, MenuItemGroup} from "../../components/shared/context-menu/models";
 import {Flowchart} from "../flowchart/models";
 import {generateUniqueActivityName} from '../../utils/generate-activity-name';
 import descriptorsStore from "../../data/descriptors-store";
@@ -17,9 +17,10 @@ import {WorkflowDefinitionManager} from "./services/manager";
 import {WorkflowDefinition, WorkflowDefinitionSummary} from "./models/entities";
 import {WorkflowDefinitionUpdatedArgs} from "./models/ui";
 import {PublishClickedArgs} from "./components/publish-button";
-import {WorkflowDefinitionsApi} from "./services/api";
+import {ExportWorkflowRequest, ImportWorkflowRequest, WorkflowDefinitionsApi} from "./services/api";
 import {DefaultModalActions, ModalDialogInstance, ModalDialogService} from "../../components/shared/modal-dialog";
 import {isEqual} from 'lodash'
+import {htmlToElement} from "../../utils";
 
 const FlowchartTypeName = 'Elsa.Flowchart';
 
@@ -43,13 +44,22 @@ export class WorkflowDefinitionsPlugin implements Plugin {
       clickHandler: this.onNewWorkflowDefinitionClick
     }
 
+    const importWorkflowDefinitionItem: MenuItem = {
+      text: 'Import',
+      clickHandler: this.onImportWorkflowDefinitionClick
+    }
+
+    const newItemGroup: MenuItemGroup = {
+      menuItems: [newWorkflowDefinitionItem, importWorkflowDefinitionItem]
+    }
+
     const workflowDefinitionBrowserItem: ToolbarMenuItem = {
       text: 'Workflow Definitions',
       onClick: this.onBrowseWorkflowDefinitions,
       order: 5
     };
 
-    newButtonItemStore.items = [...newButtonItemStore.items, newWorkflowDefinitionItem];
+    newButtonItemStore.items = [...newButtonItemStore.items, newItemGroup];
     toolbarButtonMenuItemStore.items = [...toolbarButtonMenuItemStore.items, workflowDefinitionBrowserItem];
   }
 
@@ -98,12 +108,38 @@ export class WorkflowDefinitionsPlugin implements Plugin {
   }
 
   private showWorkflowDefinitionEditor = (workflowDefinition: WorkflowDefinition) => {
-    toolbarComponentStore.components = [() => <elsa-workflow-publish-button onPublishClicked={this.onPublishClicked}/>];
+    toolbarComponentStore.components = [() => <elsa-workflow-publish-button onPublishClicked={this.onPublishClicked} onExportClicked={this.onExportClicked} onImportClicked={this.onImportClicked}/>];
     studioComponentStore.activeComponentFactory = () => <elsa-workflow-definition-editor workflowDefinition={workflowDefinition} onWorkflowUpdated={this.onWorkflowUpdated} ref={el => this.workflowDefinitionEditorElement = el}/>;
+  };
+
+  private import = async () => {
+    const fileInput = htmlToElement<HTMLInputElement>('<input type="file" />');
+
+    document.body.append(fileInput);
+    fileInput.click();
+
+    fileInput.addEventListener('change', async e => {
+      const files = fileInput.files;
+
+      if(files.length == 0) {
+        fileInput.remove();
+        return;
+      }
+
+      const file = files[0];
+      const importedWorkflow = await this.workflowDefinitionManager.importWorkflow(null, file);
+      fileInput.remove();
+      this.showWorkflowDefinitionEditor(importedWorkflow);
+    });
   };
 
   private onNewWorkflowDefinitionClick = async () => {
     await this.newWorkflow();
+    this.modalDialogService.hide(this.workflowDefinitionBrowserInstance);
+  };
+
+  private onImportWorkflowDefinitionClick = async () => {
+    await this.import();
     this.modalDialogService.hide(this.workflowDefinitionBrowserInstance);
   };
 
@@ -150,5 +186,14 @@ export class WorkflowDefinitionsPlugin implements Plugin {
     await this.saveWorkflowDefinition(workflowDefinition, true);
     await this.eventBus.emit(NotificationEventTypes.Update, this, {id: workflowDefinition.definitionId, message: `${workflowDefinition.name} publish finished`});
     e.detail.complete();
+  }
+
+  private onExportClicked = async (e: CustomEvent) => {
+    const workflowDefinition = await this.workflowDefinitionEditorElement.getWorkflowDefinition();
+    await this.workflowDefinitionManager.exportWorkflow(workflowDefinition);
+  }
+
+  private onImportClicked = async (e: CustomEvent) => {
+      await this.import();
   }
 }

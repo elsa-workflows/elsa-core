@@ -22,7 +22,6 @@ export class PublishButton {
   @Event({bubbles: true}) importClicked: EventEmitter<File>;
 
   menu: HTMLElement;
-  fileInput: HTMLInputElement;
   element: HTMLElement;
 
   @Listen('click', {target: 'window'})
@@ -70,20 +69,8 @@ export class PublishButton {
 
   private async onImportClick(e: Event) {
     e.preventDefault();
-    this.fileInput.value = null;
-    this.fileInput.click();
-
+    this.importClicked.emit();
     leave(this.menu);
-  }
-
-  private async onFileInputChange(e: Event) {
-    const files = this.fileInput.files;
-
-    if (files.length == 0) {
-      return;
-    }
-
-    this.importClicked.emit(files[0]);
   }
 
   render() {
@@ -141,7 +128,6 @@ export class PublishButton {
             </div>
           </span>
         </span>
-        <input type="file" class="hidden" onChange={e => this.onFileInputChange(e)} ref={el => this.fileInput = el}/>
       </Host>
     );
   }
