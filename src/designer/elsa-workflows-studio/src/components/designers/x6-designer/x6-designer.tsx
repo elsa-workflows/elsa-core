@@ -946,9 +946,9 @@ export class ElsaWorkflowDesigner {
         }
         {this.mode == WorkflowDesignerMode.Test ?
           <div>
-            <div id="left" style={{'z-index': '1', border:`4px solid orange`, position:`fixed`, height: `calc(100vh - 64px)`, width:`4px`, top:`64`, bottom:`0`, left:`0`}}/>
-            <div id="right" style={{'z-index': '1', border:`4px solid orange`, position:`fixed`, height: `calc(100vh - 64px)`, width:`4px`, top:`64`, bottom:`0`, right:`0`}}/>
-            <div id="top" style={{'z-index': '1', border:`4px solid orange`, position:`fixed`, height:`4px`, left:`0`, right:`0`, top:`30`}}/>
+            <div id="left" style={{'z-index': '1', border:`4px solid orange`, position:`fixed`, height: `calc(100vh - 64px)`, width:`4px`, top:`64px`, bottom:`0`, left:`0`}}/>
+            <div id="right" style={{'z-index': '1', border:`4px solid orange`, position:`fixed`, height: `calc(100vh - 64px)`, width:`4px`, top:`64px`, bottom:`0`, right:`0`}}/>
+            <div id="top" style={{'z-index': '1', border:`4px solid orange`, position:`fixed`, height:`4px`, left:`0`, right:`0`, top:`64px`}}/>
             <div id="bottom" style={{'z-index': '1', border:`4px solid orange`, position:`fixed`, height:`4px`, left:`0`, right:`0`, bottom:`0`}}/>
           </div>
           :
