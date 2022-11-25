@@ -76,6 +76,9 @@ namespace Elsa.Activities.Http
             SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string? ContentType { get; set; }
+        
+        [ActivityInput(Hint = "Send the input of the activity as content. (Ignore content field)", SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        public bool InputAsContent { get; set; }
 
         /// <summary>
         /// The Authorization header value to send.
@@ -178,7 +181,7 @@ namespace Elsa.Activities.Http
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            var request = CreateRequest();
+            var request = CreateRequest(context.Input);
             var cancellationToken = context.CancellationToken;
             var response = (await _httpClient.SendAsync(request, cancellationToken))!;
             var hasContent = response.Content != null!;
@@ -194,6 +197,7 @@ namespace Elsa.Activities.Http
                 Headers = new Dictionary<string, string[]>(allHeaders)
             };
 
+            HttpContentData? output = null;
             if (hasContent && ReadContent)
             {
                 // Only attempt to parse content if the status code represents success.
@@ -201,6 +205,11 @@ namespace Elsa.Activities.Http
                 {
                     var formatter = SelectContentParser(ResponseContentParserName, contentType);
                     ResponseContent = await formatter.ReadAsync(response, this, cancellationToken);
+                    output = new HttpContentData
+                    {
+                        ContentType = contentType,
+                        Content = ResponseContent
+                    };
                 }
                 else
                 {
@@ -218,7 +227,7 @@ namespace Elsa.Activities.Http
                 outcomes.Add("Unsupported Status Code");
 
             Response = responseModel;
-            return Outcomes(outcomes);
+            return Outcomes(outcomes, output);
         }
 
         private IHttpResponseContentReader SelectContentParser(string? parserName, string? contentType)
@@ -249,7 +258,7 @@ namespace Elsa.Activities.Http
             }
         }
 
-        private HttpRequestMessage CreateRequest()
+        private HttpRequestMessage CreateRequest(object? input)
         {
             var method = Method ?? HttpMethods.Get;
             var methodSupportsBody = GetMethodSupportsBody(method);
@@ -263,7 +272,26 @@ namespace Elsa.Activities.Http
                 var body = Content;
                 var contentType = ContentType;
 
-                if (!string.IsNullOrWhiteSpace(body))
+                if (InputAsContent && input != null)
+                {
+                    switch (input)
+                    {
+                        case HttpContentData { Content: byte[] contentBytes } data:
+                            request.Content = new ByteArrayContent(contentBytes);
+                            request.Content.Headers.ContentType = MediaTypeHeaderValue.Parse(data.ContentType);
+                            break;
+                        case HttpContentData { Content: string contentString } data:
+                            request.Content = new StringContent(contentString, Encoding.UTF8, data.ContentType);
+                            break;
+                        case byte[] bytes:
+                            request.Content = new ByteArrayContent(bytes);
+                            break;
+                        case string stringContent:
+                            request.Content = new StringContent(stringContent, Encoding.UTF8, "text/plain");
+                            break;
+                    }
+                }
+                else if (!string.IsNullOrWhiteSpace(body))
                     request.Content = new StringContent(body, Encoding.UTF8, contentType);
             }
 
