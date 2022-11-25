@@ -1,10 +1,9 @@
 import {Component, Prop, h} from '@stencil/core';
-import {LiteralExpression, SelectList, SyntaxNames, Variable} from "../../models";
+import {SyntaxNames, Variable} from "../../models";
 import {ActivityInputContext} from "../../services/node-input-driver";
-import {getInputPropertyValue, getPropertyValue, getSelectListItems} from "../../utils";
-import {ExpressionChangedArs} from "../designer/input-control-switch/input-control-switch";
-import WorkflowDefinitionEditorTunnel from "../../modules/workflow-definitions/state";
+import {getPropertyValue} from "../../utils";
 import {FormEntry} from "../shared/forms/form-entry";
+import WorkflowDefinitionTunnel from "../../state/workflow-definition-state";
 
 @Component({
   tag: 'elsa-variable-picker-input',
@@ -31,7 +30,7 @@ export class VariablePickerInput {
     debugger;
 
     return (
-      <WorkflowDefinitionEditorTunnel.Consumer>
+      <WorkflowDefinitionTunnel.Consumer>
         {({workflowDefinition}) => {
           const variables = workflowDefinition?.variables ?? [];
           return<FormEntry fieldId={fieldId} label={displayName} hint={description}>
@@ -44,7 +43,7 @@ export class VariablePickerInput {
             </select>
           </FormEntry>
         }}
-      </WorkflowDefinitionEditorTunnel.Consumer>
+      </WorkflowDefinitionTunnel.Consumer>
     );
   }
 

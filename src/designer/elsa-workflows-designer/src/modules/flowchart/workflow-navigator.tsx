@@ -4,6 +4,7 @@ import {ActivityIconRegistry, ActivityNode, flatten, PortProviderRegistry, walkA
 import {Flowchart, FlowchartNavigationItem} from "./models";
 import {Port} from "../../models";
 import descriptorsStore from "../../data/descriptors-store";
+import {WorkflowDefinition} from "../workflow-definitions/models/entities";
 
 @Component({
   tag: 'elsa-workflow-navigator',
@@ -19,7 +20,7 @@ export class WorkflowNavigator {
   }
 
   @Prop() items: Array<FlowchartNavigationItem> = [];
-  @Prop() flowchart: Flowchart;
+  @Prop() workflowDefinition: WorkflowDefinition;
 
   @Event() navigate: EventEmitter<FlowchartNavigationItem>;
 
@@ -30,10 +31,10 @@ export class WorkflowNavigator {
     if (items.length <= 0)
       return null;
 
-    if (!this.flowchart)
+    if (!this.workflowDefinition)
       return;
 
-    const nodes = flatten(walkActivities(this.flowchart));
+    const nodes = flatten(walkActivities(this.workflowDefinition.root));
 
     return <div class="ml-8">
       <nav class="flex" aria-label="Breadcrumb">

@@ -21,7 +21,9 @@ import FromJSONData = Model.FromJSONData;
 import PointLike = Point.PointLike;
 import {generateUniqueActivityName} from "../../utils/generate-activity-name";
 import { DagreLayout, OutNode} from '@antv/layout';
+import {WorkflowDefinition} from "../workflow-definitions/models/entities";
 import FlowchartTunnel, {FlowchartState} from "./state";
+import WorkflowDefinitionTunnel, {WorkflowDefinitionState} from "../../state/workflow-definition-state";
 
 const FlowchartTypeName = 'Elsa.Flowchart';
 
@@ -43,6 +45,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
     this.portProviderRegistry = Container.get(PortProviderRegistry);
   }
 
+  @Prop() workflowDefinition: WorkflowDefinition; // Injected prop.
   @Prop() interactiveMode: boolean = true;
 
   @Element() el: HTMLElement;
@@ -132,10 +135,9 @@ export class FlowchartComponent implements ContainerActivityComponent {
       controlPoints: true,
     });
 
-    let flowchartModel = this.getFlowchartModel();
-
-    let nodes = [];
-    let edges = [];
+    const flowchartModel = this.getFlowchartModel();
+    const nodes = [];
+    const edges = [];
 
     flowchartModel.activities.forEach(activity => {
       const activityElement = document.querySelectorAll("[activity-id=\"" + activity.id + "\"]")[0].getBoundingClientRect();
@@ -158,8 +160,8 @@ export class FlowchartComponent implements ContainerActivityComponent {
       this.updateActivity({id: activity.id, originalId: activity.id, activity: activity});
     });
 
-    this.import(this.activity);
-    this.scrollToStart();
+    await this.import(this.activity);
+    await this.scrollToStart();
   }
 
   @Method()
@@ -401,8 +403,9 @@ export class FlowchartComponent implements ContainerActivityComponent {
   }
 
   private importInternal = async (root: Activity) => {
+    debugger;
     const flowchart = root as Flowchart;
-    const activityNodes = flatten(walkActivities(flowchart));
+    const activityNodes = flatten(walkActivities(this.workflowDefinition.root));
 
     this.activity = flowchart;
     this.activityLookup = createActivityLookup(activityNodes);
@@ -512,7 +515,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
   }
 
   private updateLookups = () => {
-    this.activityNodes = flatten(walkActivities(this.activity));
+    this.activityNodes = flatten(walkActivities(this.workflowDefinition.root));
     this.activityLookup = createActivityLookup(this.activityNodes);
   }
 
@@ -731,7 +734,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
       <FlowchartTunnel.Provider state={state}>
         <div class="relative">
           <div class="absolute left-0 top-3 z-10">
-            <elsa-workflow-navigator items={this.currentPath} flowchart={activity} onNavigate={this.onNavigateHierarchy}/>
+            <elsa-workflow-navigator items={this.currentPath} workflowDefinition={this.workflowDefinition} onNavigate={this.onNavigateHierarchy}/>
           </div>
           <div
             class="absolute left-0 top-0 right-0 bottom-0"
@@ -746,3 +749,5 @@ export class FlowchartComponent implements ContainerActivityComponent {
     );
   }
 }
+
+WorkflowDefinitionTunnel.injectProps(FlowchartComponent, ['workflowDefinition']);
