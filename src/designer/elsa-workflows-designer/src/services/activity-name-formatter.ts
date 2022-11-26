@@ -15,8 +15,8 @@ export interface ActivityNameFormatterContext {
 @Service()
 export class ActivityNameFormatter {
 
-  public static readonly DefaultStrategy: ActivityNameStrategy = context => `${stripActivityNameSpace(context.activityDescriptor.type)}${context.count}`;
-  public static readonly UnderscoreStrategy: ActivityNameStrategy = context => `${stripActivityNameSpace(context.activityDescriptor.type)}_${context.count}`;
+  public static readonly DefaultStrategy: ActivityNameStrategy = context => `${stripActivityNameSpace(context.activityDescriptor.typeName)}${context.count}`;
+  public static readonly UnderscoreStrategy: ActivityNameStrategy = context => `${stripActivityNameSpace(context.activityDescriptor.typeName)}_${context.count}`;
   public static readonly PascalCaseStrategy: ActivityNameStrategy = context => startCase(camelCase(ActivityNameFormatter.DefaultStrategy(context))).replace(/ /g, '');
   public static readonly CamelCaseStrategy: ActivityNameStrategy = context => camelCase(ActivityNameFormatter.DefaultStrategy(context));
   public static readonly SnakeCaseStrategy: ActivityNameStrategy = context => snakeCase(ActivityNameFormatter.DefaultStrategy(context));

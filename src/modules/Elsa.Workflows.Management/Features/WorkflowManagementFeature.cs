@@ -14,6 +14,7 @@ using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Management.Implementations;
 using Elsa.Workflows.Management.Materializers;
+using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Management.Providers;
 using Elsa.Workflows.Management.Serialization;
@@ -22,42 +23,110 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Management.Features;
 
+/// <summary>
+/// Installs & configures the workflow management feature.
+/// </summary>
 [DependsOn(typeof(MediatorFeature))]
 [DependsOn(typeof(SystemClockFeature))]
 [DependsOn(typeof(WorkflowsFeature))]
 public class WorkflowManagementFeature : FeatureBase
 {
+    private const string PrimitivesCategory = "Primitives";
+
+    /// <inheritdoc />
     public WorkflowManagementFeature(IModule module) : base(module)
     {
     }
-    
+
+    /// <summary>
+    /// A set of activity types to make available to the system. 
+    /// </summary>
     public HashSet<Type> ActivityTypes { get; } = new();
+
+    /// <summary>
+    /// A set of variable types to make available to the system. 
+    /// </summary>
+    public HashSet<VariableDescriptor> VariableDescriptors { get; } = new()
+    {
+        new(typeof(object), PrimitivesCategory, "The root class for all object in the CLR System."),
+        new(typeof(string), PrimitivesCategory, "Represents a static string of characters."),
+        new(typeof(bool), PrimitivesCategory, "Represents a true or false value."),
+        new(typeof(short), PrimitivesCategory, "A 16 bit integer."),
+        new(typeof(int), PrimitivesCategory, "A 32 bit integer."),
+        new(typeof(long), PrimitivesCategory, "A 64 bit integer."),
+        new(typeof(float), PrimitivesCategory, "A real number."),
+        new(typeof(double), PrimitivesCategory, "A real number with double precision."),
+        new(typeof(decimal), PrimitivesCategory, "A decimal number."),
+        new(typeof(DateTime), PrimitivesCategory, "A value type that represents a date and time."),
+        new(typeof(DateTimeOffset), PrimitivesCategory, "A value type that consists of a DateTime and a time zone offset."),
+        new(typeof(TimeSpan), PrimitivesCategory, "Represents a duration of time."),
+        new(typeof(DateOnly), PrimitivesCategory, "Represents dates with values ranging from January 1, 0001 Anno Domini (Common Era) through December 31, 9999 A.D. (C.E.) in the Gregorian calendar."),
+        new(typeof(TimeOnly), PrimitivesCategory, "Represents a time of day, as would be read from a clock, within the range 00:00:00 to 23:59:59.9999999.")
+    };
+
+    /// <summary>
+    /// The factory to create new instances of <see cref="IWorkflowDefinitionStore"/>.
+    /// </summary>
     public Func<IServiceProvider, IWorkflowDefinitionStore> WorkflowDefinitionStore { get; set; } = sp => sp.GetRequiredService<MemoryWorkflowDefinitionStore>();
+
+    /// <summary>
+    /// The factory to create new instances of <see cref="IWorkflowInstanceStore"/>.
+    /// </summary>
     public Func<IServiceProvider, IWorkflowInstanceStore> WorkflowInstanceStore { get; set; } = sp => sp.GetRequiredService<MemoryWorkflowInstanceStore>();
 
+    /// <summary>
+    /// Adds the specified activity type to the system.
+    /// </summary>
     public WorkflowManagementFeature AddActivity<T>() where T : IActivity
     {
         ActivityTypes.Add(typeof(T));
         return this;
     }
-    
+
+    /// <summary>
+    /// Adds all types implementing <see cref="IActivity"/> to the system.
+    /// </summary>
     public WorkflowManagementFeature AddActivitiesFrom<TMarker>()
     {
         var activityTypes = typeof(TMarker).Assembly.GetExportedTypes().Where(x =>
         {
             var browsableAttr = x.GetCustomAttribute<BrowsableAttribute>();
-            var isBrowsable = browsableAttr == null || browsableAttr.Browsable; 
+            var isBrowsable = browsableAttr == null || browsableAttr.Browsable;
             return typeof(IActivity).IsAssignableFrom(x) && !x.IsAbstract && !x.IsInterface && !x.IsGenericType && isBrowsable;
         }).ToList();
         return AddActivities(activityTypes);
     }
-    
+
+    /// <summary>
+    /// Adds the specified activity types to the system.
+    /// </summary>
     public WorkflowManagementFeature AddActivities(IEnumerable<Type> activityTypes)
     {
         ActivityTypes.AddRange(activityTypes);
         return this;
     }
 
+    /// <summary>
+    /// Adds the specified variable type to the system.
+    /// </summary>
+    public WorkflowManagementFeature AddVariableType<T>(string category) => AddVariableTypes(new[] { typeof(T) }, category);
+
+    /// <summary>
+    /// Adds the specified variable types to the system.
+    /// </summary>
+    public WorkflowManagementFeature AddVariableTypes(IEnumerable<Type> types, string category) =>
+        AddVariableTypes(types.Select(x => new VariableDescriptor(x, category, x.GetCustomAttribute<DescriptionAttribute>()?.Description)));
+
+    /// <summary>
+    /// Adds the specified variable types to the system.
+    /// </summary>
+    public WorkflowManagementFeature AddVariableTypes(IEnumerable<VariableDescriptor> descriptors)
+    {
+        VariableDescriptors.AddRange(descriptors);
+        return this;
+    }
+
+    /// <inheritdoc />
     public override void Apply()
     {
         Services
@@ -83,10 +152,12 @@ public class WorkflowManagementFeature : FeatureBase
             .AddSingleton<SerializerOptionsProvider>()
             ;
 
-        Services.Configure<ApiOptions>(options =>
+        Services.Configure<ManagementOptions>(options =>
         {
-            foreach (var activityType in ActivityTypes) 
+            foreach (var activityType in ActivityTypes)
                 options.ActivityTypes.Add(activityType);
+
+            foreach (var descriptor in VariableDescriptors) options.VariableDescriptors.Add(descriptor);
         });
     }
 }

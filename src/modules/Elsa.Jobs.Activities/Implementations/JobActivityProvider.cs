@@ -54,7 +54,7 @@ public class JobActivityProvider : IActivityProvider
 
         return new()
         {
-            Type = fullTypeName,
+            TypeName = fullTypeName,
             Version = 1,
             DisplayName = displayName,
             Description = description,

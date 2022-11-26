@@ -8,10 +8,10 @@ namespace Elsa.Workflows.Core.Models;
 /// <summary>
 /// A descriptor of an activity type. It also provides a constructor to create instances of this type.
 /// </summary>
-[DebuggerDisplay("{Type}")]
+[DebuggerDisplay("{TypeName}")]
 public class ActivityDescriptor
 {
-    public string Type { get; init; } = default!;
+    public string TypeName { get; init; } = default!;
     public int Version { get; init; }
     public string Category { get; init; } = default!;
     public string? DisplayName { get; init; }

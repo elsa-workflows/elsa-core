@@ -86,6 +86,9 @@ public static class ObjectConverter
                 throw new TypeConversionException($"Failed to deserialize {stringValue} to {underlyingTargetType}", value, underlyingTargetType, e);
             }
         }
+
+        if (value is string s && string.IsNullOrWhiteSpace(s))
+            return null;
         
         try
         {

@@ -6,6 +6,7 @@ import {SyntaxSelectorIcon} from "../../icons/tooling/syntax-selector";
 import {MonacoValueChangedArgs} from "../../shared/monaco-editor/monaco-editor";
 import {Hint} from "../../shared/forms/hint";
 import {mapSyntaxToLanguage} from "../../../utils";
+import descriptorsStore from "../../../data/descriptors-store";
 
 export interface ExpressionChangedArs {
   expression: string;
@@ -137,10 +138,15 @@ export class InputControlSwitch {
     const showMonaco = !!selectedSyntax && selectedSyntax != 'Literal' && !!this.supportedSyntaxes.find(x => x === selectedSyntax);
     const expressionEditorClass = showMonaco ? 'block' : 'hidden';
     const defaultEditorClass = showMonaco ? 'hidden' : 'block';
+    const propertyType = "Object";
+    const typeDescriptor = descriptorsStore.variableDescriptors.find(x => x.typeName == propertyType);
+    const propertyTypeName = typeDescriptor?.displayName ?? propertyType;
 
     return (
-      <div>
+      <div class="relative">
+
         <div class={expressionEditorClass}>
+
           <elsa-monaco-editor
             value={value}
             language={monacoLanguage}
@@ -153,6 +159,9 @@ export class InputControlSwitch {
           <slot/>
         </div>
         <Hint text={this.hint}/>
+        <div class="pointer-events-none absolute inset-y-0 right-0 top-0 flex items-center pr-10">
+          <span class="text-gray-500 sm:text-sm">{propertyTypeName}</span>
+        </div>
       </div>
     );
   }

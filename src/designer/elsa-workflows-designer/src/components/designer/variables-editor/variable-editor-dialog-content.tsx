@@ -1,8 +1,10 @@
 import {Component, h, Prop, Event, EventEmitter, Method} from "@stencil/core";
+import {_, groupBy} from 'lodash';
 import {StorageDriverDescriptor, Variable} from "../../../models";
 import {FormEntry} from "../../shared/forms/form-entry";
 import {isNullOrWhitespace} from "../../../utils";
 import descriptorsStore from '../../../data/descriptors-store';
+import {VariableDescriptor} from "../../../services/api-client/variable-descriptors-api";
 
 @Component({
   tag: 'elsa-variable-editor-dialog-content',
@@ -22,7 +24,8 @@ export class VariableEditorDialogContent {
   render() {
     const variable: Variable = this.variable ?? {name: '', typeName: 'Object'};
     const variableTypeName = variable.typeName;
-    const availableTypeNames: Array<string> = ['Object', 'String', 'Boolean', 'Int32', 'Int64', 'Single', 'Double']; // TODO: Fetch these from backend.
+    const availableTypes: Array<VariableDescriptor> = descriptorsStore.variableDescriptors;
+    const groupedVariableTypes = _.groupBy(availableTypes, x => x.category);
     const storageDrivers: Array<StorageDriverDescriptor> = [{id: null, displayName: '-'}, ...descriptorsStore.storageDrivers];
 
     return (
@@ -38,7 +41,12 @@ export class VariableEditorDialogContent {
 
               <FormEntry fieldId="variableTypeName" label="Type" hint="The type of the variable.">
                 <select id="variableTypeName" name="variableTypeName">
-                  {availableTypeNames.map(typeName => <option value={typeName} selected={typeName == variableTypeName}>{typeName}</option>)}
+                  {Object.keys(groupedVariableTypes).map(category => {
+                    const variableTypes = groupedVariableTypes[category] as Array<VariableDescriptor>;
+                    return (<optgroup label={category}>
+                      {variableTypes.map(descriptor => <option value={descriptor.typeName} selected={descriptor.typeName == variableTypeName}>{descriptor.displayName}</option>)}
+                    </optgroup>);
+                  })}
                 </select>
               </FormEntry>
 

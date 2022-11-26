@@ -74,7 +74,7 @@ public class ActivityDescriber : IActivityDescriber
         {
             Category = category,
             Description = description,
-            Type = fullTypeName,
+            TypeName = fullTypeName,
             Version = typeVersion,
             DisplayName = displayName,
             Kind = isTrigger ? ActivityKind.Trigger : activityAttr?.Kind ?? ActivityKind.Action,

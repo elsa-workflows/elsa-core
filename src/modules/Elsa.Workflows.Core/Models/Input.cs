@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Elsa.Expressions;
 using Elsa.Expressions.Models;
 using Elsa.Expressions.Services;
@@ -14,6 +15,8 @@ public abstract class Input : Argument
     }
 
     public IExpression Expression { get; }
+    
+    [JsonPropertyName("typeName")]
     public Type Type { get; set; }
 }
 

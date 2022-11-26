@@ -70,7 +70,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
     const newName = await this.generateUniqueActivityName(flowchartDescriptor);
 
     const flowchart = {
-      type: flowchartDescriptor.type,
+      type: flowchartDescriptor.typeName,
       version: 1,
       activities: [],
       connections: [],
@@ -176,7 +176,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
 
     const activity: Activity = {
       id: id,
-      type: descriptor.type,
+      type: descriptor.typeName,
       version: descriptor.version,
       applicationProperties: {},
       metadata: {
@@ -275,7 +275,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
     const currentActivityId = this.currentPath[this.currentPath.length - 1].activityId;
     const currentActivity = this.activityLookup[currentActivityId];
     const parentActivity = this.activityLookup[parentActivityId] as Flowchart;
-    const parentActivityDescriptor = descriptorsStore.activityDescriptors.find(x => x.type == parentActivity.type);
+    const parentActivityDescriptor = descriptorsStore.activityDescriptors.find(x => x.typeName == parentActivity.type);
     const indexInParent = currentActivity.activities?.findIndex(x => x == parentActivity);
     const portName = e.detail.port.name;
 
@@ -311,7 +311,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
     const activityId = await this.generateUniqueActivityName(descriptor);
 
     return {
-      type: descriptor.type,
+      type: descriptor.typeName,
       version: descriptor.version,
       id: activityId,
       start: null,
@@ -417,7 +417,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
     await this.setupGraph(flowchart);
   };
 
-  private getActivityDescriptor = (typeName: string): ActivityDescriptor => descriptorsStore.activityDescriptors.find(x => x.type == typeName)
+  private getActivityDescriptor = (typeName: string): ActivityDescriptor => descriptorsStore.activityDescriptors.find(x => x.typeName == typeName)
 
   private setupGraph = async (flowchart: Flowchart) => {
     const activities = flowchart.activities;
@@ -506,7 +506,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
       return this.activity;
 
     const activity = this.activityLookup[currentItem.activityId] as Flowchart;
-    const activityDescriptor = descriptorsStore.activityDescriptors.find(x => x.type == activity.type);
+    const activityDescriptor = descriptorsStore.activityDescriptors.find(x => x.typeName == activity.type);
 
     if (activityDescriptor.isContainer)
       return activity;
@@ -709,7 +709,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
     const item = e.detail;
     const activityId = item.activityId;
     let activity = this.activityLookup[activityId];
-    const activityDescriptor = descriptorsStore.activityDescriptors.find(x => x.type == activity.type);
+    const activityDescriptor = descriptorsStore.activityDescriptors.find(x => x.typeName == activity.type);
     const path = this.currentPath;
     const index = path.indexOf(item);
 

@@ -1,8 +1,12 @@
+using System.ComponentModel;
+using System.Reflection;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Elsa.Telnyx.Activities;
+using Elsa.Telnyx.Client.Models;
 using Elsa.Telnyx.Extensions;
 using Elsa.Telnyx.Options;
+using Elsa.Telnyx.Payloads.Abstract;
 using Elsa.Telnyx.Providers;
 using Elsa.Workflows.Management.Extensions;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,6 +18,8 @@ namespace Elsa.Telnyx.Features;
 /// </summary>
 public class TelnyxFeature : FeatureBase
 {
+    private const string TelnyxCategoryName = "Telnyx";
+
     public TelnyxFeature(IModule module) : base(module)
     {
     }
@@ -24,7 +30,21 @@ public class TelnyxFeature : FeatureBase
 
     public override void Configure()
     {
-        Module.UseWorkflowManagement(management => management.AddActivitiesFrom<IncomingCall>());
+        Module.UseWorkflowManagement(management =>
+        {
+            management.AddActivitiesFrom<IncomingCall>();
+            
+            management.AddVariableTypes(typeof(TelnyxFeature).Assembly.ExportedTypes.Where(x =>
+            {
+                var browsableAttr = x.GetCustomAttribute<BrowsableAttribute>();
+                return typeof(Payload).IsAssignableFrom(x) && browsableAttr == null || browsableAttr?.Browsable == true;
+            }), TelnyxCategoryName);
+
+            management.AddVariableType<DialResponse>(TelnyxCategoryName);
+            management.AddVariableType<NumberLookupResponse>(TelnyxCategoryName);
+            management.AddVariableType<Carrier>(TelnyxCategoryName);
+            management.AddVariableType<CallerName>(TelnyxCategoryName);
+        });
     }
 
     public override void Apply()

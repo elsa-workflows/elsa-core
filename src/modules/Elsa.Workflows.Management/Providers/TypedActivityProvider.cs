@@ -9,9 +9,9 @@ namespace Elsa.Workflows.Management.Providers;
 public class TypedActivityProvider : IActivityProvider
 {
     private readonly IActivityDescriber _activityDescriber;
-    private readonly ApiOptions _options;
+    private readonly ManagementOptions _options;
 
-    public TypedActivityProvider(IOptions<ApiOptions> options, IActivityDescriber activityDescriber)
+    public TypedActivityProvider(IOptions<ManagementOptions> options, IActivityDescriber activityDescriber)
     {
         _activityDescriber = activityDescriber;
         _options = options.Value;

@@ -70,7 +70,7 @@ export class ToolboxActivities {
     const activityDriverRegistry = Container.get(ActivityDriverRegistry);
 
     for (const activityDescriptor of browsableDescriptors) {
-      const activityType = activityDescriptor.type;
+      const activityType = activityDescriptor.typeName;
       const driver = activityDriverRegistry.createDriver(activityType);
       const html = driver.display({displayType: 'picker', activityDescriptor: activityDescriptor});
 
@@ -112,7 +112,7 @@ export class ToolboxActivities {
             <div class={`space-y-0.5 ${categoryContentClass}`}>
 
               {activityDescriptors.map(activityDescriptor => {
-                const activityHtml = renderedActivities.get(activityDescriptor.type);
+                const activityHtml = renderedActivities.get(activityDescriptor.typeName);
                 return (
                   <div class="w-full flex items-center pl-10 pr-2 py-2">
                     <div class="relative cursor-move" onDragStart={e => ToolboxActivities.onActivityStartDrag(e, activityDescriptor)}>

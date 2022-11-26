@@ -46,13 +46,13 @@ public class TypeJsonConverter : JsonConverter<Type>
 
             if (typedEnumerable.IsAssignableFrom(value))
             {
-                var elementTypeAlias = _wellKnownTypeRegistry.TryGetAlias(elementType, out var elementAlias) ? elementAlias : value.AssemblyQualifiedName;
+                var elementTypeAlias = _wellKnownTypeRegistry.TryGetAlias(elementType, out var elementAlias) ? elementAlias : value.GetSimpleAssemblyQualifiedName();
                 JsonSerializer.Serialize(writer, $"{elementTypeAlias}[]", options);
                 return;
             }
         }
 
-        var typeAlias = _wellKnownTypeRegistry.TryGetAlias(value, out var @alias) ? alias : value.AssemblyQualifiedName;
+        var typeAlias = _wellKnownTypeRegistry.TryGetAlias(value, out var @alias) ? alias : value.GetSimpleAssemblyQualifiedName();
         JsonSerializer.Serialize(writer, typeAlias, options);
     }
 }
