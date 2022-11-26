@@ -12,6 +12,7 @@ public class WellKnownTypeRegistry : IWellKnownTypeRegistry
         this.RegisterType<object>("Object");
         this.RegisterType<string>("String");
         this.RegisterType<bool>("Boolean");
+        this.RegisterType<short>("Int16");
         this.RegisterType<int>("Int32");
         this.RegisterType<long>("Int64");
         this.RegisterType<decimal>("Decimal");
@@ -20,6 +21,8 @@ public class WellKnownTypeRegistry : IWellKnownTypeRegistry
         this.RegisterType<DateTime>("DateTime");
         this.RegisterType<DateTimeOffset>("DateTimeOffset");
         this.RegisterType<TimeSpan>("TimeSpan");
+        this.RegisterType<DateOnly>("DateOnly");
+        this.RegisterType<TimeOnly>("TimeOnly");
     }
         
     public void RegisterType(Type type, string alias)

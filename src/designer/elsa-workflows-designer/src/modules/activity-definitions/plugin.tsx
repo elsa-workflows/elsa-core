@@ -66,7 +66,7 @@ export class ActivityDefinitionsPlugin implements Plugin {
     const newName = await this.generateUniqueActivityName(flowchartDescriptor);
 
     const flowchart = {
-      type: flowchartDescriptor.type,
+      type: flowchartDescriptor.typeName,
       version: 1,
       activities: [],
       connections: [],
@@ -92,7 +92,7 @@ export class ActivityDefinitionsPlugin implements Plugin {
   };
 
   private getFlowchartDescriptor = () => this.getActivityDescriptor(FlowchartTypeName);
-  private getActivityDescriptor = (typeName: string): ActivityDescriptor => descriptorsStore.activityDescriptors.find(x => x.type == typeName)
+  private getActivityDescriptor = (typeName: string): ActivityDescriptor => descriptorsStore.activityDescriptors.find(x => x.typeName == typeName)
   private generateUniqueActivityName = async (activityDescriptor: ActivityDescriptor): Promise<string> => await generateUniqueActivityName([], activityDescriptor);
 
   private saveActivityDefinition = async (definition: ActivityDefinition, publish: boolean): Promise<ActivityDefinition> => {

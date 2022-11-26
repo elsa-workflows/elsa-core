@@ -40,7 +40,7 @@ public class ActivityDefinitionActivityProvider : IActivityProvider
     {
         return new()
         {
-            Type = definition.Type,
+            TypeName = definition.Type,
             Version = definition.Version,
             DisplayName = definition.DisplayName.WithDefault(definition.Type),
             Description = definition.Description,

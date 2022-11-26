@@ -3,6 +3,7 @@ import {LiteralExpression, SyntaxNames} from "../../models";
 import {ActivityInputContext} from "../../services/node-input-driver";
 import {getInputPropertyValue} from "../../utils";
 import {ExpressionChangedArs} from "../designer/input-control-switch/input-control-switch";
+import descriptorsStore from "../../data/descriptors-store";
 
 @Component({
   tag: 'elsa-single-line-input',
@@ -21,10 +22,13 @@ export class SingleLineInput {
     const input = getInputPropertyValue(inputContext);
     const value = (input?.expression as LiteralExpression)?.value; // TODO: The "value" field is currently hardcoded, but we should be able to be more flexible and potentially have different fields for a given syntax.
     const syntax = input?.expression?.type ?? inputDescriptor.defaultSyntax;
+    const propertyType = inputDescriptor.typeName;
+    const typeDescriptor = descriptorsStore.variableDescriptors.find(x => x.typeName == propertyType);
+    const propertyTypeName = typeDescriptor?.displayName ?? propertyType;
 
     return (
       <elsa-input-control-switch label={displayName} hint={hint} syntax={syntax} expression={value} onExpressionChanged={this.onExpressionChanged}>
-        <input type="text" name={fieldName} id={fieldId} value={value} onChange={this.onPropertyEditorChanged}/>
+          <input type="text" name={fieldName} id={fieldId} value={value} onChange={this.onPropertyEditorChanged}/>
       </elsa-input-control-switch>
     );
   }

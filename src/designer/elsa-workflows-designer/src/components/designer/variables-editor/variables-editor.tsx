@@ -63,11 +63,13 @@ export class VariablesEditor {
             {variables.map(variable => {
                 const storage = storageDrivers.find(x => x.id == variable.storageDriverId);
                 const storageName = storage?.displayName ?? '-';
+                const descriptor = descriptorsStore.variableDescriptors.find(x => x.typeName == variable.typeName);
+                const typeDisplayName = descriptor?.displayName ?? variable.typeName;
 
                 return (
                   <tr>
                     <td class="whitespace-nowrap">{variable.name}</td>
-                    <td class="whitespace-nowrap">{variable.typeName}</td>
+                    <td class="whitespace-nowrap">{typeDisplayName}</td>
                     <td>{variable.value}</td>
                     <td>{storageName}</td>
                     <td class="pr-6">

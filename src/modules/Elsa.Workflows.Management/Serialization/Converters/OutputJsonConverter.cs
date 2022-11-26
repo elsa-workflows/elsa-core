@@ -12,6 +12,7 @@ public class OutputJsonConverter<T> : JsonConverter<Output<T>?>
 {
     private readonly IWellKnownTypeRegistry _wellKnownTypeRegistry;
 
+    /// <inheritdoc />
     public OutputJsonConverter(IWellKnownTypeRegistry wellKnownTypeRegistry)
     {
         _wellKnownTypeRegistry = wellKnownTypeRegistry;
@@ -24,7 +25,7 @@ public class OutputJsonConverter<T> : JsonConverter<Output<T>?>
         if (!JsonDocument.TryParseValue(ref reader, out var doc))
             return null;
 
-        if (!doc.RootElement.TryGetProperty("type", out var outputTargetTypeElement))
+        if (!doc.RootElement.TryGetProperty("typeName", out var outputTargetTypeElement))
             return null;
 
         var memoryReferenceElement = doc.RootElement.GetProperty("memoryReference");
@@ -43,7 +44,7 @@ public class OutputJsonConverter<T> : JsonConverter<Output<T>?>
 
         var model = new
         {
-            Type = valueTypeAlias,
+            TypeName = valueTypeAlias,
             MemoryReference = value == null ? null : new
             {
                 Id = value.MemoryBlockReference().Id

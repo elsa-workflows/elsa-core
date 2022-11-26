@@ -201,7 +201,7 @@ export function createGraph(
       for (const cell of activityCells) {
         const activity = {...cell.data} as Activity;
         const activityTypeName = activity.type;
-        const activityDescriptor = descriptorsStore.activityDescriptors.find(x => x.type == activityTypeName);
+        const activityDescriptor = descriptorsStore.activityDescriptors.find(x => x.typeName == activityTypeName);
         const currentId = activity.id;
         const idExists = allActivities.find(x => x.id == currentId);
 

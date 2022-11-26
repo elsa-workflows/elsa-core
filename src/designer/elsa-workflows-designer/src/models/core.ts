@@ -38,12 +38,12 @@ export interface Variable {
 }
 
 export interface ActivityInput {
-  type: Type;
+  typeName: Type;
   expression: Expression;
 }
 
 export interface ActivityOutput {
-  type: Type;
+  typeName: Type;
   memoryReference: MemoryReference;
 }
 
@@ -68,7 +68,7 @@ export interface WorkflowState {
 }
 
 export interface ActivityDescriptor {
-  type: string;
+  typeName: string;
   version: number;
   displayName: string;
   category: string;
@@ -83,7 +83,7 @@ export interface ActivityDescriptor {
 
 export interface PropertyDescriptor {
   name: string;
-  type: Type;
+  typeName: Type;
   displayName?: string;
   description?: string;
   order?: number;
