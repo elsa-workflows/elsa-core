@@ -24,9 +24,9 @@ var workflow = new Sequence
     {
         new AskDetails
         {
-            NamePrompt = new Input<string>("What's your name?"),
-            AgePrompt = new Input<string>("What's your age?"),
-            Result = new Output(personVariable)
+            NamePrompt = new ("What's your name?"),
+            AgePrompt = new ("What's your age?"),
+            Result = new(personVariable)
         },
         new WriteLine(context =>
         {

@@ -19,13 +19,13 @@ public class AskDetails : Composite<Person>
             {
                 new AskName
                 {
-                    Prompt = new Input<string>(context => NamePrompt.Get(context)),
-                    Result = new Output(_name)
+                    Prompt = new (context => NamePrompt.Get(context)),
+                    Result = new (_name)
                 },
                 new AskAge
                 {
-                    Prompt = new Input<string>(context => AgePrompt.Get(context)),
-                    Result = new Output(_age)
+                    Prompt = new (context => AgePrompt.Get(context)),
+                    Result = new (_age)
                 }
             }
         };
