@@ -54,7 +54,6 @@ export class VariablesEditor {
             <tr>
               <th scope="col">Name</th>
               <th scope="col">Type</th>
-              <th scope="col">Value</th>
               <th scope="col">Storage</th>
               <th scope="col"/>
             </tr>
@@ -70,7 +69,6 @@ export class VariablesEditor {
                   <tr>
                     <td class="whitespace-nowrap">{variable.name}</td>
                     <td class="whitespace-nowrap">{typeDisplayName}</td>
-                    <td>{variable.value}</td>
                     <td>{storageName}</td>
                     <td class="pr-6">
                       <elsa-context-menu
