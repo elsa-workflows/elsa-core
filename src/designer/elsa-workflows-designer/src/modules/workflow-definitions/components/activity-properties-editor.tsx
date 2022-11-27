@@ -1,6 +1,6 @@
 import {Component, Event, EventEmitter, h, Method, Prop, State} from '@stencil/core';
 import {camelCase} from 'lodash';
-import {Activity, ActivityDescriptor, ActivityKind, ActivityOutput, InputDescriptor, OutputDescriptor, PropertyDescriptor, RenderActivityInputContext, RenderActivityPropsContext, TabChangedArgs, TabDefinition, Variable} from '../../../models';
+import {Activity, ActivityDescriptor, ActivityInput, ActivityKind, ActivityOutput, InputDescriptor, OutputDescriptor, PropertyDescriptor, RenderActivityInputContext, RenderActivityPropsContext, TabChangedArgs, TabDefinition, Variable} from '../../../models';
 import {InputDriverRegistry} from "../../../services";
 import {Container} from "typedi";
 import {ActivityInputContext} from "../../../services/node-input-driver";
@@ -226,13 +226,15 @@ export class ActivityPropertiesEditor {
     const camelCasePropertyName = camelCase(propertyName);
 
     if (isWrapped) {
-      activity[camelCasePropertyName] = {
-        type: inputDescriptor.typeName,
+      const input: ActivityInput = {
+        typeName: inputDescriptor.typeName,
         expression: {
           type: syntax,
           value: propertyValue // TODO: The "value" field is currently hardcoded, but we should be able to be more flexible and potentially have different fields for a given syntax.
         }
       };
+
+      activity[camelCasePropertyName] = input;
     } else {
       activity[camelCasePropertyName] = propertyValue;
     }
