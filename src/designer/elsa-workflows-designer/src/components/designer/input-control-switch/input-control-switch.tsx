@@ -29,6 +29,7 @@ export class InputControlSwitch {
   }
 
   @Prop() label: string;
+  @Prop() hideLabel: boolean;
   @Prop() hint: string;
   @Prop() fieldName?: string;
   @Prop() syntax?: string;
@@ -59,7 +60,7 @@ export class InputControlSwitch {
 
   render() {
 
-    if (!this.label && !this.shouldRenderMonaco()) {
+    if (this.hideLabel && !this.shouldRenderMonaco()) {
       return <div class="p-4">
         <div class="flex">
           <div class="flex-1">
@@ -143,10 +144,8 @@ export class InputControlSwitch {
     const propertyTypeName = typeDescriptor?.displayName ?? propertyType;
 
     return (
-      <div class="relative">
-
+      <div>
         <div class={expressionEditorClass}>
-
           <elsa-monaco-editor
             value={value}
             language={monacoLanguage}
@@ -159,9 +158,6 @@ export class InputControlSwitch {
           <slot/>
         </div>
         <Hint text={this.hint}/>
-        <div class="pointer-events-none absolute inset-y-0 right-0 top-0 flex items-center pr-10">
-          <span class="text-gray-500 sm:text-sm">{propertyTypeName}</span>
-        </div>
       </div>
     );
   }

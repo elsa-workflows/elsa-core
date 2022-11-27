@@ -151,6 +151,7 @@ export namespace Components {
         "defaultSyntax": string;
         "expression"?: string;
         "fieldName"?: string;
+        "hideLabel": boolean;
         "hint": string;
         "isReadOnly"?: boolean;
         "label": string;
@@ -832,6 +833,7 @@ declare namespace LocalJSX {
         "defaultSyntax"?: string;
         "expression"?: string;
         "fieldName"?: string;
+        "hideLabel"?: boolean;
         "hint"?: string;
         "isReadOnly"?: boolean;
         "label"?: string;
