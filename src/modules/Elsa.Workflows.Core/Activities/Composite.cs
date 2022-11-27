@@ -23,6 +23,7 @@ public abstract class Composite : ActivityBase
     /// The activity to schedule when this activity executes.
     /// </summary>
     [Port]
+    [Browsable(false)]
     public IActivity Root { get; set; } = new Sequence();
 
     /// <inheritdoc />
