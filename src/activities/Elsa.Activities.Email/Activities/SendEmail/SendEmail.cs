@@ -79,8 +79,6 @@ namespace Elsa.Activities.Email
         [ActivityInput(Hint = "The body of the email message.", UIHint = ActivityInputUIHints.MultiLine, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string? Body { get; set; }
 
-        [ActivityOutput] public object? ResponseContent { get; set; }
-
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
             var cancellationToken = context.CancellationToken;
