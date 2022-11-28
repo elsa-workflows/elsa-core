@@ -68,7 +68,7 @@ export namespace Components {
     }
     interface ElsaCanvas {
         "addActivity": (args: AddActivityArgs) => Promise<Activity>;
-        "autoLayout": () => Promise<void>;
+        "autoLayout": (direction: "TB" | "BT" | "LR" | "RL") => Promise<void>;
         "exportGraph": () => Promise<Activity>;
         "getRootComponent": () => Promise<ContainerActivityComponent>;
         "importGraph": (root: Activity) => Promise<void>;
@@ -121,7 +121,7 @@ export namespace Components {
     }
     interface ElsaFlowchart {
         "addActivity": (args: AddActivityArgs) => Promise<Activity>;
-        "autoLayout": () => Promise<void>;
+        "autoLayout": (direction: "TB" | "BT" | "LR" | "RL") => Promise<void>;
         "export": () => Promise<Activity>;
         "getCurrentLevel": () => Promise<Activity>;
         "getGraph": () => Promise<Graph>;
@@ -267,7 +267,7 @@ export namespace Components {
         "workflowDefinition"?: WorkflowDefinition;
     }
     interface ElsaWorkflowDefinitionEditorToolbar {
-        "autoLayout": () => Promise<void>;
+        "autoLayout": (direction: "TB" | "BT" | "LR" | "RL") => Promise<void>;
         "zoomToFit": () => Promise<void>;
     }
     interface ElsaWorkflowDefinitionEditorToolbox {
@@ -955,7 +955,7 @@ declare namespace LocalJSX {
         "workflowDefinition"?: WorkflowDefinition;
     }
     interface ElsaWorkflowDefinitionEditorToolbar {
-        "autoLayout"?: () => Promise<void>;
+        "autoLayout"?: (direction: "TB" | "BT" | "LR" | "RL") => Promise<void>;
         "zoomToFit"?: () => Promise<void>;
     }
     interface ElsaWorkflowDefinitionEditorToolbox {
