@@ -57,6 +57,7 @@ public class WorkflowManagementFeature : FeatureBase
         new(typeof(float), PrimitivesCategory, "A real number."),
         new(typeof(double), PrimitivesCategory, "A real number with double precision."),
         new(typeof(decimal), PrimitivesCategory, "A decimal number."),
+        new(typeof(Guid), PrimitivesCategory, "Represents a Globally Unique Identifier."),
         new(typeof(DateTime), PrimitivesCategory, "A value type that represents a date and time."),
         new(typeof(DateTimeOffset), PrimitivesCategory, "A value type that consists of a DateTime and a time zone offset."),
         new(typeof(TimeSpan), PrimitivesCategory, "Represents a duration of time."),
