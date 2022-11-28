@@ -37,6 +37,10 @@ public class ActivityWalker : IActivityWalker
 
         foreach (var port in ports)
         {
+            // Continue if the specified activity was already encountered.
+            if (collectedActivities.Contains(port))
+                continue;
+            
             var childNode = collectedNodes.FirstOrDefault(x => x.Activity == port);
 
             if (childNode == null)
