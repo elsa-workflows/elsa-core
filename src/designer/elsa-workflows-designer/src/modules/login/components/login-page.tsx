@@ -1,8 +1,9 @@
-import {Component, h, State} from "@stencil/core";
+import {Component, h, State, Event, EventEmitter} from "@stencil/core";
 import {LoginApi} from "../services";
 import {Container} from "typedi";
 import jwt_decode from "jwt-decode";
 import {AuthContext} from "../../../services";
+import {SignedInArgs} from "../models";
 
 @Component({
   tag: 'elsa-login-page',
@@ -12,6 +13,7 @@ export class LoginPage {
 
   private loginApi: LoginApi;
 
+  @Event() signedIn: EventEmitter<SignedInArgs>;
   @State() showError: boolean;
 
   constructor() {
@@ -22,7 +24,8 @@ export class LoginPage {
     e.preventDefault();
     this.showError = false;
 
-    window.requestAnimationFrame(() => {});
+    window.requestAnimationFrame(() => {
+    });
 
     const form: HTMLFormElement = e.target as HTMLFormElement;
     const formData = new FormData(form);
@@ -35,6 +38,8 @@ export class LoginPage {
       this.showError = true;
     }
 
+    this.signedIn.emit();
+
     const accessToken = loginResponse.accessToken;
     const claims = jwt_decode<any>(accessToken);
     const permissions = claims.permissions || [];
@@ -44,7 +49,7 @@ export class LoginPage {
   }
 
   private renderError = () => {
-    if(!this.showError)
+    if (!this.showError)
       return;
 
     return <div class="rounded-md bg-red-50 p-4">

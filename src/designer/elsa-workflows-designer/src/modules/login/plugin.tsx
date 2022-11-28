@@ -5,6 +5,8 @@ import {EventTypes, Plugin} from "../../models";
 import {Container, Service} from "typedi";
 import {StudioService, AuthContext, EventBus, ElsaClient, ElsaApiClientProvider} from "../../services";
 import descriptorsStore from '../../data/descriptors-store';
+import jwt_decode from "jwt-decode";
+import {SignedInArgs} from "./models";
 
 @Service()
 export class LoginPlugin implements Plugin {
@@ -22,21 +24,26 @@ export class LoginPlugin implements Plugin {
     const authContext = Container.get(AuthContext);
 
     if (!authContext.getIsSignedIn()) {
-      this.studioService.show(() => <elsa-login-page/>);
-    }
-    else {
-      const elsaClientProvider = Container.get(ElsaApiClientProvider);
-      this.elsaClient = await elsaClientProvider.getElsaClient();
-
-      const activityDescriptors = await this.elsaClient.descriptors.activities.list();
-      const storageDrivers = await this.elsaClient.descriptors.storageDrivers.list();
-      const variableDescriptors = await this.elsaClient.descriptors.variables.list();
-
-      descriptorsStore.activityDescriptors = activityDescriptors;
-      descriptorsStore.storageDrivers = storageDrivers;
-      descriptorsStore.variableDescriptors = variableDescriptors;
+      this.studioService.show(() => <elsa-login-page onSignedIn={this.onSignedIn}/>);
+    } else {
+      await this.loadDescriptors();
     }
   }
+
+  private loadDescriptors = async (): Promise<void> => {
+    const elsaClientProvider = Container.get(ElsaApiClientProvider);
+    this.elsaClient = await elsaClientProvider.getElsaClient();
+
+    const activityDescriptors = await this.elsaClient.descriptors.activities.list();
+    const storageDrivers = await this.elsaClient.descriptors.storageDrivers.list();
+    const variableDescriptors = await this.elsaClient.descriptors.variables.list();
+
+    descriptorsStore.activityDescriptors = activityDescriptors;
+    descriptorsStore.storageDrivers = storageDrivers;
+    descriptorsStore.variableDescriptors = variableDescriptors;
+  };
+
+  private onSignedIn = async (e: CustomEvent<SignedInArgs>) => await this.loadDescriptors();
 
   private onHttpClientCreated = async (e) => {
     const service: MiddlewareService = e.service;
@@ -57,7 +64,7 @@ export class LoginPlugin implements Plugin {
         if (error.response.status !== 401)
           return;
 
-        studioService.show(() => <elsa-login-page/>);
+        studioService.show(() => <elsa-login-page onSignedIn={this.onSignedIn}/>);
       }
     });
   };

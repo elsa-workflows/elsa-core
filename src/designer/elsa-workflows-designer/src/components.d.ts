@@ -23,6 +23,7 @@ import { AddActivityArgs as AddActivityArgs1, RenameActivityArgs as RenameActivi
 import { ActivityNodeShape } from "./modules/flowchart/shapes";
 import { PanelActionClickArgs, PanelActionDefinition } from "./components/shared/form-panel/models";
 import { ExpressionChangedArs } from "./components/designer/input-control-switch/input-control-switch";
+import { SignedInArgs } from "./modules/login/models";
 import { ModalActionClickArgs, ModalActionDefinition, ModalDialogInstance } from "./components/shared/modal-dialog/models";
 import { ModalType } from "./components/shared/modal-dialog/modal-type";
 import { MonacoLib, MonacoValueChangedArgs } from "./components/shared/monaco-editor/monaco-editor";
@@ -863,6 +864,7 @@ declare namespace LocalJSX {
         "selectedLabels"?: Array<string>;
     }
     interface ElsaLoginPage {
+        "onSignedIn"?: (event: CustomEvent<SignedInArgs>) => void;
     }
     interface ElsaModalDialog {
         "actions"?: Array<ModalActionDefinition>;
