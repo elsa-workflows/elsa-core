@@ -16,21 +16,35 @@ public class Delay : Activity
     {
     }
 
-    public Delay(Func<ExpressionExecutionContext, TimeSpan> timeSpan) : this(new Input<TimeSpan>(timeSpan))
+    public Delay(Func<ExpressionExecutionContext, TimeSpan> timeSpan, DelayBlockingStrategy blockingStrategy = DelayBlockingStrategy.NonBlocking) : this(new Input<TimeSpan>(timeSpan))
     {
     }
     
-    public Delay(Func<ExpressionExecutionContext, ValueTask<TimeSpan>> timeSpan) : this(new Input<TimeSpan>(timeSpan))
+    public Delay(Func<ExpressionExecutionContext, ValueTask<TimeSpan>> timeSpan, DelayBlockingStrategy blockingStrategy = DelayBlockingStrategy.NonBlocking) : this(new Input<TimeSpan>(timeSpan))
     {
     }
     
-    public Delay(Input<TimeSpan> timeSpan) => TimeSpan = timeSpan;
-    public Delay(TimeSpan timeSpan) => TimeSpan = new Input<TimeSpan>(timeSpan);
-    public Delay(Variable<TimeSpan> timeSpan) => TimeSpan = new Input<TimeSpan>(timeSpan);
+    public Delay(Input<TimeSpan> timeSpan, DelayBlockingStrategy blockingStrategy = DelayBlockingStrategy.NonBlocking)
+    {
+        TimeSpan = timeSpan;
+        Strategy = blockingStrategy;
+    }
+
+    public Delay(TimeSpan timeSpan, DelayBlockingStrategy blockingStrategy = DelayBlockingStrategy.NonBlocking)
+    {
+        TimeSpan = new Input<TimeSpan>(timeSpan);
+        Strategy = blockingStrategy;
+    }
+
+    public Delay(Variable<TimeSpan> timeSpan, DelayBlockingStrategy blockingStrategy = DelayBlockingStrategy.NonBlocking)
+    {
+        TimeSpan = new Input<TimeSpan>(timeSpan);
+        Strategy = blockingStrategy;
+    }
 
     [Input] public Input<TimeSpan> TimeSpan { get; set; } = default!;
     
-    [Input] public Input<DelayBlockingStrategy> Strategy { get; set; } = default!;
+    [Input] public DelayBlockingStrategy Strategy { get; set; } = DelayBlockingStrategy.NonBlocking;
     
     /// <summary>
     /// The threshold used by the <see cref="DelayBlockingStrategy.Auto"/>
@@ -41,7 +55,7 @@ public class Delay : Activity
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var timeSpan = context.ExpressionExecutionContext.Get(TimeSpan);
-        var blockingMode = context.Get(Strategy);
+        var blockingMode = Strategy;
 
         switch (blockingMode)
         {
@@ -83,11 +97,11 @@ public class Delay : Activity
             await NonBlockingStrategy(timeSpan, context);
     }
 
-    public static Delay FromMilliseconds(double value) => new(System.TimeSpan.FromMilliseconds(value));
-    public static Delay FromSeconds(double value) => new(System.TimeSpan.FromSeconds(value));
-    public static Delay FromMinutes(double value) => new(System.TimeSpan.FromMinutes(value));
-    public static Delay FromHours(double value) => new(System.TimeSpan.FromHours(value));
-    public static Delay FromDays(double value) => new(System.TimeSpan.FromDays(value));
+    public static Delay FromMilliseconds(double value, DelayBlockingStrategy blockingStrategy = DelayBlockingStrategy.NonBlocking) => new(System.TimeSpan.FromMilliseconds(value), blockingStrategy);
+    public static Delay FromSeconds(double value, DelayBlockingStrategy blockingStrategy = DelayBlockingStrategy.NonBlocking) => new(System.TimeSpan.FromSeconds(value), blockingStrategy);
+    public static Delay FromMinutes(double value, DelayBlockingStrategy blockingStrategy = DelayBlockingStrategy.NonBlocking) => new(System.TimeSpan.FromMinutes(value), blockingStrategy);
+    public static Delay FromHours(double value, DelayBlockingStrategy blockingStrategy = DelayBlockingStrategy.NonBlocking) => new(System.TimeSpan.FromHours(value), blockingStrategy);
+    public static Delay FromDays(double value, DelayBlockingStrategy blockingStrategy = DelayBlockingStrategy.NonBlocking) => new(System.TimeSpan.FromDays(value), blockingStrategy);
 }
 
 public record DelayPayload(DateTimeOffset ResumeAt);
