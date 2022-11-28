@@ -8,7 +8,7 @@ import {ExpressionChangedArs} from "../designer/input-control-switch/input-contr
   tag: 'elsa-dropdown-input',
   shadow: false
 })
-export class SingleLineInput {
+export class DropdownInput {
   @Prop() public inputContext: ActivityInputContext;
 
   private selectList: SelectList = {items: [], isFlagsEnum: false};

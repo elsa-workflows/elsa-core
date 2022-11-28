@@ -55,30 +55,18 @@ services
     .AddElsa(elsa => elsa
         .UseWorkflowManagement(management => management
             .UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString))
-            .AddActivity<WriteLine>()
-            .AddActivity<ReadLine>()
-            .AddActivity<If>()
-            .AddActivity<HttpEndpoint>()
-            .AddActivity<WriteHttpResponse>()
-            .AddActivity<Flowchart>()
-            .AddActivity<FlowDecision>()
-            .AddActivity<FlowSwitch>()
-            .AddActivity<FlowJoin>()
-            .AddActivity<Elsa.Scheduling.Activities.Delay>()
-            .AddActivity<Elsa.Scheduling.Activities.Timer>()
-            .AddActivity<ForEach>()
-            .AddActivity<Switch>()
-            .AddActivity<RunJavaScript>()
-            .AddActivity<Event>()
-            .AddActivity<SendHttpRequest>()
-            .AddActivity<ProcessVideo>()
+            .AddActivitiesFrom<WriteLine>()
+            .AddActivitiesFrom<HttpEndpoint>()
+            .AddActivitiesFrom<Elsa.Scheduling.Activities.Delay>()
+            .AddActivitiesFrom<RunJavaScript>()
+            .AddActivitiesFrom<Program>()
         )
         .Use<IdentityFeature>(identity =>
         {
             identity.CreateDefaultUser = true;
             identity.IdentityOptions = options => identitySection.Bind(options);
         })
-        .UseRuntime(runtime =>
+        .UseWorkflowRuntime(runtime =>
         {
             runtime.UseProtoActor(proto => proto.PersistenceProvider = _ => new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString)));
             runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));

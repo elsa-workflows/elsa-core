@@ -6,6 +6,7 @@ import {SyntaxSelectorIcon} from "../../icons/tooling/syntax-selector";
 import {MonacoValueChangedArgs} from "../../shared/monaco-editor/monaco-editor";
 import {Hint} from "../../shared/forms/hint";
 import {mapSyntaxToLanguage} from "../../../utils";
+import descriptorsStore from "../../../data/descriptors-store";
 
 export interface ExpressionChangedArs {
   expression: string;
@@ -28,6 +29,7 @@ export class InputControlSwitch {
   }
 
   @Prop() label: string;
+  @Prop() hideLabel: boolean;
   @Prop() hint: string;
   @Prop() fieldName?: string;
   @Prop() syntax?: string;
@@ -58,7 +60,7 @@ export class InputControlSwitch {
 
   render() {
 
-    if (!this.label && !this.shouldRenderMonaco()) {
+    if (this.hideLabel && !this.shouldRenderMonaco()) {
       return <div class="p-4">
         <div class="flex">
           <div class="flex-1">
@@ -137,6 +139,9 @@ export class InputControlSwitch {
     const showMonaco = !!selectedSyntax && selectedSyntax != 'Literal' && !!this.supportedSyntaxes.find(x => x === selectedSyntax);
     const expressionEditorClass = showMonaco ? 'block' : 'hidden';
     const defaultEditorClass = showMonaco ? 'hidden' : 'block';
+    const propertyType = "Object";
+    const typeDescriptor = descriptorsStore.variableDescriptors.find(x => x.typeName == propertyType);
+    const propertyTypeName = typeDescriptor?.displayName ?? propertyType;
 
     return (
       <div>

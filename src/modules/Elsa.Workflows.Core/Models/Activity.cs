@@ -62,7 +62,7 @@ public abstract class ActivityBaseWithResult : ActivityBase
     public Output? Result { get; set; }
 }
 
-public abstract class Activity<T> : ActivityWithResult
+public abstract class Activity<T> : Activity
 {
     protected Activity()
     {
@@ -72,16 +72,20 @@ public abstract class Activity<T> : ActivityWithResult
     {
     }
 
-    protected Activity(MemoryBlockReference? output) : base(output)
+    protected Activity(MemoryBlockReference? output)
     {
+        if (output != null) Result = new Output<T>(output);
     }
 
-    protected Activity(Output<T>? output) : base(output)
+    protected Activity(Output<T>? output)
     {
+        Result = output;
     }
+    
+    public Output<T>? Result { get; set; }
 }
 
-public abstract class ActivityBase<T> : ActivityBaseWithResult
+public abstract class ActivityBase<T> : ActivityBase
 {
     protected ActivityBase()
     {
@@ -91,11 +95,15 @@ public abstract class ActivityBase<T> : ActivityBaseWithResult
     {
     }
 
-    protected ActivityBase(MemoryBlockReference? output) : base(output)
+    protected ActivityBase(MemoryBlockReference? output)
     {
+        if (output != null) Result = new Output<T>(output);
     }
 
-    protected ActivityBase(Output<T>? output) : base(output)
+    protected ActivityBase(Output<T>? output)
     {
+        Result = output;
     }
+    
+    public Output<T>? Result { get; set; }
 }

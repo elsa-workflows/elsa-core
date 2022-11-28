@@ -1,5 +1,5 @@
 import {Component, h, Prop, State, Event, EventEmitter, Listen, Element} from "@stencil/core";
-import {ActivityIcon, ActivityIconRegistry, PortProviderRegistry} from "../../services";
+import {ActivityIconProducer, ActivityIconRegistry, PortProviderRegistry} from "../../services";
 import {Container} from "typedi";
 import {Activity, ActivityDescriptor, ActivityKind, ActivitySelectedArgs, ChildActivitySelectedArgs, EditChildActivityArgs, Port, PortMode} from "../../models";
 import descriptorsStore from "../../data/descriptors-store";
@@ -14,7 +14,7 @@ export class DefaultActivityTemplate {
   private readonly iconRegistry: ActivityIconRegistry;
   private readonly portProviderRegistry: PortProviderRegistry;
   private activityDescriptor: ActivityDescriptor;
-  private icon: ActivityIcon;
+  private icon: ActivityIconProducer;
   private portElements: Array<HTMLElement> = [];
 
   constructor() {
@@ -34,7 +34,7 @@ export class DefaultActivityTemplate {
     const iconRegistry = this.iconRegistry;
     const activityType = this.activityType;
     const activityTypeVersion = this.activityTypeVersion ?? 0;
-    this.activityDescriptor = descriptorsStore.activityDescriptors.find(x => x.type == activityType && x.version == activityTypeVersion);
+    this.activityDescriptor = descriptorsStore.activityDescriptors.find(x => x.typeName == activityType && x.version == activityTypeVersion);
     this.icon = iconRegistry.has(activityType) ? iconRegistry.get(activityType) : null;
   }
 
@@ -90,7 +90,7 @@ export class DefaultActivityTemplate {
     )
   }
 
-  private renderIcon = (icon?: ActivityIcon): string => {
+  private renderIcon = (icon?: ActivityIconProducer): string => {
     const iconCssClass = this.displayTypeIsPicker ? 'px-2' : 'px-4';
 
     if (!icon)
@@ -109,7 +109,7 @@ export class DefaultActivityTemplate {
       return;
 
     const activityDescriptor = this.activityDescriptor;
-    const portProvider = this.portProviderRegistry.get(activityDescriptor.type);
+    const portProvider = this.portProviderRegistry.get(activityDescriptor.typeName);
     const ports = portProvider.getOutboundPorts({ activityDescriptor, activity });
     const embeddedPorts = ports.filter(x => x.mode == PortMode.Embedded);
 
@@ -128,9 +128,9 @@ export class DefaultActivityTemplate {
     const textColor = canStartWorkflow ? 'text-white' : 'text-gray-700';
     const borderColor = port.name == this.selectedPortName ? 'border-blue-600' : 'border-gray-300';
     const activityDescriptor = this.activityDescriptor;
-    const portProvider = this.portProviderRegistry.get(activityDescriptor.type);
+    const portProvider = this.portProviderRegistry.get(activityDescriptor.typeName);
     const activityProperty = portProvider.resolvePort(port.name, { activity, activityDescriptor }) as Activity;
-    const childActivityDescriptor: ActivityDescriptor = activityProperty != null ? descriptorsStore.activityDescriptors.find(x => x.type == activityProperty.type) : null;
+    const childActivityDescriptor: ActivityDescriptor = activityProperty != null ? descriptorsStore.activityDescriptors.find(x => x.typeName == activityProperty.type) : null;
     let childActivityDisplayText = activityProperty?.metadata?.displayText;
 
     if (isNullOrWhitespace(childActivityDisplayText))

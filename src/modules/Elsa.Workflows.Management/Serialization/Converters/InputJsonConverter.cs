@@ -13,6 +13,7 @@ public class InputJsonConverter<T> : JsonConverter<Input<T>>
 {
     private readonly IExpressionSyntaxRegistry _expressionSyntaxRegistry;
 
+    /// <inheritdoc />
     public InputJsonConverter(IExpressionSyntaxRegistry expressionSyntaxRegistry)
     {
         _expressionSyntaxRegistry = expressionSyntaxRegistry;
@@ -28,7 +29,7 @@ public class InputJsonConverter<T> : JsonConverter<Input<T>>
         if (doc.RootElement.ValueKind != JsonValueKind.Object)
             return default!;
         
-        if (!doc.RootElement.TryGetProperty("type", out var inputTargetTypeElement))
+        if (!doc.RootElement.TryGetProperty("typeName", out var inputTargetTypeElement))
             return default!;
 
         var expressionElement = doc.RootElement.GetProperty("expression");
@@ -61,7 +62,7 @@ public class InputJsonConverter<T> : JsonConverter<Input<T>>
 
         var model = new
         {
-            Type = targetType,
+            TypeName = targetType,
             Expression = expressionSyntaxDescriptor.CreateSerializableObject(new SerializableObjectConstructorContext(expression))
         };
 

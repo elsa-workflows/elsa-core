@@ -37,7 +37,7 @@ internal class TriggerWebhookDrivenActivities : INotificationHandler<TelnyxWebho
         var bookmarkPayload = new WebhookEventBookmarkPayload(eventType);
 
         foreach (var activityDescriptor in activityDescriptors)
-            await _workflowRuntime.ResumeWorkflowsAsync(activityDescriptor.Type, bookmarkPayload, new ResumeWorkflowRuntimeOptions(correlationId, Input: input), cancellationToken);
+            await _workflowRuntime.ResumeWorkflowsAsync(activityDescriptor.TypeName, bookmarkPayload, new ResumeWorkflowRuntimeOptions(correlationId, Input: input), cancellationToken);
     }
 
     private IEnumerable<ActivityDescriptor> FindActivityDescriptors(string eventType) =>

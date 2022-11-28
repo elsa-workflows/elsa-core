@@ -97,7 +97,7 @@ export class ActivityNodeShape extends Shape.HTML {
   createHtml() {
     const activityDescriptor = this.activityDescriptor as ActivityDescriptor;
     const activity = this.activity as Activity;
-    const activityType = activityDescriptor.type;
+    const activityType = activityDescriptor.typeName;
     const driverRegistry = Container.get(ActivityDriverRegistry);
     const driver = driverRegistry.createDriver(activityType);
 

@@ -15,6 +15,7 @@ import { AddActivityArgs, RenameActivityArgs, UpdateActivityArgs } from "./compo
 import { ActivityInputContext } from "./services/node-input-driver";
 import { ContextMenuAnchorPoint, MenuItem, MenuItemGroup } from "./components/shared/context-menu/models";
 import { DropdownButtonItem, DropdownButtonOrigin } from "./components/shared/dropdown-button/models";
+import { WorkflowDefinition, WorkflowDefinitionSummary } from "./modules/workflow-definitions/models/entities";
 import { Flowchart, FlowchartNavigationItem } from "./modules/flowchart/models";
 import { Graph } from "@antv/x6";
 import { OutNode } from "@antv/layout";
@@ -27,7 +28,6 @@ import { ModalType } from "./components/shared/modal-dialog/modal-type";
 import { MonacoLib, MonacoValueChangedArgs } from "./components/shared/monaco-editor/monaco-editor";
 import { PagerData } from "./components/shared/pager/pager";
 import { PanelPosition, PanelStateChangedArgs } from "./components/panel/models";
-import { WorkflowDefinition, WorkflowDefinitionSummary } from "./modules/workflow-definitions/models/entities";
 import { WorkflowDefinitionPropsUpdatedArgs, WorkflowDefinitionUpdatedArgs } from "./modules/workflow-definitions/models/ui";
 import { PublishClickedArgs as PublishClickedArgs1 } from "./modules/workflow-definitions/components/publish-button";
 export namespace Components {
@@ -132,6 +132,7 @@ export namespace Components {
         "scrollToStart": () => Promise<void>;
         "updateActivity": (args: UpdateActivityArgs) => Promise<void>;
         "updateLayout": () => Promise<void>;
+        "workflowDefinition": WorkflowDefinition;
         "zoomToFit": () => Promise<void>;
     }
     interface ElsaFormPanel {
@@ -150,6 +151,7 @@ export namespace Components {
         "defaultSyntax": string;
         "expression"?: string;
         "fieldName"?: string;
+        "hideLabel": boolean;
         "hint": string;
         "isReadOnly"?: boolean;
         "label": string;
@@ -244,6 +246,9 @@ export namespace Components {
         "getVariable": () => Promise<Variable>;
         "variable": Variable;
     }
+    interface ElsaVariablePickerInput {
+        "inputContext": ActivityInputContext;
+    }
     interface ElsaVariablesEditor {
         "variables"?: Array<Variable>;
     }
@@ -304,8 +309,8 @@ export namespace Components {
         "workflowInstance": WorkflowInstance;
     }
     interface ElsaWorkflowNavigator {
-        "flowchart": Flowchart;
         "items": Array<FlowchartNavigationItem>;
+        "workflowDefinition": WorkflowDefinition;
     }
     interface ElsaWorkflowPublishButton {
         "publishing": boolean;
@@ -562,6 +567,12 @@ declare global {
         prototype: HTMLElsaVariableEditorDialogContentElement;
         new (): HTMLElsaVariableEditorDialogContentElement;
     };
+    interface HTMLElsaVariablePickerInputElement extends Components.ElsaVariablePickerInput, HTMLStencilElement {
+    }
+    var HTMLElsaVariablePickerInputElement: {
+        prototype: HTMLElsaVariablePickerInputElement;
+        new (): HTMLElsaVariablePickerInputElement;
+    };
     interface HTMLElsaVariablesEditorElement extends Components.ElsaVariablesEditor, HTMLStencilElement {
     }
     var HTMLElsaVariablesEditorElement: {
@@ -700,6 +711,7 @@ declare global {
         "elsa-switch-editor": HTMLElsaSwitchEditorElement;
         "elsa-tooltip": HTMLElsaTooltipElement;
         "elsa-variable-editor-dialog-content": HTMLElsaVariableEditorDialogContentElement;
+        "elsa-variable-picker-input": HTMLElsaVariablePickerInputElement;
         "elsa-variables-editor": HTMLElsaVariablesEditorElement;
         "elsa-workflow-definition-browser": HTMLElsaWorkflowDefinitionBrowserElement;
         "elsa-workflow-definition-editor": HTMLElsaWorkflowDefinitionEditorElement;
@@ -800,6 +812,7 @@ declare namespace LocalJSX {
         "onActivitySelected"?: (event: CustomEvent<ActivitySelectedArgs>) => void;
         "onContainerSelected"?: (event: CustomEvent<ContainerSelectedArgs>) => void;
         "onGraphUpdated"?: (event: CustomEvent<GraphUpdatedArgs>) => void;
+        "workflowDefinition"?: WorkflowDefinition;
     }
     interface ElsaFormPanel {
         "actions"?: Array<PanelActionDefinition>;
@@ -820,6 +833,7 @@ declare namespace LocalJSX {
         "defaultSyntax"?: string;
         "expression"?: string;
         "fieldName"?: string;
+        "hideLabel"?: boolean;
         "hint"?: string;
         "isReadOnly"?: boolean;
         "label"?: string;
@@ -922,6 +936,9 @@ declare namespace LocalJSX {
         "onVariableChanged"?: (event: CustomEvent<Variable>) => void;
         "variable"?: Variable;
     }
+    interface ElsaVariablePickerInput {
+        "inputContext"?: ActivityInputContext;
+    }
     interface ElsaVariablesEditor {
         "onVariablesChanged"?: (event: CustomEvent<Array<Variable>>) => void;
         "variables"?: Array<Variable>;
@@ -978,9 +995,9 @@ declare namespace LocalJSX {
         "workflowInstance"?: WorkflowInstance;
     }
     interface ElsaWorkflowNavigator {
-        "flowchart"?: Flowchart;
         "items"?: Array<FlowchartNavigationItem>;
         "onNavigate"?: (event: CustomEvent<FlowchartNavigationItem>) => void;
+        "workflowDefinition"?: WorkflowDefinition;
     }
     interface ElsaWorkflowPublishButton {
         "onExportClicked"?: (event: CustomEvent<any>) => void;
@@ -1036,6 +1053,7 @@ declare namespace LocalJSX {
         "elsa-switch-editor": ElsaSwitchEditor;
         "elsa-tooltip": ElsaTooltip;
         "elsa-variable-editor-dialog-content": ElsaVariableEditorDialogContent;
+        "elsa-variable-picker-input": ElsaVariablePickerInput;
         "elsa-variables-editor": ElsaVariablesEditor;
         "elsa-workflow-definition-browser": ElsaWorkflowDefinitionBrowser;
         "elsa-workflow-definition-editor": ElsaWorkflowDefinitionEditor;
@@ -1099,6 +1117,7 @@ declare module "@stencil/core" {
             "elsa-switch-editor": LocalJSX.ElsaSwitchEditor & JSXBase.HTMLAttributes<HTMLElsaSwitchEditorElement>;
             "elsa-tooltip": LocalJSX.ElsaTooltip & JSXBase.HTMLAttributes<HTMLElsaTooltipElement>;
             "elsa-variable-editor-dialog-content": LocalJSX.ElsaVariableEditorDialogContent & JSXBase.HTMLAttributes<HTMLElsaVariableEditorDialogContentElement>;
+            "elsa-variable-picker-input": LocalJSX.ElsaVariablePickerInput & JSXBase.HTMLAttributes<HTMLElsaVariablePickerInputElement>;
             "elsa-variables-editor": LocalJSX.ElsaVariablesEditor & JSXBase.HTMLAttributes<HTMLElsaVariablesEditorElement>;
             "elsa-workflow-definition-browser": LocalJSX.ElsaWorkflowDefinitionBrowser & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionBrowserElement>;
             "elsa-workflow-definition-editor": LocalJSX.ElsaWorkflowDefinitionEditor & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionEditorElement>;

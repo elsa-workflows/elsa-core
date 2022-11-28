@@ -7,7 +7,7 @@ namespace Elsa.Workflows.Runtime.Extensions;
 
 public static class DependencyInjectionExtensions
 {
-    public static IModule UseRuntime(this IModule module, Action<WorkflowRuntimeFeature>? configure = default)
+    public static IModule UseWorkflowRuntime(this IModule module, Action<WorkflowRuntimeFeature>? configure = default)
     {
         module.Configure(configure);
         return module;

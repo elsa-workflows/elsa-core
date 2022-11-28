@@ -74,7 +74,7 @@ public class ActivityDescriber : IActivityDescriber
         {
             Category = category,
             Description = description,
-            Type = fullTypeName,
+            TypeName = fullTypeName,
             Version = typeVersion,
             DisplayName = displayName,
             Kind = isTrigger ? ActivityKind.Trigger : activityAttr?.Kind ?? ActivityKind.Action,
@@ -102,12 +102,14 @@ public class ActivityDescriber : IActivityDescriber
             var inputAttribute = propertyInfo.GetCustomAttribute<InputAttribute>();
             var descriptionAttribute = propertyInfo.GetCustomAttribute<DescriptionAttribute>();
             var propertyType = propertyInfo.PropertyType;
-            var wrappedPropertyType = !typeof(Input).IsAssignableFrom(propertyType) ? propertyType : propertyInfo.PropertyType.GenericTypeArguments[0];
+            var isWrappedProperty = typeof(Input).IsAssignableFrom(propertyType);
+            var wrappedPropertyType = !isWrappedProperty ? propertyType : propertyInfo.PropertyType.GenericTypeArguments[0];
 
             yield return new InputDescriptor
             (
                 inputAttribute?.Name ?? propertyInfo.Name,
                 wrappedPropertyType,
+                isWrappedProperty,
                 GetUIHint(wrappedPropertyType, inputAttribute),
                 inputAttribute?.DisplayName ?? propertyInfo.Name.Humanize(LetterCasing.Title),
                 descriptionAttribute?.Description ?? inputAttribute?.Description,
@@ -159,6 +161,9 @@ public class ActivityDescriber : IActivityDescriber
 
         if (wrappedPropertyType.IsEnum || wrappedPropertyType.IsNullableType() && wrappedPropertyType.GetTypeOfNullable().IsEnum)
             return InputUIHints.Dropdown;
+        
+        if (wrappedPropertyType == typeof(Variable))
+            return InputUIHints.VariablePicker;
 
         return InputUIHints.SingleLine;
     }

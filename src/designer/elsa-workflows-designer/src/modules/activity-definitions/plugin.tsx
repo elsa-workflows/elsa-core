@@ -3,7 +3,7 @@ import {h} from "@stencil/core";
 import {Container, Service} from "typedi";
 import {ActivityDescriptor, Plugin} from "../../models";
 import newButtonItemStore from "../../data/new-button-item-store";
-import {MenuItem} from "../../components/shared/context-menu/models";
+import {MenuItem, MenuItemGroup} from "../../components/shared/context-menu/models";
 import {Flowchart} from "../flowchart/models";
 import {generateUniqueActivityName} from '../../utils/generate-activity-name';
 import descriptorsStore from "../../data/descriptors-store";
@@ -43,13 +43,17 @@ export class ActivityDefinitionsPlugin implements Plugin {
       clickHandler: this.onNewActivityDefinitionClick
     }
 
+    const newItemGroup: MenuItemGroup = {
+      menuItems: [newActivityDefinitionItem]
+    };
+
     const activityDefinitionBrowserItem: ToolbarMenuItem = {
       text: 'Activity Definitions',
       onClick: this.onBrowseActivityDefinitions,
       order: 5
     };
 
-    newButtonItemStore.items = [...newButtonItemStore.items, newActivityDefinitionItem];
+    newButtonItemStore.items = [...newButtonItemStore.items, newItemGroup];
     toolbarButtonMenuItemStore.items = [...toolbarButtonMenuItemStore.items, activityDefinitionBrowserItem];
   }
 
@@ -62,7 +66,7 @@ export class ActivityDefinitionsPlugin implements Plugin {
     const newName = await this.generateUniqueActivityName(flowchartDescriptor);
 
     const flowchart = {
-      type: flowchartDescriptor.type,
+      type: flowchartDescriptor.typeName,
       version: 1,
       activities: [],
       connections: [],
@@ -88,7 +92,7 @@ export class ActivityDefinitionsPlugin implements Plugin {
   };
 
   private getFlowchartDescriptor = () => this.getActivityDescriptor(FlowchartTypeName);
-  private getActivityDescriptor = (typeName: string): ActivityDescriptor => descriptorsStore.activityDescriptors.find(x => x.type == typeName)
+  private getActivityDescriptor = (typeName: string): ActivityDescriptor => descriptorsStore.activityDescriptors.find(x => x.typeName == typeName)
   private generateUniqueActivityName = async (activityDescriptor: ActivityDescriptor): Promise<string> => await generateUniqueActivityName([], activityDescriptor);
 
   private saveActivityDefinition = async (definition: ActivityDefinition, publish: boolean): Promise<ActivityDefinition> => {

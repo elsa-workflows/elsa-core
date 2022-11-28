@@ -4,11 +4,16 @@ using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Materializers;
+using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Runtime.Services;
+using FastEndpoints;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Import;
 
+/// <summary>
+/// Imports a JSON file containing a workflow definition.
+/// </summary>
 public class Import : ElsaEndpoint<WorkflowDefinitionRequest, WorkflowDefinitionResponse>
 {
     private readonly SerializerOptionsProvider _serializerOptionsProvider;
@@ -16,6 +21,7 @@ public class Import : ElsaEndpoint<WorkflowDefinitionRequest, WorkflowDefinition
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly VariableDefinitionMapper _variableDefinitionMapper;
 
+    /// <inheritdoc />
     public Import(
         SerializerOptionsProvider serializerOptionsProvider,
         IWorkflowDefinitionPublisher workflowDefinitionPublisher,
@@ -28,12 +34,15 @@ public class Import : ElsaEndpoint<WorkflowDefinitionRequest, WorkflowDefinition
         _variableDefinitionMapper = variableDefinitionMapper;
     }
 
+    /// <inheritdoc />
     public override void Configure()
     {
-        Post("workflow-definitions/import", "workflow-definitions/{definitionId}/import");
+        Routes("workflow-definitions/import", "workflow-definitions/{definitionId}/import");
+        Verbs(Http.POST, Http.PUT);
         ConfigurePermissions("write:workflow-definitions");
     }
 
+    /// <inheritdoc />
     public override async Task HandleAsync(WorkflowDefinitionRequest request, CancellationToken cancellationToken)
     {
         var definitionId = request.DefinitionId;
@@ -64,9 +73,9 @@ public class Import : ElsaEndpoint<WorkflowDefinitionRequest, WorkflowDefinition
         draft.MaterializerName = JsonWorkflowMaterializer.MaterializerName;
         draft.Name = request.Name?.Trim();
         draft.Description = request.Description?.Trim();
-        draft.Metadata = request.Metadata;
+        draft.Metadata = request.Metadata ?? new Dictionary<string, object>();
         draft.Variables = variables;
-        draft.ApplicationProperties = request.ApplicationProperties;
+        draft.ApplicationProperties = request.ApplicationProperties ?? new Dictionary<string, object>();
         draft = request.Publish ? await _workflowDefinitionPublisher.PublishAsync(draft, cancellationToken) : await _workflowDefinitionPublisher.SaveDraftAsync(draft, cancellationToken);
 
         // Materialize the workflow definition for serialization.
@@ -79,7 +88,7 @@ public class Import : ElsaEndpoint<WorkflowDefinitionRequest, WorkflowDefinition
             draft.Description,
             draft.CreatedAt,
             draft.Version,
-            request.Variables,
+            request.Variables ?? new List<VariableDefinition>(),
             draft.Metadata,
             draft.ApplicationProperties,
             draft.IsLatest,

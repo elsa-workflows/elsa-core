@@ -1,12 +1,13 @@
 import {Component, Event, EventEmitter, h, Method, Prop, State} from '@stencil/core';
 import {camelCase} from 'lodash';
-import {Activity, ActivityDescriptor, ActivityKind, ActivityOutput, InputDescriptor, OutputDescriptor, PropertyDescriptor, RenderActivityInputContext, RenderActivityPropsContext, TabChangedArgs, TabDefinition, Variable} from '../../../models';
+import {Activity, ActivityDescriptor, ActivityInput, ActivityKind, ActivityOutput, InputDescriptor, OutputDescriptor, PropertyDescriptor, RenderActivityInputContext, RenderActivityPropsContext, TabChangedArgs, TabDefinition, Variable} from '../../../models';
 import {InputDriverRegistry} from "../../../services";
 import {Container} from "typedi";
 import {ActivityInputContext} from "../../../services/node-input-driver";
 import {CheckboxFormEntry, FormEntry} from "../../../components/shared/forms/form-entry";
 import {isNullOrWhitespace} from "../../../utils";
 import descriptorsStore from "../../../data/descriptors-store";
+import {Input} from "postcss";
 
 export interface ActivityUpdatedArgs {
   originalId: string;
@@ -61,7 +62,7 @@ export class ActivityPropertiesEditor {
     const activity = this.activity;
     const activityId = activity.id;
     const activityDescriptor = this.findActivityDescriptor();
-    const title = activityDescriptor?.displayName ?? activityDescriptor?.type ?? 'Unknown Activity';
+    const title = activityDescriptor?.displayName ?? activityDescriptor?.typeName ?? 'Unknown Activity';
     const driverRegistry = this.inputDriverRegistry;
 
     const onInputChanged = (inputDescriptor: InputDescriptor) => this.activityUpdated.emit({
@@ -127,11 +128,10 @@ export class ActivityPropertiesEditor {
       tabs.push(outputTab);
     }
 
-    if(isTask)
-    {
+    if (isTask) {
       const taskTab: TabDefinition = {
         displayText: 'Task',
-        order:12,
+        order: 12,
         content: () => this.renderTaskTab()
       };
 
@@ -161,7 +161,7 @@ export class ActivityPropertiesEditor {
     );
   }
 
-  private findActivityDescriptor = (): ActivityDescriptor => !!this.activity ? descriptorsStore.activityDescriptors.find(x => x.type == this.activity.type) : null;
+  private findActivityDescriptor = (): ActivityDescriptor => !!this.activity ? descriptorsStore.activityDescriptors.find(x => x.typeName == this.activity.type) : null;
   private onSelectedTabIndexChanged = (e: CustomEvent<TabChangedArgs>) => this.selectedTabIndex = e.detail.selectedTabIndex
 
   private onActivityIdChanged = (e: any) => {
@@ -174,7 +174,7 @@ export class ActivityPropertiesEditor {
     const inputDescriptor: InputDescriptor = {
       name: 'Id',
       displayName: 'Id',
-      type: 'string'
+      typeName: 'String'
     };
 
     activity.id = newId;
@@ -222,15 +222,22 @@ export class ActivityPropertiesEditor {
   private onInputPropertyEditorChanged = (inputDescriptor: InputDescriptor, propertyValue: any, syntax: string) => {
     const activity = this.activity;
     const propertyName = inputDescriptor.name;
+    const isWrapped = inputDescriptor.isWrapped;
     const camelCasePropertyName = camelCase(propertyName);
 
-    activity[camelCasePropertyName] = {
-      type: inputDescriptor.type,
-      expression: {
-        type: syntax,
-        value: propertyValue // TODO: The "value" field is currently hardcoded, but we should be able to be more flexible and potentially have different fields for a given syntax.
-      }
-    };
+    if (isWrapped) {
+      const input: ActivityInput = {
+        typeName: inputDescriptor.typeName,
+        expression: {
+          type: syntax,
+          value: propertyValue // TODO: The "value" field is currently hardcoded, but we should be able to be more flexible and potentially have different fields for a given syntax.
+        }
+      };
+
+      activity[camelCasePropertyName] = input;
+    } else {
+      activity[camelCasePropertyName] = propertyValue;
+    }
 
     this.updateActivity(propertyName);
   }
@@ -241,7 +248,7 @@ export class ActivityPropertiesEditor {
     const camelCasePropertyName = camelCase(propertyName);
 
     const property: ActivityOutput = {
-      type: outputDescriptor.type,
+      typeName: outputDescriptor.typeName,
       memoryReference: {
         id: variableName
       }
@@ -318,26 +325,35 @@ export class ActivityPropertiesEditor {
         const displayName = isNullOrWhitespace(propertyDescriptor.displayName) ? propertyDescriptor.name : propertyDescriptor.displayName;
         const propertyName = camelCase(propertyDescriptor.name);
         const propertyValue = activity[propertyName] as ActivityOutput;
+        const propertyType =propertyDescriptor.typeName;
+        const typeDescriptor = descriptorsStore.variableDescriptors.find(x => x.typeName == propertyType);
+        const propertyTypeName = typeDescriptor?.displayName ?? propertyType;
 
         return <div key={key}>
           <FormEntry fieldId={key} label={displayName} hint={propertyDescriptor.description}>
-            <select onChange={e => this.onOutputPropertyEditorChanged(propertyDescriptor, (e.currentTarget as HTMLSelectElement).value)}>
-              {variableOptions.map(group => {
-                if (!group) {
-                  return <option value="" selected={!propertyValue?.memoryReference?.id}>-</option>
-                }
 
-                const items = group.items;
+            <div class="relative">
+              <select onChange={e => this.onOutputPropertyEditorChanged(propertyDescriptor, (e.currentTarget as HTMLSelectElement).value)}>
+                {variableOptions.map(group => {
+                  if (!group) {
+                    return <option value="" selected={!propertyValue?.memoryReference?.id}>-</option>
+                  }
 
-                return (
-                  <optgroup label={group.label}>
-                    {items.map(variable => {
-                      const isSelected = propertyValue?.memoryReference?.id == variable.value;
-                      return <option value={variable.value} selected={isSelected}>{variable.name}</option>;
-                    })}
-                  </optgroup>);
-              })}
-            </select>
+                  const items = group.items;
+
+                  return (
+                    <optgroup label={group.label}>
+                      {items.map(variable => {
+                        const isSelected = propertyValue?.memoryReference?.id == variable.value;
+                        return <option value={variable.value} selected={isSelected}>{variable.name}</option>;
+                      })}
+                    </optgroup>);
+                })}
+              </select>
+              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-10">
+                <span class="text-gray-500 sm:text-sm">{propertyTypeName}</span>
+              </div>
+            </div>
           </FormEntry>
         </div>;
       })}

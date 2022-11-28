@@ -1,8 +1,9 @@
-import { getVersionOptionsString, serializeQueryString } from '../../../utils';
+import {getVersionOptionsString, serializeQueryString} from '../../../utils';
 import {WorkflowDefinition, WorkflowDefinitionSummary} from "../models/entities";
 import {Activity, PagedList, Variable, VersionedEntity, VersionOptions} from "../../../models";
 import {Service} from "typedi";
 import {ElsaApiClientProvider} from "../../../services";
+import {AxiosResponse} from "axios";
 
 @Service()
 export class WorkflowDefinitionsApi {
@@ -114,15 +115,24 @@ export class WorkflowDefinitionsApi {
     const definitionId = request.definitionId;
     const json = await file.text();
     const httpClient = await this.getHttpClient();
+    let response: AxiosResponse;
 
-    const response = await httpClient.post<WorkflowDefinition>(`workflow-definitions/${definitionId}/import`, json, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    if (!definitionId) {
+      response = await httpClient.put<WorkflowDefinition>(`workflow-definitions/import`, json, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+    } else {
+      response = await httpClient.post<WorkflowDefinition>(`workflow-definitions/${definitionId}/import`, json, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+    }
 
     const workflowDefinition = response.data;
-    return { workflowDefinition: workflowDefinition };
+    return {workflowDefinition: workflowDefinition};
   }
 
   async deleteMany(request: DeleteManyWorkflowDefinitionRequest): Promise<DeleteManyWorkflowDefinitionResponse> {
@@ -166,9 +176,15 @@ export interface SaveWorkflowDefinitionRequest {
 export interface BaseManyWorkflowDefinitionRequest {
   definitionIds: string[];
 }
-export interface DeleteManyWorkflowDefinitionRequest extends BaseManyWorkflowDefinitionRequest {}
-export interface PublishManyWorkflowDefinitionRequest extends BaseManyWorkflowDefinitionRequest {}
-export interface UnpublishManyWorkflowDefinitionRequest extends BaseManyWorkflowDefinitionRequest {}
+
+export interface DeleteManyWorkflowDefinitionRequest extends BaseManyWorkflowDefinitionRequest {
+}
+
+export interface PublishManyWorkflowDefinitionRequest extends BaseManyWorkflowDefinitionRequest {
+}
+
+export interface UnpublishManyWorkflowDefinitionRequest extends BaseManyWorkflowDefinitionRequest {
+}
 
 export interface DeleteWorkflowDefinitionRequest {
   definitionId: string;
@@ -208,7 +224,7 @@ export interface ExportWorkflowResponse {
 }
 
 export interface ImportWorkflowRequest {
-  definitionId: string;
+  definitionId?: string;
   file: File;
 }
 
@@ -220,6 +236,7 @@ export enum WorkflowDefinitionsOrderBy {
   Name = 'Name',
   CreatedAt = 'CreatedAt',
 }
+
 export interface ListWorkflowDefinitionsRequest {
   page?: number;
   pageSize?: number;
@@ -239,6 +256,7 @@ export interface PublishManyWorkflowDefinitionResponse {
   alreadyPublished: string[];
   notFound: string[];
 }
+
 export interface UnpublishManyWorkflowDefinitionResponse {
   retracted: string[];
   notPublished: string[];

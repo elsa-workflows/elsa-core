@@ -74,6 +74,11 @@ export const getInputPropertyValue = (inputContext: ActivityInputContext): Activ
   return inputContext.node[propName] as ActivityInput;
 };
 
+export const getPropertyValue = (inputContext: ActivityInputContext): any => {
+  const propName = getInputPropertyName(inputContext);
+  return inputContext.node[propName] as any
+};
+
 export const stripActivityNameSpace = (name: string): string => {
   const lastDotIndex = name.lastIndexOf('.');
   return lastDotIndex < 0 ? name : name.substr(lastDotIndex + 1);
@@ -102,4 +107,11 @@ export function durationToString(duration: moment.Duration) {
           ? `${duration.asSeconds().toFixed(3)} s`
           : `${duration.asMilliseconds()} ms`
     : null;
+}
+
+export function htmlToElement<TElement>(html: string): TElement {
+  const template = document.createElement('template');
+  html = html.trim(); // Never return a text node of whitespace as the result
+  template.innerHTML = html;
+  return template.content.firstChild as unknown as TElement;
 }

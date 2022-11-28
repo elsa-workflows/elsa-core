@@ -34,6 +34,9 @@ public class VariableConverter : JsonConverter<Variable>
 
     public Variable? Map(VariableModel source)
     {
+        if (string.IsNullOrWhiteSpace(source.TypeName))
+            return null;
+        
         if (!_wellKnownTypeRegistry.TryGetTypeOrDefault(source.TypeName, out var type))
             return null;
 
@@ -51,7 +54,7 @@ public class VariableConverter : JsonConverter<Variable>
     {
         var variableType = source.GetType();
         var value = source.Value;
-        var valueType = source.Value?.GetType() ?? (variableType.IsConstructedGenericType ? variableType.GetGenericArguments().FirstOrDefault() ?? typeof(object) : typeof(object));
+        var valueType = variableType.IsConstructedGenericType ? variableType.GetGenericArguments().FirstOrDefault() ?? typeof(object) : typeof(object);
         var valueTypeAlias = _wellKnownTypeRegistry.GetAliasOrDefault(valueType);
         var driverId = source.StorageDriverId;
         var serializedValue = value.Format();

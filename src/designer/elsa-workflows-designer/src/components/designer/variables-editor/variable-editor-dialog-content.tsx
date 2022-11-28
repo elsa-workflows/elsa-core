@@ -1,8 +1,10 @@
 import {Component, h, Prop, Event, EventEmitter, Method} from "@stencil/core";
+import {_, groupBy} from 'lodash';
 import {StorageDriverDescriptor, Variable} from "../../../models";
 import {FormEntry} from "../../shared/forms/form-entry";
 import {isNullOrWhitespace} from "../../../utils";
 import descriptorsStore from '../../../data/descriptors-store';
+import {VariableDescriptor} from "../../../services/api-client/variable-descriptors-api";
 
 @Component({
   tag: 'elsa-variable-editor-dialog-content',
@@ -20,9 +22,10 @@ export class VariableEditorDialogContent {
   }
 
   render() {
-    const variable: Variable = this.variable ?? {name: '', type: 'Object'};
-    const variableType = variable.type;
-    const availableTypes: Array<string> = ['Object', 'String', 'Boolean', 'Int32', 'Int64', 'Single', 'Double']; // TODO: Fetch these from backend.
+    const variable: Variable = this.variable ?? {name: '', typeName: 'Object'};
+    const variableTypeName = variable.typeName;
+    const availableTypes: Array<VariableDescriptor> = descriptorsStore.variableDescriptors;
+    const groupedVariableTypes = _.groupBy(availableTypes, x => x.category);
     const storageDrivers: Array<StorageDriverDescriptor> = [{id: null, displayName: '-'}, ...descriptorsStore.storageDrivers];
 
     return (
@@ -36,9 +39,14 @@ export class VariableEditorDialogContent {
                 <input type="text" name="variableName" id="variableName" value={variable.name}/>
               </FormEntry>
 
-              <FormEntry fieldId="variableType" label="Type" hint="The type of the variable.">
-                <select id="variableType" name="variableType">
-                  {availableTypes.map(type => <option value={type} selected={type == variableType}>{type}</option>)}
+              <FormEntry fieldId="variableTypeName" label="Type" hint="The type of the variable.">
+                <select id="variableTypeName" name="variableTypeName">
+                  {Object.keys(groupedVariableTypes).map(category => {
+                    const variableTypes = groupedVariableTypes[category] as Array<VariableDescriptor>;
+                    return (<optgroup label={category}>
+                      {variableTypes.map(descriptor => <option value={descriptor.typeName} selected={descriptor.typeName == variableTypeName}>{descriptor.displayName}</option>)}
+                    </optgroup>);
+                  })}
                 </select>
               </FormEntry>
 
@@ -75,12 +83,12 @@ export class VariableEditorDialogContent {
     const formData = new FormData(form as HTMLFormElement);
     const name = formData.get('variableName') as string;
     const value = formData.get('variableValue') as string;
-    const type = formData.get('variableType') as string;
+    const type = formData.get('variableTypeName') as string;
     const driverId = formData.get('variableStorageDriverId') as string;
     const variable = this.variable;
 
     variable.name = name;
-    variable.type = type;
+    variable.typeName = type;
     variable.value = value;
     variable.storageDriverId = isNullOrWhitespace(driverId) ? null : driverId;
 

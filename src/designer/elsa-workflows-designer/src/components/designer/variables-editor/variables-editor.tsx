@@ -54,7 +54,6 @@ export class VariablesEditor {
             <tr>
               <th scope="col">Name</th>
               <th scope="col">Type</th>
-              <th scope="col">Value</th>
               <th scope="col">Storage</th>
               <th scope="col"/>
             </tr>
@@ -63,12 +62,13 @@ export class VariablesEditor {
             {variables.map(variable => {
                 const storage = storageDrivers.find(x => x.id == variable.storageDriverId);
                 const storageName = storage?.displayName ?? '-';
+                const descriptor = descriptorsStore.variableDescriptors.find(x => x.typeName == variable.typeName);
+                const typeDisplayName = descriptor?.displayName ?? variable.typeName;
 
                 return (
                   <tr>
                     <td class="whitespace-nowrap">{variable.name}</td>
-                    <td class="whitespace-nowrap">{variable.type}</td>
-                    <td>{variable.value}</td>
+                    <td class="whitespace-nowrap">{typeDisplayName}</td>
                     <td>{storageName}</td>
                     <td class="pr-6">
                       <elsa-context-menu
@@ -109,7 +109,7 @@ export class VariablesEditor {
 
   private onAddVariableClick = async () => {
     const newVariableName = this.generateNewVariableName();
-    const variable = {name: newVariableName, type: 'Object', value: null};
+    const variable = {name: newVariableName, typeName: 'Object', value: null};
 
     this.modalDialogInstance = this.modalDialogService.show(() => <elsa-variable-editor-dialog-content variable={variable}/>, {actions: [this.saveAction]})
   };

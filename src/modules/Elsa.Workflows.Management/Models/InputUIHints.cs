@@ -14,6 +14,7 @@ public static class InputUIHints
     public const string Dropdown = "dropdown";
     public const string MultiText = "multi-text";
     public const string CodeEditor = "code-editor";
+    public const string VariablePicker = "variable-picker";
 
     /// <summary>
     /// An editor that allows the user to write a blob of JSON.

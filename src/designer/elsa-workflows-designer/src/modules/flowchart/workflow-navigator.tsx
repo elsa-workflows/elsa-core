@@ -4,6 +4,7 @@ import {ActivityIconRegistry, ActivityNode, flatten, PortProviderRegistry, walkA
 import {Flowchart, FlowchartNavigationItem} from "./models";
 import {Port} from "../../models";
 import descriptorsStore from "../../data/descriptors-store";
+import {WorkflowDefinition} from "../workflow-definitions/models/entities";
 
 @Component({
   tag: 'elsa-workflow-navigator',
@@ -19,7 +20,8 @@ export class WorkflowNavigator {
   }
 
   @Prop() items: Array<FlowchartNavigationItem> = [];
-  @Prop() flowchart: Flowchart;
+  @Prop() workflowDefinition: WorkflowDefinition;
+
   @Event() navigate: EventEmitter<FlowchartNavigationItem>;
 
   render() {
@@ -29,10 +31,10 @@ export class WorkflowNavigator {
     if (items.length <= 0)
       return null;
 
-    if (!this.flowchart)
+    if (!this.workflowDefinition)
       return;
 
-    const nodes = flatten(walkActivities(this.flowchart));
+    const nodes = flatten(walkActivities(this.workflowDefinition.root));
 
     return <div class="ml-8">
       <nav class="flex" aria-label="Breadcrumb">
@@ -46,8 +48,8 @@ export class WorkflowNavigator {
   private renderPathItem = (item: FlowchartNavigationItem, index: number, nodes: Array<ActivityNode>) => {
     const activityId = item.activityId;
     const activity = nodes.find(x => x.activity.id == activityId).activity;
-    const activityDescriptor = descriptorsStore.activityDescriptors.find(x => x.type == activity.type);
-    const icon = this.iconRegistry.get(activity.type)();
+    const activityDescriptor = descriptorsStore.activityDescriptors.find(x => x.typeName == activity.type);
+    const icon = this.iconRegistry.getOrDefault(activity.type)();
     const listElements = [];
     const isLastItem = index == this.items.length - 1;
 

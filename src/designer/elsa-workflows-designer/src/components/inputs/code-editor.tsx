@@ -4,6 +4,7 @@ import {ActivityInputContext} from "../../services/node-input-driver";
 import {getInputPropertyValue} from "../../utils";
 import {MonacoValueChangedArgs} from "../shared/monaco-editor/monaco-editor";
 import {ExpressionChangedArs} from "../designer/input-control-switch/input-control-switch";
+import descriptorsStore from "../../data/descriptors-store";
 
 interface CodeEditorOptions {
   editorHeight?: EditorHeight;
@@ -33,7 +34,7 @@ export class CodeEditorInput {
 
     return (
       <elsa-input-control-switch label={displayName} hint={hint} syntax={syntax} expression={value} onExpressionChanged={this.onExpressionChanged}>
-        <elsa-monaco-editor value={value} {...options} onValueChanged={this.onChange}/>
+          <elsa-monaco-editor value={value} {...options} onValueChanged={this.onChange}/>
       </elsa-input-control-switch>
     );
   }

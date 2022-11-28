@@ -18,6 +18,7 @@ export class InputControlRegistry {
     this.add('multi-text', c => <elsa-multi-text-input inputContext={c}/>);
     this.add('code-editor', c => <elsa-code-editor-input inputContext={c}/>);
     this.add('checkbox', c => <elsa-checkbox-input inputContext={c}/>);
+    this.add('variable-picker', c => <elsa-variable-picker-input inputContext={c}/>);
   }
 
   public add(uiHint: UIHint, control: RenderActivityPropInputControl) {

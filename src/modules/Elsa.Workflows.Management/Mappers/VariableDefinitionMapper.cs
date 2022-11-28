@@ -16,7 +16,7 @@ public class VariableDefinitionMapper
 
     public Variable? Map(VariableDefinition source)
     {
-        if (!_wellKnownTypeRegistry.TryGetTypeOrDefault(source.Type, out var type))
+        if (!_wellKnownTypeRegistry.TryGetTypeOrDefault(source.TypeName, out var type))
             return null;
 
         var variableGenericType = typeof(Variable<>).MakeGenericType(type);
@@ -40,7 +40,7 @@ public class VariableDefinitionMapper
     {
         var variableType = source.GetType();
         var value = source.Value;
-        var valueType = source.Value?.GetType() ?? (variableType.IsConstructedGenericType ? variableType.GetGenericArguments().FirstOrDefault() ?? typeof(object) : typeof(object));
+        var valueType = variableType.IsConstructedGenericType ? variableType.GetGenericArguments().FirstOrDefault() ?? typeof(object) : typeof(object);
         var valueTypeAlias = _wellKnownTypeRegistry.GetAliasOrDefault(valueType);
         var driverId = source.StorageDriverId;
 

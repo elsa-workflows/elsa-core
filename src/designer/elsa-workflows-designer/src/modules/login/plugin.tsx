@@ -30,9 +30,11 @@ export class LoginPlugin implements Plugin {
 
       const activityDescriptors = await this.elsaClient.descriptors.activities.list();
       const storageDrivers = await this.elsaClient.descriptors.storageDrivers.list();
+      const variableDescriptors = await this.elsaClient.descriptors.variables.list();
 
       descriptorsStore.activityDescriptors = activityDescriptors;
       descriptorsStore.storageDrivers = storageDrivers;
+      descriptorsStore.variableDescriptors = variableDescriptors;
     }
   }
 
