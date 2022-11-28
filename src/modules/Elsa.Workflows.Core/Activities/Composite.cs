@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Text.Json.Serialization;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Activities.Flowchart.Models;
 using Elsa.Workflows.Core.Attributes;
@@ -24,6 +25,7 @@ public abstract class Composite : ActivityBase
     /// </summary>
     [Port]
     [Browsable(false)]
+    [JsonIgnore] // Composite activities' Root is intended to be constructed from code only, so we don't want to get it serialized.
     public IActivity Root { get; set; } = new Sequence();
 
     /// <inheritdoc />
@@ -108,6 +110,7 @@ public abstract class Composite<T> : ActivityBase<T>
     /// </summary>
     [Port]
     [Browsable(false)]
+    [JsonIgnore] // Composite activities' Root is intended to be constructed from code only, so we don't want to get it serialized.
     public IActivity Root { get; protected set; } = new Sequence();
 
     protected override void Execute(ActivityExecutionContext context)
