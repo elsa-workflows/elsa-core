@@ -9,7 +9,7 @@ export function adjustPortMarkupByNode(node: Node) {
         if(port.type == 'out'){
             node.setPortProp(port.id, "attrs", {
                 circle: {
-                    r: 4,
+                    r: 6,
                     magnet: true,
                     stroke: '#fff',
                     strokeWidth: 2,
@@ -24,7 +24,7 @@ export function adjustPortMarkupByNode(node: Node) {
         else {
             node.setPortProp(port.id, "attrs", {
                 circle: {
-                    r: 4,
+                    r: 6,
                     magnet: true,
                     stroke: '#3c82f6',
                     strokeWidth: 2,
