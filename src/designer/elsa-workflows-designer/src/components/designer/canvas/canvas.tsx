@@ -67,8 +67,8 @@ export class Canvas {
   }
 
   @Method()
-  public async autoLayout(): Promise<void> {
-    return await this.root.autoLayout();
+  public async autoLayout(direction: "TB" | "BT" | "LR" | "RL"): Promise<void> {
+    return await this.root.autoLayout(direction);
   }
 
   @Method()
