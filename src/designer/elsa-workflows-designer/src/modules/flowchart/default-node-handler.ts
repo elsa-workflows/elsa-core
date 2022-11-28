@@ -18,7 +18,7 @@ export class DefaultNodeHandler implements ActivityNodeHandler {
     const {activityDescriptor, activity, x, y} = context;
     const provider = this.portProviderRegistry.get(activityDescriptor.typeName);
     const providerContext: PortProviderContext = {activityDescriptor, activity};
-    const inPorts = [{name: null, displayName: null, mode: PortMode.Port}];
+    const inPorts = [{name: 'In', displayName: null, mode: PortMode.Port}];
     let outPorts = provider.getOutboundPorts(providerContext).filter(x => x.mode == PortMode.Port);
 
     // In a flowchart, always add a Done port to connect the next node.

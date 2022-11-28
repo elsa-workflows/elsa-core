@@ -2,6 +2,7 @@ import { Edge, Graph, Node } from "@antv/x6";
 import { PortManager } from "@antv/x6/lib/model/port";
 import { Connection } from "../modules/flowchart/models";
 import {v4 as uuid} from 'uuid';
+import { Activity } from "../models";
 
 export function adjustPortMarkupByNode(node: Node) {
     node.getPorts().forEach(port => {
@@ -176,3 +177,20 @@ export function rebuildGraph(graph: Graph)
   });
 }
 
+export function adjustConnectionsInRequestModel(root: Activity) {
+  if(root.connections.length > 0){
+    root.connections.forEach((connection: { sourcePort: string; targetPort: string; }) => {
+      connection.sourcePort = getPortNameByPortId(connection.sourcePort);
+      connection.targetPort = getPortNameByPortId(connection.targetPort);
+    });
+  }
+}
+
+export function adjustConnectionsInResponseModel(root: Activity) {
+  if(root.connections.length > 0){
+    root.connections.forEach((connection: { sourcePort: string; targetPort: string; }) => {
+      connection.sourcePort = uuid() + '_' + connection.sourcePort;
+      connection.targetPort = uuid() + '_' + connection.targetPort;
+    });
+  }
+}
