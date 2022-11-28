@@ -5,6 +5,7 @@ import {getInputPropertyValue} from "../../utils";
 import {MonacoValueChangedArgs} from "../shared/monaco-editor/monaco-editor";
 import {ExpressionChangedArs} from "../designer/input-control-switch/input-control-switch";
 import descriptorsStore from "../../data/descriptors-store";
+import {FormEntry} from "../shared/forms/form-entry";
 
 interface CodeEditorOptions {
   editorHeight?: EditorHeight;
@@ -22,20 +23,20 @@ export class CodeEditorInput {
   public render() {
     const inputContext = this.inputContext;
     const inputDescriptor = inputContext.inputDescriptor;
+    const fieldId = inputDescriptor.name;
     const displayName = inputDescriptor.displayName;
     const hint = inputDescriptor.description;
     const options: CodeEditorOptions = inputDescriptor.options || {};
     const input = getInputPropertyValue(inputContext);
-    const syntax = input?.expression?.type ?? inputDescriptor.defaultSyntax;
     let value = (input?.expression as LiteralExpression)?.value;
 
     if (value == undefined)
       value = inputDescriptor.defaultValue;
 
     return (
-      <elsa-input-control-switch label={displayName} hint={hint} syntax={syntax} expression={value} onExpressionChanged={this.onExpressionChanged}>
-          <elsa-monaco-editor value={value} {...options} onValueChanged={this.onChange}/>
-      </elsa-input-control-switch>
+      <FormEntry label={displayName} fieldId={fieldId} hint={hint}>
+        <elsa-monaco-editor value={value} {...options} onValueChanged={this.onChange}/>
+      </FormEntry>
     );
   }
 
@@ -44,7 +45,4 @@ export class CodeEditorInput {
     this.inputContext.inputChanged(value, SyntaxNames.Literal);
   }
 
-  private onExpressionChanged = (e: CustomEvent<ExpressionChangedArs>) => {
-    this.inputContext.inputChanged(e.detail.expression, e.detail.syntax);
-  }
 }

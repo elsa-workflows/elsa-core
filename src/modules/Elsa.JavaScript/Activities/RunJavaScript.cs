@@ -1,6 +1,7 @@
 ﻿using System.Text.Json.Serialization;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Management.Models;
 using IJavaScriptEvaluator = Elsa.JavaScript.Services.IJavaScriptEvaluator;
 
 namespace Elsa.JavaScript.Activities;
@@ -17,7 +18,8 @@ public class RunJavaScript : Activity<object?>
     {
         Script = new Input<string>(script);
     }
-    
+
+    [Input(UIHint = InputUIHints.CodeEditor, OptionsProvider = typeof(RunJavaScriptOptionsProvider))]
     public Input<string> Script { get; set; } = new("");
 
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
@@ -30,7 +32,7 @@ public class RunJavaScript : Activity<object?>
 
         // Get a JavaScript evaluator.
         var javaScriptEvaluator = context.GetRequiredService<IJavaScriptEvaluator>();
-        
+
         // Run the script.
         var result = await javaScriptEvaluator.EvaluateAsync(script, typeof(object), context.ExpressionExecutionContext, cancellationToken: context.CancellationToken);
 
