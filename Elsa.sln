@@ -431,6 +431,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Server.Authentication"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.ExtendHttpEndpoint", "src\samples\aspnet\Elsa.Samples.ExtendHttpEndpoint\Elsa.Samples.ExtendHttpEndpoint.csproj", "{62B28070-1AEC-49E2-A614-D505B0933E23}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Secrets.Persistence.EntityFramework.MySql", "src\modules\secrets\Elsa.Secrets.Persistance.EntityFramework.MySql\Elsa.Secrets.Persistence.EntityFramework.MySql.csproj", "{BA98EE2A-05B4-4260-93B2-09FAEBAC0F5A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1045,6 +1047,10 @@ Global
 		{62B28070-1AEC-49E2-A614-D505B0933E23}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{62B28070-1AEC-49E2-A614-D505B0933E23}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{62B28070-1AEC-49E2-A614-D505B0933E23}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BA98EE2A-05B4-4260-93B2-09FAEBAC0F5A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BA98EE2A-05B4-4260-93B2-09FAEBAC0F5A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BA98EE2A-05B4-4260-93B2-09FAEBAC0F5A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BA98EE2A-05B4-4260-93B2-09FAEBAC0F5A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1240,6 +1246,7 @@ Global
 		{AB8C9005-3579-4C03-BC36-5BB1A04AE968} = {22E75696-6FE9-436A-9097-EE21C603F818}
 		{E4D5B3F6-9DF1-4BAD-82BE-228656CD519D} = {468E498C-59DB-4541-8D8A-0D89DE9083AB}
 		{62B28070-1AEC-49E2-A614-D505B0933E23} = {22E75696-6FE9-436A-9097-EE21C603F818}
+		{BA98EE2A-05B4-4260-93B2-09FAEBAC0F5A} = {897395DA-3B0B-441A-98A1-35CFAA4A6B91}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}

@@ -6,6 +6,7 @@ import { Secret, SecretDescriptor } from "../models/secret.model";
 import { Ampq } from "../models/secrets/ampq.secret";
 import { PostgreSql } from "../models/secrets/postgre-sql.secret";
 import { SqlServer } from "../models/secrets/sqlserver.activity";
+import { MySqlServer } from "../models/secrets/mysql-server.activity";
 import { Token } from "../models/secrets/token.secret";
 import { SecretEventTypes } from "../models/secret.events";
 
@@ -34,7 +35,7 @@ export class ElsaSecretsPickerModal {
   };
 
   componentWillRender() {
-    const secretsDescriptors: Array<Secret> = [Ampq, PostgreSql, SqlServer, Token];
+    const secretsDescriptors: Array<Secret> = [Ampq, PostgreSql, SqlServer, MySqlServer, Token];
     state.secretsDescriptors = secretsDescriptors;
     this.categories = ['All', ...secretsDescriptors.map(x => x.category).distinct().sort()];
     const searchText = this.searchText ? this.searchText.toLowerCase() : '';
