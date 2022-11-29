@@ -29,7 +29,7 @@ Graph.registerEdge(
       line: {
         stroke: '#C2C8D5',
         strokeWidth: 1,
-        targetMarker: null,
+        targetMarker: 'classic', size: 6,
       },
     },
   },
