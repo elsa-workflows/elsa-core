@@ -9,7 +9,7 @@ export function adjustPortMarkupByNode(node: Node) {
         if(port.type == 'out'){
             node.setPortProp(port.id, "attrs", {
                 circle: {
-                    r: 6,
+                    r: 5,
                     magnet: true,
                     stroke: '#fff',
                     strokeWidth: 2,
@@ -24,7 +24,7 @@ export function adjustPortMarkupByNode(node: Node) {
         else {
             node.setPortProp(port.id, "attrs", {
                 circle: {
-                    r: 6,
+                    r: 5,
                     magnet: true,
                     stroke: '#3c82f6',
                     strokeWidth: 2,
@@ -60,7 +60,7 @@ function findMatchingPortForEdge(node: Node<Node.Properties>, position: string, 
 }
 
 function getPortNameByPortId(portId: string) {
-    return portId.split('_')[1] == 'null' ? null : portId.split('_')[1];
+    return portId.split('_')[1] == 'null' ? null : portId.split('_')[1] == 'In' ? null : portId.split('_')[1];
 }
 
 function updatePortsAndEdges(
@@ -86,17 +86,19 @@ function updatePortsAndEdgesOfNodeCouple(graph: Graph, sourceNode: Node<Node.Pro
         const sourceNodePort = sourceNode.getPort(edge.data.sourcePort) ?? sourceNode.getPorts().find(p => p.type == "out" && getPortNameByPortId(p.id) == getPortNameByPortId(edge.data.sourcePort));
         const targetNodePort = targetNode.getPort(edge.data.targetPort) ?? targetNode.getPorts().find(p => p.type == "in");
         
-        graph.removeEdge(edge);
+        if(sourceNodePort.position != newSourceNodePosition || targetNodePort.position != newTargetNodePosition) {
+            graph.removeEdge(edge);
 
-        const newSourceNodePortId = updatePort(graph, sourceNode, sourceNodePort, newSourceNodePosition);
-        const newTargetNodePortId = updatePort(graph, targetNode, targetNodePort, newTargetNodePosition);
+            const newSourceNodePortId = updatePort(graph, sourceNode, sourceNodePort, newSourceNodePosition);
+            const newTargetNodePortId = updatePort(graph, targetNode, targetNodePort, newTargetNodePosition);
 
-        graph.addEdge(createEdge({
-            source: sourceNode.id,
-            target: targetNode.id,
-            sourcePort: newSourceNodePortId ?? sourceNodePort.id,
-            targetPort: newTargetNodePortId ?? targetNodePort.id
-        }));
+            graph.addEdge(createEdge({
+                source: sourceNode.id,
+                target: targetNode.id,
+                sourcePort: newSourceNodePortId ?? sourceNodePort.id,
+                targetPort: newTargetNodePortId ?? targetNodePort.id
+            }));
+        }
     }
 }
 

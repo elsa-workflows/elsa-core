@@ -118,7 +118,7 @@ ActivityNodeShape.config({
         position: 'left',
         attrs: {
           circle: {
-            r: 6,
+            r: 5,
             magnet: true,
             stroke: '#3c82f6',
             strokeWidth: 2,
@@ -139,7 +139,7 @@ ActivityNodeShape.config({
         position: 'right',
         attrs: {
           circle: {
-            r: 6,
+            r: 5,
             magnet: true,
             stroke: '#3c82f6',
             strokeWidth: 2,
@@ -160,7 +160,7 @@ ActivityNodeShape.config({
         position: 'top',
         attrs: {
           circle: {
-            r: 6,
+            r: 5,
             magnet: true,
             stroke: '#3c82f6',
             strokeWidth: 2,
@@ -181,7 +181,7 @@ ActivityNodeShape.config({
         position: 'bottom',
         attrs: {
           circle: {
-            r: 6,
+            r: 5,
             magnet: true,
             stroke: '#3c82f6',
             strokeWidth: 2,
