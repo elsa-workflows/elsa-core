@@ -56,11 +56,11 @@ function hasPortAnEdge(graph: Graph, port: PortManager.PortMetadata) {
 }
 
 function findMatchingPortForEdge(node: Node<Node.Properties>, position: string, portType: string, portName: string) {
-    return node.getPorts().find(p => p.position == position && p.type == portType && p.attrs?.text?.text == portName);
+    return node.getPorts().find(p => p.position == position && p.type == portType && (portName == "In" || p.attrs?.text?.text == portName));
 }
 
 function getPortNameByPortId(portId: string) {
-    return portId.split('_')[1] == 'null' ? null : portId.split('_')[1] == 'In' ? null : portId.split('_')[1];
+    return portId.split('_')[1] == 'null' ? null : portId.split('_')[1];
 }
 
 function updatePortsAndEdges(
