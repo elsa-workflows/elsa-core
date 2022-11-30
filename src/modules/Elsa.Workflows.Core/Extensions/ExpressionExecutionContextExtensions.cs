@@ -49,4 +49,26 @@ public static class ExpressionExecutionContextExtensions
     {
         if(output != null) context.Set(output.MemoryBlockReference(), value);
     }
+    
+    /// <summary>
+    /// Returns a dictionary of variable keys and their values across scopes.
+    /// </summary>
+    public static IDictionary<string, object> GetVariableValues(this ExpressionExecutionContext context)
+    {
+        var currentRegister = context.Memory;
+        var memoryBlocks = new Dictionary<string, object>();
+
+        while (currentRegister != null)
+        {
+            foreach (var l in currentRegister.Blocks)
+            {
+                if (!memoryBlocks.ContainsKey(l.Key))
+                    memoryBlocks.Add(l.Key, l.Value!.Value);
+            }
+
+            currentRegister = currentRegister.Parent;
+        }
+
+        return memoryBlocks;
+    }
 }

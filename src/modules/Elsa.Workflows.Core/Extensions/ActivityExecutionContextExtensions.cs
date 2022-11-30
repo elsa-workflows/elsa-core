@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Elsa.Common.Services;
 using Elsa.Expressions.Helpers;
+using Elsa.Expressions.Models;
 using Elsa.Expressions.Services;
 using Elsa.Workflows.Core.Activities.Flowchart.Models;
 using Elsa.Workflows.Core.Attributes;
@@ -50,6 +51,11 @@ public static class ActivityExecutionContextExtensions
 
     public static Variable SetVariable(this ActivityExecutionContext context, string name, object? value) => context.ExpressionExecutionContext.SetVariable(name, value);
     public static T? GetVariable<T>(this ActivityExecutionContext context, string name) => context.ExpressionExecutionContext.GetVariable<T?>(name);
+
+    /// <summary>
+    /// Returns a dictionary of variable keys and their values across scopes.
+    /// </summary>
+    public static IDictionary<string, object> GetVariableValues(this ActivityExecutionContext activityExecutionContext) => activityExecutionContext.ExpressionExecutionContext.GetVariableValues();
 
     /// <summary>
     /// Evaluates each input property of the activity.
@@ -102,7 +108,7 @@ public static class ActivityExecutionContextExtensions
 
         return input;
     }
-    
+
     /// <summary>
     /// Schedules the specified activity with the provided callback.
     /// If the activity is null, the callback is invoked immediately.
@@ -210,7 +216,7 @@ public static class ActivityExecutionContextExtensions
     /// Complete the current activity with the specified outcome.
     /// </summary>
     public static ValueTask CompleteActivityWithOutcomesAsync(this ActivityExecutionContext context, params string[] outcomes) => context.CompleteActivityAsync(new Outcomes(outcomes));
-    
+
     /// <summary>
     /// Complete the current composite activity with the specified outcome.
     /// </summary>

@@ -1,8 +1,10 @@
 using System.Dynamic;
+using Elsa.Expressions.Models;
 using Elsa.Liquid.Helpers;
 using Elsa.Liquid.Notifications;
 using Elsa.Liquid.Options;
 using Elsa.Mediator.Services;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Models;
 using Fluid;
 using Fluid.Values;
@@ -31,10 +33,11 @@ namespace Elsa.Liquid.Handlers
             memberAccessStrategy.Register<ExpandoObject>();
             memberAccessStrategy.Register<LiquidPropertyAccessor, FluidValue>((x, name) => x.GetValueAsync(name));
             memberAccessStrategy.Register<ExpandoObject, object>((x, name) => ((IDictionary<string, object>)x!)[name]);
+            memberAccessStrategy.Register<ExpressionExecutionContext, LiquidPropertyAccessor>("Variables", x => new LiquidPropertyAccessor(name => ToFluidValue(x.GetVariableValues(), name, options)));
 
             if (_fluidOptions.AllowConfigurationAccess)
             {
-                memberAccessStrategy.Register<ActivityExecutionContext, LiquidPropertyAccessor>("Configuration", x => new LiquidPropertyAccessor(name => ToFluidValue(GetConfigurationValue(name), options)!));
+                memberAccessStrategy.Register<ExpressionExecutionContext, LiquidPropertyAccessor>("Configuration", x => new LiquidPropertyAccessor(name => ToFluidValue(GetConfigurationValue(name), options)));
                 memberAccessStrategy.Register<ConfigurationSectionWrapper, ConfigurationSectionWrapper?>((source, name) => source.GetSection(name));
             }
 
@@ -43,5 +46,6 @@ namespace Elsa.Liquid.Handlers
 
         private ConfigurationSectionWrapper GetConfigurationValue(string name) => new(_configuration.GetSection(name));
         private Task<FluidValue> ToFluidValue(object? input, TemplateOptions options) => Task.FromResult(FluidValue.Create(input, options));
+        private Task<FluidValue> ToFluidValue(IDictionary<string, object> dictionary, string key, TemplateOptions options) => Task.FromResult(!dictionary.ContainsKey(key) ? NilValue.Instance : FluidValue.Create(dictionary[key], options));
     }
 }

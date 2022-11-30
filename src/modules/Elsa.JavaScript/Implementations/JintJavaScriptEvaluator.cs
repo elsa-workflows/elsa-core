@@ -4,6 +4,7 @@ using Elsa.JavaScript.Notifications;
 using Elsa.JavaScript.Options;
 using Elsa.JavaScript.Services;
 using Elsa.Mediator.Services;
+using Elsa.Workflows.Core;
 using Jint;
 using Microsoft.Extensions.Options;
 
@@ -43,10 +44,10 @@ namespace Elsa.JavaScript.Implementations
             configureEngine?.Invoke(engine);
             
             // Add workflow variables.
-            var variables = GetVariables(context);
+            var variables = context.GetVariableValues();
             
             foreach (var variable in variables) 
-                engine.SetValue(variable.Key, variable.Value.Value);
+                engine.SetValue(variable.Key, variable.Value);
 
             // Add common .NET types.
             engine.RegisterType<DateTime>();
@@ -62,25 +63,6 @@ namespace Elsa.JavaScript.Implementations
         {
             var result = engine.Execute(expression).GetCompletionValue();
             return result?.ToObject();
-        }
-
-        private IDictionary<string, MemoryBlock> GetVariables(ExpressionExecutionContext context)
-        {
-            var currentRegister = context.Memory;
-            var memoryBlocks = new Dictionary<string, MemoryBlock>();
-
-            while (currentRegister != null)
-            {
-                foreach (var l in currentRegister.Blocks)
-                {
-                    if(!memoryBlocks.ContainsKey(l.Key))
-                        memoryBlocks.Add(l.Key, l.Value);
-                }
-                
-                currentRegister = currentRegister.Parent;
-            }
-
-            return memoryBlocks;
         }
     }
 }
