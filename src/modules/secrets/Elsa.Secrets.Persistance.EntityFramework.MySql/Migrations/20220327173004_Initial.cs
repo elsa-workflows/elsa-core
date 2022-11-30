@@ -13,7 +13,7 @@ namespace Elsa.Secrets.Persistence.EntityFramework.MySql.Migrations
                 name: "Secrets",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "varchar(255)", nullable: false)
+                    Id = table.Column<string>(type: "varchar(255)", nullable: false, defaultValueSql: "(uuid())")
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Type = table.Column<string>(type: "varchar(255)", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
