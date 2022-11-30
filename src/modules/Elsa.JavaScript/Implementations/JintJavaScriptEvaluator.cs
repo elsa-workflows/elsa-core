@@ -1,4 +1,6 @@
-﻿using Elsa.Expressions.Models;
+﻿using System.Dynamic;
+using System.Text.Json;
+using Elsa.Expressions.Models;
 using Elsa.JavaScript.Extensions;
 using Elsa.JavaScript.Notifications;
 using Elsa.JavaScript.Options;
@@ -10,17 +12,24 @@ using Microsoft.Extensions.Options;
 
 namespace Elsa.JavaScript.Implementations
 {
+    /// <summary>
+    /// Provides a JavaScript evaluator using Jint.
+    /// </summary>
     public class JintJavaScriptEvaluator : IJavaScriptEvaluator
     {
         private readonly IEventPublisher _mediator;
         private readonly JintOptions _jintOptions;
 
+        /// <summary>
+        /// Constructor.
+        /// </summary>
         public JintJavaScriptEvaluator(IEventPublisher mediator, IOptions<JintOptions> scriptOptions)
         {
             _mediator = mediator;
             _jintOptions = scriptOptions.Value;
         }
 
+        /// <inheritdoc />
         public async Task<object?> EvaluateAsync(string expression,
             Type returnType,
             ExpressionExecutionContext context,
@@ -43,11 +52,14 @@ namespace Elsa.JavaScript.Implementations
 
             configureEngine?.Invoke(engine);
             
-            // Add workflow variables.
-            var variables = context.GetVariableValues();
+            // Add common functions.
+            engine.SetValue("setVariable", (Action<string, object>)((name, value) => context.SetVariable(name, value)));
             
-            foreach (var variable in variables) 
-                engine.SetValue(variable.Key, variable.Value);
+            // ReSharper disable once ConvertClosureToMethodGroup (Jint will not understand).
+            engine.SetValue("getVariable", (Func<string, object?>)(name => context.GetVariable(name)));
+            
+            engine.SetValue("isNullOrWhiteSpace", (Func<string, bool>)string.IsNullOrWhiteSpace);
+            engine.SetValue("isNullOrEmpty", (Func<string, bool>)string.IsNullOrEmpty);
 
             // Add common .NET types.
             engine.RegisterType<DateTime>();
@@ -61,8 +73,8 @@ namespace Elsa.JavaScript.Implementations
 
         private static object? ExecuteExpressionAndGetResult(Engine engine, string expression)
         {
-            var result = engine.Execute(expression).GetCompletionValue();
-            return result?.ToObject();
+            var result = engine.Evaluate(expression);
+            return result.ToObject();
         }
     }
 }
