@@ -45,11 +45,15 @@ export class DefaultActivityTemplate {
   render() {
     const activityDescriptor = this.activityDescriptor;
     const activityId = this.activityId;
+    const portProvider = this.portProviderRegistry.get(activityDescriptor.typeName);
 
     return (
       <FlowchartTunnel.Consumer>
         {({nodeMap}) => {
           const activity: Activity = nodeMap[activityId];
+          const ports = portProvider.getOutboundPorts({activityDescriptor, activity});
+          const embeddedPorts = ports.filter(x => x.mode == PortMode.Embedded);
+          const hasEmbeddedPorts = embeddedPorts.length > 0;
           const canStartWorkflow = activity?.canStartWorkflow;
           const icon = this.icon;
           const textColor = canStartWorkflow ? 'text-white' : 'text-gray-700';
@@ -66,25 +70,47 @@ export class DefaultActivityTemplate {
           if (isNullOrWhitespace(displayText))
             displayText = activityDescriptor?.displayName;
 
-          return (
-            <div>
-              <div class={`activity-wrapper border ${borderColor} ${backgroundColor} ${containerCssClass} rounded text-white overflow-hidden`}>
-                <div class="activity-content-wrapper flex flex-row">
-                  <div class={`flex flex-shrink items-center ${iconBackgroundColor}`}>
-                    {this.renderIcon(icon)}
-                  </div>
-                  <div class="flex items-center">
-                    <div class={contentCssClass}>
-                      <span class={textColor}>{displayText}</span>
-                      <div>
-                        {this.renderPorts(activity)}
+          if (embeddedPorts.length == 0 || displayTypeIsPicker) {
+            return (
+              <div>
+                <div class={`activity-wrapper border ${borderColor} ${backgroundColor} ${containerCssClass} rounded text-white overflow-hidden`}>
+                  <div class="activity-content-wrapper flex flex-row">
+                    <div class={`flex flex-shrink items-center ${iconBackgroundColor}`}>
+                      {this.renderIcon(icon)}
+                    </div>
+                    <div class="flex items-center">
+                      <div class={contentCssClass}>
+                        <span class={textColor}>{displayText}</span>
+                        <div>
+                          {this.renderPorts(activity, embeddedPorts)}
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-          );
+            );
+          } else {
+            return (
+              <div>
+                <div class={`activity-wrapper border ${borderColor} ${backgroundColor} ${containerCssClass} rounded overflow-hidden`}>
+                  <div class="text-white">
+                    <div class={`flex flex-shrink items-center py-3 pr-3 ${iconBackgroundColor}`}>
+                      {this.renderIcon(icon)}
+                      <span>{displayText}</span>
+                    </div>
+                  </div>
+                  <div class="activity-content-wrapper flex flex-col">
+                    <div class="flex items-center">
+                      <div class={contentCssClass}>
+                        {this.renderPorts(activity, embeddedPorts)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          }
         }}
       </FlowchartTunnel.Consumer>
     )
@@ -103,15 +129,10 @@ export class DefaultActivityTemplate {
     );
   }
 
-  private renderPorts = (activity?: Activity) => {
+  private renderPorts = (activity: Activity, embeddedPorts: Port[]) => {
 
     if (this.displayTypeIsPicker || !this.activityDescriptor)
       return;
-
-    const activityDescriptor = this.activityDescriptor;
-    const portProvider = this.portProviderRegistry.get(activityDescriptor.typeName);
-    const ports = portProvider.getOutboundPorts({ activityDescriptor, activity });
-    const embeddedPorts = ports.filter(x => x.mode == PortMode.Embedded);
 
     if (embeddedPorts.length == 0)
       return;
@@ -129,7 +150,7 @@ export class DefaultActivityTemplate {
     const borderColor = port.name == this.selectedPortName ? 'border-blue-600' : 'border-gray-300';
     const activityDescriptor = this.activityDescriptor;
     const portProvider = this.portProviderRegistry.get(activityDescriptor.typeName);
-    const activityProperty = portProvider.resolvePort(port.name, { activity, activityDescriptor }) as Activity;
+    const activityProperty = portProvider.resolvePort(port.name, {activity, activityDescriptor}) as Activity;
     const childActivityDescriptor: ActivityDescriptor = activityProperty != null ? descriptorsStore.activityDescriptors.find(x => x.typeName == activityProperty.type) : null;
     let childActivityDisplayText = activityProperty?.metadata?.displayText;
 
