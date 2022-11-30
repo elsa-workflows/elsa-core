@@ -273,7 +273,7 @@ export class WorkflowDefinitionEditor {
 
   render() {
     const state: WorkflowDefinitionState = {
-      workflowDefinition: this.workflowDefinition
+      workflowDefinition: this.workflowDefinitionState
     };
 
     return (
