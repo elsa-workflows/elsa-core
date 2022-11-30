@@ -22,7 +22,7 @@ public class LiquidExpressionSyntaxProvider : IExpressionSyntaxProvider
     {
         Syntax = SyntaxName,
         Type = typeof(LiquidExpression),
-        CreateExpression = CreateJavaScriptExpression,
+        CreateExpression = CreateLiquidExpression,
         CreateLocationReference = context =>
         {
             var reference = new LiquidExpressionBlockReference(context.GetExpression<LiquidExpression>());
@@ -39,10 +39,10 @@ public class LiquidExpressionSyntaxProvider : IExpressionSyntaxProvider
         }
     };
 
-    private IExpression CreateJavaScriptExpression(ExpressionConstructorContext context)
+    private IExpression CreateLiquidExpression(ExpressionConstructorContext context)
     {
-        var script = context.Element.TryGetProperty("value", out var p) ? p.ToString() : "";
-        return new LiquidExpression(script);
+        var code = context.Element.TryGetProperty("value", out var p) ? p.ToString() : "";
+        return new LiquidExpression(code);
     }
 
     private string GenerateId() => _identityGenerator.GenerateId();

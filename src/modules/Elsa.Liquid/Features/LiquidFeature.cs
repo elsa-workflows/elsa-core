@@ -21,9 +21,9 @@ namespace Elsa.Liquid.Features;
 [DependsOn(typeof(MemoryCacheFeature))]
 [DependsOn(typeof(MediatorFeature))]
 [DependsOn(typeof(ExpressionsFeature))]
-public class LiquidConfigurator : FeatureBase
+public class LiquidFeature : FeatureBase
 {
-    public LiquidConfigurator(IModule serviceConfiguration) : base(serviceConfiguration)
+    public LiquidFeature(IModule serviceConfiguration) : base(serviceConfiguration)
     {
     }
 

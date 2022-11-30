@@ -9,7 +9,7 @@ namespace Elsa.Liquid.Extensions;
 
 public static class DependencyInjectionExtensions
 {
-    public static IModule UseLiquid(this IModule module, Action<LiquidConfigurator>? configure = default)
+    public static IModule UseLiquid(this IModule module, Action<LiquidFeature>? configure = default)
     {
         module.Configure(configure);
         return module;
