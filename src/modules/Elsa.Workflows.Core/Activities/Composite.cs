@@ -29,10 +29,10 @@ public abstract class Composite : ActivityBase
     public IActivity Root { get; set; } = new Sequence();
 
     /// <inheritdoc />
-    protected override void Execute(ActivityExecutionContext context)
+    protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         ConfigureActivities(context);
-        context.ScheduleActivity(Root, OnRootCompletedAsync);
+        await context.ScheduleActivityAsync(Root, OnRootCompletedAsync);
     }
 
     /// <summary>
@@ -100,6 +100,7 @@ public abstract class Composite : ActivityBase
 /// </summary>
 public abstract class Composite<T> : ActivityBase<T>
 {
+    /// <inheritdoc />
     protected Composite()
     {
         OnSignalReceived<CompleteCompositeSignal>(OnCompleteCompositeSignal);
@@ -113,10 +114,11 @@ public abstract class Composite<T> : ActivityBase<T>
     [JsonIgnore] // Composite activities' Root is intended to be constructed from code only, so we don't want to get it serialized.
     public IActivity Root { get; protected set; } = new Sequence();
 
-    protected override void Execute(ActivityExecutionContext context)
+    /// <inheritdoc />
+    protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         ConfigureActivities(context);
-        context.ScheduleActivity(Root, OnRootCompletedAsync);
+        await context.ScheduleActivityAsync(Root, OnRootCompletedAsync);
     }
 
     /// <summary>

@@ -60,10 +60,9 @@ public class While : Activity
     private async ValueTask HandleIterationAsync(ActivityExecutionContext context)
     {
         var loop = await context.EvaluateInputPropertyAsync<While, bool>(x => x.Condition);
-        //var loop = context.Get(Condition);
 
         if (loop)
-            context.ScheduleActivity(Body, OnBodyCompleted);
+            await context.ScheduleActivityAsync(Body, OnBodyCompleted);
         else
             await context.CompleteActivityAsync();
     }

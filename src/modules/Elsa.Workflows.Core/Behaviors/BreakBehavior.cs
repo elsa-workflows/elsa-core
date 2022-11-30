@@ -16,8 +16,6 @@ public class BreakBehavior : Behavior
 
     private async ValueTask OnBreakAsync(BreakSignal signal, SignalContext context)
     {
-        var cancellationToken = context.CancellationToken;
-        
         // Prevent bubbling.
         context.StopPropagation();
         

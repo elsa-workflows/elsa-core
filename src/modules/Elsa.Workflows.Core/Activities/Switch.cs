@@ -37,12 +37,12 @@ public class Switch : ActivityBase
         if (matchingCase != null)
         {
             if (matchingCase.Activity != null)
-                context.ScheduleActivity(matchingCase.Activity, OnChildActivityCompletedAsync);
+                await context.ScheduleActivityAsync(matchingCase.Activity, OnChildActivityCompletedAsync);
             return;
         }
 
         if (Default != null)
-            context.ScheduleActivity(Default, OnChildActivityCompletedAsync);
+            await context.ScheduleActivityAsync(Default, OnChildActivityCompletedAsync);
     }
 
     private async Task<SwitchCase?> FindMatchingCaseAsync(ExpressionExecutionContext context)

@@ -29,8 +29,7 @@ class BreakForEachWorkflow : WorkflowBase
                             {
                                 Then = new Break()
                             },
-                            new WriteLine(currentItem),
-                            new WriteLine("Test")
+                            new WriteLine(currentItem)
                         }
                     }
                 },

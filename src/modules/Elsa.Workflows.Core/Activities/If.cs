@@ -7,15 +7,21 @@ using Elsa.Workflows.Core.Services;
 namespace Elsa.Workflows.Core.Activities;
 
 [Activity("Elsa", "Control Flow", "Evaluate a Boolean condition to determine which path to execute next.")]
-public class If : Activity<bool>
+public class If : ActivityBase<bool>
 {
+    /// <inheritdoc />
     [JsonConstructor]
     public If()
     {
     }
 
+    /// <inheritdoc />
     public If(Input<bool> condition) => Condition = condition;
+
+    /// <inheritdoc />
     public If(Func<ExpressionExecutionContext, bool> condition) => Condition = new Input<bool>(condition);
+
+    /// <inheritdoc />
     public If(Func<bool> condition) => Condition = new Input<bool>(condition);
 
     /// <summary>
@@ -43,6 +49,11 @@ public class If : Activity<bool>
         var nextNode = result ? Then : Else;
         
         context.Set(Result, result);
-        context.ScheduleActivity(nextNode);
+        await context.ScheduleActivityAsync(nextNode, OnChildCompleted);
+    }
+
+    private async ValueTask OnChildCompleted(ActivityExecutionContext context, ActivityExecutionContext childContext)
+    {
+        await context.CompleteActivityAsync();
     }
 }

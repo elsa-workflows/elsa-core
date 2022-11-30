@@ -77,7 +77,7 @@ public class For : ActivityBase
 
         if (loop)
         {
-            context.ScheduleActivity(iterateNode, OnChildComplete);
+            await context.ScheduleActivityAsync(iterateNode, OnChildComplete);
 
             // Update internal step.
             context.SetProperty(CurrentStepProperty, currentValue);

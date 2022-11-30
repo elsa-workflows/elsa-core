@@ -136,6 +136,15 @@ export namespace Components {
         "workflowDefinition": WorkflowDefinition;
         "zoomToFit": () => Promise<void>;
     }
+    interface ElsaFlowchartEditor {
+        "export": () => Promise<Activity>;
+        "monacoLibPath": string;
+        "newRoot": () => Promise<Activity>;
+    }
+    interface ElsaFlowchartEditorToolbar {
+        "autoLayout": (direction: "TB" | "BT" | "LR" | "RL") => Promise<void>;
+        "zoomToFit": () => Promise<void>;
+    }
     interface ElsaFormPanel {
         "actions": Array<PanelActionDefinition>;
         "mainTitle": string;
@@ -430,6 +439,18 @@ declare global {
         prototype: HTMLElsaFlowchartElement;
         new (): HTMLElsaFlowchartElement;
     };
+    interface HTMLElsaFlowchartEditorElement extends Components.ElsaFlowchartEditor, HTMLStencilElement {
+    }
+    var HTMLElsaFlowchartEditorElement: {
+        prototype: HTMLElsaFlowchartEditorElement;
+        new (): HTMLElsaFlowchartEditorElement;
+    };
+    interface HTMLElsaFlowchartEditorToolbarElement extends Components.ElsaFlowchartEditorToolbar, HTMLStencilElement {
+    }
+    var HTMLElsaFlowchartEditorToolbarElement: {
+        prototype: HTMLElsaFlowchartEditorToolbarElement;
+        new (): HTMLElsaFlowchartEditorToolbarElement;
+    };
     interface HTMLElsaFormPanelElement extends Components.ElsaFormPanel, HTMLStencilElement {
     }
     var HTMLElsaFormPanelElement: {
@@ -689,6 +710,8 @@ declare global {
         "elsa-dropdown-input": HTMLElsaDropdownInputElement;
         "elsa-flow-switch-editor": HTMLElsaFlowSwitchEditorElement;
         "elsa-flowchart": HTMLElsaFlowchartElement;
+        "elsa-flowchart-editor": HTMLElsaFlowchartEditorElement;
+        "elsa-flowchart-editor-toolbar": HTMLElsaFlowchartEditorToolbarElement;
         "elsa-form-panel": HTMLElsaFormPanelElement;
         "elsa-home-page": HTMLElsaHomePageElement;
         "elsa-input-control-switch": HTMLElsaInputControlSwitchElement;
@@ -814,6 +837,13 @@ declare namespace LocalJSX {
         "onContainerSelected"?: (event: CustomEvent<ContainerSelectedArgs>) => void;
         "onGraphUpdated"?: (event: CustomEvent<GraphUpdatedArgs>) => void;
         "workflowDefinition"?: WorkflowDefinition;
+    }
+    interface ElsaFlowchartEditor {
+        "monacoLibPath"?: string;
+    }
+    interface ElsaFlowchartEditorToolbar {
+        "autoLayout"?: (direction: "TB" | "BT" | "LR" | "RL") => Promise<void>;
+        "zoomToFit"?: () => Promise<void>;
     }
     interface ElsaFormPanel {
         "actions"?: Array<PanelActionDefinition>;
@@ -1032,6 +1062,8 @@ declare namespace LocalJSX {
         "elsa-dropdown-input": ElsaDropdownInput;
         "elsa-flow-switch-editor": ElsaFlowSwitchEditor;
         "elsa-flowchart": ElsaFlowchart;
+        "elsa-flowchart-editor": ElsaFlowchartEditor;
+        "elsa-flowchart-editor-toolbar": ElsaFlowchartEditorToolbar;
         "elsa-form-panel": ElsaFormPanel;
         "elsa-home-page": ElsaHomePage;
         "elsa-input-control-switch": ElsaInputControlSwitch;
@@ -1096,6 +1128,8 @@ declare module "@stencil/core" {
             "elsa-dropdown-input": LocalJSX.ElsaDropdownInput & JSXBase.HTMLAttributes<HTMLElsaDropdownInputElement>;
             "elsa-flow-switch-editor": LocalJSX.ElsaFlowSwitchEditor & JSXBase.HTMLAttributes<HTMLElsaFlowSwitchEditorElement>;
             "elsa-flowchart": LocalJSX.ElsaFlowchart & JSXBase.HTMLAttributes<HTMLElsaFlowchartElement>;
+            "elsa-flowchart-editor": LocalJSX.ElsaFlowchartEditor & JSXBase.HTMLAttributes<HTMLElsaFlowchartEditorElement>;
+            "elsa-flowchart-editor-toolbar": LocalJSX.ElsaFlowchartEditorToolbar & JSXBase.HTMLAttributes<HTMLElsaFlowchartEditorToolbarElement>;
             "elsa-form-panel": LocalJSX.ElsaFormPanel & JSXBase.HTMLAttributes<HTMLElsaFormPanelElement>;
             "elsa-home-page": LocalJSX.ElsaHomePage & JSXBase.HTMLAttributes<HTMLElsaHomePageElement>;
             "elsa-input-control-switch": LocalJSX.ElsaInputControlSwitch & JSXBase.HTMLAttributes<HTMLElsaInputControlSwitchElement>;

@@ -24,7 +24,7 @@ public class BreakTests
     {
         await _workflowRunner.RunAsync<BreakForEachWorkflow>();
         var lines = _capturingTextWriter.Lines.ToList();
-        Assert.Equal(new[] { "Start", "C#", "Test", "End" }, lines);
+        Assert.Equal(new[] { "Start", "C#", "End" }, lines);
     }
 
     [Fact(DisplayName = "Break exits out of immediate ForEach only")]

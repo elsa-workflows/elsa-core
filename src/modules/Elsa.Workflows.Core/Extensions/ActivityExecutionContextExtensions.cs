@@ -107,21 +107,6 @@ public static class ActivityExecutionContextExtensions
     /// Schedules the specified activity with the provided callback.
     /// If the activity is null, the callback is invoked immediately.
     /// </summary>
-    public static async Task ScheduleActivityAsync(this ActivityExecutionContext context, IActivity? activity, ActivityCompletionCallback completionCallback)
-    {
-        if (activity == null)
-        {
-            await completionCallback(context, context);
-            return;
-        }
-
-        context.ScheduleActivity(activity, context, completionCallback);
-    }
-    
-    /// <summary>
-    /// Schedules the specified activity with the provided callback.
-    /// If the activity is null, the callback is invoked immediately.
-    /// </summary>
     public static async Task ScheduleOutcomeAsync(this ActivityExecutionContext context, IActivity? activity, [CallerArgumentExpression("activity")] string portPropertyName = default!)
     {
         if (activity == null)
@@ -131,7 +116,7 @@ public static class ActivityExecutionContextExtensions
             return;
         }
 
-        context.ScheduleActivity(activity, context);
+        await context.ScheduleActivityAsync(activity, context);
     }
 
     public static string GetOutcomeName(this ActivityExecutionContext context, string portPropertyName)

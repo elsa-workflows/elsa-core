@@ -83,28 +83,29 @@ public class ActivityExecutionContext
     // ReSharper disable once CollectionNeverQueried.Global
     public IDictionary<string, object?> JournalData { get; } = new Dictionary<string, object?>();
 
-    public void ScheduleActivity(IActivity? activity, ActivityCompletionCallback? completionCallback = default, IEnumerable<MemoryBlockReference>? references = default, object? tag = default)
+    public async ValueTask ScheduleActivityAsync(IActivity? activity, ActivityCompletionCallback? completionCallback = default, IEnumerable<MemoryBlockReference>? references = default, object? tag = default)
     {
-        if (activity == null)
-            return;
-
-        WorkflowExecutionContext.Schedule(activity, this, completionCallback, references, tag);
+        await ScheduleActivityAsync(activity, this, completionCallback, references, tag);
     }
 
-    public void ScheduleActivity(IActivity? activity, ActivityExecutionContext owner, ActivityCompletionCallback? completionCallback = default, IEnumerable<MemoryBlockReference>? references = default, object? tag = default)
+    public async ValueTask ScheduleActivityAsync(IActivity? activity, ActivityExecutionContext owner, ActivityCompletionCallback? completionCallback = default, IEnumerable<MemoryBlockReference>? references = default, object? tag = default)
     {
         if (activity == null)
+        {
+            if (completionCallback != null)
+                await completionCallback(this, this);
             return;
+        }
 
         WorkflowExecutionContext.Schedule(activity, owner, completionCallback, references, tag);
     }
 
-    public void ScheduleActivities(params IActivity?[] activities) => ScheduleActivities((IEnumerable<IActivity?>)activities);
+    public async ValueTask ScheduleActivitiesAsync(params IActivity?[] activities) => await ScheduleActivities((IEnumerable<IActivity?>)activities);
 
-    public void ScheduleActivities(IEnumerable<IActivity?> activities, ActivityCompletionCallback? completionCallback = default)
+    public async ValueTask ScheduleActivities(IEnumerable<IActivity?> activities, ActivityCompletionCallback? completionCallback = default)
     {
         foreach (var activity in activities)
-            ScheduleActivity(activity, completionCallback);
+            await ScheduleActivityAsync(activity, completionCallback);
     }
 
     public void CreateBookmarks(IEnumerable<object> payloads, ExecuteActivityDelegate? callback = default)

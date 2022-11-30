@@ -123,15 +123,13 @@ public class SpeakText : SpeakTextBase
     [Port]public IActivity? FinishedSpeaking { get; set; }
     [Port]public IActivity? Disconnected { get; set; }
     
-    protected override ValueTask HandleDisconnected(ActivityExecutionContext context)
+    protected override async ValueTask HandleDisconnected(ActivityExecutionContext context)
     {
-        context.ScheduleActivity(Disconnected);
-        return ValueTask.CompletedTask;
+        await context.ScheduleActivityAsync(Disconnected);
     }
 
-    protected override ValueTask HandleFinishedSpeaking(ActivityExecutionContext context)
+    protected override async ValueTask HandleFinishedSpeaking(ActivityExecutionContext context)
     {
-        context.ScheduleActivity(FinishedSpeaking);
-        return ValueTask.CompletedTask; 
+        await context.ScheduleActivityAsync(FinishedSpeaking); 
     }
 }

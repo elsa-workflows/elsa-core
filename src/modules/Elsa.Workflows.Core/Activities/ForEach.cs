@@ -8,14 +8,13 @@ using Elsa.Workflows.Core.Services;
 namespace Elsa.Workflows.Core.Activities;
 
 [Activity("Elsa", "Control Flow", "Iterate over a set of values.")]
-public class ForEach : Activity
+public class ForEach : ActivityBase
 {
     private const string CurrentIndexProperty = "CurrentIndex";
 
     public ForEach()
     {
         Behaviors.Add<BreakBehavior>(this);
-        Behaviors.Remove<AutoCompleteBehavior>();
     }
 
     public ForEach(ICollection<object> items) : this()
@@ -62,7 +61,7 @@ public class ForEach : Activity
         context.Set(CurrentValue, currentItem);
 
         if (Body != null)
-            context.ScheduleActivity(Body, OnChildCompleted);
+            await context.ScheduleActivityAsync(Body, OnChildCompleted);
         else
             await context.CompleteActivityAsync();
 

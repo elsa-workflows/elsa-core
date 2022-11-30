@@ -17,7 +17,8 @@ public class ParallelForEach<T> : Activity
     /// </summary>
     public MemoryBlockReference? CurrentValue { get; set; }
 
-    protected override void Execute(ActivityExecutionContext context)
+    /// <inheritdoc />
+    protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var items = context.Get(Items)!.Reverse().ToList();
 
@@ -33,7 +34,7 @@ public class ParallelForEach<T> : Activity
                 localVariable.Id = localVariable.Id;
 
             // Schedule a body of work for each item.
-            context.ScheduleActivity(Body, OnChildCompleted, new[] { localVariable });
+            await context.ScheduleActivityAsync(Body, OnChildCompleted, new[] { localVariable });
         }
     }
 

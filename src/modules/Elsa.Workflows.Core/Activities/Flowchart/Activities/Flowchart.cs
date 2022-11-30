@@ -29,7 +29,7 @@ public class Flowchart : Container
             return;
         }
 
-        context.ScheduleActivity(Start);
+        await context.ScheduleActivityAsync(Start);
     }
 
     private async ValueTask OnDescendantCompletedAsync(ActivityCompleted signal, SignalContext context)
@@ -74,7 +74,7 @@ public class Flowchart : Container
                 // If the completed activity is not part of the left inbound path, always allow its children to be scheduled.
                 if (!inboundActivities.Contains(completedActivity))
                 {
-                    flowchartActivityExecutionContext.ScheduleActivity(activity);
+                    await flowchartActivityExecutionContext.ScheduleActivityAsync(activity);
                     continue;
                 }
 
@@ -85,11 +85,11 @@ public class Flowchart : Container
                     var haveInboundActivitiesExecuted = inboundActivities.All(x => scope.GetExecutionCount(x) > executionCount);
 
                     if (haveInboundActivitiesExecuted)
-                        flowchartActivityExecutionContext.ScheduleActivity(activity);
+                        await flowchartActivityExecutionContext.ScheduleActivityAsync(activity);
                 }
                 else
                 {
-                    flowchartActivityExecutionContext.ScheduleActivity(activity);
+                    await flowchartActivityExecutionContext.ScheduleActivityAsync(activity);
                 }
             }
         }

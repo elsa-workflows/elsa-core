@@ -131,21 +131,18 @@ public class Dial : DialBase
     [Port] public IActivity? Hangup { get; set; }
     [Port] public IActivity? Voicemail { get; set; }
 
-    protected override ValueTask OnHandleAnsweredAsync(ActivityExecutionContext context, CallAnsweredPayload payload)
+    protected override async ValueTask OnHandleAnsweredAsync(ActivityExecutionContext context, CallAnsweredPayload payload)
     {
-        context.ScheduleActivity(Answered);
-        return ValueTask.CompletedTask;
+        await context.ScheduleActivityAsync(Answered);
     }
 
-    protected override ValueTask OnHandleHangupAsync(ActivityExecutionContext context, CallHangupPayload payload)
+    protected override async ValueTask OnHandleHangupAsync(ActivityExecutionContext context, CallHangupPayload payload)
     {
-        context.ScheduleActivity(Hangup);
-        return ValueTask.CompletedTask;
+        await context.ScheduleActivityAsync(Hangup);
     }
 
-    protected override ValueTask OnHandleMachineGreetingEndedAsync(ActivityExecutionContext context, CallMachineGreetingEndedBase payload)
+    protected override async ValueTask OnHandleMachineGreetingEndedAsync(ActivityExecutionContext context, CallMachineGreetingEndedBase payload)
     {
-        context.ScheduleActivity(Voicemail);
-        return ValueTask.CompletedTask;
+        await context.ScheduleActivityAsync(Voicemail);
     }
 }

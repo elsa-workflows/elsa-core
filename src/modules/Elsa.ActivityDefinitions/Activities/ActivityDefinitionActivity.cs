@@ -17,7 +17,7 @@ public class ActivityDefinitionActivity : ActivityBase
         var root = await materializer.MaterializeAsync(this, context.CancellationToken);
 
         // Schedule the activity for execution.
-        context.ScheduleActivity(root, onChildCompletedAsync);
+        await context.ScheduleActivityAsync(root, onChildCompletedAsync);
     }
 
     private async ValueTask onChildCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext) => await context.CompleteActivityAsync();
