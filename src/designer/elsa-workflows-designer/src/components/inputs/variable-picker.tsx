@@ -27,18 +27,18 @@ export class VariablePickerInput {
       currentValue = defaultValue ? defaultValue.toString() : undefined;
     }
 
-    debugger;
-
     return (
       <WorkflowDefinitionTunnel.Consumer>
         {({workflowDefinition}) => {
-          const variables = workflowDefinition?.variables ?? [];
-          return<FormEntry fieldId={fieldId} label={displayName} hint={description}>
+          let  variables: Variable[] = workflowDefinition?.variables ?? [];
+          variables = [null, ...variables];
+          return <FormEntry fieldId={fieldId} label={displayName} hint={description}>
           <select id={fieldId} name={fieldName} onChange={e => this.onChange(e)}>
               {variables.map((variable: Variable) => {
-                const isSelected = variable.name == currentValue?.name;
-                const json = JSON.stringify(variable);
-                return <option value={variable.name} selected={isSelected} data-variable={json}>{variable.name}</option>;
+                const variableName = variable?.name;
+                const isSelected = variableName == currentValue?.name;
+                const json = variable ? JSON.stringify(variable) : '';
+                return <option value={variableName} selected={isSelected} data-variable={json}>{variableName}</option>;
               })}
             </select>
           </FormEntry>
@@ -48,9 +48,9 @@ export class VariablePickerInput {
   }
 
   private onChange = (e: Event) => {
-    debugger;
     const inputElement = e.target as HTMLSelectElement;
-    const variable = inputElement.selectedOptions.length == 0 ? null : JSON.parse(inputElement.selectedOptions[0].dataset.variable);
+    const json = inputElement.selectedOptions[0].dataset.variable;
+    const variable = inputElement.selectedIndex <= 0 ? null : JSON.parse(json);
     this.inputContext.inputChanged(variable, SyntaxNames.Literal);
   }
 }

@@ -26,7 +26,7 @@ export class VariableEditorDialogContent {
     const variableTypeName = variable.typeName;
     const availableTypes: Array<VariableDescriptor> = descriptorsStore.variableDescriptors;
     const groupedVariableTypes = _.groupBy(availableTypes, x => x.category);
-    const storageDrivers: Array<StorageDriverDescriptor> = [{id: null, displayName: '-'}, ...descriptorsStore.storageDrivers];
+    const storageDrivers: Array<StorageDriverDescriptor> = descriptorsStore.storageDrivers;
 
     return (
       <div>
