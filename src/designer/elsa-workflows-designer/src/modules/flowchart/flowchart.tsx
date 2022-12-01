@@ -506,6 +506,13 @@ export class FlowchartComponent implements ContainerActivityComponent {
       return this.activity;
 
     const activity = this.activityLookup[currentItem.activityId] as Flowchart;
+
+    if (activity == null) {
+      alert("Critical");
+      location.reload();
+      return;
+    }
+
     const activityDescriptor = descriptorsStore.activityDescriptors.find(x => x.typeName == activity.type);
 
     if (activityDescriptor.isContainer)
@@ -706,6 +713,9 @@ export class FlowchartComponent implements ContainerActivityComponent {
   };
 
   private onNavigateHierarchy = async (e: CustomEvent<FlowchartNavigationItem>) => {
+
+    debugger;
+
     const item = e.detail;
     const activityId = item.activityId;
     let activity = this.activityLookup[activityId];
