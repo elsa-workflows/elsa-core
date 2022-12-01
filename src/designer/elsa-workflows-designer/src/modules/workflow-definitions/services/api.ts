@@ -4,7 +4,6 @@ import {Activity, PagedList, Variable, VersionedEntity, VersionOptions} from "..
 import {Service} from "typedi";
 import {ElsaApiClientProvider} from "../../../services";
 import {AxiosResponse} from "axios";
-import { adjustConnectionsInRequestModel, adjustConnectionsInResponseModel } from '../../../utils/graph';
 
 @Service()
 export class WorkflowDefinitionsApi {
@@ -45,10 +44,6 @@ export class WorkflowDefinitionsApi {
   }
 
   async post(request: SaveWorkflowDefinitionRequest): Promise<WorkflowDefinition> {
-    //TODO: Written as a workaround for different server and client models. 
-    //To be deleted after the port model on backend is updated.
-    adjustConnectionsInRequestModel(request.root);
-
     const httpClient = await this.getHttpClient();
     const response = await httpClient.post<WorkflowDefinition>('workflow-definitions', request);
     return response.data;
@@ -62,11 +57,6 @@ export class WorkflowDefinitionsApi {
     const queryStringText = serializeQueryString(queryString);
     const httpClient = await this.getHttpClient();
     const response = await httpClient.get<WorkflowDefinition>(`workflow-definitions/${request.definitionId}${queryStringText}`);
-    
-    //TODO: Written as a workaround for different server and client models. 
-    //To be deleted after the connection model on backend is updated.
-    adjustConnectionsInResponseModel(response.data.root);
-    
     return response.data;
   }
 
@@ -171,6 +161,7 @@ export class WorkflowDefinitionsApi {
 
   private getHttpClient = async () => await this.provider.getHttpClient();
 }
+
 
 export interface SaveWorkflowDefinitionRequest {
   definitionId: string;

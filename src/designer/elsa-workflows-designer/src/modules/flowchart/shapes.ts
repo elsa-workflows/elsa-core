@@ -114,8 +114,8 @@ export class ActivityNodeShape extends Shape.HTML {
 ActivityNodeShape.config({
   ports: {
     groups: {
-      left: {
-        position: 'left',
+      in: {
+        position: 'dynamicIn',
         attrs: {
           circle: {
             r: 5,
@@ -135,57 +135,15 @@ ActivityNodeShape.config({
           },
         },
       },
-      right: {
-        position: 'right',
+      out: {
+        position: 'dynamicOut',
         attrs: {
           circle: {
             r: 5,
             magnet: true,
-            stroke: '#3c82f6',
+            stroke: '#fff',
             strokeWidth: 2,
-            fill: '#fff',
-          },
-          text: {
-            fontSize: 12,
-            fill: '#888',
-          },
-        },
-        label: {
-          position: {
-            name: 'outside',
-          },
-        },
-      },
-      top: {
-        position: 'top',
-        attrs: {
-          circle: {
-            r: 5,
-            magnet: true,
-            stroke: '#3c82f6',
-            strokeWidth: 2,
-            fill: '#fff',
-          },
-          text: {
-            fontSize: 12,
-            fill: '#888',
-          },
-        },
-        label: {
-          position: {
-            name: 'outside',
-          },
-        },
-      },
-      bottom: {
-        position: 'bottom',
-        attrs: {
-          circle: {
-            r: 5,
-            magnet: true,
-            stroke: '#3c82f6',
-            strokeWidth: 2,
-            fill: '#fff',
+            fill: '#3c82f6',
           },
           text: {
             fontSize: 12,

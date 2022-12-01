@@ -20,8 +20,7 @@ import PositionEventArgs = NodeView.PositionEventArgs;
 import FromJSONData = Model.FromJSONData;
 import PointLike = Point.PointLike;
 import {generateUniqueActivityName} from "../../utils/generate-activity-name";
-import { DagreLayout, OutNode} from '@antv/layout';
-import { adjustPortMarkupByNode, rebuildGraph } from '../../utils/graph';
+import {DagreLayout, OutNode} from '@antv/layout';
 import {WorkflowDefinition} from "../workflow-definitions/models/entities";
 import FlowchartTunnel, {FlowchartState} from "./state";
 import WorkflowDefinitionTunnel, {WorkflowDefinitionState} from "../../state/workflow-definition-state";
@@ -126,10 +125,11 @@ export class FlowchartComponent implements ContainerActivityComponent {
   }
 
   @Method()
-  async autoLayout(direction: "TB" | "BT" | "LR" | "RL") {
+  async autoLayout() {
+
     const dagreLayout = new DagreLayout({
       type: 'dagre',
-      rankdir: direction,
+      rankdir: 'TB',
       align: 'UL',
       ranksep: 30,
       nodesep: 15,
@@ -161,7 +161,8 @@ export class FlowchartComponent implements ContainerActivityComponent {
       this.updateActivity({id: activity.id, originalId: activity.id, activity: activity});
     });
 
-    this.import(this.activity);
+    await this.import(this.activity);
+    await this.scrollToStart();
   }
 
   @Method()
@@ -190,8 +191,6 @@ export class FlowchartComponent implements ContainerActivityComponent {
 
     const node = this.nodeFactory.createNode(descriptor, activity, sx, sy);
     graph.addNode(node, {merge: true});
-
-    adjustPortMarkupByNode(graph.getNodes().find(n => n.id == node.id));
     await this.updateModel();
     return activity;
   }
@@ -258,11 +257,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
 
   @Method()
   async import(root: Activity): Promise<void> {
-    await this.importInternal(root);
-    
-    rebuildGraph(this.graph);
-
-    await this.scrollToStart();
+    return await this.importInternal(root);
   }
 
   @Method()

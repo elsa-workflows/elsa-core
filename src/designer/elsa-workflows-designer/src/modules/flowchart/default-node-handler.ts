@@ -4,7 +4,6 @@ import {Container, Service} from "typedi"
 import {ActivityNodeHandler, CreateUINodeContext} from "./activity-node-handler";
 import {PortProviderContext, PortProviderRegistry} from "../../services";
 import {PortMode} from "../../models";
-import {v4 as uuid} from 'uuid';
 
 @Service()
 export class DefaultNodeHandler implements ActivityNodeHandler {
@@ -28,31 +27,27 @@ export class DefaultNodeHandler implements ActivityNodeHandler {
     if (outPorts.length == 1)
       outPorts[0].displayName = null;
 
-    const leftPortModels = inPorts.map((x) => ({
-      id: uuid() + '_' + x.name,
-      group: 'left',
+    const inPortModels = inPorts.map(x => ({
+      id: x.name,
+      group: 'in',
       attrs: !!x.displayName ? {
         text: {
           text: x.displayName
-        },
-      } : null,
-      type:'in',
-      position:'left'
+        }
+      } : null
     }));
 
-    const rightPortModels = outPorts.map((x) => ({
-      id: uuid() + '_' + x.name,
-      group: 'right',
+    const outPortModels = outPorts.map(x => ({
+      id: x.name,
+      group: 'out',
       attrs: {
         text: {
           text: x.displayName
-        },
-      },
-      type: 'out',
-      position: 'right'
+        }
+      }
     }));
 
-    const portModels = [...leftPortModels, ...rightPortModels];
+    const portModels = [...inPortModels, ...outPortModels];
 
     return {
       id: activity.id,
