@@ -10,20 +10,19 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
 {
     [ApiController]
     [ApiVersion("1")]
-    [Route("v{apiVersion:apiVersion}/workflow-definitions/{definitionId}")]
     [Route("v{apiVersion:apiVersion}/workflow-definitions/{definitionId}/{versionOptions}")]
     [Produces("application/json")]
-    public class Delete : ControllerBase
+    public class DeleteByDefinitionAndVersion : ControllerBase
     {
         private readonly IWorkflowPublisher _workflowPublisher;
-        public Delete(IWorkflowPublisher workflowPublisher) => _workflowPublisher = workflowPublisher;
+        public DeleteByDefinitionAndVersion(IWorkflowPublisher workflowPublisher) => _workflowPublisher = workflowPublisher;
 
         [HttpDelete]
         [ProducesResponseType(StatusCodes.Status202Accepted)]
         [SwaggerOperation(
-            Summary = "Deletes a workflow definition and all of its versions and workflow instances.",
-            Description = "Deletes a workflow definition and all of its versions and workflow instances.",
-            OperationId = "WorkflowDefinitions.Delete",
+            Summary = "Deletes a workflow definition in a specified version or all of its versions and workflow instances.",
+            Description = "Deletes a workflow definition in a specified version or all of its versions and workflow instances.",
+            OperationId = "WorkflowDefinitions.DeleteByDefinitionAndVersion",
             Tags = new[] { "WorkflowDefinitions" })
         ]
         public async Task<IActionResult> Handle(string definitionId, VersionOptions? versionOptions = default, CancellationToken cancellationToken = default)
