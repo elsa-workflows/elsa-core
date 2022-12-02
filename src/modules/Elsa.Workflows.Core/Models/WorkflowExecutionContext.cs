@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using Elsa.Common.Extensions;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Services;
@@ -158,7 +159,16 @@ public class WorkflowExecutionContext
         return activityExecutionContext;
     }
     
-    public void RemoveActivityExecutionContext(ActivityExecutionContext context) => _activityExecutionContexts.Remove(context);
+    public void RemoveActivityExecutionContext(ActivityExecutionContext context)
+    {
+        // Remove all contexts referencing this on as a parent.
+        var childContexts = _activityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context).ToList();
+
+        foreach (var childContext in childContexts) RemoveActivityExecutionContext(childContext);
+
+        _activityExecutionContexts.Remove(context);
+    }
+
     public void AddActivityExecutionContext(ActivityExecutionContext context) => _activityExecutionContexts.Add(context);
 
     public async Task CancelActivityAsync(string activityId)

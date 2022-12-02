@@ -47,8 +47,8 @@ public class IdentityGraphService : IIdentityGraphService
 
         foreach (var input in assignedInputs)
         {
-            var locationReference = input.MemoryBlockReference();
-            locationReference.Id = $"{activity.Id}:input-{++seed}";
+            var blockReference = input.MemoryBlockReference();
+            blockReference.Id = $"{activity.Id}:input-{++seed}";
         }
 
         seed = 0;

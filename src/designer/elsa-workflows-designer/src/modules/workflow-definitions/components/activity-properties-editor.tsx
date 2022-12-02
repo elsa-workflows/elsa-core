@@ -1,13 +1,13 @@
 import {Component, Event, EventEmitter, h, Method, Prop, State} from '@stencil/core';
 import {camelCase} from 'lodash';
-import {Activity, ActivityDescriptor, ActivityInput, ActivityKind, ActivityOutput, InputDescriptor, OutputDescriptor, PropertyDescriptor, RenderActivityInputContext, RenderActivityPropsContext, TabChangedArgs, TabDefinition, Variable} from '../../../models';
+import {v4 as uuid} from 'uuid';
+import {Activity, ActivityDescriptor, ActivityInput, ActivityKind, ActivityOutput, Expression, InputDescriptor, OutputDescriptor, PropertyDescriptor, RenderActivityInputContext, RenderActivityPropsContext, TabChangedArgs, TabDefinition, Variable} from '../../../models';
 import {InputDriverRegistry} from "../../../services";
 import {Container} from "typedi";
 import {ActivityInputContext} from "../../../services/node-input-driver";
 import {CheckboxFormEntry, FormEntry} from "../../../components/shared/forms/form-entry";
 import {isNullOrWhitespace} from "../../../utils";
 import descriptorsStore from "../../../data/descriptors-store";
-import {Input} from "postcss";
 
 export interface ActivityUpdatedArgs {
   originalId: string;
@@ -225,20 +225,29 @@ export class ActivityPropertiesEditor {
     const isWrapped = inputDescriptor.isWrapped;
     const camelCasePropertyName = camelCase(propertyName);
 
+    debugger;
     if (isWrapped) {
-      const input: ActivityInput = {
-        typeName: inputDescriptor.typeName,
-        expression: {
-          type: syntax,
-          value: propertyValue // TODO: The "value" field is currently hardcoded, but we should be able to be more flexible and potentially have different fields for a given syntax.
-        }
+      let input: ActivityInput = activity[camelCasePropertyName];
+
+      const expression: Expression = {
+        type: syntax,
+        value: propertyValue // TODO: The "value" field is currently hardcoded, but we should be able to be more flexible and potentially have different fields for a given syntax.
       };
 
+      if (!input) {
+        input = {
+          typeName: inputDescriptor.typeName,
+          memoryReference: {id: uuid()},
+          expression: expression
+        }
+      }
+
+      input.expression = expression;
       activity[camelCasePropertyName] = input;
+
     } else {
       activity[camelCasePropertyName] = propertyValue;
     }
-
     this.updateActivity(propertyName);
   }
 
@@ -325,7 +334,7 @@ export class ActivityPropertiesEditor {
         const displayName = isNullOrWhitespace(propertyDescriptor.displayName) ? propertyDescriptor.name : propertyDescriptor.displayName;
         const propertyName = camelCase(propertyDescriptor.name);
         const propertyValue = activity[propertyName] as ActivityOutput;
-        const propertyType =propertyDescriptor.typeName;
+        const propertyType = propertyDescriptor.typeName;
         const typeDescriptor = descriptorsStore.variableDescriptors.find(x => x.typeName == propertyType);
         const propertyTypeName = typeDescriptor?.displayName ?? propertyType;
 

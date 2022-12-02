@@ -101,20 +101,17 @@ export class WorkflowDefinitionsPlugin implements Plugin {
   private generateUniqueActivityName = async (activityDescriptor: ActivityDescriptor): Promise<string> => await generateUniqueActivityName([], activityDescriptor);
 
   private saveWorkflowDefinition = async (definition: WorkflowDefinition, publish: boolean): Promise<WorkflowDefinition> => {
+    debugger;
     const updatedWorkflow = await this.workflowDefinitionManager.saveWorkflow(definition, publish);
-    let idGenerated = false;
+    let reload = false;
 
-    if (definition.id != updatedWorkflow.id) {
-      definition.id = updatedWorkflow.id;
-      idGenerated = true;
-    }
+    if (definition.id != updatedWorkflow.id) reload = true;
+    if (definition.definitionId != updatedWorkflow.definitionId) reload = true;
+    if (definition.version != updatedWorkflow.version) reload = true;
+    if (definition.isPublished != updatedWorkflow.isPublished) reload = true;
+    if (definition.isLatest != updatedWorkflow.isLatest) reload = true;
 
-    if (definition.definitionId != updatedWorkflow.definitionId) {
-      definition.definitionId = updatedWorkflow.definitionId;
-      idGenerated = true;
-    }
-
-    if (idGenerated) {
+    if (reload) {
       await this.workflowDefinitionEditorElement.updateWorkflowDefinition(updatedWorkflow);
       await this.workflowDefinitionEditorElement.loadWorkflowVersions();
     }

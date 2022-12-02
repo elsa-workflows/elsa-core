@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Reflection;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
@@ -113,6 +114,16 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
         ActivityExecutionContextState CreateActivityExecutionContextState(ActivityExecutionContext activityExecutionContext)
         {
             var registerState = new RegisterState(activityExecutionContext.ExpressionExecutionContext.Memory.Blocks);
+
+            var parentId = activityExecutionContext.ParentActivityExecutionContext?.Id;
+
+            if (parentId != null)
+            {
+                var parentContext = activityExecutionContext.WorkflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Id == parentId);
+                
+                Debug.Assert(parentContext != null);
+            }
+            
             var activityExecutionContextState = new ActivityExecutionContextState
             {
                 Id = activityExecutionContext.Id,
@@ -137,6 +148,10 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
             var activityExecutionContext = workflowExecutionContext.CreateActivityExecutionContext(activity);
             activityExecutionContext.Id = activityExecutionContextState.Id;
             activityExecutionContext.Properties = properties;
+
+            foreach (var memoryBlock in activityExecutionContextState.Register.Blocks) 
+                activityExecutionContext.ExpressionExecutionContext.Memory.Blocks[memoryBlock.Key] = memoryBlock.Value;
+            
             return activityExecutionContext;
         }
 

@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using Elsa.Expressions.Models;
 using Elsa.Expressions.Services;
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Management.Serialization.Converters;
 
@@ -12,11 +13,13 @@ namespace Elsa.Workflows.Management.Serialization.Converters;
 public class InputJsonConverter<T> : JsonConverter<Input<T>>
 {
     private readonly IExpressionSyntaxRegistry _expressionSyntaxRegistry;
+    private readonly IIdentityGenerator _identityGenerator;
 
     /// <inheritdoc />
-    public InputJsonConverter(IExpressionSyntaxRegistry expressionSyntaxRegistry)
+    public InputJsonConverter(IExpressionSyntaxRegistry expressionSyntaxRegistry, IIdentityGenerator identityGenerator)
     {
         _expressionSyntaxRegistry = expressionSyntaxRegistry;
+        _identityGenerator = identityGenerator;
     }
 
     public override bool CanConvert(Type typeToConvert) => typeof(Input).IsAssignableFrom(typeToConvert);
@@ -28,9 +31,13 @@ public class InputJsonConverter<T> : JsonConverter<Input<T>>
 
         if (doc.RootElement.ValueKind != JsonValueKind.Object)
             return default!;
-        
+
         if (!doc.RootElement.TryGetProperty("typeName", out var inputTargetTypeElement))
             return default!;
+
+        var memoryReferenceId = doc.RootElement.TryGetProperty("memoryReference", out var memoryReferenceElement) && memoryReferenceElement.ValueKind == JsonValueKind.String
+            ? memoryReferenceElement.GetProperty("id").GetString()!
+            : _identityGenerator.GenerateId();
 
         var expressionElement = doc.RootElement.GetProperty("expression");
 
@@ -45,7 +52,7 @@ public class InputJsonConverter<T> : JsonConverter<Input<T>>
 
         var context = new ExpressionConstructorContext(expressionElement, options);
         var expression = expressionSyntaxDescriptor.CreateExpression(context);
-        var locationReference = expressionSyntaxDescriptor.CreateLocationReference(new LocationReferenceConstructorContext(expression));
+        var locationReference = expressionSyntaxDescriptor.CreateBlockReference(new BlockReferenceConstructorContext(expression, memoryReferenceId));
 
         return (Input<T>)Activator.CreateInstance(typeof(Input<T>), expression, locationReference)!;
     }
@@ -55,6 +62,7 @@ public class InputJsonConverter<T> : JsonConverter<Input<T>>
         var expression = value.Expression;
         var expressionType = expression.GetType();
         var targetType = value.Type;
+        var memoryReferenceId = value.MemoryBlockReference().Id;
         var expressionSyntaxDescriptor = _expressionSyntaxRegistry.Find(x => x.Type == expressionType);
 
         if (expressionSyntaxDescriptor == null)
@@ -63,7 +71,11 @@ public class InputJsonConverter<T> : JsonConverter<Input<T>>
         var model = new
         {
             TypeName = targetType,
-            Expression = expressionSyntaxDescriptor.CreateSerializableObject(new SerializableObjectConstructorContext(expression))
+            Expression = expressionSyntaxDescriptor.CreateSerializableObject(new SerializableObjectConstructorContext(expression)),
+            MemoryReference = new
+            {
+                Id = memoryReferenceId
+            }
         };
 
         JsonSerializer.Serialize(writer, model, options);

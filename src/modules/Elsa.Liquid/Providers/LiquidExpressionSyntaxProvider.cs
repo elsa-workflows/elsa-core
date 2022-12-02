@@ -23,7 +23,7 @@ public class LiquidExpressionSyntaxProvider : IExpressionSyntaxProvider
         Syntax = SyntaxName,
         Type = typeof(LiquidExpression),
         CreateExpression = CreateLiquidExpression,
-        CreateLocationReference = context =>
+        CreateBlockReference = context =>
         {
             var reference = new LiquidExpressionBlockReference(context.GetExpression<LiquidExpression>());
 

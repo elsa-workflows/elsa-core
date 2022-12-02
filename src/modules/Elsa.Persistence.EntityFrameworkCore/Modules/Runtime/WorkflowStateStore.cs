@@ -4,6 +4,7 @@ using EFCore.BulkExtensions;
 using Elsa.Common.Services;
 using Elsa.Persistence.EntityFrameworkCore.Common;
 using Elsa.Workflows.Core.Serialization;
+using Elsa.Workflows.Core.Serialization.Converters;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Runtime.Services;
 using Microsoft.EntityFrameworkCore;
@@ -57,6 +58,9 @@ public class EFCoreWorkflowStateStore : IWorkflowStateStore
         
         var entry = dbContext.Entry(entity);
         var json = entry.Property<string>("Data").CurrentValue;
+        
+        // For reading string:object dictionaries where the objects would otherwise be read as JsonElement values.
+        options.Converters.Add(new SystemObjectPrimitiveConverter());
         return JsonSerializer.Deserialize<WorkflowState>(json, options);
     }
 }

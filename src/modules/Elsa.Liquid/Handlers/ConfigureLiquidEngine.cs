@@ -44,7 +44,8 @@ namespace Elsa.Liquid.Handlers
             }
             
             // Register all variable types.
-            foreach (var variableDescriptor in _managementOptions.VariableDescriptors) memberAccessStrategy.Register(variableDescriptor.Type);
+            foreach (var variableDescriptor in _managementOptions.VariableDescriptors.Where(x => x.Type.IsClass)) 
+                memberAccessStrategy.Register(variableDescriptor.Type);
 
             return Task.CompletedTask;
         }
