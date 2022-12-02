@@ -1,5 +1,5 @@
 import {CellView, Graph, Node, Shape} from '@antv/x6';
-import { autoOrientPortsAndEdges } from '../../utils/graph';
+import { autoOrientConnections } from '../../utils/graph';
 import './ports';
 import {Activity} from "../../models";
 import {Connection} from "./models";
@@ -287,7 +287,7 @@ export function createGraph(
   });
 
   graph.on("node:moving", ({ node }) => {
-    autoOrientPortsAndEdges(graph, node);
+    autoOrientConnections(graph, node);
   });
 
   return graph;
