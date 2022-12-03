@@ -3,7 +3,7 @@ image: Visual Studio 2022
 environment:
     elsa_version: 2.10.0
     elsa_build_version: 0.0.0
-    nodejs_version: "14.6.0"
+    nodejs_version: "19.0.1"
     # AppVeyor installs Java on its build agents by default, but it
     # picks an old version that's not compatible with SonarQube.
     # This brings it up to date.
