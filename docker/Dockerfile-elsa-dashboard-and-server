@@ -1,10 +1,10 @@
-FROM node:17-alpine as client-build
+FROM amd64/node:19.2.0-alpine as client-build
 
 WORKDIR /app
 COPY /src .
 
 WORKDIR /app/designer/elsa-workflows-studio
-RUN set NODE_OPTIONS=--max-old-space-size=4096
+RUN set NODE_OPTIONS=--max-old-space-size=3072
 RUN npm install --force
 RUN npm run build
 
