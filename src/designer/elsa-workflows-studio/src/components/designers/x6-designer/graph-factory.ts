@@ -42,7 +42,7 @@ export function createGraph(
     },
     selecting: {
       enabled: true,
-      showNodeSelectionBox: !disableEdit,
+      showNodeSelectionBox: false,
       rubberband: !disableEdit
     },
     scroller: {

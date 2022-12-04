@@ -11,28 +11,23 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
     [ApiController]
     [ApiVersion("1")]
     [Route("v{apiVersion:apiVersion}/workflow-definitions/{definitionId}")]
-    [Route("v{apiVersion:apiVersion}/workflow-definitions/{definitionId}/{versionOptions}")]
     [Produces("application/json")]
-    public class Delete : ControllerBase
+    public class DeleteByDefinition : ControllerBase
     {
         private readonly IWorkflowPublisher _workflowPublisher;
-        public Delete(IWorkflowPublisher workflowPublisher) => _workflowPublisher = workflowPublisher;
+        public DeleteByDefinition(IWorkflowPublisher workflowPublisher) => _workflowPublisher = workflowPublisher;
 
         [HttpDelete]
         [ProducesResponseType(StatusCodes.Status202Accepted)]
         [SwaggerOperation(
             Summary = "Deletes a workflow definition and all of its versions and workflow instances.",
             Description = "Deletes a workflow definition and all of its versions and workflow instances.",
-            OperationId = "WorkflowDefinitions.Delete",
+            OperationId = "WorkflowDefinitions.DeleteByDefinition",
             Tags = new[] { "WorkflowDefinitions" })
         ]
-        public async Task<IActionResult> Handle(string definitionId, VersionOptions? versionOptions = default, CancellationToken cancellationToken = default)
+        public async Task<IActionResult> Handle(string definitionId, CancellationToken cancellationToken = default)
         {
-            if (versionOptions == null)
-                await _workflowPublisher.DeleteAsync(definitionId, VersionOptions.All, cancellationToken);
-            else
-                await _workflowPublisher.DeleteAsync(definitionId, versionOptions.Value, cancellationToken);
-
+            await _workflowPublisher.DeleteAsync(definitionId, VersionOptions.All, cancellationToken);
             return Accepted();
         }
     }

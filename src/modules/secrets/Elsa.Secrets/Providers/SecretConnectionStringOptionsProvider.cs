@@ -24,9 +24,11 @@ namespace Elsa.Secrets.Providers
 
             var secretsPostgre = secretsProvider.GetSecretsForSelectListAsync(Constants.SecretType_PostgreSql).Result;
             var secretsMssql = secretsProvider.GetSecretsForSelectListAsync(Constants.SecretType_MsSql).Result;
+            var secretsMysql = secretsProvider.GetSecretsForSelectListAsync(Constants.SecretType_MySql).Result;
 
             var items = secretsMssql.Select(x => new SelectListItem(x.Item1, x.Item2)).ToList();
             items.AddRange(secretsPostgre.Select(x => new SelectListItem(x.Item1, x.Item2)).ToList());
+            items.AddRange(secretsMysql.Select(x => new SelectListItem(x.Item1, x.Item2)).ToList());
             items.Insert(0, new SelectListItem("", "empty"));
 
             return new SelectList { Items = items };

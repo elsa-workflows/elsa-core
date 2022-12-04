@@ -254,6 +254,8 @@ export class ElsaWorkflowDesigner {
 
     dagre.layout(graph);
 
+    this.disableEvents();
+
     this.workflowModel.activities.forEach(activity => {
       const node = graph.node(activity.activityId);
 
@@ -261,11 +263,16 @@ export class ElsaWorkflowDesigner {
       const deltaX = node.x - activity.x;
       const deltaY = node.y - activity.y;
       this.graph.positionCell(cell.translate(deltaX, deltaY), "top-left");
-      activity.x = Math.round(activity.x + deltaX);
-      activity.y = Math.round(activity.y + deltaY);
+
+      const position = (cell as any).position({ relative: false });
+      activity.x = Math.round(position.x);
+      activity.y = Math.round(position.y);
+
+      (cell as any).activity = activity;
     });
 
     this.graph.scrollToContent();
+    this.enableEvents(true);
 
     console.log("Auto-layout applied");
   };
@@ -939,9 +946,9 @@ export class ElsaWorkflowDesigner {
         }
         {this.mode == WorkflowDesignerMode.Test ?
           <div>
-            <div id="left" style={{'z-index': '1', border:`4px solid orange`, position:`fixed`, height: `calc(100vh - 64px)`, width:`4px`, top:`64`, bottom:`0`, left:`0`}}/>
-            <div id="right" style={{'z-index': '1', border:`4px solid orange`, position:`fixed`, height: `calc(100vh - 64px)`, width:`4px`, top:`64`, bottom:`0`, right:`0`}}/>
-            <div id="top" style={{'z-index': '1', border:`4px solid orange`, position:`fixed`, height:`4px`, left:`0`, right:`0`, top:`30`}}/>
+            <div id="left" style={{'z-index': '1', border:`4px solid orange`, position:`fixed`, height: `calc(100vh - 64px)`, width:`4px`, top:`64px`, bottom:`0`, left:`0`}}/>
+            <div id="right" style={{'z-index': '1', border:`4px solid orange`, position:`fixed`, height: `calc(100vh - 64px)`, width:`4px`, top:`64px`, bottom:`0`, right:`0`}}/>
+            <div id="top" style={{'z-index': '1', border:`4px solid orange`, position:`fixed`, height:`4px`, left:`0`, right:`0`, top:`64px`}}/>
             <div id="bottom" style={{'z-index': '1', border:`4px solid orange`, position:`fixed`, height:`4px`, left:`0`, right:`0`, bottom:`0`}}/>
           </div>
           :

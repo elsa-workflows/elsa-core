@@ -15,19 +15,19 @@ namespace Elsa.Retention.Extensions
         {
             services
                 .Configure(configureOptions)
-                .AddSingleton(CreateRetentionFilterPipeline)
+                .AddSingleton(CreateRetentionSpecificationFilter)
                 .AddScoped<CleanupJob>()
                 .AddHostedService<CleanupHostedService>();
 
             return services;
         }
 
-        private static IRetentionFilterPipeline CreateRetentionFilterPipeline(IServiceProvider serviceProvider)
+        private static IRetentionSpecificationFilter CreateRetentionSpecificationFilter(IServiceProvider serviceProvider)
         {
             var options = serviceProvider.GetRequiredService<IOptions<CleanupOptions>>().Value;
-            var pipeline = ActivatorUtilities.CreateInstance<RetentionFilterPipeline>(serviceProvider);
+            var pipeline = ActivatorUtilities.CreateInstance<RetentionSpecificationFilter>(serviceProvider);
 
-            options.ConfigurePipeline(pipeline);
+            options.ConfigureSpecificationFilter(pipeline);
             return pipeline;
         }
     }
