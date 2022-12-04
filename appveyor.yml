@@ -14,6 +14,7 @@ environment:
         secure: qaE9kOVkGGFM7ZMf3YeliZxDU9udTCy6W5xXHJ9T+tXv5qXPMYlIdR7hyNgxW04A
 
 init:
+    -   cmd: set NODE_OPTIONS=--max-old-space-size=1028
     -   cmd: git config --global core.autocrlf true
     -   ps: |
             if ($env:APPVEYOR_REPO_TAG -eq "true")
