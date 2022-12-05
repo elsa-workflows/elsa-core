@@ -120,7 +120,7 @@ export class DefaultActivityTemplate {
     const iconCssClass = this.displayTypeIsPicker ? 'px-2' : 'px-4';
 
     if (!icon)
-      return <div class={iconCssClass}></div>;
+      return undefined;
 
     return (
       <div class={`${iconCssClass} py-1`}>

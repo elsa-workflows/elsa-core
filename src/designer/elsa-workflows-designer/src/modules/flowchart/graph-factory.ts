@@ -5,8 +5,6 @@ import {Activity} from "../../models";
 import {Connection} from "./models";
 import descriptorsStore from "../../data/descriptors-store";
 import {generateUniqueActivityName} from "../../utils/generate-activity-name";
-import {Hash} from "../../utils";
-import {createActivityLookup} from "../../services";
 
 export function createGraph(
   container: HTMLElement,
@@ -70,8 +68,8 @@ export function createGraph(
       router: {
         name: 'manhattan',
         args: {
-          startDirections: ['right'],
-          endDirections: ['left'],
+          startDirections: ['top','right','left','bottom'],
+          endDirections: ['top','right','left','bottom'],
         },
       },
       // router: {
@@ -91,23 +89,34 @@ export function createGraph(
       snap: {
         radius: 20,
       },
-      validateMagnet({magnet}) {
-        return magnet.getAttribute('port-group') !== 'in'
+      validateMagnet({view, magnet}) {
+        const node = view.cell as Node;
+        const sourcePort = node.getPort(magnet.getAttribute('port'));
+        return sourcePort.type !== 'in'
       },
       validateConnection({sourceView, targetView, sourceMagnet, targetMagnet}) {
-        if (!sourceMagnet || sourceMagnet.getAttribute('port-group') === 'in') {
+        if(!sourceMagnet || !targetMagnet) {
+          return false;
+        }
+
+        const sourceNode = sourceView.cell as Node;
+        const sourcePort = sourceNode.getPort(sourceMagnet.getAttribute('port'));
+
+        const targetNode = targetView.cell as Node;
+        const targetPort = targetNode.getPort(targetMagnet.getAttribute('port'));
+        
+        if (sourcePort.type === 'in') {
           return false
         }
 
-        if (!targetMagnet || targetMagnet.getAttribute('port-group') !== 'in') {
+        if (targetPort.type !== 'in') {
           return false
         }
 
         const portId = targetMagnet.getAttribute('port')!
         const node = targetView.cell as Node
         const port = node.getPort(portId)
-        return !(port && port.connected);
-
+        return !(targetPort && targetPort.connected);
       },
       createEdge() {
         return graph.createEdge({

@@ -101,7 +101,6 @@ export class WorkflowDefinitionsPlugin implements Plugin {
   private generateUniqueActivityName = async (activityDescriptor: ActivityDescriptor): Promise<string> => await generateUniqueActivityName([], activityDescriptor);
 
   private saveWorkflowDefinition = async (definition: WorkflowDefinition, publish: boolean): Promise<WorkflowDefinition> => {
-    debugger;
     const updatedWorkflow = await this.workflowDefinitionManager.saveWorkflow(definition, publish);
     let reload = false;
 
