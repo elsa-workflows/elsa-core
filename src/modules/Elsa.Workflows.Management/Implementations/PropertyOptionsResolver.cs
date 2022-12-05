@@ -21,12 +21,9 @@ public class PropertyOptionsResolver : IPropertyOptionsResolver
     public object? GetOptions(PropertyInfo propertyInfo)
     {
         var inputAttribute = propertyInfo.GetCustomAttribute<InputAttribute>();
-
-        if (inputAttribute == null)
-            return null;
-
-        if (inputAttribute.OptionsProvider == null)
-            return inputAttribute.Options ?? (TryGetEnumOptions(propertyInfo, out var items) ? items : null);
+        
+        if (inputAttribute?.OptionsProvider == null)
+            return inputAttribute?.Options ?? (TryGetEnumOptions(propertyInfo, out var items) ? items : null);
 
         var providerType = inputAttribute.OptionsProvider;
 
