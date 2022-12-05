@@ -1,6 +1,6 @@
-FROM amd64/node:19.2.0-alpine as client-build
+FROM --platform=$BUILDPLATFORM node:19.2-alpine as client-build
 
-FROM mcr.microsoft.com/dotnet/sdk:7.0-bullseye-slim-amd64 AS build
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:7.0-bullseye-slim AS build
 WORKDIR /source
 
 # restore packages
