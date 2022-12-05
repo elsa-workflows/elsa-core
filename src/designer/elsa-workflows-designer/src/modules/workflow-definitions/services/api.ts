@@ -5,7 +5,6 @@ import {Service} from "typedi";
 import {ElsaApiClientProvider} from "../../../services";
 import {AxiosResponse} from "axios";
 import { adjustConnectionsInRequestModel, adjustConnectionsInResponseModel } from '../../../utils/graph';
-import { adjustConnectionsInRequestModel, adjustConnectionsInResponseModel } from '../../../utils/graph';
 import { cloneDeep } from '@antv/x6/lib/util/object/object';
 
 @Service()

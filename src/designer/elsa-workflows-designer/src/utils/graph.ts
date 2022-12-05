@@ -3,6 +3,7 @@ import { PortManager } from "@antv/x6/lib/model/port";
 import { Connection } from "../modules/flowchart/models";
 import { v4 as uuid } from 'uuid';
 import { Activity } from "../models";
+import {ActivityNode} from "../services";
 
 export function rebuildGraph(graph: Graph) {
   graph.getNodes().forEach((node: Node<Node.Properties>) => {
