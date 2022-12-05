@@ -10,7 +10,7 @@ export interface ContainerActivityComponent {
   export(): Promise<Activity>
   import(root: Activity): Promise<void>;
   zoomToFit(): Promise<void>;
-  autoLayout(direction: "TB" | "BT" | "LR" | "RL"): Promise<void>;
+  autoLayout(): Promise<void>;
   scrollToStart(): Promise<void>;
   reset(): Promise<void>;
   getCurrentLevel(): Promise<Activity>;

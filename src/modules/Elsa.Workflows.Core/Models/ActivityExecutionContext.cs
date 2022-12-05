@@ -152,7 +152,7 @@ public class ActivityExecutionContext
     /// <summary>
     /// Returns a property value associated with the current activity context. 
     /// </summary>
-    public T? GetProperty<T>(string key) => Properties!.TryGetValue<T?>(key, out var value) ? value : default;
+    public T? GetProperty<T>(string key) => Properties.TryGetValue<T?>(key, out var value) ? value : default;
 
     /// <summary>
     /// Returns a property value associated with the current activity context. 

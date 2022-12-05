@@ -40,6 +40,7 @@ export interface Variable {
 export interface ActivityInput {
   typeName: Type;
   expression: Expression;
+  memoryReference: MemoryReference;
 }
 
 export interface ActivityOutput {

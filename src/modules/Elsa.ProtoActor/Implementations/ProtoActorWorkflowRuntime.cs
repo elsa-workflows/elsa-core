@@ -68,9 +68,9 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
         var request = new ResumeWorkflowRequest
         {
             InstanceId = workflowInstanceId,
-            CorrelationId = options.CorrelationId,
-            BookmarkId = options.BookmarkId,
-            ActivityId = options.ActivityId,
+            CorrelationId = options.CorrelationId.EmptyIfNull(),
+            BookmarkId = options.BookmarkId.EmptyIfNull(),
+            ActivityId = options.ActivityId.EmptyIfNull(),
             Input = options.Input?.Serialize()
         };
 
@@ -107,7 +107,7 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
 
             var resumeResult = await ResumeWorkflowAsync(
                 workflowInstanceId,
-                runtimeOptions,
+                runtimeOptions with { BookmarkId = bookmark.BookmarkId },
                 cancellationToken);
 
             resumedWorkflows.Add(new ResumedWorkflow(workflowInstanceId, resumeResult.Bookmarks));

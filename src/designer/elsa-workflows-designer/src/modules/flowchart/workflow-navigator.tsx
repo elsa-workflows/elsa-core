@@ -2,7 +2,7 @@ import {Component, FunctionalComponent, h, Prop, Event, EventEmitter} from "@ste
 import {Container} from "typedi";
 import {ActivityIconRegistry, ActivityNode, flatten, PortProviderRegistry, walkActivities} from "../../services";
 import {Flowchart, FlowchartNavigationItem} from "./models";
-import {Port} from "../../models";
+import {Activity, ActivityDescriptor, Port} from "../../models";
 import descriptorsStore from "../../data/descriptors-store";
 import {WorkflowDefinition} from "../workflow-definitions/models/entities";
 
@@ -47,11 +47,23 @@ export class WorkflowNavigator {
 
   private renderPathItem = (item: FlowchartNavigationItem, index: number, nodes: Array<ActivityNode>) => {
     const activityId = item.activityId;
-    const activity = nodes.find(x => x.activity.id == activityId).activity;
-    const activityDescriptor = descriptorsStore.activityDescriptors.find(x => x.typeName == activity.type);
+    let activity: Activity;
+    let activityDescriptor: ActivityDescriptor;
+
+    try {
+      activity = nodes.find(x => x.activity.id == activityId).activity;
+      activityDescriptor = descriptorsStore.activityDescriptors.find(x => x.typeName == activity.type);
+    } catch (e) {
+      alert('Debug this')
+      debugger;
+      window.location.reload();
+      return;
+    }
+
     const icon = this.iconRegistry.getOrDefault(activity.type)();
     const listElements = [];
     const isLastItem = index == this.items.length - 1;
+    const isFirstItem = index == 0;
 
     const onItemClick = (e: MouseEvent, item: FlowchartNavigationItem) => {
       e.preventDefault();
@@ -68,7 +80,7 @@ export class WorkflowNavigator {
         port = ports.find(x => x.name == item.portName);
     }
 
-    if (isLastItem) {
+    if (!isFirstItem || isLastItem) {
       listElements.push(
         <li>
           <div class="flex items-center">

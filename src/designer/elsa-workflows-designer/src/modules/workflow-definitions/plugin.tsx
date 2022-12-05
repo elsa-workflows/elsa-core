@@ -20,7 +20,7 @@ import {PublishClickedArgs} from "./components/publish-button";
 import {ExportWorkflowRequest, ImportWorkflowRequest, WorkflowDefinitionsApi} from "./services/api";
 import {DefaultModalActions, ModalDialogInstance, ModalDialogService} from "../../components/shared/modal-dialog";
 import {isEqual} from 'lodash'
-import {htmlToElement} from "../../utils";
+import {htmlToElement, isNullOrWhitespace} from "../../utils";
 
 const FlowchartTypeName = 'Elsa.Flowchart';
 
@@ -101,10 +101,22 @@ export class WorkflowDefinitionsPlugin implements Plugin {
   private generateUniqueActivityName = async (activityDescriptor: ActivityDescriptor): Promise<string> => await generateUniqueActivityName([], activityDescriptor);
 
   private saveWorkflowDefinition = async (definition: WorkflowDefinition, publish: boolean): Promise<WorkflowDefinition> => {
+    debugger;
     const updatedWorkflow = await this.workflowDefinitionManager.saveWorkflow(definition, publish);
-    await this.workflowDefinitionEditorElement.updateWorkflowDefinition(updatedWorkflow);
-    await this.workflowDefinitionEditorElement.loadWorkflowVersions();
-    return updatedWorkflow;
+    let reload = false;
+
+    if (definition.id != updatedWorkflow.id) reload = true;
+    if (definition.definitionId != updatedWorkflow.definitionId) reload = true;
+    if (definition.version != updatedWorkflow.version) reload = true;
+    if (definition.isPublished != updatedWorkflow.isPublished) reload = true;
+    if (definition.isLatest != updatedWorkflow.isLatest) reload = true;
+
+    if (reload) {
+      await this.workflowDefinitionEditorElement.updateWorkflowDefinition(updatedWorkflow);
+      await this.workflowDefinitionEditorElement.loadWorkflowVersions();
+    }
+
+    return definition;
   }
 
   private showWorkflowDefinitionEditor = (workflowDefinition: WorkflowDefinition) => {
@@ -121,7 +133,7 @@ export class WorkflowDefinitionsPlugin implements Plugin {
     fileInput.addEventListener('change', async e => {
       const files = fileInput.files;
 
-      if(files.length == 0) {
+      if (files.length == 0) {
         fileInput.remove();
         return;
       }
@@ -194,6 +206,6 @@ export class WorkflowDefinitionsPlugin implements Plugin {
   }
 
   private onImportClicked = async (e: CustomEvent) => {
-      await this.import();
+    await this.import();
   }
 }

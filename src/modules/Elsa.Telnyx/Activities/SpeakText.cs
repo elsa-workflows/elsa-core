@@ -83,11 +83,11 @@ public abstract class SpeakTextBase : ActivityBase
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var request = new SpeakTextRequest(
-            Language.Get(context) ?? throw new Exception("Language is required."),
-            Voice.Get(context) ?? throw new Exception("Voice is required"),
-            Payload.Get(context) ?? throw new Exception("Payload is required"),
-            PayloadType.Get(context).EmptyToNull(),
-            ServiceLevel.Get(context).EmptyToNull()
+            Language.Get(context),
+            Voice.Get(context),
+            Payload.Get(context),
+            PayloadType.TryGet(context).EmptyToNull(),
+            ServiceLevel.TryGet(context).EmptyToNull()
         );
 
         var callControlId = context.GetPrimaryCallControlId(CallControlId) ?? throw new Exception("CallControlId is required.");

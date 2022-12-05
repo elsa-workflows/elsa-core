@@ -5,6 +5,7 @@ import {Service} from "typedi";
 import {ElsaApiClientProvider} from "../../../services";
 import {AxiosResponse} from "axios";
 import { adjustConnectionsInRequestModel, adjustConnectionsInResponseModel } from '../../../utils/graph';
+import { adjustConnectionsInRequestModel, adjustConnectionsInResponseModel } from '../../../utils/graph';
 import { cloneDeep } from '@antv/x6/lib/util/object/object';
 
 @Service()
@@ -66,11 +67,6 @@ export class WorkflowDefinitionsApi {
     const queryStringText = serializeQueryString(queryString);
     const httpClient = await this.getHttpClient();
     const response = await httpClient.get<WorkflowDefinition>(`workflow-definitions/${request.definitionId}${queryStringText}`);
-    
-    //TODO: Written as a workaround for different server and client models. 
-    //To be deleted after the connection model on backend is updated.
-    adjustConnectionsInResponseModel(response.data.root);
-    
     return response.data;
   }
 
@@ -180,6 +176,7 @@ export class WorkflowDefinitionsApi {
 
   private getHttpClient = async () => await this.provider.getHttpClient();
 }
+
 
 export interface SaveWorkflowDefinitionRequest {
   definitionId: string;

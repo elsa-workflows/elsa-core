@@ -27,7 +27,7 @@ public class JavaScriptExpressionSyntaxProvider : IExpressionSyntaxProvider
         Syntax = SyntaxName,
         Type = typeof(JavaScriptExpression),
         CreateExpression = CreateJavaScriptExpression,
-        CreateLocationReference = context =>
+        CreateBlockReference = context =>
         {
             var reference = new JavaScriptExpressionBlockReference(context.GetExpression<JavaScriptExpression>());
 

@@ -20,8 +20,7 @@ import PositionEventArgs = NodeView.PositionEventArgs;
 import FromJSONData = Model.FromJSONData;
 import PointLike = Point.PointLike;
 import {generateUniqueActivityName} from "../../utils/generate-activity-name";
-import { DagreLayout, OutNode} from '@antv/layout';
-import { adjustPortMarkupByNode, rebuildGraph } from '../../utils/graph';
+import {DagreLayout, OutNode} from '@antv/layout';
 import {WorkflowDefinition} from "../workflow-definitions/models/entities";
 import FlowchartTunnel, {FlowchartState} from "./state";
 import WorkflowDefinitionTunnel, {WorkflowDefinitionState} from "../../state/workflow-definition-state";
@@ -126,10 +125,11 @@ export class FlowchartComponent implements ContainerActivityComponent {
   }
 
   @Method()
-  async autoLayout(direction: "TB" | "BT" | "LR" | "RL") {
+  async autoLayout() {
+
     const dagreLayout = new DagreLayout({
       type: 'dagre',
-      rankdir: direction,
+      rankdir: 'TB',
       align: 'UL',
       ranksep: 30,
       nodesep: 15,
@@ -161,7 +161,8 @@ export class FlowchartComponent implements ContainerActivityComponent {
       this.updateActivity({id: activity.id, originalId: activity.id, activity: activity});
     });
 
-    this.import(this.activity);
+    await this.import(this.activity);
+    await this.scrollToStart();
   }
 
   @Method()
@@ -190,8 +191,6 @@ export class FlowchartComponent implements ContainerActivityComponent {
 
     const node = this.nodeFactory.createNode(descriptor, activity, sx, sy);
     graph.addNode(node, {merge: true});
-
-    adjustPortMarkupByNode(graph.getNodes().find(n => n.id == node.id));
     await this.updateModel();
     return activity;
   }
@@ -512,6 +511,13 @@ export class FlowchartComponent implements ContainerActivityComponent {
       return this.activity;
 
     const activity = this.activityLookup[currentItem.activityId] as Flowchart;
+
+    if (activity == null) {
+      alert("Critical");
+      location.reload();
+      return;
+    }
+
     const activityDescriptor = descriptorsStore.activityDescriptors.find(x => x.typeName == activity.type);
 
     if (activityDescriptor.isContainer)
@@ -712,6 +718,9 @@ export class FlowchartComponent implements ContainerActivityComponent {
   };
 
   private onNavigateHierarchy = async (e: CustomEvent<FlowchartNavigationItem>) => {
+
+    debugger;
+
     const item = e.detail;
     const activityId = item.activityId;
     let activity = this.activityLookup[activityId];

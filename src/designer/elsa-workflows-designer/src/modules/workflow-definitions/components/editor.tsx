@@ -32,8 +32,6 @@ export class WorkflowDefinitionEditor {
   private canvas: HTMLElsaCanvasElement;
   private container: HTMLDivElement;
   private toolbox: HTMLElsaWorkflowDefinitionEditorToolboxElement;
-  private readonly emitActivityChangedDebounced: (e: ActivityPropertyChangedEventArgs) => void;
-  private readonly updateModelDebounced: () => void;
   private readonly saveChangesDebounced: () => void;
   private readonly workflowDefinitionApi: WorkflowDefinitionsApi;
 
@@ -42,8 +40,6 @@ export class WorkflowDefinitionEditor {
     this.pluginRegistry = Container.get(PluginRegistry);
     this.activityNameFormatter = Container.get(ActivityNameFormatter);
     this.portProviderRegistry = Container.get(PortProviderRegistry);
-    this.emitActivityChangedDebounced = debounce(this.emitActivityChanged, 100);
-    this.updateModelDebounced = debounce(this.updateModel, 10);
     this.saveChangesDebounced = debounce(this.saveChanges, 1000);
     this.workflowDefinitionApi = Container.get(WorkflowDefinitionsApi);
   }
@@ -89,7 +85,7 @@ export class WorkflowDefinitionEditor {
 
   @Listen('graphUpdated')
   private async handleGraphUpdated(e: CustomEvent<GraphUpdatedArgs>) {
-    this.updateModelDebounced();
+    await this.updateModel();
     this.saveChangesDebounced();
   }
 
@@ -114,6 +110,7 @@ export class WorkflowDefinitionEditor {
     await this.updateWorkflowDefinition(workflowDefinition);
     await this.canvas.importGraph(workflowDefinition.root);
     await this.eventBus.emit(WorkflowEditorEventTypes.WorkflowDefinition.Imported, this, {workflowDefinition});
+    await this.canvas.scrollToStart();
   }
 
   // Updates the workflow definition without importing it into the designer.
@@ -228,9 +225,9 @@ export class WorkflowDefinitionEditor {
     });
   };
 
-  private onZoomToFit = async () => await this.canvas.zoomToFit();
+  private onZoomToFit = async () => await this.canvas.zoomToFit()
 
-  private onAutoLayout = async (direction: "TB" | "BT" | "LR" | "RL") => await this.canvas.autoLayout(direction);
+  private onAutoLayout = async () => await this.canvas.autoLayout()
 
   private onActivityUpdated = async (e: CustomEvent<ActivityUpdatedArgs>) => {
     await this.canvas.updateActivity({
@@ -240,12 +237,12 @@ export class WorkflowDefinitionEditor {
     });
 
     await this.updateModel();
-    this.emitActivityChangedDebounced({...e.detail, workflowEditor: this.el});
+    await this.emitActivityChanged(e.detail.activity, e.detail.propertyName);
     this.saveChangesDebounced();
   }
 
-  private onWorkflowPropsUpdated = (e: CustomEvent<WorkflowDefinitionPropsUpdatedArgs>) => {
-    this.updateModelDebounced();
+  private onWorkflowPropsUpdated = async (e: CustomEvent<WorkflowDefinitionPropsUpdatedArgs>) => {
+    await this.updateModel();
     this.saveChangesDebounced();
   }
 
