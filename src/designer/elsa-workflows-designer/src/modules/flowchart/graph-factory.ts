@@ -1,4 +1,5 @@
 import {CellView, Graph, Node, Shape} from '@antv/x6';
+import { autoOrientConnections } from '../../utils/graph';
 import './ports';
 import {Activity} from "../../models";
 import {Connection} from "./models";
@@ -274,6 +275,10 @@ export function createGraph(
     if (zoom > 0.5) {
       graph.zoom(-0.1)
     }
+  });
+
+  graph.on("node:moving", ({ node }) => {
+    autoOrientConnections(graph, node);
   });
 
   return graph;

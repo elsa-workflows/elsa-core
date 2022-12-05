@@ -213,9 +213,9 @@ export class MonacoEditor {
     const padding = this.padding || 'pt-1.5 pl-1';
     return (
       <Host
-        class="monaco-editor-host border focus:ring-blue-500 focus:border-blue-500 block w-full min-w-0 rounded-md sm:text-sm border-gray-300 p-4"
+        class="monaco-editor-host focus:ring-blue-500 focus:border-blue-500 block w-full min-w-0 sm:text-sm border-gray-300 p-4"
         style={{'min-height': this.editorHeight}}>
-        <div ref={el => this.container = el} class={`monaco-editor-container ${padding}`}/>
+        <div ref={el => this.container = el} class={`rounded-md monaco-editor-container ${padding}`}/>
       </Host>
     )
   }
