@@ -3,6 +3,7 @@ import { PortManager } from "@antv/x6/lib/model/port";
 import { Connection } from "../modules/flowchart/models";
 import { v4 as uuid } from 'uuid';
 import { Activity } from "../models";
+import appSettings from "../../appsettings.json";
 
 export function rebuildGraph(graph: Graph) {
   graph.getNodes().forEach((node: Node<Node.Properties>) => {
@@ -90,7 +91,8 @@ function updatePortsAndEdgeOfNodeCouple(graph: Graph, sourceNode: Node<Node.Prop
 
   if (edge != null) {
     const sourcePortOfConnection = edge.data.sourcePort;
-    if(isNewCalculationNeededForInflexiblePort(graph, sourceNode, sourcePortOfConnection)){
+    if(!appSettings.flexiblePorts && isNewCalculationNeededForInflexiblePort(graph, sourceNode, sourcePortOfConnection)){
+      debugger
       const outgoingEdges = findOutgoingEdges(graph, sourceNode, sourcePortOfConnection);
       const targetNodes = graph.getNodes().filter(node => outgoingEdges.map(edge => edge.data.target).includes(node.id));
       const nodeCouplesWithPositions = calculatePositionsForInflexibleNode(sourceNode, targetNodes);
