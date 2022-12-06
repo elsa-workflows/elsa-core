@@ -1,5 +1,4 @@
 using System.Collections.ObjectModel;
-using System.Runtime.CompilerServices;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Services;
@@ -83,6 +82,8 @@ public class ActivityExecutionContext
     // ReSharper disable once CollectionNeverQueried.Global
     public IDictionary<string, object?> JournalData { get; } = new Dictionary<string, object?>();
 
+    public ResumedBookmarkContext? ResumedBookmarkContext => WorkflowExecutionContext.ResumedBookmarkContext;
+
     public async ValueTask ScheduleActivityAsync(IActivity? activity, ActivityCompletionCallback? completionCallback = default, IEnumerable<MemoryBlockReference>? references = default, object? tag = default)
     {
         await ScheduleActivityAsync(activity, this, completionCallback, references, tag);
@@ -143,6 +144,7 @@ public class ActivityExecutionContext
             payloadJson,
             Activity.Id,
             Id,
+            options?.AutoBurn ?? true,
             callback?.Method.Name);
 
         AddBookmark(bookmark);
@@ -200,7 +202,7 @@ public class ActivityExecutionContext
 
     public object? Get(MemoryBlockReference blockReference)
     {
-        var location = GetBlock(blockReference) ?? throw new InvalidOperationException($"No location found with ID {blockReference.Id}. Did you forget to declare a variable with a container?");
+        var location = GetMemoryBlock(blockReference) ?? throw new InvalidOperationException($"No location found with ID {blockReference.Id}. Did you forget to declare a variable with a container?");
         return location.Value;
     }
 
@@ -230,8 +232,8 @@ public class ActivityExecutionContext
 
     internal void IncrementExecutionCount() => _executionCount++;
 
-    private MemoryBlock? GetBlock(MemoryBlockReference locationBlockReference) =>
-        ExpressionExecutionContext.Memory.TryGetBlock(locationBlockReference.Id, out var location)
-            ? location
-            : ParentActivityExecutionContext?.GetBlock(locationBlockReference);
+    private MemoryBlock? GetMemoryBlock(MemoryBlockReference locationBlockReference) =>
+        ExpressionExecutionContext.Memory.TryGetBlock(locationBlockReference.Id, out var memoryBlock)
+            ? memoryBlock
+            : ParentActivityExecutionContext?.GetMemoryBlock(locationBlockReference);
 }

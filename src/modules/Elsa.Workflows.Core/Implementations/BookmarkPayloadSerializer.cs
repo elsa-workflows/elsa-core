@@ -17,5 +17,6 @@ public class BookmarkPayloadSerializer : IBookmarkPayloadSerializer
     }
 
     public T Deserialize<T>(string json) where T : notnull => JsonSerializer.Deserialize<T>(json, _settings)!;
+    public object Deserialize(string json, Type type) => JsonSerializer.Deserialize(json, type, _settings)!;
     public string Serialize<T>(T payload) where T : notnull => JsonSerializer.Serialize(payload, payload.GetType(), _settings);
 }

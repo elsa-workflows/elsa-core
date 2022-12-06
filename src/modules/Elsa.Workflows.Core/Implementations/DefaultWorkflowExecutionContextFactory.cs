@@ -26,7 +26,8 @@ public class DefaultWorkflowExecutionContextFactory : IWorkflowExecutionContextF
         _serviceProvider = serviceProvider;
     }
     
-    public async Task<WorkflowExecutionContext> CreateAsync(Workflow workflow,
+    public async Task<WorkflowExecutionContext> CreateAsync(
+        Workflow workflow,
         string instanceId,
         WorkflowState? workflowState,
         IDictionary<string, object>? input = default,
@@ -55,9 +56,9 @@ public class DefaultWorkflowExecutionContextFactory : IWorkflowExecutionContextF
             graph, 
             scheduler, 
             input, 
-            executeActivityDelegate, 
+            executeActivityDelegate,
             triggerActivityId, 
-            default, 
+            default,
             cancellationToken);
 
         // Restore workflow execution context from state, if provided.
