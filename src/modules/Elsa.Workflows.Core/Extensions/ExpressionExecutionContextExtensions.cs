@@ -1,3 +1,4 @@
+using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Models;
 
@@ -29,11 +30,11 @@ public static class ExpressionExecutionContextExtensions
     public static ActivityExecutionContext GetActivityExecutionContext(this ExpressionExecutionContext context) => (ActivityExecutionContext)context.TransientProperties[ActivityExecutionContextKey];
     public static IDictionary<string, object> GetInput(this ExpressionExecutionContext context) => (IDictionary<string, object>)context.TransientProperties[InputKey];
 
-    public static T? Get<T>(this ExpressionExecutionContext context, Input<T>? input) => input != null ? (T?)context.GetBlock(input.MemoryBlockReference).Value : default;
-    public static T? Get<T>(this ExpressionExecutionContext context, Output output) => (T?)context.GetBlock(output.MemoryBlockReference).Value;
+    public static T? Get<T>(this ExpressionExecutionContext context, Input<T>? input) => input != null ? context.GetBlock(input.MemoryBlockReference).Value.ConvertTo<T>() : default;
+    public static T? Get<T>(this ExpressionExecutionContext context, Output output) => context.GetBlock(output.MemoryBlockReference).Value.ConvertTo<T>();
     public static object? Get(this ExpressionExecutionContext context, Output output) => context.GetBlock(output.MemoryBlockReference).Value;
     public static T? GetVariable<T>(this ExpressionExecutionContext context, string name) => (T?)context.GetVariable(name);
-    public static T? GetVariable<T>(this ExpressionExecutionContext context) => (T?)context.GetVariable(typeof(T).Name);
+    public static T? GetVariable<T>(this ExpressionExecutionContext context) => context.GetVariable(typeof(T).Name).ConvertTo<T>();
     public static object? GetVariable(this ExpressionExecutionContext context, string name) => new Variable(name).Get(context);
     public static Variable SetVariable<T>(this ExpressionExecutionContext context, T? value) => context.SetVariable(typeof(T).Name, value);
     public static Variable SetVariable<T>(this ExpressionExecutionContext context, string name, T? value) => context.SetVariable(name, (object?)value);
@@ -63,7 +64,7 @@ public static class ExpressionExecutionContextExtensions
             foreach (var l in currentRegister.Blocks)
             {
                 if (!memoryBlocks.ContainsKey(l.Key))
-                    memoryBlocks.Add(l.Key, l.Value!.Value);
+                    memoryBlocks.Add(l.Key, l.Value!.Value!);
             }
 
             currentRegister = currentRegister.Parent;

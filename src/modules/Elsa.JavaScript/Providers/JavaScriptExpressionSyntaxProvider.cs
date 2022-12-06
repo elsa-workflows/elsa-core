@@ -27,15 +27,7 @@ public class JavaScriptExpressionSyntaxProvider : IExpressionSyntaxProvider
         Syntax = SyntaxName,
         Type = typeof(JavaScriptExpression),
         CreateExpression = CreateJavaScriptExpression,
-        CreateBlockReference = context =>
-        {
-            var reference = new JavaScriptExpressionBlockReference(context.GetExpression<JavaScriptExpression>());
-
-            if (string.IsNullOrWhiteSpace(reference.Id))
-                reference.Id = GenerateId();
-
-            return reference;
-        },
+        CreateBlockReference = context => new JavaScriptExpressionBlockReference(context.GetExpression<JavaScriptExpression>()),
         CreateSerializableObject = context => new
         {
             Type = SyntaxName,

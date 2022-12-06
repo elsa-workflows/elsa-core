@@ -53,15 +53,7 @@ public class DefaultExpressionSyntaxProvider : IExpressionSyntaxProvider
             Syntax = syntax,
             Type = typeof(TExpression),
             CreateExpression = constructor,
-            CreateBlockReference = context =>
-            {
-                var reference = createBlockReference(context);
-
-                if (string.IsNullOrWhiteSpace(reference.Id))
-                    reference.Id = context.MemoryReferenceId;
-
-                return reference;
-            },
+            CreateBlockReference = createBlockReference,
             CreateSerializableObject = context => new
             {
                 Type = syntax,

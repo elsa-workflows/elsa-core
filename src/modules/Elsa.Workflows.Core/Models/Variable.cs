@@ -7,7 +7,6 @@ public class Variable : MemoryBlockReference
 {
     public Variable()
     {
-        Id = Guid.NewGuid().ToString("N");
     }
 
     public Variable(string name)

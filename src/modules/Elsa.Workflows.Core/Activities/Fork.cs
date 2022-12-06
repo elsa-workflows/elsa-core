@@ -1,4 +1,6 @@
 using System.Collections.Immutable;
+using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
 using Elsa.Common.Extensions;
 using Elsa.Workflows.Core.Activities.Flowchart.Models;
 using Elsa.Workflows.Core.Attributes;
@@ -11,6 +13,17 @@ namespace Elsa.Workflows.Core.Activities;
 [Activity("Elsa", "Control Flow", "Branch execution into multiple branches.")]
 public class Fork : ActivityBase
 {
+    private readonly string? _sourceFileName;
+    private readonly int? _sourceLineNumber;
+
+    /// <inheritdoc />
+    [JsonConstructor]
+    public Fork([CallerFilePath] string? sourceFileName = default, [CallerLineNumber] int? sourceLineNumber = default)
+    {
+        _sourceFileName = sourceFileName;
+        _sourceLineNumber = sourceLineNumber;
+    }
+    
     /// <summary>
     /// Controls when this activity yields control back to its parent activity.
     /// </summary>
