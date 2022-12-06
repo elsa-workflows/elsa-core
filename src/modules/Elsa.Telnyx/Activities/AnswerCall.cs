@@ -59,7 +59,10 @@ public class AnswerCall : ActivityBase<CallAnsweredPayload>, IBookmarksPersisted
         
         try
         {
-            await telnyxClient.Calls.AnswerCallAsync(callControlId, request, context.CancellationToken);    
+            await telnyxClient.Calls.AnswerCallAsync(callControlId, request, context.CancellationToken);
+            
+            // Remove bookmark.
+            context.ClearBookmarks();
         }
         catch (ApiException e)
         {
