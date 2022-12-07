@@ -1,4 +1,6 @@
-﻿using Elsa.Telnyx.Client.Models;
+﻿using Elsa.Telnyx.Attributes;
+using Elsa.Telnyx.Bookmarks;
+using Elsa.Telnyx.Client.Models;
 using Elsa.Telnyx.Client.Services;
 using Elsa.Telnyx.Extensions;
 using Elsa.Telnyx.Payloads.Call;
@@ -32,6 +34,7 @@ public class StartRecording : StartRecordingBase
 /// Start recording the call.
 /// </summary>
 [Activity(Constants.Namespace, "Start recording the call.", Kind = ActivityKind.Task)]
+[WebhookDriven(WebhookEventTypes.CallRecordingSaved)]
 public abstract class StartRecordingBase : ActivityBase<CallRecordingSavedPayload>
 {
     /// <summary>
@@ -87,7 +90,8 @@ public abstract class StartRecordingBase : ActivityBase<CallRecordingSavedPayloa
         try
         {
             await telnyxClient.Calls.StartRecordingAsync(callControlId, request, context.CancellationToken);
-            context.CreateBookmark(ResumeAsync);
+            
+            context.CreateBookmark(new WebhookEventBookmarkPayload(WebhookEventTypes.CallRecordingSaved), ResumeAsync);
         }
         catch (ApiException e)
         {
