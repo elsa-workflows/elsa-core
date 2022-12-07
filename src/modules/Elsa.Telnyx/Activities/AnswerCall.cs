@@ -9,18 +9,43 @@ using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Core.Activities.Flowchart.Models;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Runtime.Services;
 using Refit;
 
 namespace Elsa.Telnyx.Activities;
 
+/// <inheritdoc />
+[FlowNode("Connected", "Disconnected")]
+public class FlowAnswerCall : AnswerCallBase
+{
+    protected override async ValueTask HandleConnectedAsync(ActivityExecutionContext context) => await context.CompleteActivityAsync(new Outcomes("Connected"));
+    protected override async ValueTask HandleDisconnectedAsync(ActivityExecutionContext context) => await context.CompleteActivityAsync(new Outcomes("Disconnected"));
+}
+
+/// <inheritdoc />
+public class AnswerCall : AnswerCallBase
+{
+    /// <summary>
+    /// The activity to schedule when the call was successfully answered.
+    /// </summary>
+    [Port]public IActivity? Connected { get; set; }
+    
+    /// <summary>
+    /// The activity to schedule when the call was no longer active.
+    /// </summary>
+    [Port]public IActivity? Disconnected { get; set; }
+    
+    protected override async ValueTask HandleConnectedAsync(ActivityExecutionContext context) => await context.ScheduleActivityAsync(Connected);
+    protected override async ValueTask HandleDisconnectedAsync(ActivityExecutionContext context) => await context.ScheduleActivityAsync(Disconnected);
+}
+
 /// <summary>
 /// Answer an incoming call. You must issue this command before executing subsequent commands on an incoming call.
 /// </summary>
 [Activity(Constants.Namespace, "Answer an incoming call. You must issue this command before executing subsequent commands on an incoming call.", Kind = ActivityKind.Task)]
-[FlowNode("Connected", "Disconnected")]
 [WebhookDriven(WebhookEventTypes.CallAnswered)]
-public class AnswerCall : ActivityBase<CallAnsweredPayload>, IBookmarksPersistedHandler
+public abstract class AnswerCallBase : ActivityBase<CallAnsweredPayload>, IBookmarksPersistedHandler
 {
     /// <summary>
     /// The call control ID to answer. Leave blank when the workflow is driven by an incoming call and you wish to pick up that one.
@@ -38,14 +63,16 @@ public class AnswerCall : ActivityBase<CallAnsweredPayload>, IBookmarksPersisted
     /// <summary>
     /// Invokes Telnyx to answer the call.
     /// </summary>
-    /// <param name="context"></param>
     public async ValueTask BookmarksPersistedAsync(ActivityExecutionContext context) => await InvokeTelnyxAsync(context);
+
+    protected abstract ValueTask HandleConnectedAsync(ActivityExecutionContext context);
+    protected abstract ValueTask HandleDisconnectedAsync(ActivityExecutionContext context);
     
     private async ValueTask ResumeAsync(ActivityExecutionContext context)
     {
         var payload = context.GetInput<CallAnsweredPayload>();
         context.Set(Result, payload);
-        await context.CompleteActivityAsync(new Outcomes("Connected"));
+        await HandleConnectedAsync(context);
     }
 
     /// <summary>
@@ -60,14 +87,11 @@ public class AnswerCall : ActivityBase<CallAnsweredPayload>, IBookmarksPersisted
         try
         {
             await telnyxClient.Calls.AnswerCallAsync(callControlId, request, context.CancellationToken);
-            
-            // Remove bookmark.
-            context.ClearBookmarks();
         }
         catch (ApiException e)
         {
             if (!await e.CallIsNoLongerActiveAsync()) throw;
-            await context.CompleteActivityAsync(new Outcomes("Disconnected"));
+            await HandleDisconnectedAsync(context);
         }
     }
 }
