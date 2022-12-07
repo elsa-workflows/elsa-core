@@ -166,7 +166,14 @@ public class WorkflowExecutionContext
 
         foreach (var childContext in childContexts) RemoveActivityExecutionContext(childContext);
 
+        // Remove the context.
         _activityExecutionContexts.Remove(context);
+        
+        // Remove all associated completion callbacks.
+        context.ClearCompletionCallbacks();
+        
+        // Remove all associated bookmarks.
+        Bookmarks.RemoveWhere(x => x.ActivityInstanceId == context.Id);
     }
 
     public void AddActivityExecutionContext(ActivityExecutionContext context) => _activityExecutionContexts.Add(context);

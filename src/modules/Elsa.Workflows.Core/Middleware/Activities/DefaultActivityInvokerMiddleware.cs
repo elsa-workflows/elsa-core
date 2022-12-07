@@ -53,9 +53,6 @@ public class DefaultActivityInvokerMiddleware : IActivityExecutionMiddleware
         {
             // Store bookmarks.
             workflowExecutionContext.Bookmarks.AddRange(context.Bookmarks);
-            
-            // Clear activity execution bookmarks.
-            context.ClearBookmarks();
         }
     }
 
