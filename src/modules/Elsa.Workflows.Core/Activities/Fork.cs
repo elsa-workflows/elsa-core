@@ -10,6 +10,9 @@ using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Core.Activities;
 
+/// <summary>
+/// Branch execution into multiple branches.
+/// </summary>
 [Activity("Elsa", "Control Flow", "Branch execution into multiple branches.")]
 public class Fork : ActivityBase
 {

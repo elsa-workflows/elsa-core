@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
 using Elsa.Common.Services;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
@@ -12,22 +13,29 @@ namespace Elsa.Scheduling.Activities;
 [Activity( "Elsa", "Scheduling", "Trigger workflow execution at a specific interval.")] 
 public class Timer : EventGenerator
 {
+    /// <inheritdoc />
     [JsonConstructor]
-    public Timer()
+    public Timer([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
 
-    public Timer(TimeSpan interval) : this(new Input<TimeSpan>(interval))
+    /// <inheritdoc />
+    public Timer(TimeSpan interval, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(new Input<TimeSpan>(interval), source, line)
     {
     }
 
-    public Timer(Input<TimeSpan> interval)
+    /// <inheritdoc />
+    public Timer(Input<TimeSpan> interval, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line)
     {
         Interval = interval;
     }
     
+    /// <summary>
+    /// Th interval at which the timer should execute.
+    /// </summary>
     [Input] public Input<TimeSpan> Interval { get; set; } = default!;
 
+    /// <inheritdoc />
     protected override object GetTriggerPayload(TriggerIndexingContext context)
     {
         var interval = context.ExpressionExecutionContext.Get(Interval);
@@ -36,8 +44,15 @@ public class Timer : EventGenerator
         return new TimerPayload(executeAt, interval);
     }
 
+    /// <summary>
+    /// Creates a new <see cref="Timer"/> activity set to trigger at the specified interval.
+    /// </summary>
     public static Timer FromTimeSpan(TimeSpan value) => new(value);
+    
+    /// <summary>
+    /// Creates a new <see cref="Timer"/> activity set to trigger at the specified interval in seconds.
+    /// </summary>
     public static Timer FromSeconds(double value) => FromTimeSpan(TimeSpan.FromSeconds(value));
 }
 
-public record TimerPayload(DateTimeOffset StartAt, TimeSpan Interval);
+internal record TimerPayload(DateTimeOffset StartAt, TimeSpan Interval);

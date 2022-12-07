@@ -1,4 +1,5 @@
-﻿using Elsa.Telnyx.Attributes;
+﻿using System.Runtime.CompilerServices;
+using Elsa.Telnyx.Attributes;
 using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Client.Models;
 using Elsa.Telnyx.Client.Services;
@@ -14,19 +15,41 @@ using Refit;
 
 namespace Elsa.Telnyx.Activities;
 
+/// <inheritdoc />
 [FlowNode("Bridged", "Disconnected")]
 public class FlowBridgeCalls : BridgeCallsBase
 {
+    /// <inheritdoc />
+    public FlowBridgeCalls([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    {
+    }
+    
     protected override ValueTask HandleDisconnectedAsync(ActivityExecutionContext context) => context.CompleteActivityAsync("Disconnected");
     protected override ValueTask HandleBridgedAsync(ActivityExecutionContext context) => context.CompleteActivityAsync("Bridged");
 }
 
+/// <inheritdoc />
 public class BridgeCalls : BridgeCallsBase
 {
-    [Port]public IActivity? Disconnected { get; set; }
-    [Port]public IActivity? Bridged { get; set; }
+    /// <inheritdoc />
+    public BridgeCalls([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    {
+    }
     
+    /// <summary>
+    /// The <see cref="IActivity"/> to execute when the source leg call is no longer active.
+    /// </summary>
+    [Port]public IActivity? Disconnected { get; set; }
+    
+    /// <summary>
+    /// The <see cref="IActivity"/> to execute when the two calls are bridged.
+    /// </summary>
+    [Port]public IActivity? Bridged { get; set; }
+
+    /// <inheritdoc />
     protected override async ValueTask HandleDisconnectedAsync(ActivityExecutionContext context) => await context.ScheduleActivityAsync(Disconnected, OnCompleted);
+
+    /// <inheritdoc />
     protected override async ValueTask HandleBridgedAsync(ActivityExecutionContext context) => await context.ScheduleActivityAsync(Bridged, OnCompleted);
 }
 
@@ -36,6 +59,11 @@ public class BridgeCalls : BridgeCallsBase
 [Activity(Constants.Namespace, "Bridge two calls.", Kind = ActivityKind.Task)]
 public abstract class BridgeCallsBase : ActivityBase<BridgedCallsOutput>, IBookmarksPersistedHandler
 {
+    /// <inheritdoc />
+    protected BridgeCallsBase(string? source = default, int? line = default) : base(source, line)
+    {
+    }
+    
     /// <summary>
     /// The source call control ID of one of the call to bridge with. Leave empty to use the ambient inbound call control Id, if there is one.
     /// </summary>

@@ -1,4 +1,5 @@
-﻿using Elsa.Telnyx.Attributes;
+﻿using System.Runtime.CompilerServices;
+using Elsa.Telnyx.Attributes;
 using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Client.Models;
 using Elsa.Telnyx.Client.Services;
@@ -14,20 +15,47 @@ using Refit;
 
 namespace Elsa.Telnyx.Activities;
 
+/// <inheritdoc />
 [FlowNode("Recording finished", "Disconnected")]
 public class FlowStartRecording : StartRecordingBase
 {
+    /// <inheritdoc />
+    public FlowStartRecording([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    {
+    }
+    
+    /// <inheritdoc />
     protected override ValueTask HandleDisconnectedAsync(ActivityExecutionContext context) => context.CompleteActivityWithOutcomesAsync("Disconnected");
+
+    /// <inheritdoc />
     protected override ValueTask HandleCallRecordingSavedAsync(ActivityExecutionContext context) => context.CompleteActivityWithOutcomesAsync("Recording finished");
 }
 
+/// <inheritdoc />
 public class StartRecording : StartRecordingBase
 {
+    /// <inheritdoc />
+    public StartRecording([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    {
+    }
+    
+    /// <summary>
+    /// The <see cref="IActivity"/> to execute when recording has finished.
+    /// </summary>
     [Port] public IActivity? RecordingFinished { get; set; }
+    
+    /// <summary>
+    /// The <see cref="IActivity"/> to executed when the call was no longer active.
+    /// </summary>
     [Port] public IActivity? Disconnected { get; set; }
 
+    /// <inheritdoc />
     protected override async ValueTask HandleCallRecordingSavedAsync(ActivityExecutionContext context)  => await context.ScheduleActivityAsync(RecordingFinished, OnCompletedAsync);
+
+    /// <inheritdoc />
     protected override async ValueTask HandleDisconnectedAsync(ActivityExecutionContext context) => await context.ScheduleActivityAsync(Disconnected, OnCompletedAsync);
+
+    private async ValueTask OnCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext) => await context.CompleteActivityAsync();
 }
 
 /// <summary>
@@ -37,6 +65,11 @@ public class StartRecording : StartRecordingBase
 [WebhookDriven(WebhookEventTypes.CallRecordingSaved)]
 public abstract class StartRecordingBase : ActivityBase<CallRecordingSavedPayload>
 {
+    /// <inheritdoc />
+    protected StartRecordingBase(string? source = default, int? line = default) : base(source, line)
+    {
+    }
+    
     /// <summary>
     /// Unique identifier and token for controlling the call.
     /// </summary>
@@ -100,9 +133,16 @@ public abstract class StartRecordingBase : ActivityBase<CallRecordingSavedPayloa
         }
     }
     
+    /// <summary>
+    /// Called when the recording was saved.
+    /// </summary>
     protected abstract ValueTask HandleCallRecordingSavedAsync(ActivityExecutionContext context);
+    
+    
+    /// <summary>
+    /// Called when the call was no longer active.
+    /// </summary>
     protected abstract ValueTask HandleDisconnectedAsync(ActivityExecutionContext context);
-    protected async ValueTask OnCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext) => await context.CompleteActivityAsync();
 
     private async ValueTask ResumeAsync(ActivityExecutionContext context)
     {

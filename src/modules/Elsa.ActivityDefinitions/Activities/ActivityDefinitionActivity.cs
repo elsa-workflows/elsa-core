@@ -10,6 +10,7 @@ namespace Elsa.ActivityDefinitions.Activities;
 /// </summary>
 public class ActivityDefinitionActivity : ActivityBase
 {
+    /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         // Construct the root activity stored in the activity definitions.
@@ -17,8 +18,8 @@ public class ActivityDefinitionActivity : ActivityBase
         var root = await materializer.MaterializeAsync(this, context.CancellationToken);
 
         // Schedule the activity for execution.
-        await context.ScheduleActivityAsync(root, onChildCompletedAsync);
+        await context.ScheduleActivityAsync(root, OnChildCompletedAsync);
     }
 
-    private async ValueTask onChildCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext) => await context.CompleteActivityAsync();
+    private async ValueTask OnChildCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext) => await context.CompleteActivityAsync();
 }

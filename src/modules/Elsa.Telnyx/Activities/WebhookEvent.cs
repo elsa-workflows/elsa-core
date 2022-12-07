@@ -20,11 +20,13 @@ namespace Elsa.Telnyx.Activities;
 [Browsable(false)]
 public class WebhookEvent : ActivityBase<Payload>
 {
+    /// <inheritdoc />
     [JsonConstructor]
     public WebhookEvent([CallerFilePath]string? source = default, [CallerLineNumber]int? line = default) : base(source, line)
     {
     }
 
+    /// <inheritdoc />
     public WebhookEvent(string eventType, string activityTypeName, Variable<Payload> result, int version = 1, [CallerFilePath]string? source = default, [CallerLineNumber]int? line = default) 
         : base(activityTypeName, version, source, line)
     {

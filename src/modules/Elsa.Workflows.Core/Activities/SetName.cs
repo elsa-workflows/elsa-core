@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 
@@ -14,11 +15,11 @@ public class SetName : Activity
     internal static readonly object WorkflowInstanceNameKey = new();
 
     [JsonConstructor]
-    public SetName()
+    public SetName([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
 
-    public SetName(Input<string> value)
+    public SetName(Input<string> value, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line)
     {
         Value = value;
     }

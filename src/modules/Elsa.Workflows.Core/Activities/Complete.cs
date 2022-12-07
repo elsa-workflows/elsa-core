@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Activities.Flowchart.Models;
@@ -16,27 +17,33 @@ public class Complete : Activity
 {
     /// <inheritdoc />
     [JsonConstructor]
-    public Complete()
-    {
-    }
-    
-    /// <inheritdoc />
-    public Complete(params string[] outcomes) : this(new Input<ICollection<string>>(outcomes))
+    public Complete([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
 
     /// <inheritdoc />
-    public Complete(Func<ExpressionExecutionContext, ICollection<string>> outcomes) : this(new Input<ICollection<string>>(outcomes))
+    public Complete(IEnumerable<string> outcomes, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
+        : this(new Input<ICollection<string>>(outcomes.ToList()), source, line)
     {
     }
 
     /// <inheritdoc />
-    public Complete(Func<ExpressionExecutionContext, string> outcome) : this(context => new[] { outcome(context) })
+    public Complete(Func<ExpressionExecutionContext, ICollection<string>> outcomes, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
+        : this(new Input<ICollection<string>>(outcomes), source, line)
     {
     }
 
     /// <inheritdoc />
-    public Complete(Input<ICollection<string>> outcomes) => Outcomes = outcomes;
+    public Complete(Func<ExpressionExecutionContext, string> outcome, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
+        : this(context => new[] { outcome(context) }, source, line)
+    {
+    }
+
+    /// <inheritdoc />
+    public Complete(Input<ICollection<string>> outcomes, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line)
+    {
+        Outcomes = outcomes;
+    }
 
     /// <summary>
     /// The outcome or set of outcomes to complete this activity with.

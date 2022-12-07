@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 using Elsa.Expressions;
 using Elsa.Expressions.Models;
@@ -9,12 +10,21 @@ using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Workflows.Core.Activities.Flowchart.Activities;
 
+/// <summary>
+/// Evaluates the specified case conditions and schedules the one that evaluates to <code>true</code>.
+/// </summary>
 [FlowNode("Default")]
 [Activity("Elsa", "Flow", "Evaluate a set of case conditions and schedule the activity for a matching case.")]
 public class FlowSwitch : ActivityBase
 {
+    /// <inheritdoc />
+    public FlowSwitch([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    {
+    }
+    
     [Input(UIHint = "flow-switch-editor")] public ICollection<FlowSwitchCase> Cases { get; set; } = new List<FlowSwitchCase>();
 
+    /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var matchingCase = await FindMatchingCaseAsync(context.ExpressionExecutionContext);

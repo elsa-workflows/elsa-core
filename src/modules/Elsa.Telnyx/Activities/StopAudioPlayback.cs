@@ -1,4 +1,5 @@
-﻿using Elsa.Telnyx.Client.Models;
+﻿using System.Runtime.CompilerServices;
+using Elsa.Telnyx.Client.Models;
 using Elsa.Telnyx.Client.Services;
 using Elsa.Telnyx.Extensions;
 using Elsa.Workflows.Core;
@@ -10,19 +11,42 @@ using Refit;
 
 namespace Elsa.Telnyx.Activities;
 
+/// <inheritdoc />
 [FlowNode("Done", "Disconnected")]
 public class FlowStopAudioPlayback : StopAudioPlaybackBase
 {
+    /// <inheritdoc />
+    public FlowStopAudioPlayback([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    {
+    }
+    
+    /// <inheritdoc />
     protected override ValueTask HandleDoneAsync(ActivityExecutionContext context) => context.CompleteActivityWithOutcomesAsync("Done");
+
+    /// <inheritdoc />
     protected override ValueTask HandleDisconnectedAsync(ActivityExecutionContext context) => context.CompleteActivityWithOutcomesAsync("Disconnected");
 }
 
+/// <inheritdoc />
 public class StopAudioPlayback : StopAudioPlaybackBase
 {
-    [Port] public IActivity? Disconnected { get; set; }
+    /// <inheritdoc />
+    public StopAudioPlayback([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    {
+    }
     
+    /// <summary>
+    /// The <see cref="IActivity"/> to execute when the call was no longer active.
+    /// </summary>
+    [Port] public IActivity? Disconnected { get; set; }
+
+    /// <inheritdoc />
     protected override async ValueTask HandleDoneAsync(ActivityExecutionContext context) => await context.CompleteActivityAsync();
+
+    /// <inheritdoc />
     protected override async ValueTask HandleDisconnectedAsync(ActivityExecutionContext context) => await context.ScheduleActivityAsync(Disconnected, OnCompletedAsync);
+
+    private async ValueTask OnCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext) => await context.CompleteActivityAsync();
 }
 
 /// <summary>
@@ -31,6 +55,11 @@ public class StopAudioPlayback : StopAudioPlaybackBase
 [Activity(Constants.Namespace, Description = "Stop audio playback.", Kind = ActivityKind.Task)]
 public abstract class StopAudioPlaybackBase : ActivityBase
 {
+    /// <inheritdoc />
+    protected StopAudioPlaybackBase(string? source = default, int? line = default) : base(source, line)
+    {
+    }
+    
     /// <summary>
     /// Unique identifier and token for controlling the call.
     /// </summary>
@@ -51,6 +80,7 @@ public abstract class StopAudioPlaybackBase : ActivityBase
     )]
     public Input<string?> Stop { get; set; } = new("all");
 
+    /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var request = new StopAudioPlaybackRequest(Stop.Get(context));
@@ -69,7 +99,12 @@ public abstract class StopAudioPlaybackBase : ActivityBase
         }
     }
     
+    /// <summary>
+    /// Called when audio playback is stopping.
+    /// </summary>
     protected abstract ValueTask HandleDoneAsync(ActivityExecutionContext context);
+    /// <summary>
+    /// Called when the call was no longer active.
+    /// </summary>
     protected abstract ValueTask HandleDisconnectedAsync(ActivityExecutionContext context);
-    protected async ValueTask OnCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext) => await context.CompleteActivityAsync();
 }

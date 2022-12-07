@@ -1,4 +1,5 @@
-﻿using Elsa.Telnyx.Attributes;
+﻿using System.Runtime.CompilerServices;
+using Elsa.Telnyx.Attributes;
 using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Client.Models;
 using Elsa.Telnyx.Client.Services;
@@ -19,23 +20,38 @@ namespace Elsa.Telnyx.Activities;
 [FlowNode("Connected", "Disconnected")]
 public class FlowAnswerCall : AnswerCallBase
 {
+    /// <inheritdoc />
+    public FlowAnswerCall([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    {
+    }
+
+    /// <inheritdoc />
     protected override async ValueTask HandleConnectedAsync(ActivityExecutionContext context) => await context.CompleteActivityAsync(new Outcomes("Connected"));
+
+    /// <inheritdoc />
     protected override async ValueTask HandleDisconnectedAsync(ActivityExecutionContext context) => await context.CompleteActivityAsync(new Outcomes("Disconnected"));
 }
 
 /// <inheritdoc />
 public class AnswerCall : AnswerCallBase
 {
+    /// <inheritdoc />
+    public AnswerCall([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    {
+    }
+
     /// <summary>
     /// The activity to schedule when the call was successfully answered.
     /// </summary>
-    [Port]public IActivity? Connected { get; set; }
-    
+    [Port]
+    public IActivity? Connected { get; set; }
+
     /// <summary>
     /// The activity to schedule when the call was no longer active.
     /// </summary>
-    [Port]public IActivity? Disconnected { get; set; }
-    
+    [Port]
+    public IActivity? Disconnected { get; set; }
+
     protected override async ValueTask HandleConnectedAsync(ActivityExecutionContext context) => await context.ScheduleActivityAsync(Connected);
     protected override async ValueTask HandleDisconnectedAsync(ActivityExecutionContext context) => await context.ScheduleActivityAsync(Disconnected);
 }
@@ -47,6 +63,11 @@ public class AnswerCall : AnswerCallBase
 [WebhookDriven(WebhookEventTypes.CallAnswered)]
 public abstract class AnswerCallBase : ActivityBase<CallAnsweredPayload>, IBookmarksPersistedHandler
 {
+    /// <inheritdoc />
+    protected AnswerCallBase(string? source = default, int? line = default) : base(source, line)
+    {
+    }
+    
     /// <summary>
     /// The call control ID to answer. Leave blank when the workflow is driven by an incoming call and you wish to pick up that one.
     /// </summary>
@@ -67,7 +88,7 @@ public abstract class AnswerCallBase : ActivityBase<CallAnsweredPayload>, IBookm
 
     protected abstract ValueTask HandleConnectedAsync(ActivityExecutionContext context);
     protected abstract ValueTask HandleDisconnectedAsync(ActivityExecutionContext context);
-    
+
     private async ValueTask ResumeAsync(ActivityExecutionContext context)
     {
         var payload = context.GetInput<CallAnsweredPayload>();
@@ -83,7 +104,7 @@ public abstract class AnswerCallBase : ActivityBase<CallAnsweredPayload>, IBookm
         var callControlId = context.GetPrimaryCallControlId(CallControlId) ?? throw new Exception("CallControlId is required.");
         var request = new AnswerCallRequest();
         var telnyxClient = context.GetRequiredService<ITelnyxClient>();
-        
+
         try
         {
             await telnyxClient.Calls.AnswerCallAsync(callControlId, request, context.CancellationToken);

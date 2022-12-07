@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Attributes;
@@ -13,36 +14,41 @@ public class Event : Trigger<object?>
 {
     /// <inheritdoc />
     [JsonConstructor]
-    public Event()
+    public Event([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
 
     /// <inheritdoc />
-    public Event(string eventName) : this(new Literal<string>(eventName))
+    public Event(string eventName, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(new Literal<string>(eventName), source, line)
     {
     }
 
     /// <inheritdoc />
-    public Event(Func<string> text) : this(new DelegateBlockReference<string>(text))
+    public Event(Func<string> text, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) 
+        : this(new DelegateBlockReference<string>(text), source, line)
     {
     }
 
     /// <inheritdoc />
-    public Event(Func<ExpressionExecutionContext, string?> text) : this(new DelegateBlockReference<string?>(text))
+    public Event(Func<ExpressionExecutionContext, string?> text, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) 
+        : this(new DelegateBlockReference<string?>(text), source, line)
     {
     }
 
     /// <inheritdoc />
-    public Event(Variable<string> variable) => EventName = new Input<string>(variable);
+    public Event(Variable<string> variable, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line) => 
+        EventName = new Input<string>(variable);
 
     /// <inheritdoc />
-    public Event(Literal<string> literal) => EventName = new Input<string>(literal);
+    public Event(Literal<string> literal, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line) => 
+        EventName = new Input<string>(literal);
 
     /// <inheritdoc />
-    public Event(DelegateBlockReference delegateBlockExpression) => EventName = new Input<string>(delegateBlockExpression);
+    public Event(DelegateBlockReference delegateBlockExpression, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line) => 
+        EventName = new Input<string>(delegateBlockExpression);
 
     /// <inheritdoc />
-    public Event(Input<string> eventName) => EventName = eventName;
+    public Event(Input<string> eventName, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line) => EventName = eventName;
 
     /// <summary>
     /// The name of the event to listen for.

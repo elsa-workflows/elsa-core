@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Elsa.Expressions.Models;
 using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Extensions;
@@ -11,6 +12,9 @@ using Elsa.Workflows.Management.Models;
 
 namespace Elsa.Telnyx.Activities;
 
+/// <summary>
+/// Triggered when an inbound phone call is received for any of the specified source or destination phone numbers.
+/// </summary>
 [Activity(
     "Telnyx",
     "Telnyx",
@@ -18,13 +22,27 @@ namespace Elsa.Telnyx.Activities;
     Kind = ActivityKind.Trigger)]
 public class IncomingCall : Trigger<CallInitiatedPayload>
 {
+    /// <inheritdoc />
+    public IncomingCall([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    {
+    }
+    
+    /// <summary>
+    /// A list of destination numbers to respond to.
+    /// </summary>
     [Input(Description = "A list of destination numbers to respond to.", UIHint = InputUIHints.MultiText)]
     public Input<ICollection<string>> To { get; set; } = default!;
 
+    /// <summary>
+    /// A list of source numbers to respond to.
+    /// </summary>
     [Input(Description = "A list of source numbers to respond to.", UIHint = InputUIHints.MultiText)]
     public Input<ICollection<string>> From { get; set; } = default!;
 
-    [Input(Description = "Match any inbound calls")]
+    /// <summary>
+    /// Match any inbound calls.
+    /// </summary>
+    [Input(Description = "Match any inbound calls.")]
     public Input<bool> CatchAll { get; set; } = default!;
 
     /// <inheritdoc />

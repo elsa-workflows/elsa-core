@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Attributes;
@@ -7,17 +8,22 @@ using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Core.Activities;
 
+/// <summary>
+/// Iterate over a set of values.
+/// </summary>
 [Activity("Elsa", "Control Flow", "Iterate over a set of values.")]
 public class ForEach : ActivityBase
 {
     private const string CurrentIndexProperty = "CurrentIndex";
 
-    public ForEach()
+    /// <inheritdoc />
+    public ForEach([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
     {
         Behaviors.Add<BreakBehavior>(this);
     }
 
-    public ForEach(ICollection<object> items) : this()
+    /// <inheritdoc />
+    public ForEach(ICollection<object> items, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line)
     {
         Items = new Input<ICollection<object>>(items);
     }
