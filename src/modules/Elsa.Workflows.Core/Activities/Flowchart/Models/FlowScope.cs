@@ -3,7 +3,7 @@ using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Core.Activities.Flowchart.Models;
 
-public class FlowScope
+internal class FlowScope
 {
     [JsonConstructor]
     public FlowScope()

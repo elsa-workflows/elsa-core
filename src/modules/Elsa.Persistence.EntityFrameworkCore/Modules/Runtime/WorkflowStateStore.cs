@@ -19,7 +19,6 @@ public class EFCoreWorkflowStateStore : IWorkflowStateStore
 
     public EFCoreWorkflowStateStore(
         IDbContextFactory<RuntimeElsaDbContext> dbContextFactory,
-        Store<RuntimeElsaDbContext, WorkflowState> store,
         SerializerOptionsProvider serializerOptionsProvider,
         ISystemClock systemClock)
     {

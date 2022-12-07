@@ -14,7 +14,7 @@ public class Event : Trigger<object?>
 {
     /// <inheritdoc />
     [JsonConstructor]
-    public Event([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    internal Event([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
 

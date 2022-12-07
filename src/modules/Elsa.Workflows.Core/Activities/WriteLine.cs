@@ -15,12 +15,12 @@ namespace Elsa.Workflows.Core.Activities;
 public class WriteLine : Activity
 {
     /// <inheritdoc />
-    private WriteLine([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    internal WriteLine([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
 
     /// <inheritdoc />
-    public WriteLine(string text, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(new Literal<string>(text), source, line)
+    public WriteLine(string text = default!, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(new Literal<string>(text), source, line)
     {
     }
 
