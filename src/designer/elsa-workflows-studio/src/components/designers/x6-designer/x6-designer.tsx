@@ -267,6 +267,7 @@ export class ElsaWorkflowDesigner {
     console.log("Auto-layout applied");
   };
   connectedCallback() {
+    eventBus.on(EventTypes.WorkflowImported, this.onWorkflowImported);
     eventBus.on(EventTypes.ActivityPicked, this.onActivityPicked);
     eventBus.on(EventTypes.UpdateActivity, this.onUpdateActivityExternal);
     //eventBus.on(EventTypes.PasteActivity, this.onPasteActivity);
@@ -276,6 +277,7 @@ export class ElsaWorkflowDesigner {
   }
 
   disconnectedCallback() {
+    eventBus.detach(EventTypes.WorkflowImported, this.onWorkflowImported);
     eventBus.detach(EventTypes.ActivityPicked, this.onActivityPicked);
     eventBus.detach(EventTypes.UpdateActivity, this.onUpdateActivityExternal);
     //eventBus.detach(EventTypes.PasteActivity, this.onPasteActivity);
@@ -285,6 +287,7 @@ export class ElsaWorkflowDesigner {
   }
 
   componentWillLoad() {
+    console.info("WILL LOAD");
     this.workflowModel = this.model;
   }
 
@@ -589,6 +592,7 @@ export class ElsaWorkflowDesigner {
   }
 
   private updateGraph = async () => {
+    console.info("UPDATING GRAPH:", this.workflowModel);
     const activities = this.workflowModel.activities;
     const connections = this.workflowModel.connections;
     const edges: Array<Edge.Metadata> = [];
@@ -843,6 +847,12 @@ export class ElsaWorkflowDesigner {
   async showActivityPicker() {
     await eventBus.emit(EventTypes.ShowActivityPicker);
   }
+
+  onWorkflowImported = args => {
+    this.workflowModel = args;
+    this.updateGraph();
+    this.graph.scrollToContent();
+  };
 
   onActivityPicked = async args => {
     const activityDescriptor = args as ActivityDescriptor;

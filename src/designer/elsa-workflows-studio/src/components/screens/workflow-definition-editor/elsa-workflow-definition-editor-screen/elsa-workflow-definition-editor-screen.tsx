@@ -133,7 +133,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
       this.importing = false;
       this.imported = true;
       setTimeout(() => (this.imported = false), 500);
-      await eventBus.emit(EventTypes.WorkflowImported, this, this.workflowDefinition);
+      await eventBus.emit(EventTypes.WorkflowImported, this, this.workflowModel);
     } catch (e) {
       console.error(e);
       this.importing = false;
