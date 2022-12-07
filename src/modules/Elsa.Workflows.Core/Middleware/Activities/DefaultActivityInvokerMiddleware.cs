@@ -36,6 +36,12 @@ public class DefaultActivityInvokerMiddleware : IActivityExecutionMiddleware
         // Reset execute delegate.
         workflowExecutionContext.ExecuteDelegate = null;
         
+        // If a bookmark was used to resume, burn it if not burnt by the activity.
+        var resumedBookmark = workflowExecutionContext.ResumedBookmarkContext?.Bookmark;
+        
+        if (resumedBookmark is { AutoBurn: true }) 
+            workflowExecutionContext.Bookmarks.Remove(resumedBookmark);
+
         // Update execution count.
         context.IncrementExecutionCount();
 

@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 using Elsa.Expressions;
 using Elsa.Expressions.Models;
@@ -15,6 +16,11 @@ namespace Elsa.Workflows.Core.Activities;
 [Activity("Elsa", "Control Flow", "Evaluate a set of case conditions and schedule the activity for a matching case.")]
 public class Switch : ActivityBase
 {
+    /// <inheritdoc />
+    public Switch([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    {
+    }
+    
     /// <summary>
     /// The value to switch on.
     /// </summary>
@@ -29,6 +35,7 @@ public class Switch : ActivityBase
     [Input(UIHint = "switch-editor")] public ICollection<SwitchCase> Cases { get; set; } = new List<SwitchCase>();
     public IActivity? Default { get; set; }
 
+    /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         context.Set(Output, Expression);

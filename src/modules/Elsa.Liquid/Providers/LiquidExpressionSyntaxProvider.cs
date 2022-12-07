@@ -23,15 +23,7 @@ public class LiquidExpressionSyntaxProvider : IExpressionSyntaxProvider
         Syntax = SyntaxName,
         Type = typeof(LiquidExpression),
         CreateExpression = CreateLiquidExpression,
-        CreateBlockReference = context =>
-        {
-            var reference = new LiquidExpressionBlockReference(context.GetExpression<LiquidExpression>());
-
-            if (string.IsNullOrWhiteSpace(reference.Id))
-                reference.Id = GenerateId();
-
-            return reference;
-        },
+        CreateBlockReference = context => new LiquidExpressionBlockReference(context.GetExpression<LiquidExpression>()),
         CreateSerializableObject = context => new
         {
             Type = SyntaxName,

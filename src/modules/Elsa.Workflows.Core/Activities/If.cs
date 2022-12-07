@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Attributes;
@@ -11,18 +12,20 @@ public class If : ActivityBase<bool>
 {
     /// <inheritdoc />
     [JsonConstructor]
-    public If()
+    public If([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
 
     /// <inheritdoc />
-    public If(Input<bool> condition) => Condition = condition;
+    public If(Input<bool> condition, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line) =>
+        Condition = condition;
 
     /// <inheritdoc />
-    public If(Func<ExpressionExecutionContext, bool> condition) => Condition = new Input<bool>(condition);
+    public If(Func<ExpressionExecutionContext, bool> condition, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line) =>
+        Condition = new Input<bool>(condition);
 
     /// <inheritdoc />
-    public If(Func<bool> condition) => Condition = new Input<bool>(condition);
+    public If(Func<bool> condition, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line) => Condition = new Input<bool>(condition);
 
     /// <summary>
     /// The condition to evaluate.
@@ -47,7 +50,7 @@ public class If : ActivityBase<bool>
     {
         var result = context.Get(Condition);
         var nextNode = result ? Then : Else;
-        
+
         context.Set(Result, result);
         await context.ScheduleActivityAsync(nextNode, OnChildCompleted);
     }

@@ -32,7 +32,7 @@ public static class ObjectConverter
         if (value is DahomeyJsonNode { ValueKind: JsonValueKind.Object } dahomyJsonObject)
             return ToObject(dahomyJsonObject, targetType, options);
 
-        if (value is JsonElement { ValueKind: JsonValueKind.Object } jsonObject)
+        if (value is JsonElement { ValueKind: JsonValueKind.Object or JsonValueKind.Array } jsonObject)
             return jsonObject.Deserialize(targetType, options);
 
         var underlyingTargetType = Nullable.GetUnderlyingType(targetType) ?? targetType;

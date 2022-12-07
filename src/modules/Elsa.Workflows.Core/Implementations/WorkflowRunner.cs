@@ -84,7 +84,7 @@ public class WorkflowRunner : IWorkflowRunner
         if (bookmarkId != null)
         {
             // Schedule the bookmark.
-            var bookmark = workflowExecutionContext.Bookmarks.FirstOrDefault(x => x.Id == bookmarkId);
+            var bookmark = workflowState.Bookmarks.FirstOrDefault(x => x.Id == bookmarkId);
 
             if (bookmark != null)
                 workflowExecutionContext.ScheduleBookmark(bookmark);

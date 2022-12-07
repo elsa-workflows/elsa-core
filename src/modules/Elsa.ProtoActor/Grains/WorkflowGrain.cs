@@ -176,6 +176,7 @@ public class WorkflowGrain : WorkflowGrainBase
             ActivityInstanceId = x.ActivityInstanceId,
             Hash = x.Hash,
             Data = x.Data.EmptyIfNull(),
+            AutoBurn = x.AutoBurn,
             CallbackMethodName = x.CallbackMethodName.EmptyIfNull()
         });
 }

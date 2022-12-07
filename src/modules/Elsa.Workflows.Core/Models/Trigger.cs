@@ -2,13 +2,18 @@ using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Core.Models;
 
+/// <summary>
+/// Represents an activity that acts as a workflow trigger.
+/// </summary>
 public abstract class Trigger : ActivityBase, ITrigger
 {
-    protected Trigger()
+    /// <inheritdoc />
+    protected Trigger(string? source = default, int? line = default) : base(source, line)
     {
     }
 
-    protected Trigger(string activityType) : base(activityType)
+    /// <inheritdoc />
+    protected Trigger(string activityType, int version = 1, string? source = default, int? line = default) : base(activityType, version, source, line)
     {
     }
 
@@ -36,11 +41,11 @@ public abstract class Trigger : ActivityBase, ITrigger
 
 public abstract class Trigger<TResult> : ActivityBase<TResult>, ITrigger
 {
-    protected Trigger()
+    protected Trigger(string? source = default, int? line = default) : base(source, line)
     {
     }
 
-    protected Trigger(string activityType) : base(activityType)
+    protected Trigger(string activityType, int version = 1, string? source = default, int? line = default) : base(activityType, version, source, line)
     {
     }
 

@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
@@ -10,6 +11,11 @@ namespace Elsa.Workflows.Core.Activities.Flowchart.Activities;
 [Activity("Elsa", "Flow", "A simple container that executes the specified activity.")]
 public class FlowNode : ActivityBase
 {
+    /// <inheritdoc />
+    public FlowNode([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    {
+    }
+    
     /// <summary>
     /// The activity to execute.
     /// </summary>

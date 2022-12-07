@@ -34,6 +34,9 @@ internal class TriggerIncomingCallActivities : INotificationHandler<TelnyxWebhoo
         if (payload is not CallInitiatedPayload callInitiatedPayload)
             return;
 
+        if (callInitiatedPayload.Direction != "incoming")
+            return;
+
         var correlationId = ((Payload)webhook.Data.Payload).GetCorrelationId();;
         var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<IncomingCall>();
         var input = new Dictionary<string, object>().AddInput(webhook);

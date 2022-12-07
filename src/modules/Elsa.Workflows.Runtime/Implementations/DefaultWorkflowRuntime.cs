@@ -4,6 +4,7 @@ using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Services;
+using Medallion.Threading;
 
 namespace Elsa.Workflows.Runtime.Implementations;
 
@@ -15,6 +16,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
     private readonly ITriggerStore _triggerStore;
     private readonly IBookmarkStore _bookmarkStore;
     private readonly IBookmarkHasher _hasher;
+    private readonly IDistributedLockProvider _distributedLockProvider;
 
     public DefaultWorkflowRuntime(
         IWorkflowHostFactory workflowHostFactory,
@@ -22,7 +24,8 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         IWorkflowStateStore workflowStateStore,
         ITriggerStore triggerStore,
         IBookmarkStore bookmarkStore,
-        IBookmarkHasher hasher)
+        IBookmarkHasher hasher,
+        IDistributedLockProvider distributedLockProvider)
     {
         _workflowHostFactory = workflowHostFactory;
         _workflowDefinitionService = workflowDefinitionService;
@@ -30,6 +33,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         _triggerStore = triggerStore;
         _bookmarkStore = bookmarkStore;
         _hasher = hasher;
+        _distributedLockProvider = distributedLockProvider;
     }
 
     public async Task<StartWorkflowResult> StartWorkflowAsync(string definitionId, StartWorkflowRuntimeOptions options, CancellationToken cancellationToken = default)
@@ -56,32 +60,35 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
 
     public async Task<ResumeWorkflowResult> ResumeWorkflowAsync(string workflowInstanceId, ResumeWorkflowRuntimeOptions options, CancellationToken cancellationToken = default)
     {
-        var workflowState = await _workflowStateStore.LoadAsync(workflowInstanceId, cancellationToken);
+        await using (await _distributedLockProvider.AcquireLockAsync(workflowInstanceId, TimeSpan.FromMinutes(1), cancellationToken))
+        {
+            var workflowState = await _workflowStateStore.LoadAsync(workflowInstanceId, cancellationToken);
 
-        if (workflowState == null)
-            throw new Exception($"Workflow instance {workflowInstanceId} not found");
+            if (workflowState == null)
+                throw new Exception($"Workflow instance {workflowInstanceId} not found");
 
-        var definitionId = workflowState.DefinitionId;
-        var version = workflowState.DefinitionVersion;
+            var definitionId = workflowState.DefinitionId;
+            var version = workflowState.DefinitionVersion;
 
-        var workflowDefinition = await _workflowDefinitionService.FindAsync(
-            definitionId,
-            VersionOptions.SpecificVersion(version),
-            cancellationToken);
+            var workflowDefinition = await _workflowDefinitionService.FindAsync(
+                definitionId,
+                VersionOptions.SpecificVersion(version),
+                cancellationToken);
 
-        if (workflowDefinition == null)
-            throw new Exception("Specified workflow definition and version does not exist");
-        
-        var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
-        var workflowHost = await _workflowHostFactory.CreateAsync(workflow, workflowState, cancellationToken);
-        var resumeWorkflowOptions = new ResumeWorkflowHostOptions(options.CorrelationId, options.BookmarkId, options.ActivityId, options.Input);
+            if (workflowDefinition == null)
+                throw new Exception("Specified workflow definition and version does not exist");
 
-        await workflowHost.ResumeWorkflowAsync(resumeWorkflowOptions, cancellationToken);
-        workflowState = workflowHost.WorkflowState;
+            var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
+            var workflowHost = await _workflowHostFactory.CreateAsync(workflow, workflowState, cancellationToken);
+            var resumeWorkflowOptions = new ResumeWorkflowHostOptions(options.CorrelationId, options.BookmarkId, options.ActivityId, options.Input);
 
-        await SaveWorkflowStateAsync(workflowState, cancellationToken);
+            await workflowHost.ResumeWorkflowAsync(resumeWorkflowOptions, cancellationToken);
+            workflowState = workflowHost.WorkflowState;
 
-        return new ResumeWorkflowResult(workflowState.Bookmarks);
+            await SaveWorkflowStateAsync(workflowState, cancellationToken);
+
+            return new ResumeWorkflowResult(workflowState.Bookmarks);
+        }
     }
 
     public async Task<ICollection<ResumedWorkflow>> ResumeWorkflowsAsync(string activityTypeName, object bookmarkPayload, ResumeWorkflowRuntimeOptions options, CancellationToken cancellationToken = default)

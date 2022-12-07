@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Attributes;
@@ -16,46 +17,52 @@ public class While : Activity
     };
     
     [JsonConstructor]
-    public While(IActivity? body = default)
+    public While(IActivity? body = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
         Body = body!;
         Behaviors.Add<BreakBehavior>(this);
         Behaviors.Remove<AutoCompleteBehavior>();
     }
 
-    public While(Input<bool> condition, IActivity? body = default) : this(body)
+    public While(Input<bool> condition, IActivity? body = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(body, source, line)
     {
         Condition = condition;
     }
 
-    public While(Func<ExpressionExecutionContext, ValueTask<bool>> condition, IActivity? body = default) : this(new Input<bool>(condition), body)
+    public While(Func<ExpressionExecutionContext, ValueTask<bool>> condition, IActivity? body = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) 
+        : this(new Input<bool>(condition), body, source, line)
     {
     }
 
-    public While(Func<ExpressionExecutionContext, bool> condition, IActivity? body = default) : this(new Input<bool>(condition), body)
+    public While(Func<ExpressionExecutionContext, bool> condition, IActivity? body = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) 
+        : this(new Input<bool>(condition), body, source, line)
     {
     }
 
-    public While(Func<ValueTask<bool>> condition, IActivity? body = default) : this(new Input<bool>(condition), body)
+    public While(Func<ValueTask<bool>> condition, IActivity? body = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) 
+        : this(new Input<bool>(condition), body, source, line)
     {
     }
 
-    public While(Func<bool> condition, IActivity? body = default) : this(new Input<bool>(condition), body)
+    public While(Func<bool> condition, IActivity? body = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) 
+        : this(new Input<bool>(condition), body, source, line)
     {
     }
 
+    /// <summary>
+    /// The condition to evaluate.
+    /// </summary>
     [Input(AutoEvaluate = false)] public Input<bool> Condition { get; set; } = new(false);
+    
+    /// <summary>
+    /// The <see cref="IActivity"/> to execute on every iteration.
+    /// </summary>
     [Port] public IActivity Body { get; set; }
 
-    protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
-    {
-        await HandleIterationAsync(context);
-    }
+    /// <inheritdoc />
+    protected override async ValueTask ExecuteAsync(ActivityExecutionContext context) => await HandleIterationAsync(context);
 
-    private async ValueTask OnBodyCompleted(ActivityExecutionContext context, ActivityExecutionContext childContext)
-    {
-        await HandleIterationAsync(context);
-    }
+    private async ValueTask OnBodyCompleted(ActivityExecutionContext context, ActivityExecutionContext childContext) => await HandleIterationAsync(context);
 
     private async ValueTask HandleIterationAsync(ActivityExecutionContext context)
     {

@@ -105,6 +105,15 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
 
     private void SerializeCompletionCallbacks(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
     {
+        // Assert all referenced owner contexts exist.
+        foreach (var completionCallback in workflowExecutionContext.CompletionCallbacks)
+        {
+            var owmnerContext = workflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x == completionCallback.Owner);
+
+            if (owmnerContext == null)
+                throw new Exception("Lost an owner context");
+        }
+        
         var completionCallbacks = workflowExecutionContext.CompletionCallbacks.Select(x => new CompletionCallbackState(x.Owner.Id, x.Child.Id, x.CompletionCallback?.Method.Name));
         state.CompletionCallbacks = completionCallbacks.ToList();
     }
@@ -120,8 +129,9 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
             if (parentId != null)
             {
                 var parentContext = activityExecutionContext.WorkflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Id == parentId);
-                
-                Debug.Assert(parentContext != null);
+
+                if (parentContext == null)
+                    throw new Exception("We lost a context");
             }
             
             var activityExecutionContextState = new ActivityExecutionContextState

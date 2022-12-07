@@ -15,12 +15,14 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
 {
     private readonly IActivityRegistry _activityRegistry;
     private readonly IActivityFactory _activityFactory;
+    private readonly IIdentityGraphService _identityGraphService;
     private readonly IServiceProvider _serviceProvider;
 
-    public ActivityJsonConverter(IActivityRegistry activityRegistry, IActivityFactory activityFactory, IServiceProvider serviceProvider)
+    public ActivityJsonConverter(IActivityRegistry activityRegistry, IActivityFactory activityFactory, IIdentityGraphService identityGraphService, IServiceProvider serviceProvider)
     {
         _activityRegistry = activityRegistry;
         _activityFactory = activityFactory;
+        _identityGraphService = identityGraphService;
         _serviceProvider = serviceProvider;
     }
 
@@ -56,6 +58,9 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
 
         var context = new ActivityConstructorContext(doc.RootElement, newOptions);
         var activity = activityDescriptor.Constructor(context);
+        
+        _identityGraphService.AssignInputOutputs(activity);
+        _identityGraphService.AssignVariables(activity);
 
         return activity;
     }

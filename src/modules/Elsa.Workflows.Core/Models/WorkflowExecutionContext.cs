@@ -1,5 +1,4 @@
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using Elsa.Common.Extensions;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Services;
@@ -74,6 +73,7 @@ public class WorkflowExecutionContext
     public IDictionary<object, object> TransientProperties { get; set; } = new Dictionary<object, object>();
 
     public ExecuteActivityDelegate? ExecuteDelegate { get; set; }
+    public ResumedBookmarkContext? ResumedBookmarkContext { get; set; }
     public string? TriggerActivityId { get; set; }
     public CancellationToken CancellationToken { get; }
     public ICollection<ActivityCompletionCallbackEntry> CompletionCallbacks => new ReadOnlyCollection<ActivityCompletionCallbackEntry>(_completionCallbackEntries);
@@ -166,7 +166,14 @@ public class WorkflowExecutionContext
 
         foreach (var childContext in childContexts) RemoveActivityExecutionContext(childContext);
 
+        // Remove the context.
         _activityExecutionContexts.Remove(context);
+        
+        // Remove all associated completion callbacks.
+        context.ClearCompletionCallbacks();
+        
+        // Remove all associated bookmarks.
+        Bookmarks.RemoveWhere(x => x.ActivityInstanceId == context.Id);
     }
 
     public void AddActivityExecutionContext(ActivityExecutionContext context) => _activityExecutionContexts.Add(context);

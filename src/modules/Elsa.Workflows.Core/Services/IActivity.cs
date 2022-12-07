@@ -25,17 +25,27 @@ public interface IActivity
     /// <summary>
     /// A value indicating whether this activity can start instances of the workflow it is a part of.
     /// </summary>
-    public bool CanStartWorkflow { get; set; }
+    bool CanStartWorkflow { get; set; }
     
     /// <summary>
     /// A value indicating whether this activity can be executed asynchronously in the background.
     /// </summary>
-    public bool RunAsynchronously { get; set; }
+    bool RunAsynchronously { get; set; }
     
     /// <summary>
     /// Can contain application-specific information about this activity.
     /// </summary>
     IDictionary<string, object> ApplicationProperties { get; set; }
+
+    /// <summary>
+    /// The source file where this activity was instantiated, if any.
+    /// </summary>
+    string? Source { get; set; }
+
+    /// <summary>
+    /// The source file line number where this activity was instantiated, if any.
+    /// </summary>
+    int? Line { get; set; }
     
     /// <summary>
     /// Invoked when the activity executes.

@@ -3,7 +3,6 @@ using System.Text.Json.Serialization;
 using Elsa.Expressions.Models;
 using Elsa.Expressions.Services;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Management.Serialization.Converters;
 
@@ -13,17 +12,17 @@ namespace Elsa.Workflows.Management.Serialization.Converters;
 public class InputJsonConverter<T> : JsonConverter<Input<T>>
 {
     private readonly IExpressionSyntaxRegistry _expressionSyntaxRegistry;
-    private readonly IIdentityGenerator _identityGenerator;
 
     /// <inheritdoc />
-    public InputJsonConverter(IExpressionSyntaxRegistry expressionSyntaxRegistry, IIdentityGenerator identityGenerator)
+    public InputJsonConverter(IExpressionSyntaxRegistry expressionSyntaxRegistry)
     {
         _expressionSyntaxRegistry = expressionSyntaxRegistry;
-        _identityGenerator = identityGenerator;
     }
 
+    /// <inheritdoc />
     public override bool CanConvert(Type typeToConvert) => typeof(Input).IsAssignableFrom(typeToConvert);
 
+    /// <inheritdoc />
     public override Input<T> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         if (!JsonDocument.TryParseValue(ref reader, out var doc))
@@ -32,12 +31,14 @@ public class InputJsonConverter<T> : JsonConverter<Input<T>>
         if (doc.RootElement.ValueKind != JsonValueKind.Object)
             return default!;
 
-        if (!doc.RootElement.TryGetProperty("typeName", out var inputTargetTypeElement))
+        if (!doc.RootElement.TryGetProperty("typeName", out _))
             return default!;
 
-        var memoryReferenceId = doc.RootElement.TryGetProperty("memoryReference", out var memoryReferenceElement) && memoryReferenceElement.ValueKind == JsonValueKind.String
+        var memoryReferenceId = doc.RootElement.TryGetProperty("memoryReference", out var memoryReferenceElement) && memoryReferenceElement.ValueKind == JsonValueKind.Object
             ? memoryReferenceElement.GetProperty("id").GetString()!
-            : _identityGenerator.GenerateId();
+            : memoryReferenceElement.ValueKind == JsonValueKind.String
+                ? memoryReferenceElement.GetString()!
+                : throw new Exception("No input ID specified");
 
         var expressionElement = doc.RootElement.GetProperty("expression");
 
@@ -52,11 +53,12 @@ public class InputJsonConverter<T> : JsonConverter<Input<T>>
 
         var context = new ExpressionConstructorContext(expressionElement, options);
         var expression = expressionSyntaxDescriptor.CreateExpression(context);
-        var locationReference = expressionSyntaxDescriptor.CreateBlockReference(new BlockReferenceConstructorContext(expression, memoryReferenceId));
+        var memoryBlockReference = expressionSyntaxDescriptor.CreateBlockReference(new BlockReferenceConstructorContext(expression, memoryReferenceId));
 
-        return (Input<T>)Activator.CreateInstance(typeof(Input<T>), expression, locationReference)!;
+        return (Input<T>)Activator.CreateInstance(typeof(Input<T>), expression, memoryBlockReference)!;
     }
 
+    /// <inheritdoc />
     public override void Write(Utf8JsonWriter writer, Input<T> value, JsonSerializerOptions options)
     {
         var expression = value.Expression;

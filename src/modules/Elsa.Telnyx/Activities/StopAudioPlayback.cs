@@ -1,4 +1,5 @@
-﻿using Elsa.Telnyx.Client.Models;
+﻿using System.Runtime.CompilerServices;
+using Elsa.Telnyx.Client.Models;
 using Elsa.Telnyx.Client.Services;
 using Elsa.Telnyx.Extensions;
 using Elsa.Workflows.Core;
@@ -10,29 +11,55 @@ using Refit;
 
 namespace Elsa.Telnyx.Activities;
 
-[FlowNode("Playback ended", "Disconnected")]
+/// <inheritdoc />
+[FlowNode("Done", "Disconnected")]
 public class FlowStopAudioPlayback : StopAudioPlaybackBase
 {
-    protected override ValueTask HandlePlaybackEndedAsync(ActivityExecutionContext context) => context.CompleteActivityWithOutcomesAsync("Playback ended");
+    /// <inheritdoc />
+    public FlowStopAudioPlayback([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    {
+    }
+    
+    /// <inheritdoc />
+    protected override ValueTask HandleDoneAsync(ActivityExecutionContext context) => context.CompleteActivityWithOutcomesAsync("Done");
+
+    /// <inheritdoc />
     protected override ValueTask HandleDisconnectedAsync(ActivityExecutionContext context) => context.CompleteActivityWithOutcomesAsync("Disconnected");
 }
 
+/// <inheritdoc />
 public class StopAudioPlayback : StopAudioPlaybackBase
 {
-    [Port] public IActivity? PlaybackEnded { get; set; }
+    /// <inheritdoc />
+    public StopAudioPlayback([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    {
+    }
+    
+    /// <summary>
+    /// The <see cref="IActivity"/> to execute when the call was no longer active.
+    /// </summary>
     [Port] public IActivity? Disconnected { get; set; }
 
-    protected override async ValueTask HandlePlaybackEndedAsync(ActivityExecutionContext context) => await context.ScheduleActivityAsync(PlaybackEnded, OnCompletedAsync);
+    /// <inheritdoc />
+    protected override async ValueTask HandleDoneAsync(ActivityExecutionContext context) => await context.CompleteActivityAsync();
+
+    /// <inheritdoc />
     protected override async ValueTask HandleDisconnectedAsync(ActivityExecutionContext context) => await context.ScheduleActivityAsync(Disconnected, OnCompletedAsync);
+
+    private async ValueTask OnCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext) => await context.CompleteActivityAsync();
 }
 
 /// <summary>
 /// Stop audio playback.
 /// </summary>
 [Activity(Constants.Namespace, Description = "Stop audio playback.", Kind = ActivityKind.Task)]
-[FlowNode("Playback ended", "Disconnected")]
 public abstract class StopAudioPlaybackBase : ActivityBase
 {
+    /// <inheritdoc />
+    protected StopAudioPlaybackBase(string? source = default, int? line = default) : base(source, line)
+    {
+    }
+    
     /// <summary>
     /// Unique identifier and token for controlling the call.
     /// </summary>
@@ -53,6 +80,7 @@ public abstract class StopAudioPlaybackBase : ActivityBase
     )]
     public Input<string?> Stop { get; set; } = new("all");
 
+    /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var request = new StopAudioPlaybackRequest(Stop.Get(context));
@@ -62,18 +90,21 @@ public abstract class StopAudioPlaybackBase : ActivityBase
         try
         {
             await telnyxClient.Calls.StopAudioPlaybackAsync(callControlId, request, context.CancellationToken);
-            context.CreateBookmark(ResumeAsync);
+            await HandleDoneAsync(context);
         }
         catch (ApiException e)
         {
             if (!await e.CallIsNoLongerActiveAsync()) throw;
-            await context.CompleteActivityWithOutcomesAsync("Disconnected");
+            await HandleDisconnectedAsync(context);
         }
     }
-
-    protected abstract ValueTask HandlePlaybackEndedAsync(ActivityExecutionContext context);
+    
+    /// <summary>
+    /// Called when audio playback is stopping.
+    /// </summary>
+    protected abstract ValueTask HandleDoneAsync(ActivityExecutionContext context);
+    /// <summary>
+    /// Called when the call was no longer active.
+    /// </summary>
     protected abstract ValueTask HandleDisconnectedAsync(ActivityExecutionContext context);
-    protected async ValueTask OnCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext) => await context.CompleteActivityAsync();
-
-    private async ValueTask ResumeAsync(ActivityExecutionContext context) => await context.CompleteActivityWithOutcomesAsync("Playback ended");
 }
