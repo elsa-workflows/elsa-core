@@ -9,17 +9,22 @@ namespace Elsa.Workflows.Core.Models;
 [DebuggerDisplay("{Type} - {Id}")]
 public abstract class ActivityBase : IActivity, ISignalHandler
 {
+    private readonly string? _sourceFileName;
+    private readonly int? _sourceLineNumber;
     private readonly ICollection<SignalHandlerRegistration> _signalHandlers = new List<SignalHandlerRegistration>();
 
-    protected ActivityBase()
+    protected ActivityBase(string? source = default, int? line = default)
     {
+        _sourceFileName = source;
+        _sourceLineNumber = line;
+        
         Type = ActivityTypeNameHelper.GenerateTypeName(GetType());
         Version = 1;
         Behaviors.Add<ExecutionLoggingBehavior>(this);
         Behaviors.Add<ScheduledChildCallbackBehavior>(this);
     }
 
-    protected ActivityBase(string activityType, int version = 1) : this()
+    protected ActivityBase(string activityType, int version = 1, string? source = default, int? line = default) : this(source, line)
     {
         Type = activityType;
         Version = version;

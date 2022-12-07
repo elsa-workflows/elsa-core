@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 using Elsa.Telnyx.Attributes;
 using Elsa.Telnyx.Bookmarks;
@@ -20,11 +21,12 @@ namespace Elsa.Telnyx.Activities;
 public class WebhookEvent : ActivityBase<Payload>
 {
     [JsonConstructor]
-    public WebhookEvent()
+    public WebhookEvent([CallerFilePath]string? source = default, [CallerLineNumber]int? line = default) : base(source, line)
     {
     }
 
-    public WebhookEvent(string eventType, string activityTypeName, Variable<Payload> result) : base(activityTypeName)
+    public WebhookEvent(string eventType, string activityTypeName, Variable<Payload> result, int version = 1, [CallerFilePath]string? source = default, [CallerLineNumber]int? line = default) 
+        : base(activityTypeName, version, source, line)
     {
         EventType = eventType;
         Result = new(result);

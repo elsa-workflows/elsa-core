@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Activities.Flowchart.Models;
@@ -70,29 +71,27 @@ public abstract class Composite : ActivityBase
     
     private async ValueTask OnCompleteCompositeSignal(CompleteCompositeSignal signal, SignalContext context)
     {
-        var activityExecutionContext = context.ReceiverActivityExecutionContext;
-
-        // Remove the existing completed handler.
-        activityExecutionContext.WorkflowExecutionContext.PopCompletionCallback(activityExecutionContext, Root);
-
-        // Complete this activity.
-        await activityExecutionContext.CompleteActivityAsync(signal.Result);
+        // Complete the sender first so that it notifies its parents to complete.
+        await context.SenderActivityExecutionContext.CompleteActivityAsync();
+        
+        // Then complete this activity.
+        await context.ReceiverActivityExecutionContext.CompleteActivityAsync(signal.Result);
         context.StopPropagation();
     }
 
-    protected static Inline Inline(Func<ActivityExecutionContext, ValueTask> activity) => new(activity);
-    protected static Inline Inline(Func<ValueTask> activity) => new(activity);
-    protected static Inline Inline(Action<ActivityExecutionContext> activity) => new(activity);
-    protected static Inline Inline(Action activity) => new(activity);
-    protected static Inline<TResult> Inline<TResult>(Func<ActivityExecutionContext, ValueTask<TResult>> activity, MemoryBlockReference? output = default) => new(activity, output);
-    protected static Inline<TResult> Inline<TResult>(Func<ValueTask<TResult>> activity, MemoryBlockReference? output = default) => new(activity, output);
-    protected static Inline<TResult> Inline<TResult>(Func<ActivityExecutionContext, TResult> activity, MemoryBlockReference? output = default) => new(activity, output);
-    protected static Inline<TResult> Inline<TResult>(Func<TResult> activity, MemoryBlockReference? output = default) => new(activity, output);
+    protected static Inline Inline(Func<ActivityExecutionContext, ValueTask> activity, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(activity, source, line);
+    protected static Inline Inline(Func<ValueTask> activity, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(activity, source, line);
+    protected static Inline Inline(Action<ActivityExecutionContext> activity, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(activity, source, line);
+    protected static Inline Inline(Action activity, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(activity, source, line);
+    protected static Inline<TResult> Inline<TResult>(Func<ActivityExecutionContext, ValueTask<TResult>> activity, MemoryBlockReference? output = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(activity, output, source, line);
+    protected static Inline<TResult> Inline<TResult>(Func<ValueTask<TResult>> activity, MemoryBlockReference? output = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(activity, output, source, line);
+    protected static Inline<TResult> Inline<TResult>(Func<ActivityExecutionContext, TResult> activity, MemoryBlockReference? output, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(activity, output, source, line);
+    protected static Inline<TResult> Inline<TResult>(Func<TResult> activity, MemoryBlockReference? output = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(activity, output, source, line);
 
-    protected static SetVariable<T> SetVariable<T>(Variable<T> variable, T value) => new(variable, value);
-    protected static SetVariable<T> SetVariable<T>(Variable<T> variable, Func<ExpressionExecutionContext, T> value) => new(variable, value);
-    protected static SetVariable<T> SetVariable<T>(Variable<T> variable, Func<T> value) => new(variable, value);
-    protected static SetVariable<T> SetVariable<T>(Variable<T> variable, Variable<T> value) => new(variable, value);
+    protected static SetVariable<T> SetVariable<T>(Variable<T> variable, T value, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(variable, value, source, line);
+    protected static SetVariable<T> SetVariable<T>(Variable<T> variable, Func<ExpressionExecutionContext, T> value, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(variable, value, source, line);
+    protected static SetVariable<T> SetVariable<T>(Variable<T> variable, Func<T> value, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(variable, value, source, line);
+    protected static SetVariable<T> SetVariable<T>(Variable<T> variable, Variable<T> value, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(variable, value, source, line);
 }
 
 /// <summary>

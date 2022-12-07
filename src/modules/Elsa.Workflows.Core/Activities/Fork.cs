@@ -13,22 +13,17 @@ namespace Elsa.Workflows.Core.Activities;
 [Activity("Elsa", "Control Flow", "Branch execution into multiple branches.")]
 public class Fork : ActivityBase
 {
-    private readonly string? _sourceFileName;
-    private readonly int? _sourceLineNumber;
-
     /// <inheritdoc />
     [JsonConstructor]
-    public Fork([CallerFilePath] string? sourceFileName = default, [CallerLineNumber] int? sourceLineNumber = default)
+    public Fork([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
-        _sourceFileName = sourceFileName;
-        _sourceLineNumber = sourceLineNumber;
     }
     
     /// <summary>
     /// Controls when this activity yields control back to its parent activity.
     /// </summary>
     [Input]
-    public ForkJoinMode JoinMode { get; set; } = ForkJoinMode.WaitAny;
+    public ForkJoinMode JoinMode { get; set; } = ForkJoinMode.WaitAll;
 
     /// <summary>
     /// The branches to schedule.
@@ -37,7 +32,7 @@ public class Fork : ActivityBase
     public ICollection<IActivity> Branches { get; set; } = new List<IActivity>();
 
     /// <inheritdoc />
-    protected override void Execute(ActivityExecutionContext context) => context.ScheduleActivities(Branches.Reverse(), CompleteChildAsync);
+    protected override ValueTask ExecuteAsync(ActivityExecutionContext context) => context.ScheduleActivities(Branches.Reverse(), CompleteChildAsync);
 
     private async ValueTask CompleteChildAsync(ActivityExecutionContext context, ActivityExecutionContext childContext)
     {

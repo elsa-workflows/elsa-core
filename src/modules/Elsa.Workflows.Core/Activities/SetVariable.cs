@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
@@ -9,29 +10,33 @@ namespace Elsa.Workflows.Core.Activities;
 [Activity("Elsa", "Primitives", "Set a workflow variable to a given value.")]
 public class SetVariable<T> : Activity
 {
-    public SetVariable()
+    public SetVariable([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
 
-    public SetVariable(Variable<T> variable, Input<T> value)
+    public SetVariable(Variable<T> variable, Input<T> value, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line)
     {
         Variable = variable;
         Value = value;
     }
     
-    public SetVariable(Variable<T> variable, Variable<T> value) : this(variable, new Input<T>(value))
+    public SetVariable(Variable<T> variable, Variable<T> value, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) 
+        : this(variable, new Input<T>(value), source, line)
     {
     }
     
-    public SetVariable(Variable<T> variable, Func<ExpressionExecutionContext, T> value) : this(variable, new Input<T>(value))
+    public SetVariable(Variable<T> variable, Func<ExpressionExecutionContext, T> value, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) 
+        : this(variable, new Input<T>(value), source, line)
     {
     }
     
-    public SetVariable(Variable<T> variable, Func<T> value) : this(variable, new Input<T>(value))
+    public SetVariable(Variable<T> variable, Func<T> value, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) 
+        : this(variable, new Input<T>(value), source, line)
     {
     }
     
-    public SetVariable(Variable<T> variable, T value) : this(variable, new Input<T>(value))
+    public SetVariable(Variable<T> variable, T value, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) 
+        : this(variable, new Input<T>(value), source, line)
     {
     }
 
@@ -48,6 +53,10 @@ public class SetVariable<T> : Activity
 [Activity("Elsa", "Primitives", "Set a workflow variable to a given value.")]
 public class SetVariable : Activity
 {
+    public SetVariable([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    {
+    }
+    
     [Input] public Variable Variable { get; set; } = default!;
     [Input] public Input<object?> Value { get; set; } = new(default(object));
 
