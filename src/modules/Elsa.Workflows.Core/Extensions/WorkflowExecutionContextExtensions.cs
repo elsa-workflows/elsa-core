@@ -45,7 +45,11 @@ public static class WorkflowExecutionContextExtensions
     public static void ScheduleBookmark(this WorkflowExecutionContext workflowExecutionContext, Bookmark bookmark)
     {
         // Construct bookmark.
-        var bookmarkedActivityContext = workflowExecutionContext.ActivityExecutionContexts.First(x => x.Id == bookmark.ActivityInstanceId);
+        var bookmarkedActivityContext = workflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Id == bookmark.ActivityInstanceId);
+        
+        if(bookmarkedActivityContext == null)
+            return;
+
         var bookmarkedActivity = bookmarkedActivityContext.Activity;
 
         // Schedule the activity to resume.
