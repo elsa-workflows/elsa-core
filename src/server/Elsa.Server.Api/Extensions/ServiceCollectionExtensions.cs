@@ -1,6 +1,7 @@
 using Elsa;
 using Elsa.Models;
 using Elsa.Server.Api;
+using Elsa.Server.Api.Extensions.SchemaFilters;
 using Elsa.Server.Api.Mapping;
 using Elsa.Server.Api.Services;
 using Elsa.Server.Api.Swagger.Examples;
@@ -79,6 +80,9 @@ namespace Microsoft.Extensions.DependencyInjection
                         Type = PrimitiveType.String.ToString().ToLower(),
                         Example = new OpenApiString("System.String, mscorlib")
                     });
+
+                    //Allow enums to be displayed
+                    c.SchemaFilter<XEnumNamesSchemaFilter>();
 
                     configure?.Invoke(c);
                 });
