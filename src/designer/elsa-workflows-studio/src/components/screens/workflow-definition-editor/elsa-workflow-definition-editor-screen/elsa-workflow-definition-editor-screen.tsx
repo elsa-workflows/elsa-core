@@ -18,7 +18,7 @@ import {
   WorkflowTestActivityMessage,
   WorkflowTestActivityMessageStatus,
 } from '../../../../models';
-import { ActivityStats, createElsaClient, eventBus, featuresDataManager, SaveWorkflowDefinitionRequest } from '../../../../services';
+import { ActivityStats, createElsaClient, eventBus, featuresDataManager, monacoEditorDialogService, SaveWorkflowDefinitionRequest } from '../../../../services';
 import state from '../../../../utils/store';
 import WorkflowEditorTunnel, { WorkflowEditorState } from '../../../../data/workflow-editor';
 import DashboardTunnel from '../../../../data/dashboard';
@@ -644,6 +644,29 @@ export class ElsaWorkflowDefinitionEditorScreen {
           </div>`;
   };
 
+  renderMonacoEditorDialog() {
+    return (
+      <elsa-modal-dialog ref={el => {
+          monacoEditorDialogService.monacoEditorDialog = el;
+        }}>
+          <div slot="content" class="elsa-py-8 elsa-px-4">
+            <elsa-monaco
+              value=""
+              language="javascript"
+              editor-height="400px"
+              single-line={false}
+              onValueChanged={e => {
+                if (monacoEditorDialogService.valueChanged) {
+                  monacoEditorDialogService.valueChanged(e);
+                }
+              }}
+              ref={el => (monacoEditorDialogService.monacoEditor = el)}
+            />
+          </div>
+        </elsa-modal-dialog>
+    );
+  }
+
   render() {
     const tunnelState: WorkflowEditorState = {
       serverUrl: this.serverUrl,
@@ -657,6 +680,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
           {this.renderCanvas()}
           {this.renderActivityPicker()}
           {this.renderActivityEditor()}
+          {this.renderMonacoEditorDialog()}
         </WorkflowEditorTunnel.Provider>
       </Host>
     );

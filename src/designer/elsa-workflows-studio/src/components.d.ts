@@ -109,6 +109,7 @@ export namespace Components {
         "editorHeight": string;
         "expression": string;
         "language": string;
+        "opensModal": boolean;
         "padding": string;
         "serverUrl": string;
         "setExpression": (value: string) => Promise<void>;
@@ -1011,6 +1012,7 @@ declare namespace LocalJSX {
         "expression"?: string;
         "language"?: string;
         "onExpressionChanged"?: (event: CustomEvent<string>) => void;
+        "opensModal"?: boolean;
         "padding"?: string;
         "serverUrl"?: string;
         "singleLineMode"?: boolean;
