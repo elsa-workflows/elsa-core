@@ -287,7 +287,6 @@ export class ElsaWorkflowDesigner {
   }
 
   componentWillLoad() {
-    console.info("WILL LOAD");
     this.workflowModel = this.model;
   }
 
@@ -592,7 +591,6 @@ export class ElsaWorkflowDesigner {
   }
 
   private updateGraph = async () => {
-    console.info("UPDATING GRAPH:", this.workflowModel);
     const activities = this.workflowModel.activities;
     const connections = this.workflowModel.connections;
     const edges: Array<Edge.Metadata> = [];

@@ -94,6 +94,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
   helpDialog: HTMLElsaModalDialogElement;
   activityContextMenu: HTMLDivElement;
   componentCustomButton: HTMLDivElement;
+  confirmDialog: HTMLElsaConfirmDialogElement;
 
   //connectionContextMenu: HTMLDivElement;
 
@@ -487,6 +488,18 @@ export class ElsaWorkflowDefinitionEditorScreen {
     await eventBus.emit(EventTypes.ShowWorkflowSettings);
   }
 
+  async onDeleteClicked() {
+    const t = this.t;
+    const result = await this.confirmDialog.show(t('DeleteConfirmationModel.Title'), t('DeleteConfirmationModel.Message'));
+
+    if (!result)
+      return;
+
+    const elsaClient = await createElsaClient(this.serverUrl);
+    await elsaClient.workflowDefinitionsApi.delete(this.workflowDefinition.definitionId, {allVersions: true});
+    this.history.push(`${this.basePath}/workflow-definitions`, {});
+  }
+
   async onPublishClicked() {
     await this.publishWorkflow();
   }
@@ -748,6 +761,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
           </div>
         </div>
         {this.renderTestActivityMenu()}
+        <elsa-confirm-dialog ref={el => this.confirmDialog = el} culture={this.culture}/>
       </div>
     );
   }
@@ -1136,6 +1150,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
         onRevertClicked={() => this.onRevertClicked()}
         onExportClicked={() => this.onExportClicked()}
         onImportClicked={e => this.onImportClicked(e.detail)}
+        onDeleteClicked={e => this.onDeleteClicked()}
         culture={this.culture}
       />
     );
