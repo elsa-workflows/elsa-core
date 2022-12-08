@@ -42,7 +42,12 @@ public class JobBasedActivityInvokerMiddleware : DefaultActivityInvokerMiddlewar
     protected override async ValueTask ExecuteActivityAsync(ActivityExecutionContext context)
     {
         var activity = context.Activity;
-        var activityDescriptor = _activityRegistry.Find(activity.Type) ?? await _activityDescriber.DescribeActivityAsync(activity.GetType(), context.CancellationToken);
+        var activityDescriptor = _activityRegistry.Find(activity.Type);
+        if (activityDescriptor == null)
+        {
+            activityDescriptor = await _activityDescriber.DescribeActivityAsync(activity.GetType(), context.CancellationToken);
+            _activityRegistry.Add(this.GetType(), activityDescriptor);
+        }
         var kind = activityDescriptor.Kind;
 
         var shouldRunInBackground =
