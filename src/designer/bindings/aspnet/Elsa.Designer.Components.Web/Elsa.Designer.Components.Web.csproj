@@ -11,10 +11,6 @@
         </Description>
         <PackageTags>elsa, workflows, aspnet, aspnetcore, blazor, html</PackageTags>
     </PropertyGroup>
-
-    <PropertyGroup>
-        <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
-    </PropertyGroup>
     
     <ItemGroup>
         <SupportedPlatform Include="browser" />
