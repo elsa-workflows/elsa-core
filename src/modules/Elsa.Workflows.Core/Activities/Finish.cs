@@ -1,18 +1,23 @@
+using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
 using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Behaviors;
 using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Workflows.Core.Activities;
 
-[Activity("Elsa", "Control Flow", "Mark the workflow as Finished")]
-public class Finish : Activity
+/// <summary>
+/// Mark the workflow as finished.
+/// </summary>
+[Activity("Elsa", "Control Flow", "Mark the workflow as finished.")]
+public class Finish : ActivityBase
 {
-    public Finish()
+    /// <inheritdoc />
+    [JsonConstructor]
+    public Finish([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
-        // Don't let ancestor activities schedule additional work.
-        Behaviors.Remove<AutoCompleteBehavior>();
     }
-    
+
+    /// <inheritdoc />
     protected override void Execute(ActivityExecutionContext context)
     {
         context.ClearCompletionCallbacks();

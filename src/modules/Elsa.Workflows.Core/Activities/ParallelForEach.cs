@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
@@ -16,6 +17,7 @@ public class ParallelForEach<T> : Activity
     private const string CollectedCountProperty = nameof(CollectedCountProperty);
 
     /// <inheritdoc />
+    [JsonConstructor]
     public ParallelForEach([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }

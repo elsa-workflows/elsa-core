@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
@@ -17,6 +18,7 @@ public class Sequence : Container
     private const string CurrentIndexProperty = "CurrentIndex";
 
     /// <inheritdoc />
+    [JsonConstructor]
     public Sequence([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
         OnSignalReceived<BreakSignal>(OnBreak);

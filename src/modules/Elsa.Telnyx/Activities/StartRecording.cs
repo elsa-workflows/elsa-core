@@ -1,4 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
 using Elsa.Telnyx.Attributes;
 using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Client.Models;
@@ -20,6 +21,7 @@ namespace Elsa.Telnyx.Activities;
 public class FlowStartRecording : StartRecordingBase
 {
     /// <inheritdoc />
+    [JsonConstructor]
     public FlowStartRecording([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
@@ -35,6 +37,7 @@ public class FlowStartRecording : StartRecordingBase
 public class StartRecording : StartRecordingBase
 {
     /// <inheritdoc />
+    [JsonConstructor]
     public StartRecording([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }

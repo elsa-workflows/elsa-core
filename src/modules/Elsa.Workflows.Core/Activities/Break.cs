@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Signals;
@@ -11,6 +12,12 @@ namespace Elsa.Workflows.Core.Activities;
 [Activity("Elsa", "Control Flow", "Break out of a loop.")]
 public class Break : Activity
 {
+    /// <inheritdoc />
+    [JsonConstructor]
+    public Break()
+    {
+    }
+    
     /// <inheritdoc />
     public Break([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {

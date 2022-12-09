@@ -1,4 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
 using Elsa.Telnyx.Client.Models;
 using Elsa.Telnyx.Client.Services;
 using Elsa.Telnyx.Extensions;
@@ -20,6 +21,7 @@ namespace Elsa.Telnyx.Activities;
 public class TransferCall : Activity
 {
     /// <inheritdoc />
+    [JsonConstructor]
     public TransferCall([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }

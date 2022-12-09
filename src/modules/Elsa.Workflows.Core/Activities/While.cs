@@ -11,11 +11,15 @@ namespace Elsa.Workflows.Core.Activities;
 [Activity("Elsa", "Primitives", "Execute an activity while a given condition evaluates to true.")]
 public class While : Activity
 {
+    /// <summary>
+    /// Creates a <see cref="While"/> activity that loops forever.
+    /// </summary>
     public static While True(IActivity body) => new(body)
     {
         Condition = new Input<bool>(true)
     };
-    
+
+    /// <inheritdoc />
     [JsonConstructor]
     public While(IActivity? body = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
@@ -24,26 +28,31 @@ public class While : Activity
         Behaviors.Remove<AutoCompleteBehavior>();
     }
 
+    /// <inheritdoc />
     public While(Input<bool> condition, IActivity? body = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(body, source, line)
     {
         Condition = condition;
     }
 
+    /// <inheritdoc />
     public While(Func<ExpressionExecutionContext, ValueTask<bool>> condition, IActivity? body = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) 
         : this(new Input<bool>(condition), body, source, line)
     {
     }
 
+    /// <inheritdoc />
     public While(Func<ExpressionExecutionContext, bool> condition, IActivity? body = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) 
         : this(new Input<bool>(condition), body, source, line)
     {
     }
 
+    /// <inheritdoc />
     public While(Func<ValueTask<bool>> condition, IActivity? body = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) 
         : this(new Input<bool>(condition), body, source, line)
     {
     }
 
+    /// <inheritdoc />
     public While(Func<bool> condition, IActivity? body = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) 
         : this(new Input<bool>(condition), body, source, line)
     {

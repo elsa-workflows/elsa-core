@@ -1,4 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
 using Elsa.Telnyx.Client.Models;
 using Elsa.Telnyx.Client.Services;
 using Elsa.Workflows.Core;
@@ -15,6 +16,7 @@ namespace Elsa.Telnyx.Activities;
 public class LookupNumber : Activity<NumberLookupResponse>
 {
     /// <inheritdoc />
+    [JsonConstructor]
     public LookupNumber([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }

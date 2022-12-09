@@ -1,4 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
 using Elsa.Telnyx.Attributes;
 using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Client.Models;
@@ -24,6 +25,7 @@ namespace Elsa.Telnyx.Activities;
 public class GatherUsingSpeak : ActivityBase<CallGatherEndedPayload>, IBookmarksPersistedHandler
 {
     /// <inheritdoc />
+    [JsonConstructor]
     public GatherUsingSpeak([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }

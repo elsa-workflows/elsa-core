@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Implementations;
@@ -20,7 +21,13 @@ public class WriteLine : Activity
     }
 
     /// <inheritdoc />
-    public WriteLine(string text = default!, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(new Literal<string>(text), source, line)
+    [JsonConstructor]
+    public WriteLine()
+    {
+    }
+
+    /// <inheritdoc />
+    public WriteLine(string text, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(new Literal<string>(text), source, line)
     {
     }
 

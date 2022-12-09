@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Implementations;
@@ -14,6 +15,7 @@ namespace Elsa.Workflows.Core.Activities;
 public class ReadLine : Activity<string>
 {
     /// <inheritdoc />
+    [JsonConstructor]
     public ReadLine([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }

@@ -7,7 +7,10 @@ using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Core.Activities;
 
-[Activity("Elsa", "Control Flow", "Evaluate a Boolean condition to determine which path to execute next.")]
+/// <summary>
+/// Evaluate a Boolean condition to determine which activity to execute next.
+/// </summary>
+[Activity("Elsa", "Control Flow", "Evaluate a Boolean condition to determine which activity to execute next.")]
 public class If : ActivityBase<bool>
 {
     /// <inheritdoc />

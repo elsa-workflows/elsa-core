@@ -8,6 +8,9 @@ using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Core.Activities;
 
+/// <summary>
+/// Iterate over a sequence of steps between a start and an end number.
+/// </summary>
 [Activity("Elsa", "Control Flow", "Iterate over a sequence of steps between a start and an end number.")]
 public class For : ActivityBase
 {

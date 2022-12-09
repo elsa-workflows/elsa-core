@@ -1,4 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
 using Elsa.Telnyx.Client.Models;
 using Elsa.Telnyx.Client.Services;
 using Elsa.Telnyx.Extensions;
@@ -16,6 +17,7 @@ namespace Elsa.Telnyx.Activities;
 public class FlowStopAudioPlayback : StopAudioPlaybackBase
 {
     /// <inheritdoc />
+    [JsonConstructor]
     public FlowStopAudioPlayback([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
@@ -31,6 +33,7 @@ public class FlowStopAudioPlayback : StopAudioPlaybackBase
 public class StopAudioPlayback : StopAudioPlaybackBase
 {
     /// <inheritdoc />
+    [JsonConstructor]
     public StopAudioPlayback([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }

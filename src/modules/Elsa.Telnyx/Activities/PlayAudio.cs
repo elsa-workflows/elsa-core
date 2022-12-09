@@ -1,4 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
 using Elsa.Telnyx.Attributes;
 using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Client.Models;
@@ -20,6 +21,7 @@ namespace Elsa.Telnyx.Activities;
 public class FlowPlayAudio : PlayAudioBase
 {
     /// <inheritdoc />
+    [JsonConstructor]
     public FlowPlayAudio([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
@@ -35,6 +37,7 @@ public class FlowPlayAudio : PlayAudioBase
 public class PlayAudio : PlayAudioBase
 {
     /// <inheritdoc />
+    [JsonConstructor]
     public PlayAudio([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }

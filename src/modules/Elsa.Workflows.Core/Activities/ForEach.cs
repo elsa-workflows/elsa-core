@@ -17,6 +17,7 @@ public class ForEach : ActivityBase
     private const string CurrentIndexProperty = "CurrentIndex";
 
     /// <inheritdoc />
+    [JsonConstructor]
     public ForEach([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
     {
         Behaviors.Add<BreakBehavior>(this);

@@ -1,4 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
 using Elsa.Telnyx.Attributes;
 using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Client.Models;
@@ -20,6 +21,7 @@ namespace Elsa.Telnyx.Activities;
 public class FlowBridgeCalls : BridgeCallsBase
 {
     /// <inheritdoc />
+    [JsonConstructor]
     public FlowBridgeCalls([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
@@ -32,6 +34,7 @@ public class FlowBridgeCalls : BridgeCallsBase
 public class BridgeCalls : BridgeCallsBase
 {
     /// <inheritdoc />
+    [JsonConstructor]
     public BridgeCalls([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }

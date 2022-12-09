@@ -1,4 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
 using Elsa.Telnyx.Attributes;
 using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Client.Models;
@@ -132,6 +133,7 @@ public abstract class SpeakTextBase : ActivityBase
 public class FlowSpeakText : SpeakTextBase
 {
     /// <inheritdoc />
+    [JsonConstructor]
     public FlowSpeakText([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
@@ -147,6 +149,7 @@ public class FlowSpeakText : SpeakTextBase
 public class SpeakText : SpeakTextBase
 {
     /// <inheritdoc />
+    [JsonConstructor]
     public SpeakText([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }

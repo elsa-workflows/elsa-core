@@ -13,15 +13,18 @@ public class Inline : Activity
 {
     private readonly Func<ActivityExecutionContext, ValueTask> _activity;
 
+    /// <inheritdoc />
     public Inline(Func<ActivityExecutionContext, ValueTask> activity, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
         _activity = activity;
     }
 
+    /// <inheritdoc />
     public Inline(Func<ValueTask> activity, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(_ => activity(), source, line)
     {
     }
 
+    /// <inheritdoc />
     public Inline(Action<ActivityExecutionContext> activity, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(c =>
     {
         activity(c);
@@ -30,6 +33,7 @@ public class Inline : Activity
     {
     }
 
+    /// <inheritdoc />
     public Inline(Action activity, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(c =>
     {
         activity();
@@ -38,16 +42,47 @@ public class Inline : Activity
     {
     }
 
+    /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context) => await _activity(context);
 
+    /// <summary>
+    /// Creates a new <see cref="Inline"/> activity from the specified delegate.
+    /// </summary>
     public static Inline From(Func<ActivityExecutionContext, ValueTask> activity) => new(activity);
+    
+    /// <summary>
+    /// Creates a new <see cref="Inline"/> activity from the specified delegate.
+    /// </summary>
     public static Inline From(Func<ValueTask> activity) => new(activity);
+    
+    /// <summary>
+    /// Creates a new <see cref="Inline"/> activity from the specified delegate.
+    /// </summary>
     public static Inline From(Action<ActivityExecutionContext> activity) => new(activity);
+    
+    /// <summary>
+    /// Creates a new <see cref="Inline"/> activity from the specified delegate.
+    /// </summary>
     public static Inline From(Action activity) => new(activity);
 
+    /// <summary>
+    /// Creates a new <see cref="Inline"/> activity from the specified delegate.
+    /// </summary>
     public static Inline<T> From<T>(Func<ActivityExecutionContext, ValueTask<T>> activity) => new(activity);
+    
+    /// <summary>
+    /// Creates a new <see cref="Inline"/> activity from the specified delegate.
+    /// </summary>
     public static Inline<T> From<T>(Func<ValueTask<T>> activity) => new(activity);
+    
+    /// <summary>
+    /// Creates a new <see cref="Inline"/> activity from the specified delegate.
+    /// </summary>
     public static Inline<T> From<T>(Func<ActivityExecutionContext, T> activity) => new(activity);
+    
+    /// <summary>
+    /// Creates a new <see cref="Inline"/> activity from the specified delegate.
+    /// </summary>
     public static Inline<T> From<T>(Func<T> activity) => new(activity);
 }
 
@@ -58,17 +93,20 @@ public class Inline<T> : Activity<T>
 {
     private readonly Func<ActivityExecutionContext, ValueTask<T>> _activity;
 
+    /// <inheritdoc />
     public Inline(Func<ActivityExecutionContext, ValueTask<T>> activity, MemoryBlockReference? output = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) 
         : base(output, source, line)
     {
         _activity = activity;
     }
 
+    /// <inheritdoc />
     public Inline(Func<ValueTask<T>> activity, MemoryBlockReference? output = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) 
         : this(_ => activity(), output, source, line)
     {
     }
 
+    /// <inheritdoc />
     public Inline(Func<ActivityExecutionContext, T> activity, MemoryBlockReference? output = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) 
         : this(c =>
     {
@@ -78,6 +116,7 @@ public class Inline<T> : Activity<T>
     {
     }
 
+    /// <inheritdoc />
     public Inline(Func<T> activity, MemoryBlockReference? output = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) 
         : this(c =>
     {
@@ -86,7 +125,8 @@ public class Inline<T> : Activity<T>
     }, output, source, line)
     {
     }
-
+    
+    /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var result = await _activity(context);

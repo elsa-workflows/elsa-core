@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
 using Elsa.Expressions.Models;
 using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Extensions;
@@ -23,6 +24,7 @@ namespace Elsa.Telnyx.Activities;
 public class IncomingCall : Trigger<CallInitiatedPayload>
 {
     /// <inheritdoc />
+    [JsonConstructor]
     public IncomingCall([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }

@@ -1,4 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
 using Elsa.Telnyx.Attributes;
 using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Client.Models;
@@ -127,6 +128,7 @@ public abstract class DialBase : ActivityBase
 [FlowNode("Answered", "Hangup", "Voicemail")]
 public class FlowDial : DialBase
 {
+    [JsonConstructor]
     private FlowDial([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
@@ -147,6 +149,7 @@ public class FlowDial : DialBase
 public class Dial : DialBase
 {
     /// <inheritdoc />
+    [JsonConstructor]    
     public Dial([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
