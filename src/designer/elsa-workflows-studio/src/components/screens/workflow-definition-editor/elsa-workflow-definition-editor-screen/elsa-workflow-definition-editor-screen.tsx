@@ -94,6 +94,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
   helpDialog: HTMLElsaModalDialogElement;
   activityContextMenu: HTMLDivElement;
   componentCustomButton: HTMLDivElement;
+  confirmDialog: HTMLElsaConfirmDialogElement;
 
   //connectionContextMenu: HTMLDivElement;
 
@@ -133,7 +134,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
       this.importing = false;
       this.imported = true;
       setTimeout(() => (this.imported = false), 500);
-      await eventBus.emit(EventTypes.WorkflowImported, this, this.workflowDefinition);
+      await eventBus.emit(EventTypes.WorkflowImported, this, this.workflowModel);
     } catch (e) {
       console.error(e);
       this.importing = false;
@@ -213,6 +214,25 @@ export class ElsaWorkflowDefinitionEditorScreen {
         this.designer = this.el.querySelector('elsa-designer-tree') as HTMLElsaDesignerTreeElement;
       }
       this.designer.model = this.workflowModel;
+    }
+  }
+
+  componentDidRender() {
+    if (this.el && this.componentCustomButton) {
+      let modalX = this.activityContextMenuTestState.x + 64;
+      let modalY = this.activityContextMenuTestState.y - 256;
+
+      // Fit the modal to the canvas bounds
+      const canvasBounds = this.el?.getBoundingClientRect();
+      const modalBounds = this.componentCustomButton.getBoundingClientRect();
+      const modalWidth = modalBounds?.width;
+      const modalHeight = modalBounds?.height;
+      modalX = Math.min(canvasBounds.width, modalX + modalWidth + 32) - modalWidth - 32;
+      modalY = Math.min(canvasBounds.height, modalY + modalHeight) - modalHeight - 32;
+      modalY = Math.max(0, modalY);
+
+      this.componentCustomButton.style.left = `${modalX}px`;
+      this.componentCustomButton.style.top = `${modalY}px`;
     }
   }
 
@@ -466,6 +486,18 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
   async onShowWorkflowSettingsClick() {
     await eventBus.emit(EventTypes.ShowWorkflowSettings);
+  }
+
+  async onDeleteClicked() {
+    const t = this.t;
+    const result = await this.confirmDialog.show(t('DeleteConfirmationModel.Title'), t('DeleteConfirmationModel.Message'));
+
+    if (!result)
+      return;
+
+    const elsaClient = await createElsaClient(this.serverUrl);
+    await elsaClient.workflowDefinitionsApi.delete(this.workflowDefinition.definitionId, {allVersions: true});
+    this.history.push(`${this.basePath}/workflow-definitions`, {});
   }
 
   async onPublishClicked() {
@@ -753,6 +785,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
           </div>
         </div>
         {this.renderTestActivityMenu()}
+        <elsa-confirm-dialog ref={el => this.confirmDialog = el} culture={this.culture}/>
       </div>
     );
   }
@@ -868,7 +901,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
           {collection.map(filteredData, (v, k) => (
             <div class="elsa-ml-4">
               <p class="elsa-text-base elsa-font-medium elsa-text-gray-900">{k}</p>
-              <pre class="elsa-mt-1 elsa-text-sm elsa-text-gray-500 elsa-overflow-x-auto">{v}</pre>
+              <pre class="elsa-mt-1 elsa-text-sm elsa-text-gray-500 elsa-overflow-x-auto" style={{ "max-width": "30rem"}}>{v}</pre>
             </div>
           ))}
           {hasBody ? renderComponentCustomButton() : undefined}
@@ -915,7 +948,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
         }}
         ref={el => (this.componentCustomButton = el)}
       >
-        <div class="elsa-rounded-lg elsa-shadow-lg elsa-ring-1 elsa-ring-black elsa-ring-opacity-5 elsa-overflow-hidden">{!!message ? renderMessage() : renderLoader()}</div>
+        <div class="elsa-rounded-lg elsa-shadow-lg elsa-ring-1 elsa-ring-black elsa-ring-opacity-5 elsa-overflow-x-hidden elsa-overflow-y-auto" style={{ "max-height": "700px" }}>{!!message ? renderMessage() : renderLoader()}</div>
       </div>
     );
   };
@@ -1141,6 +1174,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
         onRevertClicked={() => this.onRevertClicked()}
         onExportClicked={() => this.onExportClicked()}
         onImportClicked={e => this.onImportClicked(e.detail)}
+        onDeleteClicked={e => this.onDeleteClicked()}
         culture={this.culture}
       />
     );
