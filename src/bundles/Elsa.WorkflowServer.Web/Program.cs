@@ -107,6 +107,7 @@ activityRegistryPopulator.PopulateRegistryAsync(typeof(JobActivityProvider));
 serviceProvider.ConfigureDefaultWorkflowExecutionPipeline(pipeline =>
     pipeline
         .UsePersistentVariables()
+        .UseBookmarkPersistence()
         .UseWorkflowContexts()
         .UseDefaultActivityScheduler()
 );
