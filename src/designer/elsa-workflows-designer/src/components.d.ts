@@ -233,6 +233,7 @@ export namespace Components {
         "tabs": Array<TabDefinition>;
     }
     interface ElsaStudio {
+        "enableFlexiblePorts": boolean;
         "monacoLibPath": string;
         "serverUrl": string;
     }
@@ -1040,6 +1041,7 @@ declare namespace LocalJSX {
         "tabs"?: Array<TabDefinition>;
     }
     interface ElsaStudio {
+        "enableFlexiblePorts"?: boolean;
         "monacoLibPath"?: string;
         "serverUrl"?: string;
     }

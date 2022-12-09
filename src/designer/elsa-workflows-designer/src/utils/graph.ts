@@ -3,7 +3,7 @@ import { PortManager } from "@antv/x6/lib/model/port";
 import { Connection } from "../modules/flowchart/models";
 import { v4 as uuid } from 'uuid';
 import { Activity } from "../models";
-import appSettings from "../../appsettings.json";
+import optionsStore from '../data/designer-options-store';
 
 export function rebuildGraph(graph: Graph) {
   graph.getNodes().forEach((node: Node<Node.Properties>) => {
@@ -39,7 +39,7 @@ function updatePortsWithNewPositions(
   adjustPortMarkupByNode(neighbourNode);
 }
 
-function calculatePositionsForInflexibleNode(sourceNode: Node<Node.Properties>, targetNodes: Node<Node.Properties>[]): 
+function calculatePositionsForInflexibleNode(sourceNode: Node<Node.Properties>, targetNodes: Node<Node.Properties>[]):
 { sourceNode: Node<Node.Properties>, sourceNodePosition: "left" | "right" | "top" | "bottom"; targetNode: Node<Node.Properties>, targetNodePosition: "left" | "right" | "top" | "bottom"; }[] {
   const sourceNodeCenter = sourceNode.getBBox().center;
   const dxAverageForTargetNodes = targetNodes.map(node => node.getBBox().center.x).reduce((a, b) => a + b, 0) / targetNodes.length;
@@ -91,7 +91,7 @@ function updatePortsAndEdgeOfNodeCouple(graph: Graph, sourceNode: Node<Node.Prop
 
   if (edge != null) {
     const sourcePortOfConnection = edge.data.sourcePort;
-    if(!appSettings.flexiblePorts && isNewCalculationNeededForInflexiblePort(graph, sourceNode, sourcePortOfConnection)){
+    if(!optionsStore.enableFlexiblePorts && isNewCalculationNeededForInflexiblePort(graph, sourceNode, sourcePortOfConnection)){
       debugger
       const outgoingEdges = findOutgoingEdges(graph, sourceNode, sourcePortOfConnection);
       const targetNodes = graph.getNodes().filter(node => outgoingEdges.map(edge => edge.data.target).includes(node.id));
