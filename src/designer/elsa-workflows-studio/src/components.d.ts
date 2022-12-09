@@ -55,6 +55,7 @@ export namespace Components {
     interface ElsaCredentialManagerItemsList {
         "basePath": string;
         "culture": string;
+        "monacoLibPath": string;
     }
     interface ElsaCredentialManagerListScreen {
         "basePath": string;
@@ -213,6 +214,7 @@ export namespace Components {
     }
     interface ElsaSecretEditorModal {
         "culture": string;
+        "monacoLibPath": string;
     }
     interface ElsaSecretsPickerModal {
     }
@@ -950,6 +952,7 @@ declare namespace LocalJSX {
     interface ElsaCredentialManagerItemsList {
         "basePath"?: string;
         "culture"?: string;
+        "monacoLibPath"?: string;
     }
     interface ElsaCredentialManagerListScreen {
         "basePath"?: string;
@@ -1119,6 +1122,7 @@ declare namespace LocalJSX {
     }
     interface ElsaSecretEditorModal {
         "culture"?: string;
+        "monacoLibPath"?: string;
     }
     interface ElsaSecretsPickerModal {
     }
