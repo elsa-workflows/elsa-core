@@ -2,7 +2,7 @@ using System;
 using Elsa.Activities.Sql.Activities;
 using Elsa.Secrets.Providers;
 
-namespace Elsa.Secrets.Enrichers
+namespace Elsa.Secrets.Enrichers.Sql
 {
     public class ExecuteSqlQueryConnectionStringInputDescriptorEnricher : BaseActivityInputDescriptorEnricher
     {

@@ -1,8 +1,8 @@
 using System;
-using Elsa.Activities.Http;
 using Elsa.Secrets.Providers;
+using Elsa.Activities.Http;
 
-namespace Elsa.Secrets.Enrichers
+namespace Elsa.Secrets.Enrichers.Http
 {
     public class SendHttpRequestAuthorizationInputDescriptorEnricher : BaseActivityInputDescriptorEnricher
     {
