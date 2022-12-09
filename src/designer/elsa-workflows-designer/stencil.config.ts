@@ -17,7 +17,7 @@ export const config: Config = {
       esmLoaderPath: '../loader',
     },
     {
-      type: 'dist-custom-elements-bundle',
+      type: 'dist-custom-elements',
     },
     {
       type: 'www',
@@ -28,8 +28,8 @@ export const config: Config = {
     sass(),
     postcss({
       plugins: [
-        tailwindcss({}),
-        autoprefixer({}),
+        tailwindcss(),
+        autoprefixer(),
         ...(dev ? [] : [purgecss({content: ['./**/*.tsx', './**/*.ts']})])
       ]
     })

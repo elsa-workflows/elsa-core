@@ -46,6 +46,7 @@ public class IdentityFeature : FeatureBase
     /// </summary>
     public Func<IServiceProvider, IRoleStore> RoleStore { get; set; } = sp => sp.GetRequiredService<MemoryRoleStore>();
 
+    /// <inheritdoc />
     public override void Configure()
     {
         Module.AddFastEndpointsAssembly(GetType());

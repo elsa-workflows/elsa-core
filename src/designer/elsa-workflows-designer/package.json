@@ -3,10 +3,10 @@
   "version": "3.0.2-preview.2",
   "description": "A workflow designer for Elsa 3",
   "main": "dist/index.cjs.js",
-  "module": "dist/custom-elements/index.js",
+  "module": "./dist/components/index.js",
   "es2015": "dist/esm/index.mjs",
   "es2017": "dist/esm/index.mjs",
-  "types": "dist/custom-elements/index.d.ts",
+  "types": "./dist/types/components.d.ts",
   "collection": "dist/collection/collection-manifest.json",
   "collection:main": "dist/collection/index.js",
   "unpkg": "dist/elsa-workflows-designer/elsa-workflows-designer.esm.js",
@@ -25,9 +25,9 @@
     "generate": "stencil generate"
   },
   "dependencies": {
-    "@antv/layout": "^0.3.1",
-    "@antv/x6": "^1.32.2",
-    "@ctrl/tinycolor": "^3.4.1",
+    "@antv/layout": "^0.3.11",
+    "@antv/x6": "1.34.6",
+    "@ctrl/tinycolor": "^3.5.0",
     "@stencil/core": "^2.20.0",
     "@stencil/state-tunnel": "^1.0.1",
     "@stencil/store": "^2.0.1",
@@ -37,28 +37,28 @@
     "js-cookie": "^3.0.1",
     "jwt-decode": "^3.1.2",
     "lodash": "^4.17.21",
-    "moment": "^2.29.3",
+    "moment": "^2.29.4",
     "notyf": "^3.10.0",
     "reflect-metadata": "^0.1.13",
     "typedi": "^0.10.0",
-    "uuid": "^8.3.2"
+    "uuid": "^9.0.0"
   },
   "peerDependencies": {
     "monaco-editor": ""
   },
   "devDependencies": {
-    "@fullhuman/postcss-purgecss": "^4.1.3",
+    "@fullhuman/postcss-purgecss": "^5.0.0",
     "@stencil/postcss": "^2.1.0",
-    "@stencil/sass": "^1.5.2",
-    "@tailwindcss/aspect-ratio": "^0.4.0",
-    "@tailwindcss/forms": "^0.5.2",
-    "@tailwindcss/typography": "^0.5.2",
+    "@stencil/sass": "^2.0.1",
+    "@tailwindcss/aspect-ratio": "^0.4.2",
+    "@tailwindcss/forms": "^0.5.3",
+    "@tailwindcss/typography": "^0.5.8",
     "@types/jquery": "^3.5.14",
     "@types/jquery-mousewheel": "^3.1.9",
     "@types/js-cookie": "^3.0.2",
-    "autoprefixer": "^10.4.5",
-    "postcss": "^8.4.12",
-    "tailwindcss": "^3.0.24"
+    "autoprefixer": "^10.4.13",
+    "postcss": "^8.4.19",
+    "tailwindcss": "^3.2.4"
   },
   "license": "MIT"
 }
