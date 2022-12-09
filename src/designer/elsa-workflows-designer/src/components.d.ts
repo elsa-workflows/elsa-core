@@ -120,7 +120,7 @@ export namespace Components {
         "inputContext": ActivityInputContext;
     }
     interface ElsaFlowchart {
-        "addActivity": (args: AddActivityArgs) => Promise<Activity>;
+        "addActivity": (args: AddActivityArgs1) => Promise<Activity>;
         "autoLayout": (direction: "TB" | "BT" | "LR" | "RL") => Promise<void>;
         "export": () => Promise<Activity>;
         "getCurrentLevel": () => Promise<Activity>;
@@ -128,10 +128,10 @@ export namespace Components {
         "import": (root: Activity) => Promise<void>;
         "interactiveMode": boolean;
         "newRoot": () => Promise<Activity>;
-        "renameActivity": (args: RenameActivityArgs) => Promise<void>;
+        "renameActivity": (args: RenameActivityArgs1) => Promise<void>;
         "reset": () => Promise<void>;
         "scrollToStart": () => Promise<void>;
-        "updateActivity": (args: UpdateActivityArgs) => Promise<void>;
+        "updateActivity": (args: UpdateActivityArgs1) => Promise<void>;
         "updateLayout": () => Promise<void>;
         "workflowDefinition": WorkflowDefinition;
         "zoomToFit": () => Promise<void>;
@@ -320,6 +320,122 @@ export namespace Components {
     }
     interface ElsaWorkflowToolbarMenu {
     }
+}
+export interface ElsaActivityDefinitionBrowserCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLElsaActivityDefinitionBrowserElement;
+}
+export interface ElsaActivityDefinitionEditorCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLElsaActivityDefinitionEditorElement;
+}
+export interface ElsaActivityDefinitionPropertiesEditorCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLElsaActivityDefinitionPropertiesEditorElement;
+}
+export interface ElsaActivityPropertiesEditorCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLElsaActivityPropertiesEditorElement;
+}
+export interface ElsaActivityPublishButtonCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLElsaActivityPublishButtonElement;
+}
+export interface ElsaDefaultActivityTemplateCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLElsaDefaultActivityTemplateElement;
+}
+export interface ElsaDropdownButtonCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLElsaDropdownButtonElement;
+}
+export interface ElsaFlowchartCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLElsaFlowchartElement;
+}
+export interface ElsaFormPanelCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLElsaFormPanelElement;
+}
+export interface ElsaInputControlSwitchCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLElsaInputControlSwitchElement;
+}
+export interface ElsaInputTagsCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLElsaInputTagsElement;
+}
+export interface ElsaInputTagsDropdownCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLElsaInputTagsDropdownElement;
+}
+export interface ElsaLabelPickerCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLElsaLabelPickerElement;
+}
+export interface ElsaLoginPageCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLElsaLoginPageElement;
+}
+export interface ElsaModalDialogCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLElsaModalDialogElement;
+}
+export interface ElsaMonacoEditorCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLElsaMonacoEditorElement;
+}
+export interface ElsaNewButtonCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLElsaNewButtonElement;
+}
+export interface ElsaPagerCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLElsaPagerElement;
+}
+export interface ElsaPanelCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLElsaPanelElement;
+}
+export interface ElsaSlideOverPanelCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLElsaSlideOverPanelElement;
+}
+export interface ElsaVariableEditorDialogContentCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLElsaVariableEditorDialogContentElement;
+}
+export interface ElsaVariablesEditorCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLElsaVariablesEditorElement;
+}
+export interface ElsaWorkflowDefinitionBrowserCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLElsaWorkflowDefinitionBrowserElement;
+}
+export interface ElsaWorkflowDefinitionEditorCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLElsaWorkflowDefinitionEditorElement;
+}
+export interface ElsaWorkflowDefinitionPropertiesEditorCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLElsaWorkflowDefinitionPropertiesEditorElement;
+}
+export interface ElsaWorkflowDefinitionVersionHistoryCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLElsaWorkflowDefinitionVersionHistoryElement;
+}
+export interface ElsaWorkflowInstanceBrowserCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLElsaWorkflowInstanceBrowserElement;
+}
+export interface ElsaWorkflowNavigatorCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLElsaWorkflowNavigatorElement;
+}
+export interface ElsaWorkflowPublishButtonCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLElsaWorkflowPublishButtonElement;
 }
 declare global {
     interface HTMLElsaActivityDefinitionBrowserElement extends Components.ElsaActivityDefinitionBrowser, HTMLStencilElement {
@@ -733,33 +849,33 @@ declare global {
 }
 declare namespace LocalJSX {
     interface ElsaActivityDefinitionBrowser {
-        "onActivityDefinitionSelected"?: (event: CustomEvent<ActivityDefinitionSummary>) => void;
-        "onNewActivityDefinitionSelected"?: (event: CustomEvent<any>) => void;
+        "onActivityDefinitionSelected"?: (event: ElsaActivityDefinitionBrowserCustomEvent<ActivityDefinitionSummary>) => void;
+        "onNewActivityDefinitionSelected"?: (event: ElsaActivityDefinitionBrowserCustomEvent<any>) => void;
     }
     interface ElsaActivityDefinitionEditor {
         "activityDefinition"?: ActivityDefinition;
         "monacoLibPath"?: string;
-        "onActivityDefinitionUpdated"?: (event: CustomEvent<ActivityDefinitionUpdatedArgs>) => void;
+        "onActivityDefinitionUpdated"?: (event: ElsaActivityDefinitionEditorCustomEvent<ActivityDefinitionUpdatedArgs>) => void;
     }
     interface ElsaActivityDefinitionPropertiesEditor {
         "activityDefinition"?: ActivityDefinition;
-        "onActivityDefinitionPropsUpdated"?: (event: CustomEvent<ActivityDefinitionPropsUpdatedArgs>) => void;
+        "onActivityDefinitionPropsUpdated"?: (event: ElsaActivityDefinitionPropertiesEditorCustomEvent<ActivityDefinitionPropsUpdatedArgs>) => void;
     }
     interface ElsaActivityProperties {
         "activity"?: Activity;
     }
     interface ElsaActivityPropertiesEditor {
         "activity"?: Activity;
-        "onActivityUpdated"?: (event: CustomEvent<ActivityUpdatedArgs>) => void;
-        "onDeleteActivityRequested"?: (event: CustomEvent<DeleteActivityRequestedArgs>) => void;
+        "onActivityUpdated"?: (event: ElsaActivityPropertiesEditorCustomEvent<ActivityUpdatedArgs>) => void;
+        "onDeleteActivityRequested"?: (event: ElsaActivityPropertiesEditorCustomEvent<DeleteActivityRequestedArgs>) => void;
         "variables"?: Array<Variable>;
     }
     interface ElsaActivityPublishButton {
-        "onExportClicked"?: (event: CustomEvent<any>) => void;
-        "onImportClicked"?: (event: CustomEvent<File>) => void;
-        "onNewClicked"?: (event: CustomEvent<any>) => void;
-        "onPublishClicked"?: (event: CustomEvent<PublishClickedArgs>) => void;
-        "onUnPublishClicked"?: (event: CustomEvent<any>) => void;
+        "onExportClicked"?: (event: ElsaActivityPublishButtonCustomEvent<any>) => void;
+        "onImportClicked"?: (event: ElsaActivityPublishButtonCustomEvent<File>) => void;
+        "onNewClicked"?: (event: ElsaActivityPublishButtonCustomEvent<any>) => void;
+        "onPublishClicked"?: (event: ElsaActivityPublishButtonCustomEvent<PublishClickedArgs>) => void;
+        "onUnPublishClicked"?: (event: ElsaActivityPublishButtonCustomEvent<any>) => void;
         "publishing"?: boolean;
     }
     interface ElsaButtonGroup {
@@ -791,13 +907,13 @@ declare namespace LocalJSX {
         "activityType"?: string;
         "activityTypeVersion"?: number;
         "displayType"?: string;
-        "onChildActivitySelected"?: (event: CustomEvent<ChildActivitySelectedArgs>) => void;
-        "onEditChildActivity"?: (event: CustomEvent<EditChildActivityArgs>) => void;
+        "onChildActivitySelected"?: (event: ElsaDefaultActivityTemplateCustomEvent<ChildActivitySelectedArgs>) => void;
+        "onEditChildActivity"?: (event: ElsaDefaultActivityTemplateCustomEvent<EditChildActivityArgs>) => void;
     }
     interface ElsaDropdownButton {
         "icon"?: any;
         "items"?: Array<DropdownButtonItem>;
-        "onItemSelected"?: (event: CustomEvent<DropdownButtonItem>) => void;
+        "onItemSelected"?: (event: ElsaDropdownButtonCustomEvent<DropdownButtonItem>) => void;
         "origin"?: DropdownButtonOrigin;
         "text"?: string;
     }
@@ -809,18 +925,18 @@ declare namespace LocalJSX {
     }
     interface ElsaFlowchart {
         "interactiveMode"?: boolean;
-        "onActivityDeleted"?: (event: CustomEvent<ActivityDeletedArgs>) => void;
-        "onActivitySelected"?: (event: CustomEvent<ActivitySelectedArgs>) => void;
-        "onContainerSelected"?: (event: CustomEvent<ContainerSelectedArgs>) => void;
-        "onGraphUpdated"?: (event: CustomEvent<GraphUpdatedArgs>) => void;
+        "onActivityDeleted"?: (event: ElsaFlowchartCustomEvent<ActivityDeletedArgs>) => void;
+        "onActivitySelected"?: (event: ElsaFlowchartCustomEvent<ActivitySelectedArgs>) => void;
+        "onContainerSelected"?: (event: ElsaFlowchartCustomEvent<ContainerSelectedArgs>) => void;
+        "onGraphUpdated"?: (event: ElsaFlowchartCustomEvent<GraphUpdatedArgs>) => void;
         "workflowDefinition"?: WorkflowDefinition;
     }
     interface ElsaFormPanel {
         "actions"?: Array<PanelActionDefinition>;
         "mainTitle"?: string;
-        "onActionInvoked"?: (event: CustomEvent<PanelActionClickArgs>) => void;
-        "onSelectedTabIndexChanged"?: (event: CustomEvent<TabChangedArgs>) => void;
-        "onSubmitted"?: (event: CustomEvent<FormData>) => void;
+        "onActionInvoked"?: (event: ElsaFormPanelCustomEvent<PanelActionClickArgs>) => void;
+        "onSelectedTabIndexChanged"?: (event: ElsaFormPanelCustomEvent<TabChangedArgs>) => void;
+        "onSubmitted"?: (event: ElsaFormPanelCustomEvent<FormData>) => void;
         "selectedTabIndex"?: number;
         "subTitle"?: string;
         "tabs"?: Array<TabDefinition>;
@@ -838,14 +954,14 @@ declare namespace LocalJSX {
         "hint"?: string;
         "isReadOnly"?: boolean;
         "label"?: string;
-        "onExpressionChanged"?: (event: CustomEvent<ExpressionChangedArs>) => void;
-        "onSyntaxChanged"?: (event: CustomEvent<string>) => void;
+        "onExpressionChanged"?: (event: ElsaInputControlSwitchCustomEvent<ExpressionChangedArs>) => void;
+        "onSyntaxChanged"?: (event: ElsaInputControlSwitchCustomEvent<string>) => void;
         "supportedSyntaxes"?: Array<string>;
         "syntax"?: string;
     }
     interface ElsaInputTags {
         "fieldId"?: string;
-        "onValueChanged"?: (event: CustomEvent<Array<string>>) => void;
+        "onValueChanged"?: (event: ElsaInputTagsCustomEvent<Array<string>>) => void;
         "placeHolder"?: string;
         "values"?: Array<string>;
     }
@@ -853,27 +969,27 @@ declare namespace LocalJSX {
         "dropdownValues"?: Array<SelectListItem>;
         "fieldId"?: string;
         "fieldName"?: string;
-        "onValueChanged"?: (event: CustomEvent<Array<string | SelectListItem>>) => void;
+        "onValueChanged"?: (event: ElsaInputTagsDropdownCustomEvent<Array<string | SelectListItem>>) => void;
         "placeHolder"?: string;
         "values"?: Array<string | SelectListItem>;
     }
     interface ElsaLabelPicker {
         "buttonClass"?: string;
         "containerClass"?: string;
-        "onSelectedLabelsChanged"?: (event: CustomEvent<Array<string>>) => void;
+        "onSelectedLabelsChanged"?: (event: ElsaLabelPickerCustomEvent<Array<string>>) => void;
         "selectedLabels"?: Array<string>;
     }
     interface ElsaLoginPage {
-        "onSignedIn"?: (event: CustomEvent<SignedInArgs>) => void;
+        "onSignedIn"?: (event: ElsaLoginPageCustomEvent<SignedInArgs>) => void;
     }
     interface ElsaModalDialog {
         "actions"?: Array<ModalActionDefinition>;
         "autoHide"?: boolean;
         "content"?: () => any;
         "modalDialogInstance"?: ModalDialogInstance;
-        "onActionInvoked"?: (event: CustomEvent<ModalActionClickArgs>) => void;
-        "onHidden"?: (event: CustomEvent<any>) => void;
-        "onShown"?: (event: CustomEvent<any>) => void;
+        "onActionInvoked"?: (event: ElsaModalDialogCustomEvent<ModalActionClickArgs>) => void;
+        "onHidden"?: (event: ElsaModalDialogCustomEvent<any>) => void;
+        "onShown"?: (event: ElsaModalDialogCustomEvent<any>) => void;
         "size"?: string;
         "type"?: ModalType;
     }
@@ -883,7 +999,7 @@ declare namespace LocalJSX {
         "editorHeight"?: string;
         "language"?: string;
         "monacoLibPath"?: string;
-        "onValueChanged"?: (event: CustomEvent<MonacoValueChangedArgs>) => void;
+        "onValueChanged"?: (event: ElsaMonacoEditorCustomEvent<MonacoValueChangedArgs>) => void;
         "padding"?: string;
         "singleLineMode"?: boolean;
         "value"?: string;
@@ -895,18 +1011,18 @@ declare namespace LocalJSX {
         "inputContext"?: ActivityInputContext;
     }
     interface ElsaNewButton {
-        "onNewClicked"?: (event: CustomEvent<any>) => void;
+        "onNewClicked"?: (event: ElsaNewButtonCustomEvent<any>) => void;
     }
     interface ElsaNotificationsManager {
     }
     interface ElsaPager {
-        "onPaginated"?: (event: CustomEvent<PagerData>) => void;
+        "onPaginated"?: (event: ElsaPagerCustomEvent<PagerData>) => void;
         "page"?: number;
         "pageSize"?: number;
         "totalCount"?: number;
     }
     interface ElsaPanel {
-        "onExpandedStateChanged"?: (event: CustomEvent<PanelStateChangedArgs>) => void;
+        "onExpandedStateChanged"?: (event: ElsaPanelCustomEvent<PanelStateChangedArgs>) => void;
         "position"?: PanelPosition;
     }
     interface ElsaRadioListInput {
@@ -919,7 +1035,7 @@ declare namespace LocalJSX {
         "actions"?: Array<PanelActionDefinition>;
         "expand"?: boolean;
         "headerText"?: string;
-        "onCollapsed"?: (event: CustomEvent<any>) => void;
+        "onCollapsed"?: (event: ElsaSlideOverPanelCustomEvent<any>) => void;
         "selectedTab"?: TabDefinition;
         "tabs"?: Array<TabDefinition>;
     }
@@ -935,23 +1051,23 @@ declare namespace LocalJSX {
         "tooltipPosition"?: string;
     }
     interface ElsaVariableEditorDialogContent {
-        "onVariableChanged"?: (event: CustomEvent<Variable>) => void;
+        "onVariableChanged"?: (event: ElsaVariableEditorDialogContentCustomEvent<Variable>) => void;
         "variable"?: Variable;
     }
     interface ElsaVariablePickerInput {
         "inputContext"?: ActivityInputContext;
     }
     interface ElsaVariablesEditor {
-        "onVariablesChanged"?: (event: CustomEvent<Array<Variable>>) => void;
+        "onVariablesChanged"?: (event: ElsaVariablesEditorCustomEvent<Array<Variable>>) => void;
         "variables"?: Array<Variable>;
     }
     interface ElsaWorkflowDefinitionBrowser {
-        "onNewWorkflowDefinitionSelected"?: (event: CustomEvent<any>) => void;
-        "onWorkflowDefinitionSelected"?: (event: CustomEvent<WorkflowDefinitionSummary>) => void;
+        "onNewWorkflowDefinitionSelected"?: (event: ElsaWorkflowDefinitionBrowserCustomEvent<any>) => void;
+        "onWorkflowDefinitionSelected"?: (event: ElsaWorkflowDefinitionBrowserCustomEvent<WorkflowDefinitionSummary>) => void;
     }
     interface ElsaWorkflowDefinitionEditor {
         "monacoLibPath"?: string;
-        "onWorkflowUpdated"?: (event: CustomEvent<WorkflowDefinitionUpdatedArgs>) => void;
+        "onWorkflowUpdated"?: (event: ElsaWorkflowDefinitionEditorCustomEvent<WorkflowDefinitionUpdatedArgs>) => void;
         "workflowDefinition"?: WorkflowDefinition;
     }
     interface ElsaWorkflowDefinitionEditorToolbar {
@@ -965,23 +1081,23 @@ declare namespace LocalJSX {
         "graph"?: Graph;
     }
     interface ElsaWorkflowDefinitionPropertiesEditor {
-        "onDeleteVersionClicked"?: (event: CustomEvent<WorkflowDefinition>) => void;
-        "onRevertVersionClicked"?: (event: CustomEvent<WorkflowDefinition>) => void;
-        "onVersionSelected"?: (event: CustomEvent<WorkflowDefinition>) => void;
-        "onWorkflowPropsUpdated"?: (event: CustomEvent<WorkflowDefinitionPropsUpdatedArgs>) => void;
+        "onDeleteVersionClicked"?: (event: ElsaWorkflowDefinitionPropertiesEditorCustomEvent<WorkflowDefinition>) => void;
+        "onRevertVersionClicked"?: (event: ElsaWorkflowDefinitionPropertiesEditorCustomEvent<WorkflowDefinition>) => void;
+        "onVersionSelected"?: (event: ElsaWorkflowDefinitionPropertiesEditorCustomEvent<WorkflowDefinition>) => void;
+        "onWorkflowPropsUpdated"?: (event: ElsaWorkflowDefinitionPropertiesEditorCustomEvent<WorkflowDefinitionPropsUpdatedArgs>) => void;
         "workflowDefinition"?: WorkflowDefinition;
         "workflowVersions"?: Array<WorkflowDefinition>;
     }
     interface ElsaWorkflowDefinitionVersionHistory {
-        "onDeleteVersionClicked"?: (event: CustomEvent<WorkflowDefinition>) => void;
-        "onRevertVersionClicked"?: (event: CustomEvent<WorkflowDefinition>) => void;
-        "onVersionSelected"?: (event: CustomEvent<WorkflowDefinition>) => void;
+        "onDeleteVersionClicked"?: (event: ElsaWorkflowDefinitionVersionHistoryCustomEvent<WorkflowDefinition>) => void;
+        "onRevertVersionClicked"?: (event: ElsaWorkflowDefinitionVersionHistoryCustomEvent<WorkflowDefinition>) => void;
+        "onVersionSelected"?: (event: ElsaWorkflowDefinitionVersionHistoryCustomEvent<WorkflowDefinition>) => void;
         "selectedVersion"?: WorkflowDefinition;
         "serverUrl"?: string;
         "workflowVersions"?: Array<WorkflowDefinition>;
     }
     interface ElsaWorkflowInstanceBrowser {
-        "onWorkflowInstanceSelected"?: (event: CustomEvent<WorkflowInstanceSummary>) => void;
+        "onWorkflowInstanceSelected"?: (event: ElsaWorkflowInstanceBrowserCustomEvent<WorkflowInstanceSummary>) => void;
     }
     interface ElsaWorkflowInstanceProperties {
         "workflowDefinition"?: WorkflowDefinition;
@@ -998,15 +1114,15 @@ declare namespace LocalJSX {
     }
     interface ElsaWorkflowNavigator {
         "items"?: Array<FlowchartNavigationItem>;
-        "onNavigate"?: (event: CustomEvent<FlowchartNavigationItem>) => void;
+        "onNavigate"?: (event: ElsaWorkflowNavigatorCustomEvent<FlowchartNavigationItem>) => void;
         "workflowDefinition"?: WorkflowDefinition;
     }
     interface ElsaWorkflowPublishButton {
-        "onExportClicked"?: (event: CustomEvent<any>) => void;
-        "onImportClicked"?: (event: CustomEvent<File>) => void;
-        "onNewClicked"?: (event: CustomEvent<any>) => void;
-        "onPublishClicked"?: (event: CustomEvent<PublishClickedArgs>) => void;
-        "onUnPublishClicked"?: (event: CustomEvent<any>) => void;
+        "onExportClicked"?: (event: ElsaWorkflowPublishButtonCustomEvent<any>) => void;
+        "onImportClicked"?: (event: ElsaWorkflowPublishButtonCustomEvent<File>) => void;
+        "onNewClicked"?: (event: ElsaWorkflowPublishButtonCustomEvent<any>) => void;
+        "onPublishClicked"?: (event: ElsaWorkflowPublishButtonCustomEvent<PublishClickedArgs>) => void;
+        "onUnPublishClicked"?: (event: ElsaWorkflowPublishButtonCustomEvent<any>) => void;
         "publishing"?: boolean;
     }
     interface ElsaWorkflowToolbar {
