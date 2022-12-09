@@ -1,5 +1,6 @@
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Services;
+using Pipelines.Sockets.Unofficial;
 
 namespace Elsa.IntegrationTests.Activities;
 
@@ -17,7 +18,7 @@ public class FinishForkedWorkflow : WorkflowBase
                     Activities =
                     {
                         new WriteLine("Branch 1"),
-                        new Event("Event 1")
+                        Event.FromName("Event 1")
                     }
                 },
                 new Sequence
