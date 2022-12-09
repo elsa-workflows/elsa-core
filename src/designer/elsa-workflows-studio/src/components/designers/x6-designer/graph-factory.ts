@@ -1,7 +1,14 @@
 import {CellView, Graph, Node} from '@antv/x6';
-import { ActivityModel } from '../../../models';
 import './ports';
 import {ActivityNodeShape} from './shapes';
+
+let _cursorX = 0;
+let _cursorY = 0;
+
+addEventListener("mousemove", e => {
+  _cursorX = e.clientX;
+  _cursorY = e.clientY;
+});
 
 export function createGraph(
   container: HTMLElement,
@@ -64,7 +71,7 @@ export function createGraph(
       router: {
         name: 'manhattan',
         args: {
-          padding: 1,
+          padding: 10,
           startDirections: ['right', 'bottom'],
           endDirections: ['left'],
         },
@@ -203,26 +210,39 @@ export function addGraphEvents(graph,
     graph.bindKey(['meta+v', 'ctrl+v'], async () => {
       if (!graph.isClipboardEmpty()) {
         disableEvents();
-        const cells = graph.paste({offset: 32});
+
+        const cells = graph.paste({ offset: 30});
 
         var activityIdsMap = cells.filter(x => !!x.activity).reduce(function(map, x) {
           map[x.activity.activityId] = x.id;
           return map;
         }, {});
+
+        const nodePositions = cells.filter(x => !!x.activity).map(x => x.position({relative: false}));
+        const minX = Math.min(...nodePositions.map(x => x.x));
+        const minY = Math.min(...nodePositions.map(x => x.y));
+
+        graph.disableHistory();
         for (const cell of cells) {
           if (cell.activity) {
             cell.activity.activityId = cell.id;
 
+            // Move the cells where the cursor is located
             const cellPosition = cell.position({relative: false});
-            cell.activity.x = Math.round(cellPosition.x);
-            cell.activity.y = Math.round(cellPosition.y);
-          } else {
-            if (cell.data) {
-              cell.data.sourceId = activityIdsMap[cell.data.sourceId] || cell.data.sourceId;
-              cell.data.targetId = activityIdsMap[cell.data.targetId] || cell.data.targetId;
-            }
+            const point = graph.pageToLocal(_cursorX, _cursorY);
+            const newX = point.x + cellPosition.x - minX;
+            const newY = point.y + cellPosition.y - minY;
+            cell.position(newX, newY);
+
+            cell.activity.x = Math.round(newX);
+            cell.activity.y = Math.round(newY);
+          }
+          else if (cell.data) {
+            cell.data.sourceId = activityIdsMap[cell.data.sourceId] || cell.data.sourceId;
+            cell.data.targetId = activityIdsMap[cell.data.targetId] || cell.data.targetId;
           }
         }
+        graph.enableHistory();
 
         await enableEvents(true);
         graph.cleanSelection();

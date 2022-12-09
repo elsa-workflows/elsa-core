@@ -2478,12 +2478,12 @@ select {
   right: 0px;
 }
 
-.elsa-right-1 {
-  right: 0.25rem;
+.elsa-top-8 {
+  top: 2rem;
 }
 
-.elsa-right-1\/2 {
-  right: 50%;
+.elsa-right-1 {
+  right: 0.25rem;
 }
 
 .elsa-top-20 {
@@ -2492,10 +2492,6 @@ select {
 
 .elsa-top-4 {
   top: 1rem;
-}
-
-.elsa-top-8 {
-  top: 2rem;
 }
 
 .elsa-bottom-0 {
@@ -2532,10 +2528,6 @@ select {
 
 .elsa-right-10 {
   right: 2.5rem;
-}
-
-.elsa-z-1 {
-  z-index: 1;
 }
 
 .elsa-z-10 {
@@ -2895,10 +2887,6 @@ select {
   max-width: 65ch;
 }
 
-.elsa-flex-auto {
-  flex: 0 0 auto;
-}
-
 .elsa-flex-1 {
   flex: 1 1 0%;
 }
@@ -2923,11 +2911,6 @@ select {
 .elsa-translate-x-0 {
   --tw-translate-x: 0px;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
-}
-
-
-.elsa-translate-x--1\/2 {
-  transform: translateX(-50%);
 }
 
 .elsa-translate-y-4 {
@@ -3071,6 +3054,12 @@ select {
   row-gap: 2rem;
 }
 
+.elsa-space-x-4 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-x-reverse: 0;
+  margin-right: calc(1rem * var(--tw-space-x-reverse));
+  margin-left: calc(1rem * calc(1 - var(--tw-space-x-reverse)));
+}
+
 .elsa-space-x-8 > :not([hidden]) ~ :not([hidden]) {
   --tw-space-x-reverse: 0;
   margin-right: calc(2rem * var(--tw-space-x-reverse));
@@ -3099,12 +3088,6 @@ select {
   --tw-space-x-reverse: 0;
   margin-right: calc(2.5rem * var(--tw-space-x-reverse));
   margin-left: calc(2.5rem * calc(1 - var(--tw-space-x-reverse)));
-}
-
-.elsa-space-x-4 > :not([hidden]) ~ :not([hidden]) {
-  --tw-space-x-reverse: 0;
-  margin-right: calc(1rem * var(--tw-space-x-reverse));
-  margin-left: calc(1rem * calc(1 - var(--tw-space-x-reverse)));
 }
 
 .elsa-space-y-3 > :not([hidden]) ~ :not([hidden]) {
@@ -3501,6 +3484,10 @@ select {
   overflow-y: auto;
 }
 
+.elsa-overflow-x-hidden {
+  overflow-x: hidden;
+}
+
 .elsa-overflow-x-scroll {
   overflow-x: scroll;
 }
@@ -3558,12 +3545,12 @@ select {
   border-width: 1px;
 }
 
-.elsa-border-0 {
-  border-width: 0px;
-}
-
 .elsa-border-2 {
   border-width: 2px;
+}
+
+.elsa-border-0 {
+  border-width: 0px;
 }
 
 .elsa-border-t {
@@ -8072,6 +8059,11 @@ select {
   padding-bottom: 0.75rem;
 }
 
+.elsa-px-6 {
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
 .elsa-py-8 {
   padding-top: 2rem;
   padding-bottom: 2rem;
@@ -8090,11 +8082,6 @@ select {
 .elsa-px-1 {
   padding-left: 0.25rem;
   padding-right: 0.25rem;
-}
-
-.elsa-px-6 {
-  padding-left: 1.5rem;
-  padding-right: 1.5rem;
 }
 
 .elsa-px-8 {
@@ -8136,6 +8123,10 @@ select {
 
 .elsa-pt-1 {
   padding-top: 0.25rem;
+}
+
+.elsa-pr-3 {
+  padding-right: 0.75rem;
 }
 
 .elsa-pt-4 {
@@ -8204,10 +8195,6 @@ select {
 
 .elsa-pr-2 {
   padding-right: 0.5rem;
-}
-
-.elsa-pr-3 {
-  padding-right: 0.75rem;
 }
 
 .elsa-pl-8 {
@@ -8295,12 +8282,12 @@ select {
   line-height: 1.25rem;
 }
 
-.elsa-leading-4 {
-  line-height: 1rem;
-}
-
 .elsa-leading-8 {
   line-height: 2rem;
+}
+
+.elsa-leading-4 {
+  line-height: 1rem;
 }
 
 .elsa-tracking-wider {
@@ -12065,12 +12052,8 @@ svg.jtk-connector.jtk-hover path {
   color: rgb(96 165 250 / var(--tw-text-opacity));
 }
 
-svg.jtk-connector.jtk-hover::before {
-  display: block;
-  width: 4px;
-  height: 4px;
-  background: red;
-  content: '';
+.jtk-endpoint {
+  z-index: 3;
 }
 
 .elsa-w-2-5 {
@@ -12087,20 +12070,19 @@ svg.jtk-connector.jtk-hover::before {
   margin-left: calc(0.125rem * calc(1 - var(--tw-space-x-reverse)));
 }
 
-.node.activity, .node.start, .node.add .label-container {
+.node.activity,
+.node.start,
+.node.add .label-container {
   fill: transparent;
 }
 
-.node.activity .label-container, .node.start .label-container {
+.node.activity .label-container,
+.node.start .label-container {
   stroke: none;
 }
 
 .hidden {
   display: none;
-}
-
-.elsa-break-words {
-  overflow-wrap: break-word;
 }
 
 .focus-within\:elsa-text-gray-600:focus-within {
@@ -12143,6 +12125,16 @@ svg.jtk-connector.jtk-hover::before {
   background-color: rgb(29 78 216 / var(--tw-bg-opacity));
 }
 
+.hover\:elsa-bg-green-500:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(34 197 94 / var(--tw-bg-opacity));
+}
+
+.hover\:elsa-bg-yellow-500:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(234 179 8 / var(--tw-bg-opacity));
+}
+
 .hover\:elsa-bg-red-700:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(185 28 28 / var(--tw-bg-opacity));
@@ -12151,11 +12143,6 @@ svg.jtk-connector.jtk-hover::before {
 .hover\:elsa-bg-gray-700:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(55 65 81 / var(--tw-bg-opacity));
-}
-
-.hover\:elsa-bg-green-500:hover {
-  --tw-bg-opacity: 1;
-  background-color: rgb(34 197 94 / var(--tw-bg-opacity));
 }
 
 .hover\:elsa-text-gray-500:hover {
@@ -12233,6 +12220,11 @@ svg.jtk-connector.jtk-hover::before {
 .focus\:elsa-border-green-700:focus {
   --tw-border-opacity: 1;
   border-color: rgb(21 128 61 / var(--tw-border-opacity));
+}
+
+.focus\:elsa-border-yellow-50:focus {
+  --tw-border-opacity: 1;
+  border-color: rgb(254 252 232 / var(--tw-border-opacity));
 }
 
 .focus\:elsa-bg-gray-100:focus {
@@ -12320,6 +12312,11 @@ svg.jtk-connector.jtk-hover::before {
 .active\:elsa-bg-green-700:active {
   --tw-bg-opacity: 1;
   background-color: rgb(21 128 61 / var(--tw-bg-opacity));
+}
+
+.active\:elsa-bg-yellow-500:active {
+  --tw-bg-opacity: 1;
+  background-color: rgb(234 179 8 / var(--tw-bg-opacity));
 }
 
 .active\:elsa-text-gray-700:active {

@@ -52,6 +52,7 @@ export class ElsaWorkflowDesigner {
   containerObserver: ResizeObserver;
   activityDisplayContexts: Map<ActivityDesignDisplayContext> = null;
   workflowSaveTimer?: NodeJS.Timer = null;
+  edgeUpdateTimer?: NodeJS.Timer = null;
 
   @Prop() model: WorkflowModel = {
     activities: [],
@@ -102,18 +103,6 @@ export class ElsaWorkflowDesigner {
     y: 0,
     activity: null,
   };
-
-  @Watch('selectedActivityIds')
-  handleSelectedActivityIdsChanged(newValue: Array<string>) {
-    const ids = newValue || [];
-    const selectedActivities = this.workflowModel.activities.filter(x => ids.includes(x.activityId));
-    const map: Map<ActivityModel> = {};
-
-    for (const activity of selectedActivities)
-      map[activity.activityId] = activity;
-
-    this.selectedActivities = map;
-  }
 
   @Watch('activityContextMenu')
   handleActivityContextMenuChanged(newValue: ActivityContextMenuState) {
@@ -235,7 +224,7 @@ export class ElsaWorkflowDesigner {
 
   applyAutoLayout() {
     const graph = new dagre.graphlib.Graph();
-    graph.setGraph({ rankdir: "TB", nodesep: 15, ranksep: 30, align: "UL" });
+    graph.setGraph({ rankdir: "TB", nodesep: 30, ranksep: 140, align: "UL" });
 
     graph.setDefaultEdgeLabel(() => ({}));
 
@@ -244,7 +233,7 @@ export class ElsaWorkflowDesigner {
       graph.setNode(activity.activityId, {
         label: activity.activityId,
         width: Math.max(220, activityElement.width),
-        height: Math.max(64, activityElement.height) + 24
+        height: Math.max(64, activityElement.height)
       });
     });
 
@@ -256,27 +245,29 @@ export class ElsaWorkflowDesigner {
 
     this.disableEvents();
 
-    this.workflowModel.activities.forEach(activity => {
-      const node = graph.node(activity.activityId);
+    this.graph.batchUpdate(() => {
+      this.workflowModel.activities.forEach(activity => {
+        const node = graph.node(activity.activityId);
+        const cell = this.graph.getCellById(activity.activityId);
 
-      const cell = this.graph.getCellById(activity.activityId);
-      const deltaX = node.x - activity.x;
-      const deltaY = node.y - activity.y;
-      this.graph.positionCell(cell.translate(deltaX, deltaY), "top-left");
+        cell.setProp('position', { x: node.x, y: node.y });
 
-      const position = (cell as any).position({ relative: false });
-      activity.x = Math.round(position.x);
-      activity.y = Math.round(position.y);
+        activity.x = Math.round(node.x);
+        activity.y = Math.round(node.y);
 
-      (cell as any).activity = activity;
+        (cell as any).activity = activity;
+      });
     });
 
     this.graph.scrollToContent();
     this.enableEvents(true);
 
+    setTimeout(() => this.updateGraphEdgeViews(), 100);
+
     console.log("Auto-layout applied");
   };
   connectedCallback() {
+    eventBus.on(EventTypes.WorkflowImported, this.onWorkflowImported);
     eventBus.on(EventTypes.ActivityPicked, this.onActivityPicked);
     eventBus.on(EventTypes.UpdateActivity, this.onUpdateActivityExternal);
     //eventBus.on(EventTypes.PasteActivity, this.onPasteActivity);
@@ -286,6 +277,7 @@ export class ElsaWorkflowDesigner {
   }
 
   disconnectedCallback() {
+    eventBus.detach(EventTypes.WorkflowImported, this.onWorkflowImported);
     eventBus.detach(EventTypes.ActivityPicked, this.onActivityPicked);
     eventBus.detach(EventTypes.UpdateActivity, this.onUpdateActivityExternal);
     //eventBus.detach(EventTypes.PasteActivity, this.onPasteActivity);
@@ -486,6 +478,21 @@ export class ElsaWorkflowDesigner {
     return node;
   }
 
+  private getEdgeStep = (targetId: string) => {
+    // The purpose of this function is to prevent connections from overlapping because of their target nodes being on the same height
+    const targetNode = this.workflowModel.activities.find(x => x.activityId === targetId);
+    let step = 10;
+    if (targetNode) {
+      const sameHeightNodes = this.workflowModel.activities
+        .filter(x => Math.abs(x.y - targetNode.y) < 20)
+        .sort((a, b) => a.activityId > b.activityId ? 1 : -1);
+      if (sameHeightNodes.length > 1) {
+        step += sameHeightNodes.findIndex(x => x.activityId == targetNode.activityId) * 20;
+      }
+    }
+    return step;
+  }
+
   private createEdge = (connection: ConnectionModel): Edge.Metadata => {
     return {
       shape: 'elsa-edge',
@@ -496,6 +503,7 @@ export class ElsaWorkflowDesigner {
       target: connection.targetId,
       targetPort: connection.targetPort,
       outcome: connection.outcome,
+      router: this.createEdgeRouter(connection.sourceId, connection.targetId),
       labels:
         [{
           attrs: {
@@ -503,6 +511,19 @@ export class ElsaWorkflowDesigner {
           },
         }],
     };
+  }
+
+  private createEdgeRouter = (sourceId: string, targetId: string) => {
+    const sourceNode = this.activityDisplayContexts[sourceId];
+    return {
+      name: 'manhattan',
+      args: {
+        padding: 10,
+        step: this.getEdgeStep(targetId),
+        startDirections: (sourceNode?.outcomes.length > 3) ? ['bottom'] : ['right'],
+        endDirections: ['left']
+      },
+    }
   }
 
   async getActivityDisplayContext(activityModel: ActivityModel): Promise<ActivityDesignDisplayContext> {
@@ -532,6 +553,8 @@ export class ElsaWorkflowDesigner {
       return;
     }
 
+    this.updateGraphEdgeViews();
+
     const graph = this.graph;
     const graphModel = graph.toJSON();
     const activities = graphModel.cells.filter(x => x.shape == 'activity').map(x => x.activity as ActivityModel);
@@ -546,6 +569,25 @@ export class ElsaWorkflowDesigner {
       persistenceBehavior: WorkflowPersistenceBehavior.WorkflowBurst
     };
     this.updateWorkflowModel(workflowModel);
+  }
+
+  private updateGraphEdgeViews = () => {
+    // This updates the connection routing between nodes, when one node gets moved for example
+
+    this.disableEvents();
+    if (this.edgeUpdateTimer) {
+      clearTimeout(this.edgeUpdateTimer);
+    }
+    this.edgeUpdateTimer = setTimeout(() => {
+      this.edgeUpdateTimer = null;
+      const edges = this.graph.getCells().filter(x => x.shape == 'elsa-edge') as any[];
+      for(const edge of edges) {
+        edge.router = this.createEdgeRouter(edge.source.cell, edge.target.cell);
+        (this.graph.findViewByCell(edge.id) as any).update();
+      }
+    }, 10);
+
+    this.enableEvents(false);
   }
 
   private updateGraph = async () => {
@@ -574,36 +616,6 @@ export class ElsaWorkflowDesigner {
   }
 
   private findActivityById = (id: string): ActivityModel => this.workflowModel.activities.find(x => x.activityId === id);
-
-  async addActivitiesFromClipboard(copiedActivities: Array<ActivityModel>) {
-    let sourceActivityId: string;
-    this.parentActivityId = null;
-    this.parentActivityOutcome = null;
-
-    for (const key in this.selectedActivities) {
-      sourceActivityId = this.selectedActivities[key].activityId;
-    }
-
-    if (sourceActivityId != undefined) {
-      this.parentActivityId = sourceActivityId;
-      this.parentActivityOutcome = this.selectedActivities[sourceActivityId].outcomes[0];
-    }
-
-    for (const key in copiedActivities) {
-      this.addingActivity = true;
-      copiedActivities[key].activityId = uuid();
-
-      await eventBus.emit(EventTypes.UpdateActivity, this, copiedActivities[key]);
-
-      this.parentActivityId = copiedActivities[key].activityId;
-      this.parentActivityOutcome = copiedActivities[key].outcomes[0];
-    }
-
-    this.selectedActivities = {};
-    // Set to null to avoid conflict with on Activity node click event
-    this.parentActivityId = null;
-    this.parentActivityOutcome = null;
-  }
 
   createNotFoundActivityDescriptor(activityModel: ActivityModel): ActivityDescriptor {
     return {
@@ -638,7 +650,7 @@ export class ElsaWorkflowDesigner {
       }
       this.workflowSaveTimer = setTimeout(() => {
         this.workflowChanged.emit(this.workflowModel);
-      }, 100);
+      }, 200);
     }
   }
 
@@ -834,6 +846,12 @@ export class ElsaWorkflowDesigner {
     await eventBus.emit(EventTypes.ShowActivityPicker);
   }
 
+  onWorkflowImported = args => {
+    this.workflowModel = args;
+    this.updateGraph();
+    this.graph.scrollToContent();
+  };
+
   onActivityPicked = async args => {
     const activityDescriptor = args as ActivityDescriptor;
     const activityModel = this.newActivity(activityDescriptor);
@@ -946,10 +964,10 @@ export class ElsaWorkflowDesigner {
         }
         {this.mode == WorkflowDesignerMode.Test ?
           <div>
-            <div id="left" style={{'z-index': '1', border:`4px solid orange`, position:`fixed`, height: `calc(100vh - 64px)`, width:`4px`, top:`64px`, bottom:`0`, left:`0`}}/>
-            <div id="right" style={{'z-index': '1', border:`4px solid orange`, position:`fixed`, height: `calc(100vh - 64px)`, width:`4px`, top:`64px`, bottom:`0`, right:`0`}}/>
-            <div id="top" style={{'z-index': '1', border:`4px solid orange`, position:`fixed`, height:`4px`, left:`0`, right:`0`, top:`64px`}}/>
-            <div id="bottom" style={{'z-index': '1', border:`4px solid orange`, position:`fixed`, height:`4px`, left:`0`, right:`0`, bottom:`0`}}/>
+            <div id="left" style={{'z-index': '1', border:`4px solid orange`, position:`absolute`, height: `calc(100vh - 64px)`, width:`4px`, top:`0`, bottom:`0`, left:`0`}}/>
+            <div id="right" style={{'z-index': '1', border:`4px solid orange`, position:`absolute`, height: `calc(100vh - 64px)`, width:`4px`, top:`0`, bottom:`0`, right:`0`}}/>
+            <div id="top" style={{'z-index': '1', border:`4px solid orange`, position:`absolute`, height:`4px`, left:`0`, right:`0`, top:`0`}}/>
+            <div id="bottom" style={{'z-index': '1', border:`4px solid orange`, position:`absolute`, height:`4px`, left:`0`, right:`0`, bottom:`0`}}/>
           </div>
           :
           undefined
