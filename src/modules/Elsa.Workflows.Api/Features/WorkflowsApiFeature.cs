@@ -1,18 +1,22 @@
+using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
-using Elsa.Workflows.Management.Mappers;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Api.Features;
 
+/// <summary>
+/// Adds workflows API features.
+/// </summary>
 public class WorkflowsApiFeature : FeatureBase
 {
+    /// <inheritdoc />
     public WorkflowsApiFeature(IModule module) : base(module)
     {
     }
 
-    public override void Apply()
+    /// <inheritdoc />
+    public override void Configure()
     {
-        Services.AddSingleton<VariableDefinitionMapper>();
+        Module.AddFastEndpointsAssembly(GetType());
     }
 }

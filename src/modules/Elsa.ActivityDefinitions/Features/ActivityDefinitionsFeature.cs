@@ -3,6 +3,7 @@ using Elsa.ActivityDefinitions.Implementations;
 using Elsa.ActivityDefinitions.Services;
 using Elsa.Common.Extensions;
 using Elsa.Common.Features;
+using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
@@ -30,6 +31,12 @@ public class ActivityDefinitionsFeature : FeatureBase
     /// A factory function that creates an instance of <see cref="IActivityDefinitionStore"/>.
     /// </summary>
     public Func<IServiceProvider, IActivityDefinitionStore> ActivityDefinitionStore { get; set; } = sp => sp.GetRequiredService<MemoryActivityDefinitionStore>();
+
+    /// <inheritdoc />
+    public override void Configure()
+    {
+        Module.AddFastEndpointsAssembly(GetType());
+    }
 
     /// <inheritdoc />
     public override void Apply()

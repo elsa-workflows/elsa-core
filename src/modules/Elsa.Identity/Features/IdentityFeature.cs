@@ -1,5 +1,7 @@
+using System.Reflection;
 using Elsa.Common.Extensions;
 using Elsa.Common.Features;
+using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
@@ -18,22 +20,45 @@ namespace Elsa.Identity.Features;
 [DependsOn(typeof(SystemClockFeature))]
 public class IdentityFeature : FeatureBase
 {
+    /// <inheritdoc />
     public IdentityFeature(IModule module) : base(module)
     {
     }
 
+    /// <summary>
+    /// A flag indicating whether a default user should be created. 
+    /// </summary>
     public bool CreateDefaultUser { get; set; }
+    
+    
+    /// <summary>
+    /// A delegate to configure <see cref="Options.IdentityOptions"/>.
+    /// </summary>
     public Action<IdentityOptions>? IdentityOptions { get; set; }
 
+    /// <summary>
+    /// A delegate that creates an instance of an implementation of <see cref="IUserStore"/>.
+    /// </summary>
     public Func<IServiceProvider, IUserStore> UserStore { get; set; } = sp => sp.GetRequiredService<MemoryUserStore>();
+    
+    /// <summary>
+    /// A delegate that creates an instance of an implementation of <see cref="IRoleStore"/>.
+    /// </summary>
     public Func<IServiceProvider, IRoleStore> RoleStore { get; set; } = sp => sp.GetRequiredService<MemoryRoleStore>();
 
+    public override void Configure()
+    {
+        Module.AddFastEndpointsAssembly(GetType());
+    }
+
+    /// <inheritdoc />
     public override void ConfigureHostedServices()
     {
         if(CreateDefaultUser)
             Module.ConfigureHostedService<SetupDefaultUserHostedService>();
     }
 
+    /// <inheritdoc />
     public override void Apply()
     {
         Services.Configure(IdentityOptions);

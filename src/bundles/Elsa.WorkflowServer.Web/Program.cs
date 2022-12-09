@@ -1,8 +1,8 @@
 using Elsa.Extensions;
-using Elsa.Features.Extensions;
 using Elsa.Http;
 using Elsa.Http.Extensions;
-using Elsa.Identity.Features;
+using Elsa.Identity;
+using Elsa.Identity.Extensions;
 using Elsa.Identity.Options;
 using Elsa.JavaScript.Activities;
 using Elsa.JavaScript.Extensions;
@@ -27,20 +27,16 @@ using Elsa.Scheduling.Extensions;
 using Elsa.WorkflowContexts.Extensions;
 using Elsa.Workflows.Api.Extensions;
 using Elsa.Workflows.Core.Activities;
-using Elsa.Workflows.Core.Activities.Flowchart.Activities;
 using Elsa.Workflows.Core.Middleware.Workflows;
 using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Runtime.Extensions;
 using Elsa.Workflows.Runtime.Implementations;
-using Elsa.WorkflowServer.Web.Activities;
 using Elsa.WorkflowServer.Web.Jobs;
-using FastEndpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Data.Sqlite;
 using Proto.Persistence.Sqlite;
-using Event = Elsa.Workflows.Core.Activities.Event;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -61,7 +57,7 @@ services
             .AddActivitiesFrom<RunJavaScript>()
             .AddActivitiesFrom<Program>()
         )
-        .Use<IdentityFeature>(identity =>
+        .UseIdentity(identity =>
         {
             identity.CreateDefaultUser = true;
             identity.IdentityOptions = options => identitySection.Bind(options);
@@ -81,9 +77,8 @@ services
         .UseJavaScript()
         .UseLiquid()
         .UseHttp()
-    );
+    ).AddFastEndpointsFromModule();
 
-services.AddFastEndpoints();
 services.AddHealthChecks();
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()));
 
@@ -94,7 +89,7 @@ services
 
 services.AddHttpContextAccessor();
 services.AddSingleton<IAuthorizationHandler, LocalHostRequirementHandler>();
-services.AddAuthorization(options => options.AddPolicy("SecurityRoot", policy => policy.AddRequirements(new LocalHostRequirement())));
+services.AddAuthorization(options => options.AddPolicy(IdentityPolicyNames.SecurityRoot, policy => policy.AddRequirements(new LocalHostRequirement())));
 
 // Configure middleware pipeline.
 var app = builder.Build();

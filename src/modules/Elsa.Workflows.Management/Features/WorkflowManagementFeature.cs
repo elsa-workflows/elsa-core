@@ -13,6 +13,7 @@ using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Management.Implementations;
+using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Options;
@@ -151,6 +152,7 @@ public class WorkflowManagementFeature : FeatureBase
             .AddSingleton<IWorkflowMaterializer, ClrWorkflowMaterializer>()
             .AddSingleton<IWorkflowMaterializer, JsonWorkflowMaterializer>()
             .AddSingleton<SerializerOptionsProvider>()
+            .AddSingleton<VariableDefinitionMapper>()
             ;
 
         Services.Configure<ManagementOptions>(options =>

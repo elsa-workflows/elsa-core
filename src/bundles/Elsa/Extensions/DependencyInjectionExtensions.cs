@@ -13,12 +13,12 @@ public static class DependencyInjectionExtensions
     /// <summary>
     /// Creates a new Elsa module and adds the <see cref="ElsaFeature"/> to it.
     /// </summary>
-    public static IServiceCollection AddElsa(this IServiceCollection services, Action<IModule>? configure = default)
+    public static IModule AddElsa(this IServiceCollection services, Action<IModule>? configure = default)
     {
         var module = services.CreateModule();
         module.Configure<ElsaFeature>();
         configure?.Invoke(module);
         module.Apply();
-        return services;
+        return module;
     }
 }
