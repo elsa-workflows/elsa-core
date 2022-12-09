@@ -19,7 +19,7 @@ export class NotificationManager {
   private notyfs: Map<string, NotyfNotification> = new Map();
 
   constructor() {
-    this.notyf = new Notyf({ types: [{ type: 'regular', className: 'notif p-4 rounded bg-white shadow-lg' }] });
+    this.notyf = new Notyf({ types: [{ type: 'regular', duration: 3000, className: '' }] });
 
     this.eventBus = Container.get(EventBus);
     this.eventBus.on(NotificationEventTypes.Add, this.handleAddNotification);
@@ -29,7 +29,7 @@ export class NotificationManager {
 
   handleAddNotification = (e: Notification) => {
     if (!this.isOpened) {
-      this.notyfs.set(e.id, this.notyf.success({ message: e.message, type: 'regular', duration: 2000, position: { x: 'right', y: 'top' } }));
+      this.notyfs.set(e.id, this.notyf.success({ message: e.message, type: 'regular', duration: 4000, className: 'p-3 rounded bg-white shadow-lg' }));
     }
     notificationStore.notifications = [e, ...notificationStore.notifications];
   };
@@ -37,7 +37,7 @@ export class NotificationManager {
   handleUpdateNotification = (e: Notification) => {
     if (!this.isOpened) {
       this.notyf.dismiss(this.notyfs.get(e.id));
-      this.notyfs.set(e.id, this.notyf.success({ message: e.message, type: 'regular', duration: 2000, position: { x: 'right', y: 'top' } }));
+      this.notyfs.set(e.id, this.notyf.success({ message: e.message, type: 'regular', duration: 4000, className: 'p-4 rounded bg-white shadow-lg' }));
     }
     notificationStore.notifications = [e, ...notificationStore.notifications];
   };
@@ -52,12 +52,12 @@ export class NotificationManager {
 
   render() {
     const { notifications } = notificationStore;
-
+    console.log(notifications)
     return (
-      <div class={`notifications-container absolute bg-white z-10 right-0 w-80 ${this.isOpened ? 'block' : 'hidden'} `}>
-        {notifications.length === 0 && <div class="m-4 p-4 rounded border border-black bg-white shadow-lg">There is no notifications yet</div>}
+      <div class={`notifications-container bg-white z-30 right-0 w-80 ${this.isOpened ? 'block' : 'hidden'} `}>
+        {notifications.length === 0 && <div class="m-4 p-3 rounded border border-black bg-white shadow-lg">There is no notifications yet</div>}
         {notifications.map(notif => (
-          <div class="m-4 p-4 rounded border border-black bg-white shadow-lg">{notif.message}</div>
+          <div class="m-4 p-3 rounded border border-black bg-white shadow-lg">{notif.message}</div>
         ))}
       </div>
     );
