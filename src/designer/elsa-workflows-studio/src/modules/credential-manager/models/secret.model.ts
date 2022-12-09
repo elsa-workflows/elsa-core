@@ -12,7 +12,7 @@ export interface Secret {
 export interface SecretModel {
   id?: string;
   type: string;
-  name?: string;
+  name: string;
   displayName?: string;
   properties: Array<SecretDefinitionProperty>;
 }

@@ -28,6 +28,7 @@ namespace Elsa.Secrets.Persistence.EntityFramework.MySql.Migrations
                         .HasColumnType("varchar(255)");
 
                     b.Property<string>("Name")
+                        .IsRequired()
                         .HasColumnType("varchar(255)");
 
                     b.Property<string>("DisplayName")

@@ -65,6 +65,7 @@ export class ElsaSecretEditorModal {
     const secretModel: SecretModel = this.secretModel || {
       type: '',
       id: '',
+      name: '',
       properties: [],
     };
 

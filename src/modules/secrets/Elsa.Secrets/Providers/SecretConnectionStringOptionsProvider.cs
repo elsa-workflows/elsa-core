@@ -1,6 +1,5 @@
 using System.Linq;
 using System.Reflection;
-using Elsa.Activities.Sql.Activities;
 using Elsa.Design;
 using Elsa.Metadata;
 using Elsa.Secrets.Models;
@@ -8,6 +7,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Secrets.Providers
 {
+    /// <summary>
+    /// Options provider to list connection string secrets.
+    /// </summary>
     public class SecretConnectionStringOptionsProvider : IActivityPropertyOptionsProvider
     {
         private readonly IServiceScopeFactory _scopeFactory;
@@ -16,19 +18,16 @@ namespace Elsa.Secrets.Providers
 
         public object? GetOptions(PropertyInfo property)
         {
-            if (property.Name != nameof(ExecuteSqlQuery.ConnectionString)
-                || property.Name != nameof(ExecuteSqlCommand.ConnectionString)) return null;
-
             using var scope = _scopeFactory.CreateScope();
             var secretsProvider = scope.ServiceProvider.GetRequiredService<ISecretsProvider>();
 
-            var secretsPostgre = secretsProvider.GetSecretsForSelectListAsync(Constants.SecretType_PostgreSql).Result;
-            var secretsMssql = secretsProvider.GetSecretsForSelectListAsync(Constants.SecretType_MsSql).Result;
-            var secretsMysql = secretsProvider.GetSecretsForSelectListAsync(Constants.SecretType_MySql).Result;
+            var secretsPostgre = secretsProvider.GetSecretsDictionaryAsync(Constants.SecretType_PostgreSql).Result;
+            var secretsMssql = secretsProvider.GetSecretsDictionaryAsync(Constants.SecretType_MsSql).Result;
+            var secretsMysql = secretsProvider.GetSecretsDictionaryAsync(Constants.SecretType_MySql).Result;
 
-            var items = secretsMssql.Select(x => new SelectListItem(x.Item1, x.Item2)).ToList();
-            items.AddRange(secretsPostgre.Select(x => new SelectListItem(x.Item1, x.Item2)).ToList());
-            items.AddRange(secretsMysql.Select(x => new SelectListItem(x.Item1, x.Item2)).ToList());
+            var items = secretsMssql.Select(x => new SelectListItem(x.Key, x.Value)).ToList();
+            items.AddRange(secretsPostgre.Select(x => new SelectListItem(x.Key, x.Value)).ToList());
+            items.AddRange(secretsMysql.Select(x => new SelectListItem(x.Key, x.Value)).ToList());
             items.Insert(0, new SelectListItem("", "empty"));
 
             return new SelectList { Items = items };

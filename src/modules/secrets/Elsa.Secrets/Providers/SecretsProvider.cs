@@ -1,8 +1,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System;
 using Elsa.Secrets.Manager;
 using Elsa.Secrets.ValueFormatters;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Secrets.Providers
 {
@@ -10,10 +12,13 @@ namespace Elsa.Secrets.Providers
     {
         private readonly ISecretsManager _secretsManager;
         private readonly IEnumerable<ISecretValueFormatter> _valueFormatters;
-        public SecretsProvider(ISecretsManager secretsManager, IEnumerable<ISecretValueFormatter> valueFormatters)
+        private readonly ILogger<SecretsProvider> _logger;
+
+        public SecretsProvider(ISecretsManager secretsManager, IEnumerable<ISecretValueFormatter> valueFormatters, ILogger<SecretsProvider> logger)
         {
             _secretsManager = secretsManager;
             _valueFormatters = valueFormatters;
+            _logger = logger;
         }
 
         public async Task<ICollection<string>> GetSecrets(string type)
@@ -28,16 +33,35 @@ namespace Elsa.Secrets.Providers
             return new List<string>();
         }
 
-        public async Task<ICollection<(string, string)>> GetSecretsForSelectListAsync(string type)
+        public async Task<string?> GetSecrets(string type, string name)
         {
             var secrets = await _secretsManager.GetSecrets(type);
 
             var formatter = _valueFormatters.FirstOrDefault(x => x.Type == type);
 
             if (formatter != null)
-                return secrets.Select(x => (x.Name ?? x.DisplayName, formatter.FormatSecretValue(x))).ToArray();
+                return secrets.Where(x => x.Name?.Equals(name, StringComparison.InvariantCultureIgnoreCase) == true && x.Type?.Equals(type, StringComparison.InvariantCultureIgnoreCase) == true)
+                    .Select(x => formatter.FormatSecretValue(x)).FirstOrDefault();
 
-            return new List<(string, string)>();
+            return null;
+        }
+
+        public async Task<IDictionary<string, string>> GetSecretsDictionaryAsync(string type)
+        {
+            var secrets = await _secretsManager.GetSecrets(type);
+
+            var formatter = _valueFormatters.FirstOrDefault(x => x.Type == type);
+
+            try
+            {
+                if (formatter != null)
+                    return secrets.ToDictionary(x => x.Name ?? x.DisplayName ?? x.Id, x => formatter.FormatSecretValue(x));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating dictionary of secrets for {type}", type);
+            }
+            return new Dictionary<string, string>();
         }
     }
 }
