@@ -14,37 +14,32 @@ public class Event : Trigger<object?>
 {
     /// <inheritdoc />
     [JsonConstructor]
-    internal Event([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public Event([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
 
     /// <inheritdoc />
-    public Event(string eventName, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(new Literal<string>(eventName), source, line)
-    {
-    }
-
-    /// <inheritdoc />
-    public Event(Func<string> text, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) 
+    public Event(Func<string> text, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
         : this(new DelegateBlockReference<string>(text), source, line)
     {
     }
 
     /// <inheritdoc />
-    public Event(Func<ExpressionExecutionContext, string?> text, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) 
+    public Event(Func<ExpressionExecutionContext, string?> text, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
         : this(new DelegateBlockReference<string?>(text), source, line)
     {
     }
 
     /// <inheritdoc />
-    public Event(Variable<string> variable, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line) => 
+    public Event(Variable<string> variable, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line) =>
         EventName = new Input<string>(variable);
 
     /// <inheritdoc />
-    public Event(Literal<string> literal, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line) => 
+    public Event(Literal<string> literal, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line) =>
         EventName = new Input<string>(literal);
 
     /// <inheritdoc />
-    public Event(DelegateBlockReference delegateBlockExpression, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line) => 
+    public Event(DelegateBlockReference delegateBlockExpression, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line) =>
         EventName = new Input<string>(delegateBlockExpression);
 
     /// <inheritdoc />
@@ -53,7 +48,8 @@ public class Event : Trigger<object?>
     /// <summary>
     /// The name of the event to listen for.
     /// </summary>
-    [Input(Description = "The name of the event to listen for.")] public Input<string> EventName { get; set; } = default!;
+    [Input(Description = "The name of the event to listen for.")]
+    public Input<string> EventName { get; set; } = default!;
 
     /// <inheritdoc />
     protected override object GetTriggerPayload(TriggerIndexingContext context)
@@ -66,8 +62,8 @@ public class Event : Trigger<object?>
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var eventName = context.Get(EventName)!;
-        
-        if(!context.IsTriggerOfWorkflow())
+
+        if (!context.IsTriggerOfWorkflow())
         {
             context.CreateBookmark(new EventBookmarkPayload(eventName));
             return;
@@ -75,4 +71,13 @@ public class Event : Trigger<object?>
 
         await context.CompleteActivityAsync();
     }
+
+    /// <summary>
+    /// Creates a new <see cref="Event"/> activity with the specified event name to listen for.
+    /// </summary>
+    public static Event FromName(string name, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(source, line)
+    {
+        EventName = new Input<string>(name)
+    };
+
 }
