@@ -4,7 +4,7 @@ WORKDIR /app
 COPY /src .
 
 WORKDIR /app/designer/elsa-workflows-studio
-ENV NODE_OPTIONS="--max-old-space-size=8192"
+ARG NODE_OPTIONS="--max-old-space-size=8192"
 RUN npm install --force
 RUN npm run build
 
