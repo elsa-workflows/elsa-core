@@ -32,8 +32,8 @@ public class MemoryRegister
 
     public MemoryBlock Declare(MemoryBlockReference blockReference)
     {
-        var datum = blockReference.Declare();
-        Blocks[blockReference.Id] = datum;
-        return datum;
+        var block = blockReference.Declare();
+        Blocks[blockReference.Id] = block;
+        return block;
     }
 }

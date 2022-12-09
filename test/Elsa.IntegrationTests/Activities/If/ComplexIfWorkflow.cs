@@ -22,16 +22,22 @@ public class ComplexIfWorkflow : WorkflowBase
                 new WriteLine("Start"),
                 new If(_condition)
                 {
-                    Then = new Sequence(
-                        
-                        new WriteLine("Executing"),
-                        new WriteLine("True!")
-                    ),
-                    Else = new Sequence(
-                        
-                        new WriteLine("Executing"),
-                        new WriteLine("False!")
-                    )
+                    Then = new Sequence
+                    {
+                        Activities =
+                        {
+                            new WriteLine("Executing"),
+                            new WriteLine("True!")
+                        }
+                    },
+                    Else = new Sequence
+                    {
+                        Activities =
+                        {
+                            new WriteLine("Executing"),
+                            new WriteLine("False!")
+                        }
+                    }
                 },
                 new WriteLine("End")
             }

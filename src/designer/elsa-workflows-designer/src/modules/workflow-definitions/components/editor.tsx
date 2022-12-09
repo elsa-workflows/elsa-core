@@ -89,7 +89,7 @@ export class WorkflowDefinitionEditor {
 
   @Listen('graphUpdated')
   private async handleGraphUpdated(e: CustomEvent<GraphUpdatedArgs>) {
-    this.updateModelDebounced();
+    await this.updateModel();
     this.saveChangesDebounced();
   }
 

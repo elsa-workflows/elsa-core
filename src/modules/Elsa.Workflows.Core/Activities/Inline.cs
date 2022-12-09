@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
@@ -12,25 +13,28 @@ public class Inline : Activity
 {
     private readonly Func<ActivityExecutionContext, ValueTask> _activity;
 
-    public Inline(Func<ActivityExecutionContext, ValueTask> activity) => _activity = activity;
+    public Inline(Func<ActivityExecutionContext, ValueTask> activity, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    {
+        _activity = activity;
+    }
 
-    public Inline(Func<ValueTask> activity) : this(_ => activity())
+    public Inline(Func<ValueTask> activity, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(_ => activity(), source, line)
     {
     }
 
-    public Inline(Action<ActivityExecutionContext> activity) : this(c =>
+    public Inline(Action<ActivityExecutionContext> activity, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(c =>
     {
         activity(c);
         return new ValueTask();
-    })
+    }, source, line)
     {
     }
 
-    public Inline(Action activity) : this(c =>
+    public Inline(Action activity, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(c =>
     {
         activity();
         return new ValueTask();
-    })
+    }, source, line)
     {
     }
 
@@ -54,28 +58,32 @@ public class Inline<T> : Activity<T>
 {
     private readonly Func<ActivityExecutionContext, ValueTask<T>> _activity;
 
-    public Inline(Func<ActivityExecutionContext, ValueTask<T>> activity, MemoryBlockReference? output = default) : base(output)
+    public Inline(Func<ActivityExecutionContext, ValueTask<T>> activity, MemoryBlockReference? output = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) 
+        : base(output, source, line)
     {
         _activity = activity;
     }
 
-    public Inline(Func<ValueTask<T>> activity, MemoryBlockReference? output = default) : this(_ => activity(), output)
+    public Inline(Func<ValueTask<T>> activity, MemoryBlockReference? output = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) 
+        : this(_ => activity(), output, source, line)
     {
     }
 
-    public Inline(Func<ActivityExecutionContext, T> activity, MemoryBlockReference? output = default) : this(c =>
+    public Inline(Func<ActivityExecutionContext, T> activity, MemoryBlockReference? output = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) 
+        : this(c =>
     {
         var result = activity(c);
         return new ValueTask<T>(result);
-    }, output)
+    }, output, source, line)
     {
     }
 
-    public Inline(Func<T> activity, MemoryBlockReference? output = default) : this(c =>
+    public Inline(Func<T> activity, MemoryBlockReference? output = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) 
+        : this(c =>
     {
         var result = activity();
         return new ValueTask<T>(result);
-    }, output)
+    }, output, source, line)
     {
     }
 

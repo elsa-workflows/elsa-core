@@ -73,6 +73,7 @@ public class WorkflowExecutionContext
     public IDictionary<object, object> TransientProperties { get; set; } = new Dictionary<object, object>();
 
     public ExecuteActivityDelegate? ExecuteDelegate { get; set; }
+    public ResumedBookmarkContext? ResumedBookmarkContext { get; set; }
     public string? TriggerActivityId { get; set; }
     public CancellationToken CancellationToken { get; }
     public ICollection<ActivityCompletionCallbackEntry> CompletionCallbacks => new ReadOnlyCollection<ActivityCompletionCallbackEntry>(_completionCallbackEntries);
@@ -158,7 +159,23 @@ public class WorkflowExecutionContext
         return activityExecutionContext;
     }
     
-    public void RemoveActivityExecutionContext(ActivityExecutionContext context) => _activityExecutionContexts.Remove(context);
+    public void RemoveActivityExecutionContext(ActivityExecutionContext context)
+    {
+        // Remove all contexts referencing this on as a parent.
+        var childContexts = _activityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context).ToList();
+
+        foreach (var childContext in childContexts) RemoveActivityExecutionContext(childContext);
+
+        // Remove the context.
+        _activityExecutionContexts.Remove(context);
+        
+        // Remove all associated completion callbacks.
+        context.ClearCompletionCallbacks();
+        
+        // Remove all associated bookmarks.
+        Bookmarks.RemoveWhere(x => x.ActivityInstanceId == context.Id);
+    }
+
     public void AddActivityExecutionContext(ActivityExecutionContext context) => _activityExecutionContexts.Add(context);
 
     public async Task CancelActivityAsync(string activityId)

@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using Dahomey.Json.Util;
 
 namespace Elsa.Telnyx.Client.Models;
 
@@ -10,7 +11,13 @@ public record DialResponse(
     string CallSessionId,
     bool IsAlive,
     string RecordType
-);
+)
+{
+    [JsonConstructor]
+    public DialResponse() : this(default!, default!, default!, default, default!)
+    {
+    }
+}
 
 public record NumberLookupResponse(
     CallerName CallerName,
@@ -21,7 +28,13 @@ public record NumberLookupResponse(
     string PhoneNumber,
     Portability Portability,
     string RecordType
-);
+)
+{
+    [JsonConstructor]
+    public NumberLookupResponse() : this(default!, default!, default!, default!, default!, default!, default!, default!)
+    {
+    }
+}
 
 public record Portability(
     string Altspid,
@@ -37,7 +50,13 @@ public record Portability(
     string SpidCarrierName,
     string SpidCarrierType,
     string State
-);
+)
+{
+    [JsonConstructor]
+    public Portability() : this(default!, default!, default!, default!, default!, default!, default!, default, default!, default!, default!, default!, default!)
+    {
+    }
+}
 
 public record Carrier(
     string ErrorCode,
@@ -45,7 +64,13 @@ public record Carrier(
     int MobileNetworkCode,
     string Name,
     string Type
-);
+)
+{
+    [JsonConstructor]
+    public Carrier() : this(default!, default!, default, default!, default!)
+    {
+    }
+}
 
 public record CallerName
 {

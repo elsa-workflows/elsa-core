@@ -46,22 +46,14 @@ public class DefaultExpressionSyntaxProvider : IExpressionSyntaxProvider
     private ExpressionSyntaxDescriptor CreateDescriptor<TExpression>(
         string syntax,
         Func<ExpressionConstructorContext, IExpression> constructor,
-        Func<LocationReferenceConstructorContext, MemoryBlockReference> createLocationReference,
+        Func<BlockReferenceConstructorContext, MemoryBlockReference> createBlockReference,
         Func<TExpression, object?> expressionValue) =>
         new()
         {
             Syntax = syntax,
             Type = typeof(TExpression),
             CreateExpression = constructor,
-            CreateLocationReference = context =>
-            {
-                var reference = createLocationReference(context);
-
-                if (string.IsNullOrWhiteSpace(reference.Id))
-                    reference.Id = GenerateId();
-
-                return reference;
-            },
+            CreateBlockReference = createBlockReference,
             CreateSerializableObject = context => new
             {
                 Type = syntax,

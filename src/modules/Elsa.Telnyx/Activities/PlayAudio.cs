@@ -1,4 +1,5 @@
-﻿using Elsa.Telnyx.Attributes;
+﻿using System.Runtime.CompilerServices;
+using Elsa.Telnyx.Attributes;
 using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Client.Models;
 using Elsa.Telnyx.Client.Services;
@@ -14,20 +15,47 @@ using Refit;
 
 namespace Elsa.Telnyx.Activities;
 
+/// <inheritdoc />
 [FlowNode("Playback started", "Disconnected")]
 public class FlowPlayAudio : PlayAudioBase
 {
+    /// <inheritdoc />
+    public FlowPlayAudio([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    {
+    }
+    
+    /// <inheritdoc />
     protected override ValueTask HandlePlaybackStartedAsync(ActivityExecutionContext context) => context.CompleteActivityWithOutcomesAsync("Playback started");
+
+    /// <inheritdoc />
     protected override ValueTask HandleDisconnectedAsync(ActivityExecutionContext context) => context.CompleteActivityWithOutcomesAsync("Disconnected");
 }
 
+/// <inheritdoc />
 public class PlayAudio : PlayAudioBase
 {
+    /// <inheritdoc />
+    public PlayAudio([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    {
+    }
+    
+    /// <summary>
+    /// The <see cref="IActivity"/> to execute when audio playback has started.
+    /// </summary>
     [Port] public IActivity? PlaybackStarted { get; set; }
+    
+    /// <summary>
+    /// The <see cref="IActivity"/> to execute when the call was no longer active.
+    /// </summary>
     [Port] public IActivity? Disconnected { get; set; }
 
+    /// <inheritdoc />
     protected override async ValueTask HandlePlaybackStartedAsync(ActivityExecutionContext context) => await context.ScheduleActivityAsync(PlaybackStarted, OnCompletedAsync);
+
+    /// <inheritdoc />
     protected override async ValueTask HandleDisconnectedAsync(ActivityExecutionContext context) => await context.ScheduleActivityAsync(Disconnected, OnCompletedAsync);
+
+    private async ValueTask OnCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext) => await context.CompleteActivityAsync();
 }
 
 /// <summary>
@@ -38,6 +66,11 @@ public class PlayAudio : PlayAudioBase
 [WebhookDriven(WebhookEventTypes.CallPlaybackStarted)]
 public abstract class PlayAudioBase : ActivityBase, IBookmarksPersistedHandler
 {
+    /// <inheritdoc />
+    protected PlayAudioBase([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    {
+    }
+    
     /// <summary>
     /// Unique identifier and token for controlling the call.
     /// </summary>
@@ -119,8 +152,16 @@ public abstract class PlayAudioBase : ActivityBase, IBookmarksPersistedHandler
     /// <inheritdoc />
     protected override void Execute(ActivityExecutionContext context) => context.CreateBookmark(new WebhookEventBookmarkPayload(WebhookEventTypes.CallPlaybackStarted), ResumeAsync);
 
+    /// <summary>
+    /// Called when playback has started.
+    /// </summary>
     protected abstract ValueTask HandlePlaybackStartedAsync(ActivityExecutionContext context);
+    
+    
+    /// <summary>
+    /// Called when the call was no longer active. 
+    /// </summary>
     protected abstract ValueTask HandleDisconnectedAsync(ActivityExecutionContext context);
-    protected async ValueTask OnCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext) => await context.CompleteActivityAsync();
+    
     private async ValueTask ResumeAsync(ActivityExecutionContext context) => await HandlePlaybackStartedAsync(context);
 }

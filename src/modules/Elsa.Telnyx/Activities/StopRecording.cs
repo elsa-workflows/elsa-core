@@ -1,4 +1,5 @@
-﻿using Elsa.Telnyx.Client.Models;
+﻿using System.Runtime.CompilerServices;
+using Elsa.Telnyx.Client.Models;
 using Elsa.Telnyx.Client.Services;
 using Elsa.Telnyx.Extensions;
 using Elsa.Workflows.Core;
@@ -16,6 +17,11 @@ namespace Elsa.Telnyx.Activities;
 [FlowNode("Recording stopped", "Disconnected")]
 public class StopRecording : ActivityBase
 {
+    /// <inheritdoc />
+    public StopRecording([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    {
+    }
+    
     /// <summary>
     /// Unique identifier and token for controlling the call.
     /// </summary>
@@ -44,6 +50,4 @@ public class StopRecording : ActivityBase
             await context.CompleteActivityWithOutcomesAsync("Disconnected");
         }
     }
-
-    private static string? EmptyToNull(string? value) => value is "" ? null : value;
 }

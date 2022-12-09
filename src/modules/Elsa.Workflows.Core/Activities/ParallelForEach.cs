@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
@@ -5,11 +6,29 @@ using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Core.Activities;
 
+/// <summary>
+/// Schedule an activity for each item in parallel.
+/// </summary>
+/// <typeparam name="T"></typeparam>
 [Activity("Elsa", "Control Flow", "Schedule an activity for each item in parallel.")]
 public class ParallelForEach<T> : Activity
 {
     private const string CollectedCountProperty = nameof(CollectedCountProperty);
+
+    /// <inheritdoc />
+    public ParallelForEach([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    {
+    }
+    
+    /// <summary>
+    /// The items to iterate.
+    /// </summary>
     [Input] public Input<ICollection<T>> Items { get; set; } = new(Array.Empty<T>());
+    
+    
+    /// <summary>
+    /// The <see cref="IActivity"/> to execute each iteration.
+    /// </summary>
     [Port] public IActivity Body { get; set; } = default!;
 
     /// <summary>

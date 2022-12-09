@@ -39,9 +39,7 @@ public class WebhookEventActivityProvider : IActivityProvider
     private ActivityDescriptor CreateDescriptor(Type payloadType)
     {
         var webhookAttribute = payloadType.GetCustomAttribute<WebhookAttribute>() ?? throw new Exception($"No WebhookAttribute found on payload type {payloadType}");
-        var ns = Constants.Namespace;
         var typeName = webhookAttribute.ActivityType;
-        var fullTypeName = $"{ns}.{typeName}";
         var displayNameAttr = payloadType.GetCustomAttribute<DisplayNameAttribute>();
         var displayName = displayNameAttr?.DisplayName ?? webhookAttribute.DisplayName;
         var categoryAttr = payloadType.GetCustomAttribute<CategoryAttribute>();
@@ -51,7 +49,7 @@ public class WebhookEventActivityProvider : IActivityProvider
 
         return new()
         {
-            TypeName = fullTypeName,
+            TypeName = typeName,
             Version = 1,
             DisplayName = displayName,
             Description = description,
@@ -62,8 +60,8 @@ public class WebhookEventActivityProvider : IActivityProvider
             Constructor = context =>
             {
                 var activity = _activityFactory.Create<WebhookEvent>(context);
-                activity.Type = fullTypeName;
-                activity.EventType = new Input<string>(webhookAttribute!.EventType);
+                activity.Type = typeName;
+                activity.EventType = webhookAttribute!.EventType;
 
                 return activity;
             }

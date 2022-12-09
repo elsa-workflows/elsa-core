@@ -1,4 +1,5 @@
-﻿using Elsa.Telnyx.Attributes;
+﻿using System.Runtime.CompilerServices;
+using Elsa.Telnyx.Attributes;
 using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Client.Models;
 using Elsa.Telnyx.Client.Services;
@@ -13,10 +14,18 @@ using Refit;
 
 namespace Elsa.Telnyx.Activities;
 
+/// <summary>
+/// Convert text to speech and play it back on the call.
+/// </summary>
 [Activity(Constants.Namespace, "Convert text to speech and play it back on the call.", Kind = ActivityKind.Task)]
 [WebhookDriven(WebhookEventTypes.CallSpeakEnded)]
 public abstract class SpeakTextBase : ActivityBase
 {
+    /// <inheritdoc />
+    protected SpeakTextBase([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    {
+    }
+    
     /// <summary>
     /// Unique identifier and token for controlling the call.
     /// </summary>
@@ -83,11 +92,11 @@ public abstract class SpeakTextBase : ActivityBase
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var request = new SpeakTextRequest(
-            Language.Get(context) ?? throw new Exception("Language is required."),
-            Voice.Get(context) ?? throw new Exception("Voice is required"),
-            Payload.Get(context) ?? throw new Exception("Payload is required"),
-            PayloadType.Get(context).EmptyToNull(),
-            ServiceLevel.Get(context).EmptyToNull()
+            Language.Get(context),
+            Voice.Get(context),
+            Payload.Get(context),
+            PayloadType.TryGet(context).EmptyToNull(),
+            ServiceLevel.TryGet(context).EmptyToNull()
         );
 
         var callControlId = context.GetPrimaryCallControlId(CallControlId) ?? throw new Exception("CallControlId is required.");
@@ -105,31 +114,56 @@ public abstract class SpeakTextBase : ActivityBase
         }
     }
 
+    /// <summary>
+    /// Called when the call was no longer active.
+    /// </summary>
     protected abstract ValueTask HandleDisconnected(ActivityExecutionContext context);
+    
+    /// <summary>
+    /// Called when speaking has finished.
+    /// </summary>
     protected abstract ValueTask HandleFinishedSpeaking(ActivityExecutionContext context);
 
     private async ValueTask ResumeAsync(ActivityExecutionContext context) => await HandleFinishedSpeaking(context);
 }
 
+/// <inheritdoc />
 [FlowNode("Finished speaking", "Disconnected")]
 public class FlowSpeakText : SpeakTextBase
 {
+    /// <inheritdoc />
+    public FlowSpeakText([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    {
+    }
+
+    /// <inheritdoc />
     protected override async ValueTask HandleDisconnected(ActivityExecutionContext context) => await context.CompleteActivityWithOutcomesAsync("Disconnected");
+
+    /// <inheritdoc />
     protected override async ValueTask HandleFinishedSpeaking(ActivityExecutionContext context) => await context.CompleteActivityWithOutcomesAsync("Finished speaking");
 }
 
+/// <inheritdoc />
 public class SpeakText : SpeakTextBase
 {
-    [Port]public IActivity? FinishedSpeaking { get; set; }
-    [Port]public IActivity? Disconnected { get; set; }
+    /// <inheritdoc />
+    public SpeakText([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    {
+    }
     
-    protected override async ValueTask HandleDisconnected(ActivityExecutionContext context)
-    {
-        await context.ScheduleActivityAsync(Disconnected);
-    }
+    /// <summary>
+    /// The <see cref="IActivity"/> to execute when speaking has finished.
+    /// </summary>
+    [Port]public IActivity? FinishedSpeaking { get; set; }
+    
+    /// <summary>
+    /// The <see cref="IActivity"/> to execute when the call was no longer active.
+    /// </summary>
+    [Port]public IActivity? Disconnected { get; set; }
 
-    protected override async ValueTask HandleFinishedSpeaking(ActivityExecutionContext context)
-    {
-        await context.ScheduleActivityAsync(FinishedSpeaking); 
-    }
+    /// <inheritdoc />
+    protected override async ValueTask HandleDisconnected(ActivityExecutionContext context) => await context.ScheduleActivityAsync(Disconnected);
+
+    /// <inheritdoc />
+    protected override async ValueTask HandleFinishedSpeaking(ActivityExecutionContext context) => await context.ScheduleActivityAsync(FinishedSpeaking);
 }

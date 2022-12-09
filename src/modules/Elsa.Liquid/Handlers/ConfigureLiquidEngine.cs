@@ -5,7 +5,7 @@ using Elsa.Liquid.Notifications;
 using Elsa.Liquid.Options;
 using Elsa.Mediator.Services;
 using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Management.Options;
 using Fluid;
 using Fluid.Values;
 using Microsoft.Extensions.Configuration;
@@ -16,11 +16,13 @@ namespace Elsa.Liquid.Handlers
     public class ConfigureLiquidEngine : INotificationHandler<RenderingLiquidTemplate>
     {
         private readonly IConfiguration _configuration;
+        private readonly ManagementOptions _managementOptions;
         private readonly FluidOptions _fluidOptions;
 
-        public ConfigureLiquidEngine(IConfiguration configuration, IOptions<FluidOptions> fluidOptions)
+        public ConfigureLiquidEngine(IConfiguration configuration, IOptions<FluidOptions> fluidOptions, IOptions<ManagementOptions> managementOptions)
         {
             _configuration = configuration;
+            _managementOptions = managementOptions.Value;
             _fluidOptions = fluidOptions.Value;
         }
 
@@ -40,6 +42,10 @@ namespace Elsa.Liquid.Handlers
                 memberAccessStrategy.Register<ExpressionExecutionContext, LiquidPropertyAccessor>("Configuration", x => new LiquidPropertyAccessor(name => ToFluidValue(GetConfigurationValue(name), options)));
                 memberAccessStrategy.Register<ConfigurationSectionWrapper, ConfigurationSectionWrapper?>((source, name) => source.GetSection(name));
             }
+            
+            // Register all variable types.
+            foreach (var variableDescriptor in _managementOptions.VariableDescriptors.Where(x => x.Type.IsClass)) 
+                memberAccessStrategy.Register(variableDescriptor.Type);
 
             return Task.CompletedTask;
         }

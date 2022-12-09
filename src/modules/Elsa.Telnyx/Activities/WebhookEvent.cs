@@ -1,5 +1,8 @@
 ﻿using System.ComponentModel;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
+using Elsa.Telnyx.Attributes;
 using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Helpers;
 using Elsa.Telnyx.Models;
@@ -17,22 +20,25 @@ namespace Elsa.Telnyx.Activities;
 [Browsable(false)]
 public class WebhookEvent : ActivityBase<Payload>
 {
+    /// <inheritdoc />
     [JsonConstructor]
-    public WebhookEvent()
+    public WebhookEvent([CallerFilePath]string? source = default, [CallerLineNumber]int? line = default) : base(source, line)
     {
     }
 
-    public WebhookEvent(string eventType, Variable<Payload> result)
+    /// <inheritdoc />
+    public WebhookEvent(string eventType, string activityTypeName, Variable<Payload> result, int version = 1, [CallerFilePath]string? source = default, [CallerLineNumber]int? line = default) 
+        : base(activityTypeName, version, source, line)
     {
-        EventType = new (eventType);
+        EventType = eventType;
         Result = new(result);
     }
     
     /// <summary>
     /// The Telnyx webhook event type to listen for.
     /// </summary>
-    [Input(Description = "The Telnyx webhook event type to listen for")]
-    public Input<string> EventType { get; set; } = default!;
+    [Description("The Telnyx webhook event type to listen for")]
+    public string EventType { get; set; } = default!;
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
@@ -41,9 +47,10 @@ public class WebhookEvent : ActivityBase<Payload>
             await Resume(context);
         else
         {
-            var eventType = context.Get(EventType)!;
+            var eventType = EventType;
             var payload = new WebhookEventBookmarkPayload(eventType);
-            context.CreateBookmark(payload, Resume);
+            
+            context.CreateBookmark(new CreateBookmarkOptions(payload, Resume, Type));
         }
     }
 

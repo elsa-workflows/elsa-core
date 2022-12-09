@@ -45,7 +45,11 @@ public static class WorkflowExecutionContextExtensions
     public static void ScheduleBookmark(this WorkflowExecutionContext workflowExecutionContext, Bookmark bookmark)
     {
         // Construct bookmark.
-        var bookmarkedActivityContext = workflowExecutionContext.ActivityExecutionContexts.First(x => x.Id == bookmark.ActivityInstanceId);
+        var bookmarkedActivityContext = workflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Id == bookmark.ActivityInstanceId);
+        
+        if(bookmarkedActivityContext == null)
+            return;
+
         var bookmarkedActivity = bookmarkedActivityContext.Activity;
 
         // Schedule the activity to resume.
@@ -56,8 +60,8 @@ public static class WorkflowExecutionContextExtensions
         // If no resumption point was specified, use "Complete" to prevent the regular "ExecuteAsync" method to be invoked and instead complete the activity.
         workflowExecutionContext.ExecuteDelegate = bookmark.CallbackMethodName != null ? bookmarkedActivity.GetResumeActivityDelegate(bookmark.CallbackMethodName) : WorkflowExecutionContext.Complete;
 
-        // Remove the bookmark.
-        workflowExecutionContext.Bookmarks.Remove(bookmark);
+        // Store the bookmark to resume in the context.
+        workflowExecutionContext.ResumedBookmarkContext = new ResumedBookmarkContext(bookmark);
     }
 
     /// <summary>

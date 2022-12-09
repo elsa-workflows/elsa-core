@@ -1,4 +1,5 @@
-﻿using Elsa.Telnyx.Client.Models;
+﻿using System.Runtime.CompilerServices;
+using Elsa.Telnyx.Client.Models;
 using Elsa.Telnyx.Client.Services;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
@@ -13,6 +14,11 @@ namespace Elsa.Telnyx.Activities;
 [Activity(Constants.Namespace, "Returns information about the provided phone number.", Kind = ActivityKind.Task)]
 public class LookupNumber : Activity<NumberLookupResponse>
 {
+    /// <inheritdoc />
+    public LookupNumber([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    {
+    }
+    
     /// <summary>
     /// The phone number to be looked up.
     /// </summary>

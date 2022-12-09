@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Reflection;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
@@ -104,6 +105,15 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
 
     private void SerializeCompletionCallbacks(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
     {
+        // Assert all referenced owner contexts exist.
+        foreach (var completionCallback in workflowExecutionContext.CompletionCallbacks)
+        {
+            var owmnerContext = workflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x == completionCallback.Owner);
+
+            if (owmnerContext == null)
+                throw new Exception("Lost an owner context");
+        }
+        
         var completionCallbacks = workflowExecutionContext.CompletionCallbacks.Select(x => new CompletionCallbackState(x.Owner.Id, x.Child.Id, x.CompletionCallback?.Method.Name));
         state.CompletionCallbacks = completionCallbacks.ToList();
     }
@@ -113,6 +123,17 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
         ActivityExecutionContextState CreateActivityExecutionContextState(ActivityExecutionContext activityExecutionContext)
         {
             var registerState = new RegisterState(activityExecutionContext.ExpressionExecutionContext.Memory.Blocks);
+
+            var parentId = activityExecutionContext.ParentActivityExecutionContext?.Id;
+
+            if (parentId != null)
+            {
+                var parentContext = activityExecutionContext.WorkflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Id == parentId);
+
+                if (parentContext == null)
+                    throw new Exception("We lost a context");
+            }
+            
             var activityExecutionContextState = new ActivityExecutionContextState
             {
                 Id = activityExecutionContext.Id,
@@ -137,6 +158,10 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
             var activityExecutionContext = workflowExecutionContext.CreateActivityExecutionContext(activity);
             activityExecutionContext.Id = activityExecutionContextState.Id;
             activityExecutionContext.Properties = properties;
+
+            foreach (var memoryBlock in activityExecutionContextState.Register.Blocks) 
+                activityExecutionContext.ExpressionExecutionContext.Memory.Blocks[memoryBlock.Key] = memoryBlock.Value;
+            
             return activityExecutionContext;
         }
 

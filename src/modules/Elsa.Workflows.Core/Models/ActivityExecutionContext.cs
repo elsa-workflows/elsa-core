@@ -1,5 +1,4 @@
 using System.Collections.ObjectModel;
-using System.Runtime.CompilerServices;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Services;
@@ -83,6 +82,8 @@ public class ActivityExecutionContext
     // ReSharper disable once CollectionNeverQueried.Global
     public IDictionary<string, object?> JournalData { get; } = new Dictionary<string, object?>();
 
+    public ResumedBookmarkContext? ResumedBookmarkContext => WorkflowExecutionContext.ResumedBookmarkContext;
+
     public async ValueTask ScheduleActivityAsync(IActivity? activity, ActivityCompletionCallback? completionCallback = default, IEnumerable<MemoryBlockReference>? references = default, object? tag = default)
     {
         await ScheduleActivityAsync(activity, this, completionCallback, references, tag);
@@ -111,33 +112,39 @@ public class ActivityExecutionContext
     public void CreateBookmarks(IEnumerable<object> payloads, ExecuteActivityDelegate? callback = default)
     {
         foreach (var payload in payloads)
-            CreateBookmark(payload, callback);
+            CreateBookmark(new CreateBookmarkOptions(payload, callback));
     }
 
     public void AddBookmarks(IEnumerable<Bookmark> bookmarks) => _bookmarks.AddRange(bookmarks);
     public void AddBookmark(Bookmark bookmark) => _bookmarks.Add(bookmark);
 
-    public Bookmark CreateBookmark(ExecuteActivityDelegate callback) => CreateBookmark(default, callback);
+    public Bookmark CreateBookmark(ExecuteActivityDelegate callback) => CreateBookmark(new CreateBookmarkOptions(default, callback));
+    public Bookmark CreateBookmark(object payload, ExecuteActivityDelegate callback) => CreateBookmark(new CreateBookmarkOptions(payload, callback));
+    public Bookmark CreateBookmark(object payload) => CreateBookmark(new CreateBookmarkOptions(payload));
 
     /// <summary>
     /// Creates a bookmark so that this activity can be resumed at a later time.
     /// Creating a bookmark will automatically suspend the workflow after all pending activities have executed.
     /// </summary>
-    public Bookmark CreateBookmark(object? payload = default, ExecuteActivityDelegate? callback = default)
+    public Bookmark CreateBookmark(CreateBookmarkOptions? options = default)
     {
+        var payload = options?.Payload;
+        var callback = options?.Callback;
+        var activityTypeName = options?.ActivityTypeName ?? Activity.Type;
         var bookmarkHasher = GetRequiredService<IBookmarkHasher>();
         var identityGenerator = GetRequiredService<IIdentityGenerator>();
         var payloadSerializer = GetRequiredService<IBookmarkPayloadSerializer>();
         var payloadJson = payload != null ? payloadSerializer.Serialize(payload) : default;
-        var hash = bookmarkHasher.Hash(Activity.Type, payloadJson);
+        var hash = bookmarkHasher.Hash(activityTypeName, payloadJson);
 
         var bookmark = new Bookmark(
             identityGenerator.GenerateId(),
-            Activity.Type,
+            activityTypeName,
             hash,
             payloadJson,
             Activity.Id,
             Id,
+            options?.AutoBurn ?? true,
             callback?.Method.Name);
 
         AddBookmark(bookmark);
@@ -152,7 +159,7 @@ public class ActivityExecutionContext
     /// <summary>
     /// Returns a property value associated with the current activity context. 
     /// </summary>
-    public T? GetProperty<T>(string key) => Properties!.TryGetValue<T?>(key, out var value) ? value : default;
+    public T? GetProperty<T>(string key) => Properties.TryGetValue<T?>(key, out var value) ? value : default;
 
     /// <summary>
     /// Returns a property value associated with the current activity context. 
@@ -195,7 +202,7 @@ public class ActivityExecutionContext
 
     public object? Get(MemoryBlockReference blockReference)
     {
-        var location = GetBlock(blockReference) ?? throw new InvalidOperationException($"No location found with ID {blockReference.Id}. Did you forget to declare a variable with a container?");
+        var location = GetMemoryBlock(blockReference) ?? throw new InvalidOperationException($"No location found with ID {blockReference.Id}. Did you forget to declare a variable with a container?");
         return location.Value;
     }
 
@@ -225,8 +232,8 @@ public class ActivityExecutionContext
 
     internal void IncrementExecutionCount() => _executionCount++;
 
-    private MemoryBlock? GetBlock(MemoryBlockReference locationBlockReference) =>
-        ExpressionExecutionContext.Memory.TryGetBlock(locationBlockReference.Id, out var location)
-            ? location
-            : ParentActivityExecutionContext?.GetBlock(locationBlockReference);
+    private MemoryBlock? GetMemoryBlock(MemoryBlockReference locationBlockReference) =>
+        ExpressionExecutionContext.Memory.TryGetBlock(locationBlockReference.Id, out var memoryBlock)
+            ? memoryBlock
+            : ParentActivityExecutionContext?.GetMemoryBlock(locationBlockReference);
 }

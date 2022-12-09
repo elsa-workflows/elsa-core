@@ -7,6 +7,7 @@ using Elsa.Telnyx.Events;
 using Elsa.Telnyx.Extensions;
 using Elsa.Telnyx.Payloads.Abstract;
 using Elsa.Workflows.Core;
+using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Runtime.Services;
 using Microsoft.Extensions.Logging;
 
@@ -31,8 +32,7 @@ internal class TriggerWebhookActivities : INotificationHandler<TelnyxWebhookRece
         var webhook = notification.Webhook;
         var eventType = webhook.Data.EventType;
         var payload = webhook.Data.Payload;
-        var ns = Constants.Namespace;
-        var activityType = $"{ns}.{payload.GetType().GetCustomAttribute<WebhookAttribute>()?.ActivityType}";
+        var activityType = payload.GetType().GetCustomAttribute<WebhookAttribute>()?.ActivityType;
 
         if (activityType == null)
             return;

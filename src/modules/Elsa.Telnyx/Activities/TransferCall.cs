@@ -1,4 +1,5 @@
-﻿using Elsa.Telnyx.Client.Models;
+﻿using System.Runtime.CompilerServices;
+using Elsa.Telnyx.Client.Models;
 using Elsa.Telnyx.Client.Services;
 using Elsa.Telnyx.Extensions;
 using Elsa.Telnyx.Payloads.Call;
@@ -18,6 +19,11 @@ namespace Elsa.Telnyx.Activities;
 [FlowNode("Transferred", "Hangup", "Disconnected")]
 public class TransferCall : Activity
 {
+    /// <inheritdoc />
+    public TransferCall([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    {
+    }
+    
     /// <summary>
     /// Unique identifier and token for controlling the call.
     /// </summary>

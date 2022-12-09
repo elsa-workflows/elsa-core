@@ -9,6 +9,7 @@ public record Bookmark(
     string? Data,
     string ActivityId,
     string ActivityInstanceId,
+    bool AutoBurn = true,
     string? CallbackMethodName = default
 )
 {

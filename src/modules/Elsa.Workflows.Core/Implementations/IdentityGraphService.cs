@@ -33,22 +33,17 @@ public class IdentityGraphService : IIdentityGraphService
         }
     }
 
-    private void AssignInputOutputs(IActivity activity)
+    public void AssignInputOutputs(IActivity activity)
     {
         var inputs = activity.GetInputs();
-        
-        var assignedInputs = inputs.Where(x =>
-        {
-            var memoryBlockReference = x.MemoryBlockReference();
-            return memoryBlockReference.Id == null!;
-        }).ToList();
-        
         var seed = 0;
 
-        foreach (var input in assignedInputs)
+        foreach (var input in inputs)
         {
-            var locationReference = input.MemoryBlockReference();
-            locationReference.Id = $"{activity.Id}:input-{++seed}";
+            var blockReference = input.MemoryBlockReference();
+            
+            if(string.IsNullOrEmpty(blockReference.Id))
+                blockReference.Id = $"{activity.Id}:input-{++seed}";
         }
 
         seed = 0;
@@ -62,12 +57,14 @@ public class IdentityGraphService : IIdentityGraphService
 
         foreach (var output in assignedOutputs)
         {
-            var memoryReference = output.Value.MemoryBlockReference();
-            memoryReference.Id = $"{activity.Id}:output-{++seed}";
+            var blockReference = output.Value.MemoryBlockReference();
+            
+            if(string.IsNullOrEmpty(blockReference.Id))
+                blockReference.Id = $"{activity.Id}:output-{++seed}";
         }
     }
 
-    private void AssignVariables(IActivity activity)
+    public void AssignVariables(IActivity activity)
     {
         var variables = activity.GetVariables();
         var seed = 0;

@@ -1,4 +1,5 @@
-﻿using Elsa.Telnyx.Attributes;
+﻿using System.Runtime.CompilerServices;
+using Elsa.Telnyx.Attributes;
 using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Client.Models;
 using Elsa.Telnyx.Client.Services;
@@ -23,6 +24,11 @@ namespace Elsa.Telnyx.Activities;
 [WebhookDriven(WebhookEventTypes.CallAnswered, WebhookEventTypes.CallHangup, WebhookEventTypes.CallMachineGreetingEnded, WebhookEventTypes.CallMachinePremiumGreetingEnded)]
 public abstract class DialBase : ActivityBase
 {
+    /// <inheritdoc />
+    protected DialBase(string? source = default, int? line = default) : base(source, line)
+    {
+    }
+    
     [Input(Description = "The DID or SIP URI to dial out and bridge to the given call.")]
     public Input<string> To { get; set; } = default!;
 
@@ -117,32 +123,57 @@ public abstract class DialBase : ActivityBase
     }
 }
 
+/// <inheritdoc />
 [FlowNode("Answered", "Hangup", "Voicemail")]
 public class FlowDial : DialBase
 {
+    private FlowDial([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    {
+    }
+
+    /// <inheritdoc />
     protected override async ValueTask OnHandleAnsweredAsync(ActivityExecutionContext context, CallAnsweredPayload payload) => await context.CompleteActivityWithOutcomesAsync("Answered");
+
+    /// <inheritdoc />
     protected override async ValueTask OnHandleHangupAsync(ActivityExecutionContext context, CallHangupPayload payload) => await context.CompleteActivityWithOutcomesAsync("Hangup");
+
+    /// <inheritdoc />
     protected override async ValueTask OnHandleMachineGreetingEndedAsync(ActivityExecutionContext context, CallMachineGreetingEndedBase payload) => await context.CompleteActivityWithOutcomesAsync("Voicemail");
 }
 
+/// <summary>
+/// Dial a phone number or SIP URI.
+/// </summary>
 public class Dial : DialBase
 {
+    /// <inheritdoc />
+    public Dial([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    {
+    }
+
+    /// <summary>
+    /// The <see cref="IActivity"/> to execute when the call was answered.
+    /// </summary>
     [Port] public IActivity? Answered { get; set; }
+    
+    /// <summary>
+    /// The <see cref="IActivity"/> to execute when there is no reply.
+    /// </summary>
     [Port] public IActivity? Hangup { get; set; }
+    
+    /// <summary>
+    /// The <see cref="IActivity"/> to execute when a robot answered the call.  
+    /// </summary>
     [Port] public IActivity? Voicemail { get; set; }
 
-    protected override async ValueTask OnHandleAnsweredAsync(ActivityExecutionContext context, CallAnsweredPayload payload)
-    {
+    /// <inheritdoc />
+    protected override async ValueTask OnHandleAnsweredAsync(ActivityExecutionContext context, CallAnsweredPayload payload) => 
         await context.ScheduleActivityAsync(Answered);
-    }
 
-    protected override async ValueTask OnHandleHangupAsync(ActivityExecutionContext context, CallHangupPayload payload)
-    {
-        await context.ScheduleActivityAsync(Hangup);
-    }
+    /// <inheritdoc />
+    protected override async ValueTask OnHandleHangupAsync(ActivityExecutionContext context, CallHangupPayload payload) => await context.ScheduleActivityAsync(Hangup);
 
-    protected override async ValueTask OnHandleMachineGreetingEndedAsync(ActivityExecutionContext context, CallMachineGreetingEndedBase payload)
-    {
+    /// <inheritdoc />
+    protected override async ValueTask OnHandleMachineGreetingEndedAsync(ActivityExecutionContext context, CallMachineGreetingEndedBase payload) => 
         await context.ScheduleActivityAsync(Voicemail);
-    }
 }

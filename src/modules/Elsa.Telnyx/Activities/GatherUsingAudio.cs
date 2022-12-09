@@ -1,4 +1,5 @@
-﻿using Elsa.Telnyx.Attributes;
+﻿using System.Runtime.CompilerServices;
+using Elsa.Telnyx.Attributes;
 using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Client.Models;
 using Elsa.Telnyx.Client.Services;
@@ -21,6 +22,11 @@ namespace Elsa.Telnyx.Activities;
 [WebhookDriven(WebhookEventTypes.CallGatherEnded)]
 public class GatherUsingAudio : ActivityBase<CallGatherEndedPayload>, IBookmarksPersistedHandler
 {
+    /// <inheritdoc />
+    public GatherUsingAudio([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    {
+    }
+    
     /// <summary>
     /// The call control ID of the call from which to gather input. Leave empty to use the ambient call control ID, if there is any.
     /// </summary>

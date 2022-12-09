@@ -13,6 +13,8 @@ using Elsa.Workflows.Runtime.Implementations;
 using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Services;
+using Medallion.Threading;
+using Medallion.Threading.FileSystem;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Runtime.Features;
@@ -52,6 +54,8 @@ public class WorkflowRuntimeFeature : FeatureBase
 
     public Func<IServiceProvider, ITriggerStore> WorkflowTriggerStore { get; set; } = sp => sp.GetRequiredService<MemoryTriggerStore>();
     public Func<IServiceProvider, IWorkflowExecutionLogStore> WorkflowExecutionLogStore { get; set; } = sp => sp.GetRequiredService<MemoryWorkflowExecutionLogStore>();
+    public Func<IServiceProvider, IDistributedLockProvider> DistributedLockProvider { get; set; } = _ => 
+        new FileDistributedSynchronizationProvider(new DirectoryInfo( Path.Combine(Environment.CurrentDirectory, "App_Data/locks")));
 
     public Func<IServiceProvider, IWorkflowStateExporter> WorkflowStateExporter { get; set; } =
         sp => sp.GetRequiredService<NoopWorkflowStateExporter>(); 
@@ -83,11 +87,14 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddSingleton(WorkflowTriggerStore)
             .AddSingleton(WorkflowExecutionLogStore)
 
-            // Memory Stores
+            // Memory stores.
             .AddMemoryStore<WorkflowState, MemoryWorkflowStateStore>()
             .AddMemoryStore<StoredBookmark, MemoryBookmarkStore>()
             .AddMemoryStore<StoredTrigger, MemoryTriggerStore>()
             .AddMemoryStore<WorkflowExecutionLogRecord, MemoryWorkflowExecutionLogStore>()
+            
+            // Distributed locking.
+            .AddSingleton(DistributedLockProvider)
 
             // Workflow definition providers.
             .AddWorkflowDefinitionProvider<ClrWorkflowDefinitionProvider>()

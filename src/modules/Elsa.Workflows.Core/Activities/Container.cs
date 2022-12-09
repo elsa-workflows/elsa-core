@@ -1,6 +1,5 @@
 using System.Collections.ObjectModel;
 using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Behaviors;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
 
@@ -11,23 +10,22 @@ namespace Elsa.Workflows.Core.Activities;
 /// </summary>
 public abstract class Container : ActivityBase, IContainer
 {
-    protected Container()
+    /// <inheritdoc />
+    protected Container(string? source = default, int? line = default) : base(source, line)
     {
-    }
-    
-    protected Container(params IActivity[] activities)
-    {
-        Activities = activities;
     }
 
-    protected Container(ICollection<Variable> variables, params IActivity[] activities) : this(activities)
-    {
-        Variables = variables;
-    }
-
+    /// <summary>
+    /// The <see cref="IActivity"/>s to execute.
+    /// </summary>
     [Port] public ICollection<IActivity> Activities { get; set; } = new HashSet<IActivity>();
+    
+    /// <summary>
+    /// The variables available to this scope.
+    /// </summary>
     public ICollection<Variable> Variables { get; set; } = new Collection<Variable>();
 
+    /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         // Register variables.
@@ -37,12 +35,18 @@ public abstract class Container : ActivityBase, IContainer
         await ScheduleChildrenAsync(context);
     }
 
+    /// <summary>
+    /// Schedule the <see cref="Activities"/> for execution.
+    /// </summary>
     protected virtual ValueTask ScheduleChildrenAsync(ActivityExecutionContext context)
     {
         ScheduleChildren(context);
         return ValueTask.CompletedTask;
     }
 
+    /// <summary>
+    /// Schedule the <see cref="Activities"/> for execution.
+    /// </summary>
     protected virtual void ScheduleChildren(ActivityExecutionContext context)
     {
     }

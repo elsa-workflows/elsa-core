@@ -4,6 +4,7 @@ using EFCore.BulkExtensions;
 using Elsa.Common.Services;
 using Elsa.Persistence.EntityFrameworkCore.Common;
 using Elsa.Workflows.Core.Serialization;
+using Elsa.Workflows.Core.Serialization.Converters;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Runtime.Services;
 using Microsoft.EntityFrameworkCore;
@@ -17,9 +18,8 @@ public class EFCoreWorkflowStateStore : IWorkflowStateStore
     private readonly IDbContextFactory<RuntimeElsaDbContext> _dbContextFactory;
 
     public EFCoreWorkflowStateStore(
-        IDbContextFactory<RuntimeElsaDbContext> dbContextFactory, 
-        Store<RuntimeElsaDbContext, WorkflowState> store, 
-        SerializerOptionsProvider serializerOptionsProvider, 
+        IDbContextFactory<RuntimeElsaDbContext> dbContextFactory,
+        SerializerOptionsProvider serializerOptionsProvider,
         ISystemClock systemClock)
     {
         _serializerOptionsProvider = serializerOptionsProvider;
@@ -34,9 +34,8 @@ public class EFCoreWorkflowStateStore : IWorkflowStateStore
         var json = JsonSerializer.Serialize(state, options);
         var now = _systemClock.UtcNow;
         var entry = dbContext.Entry(state);
-        var record = await dbContext.WorkflowStates.FirstOrDefaultAsync(x => x.Id == state.Id, cancellationToken);
 
-        if (record == null) 
+        if (entry.Property<DateTimeOffset>("CreatedAt").CurrentValue == DateTimeOffset.MinValue)
             entry.Property<DateTimeOffset>("CreatedAt").CurrentValue = now;
 
         entry.Property<string>("Data").CurrentValue = json;
@@ -54,9 +53,12 @@ public class EFCoreWorkflowStateStore : IWorkflowStateStore
 
         if (entity == null)
             return null;
-        
+
         var entry = dbContext.Entry(entity);
         var json = entry.Property<string>("Data").CurrentValue;
+
+        // For reading string:object dictionaries where the objects would otherwise be read as JsonElement values.
+        options.Converters.Add(new SystemObjectPrimitiveConverter());
         return JsonSerializer.Deserialize<WorkflowState>(json, options);
     }
 }

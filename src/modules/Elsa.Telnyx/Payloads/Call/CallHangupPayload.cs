@@ -2,10 +2,9 @@
 
 namespace Elsa.Telnyx.Payloads.Call;
 
-[Webhook(WebhookEventTypes.CallHangup, ActivityTypeName, "Call Hangup", "Triggered when an incoming call was hangup.")]
+[Webhook(WebhookEventTypes.CallHangup, WebhookActivityTypeNames.CallHangup, "Call Hangup", "Triggered when an incoming call was hangup.")]
 public sealed record CallHangupPayload : CallPayload
 {
-    public const string ActivityTypeName = "CallHangup";
     public DateTimeOffset StartTime { get; init; }
     public DateTimeOffset EndTime { get; init; }
     public string SipHangupCause { get; init; } = default!;

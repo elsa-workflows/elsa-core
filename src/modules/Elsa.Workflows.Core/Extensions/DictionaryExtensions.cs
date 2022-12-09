@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Elsa.Expressions.Helpers;
 
 namespace Elsa.Workflows.Core;
 
@@ -42,14 +43,5 @@ public static class DictionaryExtensions
         return dictionary;
     }
 
-    private static T? ConvertValue<T>(object? value)
-    {
-        return value switch
-        {
-            null => default,
-            T v => v,
-            JsonElement jsonElement => jsonElement.Deserialize<T>()!,
-            _ => throw new InvalidOperationException()
-        };
-    }
+    private static T? ConvertValue<T>(object? value) => value.ConvertTo<T>();
 }

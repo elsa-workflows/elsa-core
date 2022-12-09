@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Elsa.Workflows.Core.Activities.Flowchart.Contracts;
 using Elsa.Workflows.Core.Activities.Flowchart.Extensions;
 using Elsa.Workflows.Core.Activities.Flowchart.Models;
@@ -8,12 +9,16 @@ using Elsa.Workflows.Core.Signals;
 
 namespace Elsa.Workflows.Core.Activities.Flowchart.Activities;
 
+/// <summary>
+/// A flowchart consists of a collection of activities and connections between them.
+/// </summary>
 [Activity("Elsa", "Flow", "A flowchart is a collection of activities and connections between them.")]
 public class Flowchart : Container
 {
     internal const string ScopeProperty = "Scope";
 
-    public Flowchart()
+    /// <inheritdoc />
+    public Flowchart([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
         OnSignalReceived<ActivityCompleted>(OnDescendantCompletedAsync);
     }

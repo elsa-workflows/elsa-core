@@ -15,29 +15,28 @@ public abstract class Input : Argument
     }
 
     public IExpression Expression { get; }
-    
-    [JsonPropertyName("typeName")]
-    public Type Type { get; set; }
+
+    [JsonPropertyName("typeName")] public Type Type { get; set; }
 }
 
 public class Input<T> : Input
 {
-    public Input(T literal) : this(new Literal<T>(literal))
+    public Input(T literal, string? id = default) : this(new Literal<T>(literal) { Id = id! })
     {
     }
 
-    public Input(Func<T> @delegate) : this(new DelegateBlockReference(() => @delegate()))
+    public Input(Func<T> @delegate, string? id = default) : this(new DelegateBlockReference(() => @delegate()){ Id = id!})
     {
     }
 
     public Input(Func<ExpressionExecutionContext, ValueTask<T?>> @delegate) : this(new DelegateBlockReference<T>(@delegate))
     {
     }
-    
+
     public Input(Func<ValueTask<T?>> @delegate) : this(new DelegateBlockReference<T>(@delegate))
     {
     }
-    
+
     public Input(Func<ExpressionExecutionContext, T> @delegate) : this(new DelegateBlockReference<T>(@delegate))
     {
     }
@@ -45,7 +44,7 @@ public class Input<T> : Input
     public Input(Variable variable) : base(new VariableExpression(variable), variable, typeof(T))
     {
     }
-    
+
     public Input(Output output) : base(new OutputExpression(output), output.MemoryBlockReference(), typeof(T))
     {
     }
@@ -53,7 +52,7 @@ public class Input<T> : Input
     public Input(Literal<T> literal) : base(new LiteralExpression(literal.Value), literal, typeof(T))
     {
     }
-        
+
     public Input(Literal literal) : base(new LiteralExpression(literal.Value), literal, typeof(T))
     {
     }

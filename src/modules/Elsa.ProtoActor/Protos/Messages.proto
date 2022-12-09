@@ -81,7 +81,8 @@ message BookmarkDto {
   optional string Data = 4;
   string ActivityId = 5;
   string ActivityInstanceId = 6;
-  optional string CallbackMethodName = 7;
+  optional bool AutoBurn = 7;
+  optional string CallbackMethodName = 8;
 }
 
 message Json {

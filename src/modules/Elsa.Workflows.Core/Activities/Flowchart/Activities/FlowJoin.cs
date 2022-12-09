@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Elsa.Common.Extensions;
 using Elsa.Workflows.Core.Activities.Flowchart.Contracts;
 using Elsa.Workflows.Core.Activities.Flowchart.Extensions;
@@ -7,10 +8,18 @@ using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Workflows.Core.Activities.Flowchart.Activities;
 
+/// <summary>
+/// Merge multiple branches into a single branch of execution.
+/// </summary>
 [Activity("Elsa", "Flow", "Merge multiple branches into a single branch of execution.")]
 public class FlowJoin : ActivityBase, IJoinNode
 {
-    [Input] public Input<Models.FlowJoinMode> Mode { get; set; } = new(Models.FlowJoinMode.WaitAll);
+    /// <inheritdoc />
+    public FlowJoin([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    {
+    }
+    
+    [Input] public Input<FlowJoinMode> Mode { get; set; } = new(FlowJoinMode.WaitAll);
 
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {

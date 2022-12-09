@@ -259,10 +259,6 @@ export class FlowchartComponent implements ContainerActivityComponent {
   @Method()
   async import(root: Activity): Promise<void> {
     await this.importInternal(root);
-    
-    rebuildGraph(this.graph);
-
-    await this.scrollToStart();
   }
 
   @Method()
@@ -280,6 +276,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
     const currentActivityId = this.currentPath[this.currentPath.length - 1].activityId;
     const currentActivity = this.activityLookup[currentActivityId];
     const parentActivity = this.activityLookup[parentActivityId] as Flowchart;
+
     const parentActivityDescriptor = descriptorsStore.activityDescriptors.find(x => x.typeName == parentActivity.type);
     const indexInParent = currentActivity.activities?.findIndex(x => x == parentActivity);
     const portName = e.detail.port.name;
@@ -390,6 +387,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
     const currentNavigationItem = currentPath[currentPath.length - 1];
     const currentPortName = currentNavigationItem?.portName;
     const currentScope = this.activityLookup[currentNavigationItem.activityId] as Activity;
+
     const currentScopeDescriptor = this.getActivityDescriptor(currentScope.type);
 
     if (!!currentPortName) {
@@ -450,6 +448,9 @@ export class FlowchartComponent implements ContainerActivityComponent {
     this.graph.freeze();
     this.graph.fromJSON(model, {silent: false});
     this.graph.unfreeze();
+
+    rebuildGraph(this.graph);
+    await this.scrollToStart();
   };
 
   private getFlowchartModel = (): FlowchartModel => {

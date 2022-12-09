@@ -7,4 +7,6 @@ public interface IIdentityGraphService
     Task AssignIdentitiesAsync(Workflow workflow, CancellationToken cancellationToken = default);
     Task AssignIdentitiesAsync(IActivity root, CancellationToken cancellationToken = default);
     void AssignIdentities(ActivityNode root);
+    void AssignInputOutputs(IActivity activity);
+    void AssignVariables(IActivity activity);
 }
