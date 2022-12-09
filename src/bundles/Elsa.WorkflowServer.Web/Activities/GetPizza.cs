@@ -13,9 +13,10 @@ public class GetPizza : Composite<Pizza>
 {
     [Input(
         UIHint = InputUIHints.Dropdown,
-        Options = new[] { "Margaritha", "Funghi", "Veggie", "Carbonara", "Pepperoni", "Hawai" }
+        Options = new[] { "Margaritha", "Fungi", "Veggie", "Carbonara", "Pepperoni", "Hawaii" },
+        DefaultValue = "Margaritha"
     )]
-    public Input<string> Flavor { get; set; } = default!;
+    public Input<string> Flavor { get; set; } = new("Margaritha");
 
     [Input(
         UIHint = InputUIHints.Dropdown,
@@ -43,7 +44,7 @@ public class GetPizza : Composite<Pizza>
                             Activities =
                             {
                                 new WriteLine("Heating oven..."),
-                                Delay.FromSeconds(10),
+                                Delay.FromSeconds(2),
                                 new WriteLine("Oven heated."),
                             }
                         },
@@ -52,16 +53,16 @@ public class GetPizza : Composite<Pizza>
                             Activities =
                             {
                                 new WriteLine("Preparing dough and toppings..."),
-                                Delay.FromSeconds(5),
+                                Delay.FromSeconds(2),
                                 new WriteLine("Pizza ready for heating."),
                             }
                         }
                     }
                 },
                 new WriteLine("Heating pizza in oven..."),
-                Delay.FromSeconds(5),
+                Delay.FromSeconds(2),
                 new WriteLine("Pizza is ready for delivery!"),
-                Delay.FromSeconds(1),
+                Delay.FromSeconds(2),
                 From(context => context.Set(Result, new Pizza(Size.Get(context), Flavor.Get(context)))),
             }
         };
