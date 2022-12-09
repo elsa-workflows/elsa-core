@@ -9,18 +9,10 @@
   left: 0;
   top: 0;
   width: 100%;
-  max-width: 100%;
-  min-height: 130px;
-  max-height: 200px !important;
+  height: 100%;
+  max-height: 100% !important;
   margin: 0;
   padding: 0;
-  --tw-border-opacity: 1;
-  border: 1px solid rgb(209 213 219 / var(--tw-border-opacity));
-  -moz-appearance: textfield-multiline;
-  -webkit-appearance: textarea;
-  overflow: auto;
-  resize: both;
-  min-width: 100%;
 }
 
 .monaco-editor {
