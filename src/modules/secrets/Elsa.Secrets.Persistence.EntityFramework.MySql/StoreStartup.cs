@@ -10,7 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.Secrets.Persistence.EntityFramework.MySql
 {
     [Feature("Secrets:EntityFrameworkCore:MySql")]
-    public class StoreStartup : EntityFrameworkSecretsStartupBase
+    public class Startup : EntityFrameworkSecretsStartupBase
     {
         protected override string ProviderName => "MySql";
 
