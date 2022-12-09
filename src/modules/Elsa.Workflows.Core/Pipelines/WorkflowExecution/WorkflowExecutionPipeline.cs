@@ -8,7 +8,7 @@ public class WorkflowExecutionPipeline : IWorkflowExecutionPipeline
 {
     private readonly IServiceProvider _serviceProvider;
     private WorkflowMiddlewareDelegate? _pipeline;
-        
+
     public WorkflowExecutionPipeline(IServiceProvider serviceProvider) => _serviceProvider = serviceProvider;
     public WorkflowMiddlewareDelegate Pipeline => _pipeline ??= CreateDefaultPipeline();
 
@@ -19,10 +19,8 @@ public class WorkflowExecutionPipeline : IWorkflowExecutionPipeline
         _pipeline = builder.Build();
         return _pipeline;
     }
-        
+
     public async Task ExecuteAsync(WorkflowExecutionContext context) => await Pipeline(context);
 
-    private WorkflowMiddlewareDelegate CreateDefaultPipeline() => Setup(x => x
-        .UseDefaultActivityScheduler()
-    );
+    private WorkflowMiddlewareDelegate CreateDefaultPipeline() => Setup(x => x.UseDefaultActivityScheduler());
 }
