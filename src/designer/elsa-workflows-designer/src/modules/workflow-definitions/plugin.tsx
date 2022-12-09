@@ -195,8 +195,11 @@ export class WorkflowDefinitionsPlugin implements Plugin {
     const workflowDefinition = await this.workflowDefinitionEditorElement.getWorkflowDefinition();
     await this.eventBus.emit(NotificationEventTypes.Add, this, {id: workflowDefinition.definitionId, message: `Starting publishing ${workflowDefinition.name}`});
     await this.saveWorkflowDefinition(workflowDefinition, true);
-    await this.eventBus.emit(NotificationEventTypes.Update, this, {id: workflowDefinition.definitionId, message: `${workflowDefinition.name} publish finished`});
-    e.detail.complete();
+    setTimeout(async () => {
+      await this.eventBus.emit(NotificationEventTypes.Update, this, {id: workflowDefinition.definitionId, message: `${workflowDefinition.name} publish finished`});
+      e.detail.complete();
+    }, 2000)
+
   }
 
   private onExportClicked = async (e: CustomEvent) => {
