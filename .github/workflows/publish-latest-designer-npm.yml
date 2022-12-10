@@ -7,6 +7,9 @@ on:
   release:
     types: [published]
 
+env:
+  NODE_OPTIONS: --max-old-space-size=4096
+
 jobs:
   push_to_npm:
     name: Push NPM package to NPM
@@ -24,7 +27,6 @@ jobs:
         with:
           node-version: 18.12.1
       
-      - run: export NODE_OPTIONS="--max-old-space-size=4096"
       - run: npm install
       - run: npm run build
 
