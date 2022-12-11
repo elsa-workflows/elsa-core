@@ -30,7 +30,10 @@ export const config: Config = {
       plugins: [
         tailwindcss(),
         autoprefixer(),
-        ...(dev ? [] : [purgecss({content: ['./**/*.tsx', './**/*.ts']})])
+        ...(dev ? [] : [purgecss({
+          content: ['./**/*.tsx', './**/*.ts'],
+          defaultExtractor: (content) => content.match(/[\w-/:.]+(?<!:)/g) || [],
+        })])
       ]
     })
   ]
