@@ -14,10 +14,21 @@ public class Event : Trigger<object?>
 {
     /// <inheritdoc />
     [JsonConstructor]
-    public Event([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public Event()
+    {
+    }
+    
+    /// <inheritdoc />
+    internal Event([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
 
+    /// <inheritdoc />
+    public Event(string text, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
+        : this(new Literal<string>(text), source, line)
+    {
+    }
+    
     /// <inheritdoc />
     public Event(Func<string> text, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
         : this(new DelegateBlockReference<string>(text), source, line)
@@ -71,13 +82,4 @@ public class Event : Trigger<object?>
 
         await context.CompleteActivityAsync();
     }
-
-    /// <summary>
-    /// Creates a new <see cref="Event"/> activity with the specified event name to listen for.
-    /// </summary>
-    public static Event FromName(string name, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(source, line)
-    {
-        EventName = new Input<string>(name)
-    };
-
 }
