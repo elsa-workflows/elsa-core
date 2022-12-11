@@ -63,7 +63,7 @@ public class GetPizza : Composite<Pizza>
                 Delay.FromSeconds(2),
                 new WriteLine("Pizza is ready for delivery!"),
                 Delay.FromSeconds(2),
-                From(context => context.Set(Result, new Pizza(Size.Get(context), Flavor.Get(context)))),
+                Inline(context => context.Set(Result, new Pizza(Size.Get(context), Flavor.Get(context)))),
             }
         };
     }

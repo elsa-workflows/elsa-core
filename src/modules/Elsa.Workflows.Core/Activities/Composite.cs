@@ -220,40 +220,40 @@ public abstract class Composite<T> : ActivityBase<T>
     /// <summary>
     /// Creates a new <see cref="Activities.Inline"/> activity.
     /// </summary>
-    protected static Inline From(Func<ActivityExecutionContext, ValueTask> activity) => new(activity);
+    protected static Inline Inline(Func<ActivityExecutionContext, ValueTask> activity) => new(activity);
     
     /// <summary>
     /// Creates a new <see cref="Activities.Inline"/> activity.
     /// </summary>
-    protected static Inline From(Func<ValueTask> activity) => new(activity);
+    protected static Inline Inline(Func<ValueTask> activity) => new(activity);
     
     /// <summary>
     /// Creates a new <see cref="Activities.Inline"/> activity.
     /// </summary>
-    protected static Inline From(Action<ActivityExecutionContext> activity) => new(activity);
+    protected static Inline Inline(Action<ActivityExecutionContext> activity) => new(activity);
     
     /// <summary>
     /// Creates a new <see cref="Activities.Inline"/> activity.
     /// </summary>
-    protected static Inline From(Action activity) => new(activity);
+    protected static Inline Inline(Action activity) => new(activity);
     
     /// <summary>
     /// Creates a new <see cref="Activities.Inline"/> activity.
     /// </summary>
-    protected static Inline<TResult> From<TResult>(Func<ActivityExecutionContext, ValueTask<TResult>> activity, MemoryBlockReference? output = default) => new(activity, output);
+    protected static Inline<TResult> Inline<TResult>(Func<ActivityExecutionContext, ValueTask<TResult>> activity, MemoryBlockReference? output = default) => new(activity, output);
     
     /// <summary>
     /// Creates a new <see cref="Activities.Inline"/> activity.
     /// </summary>
-    protected static Inline<TResult> From<TResult>(Func<ValueTask<TResult>> activity, MemoryBlockReference? output = default) => new(activity, output);
+    protected static Inline<TResult> Inline<TResult>(Func<ValueTask<TResult>> activity, MemoryBlockReference? output = default) => new(activity, output);
     
     /// <summary>
     /// Creates a new <see cref="Activities.Inline"/> activity.
     /// </summary>
-    protected static Inline<TResult> From<TResult>(Func<ActivityExecutionContext, TResult> activity, MemoryBlockReference? output = default) => new(activity, output);
+    protected static Inline<TResult> Inline<TResult>(Func<ActivityExecutionContext, TResult> activity, MemoryBlockReference? output = default) => new(activity, output);
     
     /// <summary>
     /// Creates a new <see cref="Activities.Inline"/> activity.
     /// </summary>
-    protected static Inline<TResult> From<TResult>(Func<TResult> activity, MemoryBlockReference? output = default) => new(activity, output);
+    protected static Inline<TResult> Inline<TResult>(Func<TResult> activity, MemoryBlockReference? output = default) => new(activity, output);
 }

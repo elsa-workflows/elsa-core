@@ -16,7 +16,7 @@ public class GetAge : Composite<int>
             Variables = { ageVariable },
             Activities =
             {
-                From(() =>
+                Inline(() =>
                 {
                     var random = new Random();
                     return random.Next(36);
