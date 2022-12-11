@@ -6,8 +6,17 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Core.Models;
 
+/// <summary>
+/// A delegate entry that is used by activities to be notified when the activities they scheduled are completed.
+/// </summary>
+/// <param name="Owner">The activity scheduling the <see cref="Child"/> activity.</param>
+/// <param name="Child">The child <see cref="IActivity"/> being scheduled.</param>
+/// <param name="CompletionCallback">The <see cref="ActivityCompletionCallback"/> delegate to invoke when the scheduled <see cref="Child"/> activity completes.</param>
 public record ActivityCompletionCallbackEntry(ActivityExecutionContext Owner, IActivity Child, ActivityCompletionCallback? CompletionCallback);
 
+/// <summary>
+/// Provides context to the currently executing workflow.
+/// </summary>
 public class WorkflowExecutionContext
 {
     internal static ValueTask Complete(ActivityExecutionContext context) => context.CompleteActivityAsync();
@@ -16,6 +25,9 @@ public class WorkflowExecutionContext
     private readonly IList<ActivityCompletionCallbackEntry> _completionCallbackEntries = new List<ActivityCompletionCallbackEntry>();
     private IList<ActivityExecutionContext> _activityExecutionContexts;
 
+    /// <summary>
+    /// Constructor.
+    /// </summary>
     public WorkflowExecutionContext(
         IServiceProvider serviceProvider,
         string id,
