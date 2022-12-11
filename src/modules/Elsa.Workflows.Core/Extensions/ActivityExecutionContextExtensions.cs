@@ -15,8 +15,14 @@ using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Core;
 
+/// <summary>
+/// Provides extension methods for <see cref="ActivityExecutionContext"/>.
+/// </summary>
 public static class ActivityExecutionContextExtensions
 {
+    /// <summary>
+    /// Attempts to get a value from the input provided via <see cref="WorkflowExecutionContext"/>. If a value was found, an attempt is made to convert it into the specified type <code>T</code>.
+    /// </summary>
     public static bool TryGetInput<T>(this ActivityExecutionContext context, string key, out T value, JsonSerializerOptions? serializerOptions = default)
     {
         if (context.Input.TryGetValue(key, out var v))
@@ -29,7 +35,14 @@ public static class ActivityExecutionContextExtensions
         return false;
     }
 
+    /// <summary>
+    /// Gets a value from the input provided via <see cref="WorkflowExecutionContext"/>. If a value was found, an attempt is made to convert it into the specified type <code>T</code>.
+    /// </summary>
     public static T GetInput<T>(this ActivityExecutionContext context, JsonSerializerOptions? serializerOptions = default) => context.GetInput<T>(typeof(T).Name, serializerOptions);
+    
+    /// <summary>
+    /// Gets a value from the input provided via <see cref="WorkflowExecutionContext"/>. If a value was found, an attempt is made to convert it into the specified type <code>T</code>.
+    /// </summary>
     public static T GetInput<T>(this ActivityExecutionContext context, string key, JsonSerializerOptions? serializerOptions = default) => context.Input[key].ConvertTo<T>(serializerOptions)!;
 
     /// <summary>
@@ -37,6 +50,14 @@ public static class ActivityExecutionContextExtensions
     /// </summary>
     public static bool IsTriggerOfWorkflow(this ActivityExecutionContext context) => context.WorkflowExecutionContext.TriggerActivityId == context.Activity.Id;
 
+    /// <summary>
+    /// Adds a new <see cref="WorkflowExecutionLogEntry"/> to the execution log of the current <see cref="WorkflowExecutionContext"/>.
+    /// </summary>
+    /// <param name="eventName">The name of the event.</param>
+    /// <param name="message">The message of the event.</param>
+    /// <param name="source">The source of the activity. For example, the source file name and line number in case of composite activities.</param>
+    /// <param name="payload">Any contextual data related to this event.</param>
+    /// <returns>Returns the created <see cref="WorkflowExecutionLogEntry"/>.</returns>
     public static WorkflowExecutionLogEntry AddExecutionLogEntry(this ActivityExecutionContext context, string eventName, string? message = default, string? source = default, object? payload = default)
     {
         var activity = context.Activity;
