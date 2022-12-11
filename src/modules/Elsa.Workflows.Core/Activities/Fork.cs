@@ -21,7 +21,6 @@ public class Fork : ActivityBase
     [JsonConstructor]
     public Fork([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
-        OnSignalReceived<BreakSignal>(OnBreakAsync);
     }
     
     /// <summary>
@@ -86,12 +85,5 @@ public class Fork : ActivityBase
         var branchDescendantActivityIds = branchNodes.SelectMany(x => x.Flatten()).Select(x => x.Activity.Id).ToHashSet();
         
         workflowExecutionContext.Bookmarks.RemoveWhere(x => branchDescendantActivityIds.Contains(x.ActivityId));
-    }
-    
-    private async ValueTask OnBreakAsync(BreakSignal signal, SignalContext context)
-    {
-        RemoveBookmarks(context.ReceiverActivityExecutionContext);
-        await CompleteAsync(context.ReceiverActivityExecutionContext);
-        context.StopPropagation();
     }
 }
