@@ -4,6 +4,7 @@ import Tunnel from '../../../data/workflow-editor';
 import { MonacoValueChangedArgs } from '../../controls/elsa-monaco/elsa-monaco';
 import { IntellisenseContext } from '../../../models';
 import { monacoEditorDialogService } from '../../../services/monaco-editor-dialog-service';
+import { IconName, iconProvider } from '../../../services/icon-provider';
 
 @Component({
   tag: 'elsa-expression-editor',
@@ -54,9 +55,8 @@ export class ElsaExpressionEditor {
   }
 
   onEditorClick = e => {
-    if (this.opensModal) {
-      monacoEditorDialogService.show(this.language, this.currentExpression, (e: CustomEvent) => this.setExpression(e.detail.value));
-    }
+    e.preventDefault();
+    monacoEditorDialogService.show(this.language, this.currentExpression, (val: string) => this.setExpression(val));
   };
 
   render() {
@@ -71,9 +71,18 @@ export class ElsaExpressionEditor {
         single-line={this.singleLineMode}
         padding={this.padding}
         onValueChanged={e => this.onMonacoValueChanged(e.detail)}
-        onClick={this.onEditorClick}
         ref={el => (this.monacoEditor = el)}
-      />
+      >
+        {this.opensModal &&
+          <button
+            class="elsa-absolute elsa-z-10"
+            style={{ left: "0.25rem", top: "0.35rem" }}
+            onClick={this.onEditorClick}
+            >
+            { iconProvider.getIcon(IconName.OpenInDialog) }
+          </button>
+        }
+      </elsa-monaco>
     );
   }
 }

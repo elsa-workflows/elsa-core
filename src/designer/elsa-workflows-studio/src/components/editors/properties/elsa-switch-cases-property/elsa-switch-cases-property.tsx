@@ -116,7 +116,7 @@ export class ElsaSwitchCasesProperty {
                 language={monacoLanguage}
                 single-line={true}
                 editorHeight="2.75em"
-                padding="elsa-pt-1.5 elsa-pl-1 elsa-pr-28"
+                padding="elsa-pt-1.5 elsa-pl-8 elsa-pr-28"
                 opensModal
                 onExpressionChanged={e => this.onCaseExpressionChanged(e, switchCase)}
               />
