@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Elsa.Secrets.Models;
-using Elsa.Secrets.ValueFormatters;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
@@ -11,7 +10,7 @@ namespace Elsa.Secrets.ValueFormatters {
     public class OAuth2SecretValueFormatter : ISecretValueFormatter
     {
         private readonly ILogger<OAuth2SecretValueFormatter> _logger;
-        private HttpClient _httpClient;
+        private readonly HttpClient _httpClient;
         public string Type => "OAuth2";
 
         public OAuth2SecretValueFormatter(IHttpClientFactory httpClientFactory, ILogger<OAuth2SecretValueFormatter> logger) {
@@ -34,7 +33,7 @@ namespace Elsa.Secrets.ValueFormatters {
                 if (string.IsNullOrEmpty(result?.AccessToken)) {
                     throw new Exception(result?.Error ?? "Failed to obtain OAuth2 token");
                 }
-                return result.AccessToken;
+                return $"{result.TokenType ?? "Bearer"} {result.AccessToken}";
             }
             catch (Exception e) {
                 _logger.LogError(e, $"Failed to obtain OAuth2 token for secret {secret.Name}/{secret.Id}");

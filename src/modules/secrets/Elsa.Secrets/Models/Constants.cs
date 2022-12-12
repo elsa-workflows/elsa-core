@@ -8,6 +8,5 @@ namespace Elsa.Secrets.Models
         public const string SecretType_PostgreSql = "PostgreSql";
         public const string SecretType_AuthorizationHeader = "Authorization";
         public const string SecretType_OAuth2 = "OAuth2";
-        public const string SecretRefPrefix = "@secret:";
     }
 }

@@ -1,6 +1,8 @@
 using System;
+using System.Linq;
 using System.Reflection;
 using Elsa.Design;
+using Elsa.Expressions;
 using Elsa.Metadata;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -22,6 +24,8 @@ namespace Elsa.Secrets.Enrichers
             if (activityInputDescriptor == null) return;
 
             activityInputDescriptor.UIHint = ActivityInputUIHints.Dropdown;
+            activityInputDescriptor.DefaultSyntax = SyntaxNames.Secret;
+            activityInputDescriptor.SupportedSyntaxes = activityInputDescriptor.SupportedSyntaxes.Concat(new[] { SyntaxNames.Secret }).Distinct().ToList();
 
             var provider = (IActivityPropertyOptionsProvider)ActivatorUtilities.GetServiceOrCreateInstance(_serviceProvider, OptionsProvider);
             activityInputDescriptor.Options = provider.GetOptions(propertyInfo);

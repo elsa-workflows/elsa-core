@@ -1,4 +1,4 @@
-﻿namespace Elsa.Expressions
+namespace Elsa.Expressions
 {
     public static class SyntaxNames
     {
@@ -9,5 +9,6 @@
         public const string Variable = "Variable";
         public const string Output = "Output";
         public const string Sql = "SQL";
+        public const string Secret = "Secret";
     }
 }

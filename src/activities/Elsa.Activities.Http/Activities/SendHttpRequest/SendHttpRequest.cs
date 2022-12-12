@@ -35,18 +35,15 @@ namespace Elsa.Activities.Http
         private readonly HttpClient _httpClient;
         private readonly IEnumerable<IHttpResponseContentReader> _parsers;
         private readonly string? _defaultContentParserName;
-        private readonly List<ISendHttpRequestAuthorizationHeaderHandler> _authorizationHeaderHandlers;
 
         public SendHttpRequest(
             IHttpClientFactory httpClientFactory,
             IEnumerable<IHttpResponseContentReader> parsers,
-            IEnumerable<ISendHttpRequestAuthorizationHeaderHandler> authorizationHeaderHandlers,
             IOptions<HttpActivityOptions> options)
         {
             _httpClient = httpClientFactory.CreateClient(nameof(SendHttpRequest));
             _parsers = parsers;
             _defaultContentParserName = options.Value.DefaultContentParserName;
-            _authorizationHeaderHandlers = authorizationHeaderHandlers.ToList();
         }
 
         /// <summary>
@@ -184,7 +181,7 @@ namespace Elsa.Activities.Http
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            var request = await CreateRequest();
+            var request = CreateRequest();
             var cancellationToken = context.CancellationToken;
             var response = (await _httpClient.SendAsync(request, cancellationToken))!;
             var hasContent = response.Content != null!;
@@ -255,13 +252,13 @@ namespace Elsa.Activities.Http
             }
         }
 
-        private async Task<HttpRequestMessage> CreateRequest()
+        private HttpRequestMessage CreateRequest()
         {
             var method = Method ?? HttpMethods.Get;
             var methodSupportsBody = GetMethodSupportsBody(method);
             var url = Url;
             var request = new HttpRequestMessage(new HttpMethod(method), url);
-            var authorizationHeaderValue = await GetAuthorizationHeader();
+            var authorizationHeaderValue = Authorization;
             var requestHeaders = new HeaderDictionary(RequestHeaders.ToDictionary(x => x.Key, x => new StringValues(x.Value.Split(','))));
 
             if (methodSupportsBody)
@@ -286,20 +283,6 @@ namespace Elsa.Activities.Http
                 request.Headers.Add(header.Key, header.Value.AsEnumerable());
 
             return request;
-        }
-
-        private async Task<string?> GetAuthorizationHeader()
-        {
-            if (_authorizationHeaderHandlers.Count == 0 || string.IsNullOrEmpty(Authorization)) {
-                return Authorization;
-            }
-
-            var header = Authorization;
-            foreach (var handler in _authorizationHeaderHandlers) {
-                header = await handler.EvaluateStoredValue(header);
-            }
-
-            return header;
         }
 
         object? IActivityPropertyOptionsProvider.GetOptions(PropertyInfo property)

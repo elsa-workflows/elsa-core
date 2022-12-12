@@ -32,13 +32,13 @@ namespace Elsa.Secrets.Providers
         public async Task<ICollection<string>> GetSecrets(string type)
         {
             var secrets = await _secretsManager.GetSecrets(type);
-            return secrets.Select(x => Constants.SecretRefPrefix + x.Id).ToArray();
+            return secrets.Select(x => x.Id).ToArray();
         }
 
         public async Task<ICollection<(string, string)>> GetSecretsForSelectListAsync(string type)
         {
             var secrets = await _secretsManager.GetSecrets(type);
-            return secrets.Select(x => (x.Name ?? x.DisplayName, Constants.SecretRefPrefix + x.Id)).ToArray();
+            return secrets.Select(x => (x.Name ?? x.DisplayName, x.Id)).ToArray();
         }
     }
 }
