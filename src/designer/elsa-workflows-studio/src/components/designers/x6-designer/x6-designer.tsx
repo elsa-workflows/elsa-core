@@ -123,12 +123,10 @@ export class ElsaWorkflowDesigner {
   handleActivityContextMenuButtonChanged(newValue: WorkflowDesignerMode) {
     if (this.mode !== WorkflowDesignerMode.Edit) {
       this.graph.resetSelection();
-      this.graph.disableSelection();
       this.graph.disableRubberband();
       this.graph.disableHistory();
       removeGraphEvents(this.graph);
     } else {
-      this.graph.enableSelection();
       this.graph.enableRubberband();
       this.graph.enableHistory();
       addGraphEvents(this.graph, this.disableEvents, this.enableEvents, false);
@@ -224,7 +222,7 @@ export class ElsaWorkflowDesigner {
 
   applyAutoLayout() {
     const graph = new dagre.graphlib.Graph();
-    graph.setGraph({ rankdir: "TB", nodesep: 30, ranksep: 140, align: "UL" });
+    graph.setGraph({ rankdir: "TB", nodesep: 30, ranksep: 180 });
 
     graph.setDefaultEdgeLabel(() => ({}));
 
@@ -478,19 +476,30 @@ export class ElsaWorkflowDesigner {
     return node;
   }
 
-  private getEdgeStep = (targetId: string) => {
+  private getEdgeStep = (sourceId: string, targetId: string) => {
     // The purpose of this function is to prevent connections from overlapping because of their target nodes being on the same height
     const targetNode = this.workflowModel.activities.find(x => x.activityId === targetId);
-    let step = 10;
+    const siblingEdges = this.workflowModel.connections.filter(x => x.sourceId === sourceId);
+    const siblingActivities = siblingEdges.map(x => this.workflowModel.activities.find(a => a.activityId === x.targetId)).filter(x => !!x);
+
+    let xStep = 10;
+    let yStep = 10;
     if (targetNode) {
-      const sameHeightNodes = this.workflowModel.activities
+      const sameYNodes = siblingActivities
         .filter(x => Math.abs(x.y - targetNode.y) < 20)
-        .sort((a, b) => a.activityId > b.activityId ? 1 : -1);
-      if (sameHeightNodes.length > 1) {
-        step += sameHeightNodes.findIndex(x => x.activityId == targetNode.activityId) * 20;
+        .sort((a, b) => a.x > b.x ? 1 : -1);
+      const sameXNodes = siblingActivities
+        .filter(x => Math.abs(x.x - targetNode.x) < 20)
+        .sort((a, b) => a.y > b.y ? 1 : -1);
+
+      if (sameYNodes.length > 1) {
+        yStep += sameYNodes.findIndex(x => x.activityId == targetNode.activityId) * 32;
+      }
+      if (sameXNodes.length > 1) {
+        xStep += sameXNodes.findIndex(x => x.activityId == targetNode.activityId) * 32;
       }
     }
-    return step;
+    return Math.max(xStep, yStep);
   }
 
   private createEdge = (connection: ConnectionModel): Edge.Metadata => {
@@ -519,7 +528,7 @@ export class ElsaWorkflowDesigner {
       name: 'manhattan',
       args: {
         padding: 10,
-        step: this.getEdgeStep(targetId),
+        step: this.getEdgeStep(sourceId, targetId),
         startDirections: (sourceNode?.outcomes.length > 3) ? ['bottom'] : ['right'],
         endDirections: ['left']
       },
@@ -580,11 +589,13 @@ export class ElsaWorkflowDesigner {
     }
     this.edgeUpdateTimer = setTimeout(() => {
       this.edgeUpdateTimer = null;
+      this.graph.disableHistory();
       const edges = this.graph.getCells().filter(x => x.shape == 'elsa-edge') as any[];
       for(const edge of edges) {
         edge.router = this.createEdgeRouter(edge.source.cell, edge.target.cell);
         (this.graph.findViewByCell(edge.id) as any).update();
       }
+      this.graph.enableHistory();
     }, 10);
 
     this.enableEvents(false);
@@ -849,6 +860,11 @@ export class ElsaWorkflowDesigner {
   onWorkflowImported = args => {
     this.workflowModel = args;
     this.updateGraph();
+    if (this.isAutoLayoutRequired) {
+      setTimeout(() => {
+        this.applyAutoLayout();
+      }, 1);
+    }
     this.graph.scrollToContent();
   };
 
@@ -911,7 +927,7 @@ export class ElsaWorkflowDesigner {
   renderActivity(activity: ActivityModel) {
     const activityBorderColor = !!this.activityBorderColor ? this.activityBorderColor(activity) : 'gray';
     const selectedColor = !!this.activityBorderColor ? activityBorderColor : 'blue';
-    const cssClass = !!this.selectedActivities[activity.activityId] ? `elsa-border-${selectedColor}-600` : `elsa-border-${activityBorderColor}-200 hover:elsa-border-${selectedColor}-600`;
+    const cssClass = `elsa-border-${activityBorderColor}-200 hover:elsa-border-${selectedColor}-600`;
     const typeName = activity.type;
     let activityContextMenuButton = !!this.activityContextMenuButton ? this.activityContextMenuButton(activity) : '';
 
@@ -929,7 +945,7 @@ export class ElsaWorkflowDesigner {
     this.handleActivityStatsClick(activity);
 
     return `<div class="elsa-border-2 elsa-border-solid ${cssClass}">
-      <div class="elsa-p-2 elsa-pr-3">
+      <div class="elsa-p-2" style="padding-right: 2.6rem">
         <div class="elsa-flex elsa-justify-between elsa-space-x-4 mr-4">
           <div class="elsa-flex-shrink-0">
             ${activityIcon}
@@ -938,7 +954,7 @@ export class ElsaWorkflowDesigner {
             <p class="elsa-overflow-ellipsis elsa-text-base">${displayName}</p>
             ${typeName !== displayName ? `<p class="elsa-text-gray-400 elsa-text-sm">${typeName}</p>` : ''}
           </div>
-          <div class="context-menu-button-container" stats-activity-id="${activity.activityId}">
+          <div class="context-menu-button-container elsa-absolute elsa-z-1" stats-activity-id="${activity.activityId}" style="right: 0.5rem">
             ${activityContextMenuButton}
           </div>
         </div>
@@ -964,10 +980,10 @@ export class ElsaWorkflowDesigner {
         }
         {this.mode == WorkflowDesignerMode.Test ?
           <div>
-            <div id="left" style={{'z-index': '1', border:`4px solid orange`, position:`absolute`, height: `calc(100vh - 64px)`, width:`4px`, top:`0`, bottom:`0`, left:`0`}}/>
-            <div id="right" style={{'z-index': '1', border:`4px solid orange`, position:`absolute`, height: `calc(100vh - 64px)`, width:`4px`, top:`0`, bottom:`0`, right:`0`}}/>
-            <div id="top" style={{'z-index': '1', border:`4px solid orange`, position:`absolute`, height:`4px`, left:`0`, right:`0`, top:`0`}}/>
-            <div id="bottom" style={{'z-index': '1', border:`4px solid orange`, position:`absolute`, height:`4px`, left:`0`, right:`0`, bottom:`0`}}/>
+            <div id="left" style={{border:`4px solid orange`, position:`absolute`, height: `calc(100vh - 64px)`, width:`4px`, top:`0`, bottom:`0`, left:`0`}}/>
+            <div id="right" style={{ border:`4px solid orange`, position:`absolute`, height: `calc(100vh - 64px)`, width:`4px`, top:`0`, bottom:`0`, right:`0`}}/>
+            <div id="top" style={{border:`4px solid orange`, position:`absolute`, height:`4px`, left:`0`, right:`0`, top:`0`}}/>
+            <div id="bottom" style={{border:`4px solid orange`, position:`absolute`, height:`4px`, left:`0`, right:`0`, bottom:`0`}}/>
           </div>
           :
           undefined
