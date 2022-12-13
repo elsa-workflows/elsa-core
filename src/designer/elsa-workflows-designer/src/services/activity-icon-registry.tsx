@@ -11,7 +11,8 @@ import {
   IfIcon,
   ReadLineIcon, WriteLineIcon,
   RunJavaScriptIcon,
-  HttpEndpointIcon, HttpResponseIcon, HttpRequestIcon
+  HttpEndpointIcon, HttpResponseIcon, HttpRequestIcon,
+  CorrelateIcon
 } from "../components/icons/activities";
 
 export type ActivityType = string;
@@ -39,6 +40,7 @@ export class ActivityIconRegistry {
     this.add('Elsa.FlowJoin', settings => <FlowJoinIcon size={settings?.size}/>);
     this.add('Elsa.FlowNode', settings => <FlowNodeIcon size={settings?.size}/>);
     this.add('Elsa.SendHttpRequest', settings => <HttpRequestIcon size={settings?.size}/>);
+    this.add("Elsa.Correlate", settings => <CorrelateIcon size={settings?.size}/>)
   }
 
   public add(activityType: ActivityType, icon: ActivityIconProducer) {
