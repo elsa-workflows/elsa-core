@@ -28,8 +28,4 @@
         <ProjectReference Include="..\Elsa.Mediator\Elsa.Mediator.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-        <Folder Include="Notifications" />
-    </ItemGroup>
-
 </Project>

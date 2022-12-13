@@ -99,6 +99,10 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseElsaFastEndpoints();
 app.UseHttpActivities();
-app.MapRazorPages();
+
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapFallbackToPage("/Index");
+});
 
 app.Run();

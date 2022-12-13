@@ -20,6 +20,7 @@
       <ProjectReference Include="..\..\modules\Elsa.Persistence.EntityFrameworkCore\Elsa.Persistence.EntityFrameworkCore.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Quartz\Elsa.Quartz.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj" />
+      <ProjectReference Include="..\..\modules\Elsa.Workflows.Designer\Elsa.Workflows.Designer.csproj" />
     </ItemGroup>
 
 </Project>
