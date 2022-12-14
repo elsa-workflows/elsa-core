@@ -524,6 +524,7 @@ export interface WorkflowTestExecuteRequest {
   workflowDefinitionId?: string,
   version?: number,
   signalRConnectionId?: string
+  startActivityId?: string;
 }
 
 export interface WorkflowTestRestartFromActivityRequest {
