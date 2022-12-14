@@ -5,7 +5,7 @@ using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Workflows.Core.Activities;
 
-[Activity("Elsa", "Control Flow", "Set the CorrelationId of the workflow to a given value.")]
+[Activity("Elsa", "Primitives", "Set the CorrelationId of the workflow to a given value.")]
 public class Correlate : Activity
 {
     [JsonConstructor]
@@ -14,9 +14,9 @@ public class Correlate : Activity
     }
     
     /// <summary>
-    /// The text to write.
+    /// The correlation ID to set.
     /// </summary>
-    [Description("An expression that evaluates to the value to store as the correlation ID")]
+    [Description("An expression that evaluates to the value to store as the correlation id")]
     public Input<string> CorrelationId { get; set; } = default!;
     
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
