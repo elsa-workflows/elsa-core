@@ -181,7 +181,7 @@ export class ElsaWorkflowTestPanel {
       const renderEndpointUrl = () => {
         if (!message.activityData || !message.activityData["Path"]) return undefined;
 
-        const endpointUrl = this.serverUrl + '/workflows' + message.activityData["Path"].value + '?correlation=' + message.correlationId;
+        const endpointUrl = this.serverUrl + '/workflows' + message.activityData["Path"] + '?correlation=' + message.correlationId;
 
         return (
           <div>
