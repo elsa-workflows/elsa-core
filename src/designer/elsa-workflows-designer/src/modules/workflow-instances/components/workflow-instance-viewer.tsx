@@ -21,7 +21,7 @@ export class WorkflowInstanceViewer {
   private readonly pluginRegistry: PluginRegistry;
   private readonly eventBus: EventBus;
   private readonly activityNameFormatter: ActivityNameFormatter;
-  private canvas: HTMLElsaCanvasElement;
+  private flowchartElement: HTMLElsaFlowchartElement;
   private container: HTMLDivElement;
 
   constructor() {
@@ -80,8 +80,8 @@ export class WorkflowInstanceViewer {
   }
 
   @Method()
-  public async getCanvas(): Promise<HTMLElsaCanvasElement> {
-    return this.canvas;
+  public async getCanvas(): Promise<HTMLElsaFlowchartElement> {
+    return this.flowchartElement;
   }
 
   @Method()
@@ -99,7 +99,7 @@ export class WorkflowInstanceViewer {
   public async importWorkflow(workflowDefinition: WorkflowDefinition, workflowInstance: WorkflowInstance): Promise<void> {
     this.workflowInstanceState = workflowInstance;
     await this.updateWorkflowDefinition(workflowDefinition);
-    await this.canvas.importGraph(workflowDefinition.root);
+    await this.flowchartElement.import(workflowDefinition.root);
   }
 
   // Updates the workflow definition without importing it into the designer.
@@ -128,14 +128,14 @@ export class WorkflowInstanceViewer {
   }
 
   private getWorkflowInternal = async (): Promise<WorkflowDefinition> => {
-    const root = await this.canvas.exportGraph();
+    const root = await this.flowchartElement.export();
     const workflowDefinition = this.workflowDefinitionState;
     workflowDefinition.root = root;
     return workflowDefinition;
   };
 
   private updateLayout = async () => {
-    await this.canvas.updateLayout();
+    await this.flowchartElement.updateLayout();
   };
 
   private updateContainerLayout = async (panelClassName: string, panelExpanded: boolean) => {
@@ -164,7 +164,7 @@ export class WorkflowInstanceViewer {
           <elsa-workflow-journal workflowDefinition={workflowDefinition} workflowInstance={workflowInstance}/>
         </elsa-panel>
         <elsa-canvas
-          class="absolute" ref={el => this.canvas = el}
+          class="absolute" ref={el => this.flowchartElement = el}
           interactiveMode={false}/>
         <elsa-panel
           class="elsa-workflow-editor-container"

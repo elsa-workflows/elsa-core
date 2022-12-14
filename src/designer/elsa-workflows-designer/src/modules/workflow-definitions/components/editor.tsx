@@ -7,7 +7,7 @@ import {
   ActivityDescriptor,
   ActivitySelectedArgs,
   ChildActivitySelectedArgs,
-  ContainerSelectedArgs,
+  ContainerSelectedArgs, EditChildActivityArgs,
   GraphUpdatedArgs
 } from '../../../models';
 import {ActivityUpdatedArgs} from './activity-properties-editor';
@@ -29,7 +29,7 @@ export class WorkflowDefinitionEditor {
   private readonly eventBus: EventBus;
   private readonly activityNameFormatter: ActivityNameFormatter;
   private readonly portProviderRegistry: PortProviderRegistry;
-  private canvas: HTMLElsaCanvasElement;
+  private flowchart: HTMLElsaFlowchartElement;
   private container: HTMLDivElement;
   private toolbox: HTMLElsaWorkflowDefinitionEditorToolboxElement;
   private readonly emitActivityChangedDebounced: (e: ActivityPropertyChangedEventArgs) => void;
@@ -94,8 +94,8 @@ export class WorkflowDefinitionEditor {
   }
 
   @Method()
-  async getCanvas(): Promise<HTMLElsaCanvasElement> {
-    return this.canvas;
+  async getFlowchart(): Promise<HTMLElsaFlowchartElement> {
+    return this.flowchart;
   }
 
   @Method()
@@ -112,7 +112,10 @@ export class WorkflowDefinitionEditor {
   @Method()
   async importWorkflow(workflowDefinition: WorkflowDefinition): Promise<void> {
     await this.updateWorkflowDefinition(workflowDefinition);
-    await this.canvas.importGraph(workflowDefinition.root);
+    debugger;
+    this.flowchart.silent = true;
+    await this.flowchart.import(workflowDefinition.root);
+    this.flowchart.silent = false;
     await this.eventBus.emit(WorkflowEditorEventTypes.WorkflowDefinition.Imported, this, {workflowDefinition});
   }
 
@@ -125,7 +128,7 @@ export class WorkflowDefinitionEditor {
   @Method()
   async newWorkflow(): Promise<WorkflowDefinition> {
 
-    const newRoot = await this.canvas.newRoot();
+    const newRoot = await this.flowchart.newRoot();
 
     const workflowDefinition: WorkflowDefinition = {
       root: newRoot,
@@ -175,7 +178,8 @@ export class WorkflowDefinitionEditor {
   }
 
   private getWorkflowDefinitionInternal = async (): Promise<WorkflowDefinition> => {
-    const activity: Activity = await this.canvas.exportGraph();
+    debugger;
+    const activity: Activity = await this.flowchart.export();
     const workflowDefinition = this.workflowDefinitionState;
     workflowDefinition.root = activity;
     return workflowDefinition;
@@ -196,7 +200,7 @@ export class WorkflowDefinitionEditor {
   };
 
   private updateLayout = async () => {
-    await this.canvas.updateLayout();
+    await this.flowchart.updateLayout();
   };
 
   private updateContainerLayout = async (panelClassName: string, panelExpanded: boolean) => {
@@ -221,19 +225,19 @@ export class WorkflowDefinitionEditor {
     const json = e.dataTransfer.getData('activity-descriptor');
     const activityDescriptor: ActivityDescriptor = JSON.parse(json);
 
-    await this.canvas.addActivity({
+    await this.flowchart.addActivity({
       descriptor: activityDescriptor,
       x: e.pageX,
       y: e.pageY
     });
   };
 
-  private onZoomToFit = async () => await this.canvas.zoomToFit();
+  private onZoomToFit = async () => await this.flowchart.zoomToFit();
 
-  private onAutoLayout = async (direction: "TB" | "BT" | "LR" | "RL") => await this.canvas.autoLayout(direction);
+  private onAutoLayout = async (direction: "TB" | "BT" | "LR" | "RL") => await this.flowchart.autoLayout(direction);
 
   private onActivityUpdated = async (e: CustomEvent<ActivityUpdatedArgs>) => {
-    await this.canvas.updateActivity({
+    await this.flowchart.updateActivity({
       id: e.detail.newId,
       originalId: e.detail.originalId,
       activity: e.detail.activity
@@ -248,6 +252,11 @@ export class WorkflowDefinitionEditor {
     this.updateModelDebounced();
     this.saveChangesDebounced();
   }
+
+  private onGraphUpdated = async (e: CustomEvent<GraphUpdatedArgs>) => {
+    await this.updateModel();
+    this.saveChangesDebounced();
+  };
 
   onVersionSelected = async (e: CustomEvent<WorkflowDefinition>) => {
     const workflowToView = e.detail;
@@ -286,9 +295,10 @@ export class WorkflowDefinitionEditor {
             onExpandedStateChanged={e => this.onActivityPickerPanelStateChanged(e.detail)}>
             <elsa-workflow-definition-editor-toolbox ref={el => this.toolbox = el}/>
           </elsa-panel>
-          <elsa-canvas
-            class="absolute" ref={el => this.canvas = el}
+          <elsa-flowchart
+            ref={el => this.flowchart = el}
             interactiveMode={true}
+            onGraphUpdated={this.onGraphUpdated}
             onDragOver={this.onDragOver}
             onDrop={this.onDrop}/>
           <elsa-panel

@@ -6,20 +6,18 @@
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
 import { ActivityDefinition, ActivityDefinitionPropsUpdatedArgs, ActivityDefinitionSummary, ActivityDefinitionUpdatedArgs } from "./modules/activity-definitions/models";
-import { ActivityDriverRegistry, ContainerActivityComponent } from "./services";
+import { ActivityDriverRegistry } from "./services";
 import { Activity, ActivityDeletedArgs, ActivitySelectedArgs, ChildActivitySelectedArgs, ContainerSelectedArgs, EditChildActivityArgs, GraphUpdatedArgs, IntellisenseContext, SelectListItem, TabChangedArgs, TabDefinition, Variable, WorkflowInstance, WorkflowInstanceSummary } from "./models";
 import { ActivityUpdatedArgs, DeleteActivityRequestedArgs } from "./modules/workflow-definitions/components/activity-properties-editor";
 import { PublishClickedArgs } from "./modules/activity-definitions/components/publish-button";
 import { Button } from "./components/shared/button-group/models";
-import { AddActivityArgs, RenameActivityArgs, UpdateActivityArgs } from "./components/designer/canvas/canvas";
 import { ActivityInputContext } from "./services/node-input-driver";
 import { ContextMenuAnchorPoint, MenuItem, MenuItemGroup } from "./components/shared/context-menu/models";
 import { DropdownButtonItem, DropdownButtonOrigin } from "./components/shared/dropdown-button/models";
 import { WorkflowDefinition, WorkflowDefinitionSummary } from "./modules/workflow-definitions/models/entities";
-import { Flowchart, FlowchartNavigationItem } from "./modules/flowchart/models";
 import { Graph } from "@antv/x6";
 import { OutNode } from "@antv/layout";
-import { AddActivityArgs as AddActivityArgs1, RenameActivityArgs as RenameActivityArgs1, UpdateActivityArgs as UpdateActivityArgs1 } from "./components/designer/canvas/canvas";
+import { AddActivityArgs, FlowchartNavigationItem, RenameActivityArgs, UpdateActivityArgs } from "./modules/flowchart/models";
 import { ActivityNodeShape } from "./modules/flowchart/shapes";
 import { PanelActionClickArgs, PanelActionDefinition } from "./components/shared/form-panel/models";
 import { ExpressionChangedArs } from "./components/designer/input-control-switch/input-control-switch";
@@ -37,7 +35,7 @@ export namespace Components {
     interface ElsaActivityDefinitionEditor {
         "activityDefinition"?: ActivityDefinition;
         "getActivityDefinition": () => Promise<ActivityDefinition>;
-        "getCanvas": () => Promise<HTMLElsaCanvasElement>;
+        "getFlowchartElement": () => Promise<HTMLElsaFlowchartElement>;
         "importDefinition": (activityDefinition: ActivityDefinition) => Promise<void>;
         "monacoLibPath": string;
         "newActivityDefinition": () => Promise<ActivityDefinition>;
@@ -65,21 +63,6 @@ export namespace Components {
     }
     interface ElsaButtonGroup {
         "buttons": Array<Button>;
-    }
-    interface ElsaCanvas {
-        "addActivity": (args: AddActivityArgs) => Promise<Activity>;
-        "autoLayout": (direction: "TB" | "BT" | "LR" | "RL") => Promise<void>;
-        "exportGraph": () => Promise<Activity>;
-        "getRootComponent": () => Promise<ContainerActivityComponent>;
-        "importGraph": (root: Activity) => Promise<void>;
-        "interactiveMode": boolean;
-        "newRoot": () => Promise<Activity>;
-        "renameActivity": (args: RenameActivityArgs) => Promise<void>;
-        "reset": () => Promise<void>;
-        "scrollToStart": () => Promise<void>;
-        "updateActivity": (args: UpdateActivityArgs) => Promise<void>;
-        "updateLayout": () => Promise<void>;
-        "zoomToFit": () => Promise<void>;
     }
     interface ElsaCheckListInput {
         "inputContext": ActivityInputContext;
@@ -120,18 +103,18 @@ export namespace Components {
         "inputContext": ActivityInputContext;
     }
     interface ElsaFlowchart {
-        "addActivity": (args: AddActivityArgs1) => Promise<Activity>;
+        "addActivity": (args: AddActivityArgs) => Promise<Activity>;
         "autoLayout": (direction: "TB" | "BT" | "LR" | "RL") => Promise<void>;
         "export": () => Promise<Activity>;
-        "getCurrentLevel": () => Promise<Activity>;
         "getGraph": () => Promise<Graph>;
         "import": (root: Activity) => Promise<void>;
         "interactiveMode": boolean;
         "newRoot": () => Promise<Activity>;
-        "renameActivity": (args: RenameActivityArgs1) => Promise<void>;
+        "renameActivity": (args: RenameActivityArgs) => Promise<void>;
         "reset": () => Promise<void>;
         "scrollToStart": () => Promise<void>;
-        "updateActivity": (args: UpdateActivityArgs1) => Promise<void>;
+        "silent": boolean;
+        "updateActivity": (args: UpdateActivityArgs) => Promise<void>;
         "updateLayout": () => Promise<void>;
         "workflowDefinition": WorkflowDefinition;
         "zoomToFit": () => Promise<void>;
@@ -257,7 +240,7 @@ export namespace Components {
     interface ElsaWorkflowDefinitionBrowser {
     }
     interface ElsaWorkflowDefinitionEditor {
-        "getCanvas": () => Promise<HTMLElsaCanvasElement>;
+        "getFlowchart": () => Promise<HTMLElsaFlowchartElement>;
         "getWorkflowDefinition": () => Promise<WorkflowDefinition>;
         "importWorkflow": (workflowDefinition: WorkflowDefinition) => Promise<void>;
         "loadWorkflowVersions": () => Promise<void>;
@@ -297,7 +280,7 @@ export namespace Components {
         "workflowInstance"?: WorkflowInstance;
     }
     interface ElsaWorkflowInstanceViewer {
-        "getCanvas": () => Promise<HTMLElsaCanvasElement>;
+        "getCanvas": () => Promise<HTMLElsaFlowchartElement>;
         "getWorkflow": () => Promise<WorkflowDefinition>;
         "importWorkflow": (workflowDefinition: WorkflowDefinition, workflowInstance: WorkflowInstance) => Promise<void>;
         "monacoLibPath": string;
@@ -480,12 +463,6 @@ declare global {
     var HTMLElsaButtonGroupElement: {
         prototype: HTMLElsaButtonGroupElement;
         new (): HTMLElsaButtonGroupElement;
-    };
-    interface HTMLElsaCanvasElement extends Components.ElsaCanvas, HTMLStencilElement {
-    }
-    var HTMLElsaCanvasElement: {
-        prototype: HTMLElsaCanvasElement;
-        new (): HTMLElsaCanvasElement;
     };
     interface HTMLElsaCheckListInputElement extends Components.ElsaCheckListInput, HTMLStencilElement {
     }
@@ -795,7 +772,6 @@ declare global {
         "elsa-activity-properties-editor": HTMLElsaActivityPropertiesEditorElement;
         "elsa-activity-publish-button": HTMLElsaActivityPublishButtonElement;
         "elsa-button-group": HTMLElsaButtonGroupElement;
-        "elsa-canvas": HTMLElsaCanvasElement;
         "elsa-check-list-input": HTMLElsaCheckListInputElement;
         "elsa-checkbox-input": HTMLElsaCheckboxInputElement;
         "elsa-code-editor-input": HTMLElsaCodeEditorInputElement;
@@ -882,9 +858,6 @@ declare namespace LocalJSX {
     interface ElsaButtonGroup {
         "buttons"?: Array<Button>;
     }
-    interface ElsaCanvas {
-        "interactiveMode"?: boolean;
-    }
     interface ElsaCheckListInput {
         "inputContext"?: ActivityInputContext;
     }
@@ -930,6 +903,7 @@ declare namespace LocalJSX {
         "onActivitySelected"?: (event: ElsaFlowchartCustomEvent<ActivitySelectedArgs>) => void;
         "onContainerSelected"?: (event: ElsaFlowchartCustomEvent<ContainerSelectedArgs>) => void;
         "onGraphUpdated"?: (event: ElsaFlowchartCustomEvent<GraphUpdatedArgs>) => void;
+        "silent"?: boolean;
         "workflowDefinition"?: WorkflowDefinition;
     }
     interface ElsaFormPanel {
@@ -1139,7 +1113,6 @@ declare namespace LocalJSX {
         "elsa-activity-properties-editor": ElsaActivityPropertiesEditor;
         "elsa-activity-publish-button": ElsaActivityPublishButton;
         "elsa-button-group": ElsaButtonGroup;
-        "elsa-canvas": ElsaCanvas;
         "elsa-check-list-input": ElsaCheckListInput;
         "elsa-checkbox-input": ElsaCheckboxInput;
         "elsa-code-editor-input": ElsaCodeEditorInput;
@@ -1203,7 +1176,6 @@ declare module "@stencil/core" {
             "elsa-activity-properties-editor": LocalJSX.ElsaActivityPropertiesEditor & JSXBase.HTMLAttributes<HTMLElsaActivityPropertiesEditorElement>;
             "elsa-activity-publish-button": LocalJSX.ElsaActivityPublishButton & JSXBase.HTMLAttributes<HTMLElsaActivityPublishButtonElement>;
             "elsa-button-group": LocalJSX.ElsaButtonGroup & JSXBase.HTMLAttributes<HTMLElsaButtonGroupElement>;
-            "elsa-canvas": LocalJSX.ElsaCanvas & JSXBase.HTMLAttributes<HTMLElsaCanvasElement>;
             "elsa-check-list-input": LocalJSX.ElsaCheckListInput & JSXBase.HTMLAttributes<HTMLElsaCheckListInputElement>;
             "elsa-checkbox-input": LocalJSX.ElsaCheckboxInput & JSXBase.HTMLAttributes<HTMLElsaCheckboxInputElement>;
             "elsa-code-editor-input": LocalJSX.ElsaCodeEditorInput & JSXBase.HTMLAttributes<HTMLElsaCodeEditorInputElement>;

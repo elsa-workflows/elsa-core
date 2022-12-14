@@ -9,8 +9,6 @@ import {generateUniqueActivityName} from "../../utils/generate-activity-name";
 export function createGraph(
   container: HTMLElement,
   interacting: CellView.Interacting,
-  disableEvents: () => void,
-  enableEvents: (emitWorkflowChanged: boolean) => Promise<void>,
   getAllActivities: () => Array<Activity>
 ): Graph {
 
@@ -104,7 +102,7 @@ export function createGraph(
 
         const targetNode = targetView.cell as Node;
         const targetPort = targetNode.getPort(targetMagnet.getAttribute('port'));
-        
+
         if (sourcePort.type === 'in') {
           return false
         }
@@ -201,7 +199,6 @@ export function createGraph(
   graph.bindKey(['meta+v', 'ctrl+v'], async () => {
     if (!graph.isClipboardEmpty()) {
 
-      disableEvents();
       const cells = graph.paste({offset: 32});
       const activityCells = cells.filter(x => x.shape == 'activity');
       const connectionCells = cells.filter(x => x.shape == 'elsa-edge');
@@ -232,7 +229,6 @@ export function createGraph(
         cell.setData(connection);
       }
 
-      await enableEvents(true);
       graph.cleanSelection();
       graph.select(cells);
 

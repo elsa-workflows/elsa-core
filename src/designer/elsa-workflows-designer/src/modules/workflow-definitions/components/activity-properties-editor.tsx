@@ -225,7 +225,6 @@ export class ActivityPropertiesEditor {
     const isWrapped = inputDescriptor.isWrapped;
     const camelCasePropertyName = camelCase(propertyName);
 
-    debugger;
     if (isWrapped) {
       let input: ActivityInput = activity[camelCasePropertyName];
 

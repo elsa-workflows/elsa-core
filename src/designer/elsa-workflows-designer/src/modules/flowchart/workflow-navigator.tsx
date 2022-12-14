@@ -55,7 +55,6 @@ export class WorkflowNavigator {
       activityDescriptor = descriptorsStore.activityDescriptors.find(x => x.typeName == activity.type);
     } catch (e) {
       alert('Debug this')
-      debugger;
       window.location.reload();
       return;
     }

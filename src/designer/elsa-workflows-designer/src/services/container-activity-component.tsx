@@ -1,5 +1,5 @@
-import {AddActivityArgs, RenameActivityArgs, UpdateActivityArgs} from '../components/designer/canvas/canvas';
 import {Activity} from "../models";
+import {AddActivityArgs, RenameActivityArgs, UpdateActivityArgs} from "../modules/flowchart/models";
 
 export interface ContainerActivityComponent {
   newRoot(): Promise<Activity>;
@@ -13,5 +13,5 @@ export interface ContainerActivityComponent {
   autoLayout(direction: "TB" | "BT" | "LR" | "RL"): Promise<void>;
   scrollToStart(): Promise<void>;
   reset(): Promise<void>;
-  getCurrentLevel(): Promise<Activity>;
+  //getCurrentLevel(): Promise<Activity>;
 }

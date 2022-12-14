@@ -1,9 +1,10 @@
 :root {
-  --workflow-editor-width: 580px;
+  --workflow-editor-width: 480px;
   --activity-picker-width: 300px;
   --activity-editor-height: 200px;
 }
-elsa-canvas {
+elsa-flowchart {
+  position: absolute;
   left: var(--activity-picker-width);
   top: 54px;
   right: var(--workflow-editor-width);
@@ -38,7 +39,7 @@ elsa-panel.panel-state-expanded.elsa-activity-editor-container {
     display: none;
   }
 
-  elsa-canvas {
+  elsa-flowchart {
     left: 0;
   }
 }
@@ -49,7 +50,7 @@ elsa-panel.panel-state-expanded.elsa-activity-editor-container {
     display: none;
   }
 
-  elsa-canvas {
+  elsa-flowchart {
     right: 0;
   }
 }
@@ -61,7 +62,7 @@ elsa-panel.panel-state-expanded.elsa-activity-editor-container {
     display: none;
   }
 
-  elsa-canvas {
+  elsa-flowchart {
     bottom: 0;
   }
 }

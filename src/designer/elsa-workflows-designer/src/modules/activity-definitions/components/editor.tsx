@@ -28,7 +28,7 @@ export class Editor {
   private readonly eventBus: EventBus;
   private readonly activityNameFormatter: ActivityNameFormatter;
   private readonly portProviderRegistry: PortProviderRegistry;
-  private canvas: HTMLElsaCanvasElement;
+  private flowchartElement: HTMLElsaFlowchartElement;
   private container: HTMLDivElement;
   private toolbox: HTMLElsaWorkflowDefinitionEditorToolboxElement;
   private readonly emitActivityChangedDebounced: (e: ActivityPropertyChangedEventArgs) => void;
@@ -91,8 +91,8 @@ export class Editor {
   }
 
   @Method()
-  async getCanvas(): Promise<HTMLElsaCanvasElement> {
-    return this.canvas;
+  async getFlowchartElement(): Promise<HTMLElsaFlowchartElement> {
+    return this.flowchartElement;
   }
 
   @Method()
@@ -109,7 +109,7 @@ export class Editor {
   @Method()
   async importDefinition(activityDefinition: ActivityDefinition): Promise<void> {
     await this.updateActivityDefinition(activityDefinition);
-    await this.canvas.importGraph(activityDefinition.root);
+    await this.flowchartElement.import(activityDefinition.root);
   }
 
   // Updates the workflow definition without importing it into the designer.
@@ -121,7 +121,7 @@ export class Editor {
   @Method()
   async newActivityDefinition(): Promise<ActivityDefinition> {
 
-    const newRoot = await this.canvas.newRoot();
+    const newRoot = await this.flowchartElement.newRoot();
 
     const activityDefinition: ActivityDefinition = {
       root: newRoot,
@@ -159,7 +159,7 @@ export class Editor {
   }
 
   private getActivityDefinitionInternal = async (): Promise<ActivityDefinition> => {
-    const activity: Activity = await this.canvas.exportGraph();
+    const activity: Activity = await this.flowchartElement.export();
     const activityDefinition = this.activityDefinitionState;
     activityDefinition.root = activity;
     return activityDefinition;
@@ -179,7 +179,7 @@ export class Editor {
   };
 
   private updateLayout = async () => {
-    await this.canvas.updateLayout();
+    await this.flowchartElement.updateLayout();
   };
 
   private updateContainerLayout = async (panelClassName: string, panelExpanded: boolean) => {
@@ -204,17 +204,17 @@ export class Editor {
     const json = e.dataTransfer.getData('activity-descriptor');
     const activityDescriptor: ActivityDescriptor = JSON.parse(json);
 
-    await this.canvas.addActivity({
+    await this.flowchartElement.addActivity({
       descriptor: activityDescriptor,
       x: e.pageX,
       y: e.pageY
     });
   };
 
-  private onZoomToFit = async () => await this.canvas.zoomToFit()
+  private onZoomToFit = async () => await this.flowchartElement.zoomToFit()
 
   private onActivityUpdated = async (e: CustomEvent<ActivityUpdatedArgs>) => {
-    await this.canvas.updateActivity({
+    await this.flowchartElement.updateActivity({
       id: e.detail.newId,
       originalId: e.detail.originalId,
       activity: e.detail.activity,
@@ -242,7 +242,7 @@ export class Editor {
           <elsa-workflow-definition-editor-toolbox ref={el => this.toolbox = el}/>
         </elsa-panel>
         <elsa-canvas
-          class="absolute" ref={el => this.canvas = el}
+          class="absolute" ref={el => this.flowchartElement = el}
           interactiveMode={true}
           onDragOver={this.onDragOver}
           onDrop={this.onDrop}/>
