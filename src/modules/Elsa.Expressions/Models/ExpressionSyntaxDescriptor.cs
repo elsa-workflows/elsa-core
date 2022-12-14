@@ -14,7 +14,7 @@ public class ExpressionSyntaxDescriptor
 
 public record ExpressionConstructorContext(JsonElement Element, JsonSerializerOptions SerializerOptions);
 
-public record BlockReferenceConstructorContext(IExpression Expression, string MemoryReferenceId)
+public record BlockReferenceConstructorContext(IExpression Expression)
 {
     public T GetExpression<T>() => (T)Expression;
 }

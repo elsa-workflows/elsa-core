@@ -34,12 +34,6 @@ public class InputJsonConverter<T> : JsonConverter<Input<T>>
         if (!doc.RootElement.TryGetProperty("typeName", out _))
             return default!;
 
-        var memoryReferenceId = doc.RootElement.TryGetProperty("memoryReference", out var memoryReferenceElement) && memoryReferenceElement.ValueKind == JsonValueKind.Object
-            ? memoryReferenceElement.GetProperty("id").GetString()!
-            : memoryReferenceElement.ValueKind == JsonValueKind.String
-                ? memoryReferenceElement.GetString()!
-                : throw new Exception("No input ID specified");
-
         var expressionElement = doc.RootElement.GetProperty("expression");
 
         if (!expressionElement.TryGetProperty("type", out var expressionTypeNameElement))
@@ -53,7 +47,7 @@ public class InputJsonConverter<T> : JsonConverter<Input<T>>
 
         var context = new ExpressionConstructorContext(expressionElement, options);
         var expression = expressionSyntaxDescriptor.CreateExpression(context);
-        var memoryBlockReference = expressionSyntaxDescriptor.CreateBlockReference(new BlockReferenceConstructorContext(expression, memoryReferenceId));
+        var memoryBlockReference = expressionSyntaxDescriptor.CreateBlockReference(new BlockReferenceConstructorContext(expression));
 
         return (Input<T>)Activator.CreateInstance(typeof(Input<T>), expression, memoryBlockReference)!;
     }
