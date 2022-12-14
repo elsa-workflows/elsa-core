@@ -15,3 +15,4 @@ export * from "./read-line";
 export * from "./run-javascript";
 export * from "./timer";
 export * from "./write-line";
+export * from "./correlate";
