@@ -29,7 +29,7 @@ export class NotificationManager {
 
    deleteNotif = (id) => {
      console.log(id);
-     notificationStore.notifications = [...notificationStore.notifications.filter(item => item.id !== id)]
+     notificationStore.notifications = notificationStore.notifications.filter(item => item.id !== id)
   }
 
   handleAddNotification = (e: Notification) => {
