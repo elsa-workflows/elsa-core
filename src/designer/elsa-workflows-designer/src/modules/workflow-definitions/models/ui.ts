@@ -1,4 +1,4 @@
-import {Activity, ActivityDescriptor, InputDescriptor, TabDefinition} from "../../../models";
+import {Activity, ActivityDescriptor, InputDescriptor, PropertyDescriptor, TabDefinition} from "../../../models";
 import {WorkflowDefinition} from "./entities";
 
 export const WorkflowEditorEventTypes = {
@@ -63,4 +63,24 @@ export interface WorkflowDefinitionImportedArgs {
 
 export interface WorkflowEditorReadyArgs {
   workflowEditor: HTMLElsaWorkflowDefinitionEditorElement;
+}
+
+export interface ActivityUpdatedArgs {
+  originalId: string;
+  newId: string;
+  activity: Activity;
+  activityDescriptor: ActivityDescriptor;
+  propertyName?: string;
+  propertyDescriptor?: PropertyDescriptor;
+}
+
+export interface ActivityIdUpdatedArgs {
+  activity: Activity;
+  activityDescriptor: ActivityDescriptor;
+  originalId: string;
+  newId: string;
+}
+
+export interface DeleteActivityRequestedArgs {
+  activity: Activity;
 }

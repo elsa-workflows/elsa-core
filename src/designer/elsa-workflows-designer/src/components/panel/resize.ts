@@ -37,7 +37,7 @@ export function applyResize({ position, isDefault, isHide, size }: ApplyResizePa
   const root = document.querySelector<HTMLElement>(':root');
 
   if (isHide) {
-    root.style.setProperty(positionToCssVariable[position], '0');
+    root.style.setProperty(positionToCssVariable[position], '1px');
     return;
   }
 
