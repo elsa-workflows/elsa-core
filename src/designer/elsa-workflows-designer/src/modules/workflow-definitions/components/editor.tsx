@@ -30,7 +30,6 @@ export class WorkflowDefinitionEditor {
   private container: HTMLDivElement;
   private toolbox: HTMLElsaWorkflowDefinitionEditorToolboxElement;
   private readonly emitActivityChangedDebounced: (e: ActivityPropertyChangedEventArgs) => void;
-  private readonly updateModelDebounced: () => void;
   private readonly saveChangesDebounced: () => void;
   private readonly workflowDefinitionApi: WorkflowDefinitionsApi;
 
@@ -240,7 +239,6 @@ export class WorkflowDefinitionEditor {
   }
 
   private onWorkflowPropsUpdated = (e: CustomEvent<WorkflowDefinitionPropsUpdatedArgs>) => {
-    this.updateModelDebounced();
     this.saveChangesDebounced();
   }
 
