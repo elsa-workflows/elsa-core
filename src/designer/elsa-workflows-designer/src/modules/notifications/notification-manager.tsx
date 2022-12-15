@@ -65,7 +65,7 @@ export class NotificationManager {
                         <div class="flex h-full flex-col overflow-y-scroll bg-white shadow-xl">
                           <div class="p-6">
                             <div class="flex items-start justify-between">
-                              <h2 class="text-lg font-medium text-gray-900" id="slide-over-title">Team</h2>
+                              <h2 class="text-lg font-medium text-gray-900" id="slide-over-title">Notifications</h2>
                               <div class="ml-3 flex h-7 items-center">
                                 <button onClick={() => this.handleToggle()}
                                     type="button"
@@ -96,8 +96,7 @@ export class NotificationManager {
                                     aria-hidden="true"></span>
                             </span>
                                     <div class="ml-4 truncate">
-                                      <p class="truncate text-sm font-medium text-gray-900">Leslie Alexander</p>
-                                      <p class="truncate text-sm text-gray-500">@lesliealexander</p>
+                                      <p class="truncate text-sm text-gray-500">{notif.message}</p>
                                     </div>
                                   </div>
                                 </a>
@@ -123,9 +122,7 @@ export class NotificationManager {
                                       >
                                     <div class="py-1" role="none">
                                       <a href="#" class="text-gray-700 block px-4 py-2 text-sm" role="menuitem"
-                                          id="options-menu-0-item-0">View profile</a>
-                                      <a href="#" class="text-gray-700 block px-4 py-2 text-sm" role="menuitem"
-                                         id="options-menu-0-item-1">Send message</a>
+                                          id="options-menu-0-item-0">Delete notification</a>
                                     </div>
                                   </div>
                                 </div>
