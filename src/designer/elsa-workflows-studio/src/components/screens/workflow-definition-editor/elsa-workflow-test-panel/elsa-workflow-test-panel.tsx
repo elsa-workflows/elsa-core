@@ -23,6 +23,7 @@ export class ElsaWorkflowTestPanel {
   @Prop() workflowTestActivityId: string;
   @Prop() culture: string;
   @Prop() serverUrl: string;
+  @Prop() selectedActivityId?: string;
   @State() hubConnection: HubConnection;
   @State() workflowTestActivityMessages: Array<WorkflowTestActivityMessage> = [];
   @State() workflowStarted: boolean = false;
@@ -109,7 +110,8 @@ export class ElsaWorkflowTestPanel {
     const request: WorkflowTestExecuteRequest = {
       workflowDefinitionId: this.workflowDefinition.definitionId,
       version: this.workflowDefinition.version,
-      signalRConnectionId: this.signalRConnectionId
+      signalRConnectionId: this.signalRConnectionId,
+      startActivityId: this.selectedActivityId
     };
 
     const client = await createElsaClient(this.serverUrl);

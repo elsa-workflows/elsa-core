@@ -400,6 +400,7 @@ export namespace Components {
     }
     interface ElsaWorkflowTestPanel {
         "culture": string;
+        "selectedActivityId"?: string;
         "serverUrl": string;
         "workflowDefinition": WorkflowDefinition;
         "workflowTestActivityId": string;
@@ -1305,6 +1306,7 @@ declare namespace LocalJSX {
     }
     interface ElsaWorkflowTestPanel {
         "culture"?: string;
+        "selectedActivityId"?: string;
         "serverUrl"?: string;
         "workflowDefinition"?: WorkflowDefinition;
         "workflowTestActivityId"?: string;

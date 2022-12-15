@@ -1241,7 +1241,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
         Test
       </elsa-tab-header>,
       <elsa-tab-content tab="test" slot="content">
-        <elsa-workflow-test-panel workflowDefinition={this.workflowDefinition} workflowTestActivityId={this.selectedActivityId} />
+        <elsa-workflow-test-panel workflowDefinition={this.workflowDefinition} workflowTestActivityId={this.selectedActivityId} selectedActivityId={this.selectedActivityId}/>
       </elsa-tab-content>,
     ];
   }
