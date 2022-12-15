@@ -18,7 +18,7 @@ import {
   WorkflowTestActivityMessage,
   WorkflowTestActivityMessageStatus,
 } from '../../../../models';
-import { ActivityStats, createElsaClient, eventBus, featuresDataManager, SaveWorkflowDefinitionRequest } from '../../../../services';
+import { ActivityStats, createElsaClient, eventBus, featuresDataManager, monacoEditorDialogService, SaveWorkflowDefinitionRequest } from '../../../../services';
 import state from '../../../../utils/store';
 import WorkflowEditorTunnel, { WorkflowEditorState } from '../../../../data/workflow-editor';
 import DashboardTunnel from '../../../../data/dashboard';
@@ -676,6 +676,50 @@ export class ElsaWorkflowDefinitionEditorScreen {
           </div>`;
   };
 
+  renderMonacoEditorDialog() {
+    return (
+      <elsa-modal-dialog ref={el => {
+          monacoEditorDialogService.monacoEditorDialog = el;
+        }}>
+          <div slot="content" class="elsa-py-8 elsa-px-4">
+            <elsa-monaco
+              value=""
+              language="javascript"
+              editor-height="400px"
+              single-line={false}
+              onValueChanged={e => {
+                monacoEditorDialogService.currentValue = e.detail.value;
+              }}
+              ref={el => (monacoEditorDialogService.monacoEditor = el)}
+            />
+          </div>
+          <div slot="buttons">
+            <div class="elsa-bg-gray-50 elsa-px-4 elsa-py-3 sm:elsa-px-6 sm:elsa-flex sm:elsa-flex-row-reverse">
+              <button
+                type="button"
+                onClick={() => {
+                  monacoEditorDialogService.save();
+                  monacoEditorDialogService.monacoEditorDialog.hide();
+                }}
+                class="elsa-ml-3 elsa-inline-flex elsa-justify-center elsa-py-2 elsa-px-4 elsa-border elsa-border-transparent elsa-shadow-sm elsa-text-sm elsa-font-medium elsa-rounded-md elsa-text-white elsa-bg-blue-600 hover:elsa-bg-blue-700 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500"
+              >
+                Save
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  monacoEditorDialogService.monacoEditorDialog.hide();
+                }}
+                class="elsa-mt-3 elsa-w-full elsa-inline-flex elsa-justify-center elsa-rounded-md elsa-border elsa-border-gray-300 elsa-shadow-sm elsa-px-4 elsa-py-2 elsa-bg-white elsa-text-base elsa-font-medium elsa-text-gray-700 hover:elsa-bg-gray-50 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500 sm:elsa-mt-0 sm:elsa-ml-3 sm:elsa-w-auto sm:elsa-text-sm"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </elsa-modal-dialog>
+    );
+  }
+
   render() {
     const tunnelState: WorkflowEditorState = {
       serverUrl: this.serverUrl,
@@ -689,6 +733,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
           {this.renderCanvas()}
           {this.renderActivityPicker()}
           {this.renderActivityEditor()}
+          {this.renderMonacoEditorDialog()}
         </WorkflowEditorTunnel.Provider>
       </Host>
     );
