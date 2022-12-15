@@ -7,16 +7,13 @@ import {
   ActivityDescriptor,
   ActivitySelectedArgs,
   ChildActivitySelectedArgs,
-  ContainerSelectedArgs, EditChildActivityArgs,
-  GraphUpdatedArgs
+  ContainerSelectedArgs, GraphUpdatedArgs
 } from '../../../models';
-import {ActivityUpdatedArgs} from './activity-properties-editor';
 import {ActivityDriverRegistry, ActivityNameFormatter, EventBus, PluginRegistry, PortProviderRegistry} from '../../../services';
 import {MonacoEditorSettings} from "../../../services/monaco-editor-settings";
-import {ActivityPropertyChangedEventArgs, WorkflowDefinitionPropsUpdatedArgs, WorkflowDefinitionUpdatedArgs, WorkflowEditorEventTypes} from "../models/ui";
+import {ActivityPropertyChangedEventArgs, WorkflowDefinitionPropsUpdatedArgs, WorkflowDefinitionUpdatedArgs, ActivityUpdatedArgs, WorkflowEditorEventTypes} from "../models/ui";
 import {WorkflowDefinition} from "../models/entities";
 import {WorkflowDefinitionsApi} from "../services/api"
-import WorkflowDefinitionTunnel, {WorkflowDefinitionState} from "../../../state/workflow-definition-state";
 
 @Component({
   tag: 'elsa-workflow-definition-editor',
@@ -43,7 +40,6 @@ export class WorkflowDefinitionEditor {
     this.activityNameFormatter = Container.get(ActivityNameFormatter);
     this.portProviderRegistry = Container.get(PortProviderRegistry);
     this.emitActivityChangedDebounced = debounce(this.emitActivityChanged, 100);
-    this.updateModelDebounced = debounce(this.updateModel, 10);
     this.saveChangesDebounced = debounce(this.saveChanges, 1000);
     this.workflowDefinitionApi = Container.get(WorkflowDefinitionsApi);
   }
@@ -53,7 +49,7 @@ export class WorkflowDefinitionEditor {
   @Event() workflowUpdated: EventEmitter<WorkflowDefinitionUpdatedArgs>
   @State() private workflowDefinitionState: WorkflowDefinition;
   @State() private selectedActivity?: Activity;
-  @State() workflowVersions: Array<WorkflowDefinition> = [];
+  @State() private workflowVersions: Array<WorkflowDefinition> = [];
 
   @Watch('monacoLibPath')
   private handleMonacoLibPath(value: string) {
@@ -89,7 +85,6 @@ export class WorkflowDefinitionEditor {
 
   @Listen('graphUpdated')
   private async handleGraphUpdated(e: CustomEvent<GraphUpdatedArgs>) {
-    await this.updateModel();
     this.saveChangesDebounced();
   }
 
@@ -174,13 +169,13 @@ export class WorkflowDefinitionEditor {
   private renderSelectedObject = () => {
     if (!!this.selectedActivity)
       return <elsa-activity-properties-editor
+        workflowDefinition={this.workflowDefinitionState}
         activity={this.selectedActivity}
         variables={this.workflowDefinitionState.variables}
         onActivityUpdated={e => this.onActivityUpdated(e)}/>;
   }
 
   private getWorkflowDefinitionInternal = async (): Promise<WorkflowDefinition> => {
-    debugger;
     const activity: Activity = await this.flowchart.export();
     const workflowDefinition = this.workflowDefinitionState;
     workflowDefinition.root = activity;
@@ -189,11 +184,6 @@ export class WorkflowDefinitionEditor {
 
   private emitActivityChanged = async (activity: Activity, propertyName: string) => {
     await this.eventBus.emit(WorkflowEditorEventTypes.Activity.PropertyChanged, this, activity, propertyName, this);
-  };
-
-  private updateModel = async (): Promise<void> => {
-    const workflowDefinition = await this.getWorkflowDefinitionInternal();
-    await this.updateWorkflowDefinition(workflowDefinition);
   };
 
   private saveChanges = async (): Promise<void> => {
@@ -245,7 +235,6 @@ export class WorkflowDefinitionEditor {
       activity: e.detail.activity
     });
 
-    await this.updateModel();
     this.emitActivityChangedDebounced({...e.detail, workflowEditor: this.el});
     this.saveChangesDebounced();
   }
@@ -256,7 +245,6 @@ export class WorkflowDefinitionEditor {
   }
 
   private onGraphUpdated = async (e: CustomEvent<GraphUpdatedArgs>) => {
-    await this.updateModel();
     this.saveChangesDebounced();
   };
 

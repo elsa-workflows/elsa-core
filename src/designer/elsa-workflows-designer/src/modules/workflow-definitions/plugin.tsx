@@ -155,7 +155,6 @@ export class WorkflowDefinitionsPlugin implements Plugin {
   };
 
   private onWorkflowUpdated = async (e: CustomEvent<WorkflowDefinitionUpdatedArgs>) => {
-    debugger;
     const updatedWorkflowDefinition = e.detail.workflowDefinition;
 
     await this.saveWorkflowDefinition(updatedWorkflowDefinition, false);

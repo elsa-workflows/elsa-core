@@ -8,26 +8,8 @@ import {ActivityInputContext} from "../../../services/node-input-driver";
 import {CheckboxFormEntry, FormEntry} from "../../../components/shared/forms/form-entry";
 import {isNullOrWhitespace} from "../../../utils";
 import descriptorsStore from "../../../data/descriptors-store";
-
-export interface ActivityUpdatedArgs {
-  originalId: string;
-  newId: string;
-  activity: Activity;
-  activityDescriptor: ActivityDescriptor;
-  propertyName?: string;
-  propertyDescriptor?: PropertyDescriptor;
-}
-
-export interface ActivityIdUpdatedArgs {
-  activity: Activity;
-  activityDescriptor: ActivityDescriptor;
-  originalId: string;
-  newId: string;
-}
-
-export interface DeleteActivityRequestedArgs {
-  activity: Activity;
-}
+import {ActivityUpdatedArgs, DeleteActivityRequestedArgs} from "../models/ui";
+import {WorkflowDefinition} from "../models/entities";
 
 @Component({
   tag: 'elsa-activity-properties-editor',
@@ -41,6 +23,7 @@ export class ActivityPropertiesEditor {
     this.inputDriverRegistry = Container.get(InputDriverRegistry);
   }
 
+  @Prop() workflowDefinition: WorkflowDefinition;
   @Prop() activity?: Activity;
   @Prop() variables: Array<Variable> = [];
 

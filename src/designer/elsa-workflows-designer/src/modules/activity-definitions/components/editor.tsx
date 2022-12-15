@@ -15,7 +15,7 @@ import {ActivityDriverRegistry, ActivityNameFormatter, EventBus, PluginRegistry,
 import {MonacoEditorSettings} from "../../../services/monaco-editor-settings";
 import {ActivityPropertyChangedEventArgs} from "../../workflow-definitions/models/ui";
 import {ActivityDefinition, ActivityDefinitionPropsUpdatedArgs, ActivityDefinitionUpdatedArgs} from "../models";
-import {ActivityIdUpdatedArgs, ActivityUpdatedArgs} from "../../workflow-definitions/components/activity-properties-editor";
+import {ActivityIdUpdatedArgs, ActivityUpdatedArgs} from "../../workflow-definitions/models/ui";
 
 @Component({
   tag: 'elsa-activity-definition-editor',

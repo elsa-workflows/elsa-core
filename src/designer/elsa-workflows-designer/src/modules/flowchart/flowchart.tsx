@@ -5,7 +5,7 @@ import {Edge, Graph, Model, Node, NodeView, Point} from '@antv/x6';
 import './shapes';
 import './ports';
 import {ActivityNodeShape} from './shapes';
-import {Activity, ActivityDeletedArgs, ActivityDescriptor, ActivitySelectedArgs, ContainerSelectedArgs, EditChildActivityArgs, GraphUpdatedArgs, Port} from '../../models';
+import {Activity, ActivityDeletedArgs, ActivityDescriptor, ActivitySelectedArgs, ContainerSelectedArgs, EditChildActivityArgs, GraphUpdatedArgs, Port, WorkflowUpdatedArgs} from '../../models';
 import {createGraph} from './graph-factory';
 import {AddActivityArgs, Connection, Flowchart, FlowchartModel, FlowchartNavigationItem, FlowchartPathItem, RenameActivityArgs, UpdateActivityArgs} from './models';
 import {NodeFactory} from "./node-factory";
@@ -23,6 +23,7 @@ import {DagreLayout, OutNode} from '@antv/layout';
 import {adjustPortMarkupByNode, rebuildGraph} from '../../utils/graph';
 import {WorkflowDefinition} from "../workflow-definitions/models/entities";
 import FlowchartTunnel, {FlowchartState} from "./state";
+import {WorkflowDefinitionUpdatedArgs} from "../workflow-definitions/models/ui";
 
 const FlowchartTypeName = 'Elsa.Flowchart';
 
@@ -55,6 +56,7 @@ export class FlowchartComponent {
   @Event() activityDeleted: EventEmitter<ActivityDeletedArgs>;
   @Event() containerSelected: EventEmitter<ContainerSelectedArgs>;
   @Event() graphUpdated: EventEmitter<GraphUpdatedArgs>;
+  @Event() workflowUpdated: EventEmitter<WorkflowUpdatedArgs>;
 
   @State() private activityLookup: Hash<Activity> = {};
   @State() private activities: Array<Activity> = [];
@@ -179,7 +181,6 @@ export class FlowchartComponent {
     graph.addNode(node, {merge: true});
 
     adjustPortMarkupByNode(graph.getNodes().find(n => n.id == node.id));
-    debugger;
     await this.updateModel();
     return activity;
   }
@@ -256,8 +257,6 @@ export class FlowchartComponent {
     const portName = e.detail.port.name;
     const activityId = e.detail.parentActivityId;
     const item: FlowchartPathItem = {activityId, portName};
-
-    debugger;
 
     // Push child prop path.
     this.path = [...this.path, item];
@@ -472,7 +471,6 @@ export class FlowchartComponent {
   };
 
   private updateLookups = () => {
-    debugger;
     const activityNodes = flatten(walkActivities(this.workflowDefinition.root));
     this.activities = activityNodes.map(x => x.activity);
     this.activityLookup = createActivityLookup(activityNodes);
@@ -496,7 +494,10 @@ export class FlowchartComponent {
 
   private onNodeClick = async (e: PositionEventArgs<JQuery.ClickEvent>) => {
     const node = e.node as ActivityNodeShape;
-    const activity = node.data as Activity;
+    const activityCopy = node.activity;
+
+    // X6 nodes store a copy of the data, so we need to get the original activity from the workflow definition.
+    const activity = this.activityLookup[activityCopy.id];
 
     const args: ActivitySelectedArgs = {
       activity: activity,
@@ -650,7 +651,6 @@ export class FlowchartComponent {
     const path = this.path;
     const index = path.indexOf(item);
 
-    debugger;
     this.path = path.slice(0, index + 1);
     const childFlowchart = await this.getCurrentFlowchartActivity();
 

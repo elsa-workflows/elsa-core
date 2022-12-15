@@ -7,14 +7,14 @@
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
 import { ActivityDefinition, ActivityDefinitionPropsUpdatedArgs, ActivityDefinitionSummary, ActivityDefinitionUpdatedArgs } from "./modules/activity-definitions/models";
 import { ActivityDriverRegistry } from "./services";
-import { Activity, ActivityDeletedArgs, ActivitySelectedArgs, ChildActivitySelectedArgs, ContainerSelectedArgs, EditChildActivityArgs, GraphUpdatedArgs, IntellisenseContext, SelectListItem, TabChangedArgs, TabDefinition, Variable, WorkflowInstance, WorkflowInstanceSummary } from "./models";
-import { ActivityUpdatedArgs, DeleteActivityRequestedArgs } from "./modules/workflow-definitions/components/activity-properties-editor";
+import { Activity, ActivityDeletedArgs, ActivitySelectedArgs, ChildActivitySelectedArgs, ContainerSelectedArgs, EditChildActivityArgs, GraphUpdatedArgs, IntellisenseContext, SelectListItem, TabChangedArgs, TabDefinition, Variable, WorkflowInstance, WorkflowInstanceSummary, WorkflowUpdatedArgs } from "./models";
+import { WorkflowDefinition, WorkflowDefinitionSummary } from "./modules/workflow-definitions/models/entities";
+import { ActivityUpdatedArgs, DeleteActivityRequestedArgs, WorkflowDefinitionPropsUpdatedArgs, WorkflowDefinitionUpdatedArgs } from "./modules/workflow-definitions/models/ui";
 import { PublishClickedArgs } from "./modules/activity-definitions/components/publish-button";
 import { Button } from "./components/shared/button-group/models";
 import { ActivityInputContext } from "./services/node-input-driver";
 import { ContextMenuAnchorPoint, MenuItem, MenuItemGroup } from "./components/shared/context-menu/models";
 import { DropdownButtonItem, DropdownButtonOrigin } from "./components/shared/dropdown-button/models";
-import { WorkflowDefinition, WorkflowDefinitionSummary } from "./modules/workflow-definitions/models/entities";
 import { Graph } from "@antv/x6";
 import { OutNode } from "@antv/layout";
 import { AddActivityArgs, FlowchartPathItem, RenameActivityArgs, UpdateActivityArgs } from "./modules/flowchart/models";
@@ -27,7 +27,6 @@ import { ModalType } from "./components/shared/modal-dialog/modal-type";
 import { MonacoLib, MonacoValueChangedArgs } from "./components/shared/monaco-editor/monaco-editor";
 import { PagerData } from "./components/shared/pager/pager";
 import { PanelPosition, PanelStateChangedArgs } from "./components/panel/models";
-import { WorkflowDefinitionPropsUpdatedArgs, WorkflowDefinitionUpdatedArgs } from "./modules/workflow-definitions/models/ui";
 import { PublishClickedArgs as PublishClickedArgs1 } from "./modules/workflow-definitions/components/publish-button";
 export namespace Components {
     interface ElsaActivityDefinitionBrowser {
@@ -57,6 +56,7 @@ export namespace Components {
         "hide": () => Promise<void>;
         "show": () => Promise<void>;
         "variables": Array<Variable>;
+        "workflowDefinition": WorkflowDefinition;
     }
     interface ElsaActivityPublishButton {
         "publishing": boolean;
@@ -846,6 +846,7 @@ declare namespace LocalJSX {
         "onActivityUpdated"?: (event: ElsaActivityPropertiesEditorCustomEvent<ActivityUpdatedArgs>) => void;
         "onDeleteActivityRequested"?: (event: ElsaActivityPropertiesEditorCustomEvent<DeleteActivityRequestedArgs>) => void;
         "variables"?: Array<Variable>;
+        "workflowDefinition"?: WorkflowDefinition;
     }
     interface ElsaActivityPublishButton {
         "onExportClicked"?: (event: ElsaActivityPublishButtonCustomEvent<any>) => void;
@@ -903,6 +904,7 @@ declare namespace LocalJSX {
         "onActivitySelected"?: (event: ElsaFlowchartCustomEvent<ActivitySelectedArgs>) => void;
         "onContainerSelected"?: (event: ElsaFlowchartCustomEvent<ContainerSelectedArgs>) => void;
         "onGraphUpdated"?: (event: ElsaFlowchartCustomEvent<GraphUpdatedArgs>) => void;
+        "onWorkflowUpdated"?: (event: ElsaFlowchartCustomEvent<WorkflowUpdatedArgs>) => void;
         "silent"?: boolean;
         "workflowDefinition"?: WorkflowDefinition;
     }

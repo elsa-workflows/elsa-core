@@ -81,7 +81,6 @@ export class WorkflowNavigator {
     const isLastItem = index == this.items.length - 1;
 
     const onItemClick = (e: MouseEvent, item: FlowchartPathItem) => {
-      debugger;
       e.preventDefault();
       this.onItemClick(item);
     }
@@ -96,7 +95,6 @@ export class WorkflowNavigator {
         port = ports.find(x => x.name == item.portName);
     }
 
-    debugger;
     if (isLastItem) {
       listElements.push(
         <li>
