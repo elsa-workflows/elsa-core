@@ -380,6 +380,7 @@ export class FlowchartComponent {
     currentFlowchart.activities = model.activities;
     currentFlowchart.connections = model.connections;
     currentFlowchart.start = model.start;
+    this.updateLookups();
   }
 
   private exportInternal = (): Activity => {
