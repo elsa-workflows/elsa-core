@@ -17,7 +17,7 @@ import { DropdownButtonItem, DropdownButtonOrigin } from "./components/shared/dr
 import { WorkflowDefinition, WorkflowDefinitionSummary } from "./modules/workflow-definitions/models/entities";
 import { Graph } from "@antv/x6";
 import { OutNode } from "@antv/layout";
-import { AddActivityArgs, FlowchartNavigationItem, RenameActivityArgs, UpdateActivityArgs } from "./modules/flowchart/models";
+import { AddActivityArgs, FlowchartPathItem, RenameActivityArgs, UpdateActivityArgs } from "./modules/flowchart/models";
 import { ActivityNodeShape } from "./modules/flowchart/shapes";
 import { PanelActionClickArgs, PanelActionDefinition } from "./components/shared/form-panel/models";
 import { ExpressionChangedArs } from "./components/designer/input-control-switch/input-control-switch";
@@ -107,7 +107,6 @@ export namespace Components {
         "autoLayout": (direction: "TB" | "BT" | "LR" | "RL") => Promise<void>;
         "export": () => Promise<Activity>;
         "getGraph": () => Promise<Graph>;
-        "import": (root: Activity) => Promise<void>;
         "interactiveMode": boolean;
         "newRoot": () => Promise<Activity>;
         "renameActivity": (args: RenameActivityArgs) => Promise<void>;
@@ -115,6 +114,7 @@ export namespace Components {
         "scrollToStart": () => Promise<void>;
         "silent": boolean;
         "updateActivity": (args: UpdateActivityArgs) => Promise<void>;
+        "updateGraph": () => Promise<void>;
         "updateLayout": () => Promise<void>;
         "workflowDefinition": WorkflowDefinition;
         "zoomToFit": () => Promise<void>;
@@ -294,7 +294,7 @@ export namespace Components {
         "workflowInstance": WorkflowInstance;
     }
     interface ElsaWorkflowNavigator {
-        "items": Array<FlowchartNavigationItem>;
+        "items": Array<FlowchartPathItem>;
         "workflowDefinition": WorkflowDefinition;
     }
     interface ElsaWorkflowPublishButton {
@@ -1089,8 +1089,8 @@ declare namespace LocalJSX {
         "workflowInstance"?: WorkflowInstance;
     }
     interface ElsaWorkflowNavigator {
-        "items"?: Array<FlowchartNavigationItem>;
-        "onNavigate"?: (event: ElsaWorkflowNavigatorCustomEvent<FlowchartNavigationItem>) => void;
+        "items"?: Array<FlowchartPathItem>;
+        "onNavigate"?: (event: ElsaWorkflowNavigatorCustomEvent<FlowchartPathItem>) => void;
         "workflowDefinition"?: WorkflowDefinition;
     }
     interface ElsaWorkflowPublishButton {

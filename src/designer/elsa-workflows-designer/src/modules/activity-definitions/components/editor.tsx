@@ -109,7 +109,7 @@ export class Editor {
   @Method()
   async importDefinition(activityDefinition: ActivityDefinition): Promise<void> {
     await this.updateActivityDefinition(activityDefinition);
-    await this.flowchartElement.import(activityDefinition.root);
+    //await this.flowchartElement.import(activityDefinition.root);
   }
 
   // Updates the workflow definition without importing it into the designer.

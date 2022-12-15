@@ -99,7 +99,7 @@ export class WorkflowInstanceViewer {
   public async importWorkflow(workflowDefinition: WorkflowDefinition, workflowInstance: WorkflowInstance): Promise<void> {
     this.workflowInstanceState = workflowInstance;
     await this.updateWorkflowDefinition(workflowDefinition);
-    await this.flowchartElement.import(workflowDefinition.root);
+    //await this.flowchartElement.import(workflowDefinition.root);
   }
 
   // Updates the workflow definition without importing it into the designer.
@@ -163,8 +163,8 @@ export class WorkflowInstanceViewer {
           onExpandedStateChanged={e => this.onActivityPickerPanelStateChanged(e.detail)}>
           <elsa-workflow-journal workflowDefinition={workflowDefinition} workflowInstance={workflowInstance}/>
         </elsa-panel>
-        <elsa-canvas
-          class="absolute" ref={el => this.flowchartElement = el}
+        <elsa-flowchart
+          ref={el => this.flowchartElement = el}
           interactiveMode={false}/>
         <elsa-panel
           class="elsa-workflow-editor-container"

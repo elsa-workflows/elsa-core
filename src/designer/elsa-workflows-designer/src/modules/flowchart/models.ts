@@ -18,6 +18,11 @@ export interface FlowchartNavigationItem {
   index: number;
 }
 
+export interface FlowchartPathItem {
+  activityId: string;
+  portName: string;
+}
+
 export interface FlowchartModel {
   activities: Array<Activity>;
   connections: Array<Connection>;
