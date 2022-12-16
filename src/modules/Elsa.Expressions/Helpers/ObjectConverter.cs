@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Dahomey.Json;
@@ -29,13 +30,16 @@ public static class ObjectConverter
         options.PropertyNameCaseInsensitive = true;
         options.Converters.Add(new JsonStringEnumConverter());
 
+        var underlyingTargetType = Nullable.GetUnderlyingType(targetType) ?? targetType;
+
         if (value is DahomeyJsonNode { ValueKind: JsonValueKind.Object } dahomyJsonObject)
             return ToObject(dahomyJsonObject, targetType, options);
 
-        if (value is JsonElement { ValueKind: JsonValueKind.Object or JsonValueKind.Array } jsonObject)
-            return jsonObject.Deserialize(targetType, options);
+        if (value is JsonElement jsonNumber && jsonNumber.ValueKind == JsonValueKind.Number && underlyingTargetType == typeof(string))
+            return jsonNumber.ToString().ConvertTo(underlyingTargetType);
 
-        var underlyingTargetType = Nullable.GetUnderlyingType(targetType) ?? targetType;
+        if (value is JsonElement jsonObject)
+            return jsonObject.Deserialize(targetType, options);
 
         if (targetType == typeof(object))
             return value;
@@ -47,7 +51,7 @@ public static class ObjectConverter
 
         if (underlyingSourceType == underlyingTargetType)
             return value;
-        
+
         var targetTypeConverter = TypeDescriptor.GetConverter(underlyingTargetType);
 
         if (targetTypeConverter.CanConvertFrom(underlyingSourceType))
@@ -67,7 +71,7 @@ public static class ObjectConverter
 
             if (underlyingSourceType == typeof(int))
                 return Enum.ToObject(underlyingTargetType, value);
-            
+
             if (underlyingSourceType == typeof(double))
                 return Enum.ToObject(underlyingTargetType, Convert.ChangeType(value, typeof(int)));
         }
@@ -89,7 +93,7 @@ public static class ObjectConverter
 
         if (value is string s && string.IsNullOrWhiteSpace(s))
             return null;
-        
+
         try
         {
             return Convert.ChangeType(value, underlyingTargetType);
@@ -102,7 +106,7 @@ public static class ObjectConverter
 
     private static object? ToObject(this DahomeyJsonNode node, Type type, JsonSerializerOptions? options = null)
     {
-        using var arrayBufferWriter = new Dahomey.Json.Util.ArrayBufferWriter<byte>();
+        using var arrayBufferWriter = new ArrayBufferWriter<byte>();
         return JsonSerializer.Deserialize(node.ToString(), type, options);
     }
 }
