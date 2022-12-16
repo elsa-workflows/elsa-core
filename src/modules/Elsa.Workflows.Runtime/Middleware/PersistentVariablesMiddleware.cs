@@ -1,3 +1,5 @@
+using Elsa.Expressions.Helpers;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Core.Services;
@@ -24,35 +26,41 @@ public class PersistentVariablesMiddleware : WorkflowExecutionMiddleware
         // Load persistent variables.
         var dataDriveContext = new DataDriveContext(context, cancellationToken);
         
-        var persistentVariables = context.Workflow.Variables
-            .Where(x => x.StorageDriverId != null)
-            .Select(x => new PersistentVariableState(x.Name, x.StorageDriverId!))
-            .ToList();
+        var persistentVariables = context.Workflow.Variables.Where(x => x.StorageDriverId != null).ToList();
         
-        foreach (var variableState in persistentVariables)
+        foreach (var variable in persistentVariables)
         {
-            var drive = _storageDriverManager.GetDriveById(variableState.StorageDriverId);
+            var drive = _storageDriverManager.GetDriveById(variable.StorageDriverId!);
             if (drive == null) continue;
-            var id = $"{context.Id}:{variableState.Name}";
+            var id = $"{context.Id}:{variable.Name}";
             var value = await drive.ReadAsync(id, dataDriveContext);
             if (value == null) continue;
-            var variable = new Variable(variableState.Name, value);
+            var parsedValue = ParseVariableValue(variable, value);
             context.MemoryRegister.Declare(variable);
+            variable.Set(context.MemoryRegister, parsedValue);
         }
 
         // Invoke next middleware.
         await Next(context);
         
         // Persist variables.
-        
-        foreach (var variableState in persistentVariables)
+        foreach (var variable in persistentVariables)
         {
-            var drive = _storageDriverManager.GetDriveById(variableState.StorageDriverId);
+            var drive = _storageDriverManager.GetDriveById(variable.StorageDriverId!);
             if (drive == null) continue;
-            if (!context.MemoryRegister.TryGetBlock(variableState.Name, out var block)) continue;
+            if (!context.MemoryRegister.TryGetBlock(variable.Name, out var block)) continue;
             if (block.Value == null) continue;
-            var id = $"{context.Id}:{variableState.Name}";
+            var id = $"{context.Id}:{variable.Name}";
             await drive.WriteAsync(id, block.Value, dataDriveContext);
         }
+    }
+
+    private object ParseVariableValue(Variable variable, object value)
+    {
+        if (!variable.GetType().GenericTypeArguments.Any())
+            return value;
+
+        var type = variable.GetType().GenericTypeArguments.First();
+        return value.ConvertTo(type)!;
     }
 }

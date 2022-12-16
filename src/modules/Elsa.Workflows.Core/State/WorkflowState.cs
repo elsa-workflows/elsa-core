@@ -1,4 +1,6 @@
+using System.Text.Json.Serialization;
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Serialization.Converters;
 
 namespace Elsa.Workflows.Core.State;
 
@@ -56,14 +58,10 @@ public class WorkflowState
     /// A flattened list of <see cref="ActivityExecutionContextState"/> objects, representing the various active "call stacks" of the workflow.
     /// </summary>
     public ICollection<ActivityExecutionContextState> ActivityExecutionContexts { get; set; } = new List<ActivityExecutionContextState>();
-    
+
     /// <summary>
     /// A global property bag that contains properties set by application code and/or activities.
     /// </summary>
-    public IDictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
-
-    /// <summary>
-    /// A list of variables that can be persisted.
-    /// </summary>
-    public ICollection<PersistentVariableState> PersistentVariables { get; set; } = new List<PersistentVariableState>();
+    [JsonConverter(typeof(PropertyBagConverter))]
+    public PropertyBag Properties { get; set; } = new();
 }

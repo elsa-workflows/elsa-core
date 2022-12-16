@@ -20,7 +20,6 @@ namespace Elsa.Persistence.EntityFrameworkCore.Modules.Runtime
             builder.Ignore(x => x.Properties);
             builder.Ignore(x => x.ActivityOutput);
             builder.Ignore(x => x.CompletionCallbacks);
-            builder.Ignore(x => x.PersistentVariables);
             builder.Ignore(x => x.ActivityExecutionContexts);
             builder.Property<string>("Data");
             builder.Property<DateTimeOffset>("CreatedAt");

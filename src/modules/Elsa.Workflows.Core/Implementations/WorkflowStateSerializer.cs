@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Reflection;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
@@ -9,13 +8,6 @@ namespace Elsa.Workflows.Core.Implementations;
 
 public class WorkflowStateSerializer : IWorkflowStateSerializer
 {
-    private readonly IServiceProvider _serviceProvider;
-
-    public WorkflowStateSerializer(IServiceProvider serviceProvider)
-    {
-        _serviceProvider = serviceProvider;
-    }
-
     public WorkflowState SerializeState(WorkflowExecutionContext workflowExecutionContext)
     {
         var state = new WorkflowState
@@ -32,7 +24,6 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
         SerializeProperties(state, workflowExecutionContext);
         SerializeCompletionCallbacks(state, workflowExecutionContext);
         SerializeActivityExecutionContexts(state, workflowExecutionContext);
-        SerializePersistentVariables(state, workflowExecutionContext);
 
         return state;
     }
@@ -46,17 +37,16 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
         DeserializeProperties(state, workflowExecutionContext);
         DeserializeActivityExecutionContexts(state, workflowExecutionContext);
         DeserializeCompletionCallbacks(state, workflowExecutionContext);
-        //DeserializePersistentVariables(state, workflowExecutionContext);
     }
 
     private void SerializeProperties(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
     {
-        state.Properties = workflowExecutionContext.Properties;
+        state.Properties = new PropertyBag(workflowExecutionContext.Properties);
     }
 
     private void DeserializeProperties(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
     {
-        workflowExecutionContext.Properties = state.Properties;
+        workflowExecutionContext.Properties = state.Properties.Properties;
     }
 
     private void GetOutput(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
@@ -179,16 +169,6 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
         }
 
         workflowExecutionContext.ActivityExecutionContexts = activityExecutionContexts;
-    }
-
-    private void SerializePersistentVariables(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
-    {
-        var workflow = workflowExecutionContext.Workflow;
-
-        state.PersistentVariables = workflow.Variables
-            .Where(x => x.StorageDriverId != null)
-            .Select(x => new PersistentVariableState(x.Name, x.StorageDriverId!))
-            .ToList();
     }
 
     private Dictionary<string, object> GetOutputFrom(ActivityNode activityNode) =>
