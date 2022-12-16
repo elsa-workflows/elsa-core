@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using Elsa.Common.Extensions;
+using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -137,7 +138,7 @@ public class WorkflowExecutionContext
     public ActivityNode FindNodeById(string nodeId) => NodeIdLookup[nodeId];
     public ActivityNode FindNodeByActivity(IActivity activity) => NodeActivityLookup[activity];
     public IActivity FindActivityById(string activityId) => FindNodeById(activityId).Activity;
-    public T? GetProperty<T>(string key) => Properties.TryGetValue(key, out var value) ? (T?)value : default(T);
+    public T? GetProperty<T>(string key) => Properties.TryGetValue(key, out var value) ? value.ConvertTo<T>() : default;
     public void SetProperty<T>(string key, T value) => Properties[key] = value!;
 
     public T UpdateProperty<T>(string key, Func<T?, T> updater)
