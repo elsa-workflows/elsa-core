@@ -108,6 +108,7 @@ public class Flowchart : Container
                 await flowchartActivityExecutionContext.CompleteActivityAsync();
         }
 
+        flowchartActivityExecutionContext.SetProperty(ScopeProperty, scope);
         context.StopPropagation();
     }
 }
