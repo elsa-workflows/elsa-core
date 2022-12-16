@@ -39,7 +39,12 @@ public static class ObjectConverter
             return jsonNumber.ToString().ConvertTo(underlyingTargetType);
 
         if (value is JsonElement jsonObject)
+        {
+            if (jsonObject.ValueKind == JsonValueKind.String && underlyingTargetType != typeof(string))
+                return jsonObject.GetString().ConvertTo(underlyingTargetType);
+            
             return jsonObject.Deserialize(targetType, options);
+        }
 
         if (targetType == typeof(object))
             return value;
