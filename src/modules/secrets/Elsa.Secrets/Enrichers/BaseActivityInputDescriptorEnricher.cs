@@ -25,7 +25,6 @@ namespace Elsa.Secrets.Enrichers
 
             activityInputDescriptor.UIHint = ActivityInputUIHints.Dropdown;
             activityInputDescriptor.DefaultSyntax = SyntaxNames.Secret;
-            activityInputDescriptor.SupportedSyntaxes = activityInputDescriptor.SupportedSyntaxes.Concat(new[] { SyntaxNames.Secret }).Distinct().ToList();
 
             var provider = (IActivityPropertyOptionsProvider)ActivatorUtilities.GetServiceOrCreateInstance(_serviceProvider, OptionsProvider);
             activityInputDescriptor.Options = provider.GetOptions(propertyInfo);
