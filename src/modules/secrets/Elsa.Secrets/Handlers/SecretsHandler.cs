@@ -16,6 +16,6 @@ public class SecretsHandler : IExpressionHandler {
     }
 
     public async Task<object?> EvaluateAsync(string expression, Type returnType, ActivityExecutionContext context, CancellationToken cancellationToken) {
-        return await _secretsProvider.GetSecretById(expression);
+        return await _secretsProvider.GetSecretByName(expression);
     }
 }

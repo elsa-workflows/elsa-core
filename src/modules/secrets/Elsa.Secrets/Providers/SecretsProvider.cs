@@ -29,6 +29,17 @@ namespace Elsa.Secrets.Providers
             return null;
         }
 
+        public async Task<string> GetSecretByName(string name) {
+            var secret = await _secretsManager.GetSecretByName(name);
+
+            var formatter = _valueFormatters.FirstOrDefault(x => x.Type == secret?.Type);
+
+            if (formatter != null)
+                return await formatter.FormatSecretValue(secret);
+
+            return null;
+        }
+
         public async Task<ICollection<string>> GetSecrets(string type)
         {
             var secrets = await _secretsManager.GetSecrets(type);
@@ -38,7 +49,7 @@ namespace Elsa.Secrets.Providers
         public async Task<ICollection<(string, string)>> GetSecretsForSelectListAsync(string type)
         {
             var secrets = await _secretsManager.GetSecrets(type);
-            return secrets.Select(x => (x.Name ?? x.DisplayName, x.Id)).ToArray();
+            return secrets.Select(x => (x.Name ?? x.DisplayName, x.Name)).ToArray();
         }
     }
 }

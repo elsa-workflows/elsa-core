@@ -25,6 +25,13 @@ namespace Elsa.Secrets.Manager
             return secret;
         }
 
+        public async Task<Secret> GetSecretByName(string name, CancellationToken cancellationToken = default) {
+            var specification = new SecretsNameSpecification(name);
+            var secret = await _secretsStore.FindAsync(specification, cancellationToken: cancellationToken);
+
+            return secret;
+        }
+
         public async Task<IEnumerable<Secret>> GetSecrets(CancellationToken cancellationToken = default)
         {
             var specification = Specification<Secret>.Identity;
