@@ -11,6 +11,8 @@ namespace Elsa.Secrets.Providers
         /// <param name="type">Type of secrets to retrieve.</param>
         /// <returns></returns>
         Task<ICollection<string>> GetSecrets(string type);
+        Task<string> GetSecretById(string id);
+        Task<string> GetSecretByName(string name);
         /// <summary>
         /// Retrieve single secret by name for specific type.
         /// </summary>

@@ -18,7 +18,7 @@ import {
   WorkflowTestActivityMessage,
   WorkflowTestActivityMessageStatus,
 } from '../../../../models';
-import { ActivityStats, createElsaClient, eventBus, featuresDataManager, SaveWorkflowDefinitionRequest } from '../../../../services';
+import { ActivityStats, createElsaClient, eventBus, featuresDataManager, monacoEditorDialogService, SaveWorkflowDefinitionRequest } from '../../../../services';
 import state from '../../../../utils/store';
 import WorkflowEditorTunnel, { WorkflowEditorState } from '../../../../data/workflow-editor';
 import DashboardTunnel from '../../../../data/dashboard';
@@ -94,6 +94,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
   helpDialog: HTMLElsaModalDialogElement;
   activityContextMenu: HTMLDivElement;
   componentCustomButton: HTMLDivElement;
+  confirmDialog: HTMLElsaConfirmDialogElement;
 
   //connectionContextMenu: HTMLDivElement;
 
@@ -133,7 +134,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
       this.importing = false;
       this.imported = true;
       setTimeout(() => (this.imported = false), 500);
-      await eventBus.emit(EventTypes.WorkflowImported, this, this.workflowDefinition);
+      await eventBus.emit(EventTypes.WorkflowImported, this, this.workflowModel);
     } catch (e) {
       console.error(e);
       this.importing = false;
@@ -213,6 +214,25 @@ export class ElsaWorkflowDefinitionEditorScreen {
         this.designer = this.el.querySelector('elsa-designer-tree') as HTMLElsaDesignerTreeElement;
       }
       this.designer.model = this.workflowModel;
+    }
+  }
+
+  componentDidRender() {
+    if (this.el && this.componentCustomButton) {
+      let modalX = this.activityContextMenuTestState.x + 64;
+      let modalY = this.activityContextMenuTestState.y - 256;
+
+      // Fit the modal to the canvas bounds
+      const canvasBounds = this.el?.getBoundingClientRect();
+      const modalBounds = this.componentCustomButton.getBoundingClientRect();
+      const modalWidth = modalBounds?.width;
+      const modalHeight = modalBounds?.height;
+      modalX = Math.min(canvasBounds.width, modalX + modalWidth + 32) - modalWidth - 32;
+      modalY = Math.min(canvasBounds.height, modalY + modalHeight) - modalHeight - 32;
+      modalY = Math.max(0, modalY);
+
+      this.componentCustomButton.style.left = `${modalX}px`;
+      this.componentCustomButton.style.top = `${modalY}px`;
     }
   }
 
@@ -468,6 +488,18 @@ export class ElsaWorkflowDefinitionEditorScreen {
     await eventBus.emit(EventTypes.ShowWorkflowSettings);
   }
 
+  async onDeleteClicked() {
+    const t = this.t;
+    const result = await this.confirmDialog.show(t('DeleteConfirmationModel.Title'), t('DeleteConfirmationModel.Message'));
+
+    if (!result)
+      return;
+
+    const elsaClient = await createElsaClient(this.serverUrl);
+    await elsaClient.workflowDefinitionsApi.delete(this.workflowDefinition.definitionId, {allVersions: true});
+    this.history.push(`${this.basePath}/workflow-definitions`, {});
+  }
+
   async onPublishClicked() {
     await this.publishWorkflow();
   }
@@ -644,6 +676,50 @@ export class ElsaWorkflowDefinitionEditorScreen {
           </div>`;
   };
 
+  renderMonacoEditorDialog() {
+    return (
+      <elsa-modal-dialog ref={el => {
+          monacoEditorDialogService.monacoEditorDialog = el;
+        }}>
+          <div slot="content" class="elsa-py-8 elsa-px-4">
+            <elsa-monaco
+              value=""
+              language="javascript"
+              editor-height="400px"
+              single-line={false}
+              onValueChanged={e => {
+                monacoEditorDialogService.currentValue = e.detail.value;
+              }}
+              ref={el => (monacoEditorDialogService.monacoEditor = el)}
+            />
+          </div>
+          <div slot="buttons">
+            <div class="elsa-bg-gray-50 elsa-px-4 elsa-py-3 sm:elsa-px-6 sm:elsa-flex sm:elsa-flex-row-reverse">
+              <button
+                type="button"
+                onClick={() => {
+                  monacoEditorDialogService.save();
+                  monacoEditorDialogService.monacoEditorDialog.hide();
+                }}
+                class="elsa-ml-3 elsa-inline-flex elsa-justify-center elsa-py-2 elsa-px-4 elsa-border elsa-border-transparent elsa-shadow-sm elsa-text-sm elsa-font-medium elsa-rounded-md elsa-text-white elsa-bg-blue-600 hover:elsa-bg-blue-700 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500"
+              >
+                Save
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  monacoEditorDialogService.monacoEditorDialog.hide();
+                }}
+                class="elsa-mt-3 elsa-w-full elsa-inline-flex elsa-justify-center elsa-rounded-md elsa-border elsa-border-gray-300 elsa-shadow-sm elsa-px-4 elsa-py-2 elsa-bg-white elsa-text-base elsa-font-medium elsa-text-gray-700 hover:elsa-bg-gray-50 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500 sm:elsa-mt-0 sm:elsa-ml-3 sm:elsa-w-auto sm:elsa-text-sm"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </elsa-modal-dialog>
+    );
+  }
+
   render() {
     const tunnelState: WorkflowEditorState = {
       serverUrl: this.serverUrl,
@@ -657,6 +733,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
           {this.renderCanvas()}
           {this.renderActivityPicker()}
           {this.renderActivityEditor()}
+          {this.renderMonacoEditorDialog()}
         </WorkflowEditorTunnel.Provider>
       </Host>
     );
@@ -729,6 +806,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
           </div>
         </div>
         {this.renderTestActivityMenu()}
+        <elsa-confirm-dialog ref={el => this.confirmDialog = el} culture={this.culture}/>
       </div>
     );
   }
@@ -844,7 +922,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
           {collection.map(filteredData, (v, k) => (
             <div class="elsa-ml-4">
               <p class="elsa-text-base elsa-font-medium elsa-text-gray-900">{k}</p>
-              <pre class="elsa-mt-1 elsa-text-sm elsa-text-gray-500 elsa-overflow-x-auto">{v}</pre>
+              <pre class="elsa-mt-1 elsa-text-sm elsa-text-gray-500 elsa-overflow-x-auto" style={{ "max-width": "30rem"}}>{v}</pre>
             </div>
           ))}
           {hasBody ? renderComponentCustomButton() : undefined}
@@ -891,7 +969,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
         }}
         ref={el => (this.componentCustomButton = el)}
       >
-        <div class="elsa-rounded-lg elsa-shadow-lg elsa-ring-1 elsa-ring-black elsa-ring-opacity-5 elsa-overflow-hidden">{!!message ? renderMessage() : renderLoader()}</div>
+        <div class="elsa-rounded-lg elsa-shadow-lg elsa-ring-1 elsa-ring-black elsa-ring-opacity-5 elsa-overflow-x-hidden elsa-overflow-y-auto" style={{ "max-height": "700px" }}>{!!message ? renderMessage() : renderLoader()}</div>
       </div>
     );
   };
@@ -1117,6 +1195,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
         onRevertClicked={() => this.onRevertClicked()}
         onExportClicked={() => this.onExportClicked()}
         onImportClicked={e => this.onImportClicked(e.detail)}
+        onDeleteClicked={e => this.onDeleteClicked()}
         culture={this.culture}
       />
     );
@@ -1162,7 +1241,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
         Test
       </elsa-tab-header>,
       <elsa-tab-content tab="test" slot="content">
-        <elsa-workflow-test-panel workflowDefinition={this.workflowDefinition} workflowTestActivityId={this.selectedActivityId} />
+        <elsa-workflow-test-panel workflowDefinition={this.workflowDefinition} workflowTestActivityId={this.selectedActivityId} selectedActivityId={this.selectedActivityId}/>
       </elsa-tab-content>,
     ];
   }

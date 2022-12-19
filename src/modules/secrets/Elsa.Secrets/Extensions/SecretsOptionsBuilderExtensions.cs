@@ -1,3 +1,4 @@
+using Elsa.Expressions;
 using Elsa.Options;
 using Elsa.Secrets.Enrichers;
 using Elsa.Secrets.Handlers;
@@ -18,10 +19,14 @@ namespace Elsa.Secrets.Extensions
                 .AddSingleton<ISecretValueFormatter, MsSqlSecretValueFormatter>()
                 .AddSingleton<ISecretValueFormatter, PostgreSqlSecretValueFormatter>()
                 .AddSingleton<ISecretValueFormatter, AuthorizationHeaderSecretValueFormatter>()
+                .AddSingleton<ISecretValueFormatter, OAuth2SecretValueFormatter>()
                 .AddScoped<ISecretsManager, SecretsManager>()
                 .AddScoped<ISecretsProvider, SecretsProvider>()
                 .Decorate<ISecretsStore, EventPublishingSecretsStore>()
                 .AddNotificationHandlersFrom<DescribingActivityTypeHandler>();
+
+            elsaOptions.Services
+                .TryAddProvider<IExpressionHandler, SecretsHandler>(ServiceLifetime.Scoped);
 
             return elsaOptions;
         }

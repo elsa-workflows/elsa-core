@@ -8,7 +8,7 @@ namespace Elsa.Persistence.MongoDb.Serializers
     public class TypeSerializer : IBsonSerializer<Type>
     {
         public static TypeSerializer Instance { get; } = new();
-        public Type ValueType => typeof(Variables);
+        public Type ValueType => typeof(Type);
         public void Serialize(BsonSerializationContext context, BsonSerializationArgs args, object value) => Serialize(context, args, (Type) value);
 
         public void Serialize(BsonSerializationContext context, BsonSerializationArgs args, Type value)

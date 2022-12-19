@@ -54,11 +54,17 @@ export class ElsaDropdownProperty {
       this.selectList = await getSelectListItems(this.serverUrl, { options: options } as ActivityPropertyDescriptor);
 
       if (this.currentValue == undefined) {
-        const firstOption: any = this.selectList.items[0];
+        const defaultValue = this.propertyDescriptor.defaultValue;
+        if(defaultValue) {
+          this.currentValue = defaultValue;
+        }
+        else {
+          const firstOption: any = this.selectList.items[0];
 
-        if (firstOption) {
-          const optionIsObject = typeof (firstOption) == 'object';
-          this.currentValue = optionIsObject ? firstOption.value : firstOption.toString();
+          if (firstOption) {
+            const optionIsObject = typeof (firstOption) == 'object';
+            this.currentValue = optionIsObject ? firstOption.value : firstOption.toString();
+          }
         }
       }
 
@@ -66,11 +72,17 @@ export class ElsaDropdownProperty {
       this.selectList = await getSelectListItems(this.serverUrl, this.propertyDescriptor);
 
       if (this.currentValue == undefined) {
-        const firstOption: any = this.selectList.items[0];
+        const defaultValue = this.propertyDescriptor.defaultValue;
+        if(defaultValue) {
+          this.currentValue = defaultValue;
+        }
+        else {
+          const firstOption: any = this.selectList.items[0];
 
-        if (firstOption) {
-          const optionIsObject = typeof (firstOption) == 'object';
-          this.currentValue = optionIsObject ? firstOption.value : firstOption.toString();
+          if (firstOption) {
+            const optionIsObject = typeof (firstOption) == 'object';
+            this.currentValue = optionIsObject ? firstOption.value : firstOption.toString();
+          }
         }
       }
     }
@@ -105,12 +117,20 @@ export class ElsaDropdownProperty {
 
     this.selectList = await getSelectListItems(this.serverUrl, { options: options } as ActivityPropertyDescriptor);
 
-    const firstOption: any = this.selectList.items[0];
+    
+    
     let currentSelectList = await awaitElement('#' + this.propertyDescriptor.name);
 
-    if (firstOption) {
-      const optionIsObject = typeof (firstOption) == 'object';
-      this.currentValue = optionIsObject ? firstOption.value : firstOption.toString();
+    const defaultValue = this.propertyDescriptor.defaultValue;
+    if(defaultValue) {
+      this.currentValue = defaultValue;
+    }
+    else {
+      const firstOption: any = this.selectList.items[0];
+      if (firstOption) {
+        const optionIsObject = typeof (firstOption) == 'object';
+        this.currentValue = optionIsObject ? firstOption.value : firstOption.toString();
+      }
     }
 
     // Dispatch change event so that dependent dropdown elements refresh.

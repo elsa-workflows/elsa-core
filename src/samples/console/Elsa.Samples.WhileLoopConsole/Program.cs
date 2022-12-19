@@ -25,7 +25,7 @@ namespace Elsa.Samples.WhileLoopConsole
             var workflowRunner = services.GetRequiredService<IBuildsAndStartsWorkflow>();
 
             // Execute the workflow.
-            await workflowRunner.BuildAndStartWorkflowAsync(new WhileLoopWorkflow(3));
+            await workflowRunner.BuildAndStartWorkflowAsync(new BreakWhileLoopWorkflow());
         }
     }
 }

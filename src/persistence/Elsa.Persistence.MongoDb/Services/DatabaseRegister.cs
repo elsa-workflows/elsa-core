@@ -1,5 +1,6 @@
 using System;
 using Elsa.Models;
+using Elsa.Persistence.MongoDb.Options;
 using Elsa.Persistence.MongoDb.Serializers;
 using Elsa.Services.Models;
 using Microsoft.Extensions.Logging;
@@ -11,19 +12,19 @@ namespace Elsa.Persistence.MongoDb.Services
 {
     public static class DatabaseRegister
     {
-        public static void RegisterMapsAndSerializers(ILogger logger = null)
+        public static void RegisterMapsAndSerializers(ElsaMongoDbOptions mongoDbOptions, ILogger logger = null)
         {
             // In unit tests, the method is called several times, which throws an exception because the entity is already registered
             // If an error is thrown, the remaining registrations are no longer processed
-            var firstPass = Map();
+            var firstPass = Map(mongoDbOptions, logger);
 
             if (firstPass == false)
                 return;
 
-            RegisterSerializers(logger);
+            RegisterSerializers(mongoDbOptions, logger);
         }
 
-        private static bool Map()
+        private static bool Map(ElsaMongoDbOptions mongoDbOptions, ILogger logger)
         {
             if (BsonClassMap.IsClassMapRegistered(typeof(Entity)))
                 return false;
@@ -38,13 +39,19 @@ namespace Elsa.Persistence.MongoDb.Services
 
                 BsonClassMap.RegisterClassMap<WorkflowDefinition>(cm =>
                 {
-                    cm.MapProperty(p => p.Variables).SetSerializer(VariablesSerializer.Instance);
+                    if (!mongoDbOptions.DoNotRegisterVariablesSerializer)
+                    {
+                        cm.MapProperty(p => p.Variables).SetSerializer(VariablesSerializer.Instance);
+                    }
                     cm.AutoMap();
                 });
 
                 BsonClassMap.RegisterClassMap<WorkflowInstance>(cm =>
                 {
-                    cm.MapProperty(p => p.Variables).SetSerializer(VariablesSerializer.Instance);
+                    if (!mongoDbOptions.DoNotRegisterVariablesSerializer)
+                    {
+                        cm.MapProperty(p => p.Variables).SetSerializer(VariablesSerializer.Instance);
+                    }
                     cm.AutoMap();
                 });
 
@@ -52,59 +59,36 @@ namespace Elsa.Persistence.MongoDb.Services
                 BsonClassMap.RegisterClassMap<WorkflowExecutionLogRecord>(cm => cm.AutoMap());
                 BsonClassMap.RegisterClassMap<WorkflowOutputReference>(cm => cm.AutoMap());
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                logger?.LogError(ex, "Unable to map internal class with MongoDbSeriazlier");
                 return false;
             }
 
             return true;
         }
 
-        private static void RegisterSerializers(ILogger logger = null)
+        private static void RegisterSerializers(ElsaMongoDbOptions mongoDbOptions, ILogger logger = null)
+        {
+            if (!mongoDbOptions.DoNotRegisterVariablesSerializer)
+            {
+                RegisterSerializer(VariablesSerializer.Instance, logger);
+            }
+            RegisterSerializer(JObjectSerializer.Instance, logger);
+            RegisterSerializer(ObjectSerializer.Instance, logger);
+            RegisterSerializer(TypeSerializer.Instance, logger);
+            RegisterSerializer(new InstantSerializer(), logger);
+        }
+
+        private static void RegisterSerializer<T>(IBsonSerializer<T> serializer, ILogger logger)
         {
             try
             {
-                BsonSerializer.RegisterSerializer(VariablesSerializer.Instance);
+                BsonSerializer.RegisterSerializer(serializer);
             }
             catch (BsonSerializationException ex)
             {
-                logger?.LogWarning(ex, "Couldn't register {serializer_name}", nameof(VariablesSerializer));
-            }
-
-            try
-            {
-                BsonSerializer.RegisterSerializer(JObjectSerializer.Instance);
-            }
-            catch (BsonSerializationException ex)
-            {
-                logger?.LogWarning(ex, "Couldn't register {serializer_name}", nameof(JObjectSerializer));
-            }
-
-            try
-            {
-                BsonSerializer.RegisterSerializer(ObjectSerializer.Instance);
-            }
-            catch (BsonSerializationException ex)
-            {
-                logger?.LogWarning(ex, "Couldn't register {serializer_name}", nameof(ObjectSerializer));
-            }
-
-            try
-            {
-                BsonSerializer.RegisterSerializer(TypeSerializer.Instance);
-            }
-            catch (BsonSerializationException ex)
-            {
-                logger?.LogWarning(ex, "Couldn't register {serializer_name}", nameof(TypeSerializer));
-            }
-
-            try
-            {
-                BsonSerializer.RegisterSerializer(new InstantSerializer());
-            }
-            catch (BsonSerializationException ex)
-            {
-                logger?.LogWarning(ex, "Couldn't register {serializer_name}", nameof(InstantSerializer));
+                logger?.LogWarning(ex, "Couldn't register {serializer_name}", serializer.GetType());
             }
         }
     }

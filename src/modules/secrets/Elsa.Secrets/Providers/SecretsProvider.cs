@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System;
 using Elsa.Secrets.Manager;
+using Elsa.Secrets.Models;
 using Elsa.Secrets.ValueFormatters;
 using Microsoft.Extensions.Logging;
 
@@ -19,6 +20,30 @@ namespace Elsa.Secrets.Providers
             _secretsManager = secretsManager;
             _valueFormatters = valueFormatters;
             _logger = logger;
+        }
+
+        public async Task<string> GetSecretById(string id)
+        {
+            var secret = await _secretsManager.GetSecretById(id);
+
+            var formatter = _valueFormatters.FirstOrDefault(x => x.Type == secret?.Type);
+
+            if (formatter != null)
+                return await formatter.FormatSecretValue(secret);
+
+            return null;
+        }
+
+        public async Task<string> GetSecretByName(string name)
+        {
+            var secret = await _secretsManager.GetSecretByName(name);
+
+            var formatter = _valueFormatters.FirstOrDefault(x => x.Type == secret?.Type);
+
+            if (formatter != null)
+                return await formatter.FormatSecretValue(secret);
+
+            return null;
         }
 
         public async Task<ICollection<string>> GetSecrets(string type)

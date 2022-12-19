@@ -110,6 +110,7 @@ export namespace Components {
         "editorHeight": string;
         "expression": string;
         "language": string;
+        "opensModal": boolean;
         "padding": string;
         "serverUrl": string;
         "setExpression": (value: string) => Promise<void>;
@@ -401,6 +402,7 @@ export namespace Components {
     }
     interface ElsaWorkflowTestPanel {
         "culture": string;
+        "selectedActivityId"?: string;
         "serverUrl": string;
         "workflowDefinition": WorkflowDefinition;
         "workflowTestActivityId": string;
@@ -1014,6 +1016,7 @@ declare namespace LocalJSX {
         "expression"?: string;
         "language"?: string;
         "onExpressionChanged"?: (event: CustomEvent<string>) => void;
+        "opensModal"?: boolean;
         "padding"?: string;
         "serverUrl"?: string;
         "singleLineMode"?: boolean;
@@ -1286,6 +1289,7 @@ declare namespace LocalJSX {
     }
     interface ElsaWorkflowPublishButton {
         "culture"?: string;
+        "onDeleteClicked"?: (event: CustomEvent<any>) => void;
         "onExportClicked"?: (event: CustomEvent<any>) => void;
         "onImportClicked"?: (event: CustomEvent<File>) => void;
         "onPublishClicked"?: (event: CustomEvent<any>) => void;
@@ -1306,6 +1310,7 @@ declare namespace LocalJSX {
     }
     interface ElsaWorkflowTestPanel {
         "culture"?: string;
+        "selectedActivityId"?: string;
         "serverUrl"?: string;
         "workflowDefinition"?: WorkflowDefinition;
         "workflowTestActivityId"?: string;

@@ -146,6 +146,25 @@ export class ElsaWorkflowInstanceViewerScreen {
     }
   }
 
+  componentDidRender() {
+    if (this.el && this.contextMenu) {
+      let modalX = this.activityContextMenuState.x + 64;
+      let modalY = this.activityContextMenuState.y - 256;
+
+      // Fit the modal to the canvas bounds
+      const canvasBounds = this.el?.getBoundingClientRect();
+      const modalBounds = this.contextMenu.getBoundingClientRect();
+      const modalWidth = modalBounds?.width;
+      const modalHeight = modalBounds?.height;
+      modalX = Math.min(canvasBounds.width, modalX + modalWidth + 32) - modalWidth - 32;
+      modalY = Math.min(canvasBounds.height, modalY + modalHeight) - modalHeight - 32;
+      modalY = Math.max(0, modalY);
+
+      this.contextMenu.style.left = `${modalX}px`;
+      this.contextMenu.style.top = `${modalY}px`;
+    }
+  }
+
   async loadActivityDescriptors() {
     const client = await createElsaClient(this.serverUrl);
     state.activityDescriptors = await client.activitiesApi.list();
