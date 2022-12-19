@@ -36,7 +36,10 @@ namespace Elsa.Activities.Http
         private readonly IEnumerable<IHttpResponseContentReader> _parsers;
         private readonly string? _defaultContentParserName;
 
-        public SendHttpRequest(IHttpClientFactory httpClientFactory, IEnumerable<IHttpResponseContentReader> parsers, IOptions<HttpActivityOptions> options)
+        public SendHttpRequest(
+            IHttpClientFactory httpClientFactory,
+            IEnumerable<IHttpResponseContentReader> parsers,
+            IOptions<HttpActivityOptions> options)
         {
             _httpClient = httpClientFactory.CreateClient(nameof(SendHttpRequest));
             _parsers = parsers;

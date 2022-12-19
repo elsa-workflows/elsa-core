@@ -1,14 +1,11 @@
+using System.Threading;
+using System.Threading.Tasks;
 using Elsa.Secrets.Extensions;
 using Elsa.Secrets.Persistence;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
-namespace Elsa.Secrets.Api.Endpoints
+namespace Elsa.Secrets.Api.Endpoints.Secrets
 {
     [ApiController]
     [ApiVersion("1")]
