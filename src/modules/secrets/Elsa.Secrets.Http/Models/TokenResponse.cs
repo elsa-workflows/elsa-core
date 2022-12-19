@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
 
-namespace Elsa.Secrets.Models;
+namespace Elsa.Secrets.Http.Models;
 
 public class TokenResponse {
     [JsonProperty("token_type")]
