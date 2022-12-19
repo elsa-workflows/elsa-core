@@ -5,7 +5,7 @@ using Elsa.Activities.MassTransit.Consumers;
 using Elsa.Activities.MassTransit.Options;
 using Elsa.Options;
 using MassTransit;
-using MassTransit.ConsumeConfigurators;
+using MassTransit.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Activities.MassTransit.Extensions
@@ -65,12 +65,11 @@ namespace Elsa.Activities.MassTransit.Extensions
 
         public static void ConfigureWorkflowConsumer<TMessage>(
             this IReceiveEndpointConfigurator configurator,
-            IServiceProvider provider,
+            IRegistrationContext context,
             Action<IConsumerConfigurator<WorkflowConsumer<TMessage>>>? configure = null)
             where TMessage : class
         {
-            provider.GetRequiredService<IRegistration>().ConfigureConsumer(configurator, configure);
-
+            configurator.ConfigureConsumer(context, configure);
             EndpointConvention.Map<TMessage>(configurator.InputAddress);
         }
 
