@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Design;
 using Elsa.Events;
+using Elsa.Expressions;
 using Elsa.Metadata;
 using Elsa.Secrets.Enrichers;
 using Elsa.Secrets.Providers;
@@ -35,8 +36,10 @@ namespace Elsa.Secrets.Handlers
                 if (descriptor == null) continue;
 
                 descriptor.UIHint = ActivityInputUIHints.Dropdown;
+                if (secretValue!.ApplySecretsSyntax)
+                    descriptor.DefaultSyntax = SyntaxNames.Secret;
 
-                var secrets = await secretsProvider.GetSecretsDictionaryAsync(secretValue!.Type);
+                var secrets = await secretsProvider.GetSecretsDictionaryAsync(secretValue.Type);
                 var items = secrets.Select(x => new SelectListItem(x.Key, x.Value)).ToList();
                 items.Insert(0, new SelectListItem("", "empty"));
                 descriptor.Options = new SelectList { Items = items };

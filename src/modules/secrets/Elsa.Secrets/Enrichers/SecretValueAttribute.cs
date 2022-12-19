@@ -14,6 +14,11 @@ namespace Elsa.Secrets.Enrichers
         public string Type { get; }
 
         /// <summary>
+        /// Sets the DefaultSyntax value for the ActivityInput to <see cref="Elsa.Expressions.SyntaxNames.Secret">Secrets</see>
+        /// </summary>
+        public bool ApplySecretsSyntax { get; set;  } = true;
+
+        /// <summary>
         /// 
         /// </summary>
         /// <param name="type">Secret Type (Ex: MSSQLServer, MySQLServer, AMPQ, etc...)</param>

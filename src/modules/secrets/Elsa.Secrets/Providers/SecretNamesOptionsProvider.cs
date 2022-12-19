@@ -12,7 +12,7 @@ namespace Elsa.Secrets.Providers
     /// Options provider to list only secret names.
     /// </summary>
     /// <remarks>
-    /// Input value is then used within an activity to call <see cref="ISecretsProvider.GetSecrets(string, string)">ISecretsProvider.GetSecrets(type,name)</see>,
+    /// Input value is then used within an activity to call <see cref="ISecretsProvider.GetSecret(string, string)">ISecretsProvider.GetSecrets(type,name)</see>,
     /// so that the secret stays stored in secret store and not workflow definition.
     /// </remarks>
     public class SecretNamesOptionsProvider : IActivityPropertyOptionsProvider

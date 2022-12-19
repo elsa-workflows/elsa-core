@@ -22,7 +22,7 @@ namespace Elsa.Secrets.Providers
             _logger = logger;
         }
 
-        public async Task<string> GetSecretById(string id)
+        public async Task<string?> GetSecretById(string id)
         {
             var secret = await _secretsManager.GetSecretById(id);
 
@@ -34,7 +34,7 @@ namespace Elsa.Secrets.Providers
             return null;
         }
 
-        public async Task<string> GetSecretByName(string name)
+        public async Task<string?> GetSecretByName(string name)
         {
             var secret = await _secretsManager.GetSecretByName(name);
 
@@ -53,12 +53,12 @@ namespace Elsa.Secrets.Providers
             var formatter = _valueFormatters.FirstOrDefault(x => x.Type == type);
 
             if (formatter != null)
-                return secrets.Select(x => formatter.FormatSecretValue(x)).ToArray();
+                return secrets.Select(x => formatter.FormatSecretValue(x).Result).ToArray();
 
             return new List<string>();
         }
 
-        public async Task<string?> GetSecrets(string type, string name)
+        public async Task<string?> GetSecret(string type, string name)
         {
             var secrets = await _secretsManager.GetSecrets(type);
 
@@ -66,7 +66,7 @@ namespace Elsa.Secrets.Providers
 
             if (formatter != null)
                 return secrets.Where(x => x.Name?.Equals(name, StringComparison.InvariantCultureIgnoreCase) == true && x.Type?.Equals(type, StringComparison.InvariantCultureIgnoreCase) == true)
-                    .Select(x => formatter.FormatSecretValue(x)).FirstOrDefault();
+                    .Select(x => formatter.FormatSecretValue(x).Result).FirstOrDefault();
 
             return null;
         }
@@ -80,7 +80,7 @@ namespace Elsa.Secrets.Providers
             try
             {
                 if (formatter != null)
-                    return secrets.ToDictionary(x => x.Name ?? x.DisplayName ?? x.Id, x => formatter.FormatSecretValue(x));
+                    return secrets.ToDictionary(x => x.Name ?? x.DisplayName ?? x.Id, x => formatter.FormatSecretValue(x).Result);
             }
             catch (Exception ex)
             {
