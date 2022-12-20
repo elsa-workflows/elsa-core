@@ -3,7 +3,7 @@ import { Container } from 'typedi';
 import notificationStore from './notification-store';
 import { EventBus } from '../../services';
 import { Notyf, NotyfNotification } from 'notyf';
-import { Notification } from './models';
+import { NotificationType } from './models';
 import { NotificationEventTypes } from './event-types';
 
 @Component({
@@ -21,10 +21,10 @@ export class NotificationManager {
   constructor() {
     this.notyf = new Notyf({ types: [{ type: 'regular', duration: 3000 }] });
 
-    this.eventBus = Container.get(EventBus);
-    this.eventBus.on(NotificationEventTypes.Add, this.handleAddNotification);
-    this.eventBus.on(NotificationEventTypes.Update, this.handleUpdateNotification);
-    this.eventBus.on(NotificationEventTypes.Toggle, this.handleToggle);
+    // this.eventBus = Container.get(EventBus);
+    // this.eventBus.on(NotificationEventTypes.Add, this.handleAddNotification);
+    // this.eventBus.on(NotificationEventTypes.Update, this.handleUpdateNotification);
+    // this.eventBus.on(NotificationEventTypes.Toggle, this.handleToggle);
   }
 
    deleteNotif = (id) => {
@@ -32,20 +32,20 @@ export class NotificationManager {
      notificationStore.notifications = notificationStore.notifications.filter(item => item.id !== id)
   }
 
-  handleAddNotification = (e: Notification) => {
-    if (!this.isOpened) {
-      this.notyfs.set(e.id, this.notyf.success({ message: e.message, type: 'regular', duration: 400 }));
-    }
-    notificationStore.notifications = [e, ...notificationStore.notifications];
-  };
+  //handleAddNotification = (e: NotificationType) => {
+    // if (!this.isOpened) {
+    //   this.notyfs.set(e.id, this.notyf.success({ message: e.message, type: 'regular', duration: 400 }));
+    // }
+    //notificationStore.notifications = [e, ...notificationStore.notifications];
+  //};
 
-  handleUpdateNotification = (e: Notification) => {
-    if (!this.isOpened) {
-      this.notyf.dismiss(this.notyfs.get(e.id));
-      this.notyfs.set(e.id, this.notyf.success({ message: e.message, type: 'regular', duration: 4000 }));
-    }
-    notificationStore.notifications = [e, ...notificationStore.notifications];
-  };
+  //handleUpdateNotification = (e: NotificationType) => {
+    //if (!this.isOpened) {
+      //this.notyf.dismiss(this.notyfs.get(e.id));
+      //this.notyfs.set(e.id, this.notyf.success({ message: e.message, type: 'regular', duration: 4000 }));
+    //}
+    //notificationStore.notifications = [e, ...notificationStore.notifications];
+  //};
 
   handleToggle = () => {
     if (!this.isOpened) {
@@ -61,40 +61,9 @@ export class NotificationManager {
     return (
 
         <div>
-          {notifications && <div class='flex w-full flex-col items-center space-y-4 sm:items-end  z-30'>
-            {notifications.map(item => (
-                <div
-                    class="pointer-events-auto w-full max-w-sm rounded-lg  z-30 bg-white shadow-lg ring-1 ring-black ring-opacity-5">
-                  <div class="p-4  z-30">
-                    <div class="flex items-start  z-30">
-                      <div class="flex-shrink-0  z-30">
-                        <svg class="h-6 w-6 text-green-400  z-30" xmlns="http://www.w3.org/2000/svg" fill="none"
-                             viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-                          <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                      </div>
-                      <div class="ml-3 w-0 flex-1 pt-0.5  z-30">
-                        <p class="text-sm font-medium text-gray-900">{item.title}</p>
-                        <p class="mt-1 text-sm text-gray-500">{item.text}</p>
-                      </div>
-                      <div class="ml-4 flex flex-shrink-0 z-30">
-                        <button
-                                type="button"
-                                class="inline-flex rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
-                          <span class="sr-only">Close</span>
-                          <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
-                               fill="currentColor" aria-hidden="true">
-                            <path
-                                d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"/>
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+          {notifications && notifications.map(item => (
+              <elsa-awhile-notifications notification={item}></elsa-awhile-notifications>
             ))}
-          </div>}
               <div     data-transition-enter="transform transition ease-in-out duration-500 sm:duration-700"
                        data-transition-enter-start="translate-x-full"
                        data-transition-leave="transform transition ease-in-out duration-500 sm:duration-700"

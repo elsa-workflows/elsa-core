@@ -1,23 +1,16 @@
 import notificationStore from "./notification-store";
-
-
-
-interface Notification {
-    id?: number | any;
-    title: string;
-    text: string;
-}
+import {NotificationType} from "./models"
 
 export class NotificationService {
     constructor() {
     }
 
-    static createNotification = (notification: Notification ): Notification => {
+    static createNotification = (notification: NotificationType ): NotificationType => {
         notificationStore.notifications = [...notificationStore.notifications, notification]
         return notification;
     }
 
-   static updateNotification = (notification: Notification, obj: Notification) => {
+   static updateNotification = (notification: NotificationType, obj: NotificationType) => {
        console.log(notification);
        const notifIndex = notificationStore.notifications.findIndex(item => item.id === notification.id)
 

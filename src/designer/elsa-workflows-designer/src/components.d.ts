@@ -10,6 +10,7 @@ import { ActivityDriverRegistry, ContainerActivityComponent } from "./services";
 import { Activity, ActivityDeletedArgs, ActivitySelectedArgs, ChildActivitySelectedArgs, ContainerSelectedArgs, EditChildActivityArgs, GraphUpdatedArgs, IntellisenseContext, SelectListItem, TabChangedArgs, TabDefinition, Variable, WorkflowInstance, WorkflowInstanceSummary } from "./models";
 import { ActivityUpdatedArgs, DeleteActivityRequestedArgs } from "./modules/workflow-definitions/components/activity-properties-editor";
 import { PublishClickedArgs } from "./modules/activity-definitions/components/publish-button";
+import { NotificationType } from "./modules/notifications/models";
 import { Button } from "./components/shared/button-group/models";
 import { AddActivityArgs, RenameActivityArgs, UpdateActivityArgs } from "./components/designer/canvas/canvas";
 import { ActivityInputContext } from "./services/node-input-driver";
@@ -62,6 +63,9 @@ export namespace Components {
     }
     interface ElsaActivityPublishButton {
         "publishing": boolean;
+    }
+    interface ElsaAwhileNotifications {
+        "notification": NotificationType;
     }
     interface ElsaButtonGroup {
         "buttons": Array<Button>;
@@ -475,6 +479,12 @@ declare global {
         prototype: HTMLElsaActivityPublishButtonElement;
         new (): HTMLElsaActivityPublishButtonElement;
     };
+    interface HTMLElsaAwhileNotificationsElement extends Components.ElsaAwhileNotifications, HTMLStencilElement {
+    }
+    var HTMLElsaAwhileNotificationsElement: {
+        prototype: HTMLElsaAwhileNotificationsElement;
+        new (): HTMLElsaAwhileNotificationsElement;
+    };
     interface HTMLElsaButtonGroupElement extends Components.ElsaButtonGroup, HTMLStencilElement {
     }
     var HTMLElsaButtonGroupElement: {
@@ -794,6 +804,7 @@ declare global {
         "elsa-activity-properties": HTMLElsaActivityPropertiesElement;
         "elsa-activity-properties-editor": HTMLElsaActivityPropertiesEditorElement;
         "elsa-activity-publish-button": HTMLElsaActivityPublishButtonElement;
+        "elsa-awhile-notifications": HTMLElsaAwhileNotificationsElement;
         "elsa-button-group": HTMLElsaButtonGroupElement;
         "elsa-canvas": HTMLElsaCanvasElement;
         "elsa-check-list-input": HTMLElsaCheckListInputElement;
@@ -878,6 +889,9 @@ declare namespace LocalJSX {
         "onPublishClicked"?: (event: ElsaActivityPublishButtonCustomEvent<PublishClickedArgs>) => void;
         "onUnPublishClicked"?: (event: ElsaActivityPublishButtonCustomEvent<any>) => void;
         "publishing"?: boolean;
+    }
+    interface ElsaAwhileNotifications {
+        "notification"?: NotificationType;
     }
     interface ElsaButtonGroup {
         "buttons"?: Array<Button>;
@@ -1138,6 +1152,7 @@ declare namespace LocalJSX {
         "elsa-activity-properties": ElsaActivityProperties;
         "elsa-activity-properties-editor": ElsaActivityPropertiesEditor;
         "elsa-activity-publish-button": ElsaActivityPublishButton;
+        "elsa-awhile-notifications": ElsaAwhileNotifications;
         "elsa-button-group": ElsaButtonGroup;
         "elsa-canvas": ElsaCanvas;
         "elsa-check-list-input": ElsaCheckListInput;
@@ -1202,6 +1217,7 @@ declare module "@stencil/core" {
             "elsa-activity-properties": LocalJSX.ElsaActivityProperties & JSXBase.HTMLAttributes<HTMLElsaActivityPropertiesElement>;
             "elsa-activity-properties-editor": LocalJSX.ElsaActivityPropertiesEditor & JSXBase.HTMLAttributes<HTMLElsaActivityPropertiesEditorElement>;
             "elsa-activity-publish-button": LocalJSX.ElsaActivityPublishButton & JSXBase.HTMLAttributes<HTMLElsaActivityPublishButtonElement>;
+            "elsa-awhile-notifications": LocalJSX.ElsaAwhileNotifications & JSXBase.HTMLAttributes<HTMLElsaAwhileNotificationsElement>;
             "elsa-button-group": LocalJSX.ElsaButtonGroup & JSXBase.HTMLAttributes<HTMLElsaButtonGroupElement>;
             "elsa-canvas": LocalJSX.ElsaCanvas & JSXBase.HTMLAttributes<HTMLElsaCanvasElement>;
             "elsa-check-list-input": LocalJSX.ElsaCheckListInput & JSXBase.HTMLAttributes<HTMLElsaCheckListInputElement>;
