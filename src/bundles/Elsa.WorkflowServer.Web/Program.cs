@@ -77,7 +77,7 @@ services
         .UseJavaScript()
         .UseLiquid()
         .UseHttp()
-    ).AddFastEndpointsFromModule();
+    );
 
 services.AddHealthChecks();
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()));

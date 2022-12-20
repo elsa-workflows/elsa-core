@@ -22,13 +22,14 @@ Here are some of the more important features offered by Elsa:
 
 - Execute workflows in any .NET app.
 - Supports both short-running and long-running workflows.
-- Programming model loosely inspired on WF4 (composable activities)
-- Support for complex activities such as Sequence and Flowchart.
+- Programming model loosely inspired on WF4 (composable activities).
+- Support for complex activities such as Sequence, Flowchart and custom composite activities (which are like mini-workflows that can be used as activities).
 - Ships with a workflows designer web component (currently supports Flowchart diagrams only).
 
-## Examples
+## Console Examples
 
-### Hello World: Console
+### Hello World
+
 The following is a simple Hello World workflow created as a console application. The workflow is created using C#.
 
 ```csharp
@@ -61,3 +62,65 @@ Outputs:
 ```shell
 Hello World!
 ```
+
+### Sequential workflows
+
+To build workflows that execute more than one step, choose an activity that can do so. For example, the `Sequence` activity lets us add multiple activities to execute in sequence (plumbing code left out for brevity):
+
+```csharp
+// Create a workflow.
+var workflow = new Sequence
+{
+    Activities =
+    {
+        new WriteLine("Hello World!"), 
+        new WriteLine("Goodbye cruel world...")
+    }
+};
+```
+
+Outputs:
+
+```shell
+Hello World!
+Goodbye cruel world...
+```
+
+### Conditions
+
+The following demonstrates a workflow where it asks the user to enter their age, and based on this, offers a beer or a soda:
+
+```csharp
+// Declare a workflow variable for use in the workflow.
+var ageVariable = new Variable<string>();
+
+// Declare a workflow.
+var workflow = new Sequence
+{
+    // Register the variable.
+    Variables = { ageVariable }, 
+    
+    // Setup the sequence of activities to run.
+    Activities =
+    {
+        new WriteLine("Please tell me your age:"), 
+        new ReadLine(ageVariable), // Stores user input into the provided variable.,
+        new If
+        {
+            // If aged 18 or up, beer is provided, soda otherwise.
+            Condition = new Input<bool>(context => ageVariable.Get<int>(context) < 18),
+            Then = new WriteLine("Enjoy your soda!"),
+            Else = new WriteLine("Enjoy your beer!")
+        },
+        new WriteLine("Come again!")
+    }
+};
+```
+
+Notice that:
+
+- To capture activity output, a workflow variable (ageVariable) is used.
+- Depending on the result of the condition of the `If` activity, either the `Then` or the `Else` activity is executed.
+- After the If activity completes, the final WriteLine activity is executed.
+
+ ## ASP.NET Examples

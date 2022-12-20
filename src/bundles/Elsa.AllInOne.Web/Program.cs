@@ -63,9 +63,7 @@ services
         .UseLiquid()
         .UseHttp()
         .UseActivityDefinitions()
-    )
-    // Register FastEndpoints using collected assemblies from features. 
-    .AddFastEndpointsFromModule();
+    );
 
 services.AddHealthChecks();
 
@@ -105,4 +103,5 @@ app.UseEndpoints(endpoints =>
     endpoints.MapFallbackToPage("/Index");
 });
 
+app.MapRazorPages();
 app.Run();

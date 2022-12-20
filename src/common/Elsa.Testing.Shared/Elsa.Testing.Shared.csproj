@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <Import Project="..\..\common.props"/>
-    <Import Project="..\..\configureawait.props"/>
+    <Import Project="..\..\..\common.props" />
+    <Import Project="..\..\..\configureawait.props" />
 
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
@@ -12,12 +12,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="xunit.abstractions" Version="2.0.3"/>
+        <PackageReference Include="xunit.abstractions" Version="2.0.3" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\bundles\Elsa\Elsa.csproj"/>
-        <ProjectReference Include="..\..\src\modules\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj"/>
+      <ProjectReference Include="..\..\bundles\Elsa\Elsa.csproj" />
     </ItemGroup>
 
 </Project>

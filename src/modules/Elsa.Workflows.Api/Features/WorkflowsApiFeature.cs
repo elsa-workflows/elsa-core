@@ -19,4 +19,10 @@ public class WorkflowsApiFeature : FeatureBase
     {
         Module.AddFastEndpointsAssembly(GetType());
     }
+
+    /// <inheritdoc />
+    public override void Apply()
+    {
+        Module.AddFastEndpointsFromModule();
+    }
 }
