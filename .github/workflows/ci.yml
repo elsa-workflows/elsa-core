@@ -17,7 +17,7 @@ jobs:
       - name: Set VERSION variable
         run: echo "VERSION=3.0.0-preview.${{github.run_number}}" >> $GITHUB_ENV
       - name:  Setup .NET
-        uses: actions/setup-dotnet@v1
+        uses: actions/setup-dotnet@v3
         with:
           dotnet-version: 6.0.x
       - name: Build
