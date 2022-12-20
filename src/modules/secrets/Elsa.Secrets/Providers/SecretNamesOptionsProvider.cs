@@ -9,10 +9,10 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.Secrets.Providers
 {
     /// <summary>
-    /// Options provider to list only secret names.
+    /// Options provider to list only secret names. Value formated as [Secret Type]:[Secret Name]
     /// </summary>
     /// <remarks>
-    /// Input value is then used within an activity to call <see cref="ISecretsProvider.GetSecret(string, string)">ISecretsProvider.GetSecrets(type,name)</see>,
+    /// Input value is then used within an activity to call <see cref="ISecretsProvider.GetSecretByName(string, string)">ISecretsProvider.GetSecrets(type,name)</see>,
     /// so that the secret stays stored in secret store and not workflow definition.
     /// </remarks>
     public class SecretNamesOptionsProvider : IActivityPropertyOptionsProvider
@@ -28,7 +28,7 @@ namespace Elsa.Secrets.Providers
             var secrets = secretsManager.GetSecrets().Result;
 
             var items = secrets.Where(x => string.IsNullOrWhiteSpace(x.Name) == false)
-                .Select(x => new SelectListItem($"{x.DisplayName ?? x.Name} ({x.Type})", x.Name!)).ToList();
+                .Select(x => new SelectListItem($"{x.DisplayName ?? x.Name} ({x.Type})", $"{x.Type}:{x.Name!}")).ToList();
             items.Insert(0, new SelectListItem("", "empty"));
 
             return new SelectList { Items = items };

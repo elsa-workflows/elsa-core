@@ -22,7 +22,7 @@ namespace Elsa.Secrets.Providers
             _logger = logger;
         }
 
-        public async Task<string?> GetSecretById(string id)
+        public async Task<string?> GetSecretByIdAsync(string id)
         {
             var secret = await _secretsManager.GetSecretById(id);
 
@@ -34,7 +34,7 @@ namespace Elsa.Secrets.Providers
             return null;
         }
 
-        public async Task<string?> GetSecretByName(string name)
+        public async Task<string?> GetSecretByNameAsync(string name)
         {
             var secret = await _secretsManager.GetSecretByName(name);
 
@@ -46,7 +46,7 @@ namespace Elsa.Secrets.Providers
             return null;
         }
 
-        public async Task<ICollection<string>> GetSecrets(string type)
+        public async Task<ICollection<string>> GetSecretsAsync(string type)
         {
             var secrets = await _secretsManager.GetSecrets(type);
 
@@ -58,7 +58,7 @@ namespace Elsa.Secrets.Providers
             return new List<string>();
         }
 
-        public async Task<string?> GetSecret(string type, string name)
+        public async Task<string?> GetSecretByNameAsync(string type, string name)
         {
             var secrets = await _secretsManager.GetSecrets(type);
 
@@ -88,5 +88,8 @@ namespace Elsa.Secrets.Providers
             }
             return new Dictionary<string, string>();
         }
+
+        public async Task<IDictionary<string, string>> GetSecretsForSelectListAsync(string type)
+            => await GetSecretsDictionaryAsync(type);
     }
 }

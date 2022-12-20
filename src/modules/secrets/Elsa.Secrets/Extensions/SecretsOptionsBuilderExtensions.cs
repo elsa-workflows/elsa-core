@@ -25,7 +25,7 @@ namespace Elsa.Secrets.Extensions
                 .AddNotificationHandlersFrom<DescribingActivityTypeHandler>();
 
             elsaOptions.Services
-                .TryAddProvider<IExpressionHandler, SecretsHandler>(ServiceLifetime.Scoped);
+                .TryAddProvider<IExpressionHandler, SecretsExpressionHandler>(ServiceLifetime.Scoped);
 
             return elsaOptions;
         }
