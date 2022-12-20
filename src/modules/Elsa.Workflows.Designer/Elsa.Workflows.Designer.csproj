@@ -10,6 +10,7 @@
         </Description>
         <PackageTags>elsa module workflows razor designer</PackageTags>
         <StaticWebAssetsEnabled>true</StaticWebAssetsEnabled>
+        <ContentTargetFolders>staticwebassets</ContentTargetFolders>
     </PropertyGroup>
     
 
