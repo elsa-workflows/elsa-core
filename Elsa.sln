@@ -14,6 +14,7 @@ ProjectSection(SolutionItems) = preProject
 	configureawait.props = configureawait.props
 	.github\workflows\ci.yml = .github\workflows\ci.yml
 	.gitignore = .gitignore
+	icon.png = icon.png
 EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{0354F050-3992-4DD4-B0EE-5FBA04AC72B6}"

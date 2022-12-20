@@ -9,7 +9,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageIcon>nuget-icon.png</PackageIcon>
+    <PackageIcon>icon.png</PackageIcon>
       
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AnalysisModeDocumentation>Default</AnalysisModeDocumentation>
@@ -22,7 +22,7 @@
   </PropertyGroup>
 
   <ItemGroup Label="Files">
-    <None Include="..\..\..\nuget-icon.png" Pack="true" PackagePath=""/>
+    <None Include="..\..\..\icon.png" Pack="true" PackagePath=""/>
   </ItemGroup>
   
   <ItemGroup>

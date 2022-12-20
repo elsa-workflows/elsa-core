@@ -16,10 +16,6 @@ jobs:
           git branch --remote --contains | grep origin/v3
       - name: Set VERSION variable
         run: echo "VERSION=3.0.0-preview.${{github.run_number}}" >> $GITHUB_ENV
-      - name:  Setup .NET
-        uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: 6.0.x
       - name: Build
         run: dotnet build --configuration Release /p:Version=${VERSION}
       - name: Test
