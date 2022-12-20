@@ -21,6 +21,8 @@ import {ExportWorkflowRequest, ImportWorkflowRequest, WorkflowDefinitionsApi} fr
 import {DefaultModalActions, ModalDialogInstance, ModalDialogService} from "../../components/shared/modal-dialog";
 import {isEqual} from 'lodash'
 import {htmlToElement, isNullOrWhitespace} from "../../utils";
+import {NotificationService} from "../notifications/notification-service";
+import {uuid} from "@antv/x6/es/util/string/uuid";
 
 const FlowchartTypeName = 'Elsa.Flowchart';
 
@@ -192,13 +194,17 @@ export class WorkflowDefinitionsPlugin implements Plugin {
 
   private onPublishClicked = async (e: CustomEvent<PublishClickedArgs>) => {
     e.detail.begin();
+    const notification = NotificationService.createNotification({title: 'Publishing', id: uuid(), text: 'Workflow is being publishing. Please wait'})
     const workflowDefinition = await this.workflowDefinitionEditorElement.getWorkflowDefinition();
-    await this.eventBus.emit(NotificationEventTypes.Add, this, {id: workflowDefinition.definitionId, message: `Starting publishing ${workflowDefinition.name}`});
+    //await this.eventBus.emit(NotificationEventTypes.Add, this, {id: workflowDefinition.definitionId, message: `Starting publishing ${workflowDefinition.name}`});
     await this.saveWorkflowDefinition(workflowDefinition, true);
-    setTimeout(async () => {
-      await this.eventBus.emit(NotificationEventTypes.Update, this, {id: workflowDefinition.definitionId, message: `${workflowDefinition.name} publish finished`});
-      e.detail.complete();
-    }, 2000)
+
+    NotificationService.updateNotification(notification, {title: 'Workflow published', text: 'Published !'})
+    e.detail.complete();
+    // setTimeout(async () => {
+    //   await this.eventBus.emit(NotificationEventTypes.Update, this, {id: workflowDefinition.definitionId, message: `${workflowDefinition.name} publish finished`});
+    //   e.detail.complete();
+    // }, 2000)
 
   }
 
