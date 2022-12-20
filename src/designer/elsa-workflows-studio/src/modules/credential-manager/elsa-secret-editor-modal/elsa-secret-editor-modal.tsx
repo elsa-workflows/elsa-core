@@ -5,15 +5,17 @@ import { resources } from "../../../components/controls/elsa-pager/localizations
 import { loadTranslations } from "../../../components/i18n/i18n-loader";
 import { eventBus, propertyDisplayManager } from "../../../services";
 import { FormContext, textInput } from "../../../utils/forms";
-import state from "../utils/secret.store";
+import secretState from "../utils/secret.store";
 import { SecretDescriptor, SecretEditorRenderProps, SecretModel, SecretPropertyDescriptor } from "../models/secret.model";
 import { SecretEventTypes } from "../models/secret.events";
+import state from '../../../utils/store';
 
 @Component({
     tag: 'elsa-secret-editor-modal',
     shadow: false
 })
 export class ElsaSecretEditorModal {
+  @Prop({ attribute: 'monaco-lib-path' }) monacoLibPath: string;
   @Prop() culture: string;
   @State() secretModel: SecretModel;
   @State() secretDescriptor: SecretDescriptor;
@@ -33,7 +35,8 @@ export class ElsaSecretEditorModal {
   }
 
   async componentWillLoad() {
-    await initializeMonacoWorker('build/assets/js/monaco-editor/min');
+    const monacoLibPath = this.monacoLibPath ?? state.monacoLibPath;
+    await initializeMonacoWorker(monacoLibPath);
     this.i18next = await loadTranslations(this.culture, resources);
   }
 
@@ -65,6 +68,7 @@ export class ElsaSecretEditorModal {
     const secretModel: SecretModel = this.secretModel || {
       type: '',
       id: '',
+      name: '',
       properties: [],
     };
 
@@ -94,7 +98,7 @@ export class ElsaSecretEditorModal {
 
   onShowSecretEditor = async (secret: SecretModel, animate: boolean) => {
     this.secretModel = JSON.parse(JSON.stringify(secret));
-    this.secretDescriptor = state.secretsDescriptors.find(x => x.type == secret.type);
+    this.secretDescriptor = secretState.secretsDescriptors.find(x => x.type == secret.type);
     this.formContext = new FormContext(this.secretModel, newValue => this.secretModel = newValue);
 
     this.timestamp = new Date();

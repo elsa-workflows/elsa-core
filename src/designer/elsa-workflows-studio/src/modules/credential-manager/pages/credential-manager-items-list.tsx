@@ -6,12 +6,14 @@ import { loadTranslations } from '../../../components/i18n/i18n-loader';
 import Tunnel from "../../../data/dashboard";
 import { eventBus } from '../../../services';
 import { SecretEventTypes } from "../models/secret.events";
+import state from '../../../utils/store';
 
 @Component({
   tag: 'elsa-credential-manager-items-list',
   shadow: false,
 })
 export class CredentialManagerItemsList {
+  @Prop({ attribute: 'monaco-lib-path' }) monacoLibPath: string;
   @Prop() culture: string;
   @Prop() basePath: string;
   private i18next: i18n;
@@ -33,7 +35,8 @@ export class CredentialManagerItemsList {
   }
 
   renderSecretPickerEditor() {
-    return <elsa-secret-editor-modal culture={this.culture}/>;
+    const monacoLibPath = this.monacoLibPath ?? state.monacoLibPath;
+    return <elsa-secret-editor-modal culture={this.culture} monaco-lib-path={monacoLibPath} />;
   }
 
   render() {

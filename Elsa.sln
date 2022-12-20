@@ -433,6 +433,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Secrets.Persistence.En
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Secrets.Persistence.EntityFramework.Sqlite", "src\modules\secrets\Elsa.Secrets.Persistence.EntityFramework.Sqlite\Elsa.Secrets.Persistence.EntityFramework.Sqlite.csproj", "{5693C58E-7A45-4126-95CC-9E37B9DB8661}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Secrets.Sql", "src\modules\secrets\Elsa.Secrets.Sql\Elsa.Secrets.Sql.csproj", "{5EF56460-12FF-4DEC-9FB8-7E3872200BD3}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Secrets.Http", "src\modules\secrets\Elsa.Secrets.Http\Elsa.Secrets.Http.csproj", "{CD32847C-82E9-4DE4-BCDE-6B61C4200593}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1051,10 +1055,14 @@ Global
 		{5693C58E-7A45-4126-95CC-9E37B9DB8661}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5693C58E-7A45-4126-95CC-9E37B9DB8661}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5693C58E-7A45-4126-95CC-9E37B9DB8661}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1CC8BA81-8F36-4C0C-BDD3-F426570DB11E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1CC8BA81-8F36-4C0C-BDD3-F426570DB11E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1CC8BA81-8F36-4C0C-BDD3-F426570DB11E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1CC8BA81-8F36-4C0C-BDD3-F426570DB11E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5EF56460-12FF-4DEC-9FB8-7E3872200BD3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5EF56460-12FF-4DEC-9FB8-7E3872200BD3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5EF56460-12FF-4DEC-9FB8-7E3872200BD3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5EF56460-12FF-4DEC-9FB8-7E3872200BD3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CD32847C-82E9-4DE4-BCDE-6B61C4200593}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CD32847C-82E9-4DE4-BCDE-6B61C4200593}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CD32847C-82E9-4DE4-BCDE-6B61C4200593}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CD32847C-82E9-4DE4-BCDE-6B61C4200593}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1251,7 +1259,8 @@ Global
 		{62B28070-1AEC-49E2-A614-D505B0933E23} = {22E75696-6FE9-436A-9097-EE21C603F818}
 		{3B0EF1DB-E4A7-489E-B2B2-8F5CFD8515F6} = {897395DA-3B0B-441A-98A1-35CFAA4A6B91}
 		{5693C58E-7A45-4126-95CC-9E37B9DB8661} = {897395DA-3B0B-441A-98A1-35CFAA4A6B91}
-		{1CC8BA81-8F36-4C0C-BDD3-F426570DB11E} = {897395DA-3B0B-441A-98A1-35CFAA4A6B91}
+		{5EF56460-12FF-4DEC-9FB8-7E3872200BD3} = {897395DA-3B0B-441A-98A1-35CFAA4A6B91}
+		{CD32847C-82E9-4DE4-BCDE-6B61C4200593} = {897395DA-3B0B-441A-98A1-35CFAA4A6B91}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}

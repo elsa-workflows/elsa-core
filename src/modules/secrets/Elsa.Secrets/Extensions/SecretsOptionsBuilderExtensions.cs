@@ -19,17 +19,13 @@ namespace Elsa.Secrets.Extensions
                 .AddSingleton<ISecretValueFormatter, MsSqlSecretValueFormatter>()
                 .AddSingleton<ISecretValueFormatter, PostgreSqlSecretValueFormatter>()
                 .AddSingleton<ISecretValueFormatter, AuthorizationHeaderSecretValueFormatter>()
-                .AddSingleton<ISecretValueFormatter, OAuth2SecretValueFormatter>()
-                .AddScoped<IActivityInputDescriptorEnricher, SendHttpRequestAuthorizationInputDescriptorEnricher>()
-                .AddScoped<IActivityInputDescriptorEnricher, ExecuteSqlQueryConnectionStringInputDescriptorEnricher>()
-                .AddScoped<IActivityInputDescriptorEnricher, ExecuteSqlCommandConnectionStringInputDescriptorEnricher>()
                 .AddScoped<ISecretsManager, SecretsManager>()
                 .AddScoped<ISecretsProvider, SecretsProvider>()
                 .Decorate<ISecretsStore, EventPublishingSecretsStore>()
                 .AddNotificationHandlersFrom<DescribingActivityTypeHandler>();
 
             elsaOptions.Services
-                .TryAddProvider<IExpressionHandler, SecretsHandler>(ServiceLifetime.Scoped);
+                .TryAddProvider<IExpressionHandler, SecretsExpressionHandler>(ServiceLifetime.Scoped);
 
             return elsaOptions;
         }

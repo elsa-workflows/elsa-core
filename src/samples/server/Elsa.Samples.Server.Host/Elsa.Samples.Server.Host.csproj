@@ -41,7 +41,10 @@
         <ProjectReference Include="..\..\..\locking\Elsa.DistributedLocking.Redis\Elsa.DistributedLocking.Redis.csproj" />
         <ProjectReference Include="..\..\..\locking\Elsa.DistributedLocking.SqlServer\Elsa.DistributedLocking.SqlServer.csproj" />
         <ProjectReference Include="..\..\..\modules\secrets\Elsa.Secrets.Api\Elsa.Secrets.Api.csproj" />
+        <ProjectReference Include="..\..\..\modules\secrets\Elsa.Secrets.Http\Elsa.Secrets.Http.csproj" />
+        <ProjectReference Include="..\..\..\modules\secrets\Elsa.Secrets.Persistence.EntityFramework.MySql\Elsa.Secrets.Persistence.EntityFramework.MySql.csproj" />
         <ProjectReference Include="..\..\..\modules\secrets\Elsa.Secrets.Persistence.EntityFramework.Sqlite\Elsa.Secrets.Persistence.EntityFramework.Sqlite.csproj" />
+        <ProjectReference Include="..\..\..\modules\secrets\Elsa.Secrets.Sql\Elsa.Secrets.Sql.csproj" />
         <ProjectReference Include="..\..\..\modules\workflowtesting\Elsa.WorkflowTesting.Api\Elsa.WorkflowTesting.Api.csproj" />
         <ProjectReference Include="..\..\..\modules\workflowtesting\Elsa.WorkflowTesting\Elsa.WorkflowTesting.csproj" />
         <ProjectReference Include="..\..\..\modules\retention\Elsa.Retention\Elsa.Retention.csproj" />

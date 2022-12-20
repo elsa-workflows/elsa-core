@@ -75,6 +75,7 @@ export class CredentialManagerListScreen {
       const secret: SecretModel = {
         type: secretDescriptor.type,
         displayName: secretDescriptor.displayName,
+        name: secretDescriptor.displayName,
         properties: [],
       };
 
