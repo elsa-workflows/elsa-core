@@ -9,7 +9,9 @@
             Provides Razor components to render the workflows designer in ASP.NET applications.
         </Description>
         <PackageTags>elsa module workflows razor designer</PackageTags>
+        <StaticWebAssetsEnabled>false</StaticWebAssetsEnabled>
     </PropertyGroup>
+    
 
     <!--
       1. Install npm packages
