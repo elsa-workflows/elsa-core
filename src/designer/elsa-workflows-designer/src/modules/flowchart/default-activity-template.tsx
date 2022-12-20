@@ -64,7 +64,7 @@ export class DefaultActivityTemplate {
           const displayTypeIsPicker = this.displayTypeIsPicker;
           const displayTypeIsEmbedded = this.displayTypeIsEmbedded;
           const containerCssClass = displayTypeIsEmbedded ? '' : 'drop-shadow-md';
-          const contentCssClass = displayTypeIsPicker ? 'px-2 py-2' : 'px-4 py-4';
+          const contentCssClass = displayTypeIsPicker ? 'px-2 py-2' : 'px-4 pt-0 pb-3';
           let displayText = activity?.metadata?.displayText;
 
           if (isNullOrWhitespace(displayText))
@@ -79,8 +79,8 @@ export class DefaultActivityTemplate {
                       {this.renderIcon(icon)}
                     </div>
                     <div class="flex items-center">
-                      <div class={contentCssClass}>
-                        <span class={textColor}>{displayText}</span>
+                      <div class="m-3">
+                        <span class={`${textColor}`}>{displayText}</span>
                         <div>
                           {this.renderPorts(activity, embeddedPorts)}
                         </div>
@@ -161,14 +161,14 @@ export class DefaultActivityTemplate {
 
       if (!activityProperty) {
         return (
-          <div class="relative block w-full border-2 border-gray-300 border-dashed rounded-lg p-5 text-center focus:outline-none">
+          <div class="relative block w-full border-2 border-gray-300 border-dashed rounded-lg p-3 text-center focus:outline-none">
             <a href="#"
                onClick={e => this.onEditChildActivityClick(e, activity, port)}
                onMouseDown={e => e.stopPropagation()}
                class="text-gray-400 hover:text-gray-600">
-              <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-              </svg>
+              <div class="flex-grow">
+                <span class={textColor}>{port.displayName}</span>
+              </div>
             </a>
           </div>
         );
@@ -178,26 +178,15 @@ export class DefaultActivityTemplate {
 
       if (!propertyIsArray) {
         return (
-          <div class={`relative block w-full border-2 ${borderColor} border-solid rounded-lg p-5 text-center focus:outline-none`}
-               onMouseDown={this.onChildActivityMouseDown}
-               onClick={e => this.onChildActivityClick(e, activity, activityProperty, port)}>
+          <div class={`relative block w-full border-2 ${borderColor} border-solid rounded-lg p-3 text-center focus:outline-none`}>
             <div class="flex space-x-2">
-              <div class="flex-grow">
-                <span class={textColor}>{childActivityDisplayText}</span>
-              </div>
-              <div class="flex-shrink">
-                <a
-                  onClick={e => this.onEditChildActivityClick(e, activity, port)}
-                  onMouseDown={e => e.stopPropagation()}
-                  href="#"
-                  class="text-gray-500 hover:text-yellow-700">
-                  <svg class="h-6 w-6" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                    <path stroke="none" d="M0 0h24v24H0z"/>
-                    <path d="M4 20h4l10.5 -10.5a1.5 1.5 0 0 0 -4 -4l-10.5 10.5v4"/>
-                    <line x1="13.5" y1="6.5" x2="17.5" y2="10.5"/>
-                  </svg>
-                </a>
-              </div>
+              <a href="#"
+                 onClick={e => this.onEditChildActivityClick(e, activity, port)}
+                 onMouseDown={e => e.stopPropagation()}>
+                <div class="flex-grow">
+                  <span class={textColor}>{port.displayName}</span>
+                </div>
+              </a>
             </div>
           </div>
         );
@@ -206,22 +195,13 @@ export class DefaultActivityTemplate {
       return (
         <div class={`relative block w-full border-2 ${borderColor} border-solid rounded-lg p-5 text-center focus:outline-none`}>
           <div class="flex space-x-2">
-            <div class="flex-grow">
-              <span class={textColor}>{childActivityDisplayText}</span>
-            </div>
-            <div class="flex-shrink">
-              <a
-                onClick={e => this.onEditChildActivityClick(e, activity, port)}
-                onMouseDown={e => e.stopPropagation()}
-                href="#"
-                class="text-gray-500 hover:text-yellow-700">
-                <svg class="h-6 w-6" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                  <path stroke="none" d="M0 0h24v24H0z"/>
-                  <path d="M4 20h4l10.5 -10.5a1.5 1.5 0 0 0 -4 -4l-10.5 10.5v4"/>
-                  <line x1="13.5" y1="6.5" x2="17.5" y2="10.5"/>
-                </svg>
-              </a>
-            </div>
+            <a href="#"
+               onClick={e => this.onEditChildActivityClick(e, activity, port)}
+               onMouseDown={e => e.stopPropagation()}>
+              <div class="flex-grow">
+                <span class={textColor}>{port.displayName}</span>
+              </div>
+            </a>
           </div>
         </div>
       );
@@ -229,9 +209,6 @@ export class DefaultActivityTemplate {
 
     return (
       <div class="activity-port" data-port-name={port.name} ref={el => this.portElements.push(el)}>
-        <div>
-          <span class={`${textColor} text-xs`}>{port.displayName}</span>
-        </div>
         <div>
           {renderActivityProperty()}
         </div>
@@ -261,21 +238,5 @@ export class DefaultActivityTemplate {
   private onEditChildActivityClick = (e: MouseEvent, parentActivity: Activity, port: Port) => {
     e.preventDefault();
     this.editChildActivity.emit({parentActivityId: parentActivity.id, port: port});
-  };
-
-  private onChildActivityMouseDown = (e: MouseEvent) => {
-    // Prevent X6 from capturing the click event.
-    e.stopPropagation();
-  };
-
-  private onChildActivityClick = (e: MouseEvent, parentActivity: Activity, childActivity: Activity, port: Port) => {
-    const args: ChildActivitySelectedArgs = {
-      parentActivity: parentActivity,
-      childActivity: childActivity,
-      port: port
-    };
-
-    this.selectedPortName = port.name;
-    this.childActivitySelected.emit(args);
   };
 }
