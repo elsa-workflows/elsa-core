@@ -1,14 +1,19 @@
 using Elsa.Extensions;
 using Elsa.Http.Extensions;
-using Elsa.Workflows.Management.Extensions;
+using Elsa.Samples.HelloWorld;
+using Elsa.Workflows.Runtime.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 
 // Add Elsa services.
 services.AddElsa(elsa => elsa
-            
-    .UseWorkflowManagement()
+    // Configure the workflow runtime.
+    .UseWorkflowRuntime(runtime =>
+    {
+        // Register our HTTP workflow with the runtime.
+        runtime.AddWorkflow<HelloWorldHttpWorkflow>();
+    })
         
     // Enable Elsa HTTP module (for HTTP related activities). 
     .UseHttp()
