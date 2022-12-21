@@ -7,12 +7,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="System.Text.Encodings.Web" Version="6.0.0"/>
+        <PackageReference Include="System.Text.Encodings.Web" Version="7.0.0" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\..\core\Elsa\Elsa.csproj"/>
-        <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.YesSql\Elsa.Persistence.YesSql.csproj"/>
+        <ProjectReference Include="..\..\..\core\Elsa\Elsa.csproj" />
+        <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.YesSql\Elsa.Persistence.YesSql.csproj" />
     </ItemGroup>
 
 </Project>
