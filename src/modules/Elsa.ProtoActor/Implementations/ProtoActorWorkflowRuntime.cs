@@ -129,6 +129,24 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
         var triggeredWorkflows = new List<TriggeredWorkflow>();
         var hash = _hasher.Hash(activityTypeName, bookmarkPayload);
 
+        // Start new workflows.
+        var triggers = await _triggerStore.FindAsync(hash, cancellationToken);
+
+        foreach (var trigger in triggers)
+        {
+            var definitionId = trigger.WorkflowDefinitionId;
+            var startOptions = new StartWorkflowRuntimeOptions(options.CorrelationId, options.Input, VersionOptions.Published, trigger.ActivityId);
+            var canStartResult = await CanStartWorkflowAsync(definitionId, startOptions, cancellationToken);
+            
+            // If we can't start the workflow, don't try it.
+            if(!canStartResult.CanStart)
+                continue;
+            
+            var startResult = await StartWorkflowAsync(definitionId, startOptions, cancellationToken);
+
+            triggeredWorkflows.Add(new TriggeredWorkflow(startResult.InstanceId, startResult.Bookmarks));
+        }
+        
         // Resume existing workflow instances.
         var client = _cluster.GetBookmarkGrain(hash);
 
@@ -151,19 +169,6 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
                 cancellationToken);
 
             triggeredWorkflows.Add(new TriggeredWorkflow(workflowInstanceId, resumeResult.Bookmarks));
-        }
-
-        // Start new workflows.
-        var triggers = await _triggerStore.FindAsync(hash, cancellationToken);
-
-        foreach (var trigger in triggers)
-        {
-            var startResult = await StartWorkflowAsync(
-                trigger.WorkflowDefinitionId,
-                new StartWorkflowRuntimeOptions(options.CorrelationId, options.Input, VersionOptions.Published, trigger.ActivityId),
-                cancellationToken);
-
-            triggeredWorkflows.Add(new TriggeredWorkflow(startResult.InstanceId, startResult.Bookmarks));
         }
 
         return new TriggerWorkflowsResult(triggeredWorkflows);
