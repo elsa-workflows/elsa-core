@@ -122,21 +122,25 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         var triggeredWorkflows = new List<TriggeredWorkflow>();
         var hash = _hasher.Hash(activityTypeName, bookmarkPayload);
 
-        // Start new workflows.
-        var triggers = await _triggerStore.FindAsync(hash, cancellationToken);
-
-        foreach (var trigger in triggers)
+        // Start new workflows. Notice that this happens in a process-synchronized fashion to avoid multiple instances being created. 
+        const string sharedResource = $"{nameof(DefaultWorkflowRuntime)}__StartTriggeredWorkflows";
+        await using (await _distributedLockProvider.AcquireLockAsync(sharedResource, TimeSpan.FromMinutes(10), cancellationToken))
         {
-            var definitionId = trigger.WorkflowDefinitionId;
-            var startOptions = new StartWorkflowRuntimeOptions(options.CorrelationId, options.Input, VersionOptions.Published, trigger.ActivityId);
-            var canStartResult = await CanStartWorkflowAsync(definitionId, startOptions, cancellationToken);
-            
-            // If we can't start the workflow, don't try it.
-            if(!canStartResult.CanStart)
-                continue;
-            
-            var startResult = await StartWorkflowAsync(definitionId, startOptions, cancellationToken);
-            triggeredWorkflows.Add(new TriggeredWorkflow(startResult.InstanceId, startResult.Bookmarks));
+            var triggers = await _triggerStore.FindAsync(hash, cancellationToken);
+
+            foreach (var trigger in triggers)
+            {
+                var definitionId = trigger.WorkflowDefinitionId;
+                var startOptions = new StartWorkflowRuntimeOptions(options.CorrelationId, options.Input, VersionOptions.Published, trigger.ActivityId);
+                var canStartResult = await CanStartWorkflowAsync(definitionId, startOptions, cancellationToken);
+
+                // If we can't start the workflow, don't try it.
+                if (!canStartResult.CanStart)
+                    continue;
+
+                var startResult = await StartWorkflowAsync(definitionId, startOptions, cancellationToken);
+                triggeredWorkflows.Add(new TriggeredWorkflow(startResult.InstanceId, startResult.Bookmarks));
+            }
         }
 
         // Resume bookmarks.
