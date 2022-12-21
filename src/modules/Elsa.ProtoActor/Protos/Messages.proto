@@ -1,10 +1,22 @@
 syntax = "proto3";
+import "google/protobuf/empty.proto";
 import "google/protobuf/wrappers.proto";
-package Elsa.Runtime.ProtoActor.Messages;
-option csharp_namespace = "Elsa.Runtime.Protos";
+package Elsa.ProtoActor.Protos;
+option csharp_namespace = "Elsa.ProtoActor.Protos";
 
-// Empty response type.
-message Unit {}
+// Shared.
+message Json {
+  string text = 1;
+}
+
+message Input {
+  map<string, Json> Data = 1;
+}
+
+// WorkflowGrain.
+message CanStartWorkflowResponse {
+  bool CanStart = 1;
+}
 
 message StartWorkflowRequest {
   string DefinitionId = 1;
@@ -45,10 +57,22 @@ message ImportWorkflowStateRequest {
 message ImportWorkflowStateResponse {}
 
 enum RunWorkflowResult {
-  Finished = 0;
-  Suspended = 1;
+  RunWorkflowResultFinished = 0;
+  RunWorkflowResultSuspended = 1;
 }
 
+message BookmarkDto {
+  string Id = 1;
+  string Name = 2;
+  string Hash = 3;
+  optional string Data = 4;
+  string ActivityId = 5;
+  string ActivityInstanceId = 6;
+  optional bool AutoBurn = 7;
+  optional string CallbackMethodName = 8;
+}
+
+// BookmarkGrain.
 message StoreBookmarksRequest {
   string WorkflowInstanceId = 1;
   string CorrelationId = 2;
@@ -74,21 +98,24 @@ message StoredBookmark {
   string BookmarkId = 3;
 }
 
-message BookmarkDto {
-  string Id = 1;
-  string Name = 2;
-  string Hash = 3;
-  optional string Data = 4;
-  string ActivityId = 5;
-  string ActivityInstanceId = 6;
-  optional bool AutoBurn = 7;
-  optional string CallbackMethodName = 8;
+// RunningWorkflowsGrain.
+message RegisterRunningWorkflowRequest {
+  string DefinitionId = 1;
+  int32 Version = 2;
+  string InstanceId = 3;
+  optional string CorrelationId = 6;
 }
 
-message Json {
-  string text = 1;
+message UnregisterRunningWorkflowRequest {
+  string InstanceId = 1;
 }
 
-message Input {
-  map<string, Json> Data = 1;
+message CountRunningWorkflowsRequest {
+  string DefinitionId = 1;
+  int32 Version = 2;
+  optional string CorrelationId = 3;
+}
+
+message CountRunningWorkflowsResponse {
+  optional int32 Count = 1;
 }

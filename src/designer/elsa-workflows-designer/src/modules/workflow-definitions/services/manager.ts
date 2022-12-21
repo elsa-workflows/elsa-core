@@ -19,7 +19,8 @@ export class WorkflowDefinitionManager {
       description: definition.description,
       publish: publish,
       root: definition.root,
-      variables: definition.variables
+      variables: definition.variables,
+      options: definition.options
     };
 
     return await this.api.post(request);

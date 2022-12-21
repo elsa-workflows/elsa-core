@@ -1,11 +1,12 @@
 syntax = "proto3";
 
-option csharp_namespace = "Elsa.Runtime.Protos";
+option csharp_namespace = "Elsa.ProtoActor.Protos";
 
 import "google/protobuf/empty.proto";
 import "Messages.proto";
 
 service WorkflowGrain {
+  rpc CanStart (StartWorkflowRequest) returns (CanStartWorkflowResponse);
   rpc Start (StartWorkflowRequest) returns (StartWorkflowResponse);
   rpc Resume (ResumeWorkflowRequest) returns (ResumeWorkflowResponse);
   rpc ExportState(ExportWorkflowStateRequest) returns (ExportWorkflowStateResponse);
@@ -13,7 +14,13 @@ service WorkflowGrain {
 }
 
 service BookmarkGrain {
-  rpc Store(StoreBookmarksRequest) returns (Unit);
-  rpc RemoveByWorkflow(RemoveBookmarksByWorkflowRequest) returns (Unit);
+  rpc Store(StoreBookmarksRequest) returns (google.protobuf.Empty);
+  rpc RemoveByWorkflow(RemoveBookmarksByWorkflowRequest) returns (google.protobuf.Empty);
   rpc Resolve (ResolveBookmarksRequest) returns (ResolveBookmarksResponse);
+}
+
+service RunningWorkflowsGrain {
+  rpc Register(RegisterRunningWorkflowRequest) returns (google.protobuf.Empty);
+  rpc Unregister(UnregisterRunningWorkflowRequest) returns (google.protobuf.Empty);
+  rpc Count (CountRunningWorkflowsRequest) returns (CountRunningWorkflowsResponse);
 }

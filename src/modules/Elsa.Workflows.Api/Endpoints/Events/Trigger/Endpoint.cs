@@ -7,27 +7,32 @@ using Elsa.Workflows.Runtime.Services;
 
 namespace Elsa.Workflows.Api.Endpoints.Events.Trigger;
 
+/// <summary>
+/// Triggers all workflows that are waiting for the specified event.
+/// </summary>
 public class Trigger : ElsaEndpoint<Request, Response>
 {
     private readonly IWorkflowRuntime _workflowRuntime;
-    private readonly IHasher _hasher;
 
-    public Trigger(IWorkflowRuntime workflowRuntime, IHasher hasher)
+    /// <inheritdoc />
+    public Trigger(IWorkflowRuntime workflowRuntime)
     {
         _workflowRuntime = workflowRuntime;
-        _hasher = hasher;
     }
 
+    /// <inheritdoc />
     public override void Configure()
     {
         Post("/events/{eventName}/trigger");
         ConfigurePermissions("trigger:event");
     }
 
+    /// <inheritdoc />
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
         var eventBookmark = new EventBookmarkPayload(request.EventName);
-        await _workflowRuntime.TriggerWorkflowsAsync<Event>(eventBookmark, new TriggerWorkflowsRuntimeOptions(), cancellationToken);
+        var options = new TriggerWorkflowsRuntimeOptions(request.CorrelationId);
+        await _workflowRuntime.TriggerWorkflowsAsync<Event>(eventBookmark, options, cancellationToken);
         
         if (!HttpContext.Response.HasStarted)
         {

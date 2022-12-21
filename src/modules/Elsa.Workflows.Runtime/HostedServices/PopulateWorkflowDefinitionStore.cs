@@ -17,6 +17,9 @@ public class PopulateWorkflowDefinitionStore : IHostedService
     private readonly ITriggerIndexer _triggerIndexer;
     private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
 
+    /// <summary>
+    /// Constructor.
+    /// </summary>
     public PopulateWorkflowDefinitionStore(
         IEnumerable<IWorkflowDefinitionProvider> workflowDefinitionProviders,
         ITriggerIndexer triggerIndexer,
@@ -57,9 +60,8 @@ public class PopulateWorkflowDefinitionStore : IHostedService
         {
             existingDefinition.Description = definition.Description;
             existingDefinition.Name = definition.Name;
-            existingDefinition.Metadata = definition.Metadata;
+            existingDefinition.CustomProperties = definition.CustomProperties;
             existingDefinition.Variables = definition.Variables;
-            existingDefinition.ApplicationProperties = definition.ApplicationProperties;
             existingDefinition.BinaryData = definition.BinaryData;
             existingDefinition.StringData = definition.StringData;
             existingDefinition.MaterializerContext = definition.MaterializerContext;

@@ -9,7 +9,7 @@ import { ActivityDefinition, ActivityDefinitionPropsUpdatedArgs, ActivityDefinit
 import { ActivityDriverRegistry } from "./services";
 import { Activity, ActivityDeletedArgs, ActivitySelectedArgs, ChildActivitySelectedArgs, ContainerSelectedArgs, EditChildActivityArgs, GraphUpdatedArgs, IntellisenseContext, SelectListItem, TabChangedArgs, TabDefinition, Variable, WorkflowInstance, WorkflowInstanceSummary, WorkflowUpdatedArgs } from "./models";
 import { WorkflowDefinition, WorkflowDefinitionSummary } from "./modules/workflow-definitions/models/entities";
-import { ActivityUpdatedArgs, DeleteActivityRequestedArgs, WorkflowDefinitionPropsUpdatedArgs, WorkflowDefinitionUpdatedArgs } from "./modules/workflow-definitions/models/ui";
+import { ActivityUpdatedArgs, DeleteActivityRequestedArgs, Widget, WorkflowDefinitionPropsUpdatedArgs, WorkflowDefinitionUpdatedArgs } from "./modules/workflow-definitions/models/ui";
 import { PublishClickedArgs } from "./modules/activity-definitions/components/publish-button";
 import { Button } from "./components/shared/button-group/models";
 import { ActivityInputContext } from "./services/node-input-driver";
@@ -236,6 +236,9 @@ export namespace Components {
     }
     interface ElsaVariablesEditor {
         "variables"?: Array<Variable>;
+    }
+    interface ElsaWidgets {
+        "widgets": Array<Widget>;
     }
     interface ElsaWorkflowDefinitionBrowser {
     }
@@ -674,6 +677,12 @@ declare global {
         prototype: HTMLElsaVariablesEditorElement;
         new (): HTMLElsaVariablesEditorElement;
     };
+    interface HTMLElsaWidgetsElement extends Components.ElsaWidgets, HTMLStencilElement {
+    }
+    var HTMLElsaWidgetsElement: {
+        prototype: HTMLElsaWidgetsElement;
+        new (): HTMLElsaWidgetsElement;
+    };
     interface HTMLElsaWorkflowDefinitionBrowserElement extends Components.ElsaWorkflowDefinitionBrowser, HTMLStencilElement {
     }
     var HTMLElsaWorkflowDefinitionBrowserElement: {
@@ -807,6 +816,7 @@ declare global {
         "elsa-variable-editor-dialog-content": HTMLElsaVariableEditorDialogContentElement;
         "elsa-variable-picker-input": HTMLElsaVariablePickerInputElement;
         "elsa-variables-editor": HTMLElsaVariablesEditorElement;
+        "elsa-widgets": HTMLElsaWidgetsElement;
         "elsa-workflow-definition-browser": HTMLElsaWorkflowDefinitionBrowserElement;
         "elsa-workflow-definition-editor": HTMLElsaWorkflowDefinitionEditorElement;
         "elsa-workflow-definition-editor-toolbar": HTMLElsaWorkflowDefinitionEditorToolbarElement;
@@ -1039,6 +1049,9 @@ declare namespace LocalJSX {
         "onVariablesChanged"?: (event: ElsaVariablesEditorCustomEvent<Array<Variable>>) => void;
         "variables"?: Array<Variable>;
     }
+    interface ElsaWidgets {
+        "widgets"?: Array<Widget>;
+    }
     interface ElsaWorkflowDefinitionBrowser {
         "onNewWorkflowDefinitionSelected"?: (event: ElsaWorkflowDefinitionBrowserCustomEvent<any>) => void;
         "onWorkflowDefinitionSelected"?: (event: ElsaWorkflowDefinitionBrowserCustomEvent<WorkflowDefinitionSummary>) => void;
@@ -1150,6 +1163,7 @@ declare namespace LocalJSX {
         "elsa-variable-editor-dialog-content": ElsaVariableEditorDialogContent;
         "elsa-variable-picker-input": ElsaVariablePickerInput;
         "elsa-variables-editor": ElsaVariablesEditor;
+        "elsa-widgets": ElsaWidgets;
         "elsa-workflow-definition-browser": ElsaWorkflowDefinitionBrowser;
         "elsa-workflow-definition-editor": ElsaWorkflowDefinitionEditor;
         "elsa-workflow-definition-editor-toolbar": ElsaWorkflowDefinitionEditorToolbar;
@@ -1213,6 +1227,7 @@ declare module "@stencil/core" {
             "elsa-variable-editor-dialog-content": LocalJSX.ElsaVariableEditorDialogContent & JSXBase.HTMLAttributes<HTMLElsaVariableEditorDialogContentElement>;
             "elsa-variable-picker-input": LocalJSX.ElsaVariablePickerInput & JSXBase.HTMLAttributes<HTMLElsaVariablePickerInputElement>;
             "elsa-variables-editor": LocalJSX.ElsaVariablesEditor & JSXBase.HTMLAttributes<HTMLElsaVariablesEditorElement>;
+            "elsa-widgets": LocalJSX.ElsaWidgets & JSXBase.HTMLAttributes<HTMLElsaWidgetsElement>;
             "elsa-workflow-definition-browser": LocalJSX.ElsaWorkflowDefinitionBrowser & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionBrowserElement>;
             "elsa-workflow-definition-editor": LocalJSX.ElsaWorkflowDefinitionEditor & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionEditorElement>;
             "elsa-workflow-definition-editor-toolbar": LocalJSX.ElsaWorkflowDefinitionEditorToolbar & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionEditorToolbarElement>;

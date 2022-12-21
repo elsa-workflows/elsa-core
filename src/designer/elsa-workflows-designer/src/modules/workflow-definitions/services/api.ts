@@ -1,5 +1,5 @@
 import {getVersionOptionsString, serializeQueryString} from '../../../utils';
-import {WorkflowDefinition, WorkflowDefinitionSummary} from "../models/entities";
+import {WorkflowDefinition, WorkflowDefinitionSummary, WorkflowOptions} from "../models/entities";
 import {Activity, PagedList, Variable, VersionedEntity, VersionOptions} from "../../../models";
 import {Service} from "typedi";
 import {ElsaApiClientProvider} from "../../../services";
@@ -53,7 +53,7 @@ export class WorkflowDefinitionsApi {
 
     const httpClient = await this.getHttpClient();
     const response = await httpClient.post<WorkflowDefinition>('workflow-definitions', requestClone);
-    
+
     adjustConnectionsInResponseModel(response.data.root);
     return response.data;
   }
@@ -141,8 +141,8 @@ export class WorkflowDefinitionsApi {
     }
 
     const workflowDefinition = response.data;
-    
-    //TODO: Written as a workaround for different server and client models. 
+
+    //TODO: Written as a workaround for different server and client models.
     //To be deleted after the connection model on backend is updated.
     adjustConnectionsInResponseModel(workflowDefinition.root);
 
@@ -185,6 +185,7 @@ export interface SaveWorkflowDefinitionRequest {
   publish: boolean;
   root?: Activity;
   variables?: Array<Variable>;
+  options?: WorkflowOptions;
 }
 
 export interface BaseManyWorkflowDefinitionRequest {

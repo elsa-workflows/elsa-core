@@ -17,10 +17,9 @@ import {WorkflowDefinitionManager} from "./services/manager";
 import {WorkflowDefinition, WorkflowDefinitionSummary} from "./models/entities";
 import {WorkflowDefinitionUpdatedArgs} from "./models/ui";
 import {PublishClickedArgs} from "./components/publish-button";
-import {ExportWorkflowRequest, ImportWorkflowRequest, WorkflowDefinitionsApi} from "./services/api";
+import {WorkflowDefinitionsApi} from "./services/api";
 import {DefaultModalActions, ModalDialogInstance, ModalDialogService} from "../../components/shared/modal-dialog";
-import {isEqual} from 'lodash'
-import {htmlToElement, isNullOrWhitespace} from "../../utils";
+import {htmlToElement} from "../../utils";
 
 const FlowchartTypeName = 'Elsa.Flowchart';
 
@@ -101,6 +100,7 @@ export class WorkflowDefinitionsPlugin implements Plugin {
   private generateUniqueActivityName = async (activityDescriptor: ActivityDescriptor): Promise<string> => await generateUniqueActivityName([], activityDescriptor);
 
   private saveWorkflowDefinition = async (definition: WorkflowDefinition, publish: boolean): Promise<WorkflowDefinition> => {
+    debugger;
     const updatedWorkflow = await this.workflowDefinitionManager.saveWorkflow(definition, publish);
     let reload = false;
 

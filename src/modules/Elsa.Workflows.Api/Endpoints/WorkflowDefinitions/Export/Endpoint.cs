@@ -10,6 +10,9 @@ using Humanizer;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Export;
 
+/// <summary>
+/// Exports the specified workflow definition as JSON download.
+/// </summary>
 public class Export : ElsaEndpoint<Request>
 {
     private readonly IWorkflowDefinitionStore _store;
@@ -29,12 +32,14 @@ public class Export : ElsaEndpoint<Request>
         _variableDefinitionMapper = variableDefinitionMapper;
     }
 
+    /// <inheritdoc />
     public override void Configure()
     {
         Get("/workflow-definitions/{definitionId}/export");
         ConfigurePermissions("read:workflow-definitions");
     }
 
+    /// <inheritdoc />
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
         var serializerOptions = _serializerOptionsProvider.CreateApiOptions();
@@ -58,8 +63,7 @@ public class Export : ElsaEndpoint<Request>
             definition.CreatedAt,
             definition.Version,
             variables,
-            definition.Metadata,
-            definition.ApplicationProperties,
+            definition.CustomProperties,
             definition.IsLatest,
             definition.IsPublished,
             workflow.Root);

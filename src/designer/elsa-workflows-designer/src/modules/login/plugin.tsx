@@ -5,7 +5,6 @@ import {EventTypes, Plugin} from "../../models";
 import {Container, Service} from "typedi";
 import {StudioService, AuthContext, EventBus, ElsaClient, ElsaApiClientProvider} from "../../services";
 import descriptorsStore from '../../data/descriptors-store';
-import jwt_decode from "jwt-decode";
 import {SignedInArgs} from "./models";
 
 @Service()
@@ -37,10 +36,12 @@ export class LoginPlugin implements Plugin {
     const activityDescriptors = await this.elsaClient.descriptors.activities.list();
     const storageDrivers = await this.elsaClient.descriptors.storageDrivers.list();
     const variableDescriptors = await this.elsaClient.descriptors.variables.list();
+    const workflowInstantiationStrategyDescriptors = await this.elsaClient.descriptors.workflowInstantiationStrategies.list();
 
     descriptorsStore.activityDescriptors = activityDescriptors;
     descriptorsStore.storageDrivers = storageDrivers;
     descriptorsStore.variableDescriptors = variableDescriptors;
+    descriptorsStore.workflowInstantiationStrategyDescriptors = workflowInstantiationStrategyDescriptors;
   };
 
   private onSignedIn = async (e: CustomEvent<SignedInArgs>) => await this.loadDescriptors();

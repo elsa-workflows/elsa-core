@@ -10,7 +10,7 @@ using Elsa.Workflows.Management.Services;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Post;
 
-public class Post : ElsaEndpoint<WorkflowDefinitionRequest, WorkflowDefinitionResponse>
+internal class Post : ElsaEndpoint<WorkflowDefinitionRequest, WorkflowDefinitionResponse>
 {
     private readonly SerializerOptionsProvider _serializerOptionsProvider;
     private readonly IWorkflowDefinitionPublisher _workflowDefinitionPublisher;
@@ -62,9 +62,9 @@ public class Post : ElsaEndpoint<WorkflowDefinitionRequest, WorkflowDefinitionRe
         draft.MaterializerName = JsonWorkflowMaterializer.MaterializerName;
         draft.Name = request.Name?.Trim();
         draft.Description = request.Description?.Trim();
-        draft.Metadata = request.Metadata ?? new Dictionary<string, object>();
+        draft.CustomProperties = request.CustomProperties ?? new Dictionary<string, object>();
         draft.Variables = variables;
-        draft.ApplicationProperties = request.ApplicationProperties ?? new Dictionary<string, object>();
+        draft.Options = request.Options;
         draft = request.Publish ? await _workflowDefinitionPublisher.PublishAsync(draft, cancellationToken) : await _workflowDefinitionPublisher.SaveDraftAsync(draft, cancellationToken);
 
         var response = new WorkflowDefinitionResponse(
@@ -75,11 +75,11 @@ public class Post : ElsaEndpoint<WorkflowDefinitionRequest, WorkflowDefinitionRe
             draft.CreatedAt,
             draft.Version,
             request.Variables ?? new List<VariableDefinition>(),
-            draft.Metadata,
-            draft.ApplicationProperties,
+            draft.CustomProperties,
             draft.IsLatest,
             draft.IsPublished,
-            root);
+            root,
+            draft.Options);
 
         if (isNew)
             await SendCreatedAtAsync<Get.Get>(new { definitionId = definitionId }, response, cancellation: cancellationToken);

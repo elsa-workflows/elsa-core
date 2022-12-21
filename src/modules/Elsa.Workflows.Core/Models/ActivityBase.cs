@@ -66,7 +66,7 @@ public abstract class ActivityBase : IActivity, ISignalHandler
     /// <summary>
     /// A bag of properties that can be used by custom activities and other code such as middleware components to store additional values with the activity.
     /// </summary>
-    public IDictionary<string, object> ApplicationProperties { get; set; } = new Dictionary<string, object>();
+    public IDictionary<string, object> CustomProperties { get; set; } = new Dictionary<string, object>();
     
     /// <summary>
     /// Automatically set to the current source file name when instantiating this activity inside of a workflow class or composite activity class.

@@ -1,6 +1,7 @@
-using Elsa.Runtime.Protos;
+using Elsa.ProtoActor.Protos;
 
 namespace Elsa.ProtoActor;
 
-public record BookmarksStored(ICollection<StoredBookmark> Bookmarks);
-public record BookmarksRemovedByWorkflow(string WorkflowInstanceId);
+internal record BookmarksStored(ICollection<StoredBookmark> Bookmarks);
+
+internal record BookmarksRemovedByWorkflow(string WorkflowInstanceId);

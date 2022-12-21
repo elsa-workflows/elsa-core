@@ -13,6 +13,7 @@ using Elsa.Workflows.Runtime.Implementations;
 using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Services;
+using Elsa.Workflows.Runtime.Strategies;
 using Medallion.Threading;
 using Medallion.Threading.FileSystem;
 using Microsoft.Extensions.DependencyInjection;
@@ -60,18 +61,23 @@ public class WorkflowRuntimeFeature : FeatureBase
     public Func<IServiceProvider, IWorkflowStateExporter> WorkflowStateExporter { get; set; } =
         sp => sp.GetRequiredService<NoopWorkflowStateExporter>(); 
 
+    /// <summary>
+    /// Register the specified workflow type.
+    /// </summary>
     public WorkflowRuntimeFeature AddWorkflow<T>() where T : IWorkflow
     {
         Workflows.Add<T>();
         return this;
     }
 
+    /// <inheritdoc />
     public override void ConfigureHostedServices() =>
         Module
             .ConfigureHostedService<RegisterDescriptors>()
             .ConfigureHostedService<RegisterExpressionSyntaxDescriptors>()
             .ConfigureHostedService<PopulateWorkflowDefinitionStore>();
 
+    /// <inheritdoc />
     public override void Apply()
     {
         Services
@@ -107,6 +113,10 @@ public class WorkflowRuntimeFeature : FeatureBase
             // Domain event handlers.
             .AddNotificationHandlersFrom<WorkflowRuntimeFeature>()
             .AddCommandHandlersFrom<WorkflowRuntimeFeature>()
+            
+            // Instantiation strategies.
+            .AddSingleton<IWorkflowInstantiationStrategy, SingletonStrategy>()
+            .AddSingleton<IWorkflowInstantiationStrategy, CorrelatedSingletonStrategy>()
             ;
 
         Services.Configure<WorkflowRuntimeOptions>(options => { options.Workflows = Workflows; });

@@ -13,14 +13,19 @@ using Elsa.Workflows.Core.Pipelines.ActivityExecution;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Core.Strategies;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Core.Features;
 
+/// <summary>
+/// Adds workflow services to the system.
+/// </summary>
 [DependsOn(typeof(SystemClockFeature))]
 [DependsOn(typeof(ExpressionsFeature))]
 public class WorkflowsFeature : FeatureBase
 {
+    /// <inheritdoc />
     public WorkflowsFeature(IModule module) : base(module)
     {
     }
@@ -35,18 +40,25 @@ public class WorkflowsFeature : FeatureBase
     /// </summary>
     public Func<IServiceProvider, IStandardOutStreamProvider> StandardOutStreamProvider { get; set; } = _ => new StandardOutStreamProvider(Console.Out);
     
+    /// <summary>
+    /// Fluent method to set <see cref="StandardInStreamProvider"/>.
+    /// </summary>
     public WorkflowsFeature WithStandardInStreamProvider(Func<IServiceProvider, IStandardInStreamProvider> provider)
     {
         StandardInStreamProvider = provider;
         return this;
     }
 
+    /// <summary>
+    /// Fluent method to set <see cref="StandardOutStreamProvider"/>.
+    /// </summary>
     public WorkflowsFeature WithStandardOutStreamProvider(Func<IServiceProvider, IStandardOutStreamProvider> provider)
     {
         StandardOutStreamProvider = provider;
         return this;
     }
-    
+
+    /// <inheritdoc />
     public override void Apply()
     {
         AddElsaCore(Services);
@@ -91,6 +103,9 @@ public class WorkflowsFeature : FeatureBase
             .AddSingleton<IStorageDriverManager, StorageDriverManager>()
             .AddStorageDriver<WorkflowStateStorageDriver>()
             .AddStorageDriver<MemoryStorageDriver>()
+            
+            // Instantiation strategies.
+            .AddSingleton<IWorkflowInstantiationStrategy, AlwaysStrategy>()
 
             // Logging
             .AddLogging();
