@@ -52,7 +52,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         var canStart = await workflowHost.CanStartWorkflowAsync(startWorkflowOptions, cancellationToken);
         return new CanStartWorkflowResult(null, canStart);
     }
-    
+
     /// <inheritdoc />
     public async Task<StartWorkflowResult> StartWorkflowAsync(string definitionId, StartWorkflowRuntimeOptions options, CancellationToken cancellationToken = default)
     {
@@ -94,7 +94,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
             var resumeWorkflowOptions = new ResumeWorkflowHostOptions(options.CorrelationId, options.BookmarkId, options.ActivityId, options.Input);
 
             await workflowHost.ResumeWorkflowAsync(resumeWorkflowOptions, cancellationToken);
-            
+
             workflowState = workflowHost.WorkflowState;
 
             await SaveWorkflowStateAsync(workflowState, cancellationToken);
@@ -136,7 +136,8 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         }
 
         // Resume bookmarks.
-        var bookmarks = (await _bookmarkStore.FindByHashAsync(hash, cancellationToken)).ToList();
+        var correlationId = options.CorrelationId;
+        var bookmarks = (string.IsNullOrEmpty(correlationId) ? await _bookmarkStore.FindByHashAsync(hash, cancellationToken) : await _bookmarkStore.FindByCorrelationAndHashAsync(correlationId, hash, cancellationToken)).ToList();
         var resumedWorkflows = await ResumeWorkflowsAsync(bookmarks, new ResumeWorkflowRuntimeOptions(options.CorrelationId, Input: options.Input), cancellationToken);
 
         triggeredWorkflows.AddRange(resumedWorkflows.Select(x => new TriggeredWorkflow(x.InstanceId, x.Bookmarks)));
@@ -171,7 +172,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         return await _workflowHostFactory.CreateAsync(workflow, cancellationToken);
     }
 
-    
+
     private async Task<ICollection<ResumedWorkflow>> ResumeWorkflowsAsync(IEnumerable<StoredBookmark> bookmarks, ResumeWorkflowRuntimeOptions runtimeOptions, CancellationToken cancellationToken = default)
     {
         var resumedWorkflows = new List<ResumedWorkflow>();

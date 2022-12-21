@@ -115,7 +115,7 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
         var request = new ResolveBookmarksRequest
         {
             ActivityTypeName = activityTypeName,
-            CorrelationId = options.CorrelationId ?? ""
+            CorrelationId = options.CorrelationId.EmptyIfNull()
         };
 
         var bookmarksResponse = await client.Resolve(request, cancellationToken);
@@ -135,7 +135,7 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
         var request = new ResolveBookmarksRequest
         {
             ActivityTypeName = activityTypeName,
-            CorrelationId = options.CorrelationId ?? ""
+            CorrelationId = options.CorrelationId.EmptyIfNull()
         };
 
         var bookmarksResponse = await client.Resolve(request, cancellationToken);
