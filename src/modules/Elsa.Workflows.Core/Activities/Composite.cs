@@ -82,37 +82,37 @@ public abstract class Composite : ActivityBase
     /// <summary>
     /// Creates a new <see cref="Activities.Inline"/> activity.
     /// </summary>
-    protected static Inline From(Func<ActivityExecutionContext, ValueTask> activity, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(activity, source, line);
+    protected static Inline Inline(Func<ActivityExecutionContext, ValueTask> activity, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(activity, source, line);
     
     /// <summary>
     /// Creates a new <see cref="Activities.Inline"/> activity.
     /// </summary>
-    protected static Inline From(Func<ValueTask> activity, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(activity, source, line);
+    protected static Inline Inline(Func<ValueTask> activity, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(activity, source, line);
     
     /// <summary>
     /// Creates a new <see cref="Activities.Inline"/> activity.
     /// </summary>
-    protected static Inline From(Action<ActivityExecutionContext> activity, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(activity, source, line);
+    protected static Inline Inline(Action<ActivityExecutionContext> activity, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(activity, source, line);
     
     /// <summary>
     /// Creates a new <see cref="Activities.Inline"/> activity.
     /// </summary>
-    protected static Inline From(Action activity, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(activity, source, line);
+    protected static Inline Inline(Action activity, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(activity, source, line);
     
     /// <summary>
     /// Creates a new <see cref="Activities.Inline"/> activity.
     /// </summary>
-    protected static Inline<TResult> From<TResult>(Func<ActivityExecutionContext, ValueTask<TResult>> activity, MemoryBlockReference? output = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(activity, output, source, line);
+    protected static Inline<TResult> Inline<TResult>(Func<ActivityExecutionContext, ValueTask<TResult>> activity, MemoryBlockReference? output = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(activity, output, source, line);
     
     /// <summary>
     /// Creates a new <see cref="Activities.Inline"/> activity.
     /// </summary>
-    protected static Inline<TResult> From<TResult>(Func<ValueTask<TResult>> activity, MemoryBlockReference? output = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(activity, output, source, line);
+    protected static Inline<TResult> Inline<TResult>(Func<ValueTask<TResult>> activity, MemoryBlockReference? output = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(activity, output, source, line);
     
     /// <summary>
     /// Creates a new <see cref="Activities.Inline"/> activity.
     /// </summary>
-    protected static Inline<TResult> From<TResult>(Func<ActivityExecutionContext, TResult> activity, MemoryBlockReference? output, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(activity, output, source, line);
+    protected static Inline<TResult> Inline<TResult>(Func<ActivityExecutionContext, TResult> activity, MemoryBlockReference? output, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(activity, output, source, line);
     
     /// <summary>
     /// Creates a new <see cref="Activities.Inline"/> activity.
