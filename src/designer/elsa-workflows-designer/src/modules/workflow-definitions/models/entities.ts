@@ -25,5 +25,5 @@ export interface WorkflowDefinitionSummary {
 
 
 export interface WorkflowOptions {
-  instantiationStrategyType?: string;
+  activationStrategyType?: string;
 }

@@ -5,6 +5,7 @@ using Elsa.Expressions.Features;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
+using Elsa.Workflows.Core.ActivationValidators;
 using Elsa.Workflows.Core.ActivityNodeResolvers;
 using Elsa.Workflows.Core.Builders;
 using Elsa.Workflows.Core.Expressions;
@@ -13,7 +14,6 @@ using Elsa.Workflows.Core.Pipelines.ActivityExecution;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.Services;
-using Elsa.Workflows.Core.Strategies;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Core.Features;
@@ -105,7 +105,7 @@ public class WorkflowsFeature : FeatureBase
             .AddStorageDriver<MemoryStorageDriver>()
             
             // Instantiation strategies.
-            .AddSingleton<IWorkflowInstantiationStrategy, AlwaysStrategy>()
+            .AddSingleton<IWorkflowActivationStrategy, AllowAlwaysStrategy>()
 
             // Logging
             .AddLogging();

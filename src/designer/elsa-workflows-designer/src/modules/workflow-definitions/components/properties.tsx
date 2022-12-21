@@ -144,14 +144,14 @@ export class WorkflowDefinitionPropertiesEditor {
     const strategies = descriptorsStore.workflowInstantiationStrategyDescriptors;
     const settingsWidgets: Array<Widget> = [
       {
-        name: 'workflowInstantiationStrategy',
+        name: 'workflowActivationValidator',
         order: 0,
-        content: () => <FormEntry label="Strategy" fieldId="workflowInstantiationStrategyTypeName" hint="The instantiation strategy controls if new instances can be created. For example, the Singleton strategy only allows one running workflow instance to exist.">
-          <select name="workflowInstantiationStrategyTypeName" onChange={e => this.onPropertyEditorChanged(wf => {
-            options.instantiationStrategyType = (e.target as HTMLSelectElement).value;
+        content: () => <FormEntry label="Activation Strategy" fieldId="workflowActivationStrategyType" hint="The workflow activation validator validates if new instances can be created. For example, the Singleton strategy only allows one running workflow instance to exist.">
+          <select name="workflowActivationStrategyType" onChange={e => this.onPropertyEditorChanged(wf => {
+            options.activationStrategyType = (e.target as HTMLSelectElement).value;
             wf.options = options;
           })}>
-            {strategies.map(strategy => <option value={strategy.typeName} selected={strategy.typeName == options.instantiationStrategyType}>{strategy.displayName}</option>)}
+            {strategies.map(strategy => <option value={strategy.typeName} selected={strategy.typeName == options.activationStrategyType}>{strategy.displayName}</option>)}
           </select>
         </FormEntry>
       }
@@ -206,7 +206,6 @@ export class WorkflowDefinitionPropertiesEditor {
   private onPropertyEditorChanged = (apply: (w: WorkflowDefinition) => void) => {
     const workflowDefinition = this.workflowDefinition;
     apply(workflowDefinition);
-    debugger;
     this.workflowPropsUpdated.emit({workflowDefinition});
   }
 

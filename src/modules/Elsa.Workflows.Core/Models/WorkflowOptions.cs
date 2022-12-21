@@ -8,7 +8,7 @@ namespace Elsa.Workflows.Core.Models;
 public class WorkflowOptions
 {
     /// <summary>
-    /// The type of <see cref="IWorkflowInstantiationStrategy"/> to apply when new instances are requested to be created.
+    /// The type of <see cref="IWorkflowActivationStrategy"/> to apply when new instances are requested to be created.
     /// </summary>
-    public Type? InstantiationStrategyType { get; set; }
+    public Type? ActivationStrategyType { get; set; }
 }

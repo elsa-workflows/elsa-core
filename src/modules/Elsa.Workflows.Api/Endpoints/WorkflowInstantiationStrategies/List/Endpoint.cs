@@ -9,13 +9,13 @@ using Humanizer;
 namespace Elsa.Workflows.Api.Endpoints.WorkflowInstantiationStrategies.List;
 
 /// <summary>
-/// Returns list of available <see cref="IWorkflowInstantiationStrategy" /> implementations.
+/// Returns list of available <see cref="IWorkflowActivationStrategy" /> implementations.
 /// </summary>
 internal class List : ElsaEndpointWithoutRequest<ListResponse<WorkflowInstantiationStrategyDescriptor>>
 {
-    private readonly IEnumerable<IWorkflowInstantiationStrategy> _strategies;
+    private readonly IEnumerable<IWorkflowActivationStrategy> _strategies;
 
-    public List(IEnumerable<IWorkflowInstantiationStrategy> strategies)
+    public List(IEnumerable<IWorkflowActivationStrategy> strategies)
     {
         _strategies = strategies;
     }
@@ -36,7 +36,7 @@ internal class List : ElsaEndpointWithoutRequest<ListResponse<WorkflowInstantiat
 
 internal record WorkflowInstantiationStrategyDescriptor(string DisplayName, string TypeName)
 {
-    public static WorkflowInstantiationStrategyDescriptor FromStrategy(IWorkflowInstantiationStrategy strategy)
+    public static WorkflowInstantiationStrategyDescriptor FromStrategy(IWorkflowActivationStrategy strategy)
     {
         var type = strategy.GetType();
         var displayNameAttribute = type.GetCustomAttribute<DisplayNameAttribute>();

@@ -1,22 +1,21 @@
 using System.ComponentModel;
-using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Runtime.Services;
 
-namespace Elsa.Workflows.Runtime.Strategies;
+namespace Elsa.Workflows.Runtime.ActivationValidators;
 
 /// <summary>
-/// Only allow new workflow instances if a running one of the same workflow definition doesn't already exist.
+/// Only allow new workflow instances if a running one with the same correlation ID doesn't already exist.
 /// </summary>
-[DisplayName("Singleton")]
-public class SingletonStrategy : IWorkflowInstantiationStrategy
+[DisplayName("Uniquely correlated")]
+public class UniqueCorrelationStrategy : IWorkflowActivationStrategy
 {
     private readonly IWorkflowRuntime _workflowRuntime;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public SingletonStrategy(IWorkflowRuntime workflowRuntime)
+    public UniqueCorrelationStrategy(IWorkflowRuntime workflowRuntime)
     {
         _workflowRuntime = workflowRuntime;
     }
@@ -24,11 +23,11 @@ public class SingletonStrategy : IWorkflowInstantiationStrategy
     /// <summary>
     /// Only allow a new instance if no running ones exists already. 
     /// </summary>
-    public async ValueTask<bool> ShouldCreateInstanceAsync(WorkflowInstantiationStrategyContext context)
+    public async ValueTask<bool> GetAllowActivationAsync(WorkflowInstantiationStrategyContext context)
     {
         var countArgs = new CountRunningWorkflowsArgs
         {
-            DefinitionId = context.Workflow.Identity.DefinitionId
+            CorrelationId = context.CorrelationId,
         };
 
         var count = await _workflowRuntime.CountRunningWorkflowsAsync(countArgs);

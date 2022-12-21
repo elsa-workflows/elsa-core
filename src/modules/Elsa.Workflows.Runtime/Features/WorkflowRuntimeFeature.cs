@@ -6,6 +6,7 @@ using Elsa.Features.Services;
 using Elsa.Mediator.Extensions;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Core.State;
+using Elsa.Workflows.Runtime.ActivationValidators;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Extensions;
 using Elsa.Workflows.Runtime.HostedServices;
@@ -13,7 +14,6 @@ using Elsa.Workflows.Runtime.Implementations;
 using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Services;
-using Elsa.Workflows.Runtime.Strategies;
 using Medallion.Threading;
 using Medallion.Threading.FileSystem;
 using Microsoft.Extensions.DependencyInjection;
@@ -115,8 +115,9 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddCommandHandlersFrom<WorkflowRuntimeFeature>()
             
             // Instantiation strategies.
-            .AddSingleton<IWorkflowInstantiationStrategy, SingletonStrategy>()
-            .AddSingleton<IWorkflowInstantiationStrategy, CorrelatedSingletonStrategy>()
+            .AddSingleton<IWorkflowActivationStrategy, SingletonStrategy>()
+            .AddSingleton<IWorkflowActivationStrategy, CorrelationStrategy>()
+            .AddSingleton<IWorkflowActivationStrategy, UniqueCorrelationStrategy>()
             ;
 
         Services.Configure<WorkflowRuntimeOptions>(options => { options.Workflows = Workflows; });

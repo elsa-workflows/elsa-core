@@ -15,7 +15,7 @@ namespace Elsa.Workflows.Runtime.Implementations;
 public class WorkflowHost : IWorkflowHost
 {
     private readonly IWorkflowRunner _workflowRunner;
-    private readonly IEnumerable<IWorkflowInstantiationStrategy> _instantiationStrategies;
+    private readonly IEnumerable<IWorkflowActivationStrategy> _instantiationStrategies;
     private readonly IEventPublisher _eventPublisher;
     private readonly IIdentityGenerator _identityGenerator;
     private readonly ILogger<WorkflowHost> _logger;
@@ -27,7 +27,7 @@ public class WorkflowHost : IWorkflowHost
         Workflow workflow,
         WorkflowState workflowState,
         IWorkflowRunner workflowRunner,
-        IEnumerable<IWorkflowInstantiationStrategy> instantiationStrategies,
+        IEnumerable<IWorkflowActivationStrategy> instantiationStrategies,
         IEventPublisher eventPublisher,
         IIdentityGenerator identityGenerator,
         ILogger<WorkflowHost> logger)
@@ -50,7 +50,7 @@ public class WorkflowHost : IWorkflowHost
     /// <inheritdoc />
     public async Task<bool> CanStartWorkflowAsync(StartWorkflowHostOptions? options = default, CancellationToken cancellationToken = default)
     {
-        var strategyType = Workflow.Options?.InstantiationStrategyType;
+        var strategyType = Workflow.Options?.ActivationStrategyType;
 
         if (strategyType == null)
             return true;
@@ -62,7 +62,7 @@ public class WorkflowHost : IWorkflowHost
 
         var correlationId = options?.CorrelationId;
         var strategyContext = new WorkflowInstantiationStrategyContext(Workflow, correlationId, cancellationToken);
-        return await strategy.ShouldCreateInstanceAsync(strategyContext);
+        return await strategy.GetAllowActivationAsync(strategyContext);
     }
 
     /// <inheritdoc />
