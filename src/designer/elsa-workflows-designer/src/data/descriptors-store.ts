@@ -1,19 +1,19 @@
 ﻿import { createStore } from '@stencil/store';
-import {ActivityDescriptor, WorkflowInstantiationStrategyDescriptor} from "../models";
+import {ActivityDescriptor, WorkflowActivationStrategyDescriptor} from "../models";
 import {VariableDescriptor} from "../services/api-client/variable-descriptors-api";
 
 export interface DescriptorsStore {
   activityDescriptors: Array<ActivityDescriptor>;
   storageDrivers: Array<any>;
   variableDescriptors: Array<VariableDescriptor>;
-  workflowInstantiationStrategyDescriptors: Array<WorkflowInstantiationStrategyDescriptor>;
+  workflowActivationStrategyDescriptors: Array<WorkflowActivationStrategyDescriptor>;
 }
 
 const { state, onChange } = createStore<DescriptorsStore>({
   activityDescriptors: [],
   storageDrivers: [],
   variableDescriptors: [],
-  workflowInstantiationStrategyDescriptors: []
+  workflowActivationStrategyDescriptors: []
 } as DescriptorsStore);
 
 export default state;

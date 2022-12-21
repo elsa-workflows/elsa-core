@@ -116,8 +116,8 @@ public class WorkflowRuntimeFeature : FeatureBase
             
             // Instantiation strategies.
             .AddSingleton<IWorkflowActivationStrategy, SingletonStrategy>()
+            .AddSingleton<IWorkflowActivationStrategy, CorrelatedSingletonStrategy>()
             .AddSingleton<IWorkflowActivationStrategy, CorrelationStrategy>()
-            .AddSingleton<IWorkflowActivationStrategy, UniqueCorrelationStrategy>()
             ;
 
         Services.Configure<WorkflowRuntimeOptions>(options => { options.Workflows = Workflows; });

@@ -1,4 +1,4 @@
-using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Core.ActivationValidators;
@@ -6,7 +6,7 @@ namespace Elsa.Workflows.Core.ActivationValidators;
 /// <summary>
 /// Always allow the creation of a new workflow instance.
 /// </summary>
-[DisplayName("Always")]
+[Display(Name = "Always", Description = "Always allow the creation of a new workflow instance.")]
 public class AllowAlwaysStrategy : IWorkflowActivationStrategy
 {
     /// <summary>

@@ -76,7 +76,8 @@ export interface StorageDriverDescriptor {
   displayName: string;
 }
 
-export interface WorkflowInstantiationStrategyDescriptor {
+export interface WorkflowActivationStrategyDescriptor {
   displayName: string;
+  description: string;
   typeName: string;
 }

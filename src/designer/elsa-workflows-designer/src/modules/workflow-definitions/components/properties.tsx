@@ -141,15 +141,23 @@ export class WorkflowDefinitionPropertiesEditor {
       }
     }
 
-    const strategies = descriptorsStore.workflowInstantiationStrategyDescriptors;
+    const strategies = descriptorsStore.workflowActivationStrategyDescriptors;
+    const firstStrategy = strategies.length > 0 ? strategies[0] : null;
+    const defaultDescription = firstStrategy?.description ?? '';
+
     const settingsWidgets: Array<Widget> = [
       {
         name: 'workflowActivationValidator',
         order: 0,
-        content: () => <FormEntry label="Activation Strategy" fieldId="workflowActivationStrategyType" hint="The workflow activation validator validates if new instances can be created. For example, the Singleton strategy only allows one running workflow instance to exist.">
+        content: () => <FormEntry label="Activation Strategy" fieldId="workflowActivationStrategyType" hint={defaultDescription}>
           <select name="workflowActivationStrategyType" onChange={e => this.onPropertyEditorChanged(wf => {
-            options.activationStrategyType = (e.target as HTMLSelectElement).value;
+            const selectElement = (e.target as HTMLSelectElement);
+            options.activationStrategyType = selectElement.value;
             wf.options = options;
+
+            const hintElement: HTMLElement = selectElement.closest('.form-entry').getElementsByClassName('form-field-hint')[0] as HTMLElement;
+            const strategy = strategies.find(x => x.typeName == selectElement.value);
+            hintElement.innerText = strategy.description;
           })}>
             {strategies.map(strategy => <option value={strategy.typeName} selected={strategy.typeName == options.activationStrategyType}>{strategy.displayName}</option>)}
           </select>
