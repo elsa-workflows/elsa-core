@@ -60,10 +60,10 @@ namespace Elsa.Activities.JavaScript
             void ConfigureEngine(Engine engine)
             {
                 void SetOutcome(string value) => outcomes.Add(value);
-                void SetOutcomes(IEnumerable<string> values) => outcomes.AddRange(values);
+                void SetOutcomes(string[] values) => outcomes.AddRange(values);
 
-                engine.SetValue("setOutcome", (Action<string>)SetOutcome);
-                engine.SetValue("setOutcomes", (Action<IEnumerable<string>>)SetOutcomes);
+                engine.SetValue("setOutcome", SetOutcome);
+                engine.SetValue("setOutcomes", SetOutcomes);
             }
 
             var output = await _javaScriptService.EvaluateAsync(script, typeof(object), context, ConfigureEngine, context.CancellationToken);
