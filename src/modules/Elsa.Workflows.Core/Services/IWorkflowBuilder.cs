@@ -33,6 +33,11 @@ public interface IWorkflowBuilder
     string? Description { get; }
     
     /// <summary>
+    /// Options for the workflow being built.
+    /// </summary>
+    WorkflowOptions WorkflowOptions { get; }
+    
+    /// <summary>
     /// The activity to execute when the workflow is run. 
     /// </summary>
     IActivity? Root { get; set; }
@@ -103,14 +108,14 @@ public interface IWorkflowBuilder
     IWorkflowBuilder WithVariables(params Variable[] variables);
 
     /// <summary>
-    /// A fluent method for configuring <see cref="WorkflowOptions"/>.
-    /// </summary>
-    IWorkflowBuilder ConfigureOptions(Action<WorkflowOptions> configure);
-
-    /// <summary>
     /// A fluent method for adding a property to <see cref="CustomProperties"/>.
     /// </summary>
     IWorkflowBuilder WithCustomProperty(string name, object value);
+
+    /// <summary>
+    /// Configure the workflow to use the specified <see cref="IWorkflowActivationStrategy"/> type.
+    /// </summary>
+    IWorkflowBuilder WithActivationStrategyType<T>() where T : IWorkflowActivationStrategy;
     
     /// <summary>
     /// Build a new <see cref="Workflow"/> instance using the information collected in this builder.

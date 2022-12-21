@@ -41,9 +41,7 @@ public class WorkflowBuilder : IWorkflowBuilder
     /// <inheritdoc />
     public IDictionary<string, object> CustomProperties { get; set; } = new Dictionary<string, object>();
 
-    /// <summary>
-    /// Stores <see cref="WorkflowOptions"/> to be applied to the workflow being created.
-    /// </summary>
+    /// <inheritdoc />
     public WorkflowOptions WorkflowOptions { get; } = new(); 
 
     /// <inheritdoc />
@@ -131,16 +129,17 @@ public class WorkflowBuilder : IWorkflowBuilder
         return this;
     }
 
-    public IWorkflowBuilder ConfigureOptions(Action<WorkflowOptions> configure)
-    {
-        configure(WorkflowOptions);
-        return this;
-    }
-
     /// <inheritdoc />
     public IWorkflowBuilder WithCustomProperty(string name, object value)
     {
         CustomProperties[name] = value;
+        return this;
+    }
+
+    /// <inheritdoc />
+    public IWorkflowBuilder WithActivationStrategyType<T>() where T : IWorkflowActivationStrategy
+    {
+        WorkflowOptions.ActivationStrategyType = typeof(T);
         return this;
     }
 
