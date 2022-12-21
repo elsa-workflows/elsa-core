@@ -6,7 +6,7 @@ using FastEndpoints;
 
 namespace Elsa.Workflows.Api.Mappers;
 
-public class WorkflowDefinitionMapper : ResponseMapper<WorkflowDefinitionResponse, WorkflowDefinition>
+internal class WorkflowDefinitionMapper : ResponseMapper<WorkflowDefinitionResponse, WorkflowDefinition>
 {
     public override async Task<WorkflowDefinitionResponse> FromEntityAsync(WorkflowDefinition entity)
     {
@@ -14,8 +14,8 @@ public class WorkflowDefinitionMapper : ResponseMapper<WorkflowDefinitionRespons
         var variableDefinitionMapper = Resolve<VariableDefinitionMapper>();
         var workflow = await workflowDefinitionService.MaterializeWorkflowAsync(entity);
         var variables = variableDefinitionMapper.Map(workflow.Variables).ToList();
-        
-        return new (
+
+        return new(
             entity.Id,
             entity.DefinitionId,
             entity.Name,
@@ -23,10 +23,10 @@ public class WorkflowDefinitionMapper : ResponseMapper<WorkflowDefinitionRespons
             entity.CreatedAt,
             entity.Version,
             variables,
-            entity.Metadata,
-            entity.ApplicationProperties,
+            entity.CustomProperties,
             entity.IsLatest,
             entity.IsPublished,
-            workflow.Root);   
+            workflow.Root,
+            workflow.Options);
     }
 }

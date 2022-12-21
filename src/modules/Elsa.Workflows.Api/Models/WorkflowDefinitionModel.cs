@@ -3,7 +3,7 @@ using Elsa.Workflows.Management.Models;
 
 namespace Elsa.Workflows.Api.Models;
 
-public record WorkflowDefinitionModel(
+internal record WorkflowDefinitionModel(
     string Id,
     string DefinitionId,
     string? Name,
@@ -12,7 +12,6 @@ public record WorkflowDefinitionModel(
     int Version,
     ICollection<VariableDefinition> Variables,
     IDictionary<string, object> Metadata,
-    IDictionary<string, object> ApplicationProperties,
     bool IsLatest,
     bool IsPublished,
     IActivity Root

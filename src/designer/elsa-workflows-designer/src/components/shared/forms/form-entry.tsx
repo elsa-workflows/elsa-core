@@ -12,7 +12,7 @@ export interface FormEntryProps {
 export const FormEntry: FunctionalComponent<FormEntryProps> = ({label, hint, fieldId, key, padding}, children) => {
   padding ??= 'p-4';
   return (
-    <div class={padding}>
+    <div class={`form-entry ${padding}`}>
       <label htmlFor={fieldId}>
         {label}
       </label>

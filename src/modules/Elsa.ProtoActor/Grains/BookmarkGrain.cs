@@ -1,5 +1,6 @@
 using Elsa.Common.Extensions;
-using Elsa.Runtime.Protos;
+using Elsa.ProtoActor.Protos;
+using Google.Protobuf.WellKnownTypes;
 using Proto;
 using Proto.Cluster;
 using Proto.Persistence;
@@ -7,13 +8,15 @@ using Proto.Persistence.SnapshotStrategies;
 
 namespace Elsa.ProtoActor.Grains;
 
-using Persistence = Proto.Persistence.Persistence;
-
+/// <summary>
+/// Represents a registry of bookmarks.
+/// </summary>
 public class BookmarkGrain : BookmarkGrainBase
 {
     private ICollection<StoredBookmark> _bookmarks = new List<StoredBookmark>();
     private readonly Persistence _persistence;
 
+    /// <inheritdoc />
     public BookmarkGrain(IProvider provider, IContext context) : base(context)
     {
         _persistence = Persistence.WithEventSourcingAndSnapshotting(
@@ -27,9 +30,12 @@ public class BookmarkGrain : BookmarkGrainBase
     }
 
     private string BookmarkHash => Context.ClusterIdentity()!.Identity;
+
+    /// <inheritdoc />
     public override async Task OnStarted() => await _persistence.RecoverStateAsync();
 
-    public override async Task<Unit> Store(StoreBookmarksRequest request)
+    /// <inheritdoc />
+    public override async Task<Empty> Store(StoreBookmarksRequest request)
     {
         var bookmarks = request.BookmarkIds.Select(x => new StoredBookmark
         {
@@ -39,15 +45,17 @@ public class BookmarkGrain : BookmarkGrainBase
         }).ToList();
         
         await _persistence.PersistEventAsync(new BookmarksStored(bookmarks));
-        return new Unit();
+        return new Empty();
     }
 
-    public override async Task<Unit> RemoveByWorkflow(RemoveBookmarksByWorkflowRequest request)
+    /// <inheritdoc />
+    public override async Task<Empty> RemoveByWorkflow(RemoveBookmarksByWorkflowRequest request)
     {
         await _persistence.PersistEventAsync(new BookmarksRemovedByWorkflow(request.WorkflowInstanceId));
-        return new Unit();
+        return new Empty();
     }
 
+    /// <inheritdoc />
     public override Task<ResolveBookmarksResponse> Resolve(ResolveBookmarksRequest request)
     {
         var response = new ResolveBookmarksResponse();

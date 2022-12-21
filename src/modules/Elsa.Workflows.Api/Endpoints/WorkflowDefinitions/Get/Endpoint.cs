@@ -6,7 +6,7 @@ using Elsa.Workflows.Management.Services;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Get;
 
-public class Get : ElsaEndpoint<Request, WorkflowDefinitionResponse, WorkflowDefinitionMapper>
+internal class Get : ElsaEndpoint<Request, WorkflowDefinitionResponse, WorkflowDefinitionMapper>
 {
     private readonly IWorkflowDefinitionStore _store;
 

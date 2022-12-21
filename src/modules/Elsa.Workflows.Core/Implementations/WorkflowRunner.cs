@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Core.Implementations;
 
+/// <inheritdoc />
 public class WorkflowRunner : IWorkflowRunner
 {
     private readonly IServiceScopeFactory _serviceScopeFactory;
@@ -14,6 +15,9 @@ public class WorkflowRunner : IWorkflowRunner
     private readonly IIdentityGenerator _identityGenerator;
     private readonly IWorkflowExecutionContextFactory _workflowExecutionContextFactory;
 
+    /// <summary>
+    /// Constructor.
+    /// </summary>
     public WorkflowRunner(
         IServiceScopeFactory serviceScopeFactory,
         IWorkflowExecutionPipeline pipeline,
@@ -30,12 +34,14 @@ public class WorkflowRunner : IWorkflowRunner
         _workflowExecutionContextFactory = workflowExecutionContextFactory;
     }
 
+    /// <inheritdoc />
     public async Task<RunWorkflowResult> RunAsync(IActivity activity, RunWorkflowOptions? options = default, CancellationToken cancellationToken = default)
     {
         var workflow = Workflow.FromActivity(activity);
         return await RunAsync(workflow, options, cancellationToken);
     }
 
+    /// <inheritdoc />
     public async Task<RunWorkflowResult> RunAsync(IWorkflow workflow, RunWorkflowOptions? options = default, CancellationToken cancellationToken = default)
     {
         var builder = _workflowBuilderFactory.CreateBuilder();
@@ -43,6 +49,7 @@ public class WorkflowRunner : IWorkflowRunner
         return await RunAsync(workflowDefinition, options, cancellationToken);
     }
 
+    /// <inheritdoc />
     public async Task<RunWorkflowResult> RunAsync<T>(RunWorkflowOptions? options = default, CancellationToken cancellationToken = default) where T : IWorkflow
     {
         var builder = _workflowBuilderFactory.CreateBuilder();
@@ -50,6 +57,7 @@ public class WorkflowRunner : IWorkflowRunner
         return await RunAsync(workflowDefinition, options, cancellationToken);
     }
 
+    /// <inheritdoc />
     public async Task<RunWorkflowResult> RunAsync(Workflow workflow, RunWorkflowOptions? options = default, CancellationToken cancellationToken = default)
     {
         // Create a child scope.
@@ -68,6 +76,7 @@ public class WorkflowRunner : IWorkflowRunner
         return await RunAsync(workflowExecutionContext);
     }
 
+    /// <inheritdoc />
     public async Task<RunWorkflowResult> RunAsync(Workflow workflow, WorkflowState workflowState, RunWorkflowOptions? options = default, CancellationToken cancellationToken = default)
     {
         // Create a child scope.
@@ -104,6 +113,7 @@ public class WorkflowRunner : IWorkflowRunner
         return await RunAsync(workflowExecutionContext);
     }
 
+    /// <inheritdoc />
     public async Task<RunWorkflowResult> RunAsync(WorkflowExecutionContext workflowExecutionContext)
     {
         // Transition into the Running state.

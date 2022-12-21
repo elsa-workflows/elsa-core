@@ -54,6 +54,7 @@ export interface PagedList<T> {
 
 export interface List<T> {
   items: Array<T>;
+  count: number;
 }
 
 export interface VersionOptions {
@@ -73,4 +74,10 @@ export interface IntellisenseContext {
 export interface StorageDriverDescriptor {
   id: string;
   displayName: string;
+}
+
+export interface WorkflowActivationStrategyDescriptor {
+  displayName: string;
+  description: string;
+  typeName: string;
 }

@@ -1,9 +1,9 @@
 using System.Text.Json;
-using Elsa.Runtime.Protos;
+using Elsa.ProtoActor.Protos;
 
 namespace Elsa.ProtoActor.Extensions;
 
-public static class ProtoInputExtensions
+internal static class ProtoInputExtensions
 {
     public static IDictionary<string, object> Deserialize(this Input input) => input.Data.ToDictionary(x => x.Key, x => JsonSerializer.Deserialize<object>(x.Value.Text)!);
 

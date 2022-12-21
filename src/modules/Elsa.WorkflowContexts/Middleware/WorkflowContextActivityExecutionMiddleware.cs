@@ -26,7 +26,7 @@ public class WorkflowContextActivityExecutionMiddleware : IActivityExecutionMidd
     public async ValueTask InvokeAsync(ActivityExecutionContext context)
     {
         // Check if the workflow contains any workflow contexts.
-        if (!context.WorkflowExecutionContext.Workflow.ApplicationProperties!.TryGetValue<ICollection<WorkflowContext>>("Elsa:WorkflowContexts", out var workflowContexts))
+        if (!context.WorkflowExecutionContext.Workflow.CustomProperties!.TryGetValue<ICollection<WorkflowContext>>("Elsa:WorkflowContexts", out var workflowContexts))
         {
             await _next(context);
             return;

@@ -9,9 +9,29 @@ namespace Elsa.Workflows.Runtime.Services;
 /// </summary>
 public interface IWorkflowHost
 {
+    /// <summary>
+    /// The workflow definition.
+    /// </summary>
     Workflow Workflow { get; set; }
+    
+    /// <summary>
+    /// The workflow state.
+    /// </summary>
     WorkflowState WorkflowState { get; set; }
+    
+    /// <summary>
+    /// Returns a value indicating whether or not the specified workflow can start a new instance or not.
+    /// </summary>
+    Task<bool> CanStartWorkflowAsync(StartWorkflowHostOptions? options = default, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Start a new workflow instance and execute it.
+    /// </summary>
     Task<StartWorkflowHostResult> StartWorkflowAsync(StartWorkflowHostOptions? options = default, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Resume an existing workflow instance.
+    /// </summary>
     Task<ResumeWorkflowHostResult> ResumeWorkflowAsync(ResumeWorkflowHostOptions? options = default, CancellationToken cancellationToken = default);
 }
 

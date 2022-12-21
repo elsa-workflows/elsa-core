@@ -10,7 +10,7 @@ public static class ActivityExtensions
 
     public static IDictionary<WorkflowContext, ActivityWorkflowContextSettings> GetWorkflowContextSettings(this IActivity activity)
     {
-        return activity.ApplicationProperties.GetOrAdd(ActivityWorkflowContextSettingsKey, () => new Dictionary<WorkflowContext, ActivityWorkflowContextSettings>())!;
+        return activity.CustomProperties.GetOrAdd(ActivityWorkflowContextSettingsKey, () => new Dictionary<WorkflowContext, ActivityWorkflowContextSettings>())!;
     }
 
     public static TActivity LoadContext<TActivity>(this TActivity activity, WorkflowContext workflowContext) where TActivity : IActivity

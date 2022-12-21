@@ -8,12 +8,16 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace Elsa.Liquid.Implementations
 {
+    /// <inheritdoc />
     public class LiquidTemplateManager : ILiquidTemplateManager
     {
         private readonly LiquidParser _parser;
         private readonly IMemoryCache _memoryCache;
         private readonly IEventPublisher _eventPublisher;
 
+        /// <summary>
+        /// Constructor.
+        /// </summary>
         public LiquidTemplateManager(LiquidParser parser, IMemoryCache memoryCache, IEventPublisher eventPublisher)
         {
             _parser = parser;
@@ -21,13 +25,13 @@ namespace Elsa.Liquid.Implementations
             _eventPublisher = eventPublisher;
         }
 
+        /// <inheritdoc />
         public async Task<string?> RenderAsync(string template, ExpressionExecutionContext expressionExecutionContext, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(template))
                 return default!;
 
             var result = GetCachedTemplate(template);
-
             var templateContext =  await CreateTemplateContextAsync(expressionExecutionContext, cancellationToken);
 
             return await result.RenderAsync(templateContext, HtmlEncoder.Default);
@@ -49,6 +53,7 @@ namespace Elsa.Liquid.Implementations
             return result;
         }
 
+        /// <inheritdoc />
         public bool Validate(string template, out string error) => TryParse(template, out _, out error);
 
         private bool TryParse(string template, out IFluidTemplate result, out string error) => _parser.TryParse(template, out result, out error);

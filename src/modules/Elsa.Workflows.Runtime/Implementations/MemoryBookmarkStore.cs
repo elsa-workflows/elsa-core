@@ -4,10 +4,12 @@ using Elsa.Workflows.Runtime.Services;
 
 namespace Elsa.Workflows.Runtime.Implementations;
 
+/// <inheritdoc />
 public class MemoryBookmarkStore : IBookmarkStore
 {
     private readonly ConcurrentDictionary<string, ICollection<StoredBookmark>> _bookmarks = new();
 
+    /// <inheritdoc />
     public ValueTask SaveAsync(string activityTypeName, string hash, string workflowInstanceId, IEnumerable<string> bookmarkIds, string? correlationId = default, CancellationToken cancellationToken = default)
     {
         var storedBookmarks = bookmarkIds.Select(x => new StoredBookmark(activityTypeName, hash, workflowInstanceId, x, correlationId)).ToList();
@@ -15,24 +17,28 @@ public class MemoryBookmarkStore : IBookmarkStore
         return ValueTask.CompletedTask;
     }
 
+    /// <inheritdoc />
     public ValueTask<IEnumerable<StoredBookmark>> FindByWorkflowInstanceAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
     {
         var bookmarks = _bookmarks.Values.SelectMany(x => x).Where(x => x.WorkflowInstanceId == workflowInstanceId).ToList();
         return new(bookmarks);
     }
 
+    /// <inheritdoc />
     public ValueTask<IEnumerable<StoredBookmark>> FindByHashAsync(string hash, CancellationToken cancellationToken = default)
     {
         var bookmarks = _bookmarks.TryGetValue(hash, out var value) ? value : Enumerable.Empty<StoredBookmark>(); 
         return new(bookmarks);
     }
 
+    /// <inheritdoc />
     public ValueTask<IEnumerable<StoredBookmark>> FindByWorkflowInstanceAndHashAsync(string workflowInstanceId, string hash, CancellationToken cancellationToken = default)
     {
         var bookmarks = _bookmarks.Values.SelectMany(x => x).Where(x => x.WorkflowInstanceId == workflowInstanceId && x.Hash == hash).ToList();
         return new(bookmarks);
     }
-    
+
+    /// <inheritdoc />
     public ValueTask<IEnumerable<StoredBookmark>> FindByCorrelationAndHashAsync(string correlationId, string hash, CancellationToken cancellationToken = default)
     {
         var bookmarks = _bookmarks.Values.SelectMany(x => x).Where(x => x.CorrelationId == correlationId && x.Hash == hash).ToList();

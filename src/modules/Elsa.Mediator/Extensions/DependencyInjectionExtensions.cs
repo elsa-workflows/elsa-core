@@ -19,14 +19,23 @@ using Microsoft.Extensions.Options;
 
 namespace Elsa.Mediator.Extensions;
 
+/// <summary>
+/// Adds extension methods to <see cref="IModule"/> that enable & configure mediator specific features.
+/// </summary>
 public static class DependencyInjectionExtensions
 {
+    /// <summary>
+    /// Adds and configures the <see cref="MediatorFeature"/> to the specified <see cref="IModule"/>.
+    /// </summary>
     public static IModule AddMediator(this IModule module, Action<MediatorFeature>? configure = default)
     {
         module.Configure(configure);
         return module;
     }
 
+    /// <summary>
+    /// Adds mediator services to the <see cref="IServiceCollection"/>.
+    /// </summary>
     public static IServiceCollection AddMediator(this IServiceCollection services, Action<MediatorOptions>? configure = default)
     {
         services.Configure(configure ?? (_ => { }));
@@ -56,6 +65,9 @@ public static class DependencyInjectionExtensions
             ;
     }
 
+    /// <summary>
+    /// Registers a <see cref="IConsumer{T}"/> with the service container.
+    /// </summary>
     public static IServiceCollection AddConsumer<T, TConsumer>(this IServiceCollection services, int workers = 1) where TConsumer : class, IConsumer<T>
     {
         services.AddSingleton<IConsumer<T>, TConsumer>();
@@ -70,11 +82,17 @@ public static class DependencyInjectionExtensions
         return services;
     }
 
+    /// <summary>
+    /// Registers a <see cref="ICommandHandler{T}"/> with the service container.
+    /// </summary>
     public static IServiceCollection AddCommandHandler<THandler, TCommand>(this IServiceCollection services)
         where THandler : class, ICommandHandler<TCommand>
         where TCommand : ICommand<Unit> =>
         services.AddCommandHandler<THandler, TCommand, Unit>();
 
+    /// <summary>
+    /// Registers a <see cref="ICommandHandler{T}"/> with the service container.
+    /// </summary>
     public static IServiceCollection AddCommandHandler<THandler, TCommand, TResult>(this IServiceCollection services)
         where THandler : class, ICommandHandler<TCommand, TResult>
         where TCommand : ICommand<TResult>
@@ -82,6 +100,9 @@ public static class DependencyInjectionExtensions
         return services.AddSingleton<ICommandHandler, THandler>();
     }
 
+    /// <summary>
+    /// Registers a <see cref="IRequestHandler{TRequest,TResponse}"/> with the service container.
+    /// </summary>
     public static IServiceCollection AddRequestHandler<THandler, TRequest, TResponse>(this IServiceCollection services)
         where THandler : class, IRequestHandler<TRequest, TResponse>
         where TRequest : IRequest<TResponse>?
@@ -89,9 +110,19 @@ public static class DependencyInjectionExtensions
         return services.AddSingleton<IRequestHandler, THandler>();
     }
 
+    /// <summary>
+    /// Registers all handlers from the assembly of the specified <see cref="TMarker"/> type with the service container.
+    /// </summary>
     public static IServiceCollection AddHandlersFrom<TMarker>(this IServiceCollection services) => services.AddHandlersFrom(typeof(TMarker));
+    
+    /// <summary>
+    /// Registers all handlers from the assembly of the specified <see cref="markerType"/> type with the service container.
+    /// </summary>
     public static IServiceCollection AddHandlersFrom(this IServiceCollection services, Type markerType) => services.AddHandlersFrom(markerType.Assembly);
 
+    /// <summary>
+    /// Registers all handlers from the specified assembly with the service container.
+    /// </summary>
     public static IServiceCollection AddHandlersFrom(this IServiceCollection services, Assembly assembly)
     {
         return services
@@ -100,18 +131,54 @@ public static class DependencyInjectionExtensions
             .AddCommandHandlersFrom(assembly);
     }
 
+    /// <summary>
+    /// Registers all handlers from the assembly of the specified <see cref="TMarker"/> type with the service container.
+    /// </summary>
     public static IServiceCollection AddNotificationHandlersFrom<TMarker>(this IServiceCollection services) => services.AddHandlersFromInternal<INotificationHandler>(typeof(TMarker));
+    
+    /// <summary>
+    /// Registers all handlers from the assembly of the specified <see cref="markerType"/> type with the service container.
+    /// </summary>
     public static IServiceCollection AddNotificationHandlersFrom(this IServiceCollection services, Type markerType) => services.AddHandlersFromInternal<INotificationHandler>(markerType);
+    
+    /// <summary>
+    /// Registers all handlers from the specified assembly with the service container.
+    /// </summary>
     public static IServiceCollection AddNotificationHandlersFrom(this IServiceCollection services, Assembly assembly) => services.AddHandlersFromInternal<INotificationHandler>(assembly);
 
+    /// <summary>
+    /// Registers all handlers from the assembly of the specified <see cref="TMarker"/> type with the service container.
+    /// </summary>
     public static IServiceCollection AddRequestHandlersFrom<TMarker>(this IServiceCollection services) => services.AddHandlersFromInternal<IRequestHandler>(typeof(TMarker));
+    
+    /// <summary>
+    /// Registers all handlers from the assembly of the specified <see cref="markerType"/> type with the service container.
+    /// </summary>
     public static IServiceCollection AddRequestHandlersFrom(this IServiceCollection services, Type markerType) => services.AddHandlersFromInternal<IRequestHandler>(markerType);
+    
+    /// <summary>
+    /// Registers all handlers from the specified assembly with the service container.
+    /// </summary>
     public static IServiceCollection AddRequestHandlersFrom(this IServiceCollection services, Assembly assembly) => services.AddHandlersFromInternal<IRequestHandler>(assembly);
 
+    /// <summary>
+    /// Registers all handlers from the assembly of the specified <see cref="TMarker"/> type with the service container.
+    /// </summary>
     public static IServiceCollection AddCommandHandlersFrom<TMarker>(this IServiceCollection services) => services.AddHandlersFromInternal<ICommandHandler>(typeof(TMarker));
+    
+    /// <summary>
+    /// Registers all handlers from the assembly of the specified <see cref="markerType"/> type with the service container.
+    /// </summary>
     public static IServiceCollection AddCommandHandlersFrom(this IServiceCollection services, Type markerType) => services.AddHandlersFromInternal<ICommandHandler>(markerType);
+    
+    /// <summary>
+    /// Registers all handlers from the specified assembly with the service container.
+    /// </summary>
     public static IServiceCollection AddCommandHandlersFrom(this IServiceCollection services, Assembly assembly) => services.AddHandlersFromInternal<ICommandHandler>(assembly);
 
+    /// <summary>
+    /// Registers a channel for the specified type <see cref="T"/> as well as a channel reader and writer. 
+    /// </summary>
     public static IServiceCollection CreateChannel<T>(this IServiceCollection services) =>
         services
             .AddSingleton(CreateChannel<T>())

@@ -6,6 +6,7 @@ using Elsa.Features.Services;
 using Elsa.Mediator.Extensions;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Core.State;
+using Elsa.Workflows.Runtime.ActivationValidators;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Extensions;
 using Elsa.Workflows.Runtime.HostedServices;
@@ -60,18 +61,23 @@ public class WorkflowRuntimeFeature : FeatureBase
     public Func<IServiceProvider, IWorkflowStateExporter> WorkflowStateExporter { get; set; } =
         sp => sp.GetRequiredService<NoopWorkflowStateExporter>(); 
 
+    /// <summary>
+    /// Register the specified workflow type.
+    /// </summary>
     public WorkflowRuntimeFeature AddWorkflow<T>() where T : IWorkflow
     {
         Workflows.Add<T>();
         return this;
     }
 
+    /// <inheritdoc />
     public override void ConfigureHostedServices() =>
         Module
             .ConfigureHostedService<RegisterDescriptors>()
             .ConfigureHostedService<RegisterExpressionSyntaxDescriptors>()
             .ConfigureHostedService<PopulateWorkflowDefinitionStore>();
 
+    /// <inheritdoc />
     public override void Apply()
     {
         Services
@@ -107,6 +113,11 @@ public class WorkflowRuntimeFeature : FeatureBase
             // Domain event handlers.
             .AddNotificationHandlersFrom<WorkflowRuntimeFeature>()
             .AddCommandHandlersFrom<WorkflowRuntimeFeature>()
+            
+            // Instantiation strategies.
+            .AddSingleton<IWorkflowActivationStrategy, SingletonStrategy>()
+            .AddSingleton<IWorkflowActivationStrategy, CorrelatedSingletonStrategy>()
+            .AddSingleton<IWorkflowActivationStrategy, CorrelationStrategy>()
             ;
 
         Services.Configure<WorkflowRuntimeOptions>(options => { options.Workflows = Workflows; });

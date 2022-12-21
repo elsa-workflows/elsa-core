@@ -1,0 +1,37 @@
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
+using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Runtime.Services;
+
+namespace Elsa.Workflows.Runtime.ActivationValidators;
+
+/// <summary>
+/// Only allow new workflow instances if a running one of the same workflow definition doesn't already exist.
+/// </summary>
+[Display(Name = "Singleton", Description = "Only allow new workflow instances if a running one of the same workflow definition doesn't already exist.")]
+public class SingletonStrategy : IWorkflowActivationStrategy
+{
+    private readonly IWorkflowRuntime _workflowRuntime;
+
+    /// <summary>
+    /// Constructor.
+    /// </summary>
+    public SingletonStrategy(IWorkflowRuntime workflowRuntime)
+    {
+        _workflowRuntime = workflowRuntime;
+    }
+    
+    /// <summary>
+    /// Only allow a new instance if no running ones exists already. 
+    /// </summary>
+    public async ValueTask<bool> GetAllowActivationAsync(WorkflowInstantiationStrategyContext context)
+    {
+        var countArgs = new CountRunningWorkflowsArgs
+        {
+            DefinitionId = context.Workflow.Identity.DefinitionId
+        };
+
+        var count = await _workflowRuntime.CountRunningWorkflowsAsync(countArgs);
+        return count == 0;
+    }
+}
