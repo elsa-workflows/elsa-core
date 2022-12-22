@@ -3,12 +3,15 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.Expressions.Models;
 
 /// <summary>
-/// Made available to activities to access shared state and store local state. 
+/// Provides context to workflow expressions. 
 /// </summary>
 public class ExpressionExecutionContext
 {
     private readonly IServiceProvider _serviceProvider;
 
+    /// <summary>
+    /// Constructor.
+    /// </summary>
     public ExpressionExecutionContext(
         IServiceProvider serviceProvider,
         MemoryRegister memory,
@@ -33,11 +36,26 @@ public class ExpressionExecutionContext
     /// </summary>
     public IDictionary<object, object> TransientProperties { get; set; }
 
+    /// <summary>
+    /// Provides access to the parent <see cref="ExpressionExecutionContext"/>, if there is any.
+    /// </summary>
     public ExpressionExecutionContext? ParentContext { get; set; }
+    
+    /// <summary>
+    /// A cancellation token.
+    /// </summary>
     public CancellationToken CancellationToken { get; }
 
+    /// <summary>
+    /// Returns the <see cref="MemoryBlock"/> pointed to by the specified memory block reference.
+    /// </summary>
     public MemoryBlock GetBlock(Func<MemoryBlockReference> blockReference) => GetBlock(blockReference());
+    
+    /// <summary>
+    /// Returns the <see cref="MemoryBlock"/> pointed to by the specified memory block reference.
+    /// </summary>
     public MemoryBlock GetBlock(MemoryBlockReference blockReference) => GetBlockInternal(blockReference) ?? throw new Exception($"Failed to retrieve memory block with reference {blockReference.Id}");
+    
     public object Get(Func<MemoryBlockReference> blockReference) => Get(blockReference());
     public object Get(MemoryBlockReference blockReference) => GetBlock(blockReference).Value!;
     public T Get<T>(Func<MemoryBlockReference> blockReference) => Get<T>(blockReference());

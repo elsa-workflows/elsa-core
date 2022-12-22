@@ -4,7 +4,7 @@
     <Import Project="..\..\..\configureawait.props" />
 
     <PropertyGroup>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
         <Description>
             Activity Definitions allow you to manage custom activity definitions that can be created using the workflow designer.
             Think reusable mini workflows that can be used as composite activities. 

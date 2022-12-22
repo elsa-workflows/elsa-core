@@ -4,7 +4,7 @@
     <Import Project="..\..\..\configureawait.props"/>
 
     <PropertyGroup>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
         <Description>
             Provides Hangfire integration and an implementation of Elsa's IJobQueue implementation.
         </Description>

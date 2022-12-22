@@ -4,7 +4,7 @@
     <Import Project="..\..\..\configureawait.props" />
 
     <PropertyGroup>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
         <Description>
             Provides common utilities that are helpful when writing tests against Elsa Workflows functionality.
         </Description>

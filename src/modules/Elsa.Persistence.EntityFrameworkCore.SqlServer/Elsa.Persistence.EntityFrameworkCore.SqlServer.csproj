@@ -4,7 +4,7 @@
     <Import Project="..\..\..\configureawait.props" />
 
     <PropertyGroup>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
         <Description>
             Provides SQL Server migrations for various modules.
         </Description>
