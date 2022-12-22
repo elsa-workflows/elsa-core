@@ -15,7 +15,7 @@ namespace Elsa.Telnyx.Services;
 internal class WebhookHandler : IWebhookHandler
 {
     private static readonly JsonSerializerOptions SerializerSettings;
-    private readonly IMediator _mediator;
+    private readonly IBackgroundEventPublisher _mediator;
     private readonly ILogger<WebhookHandler> _logger;
 
     static WebhookHandler()
@@ -23,7 +23,7 @@ internal class WebhookHandler : IWebhookHandler
         SerializerSettings = CreateSerializerSettings();
     }
 
-    public WebhookHandler(IMediator mediator, ILogger<WebhookHandler> logger)
+    public WebhookHandler(IBackgroundEventPublisher mediator, ILogger<WebhookHandler> logger)
     {
         _mediator = mediator;
         _logger = logger;
