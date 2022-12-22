@@ -104,7 +104,12 @@ public abstract class AnswerCallBase : ActivityBase<CallAnsweredPayload>, IBookm
     private async ValueTask InvokeTelnyxAsync(ActivityExecutionContext context)
     {
         var callControlId = context.GetPrimaryCallControlId(CallControlId) ?? throw new Exception("CallControlId is required.");
-        var request = new AnswerCallRequest();
+        
+        var request = new AnswerCallRequest
+        {
+            ClientState = context.CreateCorrelatingClientState()
+        };
+        
         var telnyxClient = context.GetRequiredService<ITelnyxClient>();
 
         try

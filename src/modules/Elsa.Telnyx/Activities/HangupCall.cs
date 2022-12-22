@@ -76,7 +76,7 @@ public abstract class HangupCallBase : ActivityBase
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var callControlId = context.GetPrimaryCallControlId(CallControlId) ?? throw new Exception("CallControlId is required.");
-        var request = new HangupCallRequest();
+        var request = new HangupCallRequest(ClientState: context.CreateCorrelatingClientState());
         var telnyxClient = context.GetRequiredService<ITelnyxClient>();
 
         try

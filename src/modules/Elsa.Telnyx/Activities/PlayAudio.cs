@@ -25,7 +25,7 @@ public class FlowPlayAudio : PlayAudioBase
     public FlowPlayAudio([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
-    
+
     /// <inheritdoc />
     protected override ValueTask HandlePlaybackStartedAsync(ActivityExecutionContext context) => context.CompleteActivityWithOutcomesAsync("Playback started");
 
@@ -41,16 +41,18 @@ public class PlayAudio : PlayAudioBase
     public PlayAudio([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
-    
+
     /// <summary>
     /// The <see cref="IActivity"/> to execute when audio playback has started.
     /// </summary>
-    [Port] public IActivity? PlaybackStarted { get; set; }
-    
+    [Port]
+    public IActivity? PlaybackStarted { get; set; }
+
     /// <summary>
     /// The <see cref="IActivity"/> to execute when the call was no longer active.
     /// </summary>
-    [Port] public IActivity? Disconnected { get; set; }
+    [Port]
+    public IActivity? Disconnected { get; set; }
 
     /// <inheritdoc />
     protected override async ValueTask HandlePlaybackStartedAsync(ActivityExecutionContext context) => await context.ScheduleActivityAsync(PlaybackStarted, OnCompletedAsync);
@@ -73,7 +75,7 @@ public abstract class PlayAudioBase : ActivityBase, IBookmarksPersistedHandler
     protected PlayAudioBase([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
-    
+
     /// <summary>
     /// Unique identifier and token for controlling the call.
     /// </summary>
@@ -135,7 +137,8 @@ public abstract class PlayAudioBase : ActivityBase, IBookmarksPersistedHandler
             AudioUrl.Get(context) ?? throw new Exception("AudioUrl is required."),
             Overlay.Get(context),
             string.IsNullOrWhiteSpace(loop) ? null : loop == "infinity" ? "infinity" : int.Parse(loop),
-            TargetLegs.Get(context).EmptyToNull()
+            TargetLegs.Get(context).EmptyToNull(),
+            ClientState: context.CreateCorrelatingClientState()
         );
 
         var callControlId = context.GetPrimaryCallControlId(CallControlId) ?? throw new Exception("CallControlId is required.");
@@ -159,12 +162,12 @@ public abstract class PlayAudioBase : ActivityBase, IBookmarksPersistedHandler
     /// Called when playback has started.
     /// </summary>
     protected abstract ValueTask HandlePlaybackStartedAsync(ActivityExecutionContext context);
-    
-    
+
+
     /// <summary>
     /// Called when the call was no longer active. 
     /// </summary>
     protected abstract ValueTask HandleDisconnectedAsync(ActivityExecutionContext context);
-    
+
     private async ValueTask ResumeAsync(ActivityExecutionContext context) => await HandlePlaybackStartedAsync(context);
 }

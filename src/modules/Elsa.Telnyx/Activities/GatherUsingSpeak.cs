@@ -161,7 +161,8 @@ public class GatherUsingSpeak : ActivityBase<CallGatherEndedPayload>, IBookmarks
             MinimumDigits.TryGet(context),
             TerminatingDigit.TryGet(context).EmptyToNull(),
             TimeoutMillis.TryGet(context),
-            ValidDigits.TryGet(context).EmptyToNull()
+            ValidDigits.TryGet(context).EmptyToNull(),
+            context.CreateCorrelatingClientState()
         );
 
         var callControlId = context.GetPrimaryCallControlId(CallControlId) ?? throw new Exception("CallControlId is required");

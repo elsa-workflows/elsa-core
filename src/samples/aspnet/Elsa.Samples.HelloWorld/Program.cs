@@ -28,5 +28,5 @@ if (app.Environment.IsDevelopment())
 // Add Elsa HTTP middleware (to handle requests mapped to HTTP Endpoint activities)
 app.UseHttpActivities();
 
-// Run.
+// Start accepting requests.
 app.Run();

@@ -124,7 +124,8 @@ public class TransferCall : Activity
             AnsweringMachineDetection.Get(context),
             default,
             TimeLimitSecs.Get(context),
-            TimeoutSecs.Get(context)
+            TimeoutSecs.Get(context),
+            ClientState: context.CreateCorrelatingClientState()
         );
 
         var callControlId = context.GetPrimaryCallControlId(CallControlId) ?? throw new Exception("CallControlId is required.");
