@@ -20,9 +20,13 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Runtime.Features;
 
+/// <summary>
+/// Installs and configures workflow runtime features.
+/// </summary>
 [DependsOn(typeof(SystemClockFeature))]
 public class WorkflowRuntimeFeature : FeatureBase
 {
+    /// <inheritdoc />
     public WorkflowRuntimeFeature(IModule module) : base(module)
     {
     }
@@ -34,7 +38,7 @@ public class WorkflowRuntimeFeature : FeatureBase
 
 
     /// <summary>
-    /// A factory that instantiates a concrete <see cref="IWorkflowInvoker"/>.
+    /// A factory that instantiates a concrete <see cref="IWorkflowRuntime"/>.
     /// </summary>
     public Func<IServiceProvider, IWorkflowRuntime> WorkflowRuntime { get; set; } = sp => ActivatorUtilities.CreateInstance<DefaultWorkflowRuntime>(sp);
 
@@ -55,11 +59,13 @@ public class WorkflowRuntimeFeature : FeatureBase
 
     public Func<IServiceProvider, ITriggerStore> WorkflowTriggerStore { get; set; } = sp => sp.GetRequiredService<MemoryTriggerStore>();
     public Func<IServiceProvider, IWorkflowExecutionLogStore> WorkflowExecutionLogStore { get; set; } = sp => sp.GetRequiredService<MemoryWorkflowExecutionLogStore>();
-    public Func<IServiceProvider, IDistributedLockProvider> DistributedLockProvider { get; set; } = _ => 
-        new FileDistributedSynchronizationProvider(new DirectoryInfo( Path.Combine(Environment.CurrentDirectory, "App_Data/locks")));
+    public Func<IServiceProvider, IDistributedLockProvider> DistributedLockProvider { get; set; } = _ => new FileDistributedSynchronizationProvider(new DirectoryInfo( Path.Combine(Environment.CurrentDirectory, "App_Data/locks")));
+    public Func<IServiceProvider, IWorkflowStateExporter> WorkflowStateExporter { get; set; } = sp => sp.GetRequiredService<NoopWorkflowStateExporter>();
 
-    public Func<IServiceProvider, IWorkflowStateExporter> WorkflowStateExporter { get; set; } =
-        sp => sp.GetRequiredService<NoopWorkflowStateExporter>(); 
+    /// <summary>
+    /// A delegate to configure the <see cref="DistributedLockingOptions"/>.
+    /// </summary>
+    public Action<DistributedLockingOptions> DistributedLockingOptions { get; set; } = _ => { };
 
     /// <summary>
     /// Register the specified workflow type.
@@ -80,6 +86,9 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// <inheritdoc />
     public override void Apply()
     {
+        // Options.
+        Services.Configure(DistributedLockingOptions);
+        
         Services
             // Core.
             .AddSingleton<ITriggerIndexer, TriggerIndexer>()
@@ -114,12 +123,12 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddNotificationHandlersFrom<WorkflowRuntimeFeature>()
             .AddCommandHandlersFrom<WorkflowRuntimeFeature>()
             
-            // Instantiation strategies.
+            // Workflow activation strategies.
             .AddSingleton<IWorkflowActivationStrategy, SingletonStrategy>()
             .AddSingleton<IWorkflowActivationStrategy, CorrelatedSingletonStrategy>()
             .AddSingleton<IWorkflowActivationStrategy, CorrelationStrategy>()
             ;
 
-        Services.Configure<WorkflowRuntimeOptions>(options => { options.Workflows = Workflows; });
+        Services.Configure<RuntimeOptions>(options => { options.Workflows = Workflows; });
     }
 }

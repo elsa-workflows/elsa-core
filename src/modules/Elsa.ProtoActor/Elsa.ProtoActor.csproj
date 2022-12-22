@@ -22,14 +22,14 @@
     </ItemGroup>
 
     <ItemGroup Label="ProtoActor">
-        <PackageReference Include="Proto.Actor" Version="0.33.0" />
-        <PackageReference Include="Proto.Cluster" Version="0.33.0" />
-        <PackageReference Include="Proto.Cluster.CodeGen" Version="0.33.0" />
-        <PackageReference Include="Proto.Cluster.Consul" Version="0.33.0" />
-        <PackageReference Include="Proto.Cluster.Identity.Redis" Version="0.33.0" />
-        <PackageReference Include="Proto.Cluster.TestProvider" Version="0.33.0" />
-        <PackageReference Include="Proto.Persistence" Version="0.33.0" />
-        <PackageReference Include="Proto.Remote" Version="0.33.0" />
+        <PackageReference Include="Proto.Actor" Version="1.0.0-rc5.4" />
+        <PackageReference Include="Proto.Cluster" Version="1.0.0-rc5.4" />
+        <PackageReference Include="Proto.Cluster.CodeGen" Version="1.0.0-rc5.4" />
+        <PackageReference Include="Proto.Cluster.Consul" Version="1.0.0-rc5.4" />
+        <PackageReference Include="Proto.Cluster.Identity.Redis" Version="1.0.0-rc5.4" />
+        <PackageReference Include="Proto.Cluster.TestProvider" Version="1.0.0-rc5.4" />
+        <PackageReference Include="Proto.Persistence" Version="1.0.0-rc5.4" />
+        <PackageReference Include="Proto.Remote" Version="1.0.0-rc5.4" />
     </ItemGroup>
 
     <ItemGroup>

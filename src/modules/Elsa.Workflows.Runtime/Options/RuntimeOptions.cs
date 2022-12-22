@@ -2,7 +2,10 @@ using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Runtime.Options;
 
-public class WorkflowRuntimeOptions
+/// <summary>
+/// Provides options to the workflow runtime.
+/// </summary>
+public class RuntimeOptions
 {
     /// <summary>
     /// A list of workflow builders configured during application startup.
