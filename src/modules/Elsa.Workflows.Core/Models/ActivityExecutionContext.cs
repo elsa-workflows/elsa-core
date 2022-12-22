@@ -95,13 +95,15 @@ public class ActivityExecutionContext
         {
             if (completionCallback != null)
                 await completionCallback(this, this);
+            else
+                await owner.CompleteActivityAsync();
             return;
         }
 
         WorkflowExecutionContext.Schedule(activity, owner, completionCallback, references, tag);
     }
 
-    public async ValueTask ScheduleActivitiesAsync(params IActivity?[] activities) => await ScheduleActivities((IEnumerable<IActivity?>)activities);
+    public async ValueTask ScheduleActivitiesAsync(params IActivity?[] activities) => await ScheduleActivities(activities);
 
     public async ValueTask ScheduleActivities(IEnumerable<IActivity?> activities, ActivityCompletionCallback? completionCallback = default)
     {
