@@ -17,8 +17,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="LinqKit.Core" Version="1.2.2" />
-      <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="6.0.1" />
+      <PackageReference Include="LinqKit.Core" Version="1.2.3" />
+      <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="7.0.0" />
     </ItemGroup>
 
 </Project>
