@@ -130,8 +130,8 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
                 ParentContextId = activityExecutionContext.ParentActivityExecutionContext?.Id,
                 ScheduledActivityId = activityExecutionContext.Activity.Id,
                 OwnerActivityId = activityExecutionContext.ParentActivityExecutionContext?.Activity.Id,
-                Properties = activityExecutionContext.Properties,
-                Register = registerState
+                // Properties = activityExecutionContext.Properties,
+                // Register = registerState
             };
             return activityExecutionContextState;
         }
@@ -144,13 +144,13 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
         ActivityExecutionContext CreateActivityExecutionContext(ActivityExecutionContextState activityExecutionContextState)
         {
             var activity = workflowExecutionContext.FindActivityById(activityExecutionContextState.ScheduledActivityId);
-            var properties = activityExecutionContextState.Properties;
+            //var properties = activityExecutionContextState.Properties;
             var activityExecutionContext = workflowExecutionContext.CreateActivityExecutionContext(activity);
             activityExecutionContext.Id = activityExecutionContextState.Id;
-            activityExecutionContext.Properties = properties;
+            //activityExecutionContext.Properties = properties;
 
-            foreach (var memoryBlock in activityExecutionContextState.Register.Blocks) 
-                activityExecutionContext.ExpressionExecutionContext.Memory.Blocks[memoryBlock.Key] = memoryBlock.Value;
+            // foreach (var memoryBlock in activityExecutionContextState.Register.Blocks) 
+            //     activityExecutionContext.ExpressionExecutionContext.Memory.Blocks[memoryBlock.Key] = memoryBlock.Value;
             
             return activityExecutionContext;
         }

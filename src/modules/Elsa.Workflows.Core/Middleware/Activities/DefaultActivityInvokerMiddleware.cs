@@ -1,4 +1,5 @@
 using Elsa.Common.Extensions;
+using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Pipelines.ActivityExecution;
 using Elsa.Workflows.Core.Services;
@@ -6,8 +7,14 @@ using Delegate = System.Delegate;
 
 namespace Elsa.Workflows.Core.Middleware.Activities;
 
+/// <summary>
+/// Provides extension methods to <see cref="IActivityExecutionBuilder"/>.
+/// </summary>
 public static class ActivityInvokerMiddlewareExtensions
 {
+    /// <summary>
+    /// Adds the <see cref="DefaultActivityInvokerMiddleware"/> component to the pipeline.
+    /// </summary>
     public static IActivityExecutionBuilder UseDefaultActivityInvoker(this IActivityExecutionBuilder builder) => builder.UseMiddleware<DefaultActivityInvokerMiddleware>();
 }
 
@@ -18,14 +25,23 @@ public class DefaultActivityInvokerMiddleware : IActivityExecutionMiddleware
 {
     private readonly ActivityMiddlewareDelegate _next;
 
+    /// <summary>
+    /// Constructor
+    /// </summary>
     public DefaultActivityInvokerMiddleware(ActivityMiddlewareDelegate next)
     {
         _next = next;
     }
 
+    /// <inheritdoc />
     public async ValueTask InvokeAsync(ActivityExecutionContext context)
     {
         var workflowExecutionContext = context.WorkflowExecutionContext;
+
+        // Evaluate containing composite input properties, if any.
+        var compositeContainerContext = context.GetAncestors().FirstOrDefault(x => x.Activity is Composite);
+        if (compositeContainerContext != null && !compositeContainerContext.GetHasEvaluatedProperties())
+            await compositeContainerContext.EvaluateInputPropertiesAsync();
 
         // Evaluate input properties.
         await context.EvaluateInputPropertiesAsync();
@@ -35,11 +51,11 @@ public class DefaultActivityInvokerMiddleware : IActivityExecutionMiddleware
 
         // Reset execute delegate.
         workflowExecutionContext.ExecuteDelegate = null;
-        
+
         // If a bookmark was used to resume, burn it if not burnt by the activity.
         var resumedBookmark = workflowExecutionContext.ResumedBookmarkContext?.Bookmark;
-        
-        if (resumedBookmark is { AutoBurn: true }) 
+
+        if (resumedBookmark is { AutoBurn: true })
             workflowExecutionContext.Bookmarks.Remove(resumedBookmark);
 
         // Update execution count.

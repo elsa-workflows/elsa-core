@@ -4,15 +4,20 @@ using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Core.Implementations;
 
+/// <inheritdoc />
 public class ActivityInvoker : IActivityInvoker
 {
     private readonly IActivityExecutionPipeline _pipeline;
 
+    /// <summary>
+    /// Constructor.
+    /// </summary>
     public ActivityInvoker(IActivityExecutionPipeline pipeline)
     {
         _pipeline = pipeline;
     }
 
+    /// <inheritdoc />
     public async Task InvokeAsync(
         WorkflowExecutionContext workflowExecutionContext,
         IActivity activity,
