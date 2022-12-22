@@ -13,7 +13,7 @@
 
     <ItemGroup>
       <PackageReference Include="Cronos" Version="0.7.1" />
-      <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="7.0.0" />
     </ItemGroup>
 
     <ItemGroup>
