@@ -14,14 +14,26 @@
     <ItemGroup>
         <PackageReference Include="EFCore.BulkExtensions" Version="6.6.4" />
         <PackageReference Include="LinqKit" Version="1.2.3" />
+        <PackageReference Include="Open.Linq.AsyncExtensions" Version="1.2.0" />
+        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="7.0.0" />
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(TargetFramework)' == 'net6.0'">
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.12" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="6.0.12" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="6.0.12">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(TargetFramework)' == 'net7.0'">
         <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.1" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="7.0.1" />
-        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="7.0.0" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.1">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Open.Linq.AsyncExtensions" Version="1.2.0" />
     </ItemGroup>
 
     <ItemGroup>

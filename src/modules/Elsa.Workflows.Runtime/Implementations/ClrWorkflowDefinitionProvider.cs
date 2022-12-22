@@ -21,10 +21,10 @@ public class ClrWorkflowDefinitionProvider : IWorkflowDefinitionProvider
     private readonly SerializerOptionsProvider _serializerOptionsProvider;
     private readonly ISystemClock _systemClock;
     private readonly IServiceProvider _serviceProvider;
-    private readonly WorkflowRuntimeOptions _options;
+    private readonly RuntimeOptions _options;
 
     public ClrWorkflowDefinitionProvider(
-        IOptions<WorkflowRuntimeOptions> options,
+        IOptions<RuntimeOptions> options,
         IIdentityGraphService identityGraphService,
         IWorkflowBuilderFactory workflowBuilderFactory,
         SerializerOptionsProvider serializerOptionsProvider,

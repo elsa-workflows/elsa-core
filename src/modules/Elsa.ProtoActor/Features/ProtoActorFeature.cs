@@ -98,7 +98,7 @@ public class ProtoActorFeature : FeatureBase
                     .WithHeartbeatExpiration(TimeSpan.FromDays(1))
                     .WithActorRequestTimeout(TimeSpan.FromHours(1))
                     .WithActorActivationTimeout(TimeSpan.FromHours(1))
-                    .WithActorSpawnTimeout(TimeSpan.FromHours(1))
+                    .WithActorSpawnVerificationTimeout(TimeSpan.FromHours(1))
                     .WithClusterKind(WorkflowGrainActor.Kind, workflowGrainProps)
                     .WithClusterKind(BookmarkGrainActor.Kind, bookmarkGrainProps)
                     .WithClusterKind(RunningWorkflowsGrainActor.Kind, workflowRegistryGrainProps)
