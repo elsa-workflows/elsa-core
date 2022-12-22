@@ -10,27 +10,31 @@ namespace Elsa.Mediator.HostedServices;
 /// </summary>
 public class BackgroundEventPublisherHostedService : BackgroundService
 {
+    private readonly int _workerCount;
     private readonly ChannelReader<INotification> _channelReader;
     private readonly IEventPublisher _eventPublisher;
     private readonly IList<Channel<INotification>> _outputs;
     private readonly ILogger _logger;
 
+    /// <inheritdoc />
     public BackgroundEventPublisherHostedService(int workerCount, ChannelReader<INotification> channelReader, IEventPublisher eventPublisher, ILogger<BackgroundEventPublisherHostedService> logger)
     {
+        _workerCount = workerCount;
         _channelReader = channelReader;
         _eventPublisher = eventPublisher;
         _logger = logger;
         _outputs = new List<Channel<INotification>>(workerCount);
     }
 
+    /// <inheritdoc />
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
         var index = 0;
 
-        for (var i = 0; i < _outputs.Count; i++)
+        for (var i = 0; i < _workerCount; i++)
         {
             var output = Channel.CreateUnbounded<INotification>();
-            _outputs[i] = output;
+            _outputs.Add(output);
             _ = ReadOutputAsync(output, cancellationToken);
         }
 
@@ -38,7 +42,7 @@ public class BackgroundEventPublisherHostedService : BackgroundService
         {
             var output = _outputs[index];
             await output.Writer.WriteAsync(notification, cancellationToken);
-            index = (index + 1) % _outputs.Count;
+            index = (index + 1) % _workerCount;
         }
 
         foreach (var output in _outputs)

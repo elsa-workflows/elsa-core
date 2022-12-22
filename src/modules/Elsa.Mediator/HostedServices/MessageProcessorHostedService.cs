@@ -10,27 +10,31 @@ namespace Elsa.Mediator.HostedServices;
 /// </summary>
 public class MessageProcessorHostedService<T> : BackgroundService
 {
+    private readonly int _workerCount;
     private readonly Channel<T> _channel;
     private readonly IConsumer<T> _consumer;
     private readonly ILogger _logger;
     private readonly IList<MessageWorker<T>> _workers;
 
+    /// <inheritdoc />
     public MessageProcessorHostedService(int workerCount, Channel<T> channel, IConsumer<T> consumer, ILogger<MessageProcessorHostedService<T>> logger)
     {
+        _workerCount = workerCount;
         _channel = channel;
         _consumer = consumer;
         _logger = logger;
         _workers = new List<MessageWorker<T>>(workerCount);
     }
 
+    /// <inheritdoc />
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
         var index = 0;
 
-        for (var i = 0; i < _workers.Count; i++)
+        for (var i = 0; i < _workerCount; i++)
         {
             var worker = new MessageWorker<T>(Channel.CreateUnbounded<T>(), _consumer);
-            _workers[i] = worker;
+            _workers.Add(worker);
             _ = worker.StartAsync(cancellationToken);
         }
 
@@ -38,7 +42,7 @@ public class MessageProcessorHostedService<T> : BackgroundService
         {
             var worker = _workers[index];
             await worker.DeliverMessageAsync(message, cancellationToken);
-            index = (index + 1) % _workers.Count;
+            index = (index + 1) % _workerCount;
         }
 
         foreach (var worker in _workers)
