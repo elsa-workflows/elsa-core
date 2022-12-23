@@ -22,7 +22,7 @@ public class PersistentVariablesMiddleware : WorkflowExecutionMiddleware
     /// <inheritdoc />
     public override async ValueTask InvokeAsync(WorkflowExecutionContext context)
     {
-        var variables = _variablePersistenceManager.GetPersistentVariables(context);
+        var variables = _variablePersistenceManager.GetVariables(context);
         await _variablePersistenceManager.LoadVariablesAsync(context, variables);
         
         // Invoke next middleware.

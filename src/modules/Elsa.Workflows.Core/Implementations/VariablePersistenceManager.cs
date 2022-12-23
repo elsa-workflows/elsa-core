@@ -17,12 +17,21 @@ public class VariablePersistenceManager : IVariablePersistenceManager
     {
         _storageDriverManager = storageDriverManager;
     }
-    
-    /// <inheritdoc />
-    public IEnumerable<Variable> GetPersistentVariables(WorkflowExecutionContext context) => context.Workflow.Variables.Where(x => x.StorageDriverType != null).ToList();
 
     /// <inheritdoc />
-    public IEnumerable<Variable> GetPersistentVariablesInScope(ActivityExecutionContext context)
+    public IEnumerable<Variable> GetVariables(WorkflowExecutionContext context) => context.Workflow.Variables.Where(x => x.StorageDriverType != null).ToList();
+
+    /// <inheritdoc />
+    public IEnumerable<Variable> GetVariables(ActivityExecutionContext context)
+    {
+        // Get variables for the current activity itself, if it's a container.
+        return context.Activity is Composite composite
+            ? composite.Variables.Where(x => x.StorageDriverType != null)
+            : Enumerable.Empty<Variable>();
+    }
+
+    /// <inheritdoc />
+    public IEnumerable<Variable> GetVariablesInScope(ActivityExecutionContext context)
     {
         // Get variables for the current activity's immediate composite container.
         var immediateCompositeVariables = ((Composite?)context.ActivityNode.Ancestors()
@@ -44,7 +53,7 @@ public class VariablePersistenceManager : IVariablePersistenceManager
         var register = context.MemoryRegister;
         var variableList = variables as ICollection<Variable> ?? variables.ToList();
 
-        EnsureVariablesAreDeclared(context, variableList);
+        EnsureVariables(context, variableList);
 
         // Foreach variable memory block, load its value from their associated storage driver.
         var cancellationToken = context.CancellationToken;
@@ -60,7 +69,7 @@ public class VariablePersistenceManager : IVariablePersistenceManager
 
             if (driver == null)
                 continue;
-            
+
             var id = GetStateId(context, variable);
             var value = await driver.ReadAsync(id, storageDriverContext);
             if (value == null) continue;
@@ -75,7 +84,7 @@ public class VariablePersistenceManager : IVariablePersistenceManager
     public async Task SaveVariablesAsync(WorkflowExecutionContext context)
     {
         var register = context.MemoryRegister;
-        
+
         // Foreach variable memory block, save its value using their associated storage driver.
         var cancellationToken = context.CancellationToken;
         var storageDriverContext = new StorageDriverContext(context, cancellationToken);
@@ -92,7 +101,7 @@ public class VariablePersistenceManager : IVariablePersistenceManager
             var variable = metadata.Variable;
             var id = GetStateId(context, variable);
             var value = block.Value;
-            
+
             if (value == null)
                 await driver.DeleteAsync(id, storageDriverContext);
             else
@@ -101,13 +110,38 @@ public class VariablePersistenceManager : IVariablePersistenceManager
     }
 
     /// <inheritdoc />
-    public void EnsureVariablesAreDeclared(WorkflowExecutionContext context, IEnumerable<Variable> variables)
+    public void EnsureVariables(WorkflowExecutionContext context, IEnumerable<Variable> variables)
     {
         var register = context.MemoryRegister;
         foreach (var variable in variables)
         {
             if (!register.IsDeclared(variable))
                 register.Declare(variable);
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task DeleteVariablesAsync(WorkflowExecutionContext context, IEnumerable<Variable> variables)
+    {
+        var register = context.MemoryRegister;
+        var variableList = variables as ICollection<Variable> ?? variables.ToList();
+        var cancellationToken = context.CancellationToken;
+        var storageDriverContext = new StorageDriverContext(context, cancellationToken);
+
+        foreach (var variable in variableList)
+        {
+            if (!register.TryGetBlock(variable.Id, out var block))
+                continue;
+
+            var metadata = (VariableBlockMetadata)block.Metadata!;
+            var driver = _storageDriverManager.Get(metadata.StorageDriverType!);
+
+            if (driver == null)
+                continue;
+
+            var id = GetStateId(context, variable);
+            await driver.DeleteAsync(id, storageDriverContext);
+            register.Blocks.Remove(variable.Id);
         }
     }
 

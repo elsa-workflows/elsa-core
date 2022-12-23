@@ -104,7 +104,7 @@ public class DefaultActivityInvokerMiddleware : IActivityExecutionMiddleware
     private async Task LoadVariablesAsync(ActivityExecutionContext context)
     {
         var manager = context.GetRequiredService<IVariablePersistenceManager>();
-        var variables = manager.GetPersistentVariablesInScope(context);
+        var variables = manager.GetVariablesInScope(context);
         await manager.LoadVariablesAsync(context.WorkflowExecutionContext, variables);
     }
     

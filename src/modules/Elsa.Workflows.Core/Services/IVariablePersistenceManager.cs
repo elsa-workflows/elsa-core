@@ -1,4 +1,3 @@
-using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Workflows.Core.Services;
@@ -11,12 +10,17 @@ public interface IVariablePersistenceManager
     /// <summary>
     /// Returns a list of all persistable variables at the root level of the workflow. 
     /// </summary>
-    IEnumerable<Variable> GetPersistentVariables(WorkflowExecutionContext context);
+    IEnumerable<Variable> GetVariables(WorkflowExecutionContext context);
+    
+    /// <summary>
+    /// Returns a list of all persistable variables directly scoped to the specified <see cref="ActivityExecutionContext"/>, if it's a <see cref="IVariableContainer"/>. 
+    /// </summary>
+    IEnumerable<Variable> GetVariables(ActivityExecutionContext context);
     
     /// <summary>
     /// Returns a list of all persistable variables in scope of the specified <see cref="ActivityExecutionContext"/>. 
     /// </summary>
-    IEnumerable<Variable> GetPersistentVariablesInScope(ActivityExecutionContext context);
+    IEnumerable<Variable> GetVariablesInScope(ActivityExecutionContext context);
 
     /// <summary>
     /// Loads the variables into the specified <see cref="WorkflowExecutionContext"/>. 
@@ -31,5 +35,10 @@ public interface IVariablePersistenceManager
     /// <summary>
     /// Ensures that the specified variables are declared in the specified <see cref="WorkflowExecutionContext"/>.
     /// </summary>
-    void EnsureVariablesAreDeclared(WorkflowExecutionContext context, IEnumerable<Variable> variables);
+    void EnsureVariables(WorkflowExecutionContext context, IEnumerable<Variable> variables);
+
+    /// <summary>
+    /// Deletes the specified variables from the <see cref="WorkflowExecutionContext"/>.
+    /// </summary>
+    Task DeleteVariablesAsync(WorkflowExecutionContext context, IEnumerable<Variable> variables);
 }

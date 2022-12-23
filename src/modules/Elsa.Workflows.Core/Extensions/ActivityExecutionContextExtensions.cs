@@ -198,10 +198,10 @@ public static class ActivityExecutionContextExtensions
     /// <summary>
     /// Removes all child <see cref="ActivityExecutionContext"/> objects.
     /// </summary>
-    public static void RemoveChildren(this ActivityExecutionContext context)
+    public static async Task RemoveChildrenAsync(this ActivityExecutionContext context)
     {
         // Detach child activity execution contexts.
-        context.WorkflowExecutionContext.RemoveActivityExecutionContexts(context.GetChildren());
+        await context.WorkflowExecutionContext.RemoveActivityExecutionContextsAsync(context.GetChildren());
     }
 
     /// <summary>
@@ -234,7 +234,7 @@ public static class ActivityExecutionContextExtensions
         await context.SendSignalAsync(new ActivityCompleted(result));
 
         // Remove the context.
-        context.WorkflowExecutionContext.RemoveActivityExecutionContext(context);
+        await context.WorkflowExecutionContext.RemoveActivityExecutionContextAsync(context);
     }
 
     /// <summary>
