@@ -13,13 +13,16 @@ namespace Elsa.Workflows.Core.Activities;
 /// <summary>
 /// Represents a composite activity that has a single <see cref="Root"/> activity. Like a workflow, but without workflow-level properties.
 /// </summary>
-public abstract class Composite : ActivityBase
+public abstract class Composite : ActivityBase, IVariableContainer
 {
     /// <inheritdoc />
     protected Composite(string? source = default, int? line = default) : base(source, line)
     {
         OnSignalReceived<CompleteCompositeSignal>(OnCompleteCompositeSignal);
     }
+
+    /// <inheritdoc />
+    public ICollection<Variable> Variables { get; init; } = new List<Variable>();
     
     /// <summary>
     /// The activity to schedule when this activity executes.

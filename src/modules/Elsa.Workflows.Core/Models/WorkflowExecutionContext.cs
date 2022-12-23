@@ -174,7 +174,7 @@ public class WorkflowExecutionContext
     
     public void RemoveActivityExecutionContext(ActivityExecutionContext context)
     {
-        // Remove all contexts referencing this on as a parent.
+        // Remove all contexts referencing this one as a parent.
         var childContexts = _activityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context).ToList();
 
         foreach (var childContext in childContexts) RemoveActivityExecutionContext(childContext);
@@ -184,6 +184,9 @@ public class WorkflowExecutionContext
         
         // Remove all associated completion callbacks.
         context.ClearCompletionCallbacks();
+        
+        // Remove all associated variables.
+        
         
         // Remove all associated bookmarks.
         Bookmarks.RemoveWhere(x => x.ActivityInstanceId == context.Id);

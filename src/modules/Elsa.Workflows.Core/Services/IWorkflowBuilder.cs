@@ -85,17 +85,17 @@ public interface IWorkflowBuilder
     /// <summary>
     /// A fluent method for adding a variable to <see cref="Variables"/>.
     /// </summary>
-    Variable<T> WithVariable<T>(string? storageDriverId = default);
+    Variable<T> WithVariable<T>();
     
     /// <summary>
     /// A fluent method for adding a variable to <see cref="Variables"/>.
     /// </summary>
-    Variable<T> WithVariable<T>(string name, T value, string? storageDriverId = default);
+    Variable<T> WithVariable<T>(string name, T value);
     
     /// <summary>
     /// A fluent method for adding a variable to <see cref="Variables"/>.
     /// </summary>
-    Variable<T> WithVariable<T>(T value, string? storageDriverId = default);
+    Variable<T> WithVariable<T>(T value);
     
     /// <summary>
     /// A fluent method for adding a variable to <see cref="Variables"/>.

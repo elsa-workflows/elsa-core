@@ -40,6 +40,9 @@ internal class TriggerWebhookActivities : INotificationHandler<TelnyxWebhookRece
         var correlationId = ((Payload)webhook.Data.Payload).GetCorrelationId();
         var bookmarkPayload = new WebhookEventBookmarkPayload(eventType);
         var input = new Dictionary<string, object>().AddInput(webhook);
-        await _workflowRuntime.TriggerWorkflowsAsync(activityType, bookmarkPayload, new TriggerWorkflowsRuntimeOptions(correlationId, input), cancellationToken);
+        
+        _logger.LogDebug("Triggering {ActivityType} with correlation ID {CorrelationId}", activityType, correlationId);
+        var result = await _workflowRuntime.TriggerWorkflowsAsync(activityType, bookmarkPayload, new TriggerWorkflowsRuntimeOptions(correlationId, input), cancellationToken);
+        _logger.LogDebug("Triggered {WorkflowInstanceCount} workflows", result.TriggeredWorkflows.Count);
     }
 }

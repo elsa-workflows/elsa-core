@@ -5,23 +5,29 @@ namespace Elsa.Expressions.Models;
 /// </summary>
 public class MemoryRegister
 {
-    public MemoryRegister(MemoryRegister? parent = default, IDictionary<string, MemoryBlock>? locations = default)
+    /// <summary>
+    /// Constructor.
+    /// </summary>
+    public MemoryRegister(MemoryRegister? parent = default, IDictionary<string, MemoryBlock>? blocks = default)
     {
         Parent = parent;
-        Blocks = locations ?? new Dictionary<string, MemoryBlock>();
+        Blocks = blocks ?? new Dictionary<string, MemoryBlock>();
     }
 
     public MemoryRegister? Parent { get; }
     public IDictionary<string, MemoryBlock> Blocks { get; }
 
-    public bool TryGetBlock(string id, out MemoryBlock datum)
+    public bool IsDeclared(MemoryBlockReference reference) => HasBlock(reference.Id);
+    public bool HasBlock(string id) => Blocks.ContainsKey(id);
+    
+    public bool TryGetBlock(string id, out MemoryBlock block)
     {
-        datum = null!;
+        block = null!;
         
-        if (Blocks.TryGetValue(id, out datum!))
+        if (Blocks.TryGetValue(id, out block!))
             return true;
 
-        return Parent?.TryGetBlock(id, out datum) == true;
+        return Parent?.TryGetBlock(id, out block) == true;
     }
 
     public void Declare(IEnumerable<MemoryBlockReference> references)

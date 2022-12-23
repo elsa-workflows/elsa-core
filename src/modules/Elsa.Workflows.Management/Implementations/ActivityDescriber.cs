@@ -1,7 +1,6 @@
 using System.Collections;
 using System.ComponentModel;
 using System.Reflection;
-using Elsa.Common.Extensions;
 using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Helpers;
@@ -11,16 +10,19 @@ using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Services;
 using Humanizer;
-using IContainer = Elsa.Workflows.Core.Services.IContainer;
 
 namespace Elsa.Workflows.Management.Implementations;
 
+/// <inheritdoc />
 public class ActivityDescriber : IActivityDescriber
 {
     private readonly IPropertyOptionsResolver _optionsResolver;
     private readonly IPropertyDefaultValueResolver _defaultValueResolver;
     private readonly IActivityFactory _activityFactory;
 
+    /// <summary>
+    /// Constructor.
+    /// </summary>
     public ActivityDescriber(IPropertyOptionsResolver optionsResolver, IPropertyDefaultValueResolver defaultValueResolver, IActivityFactory activityFactory)
     {
         _optionsResolver = optionsResolver;
@@ -28,6 +30,7 @@ public class ActivityDescriber : IActivityDescriber
         _activityFactory = activityFactory;
     }
 
+    /// <inheritdoc />
     public ValueTask<ActivityDescriptor> DescribeActivityAsync(Type activityType, CancellationToken cancellationToken = default)
     {
         var activityAttr = activityType.GetCustomAttribute<ActivityAttribute>();
@@ -145,7 +148,7 @@ public class ActivityDescriber : IActivityDescriber
         }
     }
 
-    private string GetUIHint(Type wrappedPropertyType, InputAttribute? inputAttribute)
+    private static string GetUIHint(Type wrappedPropertyType, InputAttribute? inputAttribute)
     {
         if (inputAttribute?.UIHint != null)
             return inputAttribute.UIHint;

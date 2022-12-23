@@ -8,7 +8,7 @@ namespace Elsa.Workflows.Core.Activities;
 /// <summary>
 /// A base class for activities that control a collection of activities.
 /// </summary>
-public abstract class Container : ActivityBase, IContainer
+public abstract class Container : ActivityBase, IVariableContainer
 {
     /// <inheritdoc />
     protected Container(string? source = default, int? line = default) : base(source, line)

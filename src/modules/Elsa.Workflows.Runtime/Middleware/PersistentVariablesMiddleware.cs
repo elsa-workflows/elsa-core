@@ -3,7 +3,6 @@ using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Core.Services;
-using Elsa.Workflows.Core.State;
 
 namespace Elsa.Workflows.Runtime.Middleware;
 
@@ -14,30 +13,36 @@ public class PersistentVariablesMiddleware : WorkflowExecutionMiddleware
 {
     private readonly IStorageDriverManager _storageDriverManager;
 
+    /// <summary>
+    /// Constructor.
+    /// </summary>
     public PersistentVariablesMiddleware(WorkflowMiddlewareDelegate next, IStorageDriverManager storageDriverManager) : base(next)
     {
         _storageDriverManager = storageDriverManager;
     }
 
+    /// <inheritdoc />
     public override async ValueTask InvokeAsync(WorkflowExecutionContext context)
     {
         var cancellationToken = context.CancellationToken;
         
         // Load persistent variables.
-        var dataDriveContext = new DataDriveContext(context, cancellationToken);
+        var storageDriverContext = new StorageDriverContext(context, cancellationToken);
         
-        var persistentVariables = context.Workflow.Variables.Where(x => x.StorageDriverId != null).ToList();
+        var persistentVariables = context.Workflow.Variables.Where(x => x.StorageDriverType != null).ToList();
         
         foreach (var variable in persistentVariables)
         {
-            var drive = _storageDriverManager.GetDriveById(variable.StorageDriverId!);
-            if (drive == null) continue;
-            var id = $"{context.Id}:{variable.Name}";
-            var value = await drive.ReadAsync(id, dataDriveContext);
+            var driver = _storageDriverManager.Get(variable.StorageDriverType!);
+            if (driver == null) continue;
+            var id = $"{context.Id}:{context.Workflow.Id}:{variable.Name}";
+            var value = await driver.ReadAsync(id, storageDriverContext);
             if (value == null) continue;
-            var parsedValue = ParseVariableValue(variable, value);
-            context.MemoryRegister.Declare(variable);
+            var parsedValue = variable.ParseValue(value);
+            var block = context.MemoryRegister.Declare(variable);
+            var metadata = (VariableBlockMetadata)block.Metadata!;
             variable.Set(context.MemoryRegister, parsedValue);
+            block.Metadata = metadata with { IsInitialized = true };
         }
 
         // Invoke next middleware.
@@ -46,21 +51,18 @@ public class PersistentVariablesMiddleware : WorkflowExecutionMiddleware
         // Persist variables.
         foreach (var variable in persistentVariables)
         {
-            var drive = _storageDriverManager.GetDriveById(variable.StorageDriverId!);
-            if (drive == null) continue;
-            if (!context.MemoryRegister.TryGetBlock(variable.Name, out var block)) continue;
-            if (block.Value == null) continue;
-            var id = $"{context.Id}:{variable.Name}";
-            await drive.WriteAsync(id, block.Value, dataDriveContext);
+            var driver = variable.StorageDriverType != null ? _storageDriverManager.Get(variable.StorageDriverType) : default;
+            if (driver == null) continue;
+            if(!context.MemoryRegister.TryGetBlock(variable.Id, out var block))
+                continue;
+            
+            var id = $"{context.Id}:{context.Workflow.Id}:{variable.Name}";
+            var value = block.Value;
+            
+            if (value == null)
+                await driver.DeleteAsync(id, storageDriverContext);
+            else
+                await driver.WriteAsync(id, value, storageDriverContext);
         }
-    }
-
-    private object ParseVariableValue(Variable variable, object value)
-    {
-        if (!variable.GetType().GenericTypeArguments.Any())
-            return value;
-
-        var type = variable.GetType().GenericTypeArguments.First();
-        return value.ConvertTo(type)!;
     }
 }

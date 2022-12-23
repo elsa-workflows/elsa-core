@@ -7,14 +7,22 @@ namespace Elsa.Expressions.Models;
 /// </summary>
 public abstract class MemoryBlockReference
 {
+    /// <summary>
+    /// Constructor.
+    /// </summary>
     protected MemoryBlockReference()
     {
     }
 
+    /// <summary>
+    /// Constructor.
+    /// </summary>
     protected MemoryBlockReference(string id) => Id = id;
 
     public string Id { get; set; } = default!;
+
     public abstract MemoryBlock Declare();
+    public bool IsDefined(MemoryRegister register) => register.HasBlock(Id);
     public object? Get(MemoryRegister memoryRegister) => GetBlock(memoryRegister).Value;
     public T? Get<T>(MemoryRegister memoryRegister) => Get(memoryRegister).ConvertTo<T>();
     public object Get(ExpressionExecutionContext context) => context.Get(this);
