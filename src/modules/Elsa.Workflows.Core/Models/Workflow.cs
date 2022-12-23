@@ -67,7 +67,7 @@ public class Workflow : Composite, ICloneable
     public WorkflowPublication Publication { get; set; } = WorkflowPublication.LatestAndPublished;
     public WorkflowMetadata WorkflowMetadata { get; set; } = new();
     public WorkflowOptions? Options { get; set; }
-    public ICollection<Variable> Variables { get; init; } = new List<Variable>();
+    
     public Workflow Clone() => (Workflow)((ICloneable)this).Clone();
     object ICloneable.Clone() => MemberwiseClone();
 }

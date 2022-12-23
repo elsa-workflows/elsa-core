@@ -7,11 +7,9 @@ namespace Elsa.Workflows.Core.Services;
 /// </summary>
 public interface IStorageDriver
 {
-    string Id { get; }
-    string DisplayName { get; }
-    ValueTask WriteAsync(string id, object value, DataDriveContext context);
-    ValueTask<object?> ReadAsync(string id, DataDriveContext context);
-    ValueTask DeleteAsync(string id, DataDriveContext context);
+    ValueTask WriteAsync(string id, object value, StorageDriverContext context);
+    ValueTask<object?> ReadAsync(string id, StorageDriverContext context);
+    ValueTask DeleteAsync(string id, StorageDriverContext context);
 }
 
-public record DataDriveContext(WorkflowExecutionContext WorkflowExecutionContext, CancellationToken CancellationToken);
+public record StorageDriverContext(WorkflowExecutionContext WorkflowExecutionContext, CancellationToken CancellationToken);

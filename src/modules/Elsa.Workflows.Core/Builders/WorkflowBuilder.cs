@@ -87,30 +87,25 @@ public class WorkflowBuilder : IWorkflowBuilder
     }
 
     /// <inheritdoc />
-    public Variable<T> WithVariable<T>(string? storageDriverId = default)
+    public Variable<T> WithVariable<T>()
     {
-        var variable = new Variable<T>()
-        {
-            StorageDriverId = storageDriverId
-        };
+        var variable = new Variable<T>();
         Variables.Add(variable);
         return variable;
     }
 
     /// <inheritdoc />
-    public Variable<T> WithVariable<T>(string name, T value, string? storageDriverId = default)
+    public Variable<T> WithVariable<T>(string name, T value)
     {
         var variable = value != null ? new Variable<T>(name, value) : new Variable<T>(name);
-        variable.StorageDriverId = storageDriverId;
         Variables.Add(variable);
         return variable;
     }
 
     /// <inheritdoc />
-    public Variable<T> WithVariable<T>(T value, string? storageDriverId = default)
+    public Variable<T> WithVariable<T>(T value)
     {
         var variable = value != null ? new Variable<T>(value) : new Variable<T>();
-        variable.StorageDriverId = storageDriverId;
         Variables.Add(variable);
         return variable;
     }

@@ -6,8 +6,10 @@ using Elsa.Workflows.Core.State;
 
 namespace Elsa.Workflows.Core.Implementations;
 
+/// <inheritdoc />
 public class WorkflowStateSerializer : IWorkflowStateSerializer
 {
+    /// <inheritdoc />
     public WorkflowState SerializeState(WorkflowExecutionContext workflowExecutionContext)
     {
         var state = new WorkflowState
@@ -28,6 +30,7 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
         return state;
     }
 
+    /// <inheritdoc />
     public void DeserializeState(WorkflowExecutionContext workflowExecutionContext, WorkflowState state)
     {
         workflowExecutionContext.Id = state.Id;
@@ -112,8 +115,6 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
     {
         ActivityExecutionContextState CreateActivityExecutionContextState(ActivityExecutionContext activityExecutionContext)
         {
-            var registerState = new RegisterState(activityExecutionContext.ExpressionExecutionContext.Memory.Blocks);
-
             var parentId = activityExecutionContext.ParentActivityExecutionContext?.Id;
 
             if (parentId != null)
@@ -131,7 +132,6 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
                 ScheduledActivityId = activityExecutionContext.Activity.Id,
                 OwnerActivityId = activityExecutionContext.ParentActivityExecutionContext?.Activity.Id,
                 Properties = activityExecutionContext.Properties,
-                Register = registerState
             };
             return activityExecutionContextState;
         }
@@ -149,9 +149,6 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
             activityExecutionContext.Id = activityExecutionContextState.Id;
             activityExecutionContext.Properties = properties;
 
-            foreach (var memoryBlock in activityExecutionContextState.Register.Blocks) 
-                activityExecutionContext.ExpressionExecutionContext.Memory.Blocks[memoryBlock.Key] = memoryBlock.Value;
-            
             return activityExecutionContext;
         }
 

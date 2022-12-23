@@ -172,12 +172,15 @@ public class WorkflowExecutionContext
         return activityExecutionContext;
     }
     
-    public void RemoveActivityExecutionContext(ActivityExecutionContext context)
+    /// <summary>
+    /// Removes the specified <see cref="ActivityExecutionContext"/>.
+    /// </summary>
+    public async Task RemoveActivityExecutionContextAsync(ActivityExecutionContext context)
     {
-        // Remove all contexts referencing this on as a parent.
+        // Remove all contexts referencing this one as a parent.
         var childContexts = _activityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context).ToList();
 
-        foreach (var childContext in childContexts) RemoveActivityExecutionContext(childContext);
+        foreach (var childContext in childContexts) await RemoveActivityExecutionContextAsync(childContext);
 
         // Remove the context.
         _activityExecutionContexts.Remove(context);
@@ -185,10 +188,18 @@ public class WorkflowExecutionContext
         // Remove all associated completion callbacks.
         context.ClearCompletionCallbacks();
         
+        // Remove all associated variables.
+        var variablePersistenceManager = context.GetRequiredService<IVariablePersistenceManager>();
+        var variables = variablePersistenceManager.GetVariables(context);
+        await variablePersistenceManager.DeleteVariablesAsync(this, variables);
+        
         // Remove all associated bookmarks.
         Bookmarks.RemoveWhere(x => x.ActivityInstanceId == context.Id);
     }
 
+    /// <summary>
+    /// Adds the specified <see cref="ActivityExecutionContext"/> to the workflow execution context.
+    /// </summary>
     public void AddActivityExecutionContext(ActivityExecutionContext context) => _activityExecutionContexts.Add(context);
 
     public async Task CancelActivityAsync(string activityId)

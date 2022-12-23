@@ -9,6 +9,9 @@ namespace Elsa.Workflows.Core.Behaviors;
 /// </summary>
 public class BreakBehavior : Behavior
 {
+    /// <summary>
+    /// Constructor.
+    /// </summary>
     public BreakBehavior(IActivity owner) : base(owner)
     {
         OnSignalReceived<BreakSignal>(OnBreakAsync);
@@ -27,8 +30,7 @@ public class BreakBehavior : Behavior
             await workflowExecutionContext.CancelActivityAsync(descendant.Id);
 
         // Remove child activity execution contexts.
-        var childActivityExecutionContexts = context.ReceiverActivityExecutionContext.GetChildren().ToList();
-        context.ReceiverActivityExecutionContext.WorkflowExecutionContext.RemoveActivityExecutionContexts(childActivityExecutionContexts);
+        await context.ReceiverActivityExecutionContext.RemoveChildrenAsync();
 
         // Mark this activity as completed.
         await context.ReceiverActivityExecutionContext.CompleteActivityAsync();
