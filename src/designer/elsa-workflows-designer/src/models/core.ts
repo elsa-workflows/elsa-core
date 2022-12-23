@@ -34,7 +34,7 @@ export interface Variable {
   name: string;
   typeName: string;
   value?: any;
-  storageDriverId?: string;
+  storageDriverTypeName?: string;
 }
 
 export interface ActivityInput {

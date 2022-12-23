@@ -10,4 +10,4 @@ public class Response
     public ICollection<StorageDriverDescriptor> Items  { get; set; }
 }
 
-public record StorageDriverDescriptor(string Id, string DisplayName);
+public record StorageDriverDescriptor(string TypeName, string DisplayName);

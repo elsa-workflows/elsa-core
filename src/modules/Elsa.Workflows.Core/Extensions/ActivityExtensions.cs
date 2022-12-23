@@ -43,15 +43,16 @@ public static class ActivityExtensions
         return query.Select(x => x!).ToList();
     }
 
-    public static IEnumerable<Variable> GetVariables(this IActivity activity)
+    public static IEnumerable<Variable> GetVariables(this IVariableContainer activity)
     {
-        var properties = activity.GetType().GetProperties();
-        var variableProps = properties.Where(x => typeof(Variable).IsAssignableFrom(x.PropertyType)).ToList();
-        var variablesProps = properties.Where(x => typeof(IEnumerable<Variable>).IsAssignableFrom(x.PropertyType)).ToList();
-        var variables = variableProps.Select(x => (Variable?)x.GetValue(activity)).Where(x => x != null).Select(x => x!).ToList();
-        var manyVariables = variablesProps.Select(x => (IEnumerable<Variable>?)x.GetValue(activity)).Where(x => x != null).SelectMany(x => x!).ToList();
+        //var properties = activity.GetType().GetProperties();
+        //var variableProps = properties.Where(x => typeof(Variable).IsAssignableFrom(x.PropertyType)).ToList();
+        //var variablesProps = properties.Where(x => typeof(IEnumerable<Variable>).IsAssignableFrom(x.PropertyType)).ToList();
+        //var variables = variableProps.Select(x => (Variable?)x.GetValue(activity)).Where(x => x != null).Select(x => x!).ToList();
+        //var manyVariables = variablesProps.Select(x => (IEnumerable<Variable>?)x.GetValue(activity)).Where(x => x != null).SelectMany(x => x!).ToList();
 
-        return variables.Concat(manyVariables).ToList();
+        //return variables.Concat(manyVariables).ToList();
+        return activity.Variables;
     }
 
     public static TDelegate GetDelegate<TDelegate>(this IActivity activity, string methodName) where TDelegate : Delegate

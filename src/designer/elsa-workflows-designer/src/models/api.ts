@@ -72,7 +72,7 @@ export interface IntellisenseContext {
 }
 
 export interface StorageDriverDescriptor {
-  id: string;
+  typeName: string;
   displayName: string;
 }
 

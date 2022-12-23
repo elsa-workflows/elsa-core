@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Activities.Flowchart.Models;
+using Elsa.Workflows.Core.Implementations;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
 
@@ -18,7 +19,7 @@ class Workflow1 : WorkflowBase
 
     protected override void Build(IWorkflowBuilder workflow)
     {
-        var currentItem = workflow.WithVariable<string>("CurrentValue", "", StorageDriverNames.Memory);
+        var currentItem = workflow.WithVariable<string>("CurrentValue", "").WithMemoryStorage();
         var writeLine1 = new WriteLine { Id = "WriteLine1", Text = new Input<string>("Start!") };
         var forEach1 = new ForEach<string> { Id = "ForEach1", Items = new Input<ICollection<string>>(_items), CurrentValue = new Output<string?>(currentItem) };
         var writeLine2 = new WriteLine { Id = "WriteLine2", Text = new Input<string>("Current Item") };
@@ -51,7 +52,7 @@ class Workflow2 : WorkflowBase
 
     protected override void Build(IWorkflowBuilder workflow)
     {
-        var currentItem = workflow.WithVariable<string>("CurrentValue", "", StorageDriverNames.Memory);
+        var currentItem = workflow.WithVariable<string>("CurrentValue", "").WithMemoryStorage();
         var writeLine1 = new WriteLine { Id = "WriteLine1", Text = new Input<string>("Start!") };
         var forEach1 = new ForEach<string> { Id = "ForEach1", Items = new Input<ICollection<string>>(_items), CurrentValue = new Output<string?>(currentItem) };
         var writeLine2 = new WriteLine { Id = "WriteLine2", Text = new Input<string>(currentItem) };
@@ -82,7 +83,7 @@ class Workflow3 : WorkflowBase
 
     protected override void Build(IWorkflowBuilder workflow)
     {
-        var currentItem = workflow.WithVariable<string>("CurrentValue", "", StorageDriverNames.Memory);
+        var currentItem = workflow.WithVariable<string>("CurrentValue", "").WithMemoryStorage();
         var writeLine1 = new WriteLine { Id = "WriteLine1", Text = new Input<string>("Start!") };
 
         var forEach1 = new ForEach<string>

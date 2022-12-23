@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using Elsa.Expressions.Helpers;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Core.Serialization.Converters;
 
@@ -12,11 +13,13 @@ namespace Elsa.Workflows.Core.Serialization.Converters;
 public class VariableConverter : JsonConverter<Variable>
 {
     private readonly IWellKnownTypeRegistry _wellKnownTypeRegistry;
+    private readonly ILogger _logger;
 
     /// <inheritdoc />
-    public VariableConverter(IWellKnownTypeRegistry wellKnownTypeRegistry)
+    public VariableConverter(IWellKnownTypeRegistry wellKnownTypeRegistry, ILogger<VariableConverter> logger)
     {
         _wellKnownTypeRegistry = wellKnownTypeRegistry;
+        _logger = logger;
     }
 
     /// <inheritdoc />
@@ -39,7 +42,7 @@ public class VariableConverter : JsonConverter<Variable>
     {
         if (string.IsNullOrWhiteSpace(source.TypeName))
             return null;
-        
+
         if (!_wellKnownTypeRegistry.TryGetTypeOrDefault(source.TypeName, out var type))
             return null;
 
@@ -47,7 +50,11 @@ public class VariableConverter : JsonConverter<Variable>
         var variable = (Variable)Activator.CreateInstance(variableGenericType)!;
 
         variable.Name = source.Name;
-        variable.Value = source.Value.ConvertTo(type);
+
+        source.Value.TryConvertTo(type)
+            .OnSuccess(value => variable.Value = value)
+            .OnFailure(e => _logger.LogWarning("Failed to convert {SourceValue} to {TargetType}", source.Value, type.Name));
+
         variable.StorageDriverType = !string.IsNullOrEmpty(source.StorageDriverTypeName) ? Type.GetType(source.StorageDriverTypeName) : default;
 
         return variable;
