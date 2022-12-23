@@ -85,6 +85,7 @@ public class WorkflowsFeature : FeatureBase
             .AddSingleton(typeof(Func<IWorkflowBuilder>), sp => () => sp.GetRequiredService<WorkflowBuilder>())
             .AddSingleton<IWorkflowBuilderFactory, WorkflowBuilderFactory>()
             .AddSingleton<IWellKnownTypeRegistry, WellKnownTypeRegistry>()
+            .AddSingleton<IVariablePersistenceManager, VariablePersistenceManager>()
 
             // Pipelines.
             .AddSingleton<IActivityExecutionPipeline, ActivityExecutionPipeline>()
@@ -99,7 +100,7 @@ public class WorkflowsFeature : FeatureBase
             .AddSingleton(StandardInStreamProvider)
             .AddSingleton(StandardOutStreamProvider)
             
-            // Data drives.
+            // Storage drivers.
             .AddSingleton<IStorageDriverManager, StorageDriverManager>()
             .AddStorageDriver<WorkflowStorageDriver>()
             .AddStorageDriver<MemoryStorageDriver>()

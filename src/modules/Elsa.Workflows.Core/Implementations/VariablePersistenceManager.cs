@@ -8,6 +8,16 @@ namespace Elsa.Workflows.Core.Implementations;
 /// <inheritdoc />
 public class VariablePersistenceManager : IVariablePersistenceManager
 {
+    private readonly IStorageDriverManager _storageDriverManager;
+
+    /// <summary>
+    /// Constructor.
+    /// </summary>
+    public VariablePersistenceManager(IStorageDriverManager storageDriverManager)
+    {
+        _storageDriverManager = storageDriverManager;
+    }
+    
     /// <inheritdoc />
     public IEnumerable<Variable> GetPersistentVariables(WorkflowExecutionContext context) => context.Workflow.Variables.Where(x => x.StorageDriverType != null).ToList();
 
@@ -39,14 +49,12 @@ public class VariablePersistenceManager : IVariablePersistenceManager
         // Foreach variable memory block, load its value from their associated storage driver.
         var cancellationToken = context.CancellationToken;
         var storageDriverContext = new StorageDriverContext(context, cancellationToken);
-        //var blocks = register.Blocks.Values.Where(x => x.Metadata is VariableBlockMetadata { IsInitialized: false, StorageDriverType: not null }).ToList();
-        var storageDriverManager = context.GetRequiredService<IStorageDriverManager>();
 
         foreach (var variable in variableList)
         {
             var block = EnsureBlock(register, variable);
             var metadata = (VariableBlockMetadata)block.Metadata!;
-            var driver = storageDriverManager.Get(metadata.StorageDriverType!);
+            var driver = _storageDriverManager.Get(metadata.StorageDriverType!);
 
             block.Metadata = metadata with { IsInitialized = true };
 
@@ -72,12 +80,11 @@ public class VariablePersistenceManager : IVariablePersistenceManager
         var cancellationToken = context.CancellationToken;
         var storageDriverContext = new StorageDriverContext(context, cancellationToken);
         var blocks = register.Blocks.Values.Where(x => x.Metadata is VariableBlockMetadata { StorageDriverType: not null }).ToList();
-        var storageDriverManager = context.GetRequiredService<IStorageDriverManager>();
 
         foreach (var block in blocks)
         {
             var metadata = (VariableBlockMetadata)block.Metadata!;
-            var driver = storageDriverManager.Get(metadata.StorageDriverType!);
+            var driver = _storageDriverManager.Get(metadata.StorageDriverType!);
 
             if (driver == null)
                 continue;
