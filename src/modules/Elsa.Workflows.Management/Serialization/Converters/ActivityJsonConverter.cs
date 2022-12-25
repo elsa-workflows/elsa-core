@@ -59,11 +59,6 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
         var context = new ActivityConstructorContext(doc.RootElement, newOptions);
         var activity = activityDescriptor.Constructor(context);
         
-        _identityGraphService.AssignInputOutputs(activity);
-        
-        if(activity is IVariableContainer variableContainer)
-            _identityGraphService.AssignVariables(variableContainer);
-
         return activity;
     }
 
