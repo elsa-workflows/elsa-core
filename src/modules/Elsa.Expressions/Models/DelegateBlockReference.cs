@@ -32,7 +32,7 @@ public class DelegateBlockReference<T> : DelegateBlockReference
     {
     }
         
-    public DelegateBlockReference(Func<ExpressionExecutionContext, ValueTask<T?>> @delegate) : base(x => @delegate(x))
+    public DelegateBlockReference(Func<ExpressionExecutionContext, ValueTask<T?>> @delegate) : base(async x => await @delegate(x))
     {
     }
 }
