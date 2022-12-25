@@ -22,6 +22,7 @@ public abstract class Composite : ActivityBase, IVariableContainer
     }
 
     /// <inheritdoc />
+    [JsonIgnore]  // Composite activities' Variables is intended to be constructed from code only.
     public ICollection<Variable> Variables { get; init; } = new List<Variable>();
     
     /// <summary>
@@ -29,7 +30,7 @@ public abstract class Composite : ActivityBase, IVariableContainer
     /// </summary>
     [Port]
     [Browsable(false)]
-    [JsonIgnore] // Composite activities' Root is intended to be constructed from code only, so we don't want to get it serialized.
+    [JsonIgnore] // Composite activities' Root is intended to be constructed from code only.
     public IActivity Root { get; set; } = new Sequence();
 
     /// <inheritdoc />
