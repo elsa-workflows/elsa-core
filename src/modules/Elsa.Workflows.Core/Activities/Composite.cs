@@ -75,12 +75,15 @@ public abstract class Composite : ActivityBase, IVariableContainer
     
     private async ValueTask OnCompleteCompositeSignal(CompleteCompositeSignal signal, SignalContext context)
     {
+        await OnCompletedAsync(context.ReceiverActivityExecutionContext, context.SenderActivityExecutionContext);
+        
         // Complete the sender first so that it notifies its parents to complete.
         await context.SenderActivityExecutionContext.CompleteActivityAsync();
         
         // Then complete this activity.
         await context.ReceiverActivityExecutionContext.CompleteActivityAsync(signal.Result);
         context.StopPropagation();
+        
     }
 
     /// <summary>
