@@ -41,9 +41,6 @@ public class DefaultWorkflowExecutionContextFactory : IWorkflowExecutionContextF
         // Build graph.
         var graph = await _activityWalker.WalkAsync(root, cancellationToken);
 
-        // Assign identities.
-        _identityGraphService.AssignIdentities(graph);
-
         // Create scheduler.
         var scheduler = _schedulerFactory.CreateScheduler();
 

@@ -12,7 +12,7 @@ public class IdentityGraphService : IIdentityGraphService
         _activityWalker = activityWalker;
     }
 
-    public async Task AssignIdentitiesAsync(Workflow workflow, CancellationToken cancellationToken = default) => await AssignIdentitiesAsync(workflow.Root, cancellationToken);
+    public async Task AssignIdentitiesAsync(Workflow workflow, CancellationToken cancellationToken = default) => await AssignIdentitiesAsync((IActivity)workflow, cancellationToken);
 
     public async Task AssignIdentitiesAsync(IActivity root, CancellationToken cancellationToken = default)
     {
