@@ -43,19 +43,13 @@ public class PlayAudio : PlayAudioBase
     }
 
     /// <summary>
-    /// The <see cref="IActivity"/> to execute when audio playback has started.
-    /// </summary>
-    [Port]
-    public IActivity? PlaybackStarted { get; set; }
-
-    /// <summary>
     /// The <see cref="IActivity"/> to execute when the call was no longer active.
     /// </summary>
     [Port]
     public IActivity? Disconnected { get; set; }
 
     /// <inheritdoc />
-    protected override async ValueTask HandlePlaybackStartedAsync(ActivityExecutionContext context) => await context.ScheduleActivityAsync(PlaybackStarted, OnCompletedAsync);
+    protected override async ValueTask HandlePlaybackStartedAsync(ActivityExecutionContext context) => await context.CompleteActivityAsync();
 
     /// <inheritdoc />
     protected override async ValueTask HandleDisconnectedAsync(ActivityExecutionContext context) => await context.ScheduleActivityAsync(Disconnected, OnCompletedAsync);
