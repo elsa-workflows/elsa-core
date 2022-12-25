@@ -5,6 +5,9 @@ namespace Elsa.Telnyx.Client.Services;
 
 public interface ICallsApi
 {
+    [Get("/v2/calls/{callControlId}")]
+    Task<TelnyxResponse<CallStatusResponse>> GetStatusAsync(string callControlId, CancellationToken cancellationToken = default);
+    
     [Post("/v2/calls")]
     Task<TelnyxResponse<DialResponse>> DialAsync([Body] DialRequest request, CancellationToken cancellationToken = default);
 
