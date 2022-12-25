@@ -59,8 +59,6 @@ public class ClrWorkflowDefinitionProvider : IWorkflowDefinitionProvider
         await workflowBuilder.BuildAsync(builder, cancellationToken);
 
         var workflow = builder.BuildWorkflow();
-        await _identityGraphService.AssignIdentitiesAsync(workflow, cancellationToken);
-
         var workflowJson = JsonSerializer.Serialize(workflow.Root, _serializerOptionsProvider.CreatePersistenceOptions());
         var materializerContext = new ClrWorkflowMaterializerContext(workflowBuilder.GetType());
         var materializerContextJson = JsonSerializer.Serialize(materializerContext, _serializerOptionsProvider.CreatePersistenceOptions());
@@ -75,7 +73,6 @@ public class ClrWorkflowDefinitionProvider : IWorkflowDefinitionProvider
             Description = workflow.WorkflowMetadata.Description,
             CustomProperties = workflow.Metadata,
             Variables = workflow.Variables,
-            //ApplicationProperties = workflow.ApplicationProperties,
             IsLatest = workflow.Publication.IsLatest,
             IsPublished = workflow.Publication.IsPublished,
             CreatedAt = workflow.WorkflowMetadata.CreatedAt == default ? _systemClock.UtcNow : workflow.WorkflowMetadata.CreatedAt,

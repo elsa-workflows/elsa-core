@@ -38,7 +38,10 @@ public class MemoryRegister
 
     public MemoryBlock Declare(MemoryBlockReference blockReference)
     {
-        var block = blockReference.Declare();
+        if (TryGetBlock(blockReference.Id, out var block))
+            return block;
+
+        block = blockReference.Declare();
         Blocks[blockReference.Id] = block;
         return block;
     }

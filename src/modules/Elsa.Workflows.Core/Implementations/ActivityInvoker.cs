@@ -21,19 +21,10 @@ public class ActivityInvoker : IActivityInvoker
     public async Task InvokeAsync(
         WorkflowExecutionContext workflowExecutionContext,
         IActivity activity,
-        ActivityExecutionContext? owner,
-        IEnumerable<MemoryBlockReference>? memoryReferences = default)
+        ActivityExecutionContext? owner)
     {
         // Setup an activity execution context.
         var activityExecutionContext = workflowExecutionContext.CreateActivityExecutionContext(activity, owner);
-
-        // Declare memory.
-        if (memoryReferences != null)
-        {
-            var workflowMemory = workflowExecutionContext.MemoryRegister;
-            var activityMemory = new MemoryRegister(workflowMemory);
-            activityMemory.Declare(memoryReferences);
-        }
 
         // Add the activity context to the workflow context.
         workflowExecutionContext.AddActivityExecutionContext(activityExecutionContext);

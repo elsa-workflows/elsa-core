@@ -16,9 +16,19 @@ public static class VariableExtensions
     public static Variable WithWorkflowStorage(this Variable variable) => variable.WithStorage<WorkflowStorageDriver>();
     
     /// <summary>
+    /// Configures the variable to use the <see cref="WorkflowStorageDriver"/>.
+    /// </summary>
+    public static Variable<T> WithWorkflowStorage<T>(this Variable<T> variable) => (Variable<T>)variable.WithStorage<WorkflowStorageDriver>();
+    
+    /// <summary>
     /// Configures the variable to use the <see cref="MemoryStorageDriver"/>.
     /// </summary>
     public static Variable WithMemoryStorage(this Variable variable) => variable.WithStorage<MemoryStorageDriver>();
+    
+    /// <summary>
+    /// Configures the variable to use the <see cref="MemoryStorageDriver"/>.
+    /// </summary>
+    public static Variable<T> WithMemoryStorage<T>(this Variable<T> variable) => (Variable<T>)variable.WithStorage<MemoryStorageDriver>();
 
     /// <summary>
     /// Configures the variable to use the specified <see cref="IStorageDriver"/> type.

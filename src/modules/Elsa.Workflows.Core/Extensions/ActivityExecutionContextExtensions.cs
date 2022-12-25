@@ -103,6 +103,9 @@ public static class ActivityExecutionContextExtensions
         context.SetHasEvaluatedProperties();
     }
 
+    /// <summary>
+    /// Evaluates the specified input property of the activity.
+    /// </summary>
     public static async Task<T?> EvaluateInputPropertyAsync<TActivity, T>(this ActivityExecutionContext context, Expression<Func<TActivity, Input<T>>> propertyExpression)
     {
         var inputName = propertyExpression.GetProperty()!.Name;

@@ -1,17 +1,32 @@
 using System.ComponentModel;
-using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Dahomey.Json;
-using Dahomey.Json.Serialization.Conventions;
-using Dahomey.Json.Util;
 using Elsa.Expressions.Exceptions;
-using DahomeyJsonNode = System.Text.Json.JsonNode;
+using Elsa.Expressions.Extensions;
+using Elsa.Expressions.Models;
 
 namespace Elsa.Expressions.Helpers;
 
+/// <summary>
+/// A helper that attempts many strategies to try and convert the source value into the destination type. 
+/// </summary>
 public static class ObjectConverter
 {
+    public static Result TryConvertTo<T>(this object? value, JsonSerializerOptions? serializerOptions = null) => value.TryConvertTo(typeof(T), serializerOptions);
+    
+    public static Result TryConvertTo(this object? value, Type targetType, JsonSerializerOptions? serializerOptions = null)
+    {
+        try
+        {
+            var convertedValue = value.ConvertTo(targetType, serializerOptions);
+            return new Result(true, convertedValue, null);
+        }
+        catch (Exception e)
+        {
+            return new Result(false, null, e);
+        }
+    }
+
     public static T? ConvertTo<T>(this object? value, JsonSerializerOptions? serializerOptions = null) => value != null ? (T?)value.ConvertTo(typeof(T), serializerOptions) : default;
 
     public static object? ConvertTo(this object? value, Type targetType, JsonSerializerOptions? serializerOptions = null)
@@ -32,9 +47,6 @@ public static class ObjectConverter
 
         var underlyingTargetType = Nullable.GetUnderlyingType(targetType) ?? targetType;
 
-        if (value is DahomeyJsonNode { ValueKind: JsonValueKind.Object } dahomyJsonObject)
-            return ToObject(dahomyJsonObject, targetType, options);
-
         if (value is JsonElement jsonNumber && jsonNumber.ValueKind == JsonValueKind.Number && underlyingTargetType == typeof(string))
             return jsonNumber.ToString().ConvertTo(underlyingTargetType);
 
@@ -42,7 +54,7 @@ public static class ObjectConverter
         {
             if (jsonObject.ValueKind == JsonValueKind.String && underlyingTargetType != typeof(string))
                 return jsonObject.GetString().ConvertTo(underlyingTargetType);
-            
+
             return jsonObject.Deserialize(targetType, options);
         }
 
@@ -107,11 +119,5 @@ public static class ObjectConverter
         {
             throw new TypeConversionException($"Failed to convert an object of type {sourceType} to {underlyingTargetType}", value, underlyingTargetType, e);
         }
-    }
-
-    private static object? ToObject(this DahomeyJsonNode node, Type type, JsonSerializerOptions? options = null)
-    {
-        using var arrayBufferWriter = new ArrayBufferWriter<byte>();
-        return JsonSerializer.Deserialize(node.ToString(), type, options);
     }
 }

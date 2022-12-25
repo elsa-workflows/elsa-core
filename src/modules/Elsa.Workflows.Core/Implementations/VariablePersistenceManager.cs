@@ -33,18 +33,18 @@ public class VariablePersistenceManager : IVariablePersistenceManager
     /// <inheritdoc />
     public IEnumerable<Variable> GetVariablesInScope(ActivityExecutionContext context)
     {
-        // Get variables for the current activity's immediate composite container.
-        var immediateCompositeVariables = ((Composite?)context.ActivityNode.Ancestors()
-                .FirstOrDefault(x => x.Activity is Composite)?.Activity)?.Variables
-            .Where(x => x.StorageDriverType != null) ?? Enumerable.Empty<Variable>();
+        // Get variables between the current activity and immediate composite container.
+        var ancestors = context.ActivityNode.Ancestors();
+        
+        foreach (var node in ancestors)
+        {
+            if (node.Activity is IVariableContainer variableContainer)
+                foreach (var variable in variableContainer.Variables)
+                    yield return variable;
 
-        // Get variables for the current activity itself, if it's a container.
-        var directVariables = (context.Activity is Composite composite
-            ? composite.Variables.Where(x => x.StorageDriverType != null)
-            : Enumerable.Empty<Variable>());
-
-        // Return a concatenated list of variables.
-        return immediateCompositeVariables.Concat(directVariables);
+            if (node.Activity is Composite)
+                break;
+        }
     }
 
     /// <inheritdoc />
@@ -112,12 +112,7 @@ public class VariablePersistenceManager : IVariablePersistenceManager
     /// <inheritdoc />
     public void EnsureVariables(WorkflowExecutionContext context, IEnumerable<Variable> variables)
     {
-        var register = context.MemoryRegister;
-        foreach (var variable in variables)
-        {
-            if (!register.IsDeclared(variable))
-                register.Declare(variable);
-        }
+        foreach (var variable in variables) context.MemoryRegister.Declare(variable);
     }
 
     /// <inheritdoc />

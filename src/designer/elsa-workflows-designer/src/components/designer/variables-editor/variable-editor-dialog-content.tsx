@@ -55,11 +55,11 @@ export class VariableEditorDialogContent {
               </FormEntry>
 
               <FormEntry fieldId="variableStorageDriverId" label="Storage" hint="The storage to use when persisting the variable.">
-                <select id="variableStorageDriverId" name="variableStorageDriverId">
+                <select id="variableStorageDriverTypeName" name="variableStorageDriverTypeName">
                   {storageDrivers.map(driver => {
-                    const value = driver.id;
+                    const value = driver.typeName;
                     const text = driver.displayName;
-                    const selected = value == variable.storageDriverId;
+                    const selected = value == variable.storageDriverTypeName;
                     return <option value={value} selected={selected}>{text}</option>;
                   })}
                 </select>
@@ -84,13 +84,13 @@ export class VariableEditorDialogContent {
     const name = formData.get('variableName') as string;
     const value = formData.get('variableValue') as string;
     const type = formData.get('variableTypeName') as string;
-    const driverId = formData.get('variableStorageDriverId') as string;
+    const driverTypeName = formData.get('variableStorageDriverTypeName') as string;
     const variable = this.variable;
 
     variable.name = name;
     variable.typeName = type;
     variable.value = value;
-    variable.storageDriverId = isNullOrWhitespace(driverId) ? null : driverId;
+    variable.storageDriverTypeName = isNullOrWhitespace(driverTypeName) ? null : driverTypeName;
 
     return variable;
   };
