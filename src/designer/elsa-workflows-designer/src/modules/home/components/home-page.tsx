@@ -28,7 +28,7 @@ export class HomePage {
                     <span class="md:block"> Welcome to <span class='text-blue-500 md:block'>Elsa Workflows</span> <span>3.0</span></span>
                   </h1>
                   <p class="tagline mt-3 text-base text-gray-300 sm:mt-5 sm:text-xl lg:text-lg xl:text-xl">
-                    Use the dashboard to manage all the things.
+                    Decoding the future.
                   </p>
                 </div>
               </div>
