@@ -21,7 +21,7 @@ jobs:
       - name: Test
         run: dotnet test --configuration Release /p:Version=${VERSION} --no-build
       - name: Pack
-        run: dotnet pack --configuration Release /p:Version=${VERSION} --no-build --output .
+        run: dotnet pack --configuration Release /p:Version=${VERSION} --output .
       - name: Push
         run: dotnet nuget push *.nupkg --api-key ${{ secrets.FEEDS_IO_PAT }} --source https://f.feedz.io/elsa-workflows/v3/nuget/index.json
         env:

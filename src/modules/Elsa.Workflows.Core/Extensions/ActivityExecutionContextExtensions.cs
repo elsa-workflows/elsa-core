@@ -4,7 +4,6 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Elsa.Common.Services;
 using Elsa.Expressions.Helpers;
-using Elsa.Expressions.Models;
 using Elsa.Expressions.Services;
 using Elsa.Workflows.Core.Activities.Flowchart.Models;
 using Elsa.Workflows.Core.Attributes;
@@ -103,6 +102,9 @@ public static class ActivityExecutionContextExtensions
         context.SetHasEvaluatedProperties();
     }
 
+    /// <summary>
+    /// Evaluates the specified input property of the activity.
+    /// </summary>
     public static async Task<T?> EvaluateInputPropertyAsync<TActivity, T>(this ActivityExecutionContext context, Expression<Func<TActivity, Input<T>>> propertyExpression)
     {
         var inputName = propertyExpression.GetProperty()!.Name;
@@ -198,10 +200,10 @@ public static class ActivityExecutionContextExtensions
     /// <summary>
     /// Removes all child <see cref="ActivityExecutionContext"/> objects.
     /// </summary>
-    public static void RemoveChildren(this ActivityExecutionContext context)
+    public static async Task RemoveChildrenAsync(this ActivityExecutionContext context)
     {
         // Detach child activity execution contexts.
-        context.WorkflowExecutionContext.RemoveActivityExecutionContexts(context.GetChildren());
+        await context.WorkflowExecutionContext.RemoveActivityExecutionContextsAsync(context.GetChildren());
     }
 
     /// <summary>
@@ -234,7 +236,7 @@ public static class ActivityExecutionContextExtensions
         await context.SendSignalAsync(new ActivityCompleted(result));
 
         // Remove the context.
-        context.WorkflowExecutionContext.RemoveActivityExecutionContext(context);
+        await context.WorkflowExecutionContext.RemoveActivityExecutionContextAsync(context);
     }
 
     /// <summary>

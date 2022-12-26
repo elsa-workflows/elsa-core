@@ -9,6 +9,13 @@ namespace Elsa.Workflows.Runtime.Services;
 /// </summary>
 public interface IWorkflowDefinitionService
 {
+    /// <summary>
+    /// Constructs an executable <see cref="Workflow"/> from the specified <see cref="WorkflowDefinition"/>.
+    /// </summary>
     Task<Workflow> MaterializeWorkflowAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Looks for a <see cref="WorkflowDefinition"/> by the specified definition ID and <see cref="VersionOptions"/>.
+    /// </summary>
     Task<WorkflowDefinition?> FindAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default);
 }

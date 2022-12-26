@@ -4,7 +4,7 @@
     <Import Project="..\..\..\configureawait.props"/>
 
     <PropertyGroup>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
         <Description>
             Provides infrastructure to execute background jobs. Comes with an in-memory job queue provider out of the box.
         </Description>
@@ -13,7 +13,7 @@
 
     <ItemGroup>
       <PackageReference Include="Cronos" Version="0.7.1" />
-      <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="7.0.0" />
     </ItemGroup>
 
     <ItemGroup>

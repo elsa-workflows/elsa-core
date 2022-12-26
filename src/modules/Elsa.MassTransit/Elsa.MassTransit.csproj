@@ -4,7 +4,7 @@
     <Import Project="..\..\..\configureawait.props"/>
 
     <PropertyGroup>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
         <Description>
             Provides integration with MassTransit and comes with a MassTransit implementation of Elsa's IServiceBus abstraction.
         </Description>
@@ -17,7 +17,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="MassTransit" Version="8.0.1"/>
+        <PackageReference Include="MassTransit" Version="8.0.9"/>
         <PackageReference Include="MassTransit.Extensions.DependencyInjection" Version="7.3.1"/>
     </ItemGroup>
 

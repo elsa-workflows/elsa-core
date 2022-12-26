@@ -1,16 +1,32 @@
 using System.ComponentModel;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Dahomey.Json;
-using Dahomey.Json.Serialization.Conventions;
-using Dahomey.Json.Util;
 using Elsa.Expressions.Exceptions;
-using DahomeyJsonNode = System.Text.Json.JsonNode;
+using Elsa.Expressions.Extensions;
+using Elsa.Expressions.Models;
 
 namespace Elsa.Expressions.Helpers;
 
+/// <summary>
+/// A helper that attempts many strategies to try and convert the source value into the destination type. 
+/// </summary>
 public static class ObjectConverter
 {
+    public static Result TryConvertTo<T>(this object? value, JsonSerializerOptions? serializerOptions = null) => value.TryConvertTo(typeof(T), serializerOptions);
+    
+    public static Result TryConvertTo(this object? value, Type targetType, JsonSerializerOptions? serializerOptions = null)
+    {
+        try
+        {
+            var convertedValue = value.ConvertTo(targetType, serializerOptions);
+            return new Result(true, convertedValue, null);
+        }
+        catch (Exception e)
+        {
+            return new Result(false, null, e);
+        }
+    }
+
     public static T? ConvertTo<T>(this object? value, JsonSerializerOptions? serializerOptions = null) => value != null ? (T?)value.ConvertTo(typeof(T), serializerOptions) : default;
 
     public static object? ConvertTo(this object? value, Type targetType, JsonSerializerOptions? serializerOptions = null)
@@ -29,13 +45,18 @@ public static class ObjectConverter
         options.PropertyNameCaseInsensitive = true;
         options.Converters.Add(new JsonStringEnumConverter());
 
-        if (value is DahomeyJsonNode { ValueKind: JsonValueKind.Object } dahomyJsonObject)
-            return ToObject(dahomyJsonObject, targetType, options);
-
-        if (value is JsonElement { ValueKind: JsonValueKind.Object or JsonValueKind.Array } jsonObject)
-            return jsonObject.Deserialize(targetType, options);
-
         var underlyingTargetType = Nullable.GetUnderlyingType(targetType) ?? targetType;
+
+        if (value is JsonElement jsonNumber && jsonNumber.ValueKind == JsonValueKind.Number && underlyingTargetType == typeof(string))
+            return jsonNumber.ToString().ConvertTo(underlyingTargetType);
+
+        if (value is JsonElement jsonObject)
+        {
+            if (jsonObject.ValueKind == JsonValueKind.String && underlyingTargetType != typeof(string))
+                return jsonObject.GetString().ConvertTo(underlyingTargetType);
+
+            return jsonObject.Deserialize(targetType, options);
+        }
 
         if (targetType == typeof(object))
             return value;
@@ -47,7 +68,7 @@ public static class ObjectConverter
 
         if (underlyingSourceType == underlyingTargetType)
             return value;
-        
+
         var targetTypeConverter = TypeDescriptor.GetConverter(underlyingTargetType);
 
         if (targetTypeConverter.CanConvertFrom(underlyingSourceType))
@@ -67,7 +88,7 @@ public static class ObjectConverter
 
             if (underlyingSourceType == typeof(int))
                 return Enum.ToObject(underlyingTargetType, value);
-            
+
             if (underlyingSourceType == typeof(double))
                 return Enum.ToObject(underlyingTargetType, Convert.ChangeType(value, typeof(int)));
         }
@@ -89,7 +110,7 @@ public static class ObjectConverter
 
         if (value is string s && string.IsNullOrWhiteSpace(s))
             return null;
-        
+
         try
         {
             return Convert.ChangeType(value, underlyingTargetType);
@@ -98,11 +119,5 @@ public static class ObjectConverter
         {
             throw new TypeConversionException($"Failed to convert an object of type {sourceType} to {underlyingTargetType}", value, underlyingTargetType, e);
         }
-    }
-
-    private static object? ToObject(this DahomeyJsonNode node, Type type, JsonSerializerOptions? options = null)
-    {
-        using var arrayBufferWriter = new Dahomey.Json.Util.ArrayBufferWriter<byte>();
-        return JsonSerializer.Deserialize(node.ToString(), type, options);
     }
 }

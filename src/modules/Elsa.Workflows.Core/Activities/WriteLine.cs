@@ -10,7 +10,7 @@ using Elsa.Workflows.Core.Services;
 namespace Elsa.Workflows.Core.Activities;
 
 /// <summary>
-/// 
+///  Write a line of text to the console.
 /// </summary>
 [Activity("Elsa", "Console", "Write a line of text to the console.")]
 public class WriteLine : Activity

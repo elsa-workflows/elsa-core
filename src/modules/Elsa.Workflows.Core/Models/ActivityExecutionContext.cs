@@ -84,24 +84,26 @@ public class ActivityExecutionContext
 
     public ResumedBookmarkContext? ResumedBookmarkContext => WorkflowExecutionContext.ResumedBookmarkContext;
 
-    public async ValueTask ScheduleActivityAsync(IActivity? activity, ActivityCompletionCallback? completionCallback = default, IEnumerable<MemoryBlockReference>? references = default, object? tag = default)
+    public async ValueTask ScheduleActivityAsync(IActivity? activity, ActivityCompletionCallback? completionCallback = default, object? tag = default)
     {
-        await ScheduleActivityAsync(activity, this, completionCallback, references, tag);
+        await ScheduleActivityAsync(activity, this, completionCallback, tag);
     }
 
-    public async ValueTask ScheduleActivityAsync(IActivity? activity, ActivityExecutionContext owner, ActivityCompletionCallback? completionCallback = default, IEnumerable<MemoryBlockReference>? references = default, object? tag = default)
+    public async ValueTask ScheduleActivityAsync(IActivity? activity, ActivityExecutionContext owner, ActivityCompletionCallback? completionCallback = default, object? tag = default)
     {
         if (activity == null)
         {
             if (completionCallback != null)
                 await completionCallback(this, this);
+            else
+                await owner.CompleteActivityAsync();
             return;
         }
 
-        WorkflowExecutionContext.Schedule(activity, owner, completionCallback, references, tag);
+        WorkflowExecutionContext.Schedule(activity, owner, completionCallback, tag);
     }
 
-    public async ValueTask ScheduleActivitiesAsync(params IActivity?[] activities) => await ScheduleActivities((IEnumerable<IActivity?>)activities);
+    public async ValueTask ScheduleActivitiesAsync(params IActivity?[] activities) => await ScheduleActivities(activities);
 
     public async ValueTask ScheduleActivities(IEnumerable<IActivity?> activities, ActivityCompletionCallback? completionCallback = default)
     {

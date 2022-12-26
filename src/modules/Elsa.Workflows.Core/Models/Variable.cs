@@ -1,5 +1,6 @@
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
+using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Core.Models;
 
@@ -28,11 +29,13 @@ public class Variable : MemoryBlockReference
     public object? Value { get; set; }
     
     /// <summary>
-    /// When specified, the variable's value will be stored on the specified <see cref="Elsa.Workflows.Core.Services.IStorageDriver"/>. 
+    /// The ID of a storage driver to use for persistence.
+    /// If not driver is specified, the referenced memory block will remain in memory for as long as the expression execution context exists.
     /// </summary>
-    public string? StorageDriverId { get; set; }
-    
-    public override MemoryBlock Declare() => new(Value);
+    public Type? StorageDriverType { get; set; }
+
+    /// <inheritdoc />
+    public override MemoryBlock Declare() => new(Value, new VariableBlockMetadata(this, StorageDriverType, false));
 }
 
 public class Variable<T> : Variable
@@ -56,4 +59,18 @@ public class Variable<T> : Variable
 
     public T? Get(ActivityExecutionContext context) => Get(context.ExpressionExecutionContext).ConvertTo<T?>();
     public new T? Get(ExpressionExecutionContext context) => base.Get(context).ConvertTo<T?>();
+
+    /// <summary>
+    /// Sets the <see cref="Variable.StorageDriverType"/> to the specified type.
+    /// </summary>
+    public Variable<T> WithStorageDriver<TDriver>() where TDriver:IStorageDriver
+    {
+        StorageDriverType = typeof(TDriver);
+        return this;
+    }
 }
+
+/// <summary>
+/// Provides metadata about the variable block.
+/// </summary>
+public record VariableBlockMetadata(Variable Variable, Type? StorageDriverType, bool IsInitialized);

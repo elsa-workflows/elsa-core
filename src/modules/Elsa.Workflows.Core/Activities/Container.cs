@@ -8,7 +8,7 @@ namespace Elsa.Workflows.Core.Activities;
 /// <summary>
 /// A base class for activities that control a collection of activities.
 /// </summary>
-public abstract class Container : ActivityBase, IContainer
+public abstract class Container : ActivityBase, IVariableContainer
 {
     /// <inheritdoc />
     protected Container(string? source = default, int? line = default) : base(source, line)
@@ -28,9 +28,6 @@ public abstract class Container : ActivityBase, IContainer
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        // Register variables.
-        context.ExpressionExecutionContext.Memory.Declare(Variables);
-
         // Schedule children.
         await ScheduleChildrenAsync(context);
     }

@@ -1,15 +1,55 @@
+using Elsa.Expressions.Helpers;
+using Elsa.Workflows.Core.Implementations;
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Core;
 
+/// <summary>
+/// Adds extension methods to <see cref="Variable"/> for configuring storage.
+/// </summary>
 public static class VariableExtensions
 {
-    public static Variable WithWorkflowDrive(this Variable variable) => variable.WithStorage(StorageDriverNames.Workflow);
-    public static Variable WithMemoryDrive(this Variable variable) => variable.WithStorage(StorageDriverNames.Memory);
+    /// <summary>
+    /// Configures the variable to use the <see cref="WorkflowStorageDriver"/>.
+    /// </summary>
+    public static Variable WithWorkflowStorage(this Variable variable) => variable.WithStorage<WorkflowStorageDriver>();
     
-    public static Variable WithStorage(this Variable variable, string storageDriverId)
+    /// <summary>
+    /// Configures the variable to use the <see cref="WorkflowStorageDriver"/>.
+    /// </summary>
+    public static Variable<T> WithWorkflowStorage<T>(this Variable<T> variable) => (Variable<T>)variable.WithStorage<WorkflowStorageDriver>();
+    
+    /// <summary>
+    /// Configures the variable to use the <see cref="MemoryStorageDriver"/>.
+    /// </summary>
+    public static Variable WithMemoryStorage(this Variable variable) => variable.WithStorage<MemoryStorageDriver>();
+    
+    /// <summary>
+    /// Configures the variable to use the <see cref="MemoryStorageDriver"/>.
+    /// </summary>
+    public static Variable<T> WithMemoryStorage<T>(this Variable<T> variable) => (Variable<T>)variable.WithStorage<MemoryStorageDriver>();
+
+    /// <summary>
+    /// Configures the variable to use the specified <see cref="IStorageDriver"/> type.
+    /// </summary>
+    public static Variable WithStorage<T>(this Variable variable) => variable.WithStorage(typeof(T));
+    
+    /// <summary>
+    /// Configures the variable to use the specified <see cref="IStorageDriver"/> type.
+    /// </summary>
+    public static Variable WithStorage(this Variable variable, Type storageDriverType)
     {
-        variable.StorageDriverId = storageDriverId;
+        variable.StorageDriverType = storageDriverType;
         return variable;
+    }
+
+    /// <summary>
+    /// Converts the specified value into a type that is compatible with the variable.
+    /// </summary>
+    public static object ParseValue(this Variable variable, object value)
+    {
+        var genericType = variable.GetType().GenericTypeArguments.FirstOrDefault();
+        return genericType == null ? value : value.ConvertTo(genericType)!;
     }
 }

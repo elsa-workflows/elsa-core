@@ -4,6 +4,7 @@ using Elsa.Workflows.Core.State;
 
 namespace Elsa.Workflows.Core.Implementations;
 
+/// <inheritdoc />
 public class DefaultWorkflowExecutionContextFactory : IWorkflowExecutionContextFactory
 {
     private readonly IActivityWalker _activityWalker;
@@ -12,11 +13,14 @@ public class DefaultWorkflowExecutionContextFactory : IWorkflowExecutionContextF
     private readonly IWorkflowStateSerializer _workflowStateSerializer;
     private readonly IServiceProvider _serviceProvider;
 
+    /// <summary>
+    /// Constructor.
+    /// </summary>
     public DefaultWorkflowExecutionContextFactory(
-        IActivityWalker activityWalker, 
-        IIdentityGraphService identityGraphService, 
-        IActivitySchedulerFactory schedulerFactory, 
-        IWorkflowStateSerializer workflowStateSerializer, 
+        IActivityWalker activityWalker,
+        IIdentityGraphService identityGraphService,
+        IActivitySchedulerFactory schedulerFactory,
+        IWorkflowStateSerializer workflowStateSerializer,
         IServiceProvider serviceProvider)
     {
         _activityWalker = activityWalker;
@@ -25,7 +29,8 @@ public class DefaultWorkflowExecutionContextFactory : IWorkflowExecutionContextF
         _workflowStateSerializer = workflowStateSerializer;
         _serviceProvider = serviceProvider;
     }
-    
+
+    /// <inheritdoc />
     public async Task<WorkflowExecutionContext> CreateAsync(
         Workflow workflow,
         string instanceId,
@@ -40,24 +45,27 @@ public class DefaultWorkflowExecutionContextFactory : IWorkflowExecutionContextF
 
         // Build graph.
         var graph = await _activityWalker.WalkAsync(root, cancellationToken);
+        var flattenedList = graph.Flatten().ToList();
+        var needsIdentityAssignment = flattenedList.Any(x => string.IsNullOrEmpty(x.NodeId));
 
-        // Assign identities.
-        _identityGraphService.AssignIdentities(graph);
+        if (needsIdentityAssignment)
+            _identityGraphService.AssignIdentities(flattenedList);
 
         // Create scheduler.
         var scheduler = _schedulerFactory.CreateScheduler();
 
         // Setup a workflow execution context.
         var workflowExecutionContext = new WorkflowExecutionContext(
-            _serviceProvider, 
-            instanceId, 
-            correlationId, 
-            workflow, 
-            graph, 
-            scheduler, 
-            input, 
+            _serviceProvider,
+            instanceId,
+            correlationId,
+            workflow,
+            graph,
+            flattenedList,
+            scheduler,
+            input,
             executeActivityDelegate,
-            triggerActivityId, 
+            triggerActivityId,
             default,
             cancellationToken);
 

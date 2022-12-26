@@ -4,7 +4,7 @@
     <Import Project="..\..\..\configureawait.props" />
 
     <PropertyGroup>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
         <Description>
             Provides workflow runtime functionality.
         </Description>
@@ -19,13 +19,9 @@
 
     <ItemGroup>
       <PackageReference Include="DistributedLock" Version="2.3.2" />
-      <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
-      <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="6.0.0" />
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="7.0.0" />
       <PackageReference Include="Open.Linq.AsyncExtensions" Version="1.2.0" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Consumers" />
     </ItemGroup>
 
 </Project>

@@ -17,7 +17,7 @@ import {WorkflowDefinitionManager} from "./services/manager";
 import {WorkflowDefinition, WorkflowDefinitionSummary} from "./models/entities";
 import {WorkflowDefinitionUpdatedArgs} from "./models/ui";
 import {PublishClickedArgs} from "./components/publish-button";
-import {ExportWorkflowRequest, ImportWorkflowRequest, WorkflowDefinitionsApi} from "./services/api";
+import {WorkflowDefinitionsApi} from "./services/api";
 import {DefaultModalActions, ModalDialogInstance, ModalDialogService} from "../../components/shared/modal-dialog";
 import {isEqual} from 'lodash'
 import {htmlToElement, isNullOrWhitespace} from "../../utils";
@@ -159,20 +159,22 @@ export class WorkflowDefinitionsPlugin implements Plugin {
   private onWorkflowUpdated = async (e: CustomEvent<WorkflowDefinitionUpdatedArgs>) => {
     const updatedWorkflowDefinition = e.detail.workflowDefinition;
 
-    if (e.detail.latestVersionNumber == undefined) {
-      await this.saveWorkflowDefinition(updatedWorkflowDefinition, false);
-      return;
-    }
+    await this.saveWorkflowDefinition(updatedWorkflowDefinition, false);
 
-    if (updatedWorkflowDefinition.version == e.detail.latestVersionNumber || updatedWorkflowDefinition.isPublished) {
-      const currentWorkflowDefinition = await this.api.get({definitionId: updatedWorkflowDefinition.definitionId, versionOptions: {version: updatedWorkflowDefinition.version}});
-      if (!isEqual(currentWorkflowDefinition.root.activities, updatedWorkflowDefinition.root.activities) || !isEqual(currentWorkflowDefinition.variables, updatedWorkflowDefinition.variables)) {
-        if (updatedWorkflowDefinition.isPublished)
-          updatedWorkflowDefinition.version = e.detail.latestVersionNumber;
+    // if (e.detail.latestVersionNumber == undefined) {
+    //   await this.saveWorkflowDefinition(updatedWorkflowDefinition, false);
+    //   return;
+    // }
 
-        await this.saveWorkflowDefinition(updatedWorkflowDefinition, false);
-      }
-    }
+    // if (updatedWorkflowDefinition.version == e.detail.latestVersionNumber || updatedWorkflowDefinition.isPublished) {
+    //   const currentWorkflowDefinition = await this.api.get({definitionId: updatedWorkflowDefinition.definitionId, versionOptions: {version: updatedWorkflowDefinition.version}});
+    //   if (!isEqual(currentWorkflowDefinition.root.activities, updatedWorkflowDefinition.root.activities) || !isEqual(currentWorkflowDefinition.variables, updatedWorkflowDefinition.variables)) {
+    //     if (updatedWorkflowDefinition.isPublished)
+    //       updatedWorkflowDefinition.version = e.detail.latestVersionNumber;
+    //
+    //     await this.saveWorkflowDefinition(updatedWorkflowDefinition, false);
+    //   }
+    // }
   }
 
   private onBrowseWorkflowDefinitions = async () => {

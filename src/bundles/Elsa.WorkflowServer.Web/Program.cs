@@ -27,6 +27,7 @@ using Elsa.Scheduling.Extensions;
 using Elsa.WorkflowContexts.Extensions;
 using Elsa.Workflows.Api.Extensions;
 using Elsa.Workflows.Core.Activities;
+using Elsa.Workflows.Core.Middleware.Activities;
 using Elsa.Workflows.Core.Middleware.Workflows;
 using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Management.Services;
@@ -64,9 +65,9 @@ services
         })
         .UseWorkflowRuntime(runtime =>
         {
-            runtime.UseProtoActor(proto => proto.PersistenceProvider = _ => new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString)));
+            //runtime.UseProtoActor(proto => proto.PersistenceProvider = _ => new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString)));
             runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
-            runtime.WorkflowStateExporter = sp => sp.GetRequiredService<AsyncWorkflowStateExporter>();
+            //runtime.WorkflowStateExporter = sp => sp.GetRequiredService<AsyncWorkflowStateExporter>();
         })
         .UseLabels(labels => labels.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
         .UseActivityDefinitions(feature => feature.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
@@ -77,7 +78,7 @@ services
         .UseJavaScript()
         .UseLiquid()
         .UseHttp()
-    ).AddFastEndpointsFromModule();
+    );
 
 services.AddHealthChecks();
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()));
@@ -113,7 +114,9 @@ serviceProvider.ConfigureDefaultWorkflowExecutionPipeline(pipeline =>
 );
 
 // Configure activity execution pipeline to use the job-based activity invoker.
-serviceProvider.ConfigureDefaultActivityExecutionPipeline(pipeline => pipeline.UseJobBasedActivityInvoker());
+serviceProvider.ConfigureDefaultActivityExecutionPipeline(pipeline => pipeline
+    .UseExceptionHandling()
+    .UseJobBasedActivityInvoker());
 
 if (app.Environment.IsDevelopment())
     app.UseDeveloperExceptionPage();

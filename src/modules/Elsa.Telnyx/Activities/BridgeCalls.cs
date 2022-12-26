@@ -1,6 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
-using Elsa.Telnyx.Attributes;
 using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Client.Models;
 using Elsa.Telnyx.Client.Services;
@@ -84,7 +83,7 @@ public abstract class BridgeCallsBase : ActivityBase<BridgedCallsOutput>, IBookm
     {
         var callControlIdA = context.GetPrimaryCallControlId(CallControlIdA) ?? throw new Exception("CallControlA is required");
         var callControlIdB = context.GetSecondaryCallControlId(CallControlIdB) ?? throw new Exception("CallControlB is required");
-        var request = new BridgeCallsRequest(callControlIdB);
+        var request = new BridgeCallsRequest(callControlIdB, ClientState: context.CreateCorrelatingClientState());
         var telnyxClient = context.GetRequiredService<ITelnyxClient>();
 
         try

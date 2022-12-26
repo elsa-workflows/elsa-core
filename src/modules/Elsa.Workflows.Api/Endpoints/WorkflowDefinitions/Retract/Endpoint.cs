@@ -6,7 +6,7 @@ using Elsa.Workflows.Management.Services;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Retract;
 
-public class Retract : ElsaEndpoint<Request, WorkflowDefinitionResponse, WorkflowDefinitionMapper>
+internal class Retract : ElsaEndpoint<Request, WorkflowDefinitionResponse, WorkflowDefinitionMapper>
 {
     private readonly IWorkflowDefinitionStore _store;
     private readonly IWorkflowDefinitionPublisher _workflowDefinitionPublisher;

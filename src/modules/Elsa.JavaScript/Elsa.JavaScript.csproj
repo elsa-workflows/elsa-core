@@ -4,7 +4,7 @@
     <Import Project="..\..\..\configureawait.props" />
 
     <PropertyGroup>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
         <Description>
             Provides a JavaScript expression provider.
         </Description>
@@ -19,7 +19,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Jint" Version="3.0.0-preview-328" />
+        <PackageReference Include="Jint" Version="3.0.0-preview-388" />
     </ItemGroup>
 
 </Project>

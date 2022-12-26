@@ -34,7 +34,7 @@ public class HttpFeature : FeatureBase
             typeof(HttpRequestHeaders),
             typeof(HttpRequestModel),
             typeof(HttpResponseModel)
-        }, "HTTP"));
+        }, "HTTP").AddActivitiesFrom<HttpFeature>());
     }
 
     /// <inheritdoc />

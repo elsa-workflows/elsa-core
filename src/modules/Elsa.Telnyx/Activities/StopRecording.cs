@@ -37,7 +37,7 @@ public class StopRecording : ActivityBase
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        var request = new StopRecordingRequest();
+        var request = new StopRecordingRequest(context.CreateCorrelatingClientState());
         var callControlId = context.GetPrimaryCallControlId(CallControlId) ?? throw new Exception("CallControlId is required");
         var telnyxClient = context.GetRequiredService<ITelnyxClient>();
 

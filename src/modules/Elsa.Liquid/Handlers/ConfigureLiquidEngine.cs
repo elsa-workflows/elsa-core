@@ -13,12 +13,18 @@ using Microsoft.Extensions.Options;
 
 namespace Elsa.Liquid.Handlers
 {
-    public class ConfigureLiquidEngine : INotificationHandler<RenderingLiquidTemplate>
+    /// <summary>
+    /// Configures the liquid templating engine before evaluating a liquid expression.
+    /// </summary>
+    internal class ConfigureLiquidEngine : INotificationHandler<RenderingLiquidTemplate>
     {
         private readonly IConfiguration _configuration;
         private readonly ManagementOptions _managementOptions;
         private readonly FluidOptions _fluidOptions;
 
+        /// <summary>
+        /// Constructor.
+        /// </summary>
         public ConfigureLiquidEngine(IConfiguration configuration, IOptions<FluidOptions> fluidOptions, IOptions<ManagementOptions> managementOptions)
         {
             _configuration = configuration;
@@ -26,6 +32,7 @@ namespace Elsa.Liquid.Handlers
             _fluidOptions = fluidOptions.Value;
         }
 
+        /// <inheritdoc />
         public Task HandleAsync(RenderingLiquidTemplate notification, CancellationToken cancellationToken)
         {
             var context = notification.TemplateContext;
@@ -36,6 +43,7 @@ namespace Elsa.Liquid.Handlers
             memberAccessStrategy.Register<LiquidPropertyAccessor, FluidValue>((x, name) => x.GetValueAsync(name));
             memberAccessStrategy.Register<ExpandoObject, object>((x, name) => ((IDictionary<string, object>)x!)[name]);
             memberAccessStrategy.Register<ExpressionExecutionContext, LiquidPropertyAccessor>("Variables", x => new LiquidPropertyAccessor(name => ToFluidValue(x.GetVariableValues(), name, options)));
+            memberAccessStrategy.Register<ExpressionExecutionContext, string?>("CorrelationId", x => x.GetWorkflowExecutionContext().CorrelationId);
 
             if (_fluidOptions.AllowConfigurationAccess)
             {

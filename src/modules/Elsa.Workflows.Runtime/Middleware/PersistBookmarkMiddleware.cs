@@ -9,19 +9,21 @@ using Elsa.Workflows.Runtime.Services;
 namespace Elsa.Workflows.Runtime.Middleware;
 
 /// <summary>
-/// Takes care of loading & persisting workflow variables.
+/// Takes care of loading &amp; persisting workflow variables.
 /// </summary>
 public class PersistBookmarkMiddleware : WorkflowExecutionMiddleware
 {
     private readonly IWorkflowRuntime _workflowRuntime;
     private readonly IEventPublisher _eventPublisher;
 
+    /// <inheritdoc />
     public PersistBookmarkMiddleware(WorkflowMiddlewareDelegate next, IWorkflowRuntime workflowRuntime, IEventPublisher eventPublisher) : base(next)
     {
         _workflowRuntime = workflowRuntime;
         _eventPublisher = eventPublisher;
     }
 
+    /// <inheritdoc />
     public override async ValueTask InvokeAsync(WorkflowExecutionContext context)
     {
         var cancellationToken = context.CancellationToken;

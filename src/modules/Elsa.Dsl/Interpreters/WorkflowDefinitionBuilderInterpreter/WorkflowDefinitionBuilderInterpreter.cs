@@ -2,6 +2,7 @@
 using Elsa.Dsl.Models;
 using Elsa.Dsl.Services;
 using Elsa.Expressions.Services;
+using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Dsl.Interpreters;
@@ -17,8 +18,9 @@ public partial class WorkflowDefinitionBuilderInterpreter : ElsaParserBaseVisito
     private readonly ParseTreeProperty<IList<object?>> _argValues = new();
     private readonly ParseTreeProperty<Type> _expressionType = new();
     private readonly IDictionary<string, DefinedVariable> _definedVariables = new Dictionary<string, DefinedVariable>();
-    private readonly Stack<IContainer> _containerStack = new();
+    private readonly Stack<Container> _containerStack = new();
 
+    /// <inheritdoc />
     public WorkflowDefinitionBuilderInterpreter(
         ITypeSystem typeSystem, 
         IFunctionActivityRegistry functionActivityRegistry, 

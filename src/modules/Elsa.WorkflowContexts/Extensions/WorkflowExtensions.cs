@@ -5,6 +5,9 @@ using Elsa.Workflows.Core.Services;
 
 namespace Elsa.WorkflowContexts.Extensions;
 
+/// <summary>
+/// Adds extension methods to <see cref="IWorkflowBuilder"/>.
+/// </summary>
 public static class WorkflowExtensions
 {
     /// <summary>
@@ -22,7 +25,7 @@ public static class WorkflowExtensions
     /// </summary>
     public static IWorkflowBuilder AddWorkflowContext(this IWorkflowBuilder workflow, WorkflowContext workflowContext)
     {
-        var providerTypes = workflow.ApplicationProperties!.GetOrAdd("Elsa:WorkflowContexts", () => new List<WorkflowContext>())!;
+        var providerTypes = workflow.CustomProperties!.GetOrAdd("Elsa:WorkflowContexts", () => new List<WorkflowContext>())!;
 
         providerTypes.Add(workflowContext);
         return workflow;

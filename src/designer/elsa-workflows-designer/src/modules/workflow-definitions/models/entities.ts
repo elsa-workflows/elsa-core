@@ -5,10 +5,10 @@ export interface WorkflowDefinition extends VersionedEntity {
   name?: string;
   description?: string;
   variables?: Array<Variable>;
-  metadata?: Map<string, any>;
-  applicationProperties?: Map<string, any>;
+  customProperties?: Map<string, any>;
   materializerName: string;
   materializerContext?: string;
+  options?: WorkflowOptions;
   root: Activity;
 }
 
@@ -21,4 +21,9 @@ export interface WorkflowDefinitionSummary {
   isPublished: boolean;
   isLatest: boolean;
   materializerName: string;
+}
+
+
+export interface WorkflowOptions {
+  activationStrategyType?: string;
 }

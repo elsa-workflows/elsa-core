@@ -97,7 +97,8 @@ public abstract class SpeakTextBase : ActivityBase
             Voice.Get(context),
             Payload.Get(context),
             PayloadType.TryGet(context).EmptyToNull(),
-            ServiceLevel.TryGet(context).EmptyToNull()
+            ServiceLevel.TryGet(context).EmptyToNull(),
+            ClientState: context.CreateCorrelatingClientState()
         );
 
         var callControlId = context.GetPrimaryCallControlId(CallControlId) ?? throw new Exception("CallControlId is required.");

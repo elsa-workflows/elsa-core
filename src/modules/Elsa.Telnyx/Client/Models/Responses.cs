@@ -1,9 +1,17 @@
 ﻿using System.Text.Json.Serialization;
-using Dahomey.Json.Util;
 
 namespace Elsa.Telnyx.Client.Models;
 
 public record TelnyxResponse<T>(T Data);
+
+public record CallStatusResponse(
+    string CallControlId,
+    string CallLegId,
+    string CallSessionId,
+    string ClientState,
+    bool IsAlive,
+    string RecordType
+);
 
 public record DialResponse(
     string CallControlId,

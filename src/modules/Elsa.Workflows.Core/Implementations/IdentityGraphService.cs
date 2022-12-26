@@ -3,36 +3,48 @@ using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Core.Implementations;
 
+/// <inheritdoc />
 public class IdentityGraphService : IIdentityGraphService
 {
     private readonly IActivityWalker _activityWalker;
 
+    /// <summary>
+    /// Constructor.
+    /// </summary>
     public IdentityGraphService(IActivityWalker activityWalker)
     {
         _activityWalker = activityWalker;
     }
 
-    public async Task AssignIdentitiesAsync(Workflow workflow, CancellationToken cancellationToken = default) => await AssignIdentitiesAsync(workflow.Root, cancellationToken);
+    /// <inheritdoc />
+    public async Task AssignIdentitiesAsync(Workflow workflow, CancellationToken cancellationToken = default) => await AssignIdentitiesAsync((IActivity)workflow, cancellationToken);
 
+    /// <inheritdoc />
     public async Task AssignIdentitiesAsync(IActivity root, CancellationToken cancellationToken = default)
     {
         var graph = await _activityWalker.WalkAsync(root, cancellationToken);
         AssignIdentities(graph);
     }
 
-    public void AssignIdentities(ActivityNode root)
+    /// <inheritdoc />
+    public void AssignIdentities(ActivityNode root) => AssignIdentities(root.Flatten().ToList());
+
+    /// <inheritdoc />
+    public void AssignIdentities(ICollection<ActivityNode> flattenedList)
     {
         var identityCounters = new Dictionary<string, int>();
-        var list = root.Flatten().ToList();
 
-        foreach (var node in list)
+        foreach (var node in flattenedList)
         {
-            node.Activity.Id = CreateId(node, identityCounters, list);
+            node.Activity.Id = CreateId(node, identityCounters, flattenedList);
             AssignInputOutputs(node.Activity);
-            AssignVariables(node.Activity);
+            
+            if(node.Activity is IVariableContainer variableContainer)
+                AssignVariables(variableContainer);
         }
     }
 
+    /// <inheritdoc />
     public void AssignInputOutputs(IActivity activity)
     {
         var inputs = activity.GetInputs();
@@ -64,7 +76,7 @@ public class IdentityGraphService : IIdentityGraphService
         }
     }
 
-    public void AssignVariables(IActivity activity)
+    public void AssignVariables(IVariableContainer activity)
     {
         var variables = activity.GetVariables();
         var seed = 0;

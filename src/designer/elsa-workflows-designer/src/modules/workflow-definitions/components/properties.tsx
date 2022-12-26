@@ -1,13 +1,14 @@
 import {Component, Event, EventEmitter, h, Method, Prop, State, Watch} from '@stencil/core';
 import {Container} from "typedi";
 import {EventBus} from "../../../services";
-import {WorkflowDefinition} from "../models/entities";
-import {PropertiesTabModel, TabModel, WorkflowDefinitionPropsUpdatedArgs, WorkflowPropertiesEditorDisplayingArgs, WorkflowPropertiesEditorEventTypes, WorkflowPropertiesEditorModel} from "../models/ui";
+import {WorkflowDefinition, WorkflowOptions} from "../models/entities";
+import {PropertiesTabModel, TabModel, Widget, WorkflowDefinitionPropsUpdatedArgs, WorkflowPropertiesEditorDisplayingArgs, WorkflowPropertiesEditorEventTypes, WorkflowPropertiesEditorModel} from "../models/ui";
 import {FormEntry} from "../../../components/shared/forms/form-entry";
 import {isNullOrWhitespace} from "../../../utils";
 import {InfoList} from "../../../components/shared/forms/info-list";
 import {TabChangedArgs, Variable, VersionedEntity} from "../../../models";
 import {WorkflowDefinitionsApi} from "../services/api";
+import descriptorsStore from "../../../data/descriptors-store";
 
 @Component({
   tag: 'elsa-workflow-definition-properties-editor',
@@ -81,6 +82,7 @@ export class WorkflowDefinitionPropertiesEditor {
     };
 
     const workflowDefinition = this.workflowDefinition;
+    const options: WorkflowOptions = workflowDefinition.options || {};
 
     if (!workflowDefinition) {
       this.model = model;
@@ -139,6 +141,38 @@ export class WorkflowDefinitionPropertiesEditor {
       }
     }
 
+    const strategies = descriptorsStore.workflowActivationStrategyDescriptors;
+    const firstStrategy = strategies.length > 0 ? strategies[0] : null;
+    const defaultDescription = firstStrategy?.description ?? '';
+
+    const settingsWidgets: Array<Widget> = [
+      {
+        name: 'workflowActivationValidator',
+        order: 0,
+        content: () => <FormEntry label="Activation Strategy" fieldId="workflowActivationStrategyType" hint={defaultDescription}>
+          <select name="workflowActivationStrategyType" onChange={e => this.onPropertyEditorChanged(wf => {
+            const selectElement = (e.target as HTMLSelectElement);
+            options.activationStrategyType = selectElement.value;
+            wf.options = options;
+
+            const hintElement: HTMLElement = selectElement.closest('.form-entry').getElementsByClassName('form-field-hint')[0] as HTMLElement;
+            const strategy = strategies.find(x => x.typeName == selectElement.value);
+            hintElement.innerText = strategy.description;
+          })}>
+            {strategies.map(strategy => <option value={strategy.typeName} selected={strategy.typeName == options.activationStrategyType}>{strategy.displayName}</option>)}
+          </select>
+        </FormEntry>
+      }
+    ];
+
+    const settingsTabModel: TabModel = {
+      name: 'settings',
+      tab: {
+        displayText: 'Settings',
+        content: () => <elsa-widgets widgets={settingsWidgets}/>
+      }
+    }
+
     const versionHistoryTabModel: TabModel = {
       name: 'versionHistory',
       tab: {
@@ -147,7 +181,7 @@ export class WorkflowDefinitionPropertiesEditor {
       }
     }
 
-    model.tabModels = [propertiesTabModel, variablesTabModel, versionHistoryTabModel];
+    model.tabModels = [propertiesTabModel, variablesTabModel, settingsTabModel, versionHistoryTabModel];
 
     const args: WorkflowPropertiesEditorDisplayingArgs = {model};
 
@@ -156,13 +190,7 @@ export class WorkflowDefinitionPropertiesEditor {
     this.model = model;
   }
 
-  private renderPropertiesTab = (tabModel: PropertiesTabModel) => {
-    const widgets = tabModel.Widgets.sort((a, b) => a.order < b.order ? -1 : a.order > b.order ? 1 : 0);
-
-    return <div>
-      {widgets.map(widget => widget.content())}
-    </div>
-  };
+  private renderPropertiesTab = (tabModel: PropertiesTabModel) => <elsa-widgets widgets={tabModel.Widgets}/>;
 
   private renderVariablesTab = () => {
     const variables: Array<Variable> = this.workflowDefinition?.variables ?? [];

@@ -1,5 +1,3 @@
-using System.Reflection;
-using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Core.Signals;
@@ -11,6 +9,7 @@ namespace Elsa.Workflows.Core.Behaviors;
 /// </summary>
 public class ScheduledChildCallbackBehavior : Behavior
 {
+    /// <inheritdoc />
     public ScheduledChildCallbackBehavior(IActivity owner) : base(owner)
     {
         OnSignalReceived<ActivityCompleted>(OnActivityCompletedAsync);
@@ -29,11 +28,8 @@ public class ScheduledChildCallbackBehavior : Behavior
         // Before invoking the parent activity, make sure its properties are evaluated.
         if (!activityExecutionContext.GetHasEvaluatedProperties())
             await activityExecutionContext.EvaluateInputPropertiesAsync();
-
-        // If no callback was specified, check if there's a [Port] attribute present on the completed child and use its name to complete the activity with outcomes.
-        if (callbackEntry.CompletionCallback != null)
-        {
+        
+        if (callbackEntry.CompletionCallback != null) 
             await callbackEntry.CompletionCallback(activityExecutionContext, childActivityExecutionContext);
-        }
     }
 }

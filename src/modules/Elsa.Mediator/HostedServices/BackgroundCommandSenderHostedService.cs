@@ -16,6 +16,7 @@ public class BackgroundCommandSenderHostedService : BackgroundService
     private readonly IList<Channel<ICommand>> _outputs;
     private readonly ILogger _logger;
 
+    /// <inheritdoc />
     public BackgroundCommandSenderHostedService(int workerCount, ChannelReader<ICommand> channelReader, ICommandSender commandSender, ILogger<BackgroundCommandSenderHostedService> logger)
     {
         _workerCount = workerCount;
@@ -25,6 +26,7 @@ public class BackgroundCommandSenderHostedService : BackgroundService
         _outputs = new List<Channel<ICommand>>(workerCount);
     }
 
+    /// <inheritdoc />
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
         var index = 0;

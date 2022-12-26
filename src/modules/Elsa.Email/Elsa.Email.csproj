@@ -4,7 +4,7 @@
     <Import Project="..\..\..\configureawait.props"/>
 
     <PropertyGroup>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
         <Description>
             Provides a SendEmail activity that lets you send emails from a workflow.
         </Description>
@@ -12,8 +12,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="MailKit" Version="3.4.2"/>
-        <PackageReference Include="Microsoft.Extensions.Http" Version="6.0.0"/>
+        <PackageReference Include="MailKit" Version="3.4.3"/>
+        <PackageReference Include="Microsoft.Extensions.Http" Version="7.0.0"/>
     </ItemGroup>
 
     <ItemGroup>

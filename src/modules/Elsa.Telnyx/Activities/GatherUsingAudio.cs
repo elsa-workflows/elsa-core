@@ -116,7 +116,7 @@ public class GatherUsingAudio : ActivityBase<CallGatherEndedPayload>, IBookmarks
     {
         var request = new GatherUsingAudioRequest(
             AudioUrl.Get(context) ?? throw new Exception("AudioUrl is required."),
-            default,
+            context.CreateCorrelatingClientState(),
             default,
             InterDigitTimeoutMillis.Get(context),
             InvalidAudioUrl.Get(context),

@@ -1,12 +1,11 @@
 ﻿using System.Text;
 using System.Text.Json;
-using Dahomey.Json.NamingPolicies;
 using Elsa.Mediator.Services;
-using Elsa.Telnyx.Converters;
 using Elsa.Telnyx.Events;
 using Elsa.Telnyx.Extensions;
 using Elsa.Telnyx.Models;
 using Elsa.Telnyx.Payloads.Abstract;
+using Elsa.Telnyx.Serialization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
@@ -15,7 +14,7 @@ namespace Elsa.Telnyx.Services;
 internal class WebhookHandler : IWebhookHandler
 {
     private static readonly JsonSerializerOptions SerializerSettings;
-    private readonly IMediator _mediator;
+    private readonly IBackgroundEventPublisher _mediator;
     private readonly ILogger<WebhookHandler> _logger;
 
     static WebhookHandler()
@@ -23,7 +22,7 @@ internal class WebhookHandler : IWebhookHandler
         SerializerSettings = CreateSerializerSettings();
     }
 
-    public WebhookHandler(IMediator mediator, ILogger<WebhookHandler> logger)
+    public WebhookHandler(IBackgroundEventPublisher mediator, ILogger<WebhookHandler> logger)
     {
         _mediator = mediator;
         _logger = logger;

@@ -1,13 +1,19 @@
 using Elsa.Common.Extensions;
+using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Pipelines.ActivityExecution;
 using Elsa.Workflows.Core.Services;
-using Delegate = System.Delegate;
 
 namespace Elsa.Workflows.Core.Middleware.Activities;
 
+/// <summary>
+/// Provides extension methods to <see cref="IActivityExecutionBuilder"/>.
+/// </summary>
 public static class ActivityInvokerMiddlewareExtensions
 {
+    /// <summary>
+    /// Adds the <see cref="DefaultActivityInvokerMiddleware"/> component to the pipeline.
+    /// </summary>
     public static IActivityExecutionBuilder UseDefaultActivityInvoker(this IActivityExecutionBuilder builder) => builder.UseMiddleware<DefaultActivityInvokerMiddleware>();
 }
 
@@ -18,28 +24,35 @@ public class DefaultActivityInvokerMiddleware : IActivityExecutionMiddleware
 {
     private readonly ActivityMiddlewareDelegate _next;
 
+    /// <summary>
+    /// Constructor
+    /// </summary>
     public DefaultActivityInvokerMiddleware(ActivityMiddlewareDelegate next)
     {
         _next = next;
     }
 
+    /// <inheritdoc />
     public async ValueTask InvokeAsync(ActivityExecutionContext context)
     {
         var workflowExecutionContext = context.WorkflowExecutionContext;
 
+        // Restore uninitialized variables for each containing activity.
+        await LoadVariablesAsync(context);
+        
         // Evaluate input properties.
-        await context.EvaluateInputPropertiesAsync();
+        await EvaluateInputPropertiesAsync(context);
 
         // Execute activity.
         await ExecuteActivityAsync(context);
 
         // Reset execute delegate.
         workflowExecutionContext.ExecuteDelegate = null;
-        
+
         // If a bookmark was used to resume, burn it if not burnt by the activity.
         var resumedBookmark = workflowExecutionContext.ResumedBookmarkContext?.Bookmark;
-        
-        if (resumedBookmark is { AutoBurn: true }) 
+
+        if (resumedBookmark is { AutoBurn: true })
             workflowExecutionContext.Bookmarks.Remove(resumedBookmark);
 
         // Update execution count.
@@ -54,6 +67,9 @@ public class DefaultActivityInvokerMiddleware : IActivityExecutionMiddleware
             // Store bookmarks.
             workflowExecutionContext.Bookmarks.AddRange(context.Bookmarks);
         }
+        
+        // Persist variables.
+        await SaveVariablesAsync(context);
     }
 
     /// <summary>
@@ -71,5 +87,30 @@ public class DefaultActivityInvokerMiddleware : IActivityExecutionMiddleware
         }
 
         await executeDelegate(context);
+    }
+
+    private async Task EvaluateInputPropertiesAsync(ActivityExecutionContext context)
+    {
+        // Evaluate containing composite input properties, if any.
+        var compositeContainerContext = context.GetAncestors().FirstOrDefault(x => x.Activity is Composite);
+        
+        if (compositeContainerContext != null && !compositeContainerContext.GetHasEvaluatedProperties())
+            await compositeContainerContext.EvaluateInputPropertiesAsync();
+
+        // Evaluate input properties.
+        await context.EvaluateInputPropertiesAsync();
+    }
+
+    private async Task LoadVariablesAsync(ActivityExecutionContext context)
+    {
+        var manager = context.GetRequiredService<IVariablePersistenceManager>();
+        var variables = manager.GetVariablesInScope(context);
+        await manager.LoadVariablesAsync(context.WorkflowExecutionContext, variables);
+    }
+    
+    private async Task SaveVariablesAsync(ActivityExecutionContext context)
+    {
+        var manager = context.GetRequiredService<IVariablePersistenceManager>();
+        await manager.SaveVariablesAsync(context.WorkflowExecutionContext);
     }
 }

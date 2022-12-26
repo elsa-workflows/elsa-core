@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Elsa.Common.Models;
 using Elsa.ProtoActor.Extensions;
-using Elsa.Runtime.Protos;
+using Elsa.ProtoActor.Protos;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.State;
@@ -9,8 +9,6 @@ using Elsa.Workflows.Runtime.Services;
 using Proto;
 using Proto.Cluster;
 using Proto.Persistence;
-using Bookmark = Elsa.Workflows.Core.Models.Bookmark;
-using RunWorkflowResult = Elsa.Runtime.Protos.RunWorkflowResult;
 
 namespace Elsa.ProtoActor.Grains;
 
@@ -64,7 +62,7 @@ public class WorkflowGrain : WorkflowGrainBase
 
         // Materialize the workflow.
         var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
-        
+
         // Create an initial workflow state.
         if (_workflowState == null!)
         {
@@ -75,45 +73,69 @@ public class WorkflowGrain : WorkflowGrainBase
                 //Bookmarks = _bookmarks
             };
         }
-        
+
         // Create a workflow host.
         _workflowHost = await _workflowHostFactory.CreateAsync(workflow, _workflowState, cancellationToken);
     }
 
-    public override async Task<StartWorkflowResponse> Start(StartWorkflowRequest request)
+    /// <inheritdoc />
+    public override async Task<CanStartWorkflowResponse> CanStart(StartWorkflowRequest request)
     {
         var definitionId = request.DefinitionId;
-        var correlationId = request.CorrelationId == "" ? default : request.CorrelationId;
+        var correlationId = request.CorrelationId.NullIfEmpty();
         var input = request.Input?.Deserialize();
         var versionOptions = VersionOptions.FromString(request.VersionOptions);
         var cancellationToken = Context.CancellationToken;
-        var workflowDefinition = await _workflowDefinitionService.FindAsync(definitionId, versionOptions, cancellationToken);
-
-        if (workflowDefinition == null)
-            throw new Exception("Specified workflow definition and version does not exist");
-
-        var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
-        _version = workflow.Version;
+        var startWorkflowOptions = new StartWorkflowHostOptions(WorkflowInstanceId, correlationId, input, request.TriggerActivityId);
+        
+        _workflowHost = await CreateWorkflowHostAsync(definitionId, versionOptions, cancellationToken);
+        _version = _workflowHost.Workflow.Version;
         _definitionId = definitionId;
         _input = input;
         
-        // Create a workflow host.
-        _workflowHost = await _workflowHostFactory.CreateAsync(workflow, cancellationToken);
+        var canStart = await _workflowHost.CanStartWorkflowAsync(startWorkflowOptions, cancellationToken);
+        
+        return new CanStartWorkflowResponse
+        {
+            CanStart = canStart
+        };
+    }
+
+    /// <inheritdoc />
+    public override async Task<StartWorkflowResponse> Start(StartWorkflowRequest request)
+    {
+        var definitionId = request.DefinitionId;
+        var correlationId = request.CorrelationId.NullIfEmpty();
+        var input = request.Input?.Deserialize();
+        var versionOptions = VersionOptions.FromString(request.VersionOptions);
+        var cancellationToken = Context.CancellationToken;
+
+        // Only need to reconstruct a workflow host if not already done so during CanStart.
+        if (_workflowHost == null!)
+        {
+            _workflowHost = await CreateWorkflowHostAsync(definitionId, versionOptions, cancellationToken);
+            _version = _workflowHost.Workflow.Version;
+            _definitionId = definitionId;
+            _input = input;
+        }
 
         var startWorkflowOptions = new StartWorkflowHostOptions(WorkflowInstanceId, correlationId, input, request.TriggerActivityId);
         await _workflowHost.StartWorkflowAsync(startWorkflowOptions, cancellationToken);
+        var workflowState = _workflowHost.WorkflowState;
+        var result = workflowState.Status == WorkflowStatus.Finished ? Protos.RunWorkflowResult.Finished : Protos.RunWorkflowResult.Suspended;
 
-        _workflowState = _workflowHost.WorkflowState;
-        
+        _workflowState = workflowState!;
+
         await SaveSnapshotAsync();
 
         return new StartWorkflowResponse
         {
-            Result = _workflowHost.WorkflowState.Status == WorkflowStatus.Finished ? RunWorkflowResult.Finished : RunWorkflowResult.Suspended,
-            Bookmarks = { Map(_workflowHost.WorkflowState.Bookmarks) }
+            Result = result,
+            Bookmarks = { Map(workflowState.Bookmarks) }
         };
     }
 
+    /// <inheritdoc />
     public override async Task<ResumeWorkflowResponse> Resume(ResumeWorkflowRequest request)
     {
         _input = request.Input?.Deserialize();
@@ -126,21 +148,22 @@ public class WorkflowGrain : WorkflowGrainBase
         var finished = _workflowHost.WorkflowState.Status == WorkflowStatus.Finished;
 
         _workflowState = _workflowHost.WorkflowState;
-        
+
         await SaveSnapshotAsync();
 
         return new ResumeWorkflowResponse
         {
-            Result = finished ? RunWorkflowResult.Finished : RunWorkflowResult.Suspended,
+            Result = finished ? Protos.RunWorkflowResult.Finished : Protos.RunWorkflowResult.Suspended,
             Bookmarks = { Map(_workflowHost.WorkflowState.Bookmarks) }
         };
     }
 
+    /// <inheritdoc />
     public override Task<ExportWorkflowStateResponse> ExportState(ExportWorkflowStateRequest request)
     {
-        var options = _serializerOptionsProvider.CreatePersistenceOptions(); 
+        var options = _serializerOptionsProvider.CreatePersistenceOptions();
         var json = JsonSerializer.Serialize(_workflowHost.WorkflowState, options);
-        
+
         var response = new ExportWorkflowStateResponse
         {
             SerializedWorkflowState = new Json
@@ -152,6 +175,7 @@ public class WorkflowGrain : WorkflowGrainBase
         return Task.FromResult(response);
     }
 
+    /// <inheritdoc />
     public override Task<ImportWorkflowStateResponse> ImportState(ImportWorkflowStateRequest request)
     {
         var options = _serializerOptionsProvider.CreatePersistenceOptions();
@@ -159,14 +183,25 @@ public class WorkflowGrain : WorkflowGrainBase
 
         _workflowState = workflowState;
         _workflowHost.WorkflowState = workflowState;
-        
+
         return Task.FromResult(new ImportWorkflowStateResponse());
     }
 
     private void ApplySnapshot(Snapshot snapshot) => (_definitionId, _version, _workflowState, _input) = (WorkflowSnapshot)snapshot.State;
     private async Task SaveSnapshotAsync() => await _persistence.PersistSnapshotAsync(GetState());
     private object GetState() => new WorkflowSnapshot(_definitionId, _version, _workflowState, _input);
-    
+
+    private async Task<IWorkflowHost> CreateWorkflowHostAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken)
+    {
+        var workflowDefinition = await _workflowDefinitionService.FindAsync(definitionId, versionOptions, cancellationToken);
+
+        if (workflowDefinition == null)
+            throw new Exception("Specified workflow definition and version does not exist");
+
+        var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
+        return await _workflowHostFactory.CreateAsync(workflow, cancellationToken);
+    }
+
     private static IEnumerable<BookmarkDto> Map(IEnumerable<Bookmark> bookmarks) =>
         bookmarks.Select(x => new BookmarkDto
         {

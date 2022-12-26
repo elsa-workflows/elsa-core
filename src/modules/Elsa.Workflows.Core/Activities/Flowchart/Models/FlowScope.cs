@@ -71,5 +71,5 @@ internal class FlowScope
         return Activities.Values.Any(x => x.ExecutionCount != sample);
     }
 
-    public long GetExecutionCount(IActivity activity) => EnsureActivity(activity).ExecutionCount;
+    public long GetExecutionCount(IActivity activity) => Activities.ContainsKey(activity.Id) ? Activities[activity.Id].ExecutionCount : 0;
 }

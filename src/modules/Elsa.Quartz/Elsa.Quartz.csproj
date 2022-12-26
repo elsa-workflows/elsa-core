@@ -4,7 +4,7 @@
     <Import Project="..\..\..\configureawait.props" />
 
     <PropertyGroup>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
         <Description>
             Provides integration with the Quartz.NET library and provide am implementation of Elsa's IJobScheduler using Quartz.NET.
         </Description>
@@ -12,9 +12,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Quartz" Version="3.4.0" />
-        <PackageReference Include="Quartz.Extensions.DependencyInjection" Version="3.4.0" />
-        <PackageReference Include="Quartz.Extensions.Hosting" Version="3.4.0" />
+        <PackageReference Include="Quartz" Version="3.5.0" />
+        <PackageReference Include="Quartz.Extensions.DependencyInjection" Version="3.5.0" />
+        <PackageReference Include="Quartz.Extensions.Hosting" Version="3.5.0" />
     </ItemGroup>
 
     <ItemGroup>

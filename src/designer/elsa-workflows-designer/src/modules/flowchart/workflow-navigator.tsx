@@ -1,10 +1,11 @@
 import {Component, FunctionalComponent, h, Prop, Event, EventEmitter} from "@stencil/core";
 import {Container} from "typedi";
 import {ActivityIconRegistry, ActivityNode, flatten, PortProviderRegistry, walkActivities} from "../../services";
-import {Flowchart, FlowchartNavigationItem} from "./models";
+import {Flowchart, FlowchartNavigationItem, FlowchartPathItem} from "./models";
 import {Activity, ActivityDescriptor, Port} from "../../models";
 import descriptorsStore from "../../data/descriptors-store";
 import {WorkflowDefinition} from "../workflow-definitions/models/entities";
+import {FlowchartIcon} from "../../components/icons/activities";
 
 @Component({
   tag: 'elsa-workflow-navigator',
@@ -19,14 +20,14 @@ export class WorkflowNavigator {
     this.portProviderRegistry = Container.get(PortProviderRegistry);
   }
 
-  @Prop() items: Array<FlowchartNavigationItem> = [];
+  @Prop() items: Array<FlowchartPathItem> = [];
   @Prop() workflowDefinition: WorkflowDefinition;
 
-  @Event() navigate: EventEmitter<FlowchartNavigationItem>;
+  @Event() navigate: EventEmitter<FlowchartPathItem>;
 
   render() {
 
-    const items = this.items;
+    let items = this.items;
 
     if (items.length <= 0)
       return null;
@@ -39,13 +40,30 @@ export class WorkflowNavigator {
     return <div class="ml-8">
       <nav class="flex" aria-label="Breadcrumb">
         <ol role="list" class="flex items-center space-x-3">
+          {items.length > 0 && (
+            <li>
+              <div class="flex items-center">
+                <a onClick={e => this.onItemClick(null)}
+                   href="#"
+                   class="block flex items-center text-gray-400 hover:text-gray-500">
+                  <div class="bg-blue-500 rounded">
+                    {<FlowchartIcon/>}
+                  </div>
+                  <span class="ml-4 text-sm font-medium text-gray-500 hover:text-gray-700">{this.workflowDefinition.root.id}</span>
+                </a>
+                <svg class="ml-2 flex-shrink-0 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                </svg>
+              </div>
+            </li>
+          )}
           {items.map((item, index) => this.renderPathItem(item, index, nodes))}
         </ol>
       </nav>
     </div>
   }
 
-  private renderPathItem = (item: FlowchartNavigationItem, index: number, nodes: Array<ActivityNode>) => {
+  private renderPathItem = (item: FlowchartPathItem, index: number, nodes: Array<ActivityNode>) => {
     const activityId = item.activityId;
     let activity: Activity;
     let activityDescriptor: ActivityDescriptor;
@@ -54,18 +72,15 @@ export class WorkflowNavigator {
       activity = nodes.find(x => x.activity.id == activityId).activity;
       activityDescriptor = descriptorsStore.activityDescriptors.find(x => x.typeName == activity.type);
     } catch (e) {
-      alert('Debug this')
-      debugger;
-      window.location.reload();
+      alert('Debug this');
       return;
     }
 
     const icon = this.iconRegistry.getOrDefault(activity.type)();
     const listElements = [];
     const isLastItem = index == this.items.length - 1;
-    const isFirstItem = index == 0;
 
-    const onItemClick = (e: MouseEvent, item: FlowchartNavigationItem) => {
+    const onItemClick = (e: MouseEvent, item: FlowchartPathItem) => {
       e.preventDefault();
       this.onItemClick(item);
     }
@@ -80,7 +95,7 @@ export class WorkflowNavigator {
         port = ports.find(x => x.name == item.portName);
     }
 
-    if (!isFirstItem || isLastItem) {
+    if (isLastItem) {
       listElements.push(
         <li>
           <div class="flex items-center">
@@ -131,5 +146,5 @@ export class WorkflowNavigator {
     return listElements;
   }
 
-  private onItemClick = (item: FlowchartNavigationItem) => this.navigate.emit(item);
+  private onItemClick = (item: FlowchartPathItem) => this.navigate.emit(item);
 }

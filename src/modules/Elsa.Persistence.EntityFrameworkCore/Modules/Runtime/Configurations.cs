@@ -8,20 +8,23 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Modules.Runtime
 {
+    /// <summary>
+    /// EF Core configuration for various sets of <see cref="DbContext"/>. 
+    /// </summary>
     public class Configurations :
         IEntityTypeConfiguration<WorkflowState>,
         IEntityTypeConfiguration<StoredTrigger>,
         IEntityTypeConfiguration<WorkflowExecutionLogRecord>,
         IEntityTypeConfiguration<StoredBookmark>
     {
+        /// <inheritdoc />
         public void Configure(EntityTypeBuilder<WorkflowState> builder)
         {
             builder.Ignore(x => x.Bookmarks);
             builder.Ignore(x => x.Properties);
-            builder.Ignore(x => x.ActivityOutput);
             builder.Ignore(x => x.CompletionCallbacks);
-            builder.Ignore(x => x.PersistentVariables);
             builder.Ignore(x => x.ActivityExecutionContexts);
+            builder.Ignore(x => x.Fault);
             builder.Property<string>("Data");
             builder.Property<DateTimeOffset>("CreatedAt");
             builder.Property<DateTimeOffset>("UpdatedAt");
@@ -37,6 +40,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Modules.Runtime
             builder.HasIndex("UpdatedAt").HasDatabaseName($"IX_{nameof(WorkflowState)}_UpdatedAt");
         }
 
+        /// <inheritdoc />
         public void Configure(EntityTypeBuilder<StoredTrigger> builder)
         {
             builder.HasIndex(x => x.WorkflowDefinitionId).HasDatabaseName($"IX_{nameof(StoredTrigger)}_{nameof(StoredTrigger.WorkflowDefinitionId)}");
@@ -44,6 +48,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Modules.Runtime
             builder.HasIndex(x => x.Hash).HasDatabaseName($"IX_{nameof(StoredTrigger)}_{nameof(StoredTrigger.Hash)}");
         }
 
+        /// <inheritdoc />
         public void Configure(EntityTypeBuilder<WorkflowExecutionLogRecord> builder)
         {
             builder.Ignore(x => x.Payload);
@@ -60,6 +65,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Modules.Runtime
             builder.HasIndex(x => x.WorkflowVersion).HasDatabaseName($"IX_{nameof(WorkflowExecutionLogRecord)}_{nameof(WorkflowExecutionLogRecord.WorkflowVersion)}");
         }
 
+        /// <inheritdoc />
         public void Configure(EntityTypeBuilder<StoredBookmark> builder)
         {
             builder.HasKey(x => x.BookmarkId);

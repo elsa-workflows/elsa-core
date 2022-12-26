@@ -1,9 +1,10 @@
+using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Models;
 
 namespace Elsa.Workflows.Api.Models;
 
-public class WorkflowDefinitionResponse
+internal class WorkflowDefinitionResponse
 {
     public WorkflowDefinitionResponse(
         string id,
@@ -14,10 +15,10 @@ public class WorkflowDefinitionResponse
         int version,
         ICollection<VariableDefinition> variables,
         IDictionary<string, object> metadata,
-        IDictionary<string, object> applicationProperties,
         bool isLatest,
         bool isPublished,
-        IActivity root)
+        IActivity root,
+        WorkflowOptions? options)
     {
         Id = id;
         DefinitionId = definitionId;
@@ -27,10 +28,10 @@ public class WorkflowDefinitionResponse
         Version = version;
         Variables = variables;
         Metadata = metadata;
-        ApplicationProperties = applicationProperties;
         IsLatest = isLatest;
         IsPublished = isPublished;
         Root = root;
+        Options = options;
     }
 
     public string Id { get; }
@@ -41,8 +42,8 @@ public class WorkflowDefinitionResponse
     public int Version { get; }
     public ICollection<VariableDefinition> Variables { get; }
     public IDictionary<string, object> Metadata { get; }
-    public IDictionary<string, object> ApplicationProperties { get; }
     public bool IsLatest { get; }
     public bool IsPublished { get; }
     public IActivity Root { get; }
+    public WorkflowOptions? Options { get; set; }
 }

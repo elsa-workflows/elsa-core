@@ -9,6 +9,9 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageIcon>icon.png</PackageIcon>
+    
+    <!-- For NuGet browsers that currently don't support <PackageIcon> yet -->
     <PackageIconUrl>https://v3.elsaworkflows.io/nuget-icon.png</PackageIconUrl>
       
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -20,6 +23,10 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
   </PropertyGroup>
+
+  <ItemGroup Label="Files">
+    <None Include="..\..\..\icon.png" Pack="true" PackagePath="\"/>
+  </ItemGroup>
   
   <ItemGroup>
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1">

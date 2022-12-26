@@ -5,38 +5,53 @@ using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Core.Models;
 
+/// <summary>
+/// Represents an executable process.
+/// </summary>
 [Browsable(false)]
 public class Workflow : Composite, ICloneable
 {
+    /// <summary>
+    /// Constructor.
+    /// </summary>
     public Workflow(
         WorkflowIdentity identity,
         WorkflowPublication publication,
         WorkflowMetadata workflowMetadata,
+        WorkflowOptions? options,
         IActivity root,
         ICollection<Variable> variables,
-        IDictionary<string, object> metadata,
-        IDictionary<string, object> applicationProperties)
+        IDictionary<string, object> customProperties)
     {
         Identity = identity;
         Publication = publication;
         WorkflowMetadata = workflowMetadata;
+        Options = options;
         Variables = variables;
-        Metadata = metadata;
-        ApplicationProperties = applicationProperties;
+        CustomProperties = customProperties;
         Root = root;
         Version = identity.Version;
     }
 
+    /// <summary>
+    /// Constructor.
+    /// </summary>
     public Workflow(IActivity root)
     {
         Root = root;
     }
 
+    /// <summary>
+    /// Constructor.
+    /// </summary>
     public Workflow()
     {
     }
 
-    public static Workflow FromActivity(IActivity root) => root is Workflow workflow ? workflow : new(root);
+    /// <summary>
+    /// Constructs a new <see cref="Workflow"/> from the specified <see cref="IActivity"/>.
+    /// </summary>
+    public static Workflow FromActivity(IActivity root) => root as Workflow ?? new(root);
 
     /// <summary>
     /// Creates a new memory register initialized with this workflow's variables.
@@ -51,7 +66,8 @@ public class Workflow : Composite, ICloneable
     public WorkflowIdentity Identity { get; set; } = WorkflowIdentity.VersionOne;
     public WorkflowPublication Publication { get; set; } = WorkflowPublication.LatestAndPublished;
     public WorkflowMetadata WorkflowMetadata { get; set; } = new();
-    public ICollection<Variable> Variables { get; init; } = new List<Variable>();
+    public WorkflowOptions? Options { get; set; }
+    
     public Workflow Clone() => (Workflow)((ICloneable)this).Clone();
     object ICloneable.Clone() => MemberwiseClone();
 }

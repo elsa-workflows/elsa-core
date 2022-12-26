@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Reflection;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
@@ -7,15 +6,10 @@ using Elsa.Workflows.Core.State;
 
 namespace Elsa.Workflows.Core.Implementations;
 
+/// <inheritdoc />
 public class WorkflowStateSerializer : IWorkflowStateSerializer
 {
-    private readonly IServiceProvider _serviceProvider;
-
-    public WorkflowStateSerializer(IServiceProvider serviceProvider)
-    {
-        _serviceProvider = serviceProvider;
-    }
-
+    /// <inheritdoc />
     public WorkflowState SerializeState(WorkflowExecutionContext workflowExecutionContext)
     {
         var state = new WorkflowState
@@ -26,17 +20,18 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
             CorrelationId = workflowExecutionContext.CorrelationId,
             Status = workflowExecutionContext.Status,
             SubStatus = workflowExecutionContext.SubStatus,
-            Bookmarks = workflowExecutionContext.Bookmarks
+            Bookmarks = workflowExecutionContext.Bookmarks,
+            Fault = SerializeFault(workflowExecutionContext.Fault)
         };
 
         SerializeProperties(state, workflowExecutionContext);
         SerializeCompletionCallbacks(state, workflowExecutionContext);
         SerializeActivityExecutionContexts(state, workflowExecutionContext);
-        SerializePersistentVariables(state, workflowExecutionContext);
 
         return state;
     }
 
+    /// <inheritdoc />
     public void DeserializeState(WorkflowExecutionContext workflowExecutionContext, WorkflowState state)
     {
         workflowExecutionContext.Id = state.Id;
@@ -46,52 +41,19 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
         DeserializeProperties(state, workflowExecutionContext);
         DeserializeActivityExecutionContexts(state, workflowExecutionContext);
         DeserializeCompletionCallbacks(state, workflowExecutionContext);
-        //DeserializePersistentVariables(state, workflowExecutionContext);
     }
 
     private void SerializeProperties(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
     {
-        state.Properties = workflowExecutionContext.Properties;
+        state.Properties = new PropertyBag(workflowExecutionContext.Properties);
     }
 
     private void DeserializeProperties(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
     {
-        workflowExecutionContext.Properties = state.Properties;
+        workflowExecutionContext.Properties = state.Properties.Properties;
     }
 
-    private void GetOutput(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
-    {
-        foreach (var node in workflowExecutionContext.Nodes)
-            GetOutput(state, node);
-    }
-
-    private void GetOutput(WorkflowState state, ActivityNode activityNode)
-    {
-        var output = GetOutputFrom(activityNode);
-
-        if (output.Any())
-            state.ActivityOutput.Add(activityNode.NodeId, output);
-    }
-
-    private void SetOutput(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
-    {
-        foreach (var entry in state.ActivityOutput)
-        {
-            var activityId = entry.Key;
-            var node = workflowExecutionContext.FindNodeById(activityId);
-            var activityType = node.Activity.GetType();
-
-            foreach (var outputEntry in entry.Value)
-            {
-                var propertyName = outputEntry.Key;
-                var propertyValue = outputEntry.Value;
-                var propertyInfo = activityType.GetProperty(propertyName, BindingFlags.Public)!;
-                propertyInfo.SetValue(node, propertyValue);
-            }
-        }
-    }
-
-    private void DeserializeCompletionCallbacks(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
+    private static void DeserializeCompletionCallbacks(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
     {
         foreach (var completionCallbackEntry in state.CompletionCallbacks)
         {
@@ -103,7 +65,7 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
         }
     }
 
-    private void SerializeCompletionCallbacks(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
+    private static void SerializeCompletionCallbacks(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
     {
         // Assert all referenced owner contexts exist.
         foreach (var completionCallback in workflowExecutionContext.CompletionCallbacks)
@@ -118,12 +80,10 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
         state.CompletionCallbacks = completionCallbacks.ToList();
     }
 
-    private void SerializeActivityExecutionContexts(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
+    private static void SerializeActivityExecutionContexts(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
     {
         ActivityExecutionContextState CreateActivityExecutionContextState(ActivityExecutionContext activityExecutionContext)
         {
-            var registerState = new RegisterState(activityExecutionContext.ExpressionExecutionContext.Memory.Blocks);
-
             var parentId = activityExecutionContext.ParentActivityExecutionContext?.Id;
 
             if (parentId != null)
@@ -141,7 +101,6 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
                 ScheduledActivityId = activityExecutionContext.Activity.Id,
                 OwnerActivityId = activityExecutionContext.ParentActivityExecutionContext?.Activity.Id,
                 Properties = activityExecutionContext.Properties,
-                Register = registerState
             };
             return activityExecutionContextState;
         }
@@ -149,7 +108,7 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
         state.ActivityExecutionContexts = workflowExecutionContext.ActivityExecutionContexts.Reverse().Select(CreateActivityExecutionContextState).ToList();
     }
 
-    private void DeserializeActivityExecutionContexts(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
+    private static void DeserializeActivityExecutionContexts(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
     {
         ActivityExecutionContext CreateActivityExecutionContext(ActivityExecutionContextState activityExecutionContextState)
         {
@@ -159,9 +118,6 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
             activityExecutionContext.Id = activityExecutionContextState.Id;
             activityExecutionContext.Properties = properties;
 
-            foreach (var memoryBlock in activityExecutionContextState.Register.Blocks) 
-                activityExecutionContext.ExpressionExecutionContext.Memory.Blocks[memoryBlock.Key] = memoryBlock.Value;
-            
             return activityExecutionContext;
         }
 
@@ -180,17 +136,13 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
 
         workflowExecutionContext.ActivityExecutionContexts = activityExecutionContexts;
     }
-
-    private void SerializePersistentVariables(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
+    
+    private static WorkflowFaultState? SerializeFault(WorkflowFault? fault)
     {
-        var workflow = workflowExecutionContext.Workflow;
+        if (fault == null)
+            return null;
 
-        state.PersistentVariables = workflow.Variables
-            .Where(x => x.StorageDriverId != null)
-            .Select(x => new PersistentVariableState(x.Name, x.StorageDriverId!))
-            .ToList();
+        var exceptionState = ExceptionState.FromException(fault.Exception);
+        return new WorkflowFaultState(exceptionState, fault.Message, fault.FaultedActivityId);
     }
-
-    private Dictionary<string, object> GetOutputFrom(ActivityNode activityNode) =>
-        activityNode.GetType().GetProperties(BindingFlags.Public).Where(x => x.GetCustomAttribute<OutputAttribute>() != null).ToDictionary(x => x.Name, x => x.GetValue(activityNode)!);
 }

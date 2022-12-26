@@ -3,7 +3,6 @@ export * from './activity-driver';
 export * from './activity-driver-registry';
 export * from './activity-icon-registry';
 export * from './auth';
-export * from './container-activity-component';
 export * from './custom-event-bus';
 export * from './api-client/api-client';
 export * from './event-bus';

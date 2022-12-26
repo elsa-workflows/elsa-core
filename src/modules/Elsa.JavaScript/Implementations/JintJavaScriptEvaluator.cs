@@ -7,6 +7,7 @@ using Elsa.JavaScript.Options;
 using Elsa.JavaScript.Services;
 using Elsa.Mediator.Services;
 using Elsa.Workflows.Core;
+using Humanizer;
 using Jint;
 using Microsoft.Extensions.Options;
 
@@ -55,20 +56,36 @@ namespace Elsa.JavaScript.Implementations
             // Add common functions.
             engine.SetValue("setVariable", (Action<string, object>)((name, value) => context.SetVariable(name, value)));
             
-            // ReSharper disable once ConvertClosureToMethodGroup (Jint will not understand).
+            // ReSharper disable once ConvertClosureToMethodGroup (Jint does not understand method groups).
             engine.SetValue("getVariable", (Func<string, object?>)(name => context.GetVariable(name)));
+            
+            // Create variable setters and getters for each variable.
+            CreateVariableAccessors(engine, context);
             
             engine.SetValue("isNullOrWhiteSpace", (Func<string, bool>)string.IsNullOrWhiteSpace);
             engine.SetValue("isNullOrEmpty", (Func<string, bool>)string.IsNullOrEmpty);
 
             // Add common .NET types.
             engine.RegisterType<DateTime>();
+            engine.RegisterType<DateTimeOffset>();
             engine.RegisterType<TimeSpan>();
 
             // Allow listeners invoked by the mediator to configure the engine.
             await _mediator.PublishAsync(new EvaluatingJavaScript(engine, context), cancellationToken);
 
             return engine;
+        }
+
+        private static void CreateVariableAccessors(Engine engine, ExpressionExecutionContext context)
+        {
+            var variablesDictionary = context.GetVariableValues();
+
+            foreach (var variable in variablesDictionary)
+            {
+                var pascalName = variable.Key.Pascalize();
+                engine.SetValue($"get{pascalName}", (Func<object?>)(() => context.GetVariable(variable.Key)));
+                engine.SetValue($"set{pascalName}", (Action<object?>)(value => context.SetVariable(variable.Key, value)));
+            }
         }
 
         private static object? ExecuteExpressionAndGetResult(Engine engine, string expression)

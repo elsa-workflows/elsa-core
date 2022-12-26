@@ -38,7 +38,7 @@ public class FlowchartJsonConverter : JsonConverter<Activities.Flowchart>
             Start = start,
             Activities = activities,
             Connections = connections,
-            ApplicationProperties =
+            CustomProperties =
             {
                 [AllActivitiesKey] = activities.ToList(),
                 [AllConnectionsKey] = connections.ToList()
@@ -56,9 +56,9 @@ public class FlowchartJsonConverter : JsonConverter<Activities.Flowchart>
 
         connectionSerializerOptions.Converters.Add(new ConnectionJsonConverter(activityDictionary));
 
-        var allActivities = value.ApplicationProperties.TryGetValue(AllActivitiesKey, out var a) ? a : activities;
-        var allConnections = value.ApplicationProperties.TryGetValue(AllConnectionsKey, out var c) ? c : value.Connections;
-        var applicationProperties = new Dictionary<string, object>(value.ApplicationProperties);
+        var allActivities = value.CustomProperties.TryGetValue(AllActivitiesKey, out var a) ? a : activities;
+        var allConnections = value.CustomProperties.TryGetValue(AllConnectionsKey, out var c) ? c : value.Connections;
+        var applicationProperties = new Dictionary<string, object>(value.CustomProperties);
 
         applicationProperties.Remove(AllActivitiesKey);
         applicationProperties.Remove(AllConnectionsKey);

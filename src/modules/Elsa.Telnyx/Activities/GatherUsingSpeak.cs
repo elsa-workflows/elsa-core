@@ -151,17 +151,18 @@ public class GatherUsingSpeak : ActivityBase<CallGatherEndedPayload>, IBookmarks
     {
         var request = new GatherUsingSpeakRequest(
             Language.Get(context) ?? throw new Exception("Language is required."),
-            Voice.Get(context) ?? throw new Exception("Language is required."),
-            Payload.Get(context) ?? throw new Exception("Language is required."),
-            PayloadType.Get(context),
-            ServiceLevel.Get(context),
-            InterDigitTimeoutMillis.Get(context),
-            MaximumDigits.Get(context),
-            MaximumTries.Get(context),
-            MinimumDigits.Get(context),
-            TerminatingDigit.Get(context).EmptyToNull(),
-            TimeoutMillis.Get(context),
-            ValidDigits.Get(context).EmptyToNull()
+            Voice.Get(context) ?? throw new Exception("Voice is required."),
+            Payload.Get(context) ?? throw new Exception("Payload is required."),
+            PayloadType.TryGet(context),
+            ServiceLevel.TryGet(context),
+            InterDigitTimeoutMillis.TryGet(context),
+            MaximumDigits.TryGet(context),
+            MaximumTries.TryGet(context),
+            MinimumDigits.TryGet(context),
+            TerminatingDigit.TryGet(context).EmptyToNull(),
+            TimeoutMillis.TryGet(context),
+            ValidDigits.TryGet(context).EmptyToNull(),
+            context.CreateCorrelatingClientState()
         );
 
         var callControlId = context.GetPrimaryCallControlId(CallControlId) ?? throw new Exception("CallControlId is required");

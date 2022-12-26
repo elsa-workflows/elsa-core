@@ -60,7 +60,7 @@ export class VariablesEditor {
             </thead>
             <tbody>
             {variables.map(variable => {
-                const storage = storageDrivers.find(x => x.id == variable.storageDriverId);
+                const storage = storageDrivers.find(x => x.typeName == variable.storageDriverTypeName);
                 const storageName = storage?.displayName ?? '-';
                 const descriptor = descriptorsStore.variableDescriptors.find(x => x.typeName == variable.typeName);
                 const typeDisplayName = descriptor?.displayName ?? variable.typeName;

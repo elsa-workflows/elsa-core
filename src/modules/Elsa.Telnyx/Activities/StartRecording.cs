@@ -117,7 +117,8 @@ public abstract class StartRecordingBase : ActivityBase<CallRecordingSavedPayloa
         var request = new StartRecordingRequest(
             Channels.TryGet(context) ?? "single",
             Format.TryGet(context) ?? "wav",
-            PlayBeep.TryGet(context)
+            PlayBeep.TryGet(context),
+            ClientState: context.CreateCorrelatingClientState()
         );
 
         var callControlId = context.GetPrimaryCallControlId(CallControlId) ?? throw new Exception("CallControlId is required.");

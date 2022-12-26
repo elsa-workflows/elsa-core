@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using Elsa.Expressions.Helpers;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Core.Serialization.Converters;
 
@@ -12,12 +13,16 @@ namespace Elsa.Workflows.Core.Serialization.Converters;
 public class VariableConverter : JsonConverter<Variable>
 {
     private readonly IWellKnownTypeRegistry _wellKnownTypeRegistry;
+    private readonly ILogger _logger;
 
-    public VariableConverter(IWellKnownTypeRegistry wellKnownTypeRegistry)
+    /// <inheritdoc />
+    public VariableConverter(IWellKnownTypeRegistry wellKnownTypeRegistry, ILogger<VariableConverter> logger)
     {
         _wellKnownTypeRegistry = wellKnownTypeRegistry;
+        _logger = logger;
     }
 
+    /// <inheritdoc />
     public override Variable? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         var model = JsonSerializer.Deserialize<VariableModel>(ref reader, options)!;
@@ -26,17 +31,18 @@ public class VariableConverter : JsonConverter<Variable>
         return variable;
     }
 
+    /// <inheritdoc />
     public override void Write(Utf8JsonWriter writer, Variable value, JsonSerializerOptions options)
     {
         var model = Map(value);
         JsonSerializer.Serialize(writer, model, options);
     }
 
-    public Variable? Map(VariableModel source)
+    private Variable? Map(VariableModel source)
     {
         if (string.IsNullOrWhiteSpace(source.TypeName))
             return null;
-        
+
         if (!_wellKnownTypeRegistry.TryGetTypeOrDefault(source.TypeName, out var type))
             return null;
 
@@ -44,42 +50,46 @@ public class VariableConverter : JsonConverter<Variable>
         var variable = (Variable)Activator.CreateInstance(variableGenericType)!;
 
         variable.Name = source.Name;
-        variable.Value = source.Value.ConvertTo(type);
-        variable.StorageDriverId = source.StorageDriverId;
+
+        source.Value.TryConvertTo(type)
+            .OnSuccess(value => variable.Value = value)
+            .OnFailure(e => _logger.LogWarning("Failed to convert {SourceValue} to {TargetType}", source.Value, type.Name));
+
+        variable.StorageDriverType = !string.IsNullOrEmpty(source.StorageDriverTypeName) ? Type.GetType(source.StorageDriverTypeName) : default;
 
         return variable;
     }
-    
-    public VariableModel Map(Variable source)
+
+    private VariableModel Map(Variable source)
     {
         var variableType = source.GetType();
         var value = source.Value;
         var valueType = variableType.IsConstructedGenericType ? variableType.GetGenericArguments().FirstOrDefault() ?? typeof(object) : typeof(object);
         var valueTypeAlias = _wellKnownTypeRegistry.GetAliasOrDefault(valueType);
-        var driverId = source.StorageDriverId;
+        var storageDriverTypeName = source.StorageDriverType?.GetSimpleAssemblyQualifiedName();
         var serializedValue = value.Format();
 
-        return new VariableModel(source.Name, valueTypeAlias, serializedValue, driverId);
+        return new VariableModel(source.Name, valueTypeAlias, serializedValue, storageDriverTypeName);
     }
 
-    public class VariableModel
+    private class VariableModel
     {
         [JsonConstructor]
         public VariableModel()
         {
         }
 
-        public VariableModel(string name, string typeName, string? value, string? storageDriverId)
+        public VariableModel(string name, string typeName, string? value, string? storageDriverTypeName)
         {
             Name = name;
             TypeName = typeName;
             Value = value;
-            StorageDriverId = storageDriverId;
+            StorageDriverTypeName = storageDriverTypeName;
         }
 
         public string Name { get; set; } = default!;
         public string TypeName { get; set; } = default!;
         public string? Value { get; set; }
-        public string? StorageDriverId { get; set; }
+        public string? StorageDriverTypeName { get; set; }
     }
 }
