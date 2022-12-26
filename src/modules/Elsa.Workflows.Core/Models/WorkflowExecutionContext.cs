@@ -138,6 +138,11 @@ public class WorkflowExecutionContext
     public IDictionary<object, object> TransientProperties { get; set; } = new Dictionary<object, object>();
 
     /// <summary>
+    /// Stores any fault that may have occurred during execution. Faulting a workflow will effectively suspend subsequent execution.
+    /// </summary>
+    public WorkflowFault? Fault { get; set; }
+
+    /// <summary>
     /// The current <see cref="ExecuteActivityDelegate"/> delegate to invoke when executing the next activity.
     /// </summary>
     public ExecuteActivityDelegate? ExecuteDelegate { get; set; }
