@@ -4,6 +4,7 @@ using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Persistence.EntityFrameworkCore.Common;
 using Elsa.Persistence.EntityFrameworkCore.Extensions;
+using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Management.Entities;
@@ -130,13 +131,13 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
         {
         }
 
-        public WorkflowInstanceState(WorkflowState workflowState, WorkflowFault? fault)
+        public WorkflowInstanceState(WorkflowState workflowState, WorkflowFaultState? fault)
         {
             WorkflowState = workflowState;
             Fault = fault;
         }
 
         public WorkflowState WorkflowState { get; init; } = default!;
-        public WorkflowFault? Fault { get; set; }
+        public WorkflowFaultState? Fault { get; set; }
     }
 }

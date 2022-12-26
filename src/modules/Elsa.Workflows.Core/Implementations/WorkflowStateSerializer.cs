@@ -20,7 +20,8 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
             CorrelationId = workflowExecutionContext.CorrelationId,
             Status = workflowExecutionContext.Status,
             SubStatus = workflowExecutionContext.SubStatus,
-            Bookmarks = workflowExecutionContext.Bookmarks
+            Bookmarks = workflowExecutionContext.Bookmarks,
+            Fault = SerializeFault(workflowExecutionContext.Fault)
         };
 
         SerializeProperties(state, workflowExecutionContext);
@@ -52,39 +53,7 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
         workflowExecutionContext.Properties = state.Properties.Properties;
     }
 
-    private void GetOutput(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
-    {
-        foreach (var node in workflowExecutionContext.Nodes)
-            GetOutput(state, node);
-    }
-
-    private void GetOutput(WorkflowState state, ActivityNode activityNode)
-    {
-        var output = GetOutputFrom(activityNode);
-
-        if (output.Any())
-            state.ActivityOutput.Add(activityNode.NodeId, output);
-    }
-
-    private void SetOutput(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
-    {
-        foreach (var entry in state.ActivityOutput)
-        {
-            var activityId = entry.Key;
-            var node = workflowExecutionContext.FindNodeById(activityId);
-            var activityType = node.Activity.GetType();
-
-            foreach (var outputEntry in entry.Value)
-            {
-                var propertyName = outputEntry.Key;
-                var propertyValue = outputEntry.Value;
-                var propertyInfo = activityType.GetProperty(propertyName, BindingFlags.Public)!;
-                propertyInfo.SetValue(node, propertyValue);
-            }
-        }
-    }
-
-    private void DeserializeCompletionCallbacks(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
+    private static void DeserializeCompletionCallbacks(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
     {
         foreach (var completionCallbackEntry in state.CompletionCallbacks)
         {
@@ -96,7 +65,7 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
         }
     }
 
-    private void SerializeCompletionCallbacks(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
+    private static void SerializeCompletionCallbacks(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
     {
         // Assert all referenced owner contexts exist.
         foreach (var completionCallback in workflowExecutionContext.CompletionCallbacks)
@@ -111,7 +80,7 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
         state.CompletionCallbacks = completionCallbacks.ToList();
     }
 
-    private void SerializeActivityExecutionContexts(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
+    private static void SerializeActivityExecutionContexts(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
     {
         ActivityExecutionContextState CreateActivityExecutionContextState(ActivityExecutionContext activityExecutionContext)
         {
@@ -139,7 +108,7 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
         state.ActivityExecutionContexts = workflowExecutionContext.ActivityExecutionContexts.Reverse().Select(CreateActivityExecutionContextState).ToList();
     }
 
-    private void DeserializeActivityExecutionContexts(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
+    private static void DeserializeActivityExecutionContexts(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
     {
         ActivityExecutionContext CreateActivityExecutionContext(ActivityExecutionContextState activityExecutionContextState)
         {
@@ -167,7 +136,13 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
 
         workflowExecutionContext.ActivityExecutionContexts = activityExecutionContexts;
     }
+    
+    private static WorkflowFaultState? SerializeFault(WorkflowFault? fault)
+    {
+        if (fault == null)
+            return null;
 
-    private Dictionary<string, object> GetOutputFrom(ActivityNode activityNode) =>
-        activityNode.GetType().GetProperties(BindingFlags.Public).Where(x => x.GetCustomAttribute<OutputAttribute>() != null).ToDictionary(x => x.Name, x => x.GetValue(activityNode)!);
+        var exceptionState = ExceptionState.FromException(fault.Exception);
+        return new WorkflowFaultState(exceptionState, fault.Message, fault.FaultedActivityId);
+    }
 }

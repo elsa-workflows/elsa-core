@@ -43,12 +43,12 @@ public class WorkflowState
     /// Collected bookmarks.
     /// </summary>
     public ICollection<Bookmark> Bookmarks { get; set; } = new List<Bookmark>();
-    
+
     /// <summary>
-    /// A dictionary of activity output.
+    /// The serialized workflow state, if any. 
     /// </summary>
-    public IDictionary<string, IDictionary<string, object>> ActivityOutput { get; set; } = new Dictionary<string, IDictionary<string, object>>();
-    
+    public WorkflowFaultState? Fault { get; set; }
+
     /// <summary>
     /// A list of callbacks that activities registered in order to be notified when the activities they scheduled complete. 
     /// </summary>

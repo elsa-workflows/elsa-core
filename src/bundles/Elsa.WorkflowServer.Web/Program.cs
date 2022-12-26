@@ -27,6 +27,7 @@ using Elsa.Scheduling.Extensions;
 using Elsa.WorkflowContexts.Extensions;
 using Elsa.Workflows.Api.Extensions;
 using Elsa.Workflows.Core.Activities;
+using Elsa.Workflows.Core.Middleware.Activities;
 using Elsa.Workflows.Core.Middleware.Workflows;
 using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Management.Services;
@@ -113,7 +114,9 @@ serviceProvider.ConfigureDefaultWorkflowExecutionPipeline(pipeline =>
 );
 
 // Configure activity execution pipeline to use the job-based activity invoker.
-serviceProvider.ConfigureDefaultActivityExecutionPipeline(pipeline => pipeline.UseJobBasedActivityInvoker());
+serviceProvider.ConfigureDefaultActivityExecutionPipeline(pipeline => pipeline
+    .UseExceptionHandling()
+    .UseJobBasedActivityInvoker());
 
 if (app.Environment.IsDevelopment())
     app.UseDeveloperExceptionPage();
