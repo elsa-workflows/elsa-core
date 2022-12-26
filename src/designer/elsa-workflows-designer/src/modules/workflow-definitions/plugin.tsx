@@ -21,7 +21,7 @@ import {ExportWorkflowRequest, ImportWorkflowRequest, WorkflowDefinitionsApi} fr
 import {DefaultModalActions, ModalDialogInstance, ModalDialogService} from "../../components/shared/modal-dialog";
 import {isEqual} from 'lodash'
 import {htmlToElement, isNullOrWhitespace} from "../../utils";
-import {NotificationService} from "../notifications/notification-service";
+import NotificationService from "../notifications/notification-service";
 import {uuid} from "@antv/x6/es/util/string/uuid";
 
 const FlowchartTypeName = 'Elsa.Flowchart';

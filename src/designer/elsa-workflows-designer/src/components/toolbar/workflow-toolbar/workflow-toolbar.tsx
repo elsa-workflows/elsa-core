@@ -1,30 +1,37 @@
-import {Component, h} from '@stencil/core';
+import {Component, State, h} from '@stencil/core';
 import Container from 'typedi';
 import {NotificationEventTypes} from '../../../modules/notifications/event-types';
 import {EventBus} from '../../../services';
 import toolbarComponentStore from "../../../data/toolbar-component-store";
+import notificationService from '../../../modules/notifications/notification-service';
+import notificationStore from "../../../modules/notifications/notification-store";
 
 @Component({
   tag: 'elsa-workflow-toolbar',
 })
 export class WorkflowToolbar {
+  @State() public modalState: boolean = false;
   private readonly eventBus: EventBus;
-
+  static NotificationService = notificationService;
   constructor() {
     this.eventBus = Container.get(EventBus);
   }
 
   onNotificationClick = e => {
     e.stopPropagation();
-    this.eventBus.emit(NotificationEventTypes.Toggle, this);
+    // this.eventBus.emit(NotificationEventTypes.Toggle, this);
+    WorkflowToolbar.NotificationService.toogleNotification();
+    this.modalState = !this.modalState;
   };
 
   render() {
+    const { notifications, infoPanelBoolean } = notificationStore;
     return (
+      <div>
       <nav class="bg-gray-800">
         <div class="mx-auto px-2 sm:px-6 lg:px-6">
           <div class="relative flex items-center justify-end h-16">
-            <div class="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0 z-40">
+            <div class="inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0 z-40">
               {/* Notifications*/}
               <button
                 onClick={e => this.onNotificationClick(e)}
@@ -54,6 +61,11 @@ export class WorkflowToolbar {
           </div>
         </div>
       </nav>
+        <elsa-notifications-manager modalState={this.modalState}></elsa-notifications-manager>
+        {notifications && notifications.map(item => {
+          <elsa-awhile-notifications notification={item}></elsa-awhile-notifications>
+        })}
+        </div>
     );
   }
 }

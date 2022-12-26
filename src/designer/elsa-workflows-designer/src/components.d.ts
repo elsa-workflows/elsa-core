@@ -212,6 +212,7 @@ export namespace Components {
     interface ElsaNewButton {
     }
     interface ElsaNotificationsManager {
+        "modalState": boolean;
     }
     interface ElsaPager {
         "page": number;
@@ -1029,6 +1030,7 @@ declare namespace LocalJSX {
         "onNewClicked"?: (event: ElsaNewButtonCustomEvent<any>) => void;
     }
     interface ElsaNotificationsManager {
+        "modalState"?: boolean;
     }
     interface ElsaPager {
         "onPaginated"?: (event: ElsaPagerCustomEvent<PagerData>) => void;
