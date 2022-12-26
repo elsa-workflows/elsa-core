@@ -2,12 +2,9 @@ using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 using Elsa.Common.Extensions;
-using Elsa.Workflows.Core.Activities.Flowchart.Models;
 using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Behaviors;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
-using Elsa.Workflows.Core.Signals;
 
 namespace Elsa.Workflows.Core.Activities;
 

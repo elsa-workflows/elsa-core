@@ -7,7 +7,6 @@ using Elsa.Telnyx.Events;
 using Elsa.Telnyx.Extensions;
 using Elsa.Telnyx.Payloads.Abstract;
 using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Runtime.Services;
 using Microsoft.Extensions.Logging;
 
