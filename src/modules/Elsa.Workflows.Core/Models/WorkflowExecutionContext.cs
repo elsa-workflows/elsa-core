@@ -35,6 +35,7 @@ public class WorkflowExecutionContext
         string? correlationId,
         Workflow workflow,
         ActivityNode graph,
+        ICollection<ActivityNode> nodes,
         IActivityScheduler scheduler,
         IDictionary<string, object>? input,
         ExecuteActivityDelegate? executeDelegate,
@@ -48,7 +49,7 @@ public class WorkflowExecutionContext
         SubStatus = WorkflowSubStatus.Executing;
         Id = id;
         CorrelationId = correlationId;
-        _nodes = graph.Flatten().Distinct().ToList();
+        _nodes = nodes.ToList();
         _activityExecutionContexts = activityExecutionContexts?.ToList() ?? new List<ActivityExecutionContext>();
         Scheduler = scheduler;
         Input = input ?? new Dictionary<string, object>();
@@ -60,18 +61,69 @@ public class WorkflowExecutionContext
         MemoryRegister = workflow.CreateRegister();
     }
 
+    /// <summary>
+    /// The <see cref="Workflow"/> associated with the execution context.
+    /// </summary>
     public Workflow Workflow { get; }
+    
+    /// <summary>
+    /// A graph of the workflow structure.
+    /// </summary>
     public ActivityNode Graph { get; }
+    
+    /// <summary>
+    /// The current status of the workflow. 
+    /// </summary>
     public WorkflowStatus Status => GetMainStatus(SubStatus);
+    
+    /// <summary>
+    /// The current sub status of the workflow.
+    /// </summary>
     public WorkflowSubStatus SubStatus { get; internal set; }
+    
+    /// <summary>
+    /// The root <see cref="MemoryRegister"/> associated with the execution context.
+    /// </summary>
     public MemoryRegister MemoryRegister { get; }
+    
+    /// <summary>
+    /// A unique ID of the execution context.
+    /// </summary>
     public string Id { get; set; }
+    
+    /// <summary>
+    /// An application-specific identifier associated with the execution context.
+    /// </summary>
     public string? CorrelationId { get; set; }
+    
+    /// <summary>
+    /// A flattened list of <see cref="ActivityNode"/>s from the <see cref="Graph"/>. 
+    /// </summary>
     public IReadOnlyCollection<ActivityNode> Nodes => new ReadOnlyCollection<ActivityNode>(_nodes);
+    
+    /// <summary>
+    /// A map between activity IDs and <see cref="ActivityNode"/>s in the workflow graph.
+    /// </summary>
     public IDictionary<string, ActivityNode> NodeIdLookup { get; }
+    
+    /// <summary>
+    /// A map between <see cref="IActivity"/>s and <see cref="ActivityNode"/>s in the workflow graph.
+    /// </summary>
     public IDictionary<IActivity, ActivityNode> NodeActivityLookup { get; }
+    
+    /// <summary>
+    /// The <see cref="IActivityScheduler"/> for the execution context.
+    /// </summary>
     public IActivityScheduler Scheduler { get; }
+    
+    /// <summary>
+    /// A collection of collected bookmarks during workflow execution. 
+    /// </summary>
     public ICollection<Bookmark> Bookmarks { get; set; } = new List<Bookmark>();
+    
+    /// <summary>
+    /// A dictionary of inputs provided at the start of the current workflow execution. 
+    /// </summary>
     public IDictionary<string, object> Input { get; }
 
     /// <summary>
@@ -85,12 +137,34 @@ public class WorkflowExecutionContext
     /// </summary>
     public IDictionary<object, object> TransientProperties { get; set; } = new Dictionary<object, object>();
 
+    /// <summary>
+    /// The current <see cref="ExecuteActivityDelegate"/> delegate to invoke when executing the next activity.
+    /// </summary>
     public ExecuteActivityDelegate? ExecuteDelegate { get; set; }
+    
+    /// <summary>
+    /// Provides context about the bookmark that was used to resume workflow execution, if any. 
+    /// </summary>
     public ResumedBookmarkContext? ResumedBookmarkContext { get; set; }
+    
+    /// <summary>
+    /// The ID of the activity associated with the trigger that caused this workflow execution, if any. 
+    /// </summary>
     public string? TriggerActivityId { get; set; }
+    
+    /// <summary>
+    /// A <see cref="CancellationToken"/> that can be used to cancel asynchronous operations.
+    /// </summary>
     public CancellationToken CancellationToken { get; }
+    
+    /// <summary>
+    /// A list of <see cref="ActivityCompletionCallbackEntry"/> callbacks that are invoked when the associated child activity completes.
+    /// </summary>
     public ICollection<ActivityCompletionCallbackEntry> CompletionCallbacks => new ReadOnlyCollection<ActivityCompletionCallbackEntry>(_completionCallbackEntries);
 
+    /// <summary>
+    /// A list of <see cref="ActivityExecutionContext"/>s that are currently active.
+    /// </summary>
     public IReadOnlyCollection<ActivityExecutionContext> ActivityExecutionContexts
     {
         get => _activityExecutionContexts.ToList();
@@ -102,21 +176,54 @@ public class WorkflowExecutionContext
     /// </summary>
     public ICollection<WorkflowExecutionLogEntry> ExecutionLog { get; } = new List<WorkflowExecutionLogEntry>();
 
+    /// <summary>
+    /// Resolves the specified service type from the service provider.
+    /// </summary>
     public T GetRequiredService<T>() where T : notnull => _serviceProvider.GetRequiredService<T>();
+    
+    /// <summary>
+    /// Resolves the specified service type from the service provider.
+    /// </summary>
     public object GetRequiredService(Type serviceType) => _serviceProvider.GetRequiredService(serviceType);
+    
+    /// <summary>
+    /// Resolves the specified service type from the service provider, or creates a new instance if the service type was not found in the service container.
+    /// </summary>
     public T GetOrCreateService<T>() where T : notnull => ActivatorUtilities.GetServiceOrCreateInstance<T>(_serviceProvider);
+    
+    /// <summary>
+    /// Resolves the specified service type from the service provider, or creates a new instance if the service type was not found in the service container.
+    /// </summary>
     public object GetOrCreateService(Type serviceType) => ActivatorUtilities.GetServiceOrCreateInstance(_serviceProvider, serviceType);
+    
+    /// <summary>
+    /// Resolves the specified service type from the service provider.
+    /// </summary>
     public T? GetService<T>() where T : notnull => _serviceProvider.GetService<T>();
-    public IEnumerable<T> GetServices<T>() where T : notnull => _serviceProvider.GetServices<T>();
+    
+    /// <summary>
+    /// Resolves the specified service type from the service provider.
+    /// </summary>
     public object? GetService(Type serviceType) => _serviceProvider.GetService(serviceType);
+    
+    /// <summary>
+    /// Resolves multiple implementations of the specified service type from the service provider.
+    /// </summary>
+    public IEnumerable<T> GetServices<T>() where T : notnull => _serviceProvider.GetServices<T>();
 
-    public void AddCompletionCallback(ActivityExecutionContext owner, IActivity child, ActivityCompletionCallback? completionCallback = default)
+    /// <summary>
+    /// Registers a completion callback for the specified activity.
+    /// </summary>
+    internal void AddCompletionCallback(ActivityExecutionContext owner, IActivity child, ActivityCompletionCallback? completionCallback = default)
     {
         var entry = new ActivityCompletionCallbackEntry(owner, child, completionCallback);
         _completionCallbackEntries.Add(entry);
     }
 
-    public ActivityCompletionCallbackEntry? PopCompletionCallback(ActivityExecutionContext owner, IActivity child)
+    /// <summary>
+    /// Unregisters the completion callback for the specified owner and child activity.
+    /// </summary>
+    internal ActivityCompletionCallbackEntry? PopCompletionCallback(ActivityExecutionContext owner, IActivity child)
     {
         var entry = _completionCallbackEntries.FirstOrDefault(x => x.Owner == owner && x.Child == child);
 
@@ -127,20 +234,42 @@ public class WorkflowExecutionContext
         return entry;
     }
 
-    public void RemoveCompletionCallback(ActivityCompletionCallbackEntry entry) => _completionCallbackEntries.Remove(entry);
+    internal void RemoveCompletionCallback(ActivityCompletionCallbackEntry entry) => _completionCallbackEntries.Remove(entry);
 
-    public void RemoveCompletionCallbacks(IEnumerable<ActivityCompletionCallbackEntry> entries)
+    internal void RemoveCompletionCallbacks(IEnumerable<ActivityCompletionCallbackEntry> entries)
     {
         foreach (var entry in entries.ToList())
             _completionCallbackEntries.Remove(entry);
     }
 
-    public ActivityNode FindNodeById(string nodeId) => NodeIdLookup[nodeId];
+    /// <summary>
+    /// Returns the <see cref="ActivityNode"/> with the specified activity ID from the workflow graph.
+    /// </summary>
+    public ActivityNode FindNodeById(string activityId) => NodeIdLookup[activityId];
+    
+    /// <summary>
+    /// Returns the <see cref="ActivityNode"/> containing the specified activity from the workflow graph.
+    /// </summary>
     public ActivityNode FindNodeByActivity(IActivity activity) => NodeActivityLookup[activity];
+    
+    /// <summary>
+    /// Returns the <see cref="IActivity"/> with the specified ID from the workflow graph.
+    /// </summary>
     public IActivity FindActivityById(string activityId) => FindNodeById(activityId).Activity;
+    
+    /// <summary>
+    /// Returns a custom property with the specified key from the <see cref="Properties"/> dictionary.
+    /// </summary>
     public T? GetProperty<T>(string key) => Properties.TryGetValue(key, out var value) ? value.ConvertTo<T>() : default;
+    
+    /// <summary>
+    /// Sets a custom property with the specified key on the <see cref="Properties"/> dictionary.
+    /// </summary>
     public void SetProperty<T>(string key, T value) => Properties[key] = value!;
 
+    /// <summary>
+    /// Updates a custom property with the specified key on the <see cref="Properties"/> dictionary.
+    /// </summary>
     public T UpdateProperty<T>(string key, Func<T?, T> updater)
     {
         var value = GetProperty<T?>(key);
@@ -149,9 +278,12 @@ public class WorkflowExecutionContext
         return value;
     }
 
+    /// <summary>
+    /// Returns true if the <see cref="Properties"/> dictionary contains the specified key.
+    /// </summary>
     public bool HasProperty(string name) => Properties.ContainsKey(name);
 
-    public void TransitionTo(WorkflowSubStatus subStatus)
+    internal void TransitionTo(WorkflowSubStatus subStatus)
     {
         var targetStatus = GetMainStatus(subStatus);
 
@@ -161,6 +293,9 @@ public class WorkflowExecutionContext
         SubStatus = subStatus;
     }
 
+    /// <summary>
+    /// Creates a new <see cref="ActivityExecutionContext"/> for the specified activity.
+    /// </summary>
     public ActivityExecutionContext CreateActivityExecutionContext(IActivity activity, ActivityExecutionContext? parentContext = default)
     {
         var parentExpressionExecutionContext = parentContext?.ExpressionExecutionContext;
@@ -175,7 +310,7 @@ public class WorkflowExecutionContext
     /// <summary>
     /// Removes the specified <see cref="ActivityExecutionContext"/>.
     /// </summary>
-    public async Task RemoveActivityExecutionContextAsync(ActivityExecutionContext context)
+    internal async Task RemoveActivityExecutionContextAsync(ActivityExecutionContext context)
     {
         // Remove all contexts referencing this one as a parent.
         var childContexts = _activityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context).ToList();
@@ -200,8 +335,11 @@ public class WorkflowExecutionContext
     /// <summary>
     /// Adds the specified <see cref="ActivityExecutionContext"/> to the workflow execution context.
     /// </summary>
-    public void AddActivityExecutionContext(ActivityExecutionContext context) => _activityExecutionContexts.Add(context);
+    internal void AddActivityExecutionContext(ActivityExecutionContext context) => _activityExecutionContexts.Add(context);
 
+    /// <summary>
+    /// Cancels the specified activity. 
+    /// </summary>
     public async Task CancelActivityAsync(string activityId)
     {
         var activityExecutionContext = ActivityExecutionContexts.FirstOrDefault(x => x.Id == activityId);
