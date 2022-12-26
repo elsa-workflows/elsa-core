@@ -15,7 +15,6 @@ export class HomePage {
   }
 
   render() {
-    const imageUrl = getAssetPath('./assets/elsa-anim.gif');
     const visualPath = getAssetPath('./assets/elsa-breaking-barriers-undraw.svg');
     return (
       <div class="home-wrapper relative bg-gray-800 overflow-hidden h-screen">
