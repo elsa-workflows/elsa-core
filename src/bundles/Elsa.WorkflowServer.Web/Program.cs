@@ -17,10 +17,12 @@ using Elsa.Persistence.EntityFrameworkCore.Modules.ActivityDefinitions;
 using Elsa.Persistence.EntityFrameworkCore.Modules.Labels;
 using Elsa.Persistence.EntityFrameworkCore.Modules.Management;
 using Elsa.Persistence.EntityFrameworkCore.Modules.Runtime;
+using Elsa.Persistence.EntityFrameworkCore.Modules.WorkflowSink;
 using Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.ActivityDefinitions;
 using Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.Labels;
 using Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.Management;
 using Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.Runtime;
+using Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.WorkflowSink;
 using Elsa.ProtoActor.Extensions;
 using Elsa.Requirements;
 using Elsa.Scheduling.Extensions;
@@ -78,6 +80,12 @@ services
         .UseJavaScript()
         .UseLiquid()
         .UseHttp()
+        //.UseMassTransit(feature => feature.UseRabbitMq())
+        .UseWorkflowSink(feature =>
+        {
+            feature.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
+            //feature.UseMassTransitServiceBus();
+        })
     );
 
 services.AddHealthChecks();

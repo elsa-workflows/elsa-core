@@ -31,7 +31,8 @@ public class Module : IModule
     public IDictionary<object, object> Properties { get; } = new Dictionary<object, object>();
 
     /// <inheritdoc />
-    public T Configure<T>(Action<T>? configure = default) where T : class, IFeature => Configure(module => (T)Activator.CreateInstance(typeof(T), module)!, configure);
+    public T Configure<T>(Action<T>? configure = default) where T : class, IFeature
+        => Configure(module => (T)Activator.CreateInstance(typeof(T), module)!, configure);
 
     /// <inheritdoc />
     public T Configure<T>(Func<IModule, T> factory, Action<T>? configure = default) where T : class, IFeature
