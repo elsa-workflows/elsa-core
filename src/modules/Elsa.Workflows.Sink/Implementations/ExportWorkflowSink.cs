@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -9,6 +8,7 @@ using Elsa.Mediator.Services;
 using Elsa.Workflows.Sink.Contracts;
 using Elsa.Workflows.Sink.Models;
 using MassTransit;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Sink.Implementations;
 
@@ -16,13 +16,16 @@ public class ExportWorkflowSink : INotificationHandler<ExportWorkflowSinkMessage
 {
     private readonly IEnumerable<IWorkflowSinkManager> _sinkManagers;
     private readonly IPrepareWorkflowSinkModel _prepareWorkflowSinkModel;
+    private readonly ILogger _logger;
 
-    private readonly IList<Error> _errors = new List<Error>();
-
-    public ExportWorkflowSink(IEnumerable<IWorkflowSinkManager> sinkManagers, IPrepareWorkflowSinkModel prepareWorkflowSinkModel)
+    public ExportWorkflowSink(
+        IEnumerable<IWorkflowSinkManager> sinkManagers, 
+        IPrepareWorkflowSinkModel prepareWorkflowSinkModel,
+        ILogger<ExportWorkflowSink> logger)
     {
         _sinkManagers = sinkManagers;
         _prepareWorkflowSinkModel = prepareWorkflowSinkModel;
+        _logger = logger;
     }
 
     public async Task HandleAsync(ExportWorkflowSinkMessage message, CancellationToken cancellationToken)
@@ -37,11 +40,9 @@ public class ExportWorkflowSink : INotificationHandler<ExportWorkflowSinkMessage
             }
             catch (Exception ex)
             {
-                _errors.Add(new Error(ex.Message));
+                _logger.LogError("An error occured during sink export: {message}", ex.Message);
             }
         }
-        
-        CheckForErrors();
     }
 
     public async Task Consume(ConsumeContext<ExportWorkflowSinkMessage> context)
@@ -56,18 +57,8 @@ public class ExportWorkflowSink : INotificationHandler<ExportWorkflowSinkMessage
             }
             catch (Exception ex)
             {
-                _errors.Add(new Error(ex.Message));
+                _logger.LogError("An error occured during sink export: {message}", ex.Message);
             }
-        }
-
-        CheckForErrors();
-    }
-
-    private void CheckForErrors()
-    {
-        if (_errors.Any())
-        {
-            throw new SinkExportFailed(string.Join(",", _errors.Select(e => e.Message)));
         }
     }
 }
