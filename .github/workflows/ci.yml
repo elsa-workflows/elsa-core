@@ -3,6 +3,11 @@ on:
   push:
     branches:
       - v3
+env:
+  nuget_feed_name: 'Packages'
+  nuget_feed_source: 'https://pkgs.dev.azure.com/elsa-workflows/3cbdb983-acb6-4ba7-b862-f9e3cbd4e213/_packaging/Packages/nuget/v3/index.json'
+  nuget_config: '.nuget/NuGet.Config'
+  
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -22,7 +27,9 @@ jobs:
         run: dotnet test --configuration Release /p:Version=${VERSION} --no-build
       - name: Pack
         run: dotnet pack --configuration Release /p:Version=${VERSION} --output .
+      - name: Authenticate
+        run: dotnet nuget add source ${{ env.nuget_feed_source }} --name ${{ env.nuget_feed_name }} --username az --password ${{ secrets.AZURE_DEVOPS_TOKEN }} --configfile ${{ env.nuget_config }}
       - name: Push
-        run: dotnet nuget push *.nupkg --api-key ${{ secrets.AZUREDEVOPS_PAT }} --source https://pkgs.dev.azure.com/elsa-workflows/3cbdb983-acb6-4ba7-b862-f9e3cbd4e213/_packaging/Prereleases/nuget/v3/index.json
+        run: dotnet nuget push *.nupkg --api-key az --source ${{ env.nuget_feed_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
