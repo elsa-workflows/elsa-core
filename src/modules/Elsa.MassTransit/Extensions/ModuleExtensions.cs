@@ -29,17 +29,17 @@ public static class ModuleExtensions
     /// <summary>
     /// Adds MassTransit to the service container and registers all collected assemblies for discovery of consumers.
     /// </summary>
-    public static IModule AddMassTransitFromModule(this IModule module, Action<IBusRegistrationConfigurator>? config = default)
+    public static IModule AddMassTransitFromModule(this IModule module, Action<IBusRegistrationConfigurator> config)
     {
         var consumerTypes = module.GetServiceBusConsumerTypesFromModule().ToList();
 
-        module.Services.AddMassTransit(configure =>
+        module.Services.AddMassTransit(bus =>
         {
-            configure.SetKebabCaseEndpointNameFormatter();
+            bus.SetKebabCaseEndpointNameFormatter();
 
-            configure.AddConsumers(consumerTypes.ToArray());
+            bus.AddConsumers(consumerTypes.ToArray());
 
-            config?.Invoke(configure);
+            config?.Invoke(bus);
         });
 
         return module;

@@ -21,8 +21,6 @@ public class MemoryWorkflowSinkPersistenceFeature : FeatureBase
 
     public override void Apply()
     {
-        base.Apply();
-        
         Services.AddSingleton<IWorkflowSinkManager, MemoryWorkflowSinkManager>();
     }
 }

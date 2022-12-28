@@ -33,8 +33,6 @@ public class WorkflowSinkFeature : FeatureBase
 
     public override void Configure()
     {
-        base.Configure();
-        
         Module.AddMassTransitServiceBusConsumerType(typeof(ExportWorkflowSink));
     }
 

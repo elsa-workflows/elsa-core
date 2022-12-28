@@ -1,5 +1,6 @@
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
+using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.MassTransit.Options;
 using MassTransit;
@@ -8,17 +9,18 @@ using Microsoft.Extensions.Options;
 
 namespace Elsa.MassTransit.Features;
 
-public class RabbitMqServiceBusFeature : MassTransitFeature
+[DependsOn(typeof(MassTransitFeature))]
+public class RabbitMqServiceBusFeature : FeatureBase
 {
     public RabbitMqServiceBusFeature(IModule module) : base(module)
     {
     }
 
-    public override void Apply()
+    public override void Configure()
     {
         var serviceProvider = Services.BuildServiceProvider();
         
-        Module.AddMassTransitFromModule(configure =>
+        Module.Configure<MassTransitFeature>().BusConfigurator = configure =>
         {
             configure.UsingRabbitMq((context, configurator) =>
             {
@@ -27,12 +29,12 @@ public class RabbitMqServiceBusFeature : MassTransitFeature
 
                 configurator.Host(host, h =>
                 {
-                    h.Username(rabbitMqSettings.UserName);
+                    h.Username(rabbitMqSettings.Username);
                     h.Password(rabbitMqSettings.Password);
                 });
 
                 configurator.ConfigureEndpoints(context);
             });
-        });
+        };
     }
 }
