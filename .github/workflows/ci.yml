@@ -6,7 +6,7 @@ on:
 env:
   nuget_feed_name: 'Packages'
   nuget_feed_source: 'https://pkgs.dev.azure.com/elsa-workflows/3cbdb983-acb6-4ba7-b862-f9e3cbd4e213/_packaging/Packages/nuget/v3/index.json'
-  nuget_config: '.nuget/NuGet.Config'
+  nuget_config: 'NuGet.Config'
   
 jobs:
   build:
