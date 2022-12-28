@@ -48,9 +48,6 @@ public class Workflow : Composite, ICloneable
     public Workflow()
     {
     }
-    
-    [JsonIgnore]
-    public Variable? ResultVariable { get; set; }
 
     /// <summary>
     /// Constructs a new <see cref="Workflow"/> from the specified <see cref="IActivity"/>.

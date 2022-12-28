@@ -16,7 +16,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "6.0.12");
 
-            modelBuilder.Entity("Elsa.Workflows.Sink.Models.WorkflowSink", b =>
+            modelBuilder.Entity("Elsa.Workflows.Sink.Models.WorkflowSinkEntity", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("TEXT");
@@ -42,9 +42,6 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("Id")
-                        .HasDatabaseName("IX_WorkflowSink_Id");
 
                     b.ToTable("WorkflowSink");
                 });

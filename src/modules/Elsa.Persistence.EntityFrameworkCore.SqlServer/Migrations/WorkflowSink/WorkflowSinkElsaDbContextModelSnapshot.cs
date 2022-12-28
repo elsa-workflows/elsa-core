@@ -23,7 +23,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.SqlServer.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder, 1L, 1);
 
-            modelBuilder.Entity("Elsa.Workflows.Sink.Models.WorkflowSink", b =>
+            modelBuilder.Entity("Elsa.Workflows.Sink.Models.WorkflowSinkEntity", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
@@ -47,9 +47,6 @@ namespace Elsa.Persistence.EntityFrameworkCore.SqlServer.Migrations
                         .HasColumnType("datetimeoffset");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("Id")
-                        .HasDatabaseName("IX_WorkflowSink_Id");
 
                     b.ToTable("WorkflowSink", "Elsa");
                 });

@@ -24,11 +24,6 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
                 {
                     table.PrimaryKey("PK_WorkflowSink", x => x.Id);
                 });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_WorkflowSink_Id",
-                table: "WorkflowSink",
-                column: "Id");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)

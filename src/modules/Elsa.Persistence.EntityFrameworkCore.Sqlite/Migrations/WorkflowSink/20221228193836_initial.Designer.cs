@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
 {
     [DbContext(typeof(WorkflowSinkElsaDbContext))]
-    [Migration("20221227145158_initial")]
+    [Migration("20221228193836_initial")]
     partial class initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -18,7 +18,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "6.0.12");
 
-            modelBuilder.Entity("Elsa.Workflows.Sink.Models.WorkflowSink", b =>
+            modelBuilder.Entity("Elsa.Workflows.Sink.Models.WorkflowSinkEntity", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("TEXT");
@@ -44,9 +44,6 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("Id")
-                        .HasDatabaseName("IX_WorkflowSink_Id");
 
                     b.ToTable("WorkflowSink");
                 });

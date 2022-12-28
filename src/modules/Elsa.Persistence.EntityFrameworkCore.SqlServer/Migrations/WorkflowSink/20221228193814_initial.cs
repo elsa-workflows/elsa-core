@@ -29,12 +29,6 @@ namespace Elsa.Persistence.EntityFrameworkCore.SqlServer.Migrations
                 {
                     table.PrimaryKey("PK_WorkflowSink", x => x.Id);
                 });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_WorkflowSink_Id",
-                schema: "Elsa",
-                table: "WorkflowSink",
-                column: "Id");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
