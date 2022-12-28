@@ -27,13 +27,13 @@ public static class ModuleExtensions
     /// </summary>
     public static IModule AddMassTransitFromModule(this IModule module, Action<IBusRegistrationConfigurator> config)
     {
-        var consumerTypes = module.GetServiceBusConsumerTypesFromModule().ToList();
+        var consumerTypes = module.GetServiceBusConsumerTypesFromModule().ToArray();
 
         module.Services.AddMassTransit(bus =>
         {
             bus.SetKebabCaseEndpointNameFormatter();
 
-            bus.AddConsumers(consumerTypes.ToArray());
+            bus.AddConsumers(consumerTypes);
 
             config?.Invoke(bus);
         });
