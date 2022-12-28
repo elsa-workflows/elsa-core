@@ -120,11 +120,16 @@ public class WorkflowExecutionContext
     /// A collection of collected bookmarks during workflow execution. 
     /// </summary>
     public ICollection<Bookmark> Bookmarks { get; set; } = new List<Bookmark>();
-    
+
     /// <summary>
     /// A dictionary of inputs provided at the start of the current workflow execution. 
     /// </summary>
     public IDictionary<string, object> Input { get; }
+
+    /// <summary>
+    /// A dictionary of outputs provided by the current workflow execution. 
+    /// </summary>
+    public IDictionary<string, object> Output { get; } = new Dictionary<string, object>();
 
     /// <summary>
     /// A dictionary that can be used by application code and activities to store information. Values need to be serializable, since this dictionary will be persisted alongside the workflow instance. 

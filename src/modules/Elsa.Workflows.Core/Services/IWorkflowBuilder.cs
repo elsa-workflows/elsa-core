@@ -45,8 +45,13 @@ public interface IWorkflowBuilder
     /// <summary>
     /// The workflow variables to store with the workflow being built.
     /// </summary>
-    ICollection<Variable> Variables { get; set; }
-    
+    ICollection<Variable>? Variables { get; set; }
+
+    /// <summary>
+    /// An internal variable used to get and set the result of the workflow.
+    /// </summary>
+    public Variable Result { get; set; }
+
     /// <summary>
     /// A set of properties that can be used for storing application-specific information about the workflow being built.
     /// </summary>
@@ -96,6 +101,11 @@ public interface IWorkflowBuilder
     /// A fluent method for adding a variable to <see cref="Variables"/>.
     /// </summary>
     Variable<T> WithVariable<T>(T value);
+    
+    /// <summary>
+    /// A fluent method for adding a variable to <see cref="Variables"/>.
+    /// </summary>
+    IWorkflowBuilder WithVariable<T>(Variable<T> variable);
     
     /// <summary>
     /// A fluent method for adding a variable to <see cref="Variables"/>.

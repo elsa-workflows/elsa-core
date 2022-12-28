@@ -121,6 +121,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.HelloWorld", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Testing.Shared", "src\common\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj", "{AD8C4BB0-C78F-496C-B326-1D82C02C7568}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.WorkflowFunctions", "src\samples\console\Elsa.Samples.WorkflowFunctions\Elsa.Samples.WorkflowFunctions.csproj", "{4782CA82-83B0-437E-8C97-636BB8B402EA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -307,6 +309,10 @@ Global
 		{AD8C4BB0-C78F-496C-B326-1D82C02C7568}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AD8C4BB0-C78F-496C-B326-1D82C02C7568}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AD8C4BB0-C78F-496C-B326-1D82C02C7568}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4782CA82-83B0-437E-8C97-636BB8B402EA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4782CA82-83B0-437E-8C97-636BB8B402EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4782CA82-83B0-437E-8C97-636BB8B402EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4782CA82-83B0-437E-8C97-636BB8B402EA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{155227F0-A33B-40AA-A4B4-06F813EB921B} = {61017E64-6D00-49CB-9E81-5002DC8F7D5F}
@@ -361,5 +367,6 @@ Global
 		{B191F11D-583D-44D9-8A08-F5B0DC58B822} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 		{DF8CCA17-6B00-42C6-B4EC-61B42AA91EE0} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 		{AD8C4BB0-C78F-496C-B326-1D82C02C7568} = {C6658DE0-2B2F-47F0-BB61-2CA66D435C09}
+		{4782CA82-83B0-437E-8C97-636BB8B402EA} = {873BFC3E-63C2-4495-A503-5EC05DCD84E4}
 	EndGlobalSection
 EndGlobal

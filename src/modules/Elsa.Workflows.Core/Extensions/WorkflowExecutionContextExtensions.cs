@@ -22,6 +22,17 @@ public static class WorkflowExecutionContextExtensions
     }
 
     /// <summary>
+    /// Schedules the workflow for execution.
+    /// </summary>
+    public static void ScheduleWorkflow(this WorkflowExecutionContext workflowExecutionContext)
+    {
+        var activityInvoker = workflowExecutionContext.GetRequiredService<IActivityInvoker>();
+        var workflow = workflowExecutionContext.Workflow;
+        var workItem = new ActivityWorkItem(workflow.Id, async () => await activityInvoker.InvokeAsync(workflowExecutionContext, workflow));
+        workflowExecutionContext.Scheduler.Schedule(workItem);
+    }
+    
+    /// <summary>
     /// Schedules the root activity of the workflow.
     /// </summary>
     public static void ScheduleRoot(this WorkflowExecutionContext workflowExecutionContext)

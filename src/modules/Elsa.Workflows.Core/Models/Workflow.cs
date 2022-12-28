@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Text.Json.Serialization;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Services;
@@ -47,6 +48,9 @@ public class Workflow : Composite, ICloneable
     public Workflow()
     {
     }
+    
+    [JsonIgnore]
+    public Variable? ResultVariable { get; set; }
 
     /// <summary>
     /// Constructs a new <see cref="Workflow"/> from the specified <see cref="IActivity"/>.
@@ -67,7 +71,11 @@ public class Workflow : Composite, ICloneable
     public WorkflowPublication Publication { get; set; } = WorkflowPublication.LatestAndPublished;
     public WorkflowMetadata WorkflowMetadata { get; set; } = new();
     public WorkflowOptions? Options { get; set; }
-    
+
+    /// <summary>
+    /// Create a shallow copy of this workflow.
+    /// </summary>
     public Workflow Clone() => (Workflow)((ICloneable)this).Clone();
+    
     object ICloneable.Clone() => MemberwiseClone();
 }
