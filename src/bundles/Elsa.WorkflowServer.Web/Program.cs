@@ -76,13 +76,7 @@ services
         .UseJavaScript()
         .UseLiquid()
         .UseHttp()
-        .UseMassTransit(feature => feature.UseRabbitMq())
-        .UseWorkflowSink(feature =>
-        {
-            feature.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
-            feature.UseInMemoryDatabase();
-            feature.UseMassTransitServiceBus();
-        })
+        .UseWorkflowSink(feature => feature.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
     );
 
 services.AddHealthChecks();
