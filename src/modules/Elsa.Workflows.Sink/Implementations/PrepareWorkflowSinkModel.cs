@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Common.Models;
 using Elsa.Common.Services;
+using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Runtime.Services;
 using Elsa.Workflows.Sink.Contracts;
 using Elsa.Workflows.Sink.Models;
@@ -25,27 +26,22 @@ public class PrepareWorkflowSinkModel : IPrepareWorkflowSinkModel
         _systemClock = systemClock;
     }
         
-    public async Task<WorkflowSinkDto> ExecuteAsync(string definitionId, int definitionVersion, string stateId, CancellationToken cancellationToken)
+    public async Task<WorkflowSinkDto> ExecuteAsync(WorkflowState state, CancellationToken cancellationToken)
     {
-        var workflowDefinition = await _workflowDefinitionService.FindAsync(definitionId, VersionOptions.SpecificVersion(definitionVersion), cancellationToken);
+        var workflowDefinition = await _workflowDefinitionService.FindAsync(state.DefinitionId, VersionOptions.SpecificVersion(state.DefinitionVersion), cancellationToken);
         if (workflowDefinition is null)
             throw new Exception(
-                $"Can't find workflow definition with definition ID {definitionId} and version {definitionVersion}");
+                $"Can't find workflow definition with definition ID {state.DefinitionId} and version {state.DefinitionVersion}");
 
         var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
-        
-        var workflowState = await _workflowStateStore.LoadAsync(stateId, cancellationToken);
-        if (workflowState is null)
-            throw new Exception(
-                $"Can't load workflow state with workflow state ID {stateId}");
 
         var now = _systemClock.UtcNow;
 
         var workflowSinkDto = new WorkflowSinkDto
         {
-            Id = workflowState.Id,
+            Id = state.Id,
             Workflow = workflow,
-            WorkflowState = workflowState,
+            WorkflowState = state,
             CreatedAt = now,
             LastExecutedAt = now
         };

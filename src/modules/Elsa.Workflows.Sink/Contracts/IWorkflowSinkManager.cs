@@ -4,7 +4,7 @@ using Elsa.Workflows.Sink.Models;
 
 namespace Elsa.Workflows.Sink.Contracts;
 
-public interface IWorkflowSink
+public interface IWorkflowSinkManager
 {
     Task SaveAsync(WorkflowSinkDto dto, CancellationToken cancellationToken = default);
 }

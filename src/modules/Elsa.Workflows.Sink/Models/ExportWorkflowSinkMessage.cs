@@ -1,18 +1,15 @@
 using Elsa.Mediator.Models;
 using Elsa.Mediator.Services;
+using Elsa.Workflows.Core.State;
 
 namespace Elsa.Workflows.Sink.Models;
 
-public class ExportWorkflowSinkMessage : ICommand<Unit>
+public class ExportWorkflowSinkMessage : ICommand<Unit>, INotification
 {
-    public ExportWorkflowSinkMessage(string workflowDefinitionId, int workflowDefinitionVersion, string workflowStateId)
+    public ExportWorkflowSinkMessage(WorkflowState workflowState)
     {
-        WorkflowDefinitionId = workflowDefinitionId;
-        WorkflowDefinitionVersion = workflowDefinitionVersion;
-        WorkflowStateId = workflowStateId;
+        WorkflowState = workflowState;
     }
 
-    public string WorkflowDefinitionId { get; set; }
-    public int WorkflowDefinitionVersion { get; set; }
-    public string WorkflowStateId { get; set; }
+    public WorkflowState WorkflowState { get; set; }
 }

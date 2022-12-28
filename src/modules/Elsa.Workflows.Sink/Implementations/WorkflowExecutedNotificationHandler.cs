@@ -18,8 +18,6 @@ public class WorkflowExecutedNotificationHandler : INotificationHandler<Workflow
     
     public async Task HandleAsync(WorkflowExecuted notification, CancellationToken cancellationToken)
     {
-        var state = notification.WorkflowState;
-        
-        await _sinkTransport.SendAsync(new ExportWorkflowSinkMessage(state.DefinitionId, state.DefinitionVersion, state.Id), cancellationToken);
+        await _sinkTransport.SendAsync(new ExportWorkflowSinkMessage(notification.WorkflowState), cancellationToken);
     }
 }

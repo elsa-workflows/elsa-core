@@ -5,7 +5,7 @@ namespace Microsoft.Extensions.DependencyInjection;
 
 public static class FeatureExtensions
 {
-    public static WorkflowSinkFeature UseInMemoryDatabase(this WorkflowSinkFeature feature, Action<InMemoryWorkflowSinkPersistenceFeature>? configure = default)
+    public static WorkflowSinkFeature UseInMemoryDatabase(this WorkflowSinkFeature feature, Action<MemoryWorkflowSinkPersistenceFeature>? configure = default)
     {
         feature.Module.Configure(configure);
         return feature;

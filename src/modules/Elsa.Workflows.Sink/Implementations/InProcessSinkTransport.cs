@@ -8,15 +8,15 @@ namespace Elsa.Workflows.Sink.Implementations;
 
 public class InProcessSinkTransport : ISinkTransport
 {
-    private readonly IBackgroundCommandSender _sender;
+    private readonly IBackgroundEventPublisher _publisher;
 
-    public InProcessSinkTransport(IBackgroundCommandSender sender)
+    public InProcessSinkTransport(IBackgroundEventPublisher publisher)
     {
-        _sender = sender;
+        _publisher = publisher;
     }
 
     public async Task SendAsync(ExportWorkflowSinkMessage message, CancellationToken cancellationToken)
     {
-        await _sender.SendAsync(message, cancellationToken);
+        await _publisher.PublishAsync(message, cancellationToken);
     }
 }
