@@ -28,9 +28,9 @@ public class WorkflowSinkFeature : FeatureBase
     public Func<IServiceProvider, ISinkTransport> SinkTransport { get; set; } = sp => ActivatorUtilities.CreateInstance<InProcessSinkTransport>(sp);
     
     /// <summary>
-    /// A factory that instantiates a concrete <see cref="IWorkflowSinkManager"/>.
+    /// A factory that instantiates a concrete <see cref="IWorkflowSinkClient"/>.
     /// </summary>
-    public Func<IServiceProvider, IWorkflowSinkManager>? WorkflowSinkManager { get; set; } = sp => ActivatorUtilities.CreateInstance<MemoryWorkflowSinkManager>(sp);
+    public Func<IServiceProvider, IWorkflowSinkClient>? WorkflowSinkClient { get; set; } = sp => ActivatorUtilities.CreateInstance<MemoryWorkflowSinkClient>(sp);
 
     public override void Configure()
     {
@@ -39,16 +39,16 @@ public class WorkflowSinkFeature : FeatureBase
 
     public override void Apply()
     {
-        if (WorkflowSinkManager != default)
+        if (WorkflowSinkClient != default)
         {
-            Services.AddSingleton(WorkflowSinkManager);
+            Services.AddSingleton(WorkflowSinkClient);
         }
         
         Services
             // Core.
             .AddSingleton(SinkTransport)
             .AddSingleton<IPrepareWorkflowSinkModel, PrepareWorkflowSinkModel>()
-            .AddMemoryStore<WorkflowSinkDto, MemoryWorkflowSinkManager>()
+            .AddMemoryStore<WorkflowSinkDto, MemoryWorkflowSinkClient>()
 
             //Handlers.
             .AddNotificationHandler<WorkflowExecutedNotificationHandler, WorkflowExecuted>()

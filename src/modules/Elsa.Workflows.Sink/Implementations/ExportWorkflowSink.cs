@@ -14,16 +14,16 @@ namespace Elsa.Workflows.Sink.Implementations;
 
 public class ExportWorkflowSink : INotificationHandler<ExportWorkflowSinkMessage>, global::MassTransit.IConsumer<ExportWorkflowSinkMessage>
 {
-    private readonly IEnumerable<IWorkflowSinkManager> _sinkManagers;
+    private readonly IEnumerable<IWorkflowSinkClient> _sinkClients;
     private readonly IPrepareWorkflowSinkModel _prepareWorkflowSinkModel;
     private readonly ILogger _logger;
 
     public ExportWorkflowSink(
-        IEnumerable<IWorkflowSinkManager> sinkManagers, 
+        IEnumerable<IWorkflowSinkClient> sinkClients, 
         IPrepareWorkflowSinkModel prepareWorkflowSinkModel,
         ILogger<ExportWorkflowSink> logger)
     {
-        _sinkManagers = sinkManagers;
+        _sinkClients = sinkClients;
         _prepareWorkflowSinkModel = prepareWorkflowSinkModel;
         _logger = logger;
     }
@@ -32,11 +32,11 @@ public class ExportWorkflowSink : INotificationHandler<ExportWorkflowSinkMessage
     {
         var workflowSinkModel = await _prepareWorkflowSinkModel.ExecuteAsync(message.WorkflowState, cancellationToken);
 
-        foreach (var manager in _sinkManagers)
+        foreach (var client in _sinkClients)
         {
             try
             {
-                await manager.SaveAsync(workflowSinkModel, cancellationToken);
+                await client.SaveAsync(workflowSinkModel, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -49,11 +49,11 @@ public class ExportWorkflowSink : INotificationHandler<ExportWorkflowSinkMessage
     {
         var workflowSinkModel = await _prepareWorkflowSinkModel.ExecuteAsync(context.Message.WorkflowState, context.CancellationToken);
         
-        foreach (var manager in _sinkManagers)
+        foreach (var client in _sinkClients)
         {
             try
             {
-                await manager.SaveAsync(workflowSinkModel, context.CancellationToken);
+                await client.SaveAsync(workflowSinkModel, context.CancellationToken);
             }
             catch (Exception ex)
             {

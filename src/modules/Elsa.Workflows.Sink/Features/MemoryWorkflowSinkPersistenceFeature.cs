@@ -16,11 +16,11 @@ public class MemoryWorkflowSinkPersistenceFeature : FeatureBase
     
     public override void Configure()
     {
-        Module.Configure<WorkflowSinkFeature>().WorkflowSinkManager = default;
+        Module.Configure<WorkflowSinkFeature>().WorkflowSinkClient = default;
     }
 
     public override void Apply()
     {
-        Services.AddSingleton<IWorkflowSinkManager, MemoryWorkflowSinkManager>();
+        Services.AddSingleton<IWorkflowSinkClient, MemoryWorkflowSinkClient>();
     }
 }

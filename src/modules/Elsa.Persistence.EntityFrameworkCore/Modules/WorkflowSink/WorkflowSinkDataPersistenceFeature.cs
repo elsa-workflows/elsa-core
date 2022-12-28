@@ -17,15 +17,15 @@ public class EFCoreWorkflowSinkPersistenceFeature : PersistenceFeatureBase<Workf
 
     public override void Configure()
     {
-        Module.Configure<WorkflowSinkFeature>().WorkflowSinkManager = default;
+        Module.Configure<WorkflowSinkFeature>().WorkflowSinkClient = default;
     }
 
     public override void Apply()
     {
         base.Apply();
 
-        Services.AddSingleton<IWorkflowSinkManager, EFCoreWorkflowSinkManager>();
+        Services.AddSingleton<IWorkflowSinkClient, EFCoreWorkflowSinkClient>();
         
-        AddStore<WorkflowSinkEntity, EFCoreWorkflowSinkManager>();
+        AddStore<WorkflowSinkEntity, EFCoreWorkflowSinkClient>();
     }
 }

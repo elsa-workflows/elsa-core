@@ -6,11 +6,11 @@ using Elsa.Workflows.Sink.Models;
 
 namespace Elsa.Workflows.Sink.Implementations;
 
-public class MemoryWorkflowSinkManager : IWorkflowSinkManager
+public class MemoryWorkflowSinkClient : IWorkflowSinkClient
 {
     private readonly MemoryStore<WorkflowSinkDto> _store;
 
-    public MemoryWorkflowSinkManager(MemoryStore<WorkflowSinkDto> store)
+    public MemoryWorkflowSinkClient(MemoryStore<WorkflowSinkDto> store)
     {
         _store = store;
     }

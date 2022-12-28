@@ -7,12 +7,12 @@ using Elsa.Workflows.Core.Serialization;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Modules.WorkflowSink;
 
-public class EFCoreWorkflowSinkManager : IWorkflowSinkManager
+public class EFCoreWorkflowSinkClient : IWorkflowSinkClient
 {
     private readonly Store<WorkflowSinkElsaDbContext, WorkflowSinkEntity> _store;
     private readonly SerializerOptionsProvider _serializerOptionsProvider;
 
-    public EFCoreWorkflowSinkManager(Store<WorkflowSinkElsaDbContext, WorkflowSinkEntity> store, SerializerOptionsProvider serializerOptionsProvider)
+    public EFCoreWorkflowSinkClient(Store<WorkflowSinkElsaDbContext, WorkflowSinkEntity> store, SerializerOptionsProvider serializerOptionsProvider)
     {
         _store = store;
         _serializerOptionsProvider = serializerOptionsProvider;
