@@ -15,6 +15,7 @@ public class WorkflowBuilder : IWorkflowBuilder
     public WorkflowBuilder(IIdentityGraphService identityGraphService)
     {
         _identityGraphService = identityGraphService;
+        Result = new Variable();
     }
 
     /// <inheritdoc />
@@ -37,6 +38,9 @@ public class WorkflowBuilder : IWorkflowBuilder
 
     /// <inheritdoc />
     public ICollection<Variable> Variables { get; set; } = new List<Variable>();
+
+    /// <inheritdoc />
+    public Variable? Result { get; set; }
 
     /// <inheritdoc />
     public IDictionary<string, object> CustomProperties { get; set; } = new Dictionary<string, object>();
@@ -111,6 +115,13 @@ public class WorkflowBuilder : IWorkflowBuilder
     }
 
     /// <inheritdoc />
+    public IWorkflowBuilder WithVariable<T>(Variable<T> variable)
+    {
+        Variables.Add(variable);
+        return this;
+    }
+    
+    /// <inheritdoc />
     public IWorkflowBuilder WithVariable(Variable variable)
     {
         Variables.Add(variable);
@@ -148,6 +159,13 @@ public class WorkflowBuilder : IWorkflowBuilder
         var publication = WorkflowPublication.LatestAndPublished;
         var workflowMetadata = new WorkflowMetadata(Name, Description);
         var workflow = new Workflow(identity, publication, workflowMetadata, WorkflowOptions, root, Variables, CustomProperties);
+
+        // IF a Result variable is defined, install it into the workflow so we can capture the output into it.
+        if (Result != null)
+        {
+            workflow.ResultVariable = Result;
+            workflow.Result = new Output(Result);
+        }
 
         _identityGraphService.AssignIdentitiesAsync(workflow);
 

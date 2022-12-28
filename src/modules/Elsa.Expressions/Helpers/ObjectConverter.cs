@@ -1,3 +1,4 @@
+using System.Collections;
 using System.ComponentModel;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -110,6 +111,29 @@ public static class ObjectConverter
 
         if (value is string s && string.IsNullOrWhiteSpace(s))
             return null;
+        
+        if (value is IEnumerable enumerable)
+        {
+            if (underlyingTargetType is { IsGenericType: true })
+            {
+                var desiredCollectionItemType = targetType.GenericTypeArguments[0];
+                var desiredCollectionType = typeof(ICollection<>).MakeGenericType(desiredCollectionItemType);
+
+                if (underlyingTargetType.IsAssignableFrom(desiredCollectionType) || desiredCollectionType.IsAssignableFrom(underlyingTargetType))
+                {
+                    var collectionType = typeof(List<>).MakeGenericType(desiredCollectionItemType);
+                    var collection = (IList)Activator.CreateInstance(collectionType)!;
+                    
+                    foreach (var item in enumerable)
+                    {
+                        var convertedItem = ConvertTo(item, desiredCollectionItemType);
+                        collection.Add(convertedItem);
+                    }
+
+                    return collection;
+                }
+            }
+        }
 
         try
         {

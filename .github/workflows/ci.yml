@@ -23,6 +23,6 @@ jobs:
       - name: Pack
         run: dotnet pack --configuration Release /p:Version=${VERSION} --output .
       - name: Push
-        run: dotnet nuget push *.nupkg --api-key ${{ secrets.FEEDS_IO_PAT }} --source https://f.feedz.io/elsa-workflows/v3/nuget/index.json
+        run: dotnet nuget push *.nupkg --api-key ${{ secrets.AZUREDEVOPS_PAT }} --source https://pkgs.dev.azure.com/elsa-workflows/3cbdb983-acb6-4ba7-b862-f9e3cbd4e213/_packaging/Prereleases/nuget/v3/index.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
