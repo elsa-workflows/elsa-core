@@ -9,10 +9,10 @@ namespace Elsa.Persistence.EntityFrameworkCore.Modules.WorkflowSink;
 
 public class EFCoreWorkflowSinkManager : IWorkflowSinkManager
 {
-    private readonly Store<WorkflowSinkElsaDbContext, Workflows.Sink.Models.WorkflowSink> _store;
+    private readonly Store<WorkflowSinkElsaDbContext, WorkflowSinkEntity> _store;
     private readonly SerializerOptionsProvider _serializerOptionsProvider;
 
-    public EFCoreWorkflowSinkManager(Store<WorkflowSinkElsaDbContext, Workflows.Sink.Models.WorkflowSink> store, SerializerOptionsProvider serializerOptionsProvider)
+    public EFCoreWorkflowSinkManager(Store<WorkflowSinkElsaDbContext, WorkflowSinkEntity> store, SerializerOptionsProvider serializerOptionsProvider)
     {
         _store = store;
         _serializerOptionsProvider = serializerOptionsProvider;
@@ -24,22 +24,21 @@ public class EFCoreWorkflowSinkManager : IWorkflowSinkManager
 
         if (existingEntity?.LastExecutedAt == dto.LastExecutedAt) return;
         
-        dto.CreatedAt = existingEntity?.CreatedAt ?? dto.CreatedAt;
-
-        var workflowSinkEntity = new Workflows.Sink.Models.WorkflowSink
+        existingEntity ??= new WorkflowSinkEntity
         {
-            Id = dto.Id,
-            CreatedAt = dto.CreatedAt,
-            LastExecutedAt = dto.LastExecutedAt,
-            CancelledAt = dto.CancelledAt,
-            FinishedAt = dto.FinishedAt,
-            FaultedAt = dto.FaultedAt
+            Id = dto.WorkflowState.Id,
+            CreatedAt = dto.CreatedAt
         };
-        
-        await _store.SaveAsync(workflowSinkEntity, dto, OnSaving, cancellationToken);
+
+        existingEntity.LastExecutedAt = dto.LastExecutedAt;
+        existingEntity.CancelledAt = dto.CancelledAt;
+        existingEntity.FinishedAt = dto.FinishedAt;
+        existingEntity.FaultedAt = dto.FaultedAt;
+
+        await _store.SaveAsync(existingEntity, dto, OnSaving, cancellationToken);
     }
 
-    private Workflows.Sink.Models.WorkflowSink OnSaving(WorkflowSinkElsaDbContext wfSinkElsaDbContext, Workflows.Sink.Models.WorkflowSink entity, WorkflowSinkDto dto)
+    private WorkflowSinkEntity OnSaving(WorkflowSinkElsaDbContext wfSinkElsaDbContext, WorkflowSinkEntity entity, WorkflowSinkDto dto)
     {
         var data = new { dto.Workflow, dto.WorkflowState};
 

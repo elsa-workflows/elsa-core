@@ -3,7 +3,7 @@ using Elsa.Common.Entities;
 
 namespace Elsa.Workflows.Sink.Models;
 
-public class WorkflowSink : Entity
+public class WorkflowSinkEntity : Entity
 {
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset LastExecutedAt { get; set; }

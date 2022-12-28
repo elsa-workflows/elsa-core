@@ -14,7 +14,7 @@ public class WorkflowSinkElsaDbContext : ElsaDbContextBase
     {
     }
     
-    public DbSet<Workflows.Sink.Models.WorkflowSink> WorkflowSink { get; set; } = default!;
+    public DbSet<WorkflowSinkEntity> WorkflowSink { get; set; } = default!;
 
     protected override void ApplyEntityConfigurations(ModelBuilder modelBuilder)
     {
