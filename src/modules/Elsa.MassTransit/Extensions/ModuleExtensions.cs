@@ -1,12 +1,8 @@
 using Elsa.Features.Services;
-using Elsa.MassTransit.Options;
 using Elsa.Workflows.Core;
 using MassTransit;
-using MassTransit.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 
-namespace Elsa.Extensions;
+namespace Elsa.MassTransit.Extensions;
 
 public static class ModuleExtensions
 {

@@ -5,6 +5,7 @@ using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
+using Elsa.MassTransit.Extensions;
 using Elsa.Mediator.Extensions;
 using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Sink.Contracts;
