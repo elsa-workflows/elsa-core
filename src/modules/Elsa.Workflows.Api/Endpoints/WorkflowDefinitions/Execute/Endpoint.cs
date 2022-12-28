@@ -19,7 +19,7 @@ public class Execute : ElsaEndpoint<Request, Response>
     public override void Configure()
     {
         Post("/workflow-definitions/{definitionId}/execute");
-        //ConfigurePermissions("exec:workflow-definitions");
+        ConfigurePermissions("exec:workflow-definitions");
         AllowAnonymous();
     }
 
