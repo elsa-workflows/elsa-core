@@ -24,6 +24,17 @@ public abstract class Composite : ActivityBase, IVariableContainer
     /// <inheritdoc />
     [JsonIgnore]  // Composite activities' Variables is intended to be constructed from code only.
     public ICollection<Variable> Variables { get; init; } = new List<Variable>();
+
+    /// <summary>
+    /// The result value of the composite, if any.
+    /// </summary>
+    [Output] public Output? Result { get; set; }
+
+    /// <summary>
+    /// A variable to allow activities to set a result.
+    /// </summary>
+    [JsonIgnore]
+    public Variable? ResultVariable { get; set; }
     
     /// <summary>
     /// The activity to schedule when this activity executes.
@@ -81,7 +92,7 @@ public abstract class Composite : ActivityBase, IVariableContainer
         await context.SenderActivityExecutionContext.CompleteActivityAsync();
         
         // Then complete this activity.
-        await context.ReceiverActivityExecutionContext.CompleteActivityAsync(signal.Result);
+        await context.ReceiverActivityExecutionContext.CompleteActivityAsync(signal.Value);
         context.StopPropagation();
         
     }
@@ -150,117 +161,10 @@ public abstract class Composite : ActivityBase, IVariableContainer
 /// <summary>
 /// Represents a composite activity that has a single <see cref="Root"/> activity and returns a result.
 /// </summary>
-public abstract class Composite<T> : ActivityBase<T>
+public abstract class Composite<T> : Composite
 {
     /// <inheritdoc />
     protected Composite([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
-        OnSignalReceived<CompleteCompositeSignal>(OnCompleteCompositeSignal);
     }
-
-    /// <summary>
-    /// The activity to schedule when this activity executes.
-    /// </summary>
-    [Port]
-    [Browsable(false)]
-    [JsonIgnore] // Composite activities' Root is intended to be constructed from code only, so we don't want to get it serialized.
-    public IActivity Root { get; protected set; } = new Sequence();
-
-    /// <inheritdoc />
-    protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
-    {
-        ConfigureActivities(context);
-        await context.ScheduleActivityAsync(Root, OnRootCompletedAsync);
-    }
-
-    /// <summary>
-    /// Override this method to configure activity properties before execution.
-    /// </summary>
-    protected virtual void ConfigureActivities(ActivityExecutionContext context)
-    {
-    }
-
-    /// <summary>
-    /// Override this method to handle the completion event for this composite activity.
-    /// </summary>
-    protected virtual ValueTask OnCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext)
-    {
-        OnCompleted(context, childContext);
-        return new();
-    }
-
-    /// <summary>
-    /// Override this method to handle the completion event for this composite activity.
-    /// </summary>
-    protected virtual void OnCompleted(ActivityExecutionContext context, ActivityExecutionContext childContext)
-    {
-    }
-
-    /// <summary>
-    /// Completes this composite activity.
-    /// </summary>
-    protected async Task CompleteAsync(ActivityExecutionContext context, object? result = default) => await context.SendSignalAsync(new CompleteCompositeSignal(result));
-    
-    /// <summary>
-    /// Completes this composite activity.
-    /// </summary>
-    protected async Task CompleteAsync(ActivityExecutionContext context, params string[] outcomes) => await CompleteAsync(context, new Outcomes(outcomes));
-
-    private async ValueTask OnRootCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext)
-    {
-        await OnCompletedAsync(context, childContext);
-        await context.CompleteActivityAsync();
-    }
-    
-    private async ValueTask OnCompleteCompositeSignal(CompleteCompositeSignal signal, SignalContext context)
-    {
-        var activityExecutionContext = context.ReceiverActivityExecutionContext;
-
-        // Remove the existing completed handler.
-        activityExecutionContext.WorkflowExecutionContext.PopCompletionCallback(activityExecutionContext, Root);
-
-        // Complete this activity.
-        await activityExecutionContext.CompleteActivityAsync(signal.Result);
-        context.StopPropagation();
-    }
-
-    /// <summary>
-    /// Creates a new <see cref="Activities.Inline"/> activity.
-    /// </summary>
-    protected static Inline Inline(Func<ActivityExecutionContext, ValueTask> activity) => new(activity);
-    
-    /// <summary>
-    /// Creates a new <see cref="Activities.Inline"/> activity.
-    /// </summary>
-    protected static Inline Inline(Func<ValueTask> activity) => new(activity);
-    
-    /// <summary>
-    /// Creates a new <see cref="Activities.Inline"/> activity.
-    /// </summary>
-    protected static Inline Inline(Action<ActivityExecutionContext> activity) => new(activity);
-    
-    /// <summary>
-    /// Creates a new <see cref="Activities.Inline"/> activity.
-    /// </summary>
-    protected static Inline Inline(Action activity) => new(activity);
-    
-    /// <summary>
-    /// Creates a new <see cref="Activities.Inline"/> activity.
-    /// </summary>
-    protected static Inline<TResult> Inline<TResult>(Func<ActivityExecutionContext, ValueTask<TResult>> activity, MemoryBlockReference? output = default) => new(activity, output);
-    
-    /// <summary>
-    /// Creates a new <see cref="Activities.Inline"/> activity.
-    /// </summary>
-    protected static Inline<TResult> Inline<TResult>(Func<ValueTask<TResult>> activity, MemoryBlockReference? output = default) => new(activity, output);
-    
-    /// <summary>
-    /// Creates a new <see cref="Activities.Inline"/> activity.
-    /// </summary>
-    protected static Inline<TResult> Inline<TResult>(Func<ActivityExecutionContext, TResult> activity, MemoryBlockReference? output = default) => new(activity, output);
-    
-    /// <summary>
-    /// Creates a new <see cref="Activities.Inline"/> activity.
-    /// </summary>
-    protected static Inline<TResult> Inline<TResult>(Func<TResult> activity, MemoryBlockReference? output = default) => new(activity, output);
 }

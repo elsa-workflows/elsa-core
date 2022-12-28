@@ -50,11 +50,27 @@ public class WorkflowRunner : IWorkflowRunner
     }
 
     /// <inheritdoc />
+    public async Task<RunWorkflowResult<TResult>> RunAsync<TResult>(WorkflowBase<TResult> workflow, RunWorkflowOptions? options = default, CancellationToken cancellationToken = default)
+    {
+        var result = await RunAsync((IWorkflow)workflow, options, cancellationToken);
+        return new RunWorkflowResult<TResult>(result.WorkflowState, result.Workflow, (TResult)result.Result!);
+    }
+
+    /// <inheritdoc />
     public async Task<RunWorkflowResult> RunAsync<T>(RunWorkflowOptions? options = default, CancellationToken cancellationToken = default) where T : IWorkflow
     {
         var builder = _workflowBuilderFactory.CreateBuilder();
         var workflowDefinition = await builder.BuildWorkflowAsync<T>(cancellationToken);
         return await RunAsync(workflowDefinition, options, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<TResult> RunAsync<T, TResult>(RunWorkflowOptions? options = default, CancellationToken cancellationToken = default) where T : WorkflowBase<TResult>
+    {
+        var builder = _workflowBuilderFactory.CreateBuilder();
+        var workflowDefinition = await builder.BuildWorkflowAsync<T>(cancellationToken);
+        var result = await RunAsync(workflowDefinition, options, cancellationToken);
+        return (TResult)result.Result!;
     }
 
     /// <inheritdoc />
@@ -71,7 +87,7 @@ public class WorkflowRunner : IWorkflowRunner
         var workflowExecutionContext = await CreateWorkflowExecutionContextAsync(workflow, instanceId, correlationId, default, input, default, triggerActivityId, cancellationToken);
 
         // Schedule the first activity.
-        workflowExecutionContext.ScheduleRoot();
+        workflowExecutionContext.ScheduleWorkflow();
 
         return await RunAsync(workflowExecutionContext);
     }
@@ -106,8 +122,9 @@ public class WorkflowRunner : IWorkflowRunner
         }
         else
         {
-            // Schedule the first node.
-            workflowExecutionContext.ScheduleRoot();
+            // Schedule the workflow itself.
+            //workflowExecutionContext.ScheduleRoot();
+            workflowExecutionContext.ScheduleWorkflow();
         }
 
         return await RunAsync(workflowExecutionContext);
@@ -118,6 +135,8 @@ public class WorkflowRunner : IWorkflowRunner
     {
         // Transition into the Running state.
         workflowExecutionContext.TransitionTo(WorkflowSubStatus.Executing);
+        
+        var workflow = workflowExecutionContext.Workflow;
 
         // Execute the workflow execution pipeline.
         await _pipeline.ExecuteAsync(workflowExecutionContext);
@@ -125,8 +144,11 @@ public class WorkflowRunner : IWorkflowRunner
         // Extract workflow state.
         var workflowState = _workflowStateSerializer.SerializeState(workflowExecutionContext);
 
+        // Read captured output, if any.
+        var result = workflow.ResultVariable?.Get(workflowExecutionContext.MemoryRegister);
+
         // Return workflow execution result containing state + bookmarks.
-        return new RunWorkflowResult(workflowState);
+        return new RunWorkflowResult(workflowState, workflowExecutionContext.Workflow, result);
     }
 
     private async Task<WorkflowExecutionContext> CreateWorkflowExecutionContextAsync(
