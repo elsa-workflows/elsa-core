@@ -4,7 +4,6 @@ using Elsa.Http;
 using Elsa.Http.Extensions;
 using Elsa.Identity;
 using Elsa.Identity.Extensions;
-using Elsa.Identity.Features;
 using Elsa.Identity.Options;
 using Elsa.JavaScript.Activities;
 using Elsa.JavaScript.Extensions;
@@ -19,13 +18,10 @@ using Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.Labels;
 using Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.Runtime;
 using Elsa.Requirements;
 using Elsa.Scheduling.Extensions;
-using Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Post;
-using Elsa.Workflows.Api.Features;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Runtime.Extensions;
-using FastEndpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 
@@ -48,11 +44,11 @@ services
             .AddActivitiesFrom<Delay>()
             .AddActivitiesFrom<RunJavaScript>()
         )
-        .UseWorkflowApiEndpoints()
+        .UseWorkflowsApi()
         .UseIdentity(identity =>
         {
             identity.CreateDefaultUser = true;
-            identity.IdentityOptions = options => identitySection.Bind(options);
+            identity.IdentityOptions = identityOptions;
         })
         .UseWorkflowRuntime(runtime => { runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)); })
         .UseLabels(labels => labels.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
@@ -95,7 +91,7 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseElsaFastEndpoints();
+app.UseWorkflowsApi();
 app.UseWorkflows();
 
 app.UseEndpoints(endpoints =>
