@@ -13,7 +13,7 @@ public class Module : IModule
 {
     private record HostedServiceDescriptor(int Order, Type HostedServiceType);
 
-    private readonly ISet<IFeature> _features = new HashSet<IFeature>();
+    private ISet<IFeature> _features = new HashSet<IFeature>();
     private readonly ICollection<HostedServiceDescriptor> _hostedServiceDescriptors = new List<HostedServiceDescriptor>();
 
     /// <summary>
@@ -58,6 +58,9 @@ public class Module : IModule
     {
         var featureTypes = _features.Select(x => x.GetType()).TSort(x => x.GetCustomAttributes<DependsOn>().Select(dependsOn => dependsOn.Type)).ToList();
         var features = featureTypes.Select(featureType => _features.FirstOrDefault(x => x.GetType() == featureType) ?? (IFeature)Activator.CreateInstance(featureType, this)!).ToList();
+
+        // Update list with complete list of features. This is important because during the Configure phase, dependent features might configure other features, which should not be created as new instances.
+        _features = features.ToHashSet();
 
         foreach (var feature in features)
         {
