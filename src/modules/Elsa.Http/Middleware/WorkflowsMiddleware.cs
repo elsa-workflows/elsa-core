@@ -15,7 +15,7 @@ using Microsoft.Extensions.Options;
 
 namespace Elsa.Http.Middleware;
 
-public class HttpTriggerMiddleware
+public class WorkflowsMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly IBookmarkHasher _hasher;
@@ -25,7 +25,7 @@ public class HttpTriggerMiddleware
     private readonly HttpActivityOptions _options;
     private readonly string _activityTypeName = ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>();
 
-    public HttpTriggerMiddleware(
+    public WorkflowsMiddleware(
         RequestDelegate next,
         IBookmarkHasher hasher,
         IWorkflowRuntime workflowRuntime,

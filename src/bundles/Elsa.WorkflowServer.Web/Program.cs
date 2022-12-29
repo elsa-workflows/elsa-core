@@ -133,7 +133,7 @@ app.UseAuthorization();
 // Register Elsa middleware.
 app.UseElsaFastEndpoints();
 app.UseJsonSerializationErrorHandler();
-app.UseHttpActivities();
+app.UseWorkflows();
 
 // Run.
 app.Run();

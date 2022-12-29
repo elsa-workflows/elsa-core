@@ -1,4 +1,7 @@
 using Elsa.Extensions;
+using Elsa.Http.Extensions;
+using Elsa.Samples.MyBackendApi.Workflows;
+using Elsa.Workflows.Runtime.Extensions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -6,7 +9,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
-builder.Services.AddElsa(elsa => elsa.UseHttp());
+builder.Services.AddElsa(elsa =>
+{
+    elsa.UseWorkflowRuntime(runtime => runtime.AddWorkflow<HelloWorldHttpWorkflow>());
+    elsa.UseHttp();
+});
 
 var app = builder.Build();
 
@@ -14,4 +21,5 @@ var app = builder.Build();
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
+app.UseWorkflows();
 app.Run();

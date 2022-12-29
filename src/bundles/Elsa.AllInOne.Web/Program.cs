@@ -96,7 +96,7 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseElsaFastEndpoints();
-app.UseHttpActivities();
+app.UseWorkflows();
 
 app.UseEndpoints(endpoints =>
 {
