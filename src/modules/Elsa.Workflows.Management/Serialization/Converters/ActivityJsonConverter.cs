@@ -15,17 +15,17 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
 {
     private readonly IActivityRegistry _activityRegistry;
     private readonly IActivityFactory _activityFactory;
-    private readonly IIdentityGraphService _identityGraphService;
     private readonly IServiceProvider _serviceProvider;
 
-    public ActivityJsonConverter(IActivityRegistry activityRegistry, IActivityFactory activityFactory, IIdentityGraphService identityGraphService, IServiceProvider serviceProvider)
+    /// <inheritdoc />
+    public ActivityJsonConverter(IActivityRegistry activityRegistry, IActivityFactory activityFactory, IServiceProvider serviceProvider)
     {
         _activityRegistry = activityRegistry;
         _activityFactory = activityFactory;
-        _identityGraphService = identityGraphService;
         _serviceProvider = serviceProvider;
     }
 
+    /// <inheritdoc />
     public override IActivity Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         if (!JsonDocument.TryParseValue(ref reader, out var doc))
@@ -33,12 +33,9 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
 
         if (!doc.RootElement.TryGetProperty("type", out var activityTypeNameElement))
             throw new JsonException("Failed to extract activity type property");
-        
-        if (!doc.RootElement.TryGetProperty("version", out var activityTypeVersionElement))
-            throw new JsonException("Failed to extract activity type version property");
 
         var activityTypeName = activityTypeNameElement.GetString()!;
-        var activityTypeVersion = activityTypeVersionElement.GetInt32();
+        var activityTypeVersion = doc.RootElement.TryGetProperty("version", out var activityTypeVersionElement) ? activityTypeVersionElement.GetInt32() : 1;
         var activityDescriptor = _activityRegistry.Find(activityTypeName, activityTypeVersion);
 
         var newOptions = new JsonSerializerOptions(options);
@@ -62,6 +59,7 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
         return activity;
     }
 
+    /// <inheritdoc />
     public override void Write(Utf8JsonWriter writer, IActivity value, JsonSerializerOptions options)
     {
         var newOptions = new JsonSerializerOptions(options);
