@@ -90,7 +90,9 @@ build_script:
 
             "//www.myget.org/F/elsa-2/npm/:_authToken=$env:MYGET_ELSA_2" | Out-File ".npmrc" -Encoding UTF8
 
-            npm publish
+            npm config set always-auth true 
+
+            npm publish --registry=https:////www.myget.org/F/elsa-2/npm/
 
             cd ..\bindings\aspnet\Elsa.Designer.Components.Web
 
