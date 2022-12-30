@@ -16,6 +16,7 @@ ProjectSection(SolutionItems) = preProject
 	icon.png = icon.png
 	.github\workflows\packages.yml = .github\workflows\packages.yml
 	.github\workflows\all-in-one-web.yml = .github\workflows\all-in-one-web.yml
+	build-and-run-all-in-one-web-docker.sh = build-and-run-all-in-one-web-docker.sh
 EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{0354F050-3992-4DD4-B0EE-5FBA04AC72B6}"
@@ -131,6 +132,11 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.WorkflowDesigner", "src\samples\aspnet\Elsa.Samples.WorkflowDesigner\Elsa.Samples.WorkflowDesigner.csproj", "{812B3B34-D2DD-4A3B-BA2D-3D3C52E0C062}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.WorkflowServerAndDesigner", "src\samples\aspnet\Elsa.Samples.WorkflowServerAndDesigner\Elsa.Samples.WorkflowServerAndDesigner.csproj", "{34FBB2D3-4E2B-4411-95F2-C6B56899826A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{986E5482-0482-448C-B9E4-EC67A9474B85}"
+	ProjectSection(SolutionItems) = preProject
+		docker\Dockerfile = docker\Dockerfile
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
