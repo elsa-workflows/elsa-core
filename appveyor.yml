@@ -88,6 +88,10 @@ build_script:
 
             npm run build
 
+            "//www.myget.org/F/elsa-2/npm/:_authToken=$env:MYGET_ELSA_2" | Out-File ".npmrc" -Encoding UTF8
+
+            npm publish
+
             cd ..\bindings\aspnet\Elsa.Designer.Components.Web
 
             npm run build
@@ -135,10 +139,10 @@ deploy:
         on:
             branch: master
 
-after_deploy:
-    -   ps: >-
-            "//www.myget.org/F/elsa-2/npm/:_authToken=$env:MYGET_ELSA_2" | Out-File (Join-Path $ENV:APPVEYOR_BUILD_FOLDER ".npmrc") -Encoding UTF8
+# after_deploy:
+#     -   ps: >-
+#             "//www.myget.org/F/elsa-2/npm/:_authToken=$env:MYGET_ELSA_2" | Out-File (Join-Path $ENV:APPVEYOR_BUILD_FOLDER ".npmrc") -Encoding UTF8
         
-            cd .\src\designer\elsa-workflows-studio
+#             cd .\src\designer\elsa-workflows-studio
 
-            npm publish
+#             npm publish
