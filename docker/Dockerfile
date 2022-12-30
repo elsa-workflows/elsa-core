@@ -1,4 +1,4 @@
-﻿FROM mcr.microsoft.com/dotnet/sdk:7.0-bullseye-slim AS build
+﻿FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:7.0-bullseye-slim AS build
 WORKDIR /source
 
 # install node
