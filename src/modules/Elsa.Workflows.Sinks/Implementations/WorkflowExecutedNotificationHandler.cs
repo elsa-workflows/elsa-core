@@ -1,5 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Common.Services;
 using Elsa.Mediator.Services;
 using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Sinks.Contracts;
@@ -9,15 +10,15 @@ namespace Elsa.Workflows.Sinks.Implementations;
 
 public class WorkflowExecutedNotificationHandler : INotificationHandler<WorkflowExecuted>
 {
-    private readonly ISinkTransport _sinkTransport;
+    private readonly ITransport<ExportWorkflowSinkMessage> _transport;
 
-    public WorkflowExecutedNotificationHandler(ISinkTransport sinkTransport)
+    public WorkflowExecutedNotificationHandler(ITransport<ExportWorkflowSinkMessage> transport)
     {
-        _sinkTransport = sinkTransport;
+        _transport = transport;
     }
     
     public async Task HandleAsync(WorkflowExecuted notification, CancellationToken cancellationToken)
     {
-        await _sinkTransport.SendAsync(new ExportWorkflowSinkMessage(notification.WorkflowState), cancellationToken);
+        await _transport.SendAsync(new ExportWorkflowSinkMessage(notification.WorkflowState), cancellationToken);
     }
 }
