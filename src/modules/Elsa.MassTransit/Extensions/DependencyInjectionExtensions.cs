@@ -1,5 +1,6 @@
 using Elsa.Features.Services;
 using Elsa.MassTransit.Features;
+using Elsa.MassTransit.Options;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection;
