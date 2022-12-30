@@ -2,7 +2,7 @@
 WORKDIR /source
 
 # install node
-ENV NODE_VERSION=18.12.1
+ENV NODE_VERSION=19.0.0
 RUN apt install -y curl
 RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.2/install.sh | bash
 ENV NVM_DIR=/root/.nvm
