@@ -1,9 +1,9 @@
 name: Build elsa designer
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - master
+  #push:
+  #  branches:
+  #    - master
   release:
     types: [published]
 
@@ -30,13 +30,13 @@ jobs:
       - run: npm install
       - run: npm run build
 
-      - name: NPM Publish Preview
-        if: github.event_name == 'push'
-        uses: JS-DevTools/npm-publish@v1
-        with:
-          package: ./src/designer/elsa-workflows-studio/package.json
-          token: ${{ secrets.NPM_TOKEN }}
-          tag: preview
+      # - name: NPM Publish Preview
+      #   if: github.event_name == 'push'
+      #   uses: JS-DevTools/npm-publish@v1
+      #   with:
+      #     package: ./src/designer/elsa-workflows-studio/package.json
+      #     token: ${{ secrets.NPM_TOKEN }}
+      #     tag: preview
         
       - name: NPM Publish Release
         if: github.event_name == 'release'
