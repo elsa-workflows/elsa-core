@@ -29,12 +29,11 @@ public class IdentityFeature : FeatureBase
     /// A flag indicating whether a default user should be created. 
     /// </summary>
     public bool CreateDefaultUser { get; set; }
-    
-    
+
     /// <summary>
     /// A delegate to configure <see cref="Options.IdentityOptions"/>.
     /// </summary>
-    public Action<IdentityOptions>? IdentityOptions { get; set; }
+    public IdentityOptions IdentityOptions { get; set; } = new();
 
     /// <summary>
     /// A delegate that creates an instance of an implementation of <see cref="IUserStore"/>.
@@ -62,8 +61,8 @@ public class IdentityFeature : FeatureBase
     /// <inheritdoc />
     public override void Apply()
     {
-        Services.Configure(IdentityOptions);
-
+        Services.Configure<IdentityOptions>(options => options.CopyFrom(IdentityOptions));
+        
         Services
             .AddMemoryStore<User, MemoryUserStore>()
             .AddMemoryStore<Role, MemoryRoleStore>()

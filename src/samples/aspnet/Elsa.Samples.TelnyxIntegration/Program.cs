@@ -8,12 +8,12 @@ using Elsa.Jobs.Activities.Extensions;
 using Elsa.Jobs.Activities.Middleware.Activities;
 using Elsa.Jobs.Extensions;
 using Elsa.Liquid.Extensions;
-using Elsa.Persistence.EntityFrameworkCore.Modules.ActivityDefinitions;
-using Elsa.Persistence.EntityFrameworkCore.Modules.Management;
-using Elsa.Persistence.EntityFrameworkCore.Modules.Runtime;
-using Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.ActivityDefinitions;
-using Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.Management;
-using Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.Runtime;
+using Elsa.EntityFrameworkCore.Modules.ActivityDefinitions;
+using Elsa.EntityFrameworkCore.Modules.Management;
+using Elsa.EntityFrameworkCore.Modules.Runtime;
+using Elsa.EntityFrameworkCore.Sqlite.Modules.ActivityDefinitions;
+using Elsa.EntityFrameworkCore.Sqlite.Modules.Management;
+using Elsa.EntityFrameworkCore.Sqlite.Modules.Runtime;
 using Elsa.ProtoActor.Extensions;
 using Elsa.Requirements;
 using Elsa.Scheduling.Extensions;
@@ -34,7 +34,7 @@ using Event = Elsa.Workflows.Core.Activities.Event;
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 var configuration = builder.Configuration;
-var sqliteConnectionString = configuration.GetConnectionString("Sqlite");
+var sqliteConnectionString = configuration.GetConnectionString("Sqlite")!;
 var identityOptions = new IdentityOptions();
 var identitySection = configuration.GetSection("Identity");
 identitySection.Bind(identityOptions);
@@ -62,7 +62,7 @@ services
         .UseIdentity(identity =>
         {
             identity.CreateDefaultUser = true;
-            identity.IdentityOptions = options => identitySection.Bind(options);
+            identity.IdentityOptions = identityOptions;
         })
         .UseWorkflowRuntime(runtime =>
         {
@@ -77,7 +77,7 @@ services
         .UseJobs(jobs => jobs.ConfigureOptions = options => options.WorkerCount = 10)
         .UseJobActivities()
         .UseScheduling()
-        .UseWorkflowApiEndpoints()
+        .UseWorkflowsApi()
         .UseJavaScript()
         .UseLiquid()
         .UseTelnyx(telnyx => telnyx.ConfigureTelnyxOptions = options => configuration.GetSection("Telnyx").Bind(options))
@@ -130,7 +130,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 // Register Elsa middleware.
-app.UseElsaFastEndpoints();
+app.UseWorkflowsApi();
 app.UseJsonSerializationErrorHandler();
 
 // Run.

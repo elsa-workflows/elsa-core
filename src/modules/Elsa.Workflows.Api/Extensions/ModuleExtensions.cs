@@ -6,7 +6,7 @@ namespace Microsoft.Extensions.DependencyInjection;
 
 public static class ModuleExtensions
 {
-    public static IModule UseWorkflowApiEndpoints(this IModule module, Action<WorkflowsApiFeature>? configure = default)
+    public static IModule UseWorkflowsApi(this IModule module, Action<WorkflowsApiFeature>? configure = default)
     {
         module.Configure(configure);
         return module;

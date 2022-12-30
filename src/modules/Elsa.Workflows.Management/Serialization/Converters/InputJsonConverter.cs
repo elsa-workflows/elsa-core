@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Expressions.Services;
 using Elsa.Workflows.Core.Models;
@@ -28,28 +29,32 @@ public class InputJsonConverter<T> : JsonConverter<Input<T>>
         if (!JsonDocument.TryParseValue(ref reader, out var doc))
             return default!;
 
-        if (doc.RootElement.ValueKind != JsonValueKind.Object)
-            return default!;
+        // If the value is an object, it represents an Input-wrapped property
+        if (doc.RootElement.ValueKind == JsonValueKind.Object)
+        {
+            if (!doc.RootElement.TryGetProperty("typeName", out _))
+                return default!;
 
-        if (!doc.RootElement.TryGetProperty("typeName", out _))
-            return default!;
+            var expressionElement = doc.RootElement.GetProperty("expression");
 
-        var expressionElement = doc.RootElement.GetProperty("expression");
+            if (!expressionElement.TryGetProperty("type", out var expressionTypeNameElement))
+                return default!;
 
-        if (!expressionElement.TryGetProperty("type", out var expressionTypeNameElement))
-            return default!;
+            var expressionTypeName = expressionTypeNameElement.GetString() ?? "Literal";
+            var expressionSyntaxDescriptor = _expressionSyntaxRegistry.Find(expressionTypeName);
 
-        var expressionTypeName = expressionTypeNameElement.GetString() ?? "Literal";
-        var expressionSyntaxDescriptor = _expressionSyntaxRegistry.Find(expressionTypeName);
+            if (expressionSyntaxDescriptor == null)
+                return default!;
 
-        if (expressionSyntaxDescriptor == null)
-            return default!;
+            var context = new ExpressionConstructorContext(expressionElement, options);
+            var expression = expressionSyntaxDescriptor.CreateExpression(context);
+            var memoryBlockReference = expressionSyntaxDescriptor.CreateBlockReference(new BlockReferenceConstructorContext(expression));
 
-        var context = new ExpressionConstructorContext(expressionElement, options);
-        var expression = expressionSyntaxDescriptor.CreateExpression(context);
-        var memoryBlockReference = expressionSyntaxDescriptor.CreateBlockReference(new BlockReferenceConstructorContext(expression));
+            return (Input<T>)Activator.CreateInstance(typeof(Input<T>), expression, memoryBlockReference)!;
+        }
 
-        return (Input<T>)Activator.CreateInstance(typeof(Input<T>), expression, memoryBlockReference)!;
+        var convertedValue = doc.RootElement.ToString().TryConvertTo<T>().Value;
+        return (Input<T>)Activator.CreateInstance(typeof(Input<T>), new Literal(convertedValue))!;
     }
 
     /// <inheritdoc />

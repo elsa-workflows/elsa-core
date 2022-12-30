@@ -12,9 +12,10 @@ ProjectSection(SolutionItems) = preProject
 	docker-compose.yml = docker-compose.yml
 	common.props = common.props
 	configureawait.props = configureawait.props
-	.github\workflows\ci.yml = .github\workflows\ci.yml
 	.gitignore = .gitignore
 	icon.png = icon.png
+	.github\workflows\packages.yml = .github\workflows\packages.yml
+	.github\workflows\all-in-one-web.yml = .github\workflows\all-in-one-web.yml
 EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{0354F050-3992-4DD4-B0EE-5FBA04AC72B6}"
@@ -93,9 +94,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Common", "src\modules\
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "worker", "worker", "{389D40B8-005F-46A1-9493-1FE6065F04FD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.EntityFrameworkCore", "src\modules\Elsa.Persistence.EntityFrameworkCore\Elsa.Persistence.EntityFrameworkCore.csproj", "{7CC95512-7F44-45C3-A669-95B7048D4730}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.EntityFrameworkCore", "src\modules\Elsa.EntityFrameworkCore\Elsa.EntityFrameworkCore.csproj", "{7CC95512-7F44-45C3-A669-95B7048D4730}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.EntityFrameworkCore.Sqlite", "src\modules\Elsa.Persistence.EntityFrameworkCore.Sqlite\Elsa.Persistence.EntityFrameworkCore.Sqlite.csproj", "{CAC22763-4A1C-4FC5-AC0D-6148927596D6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.EntityFrameworkCore.Sqlite", "src\modules\Elsa.EntityFrameworkCore.Sqlite\Elsa.EntityFrameworkCore.Sqlite.csproj", "{CAC22763-4A1C-4FC5-AC0D-6148927596D6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.HelloWorld", "src\samples\console\Elsa.Samples.HelloWorld\Elsa.Samples.HelloWorld.csproj", "{D253AFC2-9496-4538-B424-47CC579B7A96}"
 EndProject
@@ -111,7 +112,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.TelnyxIntegrat
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.Composition", "src\samples\console\Elsa.Samples.Composition\Elsa.Samples.Composition.csproj", "{1AA0AEFC-BD58-4284-A6C5-AD15C5C79782}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.EntityFrameworkCore.SqlServer", "src\modules\Elsa.Persistence.EntityFrameworkCore.SqlServer\Elsa.Persistence.EntityFrameworkCore.SqlServer.csproj", "{555A4306-3BAB-409E-8BB8-3171A5867B2C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.EntityFrameworkCore.SqlServer", "src\modules\Elsa.EntityFrameworkCore.SqlServer\Elsa.EntityFrameworkCore.SqlServer.csproj", "{555A4306-3BAB-409E-8BB8-3171A5867B2C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Email", "src\modules\Elsa.Email\Elsa.Email.csproj", "{1E5BD8D9-55BE-41E2-B389-6AB9F26C22AF}"
 EndProject
@@ -122,6 +123,14 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Testing.Shared", "src\common\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj", "{AD8C4BB0-C78F-496C-B326-1D82C02C7568}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.WorkflowFunctions", "src\samples\console\Elsa.Samples.WorkflowFunctions\Elsa.Samples.WorkflowFunctions.csproj", "{4782CA82-83B0-437E-8C97-636BB8B402EA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.MyBackendApi", "src\samples\aspnet\Elsa.Samples.MyBackendApi\Elsa.Samples.MyBackendApi.csproj", "{1A37795B-EBAB-4A9F-8CF0-373DA3D4C64A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.WorkflowServer", "src\samples\aspnet\Elsa.Samples.WorkflowServer\Elsa.Samples.WorkflowServer.csproj", "{89157FB8-A25B-42EC-A91F-37DFEE274C8C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.WorkflowDesigner", "src\samples\aspnet\Elsa.Samples.WorkflowDesigner\Elsa.Samples.WorkflowDesigner.csproj", "{812B3B34-D2DD-4A3B-BA2D-3D3C52E0C062}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.WorkflowServerAndDesigner", "src\samples\aspnet\Elsa.Samples.WorkflowServerAndDesigner\Elsa.Samples.WorkflowServerAndDesigner.csproj", "{34FBB2D3-4E2B-4411-95F2-C6B56899826A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -313,6 +322,22 @@ Global
 		{4782CA82-83B0-437E-8C97-636BB8B402EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4782CA82-83B0-437E-8C97-636BB8B402EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4782CA82-83B0-437E-8C97-636BB8B402EA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1A37795B-EBAB-4A9F-8CF0-373DA3D4C64A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1A37795B-EBAB-4A9F-8CF0-373DA3D4C64A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1A37795B-EBAB-4A9F-8CF0-373DA3D4C64A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1A37795B-EBAB-4A9F-8CF0-373DA3D4C64A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{89157FB8-A25B-42EC-A91F-37DFEE274C8C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{89157FB8-A25B-42EC-A91F-37DFEE274C8C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{89157FB8-A25B-42EC-A91F-37DFEE274C8C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{89157FB8-A25B-42EC-A91F-37DFEE274C8C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{812B3B34-D2DD-4A3B-BA2D-3D3C52E0C062}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{812B3B34-D2DD-4A3B-BA2D-3D3C52E0C062}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{812B3B34-D2DD-4A3B-BA2D-3D3C52E0C062}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{812B3B34-D2DD-4A3B-BA2D-3D3C52E0C062}.Release|Any CPU.Build.0 = Release|Any CPU
+		{34FBB2D3-4E2B-4411-95F2-C6B56899826A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{34FBB2D3-4E2B-4411-95F2-C6B56899826A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{34FBB2D3-4E2B-4411-95F2-C6B56899826A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{34FBB2D3-4E2B-4411-95F2-C6B56899826A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{155227F0-A33B-40AA-A4B4-06F813EB921B} = {61017E64-6D00-49CB-9E81-5002DC8F7D5F}
@@ -368,5 +393,9 @@ Global
 		{DF8CCA17-6B00-42C6-B4EC-61B42AA91EE0} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 		{AD8C4BB0-C78F-496C-B326-1D82C02C7568} = {C6658DE0-2B2F-47F0-BB61-2CA66D435C09}
 		{4782CA82-83B0-437E-8C97-636BB8B402EA} = {873BFC3E-63C2-4495-A503-5EC05DCD84E4}
+		{1A37795B-EBAB-4A9F-8CF0-373DA3D4C64A} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
+		{89157FB8-A25B-42EC-A91F-37DFEE274C8C} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
+		{812B3B34-D2DD-4A3B-BA2D-3D3C52E0C062} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
+		{34FBB2D3-4E2B-4411-95F2-C6B56899826A} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 	EndGlobalSection
 EndGlobal
