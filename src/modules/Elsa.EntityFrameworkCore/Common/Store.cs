@@ -23,7 +23,7 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
     {
         await using var dbContext = await CreateDbContextAsync(cancellationToken);
         entity = onSaving?.Invoke(dbContext, entity) ?? entity;
-        await dbContext.BulkInsertOrUpdateAsync(new[] { entity }, config => { config.EnableShadowProperties = true; }, cancellationToken: cancellationToken);
+        await dbContext.BulkUpsertAsync(new[] { entity }, cancellationToken);
     }
 
     public async Task SaveManyAsync(IEnumerable<TEntity> entities, CancellationToken cancellationToken = default) => await SaveManyAsync(entities, default, cancellationToken);
@@ -36,7 +36,7 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
         if (onSaving != null)
             entityList = entityList.Select(x => onSaving(dbContext, x)).ToList();
 
-        await dbContext.BulkInsertOrUpdateAsync(entityList, config => { config.EnableShadowProperties = true; }, cancellationToken: cancellationToken);
+        await dbContext.BulkUpsertAsync(entityList, cancellationToken);
     }
 
     public async Task<TEntity?> FindAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default) => await FindAsync(predicate, default, cancellationToken);
