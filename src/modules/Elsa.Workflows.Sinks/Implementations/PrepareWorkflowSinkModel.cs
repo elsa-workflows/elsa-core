@@ -5,10 +5,10 @@ using Elsa.Common.Models;
 using Elsa.Common.Services;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Runtime.Services;
-using Elsa.Workflows.Sink.Contracts;
-using Elsa.Workflows.Sink.Models;
+using Elsa.Workflows.Sinks.Contracts;
+using Elsa.Workflows.Sinks.Models;
 
-namespace Elsa.Workflows.Sink.Implementations;
+namespace Elsa.Workflows.Sinks.Implementations;
 
 public class PrepareWorkflowSinkModel : IPrepareWorkflowSinkModel
 {
@@ -26,7 +26,7 @@ public class PrepareWorkflowSinkModel : IPrepareWorkflowSinkModel
         _systemClock = systemClock;
     }
         
-    public async Task<WorkflowSinkDto> ExecuteAsync(WorkflowState state, CancellationToken cancellationToken)
+    public async Task<WorkflowInstanceDto> ExecuteAsync(WorkflowState state, CancellationToken cancellationToken)
     {
         var workflowDefinition = await _workflowDefinitionService.FindAsync(state.DefinitionId, VersionOptions.SpecificVersion(state.DefinitionVersion), cancellationToken);
         if (workflowDefinition is null)
@@ -37,7 +37,7 @@ public class PrepareWorkflowSinkModel : IPrepareWorkflowSinkModel
 
         var now = _systemClock.UtcNow;
 
-        var workflowSinkDto = new WorkflowSinkDto
+        var workflowSinkDto = new WorkflowInstanceDto
         {
             Id = state.Id,
             Workflow = workflow,

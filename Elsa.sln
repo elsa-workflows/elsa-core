@@ -121,11 +121,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.HelloWorld", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Testing.Shared", "src\common\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj", "{AD8C4BB0-C78F-496C-B326-1D82C02C7568}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Workflows.Sink", "src\modules\Elsa.Workflows.Sink\Elsa.Workflows.Sink.csproj", "{7F1FDA45-C731-4DCC-BFF6-403D4B857A93}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Workflows.Sinks", "src\modules\Elsa.Workflows.Sinks\Elsa.Workflows.Sinks.csproj", "{7F1FDA45-C731-4DCC-BFF6-403D4B857A93}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.WorkflowFunctions", "src\samples\console\Elsa.Samples.WorkflowFunctions\Elsa.Samples.WorkflowFunctions.csproj", "{4782CA82-83B0-437E-8C97-636BB8B402EA}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Elasticsearch", "src\modules\Elsa.Elasticsearch\Elsa.Elasticsearch.csproj", "{C482C843-049F-4908-A479-D78EE183DB65}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -321,10 +319,6 @@ Global
 		{4782CA82-83B0-437E-8C97-636BB8B402EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4782CA82-83B0-437E-8C97-636BB8B402EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4782CA82-83B0-437E-8C97-636BB8B402EA}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C482C843-049F-4908-A479-D78EE183DB65}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C482C843-049F-4908-A479-D78EE183DB65}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C482C843-049F-4908-A479-D78EE183DB65}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C482C843-049F-4908-A479-D78EE183DB65}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{155227F0-A33B-40AA-A4B4-06F813EB921B} = {61017E64-6D00-49CB-9E81-5002DC8F7D5F}
@@ -381,6 +375,5 @@ Global
 		{AD8C4BB0-C78F-496C-B326-1D82C02C7568} = {C6658DE0-2B2F-47F0-BB61-2CA66D435C09}
 		{7F1FDA45-C731-4DCC-BFF6-403D4B857A93} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 		{4782CA82-83B0-437E-8C97-636BB8B402EA} = {873BFC3E-63C2-4495-A503-5EC05DCD84E4}
-		{C482C843-049F-4908-A479-D78EE183DB65} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 	EndGlobalSection
 EndGlobal

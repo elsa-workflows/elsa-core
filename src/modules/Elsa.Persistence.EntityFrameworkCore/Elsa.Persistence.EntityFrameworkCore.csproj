@@ -42,7 +42,7 @@
         <ProjectReference Include="..\Elsa.MassTransit\Elsa.MassTransit.csproj" />
         <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj" />
         <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
-        <ProjectReference Include="..\Elsa.Workflows.Sink\Elsa.Workflows.Sink.csproj" />
+        <ProjectReference Include="..\Elsa.Workflows.Sinks\Elsa.Workflows.Sinks.csproj" />
     </ItemGroup>
 
 </Project>

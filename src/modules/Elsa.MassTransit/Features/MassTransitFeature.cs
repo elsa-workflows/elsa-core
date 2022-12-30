@@ -16,12 +16,9 @@ public class MassTransitFeature : FeatureBase
 
     public override void Configure()
     {
-        BusConfigurator = configure =>
+        BusConfigurator ??= configure =>
         {
-            configure.UsingInMemory((context, configurator) =>
-            {
-                configurator.ConfigureEndpoints(context);
-            });
+            configure.UsingInMemory((context, configurator) => { configurator.ConfigureEndpoints(context); });
         };
     }
 

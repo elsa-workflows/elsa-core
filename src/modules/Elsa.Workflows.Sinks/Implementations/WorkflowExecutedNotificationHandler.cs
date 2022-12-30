@@ -2,10 +2,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Mediator.Services;
 using Elsa.Workflows.Runtime.Notifications;
-using Elsa.Workflows.Sink.Contracts;
-using Elsa.Workflows.Sink.Models;
+using Elsa.Workflows.Sinks.Contracts;
+using Elsa.Workflows.Sinks.Models;
 
-namespace Elsa.Workflows.Sink.Implementations;
+namespace Elsa.Workflows.Sinks.Implementations;
 
 public class WorkflowExecutedNotificationHandler : INotificationHandler<WorkflowExecuted>
 {

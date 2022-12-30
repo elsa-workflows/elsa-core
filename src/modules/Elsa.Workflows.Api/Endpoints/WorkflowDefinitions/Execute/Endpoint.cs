@@ -20,7 +20,6 @@ public class Execute : ElsaEndpoint<Request, Response>
     {
         Post("/workflow-definitions/{definitionId}/execute");
         ConfigurePermissions("exec:workflow-definitions");
-        AllowAnonymous();
     }
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)

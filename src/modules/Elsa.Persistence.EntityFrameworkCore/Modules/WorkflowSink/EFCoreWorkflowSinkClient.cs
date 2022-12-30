@@ -1,30 +1,30 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Persistence.EntityFrameworkCore.Common;
-using Elsa.Workflows.Sink.Contracts;
-using Elsa.Workflows.Sink.Models;
+using Elsa.Workflows.Sinks.Contracts;
+using Elsa.Workflows.Sinks.Models;
 using Elsa.Workflows.Core.Serialization;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Modules.WorkflowSink;
 
 public class EFCoreWorkflowSinkClient : IWorkflowSinkClient
 {
-    private readonly Store<WorkflowSinkElsaDbContext, WorkflowSinkEntity> _store;
+    private readonly Store<WorkflowSinkElsaDbContext, WorkflowInstance> _store;
     private readonly SerializerOptionsProvider _serializerOptionsProvider;
 
-    public EFCoreWorkflowSinkClient(Store<WorkflowSinkElsaDbContext, WorkflowSinkEntity> store, SerializerOptionsProvider serializerOptionsProvider)
+    public EFCoreWorkflowSinkClient(Store<WorkflowSinkElsaDbContext, WorkflowInstance> store, SerializerOptionsProvider serializerOptionsProvider)
     {
         _store = store;
         _serializerOptionsProvider = serializerOptionsProvider;
     }
 
-    public async Task SaveAsync(WorkflowSinkDto dto, CancellationToken cancellationToken = default)
+    public async Task SaveAsync(WorkflowInstanceDto dto, CancellationToken cancellationToken = default)
     {
         var existingEntity = await _store.FindAsync(e => e.Id == dto.Id, cancellationToken);
 
         if (existingEntity?.LastExecutedAt == dto.LastExecutedAt) return;
         
-        existingEntity ??= new WorkflowSinkEntity
+        existingEntity ??= new WorkflowInstance
         {
             Id = dto.WorkflowState.Id,
             CreatedAt = dto.CreatedAt
@@ -38,7 +38,7 @@ public class EFCoreWorkflowSinkClient : IWorkflowSinkClient
         await _store.SaveAsync(existingEntity, dto, OnSaving, cancellationToken);
     }
 
-    private WorkflowSinkEntity OnSaving(WorkflowSinkElsaDbContext wfSinkElsaDbContext, WorkflowSinkEntity entity, WorkflowSinkDto dto)
+    private WorkflowInstance OnSaving(WorkflowSinkElsaDbContext wfSinkElsaDbContext, WorkflowInstance entity, WorkflowInstanceDto dto)
     {
         var data = new { dto.Workflow, dto.WorkflowState};
 

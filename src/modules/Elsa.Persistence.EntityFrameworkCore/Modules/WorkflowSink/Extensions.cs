@@ -1,4 +1,4 @@
-﻿using Elsa.Workflows.Sink.Features;
+﻿using Elsa.Workflows.Sinks.Features;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Modules.WorkflowSink
 {

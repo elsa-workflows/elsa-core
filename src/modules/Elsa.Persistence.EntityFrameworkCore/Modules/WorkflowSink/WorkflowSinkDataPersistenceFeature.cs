@@ -1,9 +1,9 @@
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Persistence.EntityFrameworkCore.Common;
-using Elsa.Workflows.Sink.Contracts;
-using Elsa.Workflows.Sink.Features;
-using Elsa.Workflows.Sink.Models;
+using Elsa.Workflows.Sinks.Contracts;
+using Elsa.Workflows.Sinks.Features;
+using Elsa.Workflows.Sinks.Models;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Modules.WorkflowSink;
@@ -15,17 +15,12 @@ public class EFCoreWorkflowSinkPersistenceFeature : PersistenceFeatureBase<Workf
     {
     }
 
-    public override void Configure()
-    {
-        Module.Configure<WorkflowSinkFeature>().WorkflowSinkClient = default;
-    }
-
     public override void Apply()
     {
         base.Apply();
 
         Services.AddSingleton<IWorkflowSinkClient, EFCoreWorkflowSinkClient>();
         
-        AddStore<WorkflowSinkEntity, EFCoreWorkflowSinkClient>();
+        AddStore<WorkflowInstance, EFCoreWorkflowSinkClient>();
     }
 }

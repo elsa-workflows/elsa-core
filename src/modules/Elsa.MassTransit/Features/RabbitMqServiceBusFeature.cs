@@ -1,9 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.MassTransit.Options;
 using MassTransit;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
@@ -12,20 +14,24 @@ namespace Elsa.MassTransit.Features;
 [DependsOn(typeof(MassTransitFeature))]
 public class RabbitMqServiceBusFeature : FeatureBase
 {
-    public RabbitMqServiceBusFeature(IModule module) : base(module)
+    private readonly IConfiguration _configuration;
+    
+    public RabbitMqServiceBusFeature(IModule module, IConfiguration configuration) : base(module)
     {
+        _configuration = configuration;
     }
-
+    
     public override void Configure()
     {
-        var serviceProvider = Services.BuildServiceProvider();
-        
+        var rabbitMqSettings = new RabbitMqOptions();
+        _configuration.GetSection(RabbitMqOptions.RabbitMq).Bind(rabbitMqSettings);
+
         Module.Configure<MassTransitFeature>().BusConfigurator = configure =>
         {
             configure.UsingRabbitMq((context, configurator) =>
             {
-                var rabbitMqSettings = serviceProvider.GetService<IOptions<RabbitMqOptions>>()!.Value;
-                var host = new Uri("rabbitmq://" + rabbitMqSettings.ConnectionString);
+                var connectionString = _configuration.GetConnectionString(RabbitMqOptions.RabbitMq);
+                var host = new Uri("rabbitmq://" + connectionString);
 
                 configurator.Host(host, h =>
                 {

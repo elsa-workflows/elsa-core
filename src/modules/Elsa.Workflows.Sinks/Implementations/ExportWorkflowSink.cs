@@ -5,12 +5,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Common.Models;
 using Elsa.Mediator.Services;
-using Elsa.Workflows.Sink.Contracts;
-using Elsa.Workflows.Sink.Models;
+using Elsa.Workflows.Sinks.Contracts;
+using Elsa.Workflows.Sinks.Models;
 using MassTransit;
 using Microsoft.Extensions.Logging;
 
-namespace Elsa.Workflows.Sink.Implementations;
+namespace Elsa.Workflows.Sinks.Implementations;
 
 public class ExportWorkflowSink : INotificationHandler<ExportWorkflowSinkMessage>, global::MassTransit.IConsumer<ExportWorkflowSinkMessage>
 {

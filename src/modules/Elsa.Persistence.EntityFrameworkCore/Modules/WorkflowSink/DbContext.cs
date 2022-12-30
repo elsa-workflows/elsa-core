@@ -1,9 +1,5 @@
 ﻿using Elsa.Persistence.EntityFrameworkCore.Common;
-using Elsa.Workflows.Core.State;
-using Elsa.Workflows.Management.Entities;
-using Elsa.Workflows.Runtime.Entities;
-using Elsa.Workflows.Runtime.Models;
-using Elsa.Workflows.Sink.Models;
+using Elsa.Workflows.Sinks.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Modules.WorkflowSink;
@@ -14,7 +10,7 @@ public class WorkflowSinkElsaDbContext : ElsaDbContextBase
     {
     }
     
-    public DbSet<WorkflowSinkEntity> WorkflowSink { get; set; } = default!;
+    public DbSet<WorkflowInstance> WorkflowSink { get; set; } = default!;
 
     protected override void ApplyEntityConfigurations(ModelBuilder modelBuilder)
     {

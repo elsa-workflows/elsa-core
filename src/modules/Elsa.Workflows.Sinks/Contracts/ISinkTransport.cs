@@ -1,8 +1,8 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Workflows.Sink.Models;
+using Elsa.Workflows.Sinks.Models;
 
-namespace Elsa.Workflows.Sink.Contracts;
+namespace Elsa.Workflows.Sinks.Contracts;
 
 public interface ISinkTransport
 {

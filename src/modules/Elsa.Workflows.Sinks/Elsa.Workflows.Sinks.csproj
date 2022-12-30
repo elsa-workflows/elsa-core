@@ -1,8 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+    <Import Project="..\..\..\common.props" />
+    <Import Project="..\..\..\configureawait.props" />
+
     <PropertyGroup>
         <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
-        <Nullable>enable</Nullable>
+        <Description>
+            Provides workflow state sinks that store workflow state in various formats and locations.
+        </Description>
+        <PackageTags>elsa module</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>
