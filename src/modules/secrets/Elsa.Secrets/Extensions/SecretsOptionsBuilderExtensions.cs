@@ -15,9 +15,9 @@ namespace Elsa.Secrets.Extensions
         public static ElsaOptionsBuilder AddSecrets(this ElsaOptionsBuilder elsaOptions)
         {
             elsaOptions.Services
-                .AddSingleton<ISecretValueFormatter, MsSqlSecretValueFormatter>()
-                .AddSingleton<ISecretValueFormatter, PostgreSqlSecretValueFormatter>()
-                .AddSingleton<ISecretValueFormatter, AuthorizationHeaderSecretValueFormatter>()
+                .AddScoped<ISecretValueFormatter, MsSqlSecretValueFormatter>()
+                .AddScoped<ISecretValueFormatter, PostgreSqlSecretValueFormatter>()
+                .AddScoped<ISecretValueFormatter, AuthorizationHeaderSecretValueFormatter>()
                 .AddScoped<ISecretsManager, SecretsManager>()
                 .AddScoped<ISecretsProvider, SecretsProvider>()
                 .Decorate<ISecretsStore, EventPublishingSecretsStore>()

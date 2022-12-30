@@ -16,6 +16,7 @@ export class CredentialManagerItemsList {
   @Prop({ attribute: 'monaco-lib-path' }) monacoLibPath: string;
   @Prop() culture: string;
   @Prop() basePath: string;
+  @Prop() serverUrl: string;
   private i18next: i18n;
 
   async componentWillLoad() {
@@ -36,7 +37,7 @@ export class CredentialManagerItemsList {
 
   renderSecretPickerEditor() {
     const monacoLibPath = this.monacoLibPath ?? state.monacoLibPath;
-    return <elsa-secret-editor-modal culture={this.culture} monaco-lib-path={monacoLibPath} />;
+    return <elsa-secret-editor-modal culture={this.culture} monaco-lib-path={monacoLibPath} serverUrl={this.serverUrl}/>;
   }
 
   render() {
@@ -61,4 +62,4 @@ export class CredentialManagerItemsList {
     );
   }
 }
-Tunnel.injectProps(CredentialManagerItemsList, ['culture', 'basePath']);
+Tunnel.injectProps(CredentialManagerItemsList, ['culture', 'basePath', 'serverUrl']);

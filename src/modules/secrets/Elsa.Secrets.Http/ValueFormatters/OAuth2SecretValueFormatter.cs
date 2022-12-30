@@ -1,53 +1,45 @@
 using System;
-using System.Collections.Generic;
-using System.Net.Http;
 using System.Threading.Tasks;
 using Elsa.Secrets.Http.Models;
+using Elsa.Secrets.Http.Services;
 using Elsa.Secrets.Models;
 using Elsa.Secrets.ValueFormatters;
-using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
 namespace Elsa.Secrets.Http.ValueFormatters
 {
     public class OAuth2SecretValueFormatter : ISecretValueFormatter
     {
-        private readonly ILogger<OAuth2SecretValueFormatter> _logger;
-        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IOAuth2TokenService _tokenService;
         public string Type => "OAuth2";
 
-        public OAuth2SecretValueFormatter(IHttpClientFactory httpClientFactory, ILogger<OAuth2SecretValueFormatter> logger)
+        public OAuth2SecretValueFormatter(IOAuth2TokenService tokenService)
         {
-            _logger = logger;
-            _httpClientFactory = httpClientFactory;
+            _tokenService = tokenService;
         }
 
         public async Task<string> FormatSecretValue(Secret secret)
         {
-            var content = new Dictionary<string, string> {
-                {"grant_type", "client_credentials"},
-                {"client_id", secret.GetProperty("ClientId")},
-                {"client_secret", secret.GetProperty("ClientSecret")},
-                {"scope", secret.GetProperty("Scope")}
-            };
+            var tokenJson = secret.GetProperty("Token") ?? string.Empty;
+            var tokenData =  JsonConvert.DeserializeObject<TokenData>(tokenJson);
+            
+            if (secret.GetProperty("GrantType") == "authorization_code" && tokenData == null)
+                throw new Exception("OAuth2 refresh token has expired - credential must be authorized with OAuth2 provider");
 
-            try
+            if (tokenData?.ExpiresAtUtc > DateTime.UtcNow)
+                return $"{tokenData.TokenType ?? "Bearer"} {tokenData.AccessToken}";
+
+            TokenResponse response;
+            if (!string.IsNullOrEmpty(tokenData?.RefreshToken))
             {
-                var _httpClient = _httpClientFactory.CreateClient(nameof(OAuth2SecretValueFormatter));
-                var response = await _httpClient.PostAsync(secret.GetProperty("AccessTokenUrl"), new FormUrlEncodedContent(content));
-                var json = await response.Content.ReadAsStringAsync();
-                var result = JsonConvert.DeserializeObject<TokenResponse>(json);
-                if (string.IsNullOrEmpty(result?.AccessToken))
-                {
-                    throw new Exception(result?.Error ?? "Failed to obtain OAuth2 token");
-                }
-                return $"{result.TokenType ?? "Bearer"} {result.AccessToken}";
+                response = await _tokenService.GetTokenByRefreshToken(secret, tokenData.RefreshToken);
             }
-            catch (Exception e)
+            else
             {
-                _logger.LogError(e, $"Failed to obtain OAuth2 token for secret {secret.Name}/{secret.Id}");
-                throw;
+                response = await _tokenService.GetToken(secret);
             }
+            
+            return $"{response.TokenType ?? "Bearer"} {response.AccessToken}";
         }
     }
 }

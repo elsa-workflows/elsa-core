@@ -24,7 +24,7 @@ namespace Elsa.Secrets.Providers
             var secretsAuth = secretsProvider.GetSecretsDictionaryAsync(Constants.SecretType_AuthorizationHeader).Result;
             var secretsOAuth = secretsProvider.GetSecretsDictionaryAsync(Constants.SecretType_OAuth2).Result;
 
-            var items = secretsAuth.Concat(secretsOAuth).Select(x => new SelectListItem(x.Key, x.Value)).ToList();
+            var items = secretsAuth.Concat(secretsOAuth).Select(x => new SelectListItem(x.Value, x.Key)).ToList();
             items.Insert(0, new SelectListItem("", "empty"));
 
             return new SelectList { Items = items };
