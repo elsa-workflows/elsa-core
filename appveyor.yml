@@ -88,12 +88,6 @@ build_script:
 
             npm run build
 
-            "//www.myget.org/F/elsa-2/npm/:_authToken=$env:MYGET_ELSA_2" | Out-File ".npmrc" -Encoding UTF8
-
-            npm config set always-auth true 
-
-            npm publish --registry=https:////www.myget.org/F/elsa-2/npm/
-
             cd ..\bindings\aspnet\Elsa.Designer.Components.Web
 
             npm run build
@@ -141,10 +135,14 @@ deploy:
         on:
             branch: master
 
-# after_deploy:
-#     -   ps: >-
-#             "//www.myget.org/F/elsa-2/npm/:_authToken=$env:MYGET_ELSA_2" | Out-File (Join-Path $ENV:APPVEYOR_BUILD_FOLDER ".npmrc") -Encoding UTF8
-        
-#             cd .\src\designer\elsa-workflows-studio
+after_deploy:
+    -   ps: >-
+            if( -Not $env:APPVEYOR_PULL_REQUEST_NUMBER)
+            {
+                cd .\src\designer\elsa-workflows-studio
 
-#             npm publish
+                "always-auth=true" | Out-File ".npmrc" -Encoding UTF8
+                "//www.myget.org/F/elsa-2/npm/:_authToken=$env:MYGET_ELSA_2" | Out-File ".npmrc" -Encoding UTF8 -Append
+
+                npm publish --registry=https://www.myget.org/F/elsa-2/npm/
+            }
