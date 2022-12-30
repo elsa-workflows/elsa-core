@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <Import Project="..\..\..\common.props" />
+    <Import Project="..\..\..\configureawait.props" />
+
+    <PropertyGroup>
+        <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
+        <Description>
+            Provides SQLite migrations for various modules.
+        </Description>
+        <PackageTags>elsa module persistence efcore sqlite</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup Condition=" '$(TargetFramework)' == 'net6.0'">
+        <PackageReference Include="Microsoft.Data.Sqlite" Version="6.0.12" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="6.0.12">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(TargetFramework)' == 'net7.0'">
+        <PackageReference Include="Microsoft.Data.Sqlite" Version="7.0.1" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.1">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Elsa.EntityFrameworkCore\Elsa.EntityFrameworkCore.csproj" />
+    </ItemGroup>
+
+</Project>

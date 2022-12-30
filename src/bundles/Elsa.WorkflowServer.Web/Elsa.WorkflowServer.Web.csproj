@@ -11,8 +11,8 @@
     <ItemGroup>
       <ProjectReference Include="..\..\modules\Elsa.Jobs.Activities\Elsa.Jobs.Activities.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.ActivityDefinitions\Elsa.ActivityDefinitions.csproj" />
-      <ProjectReference Include="..\..\modules\Elsa.Persistence.EntityFrameworkCore.Sqlite\Elsa.Persistence.EntityFrameworkCore.Sqlite.csproj" />
-      <ProjectReference Include="..\..\modules\Elsa.Persistence.EntityFrameworkCore\Elsa.Persistence.EntityFrameworkCore.csproj" />
+      <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.Sqlite\Elsa.EntityFrameworkCore.Sqlite.csproj" />
+      <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore\Elsa.EntityFrameworkCore.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.ProtoActor\Elsa.ProtoActor.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Identity\Elsa.Identity.csproj" />
       <ProjectReference Include="..\Elsa\Elsa.csproj" />
