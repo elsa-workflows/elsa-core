@@ -93,9 +93,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Common", "src\modules\
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "worker", "worker", "{389D40B8-005F-46A1-9493-1FE6065F04FD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.EntityFrameworkCore", "src\modules\Elsa.Persistence.EntityFrameworkCore\Elsa.Persistence.EntityFrameworkCore.csproj", "{7CC95512-7F44-45C3-A669-95B7048D4730}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.EntityFrameworkCore", "src\modules\Elsa.EntityFrameworkCore\Elsa.EntityFrameworkCore.csproj", "{7CC95512-7F44-45C3-A669-95B7048D4730}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.EntityFrameworkCore.Sqlite", "src\modules\Elsa.Persistence.EntityFrameworkCore.Sqlite\Elsa.Persistence.EntityFrameworkCore.Sqlite.csproj", "{CAC22763-4A1C-4FC5-AC0D-6148927596D6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.EntityFrameworkCore.Sqlite", "src\modules\Elsa.EntityFrameworkCore.Sqlite\Elsa.EntityFrameworkCore.Sqlite.csproj", "{CAC22763-4A1C-4FC5-AC0D-6148927596D6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.HelloWorld", "src\samples\console\Elsa.Samples.HelloWorld\Elsa.Samples.HelloWorld.csproj", "{D253AFC2-9496-4538-B424-47CC579B7A96}"
 EndProject
@@ -111,7 +111,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.TelnyxIntegrat
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.Composition", "src\samples\console\Elsa.Samples.Composition\Elsa.Samples.Composition.csproj", "{1AA0AEFC-BD58-4284-A6C5-AD15C5C79782}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.EntityFrameworkCore.SqlServer", "src\modules\Elsa.Persistence.EntityFrameworkCore.SqlServer\Elsa.Persistence.EntityFrameworkCore.SqlServer.csproj", "{555A4306-3BAB-409E-8BB8-3171A5867B2C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.EntityFrameworkCore.SqlServer", "src\modules\Elsa.EntityFrameworkCore.SqlServer\Elsa.EntityFrameworkCore.SqlServer.csproj", "{555A4306-3BAB-409E-8BB8-3171A5867B2C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Email", "src\modules\Elsa.Email\Elsa.Email.csproj", "{1E5BD8D9-55BE-41E2-B389-6AB9F26C22AF}"
 EndProject
