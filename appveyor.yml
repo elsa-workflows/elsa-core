@@ -84,6 +84,8 @@ build_script:
     -   ps: >-
             cd .\src\designer\elsa-workflows-studio
 
+            npm version $env:elsa_build_version
+
             npm run build
 
             cd ..\bindings\aspnet\Elsa.Designer.Components.Web
@@ -132,3 +134,11 @@ deploy:
         artifact: /Elsa.*(\.|\.s)nupkg/
         on:
             branch: master
+
+after_deploy:
+    -   ps: >-
+            "//www.myget.org/F/elsa-2/npm/:_authToken=$env:MYGET_ELSA_2" | Out-File (Join-Path $ENV:APPVEYOR_BUILD_FOLDER ".npmrc") -Encoding UTF8
+        
+            cd .\src\designer\elsa-workflows-studio
+
+            npm publish
