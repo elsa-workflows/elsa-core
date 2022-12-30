@@ -7,12 +7,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="7.0.1" />
-        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
-    </ItemGroup>
-
-    <ItemGroup>
       <ProjectReference Include="..\..\..\bundles\Elsa\Elsa.csproj" />
+      <ProjectReference Include="..\..\..\modules\Elsa.EntityFrameworkCore.Sqlite\Elsa.EntityFrameworkCore.Sqlite.csproj" />
       <ProjectReference Include="..\..\..\modules\Elsa.Http\Elsa.Http.csproj" />
       <ProjectReference Include="..\..\..\modules\Elsa.Identity\Elsa.Identity.csproj" />
       <ProjectReference Include="..\..\..\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj" />

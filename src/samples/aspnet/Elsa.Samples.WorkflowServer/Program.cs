@@ -1,12 +1,18 @@
+using Elsa.EntityFrameworkCore.Modules.Management;
+using Elsa.EntityFrameworkCore.Sqlite.Modules.Management;
 using Elsa.Extensions;
 using Elsa.Http.Extensions;
 using Elsa.Identity.Extensions;
+using Elsa.Workflows.Management.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddElsa(elsa =>
 {
+    // Configure management feature to use EF Core.
+    elsa.UseWorkflowManagement(management => management.UseEntityFrameworkCore(ef => ef.UseSqlite()));
+    
     // Expose API endpoints.
     elsa.UseWorkflowsApi();
 
