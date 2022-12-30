@@ -141,8 +141,9 @@ after_deploy:
             {
                 cd .\src\designer\elsa-workflows-studio
 
-                "always-auth=true" | Out-File ".npmrc" -Encoding UTF8
+                "registry=https://www.myget.org/F/elsa-2/npm/" | Out-File ".npmrc" -Encoding UTF8
+                "always-auth=true" | Out-File ".npmrc" -Encoding UTF8 -Append
                 "//www.myget.org/F/elsa-2/npm/:_authToken=$env:MYGET_ELSA_2" | Out-File ".npmrc" -Encoding UTF8 -Append
 
-                npm publish --registry=https://www.myget.org/F/elsa-2/npm/
+                npm publish
             }
