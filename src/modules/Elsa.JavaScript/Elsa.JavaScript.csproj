@@ -19,7 +19,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Jint" Version="3.0.0-preview-388" />
+        <PackageReference Include="Jint" Version="3.0.0-beta-2044" />
     </ItemGroup>
 
 </Project>

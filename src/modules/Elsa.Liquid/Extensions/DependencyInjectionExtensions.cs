@@ -9,12 +9,18 @@ namespace Elsa.Liquid.Extensions;
 
 public static class DependencyInjectionExtensions
 {
+    /// <summary>
+    /// Setup the <see cref="LiquidFeature"/> feature.
+    /// </summary>
     public static IModule UseLiquid(this IModule module, Action<LiquidFeature>? configure = default)
     {
         module.Configure(configure);
         return module;
     }
 
+    /// <summary>
+    /// Register a custom Liquid filter.
+    /// </summary>
     public static IServiceCollection AddLiquidFilter<T>(this IServiceCollection services, string name) where T : class, ILiquidFilter
     {
         services.Configure<FluidOptions>(options => options.FilterRegistrations[name] = typeof(T));
@@ -22,6 +28,9 @@ public static class DependencyInjectionExtensions
         return services;
     }
 
+    /// <summary>
+    /// Register a custom Liquid tag.
+    /// </summary>
     public static IServiceCollection RegisterLiquidTag(this IServiceCollection services, Action<LiquidParser> configure)
     {
         services.Configure<FluidOptions>(options => options.ParserConfiguration.Add(configure));

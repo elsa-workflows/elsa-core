@@ -19,7 +19,7 @@ public static class WebApplicationExtensions
     /// <param name="app"></param>
     /// <param name="routePrefix">The route prefix to apply to Elsa API endpoints.</param>
     /// <example>E.g. "elsa/api" will expose endpoints like this: "/elsa/api/workflow-definitions"</example>
-    public static IApplicationBuilder UseElsaFastEndpoints(this IApplicationBuilder app, string routePrefix = "elsa/api") =>
+    public static IApplicationBuilder UseWorkflowsApi(this IApplicationBuilder app, string routePrefix = "elsa/api") =>
         app.UseFastEndpoints(config =>
         {
             config.Endpoints.RoutePrefix = routePrefix;

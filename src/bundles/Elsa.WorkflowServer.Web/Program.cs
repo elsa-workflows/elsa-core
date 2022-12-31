@@ -13,18 +13,19 @@ using Elsa.Jobs.Activities.Services;
 using Elsa.Jobs.Extensions;
 using Elsa.Labels.Extensions;
 using Elsa.Liquid.Extensions;
+using Elsa.EntityFrameworkCore.Modules.ActivityDefinitions;
+using Elsa.EntityFrameworkCore.Modules.Labels;
+using Elsa.EntityFrameworkCore.Modules.Management;
+using Elsa.EntityFrameworkCore.Modules.Runtime;
+using Elsa.EntityFrameworkCore.Sqlite.Modules.ActivityDefinitions;
+using Elsa.EntityFrameworkCore.Sqlite.Modules.Labels;
+using Elsa.EntityFrameworkCore.Sqlite.Modules.Management;
+using Elsa.EntityFrameworkCore.Sqlite.Modules.Runtime;
 using Elsa.MassTransit.Options;
-using Elsa.Persistence.EntityFrameworkCore.Modules.ActivityDefinitions;
-using Elsa.Persistence.EntityFrameworkCore.Modules.Labels;
-using Elsa.Persistence.EntityFrameworkCore.Modules.Management;
-using Elsa.Persistence.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Persistence.EntityFrameworkCore.Modules.WorkflowSink;
-using Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.ActivityDefinitions;
-using Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.Labels;
-using Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.Management;
-using Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.Runtime;
 using Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.WorkflowSink;
 using Elsa.Requirements;
+using Elsa.Scheduling.Activities;
 using Elsa.Scheduling.Extensions;
 using Elsa.WorkflowContexts.Extensions;
 using Elsa.Workflows.Api.Extensions;
@@ -34,14 +35,16 @@ using Elsa.Workflows.Core.Middleware.Workflows;
 using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Runtime.Extensions;
+using Elsa.Workflows.Runtime.Implementations;
 using Elsa.WorkflowServer.Web.Jobs;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Data.Sqlite;
+using Proto.Persistence.Sqlite;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 var configuration = builder.Configuration;
-var sqliteConnectionString = configuration.GetConnectionString("Sqlite");
+var sqliteConnectionString = configuration.GetConnectionString("Sqlite")!;
 var identityOptions = new IdentityOptions();
 var identitySection = configuration.GetSection("Identity");
 identitySection.Bind(identityOptions);
@@ -56,20 +59,20 @@ services
             .UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString))
             .AddActivitiesFrom<WriteLine>()
             .AddActivitiesFrom<HttpEndpoint>()
-            .AddActivitiesFrom<Elsa.Scheduling.Activities.Delay>()
+            .AddActivitiesFrom<Delay>()
             .AddActivitiesFrom<RunJavaScript>()
             .AddActivitiesFrom<Program>()
         )
         .UseIdentity(identity =>
         {
             identity.CreateDefaultUser = true;
-            identity.IdentityOptions = options => identitySection.Bind(options);
+            identity.IdentityOptions = identityOptions;
         })
+        .UseDefaultAuthentication()
         .UseWorkflowRuntime(runtime =>
         {
             //runtime.UseProtoActor(proto => proto.PersistenceProvider = _ => new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString)));
             runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
-            //runtime.WorkflowStateExporter = sp => sp.GetRequiredService<AsyncWorkflowStateExporter>();
         })
         .UseLabels(labels => labels.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
         .UseActivityDefinitions(feature => feature.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
@@ -78,7 +81,7 @@ services
         .UseJobs(jobs => jobs.ConfigureOptions = options => options.WorkerCount = 10)
         .UseJobActivities()
         .UseScheduling()
-        .UseWorkflowApiEndpoints()
+        .UseWorkflowsApi()
         .UseJavaScript()
         .UseLiquid()
         .UseHttp()
@@ -86,12 +89,6 @@ services
 
 services.AddHealthChecks();
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()));
-
-// Authentication & Authorization.
-services
-    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, identityOptions.ConfigureJwtBearerOptions);
-
 services.AddHttpContextAccessor();
 services.AddSingleton<IAuthorizationHandler, LocalHostRequirementHandler>();
 services.AddAuthorization(options => options.AddPolicy(IdentityPolicyNames.SecurityRoot, policy => policy.AddRequirements(new LocalHostRequirement())));
@@ -135,9 +132,9 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 // Register Elsa middleware.
-app.UseElsaFastEndpoints();
+app.UseWorkflowsApi();
 app.UseJsonSerializationErrorHandler();
-app.UseHttpActivities();
+app.UseWorkflows();
 
 // Run.
 app.Run();
