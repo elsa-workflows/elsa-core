@@ -13,9 +13,15 @@ public static class DependencyInjectionExtensions
         return module;
     }
     
-    public static MassTransitFeature UseRabbitMq(this MassTransitFeature feature, Action<RabbitMqServiceBusFeature>? configure = default)
+    public static MassTransitFeature UseRabbitMq(this MassTransitFeature feature, string connectionString, RabbitMqOptions options)
     {
-        feature.Module.Configure(configure);
+        void Configure(RabbitMqServiceBusFeature bus)
+        {
+            bus.ConnectionString = connectionString;
+            bus.Options = options;
+        }
+
+        feature.Module.Configure((Action<RabbitMqServiceBusFeature>) Configure);
         return feature;
     }
 }

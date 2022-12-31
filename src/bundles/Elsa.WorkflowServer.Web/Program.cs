@@ -13,6 +13,7 @@ using Elsa.Jobs.Activities.Services;
 using Elsa.Jobs.Extensions;
 using Elsa.Labels.Extensions;
 using Elsa.Liquid.Extensions;
+using Elsa.MassTransit.Options;
 using Elsa.Persistence.EntityFrameworkCore.Modules.ActivityDefinitions;
 using Elsa.Persistence.EntityFrameworkCore.Modules.Labels;
 using Elsa.Persistence.EntityFrameworkCore.Modules.Management;
@@ -44,6 +45,9 @@ var sqliteConnectionString = configuration.GetConnectionString("Sqlite");
 var identityOptions = new IdentityOptions();
 var identitySection = configuration.GetSection("Identity");
 identitySection.Bind(identityOptions);
+var rabbitMqConnectionString = configuration.GetConnectionString("RabbitMq");
+var rabbitMqOptions = new RabbitMqOptions();
+configuration.GetSection(RabbitMqOptions.RabbitMq).Bind(rabbitMqOptions);
 
 // Add Elsa services.
 services
@@ -70,6 +74,7 @@ services
         .UseLabels(labels => labels.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
         .UseActivityDefinitions(feature => feature.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
         .UseWorkflowSinks(feature => feature.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
+        //.UseMassTransit(mt => mt.UseRabbitMq(rabbitMqConnectionString!, rabbitMqOptions))
         .UseJobs(jobs => jobs.ConfigureOptions = options => options.WorkerCount = 10)
         .UseJobActivities()
         .UseScheduling()

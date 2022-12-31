@@ -15,8 +15,6 @@ public class MassTransitFeature : FeatureBase
 
     public Action<IBusRegistrationConfigurator>? BusConfigurator { get; set; }
 
-    public IConfiguration Configuration { get; set; }
-
     public override void Configure()
     {
         BusConfigurator ??= configure =>
