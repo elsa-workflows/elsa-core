@@ -47,6 +47,8 @@ cache:
     - '%APPDATA%\npm-cache'
 
 install:
+    -   node --version
+    -   npm --version
     -   ps: >-
             cd .\src\designer\elsa-workflows-studio
 
