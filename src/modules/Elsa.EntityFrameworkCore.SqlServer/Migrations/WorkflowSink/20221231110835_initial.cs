@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Elsa.Persistence.EntityFrameworkCore.SqlServer.Migrations
+namespace Elsa.EntityFrameworkCore.SqlServer.Migrations
 {
     public partial class initial : Migration
     {
@@ -29,6 +29,36 @@ namespace Elsa.Persistence.EntityFrameworkCore.SqlServer.Migrations
                 {
                     table.PrimaryKey("PK_WorkflowSink", x => x.Id);
                 });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowSink_CancelledAt",
+                schema: "Elsa",
+                table: "WorkflowSink",
+                column: "CancelledAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowSink_CreatedAt",
+                schema: "Elsa",
+                table: "WorkflowSink",
+                column: "CreatedAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowSink_FaultedAt",
+                schema: "Elsa",
+                table: "WorkflowSink",
+                column: "FaultedAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowSink_FinishedAt",
+                schema: "Elsa",
+                table: "WorkflowSink",
+                column: "FinishedAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowSink_LastExecutedAt",
+                schema: "Elsa",
+                table: "WorkflowSink",
+                column: "LastExecutedAt");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)

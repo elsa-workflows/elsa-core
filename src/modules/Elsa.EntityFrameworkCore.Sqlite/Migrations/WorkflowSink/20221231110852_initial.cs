@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
+namespace Elsa.EntityFrameworkCore.Sqlite.Migrations
 {
     public partial class initial : Migration
     {
@@ -24,6 +24,31 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
                 {
                     table.PrimaryKey("PK_WorkflowSink", x => x.Id);
                 });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowSink_CancelledAt",
+                table: "WorkflowSink",
+                column: "CancelledAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowSink_CreatedAt",
+                table: "WorkflowSink",
+                column: "CreatedAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowSink_FaultedAt",
+                table: "WorkflowSink",
+                column: "FaultedAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowSink_FinishedAt",
+                table: "WorkflowSink",
+                column: "FinishedAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowSink_LastExecutedAt",
+                table: "WorkflowSink",
+                column: "LastExecutedAt");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
