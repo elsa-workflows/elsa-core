@@ -1,11 +1,11 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Elsa.Persistence.EntityFrameworkCore.Common;
+using Elsa.EntityFrameworkCore.Common;
 using Elsa.Workflows.Sinks.Contracts;
 using Elsa.Workflows.Sinks.Models;
 using Elsa.Workflows.Core.Serialization;
 
-namespace Elsa.Persistence.EntityFrameworkCore.Modules.WorkflowSink;
+namespace Elsa.EntityFrameworkCore.Modules.WorkflowSink;
 
 public class EFCoreWorkflowSinkClient : IWorkflowSinkClient
 {

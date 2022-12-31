@@ -1,7 +1,7 @@
-﻿using Elsa.Persistence.EntityFrameworkCore.Modules.WorkflowSink;
-using Elsa.Persistence.EntityFrameworkCore.Sqlite.Extensions;
+﻿using Elsa.EntityFrameworkCore.Modules.WorkflowSink;
+using Elsa.EntityFrameworkCore.Sqlite.Extensions;
 
-namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.WorkflowSink;
+namespace Elsa.EntityFrameworkCore.Sqlite.Modules.WorkflowSink;
 
 public static class Extensions
 {

@@ -1,12 +1,12 @@
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
-using Elsa.Persistence.EntityFrameworkCore.Common;
+using Elsa.EntityFrameworkCore.Common;
 using Elsa.Workflows.Sinks.Contracts;
 using Elsa.Workflows.Sinks.Features;
 using Elsa.Workflows.Sinks.Models;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Persistence.EntityFrameworkCore.Modules.WorkflowSink;
+namespace Elsa.EntityFrameworkCore.Modules.WorkflowSink;
 
 [DependsOn(typeof(WorkflowSinkFeature))]
 public class EFCoreWorkflowSinkPersistenceFeature : PersistenceFeatureBase<WorkflowSinkElsaDbContext>

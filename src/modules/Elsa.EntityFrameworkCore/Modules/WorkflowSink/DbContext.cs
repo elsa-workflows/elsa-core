@@ -1,8 +1,8 @@
-﻿using Elsa.Persistence.EntityFrameworkCore.Common;
+﻿using Elsa.EntityFrameworkCore.Common;
 using Elsa.Workflows.Sinks.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace Elsa.Persistence.EntityFrameworkCore.Modules.WorkflowSink;
+namespace Elsa.EntityFrameworkCore.Modules.WorkflowSink;
 
 public class WorkflowSinkElsaDbContext : ElsaDbContextBase
 {

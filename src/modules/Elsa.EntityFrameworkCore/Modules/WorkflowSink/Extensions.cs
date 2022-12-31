@@ -1,6 +1,6 @@
 ﻿using Elsa.Workflows.Sinks.Features;
 
-namespace Elsa.Persistence.EntityFrameworkCore.Modules.WorkflowSink
+namespace Elsa.EntityFrameworkCore.Modules.WorkflowSink
 {
     public static class Extensions
     {

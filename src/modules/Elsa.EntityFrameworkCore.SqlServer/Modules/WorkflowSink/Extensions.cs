@@ -1,7 +1,7 @@
-﻿using Elsa.Persistence.EntityFrameworkCore.Modules.WorkflowSink;
-using Elsa.Persistence.EntityFrameworkCore.SqlServer.Extensions;
+﻿using Elsa.EntityFrameworkCore.Modules.WorkflowSink;
+using Elsa.EntityFrameworkCore.SqlServer.Extensions;
 
-namespace Elsa.Persistence.EntityFrameworkCore.SqlServer.Modules.WorkflowSink;
+namespace Elsa.EntityFrameworkCore.SqlServer.Modules.WorkflowSink;
 
 public static class Extensions
 {

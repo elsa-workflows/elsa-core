@@ -2,7 +2,7 @@ using Elsa.Workflows.Sinks.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Elsa.Persistence.EntityFrameworkCore.Modules.WorkflowSink
+namespace Elsa.EntityFrameworkCore.Modules.WorkflowSink
 {
     public class Configurations :
         IEntityTypeConfiguration<WorkflowInstance>
