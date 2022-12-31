@@ -1,8 +1,5 @@
-using System;
-using Elsa.Common.Extensions;
 using Elsa.Common.Features;
 using Elsa.Common.Services;
-using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
@@ -39,7 +36,7 @@ public class WorkflowSinkFeature : FeatureBase
         Services
             // Core.
             .AddSingleton(SinkTransport)
-            .AddSingleton<IPrepareWorkflowSinkModel, PrepareWorkflowSinkModel>()
+            .AddSingleton<IPrepareWorkflowInstance, PrepareWorkflowInstance>()
 
             //Handlers.
             .AddNotificationHandler<WorkflowExecutedNotificationHandler, WorkflowExecuted>()

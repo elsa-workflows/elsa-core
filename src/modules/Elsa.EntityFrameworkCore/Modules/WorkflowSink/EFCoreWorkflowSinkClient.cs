@@ -34,18 +34,12 @@ public class EFCoreWorkflowSinkClient : IWorkflowSinkClient
         existingEntity.CancelledAt = dto.CancelledAt;
         existingEntity.FinishedAt = dto.FinishedAt;
         existingEntity.FaultedAt = dto.FaultedAt;
-
-        await _store.SaveAsync(existingEntity, dto, OnSaving, cancellationToken);
-    }
-
-    private WorkflowInstance OnSaving(WorkflowSinkElsaDbContext wfSinkElsaDbContext, WorkflowInstance entity, WorkflowInstanceDto dto)
-    {
-        var data = new { dto.Workflow, dto.WorkflowState};
-
+        
+        var dataToSerialize = new { dto.Workflow, dto.WorkflowState};
         var options = _serializerOptionsProvider.CreatePersistenceOptions(ReferenceHandler.Preserve);
-        var json = JsonSerializer.Serialize(data, options);
+        var json = JsonSerializer.Serialize(dataToSerialize, options);
+        (await _store.GetDbContextAsync(cancellationToken)).Entry(existingEntity).Property("Data").CurrentValue = json;
 
-        wfSinkElsaDbContext.Entry(entity).Property("Data").CurrentValue = json;
-        return entity;
+        await _store.SaveAsync(existingEntity, cancellationToken);
     }
 }

@@ -15,22 +15,22 @@ namespace Elsa.Workflows.Sinks.Implementations;
 public class ExportWorkflowSink : INotificationHandler<ExportWorkflowSinkMessage>, global::MassTransit.IConsumer<ExportWorkflowSinkMessage>
 {
     private readonly IEnumerable<IWorkflowSinkClient> _sinkClients;
-    private readonly IPrepareWorkflowSinkModel _prepareWorkflowSinkModel;
+    private readonly IPrepareWorkflowInstance _prepareWorkflowInstance;
     private readonly ILogger _logger;
 
     public ExportWorkflowSink(
         IEnumerable<IWorkflowSinkClient> sinkClients, 
-        IPrepareWorkflowSinkModel prepareWorkflowSinkModel,
+        IPrepareWorkflowInstance prepareWorkflowInstance,
         ILogger<ExportWorkflowSink> logger)
     {
         _sinkClients = sinkClients;
-        _prepareWorkflowSinkModel = prepareWorkflowSinkModel;
+        _prepareWorkflowInstance = prepareWorkflowInstance;
         _logger = logger;
     }
 
     public async Task HandleAsync(ExportWorkflowSinkMessage message, CancellationToken cancellationToken)
     {
-        var workflowSinkModel = await _prepareWorkflowSinkModel.ExecuteAsync(message.WorkflowState, cancellationToken);
+        var workflowSinkModel = await _prepareWorkflowInstance.ExecuteAsync(message.WorkflowState, cancellationToken);
 
         foreach (var client in _sinkClients)
         {
@@ -47,7 +47,7 @@ public class ExportWorkflowSink : INotificationHandler<ExportWorkflowSinkMessage
 
     public async Task Consume(ConsumeContext<ExportWorkflowSinkMessage> context)
     {
-        var workflowSinkModel = await _prepareWorkflowSinkModel.ExecuteAsync(context.Message.WorkflowState, context.CancellationToken);
+        var workflowSinkModel = await _prepareWorkflowInstance.ExecuteAsync(context.Message.WorkflowState, context.CancellationToken);
         
         foreach (var client in _sinkClients)
         {

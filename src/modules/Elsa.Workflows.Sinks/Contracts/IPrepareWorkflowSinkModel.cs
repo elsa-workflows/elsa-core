@@ -5,7 +5,7 @@ using Elsa.Workflows.Sinks.Models;
 
 namespace Elsa.Workflows.Sinks.Contracts;
 
-public interface IPrepareWorkflowSinkModel
+public interface IPrepareWorkflowInstance
 {
     public Task<WorkflowInstanceDto> ExecuteAsync(WorkflowState state, CancellationToken cancellationToken);
 }

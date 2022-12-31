@@ -10,19 +10,16 @@ using Elsa.Workflows.Sinks.Models;
 
 namespace Elsa.Workflows.Sinks.Implementations;
 
-public class PrepareWorkflowSinkModel : IPrepareWorkflowSinkModel
+public class PrepareWorkflowInstance : IPrepareWorkflowInstance
 {
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
-    private readonly IWorkflowStateStore _workflowStateStore;
     private readonly ISystemClock _systemClock;
         
-    public PrepareWorkflowSinkModel(
-        IWorkflowDefinitionService workflowDefinitionService, 
-        IWorkflowStateStore workflowStateStore,
+    public PrepareWorkflowInstance(
+        IWorkflowDefinitionService workflowDefinitionService,
         ISystemClock systemClock)
     {
         _workflowDefinitionService = workflowDefinitionService;
-        _workflowStateStore = workflowStateStore;
         _systemClock = systemClock;
     }
         
