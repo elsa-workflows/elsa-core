@@ -12,6 +12,8 @@ environment:
     sonarcloud_project_name: elsa-workflows_elsa-core
     sonarcloud_api_key:
         secure: qaE9kOVkGGFM7ZMf3YeliZxDU9udTCy6W5xXHJ9T+tXv5qXPMYlIdR7hyNgxW04A
+    myget_api_key:
+        secure: H+Iel+3hA9EiGlhZUUEmrhkka+lTF5UbnW24xwpIrwEcikyW5Qm+MGJQfqgZU29Q
 
 init:
     -   cmd: set NODE_OPTIONS=--max-old-space-size=2048
@@ -145,7 +147,7 @@ after_deploy:
 
                 "registry=https://www.myget.org/F/elsa-2-npm/npm/" | Out-File ".npmrc" -Encoding UTF8
                 "always-auth=true" | Out-File ".npmrc" -Encoding UTF8 -Append
-                "//www.myget.org/F/elsa-2-npm/npm/:_authToken=$env:MYGET_ELSA_2_NPM" | Out-File ".npmrc" -Encoding UTF8 -Append
+                "//www.myget.org/F/elsa-2-npm/npm/:_authToken=$env:myget_api_key" | Out-File ".npmrc" -Encoding UTF8 -Append
 
                 npm publish
             }
