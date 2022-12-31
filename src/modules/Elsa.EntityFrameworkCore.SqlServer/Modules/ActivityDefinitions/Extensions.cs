@@ -1,9 +1,9 @@
 ﻿using Elsa.EntityFrameworkCore.Modules.ActivityDefinitions;
-using Elsa.EntityFrameworkCore.SqlServer.Extensions;
 
-namespace Elsa.EntityFrameworkCore.SqlServer.Modules.ActivityDefinitions;
+// ReSharper disable once CheckNamespace
+namespace Elsa.EntityFrameworkCore.Extensions;
 
-public static class Extensions
+public static partial class Extensions
 {
     public static EFCoreActivityDefinitionsPersistenceFeature UseSqlServer(this EFCoreActivityDefinitionsPersistenceFeature feature, string connectionString)
     {

@@ -1,6 +1,6 @@
-using Elsa.Common.Extensions;
 using Elsa.Common.Implementations;
 using Elsa.Common.Models;
+using Elsa.Extensions;
 using Elsa.Labels.Entities;
 using Elsa.Labels.Services;
 

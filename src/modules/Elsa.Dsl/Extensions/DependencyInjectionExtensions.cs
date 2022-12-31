@@ -1,9 +1,10 @@
 using Elsa.Dsl.Features;
 using Elsa.Features.Services;
 
-namespace Elsa.Dsl.Extensions;
+// ReSharper disable once CheckNamespace
+namespace Elsa.Extensions;
 
-public static class DependencyInjectionExtensions
+public static class ModuleExtensions
 {
     public static IModule UseDsl(this IModule configuration, Action<DslFeature>? configure = default)
     {

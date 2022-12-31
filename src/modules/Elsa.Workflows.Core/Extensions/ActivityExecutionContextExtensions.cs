@@ -12,7 +12,8 @@ using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Core.Signals;
 using Microsoft.Extensions.Logging;
 
-namespace Elsa.Workflows.Core;
+// ReSharper disable once CheckNamespace
+namespace Elsa.Extensions;
 
 /// <summary>
 /// Provides extension methods for <see cref="ActivityExecutionContext"/>.

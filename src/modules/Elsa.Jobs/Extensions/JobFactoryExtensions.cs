@@ -1,6 +1,7 @@
 using Elsa.Jobs.Services;
 
-namespace Elsa.Jobs.Extensions;
+// ReSharper disable once CheckNamespace
+namespace Elsa.Extensions;
 
 public static class JobFactoryExtensions
 {

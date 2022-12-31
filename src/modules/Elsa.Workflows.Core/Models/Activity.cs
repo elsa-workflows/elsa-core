@@ -1,4 +1,5 @@
 using Elsa.Expressions.Models;
+using Elsa.Extensions;
 using Elsa.Workflows.Core.Behaviors;
 
 namespace Elsa.Workflows.Core.Models;

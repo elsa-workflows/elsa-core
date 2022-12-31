@@ -1,8 +1,10 @@
 ﻿using Elsa.EntityFrameworkCore.Common;
+using Elsa.EntityFrameworkCore.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 
-namespace Elsa.EntityFrameworkCore.Sqlite.Extensions;
+// ReSharper disable once CheckNamespace
+namespace Elsa.EntityFrameworkCore.Extensions;
 
 public static class DbContextOptionsBuilderExtensions
 {

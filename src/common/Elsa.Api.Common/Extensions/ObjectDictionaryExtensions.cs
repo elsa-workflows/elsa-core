@@ -1,3 +1,4 @@
+// ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
 
 static class ObjectDictionaryExtensions

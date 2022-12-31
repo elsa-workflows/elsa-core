@@ -6,12 +6,12 @@ using Elsa.AzureServiceBus.Implementations;
 using Elsa.AzureServiceBus.Options;
 using Elsa.AzureServiceBus.Providers;
 using Elsa.AzureServiceBus.Services;
-using Elsa.Mediator.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
-namespace Elsa.AzureServiceBus.Extensions;
+// ReSharper disable once CheckNamespace
+namespace Elsa.Extensions;
 
 public static class DependencyInjectionExtensions
 {

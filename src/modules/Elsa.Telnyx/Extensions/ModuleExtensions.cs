@@ -1,7 +1,8 @@
 using Elsa.Features.Services;
 using Elsa.Telnyx.Features;
 
-namespace Elsa.Telnyx.Extensions;
+// ReSharper disable once CheckNamespace
+namespace Elsa.Extensions;
 
 public static class ModuleExtensions
 {

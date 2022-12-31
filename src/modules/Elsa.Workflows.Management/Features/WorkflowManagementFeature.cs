@@ -1,8 +1,8 @@
 using System.ComponentModel;
 using System.Reflection;
-using Elsa.Common.Extensions;
 using Elsa.Common.Features;
 using Elsa.Expressions.Services;
+using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
@@ -11,7 +11,6 @@ using Elsa.Workflows.Core.Features;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Entities;
-using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Management.Implementations;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Materializers;

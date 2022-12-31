@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using Elsa.Expressions;
 using Elsa.Expressions.Models;
 using Elsa.Expressions.Services;
+using Elsa.Extensions;
 using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Core.Activities.Flowchart.Models;
 using Elsa.Workflows.Core.Attributes;

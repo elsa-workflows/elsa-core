@@ -1,7 +1,8 @@
 using Elsa.Email.Features;
 using Elsa.Features.Services;
 
-namespace Elsa.Email.Extensions;
+// ReSharper disable once CheckNamespace
+namespace Elsa.Extensions;
 
 /// <summary>
 /// Provides methods to install and configure email related features.

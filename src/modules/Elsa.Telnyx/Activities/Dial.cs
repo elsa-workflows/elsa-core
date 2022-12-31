@@ -1,5 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
+using Elsa.Extensions;
 using Elsa.Telnyx.Attributes;
 using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Client.Models;
@@ -8,7 +9,6 @@ using Elsa.Telnyx.Exceptions;
 using Elsa.Telnyx.Extensions;
 using Elsa.Telnyx.Options;
 using Elsa.Telnyx.Payloads.Call;
-using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;

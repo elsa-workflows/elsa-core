@@ -1,4 +1,4 @@
-﻿using Elsa.EntityFrameworkCore.SqlServer.Extensions;
+﻿using Elsa.EntityFrameworkCore.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 

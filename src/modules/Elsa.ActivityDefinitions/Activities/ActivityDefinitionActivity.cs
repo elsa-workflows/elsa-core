@@ -1,6 +1,6 @@
 using Elsa.ActivityDefinitions.Entities;
 using Elsa.ActivityDefinitions.Services;
-using Elsa.Workflows.Core;
+using Elsa.Extensions;
 using Elsa.Workflows.Core.Models;
 
 namespace Elsa.ActivityDefinitions.Activities;

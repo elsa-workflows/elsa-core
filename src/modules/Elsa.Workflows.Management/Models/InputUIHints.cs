@@ -1,6 +1,6 @@
 using System.Collections;
+using Elsa.Extensions;
 using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Management.Extensions;
 
 namespace Elsa.Workflows.Management.Models;
 

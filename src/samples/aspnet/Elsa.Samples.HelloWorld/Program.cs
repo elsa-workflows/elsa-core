@@ -1,7 +1,5 @@
 using Elsa.Extensions;
-using Elsa.Http.Extensions;
 using Elsa.Samples.HelloWorld;
-using Elsa.Workflows.Runtime.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;

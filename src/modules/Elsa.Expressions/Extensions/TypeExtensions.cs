@@ -1,4 +1,5 @@
-namespace Elsa.Expressions.Extensions;
+// ReSharper disable once CheckNamespace
+namespace Elsa.Extensions;
 
 /// <summary>
 /// Adds extension methods to <see cref="Type"/>.

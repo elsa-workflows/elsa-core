@@ -1,4 +1,4 @@
-﻿using Elsa.Http.Extensions;
+﻿using Elsa.Extensions;
 using Elsa.Http.Services;
 using Elsa.Mediator.Services;
 using Elsa.Workflows.Runtime.Notifications;

@@ -1,6 +1,7 @@
 using Elsa.ActivityDefinitions.Entities;
 using Elsa.ActivityDefinitions.Features;
 using Elsa.EntityFrameworkCore.Common;
+using Elsa.Extensions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Microsoft.Extensions.DependencyInjection;

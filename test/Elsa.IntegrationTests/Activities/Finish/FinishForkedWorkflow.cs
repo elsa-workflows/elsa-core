@@ -1,6 +1,5 @@
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Services;
-using Pipelines.Sockets.Unofficial;
 
 namespace Elsa.IntegrationTests.Activities;
 

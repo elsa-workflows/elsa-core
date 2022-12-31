@@ -1,6 +1,7 @@
 using System.Text.Json;
 
-namespace Elsa.Workflows.Core;
+// ReSharper disable once CheckNamespace
+namespace Elsa.Extensions;
 
 public static class JsonElementExtensions
 {

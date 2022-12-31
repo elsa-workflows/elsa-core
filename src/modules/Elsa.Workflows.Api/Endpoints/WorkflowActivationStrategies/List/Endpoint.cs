@@ -2,8 +2,8 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 using Elsa.Abstractions;
+using Elsa.Extensions;
 using Elsa.Models;
-using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Services;
 using Humanizer;
 

@@ -1,12 +1,13 @@
 using Elsa.ProtoActor.Features;
 using Elsa.Workflows.Runtime.Features;
 
-namespace Elsa.ProtoActor.Extensions;
+// ReSharper disable once CheckNamespace
+namespace Elsa.Extensions;
 
 /// <summary>
 /// Provides extension methods on <see cref="WorkflowRuntimeFeature"/>.
 /// </summary>
-public static class DependencyInjectionExtensions
+public static class WorkflowRuntimeFeatureExtensions
 {
     /// <summary>
     /// Enable & configure the <see cref="WorkflowRuntimeFeature"/>.

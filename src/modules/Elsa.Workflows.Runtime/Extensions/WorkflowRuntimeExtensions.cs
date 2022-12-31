@@ -2,7 +2,8 @@ using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Runtime.Services;
 
-namespace Elsa.Workflows.Runtime.Extensions;
+// ReSharper disable once CheckNamespace
+namespace Elsa.Extensions;
 
 /// <summary>
 /// Adds extension methods to <see cref="IWorkflowRuntime"/>.

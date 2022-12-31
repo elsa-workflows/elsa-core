@@ -3,20 +3,20 @@ using Elsa.Liquid.Services;
 using Fluid;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Liquid.Extensions
+// ReSharper disable once CheckNamespace
+namespace Elsa.Extensions;
+
+public static class TemplateContextExtensions
 {
-    public static class TemplateContextExtensions
+    internal static void AddFilters(this TemplateContext templateContext, FluidOptions options, IServiceProvider services)
     {
-        internal static void AddFilters(this TemplateContext templateContext, FluidOptions options, IServiceProvider services)
+        foreach (var (key, value) in options.FilterRegistrations)
         {
-            foreach (var (key, value) in options.FilterRegistrations)
+            templateContext.Options.Filters.AddFilter(key, (input, arguments, ctx) =>
             {
-                templateContext.Options.Filters.AddFilter(key, (input, arguments, ctx) =>
-                {
-                    var filter = (ILiquidFilter)services.GetRequiredService(value);
-                    return filter.ProcessAsync(input, arguments, ctx);
-                });
-            }
+                var filter = (ILiquidFilter)services.GetRequiredService(value);
+                return filter.ProcessAsync(input, arguments, ctx);
+            });
         }
     }
 }

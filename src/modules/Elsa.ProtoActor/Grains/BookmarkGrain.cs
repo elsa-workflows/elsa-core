@@ -1,4 +1,4 @@
-using Elsa.Common.Extensions;
+using Elsa.Extensions;
 using Elsa.ProtoActor.Protos;
 using Google.Protobuf.WellKnownTypes;
 using Proto;

@@ -1,11 +1,11 @@
 using System.ComponentModel;
 using System.Reflection;
+using Elsa.Extensions;
 using Elsa.Telnyx.Activities;
 using Elsa.Telnyx.Attributes;
 using Elsa.Telnyx.Helpers;
 using Elsa.Telnyx.Payloads.Abstract;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Management.Services;
 
 namespace Elsa.Telnyx.Providers;

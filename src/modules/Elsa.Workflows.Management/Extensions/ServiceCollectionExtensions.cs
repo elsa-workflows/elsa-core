@@ -1,7 +1,7 @@
 using Elsa.Workflows.Management.Services;
-using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Workflows.Management.Extensions;
+// ReSharper disable once CheckNamespace
+namespace Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
 /// Provides extension methods to <see cref="IServiceCollection"/> for various kinds of services and providers. 

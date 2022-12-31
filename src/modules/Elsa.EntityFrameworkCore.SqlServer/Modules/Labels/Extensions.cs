@@ -1,9 +1,9 @@
 ﻿using Elsa.EntityFrameworkCore.Modules.Labels;
-using Elsa.EntityFrameworkCore.SqlServer.Extensions;
 
-namespace Elsa.EntityFrameworkCore.SqlServer.Modules.Labels;
+// ReSharper disable once CheckNamespace
+namespace Elsa.EntityFrameworkCore.Extensions;
 
-public static class Extensions
+public static partial class Extensions
 {
     public static EFCoreLabelPersistenceFeature UseSqlServer(this EFCoreLabelPersistenceFeature feature, string connectionString)
     {

@@ -1,6 +1,6 @@
+using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
-using Elsa.Quartz.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Quartz;
 

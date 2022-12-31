@@ -1,5 +1,5 @@
 using System.Runtime.CompilerServices;
-using Elsa.Common.Extensions;
+using Elsa.Extensions;
 using Elsa.Workflows.Core.Activities.Flowchart.Contracts;
 using Elsa.Workflows.Core.Activities.Flowchart.Extensions;
 using Elsa.Workflows.Core.Activities.Flowchart.Models;
@@ -21,6 +21,7 @@ public class FlowJoin : ActivityBase, IJoinNode
     
     [Input] public Input<FlowJoinMode> Mode { get; set; } = new(FlowJoinMode.WaitAll);
 
+    /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var flowchartExecutionContext = context.ParentActivityExecutionContext!;

@@ -1,7 +1,8 @@
 using Elsa.Http.Middleware;
 using Microsoft.AspNetCore.Builder;
 
-namespace Elsa.Http.Extensions;
+// ReSharper disable once CheckNamespace
+namespace Elsa.Extensions;
 
 /// <summary>
 /// Adds extension methods to <see cref="IApplicationBuilder"/> related to workflow middleware components.

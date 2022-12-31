@@ -1,7 +1,8 @@
 using Elsa.Common.Models;
 using Elsa.Workflows.Core.Models;
 
-namespace Elsa.Workflows.Management.Extensions;
+// ReSharper disable once CheckNamespace
+namespace Elsa.Extensions;
 
 public static class WorkflowExtensions
 {

@@ -1,6 +1,6 @@
-using Elsa.Expressions.Extensions;
 using Elsa.Expressions.Features;
 using Elsa.Expressions.Services;
+using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
@@ -10,7 +10,6 @@ using Elsa.JavaScript.Implementations;
 using Elsa.JavaScript.Providers;
 using Elsa.JavaScript.Services;
 using Elsa.Mediator.Features;
-using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Management.Implementations;
 using Microsoft.Extensions.DependencyInjection;
 

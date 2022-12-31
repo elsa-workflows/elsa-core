@@ -10,29 +10,19 @@ using Elsa.Mediator.Middleware.Request.Contracts;
 using Elsa.Mediator.Models;
 using Elsa.Mediator.Services;
 using Elsa.Features.Services;
-using Elsa.Mediator.Features;
 using Elsa.Mediator.HostedServices;
 using Elsa.Mediator.Options;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace Elsa.Mediator.Extensions;
+// ReSharper disable once CheckNamespace
+namespace Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
 /// Adds extension methods to <see cref="IModule"/> that enable & configure mediator specific features.
 /// </summary>
 public static class DependencyInjectionExtensions
 {
-    /// <summary>
-    /// Adds and configures the <see cref="MediatorFeature"/> to the specified <see cref="IModule"/>.
-    /// </summary>
-    public static IModule AddMediator(this IModule module, Action<MediatorFeature>? configure = default)
-    {
-        module.Configure(configure);
-        return module;
-    }
-
     /// <summary>
     /// Adds mediator services to the <see cref="IServiceCollection"/>.
     /// </summary>

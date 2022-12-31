@@ -1,6 +1,7 @@
 using Elsa.Common.Models;
 
-namespace Elsa.Common.Extensions;
+// ReSharper disable once CheckNamespace
+namespace Elsa.Extensions;
 
 public static class EnumerableExtensions
 {

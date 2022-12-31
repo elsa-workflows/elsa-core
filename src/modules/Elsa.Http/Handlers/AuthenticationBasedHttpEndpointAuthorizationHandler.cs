@@ -1,6 +1,6 @@
+using Elsa.Extensions;
 using Elsa.Http.Models;
 using Elsa.Http.Services;
-using Elsa.Workflows.Core;
 using Microsoft.AspNetCore.Authorization;
 
 namespace Elsa.Http.Handlers;
