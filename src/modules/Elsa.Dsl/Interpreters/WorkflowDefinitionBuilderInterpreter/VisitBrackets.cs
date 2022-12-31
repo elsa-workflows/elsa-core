@@ -1,4 +1,4 @@
-﻿using Elsa.Dsl.Extensions;
+﻿using Elsa.Expressions.Helpers;
 using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Dsl.Interpreters;

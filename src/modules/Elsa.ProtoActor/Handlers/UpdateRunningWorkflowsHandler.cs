@@ -1,5 +1,5 @@
+using Elsa.Extensions;
 using Elsa.Mediator.Services;
-using Elsa.ProtoActor.Extensions;
 using Elsa.ProtoActor.Grains;
 using Elsa.ProtoActor.Protos;
 using Elsa.Workflows.Runtime.Notifications;

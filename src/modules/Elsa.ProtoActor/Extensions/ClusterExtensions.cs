@@ -2,7 +2,8 @@ using Elsa.ProtoActor.Grains;
 using Elsa.ProtoActor.Protos;
 using Proto.Cluster;
 
-namespace Elsa.ProtoActor.Extensions;
+// ReSharper disable once CheckNamespace
+namespace Elsa.Extensions;
 
 internal static class ClusterExtensions
 {

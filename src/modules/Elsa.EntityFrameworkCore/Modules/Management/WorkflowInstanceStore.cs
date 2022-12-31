@@ -4,7 +4,6 @@ using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.EntityFrameworkCore.Common;
 using Elsa.EntityFrameworkCore.Extensions;
-using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Management.Entities;

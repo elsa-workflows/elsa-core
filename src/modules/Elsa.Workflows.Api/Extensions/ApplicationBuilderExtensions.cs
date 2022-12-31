@@ -1,7 +1,8 @@
 using Elsa.Workflows.Api.Middleware;
 using Microsoft.AspNetCore.Builder;
 
-namespace Elsa.Workflows.Api.Extensions;
+// ReSharper disable once CheckNamespace
+namespace Elsa.Extensions;
 
 public static class ApplicationBuilderExtensions
 {

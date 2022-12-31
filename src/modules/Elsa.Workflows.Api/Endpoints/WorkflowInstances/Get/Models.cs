@@ -1,6 +1,5 @@
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.State;
-using Elsa.Workflows.Management.Models;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.Get;
 

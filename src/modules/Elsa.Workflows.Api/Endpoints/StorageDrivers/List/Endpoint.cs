@@ -2,7 +2,7 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 using Elsa.Abstractions;
-using Elsa.Workflows.Core;
+using Elsa.Extensions;
 using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Api.Endpoints.StorageDrivers.List;

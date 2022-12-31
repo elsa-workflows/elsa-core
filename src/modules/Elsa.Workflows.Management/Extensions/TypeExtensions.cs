@@ -1,4 +1,5 @@
-namespace Elsa.Workflows.Management.Extensions;
+// ReSharper disable once CheckNamespace
+namespace Elsa.Extensions;
 
 public static class TypeExtensions
 {

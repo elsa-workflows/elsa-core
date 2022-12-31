@@ -1,8 +1,8 @@
 using Elsa.EntityFrameworkCore.Common;
+using Elsa.Extensions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Labels.Entities;
-using Elsa.Labels.Extensions;
 using Elsa.Labels.Features;
 using Microsoft.Extensions.DependencyInjection;
 

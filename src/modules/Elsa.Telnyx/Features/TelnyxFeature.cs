@@ -1,14 +1,13 @@
 using System.ComponentModel;
 using System.Reflection;
+using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Elsa.Telnyx.Activities;
 using Elsa.Telnyx.Client.Models;
-using Elsa.Telnyx.Extensions;
 using Elsa.Telnyx.Options;
 using Elsa.Telnyx.Payloads.Abstract;
 using Elsa.Telnyx.Providers;
-using Elsa.Workflows.Management.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Telnyx.Features;

@@ -2,7 +2,6 @@ using Elsa.Common.Features;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
-using Elsa.Mediator.Extensions;
 using Elsa.Scheduling.Handlers;
 using Elsa.Scheduling.Implementations;
 using Elsa.Scheduling.Services;

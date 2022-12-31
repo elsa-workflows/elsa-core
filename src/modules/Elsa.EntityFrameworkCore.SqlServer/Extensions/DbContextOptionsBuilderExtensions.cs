@@ -2,7 +2,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 
-namespace Elsa.EntityFrameworkCore.SqlServer.Extensions;
+// ReSharper disable once CheckNamespace
+namespace Elsa.EntityFrameworkCore.Extensions;
 
 public static class DbContextOptionsBuilderExtensions
 {

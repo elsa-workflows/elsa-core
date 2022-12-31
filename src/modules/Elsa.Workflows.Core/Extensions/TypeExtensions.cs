@@ -1,7 +1,8 @@
 using System.Collections.Concurrent;
 using System.Reflection;
 
-namespace Elsa.Workflows.Core;
+// ReSharper disable once CheckNamespace
+namespace Elsa.Extensions;
 
 public static class TypeExtensions
 {

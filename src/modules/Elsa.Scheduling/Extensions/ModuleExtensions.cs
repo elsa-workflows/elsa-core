@@ -1,7 +1,8 @@
 using Elsa.Features.Services;
 using Elsa.Scheduling.Features;
 
-namespace Elsa.Scheduling.Extensions;
+// ReSharper disable once CheckNamespace
+namespace Elsa.Extensions;
 
 public static class ModuleExtensions
 {

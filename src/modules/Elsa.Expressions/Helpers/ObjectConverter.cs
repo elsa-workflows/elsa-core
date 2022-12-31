@@ -3,8 +3,8 @@ using System.ComponentModel;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Exceptions;
-using Elsa.Expressions.Extensions;
 using Elsa.Expressions.Models;
+using Elsa.Extensions;
 
 namespace Elsa.Expressions.Helpers;
 

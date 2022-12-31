@@ -3,7 +3,8 @@ using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using LinqKit;
 
-namespace Elsa.Common.Extensions;
+// ReSharper disable once CheckNamespace
+namespace Elsa.Extensions;
 
 public static class VersionedEntityExtensions
 {

@@ -1,7 +1,8 @@
 using Jint;
 using Jint.Runtime.Interop;
 
-namespace Elsa.JavaScript.Extensions;
+// ReSharper disable once CheckNamespace
+namespace Elsa.Extensions;
 
 public static class EngineExtensions
 {

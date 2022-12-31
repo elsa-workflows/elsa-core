@@ -1,6 +1,6 @@
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
-using Elsa.Mediator.Extensions;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Mediator.Features;
 

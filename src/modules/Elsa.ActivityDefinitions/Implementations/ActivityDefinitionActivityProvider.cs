@@ -1,9 +1,8 @@
 using Elsa.ActivityDefinitions.Activities;
 using Elsa.ActivityDefinitions.Entities;
-using Elsa.ActivityDefinitions.Extensions;
 using Elsa.ActivityDefinitions.Services;
 using Elsa.Common.Models;
-using Elsa.Workflows.Core;
+using Elsa.Extensions;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Services;
 using Open.Linq.AsyncExtensions;

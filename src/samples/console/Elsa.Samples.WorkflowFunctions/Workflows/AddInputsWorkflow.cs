@@ -1,4 +1,4 @@
-using Elsa.Workflows.Core;
+using Elsa.Extensions;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Services;
 

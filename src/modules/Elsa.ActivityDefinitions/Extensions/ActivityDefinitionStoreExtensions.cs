@@ -2,7 +2,8 @@ using Elsa.ActivityDefinitions.Entities;
 using Elsa.ActivityDefinitions.Services;
 using Elsa.Common.Models;
 
-namespace Elsa.ActivityDefinitions.Extensions;
+// ReSharper disable once CheckNamespace
+namespace Elsa.Extensions;
 
 public static class ActivityDefinitionStoreExtensions
 {

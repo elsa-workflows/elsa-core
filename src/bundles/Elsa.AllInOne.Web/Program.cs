@@ -1,23 +1,11 @@
+using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.Extensions;
-using Elsa.Jobs.Extensions;
-using Elsa.Http.Extensions;
 using Elsa.Identity;
-using Elsa.Identity.Extensions;
 using Elsa.Identity.Options;
-using Elsa.JavaScript.Extensions;
-using Elsa.Labels.Extensions;
-using Elsa.Liquid.Extensions;
 using Elsa.EntityFrameworkCore.Modules.ActivityDefinitions;
 using Elsa.EntityFrameworkCore.Modules.Labels;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
-using Elsa.EntityFrameworkCore.Sqlite.Modules.ActivityDefinitions;
-using Elsa.EntityFrameworkCore.Sqlite.Modules.Labels;
-using Elsa.EntityFrameworkCore.Sqlite.Modules.Runtime;
 using Elsa.Requirements;
-using Elsa.Scheduling.Extensions;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Runtime.Extensions;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);

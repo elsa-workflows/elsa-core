@@ -2,7 +2,8 @@ using System.Runtime.CompilerServices;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Models;
 
-namespace Elsa.Workflows.Core;
+// ReSharper disable once CheckNamespace
+namespace Elsa.Extensions;
 
 public static class InputExtensions
 {

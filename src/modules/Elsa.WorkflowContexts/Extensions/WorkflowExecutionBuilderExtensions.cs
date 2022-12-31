@@ -3,7 +3,8 @@ using Elsa.Workflows.Core.Pipelines.ActivityExecution;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Core.Services;
 
-namespace Elsa.WorkflowContexts.Extensions;
+// ReSharper disable once CheckNamespace
+namespace Elsa.Extensions;
 
 public static class WorkflowExecutionBuilderExtensions
 {

@@ -3,7 +3,8 @@ using Elsa.Workflows.Core.Implementations;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
 
-namespace Elsa.Workflows.Core;
+// ReSharper disable once CheckNamespace
+namespace Elsa.Extensions;
 
 /// <summary>
 /// Adds extension methods to <see cref="Variable"/> for configuring storage.

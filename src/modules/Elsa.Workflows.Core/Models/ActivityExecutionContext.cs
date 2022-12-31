@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
+using Elsa.Extensions;
 using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Core.Models;

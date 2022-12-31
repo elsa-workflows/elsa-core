@@ -3,7 +3,8 @@ using Elsa.Scheduling.Jobs;
 using Quartz;
 using IJob = Elsa.Jobs.Services.IJob;
 
-namespace Elsa.Quartz.Extensions;
+// ReSharper disable once CheckNamespace
+namespace Elsa.Extensions;
 
 public static class DependencyInjectionExtensions
 {

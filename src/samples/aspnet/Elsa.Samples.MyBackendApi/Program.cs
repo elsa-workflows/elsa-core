@@ -1,7 +1,5 @@
 using Elsa.Extensions;
-using Elsa.Http.Extensions;
 using Elsa.Samples.MyBackendApi.Workflows;
-using Elsa.Workflows.Runtime.Extensions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 

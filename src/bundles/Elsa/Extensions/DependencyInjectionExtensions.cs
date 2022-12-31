@@ -1,5 +1,4 @@
 using Elsa.Features;
-using Elsa.Features.Extensions;
 using Elsa.Features.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -8,7 +7,7 @@ namespace Elsa.Extensions;
 /// <summary>
 /// Provides extension methods to <see cref="IServiceCollection"/>. 
 /// </summary>
-public static class DependencyInjectionExtensions
+public static class ModuleExtensions
 {
     /// <summary>
     /// Creates a new Elsa module and adds the <see cref="ElsaFeature"/> to it.

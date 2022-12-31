@@ -1,4 +1,3 @@
-using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Runtime.Services;

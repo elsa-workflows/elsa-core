@@ -1,8 +1,7 @@
 using System.Collections.Generic;
-using Elsa.Workflows.Core;
+using Elsa.Extensions;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Activities.Flowchart.Models;
-using Elsa.Workflows.Core.Implementations;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
 
