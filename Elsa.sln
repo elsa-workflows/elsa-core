@@ -140,7 +140,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{986E54
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "templates", "templates", "{26A89A29-FE67-4174-9809-7C63AAD6BD5D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElsaWorkflowsApp", "templates\elsa-workflow-app\ElsaWorkflowsApp\ElsaWorkflowsApp.csproj", "{15B2ABCB-7460-4E59-A991-10AD9190B1C9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Templates", "templates\elsa-workflow-app\Elsa.Templates\Elsa.Templates.csproj", "{15B2ABCB-7460-4E59-A991-10AD9190B1C9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.WorkflowSinks", "src\samples\aspnet\Elsa.Samples.WorkflowSinks\Elsa.Samples.WorkflowSinks.csproj", "{536EFB55-EEA1-4761-9A72-D4EA84A6DB70}"
 EndProject

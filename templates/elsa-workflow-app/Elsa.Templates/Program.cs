@@ -1,7 +1,3 @@
-using Elsa.EntityFrameworkCore.Extensions;
-using Elsa.EntityFrameworkCore.Modules.ActivityDefinitions;
-using Elsa.EntityFrameworkCore.Modules.Labels;
-using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using Elsa.Identity;
 using Elsa.Identity.Options;
@@ -11,9 +7,8 @@ using Microsoft.AspNetCore.Authorization;
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 var configuration = builder.Configuration;
-var sqliteConnectionString = configuration.GetConnectionString("Sqlite")!;
-var identityOptions = new IdentityOptions();
-var identitySection = configuration.GetSection("Identity");
+var identityOptions = new IdentityTokenOptions();
+var identitySection = configuration.GetSection("Elsa:Identity");
 identitySection.Bind(identityOptions);
 
 // Add Elsa services.
@@ -23,13 +18,10 @@ services
         .UseWorkflowsApi()
         .UseIdentity(identity =>
         {
-            identity.CreateDefaultUser = true;
-            identity.IdentityOptions = identityOptions;
+            identity.IdentityOptions.CreateDefaultAdmin = true;
+            identity.TokenOptions = identityOptions;
         })
         .UseDefaultAuthentication()
-        .UseWorkflowRuntime(runtime => { runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)); })
-        .UseLabels(labels => labels.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
-        .UseActivityDefinitions(feature => feature.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
         .UseJavaScript()
         .UseLiquid()
         .UseHttp()

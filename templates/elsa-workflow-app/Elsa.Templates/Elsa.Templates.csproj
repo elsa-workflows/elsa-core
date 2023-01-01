@@ -1,16 +1,19 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
+    <Import Project="..\..\..\common.props" />
+    <Import Project="..\..\..\configureawait.props" />
+    
     <PropertyGroup>
+        <PackageType>Template</PackageType>
         <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
-        <Nullable>enable</Nullable>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-        <IsPackable>false</IsPackable>
+        <Description>
+            Provides a set of project templates to get started with Elsa quickly.
+        </Description>
+        <PackageTags>elsa template</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\..\..\src\bundles\Elsa\Elsa.csproj" />
-      <ProjectReference Include="..\..\..\src\modules\Elsa.EntityFrameworkCore.Sqlite\Elsa.EntityFrameworkCore.Sqlite.csproj" />
       <ProjectReference Include="..\..\..\src\modules\Elsa.Http\Elsa.Http.csproj" />
       <ProjectReference Include="..\..\..\src\modules\Elsa.Identity\Elsa.Identity.csproj" />
       <ProjectReference Include="..\..\..\src\modules\Elsa.JavaScript\Elsa.JavaScript.csproj" />

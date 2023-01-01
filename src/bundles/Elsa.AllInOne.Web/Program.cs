@@ -13,8 +13,11 @@ var services = builder.Services;
 var configuration = builder.Configuration;
 var sqliteConnectionString = configuration.GetConnectionString("Sqlite")!;
 var identityOptions = new IdentityOptions();
+var identityTokenOptions = new IdentityTokenOptions();
 var identitySection = configuration.GetSection("Identity");
+var identityTokenSection = identitySection.GetSection("Tokens");
 identitySection.Bind(identityOptions);
+identityTokenSection.Bind(identityTokenOptions);
 
 // Add Elsa services.
 services
@@ -23,8 +26,8 @@ services
         .UseWorkflowsApi()
         .UseIdentity(identity =>
         {
-            identity.CreateDefaultUser = true;
             identity.IdentityOptions = identityOptions;
+            identity.TokenOptions = identityTokenOptions;
         })
         .UseDefaultAuthentication()
         .UseWorkflowRuntime(runtime => { runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)); })
