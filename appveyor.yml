@@ -149,5 +149,5 @@ after_deploy:
                 "always-auth=true" | Out-File ".npmrc" -Encoding UTF8 -Append
                 "//www.myget.org/F/elsa-2-npm/npm/:_authToken=$env:myget_api_key" | Out-File ".npmrc" -Encoding UTF8 -Append
 
-                npm publish
+                npm publish --loglevel warn
             }
