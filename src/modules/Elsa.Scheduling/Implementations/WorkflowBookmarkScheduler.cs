@@ -1,11 +1,11 @@
 using System.Text.Json;
+using Elsa.Extensions;
 using Elsa.Jobs.Schedules;
 using Elsa.Jobs.Services;
 using Elsa.Scheduling.Activities;
 using Elsa.Scheduling.Jobs;
 using Elsa.Scheduling.Services;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Management.Extensions;
 
 namespace Elsa.Scheduling.Implementations;
 

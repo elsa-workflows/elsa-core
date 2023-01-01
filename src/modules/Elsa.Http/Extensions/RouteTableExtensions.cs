@@ -1,15 +1,16 @@
 using System.Text.Json;
+using Elsa.Http;
 using Elsa.Http.Models;
 using Elsa.Http.Services;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Runtime.Entities;
 
-namespace Elsa.Http.Extensions;
+// ReSharper disable once CheckNamespace
+namespace Elsa.Extensions;
 
 public static class RouteTableExtensions
 {
-    
     public static void AddRoutes(this IRouteTable routeTable, IEnumerable<StoredTrigger> triggers)
     {
         var paths = Filter(triggers).Select(Deserialize).Select(x => x.Path).ToList();

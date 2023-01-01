@@ -1,5 +1,5 @@
 ﻿using System.Collections;
-using System.Text.Json.Serialization;
+
 // ReSharper disable NotAccessedPositionalProperty.Global
 
 namespace Elsa.Workflows.Core.State

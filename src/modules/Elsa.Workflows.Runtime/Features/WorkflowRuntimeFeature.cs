@@ -1,14 +1,12 @@
-using Elsa.Common.Extensions;
 using Elsa.Common.Features;
+using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
-using Elsa.Mediator.Extensions;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Runtime.ActivationValidators;
 using Elsa.Workflows.Runtime.Entities;
-using Elsa.Workflows.Runtime.Extensions;
 using Elsa.Workflows.Runtime.HostedServices;
 using Elsa.Workflows.Runtime.Implementations;
 using Elsa.Workflows.Runtime.Models;
@@ -120,8 +118,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddSingleton(WorkflowStateExporter)
 
             // Domain event handlers.
-            .AddNotificationHandlersFrom<WorkflowRuntimeFeature>()
-            .AddCommandHandlersFrom<WorkflowRuntimeFeature>()
+            .AddHandlersFrom<WorkflowRuntimeFeature>()
             
             // Workflow activation strategies.
             .AddSingleton<IWorkflowActivationStrategy, SingletonStrategy>()

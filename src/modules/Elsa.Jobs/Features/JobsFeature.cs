@@ -2,7 +2,6 @@ using Elsa.Common.Features;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
-using Elsa.Jobs.Extensions;
 using Elsa.Jobs.HostedServices;
 using Elsa.Jobs.Implementations;
 using Elsa.Jobs.Options;

@@ -1,8 +1,7 @@
 using Elsa.Abstractions;
+using Elsa.Extensions;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Services;
-using Elsa.Workflows.Runtime.Extensions;
 using Elsa.Workflows.Runtime.Services;
 
 namespace Elsa.Workflows.Api.Endpoints.Events.Trigger;

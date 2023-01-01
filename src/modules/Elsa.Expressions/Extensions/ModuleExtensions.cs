@@ -5,7 +5,8 @@ using Elsa.Features.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-namespace Elsa.Expressions.Extensions;
+// ReSharper disable once CheckNamespace
+namespace Elsa.Extensions;
 
 public static class ModuleExtensions
 {

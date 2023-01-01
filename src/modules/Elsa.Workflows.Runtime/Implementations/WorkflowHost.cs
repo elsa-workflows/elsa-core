@@ -1,6 +1,7 @@
 using Elsa.Mediator.Services;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Notifications;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Runtime.Notifications;
@@ -70,9 +71,7 @@ public class WorkflowHost : IWorkflowHost
     {
         var correlationId = options?.CorrelationId;
         var instanceId = options?.InstanceId ?? _identityGenerator.GenerateId();
-        await _eventPublisher.PublishAsync(new WorkflowExecuting(Workflow), cancellationToken);
-
-        var originalBookmarks = WorkflowState?.Bookmarks.ToList() ?? new List<Bookmark>();
+        var originalBookmarks = WorkflowState.Bookmarks.ToList();
         var input = options?.Input;
         var runOptions = new RunWorkflowOptions(instanceId, correlationId, Input: input, TriggerActivityId: options?.TriggerActivityId);
         var workflowResult = await _workflowRunner.RunAsync(Workflow, runOptions, cancellationToken);
@@ -81,8 +80,6 @@ public class WorkflowHost : IWorkflowHost
 
         var updatedBookmarks = WorkflowState.Bookmarks;
         var diff = Diff.For(originalBookmarks, updatedBookmarks);
-        
-        await _eventPublisher.PublishAsync(new WorkflowExecuted(Workflow, WorkflowState), cancellationToken);
 
         return new StartWorkflowHostResult(diff);
     }
@@ -92,8 +89,6 @@ public class WorkflowHost : IWorkflowHost
     /// </summary>
     public async Task<ResumeWorkflowHostResult> ResumeWorkflowAsync(ResumeWorkflowHostOptions? options = default, CancellationToken cancellationToken = default)
     {
-        await _eventPublisher.PublishAsync(new WorkflowExecuting(Workflow), cancellationToken);
-
         if (WorkflowState.Status != WorkflowStatus.Running)
         {
             _logger.LogWarning("Attempt to resume workflow {WorkflowInstanceId} that is not in the Running state. The actual state is {ActualWorkflowStatus}", WorkflowState.Id, WorkflowState.Status);
@@ -106,8 +101,6 @@ public class WorkflowHost : IWorkflowHost
         var workflowResult = await _workflowRunner.RunAsync(Workflow, WorkflowState, runOptions, cancellationToken);
 
         WorkflowState = workflowResult.WorkflowState;
-        await _eventPublisher.PublishAsync(new WorkflowExecuted(Workflow, WorkflowState), cancellationToken);
-
         return new ResumeWorkflowHostResult();
     }
 }

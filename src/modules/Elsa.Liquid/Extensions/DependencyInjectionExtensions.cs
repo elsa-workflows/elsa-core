@@ -1,23 +1,12 @@
-using Elsa.Features.Services;
-using Elsa.Liquid.Features;
 using Elsa.Liquid.Implementations;
 using Elsa.Liquid.Options;
 using Elsa.Liquid.Services;
-using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Liquid.Extensions;
+// ReSharper disable once CheckNamespace
+namespace Microsoft.Extensions.DependencyInjection;
 
 public static class DependencyInjectionExtensions
 {
-    /// <summary>
-    /// Setup the <see cref="LiquidFeature"/> feature.
-    /// </summary>
-    public static IModule UseLiquid(this IModule module, Action<LiquidFeature>? configure = default)
-    {
-        module.Configure(configure);
-        return module;
-    }
-
     /// <summary>
     /// Register a custom Liquid filter.
     /// </summary>

@@ -1,4 +1,5 @@
-namespace Elsa.Dsl.Extensions;
+// ReSharper disable once CheckNamespace
+namespace Elsa.Extensions;
 
 public static class ListConverter
 {

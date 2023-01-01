@@ -7,7 +7,7 @@ public class JoinAnyForkWorkflow : WorkflowBase
 {
     protected override void Build(IWorkflowBuilder workflow)
     {
-        workflow.WithRoot(new Sequence
+        workflow.Root = new Sequence
         {
             Activities =
             {
@@ -54,6 +54,6 @@ public class JoinAnyForkWorkflow : WorkflowBase
                 },
                 new WriteLine("End")
             }
-        });
+        };
     }
 }

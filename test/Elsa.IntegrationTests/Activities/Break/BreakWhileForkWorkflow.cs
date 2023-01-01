@@ -10,7 +10,7 @@ public class BreakWhileForkWorkflow : WorkflowBase
     {
         var currentValue = new Variable<int?>("CurrentValue", 0);
 
-        workflow.WithRoot(new Sequence
+        workflow.Root = new Sequence
         {
             Variables = { currentValue },
             Activities =
@@ -46,6 +46,6 @@ public class BreakWhileForkWorkflow : WorkflowBase
                     }
                 }),
             }
-        });
+        };
     }
 }

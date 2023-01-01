@@ -29,13 +29,4 @@
       <PackageReference Include="Proto.Persistence.Sqlite" Version="0.33.0" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Reference Include="Elsa.Persistence.EntityFrameworkCore">
-        <HintPath>bin\Debug\net6.0\Elsa.Persistence.EntityFrameworkCore.dll</HintPath>
-      </Reference>
-      <Reference Include="Elsa.Persistence.EntityFrameworkCore.Sqlite">
-        <HintPath>bin\Debug\net6.0\Elsa.Persistence.EntityFrameworkCore.Sqlite.dll</HintPath>
-      </Reference>
-    </ItemGroup>
-
 </Project>

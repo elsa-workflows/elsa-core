@@ -1,7 +1,6 @@
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
-using Elsa.Mediator.Extensions;
 using Elsa.ProtoActor.Grains;
 using Elsa.ProtoActor.HostedServices;
 using Elsa.ProtoActor.Implementations;

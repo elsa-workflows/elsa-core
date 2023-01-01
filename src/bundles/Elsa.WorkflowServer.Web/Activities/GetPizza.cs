@@ -1,5 +1,5 @@
+using Elsa.Extensions;
 using Elsa.Scheduling.Activities;
-using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;

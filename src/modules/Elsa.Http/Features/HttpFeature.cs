@@ -1,4 +1,5 @@
 using Elsa.Common.Features;
+using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
@@ -9,8 +10,6 @@ using Elsa.Http.Models;
 using Elsa.Http.Options;
 using Elsa.Http.Parsers;
 using Elsa.Http.Services;
-using Elsa.Mediator.Extensions;
-using Elsa.Workflows.Management.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Http.Features;

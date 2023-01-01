@@ -2,7 +2,8 @@ using Elsa.Features.Services;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Management.Features;
 
-namespace Elsa.Workflows.Management.Extensions;
+// ReSharper disable once CheckNamespace
+namespace Elsa.Extensions;
 
 /// <summary>
 /// Provides extensions to the specified <see cref="IModule"/>/

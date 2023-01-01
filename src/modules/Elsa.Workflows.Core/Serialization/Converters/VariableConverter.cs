@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Helpers;
+using Elsa.Extensions;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
 using Microsoft.Extensions.Logging;

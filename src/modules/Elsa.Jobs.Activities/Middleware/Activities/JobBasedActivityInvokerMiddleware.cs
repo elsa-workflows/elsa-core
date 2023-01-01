@@ -1,6 +1,6 @@
+using Elsa.Extensions;
 using Elsa.Jobs.Activities.Jobs;
 using Elsa.Jobs.Activities.Models;
-using Elsa.Jobs.Extensions;
 using Elsa.Jobs.Services;
 using Elsa.Workflows.Core.Middleware.Activities;
 using Elsa.Workflows.Core.Models;

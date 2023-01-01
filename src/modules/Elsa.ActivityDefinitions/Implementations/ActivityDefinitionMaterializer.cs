@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Elsa.ActivityDefinitions.Activities;
 using Elsa.ActivityDefinitions.Services;
-using Elsa.Workflows.Core;
+using Elsa.Extensions;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.Services;

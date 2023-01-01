@@ -12,7 +12,7 @@ public class BreakWhileBlockForkWorkflow : WorkflowBase
 
         workflow.WithVariable(currentValue);
         
-        workflow.WithRoot(new While(() => true)
+        workflow.Root = new While(() => true)
         {
             Body =
                 new Sequence
@@ -47,6 +47,6 @@ public class BreakWhileBlockForkWorkflow : WorkflowBase
                         }
                     }
                 }
-        });
+        };
     }
 }

@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using Elsa.Expressions.Models;
+using Elsa.Extensions;
 using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Core.Activities.Flowchart.Models;
 using Elsa.Workflows.Core.Attributes;
@@ -25,6 +26,7 @@ public class FlowDecision : ActivityBase
     [Input(UIHint = "single-line")]
     public Input<bool> Condition { get; set; } = new(new Literal<bool>(false));
 
+    /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var result = context.Get(Condition);

@@ -11,7 +11,7 @@ class BreakForWorkflow : WorkflowBase
     {
         var currentValue = new Variable<int?>();
 
-        workflow.WithRoot(new Sequence
+        workflow.Root = new Sequence
         {
             Activities =
             {
@@ -33,6 +33,6 @@ class BreakForWorkflow : WorkflowBase
                 },
                 new WriteLine("End"),
             }
-        });
+        };
     }
 }

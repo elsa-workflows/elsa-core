@@ -1,13 +1,10 @@
-using System;
-using Elsa.Common.Entities;
+using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.State;
+using Elsa.Workflows.Sinks.Services;
 
 namespace Elsa.Workflows.Sinks.Models;
 
-public class WorkflowInstance : Entity
-{
-    public DateTimeOffset CreatedAt { get; set; }
-    public DateTimeOffset LastExecutedAt { get; set; }
-    public DateTimeOffset? FinishedAt { get; set; }
-    public DateTimeOffset? CancelledAt { get; set; }
-    public DateTimeOffset? FaultedAt { get; set; }
-}
+/// <summary>
+/// Provides context to the <see cref="IWorkflowSink"/> implementations.
+/// </summary>
+public record WorkflowSinkContext(WorkflowState WorkflowState, Workflow Workflow, CancellationToken CancellationToken);

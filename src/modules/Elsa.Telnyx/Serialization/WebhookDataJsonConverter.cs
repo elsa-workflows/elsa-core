@@ -1,9 +1,9 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
+using Elsa.Extensions;
 using Elsa.Telnyx.Helpers;
 using Elsa.Telnyx.Models;
 using Elsa.Telnyx.Payloads.Abstract;
-using Elsa.Workflows.Core;
 
 namespace Elsa.Telnyx.Serialization;
 

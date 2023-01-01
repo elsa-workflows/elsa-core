@@ -1,4 +1,5 @@
-namespace Elsa.Features.Extensions;
+// ReSharper disable once CheckNamespace
+namespace Elsa.Extensions;
 
 public static class EnumerableTopologicalSortExtensions
 {

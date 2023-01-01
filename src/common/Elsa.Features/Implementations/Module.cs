@@ -1,6 +1,6 @@
 using System.Reflection;
+using Elsa.Extensions;
 using Elsa.Features.Attributes;
-using Elsa.Features.Extensions;
 using Elsa.Features.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;

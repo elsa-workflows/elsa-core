@@ -2,7 +2,8 @@ using Elsa.Features.Services;
 using Elsa.Workflows.Core;
 using MassTransit;
 
-namespace Elsa.MassTransit.Extensions;
+// ReSharper disable once CheckNamespace
+namespace Elsa.Extensions;
 
 public static class ModuleExtensions
 {

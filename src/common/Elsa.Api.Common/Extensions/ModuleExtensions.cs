@@ -2,6 +2,7 @@ using System.Reflection;
 using Elsa.Features.Services;
 using FastEndpoints;
 
+// ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
 
 /// <summary>

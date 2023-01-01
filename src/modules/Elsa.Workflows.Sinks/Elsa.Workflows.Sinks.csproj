@@ -13,15 +13,8 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\common\Elsa.Api.Common\Elsa.Api.Common.csproj" />
-      <ProjectReference Include="..\..\common\Elsa.Features\Elsa.Features.csproj" />
-      <ProjectReference Include="..\Elsa.Common\Elsa.Common.csproj" />
-      <ProjectReference Include="..\Elsa.MassTransit\Elsa.MassTransit.csproj" />
       <ProjectReference Include="..\Elsa.Mediator\Elsa.Mediator.csproj" />
-      <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <PackageReference Include="MassTransit.Abstractions" Version="8.0.10-develop.696" />
+      <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
     </ItemGroup>
 
 </Project>

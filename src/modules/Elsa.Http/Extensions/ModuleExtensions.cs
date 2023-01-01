@@ -2,7 +2,7 @@ using Elsa.Features.Services;
 using Elsa.Http.Features;
 
 // ReSharper disable once CheckNamespace
-namespace Microsoft.Extensions.DependencyInjection;
+namespace Elsa.Extensions;
 
 /// <summary>
 /// Provides extensions to install the <see cref="HttpFeature"/> feature.

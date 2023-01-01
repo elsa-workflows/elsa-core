@@ -1,6 +1,7 @@
 using Elsa.Expressions.Helpers;
 
-namespace Elsa.Workflows.Core;
+// ReSharper disable once CheckNamespace
+namespace Elsa.Extensions;
 
 public static class DictionaryExtensions
 {

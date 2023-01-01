@@ -1,7 +1,6 @@
-using Elsa.WorkflowContexts.Extensions;
+using Elsa.Extensions;
 using Elsa.WorkflowContexts.Models;
 using Elsa.WorkflowContexts.Services;
-using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Pipelines.ActivityExecution;
 using Elsa.Workflows.Core.Services;
@@ -17,12 +16,16 @@ public class WorkflowContextActivityExecutionMiddleware : IActivityExecutionMidd
     private readonly ActivityMiddlewareDelegate _next;
     private readonly IServiceScopeFactory _serviceScopeFactory;
 
+    /// <summary>
+    /// Constructor.
+    /// </summary>
     public WorkflowContextActivityExecutionMiddleware(ActivityMiddlewareDelegate next, IServiceScopeFactory serviceScopeFactory)
     {
         _next = next;
         _serviceScopeFactory = serviceScopeFactory;
     }
 
+    /// <inheritdoc />
     public async ValueTask InvokeAsync(ActivityExecutionContext context)
     {
         // Check if the workflow contains any workflow contexts.

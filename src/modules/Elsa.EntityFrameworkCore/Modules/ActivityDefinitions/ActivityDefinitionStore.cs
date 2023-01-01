@@ -3,10 +3,10 @@ using System.Text.Json;
 using Elsa.ActivityDefinitions.Entities;
 using Elsa.ActivityDefinitions.Models;
 using Elsa.ActivityDefinitions.Services;
-using Elsa.Common.Extensions;
 using Elsa.Common.Models;
 using Elsa.EntityFrameworkCore.Common;
 using Elsa.EntityFrameworkCore.Extensions;
+using Elsa.Extensions;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Serialization;
 

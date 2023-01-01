@@ -13,7 +13,7 @@ class NestedForEachWithBreakWorkflow : WorkflowBase
         var currentOuterItem = new Variable<string>();
         var currentInnerItem = new Variable<string>();
 
-        workflow.WithRoot(new ForEach<string>(outerItems)
+        workflow.Root = new ForEach<string>(outerItems)
         {
             CurrentValue = new Output<string?>(currentOuterItem),
             Body = new Sequence
@@ -38,6 +38,6 @@ class NestedForEachWithBreakWorkflow : WorkflowBase
                     }
                 }
             }
-        });
+        };
     }
 }

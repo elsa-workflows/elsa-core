@@ -1,9 +1,10 @@
 ﻿using Elsa.EntityFrameworkCore.Modules.ActivityDefinitions;
-using Elsa.EntityFrameworkCore.Sqlite.Extensions;
+using Elsa.EntityFrameworkCore.Sqlite;
 
-namespace Elsa.EntityFrameworkCore.Sqlite.Modules.ActivityDefinitions;
+// ReSharper disable once CheckNamespace
+namespace Elsa.EntityFrameworkCore.Extensions;
 
-public static class Extensions
+public static partial class Extensions
 {
     public static EFCoreActivityDefinitionsPersistenceFeature UseSqlite(this EFCoreActivityDefinitionsPersistenceFeature feature, string connectionString = Constants.DefaultConnectionString)
     {

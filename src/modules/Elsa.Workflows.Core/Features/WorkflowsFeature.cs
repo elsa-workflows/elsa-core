@@ -1,7 +1,7 @@
 using Elsa.Common.Features;
 using Elsa.Expressions;
-using Elsa.Expressions.Extensions;
 using Elsa.Expressions.Features;
+using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
@@ -95,6 +95,9 @@ public class WorkflowsFeature : FeatureBase
             .AddSingleton<IActivityPortResolver, OutboundActivityPortResolver>()
             .AddSingleton<IActivityPortResolver, SwitchActivityPortResolver>()
             .AddSingleton<ISerializationOptionsConfigurator, CustomSerializationOptionConfigurator>()
+            
+            // Domain event handlers.
+            .AddHandlersFrom<WorkflowsFeature>()
             
             // Stream providers.
             .AddSingleton(StandardInStreamProvider)

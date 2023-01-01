@@ -1,3 +1,5 @@
+using Elsa.Extensions;
+
 namespace Elsa.Workflows.Core.Services;
 
 public interface IWellKnownTypeRegistry

@@ -1,9 +1,8 @@
-using Elsa.Features.Extensions;
-using Elsa.Features.Services;
 using Elsa.Quartz.Features;
 using Elsa.Scheduling.Features;
 
-namespace Elsa.Quartz.Extensions;
+// ReSharper disable once CheckNamespace
+namespace Elsa.Extensions;
 
 public static class SchedulingFeatureExtensions
 {

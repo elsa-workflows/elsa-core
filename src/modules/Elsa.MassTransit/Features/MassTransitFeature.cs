@@ -1,9 +1,7 @@
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
-using Elsa.MassTransit.Extensions;
 using MassTransit;
-using Microsoft.Extensions.Configuration;
 
 namespace Elsa.MassTransit.Features;
 

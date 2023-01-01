@@ -1,45 +1,25 @@
+using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.Extensions;
 using Elsa.Http;
-using Elsa.Http.Extensions;
 using Elsa.Identity;
-using Elsa.Identity.Extensions;
 using Elsa.Identity.Options;
 using Elsa.JavaScript.Activities;
-using Elsa.JavaScript.Extensions;
-using Elsa.Jobs.Activities.Extensions;
 using Elsa.Jobs.Activities.Implementations;
 using Elsa.Jobs.Activities.Middleware.Activities;
 using Elsa.Jobs.Activities.Services;
-using Elsa.Jobs.Extensions;
-using Elsa.Labels.Extensions;
-using Elsa.Liquid.Extensions;
 using Elsa.EntityFrameworkCore.Modules.ActivityDefinitions;
 using Elsa.EntityFrameworkCore.Modules.Labels;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
-using Elsa.EntityFrameworkCore.Sqlite.Modules.ActivityDefinitions;
-using Elsa.EntityFrameworkCore.Sqlite.Modules.Labels;
-using Elsa.EntityFrameworkCore.Sqlite.Modules.Management;
-using Elsa.EntityFrameworkCore.Sqlite.Modules.Runtime;
 using Elsa.MassTransit.Options;
-using Elsa.Persistence.EntityFrameworkCore.Modules.WorkflowSink;
-using Elsa.Persistence.EntityFrameworkCore.Sqlite.Modules.WorkflowSink;
 using Elsa.Requirements;
 using Elsa.Scheduling.Activities;
-using Elsa.Scheduling.Extensions;
-using Elsa.WorkflowContexts.Extensions;
-using Elsa.Workflows.Api.Extensions;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Middleware.Activities;
 using Elsa.Workflows.Core.Middleware.Workflows;
-using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Management.Services;
-using Elsa.Workflows.Runtime.Extensions;
-using Elsa.Workflows.Runtime.Implementations;
 using Elsa.WorkflowServer.Web.Jobs;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.Data.Sqlite;
-using Proto.Persistence.Sqlite;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -48,7 +28,6 @@ var sqliteConnectionString = configuration.GetConnectionString("Sqlite")!;
 var identityOptions = new IdentityOptions();
 var identitySection = configuration.GetSection("Identity");
 identitySection.Bind(identityOptions);
-var rabbitMqConnectionString = configuration.GetConnectionString("RabbitMq");
 var rabbitMqOptions = new RabbitMqOptions();
 configuration.GetSection(RabbitMqOptions.RabbitMq).Bind(rabbitMqOptions);
 
@@ -76,8 +55,6 @@ services
         })
         .UseLabels(labels => labels.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
         .UseActivityDefinitions(feature => feature.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
-        .UseWorkflowSinks(feature => feature.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
-        //.UseMassTransit(mt => mt.UseRabbitMq(rabbitMqConnectionString!, rabbitMqOptions))
         .UseJobs(jobs => jobs.ConfigureOptions = options => options.WorkerCount = 10)
         .UseJobActivities()
         .UseScheduling()

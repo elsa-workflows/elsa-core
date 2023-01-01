@@ -1,6 +1,5 @@
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Services;
-using Pipelines.Sockets.Unofficial;
 
 namespace Elsa.IntegrationTests.Activities;
 
@@ -8,7 +7,7 @@ public class FinishForkedWorkflow : WorkflowBase
 {
     protected override void Build(IWorkflowBuilder workflow)
     {
-        workflow.WithRoot(new Fork
+        workflow.Root = new Fork
         {
             JoinMode = ForkJoinMode.WaitAll,
             Branches =
@@ -30,6 +29,6 @@ public class FinishForkedWorkflow : WorkflowBase
                     }
                 }
             }
-        });
+        };
     }
 }
