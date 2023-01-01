@@ -141,13 +141,16 @@ deploy:
 
 after_deploy:
     -   ps: >-
-            if( -Not $env:APPVEYOR_PULL_REQUEST_NUMBER)
+            if(-Not $env:APPVEYOR_PULL_REQUEST_NUMBER)
             {
-                cd .\src\designer\elsa-workflows-studio
+                if(($env:APPVEYOR_REPO_BRANCH -eq "master") -or ($env:APPVEYOR_REPO_TAG -eq "true"))
+                {
+                    cd .\src\designer\elsa-workflows-studio
 
-                "registry=https://www.myget.org/F/elsa-2-npm/npm/" | Out-File ".npmrc" -Encoding UTF8
-                "always-auth=true" | Out-File ".npmrc" -Encoding UTF8 -Append
-                "//www.myget.org/F/elsa-2-npm/npm/:_authToken=$env:myget_api_key" | Out-File ".npmrc" -Encoding UTF8 -Append
+                    "registry=https://www.myget.org/F/elsa-2-npm/npm/" | Out-File ".npmrc" -Encoding UTF8
+                    "always-auth=true" | Out-File ".npmrc" -Encoding UTF8 -Append
+                    "//www.myget.org/F/elsa-2-npm/npm/:_authToken=$env:myget_api_key" | Out-File ".npmrc" -Encoding UTF8 -Append
 
-                npm publish --loglevel warn
+                    npm publish --loglevel warn
+                }
             }
