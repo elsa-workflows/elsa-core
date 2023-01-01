@@ -7,7 +7,7 @@ public class FinishForkedWorkflow : WorkflowBase
 {
     protected override void Build(IWorkflowBuilder workflow)
     {
-        workflow.WithRoot(new Fork
+        workflow.Root = new Fork
         {
             JoinMode = ForkJoinMode.WaitAll,
             Branches =
@@ -29,6 +29,6 @@ public class FinishForkedWorkflow : WorkflowBase
                     }
                 }
             }
-        });
+        };
     }
 }

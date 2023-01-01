@@ -25,7 +25,7 @@ public class WorkflowBuilder : IWorkflowBuilder
     public string? DefinitionId { get; set; }
 
     /// <inheritdoc />
-    public int Version { get; private set; } = 1;
+    public int Version { get; set; } = 1;
 
     /// <inheritdoc />
     public string? Name { get; set; }
@@ -46,50 +46,8 @@ public class WorkflowBuilder : IWorkflowBuilder
     public IDictionary<string, object> CustomProperties { get; set; } = new Dictionary<string, object>();
 
     /// <inheritdoc />
-    public WorkflowOptions WorkflowOptions { get; } = new(); 
-
-    /// <inheritdoc />
-    public IWorkflowBuilder WithId(string id)
-    {
-        Id = id;
-        return this;
-    }
-
-    /// <inheritdoc />
-    public IWorkflowBuilder WithDefinitionId(string definitionId)
-    {
-        DefinitionId = definitionId;
-        return this;
-    }
-
-    /// <inheritdoc />
-    public IWorkflowBuilder WithVersion(int version)
-    {
-        Version = version;
-        return this;
-    }
-
-    /// <inheritdoc />
-    public IWorkflowBuilder WithRoot(IActivity root)
-    {
-        Root = root;
-        return this;
-    }
-
-    /// <inheritdoc />
-    public IWorkflowBuilder WithName(string value)
-    {
-        Name = value;
-        return this;
-    }
-
-    /// <inheritdoc />
-    public IWorkflowBuilder WithDescription(string value)
-    {
-        Description = value;
-        return this;
-    }
-
+    public WorkflowOptions WorkflowOptions { get;  } = new(); 
+    
     /// <inheritdoc />
     public Variable<T> WithVariable<T>()
     {
@@ -175,7 +133,7 @@ public class WorkflowBuilder : IWorkflowBuilder
     /// <inheritdoc />
     public async Task<Workflow> BuildWorkflowAsync(IWorkflow workflowDefinition, CancellationToken cancellationToken = default)
     {
-        WithDefinitionId(workflowDefinition.GetType().Name);
+        DefinitionId = workflowDefinition.GetType().Name;
         await workflowDefinition.BuildAsync(this, cancellationToken);
         return BuildWorkflow();
     }

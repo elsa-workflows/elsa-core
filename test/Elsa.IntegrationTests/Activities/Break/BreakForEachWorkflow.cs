@@ -12,7 +12,7 @@ class BreakForEachWorkflow : WorkflowBase
         var items = new[] { "C#", "Rust", "Go" };
         var currentItem = new Variable<string>();
 
-        workflow.WithRoot(new Sequence
+        workflow.Root = new Sequence
         {
             Activities =
             {
@@ -35,6 +35,6 @@ class BreakForEachWorkflow : WorkflowBase
                 },
                 new WriteLine("End"),
             }
-        });
+        };
     }
 }

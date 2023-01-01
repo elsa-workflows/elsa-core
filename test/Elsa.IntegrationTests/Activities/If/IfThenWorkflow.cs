@@ -15,10 +15,10 @@ public class IfThenWorkflow : WorkflowBase
         
     protected override void Build(IWorkflowBuilder workflow)
     {
-        workflow.WithRoot(new If(_condition)
+        workflow.Root = new If(_condition)
         {
             Then = new WriteLine("True!"),
             Else = new WriteLine("False!")
-        });
+        };
     }
 }

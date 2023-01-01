@@ -18,7 +18,7 @@ class ForEachWorkflow : WorkflowBase
     {
         var currentItem = new Variable<string>("CurrentItem");
 
-        workflow.WithRoot(new Sequence
+        workflow.Root = new Sequence
         {
             Variables = { currentItem },
             Activities =
@@ -30,6 +30,6 @@ class ForEachWorkflow : WorkflowBase
                     Body = new WriteLine(currentItem)
                 },
             }
-        });
+        };
     }
 }

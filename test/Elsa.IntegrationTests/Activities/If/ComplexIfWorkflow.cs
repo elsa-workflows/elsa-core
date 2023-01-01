@@ -15,7 +15,7 @@ public class ComplexIfWorkflow : WorkflowBase
         
     protected override void Build(IWorkflowBuilder workflow)
     {
-        workflow.WithRoot(new Sequence
+        workflow.Root = new Sequence
         {
             Activities =
             {
@@ -41,6 +41,6 @@ public class ComplexIfWorkflow : WorkflowBase
                 },
                 new WriteLine("End")
             }
-        });
+        };
     }
 }

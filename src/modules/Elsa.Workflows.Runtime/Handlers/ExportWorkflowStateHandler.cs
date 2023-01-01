@@ -1,4 +1,5 @@
 using Elsa.Mediator.Services;
+using Elsa.Workflows.Core.Notifications;
 using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Runtime.Services;
 

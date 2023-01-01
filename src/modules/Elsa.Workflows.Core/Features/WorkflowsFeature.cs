@@ -96,6 +96,9 @@ public class WorkflowsFeature : FeatureBase
             .AddSingleton<IActivityPortResolver, SwitchActivityPortResolver>()
             .AddSingleton<ISerializationOptionsConfigurator, CustomSerializationOptionConfigurator>()
             
+            // Domain event handlers.
+            .AddHandlersFrom<WorkflowsFeature>()
+            
             // Stream providers.
             .AddSingleton(StandardInStreamProvider)
             .AddSingleton(StandardOutStreamProvider)

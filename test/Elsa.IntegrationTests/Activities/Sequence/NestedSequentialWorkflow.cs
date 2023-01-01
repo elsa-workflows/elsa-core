@@ -7,7 +7,7 @@ class NestedSequentialWorkflow : WorkflowBase
 {
     protected override void Build(IWorkflowBuilder workflow)
     {
-        workflow.WithRoot(new Sequence
+        workflow.Root = new Sequence
         {
             Activities =
             {
@@ -23,6 +23,6 @@ class NestedSequentialWorkflow : WorkflowBase
                 },
                 new WriteLine("End"),
             }
-        });
+        };
     }
 }

@@ -7,7 +7,7 @@ public class FinishSequentialWorkflow : WorkflowBase
 {
     protected override void Build(IWorkflowBuilder workflow)
     {
-        workflow.WithRoot(new Sequence
+        workflow.Root = new Sequence
         {
             Activities =
             {
@@ -15,6 +15,6 @@ public class FinishSequentialWorkflow : WorkflowBase
                 new Finish(),
                 new WriteLine("Line 2")
             }
-        });
+        };
     }
 }

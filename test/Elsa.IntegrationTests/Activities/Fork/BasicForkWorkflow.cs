@@ -7,7 +7,7 @@ public class BasicForkWorkflow : WorkflowBase
 {
     protected override void Build(IWorkflowBuilder workflow)
     {
-        workflow.WithRoot(new Fork
+        workflow.Root = new Fork
         {
             Branches =
             {
@@ -15,6 +15,6 @@ public class BasicForkWorkflow : WorkflowBase
                 new WriteLine("Branch 2"),
                 new WriteLine("Branch 3")
             }
-        });
+        };
     }
 }

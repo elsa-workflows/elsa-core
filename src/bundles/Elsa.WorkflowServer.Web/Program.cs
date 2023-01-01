@@ -11,6 +11,7 @@ using Elsa.EntityFrameworkCore.Modules.ActivityDefinitions;
 using Elsa.EntityFrameworkCore.Modules.Labels;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
+using Elsa.MassTransit.Options;
 using Elsa.Requirements;
 using Elsa.Scheduling.Activities;
 using Elsa.Workflows.Core.Activities;
@@ -27,6 +28,8 @@ var sqliteConnectionString = configuration.GetConnectionString("Sqlite")!;
 var identityOptions = new IdentityOptions();
 var identitySection = configuration.GetSection("Identity");
 identitySection.Bind(identityOptions);
+var rabbitMqOptions = new RabbitMqOptions();
+configuration.GetSection(RabbitMqOptions.RabbitMq).Bind(rabbitMqOptions);
 
 // Add Elsa services.
 services

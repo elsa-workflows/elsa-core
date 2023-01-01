@@ -3,8 +3,10 @@ using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Dsl.Interpreters;
 
+/// <inheritdoc />
 public partial class WorkflowDefinitionBuilderInterpreter
 {
+    /// <inheritdoc />
     public override IWorkflowBuilder VisitProgram(ElsaParser.ProgramContext context)
     {
         var stats = context.stat();
@@ -22,13 +24,13 @@ public partial class WorkflowDefinitionBuilderInterpreter
         if (activities.Count == 1)
         {
             // We only have one activity, so we can use it as the root and discard the root sequence.
-            _workflowBuilder.WithRoot(activities.Single());
+            _workflowBuilder.Root = activities.Single();
         }
         else
         {
             // Assign the collected child activities to the root sequence.
             rootSequence.Activities = activities.ToList();
-            _workflowBuilder.WithRoot(rootSequence);
+            _workflowBuilder.Root = rootSequence;
         }
 
         return DefaultResult;

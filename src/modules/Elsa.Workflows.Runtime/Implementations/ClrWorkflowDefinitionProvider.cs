@@ -16,23 +16,23 @@ namespace Elsa.Workflows.Runtime.Implementations;
 /// </summary>
 public class ClrWorkflowDefinitionProvider : IWorkflowDefinitionProvider
 {
-    private readonly IIdentityGraphService _identityGraphService;
     private readonly IWorkflowBuilderFactory _workflowBuilderFactory;
     private readonly SerializerOptionsProvider _serializerOptionsProvider;
     private readonly ISystemClock _systemClock;
     private readonly IServiceProvider _serviceProvider;
     private readonly RuntimeOptions _options;
 
+    /// <summary>
+    /// Constructor.
+    /// </summary>
     public ClrWorkflowDefinitionProvider(
         IOptions<RuntimeOptions> options,
-        IIdentityGraphService identityGraphService,
         IWorkflowBuilderFactory workflowBuilderFactory,
         SerializerOptionsProvider serializerOptionsProvider,
         ISystemClock systemClock,
         IServiceProvider serviceProvider
     )
     {
-        _identityGraphService = identityGraphService;
         _workflowBuilderFactory = workflowBuilderFactory;
         _serializerOptionsProvider = serializerOptionsProvider;
         _systemClock = systemClock;
@@ -40,8 +40,10 @@ public class ClrWorkflowDefinitionProvider : IWorkflowDefinitionProvider
         _options = options.Value;
     }
 
+    /// <inheritdoc />
     public string Name => "CLR";
 
+    /// <inheritdoc />
     public async ValueTask<IEnumerable<WorkflowDefinitionResult>> GetWorkflowDefinitionsAsync(CancellationToken cancellationToken = default)
     {
         var workflowDefinitionTasks = _options.Workflows.Values.Select(async x => await BuildWorkflowDefinition(x, cancellationToken)).ToList();
@@ -55,7 +57,7 @@ public class ClrWorkflowDefinitionProvider : IWorkflowDefinitionProvider
         var workflowBuilder = await workflowFactory(_serviceProvider);
         var workflowBuilderType = workflowBuilder.GetType();
 
-        builder.WithDefinitionId(workflowBuilderType.Name);
+        builder.DefinitionId = workflowBuilderType.Name;
         await workflowBuilder.BuildAsync(builder, cancellationToken);
 
         var workflow = builder.BuildWorkflow();

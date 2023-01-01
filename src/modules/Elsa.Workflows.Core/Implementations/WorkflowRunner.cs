@@ -1,5 +1,7 @@
 using Elsa.Extensions;
+using Elsa.Mediator.Services;
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Notifications;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Core.State;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,6 +17,7 @@ public class WorkflowRunner : IWorkflowRunner
     private readonly IWorkflowBuilderFactory _workflowBuilderFactory;
     private readonly IIdentityGenerator _identityGenerator;
     private readonly IWorkflowExecutionContextFactory _workflowExecutionContextFactory;
+    private readonly IEventPublisher _eventPublisher;
 
     /// <summary>
     /// Constructor.
@@ -25,7 +28,8 @@ public class WorkflowRunner : IWorkflowRunner
         IWorkflowStateSerializer workflowStateSerializer,
         IWorkflowBuilderFactory workflowBuilderFactory,
         IIdentityGenerator identityGenerator,
-        IWorkflowExecutionContextFactory workflowExecutionContextFactory)
+        IWorkflowExecutionContextFactory workflowExecutionContextFactory,
+        IEventPublisher eventPublisher)
     {
         _serviceScopeFactory = serviceScopeFactory;
         _pipeline = pipeline;
@@ -33,6 +37,7 @@ public class WorkflowRunner : IWorkflowRunner
         _workflowBuilderFactory = workflowBuilderFactory;
         _identityGenerator = identityGenerator;
         _workflowExecutionContextFactory = workflowExecutionContextFactory;
+        _eventPublisher = eventPublisher;
     }
 
     /// <inheritdoc />
@@ -134,10 +139,14 @@ public class WorkflowRunner : IWorkflowRunner
     /// <inheritdoc />
     public async Task<RunWorkflowResult> RunAsync(WorkflowExecutionContext workflowExecutionContext)
     {
+        var workflow = workflowExecutionContext.Workflow;
+        var cancellationToken = workflowExecutionContext.CancellationToken;
+        
+        // Publish domain event.
+        await _eventPublisher.PublishAsync(new WorkflowExecuting(workflow), cancellationToken);
+        
         // Transition into the Running state.
         workflowExecutionContext.TransitionTo(WorkflowSubStatus.Executing);
-        
-        var workflow = workflowExecutionContext.Workflow;
 
         // Execute the workflow execution pipeline.
         await _pipeline.ExecuteAsync(workflowExecutionContext);
@@ -147,7 +156,10 @@ public class WorkflowRunner : IWorkflowRunner
 
         // Read captured output, if any.
         var result = workflow.ResultVariable?.Get(workflowExecutionContext.MemoryRegister);
-
+        
+        // Publish domain event.
+        await _eventPublisher.PublishAsync(new WorkflowExecuted(workflow, workflowState), cancellationToken);
+        
         // Return workflow execution result containing state + bookmarks.
         return new RunWorkflowResult(workflowState, workflowExecutionContext.Workflow, result);
     }

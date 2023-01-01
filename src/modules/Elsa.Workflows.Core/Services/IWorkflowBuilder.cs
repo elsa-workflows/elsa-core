@@ -10,27 +10,27 @@ public interface IWorkflowBuilder
     /// <summary>
     /// The definition ID to use for the workflow being built.
     /// </summary>
-    string? DefinitionId { get; }
+    string? DefinitionId { get; set; }
     
     /// <summary>
     /// The version ID to use for the workflow being built.
     /// </summary>
-    string? Id { get; }
+    string? Id { get; set; }
     
     /// <summary>
     /// The version of the workflow being built.
     /// </summary>
-    int Version { get; }
+    int Version { get; set; }
     
     /// <summary>
     /// The name of the workflow.
     /// </summary>
-    string? Name { get; }
+    string? Name { get; set; }
     
     /// <summary>
     /// A description of the workflow.
     /// </summary>
-    string? Description { get; }
+    string? Description { get; set; }
     
     /// <summary>
     /// Options for the workflow being built.
@@ -56,36 +56,6 @@ public interface IWorkflowBuilder
     /// A set of properties that can be used for storing application-specific information about the workflow being built.
     /// </summary>
     IDictionary<string, object> CustomProperties { get; }
-    
-    /// <summary>
-    /// A fluent method for assigning the <see cref="DefinitionId"/>.
-    /// </summary>
-    IWorkflowBuilder WithDefinitionId(string definitionId);
-    
-    /// <summary>
-    /// A fluent method for assigning the <see cref="Id"/>.
-    /// </summary>
-    IWorkflowBuilder WithId(string id);
-    
-    /// <summary>
-    /// A fluent method for assigning the <see cref="Version"/>.
-    /// </summary>
-    IWorkflowBuilder WithVersion(int version);
-    
-    /// <summary>
-    /// A fluent method for assigning the <see cref="Root"/>.
-    /// </summary>
-    IWorkflowBuilder WithRoot(IActivity root);
-    
-    /// <summary>
-    /// A fluent method for assigning the <see cref="Name"/>.
-    /// </summary>
-    IWorkflowBuilder WithName(string value);
-    
-    /// <summary>
-    /// A fluent method for assigning the <see cref="Description"/>.
-    /// </summary>
-    IWorkflowBuilder WithDescription(string value);
     
     /// <summary>
     /// A fluent method for adding a variable to <see cref="Variables"/>.

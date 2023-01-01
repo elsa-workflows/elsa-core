@@ -25,7 +25,7 @@ class Workflow1 : WorkflowBase
         var writeLine3 = new WriteLine { Id = "WriteLine3", Text = new Input<string>(currentItem) };
         var writeLine4 = new WriteLine { Id = "WriteLine4", Text = new Input<string>("Done!") };
 
-        workflow.WithRoot(new Workflows.Core.Activities.Flowchart.Activities.Flowchart
+        workflow.Root = new Workflows.Core.Activities.Flowchart.Activities.Flowchart
         {
             Start = writeLine1,
             Activities = { writeLine1, writeLine2, writeLine3, writeLine4, forEach1 },
@@ -36,7 +36,7 @@ class Workflow1 : WorkflowBase
                 new Connection(writeLine2, writeLine3),
                 new Connection(forEach1, writeLine4)
             }
-        });
+        };
     }
 }
 
@@ -57,7 +57,7 @@ class Workflow2 : WorkflowBase
         var writeLine2 = new WriteLine { Id = "WriteLine2", Text = new Input<string>(currentItem) };
         var writeLine3 = new WriteLine { Id = "WriteLine3", Text = new Input<string>("Done!") };
 
-        workflow.WithRoot(new Workflows.Core.Activities.Flowchart.Activities.Flowchart
+        workflow.Root = new Workflows.Core.Activities.Flowchart.Activities.Flowchart
         {
             Start = writeLine1,
             Activities = { writeLine1, writeLine2, writeLine3, forEach1 },
@@ -67,7 +67,7 @@ class Workflow2 : WorkflowBase
                 new Connection(forEach1, writeLine2, nameof(ForEach.Body)),
                 new Connection(forEach1, writeLine3)
             }
-        });
+        };
     }
 }
 
@@ -94,7 +94,7 @@ class Workflow3 : WorkflowBase
 
         var writeLine3 = new WriteLine { Id = "WriteLine3", Text = new Input<string>("Done!") };
 
-        workflow.WithRoot(new Workflows.Core.Activities.Flowchart.Activities.Flowchart
+        workflow.Root = new Workflows.Core.Activities.Flowchart.Activities.Flowchart
         {
             Start = writeLine1,
             Activities = { writeLine1, writeLine3, forEach1 },
@@ -103,6 +103,6 @@ class Workflow3 : WorkflowBase
                 new Connection(writeLine1, forEach1),
                 new Connection(forEach1, writeLine3)
             }
-        });
+        };
     }
 }

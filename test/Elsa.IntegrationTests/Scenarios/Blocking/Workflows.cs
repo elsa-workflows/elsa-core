@@ -7,7 +7,7 @@ class BlockingSequentialWorkflow : WorkflowBase
 {
     protected override void Build(IWorkflowBuilder workflow)
     {
-        workflow.WithRoot(new Sequence
+        workflow.Root = new Sequence
         {
             Activities =
             {
@@ -16,6 +16,6 @@ class BlockingSequentialWorkflow : WorkflowBase
                 new WriteLine("Line 2"),
                 new WriteLine("Line 3")
             }
-        });
+        };
     }
 }
