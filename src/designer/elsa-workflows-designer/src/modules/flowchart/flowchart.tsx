@@ -276,8 +276,11 @@ export class FlowchartComponent {
     await this.setupGraph(childFlowchart);
   }
 
-  async componentDidLoad() {
+  async componentWillLoad() {
     this.updateLookups();
+  }
+
+  async componentDidLoad() {
     await this.createAndInitializeGraph();
   }
 
