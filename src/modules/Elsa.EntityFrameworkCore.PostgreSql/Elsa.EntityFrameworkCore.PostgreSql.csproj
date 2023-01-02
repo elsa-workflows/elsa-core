@@ -33,11 +33,4 @@
       <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="7.0.1" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Migrations\ActivityDefinitions" />
-      <Folder Include="Migrations\Labels" />
-      <Folder Include="Migrations\Management" />
-      <Folder Include="Migrations\Runtime" />
-    </ItemGroup>
-
 </Project>
