@@ -1,9 +1,7 @@
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.Extensions;
-using Elsa.Http;
 using Elsa.Identity;
 using Elsa.Identity.Options;
-using Elsa.JavaScript.Activities;
 using Elsa.Jobs.Activities.Implementations;
 using Elsa.Jobs.Activities.Middleware.Activities;
 using Elsa.Jobs.Activities.Services;
@@ -13,11 +11,10 @@ using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.MassTransit.Options;
 using Elsa.Requirements;
-using Elsa.Scheduling.Activities;
-using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Middleware.Activities;
 using Elsa.Workflows.Core.Middleware.Workflows;
 using Elsa.Workflows.Management.Services;
+using Elsa.Workflows.Runtime.Implementations;
 using Elsa.WorkflowServer.Web.Jobs;
 using Microsoft.AspNetCore.Authorization;
 
@@ -39,10 +36,6 @@ services
     .AddElsa(elsa => elsa
         .UseWorkflowManagement(management => management
             .UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString))
-            .AddActivitiesFrom<WriteLine>()
-            .AddActivitiesFrom<HttpEndpoint>()
-            .AddActivitiesFrom<Delay>()
-            .AddActivitiesFrom<RunJavaScript>()
             .AddActivitiesFrom<Program>()
         )
         .UseIdentity(identity =>
@@ -55,6 +48,7 @@ services
         {
             //runtime.UseProtoActor(proto => proto.PersistenceProvider = _ => new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString)));
             runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
+            runtime.WorkflowStateExporter = sp => ActivatorUtilities.CreateInstance<AsyncWorkflowStateExporter>(sp);
         })
         .UseLabels(labels => labels.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
         .UseActivityDefinitions(feature => feature.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
