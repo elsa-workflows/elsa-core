@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Workflows.Core.Activities;
@@ -7,6 +8,7 @@ namespace Elsa.Workflows.Core.Activities;
 /// This activity is instantiated in case a workflow references an activity type that could not be found.
 /// </summary>
 [Browsable(false)]
+[Activity("Elsa", "Workflows", "A placeholder activity that will be used in case a workflow definition references an activity type that cannot be found.")]
 public class NotFoundActivity : Activity
 {
     /// <inheritdoc />

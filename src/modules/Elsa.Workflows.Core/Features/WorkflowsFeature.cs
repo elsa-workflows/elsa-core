@@ -109,7 +109,7 @@ public class WorkflowsFeature : FeatureBase
             .AddSingleton<IActivitySchedulerFactory, ActivitySchedulerFactory>()
             .AddSingleton<IHasher, Hasher>()
             .AddSingleton<IBookmarkHasher, BookmarkHasher>()
-            .AddSingleton<IIdentityGenerator, RandomIdentityGenerator>()
+            .AddSingleton<IIdentityGenerator, GuidIdentityGenerator>()
             .AddSingleton<IWorkflowExecutionContextFactory, DefaultWorkflowExecutionContextFactory>()
             .AddSingleton<IBookmarkPayloadSerializer, BookmarkPayloadSerializer>()
             .AddTransient<WorkflowBuilder>()
