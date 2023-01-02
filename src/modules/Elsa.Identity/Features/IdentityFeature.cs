@@ -24,14 +24,14 @@ public class IdentityFeature : FeatureBase
     }
 
     /// <summary>
-    /// A flag indicating whether a default user should be created. 
-    /// </summary>
-    public bool CreateDefaultUser { get; set; }
-
-    /// <summary>
     /// A delegate to configure <see cref="Options.IdentityOptions"/>.
     /// </summary>
     public IdentityOptions IdentityOptions { get; set; } = new();
+
+    /// <summary>
+    /// A delegate to configure <see cref="Options.IdentityTokenOptions"/>.
+    /// </summary>
+    public IdentityTokenOptions TokenOptions { get; set; } = new();
 
     /// <summary>
     /// A delegate that creates an instance of an implementation of <see cref="IUserStore"/>.
@@ -52,14 +52,14 @@ public class IdentityFeature : FeatureBase
     /// <inheritdoc />
     public override void ConfigureHostedServices()
     {
-        if(CreateDefaultUser)
+        if(IdentityOptions.CreateDefaultAdmin)
             Module.ConfigureHostedService<SetupDefaultUserHostedService>();
     }
 
     /// <inheritdoc />
     public override void Apply()
     {
-        Services.Configure<IdentityOptions>(options => options.CopyFrom(IdentityOptions));
+        Services.Configure<IdentityTokenOptions>(options => options.CopyFrom(TokenOptions));
         
         Services
             .AddMemoryStore<User, MemoryUserStore>()

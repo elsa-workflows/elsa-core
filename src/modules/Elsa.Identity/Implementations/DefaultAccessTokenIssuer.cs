@@ -12,9 +12,9 @@ namespace Elsa.Identity.Implementations;
 public class DefaultAccessTokenIssuer : IAccessTokenIssuer
 {
     private readonly ISystemClock _systemClock;
-    private readonly IdentityOptions _identityOptions;
+    private readonly IdentityTokenOptions _identityOptions;
 
-    public DefaultAccessTokenIssuer(ISystemClock systemClock, IOptions<IdentityOptions> identityOptions)
+    public DefaultAccessTokenIssuer(ISystemClock systemClock, IOptions<IdentityTokenOptions> identityOptions)
     {
         _systemClock = systemClock;
         _identityOptions = identityOptions.Value;

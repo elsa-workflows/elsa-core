@@ -26,8 +26,11 @@ var services = builder.Services;
 var configuration = builder.Configuration;
 var sqliteConnectionString = configuration.GetConnectionString("Sqlite")!;
 var identityOptions = new IdentityOptions();
+var identityTokenOptions = new IdentityTokenOptions();
 var identitySection = configuration.GetSection("Identity");
+var identityTokenSection = identitySection.GetSection("Tokens");
 identitySection.Bind(identityOptions);
+identityTokenSection.Bind(identityTokenOptions);
 var rabbitMqOptions = new RabbitMqOptions();
 configuration.GetSection(RabbitMqOptions.RabbitMq).Bind(rabbitMqOptions);
 
@@ -44,8 +47,8 @@ services
         )
         .UseIdentity(identity =>
         {
-            identity.CreateDefaultUser = true;
             identity.IdentityOptions = identityOptions;
+            identity.TokenOptions = identityTokenOptions;
         })
         .UseDefaultAuthentication()
         .UseWorkflowRuntime(runtime =>

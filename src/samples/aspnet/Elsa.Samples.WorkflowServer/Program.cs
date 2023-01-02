@@ -19,8 +19,8 @@ builder.Services.AddElsa(elsa =>
     // Configure identity so that we can create a default admin user.
     elsa.UseIdentity(identity =>
     {
-        identity.CreateDefaultUser = builder.Environment.IsDevelopment();
-        identity.IdentityOptions.SigningKey = "secret-token-signing-key";
+        identity.IdentityOptions.CreateDefaultAdmin = builder.Environment.IsDevelopment();
+        identity.TokenOptions.SigningKey = "secret-token-signing-key";
     });
     
     // Use default authentication (JWT).
