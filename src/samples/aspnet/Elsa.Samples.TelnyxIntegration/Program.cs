@@ -91,15 +91,6 @@ services.AddAuthorization(options => options.AddPolicy(IdentityPolicyNames.Secur
 var app = builder.Build();
 var serviceProvider = app.Services;
 
-// Configure workflow engine execution pipeline.
-serviceProvider.ConfigureDefaultWorkflowExecutionPipeline(pipeline =>
-    pipeline
-        .UsePersistentVariables()
-        .UseBookmarkPersistence()
-        .UseWorkflowContexts()
-        .UseDefaultActivityScheduler()
-);
-
 // Configure activity execution pipeline to use the job-based activity invoker.
 serviceProvider.ConfigureDefaultActivityExecutionPipeline(pipeline => pipeline.UseJobBasedActivityInvoker());
 

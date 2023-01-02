@@ -2,8 +2,6 @@ using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.Extensions;
 using Elsa.Identity;
 using Elsa.Identity.Options;
-using Elsa.Jobs.Activities.Implementations;
-using Elsa.Jobs.Activities.Middleware.Activities;
 using Elsa.Jobs.Activities.Services;
 using Elsa.EntityFrameworkCore.Modules.ActivityDefinitions;
 using Elsa.EntityFrameworkCore.Modules.Labels;
@@ -11,10 +9,6 @@ using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.MassTransit.Options;
 using Elsa.Requirements;
-using Elsa.Workflows.Core.Middleware.Activities;
-using Elsa.Workflows.Core.Middleware.Workflows;
-using Elsa.Workflows.Management.Services;
-using Elsa.Workflows.Runtime.Implementations;
 using Elsa.WorkflowServer.Web.Jobs;
 using Microsoft.AspNetCore.Authorization;
 
@@ -34,21 +28,19 @@ configuration.GetSection(RabbitMqOptions.RabbitMq).Bind(rabbitMqOptions);
 // Add Elsa services.
 services
     .AddElsa(elsa => elsa
-        .UseWorkflowManagement(management => management
-            .UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString))
-            .AddActivitiesFrom<Program>()
-        )
+        .AddActivitiesFrom<Program>()
         .UseIdentity(identity =>
         {
             identity.IdentityOptions = identityOptions;
             identity.TokenOptions = identityTokenOptions;
         })
         .UseDefaultAuthentication()
+        .UseWorkflowManagement(management => management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
         .UseWorkflowRuntime(runtime =>
         {
             //runtime.UseProtoActor(proto => proto.PersistenceProvider = _ => new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString)));
             runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
-            runtime.WorkflowStateExporter = sp => ActivatorUtilities.CreateInstance<AsyncWorkflowStateExporter>(sp);
+            runtime.UseAsyncWorkflowStateExporter();
         })
         .UseLabels(labels => labels.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
         .UseActivityDefinitions(feature => feature.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
@@ -74,24 +66,6 @@ var serviceProvider = app.Services;
 // Register a dummy job for demo purposes.
 var jobRegistry = serviceProvider.GetRequiredService<IJobRegistry>();
 jobRegistry.Add(typeof(IndexBlockchainJob));
-
-// Update activity providers.
-var activityRegistryPopulator = serviceProvider.GetRequiredService<IActivityRegistryPopulator>();
-activityRegistryPopulator.PopulateRegistryAsync(typeof(JobActivityProvider));
-
-// Configure workflow engine execution pipeline.
-serviceProvider.ConfigureDefaultWorkflowExecutionPipeline(pipeline =>
-    pipeline
-        .UsePersistentVariables()
-        .UseBookmarkPersistence()
-        .UseWorkflowContexts()
-        .UseDefaultActivityScheduler()
-);
-
-// Configure activity execution pipeline to use the job-based activity invoker.
-serviceProvider.ConfigureDefaultActivityExecutionPipeline(pipeline => pipeline
-    .UseExceptionHandling()
-    .UseJobBasedActivityInvoker());
 
 if (app.Environment.IsDevelopment())
     app.UseDeveloperExceptionPage();

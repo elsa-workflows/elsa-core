@@ -14,12 +14,14 @@ public class PersistWorkflowExecutionLogMiddleware : WorkflowExecutionMiddleware
     private readonly IWorkflowExecutionLogStore _workflowExecutionLogStore;
     private readonly IIdentityGenerator _identityGenerator;
 
+    /// <inheritdoc />
     public PersistWorkflowExecutionLogMiddleware(WorkflowMiddlewareDelegate next, IWorkflowExecutionLogStore workflowExecutionLogStore, IIdentityGenerator identityGenerator) : base(next)
     {
         _workflowExecutionLogStore = workflowExecutionLogStore;
         _identityGenerator = identityGenerator;
     }
 
+    /// <inheritdoc />
     public override async ValueTask InvokeAsync(WorkflowExecutionContext context)
     {
         // Invoke next middleware.

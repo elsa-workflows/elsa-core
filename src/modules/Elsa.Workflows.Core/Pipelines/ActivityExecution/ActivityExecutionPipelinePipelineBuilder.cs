@@ -2,18 +2,18 @@ using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Core.Pipelines.ActivityExecution;
 
-public class ActivityExecutionPipelineBuilder : IActivityExecutionBuilder
+public class ActivityExecutionPipelinePipelineBuilder : IActivityExecutionPipelineBuilder
 {
     private readonly IList<Func<ActivityMiddlewareDelegate, ActivityMiddlewareDelegate>> _components = new List<Func<ActivityMiddlewareDelegate, ActivityMiddlewareDelegate>>();
 
-    public ActivityExecutionPipelineBuilder(IServiceProvider serviceProvider)
+    public ActivityExecutionPipelinePipelineBuilder(IServiceProvider serviceProvider)
     {
         ServiceProvider = serviceProvider;
     }
         
     public IServiceProvider ServiceProvider { get; }
 
-    public IActivityExecutionBuilder Use(Func<ActivityMiddlewareDelegate, ActivityMiddlewareDelegate> middleware)
+    public IActivityExecutionPipelineBuilder Use(Func<ActivityMiddlewareDelegate, ActivityMiddlewareDelegate> middleware)
     {
         _components.Add(middleware);
         return this;

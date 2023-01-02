@@ -171,6 +171,7 @@ export class Journal {
   };
 
   private loadJournalPage = async (page: number): Promise<void> => {
+    debugger;
     if (!this.workflowInstance || !this.workflowDefinition)
       return;
 

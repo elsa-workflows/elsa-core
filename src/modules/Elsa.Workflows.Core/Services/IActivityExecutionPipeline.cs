@@ -5,7 +5,7 @@ namespace Elsa.Workflows.Core.Services;
 
 public interface IActivityExecutionPipeline
 {
-    ActivityMiddlewareDelegate Setup(Action<IActivityExecutionBuilder> setup);
+    ActivityMiddlewareDelegate Setup(Action<IActivityExecutionPipelineBuilder> setup);
     ActivityMiddlewareDelegate Pipeline { get; }
     Task ExecuteAsync(ActivityExecutionContext context);
 }

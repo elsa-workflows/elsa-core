@@ -3,17 +3,23 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Core.Pipelines.WorkflowExecution;
 
+/// <summary>
+/// Provides extensions to <see cref="IWorkflowExecutionPipelineBuilder"/> that adds support for installing <see cref="IWorkflowExecutionMiddleware"/> components.
+/// </summary>
 public static class WorkflowExecutionMiddlewareExtensions
 {
-    public static IWorkflowExecutionBuilder UseMiddleware<TMiddleware>(this IWorkflowExecutionBuilder builder, params object[] args) where TMiddleware: IWorkflowExecutionMiddleware
+    /// <summary>
+    /// Installs the specified middleware component into the pipeline being built.
+    /// </summary>
+    public static IWorkflowExecutionPipelineBuilder UseMiddleware<TMiddleware>(this IWorkflowExecutionPipelineBuilder pipelineBuilder, params object[] args) where TMiddleware: IWorkflowExecutionMiddleware
     {
         var middleware = typeof(TMiddleware);
 
-        return builder.Use(next =>
+        return pipelineBuilder.Use(next =>
         {
             var invokeMethod = MiddlewareHelpers.GetInvokeMethod(middleware);
-            var ctorParams = new[] { next }.Concat(args).Select(x => x!).ToArray();
-            var instance = ActivatorUtilities.CreateInstance(builder.ApplicationServices, middleware, ctorParams);
+            var ctorParams = new[] { next }.Concat(args).Select(x => x).ToArray();
+            var instance = ActivatorUtilities.CreateInstance(pipelineBuilder.ServiceProvider, middleware, ctorParams);
             return (WorkflowMiddlewareDelegate)invokeMethod.CreateDelegate(typeof(WorkflowMiddlewareDelegate), instance);
         });
     }

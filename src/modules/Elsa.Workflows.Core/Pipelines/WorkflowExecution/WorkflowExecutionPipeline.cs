@@ -4,15 +4,26 @@ using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Core.Pipelines.WorkflowExecution;
 
+/// <inheritdoc />
 public class WorkflowExecutionPipeline : IWorkflowExecutionPipeline
 {
     private readonly IServiceProvider _serviceProvider;
     private WorkflowMiddlewareDelegate? _pipeline;
 
-    public WorkflowExecutionPipeline(IServiceProvider serviceProvider) => _serviceProvider = serviceProvider;
+    /// <summary>
+    /// Constructor.
+    /// </summary>
+    public WorkflowExecutionPipeline(IServiceProvider serviceProvider, Action<IWorkflowExecutionPipelineBuilder> pipelineBuilder)
+    {
+        _serviceProvider = serviceProvider;
+        Setup(pipelineBuilder);
+    }
+
+    /// <inheritdoc />
     public WorkflowMiddlewareDelegate Pipeline => _pipeline ??= CreateDefaultPipeline();
 
-    public WorkflowMiddlewareDelegate Setup(Action<IWorkflowExecutionBuilder> setup)
+    /// <inheritdoc />
+    public WorkflowMiddlewareDelegate Setup(Action<IWorkflowExecutionPipelineBuilder> setup)
     {
         var builder = new WorkflowExecutionPipelineBuilder(_serviceProvider);
         setup(builder);
@@ -20,6 +31,7 @@ public class WorkflowExecutionPipeline : IWorkflowExecutionPipeline
         return _pipeline;
     }
 
+    /// <inheritdoc />
     public async Task ExecuteAsync(WorkflowExecutionContext context) => await Pipeline(context);
 
     private WorkflowMiddlewareDelegate CreateDefaultPipeline() => Setup(x => x.UseDefaultActivityScheduler());

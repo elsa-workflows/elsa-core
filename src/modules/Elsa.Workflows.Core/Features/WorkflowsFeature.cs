@@ -10,9 +10,12 @@ using Elsa.Workflows.Core.ActivityNodeResolvers;
 using Elsa.Workflows.Core.Builders;
 using Elsa.Workflows.Core.Expressions;
 using Elsa.Workflows.Core.Implementations;
+using Elsa.Workflows.Core.Middleware.Activities;
+using Elsa.Workflows.Core.Middleware.Workflows;
 using Elsa.Workflows.Core.Pipelines.ActivityExecution;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Core.Serialization;
+using Elsa.Workflows.Core.Serialization.Converters;
 using Elsa.Workflows.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -41,6 +44,16 @@ public class WorkflowsFeature : FeatureBase
     public Func<IServiceProvider, IStandardOutStreamProvider> StandardOutStreamProvider { get; set; } = _ => new StandardOutStreamProvider(Console.Out);
     
     /// <summary>
+    /// A delegate to configure the <see cref="IWorkflowExecutionPipeline"/>.
+    /// </summary>
+    public Action<IWorkflowExecutionPipelineBuilder> WorkflowExecutionPipeline { get; set; } = builder => builder.UseDefaultActivityScheduler();
+    
+    /// <summary>
+    /// A delegate to configure the <see cref="IActivityExecutionPipeline"/>.
+    /// </summary>
+    public Action<IActivityExecutionPipelineBuilder> ActivityExecutionPipeline { get; set; } = builder => builder.UseDefaultActivityInvoker();
+    
+    /// <summary>
     /// Fluent method to set <see cref="StandardInStreamProvider"/>.
     /// </summary>
     public WorkflowsFeature WithStandardInStreamProvider(Func<IServiceProvider, IStandardInStreamProvider> provider)
@@ -55,6 +68,24 @@ public class WorkflowsFeature : FeatureBase
     public WorkflowsFeature WithStandardOutStreamProvider(Func<IServiceProvider, IStandardOutStreamProvider> provider)
     {
         StandardOutStreamProvider = provider;
+        return this;
+    }
+
+    /// <summary>
+    /// Fluent method to configure the <see cref="IWorkflowExecutionPipeline"/>.
+    /// </summary>
+    public WorkflowsFeature WithWorkflowExecutionPipeline(Action<IWorkflowExecutionPipelineBuilder> setup)
+    {
+        WorkflowExecutionPipeline = setup;
+        return this;
+    }
+
+    /// <summary>
+    /// Fluent method to configure the <see cref="IActivityExecutionPipeline"/>.
+    /// </summary>
+    public WorkflowsFeature WithActivityExecutionPipeline(Action<IActivityExecutionPipelineBuilder> setup)
+    {
+        ActivityExecutionPipeline = setup;
         return this;
     }
 
@@ -89,7 +120,7 @@ public class WorkflowsFeature : FeatureBase
 
             // Pipelines.
             .AddSingleton<IActivityExecutionPipeline, ActivityExecutionPipeline>()
-            .AddSingleton<IWorkflowExecutionPipeline, WorkflowExecutionPipeline>()
+            .AddSingleton<IWorkflowExecutionPipeline>(sp => new WorkflowExecutionPipeline(sp, WorkflowExecutionPipeline))
 
             // Built-in activity services.
             .AddSingleton<IActivityPortResolver, OutboundActivityPortResolver>()

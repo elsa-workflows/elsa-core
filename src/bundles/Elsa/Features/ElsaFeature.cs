@@ -24,7 +24,7 @@ public class ElsaFeature : FeatureBase
     /// Set this to true to opt out of automatically registering activities from Elsa.Workflows.Core.
     /// </summary>
     public bool DisableAutomaticActivityRegistration { get; set; }
-    
+
     /// <inheritdoc />
     public ElsaFeature(IModule module) : base(module)
     {
@@ -33,6 +33,14 @@ public class ElsaFeature : FeatureBase
     /// <inheritdoc />
     public override void Configure()
     {
-        Module.UseWorkflowManagement(management => management.AddActivitiesFrom<WriteLine>());
+        Module
+            .UseWorkflows(workflows => workflows
+                .WithDefaultRuntimeWorkflowExecutionPipeline()
+                .WithJobBasedActivityExecutionPipeline())
+            .UseWorkflowManagement(management =>
+            {
+                if (!DisableAutomaticActivityRegistration)
+                    management.AddActivitiesFrom<WriteLine>();
+            });
     }
 }
