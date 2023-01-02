@@ -1,7 +1,7 @@
-﻿@using Microsoft.JSInterop
+@using Microsoft.JSInterop
 @inject IJSRuntime JS;
 
-<elsa-studio-root server-url="@ServerUrl" monaco-lib-path="@MonacoLibPath">
+<elsa-studio-root server-url="@ServerUrl" monaco-lib-path="@MonacoLibPath" use-x6-graphs="@UseX6Graphs" culture="@Culture" base-path="@BasePath">
 <elsa-workflow-definition-editor-screen workflow-definition-id="@WorkflowDefinitionId"></elsa-workflow-definition-editor-screen>
 </elsa-studio-root>
 
@@ -15,4 +15,13 @@
 
     [Parameter]
     public string WorkflowDefinitionId { get; set; } = default!;
+
+    [Parameter]
+    public string Culture { get; set; } = default!;
+
+    [Parameter]
+    public string BasePath { get; set; } = default!;
+
+    [Parameter]
+    public bool UseX6Graphs { get; set; } = false;
 }
