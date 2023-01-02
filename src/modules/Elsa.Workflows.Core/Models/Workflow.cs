@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Activities;
+using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Core.Models;
@@ -10,6 +11,7 @@ namespace Elsa.Workflows.Core.Models;
 /// Represents an executable process.
 /// </summary>
 [Browsable(false)]
+[Activity("Elsa", "Workflows", "A workflow is an activity that executes its Root activity.")]
 public class Workflow : Composite, ICloneable
 {
     /// <summary>

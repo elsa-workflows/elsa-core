@@ -13,7 +13,7 @@ public static class ExceptionHandlingMiddlewareExtensions
     /// <summary>
     /// Installs the <see cref="ExceptionHandlingMiddleware"/> component in the activity execution pipeline.
     /// </summary>
-    public static IActivityExecutionBuilder UseExceptionHandling(this IActivityExecutionBuilder builder) => builder.UseMiddleware<ExceptionHandlingMiddleware>();
+    public static IActivityExecutionPipelineBuilder UseExceptionHandling(this IActivityExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<ExceptionHandlingMiddleware>();
 }
 
 /// <summary>

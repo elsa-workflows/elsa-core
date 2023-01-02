@@ -15,6 +15,7 @@ import {ActivityPropertyChangedEventArgs, WorkflowDefinitionPropsUpdatedArgs, Wo
 import {WorkflowDefinition} from "../models/entities";
 import {WorkflowDefinitionsApi} from "../services/api"
 import WorkflowDefinitionTunnel, {WorkflowDefinitionState} from "../../../state/workflow-definition-state";
+import {LayoutDirection} from "../../flowchart/models";
 
 @Component({
   tag: 'elsa-workflow-definition-editor',
@@ -226,7 +227,10 @@ export class WorkflowDefinitionEditor {
 
   private onZoomToFit = async () => await this.flowchart.zoomToFit();
 
-  private onAutoLayout = async (direction: "TB" | "BT" | "LR" | "RL") => await this.flowchart.autoLayout(direction);
+  private onAutoLayout = async (direction: LayoutDirection) => {
+    debugger;
+    await this.flowchart.autoLayout(direction);
+  };
 
   private onActivityUpdated = async (e: CustomEvent<ActivityUpdatedArgs>) => {
     await this.flowchart.updateActivity({
@@ -279,7 +283,7 @@ export class WorkflowDefinitionEditor {
     return (
       <WorkflowDefinitionTunnel.Provider state={state}>
         <div class="absolute inset-0" ref={el => this.container = el}>
-          <elsa-workflow-definition-editor-toolbar zoomToFit={this.onZoomToFit} autoLayout={this.onAutoLayout}/>
+          <elsa-workflow-definition-editor-toolbar zoomToFit={this.onZoomToFit} onAutoLayout={(e: CustomEvent<LayoutDirection>) => this.onAutoLayout(e.detail)}/>
           <elsa-panel
             class="elsa-activity-picker-container z-30"
             position={PanelPosition.Left}

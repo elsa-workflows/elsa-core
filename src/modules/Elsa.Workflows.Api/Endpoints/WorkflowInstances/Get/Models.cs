@@ -10,6 +10,7 @@ public class Request
 
 public class Response
 {
+    public string Id { get; set; }
     public string DefinitionId { get; init; } = default!;
     public string DefinitionVersionId { get; init; } = default!;
     public int Version { get; init; }

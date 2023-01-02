@@ -55,9 +55,24 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// </summary>
     public Func<IServiceProvider, IBookmarkStore> BookmarkStore { get; set; } = sp => sp.GetRequiredService<MemoryBookmarkStore>();
 
+    /// <summary>
+    /// A factory that instantiates an <see cref="ITriggerStore"/>.
+    /// </summary>
     public Func<IServiceProvider, ITriggerStore> WorkflowTriggerStore { get; set; } = sp => sp.GetRequiredService<MemoryTriggerStore>();
+    
+    /// <summary>
+    /// A factory that instantiates an <see cref="IWorkflowExecutionLogStore"/>.
+    /// </summary>
     public Func<IServiceProvider, IWorkflowExecutionLogStore> WorkflowExecutionLogStore { get; set; } = sp => sp.GetRequiredService<MemoryWorkflowExecutionLogStore>();
+    
+    /// <summary>
+    /// A factory that instantiates an <see cref="IDistributedLockProvider"/>.
+    /// </summary>
     public Func<IServiceProvider, IDistributedLockProvider> DistributedLockProvider { get; set; } = _ => new FileDistributedSynchronizationProvider(new DirectoryInfo( Path.Combine(Environment.CurrentDirectory, "App_Data/locks")));
+    
+    /// <summary>
+    /// A factory that instantiates an <see cref="IWorkflowStateExporter"/>.
+    /// </summary>
     public Func<IServiceProvider, IWorkflowStateExporter> WorkflowStateExporter { get; set; } = sp => sp.GetRequiredService<NoopWorkflowStateExporter>();
 
     /// <summary>

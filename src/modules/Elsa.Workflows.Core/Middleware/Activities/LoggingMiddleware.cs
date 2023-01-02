@@ -32,5 +32,5 @@ public class LoggingMiddleware : IActivityExecutionMiddleware
 
 public static class LoggingMiddlewareExtensions
 {
-    public static IActivityExecutionBuilder UseLogging(this IActivityExecutionBuilder builder) => builder.UseMiddleware<LoggingMiddleware>();
+    public static IActivityExecutionPipelineBuilder UseLogging(this IActivityExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<LoggingMiddleware>();
 }

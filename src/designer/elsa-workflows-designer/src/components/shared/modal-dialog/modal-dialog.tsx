@@ -13,7 +13,7 @@ export class ModalDialog {
 
   @Prop() modalDialogInstance: ModalDialogInstance;
   @Prop() actions: Array<ModalActionDefinition> = [];
-  @Prop() size: string = 'sm:max-w-6xl';
+  @Prop() size: string = 'max-w-6xl';
   @Prop() type: ModalType = ModalType.Default;
   @Prop() autoHide: boolean = true;
   @Prop() content: () => any = () => <div/>;
@@ -65,12 +65,6 @@ export class ModalDialog {
   async handleKeyDown(e: KeyboardEvent) {
     if (this.isVisible && e.key === 'Escape') {
       await this.hide(true);
-    }
-  }
-
-  componentWillRender() {
-    if (this.type == ModalType.Default) {
-      this.size += " sm:w-full";
     }
   }
 

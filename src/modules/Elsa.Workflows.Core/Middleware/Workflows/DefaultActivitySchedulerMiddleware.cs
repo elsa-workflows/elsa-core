@@ -9,7 +9,7 @@ public static class UseActivitySchedulerMiddlewareExtensions
     /// <summary>
     /// Installs middleware that executes scheduled work items (activities). 
     /// </summary>
-    public static IWorkflowExecutionBuilder UseDefaultActivityScheduler(this IWorkflowExecutionBuilder builder) => builder.UseMiddleware<DefaultActivitySchedulerMiddleware>();
+    public static IWorkflowExecutionPipelineBuilder UseDefaultActivityScheduler(this IWorkflowExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<DefaultActivitySchedulerMiddleware>();
 }
 
 public class DefaultActivitySchedulerMiddleware : WorkflowExecutionMiddleware

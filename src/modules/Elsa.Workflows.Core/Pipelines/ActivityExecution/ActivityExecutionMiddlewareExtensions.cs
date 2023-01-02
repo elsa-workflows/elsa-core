@@ -5,15 +5,15 @@ namespace Elsa.Workflows.Core.Pipelines.ActivityExecution;
 
 public static class ActivityExecutionMiddlewareExtensions
 {
-    public static IActivityExecutionBuilder UseMiddleware<TMiddleware>(this IActivityExecutionBuilder builder, params object[] args) where TMiddleware : IActivityExecutionMiddleware
+    public static IActivityExecutionPipelineBuilder UseMiddleware<TMiddleware>(this IActivityExecutionPipelineBuilder pipelineBuilder, params object[] args) where TMiddleware : IActivityExecutionMiddleware
     {
         var middleware = typeof(TMiddleware);
 
-        return builder.Use(next =>
+        return pipelineBuilder.Use(next =>
         {
             var invokeMethod = MiddlewareHelpers.GetInvokeMethod(middleware);
             var ctorArgs = new[] { next }.Concat(args).Select(x => x!).ToArray();
-            var instance = ActivatorUtilities.CreateInstance(builder.ServiceProvider, middleware, ctorArgs);
+            var instance = ActivatorUtilities.CreateInstance(pipelineBuilder.ServiceProvider, middleware, ctorArgs);
             return (ActivityMiddlewareDelegate)invokeMethod.CreateDelegate(typeof(ActivityMiddlewareDelegate), instance);
         });
     }

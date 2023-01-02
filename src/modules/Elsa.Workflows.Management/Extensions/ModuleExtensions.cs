@@ -1,5 +1,6 @@
 using Elsa.Features.Services;
 using Elsa.Workflows.Core.Activities;
+using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Features;
 
 // ReSharper disable once CheckNamespace
@@ -22,4 +23,14 @@ public static class ModuleExtensions
         });
         return module;
     }
+
+    /// <summary>
+    /// Adds all types implementing <see cref="IActivity"/> to the system.
+    /// </summary>
+    public static IModule AddActivitiesFrom<TMarkerType>(this IModule module) => module.UseWorkflowManagement(management => management.AddActivitiesFrom<TMarkerType>());
+    
+    /// <summary>
+    /// Adds the specified activity type to the system.
+    /// </summary>
+    public static IModule AddActivity<T>(this IModule module) where T:IActivity => module.UseWorkflowManagement(management => management.AddActivity<T>());
 }

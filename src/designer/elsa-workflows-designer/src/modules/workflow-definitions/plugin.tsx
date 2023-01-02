@@ -43,7 +43,7 @@ export class WorkflowDefinitionsPlugin implements Plugin {
 
     const newWorkflowDefinitionItem: MenuItem = {
       text: 'Workflow Definition',
-      clickHandler: this.onNewWorkflowDefinitionClick
+      clickHandler: this.onNewWorkflowDefinitionSelected
     }
 
     const importWorkflowDefinitionItem: MenuItem = {
@@ -80,7 +80,7 @@ export class WorkflowDefinitionsPlugin implements Plugin {
       connections: [],
       id: newName,
       metadata: {},
-      applicationProperties: {},
+      customProperties: {},
       variables: []
     } as Flowchart;
 
@@ -146,7 +146,7 @@ export class WorkflowDefinitionsPlugin implements Plugin {
     });
   };
 
-  private onNewWorkflowDefinitionClick = async () => {
+  private onNewWorkflowDefinitionSelected = async () => {
     await this.newWorkflow();
     this.modalDialogService.hide(this.workflowDefinitionBrowserInstance);
   };
@@ -158,32 +158,16 @@ export class WorkflowDefinitionsPlugin implements Plugin {
 
   private onWorkflowUpdated = async (e: CustomEvent<WorkflowDefinitionUpdatedArgs>) => {
     const updatedWorkflowDefinition = e.detail.workflowDefinition;
-
     await this.saveWorkflowDefinition(updatedWorkflowDefinition, false);
-
-    // if (e.detail.latestVersionNumber == undefined) {
-    //   await this.saveWorkflowDefinition(updatedWorkflowDefinition, false);
-    //   return;
-    // }
-
-    // if (updatedWorkflowDefinition.version == e.detail.latestVersionNumber || updatedWorkflowDefinition.isPublished) {
-    //   const currentWorkflowDefinition = await this.api.get({definitionId: updatedWorkflowDefinition.definitionId, versionOptions: {version: updatedWorkflowDefinition.version}});
-    //   if (!isEqual(currentWorkflowDefinition.root.activities, updatedWorkflowDefinition.root.activities) || !isEqual(currentWorkflowDefinition.variables, updatedWorkflowDefinition.variables)) {
-    //     if (updatedWorkflowDefinition.isPublished)
-    //       updatedWorkflowDefinition.version = e.detail.latestVersionNumber;
-    //
-    //     await this.saveWorkflowDefinition(updatedWorkflowDefinition, false);
-    //   }
-    // }
   }
 
   private onBrowseWorkflowDefinitions = async () => {
     const closeAction = DefaultModalActions.Close();
-    const newAction = DefaultModalActions.New(this.onNewWorkflowDefinitionClick);
+    const newAction = DefaultModalActions.New(this.onNewWorkflowDefinitionSelected);
     const actions = [closeAction, newAction];
 
     this.workflowDefinitionBrowserInstance = this.modalDialogService.show(() =>
-        <elsa-workflow-definition-browser onWorkflowDefinitionSelected={this.onWorkflowDefinitionSelected} onNewWorkflowDefinitionSelected={this.onNewWorkflowDefinitionClick}/>,
+        <elsa-workflow-definition-browser onWorkflowDefinitionSelected={this.onWorkflowDefinitionSelected} onNewWorkflowDefinitionSelected={this.onNewWorkflowDefinitionSelected}/>,
       {actions})
   }
 
@@ -198,16 +182,10 @@ export class WorkflowDefinitionsPlugin implements Plugin {
     e.detail.begin();
     const notification = NotificationService.createNotification({title: 'Publishing', id: uuid(), text: 'Workflow is being publishing. Please wait'})
     const workflowDefinition = await this.workflowDefinitionEditorElement.getWorkflowDefinition();
-    //await this.eventBus.emit(NotificationEventTypes.Add, this, {id: workflowDefinition.definitionId, message: `Starting publishing ${workflowDefinition.name}`});
     await this.saveWorkflowDefinition(workflowDefinition, true);
 
     NotificationService.updateNotification(notification, {title: 'Workflow published', text: 'Published !'})
     e.detail.complete();
-    // setTimeout(async () => {
-    //   await this.eventBus.emit(NotificationEventTypes.Update, this, {id: workflowDefinition.definitionId, message: `${workflowDefinition.name} publish finished`});
-    //   e.detail.complete();
-    // }, 2000)
-
   }
 
   private onExportClicked = async (e: CustomEvent) => {

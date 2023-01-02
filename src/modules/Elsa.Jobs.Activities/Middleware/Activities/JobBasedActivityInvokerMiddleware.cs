@@ -5,15 +5,9 @@ using Elsa.Jobs.Services;
 using Elsa.Workflows.Core.Middleware.Activities;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Pipelines.ActivityExecution;
-using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Services;
 
 namespace Elsa.Jobs.Activities.Middleware.Activities;
-
-public static class JobBasedActivityInvokerMiddlewareExtensions
-{
-    public static IActivityExecutionBuilder UseJobBasedActivityInvoker(this IActivityExecutionBuilder builder) => builder.UseMiddleware<JobBasedActivityInvokerMiddleware>();
-}
 
 /// <summary>
 /// Executes the current activity from a background job if the activity is of kind <see cref="ActivityKind.Job"/> or <see cref="ActivityKind.Task"/> 
@@ -26,6 +20,7 @@ public class JobBasedActivityInvokerMiddleware : DefaultActivityInvokerMiddlewar
     private readonly IJobFactory _jobFactory;
     private readonly IJobQueue _jobQueue;
 
+    /// <inheritdoc />
     public JobBasedActivityInvokerMiddleware(
         ActivityMiddlewareDelegate next,
         IActivityRegistry activityRegistry,
@@ -39,6 +34,7 @@ public class JobBasedActivityInvokerMiddleware : DefaultActivityInvokerMiddlewar
         _jobQueue = jobQueue;
     }
 
+    /// <inheritdoc />
     protected override async ValueTask ExecuteActivityAsync(ActivityExecutionContext context)
     {
         var activity = context.Activity;
