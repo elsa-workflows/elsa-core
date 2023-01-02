@@ -99,7 +99,12 @@ export class WorkflowInstanceViewer {
   public async importWorkflow(workflowDefinition: WorkflowDefinition, workflowInstance: WorkflowInstance): Promise<void> {
     this.workflowInstanceState = workflowInstance;
     await this.updateWorkflowDefinition(workflowDefinition);
-    //await this.flowchartElement.import(workflowDefinition.root);
+    // Update the flowchart after state is updated.
+    window.requestAnimationFrame(async () => {
+      await this.flowchartElement.updateGraph();
+    });
+
+    await this.eventBus.emit(WorkflowEditorEventTypes.WorkflowDefinition.Imported, this, {workflowDefinition});
   }
 
   // Updates the workflow definition without importing it into the designer.
@@ -165,6 +170,7 @@ export class WorkflowInstanceViewer {
         </elsa-panel>
         <elsa-flowchart
           ref={el => this.flowchartElement = el}
+          workflowDefinition={workflowDefinition}
           interactiveMode={false}/>
         <elsa-panel
           class="elsa-workflow-editor-container"
