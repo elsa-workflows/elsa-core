@@ -47,3 +47,5 @@ export interface RenameActivityArgs {
   newId: string;
   activity: Activity;
 }
+
+export type LayoutDirection = 'LR' | 'TB' | 'RL' | 'BT';

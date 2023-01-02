@@ -6,25 +6,29 @@ import {DropdownButtonItem, DropdownButtonOrigin} from "./models";
   tag: 'elsa-dropdown-button',
   shadow: false,
 })
-export class ElsaContextMenu {
+export class DropdownButton {
   @Prop() public text: string;
   @Prop() public icon?: any;
   @Prop() public origin: DropdownButtonOrigin = DropdownButtonOrigin.TopLeft;
   @Prop() public items: Array<DropdownButtonItem> = [];
+  @Prop() public theme: string = 'Secondary';
   @Event() public itemSelected: EventEmitter<DropdownButtonItem>
 
   private contextMenu: HTMLElement;
   private element: HTMLElement;
 
   public render() {
+    const buttonClass = this.theme == 'Secondary' ? 'btn-secondary' : 'btn-primary';
+    const arrowClass = this.theme == 'Secondary' ? 'text-gray-400' : 'text-white';
+
     return (
       <div class="relative" ref={el => this.element = el}>
         <button onClick={e => this.toggleMenu()} type="button"
-                class="w-full bg-white border border-gray-300 rounded-md shadow-sm px-4 py-2 inline-flex justify-center text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                class={`btn ${buttonClass} w-full border`}
                 aria-haspopup="true" aria-expanded="false">
           {this.renderIcon()}
           {this.text}
-          <svg class="ml-2.5 -mr-1.5 h-5 w-5 text-gray-400" x-description="Heroicon name: chevron-down" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <svg class={`ml-2.5 -mr-1.5 h-5 w-5 ${arrowClass}`} x-description="Heroicon name: chevron-down" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
             <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
           </svg>
         </button>
@@ -83,6 +87,10 @@ export class ElsaContextMenu {
 
   private async onItemClick(e: Event, menuItem: DropdownButtonItem) {
     e.preventDefault();
+
+    if(!!menuItem.handler)
+      menuItem.handler();
+
     this.itemSelected.emit(menuItem);
     this.closeContextMenu();
   }
