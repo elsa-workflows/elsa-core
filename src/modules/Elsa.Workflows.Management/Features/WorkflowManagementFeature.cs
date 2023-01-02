@@ -89,12 +89,9 @@ public class WorkflowManagementFeature : FeatureBase
     /// </summary>
     public WorkflowManagementFeature AddActivitiesFrom<TMarker>()
     {
-        var activityTypes = typeof(TMarker).Assembly.GetExportedTypes().Where(x =>
-        {
-            var browsableAttr = x.GetCustomAttribute<BrowsableAttribute>();
-            var isBrowsable = browsableAttr == null || browsableAttr.Browsable;
-            return typeof(IActivity).IsAssignableFrom(x) && !x.IsAbstract && !x.IsInterface && !x.IsGenericType && isBrowsable;
-        }).ToList();
+        var activityTypes = typeof(TMarker).Assembly.GetExportedTypes()
+            .Where(x => typeof(IActivity).IsAssignableFrom(x) && !x.IsAbstract && !x.IsInterface && !x.IsGenericType)
+            .ToList();
         return AddActivities(activityTypes);
     }
 

@@ -21,7 +21,7 @@ public class DefaultAuthenticationFeature : FeatureBase
     public override void Apply()
     {
         var identityFeature = Module.Configure<IdentityFeature>();
-        var identityOptions = identityFeature.IdentityOptions;
+        var identityOptions = identityFeature.TokenOptions;
         
         Services
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

@@ -108,8 +108,6 @@ export class WorkflowInstanceBrowser {
                 <th>Status</th>
                 <th class="optional">Created</th>
                 <th class="optional">Finished</th>
-                <th class="optional">Executed</th>
-                <th class="optional">Faulted</th>
                 <th/>
               </tr>
               </thead>
@@ -143,8 +141,6 @@ export class WorkflowInstanceBrowser {
                     </td>
                     <td class="optional">{formatTimestamp(workflowInstance.createdAt, '-')}</td>
                     <td class="optional">{formatTimestamp(workflowInstance.finishedAt, '-')}</td>
-                    <td class="optional">{formatTimestamp(workflowInstance.lastExecutedAt, '-')}</td>
-                    <td class="optional">{formatTimestamp(workflowInstance.faultedAt, '-')}</td>
                     <td class="pr-6">
                       <elsa-context-menu menuItems={[
                         {text: 'Edit', clickHandler: e => this.onWorkflowInstanceClick(e, workflowInstance), icon: <EditIcon/>},

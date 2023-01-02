@@ -36,10 +36,12 @@ public class AsyncWorkflowStateExporter : IWorkflowStateExporter, ICommandHandle
         _workflowInstanceStore = workflowInstanceStore;
         _systemClock = systemClock;
     }
-    
+
+    /// <inheritdoc />
     public async ValueTask ExportAsync(Workflow workflow, WorkflowState workflowState, CancellationToken cancellationToken) => 
         await _backgroundCommandSender.SendAsync(new ExportWorkflowStateToDb(workflowState), cancellationToken);
 
+    /// <inheritdoc />
     public async Task<Unit> HandleAsync(ExportWorkflowStateToDb command, CancellationToken cancellationToken)
     {
         var workflowState = command.WorkflowState;

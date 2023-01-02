@@ -7,7 +7,7 @@ import './ports';
 import {ActivityNodeShape} from './shapes';
 import {Activity, ActivityDeletedArgs, ActivityDescriptor, ActivitySelectedArgs, ContainerSelectedArgs, EditChildActivityArgs, GraphUpdatedArgs, Port, WorkflowUpdatedArgs} from '../../models';
 import {createGraph} from './graph-factory';
-import {AddActivityArgs, Connection, Flowchart, FlowchartModel, FlowchartNavigationItem, FlowchartPathItem, RenameActivityArgs, UpdateActivityArgs} from './models';
+import {AddActivityArgs, Connection, Flowchart, FlowchartModel, FlowchartNavigationItem, FlowchartPathItem, LayoutDirection, RenameActivityArgs, UpdateActivityArgs} from './models';
 import {NodeFactory} from "./node-factory";
 import {Container} from "typedi";
 import {ActivityNode, createActivityLookup, EventBus, flatten, PortProviderRegistry, walkActivities} from "../../services";
@@ -23,7 +23,6 @@ import {DagreLayout, OutNode} from '@antv/layout';
 import {adjustPortMarkupByNode, rebuildGraph} from '../../utils/graph';
 import {WorkflowDefinition} from "../workflow-definitions/models/entities";
 import FlowchartTunnel, {FlowchartState} from "./state";
-import {WorkflowDefinitionUpdatedArgs} from "../workflow-definitions/models/ui";
 
 const FlowchartTypeName = 'Elsa.Flowchart';
 
@@ -115,7 +114,8 @@ export class FlowchartComponent {
   }
 
   @Method()
-  async autoLayout(direction: "TB" | "BT" | "LR" | "RL") {
+  async autoLayout(direction: LayoutDirection) {
+    debugger;
     const dagreLayout = new DagreLayout({
       type: 'dagre',
       rankdir: direction,
@@ -150,7 +150,8 @@ export class FlowchartComponent {
       this.updateActivity({id: activity.id, originalId: activity.id, activity: activity});
     });
 
-    //this.importInternal()
+    this.updateGraphInternal(flowchartModel.activities, flowchartModel.connections);
+    this.graphUpdated.emit({});
   }
 
   @Method()
@@ -166,7 +167,7 @@ export class FlowchartComponent {
       id: id,
       type: descriptor.typeName,
       version: descriptor.version,
-      applicationProperties: {},
+      customProperties: {},
       metadata: {
         designer: {
           position: {
@@ -276,8 +277,11 @@ export class FlowchartComponent {
     await this.setupGraph(childFlowchart);
   }
 
-  async componentDidLoad() {
+  async componentWillLoad() {
     this.updateLookups();
+  }
+
+  async componentDidLoad() {
     await this.createAndInitializeGraph();
   }
 
@@ -296,7 +300,7 @@ export class FlowchartComponent {
       connections: [],
       metadata: {},
       variables: [],
-      applicationProperties: {},
+      customProperties: {},
       canStartWorkflow: false
     };
   }
@@ -392,6 +396,11 @@ export class FlowchartComponent {
   private setupGraph = async (flowchart: Flowchart) => {
     const activities = flowchart.activities;
     const connections = flowchart.connections;
+    this.updateGraphInternal(activities, connections);
+    await this.scrollToStart();
+  };
+
+  private updateGraphInternal = (activities: Array<Activity>, connections: Array<Connection>) => {
     const edges: Array<Edge.Metadata> = [];
 
     // Create an X6 node for each activity.
@@ -416,8 +425,7 @@ export class FlowchartComponent {
     this.graph.unfreeze();
 
     rebuildGraph(this.graph);
-    await this.scrollToStart();
-  };
+  }
 
   private getFlowchartModel = (): FlowchartModel => {
     const graph = this.graph;

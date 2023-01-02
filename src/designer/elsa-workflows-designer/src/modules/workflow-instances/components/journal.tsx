@@ -1,5 +1,5 @@
 import {Component, h, Prop, State, Watch} from "@stencil/core";
-import {ActivityDescriptor, WorkflowExecutionLogRecord, WorkflowInstance} from "../../../models";
+import {ActivityDescriptor, Workflow, WorkflowExecutionLogRecord, WorkflowInstance} from "../../../models";
 import {Container} from "typedi";
 import {ActivityIconRegistry, ActivityNode, createActivityNodeMap, flatten, walkActivities} from "../../../services";
 import {durationToString, formatTime, getDuration, Hash, isNullOrWhitespace} from "../../../utils";
@@ -115,7 +115,7 @@ export class Journal {
       const activityDisplayText = isNullOrWhitespace(activityMetadata.displayText) ? activity.id : activityMetadata.displayText;
       const duration = durationToString(block.duration);
       const status = block.completed ? 'Completed' : 'Started';
-      const icon = iconRegistry.get(activity.type)({size: ActivityIconSize.Small});
+      const icon = iconRegistry.getOrDefault(activity.type)({size: ActivityIconSize.Small});
       const expanded = !!expandedBlocks.find(x => x == block);
 
       const toggleIcon = expanded
@@ -166,7 +166,19 @@ export class Journal {
     if (!this.workflowInstance || !this.workflowDefinition)
       return;
 
-    this.nodes = flatten(walkActivities(this.workflowDefinition.root));
+    const workflow: Workflow = {
+      type: 'Elsa.Workflow',
+      id: 'Workflow1', // Always 'Workflow1'.
+      version: this.workflowDefinition.version,
+      customProperties: this.workflowDefinition.customProperties,
+      canStartWorkflow: false,
+      runAsynchronously: false,
+      metadata: {},
+      root: this.workflowDefinition.root,
+      variables: this.workflowDefinition.variables
+    };
+
+    this.nodes = flatten(walkActivities(workflow));
     this.nodeMap = createActivityNodeMap(this.nodes);
   };
 

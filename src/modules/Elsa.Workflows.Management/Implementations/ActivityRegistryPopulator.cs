@@ -10,12 +10,16 @@ public class ActivityRegistryPopulator : IActivityRegistryPopulator
     private readonly IEnumerable<IActivityProvider> _providers;
     private readonly IActivityRegistry _registry;
 
+    /// <summary>
+    /// Constructor.
+    /// </summary>
     public ActivityRegistryPopulator(IEnumerable<IActivityProvider> providers, IActivityRegistry registry)
     {
         _providers = providers;
         _registry = registry;
     }
 
+    /// <inheritdoc />
     public async Task PopulateRegistryAsync(CancellationToken cancellationToken)
     {
         _registry.Clear();
@@ -24,6 +28,7 @@ public class ActivityRegistryPopulator : IActivityRegistryPopulator
             await PopulateRegistryAsync(provider, cancellationToken);
     }
 
+    /// <inheritdoc />
     public async Task PopulateRegistryAsync(Type providerType, CancellationToken cancellationToken = default)
     {
         _registry.ClearProvider(providerType);

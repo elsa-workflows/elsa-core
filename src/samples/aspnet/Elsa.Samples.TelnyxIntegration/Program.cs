@@ -22,8 +22,11 @@ var services = builder.Services;
 var configuration = builder.Configuration;
 var sqliteConnectionString = configuration.GetConnectionString("Sqlite")!;
 var identityOptions = new IdentityOptions();
+var identityTokenOptions = new IdentityTokenOptions();
 var identitySection = configuration.GetSection("Identity");
+var identityTokenSection = identitySection.GetSection("Tokens");
 identitySection.Bind(identityOptions);
+identityTokenSection.Bind(identityTokenOptions);
 
 // Add Elsa services.
 services
@@ -47,8 +50,8 @@ services
         )
         .UseIdentity(identity =>
         {
-            identity.CreateDefaultUser = true;
             identity.IdentityOptions = identityOptions;
+            identity.TokenOptions = identityTokenOptions;
         })
         .UseWorkflowRuntime(runtime =>
         {
@@ -76,7 +79,7 @@ services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader()
 // Authentication & Authorization.
 services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, identityOptions.ConfigureJwtBearerOptions);
+    .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, identityTokenOptions.ConfigureJwtBearerOptions);
 
 services.AddHttpContextAccessor();
 services.AddSingleton<IAuthorizationHandler, LocalHostRequirementHandler>();
@@ -87,15 +90,6 @@ services.AddAuthorization(options => options.AddPolicy(IdentityPolicyNames.Secur
 // Configure middleware pipeline.
 var app = builder.Build();
 var serviceProvider = app.Services;
-
-// Configure workflow engine execution pipeline.
-serviceProvider.ConfigureDefaultWorkflowExecutionPipeline(pipeline =>
-    pipeline
-        .UsePersistentVariables()
-        .UseBookmarkPersistence()
-        .UseWorkflowContexts()
-        .UseDefaultActivityScheduler()
-);
 
 // Configure activity execution pipeline to use the job-based activity invoker.
 serviceProvider.ConfigureDefaultActivityExecutionPipeline(pipeline => pipeline.UseJobBasedActivityInvoker());

@@ -72,7 +72,7 @@ export class ActivityDefinitionsPlugin implements Plugin {
       connections: [],
       id: newName,
       metadata: {},
-      applicationProperties: {},
+      customProperties: {},
       variables: []
     } as Flowchart;
 

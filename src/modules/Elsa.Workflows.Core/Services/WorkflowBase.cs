@@ -3,7 +3,7 @@ using Elsa.Workflows.Core.Models;
 namespace Elsa.Workflows.Core.Services;
 
 /// <summary>
-/// A base class for implementing workflow definitions using the builder API.
+/// A base class for implementing workflow definitions using the pipelineBuilder API.
 /// </summary>
 public abstract class WorkflowBase : IWorkflow
 {
@@ -43,7 +43,7 @@ public abstract class WorkflowBase : IWorkflow
 }
 
 /// <summary>
-/// A base class for implementing workflow definitions that can return a result using the builder API.
+/// A base class for implementing workflow definitions that can return a result using the pipelineBuilder API.
 /// </summary>
 public abstract class WorkflowBase<TResult> : WorkflowBase
 {

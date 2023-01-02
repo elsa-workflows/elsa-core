@@ -11,10 +11,10 @@ public static class WorkflowExecutionBuilderExtensions
     /// <summary>
     /// Installs middleware that enables the use of workflow context.
     /// </summary>
-    public static IWorkflowExecutionBuilder UseWorkflowContexts(this IWorkflowExecutionBuilder builder) => builder.UseMiddleware<WorkflowContextWorkflowExecutionMiddleware>();
+    public static IWorkflowExecutionPipelineBuilder UseWorkflowContexts(this IWorkflowExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<WorkflowContextWorkflowExecutionMiddleware>();
     
     /// <summary>
     /// Installs middleware that enables the use of workflow context.
     /// </summary>
-    public static IActivityExecutionBuilder UseWorkflowContexts(this IActivityExecutionBuilder builder) => builder.UseMiddleware<WorkflowContextActivityExecutionMiddleware>();
+    public static IActivityExecutionPipelineBuilder UseWorkflowContexts(this IActivityExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<WorkflowContextActivityExecutionMiddleware>();
 }

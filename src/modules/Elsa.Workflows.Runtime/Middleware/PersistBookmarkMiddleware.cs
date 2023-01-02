@@ -9,7 +9,7 @@ using Elsa.Workflows.Runtime.Services;
 namespace Elsa.Workflows.Runtime.Middleware;
 
 /// <summary>
-/// Takes care of loading &amp; persisting workflow variables.
+/// Takes care of loading and persisting bookmarks.
 /// </summary>
 public class PersistBookmarkMiddleware : WorkflowExecutionMiddleware
 {

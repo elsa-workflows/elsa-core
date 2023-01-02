@@ -3,7 +3,7 @@ using Elsa.Workflows.Core.Models;
 namespace Elsa.Workflows.Core.Services;
 
 /// <summary>
-/// A workflow builder collects information about a workflow to be built programmatically.
+/// A workflow pipelineBuilder collects information about a workflow to be built programmatically.
 /// </summary>
 public interface IWorkflowBuilder
 {
@@ -98,7 +98,7 @@ public interface IWorkflowBuilder
     IWorkflowBuilder WithActivationStrategyType<T>() where T : IWorkflowActivationStrategy;
     
     /// <summary>
-    /// Build a new <see cref="Workflow"/> instance using the information collected in this builder.
+    /// Build a new <see cref="Workflow"/> instance using the information collected in this pipelineBuilder.
     /// </summary>
     Workflow BuildWorkflow();
     

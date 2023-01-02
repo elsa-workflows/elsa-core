@@ -7,14 +7,14 @@ using Elsa.Workflows.Core.Services;
 namespace Elsa.Workflows.Core.Middleware.Activities;
 
 /// <summary>
-/// Provides extension methods to <see cref="IActivityExecutionBuilder"/>.
+/// Provides extension methods to <see cref="IActivityExecutionPipelineBuilder"/>.
 /// </summary>
 public static class ActivityInvokerMiddlewareExtensions
 {
     /// <summary>
     /// Adds the <see cref="DefaultActivityInvokerMiddleware"/> component to the pipeline.
     /// </summary>
-    public static IActivityExecutionBuilder UseDefaultActivityInvoker(this IActivityExecutionBuilder builder) => builder.UseMiddleware<DefaultActivityInvokerMiddleware>();
+    public static IActivityExecutionPipelineBuilder UseDefaultActivityInvoker(this IActivityExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<DefaultActivityInvokerMiddleware>();
 }
 
 /// <summary>

@@ -17,8 +17,8 @@ import { ActivityInputContext } from "./services/node-input-driver";
 import { ContextMenuAnchorPoint, MenuItem, MenuItemGroup } from "./components/shared/context-menu/models";
 import { DropdownButtonItem, DropdownButtonOrigin } from "./components/shared/dropdown-button/models";
 import { Graph } from "@antv/x6";
+import { AddActivityArgs, FlowchartPathItem, LayoutDirection, RenameActivityArgs, UpdateActivityArgs } from "./modules/flowchart/models";
 import { OutNode } from "@antv/layout";
-import { AddActivityArgs, FlowchartPathItem, RenameActivityArgs, UpdateActivityArgs } from "./modules/flowchart/models";
 import { ActivityNodeShape } from "./modules/flowchart/shapes";
 import { PanelActionClickArgs, PanelActionDefinition } from "./components/shared/form-panel/models";
 import { ExpressionChangedArs } from "./components/designer/input-control-switch/input-control-switch";
@@ -99,6 +99,7 @@ export namespace Components {
         "items": Array<DropdownButtonItem>;
         "origin": DropdownButtonOrigin;
         "text": string;
+        "theme": string;
     }
     interface ElsaDropdownInput {
         "inputContext": ActivityInputContext;
@@ -108,7 +109,7 @@ export namespace Components {
     }
     interface ElsaFlowchart {
         "addActivity": (args: AddActivityArgs) => Promise<Activity>;
-        "autoLayout": (direction: "TB" | "BT" | "LR" | "RL") => Promise<void>;
+        "autoLayout": (direction: LayoutDirection) => Promise<void>;
         "export": () => Promise<Activity>;
         "getGraph": () => Promise<Graph>;
         "interactiveMode": boolean;
@@ -259,7 +260,6 @@ export namespace Components {
         "workflowDefinition"?: WorkflowDefinition;
     }
     interface ElsaWorkflowDefinitionEditorToolbar {
-        "autoLayout": (direction: "TB" | "BT" | "LR" | "RL") => Promise<void>;
         "zoomToFit": () => Promise<void>;
     }
     interface ElsaWorkflowDefinitionEditorToolbox {
@@ -408,6 +408,10 @@ export interface ElsaWorkflowDefinitionBrowserCustomEvent<T> extends CustomEvent
 export interface ElsaWorkflowDefinitionEditorCustomEvent<T> extends CustomEvent<T> {
     detail: T;
     target: HTMLElsaWorkflowDefinitionEditorElement;
+}
+export interface ElsaWorkflowDefinitionEditorToolbarCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLElsaWorkflowDefinitionEditorToolbarElement;
 }
 export interface ElsaWorkflowDefinitionPropertiesEditorCustomEvent<T> extends CustomEvent<T> {
     detail: T;
@@ -916,6 +920,7 @@ declare namespace LocalJSX {
         "onItemSelected"?: (event: ElsaDropdownButtonCustomEvent<DropdownButtonItem>) => void;
         "origin"?: DropdownButtonOrigin;
         "text"?: string;
+        "theme"?: string;
     }
     interface ElsaDropdownInput {
         "inputContext"?: ActivityInputContext;
@@ -1078,7 +1083,7 @@ declare namespace LocalJSX {
         "workflowDefinition"?: WorkflowDefinition;
     }
     interface ElsaWorkflowDefinitionEditorToolbar {
-        "autoLayout"?: (direction: "TB" | "BT" | "LR" | "RL") => Promise<void>;
+        "onAutoLayout"?: (event: ElsaWorkflowDefinitionEditorToolbarCustomEvent<LayoutDirection>) => void;
         "zoomToFit"?: () => Promise<void>;
     }
     interface ElsaWorkflowDefinitionEditorToolbox {

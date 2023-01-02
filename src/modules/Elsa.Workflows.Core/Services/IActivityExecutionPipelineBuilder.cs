@@ -2,9 +2,9 @@ using Elsa.Workflows.Core.Pipelines.ActivityExecution;
 
 namespace Elsa.Workflows.Core.Services;
 
-public interface IActivityExecutionBuilder
+public interface IActivityExecutionPipelineBuilder
 {
     IServiceProvider ServiceProvider { get; }
-    IActivityExecutionBuilder Use(Func<ActivityMiddlewareDelegate, ActivityMiddlewareDelegate> middleware);
+    IActivityExecutionPipelineBuilder Use(Func<ActivityMiddlewareDelegate, ActivityMiddlewareDelegate> middleware);
     public ActivityMiddlewareDelegate Build();
 }
