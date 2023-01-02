@@ -166,7 +166,7 @@ export class FlowchartComponent {
       id: id,
       type: descriptor.typeName,
       version: descriptor.version,
-      applicationProperties: {},
+      customProperties: {},
       metadata: {
         designer: {
           position: {
@@ -296,7 +296,7 @@ export class FlowchartComponent {
       connections: [],
       metadata: {},
       variables: [],
-      applicationProperties: {},
+      customProperties: {},
       canStartWorkflow: false
     };
   }

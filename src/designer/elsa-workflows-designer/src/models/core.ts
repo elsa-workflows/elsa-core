@@ -17,7 +17,7 @@ export interface Activity {
   metadata: any;
   canStartWorkflow?: boolean;
   runAsynchronously?: boolean;
-  applicationProperties: any;
+  customProperties: any;
 
   [name: string]: any;
 }
@@ -27,6 +27,11 @@ export interface Trigger extends Activity {
 
 export interface Container extends Activity {
   activities: Array<Activity>;
+  variables: Array<Variable>;
+}
+
+export interface Workflow extends Activity {
+  root: Activity;
   variables: Array<Variable>;
 }
 

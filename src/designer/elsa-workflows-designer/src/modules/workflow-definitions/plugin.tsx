@@ -80,7 +80,7 @@ export class WorkflowDefinitionsPlugin implements Plugin {
       connections: [],
       id: newName,
       metadata: {},
-      applicationProperties: {},
+      customProperties: {},
       variables: []
     } as Flowchart;
 

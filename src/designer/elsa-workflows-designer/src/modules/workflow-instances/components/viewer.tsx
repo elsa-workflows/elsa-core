@@ -15,7 +15,7 @@ import {WorkflowEditorEventTypes} from "../../workflow-definitions/models/ui";
 
 @Component({
   tag: 'elsa-workflow-instance-viewer',
-  styleUrl: 'workflow-instance-viewer.scss',
+  styleUrl: 'viewer.scss',
 })
 export class WorkflowInstanceViewer {
   private readonly pluginRegistry: PluginRegistry;
