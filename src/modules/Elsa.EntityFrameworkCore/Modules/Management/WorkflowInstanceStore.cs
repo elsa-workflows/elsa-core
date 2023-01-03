@@ -33,24 +33,30 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     public async Task<WorkflowInstance?> FindByIdAsync(string id, CancellationToken cancellationToken = default) =>
         await _store.FindAsync(x => x.Id == id, Load, cancellationToken);
 
+    /// <inheritdoc />
     public async Task SaveAsync(WorkflowInstance record, CancellationToken cancellationToken = default) =>
         await _store.SaveAsync(record, Save, cancellationToken);
 
+    /// <inheritdoc />
     public async Task SaveManyAsync(IEnumerable<WorkflowInstance> records, CancellationToken cancellationToken = default) =>
         await _store.SaveManyAsync(records, Save, cancellationToken);
 
+    /// <inheritdoc />
     public async Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default) =>
         await _store.DeleteWhereAsync(x => x.Id == id, cancellationToken) > 0;
 
+    /// <inheritdoc />
     public async Task<int> DeleteManyAsync(IEnumerable<string> ids, CancellationToken cancellationToken = default)
     {
         var idList = ids.ToList();
         return await _store.DeleteWhereAsync(x => idList.Contains(x.Id), cancellationToken);
     }
 
+    /// <inheritdoc />
     public async Task DeleteManyByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default) =>
         await _store.DeleteWhereAsync(x => x.DefinitionId == definitionId, cancellationToken);
 
+    /// <inheritdoc />
     public async Task<Page<WorkflowInstanceSummary>> FindManyAsync(FindWorkflowInstancesArgs args, CancellationToken cancellationToken = default)
     {
         var dbContext = await _store.CreateDbContextAsync(cancellationToken);
@@ -94,9 +100,9 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
         return await query.PaginateAsync(x => WorkflowInstanceSummary.FromInstance(x), pageArgs);
     }
 
-    public WorkflowInstance Save(ManagementElsaDbContext managementElsaDbContext, WorkflowInstance entity)
+    private WorkflowInstance Save(ManagementElsaDbContext managementElsaDbContext, WorkflowInstance entity)
     {
-        var data = new WorkflowInstanceState(entity.WorkflowState, entity.Fault);
+        var data = entity.WorkflowState;
         var options = _serializerOptionsProvider.CreatePersistenceOptions(ReferenceHandler.Preserve);
         var json = JsonSerializer.Serialize(data, options);
 
@@ -104,39 +110,22 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
         return entity;
     }
 
-    public WorkflowInstance? Load(ManagementElsaDbContext managementElsaDbContext, WorkflowInstance? entity)
+    private WorkflowInstance? Load(ManagementElsaDbContext managementElsaDbContext, WorkflowInstance? entity)
     {
         if (entity == null)
             return null;
 
-        var data = new WorkflowInstanceState(entity.WorkflowState, entity.Fault);
+        var data = entity.WorkflowState;
         var json = (string?)managementElsaDbContext.Entry(entity).Property("Data").CurrentValue;
 
         if (!string.IsNullOrWhiteSpace(json))
         {
             var options = _serializerOptionsProvider.CreatePersistenceOptions(ReferenceHandler.Preserve);
-            data = JsonSerializer.Deserialize<WorkflowInstanceState>(json, options)!;
+            data = JsonSerializer.Deserialize<WorkflowState>(json, options)!;
         }
 
-        entity.WorkflowState = data.WorkflowState;
-        entity.Fault = data.Fault;
+        entity.WorkflowState = data;
 
         return entity;
-    }
-
-    private class WorkflowInstanceState
-    {
-        public WorkflowInstanceState()
-        {
-        }
-
-        public WorkflowInstanceState(WorkflowState workflowState, WorkflowFaultState? fault)
-        {
-            WorkflowState = workflowState;
-            Fault = fault;
-        }
-
-        public WorkflowState WorkflowState { get; init; } = default!;
-        public WorkflowFaultState? Fault { get; set; }
     }
 }

@@ -1,5 +1,5 @@
 import {Component, Event, EventEmitter, h, Method, Prop, State, Watch} from '@stencil/core';
-import {TabChangedArgs, WorkflowInstance} from '../../../models';
+import {TabChangedArgs, Variable, WorkflowInstance} from '../../../models';
 import {InfoList} from "../../../components/shared/forms/info-list";
 import {formatTimestamp, isNullOrWhitespace} from "../../../utils";
 import {PropertiesTabModel, TabModel, WorkflowInstancePropertiesDisplayingArgs, WorkflowInstancePropertiesEventTypes, WorkflowInstancePropertiesViewerModel} from "../models";
@@ -147,8 +147,10 @@ export class WorkflowDefinitionPropertiesEditor {
   };
 
   private renderVariablesTab = () => {
+    const variables: Array<Variable> = this.workflowDefinition?.variables ?? [];
+
     return <div>
-      TODO: Variables editor
+      <elsa-variables-viewer variables={variables} workflowDefinition={this.workflowDefinition} workflowInstance={this.workflowInstance} />
     </div>
   };
 

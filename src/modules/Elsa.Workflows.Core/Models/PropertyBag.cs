@@ -11,10 +11,10 @@ public class PropertyBag
     {
     }
 
-    public PropertyBag(IDictionary<string, object> properties)
+    public PropertyBag(IDictionary<string, object> dictionary)
     {
-        Properties = properties;
+        Dictionary = dictionary;
     }
     
-    public IDictionary<string, object> Properties { get; init; }
+    public IDictionary<string, object> Dictionary { get; init; }
 }

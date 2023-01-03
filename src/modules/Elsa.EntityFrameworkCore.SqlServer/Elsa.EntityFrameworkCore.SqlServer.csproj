@@ -12,7 +12,7 @@
     </PropertyGroup>
 
     <ItemGroup Condition=" '$(TargetFramework)' == 'net6.0'">
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.1">
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="6.0.12">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>

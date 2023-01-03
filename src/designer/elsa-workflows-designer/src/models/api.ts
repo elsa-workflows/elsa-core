@@ -42,7 +42,7 @@ export interface WorkflowInstanceSummary {
 }
 
 export interface WorkflowInstance extends WorkflowInstanceSummary {
-  workflowState: WorkflowState;
+  properties: any;
 }
 
 export interface PagedList<T> {

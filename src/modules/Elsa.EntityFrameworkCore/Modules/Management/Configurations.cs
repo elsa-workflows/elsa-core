@@ -25,7 +25,6 @@ namespace Elsa.EntityFrameworkCore.Modules.Management
         public void Configure(EntityTypeBuilder<WorkflowInstance> builder)
         {
             builder.Ignore(x => x.WorkflowState);
-            builder.Ignore(x => x.Fault);
             builder.Property<string>("Data");
             builder.Property(x => x.Status).HasConversion<EnumToStringConverter<WorkflowStatus>>();
             builder.Property(x => x.SubStatus).HasConversion<EnumToStringConverter<WorkflowSubStatus>>();

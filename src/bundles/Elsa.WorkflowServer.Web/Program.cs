@@ -40,7 +40,7 @@ services
         .UseWorkflowManagement(management => management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
         .UseWorkflowRuntime(runtime =>
         {
-            runtime.UseProtoActor(proto => proto.PersistenceProvider = _ => new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString)));
+            //runtime.UseProtoActor(proto => proto.PersistenceProvider = _ => new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString)));
             runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
             runtime.UseAsyncWorkflowStateExporter();
         })

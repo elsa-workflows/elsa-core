@@ -1,7 +1,9 @@
 using Elsa.Common.Models;
 using Elsa.Common.Services;
+using Elsa.Extensions;
 using Elsa.Mediator.Models;
 using Elsa.Mediator.Services;
+using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Management.Entities;
@@ -70,6 +72,8 @@ public class AsyncWorkflowStateExporter : IWorkflowStateExporter, ICommandHandle
         workflowInstance.SubStatus = workflowState.SubStatus;
         workflowInstance.CorrelationId = workflowState.CorrelationId;
         workflowInstance.LastExecutedAt = now;
+        workflowInstance.WorkflowState = workflowState;
+        workflowInstance.Name = workflowState.Properties.Dictionary.GetValue(SetName.WorkflowInstanceNameKey) as string;
 
         // TODO: Store timestamps such as CancelledAt, FaultedAt, etc.
 
