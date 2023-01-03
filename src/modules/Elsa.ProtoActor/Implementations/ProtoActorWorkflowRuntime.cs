@@ -2,6 +2,7 @@ using System.Text.Json;
 using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.ProtoActor.Extensions;
+using Elsa.ProtoActor.Grains;
 using Elsa.ProtoActor.Protos;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Serialization;
@@ -46,18 +47,19 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
         var versionOptions = options.VersionOptions;
         var correlationId = options.CorrelationId;
         var input = options.Input;
-
+        var workflowInstanceId = _identityGenerator.GenerateId();
+        
         var request = new StartWorkflowRequest
         {
             DefinitionId = definitionId,
+            InstanceId = workflowInstanceId, 
             VersionOptions = versionOptions.ToString(),
             CorrelationId = correlationId.EmptyIfNull(),
             Input = input?.Serialize(),
             TriggerActivityId = options.TriggerActivityId.EmptyIfNull()
         };
-
-        var workflowInstanceId = _identityGenerator.GenerateId();
-        var client = _cluster.GetWorkflowGrain(workflowInstanceId);
+        
+        var client = _cluster.GetNamedWorkflowGrain(workflowInstanceId);
         var response = await client.CanStart(request, cancellationToken);
 
         return new CanStartWorkflowResult(workflowInstanceId, response!.CanStart);
@@ -68,19 +70,20 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
     {
         var versionOptions = options.VersionOptions;
         var correlationId = options.CorrelationId;
+        var workflowInstanceId = _identityGenerator.GenerateId();
         var input = options.Input;
 
         var request = new StartWorkflowRequest
         {
             DefinitionId = definitionId,
+            InstanceId = workflowInstanceId,
             VersionOptions = versionOptions.ToString(),
             CorrelationId = correlationId.WithDefault(""),
             Input = input?.Serialize(),
             TriggerActivityId = options.TriggerActivityId.WithDefault("")
         };
-
-        var workflowInstanceId = _identityGenerator.GenerateId();
-        var client = _cluster.GetWorkflowGrain(workflowInstanceId);
+        
+        var client = _cluster.GetNamedWorkflowGrain(workflowInstanceId);
         var response = await client.Start(request, cancellationToken);
         var bookmarks = Map(response!.Bookmarks).ToList();
 
@@ -98,8 +101,8 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
             ActivityId = options.ActivityId.EmptyIfNull(),
             Input = options.Input?.Serialize()
         };
-
-        var client = _cluster.GetWorkflowGrain(workflowInstanceId);
+        
+        var client = _cluster.GetNamedWorkflowGrain(workflowInstanceId);
         var response = await client.Resume(request, cancellationToken);
         var bookmarks = Map(response!.Bookmarks).ToList();
 
@@ -110,7 +113,7 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
     public async Task<ICollection<ResumedWorkflow>> ResumeWorkflowsAsync(string activityTypeName, object bookmarkPayload, ResumeWorkflowRuntimeOptions options, CancellationToken cancellationToken = default)
     {
         var hash = _hasher.Hash(activityTypeName, bookmarkPayload);
-        var client = _cluster.GetBookmarkGrain(hash);
+        var client = _cluster.GetNamedBookmarkGrain(hash);
 
         var request = new ResolveBookmarksRequest
         {
@@ -148,7 +151,7 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
         }
         
         // Resume existing workflow instances.
-        var client = _cluster.GetBookmarkGrain(hash);
+        var client = _cluster.GetNamedBookmarkGrain(hash);
 
         var request = new ResolveBookmarksRequest
         {
@@ -177,7 +180,7 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
     /// <inheritdoc />
     public async Task<WorkflowState?> ExportWorkflowStateAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
     {
-        var client = _cluster.GetWorkflowGrain(workflowInstanceId);
+        var client = _cluster.GetNamedWorkflowGrain(workflowInstanceId);
         var response = await client.ExportState(new ExportWorkflowStateRequest(), cancellationToken);
         var json = response!.SerializedWorkflowState.Text;
         var options = _serializerOptionsProvider.CreatePersistenceOptions();
@@ -189,7 +192,7 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
     public async Task ImportWorkflowStateAsync(WorkflowState workflowState, CancellationToken cancellationToken = default)
     {
         var options = _serializerOptionsProvider.CreatePersistenceOptions();
-        var client = _cluster.GetWorkflowGrain(workflowState.Id);
+        var client = _cluster.GetNamedWorkflowGrain(workflowState.Id);
         var json = JsonSerializer.Serialize(workflowState, options);
 
         var request = new ImportWorkflowStateRequest
@@ -213,7 +216,7 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
     /// <inheritdoc />
     public async Task<int> CountRunningWorkflowsAsync(CountRunningWorkflowsArgs args, CancellationToken cancellationToken = default)
     {
-        var client = _cluster.GetRunningWorkflowsGrain();
+        var client = _cluster.GetNamedRunningWorkflowsGrain();
         
         var request = new CountRunningWorkflowsRequest
         {
@@ -251,7 +254,7 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
 
         foreach (var groupedBookmark in groupedBookmarks)
         {
-            var bookmarkClient = _cluster.GetBookmarkGrain(groupedBookmark.Key);
+            var bookmarkClient = _cluster.GetNamedBookmarkGrain(groupedBookmark.Key);
 
             var storeBookmarkRequest = new StoreBookmarksRequest
             {
@@ -270,7 +273,7 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
 
         foreach (var groupedBookmark in groupedBookmarks)
         {
-            var bookmarkClient = _cluster.GetBookmarkGrain(groupedBookmark.Key);
+            var bookmarkClient = _cluster.GetNamedBookmarkGrain(groupedBookmark.Key);
             await bookmarkClient.RemoveByWorkflow(new RemoveBookmarksByWorkflowRequest
             {
                 WorkflowInstanceId = instanceId
@@ -278,8 +281,8 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
         }
     }
 
-    private static IEnumerable<Bookmark> Map(IEnumerable<BookmarkDto> bookmarkDtos) =>
-        bookmarkDtos.Select(x =>
+    private static IEnumerable<Bookmark> Map(IEnumerable<BookmarkDto> source) =>
+        source.Select(x =>
             new Bookmark(
                 x.Id,
                 x.Name,
