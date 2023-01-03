@@ -11,6 +11,8 @@ using Elsa.MassTransit.Options;
 using Elsa.Requirements;
 using Elsa.WorkflowServer.Web.Jobs;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Data.Sqlite;
+using Proto.Persistence.Sqlite;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -38,7 +40,7 @@ services
         .UseWorkflowManagement(management => management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
         .UseWorkflowRuntime(runtime =>
         {
-            //runtime.UseProtoActor(proto => proto.PersistenceProvider = _ => new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString)));
+            runtime.UseProtoActor(proto => proto.PersistenceProvider = _ => new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString)));
             runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
             runtime.UseAsyncWorkflowStateExporter();
         })

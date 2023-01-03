@@ -23,7 +23,7 @@ internal class UpdateRunningWorkflowsHandler : INotificationHandler<WorkflowExec
 
     public async Task HandleAsync(WorkflowExecuted notification, CancellationToken cancellationToken)
     {
-        var client = _cluster.GetRunningWorkflowsGrain();
+        var client = _cluster.GetNamedRunningWorkflowsGrain();
         var workflowState = notification.WorkflowState;
 
         if (workflowState.Status == WorkflowStatus.Running)

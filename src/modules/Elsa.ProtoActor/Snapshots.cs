@@ -4,7 +4,7 @@ using Elsa.Workflows.Core.State;
 
 namespace Elsa.ProtoActor;
 
-internal record WorkflowSnapshot(string DefinitionId, int Version, WorkflowState WorkflowState, IDictionary<string, object>? Input);
+internal record WorkflowSnapshot(string DefinitionId, string InstanceId, int Version, WorkflowState WorkflowState, IDictionary<string, object>? Input);
 
 internal record BookmarkSnapshot(ICollection<StoredBookmark> Bookmarks);
 
