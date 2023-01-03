@@ -13,6 +13,7 @@ namespace Elsa.Workflows.Core.Activities;
 /// Execute a set of activities in sequence.
 /// </summary>
 [Category("Workflows")]
+[Browsable(false)]
 [Activity("Elsa", "Workflows", "Execute a set of activities in sequence.")]
 public class Sequence : Container
 {

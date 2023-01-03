@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Attributes;
@@ -8,6 +9,7 @@ namespace Elsa.Workflows.Core.Activities;
 /// <summary>
 /// Represents an inline code activity that can be used to execute arbitrary .NET code from a workflow.
 /// </summary>
+[Browsable(false)]
 [Activity("Elsa", "Primitives", "Evaluate a Boolean condition to determine which path to execute next.")]
 public class Inline : Activity
 {

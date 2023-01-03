@@ -80,7 +80,7 @@ export class DefaultActivityTemplate {
                       {this.renderIcon(icon)}
                     </div>
                     <div class="flex items-center">
-                      <div class="m-3">
+                      <div class={displayTypeIsPicker ? `m-2` : 'm-3'}>
                         <span class={`${textColor}`}>{displayText}</span>
                         <div>
                           {this.renderPorts(activity, embeddedPorts)}
