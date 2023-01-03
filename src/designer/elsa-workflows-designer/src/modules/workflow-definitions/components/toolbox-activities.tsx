@@ -52,7 +52,7 @@ export class ToolboxActivities {
   buildModel = (): any => {
     const browsableDescriptors = descriptorsStore.activityDescriptors.filter(x => x.isBrowsable);
     const categorizedActivitiesLookup = groupBy(browsableDescriptors, x => x.category);
-    const categories = Object.keys(categorizedActivitiesLookup);
+    const categories = Object.keys(categorizedActivitiesLookup).sort((a, b) => a.localeCompare(b));
     const renderedActivities: Map<string, string> = new Map<string, string>();
 
     // Group activities by category

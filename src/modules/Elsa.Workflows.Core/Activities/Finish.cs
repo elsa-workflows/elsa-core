@@ -8,7 +8,7 @@ namespace Elsa.Workflows.Core.Activities;
 /// <summary>
 /// Mark the workflow as finished.
 /// </summary>
-[Activity("Elsa", "Control Flow", "Mark the workflow as finished.")]
+[Activity("Elsa", "Primitives", "Mark the workflow as finished.")]
 public class Finish : ActivityBase
 {
     /// <inheritdoc />
