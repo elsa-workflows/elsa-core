@@ -6,19 +6,23 @@ using Elsa.Workflows.Core.Models;
 namespace Elsa.Workflows.Core.Activities;
 
 /// <summary>
-/// Sets a transient property on the workflow execution context the specified name value.
-/// This value is used by the <see cref="PersistWorkflowInstanceMiddleware"/> component to update the name of the workflow instance. 
+/// Sets a property on the workflow execution context with the specified name value.
 /// </summary>
 [Activity("Elsa", "Workflows", "Set the name of the workflow instance to a specified value.")]
 public class SetName : Activity
 {
-    internal static readonly object WorkflowInstanceNameKey = new();
+    /// <summary>
+    /// The property key name used to store the workflow instance name.
+    /// </summary>
+    public const string WorkflowInstanceNameKey = "WorkflowInstanceName";
 
+    /// <inheritdoc />
     [JsonConstructor]
     public SetName([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
 
+    /// <inheritdoc />
     public SetName(Input<string> value, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line)
     {
         Value = value;
@@ -29,9 +33,10 @@ public class SetName : Activity
     /// </summary>
     public Input<string> Value { get; set; } = new("");
 
+    /// <inheritdoc />
     protected override void Execute(ActivityExecutionContext context)
     {
         var value = context.Get(Value);
-        context.WorkflowExecutionContext.TransientProperties[WorkflowInstanceNameKey] = value!;
+        context.WorkflowExecutionContext.SetProperty(WorkflowInstanceNameKey, value!);
     }
 }

@@ -14,6 +14,6 @@ public class PropertyBagConverter : JsonConverter<PropertyBag>
 
     public override void Write(Utf8JsonWriter writer, PropertyBag value, JsonSerializerOptions options)
     {
-        JsonSerializer.Serialize(writer, value.Properties);
+        JsonSerializer.Serialize(writer, value.Dictionary);
     }
 }
