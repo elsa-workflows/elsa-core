@@ -6,22 +6,25 @@ using Elsa.Workflows.Core.Services;
 namespace Elsa.Workflows.Core.Serialization.Converters;
 
 /// <summary>
-/// Serializes <see cref="Type"/> objects to a simple alias representing said type.
+/// Serializes <see cref="Type"/> objects to a simple alias representing the type.
 /// </summary>
 public class TypeJsonConverter : JsonConverter<Type>
 {
     private readonly IWellKnownTypeRegistry _wellKnownTypeRegistry;
 
+    /// <inheritdoc />
     public TypeJsonConverter(IWellKnownTypeRegistry wellKnownTypeRegistry)
     {
         _wellKnownTypeRegistry = wellKnownTypeRegistry;
     }
 
+    /// <inheritdoc />
     public override bool CanConvert(Type typeToConvert)
     {
         return typeToConvert == typeof(Type) || typeToConvert.FullName == "System.RuntimeType";
     }
 
+    /// <inheritdoc />
     public override Type? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         var typeAlias = reader.GetString()!;
@@ -37,6 +40,7 @@ public class TypeJsonConverter : JsonConverter<Type>
         return _wellKnownTypeRegistry.TryGetType(typeAlias, out var type) ? type : Type.GetType(typeAlias);
     }
 
+    /// <inheritdoc />
     public override void Write(Utf8JsonWriter writer, Type value, JsonSerializerOptions options)
     {
         // Handle collection types.

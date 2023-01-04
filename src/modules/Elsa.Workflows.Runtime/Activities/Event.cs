@@ -5,12 +5,12 @@ using Elsa.Extensions;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 
-namespace Elsa.Workflows.Core.Activities;
+namespace Elsa.Workflows.Runtime.Activities;
 
 /// <summary>
 /// Wait for an event to be triggered.
 /// </summary>
-[Activity("Elsa", "Primitives", "Wait for an event to be triggered.")]
+[Activity("Elsa", "Primitives", "Wait for an event to be published.")]
 public class Event : Trigger<object?>
 {
     /// <inheritdoc />

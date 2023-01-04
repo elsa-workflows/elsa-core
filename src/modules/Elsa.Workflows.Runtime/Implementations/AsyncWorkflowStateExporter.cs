@@ -16,19 +16,19 @@ namespace Elsa.Workflows.Runtime.Implementations;
 /// <summary>
 /// A default implementation that asynchronously stores the workflow state in a database using <see cref="IWorkflowInstanceStore"/>.
 /// </summary>
-public class AsyncWorkflowStateExporter : IWorkflowStateExporter, ICommandHandler<ExportWorkflowStateToDb>
+public class AsyncWorkflowStateExporter : IWorkflowStateExporter, ICommandHandler<ExportWorkflowStateToDbCommand>
 {
     private readonly IBackgroundCommandSender _backgroundCommandSender;
     private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
     private readonly IWorkflowInstanceStore _workflowInstanceStore;
     private readonly ISystemClock _systemClock;
-    
+
     /// <summary>
     /// Constructor.
     /// </summary>
     public AsyncWorkflowStateExporter(
         IBackgroundCommandSender backgroundCommandSender,
-        IWorkflowDefinitionStore workflowDefinitionStore, 
+        IWorkflowDefinitionStore workflowDefinitionStore,
         IWorkflowInstanceStore workflowInstanceStore,
         ISystemClock systemClock
     )
@@ -40,11 +40,11 @@ public class AsyncWorkflowStateExporter : IWorkflowStateExporter, ICommandHandle
     }
 
     /// <inheritdoc />
-    public async ValueTask ExportAsync(Workflow workflow, WorkflowState workflowState, CancellationToken cancellationToken) => 
-        await _backgroundCommandSender.SendAsync(new ExportWorkflowStateToDb(workflowState), cancellationToken);
+    public async ValueTask ExportAsync(Workflow workflow, WorkflowState workflowState, CancellationToken cancellationToken) =>
+        await _backgroundCommandSender.SendAsync(new ExportWorkflowStateToDbCommand(workflowState), cancellationToken);
 
     /// <inheritdoc />
-    public async Task<Unit> HandleAsync(ExportWorkflowStateToDb command, CancellationToken cancellationToken)
+    public async Task<Unit> HandleAsync(ExportWorkflowStateToDbCommand command, CancellationToken cancellationToken)
     {
         var workflowState = command.WorkflowState;
         var definitionId = workflowState.DefinitionId;
@@ -73,7 +73,9 @@ public class AsyncWorkflowStateExporter : IWorkflowStateExporter, ICommandHandle
         workflowInstance.CorrelationId = workflowState.CorrelationId;
         workflowInstance.LastExecutedAt = now;
         workflowInstance.WorkflowState = workflowState;
-        workflowInstance.Name = workflowState.Properties.Dictionary.GetValue(SetName.WorkflowInstanceNameKey) as string;
+
+        if (workflowState.Properties.Dictionary.TryGetValue<string>(SetName.WorkflowInstanceNameKey, out var name))
+            workflowInstance.Name = name;
 
         // TODO: Store timestamps such as CancelledAt, FaultedAt, etc.
 

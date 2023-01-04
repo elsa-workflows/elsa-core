@@ -50,6 +50,12 @@ services:
     image: redis:latest
     ports:
       - "127.0.0.1:6379:6379"
+        
+  rabbitmq:
+    image: "rabbitmq:3-management"
+    ports:
+      - "15672:15672"
+      - "5672:5672"
 
 networks:
   consul:
