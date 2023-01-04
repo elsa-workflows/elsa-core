@@ -21,4 +21,9 @@ public interface IWorkflowDispatcher
     /// Starts all workflows and resumes existing workflow instances based on the specified activity type and bookmark payload.
     /// </summary>
     Task<DispatchTriggerWorkflowsResponse> DispatchAsync(DispatchTriggerWorkflowsRequest request, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Resumes the workflow waiting for the specified bookmark.
+    /// </summary>
+    Task<DispatchResumeWorkflowsResponse> DispatchAsync(DispatchResumeWorkflowsRequest request, CancellationToken cancellationToken = default);
 }

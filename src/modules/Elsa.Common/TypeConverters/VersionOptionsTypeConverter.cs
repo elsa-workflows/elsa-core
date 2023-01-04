@@ -2,11 +2,10 @@
 using System.Globalization;
 using Elsa.Common.Models;
 
-namespace Elsa.Common.TypeConverters
+namespace Elsa.Common.TypeConverters;
+
+public class VersionOptionsTypeConverter : TypeConverter
 {
-    public class VersionOptionsTypeConverter : TypeConverter
-    {
-        public override bool CanConvertFrom(ITypeDescriptorContext? context, Type sourceType) => sourceType == typeof(string) || base.CanConvertFrom(context, sourceType);
-        public override object ConvertFrom(ITypeDescriptorContext? context, CultureInfo? culture, object value) => value is string text ? VersionOptions.FromString(text) : base.ConvertFrom(context, culture, value)!;
-    }
+    public override bool CanConvertFrom(ITypeDescriptorContext? context, Type sourceType) => sourceType == typeof(string) || base.CanConvertFrom(context, sourceType);
+    public override object ConvertFrom(ITypeDescriptorContext? context, CultureInfo? culture, object value) => value is string text ? VersionOptions.FromString(text) : base.ConvertFrom(context, culture, value)!;
 }

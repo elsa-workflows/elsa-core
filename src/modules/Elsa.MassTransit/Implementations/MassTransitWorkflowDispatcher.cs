@@ -59,4 +59,17 @@ public class MassTransitWorkflowDispatcher : IWorkflowDispatcher
         }, cancellationToken);
         return new();
     }
+
+    /// <inheritdoc />
+    public async Task<DispatchResumeWorkflowsResponse> DispatchAsync(DispatchResumeWorkflowsRequest request, CancellationToken cancellationToken = default)
+    {
+        await _bus.Publish<DispatchResumeWorkflows>(new
+        {
+            request.Input,
+            request.BookmarkPayload,
+            request.CorrelationId,
+            request.ActivityTypeName
+        }, cancellationToken);
+        return new();
+    }
 }

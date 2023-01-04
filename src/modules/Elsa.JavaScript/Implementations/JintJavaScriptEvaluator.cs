@@ -8,87 +8,86 @@ using Humanizer;
 using Jint;
 using Microsoft.Extensions.Options;
 
-namespace Elsa.JavaScript.Implementations
+namespace Elsa.JavaScript.Implementations;
+
+/// <summary>
+/// Provides a JavaScript evaluator using Jint.
+/// </summary>
+public class JintJavaScriptEvaluator : IJavaScriptEvaluator
 {
+    private readonly IEventPublisher _mediator;
+    private readonly JintOptions _jintOptions;
+
     /// <summary>
-    /// Provides a JavaScript evaluator using Jint.
+    /// Constructor.
     /// </summary>
-    public class JintJavaScriptEvaluator : IJavaScriptEvaluator
+    public JintJavaScriptEvaluator(IEventPublisher mediator, IOptions<JintOptions> scriptOptions)
     {
-        private readonly IEventPublisher _mediator;
-        private readonly JintOptions _jintOptions;
+        _mediator = mediator;
+        _jintOptions = scriptOptions.Value;
+    }
 
-        /// <summary>
-        /// Constructor.
-        /// </summary>
-        public JintJavaScriptEvaluator(IEventPublisher mediator, IOptions<JintOptions> scriptOptions)
+    /// <inheritdoc />
+    public async Task<object?> EvaluateAsync(string expression,
+        Type returnType,
+        ExpressionExecutionContext context,
+        Action<Engine>? configureEngine = default,
+        CancellationToken cancellationToken = default)
+    {
+        var engine = await GetConfiguredEngine(configureEngine, context, cancellationToken);
+        var result = ExecuteExpressionAndGetResult(engine, expression);
+
+        return result;
+    }
+
+    private async Task<Engine> GetConfiguredEngine(Action<Engine>? configureEngine, ExpressionExecutionContext context, CancellationToken cancellationToken)
+    {
+        var engine = new Engine(opts =>
         {
-            _mediator = mediator;
-            _jintOptions = scriptOptions.Value;
-        }
+            if (_jintOptions.AllowClrAccess)
+                opts.AllowClr();
+        });
 
-        /// <inheritdoc />
-        public async Task<object?> EvaluateAsync(string expression,
-            Type returnType,
-            ExpressionExecutionContext context,
-            Action<Engine>? configureEngine = default,
-            CancellationToken cancellationToken = default)
-        {
-            var engine = await GetConfiguredEngine(configureEngine, context, cancellationToken);
-            var result = ExecuteExpressionAndGetResult(engine, expression);
-
-            return result;
-        }
-
-        private async Task<Engine> GetConfiguredEngine(Action<Engine>? configureEngine, ExpressionExecutionContext context, CancellationToken cancellationToken)
-        {
-            var engine = new Engine(opts =>
-            {
-                if (_jintOptions.AllowClrAccess)
-                    opts.AllowClr();
-            });
-
-            configureEngine?.Invoke(engine);
+        configureEngine?.Invoke(engine);
             
-            // Add common functions.
-            engine.SetValue("setVariable", (Action<string, object>)((name, value) => context.SetVariable(name, value)));
+        // Add common functions.
+        engine.SetValue("setVariable", (Action<string, object>)((name, value) => context.SetVariable(name, value)));
             
-            // ReSharper disable once ConvertClosureToMethodGroup (Jint does not understand method groups).
-            engine.SetValue("getVariable", (Func<string, object?>)(name => context.GetVariable(name)));
+        // ReSharper disable once ConvertClosureToMethodGroup (Jint does not understand method groups).
+        engine.SetValue("getVariable", (Func<string, object?>)(name => context.GetVariable(name)));
             
-            // Create variable setters and getters for each variable.
-            CreateVariableAccessors(engine, context);
+        // Create variable setters and getters for each variable.
+        CreateVariableAccessors(engine, context);
             
-            engine.SetValue("isNullOrWhiteSpace", (Func<string, bool>)string.IsNullOrWhiteSpace);
-            engine.SetValue("isNullOrEmpty", (Func<string, bool>)string.IsNullOrEmpty);
+        engine.SetValue("isNullOrWhiteSpace", (Func<string, bool>)string.IsNullOrWhiteSpace);
+        engine.SetValue("isNullOrEmpty", (Func<string, bool>)string.IsNullOrEmpty);
 
-            // Add common .NET types.
-            engine.RegisterType<DateTime>();
-            engine.RegisterType<DateTimeOffset>();
-            engine.RegisterType<TimeSpan>();
+        // Add common .NET types.
+        engine.RegisterType<DateTime>();
+        engine.RegisterType<DateTimeOffset>();
+        engine.RegisterType<TimeSpan>();
 
-            // Allow listeners invoked by the mediator to configure the engine.
-            await _mediator.PublishAsync(new EvaluatingJavaScript(engine, context), cancellationToken);
+        // Allow listeners invoked by the mediator to configure the engine.
+        await _mediator.PublishAsync(new EvaluatingJavaScript(engine, context), cancellationToken);
 
-            return engine;
-        }
+        return engine;
+    }
 
-        private static void CreateVariableAccessors(Engine engine, ExpressionExecutionContext context)
+    private static void CreateVariableAccessors(Engine engine, ExpressionExecutionContext context)
+    {
+        var variablesDictionary = context.GetVariableValues();
+
+        foreach (var variable in variablesDictionary)
         {
-            var variablesDictionary = context.GetVariableValues();
-
-            foreach (var variable in variablesDictionary)
-            {
-                var pascalName = variable.Key.Pascalize();
-                engine.SetValue($"get{pascalName}", (Func<object?>)(() => context.GetVariable(variable.Key)));
-                engine.SetValue($"set{pascalName}", (Action<object?>)(value => context.SetVariable(variable.Key, value)));
-            }
+            var pascalName = variable.Key.Pascalize();
+            engine.SetValue($"get{pascalName}", (Func<object?>)(() => context.GetVariable(variable.Key)));
+            engine.SetValue($"set{pascalName}", (Action<object?>)(value => context.SetVariable(variable.Key, value)));
         }
+    }
 
-        private static object? ExecuteExpressionAndGetResult(Engine engine, string expression)
-        {
-            var result = engine.Evaluate(expression);
-            return result.ToObject();
-        }
+    private static object? ExecuteExpressionAndGetResult(Engine engine, string expression)
+    {
+        var result = engine.Evaluate(expression);
+        return result.ToObject();
     }
 }

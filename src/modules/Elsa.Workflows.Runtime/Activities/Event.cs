@@ -25,20 +25,20 @@ public class Event : Trigger<object?>
     }
 
     /// <inheritdoc />
-    public Event(string text, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
-        : this(new Literal<string>(text), source, line)
+    public Event(string eventName, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
+        : this(new Literal<string>(eventName), source, line)
     {
     }
     
     /// <inheritdoc />
-    public Event(Func<string> text, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
-        : this(new DelegateBlockReference<string>(text), source, line)
+    public Event(Func<string> eventName, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
+        : this(new DelegateBlockReference<string>(eventName), source, line)
     {
     }
 
     /// <inheritdoc />
-    public Event(Func<ExpressionExecutionContext, string?> text, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
-        : this(new DelegateBlockReference<string?>(text), source, line)
+    public Event(Func<ExpressionExecutionContext, string?> eventName, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
+        : this(new DelegateBlockReference<string?>(eventName), source, line)
     {
     }
 

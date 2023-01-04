@@ -36,7 +36,6 @@ public class MassTransitFeature : FeatureBase
     /// <inheritdoc />
     public override void Apply()
     {
-        //ConfigureMessageSerializer();
         AddMassTransit(BusConfigurator);
     }
     
@@ -60,10 +59,5 @@ public class MassTransitFeature : FeatureBase
             // Wait until the bus is started before returning from IHostedService.StartAsync.
             options.WaitUntilStarted = true;
         });
-    }
-    
-    private static void ConfigureMessageSerializer()
-    {
-        SystemTextJsonMessageSerializer.Options.Converters.Add(new PolymorphicConverter());
     }
 }
