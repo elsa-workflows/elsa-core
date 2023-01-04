@@ -55,6 +55,7 @@ services
         .UseHttp()
     );
 
+services.AddHandlersFrom<Program>();
 services.AddHealthChecks();
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()));
 services.AddHttpContextAccessor();

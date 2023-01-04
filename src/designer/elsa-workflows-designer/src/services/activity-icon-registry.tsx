@@ -25,6 +25,7 @@ import {BreakIcon} from "../components/icons/activities/break";
 import {ForkIcon} from "../components/icons/activities/fork";
 import {CompleteIcon} from "../components/icons/activities/complete";
 import {PublishEventIcon} from "../components/icons/activities/publish-event";
+import {RunTaskIcon} from "../components/icons/activities/run-task";
 
 export type ActivityType = string;
 export type ActivityIconProducer = (ActivityIconSettings?) => any;
@@ -63,6 +64,7 @@ export class ActivityIconRegistry {
     this.add('Elsa.Complete', settings => <CompleteIcon size={settings?.size}/>);
     this.add('Elsa.SetName', settings => <SetNameIcon size={settings?.size}/>);
     this.add('Elsa.SetVariable', settings => <SetVariableIcon size={settings?.size}/>);
+    this.add('Elsa.RunTask', settings => <RunTaskIcon size={settings?.size}/>);
   }
 
   public add(activityType: ActivityType, icon: ActivityIconProducer) {

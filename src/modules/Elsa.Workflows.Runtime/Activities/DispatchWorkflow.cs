@@ -6,7 +6,7 @@ namespace Elsa.Workflows.Runtime.Activities;
 /// <summary>
 /// Creates a new workflow instance of the specified workflow and dispatches it for execution.
 /// </summary>
-[Activity("Elsa", "Workflows", "Create a new workflow instance of the specified workflow and dispatches it for execution.")]
+[Activity("Elsa", "Primitives", "Create a new workflow instance of the specified workflow and dispatches it for execution.")]
 public class DispatchWorkflow : Activity
 {
     public Input<string> WorkflowDefinitionId { get; set; } = new("");

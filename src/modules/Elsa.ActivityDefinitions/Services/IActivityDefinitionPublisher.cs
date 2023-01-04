@@ -1,15 +1,14 @@
 using Elsa.ActivityDefinitions.Entities;
 
-namespace Elsa.ActivityDefinitions.Services
+namespace Elsa.ActivityDefinitions.Services;
+
+public interface IActivityDefinitionPublisher
 {
-    public interface IActivityDefinitionPublisher
-    {
-        ActivityDefinition New();
-        Task<ActivityDefinition?> PublishAsync(string definitionId, CancellationToken cancellationToken = default);
-        Task<ActivityDefinition> PublishAsync(ActivityDefinition definition, CancellationToken cancellationToken = default);
-        Task<ActivityDefinition?> RetractAsync(string definitionId, CancellationToken cancellationToken = default);
-        Task<ActivityDefinition> RetractAsync(ActivityDefinition definition, CancellationToken cancellationToken = default);
-        Task<ActivityDefinition?> GetDraftAsync(string definitionId, CancellationToken cancellationToken = default);
-        Task<ActivityDefinition> SaveDraftAsync(ActivityDefinition definition, CancellationToken cancellationToken = default);
-    }
+    ActivityDefinition New();
+    Task<ActivityDefinition?> PublishAsync(string definitionId, CancellationToken cancellationToken = default);
+    Task<ActivityDefinition> PublishAsync(ActivityDefinition definition, CancellationToken cancellationToken = default);
+    Task<ActivityDefinition?> RetractAsync(string definitionId, CancellationToken cancellationToken = default);
+    Task<ActivityDefinition> RetractAsync(ActivityDefinition definition, CancellationToken cancellationToken = default);
+    Task<ActivityDefinition?> GetDraftAsync(string definitionId, CancellationToken cancellationToken = default);
+    Task<ActivityDefinition> SaveDraftAsync(ActivityDefinition definition, CancellationToken cancellationToken = default);
 }
