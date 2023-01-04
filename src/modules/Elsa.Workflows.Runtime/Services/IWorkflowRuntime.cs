@@ -34,19 +34,11 @@ public interface IWorkflowRuntime
     /// <summary>
     /// Resumes all workflows that are bookmarked on the specified activity type. 
     /// </summary>
-    /// <param name="activityTypeName"></param>
-    /// <param name="bookmarkPayload"></param>
-    /// <param name="options"></param>
-    /// <param name="cancellationToken"></param>
     Task<ICollection<ResumedWorkflow>> ResumeWorkflowsAsync(string activityTypeName, object bookmarkPayload, ResumeWorkflowRuntimeOptions options, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Starts all workflows and resumes existing workflow instances based on the specified activity type and bookmark payload.
     /// </summary>
-    /// <param name="activityTypeName"></param>
-    /// <param name="bookmarkPayload"></param>
-    /// <param name="options"></param>
-    /// <param name="cancellationToken"></param>
     Task<TriggerWorkflowsResult> TriggerWorkflowsAsync(string activityTypeName, object bookmarkPayload, TriggerWorkflowsRuntimeOptions options, CancellationToken cancellationToken = default);
     
     /// <summary>

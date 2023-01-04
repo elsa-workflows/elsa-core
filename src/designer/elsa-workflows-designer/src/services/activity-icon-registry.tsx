@@ -24,6 +24,7 @@ import {StartAtIcon} from "../components/icons/activities/startat";
 import {BreakIcon} from "../components/icons/activities/break";
 import {ForkIcon} from "../components/icons/activities/fork";
 import {CompleteIcon} from "../components/icons/activities/complete";
+import {PublishEventIcon} from "../components/icons/activities/publish-event";
 
 export type ActivityType = string;
 export type ActivityIconProducer = (ActivityIconSettings?) => any;
@@ -50,6 +51,7 @@ export class ActivityIconRegistry {
     this.add('Elsa.StartAt', settings => <StartAtIcon size={settings?.size}/>);
     this.add('Elsa.FlowDecision', settings => <FlowDecisionIcon size={settings?.size}/>);
     this.add('Elsa.Event', settings => <EventIcon size={settings?.size}/>);
+    this.add('Elsa.PublishEvent', settings => <PublishEventIcon size={settings?.size}/>);
     this.add('Elsa.RunJavaScript', settings => <RunJavaScriptIcon size={settings?.size}/>);
     this.add('Elsa.FlowJoin', settings => <FlowJoinIcon size={settings?.size}/>);
     this.add('Elsa.FlowNode', settings => <FlowNodeIcon size={settings?.size}/>);

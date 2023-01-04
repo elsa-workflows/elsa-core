@@ -3,4 +3,4 @@ using Elsa.Workflows.Core.State;
 
 namespace Elsa.Workflows.Runtime.Commands;
 
-public record ExportWorkflowStateToDb(WorkflowState WorkflowState) : ICommand;
+public record ExportWorkflowStateToDbCommand(WorkflowState WorkflowState) : ICommand;

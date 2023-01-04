@@ -3,7 +3,6 @@ using System.Text.Json;
 using Elsa.Expressions.Models;
 using Elsa.Expressions.Services;
 using Elsa.Extensions;
-using Elsa.Mediator.Services;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
@@ -15,9 +14,11 @@ using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Runtime.Services;
 using Microsoft.Extensions.Logging;
 using Open.Linq.AsyncExtensions;
+using IEventPublisher = Elsa.Mediator.Services.IEventPublisher;
 
 namespace Elsa.Workflows.Runtime.Implementations;
 
+/// <inheritdoc />
 public class TriggerIndexer : ITriggerIndexer
 {
     private readonly IActivityWalker _activityWalker;
@@ -30,6 +31,9 @@ public class TriggerIndexer : ITriggerIndexer
     private readonly IBookmarkHasher _hasher;
     private readonly ILogger _logger;
 
+    /// <summary>
+    /// Constructor.
+    /// </summary>
     public TriggerIndexer(
         IActivityWalker activityWalker,
         IWorkflowDefinitionService workflowDefinitionService,
@@ -52,12 +56,14 @@ public class TriggerIndexer : ITriggerIndexer
         _workflowDefinitionService = workflowDefinitionService;
     }
 
+    /// <inheritdoc />
     public async Task<IndexedWorkflowTriggers> IndexTriggersAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
     {
         var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(definition, cancellationToken);
         return await IndexTriggersAsync(workflow, cancellationToken);
     }
 
+    /// <inheritdoc />
     public async Task<IndexedWorkflowTriggers> IndexTriggersAsync(Workflow workflow, CancellationToken cancellationToken = default)
     {
         // Get current triggers

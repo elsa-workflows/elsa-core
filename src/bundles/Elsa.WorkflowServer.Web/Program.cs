@@ -7,7 +7,6 @@ using Elsa.EntityFrameworkCore.Modules.ActivityDefinitions;
 using Elsa.EntityFrameworkCore.Modules.Labels;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
-using Elsa.MassTransit.Options;
 using Elsa.Requirements;
 using Elsa.WorkflowServer.Web.Jobs;
 using Microsoft.AspNetCore.Authorization;
@@ -18,14 +17,13 @@ var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 var configuration = builder.Configuration;
 var sqliteConnectionString = configuration.GetConnectionString("Sqlite")!;
+var rabbitMqConnectionString = configuration.GetConnectionString("RabbitMq")!;
 var identityOptions = new IdentityOptions();
 var identityTokenOptions = new IdentityTokenOptions();
 var identitySection = configuration.GetSection("Identity");
 var identityTokenSection = identitySection.GetSection("Tokens");
 identitySection.Bind(identityOptions);
 identityTokenSection.Bind(identityTokenOptions);
-var rabbitMqOptions = new RabbitMqOptions();
-configuration.GetSection(RabbitMqOptions.RabbitMq).Bind(rabbitMqOptions);
 
 // Add Elsa services.
 services
@@ -40,10 +38,12 @@ services
         .UseWorkflowManagement(management => management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
         .UseWorkflowRuntime(runtime =>
         {
-            //runtime.UseProtoActor(proto => proto.PersistenceProvider = _ => new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString)));
+            runtime.UseProtoActor(proto => proto.PersistenceProvider = _ => new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString)));
             runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
             runtime.UseAsyncWorkflowStateExporter();
+            runtime.UseMassTransitDispatcher();
         })
+        .UseMassTransit(massTransit => massTransit.UseRabbitMq(rabbitMqConnectionString))
         .UseLabels(labels => labels.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
         .UseActivityDefinitions(feature => feature.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
         .UseJobs(jobs => jobs.ConfigureOptions = options => options.WorkerCount = 10)

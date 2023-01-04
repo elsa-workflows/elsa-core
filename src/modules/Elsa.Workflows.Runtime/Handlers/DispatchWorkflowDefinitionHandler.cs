@@ -5,7 +5,8 @@ using Elsa.Workflows.Runtime.Services;
 
 namespace Elsa.Workflows.Runtime.Handlers;
 
-internal class DispatchWorkflowDefinitionHandler : ICommandHandler<DispatchWorkflowDefinition>
+// ReSharper disable once UnusedType.Global
+internal class DispatchWorkflowDefinitionHandler : ICommandHandler<DispatchWorkflowDefinitionCommand>
 {
     private readonly IWorkflowRuntime _workflowRuntime;
 
@@ -14,7 +15,7 @@ internal class DispatchWorkflowDefinitionHandler : ICommandHandler<DispatchWorkf
         _workflowRuntime = workflowRuntime;
     }
     
-    public async Task<Unit> HandleAsync(DispatchWorkflowDefinition command, CancellationToken cancellationToken)
+    public async Task<Unit> HandleAsync(DispatchWorkflowDefinitionCommand command, CancellationToken cancellationToken)
     {
         var options = new StartWorkflowRuntimeOptions(command.CorrelationId, command.Input, command.VersionOptions);
             

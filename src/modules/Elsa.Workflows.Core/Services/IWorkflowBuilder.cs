@@ -45,12 +45,12 @@ public interface IWorkflowBuilder
     /// <summary>
     /// The workflow variables to store with the workflow being built.
     /// </summary>
-    ICollection<Variable>? Variables { get; set; }
+    ICollection<Variable> Variables { get; set; }
 
     /// <summary>
     /// An internal variable used to get and set the result of the workflow.
     /// </summary>
-    public Variable Result { get; set; }
+    public Variable? Result { get; set; }
 
     /// <summary>
     /// A set of properties that can be used for storing application-specific information about the workflow being built.

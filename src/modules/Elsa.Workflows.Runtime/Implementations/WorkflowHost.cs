@@ -1,10 +1,7 @@
-using Elsa.Mediator.Services;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Notifications;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Core.State;
-using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Runtime.Services;
 using Microsoft.Extensions.Logging;
 
@@ -17,7 +14,6 @@ public class WorkflowHost : IWorkflowHost
 {
     private readonly IWorkflowRunner _workflowRunner;
     private readonly IEnumerable<IWorkflowActivationStrategy> _instantiationStrategies;
-    private readonly IEventPublisher _eventPublisher;
     private readonly IIdentityGenerator _identityGenerator;
     private readonly ILogger<WorkflowHost> _logger;
 
@@ -29,7 +25,6 @@ public class WorkflowHost : IWorkflowHost
         WorkflowState workflowState,
         IWorkflowRunner workflowRunner,
         IEnumerable<IWorkflowActivationStrategy> instantiationStrategies,
-        IEventPublisher eventPublisher,
         IIdentityGenerator identityGenerator,
         ILogger<WorkflowHost> logger)
     {
@@ -37,7 +32,6 @@ public class WorkflowHost : IWorkflowHost
         WorkflowState = workflowState;
         _workflowRunner = workflowRunner;
         _instantiationStrategies = instantiationStrategies;
-        _eventPublisher = eventPublisher;
         _identityGenerator = identityGenerator;
         _logger = logger;
     }

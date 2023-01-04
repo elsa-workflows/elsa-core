@@ -90,6 +90,13 @@ public class WorkflowRuntimeFeature : FeatureBase
     }
 
     /// <inheritdoc />
+    public override void Configure()
+    {
+        // Activities
+        Module.AddActivitiesFrom<WorkflowRuntimeFeature>();
+    }
+
+    /// <inheritdoc />
     public override void ConfigureHostedServices() =>
         Module
             .ConfigureHostedService<RegisterDescriptors>()
@@ -101,6 +108,7 @@ public class WorkflowRuntimeFeature : FeatureBase
     {
         // Options.
         Services.Configure(DistributedLockingOptions);
+        Services.Configure<RuntimeOptions>(options => { options.Workflows = Workflows; });
         
         Services
             // Core.
@@ -114,6 +122,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddSingleton(BookmarkStore)
             .AddSingleton(WorkflowTriggerStore)
             .AddSingleton(WorkflowExecutionLogStore)
+            .AddSingleton<IEventPublisher, EventPublisher>()
 
             // Memory stores.
             .AddMemoryStore<WorkflowState, MemoryWorkflowStateStore>()
@@ -141,6 +150,5 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddSingleton<IWorkflowActivationStrategy, CorrelationStrategy>()
             ;
 
-        Services.Configure<RuntimeOptions>(options => { options.Workflows = Workflows; });
     }
 }

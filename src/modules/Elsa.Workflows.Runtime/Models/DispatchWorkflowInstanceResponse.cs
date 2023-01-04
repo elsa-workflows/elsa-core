@@ -1,3 +1,3 @@
 namespace Elsa.Workflows.Runtime.Models;
 
-public record DispatchWorkflowInstanceResponse();
+public record DispatchWorkflowInstanceResponse;

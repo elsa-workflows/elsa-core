@@ -217,7 +217,7 @@ public class ActivityExecutionContext
 
     public void Set(MemoryBlockReference blockReference, object? value) => ExpressionExecutionContext.Set(blockReference, value);
     public void Set(Output? output, object? value) => ExpressionExecutionContext.Set(output, value);
-    public void Set<T>(Output<T>? output, T value) => ExpressionExecutionContext.Set(output, value);
+    public void Set<T>(Output<T>? output, T? value) => ExpressionExecutionContext.Set(output, value);
 
     /// <summary>
     /// Stops further execution of the workflow.
