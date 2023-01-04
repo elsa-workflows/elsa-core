@@ -48,4 +48,12 @@ public class TaskBasedWorkflowDispatcher : IWorkflowDispatcher
         await _backgroundCommandSender.SendAsync(command, cancellationToken);
         return new DispatchTriggerWorkflowsResponse();
     }
+
+    /// <inheritdoc />
+    public async Task<DispatchResumeWorkflowsResponse> DispatchAsync(DispatchResumeWorkflowsRequest request, CancellationToken cancellationToken = default)
+    {
+        var command = new DispatchResumeWorkflowsCommand(request.ActivityTypeName, request.BookmarkPayload, request.CorrelationId, request.Input);
+        await _backgroundCommandSender.SendAsync(command, cancellationToken);
+        return new DispatchResumeWorkflowsResponse();
+    }
 }

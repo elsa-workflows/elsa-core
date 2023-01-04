@@ -1,20 +1,20 @@
+using Elsa.Mediator.Services;
 using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Runtime.Services;
-using IEventPublisher = Elsa.Mediator.Services.IEventPublisher;
 
 namespace Elsa.Workflows.Runtime.Implementations;
 
 /// <summary>
-/// Relies on the <see cref="IEventPublisher"/> to synchronously publish the received request as a domain event.
+/// Relies on the <see cref="IBackgroundEventPublisher"/> to asynchronously publish the received request as a domain event.
 /// </summary>
-public class SynchronousRunTaskDispatcher : IRunTaskDispatcher
+public class AsynchronousTaskDispatcher : ITaskDispatcher
 {
-    private readonly IEventPublisher _eventPublisher;
+    private readonly IBackgroundEventPublisher _eventPublisher;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public SynchronousRunTaskDispatcher(IEventPublisher eventPublisher) => _eventPublisher = eventPublisher;
+    public AsynchronousTaskDispatcher(IBackgroundEventPublisher eventPublisher) => _eventPublisher = eventPublisher;
 
     /// <inheritdoc />
     public async Task DispatchAsync(RunTaskRequest request, CancellationToken cancellationToken = default) => await _eventPublisher.PublishAsync(request, cancellationToken);

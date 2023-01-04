@@ -5,7 +5,7 @@ namespace Elsa.Workflows.Runtime.Services;
 /// <summary>
 /// Dispatches a request for running a task.
 /// </summary>
-public interface IRunTaskDispatcher
+public interface ITaskDispatcher
 {
     /// <summary>
     /// Asynchronously publishes the specified event using the workflow dispatcher.

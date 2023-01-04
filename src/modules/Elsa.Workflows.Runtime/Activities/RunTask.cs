@@ -2,7 +2,6 @@ using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
-using Elsa.Mediator.Services;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
@@ -41,7 +40,7 @@ public class RunTask : ActivityBase<object>, IBookmarksPersistedHandler
     
     /// <inheritdoc />
     [JsonConstructor]
-    public RunTask([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public RunTask()
     {
     }
 
@@ -56,12 +55,36 @@ public class RunTask : ActivityBase<object>, IBookmarksPersistedHandler
     }
     
     /// <inheritdoc />
+    public RunTask(string taskName, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(new Literal<string>(taskName), source, line)
+    {
+    }
+
+    /// <inheritdoc />
+    public RunTask(Func<string> taskName, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) 
+        : this(new DelegateBlockReference<string>(taskName), source, line)
+    {
+    }
+
+    /// <inheritdoc />
+    public RunTask(Func<ExpressionExecutionContext, string?> taskName, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) 
+        : this(new DelegateBlockReference<string?>(taskName), source, line)
+    {
+    }
+
+    /// <inheritdoc />
+    public RunTask(Variable<string> taskName, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line) => TaskName = new Input<string>(taskName);
+
+    /// <inheritdoc />
+    public RunTask(Literal<string> taskName, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line) => TaskName = new Input<string>(taskName);
+
+    
+    /// <inheritdoc />
     protected override void Execute(ActivityExecutionContext context)
     {
         var taskName = TaskName.Get(context);
         var identityGenerator = context.GetRequiredService<IIdentityGenerator>();
         var taskId = identityGenerator.GenerateId();
-        var payload = new RunTaskBookmarkPayload(taskId, taskName);
+        var payload = new RunTaskBookmarkPayload(taskId);
         context.CreateBookmark(payload, ResumeAsync);
         context.TransientProperties[BookmarkPropertyKey] = payload;
     }
@@ -77,8 +100,9 @@ public class RunTask : ActivityBase<object>, IBookmarksPersistedHandler
     {
         var bookmark = (RunTaskBookmarkPayload)context.TransientProperties[BookmarkPropertyKey];
         var taskParams = TaskParams.TryGet(context);
-        var notification = new RunTaskRequest(bookmark.TaskId, bookmark.TaskName, taskParams);
-        var dispatcher = context.GetRequiredService<IRunTaskDispatcher>();
+        var taskName = TaskName.Get(context);
+        var notification = new RunTaskRequest(bookmark.TaskId, taskName, taskParams);
+        var dispatcher = context.GetRequiredService<ITaskDispatcher>();
 
         await dispatcher.DispatchAsync(notification, context.CancellationToken);
     }
