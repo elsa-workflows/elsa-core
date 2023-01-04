@@ -7,14 +7,14 @@ namespace Elsa.MassTransit.Consumers;
 /// <summary>
 /// A consumer of various dispatch message types to asynchronously execute workflows.
 /// </summary>
-public class DispatchRequestConsumer : IConsumer<DispatchWorkflowDefinition>, IConsumer<DispatchWorkflowInstance>, IConsumer<DispatchTriggerWorkflows>
+public class DispatchWorkflowRequestConsumer : IConsumer<DispatchWorkflowDefinition>, IConsumer<DispatchWorkflowInstance>, IConsumer<DispatchTriggerWorkflows>
 {
     private readonly IWorkflowRuntime _workflowRuntime;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public DispatchRequestConsumer(IWorkflowRuntime workflowRuntime)
+    public DispatchWorkflowRequestConsumer(IWorkflowRuntime workflowRuntime)
     {
         _workflowRuntime = workflowRuntime;
     }

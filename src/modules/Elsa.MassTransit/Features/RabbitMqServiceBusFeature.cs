@@ -47,7 +47,7 @@ public class RabbitMqServiceBusFeature : FeatureBase
                     });
                 }
 
-                configurator.ConfigureEndpoints(context, KebabCaseEndpointNameFormatter.Instance);
+                configurator.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("Elsa", false));
             });
         };
     }

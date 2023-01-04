@@ -78,8 +78,8 @@ public class RunTask : ActivityBase<object>, IBookmarksPersistedHandler
         var bookmark = (RunTaskBookmarkPayload)context.TransientProperties[BookmarkPropertyKey];
         var taskParams = TaskParams.TryGet(context);
         var notification = new RunTaskRequest(bookmark.TaskId, bookmark.TaskName, taskParams);
-        var mediator = context.GetRequiredService<IBackgroundEventPublisher>();
+        var dispatcher = context.GetRequiredService<IRunTaskDispatcher>();
 
-        await mediator.PublishAsync(notification, context.CancellationToken);
+        await dispatcher.DispatchAsync(notification, context.CancellationToken);
     }
 }
