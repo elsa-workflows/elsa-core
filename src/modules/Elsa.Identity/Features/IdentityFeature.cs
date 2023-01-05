@@ -1,3 +1,4 @@
+using Elsa.Common.Exceptions;
 using Elsa.Common.Features;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
@@ -59,6 +60,9 @@ public class IdentityFeature : FeatureBase
     /// <inheritdoc />
     public override void Apply()
     {
+        if (string.IsNullOrWhiteSpace(TokenOptions.SigningKey))
+            throw new MissingConfigurationException("SigningKey is a required setting for the Identity feature.");
+        
         Services.Configure<IdentityTokenOptions>(options => options.CopyFrom(TokenOptions));
         
         Services

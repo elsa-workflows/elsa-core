@@ -59,8 +59,6 @@ services.AddHandlersFrom<Program>();
 services.AddHealthChecks();
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()));
 services.AddHttpContextAccessor();
-services.AddSingleton<IAuthorizationHandler, LocalHostRequirementHandler>();
-services.AddAuthorization(options => options.AddPolicy(IdentityPolicyNames.SecurityRoot, policy => policy.AddRequirements(new LocalHostRequirement())));
 
 // Configure middleware pipeline.
 var app = builder.Build();
