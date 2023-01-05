@@ -3,16 +3,13 @@ using Elsa.Elasticsearch.Modules.Runtime;
 using Elsa.Elasticsearch.Options;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.Extensions;
-using Elsa.Identity;
 using Elsa.Identity.Options;
 using Elsa.Jobs.Activities.Services;
 using Elsa.EntityFrameworkCore.Modules.ActivityDefinitions;
 using Elsa.EntityFrameworkCore.Modules.Labels;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
-using Elsa.Requirements;
 using Elsa.WorkflowServer.Web.Jobs;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.Data.Sqlite;
 using Proto.Persistence.Sqlite;
 
@@ -27,7 +24,6 @@ var identitySection = configuration.GetSection("Identity");
 var identityTokenSection = identitySection.GetSection("Tokens");
 identitySection.Bind(identityOptions);
 identityTokenSection.Bind(identityTokenOptions);
-var postgreSqlConnectionString = configuration.GetConnectionString("PostgreSql")!;
 var elasticOptions = new ElasticsearchOptions();
 configuration.GetSection(ElasticsearchOptions.Elasticsearch).Bind(elasticOptions);
 
@@ -70,8 +66,6 @@ services.AddHandlersFrom<Program>();
 services.AddHealthChecks();
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()));
 services.AddHttpContextAccessor();
-services.AddSingleton<IAuthorizationHandler, LocalHostRequirementHandler>();
-services.AddAuthorization(options => options.AddPolicy(IdentityPolicyNames.SecurityRoot, policy => policy.AddRequirements(new LocalHostRequirement())));
 
 // Configure middleware pipeline.
 var app = builder.Build();
