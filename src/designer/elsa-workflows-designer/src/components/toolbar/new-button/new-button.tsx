@@ -41,7 +41,7 @@ export class NewButton {
 
   render() {
 
-    const items: Array<MenuItemGroup> = newButtonItemStore.items;
+    const groups: Array<MenuItemGroup> = newButtonItemStore.groups;
 
     const mainItem: MenuItem = newButtonItemStore.mainItem ?? {
       text: 'New',
@@ -54,8 +54,8 @@ export class NewButton {
           <button type="button"
                   onClick={mainItem.clickHandler}
                   class="relative inline-flex items-center px-4 py-2 rounded-l-md border border-blue-600 bg-blue-600 text-sm font-medium text-white hover:bg-blue-700 focus:z-10 focus:outline-none focus:ring-blue-600 hover:border-blue-700">
-        {mainItem.text}
-      </button>
+            {mainItem.text}
+          </button>
           <span class="-ml-px relative block">
             <button onClick={() => this.toggleMenu()} id="option-menu" type="button"
                     class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-blue-600 bg-blue-600 text-sm font-medium text-white hover:bg-blue-700 focus:z-10 focus:outline-none hover:border-blue-700">
@@ -73,15 +73,16 @@ export class NewButton {
                  class="hidden origin-bottom-right absolute right-0 top-10 mb-2 -mr-1 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
 
               <div class="divide-y divide-gray-100 focus:outline-none" role="menu" aria-orientation="vertical" aria-labelledby="option-menu">
-              {items.map(groupItem => {
+              {groups.map(menuItemGroup => {
+
                 return <div class="py-1" role="none">
-                  {groupItem.menuItems.map(item => {
+                  {menuItemGroup.menuItems.map(menuItem => {
                     return (
                       <div class="py-1" role="none">
-                        <a href="#" onClick={e => this.onItemClick(e, item)}
+                        <a href="#" onClick={e => this.onItemClick(e, menuItem)}
                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                            role="menuitem">
-                          {item.text}
+                          {menuItem.text}
                         </a>
                       </div>);
                   })}

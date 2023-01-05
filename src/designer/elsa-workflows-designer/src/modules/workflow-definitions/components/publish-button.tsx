@@ -1,6 +1,6 @@
 import {Component, Event, EventEmitter, Host, h, Listen, Prop} from '@stencil/core';
 import {leave, toggle} from 'el-transition'
-import {MenuItem} from "../../../components/shared/context-menu/models";
+import {MenuItem, MenuItemGroup} from "../../../components/shared/context-menu/models";
 import newButtonItemStore from "../../../data/new-button-item-store";
 
 export interface PublishClickedArgs {
@@ -74,7 +74,21 @@ export class PublishButton {
   }
 
   render() {
-    const newMenuItems: Array<MenuItem> = newButtonItemStore.items;
+    const importExportGroup: MenuItemGroup = {
+      menuItems: [{
+        text: 'Export',
+        clickHandler: e => this.onExportClick(e),
+      },{
+        text: 'Import',
+        clickHandler: e => this.onImportClick(e),
+      }]
+    };
+
+    const unpublishGroup: MenuItemGroup = {
+      menuItems: [{text: 'Unpublish', clickHandler: e => this.onUnPublishClick(e)}]
+    }
+
+    const menuItemGroups: Array<MenuItemGroup> = [...newButtonItemStore.groups, importExportGroup, unpublishGroup];
 
     return (
       <Host class="block" ref={el => this.element = el}>
@@ -98,31 +112,15 @@ export class PublishButton {
 
               <div class="divide-y divide-gray-100 focus:outline-none" role="menu" aria-orientation="vertical" aria-labelledby="option-menu">
 
-              <div class="py-1" role="none">
-                  {newMenuItems.map(item => (
+                {menuItemGroups.map(menuItemGroup => <div class="py-1" role="none">
+                  {menuItemGroup.menuItems.map(item => (
                     <a href="#" onClick={e => this.onNewClick(e, item)}
                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                        role="menuitem">
                       {`New ${item.text}`}
                     </a>
                   ))}
-                </div>
-
-                <div class="py-1" role="none">
-                  <a href="#" onClick={e => this.onExportClick(e)}
-                     class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                     role="menuitem">
-                    Export
-                  </a>
-
-                  <a href="#" onClick={e => this.onImportClick(e)}
-                     class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                     role="menuitem">
-                    Import
-                  </a>
-                </div>
-
-                {this.renderUnpublishButton()}
+                </div>)}
 
               </div>
             </div>
@@ -156,18 +154,5 @@ export class PublishButton {
         </svg>
         Publishing
       </button>);
-  }
-
-  private renderUnpublishButton() {
-
-    return (
-      <div class="py-1" role="none">
-        <a href="#" onClick={e => this.onUnPublishClick(e)}
-           class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-           role="menuitem">
-          Unpublish
-        </a>
-      </div>
-    );
   }
 }

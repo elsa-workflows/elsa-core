@@ -53,7 +53,7 @@ export class ActivityDefinitionsPlugin implements Plugin {
       order: 5
     };
 
-    newButtonItemStore.items = [...newButtonItemStore.items, newItemGroup];
+    newButtonItemStore.groups = [...newButtonItemStore.groups, newItemGroup];
     toolbarButtonMenuItemStore.items = [...toolbarButtonMenuItemStore.items, activityDefinitionBrowserItem];
   }
 
