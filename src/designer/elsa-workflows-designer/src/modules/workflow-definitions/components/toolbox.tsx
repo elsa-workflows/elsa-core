@@ -22,23 +22,26 @@ export class Toolbox {
 
     return (
 
-      <div class="activity-list">
+      <div class="activity-list  absolute inset-0 overflow-hidden">
+        <div class="h-full flex flex-col">
+          <div class="border-b border-gray-200">
+            <nav class="-mb-px flex" aria-label="Tabs">
+              <a href="#"
+                 onClick={e => this.onTabSelected(e, 0)}
+                 class={`${activitiesTabCssClass} w-1/2 py-4 px-1 text-center border-b-2 font-medium text-sm`}>
+                Activities
+              </a>
+            </nav>
+          </div>
 
-        <div class="border-b border-gray-200">
-          <nav class="-mb-px flex" aria-label="Tabs">
-            <a href="#"
-               onClick={e => this.onTabSelected(e, 0)}
-               class={`${activitiesTabCssClass} w-1/2 py-4 px-1 text-center border-b-2 font-medium text-sm`}>
-              Activities
-            </a>
-
-          </nav>
+          <div class="flex-1 relative">
+            <div class="absolute inset-0 overflow-y-scroll">
+              <elsa-workflow-definition-editor-toolbox-activities
+                graph={this.graph}
+                class={selectedTabIndex == 0 ? '' : 'hidden'}/>
+            </div>
+          </div>
         </div>
-
-        <elsa-workflow-definition-editor-toolbox-activities
-          graph={this.graph}
-          class={selectedTabIndex == 0 ? '' : 'hidden'}/>
-
       </div>
     );
   }
