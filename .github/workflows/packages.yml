@@ -1,5 +1,6 @@
 name: Elsa 3 Prerelease
 on:
+  workflow_dispatch:
   push:
     branches:
       - v3
