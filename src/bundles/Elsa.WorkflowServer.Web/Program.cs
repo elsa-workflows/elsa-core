@@ -40,13 +40,13 @@ services
         .UseWorkflowManagement(management =>
         {
             management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
-            management.UseWorkflowInstances(w => w.UseElasticsearch(elasticOptions));
+            management.UseWorkflowInstances(w => w.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)));
         })
         .UseWorkflowRuntime(runtime =>
         {
             runtime.UseProtoActor(proto => proto.PersistenceProvider = _ => new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString)));
             runtime.UseDefaultRuntime(df => df.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)));
-            runtime.UseExecutionLogRecords(e => e.UseElasticsearch(elasticOptions));
+            runtime.UseExecutionLogRecords(e => e.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)));
             runtime.UseAsyncWorkflowStateExporter();
             runtime.UseMassTransitDispatcher();
         })
