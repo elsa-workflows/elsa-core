@@ -1,4 +1,5 @@
 using Elsa.Extensions;
+using Elsa.ProtoActor.Extensions;
 using Elsa.ProtoActor.Protos;
 using Google.Protobuf.WellKnownTypes;
 using Proto;
@@ -13,6 +14,7 @@ namespace Elsa.ProtoActor.Grains;
 /// </summary>
 public class BookmarkGrain : BookmarkGrainBase
 {
+    private const int EventsPerSnapshot = 100;
     private ICollection<StoredBookmark> _bookmarks = new List<StoredBookmark>();
     private readonly Persistence _persistence;
 
@@ -25,7 +27,7 @@ public class BookmarkGrain : BookmarkGrainBase
             BookmarkHash,
             ApplyEvent,
             ApplySnapshot,
-            new TimeStrategy(TimeSpan.FromSeconds(10)),
+            new IntervalStrategy(EventsPerSnapshot),
             GetState);
     }
 
@@ -43,15 +45,16 @@ public class BookmarkGrain : BookmarkGrainBase
             CorrelationId = request.CorrelationId,
             BookmarkId = x
         }).ToList();
-        
-        await _persistence.PersistEventAsync(new BookmarksStored(bookmarks));
+
+        await _persistence.PersistRollingEventAsync(new BookmarksStored(bookmarks), EventsPerSnapshot);
         return new Empty();
     }
 
     /// <inheritdoc />
     public override async Task<Empty> RemoveByWorkflow(RemoveBookmarksByWorkflowRequest request)
     {
-        await _persistence.PersistEventAsync(new BookmarksRemovedByWorkflow(request.WorkflowInstanceId));
+        await _persistence.PersistRollingEventAsync(new BookmarksRemovedByWorkflow(request.WorkflowInstanceId), EventsPerSnapshot);
+        
         return new Empty();
     }
 

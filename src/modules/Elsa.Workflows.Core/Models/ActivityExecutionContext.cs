@@ -44,7 +44,7 @@ public class ActivityExecutionContext
     /// <summary>
     /// A dictionary of values that can be associated with this activity execution context.
     /// </summary>
-    public IDictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
+    public PropertyBag Properties { get; set; } = new();
 
     /// <summary>
     /// A transient dictionary of values that can be associated with this activity execution context.
@@ -162,18 +162,18 @@ public class ActivityExecutionContext
     /// <summary>
     /// Returns a property value associated with the current activity context. 
     /// </summary>
-    public T? GetProperty<T>(string key) => Properties.TryGetValue<T?>(key, out var value) ? value : default;
+    public T? GetProperty<T>(string key) => Properties.Dictionary.TryGetValue<T?>(key, out var value) ? value : default;
 
     /// <summary>
     /// Returns a property value associated with the current activity context. 
     /// </summary>
     public T GetProperty<T>(string key, Func<T> defaultValue)
     {
-        if (Properties.TryGetValue<T?>(key, out var value))
+        if (Properties.Dictionary.TryGetValue<T?>(key, out var value))
             return value!;
 
         value = defaultValue();
-        Properties[key] = value!;
+        Properties.Dictionary[key] = value!;
 
         return value!;
     }
@@ -181,7 +181,7 @@ public class ActivityExecutionContext
     /// <summary>
     /// Stores a property associated with the current activity context. 
     /// </summary>
-    public void SetProperty<T>(string key, T? value) => Properties[key] = value!;
+    public void SetProperty<T>(string key, T? value) => Properties.Dictionary[key] = value!;
 
     /// <summary>
     /// Updates a property associated with the current activity context. 
@@ -190,7 +190,7 @@ public class ActivityExecutionContext
     {
         var value = GetProperty<T?>(key);
         value = updater(value);
-        Properties[key] = value;
+        Properties.Dictionary[key] = value;
         return value;
     }
 
@@ -217,7 +217,7 @@ public class ActivityExecutionContext
 
     public void Set(MemoryBlockReference blockReference, object? value) => ExpressionExecutionContext.Set(blockReference, value);
     public void Set(Output? output, object? value) => ExpressionExecutionContext.Set(output, value);
-    public void Set<T>(Output<T>? output, T value) => ExpressionExecutionContext.Set(output, value);
+    public void Set<T>(Output<T>? output, T? value) => ExpressionExecutionContext.Set(output, value);
 
     /// <summary>
     /// Stops further execution of the workflow.

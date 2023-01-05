@@ -5,6 +5,7 @@ using Elsa.Workflows.Runtime.Services;
 
 namespace Elsa.Workflows.Runtime.Handlers;
 
+// ReSharper disable once UnusedType.Global
 internal class ExportWorkflowStateHandler : INotificationHandler<WorkflowExecuted>
 {
     private readonly IWorkflowStateExporter _exporter;

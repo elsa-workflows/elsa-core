@@ -39,7 +39,6 @@
     <ItemGroup>
         <ProjectReference Include="..\Elsa.ActivityDefinitions\Elsa.ActivityDefinitions.csproj" />
         <ProjectReference Include="..\Elsa.Labels\Elsa.Labels.csproj" />
-        <ProjectReference Include="..\Elsa.MassTransit\Elsa.MassTransit.csproj" />
         <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj" />
         <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
         <ProjectReference Include="..\Elsa.Workflows.Sinks\Elsa.Workflows.Sinks.csproj" />

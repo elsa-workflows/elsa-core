@@ -76,6 +76,11 @@ public class WorkflowRuntimeFeature : FeatureBase
     public Func<IServiceProvider, IWorkflowStateExporter> WorkflowStateExporter { get; set; } = sp => sp.GetRequiredService<NoopWorkflowStateExporter>();
 
     /// <summary>
+    /// A factory that instantiates an <see cref="ITaskDispatcher"/>.
+    /// </summary>
+    public Func<IServiceProvider, ITaskDispatcher> RunTaskDispatcher { get; set; } = sp => sp.GetRequiredService<AsynchronousTaskDispatcher>();
+
+    /// <summary>
     /// A delegate to configure the <see cref="DistributedLockingOptions"/>.
     /// </summary>
     public Action<DistributedLockingOptions> DistributedLockingOptions { get; set; } = _ => { };
@@ -90,6 +95,13 @@ public class WorkflowRuntimeFeature : FeatureBase
     }
 
     /// <inheritdoc />
+    public override void Configure()
+    {
+        // Activities
+        Module.AddActivitiesFrom<WorkflowRuntimeFeature>();
+    }
+
+    /// <inheritdoc />
     public override void ConfigureHostedServices() =>
         Module
             .ConfigureHostedService<RegisterDescriptors>()
@@ -101,6 +113,7 @@ public class WorkflowRuntimeFeature : FeatureBase
     {
         // Options.
         Services.Configure(DistributedLockingOptions);
+        Services.Configure<RuntimeOptions>(options => { options.Workflows = Workflows; });
         
         Services
             // Core.
@@ -114,6 +127,11 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddSingleton(BookmarkStore)
             .AddSingleton(WorkflowTriggerStore)
             .AddSingleton(WorkflowExecutionLogStore)
+            .AddSingleton(RunTaskDispatcher)
+            .AddSingleton<ITaskReporter, TaskReporter>()
+            .AddSingleton<SynchronousTaskDispatcher>()
+            .AddSingleton<AsynchronousTaskDispatcher>()
+            .AddSingleton<IEventPublisher, EventPublisher>()
 
             // Memory stores.
             .AddMemoryStore<WorkflowState, MemoryWorkflowStateStore>()
@@ -132,7 +150,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddSingleton<AsyncWorkflowStateExporter>()
             .AddSingleton(WorkflowStateExporter)
 
-            // Domain event handlers.
+            // Domain handlers.
             .AddHandlersFrom<WorkflowRuntimeFeature>()
             
             // Workflow activation strategies.
@@ -141,6 +159,5 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddSingleton<IWorkflowActivationStrategy, CorrelationStrategy>()
             ;
 
-        Services.Configure<RuntimeOptions>(options => { options.Workflows = Workflows; });
     }
 }

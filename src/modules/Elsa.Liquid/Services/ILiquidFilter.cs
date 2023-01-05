@@ -1,10 +1,9 @@
 ﻿using Fluid;
 using Fluid.Values;
 
-namespace Elsa.Liquid.Services
+namespace Elsa.Liquid.Services;
+
+public interface ILiquidFilter
 {
-    public interface ILiquidFilter
-    {
-        ValueTask<FluidValue> ProcessAsync(FluidValue input, FilterArguments arguments, TemplateContext ctx);
-    }
+    ValueTask<FluidValue> ProcessAsync(FluidValue input, FilterArguments arguments, TemplateContext ctx);
 }

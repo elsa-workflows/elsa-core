@@ -56,6 +56,7 @@ export class DefaultActivityTemplate {
           const hasEmbeddedPorts = embeddedPorts.length > 0;
           const canStartWorkflow = activity?.canStartWorkflow;
           const icon = this.icon;
+          const hasIcon = !!icon;
           const textColor = canStartWorkflow ? 'text-white' : 'text-gray-700';
           const isTrigger = activityDescriptor?.kind == ActivityKind.Trigger;
           const backgroundColor = canStartWorkflow ? isTrigger ? 'bg-green-400' : 'bg-blue-400' : 'bg-white';
@@ -79,7 +80,7 @@ export class DefaultActivityTemplate {
                       {this.renderIcon(icon)}
                     </div>
                     <div class="flex items-center">
-                      <div class="m-3">
+                      <div class={displayTypeIsPicker ? `m-2` : 'm-3'}>
                         <span class={`${textColor}`}>{displayText}</span>
                         <div>
                           {this.renderPorts(activity, embeddedPorts)}
@@ -95,7 +96,7 @@ export class DefaultActivityTemplate {
               <div>
                 <div class={`activity-wrapper border ${borderColor} ${backgroundColor} ${containerCssClass} rounded overflow-hidden`}>
                   <div class="text-white">
-                    <div class={`flex flex-shrink items-center py-3 pr-3 ${iconBackgroundColor}`}>
+                    <div class={`flex flex-shrink items-center py-3 ${ hasIcon ? 'pr-3' : 'px-3' } ${iconBackgroundColor}`}>
                       {this.renderIcon(icon)}
                       <span>{displayText}</span>
                     </div>
@@ -146,16 +147,11 @@ export class DefaultActivityTemplate {
 
   private renderPort = (activity: Activity, port: Port) => {
     const canStartWorkflow = activity?.canStartWorkflow == true;
-    const textColor = canStartWorkflow ? 'text-white' : 'text-gray-700';
+    const displayTextClass = canStartWorkflow ? 'text-white' : 'text-gray-600';
     const borderColor = port.name == this.selectedPortName ? 'border-blue-600' : 'border-gray-300';
     const activityDescriptor = this.activityDescriptor;
     const portProvider = this.portProviderRegistry.get(activityDescriptor.typeName);
     const activityProperty = portProvider.resolvePort(port.name, {activity, activityDescriptor}) as Activity;
-    const childActivityDescriptor: ActivityDescriptor = activityProperty != null ? descriptorsStore.activityDescriptors.find(x => x.typeName == activityProperty.type) : null;
-    let childActivityDisplayText = activityProperty?.metadata?.displayText;
-
-    if (isNullOrWhitespace(childActivityDisplayText))
-      childActivityDisplayText = childActivityDescriptor?.displayName;
 
     const renderActivityProperty = () => {
 
@@ -167,7 +163,7 @@ export class DefaultActivityTemplate {
                onMouseDown={e => e.stopPropagation()}
                class="text-gray-400 hover:text-gray-600">
               <div class="flex-grow">
-                <span class={textColor}>{port.displayName}</span>
+                <span class={`text-sm ${displayTextClass}`}>{port.displayName}</span>
               </div>
             </a>
           </div>
@@ -184,7 +180,7 @@ export class DefaultActivityTemplate {
                  onClick={e => this.onEditChildActivityClick(e, activity, port)}
                  onMouseDown={e => e.stopPropagation()}>
                 <div class="flex-grow">
-                  <span class={textColor}>{port.displayName}</span>
+                  <span class={`text-sm ${displayTextClass}`}>{port.displayName}</span>
                 </div>
               </a>
             </div>
@@ -199,7 +195,7 @@ export class DefaultActivityTemplate {
                onClick={e => this.onEditChildActivityClick(e, activity, port)}
                onMouseDown={e => e.stopPropagation()}>
               <div class="flex-grow">
-                <span class={textColor}>{port.displayName}</span>
+                <span class={`text-sm ${displayTextClass}`}>{port.displayName}</span>
               </div>
             </a>
           </div>

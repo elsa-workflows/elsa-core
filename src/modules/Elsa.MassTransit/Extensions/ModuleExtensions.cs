@@ -1,44 +1,51 @@
 using Elsa.Features.Services;
-using Elsa.Workflows.Core;
-using MassTransit;
+using Elsa.MassTransit.Features;
+using Elsa.MassTransit.Options;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
 
+/// <summary>
+/// Provides extensions to <see cref="IModule"/> that enables and configures MassTransit.
+/// </summary>
 public static class ModuleExtensions
 {
-    private static readonly object ServiceBusConsumerTypesKey = new();
-
     /// <summary>
-    /// Registers the specified type for MassTransit service bus consumer discovery.
+    /// Enable and configure MassTransit.
     /// </summary>
-    public static void AddMassTransitServiceBusConsumerType(this IModule module, Type type)
+    public static IModule UseMassTransit(this IModule module, Action<MassTransitFeature>? configure = default)
     {
-        var types = DictionaryExtensions.GetOrAdd(module.Properties, ServiceBusConsumerTypesKey, () => new HashSet<Type>());
-        types.Add(type);
+        module.Configure(configure);
+        return module;
     }
 
     /// <summary>
-    /// Returns all collected types for discovery of service bus consumers.
+    /// Enable and configure the RabbitMQ broker for MassTransit.
     /// </summary>
-    private static IEnumerable<Type> GetServiceBusConsumerTypesFromModule(this IModule module) => DictionaryExtensions.GetOrAdd(module.Properties, ServiceBusConsumerTypesKey, () => new HashSet<Type>());
+    public static MassTransitFeature UseRabbitMq(this MassTransitFeature feature, string connectionString) => feature.UseRabbitMq(new Uri(connectionString), null);
+
+    /// <summary>
+    /// Enable and configure the RabbitMQ broker for MassTransit.
+    /// </summary>
+    public static MassTransitFeature UseRabbitMq(this MassTransitFeature feature, Uri connectionString) => feature.UseRabbitMq(connectionString, null);
     
     /// <summary>
-    /// Adds MassTransit to the service container and registers all collected assemblies for discovery of consumers.
+    /// Enable and configure the RabbitMQ broker for MassTransit.
     /// </summary>
-    public static IModule AddMassTransitFromModule(this IModule module, Action<IBusRegistrationConfigurator> config)
+    public static MassTransitFeature UseRabbitMq(this MassTransitFeature feature, RabbitMqOptions options) => feature.UseRabbitMq(null, options);
+
+    /// <summary>
+    /// Enable and configure the RabbitMQ broker for MassTransit.
+    /// </summary>
+    private static MassTransitFeature UseRabbitMq(this MassTransitFeature feature, Uri? connectionString, RabbitMqOptions? options)
     {
-        var consumerTypes = module.GetServiceBusConsumerTypesFromModule().ToArray();
-
-        module.Services.AddMassTransit(bus =>
+        void Configure(RabbitMqServiceBusFeature bus)
         {
-            bus.SetKebabCaseEndpointNameFormatter();
+            bus.ConnectionString = connectionString;
+            bus.Options = options;
+        }
 
-            bus.AddConsumers(consumerTypes);
-
-            config?.Invoke(bus);
-        });
-
-        return module;
+        feature.Module.Configure((Action<RabbitMqServiceBusFeature>) Configure);
+        return feature;
     }
 }

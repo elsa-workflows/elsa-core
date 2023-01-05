@@ -5,12 +5,12 @@ using Elsa.Extensions;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 
-namespace Elsa.Workflows.Core.Activities;
+namespace Elsa.Workflows.Runtime.Activities;
 
 /// <summary>
 /// Wait for an event to be triggered.
 /// </summary>
-[Activity("Elsa", "Primitives", "Wait for an event to be triggered.")]
+[Activity("Elsa", "Primitives", "Wait for an event to be published.")]
 public class Event : Trigger<object?>
 {
     /// <inheritdoc />
@@ -25,20 +25,20 @@ public class Event : Trigger<object?>
     }
 
     /// <inheritdoc />
-    public Event(string text, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
-        : this(new Literal<string>(text), source, line)
+    public Event(string eventName, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
+        : this(new Literal<string>(eventName), source, line)
     {
     }
     
     /// <inheritdoc />
-    public Event(Func<string> text, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
-        : this(new DelegateBlockReference<string>(text), source, line)
+    public Event(Func<string> eventName, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
+        : this(new DelegateBlockReference<string>(eventName), source, line)
     {
     }
 
     /// <inheritdoc />
-    public Event(Func<ExpressionExecutionContext, string?> text, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
-        : this(new DelegateBlockReference<string?>(text), source, line)
+    public Event(Func<ExpressionExecutionContext, string?> eventName, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
+        : this(new DelegateBlockReference<string?>(eventName), source, line)
     {
     }
 

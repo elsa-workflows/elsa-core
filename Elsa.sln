@@ -142,6 +142,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.WorkflowSinks"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.EntityFrameworkCore.PostgreSql", "src\modules\Elsa.EntityFrameworkCore.PostgreSql\Elsa.EntityFrameworkCore.PostgreSql.csproj", "{AA84DBF7-F70F-4673-8DC2-6EFBE3E9BF83}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.RunTaskIntegration", "src\samples\aspnet\Elsa.Samples.RunTaskIntegration\Elsa.Samples.RunTaskIntegration.csproj", "{51050209-EC2F-4DC7-8F46-07E22B7811CD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -356,6 +358,10 @@ Global
 		{AA84DBF7-F70F-4673-8DC2-6EFBE3E9BF83}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AA84DBF7-F70F-4673-8DC2-6EFBE3E9BF83}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AA84DBF7-F70F-4673-8DC2-6EFBE3E9BF83}.Release|Any CPU.Build.0 = Release|Any CPU
+		{51050209-EC2F-4DC7-8F46-07E22B7811CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{51050209-EC2F-4DC7-8F46-07E22B7811CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{51050209-EC2F-4DC7-8F46-07E22B7811CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{51050209-EC2F-4DC7-8F46-07E22B7811CD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{155227F0-A33B-40AA-A4B4-06F813EB921B} = {61017E64-6D00-49CB-9E81-5002DC8F7D5F}
@@ -417,5 +423,6 @@ Global
 		{34FBB2D3-4E2B-4411-95F2-C6B56899826A} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 		{536EFB55-EEA1-4761-9A72-D4EA84A6DB70} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 		{AA84DBF7-F70F-4673-8DC2-6EFBE3E9BF83} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
+		{51050209-EC2F-4DC7-8F46-07E22B7811CD} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 	EndGlobalSection
 EndGlobal

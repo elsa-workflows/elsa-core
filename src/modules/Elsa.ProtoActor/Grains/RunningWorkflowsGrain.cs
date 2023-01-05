@@ -1,3 +1,4 @@
+using Elsa.ProtoActor.Extensions;
 using Elsa.ProtoActor.Protos;
 using Proto;
 using Proto.Cluster;
@@ -11,6 +12,7 @@ namespace Elsa.ProtoActor.Grains;
 /// </summary>
 public class RunningWorkflowsGrain : RunningWorkflowsGrainBase
 {
+    private const int EventsPerSnapshot = 100;
     private readonly Persistence _persistence;
     private IDictionary<string, WorkflowInstanceEntry> _lookupByInstanceId = new Dictionary<string, WorkflowInstanceEntry>();
     private IDictionary<string, WorkflowInstanceEntry> _lookupByCorrelationId = new Dictionary<string, WorkflowInstanceEntry>();
@@ -24,15 +26,15 @@ public class RunningWorkflowsGrain : RunningWorkflowsGrainBase
             context.ClusterIdentity()!.Identity, 
             ApplyEvent, 
             ApplySnapshot, 
-            new IntervalStrategy(50),
+            new IntervalStrategy(EventsPerSnapshot),
             GetState);
     }
 
     /// <inheritdoc />
-    public override async Task Register(RegisterRunningWorkflowRequest request) => await _persistence.PersistEventAsync(request);
+    public override async Task Register(RegisterRunningWorkflowRequest request) => await _persistence.PersistRollingEventAsync(request, EventsPerSnapshot);
 
     /// <inheritdoc />
-    public override async Task Unregister(UnregisterRunningWorkflowRequest request) => await _persistence.PersistEventAsync(request);
+    public override async Task Unregister(UnregisterRunningWorkflowRequest request) => await _persistence.PersistRollingEventAsync(request, EventsPerSnapshot);
 
     /// <inheritdoc />
     public override Task<CountRunningWorkflowsResponse> Count(CountRunningWorkflowsRequest request)

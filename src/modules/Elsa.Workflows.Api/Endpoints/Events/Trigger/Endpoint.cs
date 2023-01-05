@@ -1,7 +1,4 @@
 using Elsa.Abstractions;
-using Elsa.Extensions;
-using Elsa.Workflows.Core.Activities;
-using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Runtime.Services;
 
 namespace Elsa.Workflows.Api.Endpoints.Events.Trigger;
@@ -11,12 +8,12 @@ namespace Elsa.Workflows.Api.Endpoints.Events.Trigger;
 /// </summary>
 public class Trigger : ElsaEndpoint<Request, Response>
 {
-    private readonly IWorkflowRuntime _workflowRuntime;
+    private readonly IEventPublisher _eventPublisher;
 
     /// <inheritdoc />
-    public Trigger(IWorkflowRuntime workflowRuntime)
+    public Trigger(IEventPublisher eventPublisher)
     {
-        _workflowRuntime = workflowRuntime;
+        _eventPublisher = eventPublisher;
     }
 
     /// <inheritdoc />
@@ -29,9 +26,7 @@ public class Trigger : ElsaEndpoint<Request, Response>
     /// <inheritdoc />
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
-        var eventBookmark = new EventBookmarkPayload(request.EventName);
-        var options = new TriggerWorkflowsRuntimeOptions(request.CorrelationId);
-        await _workflowRuntime.TriggerWorkflowsAsync<Event>(eventBookmark, options, cancellationToken);
+        await _eventPublisher.DispatchAsync(request.EventName, request.CorrelationId, cancellationToken: cancellationToken);
         
         if (!HttpContext.Response.HasStarted)
         {

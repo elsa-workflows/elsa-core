@@ -1,6 +1,8 @@
+using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
+using Elsa.MassTransit.Consumers;
 using Elsa.MassTransit.Implementations;
 using Elsa.Workflows.Runtime.Features;
 using Elsa.Workflows.Runtime.Services;
@@ -12,6 +14,7 @@ namespace Elsa.MassTransit.Features;
 /// Configures the system to use a MassTransit implementation of <see cref="IWorkflowDispatcher"/>; 
 /// </summary>
 [DependsOn(typeof(WorkflowRuntimeFeature))]
+[DependsOn(typeof(MassTransitFeature))]
 public class MassTransitWorkflowDispatcherFeature : FeatureBase
 {
     /// <inheritdoc />
@@ -22,6 +25,13 @@ public class MassTransitWorkflowDispatcherFeature : FeatureBase
     /// <inheritdoc />
     public override void Configure()
     {
-        Module.Configure<WorkflowRuntimeFeature>(f => f.WorkflowDispatcher = ActivatorUtilities.GetServiceOrCreateInstance<MassTransitWorkflowDispatcher>);
+        Module.Configure<MassTransitFeature>(massTransit => massTransit.AddConsumer<DispatchWorkflowRequestConsumer>());
+        Module.Configure<WorkflowRuntimeFeature>(f => f.WorkflowDispatcher = sp => sp.GetRequiredService<MassTransitWorkflowDispatcher>());
+    }
+
+    /// <inheritdoc />
+    public override void Apply()
+    {
+        Services.AddSingleton<MassTransitWorkflowDispatcher>();
     }
 }

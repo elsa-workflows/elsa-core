@@ -1,5 +1,6 @@
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Runtime.Activities;
 
 namespace Elsa.IntegrationTests.Activities;
 

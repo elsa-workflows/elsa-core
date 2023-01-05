@@ -8,7 +8,7 @@ namespace Elsa.Workflows.Core.Activities;
 /// <summary>
 /// Mark the workflow as finished.
 /// </summary>
-[Activity("Elsa", "Control Flow", "A milestone activity with no behavior other than marking a milestone.", Kind = ActivityKind.Action)]
+[Activity("Elsa", "Primitives", "A milestone activity with no behavior other than marking a milestone.", Kind = ActivityKind.Action)]
 public class Start : Activity
 {
     /// <inheritdoc />

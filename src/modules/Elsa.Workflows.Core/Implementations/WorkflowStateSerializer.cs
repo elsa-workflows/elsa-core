@@ -49,7 +49,7 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
 
     private void DeserializeProperties(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
     {
-        workflowExecutionContext.Properties = state.Properties.Properties;
+        workflowExecutionContext.Properties = state.Properties.Dictionary;
     }
 
     private static void DeserializeCompletionCallbacks(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)

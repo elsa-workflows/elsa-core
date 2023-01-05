@@ -9,7 +9,7 @@ using Elsa.Workflows.Core.Services;
 namespace Elsa.Workflows.Core.Activities;
 
 /// <summary>
-/// Read a line of text from the console
+/// Read a line of text from the console.
 /// </summary>
 [Activity("Elsa", "Console", "Read a line of text from the console.")]
 public class ReadLine : Activity<string>
