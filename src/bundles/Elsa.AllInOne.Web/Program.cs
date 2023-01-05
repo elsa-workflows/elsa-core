@@ -30,7 +30,11 @@ services
             identity.TokenOptions = identityTokenOptions;
         })
         .UseDefaultAuthentication()
-        .UseWorkflowRuntime(runtime => { runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)); })
+        .UseWorkflowRuntime(runtime =>
+        {
+            runtime.UseDefaultRuntime(dr => dr.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)));
+            runtime.UseExecutionLogRecords(e => e.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)));
+        })
         .UseLabels(labels => labels.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
         .UseActivityDefinitions(feature => feature.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
         .UseJobs()

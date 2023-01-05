@@ -10,7 +10,17 @@ public static class WorkflowManagementFeatureExtensions
     /// <summary>
     /// Sets up the EF Core persistence provider. 
     /// </summary>
-    public static WorkflowManagementFeature UseEntityFrameworkCore(this WorkflowManagementFeature feature, Action<EFCoreManagementPersistenceFeature>? configure = default)
+    public static WorkflowManagementFeature UseEntityFrameworkCore(this WorkflowManagementFeature feature,
+        Action<EFCoreManagementPersistenceFeature>? configure = default)
+    {
+        feature.Module.Configure(configure);
+        return feature;
+    }
+
+    /// <summary>
+    /// Sets up the EF Core persistence provider. 
+    /// </summary>
+    public static WorkflowInstanceFeature UseEntityFrameworkCore(this WorkflowInstanceFeature feature, Action<EFCoreWorkflowInstancePersistenceFeature>? configure = default)
     {
         feature.Module.Configure(configure);
         return feature;

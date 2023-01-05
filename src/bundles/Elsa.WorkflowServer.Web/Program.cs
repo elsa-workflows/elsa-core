@@ -1,3 +1,6 @@
+using Elsa.Elasticsearch.Modules.Management;
+using Elsa.Elasticsearch.Modules.Runtime;
+using Elsa.Elasticsearch.Options;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.Extensions;
 using Elsa.Identity;
@@ -24,6 +27,9 @@ var identitySection = configuration.GetSection("Identity");
 var identityTokenSection = identitySection.GetSection("Tokens");
 identitySection.Bind(identityOptions);
 identityTokenSection.Bind(identityTokenOptions);
+var postgreSqlConnectionString = configuration.GetConnectionString("PostgreSql")!;
+var elasticOptions = new ElasticsearchOptions();
+configuration.GetSection(ElasticsearchOptions.Elasticsearch).Bind(elasticOptions);
 
 // Add Elsa services.
 services
@@ -35,11 +41,16 @@ services
             identity.TokenOptions = identityTokenOptions;
         })
         .UseDefaultAuthentication()
-        .UseWorkflowManagement(management => management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
+        .UseWorkflowManagement(management =>
+        {
+            management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
+            management.UseWorkflowInstances(w => w.UseElasticsearch(elasticOptions));
+        })
         .UseWorkflowRuntime(runtime =>
         {
             runtime.UseProtoActor(proto => proto.PersistenceProvider = _ => new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString)));
-            runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
+            runtime.UseDefaultRuntime(df => df.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)));
+            runtime.UseExecutionLogRecords(e => e.UseElasticsearch(elasticOptions));
             runtime.UseAsyncWorkflowStateExporter();
             runtime.UseMassTransitDispatcher();
         })

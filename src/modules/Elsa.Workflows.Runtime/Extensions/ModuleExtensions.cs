@@ -27,4 +27,16 @@ public static class ModuleExtensions
         module.Configure<WorkflowRuntimeFeature>().AddWorkflow<T>();
         return module;
     }
+    
+    public static WorkflowRuntimeFeature UseDefaultRuntime(this WorkflowRuntimeFeature feature, Action<DefaultRuntimeFeature>? configure = default)
+    {
+        feature.Module.Configure(configure);
+        return feature;
+    }
+    
+    public static WorkflowRuntimeFeature UseExecutionLogRecords(this WorkflowRuntimeFeature feature, Action<ExecutionLogRecordFeature>? configure = default)
+    {
+        feature.Module.Configure(configure);
+        return feature;
+    }
 }

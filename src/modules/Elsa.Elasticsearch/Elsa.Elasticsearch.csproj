@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <Import Project="..\..\..\common.props" />
+    <Import Project="..\..\..\configureawait.props" />
+
+    <PropertyGroup>
+        <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
+        <Description>
+            Provides Elasticsearch implementation for workflow state persistence.
+        </Description>
+        <PackageTags>elsa module</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\common\Elsa.Features\Elsa.Features.csproj" />
+      <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="NEST" Version="7.17.5" />
+    </ItemGroup>
+
+</Project>
