@@ -134,6 +134,12 @@ export class ElsaWorkflowDesigner {
     setTimeout(() => this.updateGraph(), 1);
   }
 
+  @Watch('model')
+  handleModelChanged(newValue: WorkflowModel) {
+    this.updateWorkflowModel(newValue, false);
+    setTimeout(() => this.updateGraph(), 1);
+  }
+
   @Method()
   async removeActivity(activity: ActivityModel) {
     const cell = this.graph.getCells().find(x => x.id === activity.activityId);
