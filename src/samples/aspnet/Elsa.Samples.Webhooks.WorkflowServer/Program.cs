@@ -19,7 +19,7 @@ builder.Services.AddElsa(elsa =>
         identity.IdentityOptions.CreateDefaultAdmin = true;
         identity.TokenOptions.SigningKey = "secret-signing-key-for-tokens";
     })
-    .UseWorkflowsApi()
+    .UseWorkflowsApi(api => api.CompleteTaskPolicy = policy => policy.RequireAssertion(_ => true)) // Allows anonymous requests. Will be replaced with an API key scheme.
     .UseDefaultAuthentication()
     .UseWebhooks(webhooks => webhooks.RegisterWebhook(new Uri("https://localhost:7100/webhooks/run-task")));
 });

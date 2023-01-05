@@ -1,3 +1,4 @@
+using Elsa.Samples.Webhooks.ExternalApp.Jobs;
 using Elsa.Samples.Webhooks.ExternalApp.Models;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,17 +8,17 @@ namespace Elsa.Samples.Webhooks.ExternalApp.Controllers;
 [Route("webhooks")]
 public class WebhooksController : ControllerBase
 {
-    private readonly BackgroundWorker _backgroundWorker;
+    private readonly DeliverFoodJob _deliverFoodJob;
 
-    public WebhooksController(BackgroundWorker backgroundWorker)
+    public WebhooksController(DeliverFoodJob deliverFoodJob)
     {
-        _backgroundWorker = backgroundWorker;
+        _deliverFoodJob = deliverFoodJob;
     }
     
     [HttpPost("run-task")]
     public IActionResult RunTask(WebhookEvent<RunTaskPayload> model)
     {
-        Task.Factory.StartNew(() => _backgroundWorker.RunAsync(model.Payload));
+        Task.Factory.StartNew(() => _deliverFoodJob.RunAsync(model.Payload));
         return Accepted();
     }
 }

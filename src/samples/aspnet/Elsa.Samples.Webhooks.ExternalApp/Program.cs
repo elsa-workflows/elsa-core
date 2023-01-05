@@ -1,4 +1,5 @@
 using Elsa.Samples.Webhooks.ExternalApp.Controllers;
+using Elsa.Samples.Webhooks.ExternalApp.Jobs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -6,7 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 
 // Configure the background worker with an HTTP client that can report workflow task completion.
-builder.Services.AddHttpClient<BackgroundWorker>(httpClient =>
+builder.Services.AddHttpClient<DeliverFoodJob>(httpClient =>
 {
     httpClient.BaseAddress = new Uri("https://localhost:7164/elsa/api/");
 });

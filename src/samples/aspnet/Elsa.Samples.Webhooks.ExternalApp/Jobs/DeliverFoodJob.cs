@@ -1,12 +1,12 @@
 using Elsa.Samples.Webhooks.ExternalApp.Models;
 
-namespace Elsa.Samples.Webhooks.ExternalApp.Controllers;
+namespace Elsa.Samples.Webhooks.ExternalApp.Jobs;
 
-public class BackgroundWorker
+public class DeliverFoodJob
 {
     private readonly HttpClient _httpClient;
 
-    public BackgroundWorker(HttpClient httpClient)
+    public DeliverFoodJob(HttpClient httpClient)
     {
         _httpClient = httpClient;
     }
@@ -14,6 +14,6 @@ public class BackgroundWorker
     public async Task RunAsync(RunTaskPayload taskPayload)
     {
         var taskId = taskPayload.TaskId;
-        await _httpClient.PostAsJsonAsync($"tasks/{taskId}/complete", new { Foo = "Bar"  });
+        await _httpClient.PostAsJsonAsync($"tasks/{taskId}/complete", new { Result = "Pizza"  });
     }
 }
