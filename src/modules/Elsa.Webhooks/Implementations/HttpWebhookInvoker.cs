@@ -22,7 +22,7 @@ public class HttpWebhookInvoker : IWebhookInvoker
     /// <inheritdoc />
     public async Task InvokeWebhookAsync(WebhookRegistration registration, WebhookEvent webhookEvent, CancellationToken cancellationToken = default)
     {
-        var url = registration.Endpoint;
+        var url = registration.Url;
         await _httpClient.PostAsJsonAsync(url, webhookEvent, cancellationToken);
     }
 }

@@ -3,7 +3,7 @@ using Elsa.Webhooks.Models;
 namespace Elsa.Webhooks.Services;
 
 /// <summary>
-/// Invokes a single registered webhook endpoint.
+/// Invokes a single registered webhook url.
 /// </summary>
 public interface IWebhookInvoker
 {

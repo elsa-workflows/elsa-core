@@ -3,6 +3,7 @@ using Elsa.Extensions;
 using Elsa.Samples.Webhooks.WorkflowServer.Workflows;
 using Elsa.Webhooks.Extensions;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,7 +22,7 @@ builder.Services.AddElsa(elsa =>
     })
     .UseWorkflowsApi(api => api.CompleteTaskPolicy = policy => policy.RequireAssertion(_ => true)) // Allows anonymous requests. Will be replaced with an API key scheme.
     .UseDefaultAuthentication()
-    .UseWebhooks(webhooks => webhooks.RegisterWebhook(new Uri("https://localhost:7100/webhooks/run-task")));
+    .UseWebhooks(webhooks => webhooks.WebhookOptions = options => builder.Configuration.GetSection("Webhooks").Bind(options));
 });
 
 var app = builder.Build();

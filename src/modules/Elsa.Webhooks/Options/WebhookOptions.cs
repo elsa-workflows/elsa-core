@@ -10,5 +10,5 @@ public class WebhookOptions
     /// <summary>
     /// Stores a list of webhook registrations.
     /// </summary>
-    public ICollection<WebhookRegistration> WebhookRegistrations { get; set; } = new List<WebhookRegistration>();
+    public ICollection<WebhookRegistration> Endpoints { get; set; } = new List<WebhookRegistration>();
 }

@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace Elsa.Webhooks.Models;
 
 /// <summary>
-/// Represents a webhook endpoint registration
+/// Represents a webhook url registration
 /// </summary>
 public class WebhookRegistration
 {
@@ -18,15 +18,15 @@ public class WebhookRegistration
     /// <summary>
     /// Constructor.
     /// </summary>
-    public WebhookRegistration(Uri endpoint)
+    public WebhookRegistration(Uri url)
     {
-        Endpoint = endpoint;
+        Url = url;
     }
     
     /// <summary>
     /// The URL to deliver the webhook event to.
     /// </summary>
-    public Uri Endpoint { get; set; } = default!;
+    public Uri Url { get; set; } = default!;
 
     /// <summary>
     /// A whitelist of event types to deliver. If empty, all events will be delivered.

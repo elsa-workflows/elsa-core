@@ -26,36 +26,36 @@ public class WebhooksFeature : FeatureBase
     public Func<IServiceProvider, IWebhookDispatcher> WebhookDispatcher { get; set; } = sp => sp.GetRequiredService<BackgroundWebhookDispatcher>();
 
     /// <summary>
-    /// A delegate that is invoked when configuring <see cref="WebhookOptions"/>.
+    /// A delegate that is invoked when configuring <see cref="Options.WebhookOptions"/>.
     /// </summary>
-    public Action<WebhookOptions> ConfigureWebhookOptions { get; set; } = _ => { };
+    public Action<WebhookOptions> WebhookOptions { get; set; } = _ => { };
 
     /// <summary>
-    /// A delegate to configure the <see cref="HttpClient"/> used when invoking webhook endpoints.
+    /// A delegate to configure the <see cref="System.Net.Http.HttpClient"/> used when invoking webhook endpoints.
     /// </summary>
-    public Action<IServiceProvider, HttpClient> ConfigureHttpClient { get; set; } = (_, _) => { };
+    public Action<IServiceProvider, HttpClient> HttpClient { get; set; } = (_, _) => { };
 
     /// <summary>
     /// A delegate to configure the <see cref="IHttpClientBuilder"/>. For example, to configure Polly policies.
     /// </summary>
-    public Action<IHttpClientBuilder> ConfigureHttpClientBuilder { get; set; } = builder => builder.AddTransientHttpErrorPolicy(policy => policy.WaitAndRetryAsync(3, retry => TimeSpan.FromSeconds(retry)));
+    public Action<IHttpClientBuilder> HttpClientBuilder { get; set; } = builder => builder.AddTransientHttpErrorPolicy(policy => policy.WaitAndRetryAsync(3, retry => TimeSpan.FromSeconds(retry)));
 
     /// <summary>
-    /// Registers the specified webhook with <see cref="WebhookOptions"/>
+    /// Registers the specified webhook with <see cref="Options.WebhookOptions"/>
     /// </summary>
     public WebhooksFeature RegisterWebhook(Uri endpoint) => RegisterWebhook(new WebhookRegistration(endpoint));
     
     /// <summary>
-    /// Registers the specified webhook with <see cref="WebhookOptions"/>
+    /// Registers the specified webhook with <see cref="Options.WebhookOptions"/>
     /// </summary>
     public WebhooksFeature RegisterWebhook(WebhookRegistration registration) => RegisterWebhooks(registration);
     
     /// <summary>
-    /// Registers the specified webhooks with <see cref="WebhookOptions"/>
+    /// Registers the specified webhooks with <see cref="Options.WebhookOptions"/>
     /// </summary>
     public WebhooksFeature RegisterWebhooks(params WebhookRegistration[] registrations)
     {
-        Services.Configure<WebhookOptions>(options => options.WebhookRegistrations.AddRange(registrations));
+        Services.Configure<WebhookOptions>(options => options.Endpoints.AddRange(registrations));
         return this;
     }
 
@@ -69,9 +69,9 @@ public class WebhooksFeature : FeatureBase
             .AddSingleton<IWebhookRegistrationService, DefaultWebhookRegistrationService>()
             .AddSingleton<IWebhookRegistrationProvider, OptionsWebhookRegistrationProvider>();
 
-        Services.Configure(ConfigureWebhookOptions);
+        Services.Configure(WebhookOptions);
 
-        var httpClientBuilder = Services.AddHttpClient<IWebhookInvoker, HttpWebhookInvoker>(ConfigureHttpClient);
-        ConfigureHttpClientBuilder(httpClientBuilder);
+        var httpClientBuilder = Services.AddHttpClient<IWebhookInvoker, HttpWebhookInvoker>(HttpClient);
+        HttpClientBuilder(httpClientBuilder);
     }
 }

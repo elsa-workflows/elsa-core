@@ -6,7 +6,7 @@ using Elsa.Webhooks.Services;
 namespace Elsa.Webhooks.Implementations;
 
 /// <summary>
-/// Uses a background channel to asynchronously invoke each webhook endpoint.
+/// Uses a background channel to asynchronously invoke each webhook url.
 /// </summary>
 public class BackgroundWebhookDispatcher : IWebhookDispatcher
 {

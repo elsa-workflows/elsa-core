@@ -23,5 +23,5 @@ public class OptionsWebhookRegistrationProvider : IWebhookRegistrationProvider
 
     /// <inheritdoc />
     public ValueTask<IEnumerable<WebhookRegistration>> ListAsync(string eventType, CancellationToken cancellationToken) => 
-        new(_options.WebhookRegistrations.Where(x => !x.EventTypes.Any() || x.EventTypes.Contains(eventType)));
+        new(_options.Endpoints.Where(x => !x.EventTypes.Any() || x.EventTypes.Contains(eventType)));
 }
