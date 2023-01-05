@@ -6,7 +6,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 
 // Configure the background worker with an HTTP client that can report workflow task completion.
-builder.Services.AddHttpClient<BackgroundWorker>(httpClient => httpClient.BaseAddress = new Uri("https://localhost:7164/elsa/api"));
+builder.Services.AddHttpClient<BackgroundWorker>(httpClient =>
+{
+    httpClient.BaseAddress = new Uri("https://localhost:7164/elsa/api/");
+});
 
 var app = builder.Build();
 
