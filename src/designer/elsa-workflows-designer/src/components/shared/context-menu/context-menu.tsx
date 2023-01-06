@@ -1,6 +1,6 @@
 import {Component, h, Listen, Method, Prop, Element} from '@stencil/core';
 import {leave, toggle, enter} from 'el-transition';
-import {groupBy} from 'lodash';
+import {groupBy, map} from 'lodash';
 import {ContextMenuAnchorPoint, ContextMenuItem} from "./models";
 import {TickIcon} from "../../icons/tooling/tick";
 
@@ -79,8 +79,7 @@ export class ContextMenu {
   render() {
     const anchorPointClass = this.getAnchorPointClass();
     const menuItems = this.menuItems;
-    const menuItemGroups = groupBy(menuItems, x => x.group);
-    debugger;
+    const menuItemGroups = groupBy(menuItems, x => x.group ?? 0);
 
     return (
       <div class="relative flex justify-end items-center">
@@ -101,14 +100,13 @@ export class ContextMenu {
   }
 
   renderMenuItemGroups = (menuItemGroups: Array<any>) => {
-    if (menuItemGroups.length == 0)
+    if (Object.keys(menuItemGroups).length == 0)
       return;
 
-    return menuItemGroups.map(group => this.renderMenuItems(group.menuItems));
+    return map(menuItemGroups, group => this.renderMenuItems(group));
   }
 
   renderMenuItems = (menuItems: Array<ContextMenuItem>) => {
-
     if (menuItems.length == 0)
       return;
 
@@ -129,7 +127,6 @@ export class ContextMenu {
             <span class="flex-grow">{menuItem.text}</span>
             {isToggle && checked ? <span class="float-right"><TickIcon/></span> : undefined}
           </a>
-
         );
       })}
     </div>

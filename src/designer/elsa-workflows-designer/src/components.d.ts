@@ -193,6 +193,8 @@ export namespace Components {
     interface ElsaMultiTextInput {
         "inputContext": ActivityInputContext;
     }
+    interface ElsaNewButton {
+    }
     interface ElsaNotificationsManager {
         "modalState": boolean;
     }
@@ -379,6 +381,10 @@ export interface ElsaModalDialogCustomEvent<T> extends CustomEvent<T> {
 export interface ElsaMonacoEditorCustomEvent<T> extends CustomEvent<T> {
     detail: T;
     target: HTMLElsaMonacoEditorElement;
+}
+export interface ElsaNewButtonCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLElsaNewButtonElement;
 }
 export interface ElsaPagerCustomEvent<T> extends CustomEvent<T> {
     detail: T;
@@ -613,6 +619,12 @@ declare global {
         prototype: HTMLElsaMultiTextInputElement;
         new (): HTMLElsaMultiTextInputElement;
     };
+    interface HTMLElsaNewButtonElement extends Components.ElsaNewButton, HTMLStencilElement {
+    }
+    var HTMLElsaNewButtonElement: {
+        prototype: HTMLElsaNewButtonElement;
+        new (): HTMLElsaNewButtonElement;
+    };
     interface HTMLElsaNotificationsManagerElement extends Components.ElsaNotificationsManager, HTMLStencilElement {
     }
     var HTMLElsaNotificationsManagerElement: {
@@ -818,6 +830,7 @@ declare global {
         "elsa-monaco-editor": HTMLElsaMonacoEditorElement;
         "elsa-multi-line-input": HTMLElsaMultiLineInputElement;
         "elsa-multi-text-input": HTMLElsaMultiTextInputElement;
+        "elsa-new-button": HTMLElsaNewButtonElement;
         "elsa-notifications-manager": HTMLElsaNotificationsManagerElement;
         "elsa-pager": HTMLElsaPagerElement;
         "elsa-panel": HTMLElsaPanelElement;
@@ -1016,6 +1029,9 @@ declare namespace LocalJSX {
     interface ElsaMultiTextInput {
         "inputContext"?: ActivityInputContext;
     }
+    interface ElsaNewButton {
+        "onNewClicked"?: (event: ElsaNewButtonCustomEvent<any>) => void;
+    }
     interface ElsaNotificationsManager {
         "modalState"?: boolean;
     }
@@ -1173,6 +1189,7 @@ declare namespace LocalJSX {
         "elsa-monaco-editor": ElsaMonacoEditor;
         "elsa-multi-line-input": ElsaMultiLineInput;
         "elsa-multi-text-input": ElsaMultiTextInput;
+        "elsa-new-button": ElsaNewButton;
         "elsa-notifications-manager": ElsaNotificationsManager;
         "elsa-pager": ElsaPager;
         "elsa-panel": ElsaPanel;
@@ -1238,6 +1255,7 @@ declare module "@stencil/core" {
             "elsa-monaco-editor": LocalJSX.ElsaMonacoEditor & JSXBase.HTMLAttributes<HTMLElsaMonacoEditorElement>;
             "elsa-multi-line-input": LocalJSX.ElsaMultiLineInput & JSXBase.HTMLAttributes<HTMLElsaMultiLineInputElement>;
             "elsa-multi-text-input": LocalJSX.ElsaMultiTextInput & JSXBase.HTMLAttributes<HTMLElsaMultiTextInputElement>;
+            "elsa-new-button": LocalJSX.ElsaNewButton & JSXBase.HTMLAttributes<HTMLElsaNewButtonElement>;
             "elsa-notifications-manager": LocalJSX.ElsaNotificationsManager & JSXBase.HTMLAttributes<HTMLElsaNotificationsManagerElement>;
             "elsa-pager": LocalJSX.ElsaPager & JSXBase.HTMLAttributes<HTMLElsaPagerElement>;
             "elsa-panel": LocalJSX.ElsaPanel & JSXBase.HTMLAttributes<HTMLElsaPanelElement>;
