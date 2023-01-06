@@ -16,6 +16,7 @@ public abstract class ElasticFeatureBase : FeatureBase
     }
     
     internal ElasticsearchOptions Options { get; set; } = new();
+    internal IDictionary<string,string> IndexConfig { get; set; }
 
     public override void Apply()
     {
@@ -29,7 +30,7 @@ public abstract class ElasticFeatureBase : FeatureBase
     {
         return new ConnectionSettings(new Uri(Options.Endpoint))
             .ConfigureAuthentication(Options)
-            .ConfigureMapping(Options);
+            .ConfigureMapping(IndexConfig);
     }
 
     protected void AddStore<TModel, TStore>() where TModel : class where TStore : class

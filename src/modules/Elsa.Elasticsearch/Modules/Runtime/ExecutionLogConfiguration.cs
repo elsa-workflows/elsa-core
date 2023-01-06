@@ -9,9 +9,9 @@ public class ExecutionLogConfiguration : IElasticConfiguration
 {
     private const string IndexName = "workflow-execution-log";
     
-    public void Apply(ConnectionSettings connectionSettings, ElasticsearchOptions options)
+    public void Apply(ConnectionSettings connectionSettings, IDictionary<string,string> indexConfig)
     {
         connectionSettings.DefaultMappingFor<WorkflowExecutionLogRecord>(m => 
-            m.IndexName(IElasticConfiguration.ResolveIndexName<WorkflowExecutionLogRecord>(options, IndexName)));
+            m.IndexName(IElasticConfiguration.ResolveIndexName<WorkflowExecutionLogRecord>(indexConfig, IndexName)));
     }
 }

@@ -5,11 +5,11 @@ namespace Elsa.Elasticsearch.Services;
 
 public interface IElasticConfiguration
 {
-    void Apply(ConnectionSettings connectionSettings, ElasticsearchOptions options);
+    void Apply(ConnectionSettings connectionSettings, IDictionary<string,string> indexConfig);
     
-    public static string ResolveIndexName<T>(ElasticsearchOptions options, string indexName)
+    public static string ResolveIndexName<T>(IDictionary<string,string> indices, string? indexName = default)
     {
-        var indexNameFromConfig = options.Indices[typeof(T).Name];
+        var indexNameFromConfig = indices[typeof(T).Name];
         return string.IsNullOrWhiteSpace(indexNameFromConfig) ? indexName : indexNameFromConfig;
     }
 }

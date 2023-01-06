@@ -7,11 +7,11 @@ namespace Elsa.Elasticsearch.Modules.Management;
 
 public class WorkflowInstanceConfiguration : IElasticConfiguration
 {
-    public const string IndexName = "workflow-instance";
+    private const string IndexName = "workflow-instance";
     
-    public void Apply(ConnectionSettings connectionSettings, ElasticsearchOptions options)
+    public void Apply(ConnectionSettings connectionSettings, IDictionary<string,string> indexConfig)
     {
         connectionSettings.DefaultMappingFor<WorkflowInstance>(m => 
-            m.IndexName(IElasticConfiguration.ResolveIndexName<WorkflowInstance>(options, IndexName)));
+            m.IndexName(IElasticConfiguration.ResolveIndexName<WorkflowInstance>(indexConfig, IndexName)));
     }
 }

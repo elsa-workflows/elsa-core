@@ -21,7 +21,7 @@ public static class ConnectionSettingsExtensions
         return settings;
     }
     
-    public static ConnectionSettings ConfigureMapping(this ConnectionSettings settings, ElasticsearchOptions options)
+    public static ConnectionSettings ConfigureMapping(this ConnectionSettings settings, IDictionary<string,string> indexConfig)
     {
         var configs = AppDomain.CurrentDomain.GetAssemblies()
             .SelectMany(s => s.GetTypes())
@@ -30,7 +30,7 @@ public static class ConnectionSettingsExtensions
         foreach (var config in configs)
         {
             var configInstance = (IElasticConfiguration)Activator.CreateInstance(config)!;
-            configInstance.Apply(settings, options);
+            configInstance.Apply(settings, indexConfig);
         }
 
         return settings;
