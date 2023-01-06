@@ -74,8 +74,8 @@ namespace Elsa.Secrets.Providers
         {
             var secrets = await _secretsManager.GetSecrets(type);
             return secrets
-                .GroupBy(x => x.Name).Select(x => x.First())
-                .ToDictionary(x => x.Name, x => x.Name ?? x.DisplayName ?? x.Id);
+                .GroupBy(x => $"{type}:{x.Name}").Select(x => x.First())
+                .ToDictionary(x => $"{type}:{x.Name}", x => x.Name ?? x.DisplayName ?? x.Id);
         }
 
         public async Task<IDictionary<string, string>> GetSecretsForSelectListAsync(string type)
