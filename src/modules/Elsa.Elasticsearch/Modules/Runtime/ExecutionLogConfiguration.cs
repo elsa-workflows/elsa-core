@@ -1,3 +1,4 @@
+using Elsa.Elasticsearch.Options;
 using Elsa.Elasticsearch.Services;
 using Elsa.Workflows.Runtime.Entities;
 using Nest;
@@ -8,9 +9,9 @@ public class ExecutionLogConfiguration : IElasticConfiguration
 {
     private const string IndexName = "workflow-execution-log";
     
-    public void Apply(ConnectionSettings connectionSettings)
+    public void Apply(ConnectionSettings connectionSettings, ElasticsearchOptions options)
     {
         connectionSettings.DefaultMappingFor<WorkflowExecutionLogRecord>(m => 
-            m.IndexName(IElasticConfiguration.ResolveIndexName<WorkflowExecutionLogRecord>(IndexName)));
+            m.IndexName(IElasticConfiguration.ResolveIndexName<WorkflowExecutionLogRecord>(options, IndexName)));
     }
 }

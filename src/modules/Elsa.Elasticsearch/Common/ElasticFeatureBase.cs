@@ -29,7 +29,7 @@ public abstract class ElasticFeatureBase : FeatureBase
     {
         return new ConnectionSettings(new Uri(Options.Endpoint))
             .ConfigureAuthentication(Options)
-            .ConfigureMapping();
+            .ConfigureMapping(Options);
     }
 
     protected void AddStore<TModel, TStore>() where TModel : class where TStore : class

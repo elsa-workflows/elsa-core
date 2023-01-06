@@ -1,3 +1,4 @@
+using Elsa.Elasticsearch.Options;
 using Elsa.Elasticsearch.Services;
 using Elsa.Workflows.Management.Entities;
 using Nest;
@@ -8,9 +9,9 @@ public class WorkflowInstanceConfiguration : IElasticConfiguration
 {
     public const string IndexName = "workflow-instance";
     
-    public void Apply(ConnectionSettings connectionSettings)
+    public void Apply(ConnectionSettings connectionSettings, ElasticsearchOptions options)
     {
         connectionSettings.DefaultMappingFor<WorkflowInstance>(m => 
-            m.IndexName(IElasticConfiguration.ResolveIndexName<WorkflowInstance>(IndexName)));
+            m.IndexName(IElasticConfiguration.ResolveIndexName<WorkflowInstance>(options, IndexName)));
     }
 }
