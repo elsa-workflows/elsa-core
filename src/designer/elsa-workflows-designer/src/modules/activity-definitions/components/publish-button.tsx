@@ -1,5 +1,4 @@
-import {Component, Event, EventEmitter, Host, h, Listen, Prop} from '@stencil/core';
-import {leave, toggle} from 'el-transition'
+import {Component, Event, EventEmitter, h, Prop} from '@stencil/core';
 import newButtonItemStore from "../../../data/new-button-item-store";
 import {DropdownButtonItem} from "../../../components/shared/dropdown-button/models";
 
@@ -24,29 +23,11 @@ export class PublishButton {
   menu: HTMLElement;
   element: HTMLElement;
 
-  @Listen('click', {target: 'window'})
-  private onWindowClicked(event: Event) {
-    const target = event.target as HTMLElement;
-
-    if (!this.element.contains(target))
-      this.closeMenu();
-  }
-
-  private closeMenu() {
-    leave(this.menu);
-  }
-
-  private toggleMenu() {
-    toggle(this.menu);
-  }
-
   private onPublishClick() {
     this.publishClicked.emit({
       begin: () => this.publishing = true,
       complete: () => this.publishing = false
     });
-
-    leave(this.menu);
   }
 
   private onUnPublishClick() {
