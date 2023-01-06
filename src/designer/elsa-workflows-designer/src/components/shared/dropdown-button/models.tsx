@@ -9,5 +9,7 @@ export interface DropdownButtonItem {
   value?: any;
   text: string;
   isSelected?: boolean;
-  handler?: () => {};
+  handler?: () => void;
+  order?: number;
+  group?: number;
 }

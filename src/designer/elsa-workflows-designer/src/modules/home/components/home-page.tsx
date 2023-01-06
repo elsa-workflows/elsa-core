@@ -1,6 +1,8 @@
 import 'reflect-metadata';
 import {Component, getAssetPath, h} from "@stencil/core";
 import toolbarComponentStore from "../../../data/toolbar-component-store";
+import newButtonItemStore from "../../../data/new-button-item-store";
+import {DropdownButtonOrigin} from "../../../components/shared/dropdown-button/models";
 
 @Component({
   tag: 'elsa-home-page',
@@ -10,8 +12,12 @@ import toolbarComponentStore from "../../../data/toolbar-component-store";
 })
 export class HomePage {
 
-  async componentWillLoad(){
-    toolbarComponentStore.components = [() => <elsa-new-button/>];
+  async componentWillLoad() {
+    const mainItem = newButtonItemStore.mainItem ?? {
+      text: 'New'
+    };
+
+    toolbarComponentStore.components = [() => <elsa-dropdown-button items={newButtonItemStore.items} text={mainItem.text} handler={mainItem.handler} origin={DropdownButtonOrigin.TopRight}/>];
   }
 
   render() {

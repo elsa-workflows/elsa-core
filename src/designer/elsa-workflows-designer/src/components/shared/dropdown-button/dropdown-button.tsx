@@ -1,5 +1,6 @@
-import {Component, Event, EventEmitter, Listen, h, Prop} from '@stencil/core';
+import {Component, Event, EventEmitter, Listen, h, Prop, Host} from '@stencil/core';
 import {leave, toggle} from 'el-transition'
+import {groupBy, sortBy, map} from 'lodash';
 import {DropdownButtonItem, DropdownButtonOrigin} from "./models";
 
 @Component({
@@ -9,31 +10,42 @@ import {DropdownButtonItem, DropdownButtonOrigin} from "./models";
 export class DropdownButton {
   @Prop() public text: string;
   @Prop() public icon?: any;
+  @Prop() public handler?: () => void;
   @Prop() public origin: DropdownButtonOrigin = DropdownButtonOrigin.TopLeft;
   @Prop() public items: Array<DropdownButtonItem> = [];
-  @Prop() public theme: string = 'Secondary';
+  @Prop() public theme: ('Primary' | 'Secondary') = 'Primary';
   @Event() public itemSelected: EventEmitter<DropdownButtonItem>
 
   private contextMenu: HTMLElement;
   private element: HTMLElement;
 
   public render() {
-    const buttonClass = this.theme == 'Secondary' ? 'btn-secondary' : 'btn-primary';
-    const arrowClass = this.theme == 'Secondary' ? 'text-gray-400' : 'text-white';
+    const buttonClass = this.theme == 'Secondary' ? 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-blue-500 hover:border-blue-500' : 'border-blue-600 bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-600 hover:border-blue-700';
+    const arrowClass = this.theme == 'Secondary' ? 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:border-blue-500' : 'border-blue-600 bg-blue-600 text-white hover:bg-blue-700 hover:border-blue-700';
+    const handler = this.handler ?? (() => this.toggleMenu());
 
     return (
-      <div class="relative" ref={el => this.element = el}>
-        <button onClick={e => this.toggleMenu()} type="button"
-                class={`btn ${buttonClass} w-full border`}
-                aria-haspopup="true" aria-expanded="false">
-          {this.renderIcon()}
-          {this.text}
-          <svg class={`ml-2.5 -mr-1.5 h-5 w-5 ${arrowClass}`} x-description="Heroicon name: chevron-down" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
-          </svg>
-        </button>
-        {this.renderMenu()}
-      </div>
+      <Host class="block" ref={el => this.element = el}>
+        <span class="relative z-0 inline-flex shadow-sm rounded-md">
+          <button type="button"
+                  class={`relative inline-flex items-center px-4 py-2 rounded-l-md border text-sm font-medium focus:z-10 focus:outline-none ${buttonClass}`}
+                  onClick={handler}>
+            {this.renderIcon()}
+            {this.text}
+          </button>
+          <div class="-ml-px block">
+            <button type="button"
+                    class={`relative inline-flex items-center px-2 py-2 rounded-r-md border text-sm font-medium focus:z-10 focus:outline-none ${arrowClass}`}
+                    onClick={() => this.toggleMenu()}
+                    aria-expanded="true" aria-haspopup="true">
+              <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>
+              </svg>
+            </button>
+            {this.renderMenu()}
+          </div>
+        </span>
+      </Host>
     );
   }
 
@@ -57,10 +69,29 @@ export class DropdownButton {
   }
 
   private renderItems() {
-    return this.items.map(item => {
-      const selectedCssClass = item.isSelected ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'hover:bg-gray-100 text-gray-700 hover:text-gray-900';
-      return <a href="#" onClick={e => this.onItemClick(e, item)} class={`block px-4 py-2 text-sm ${selectedCssClass}`} role="menuitem">{item.text}</a>;
-    })
+
+    const groups = groupBy(this.items, x => x.group ?? 0);
+
+    return <div class="divide-y divide-gray-100 focus:outline-none" role="menu" aria-orientation="vertical" aria-labelledby="option-menu">
+      {map(groups, menuItemGroup => {
+
+        return <div class="py-1" role="none">
+          {menuItemGroup.map(menuItem => {
+
+            const selectedCssClass = menuItem.isSelected ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'hover:bg-gray-100 text-gray-700 hover:text-gray-900';
+            return (
+              <div class="py-1" role="none">
+                <a href="#" onClick={e => this.onItemClick(e, menuItem)}
+                   class={`block px-4 py-2 text-sm ${selectedCssClass}`}
+                   role="menuitem">
+                  {menuItem.text}
+                </a>
+              </div>);
+          })}
+
+        </div>
+      })}
+    </div>
   }
 
   private renderIcon = () => this.icon ? this.icon : undefined;
@@ -88,7 +119,7 @@ export class DropdownButton {
   private async onItemClick(e: Event, menuItem: DropdownButtonItem) {
     e.preventDefault();
 
-    if(!!menuItem.handler)
+    if (!!menuItem.handler)
       menuItem.handler();
 
     this.itemSelected.emit(menuItem);
@@ -96,7 +127,7 @@ export class DropdownButton {
   }
 
   @Listen('click', {target: 'window'})
-  private onWindowClicked(event: Event){
+  private onWindowClicked(event: Event) {
     const target = event.target as HTMLElement;
 
     if (!this.element.contains(target))

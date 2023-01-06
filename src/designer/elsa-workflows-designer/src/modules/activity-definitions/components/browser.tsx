@@ -218,15 +218,15 @@ export class ActivityDefinitionBrowser {
                     <td class="pr-6">
                       <elsa-context-menu
                         menuItems={[
-                          {text: 'Edit', clickHandler: e => this.onActivityDefinitionClick(e, definition), icon: <EditIcon/>},
+                          {text: 'Edit', handler: e => this.onActivityDefinitionClick(e, definition), icon: <EditIcon/>},
                           isPublished
-                            ? {text: 'Unpublish', clickHandler: e => this.onUnPublishClick(e, definition), icon: <UnPublishIcon/>}
+                            ? {text: 'Unpublish', handler: e => this.onUnPublishClick(e, definition), icon: <UnPublishIcon/>}
                             : {
                               text: 'Publish',
-                              clickHandler: e => this.onPublishClick(e, definition),
+                              handler: e => this.onPublishClick(e, definition),
                               icon: <PublishIcon/>,
                             },
-                          {text: 'Delete', clickHandler: e => this.onDeleteClick(e, definition), icon: <DeleteIcon/>},
+                          {text: 'Delete', handler: e => this.onDeleteClick(e, definition), icon: <DeleteIcon/>},
                         ]}
                       />
                     </td>

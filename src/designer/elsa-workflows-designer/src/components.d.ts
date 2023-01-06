@@ -14,7 +14,7 @@ import { PublishClickedArgs } from "./modules/activity-definitions/components/pu
 import { NotificationType } from "./modules/notifications/models";
 import { Button } from "./components/shared/button-group/models";
 import { ActivityInputContext } from "./services/node-input-driver";
-import { ContextMenuAnchorPoint, MenuItem, MenuItemGroup } from "./components/shared/context-menu/models";
+import { ContextMenuAnchorPoint, ContextMenuItem } from "./components/shared/context-menu/models";
 import { DropdownButtonItem, DropdownButtonOrigin } from "./components/shared/dropdown-button/models";
 import { Graph } from "@antv/x6";
 import { AddActivityArgs, FlowchartPathItem, LayoutDirection, RenameActivityArgs, UpdateActivityArgs } from "./modules/flowchart/models";
@@ -81,8 +81,7 @@ export namespace Components {
         "anchorPoint": ContextMenuAnchorPoint;
         "close": () => Promise<void>;
         "hideButton": boolean;
-        "menuItemGroups": Array<MenuItemGroup>;
-        "menuItems": Array<MenuItem>;
+        "menuItems": Array<ContextMenuItem>;
         "open": () => Promise<void>;
     }
     interface ElsaCopyButton {
@@ -95,11 +94,12 @@ export namespace Components {
         "displayType": string;
     }
     interface ElsaDropdownButton {
+        "handler"?: () => void;
         "icon"?: any;
         "items": Array<DropdownButtonItem>;
         "origin": DropdownButtonOrigin;
         "text": string;
-        "theme": string;
+        "theme": ('Primary' | 'Secondary');
     }
     interface ElsaDropdownInput {
         "inputContext": ActivityInputContext;
@@ -192,8 +192,6 @@ export namespace Components {
     }
     interface ElsaMultiTextInput {
         "inputContext": ActivityInputContext;
-    }
-    interface ElsaNewButton {
     }
     interface ElsaNotificationsManager {
         "modalState": boolean;
@@ -381,10 +379,6 @@ export interface ElsaModalDialogCustomEvent<T> extends CustomEvent<T> {
 export interface ElsaMonacoEditorCustomEvent<T> extends CustomEvent<T> {
     detail: T;
     target: HTMLElsaMonacoEditorElement;
-}
-export interface ElsaNewButtonCustomEvent<T> extends CustomEvent<T> {
-    detail: T;
-    target: HTMLElsaNewButtonElement;
 }
 export interface ElsaPagerCustomEvent<T> extends CustomEvent<T> {
     detail: T;
@@ -619,12 +613,6 @@ declare global {
         prototype: HTMLElsaMultiTextInputElement;
         new (): HTMLElsaMultiTextInputElement;
     };
-    interface HTMLElsaNewButtonElement extends Components.ElsaNewButton, HTMLStencilElement {
-    }
-    var HTMLElsaNewButtonElement: {
-        prototype: HTMLElsaNewButtonElement;
-        new (): HTMLElsaNewButtonElement;
-    };
     interface HTMLElsaNotificationsManagerElement extends Components.ElsaNotificationsManager, HTMLStencilElement {
     }
     var HTMLElsaNotificationsManagerElement: {
@@ -830,7 +818,6 @@ declare global {
         "elsa-monaco-editor": HTMLElsaMonacoEditorElement;
         "elsa-multi-line-input": HTMLElsaMultiLineInputElement;
         "elsa-multi-text-input": HTMLElsaMultiTextInputElement;
-        "elsa-new-button": HTMLElsaNewButtonElement;
         "elsa-notifications-manager": HTMLElsaNotificationsManagerElement;
         "elsa-pager": HTMLElsaPagerElement;
         "elsa-panel": HTMLElsaPanelElement;
@@ -912,8 +899,7 @@ declare namespace LocalJSX {
     interface ElsaContextMenu {
         "anchorPoint"?: ContextMenuAnchorPoint;
         "hideButton"?: boolean;
-        "menuItemGroups"?: Array<MenuItemGroup>;
-        "menuItems"?: Array<MenuItem>;
+        "menuItems"?: Array<ContextMenuItem>;
     }
     interface ElsaCopyButton {
         "value"?: string;
@@ -927,12 +913,13 @@ declare namespace LocalJSX {
         "onEditChildActivity"?: (event: ElsaDefaultActivityTemplateCustomEvent<EditChildActivityArgs>) => void;
     }
     interface ElsaDropdownButton {
+        "handler"?: () => void;
         "icon"?: any;
         "items"?: Array<DropdownButtonItem>;
         "onItemSelected"?: (event: ElsaDropdownButtonCustomEvent<DropdownButtonItem>) => void;
         "origin"?: DropdownButtonOrigin;
         "text"?: string;
-        "theme"?: string;
+        "theme"?: ('Primary' | 'Secondary');
     }
     interface ElsaDropdownInput {
         "inputContext"?: ActivityInputContext;
@@ -1028,9 +1015,6 @@ declare namespace LocalJSX {
     }
     interface ElsaMultiTextInput {
         "inputContext"?: ActivityInputContext;
-    }
-    interface ElsaNewButton {
-        "onNewClicked"?: (event: ElsaNewButtonCustomEvent<any>) => void;
     }
     interface ElsaNotificationsManager {
         "modalState"?: boolean;
@@ -1189,7 +1173,6 @@ declare namespace LocalJSX {
         "elsa-monaco-editor": ElsaMonacoEditor;
         "elsa-multi-line-input": ElsaMultiLineInput;
         "elsa-multi-text-input": ElsaMultiTextInput;
-        "elsa-new-button": ElsaNewButton;
         "elsa-notifications-manager": ElsaNotificationsManager;
         "elsa-pager": ElsaPager;
         "elsa-panel": ElsaPanel;
@@ -1255,7 +1238,6 @@ declare module "@stencil/core" {
             "elsa-monaco-editor": LocalJSX.ElsaMonacoEditor & JSXBase.HTMLAttributes<HTMLElsaMonacoEditorElement>;
             "elsa-multi-line-input": LocalJSX.ElsaMultiLineInput & JSXBase.HTMLAttributes<HTMLElsaMultiLineInputElement>;
             "elsa-multi-text-input": LocalJSX.ElsaMultiTextInput & JSXBase.HTMLAttributes<HTMLElsaMultiTextInputElement>;
-            "elsa-new-button": LocalJSX.ElsaNewButton & JSXBase.HTMLAttributes<HTMLElsaNewButtonElement>;
             "elsa-notifications-manager": LocalJSX.ElsaNotificationsManager & JSXBase.HTMLAttributes<HTMLElsaNotificationsManagerElement>;
             "elsa-pager": LocalJSX.ElsaPager & JSXBase.HTMLAttributes<HTMLElsaPagerElement>;
             "elsa-panel": LocalJSX.ElsaPanel & JSXBase.HTMLAttributes<HTMLElsaPanelElement>;

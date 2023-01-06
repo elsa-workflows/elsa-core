@@ -12,7 +12,7 @@ import {NodeFactory} from "./node-factory";
 import {Container} from "typedi";
 import {ActivityNode, createActivityLookup, EventBus, flatten, PortProviderRegistry, walkActivities} from "../../services";
 import {ConnectionCreatedEventArgs, FlowchartEvents} from "./events";
-import {ContextMenuAnchorPoint, MenuItemGroup} from "../../components/shared/context-menu/models";
+import {ContextMenuAnchorPoint, ContextMenuItem} from "../../components/shared/context-menu/models";
 import descriptorsStore from "../../data/descriptors-store";
 import {Hash} from "../../utils";
 import PositionEventArgs = NodeView.PositionEventArgs;
@@ -519,32 +519,27 @@ export class FlowchartComponent {
     const node = e.node as ActivityNodeShape;
     const activity = e.node.data as Activity;
 
-    const menuItemGroups: Array<MenuItemGroup> = [
+    const menuItems: Array<ContextMenuItem> = [
       {
-        menuItems: [{
-          text: 'Startable',
-          clickHandler: () => this.onToggleCanStartWorkflowClicked(node),
-          isToggle: true,
-          checked: activity.canStartWorkflow,
-        }]
+        text: 'Startable',
+        handler: () => this.onToggleCanStartWorkflowClicked(node),
+        isToggle: true,
+        checked: activity.canStartWorkflow,
+
       }, {
-        menuItems: [
-          {
-            text: 'Cut',
-            clickHandler: () => this.onCutActivityClicked(node)
-          },
-          {
-            text: 'Copy',
-            clickHandler: () => this.onCopyActivityClicked(node)
-          }]
+        text: 'Cut',
+        handler: () => this.onCutActivityClicked(node)
+      },
+      {
+        text: 'Copy',
+        handler: () => this.onCopyActivityClicked(node)
+
       }, {
-        menuItems: [{
-          text: 'Delete',
-          clickHandler: () => this.onDeleteActivityClicked(node)
-        }]
+        text: 'Delete',
+        handler: () => this.onDeleteActivityClicked(node)
       }];
 
-    this.activityContextMenu.menuItemGroups = menuItemGroups;
+    this.activityContextMenu.menuItems = menuItems;
     const localPos = this.graph.localToClient(e.x, e.y);
     this.activityContextMenu.style.top = `${localPos.y}px`;
     this.activityContextMenu.style.left = `${localPos.x}px`;

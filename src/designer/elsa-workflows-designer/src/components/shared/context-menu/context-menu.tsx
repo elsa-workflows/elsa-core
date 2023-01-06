@@ -1,6 +1,7 @@
 import {Component, h, Listen, Method, Prop, Element} from '@stencil/core';
 import {leave, toggle, enter} from 'el-transition';
-import {ContextMenuAnchorPoint, MenuItem, MenuItemGroup} from "./models";
+import {groupBy} from 'lodash';
+import {ContextMenuAnchorPoint, ContextMenuItem} from "./models";
 import {TickIcon} from "../../icons/tooling/tick";
 
 @Component({
@@ -8,8 +9,7 @@ import {TickIcon} from "../../icons/tooling/tick";
   shadow: false,
 })
 export class ContextMenu {
-  @Prop({mutable: true}) menuItems: Array<MenuItem> = [];
-  @Prop({mutable: true}) menuItemGroups: Array<MenuItemGroup> = [];
+  @Prop({mutable: true}) menuItems: Array<ContextMenuItem> = [];
   @Prop() hideButton: boolean;
   @Prop() anchorPoint: ContextMenuAnchorPoint;
 
@@ -48,11 +48,11 @@ export class ContextMenu {
     toggle(this.contextMenu);
   }
 
-  private async onMenuItemClick(e: MouseEvent, menuItem: MenuItem) {
+  private async onMenuItemClick(e: MouseEvent, menuItem: ContextMenuItem) {
     e.preventDefault();
 
-    if (!!menuItem.clickHandler)
-      menuItem.clickHandler(e);
+    if (!!menuItem.handler)
+      menuItem.handler(e);
 
     if (menuItem.isToggle) {
       menuItem.checked = !menuItem.checked;
@@ -79,7 +79,8 @@ export class ContextMenu {
   render() {
     const anchorPointClass = this.getAnchorPointClass();
     const menuItems = this.menuItems;
-    const menuItemGroups = this.menuItemGroups;
+    const menuItemGroups = groupBy(menuItems, x => x.group);
+    debugger;
 
     return (
       <div class="relative flex justify-end items-center">
@@ -92,7 +93,6 @@ export class ContextMenu {
              data-transition-leave-end="transform opacity-0 scale-95"
              class={`hidden z-10 mx-3 absolute ${anchorPointClass} w-48 mt-1 rounded-md shadow-lg`}>
           <div class="rounded-md bg-white shadow-xs ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 focus:outline-none" role="menu" aria-orientation="vertical" aria-labelledby="project-options-menu-0">
-            {this.renderMenuItems(menuItems)}
             {this.renderMenuItemGroups(menuItemGroups)}
           </div>
         </div>
@@ -100,14 +100,14 @@ export class ContextMenu {
     );
   }
 
-  renderMenuItemGroups = (menuItemGroups: Array<MenuItemGroup>) => {
+  renderMenuItemGroups = (menuItemGroups: Array<any>) => {
     if (menuItemGroups.length == 0)
       return;
 
     return menuItemGroups.map(group => this.renderMenuItems(group.menuItems));
   }
 
-  renderMenuItems = (menuItems: Array<MenuItem>) => {
+  renderMenuItems = (menuItems: Array<ContextMenuItem>) => {
 
     if (menuItems.length == 0)
       return;

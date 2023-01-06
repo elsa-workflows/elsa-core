@@ -58,7 +58,7 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
             
         // Create variable setters and getters for each variable.
         CreateVariableAccessors(engine, context);
-            
+        
         engine.SetValue("isNullOrWhiteSpace", (Func<string, bool>)string.IsNullOrWhiteSpace);
         engine.SetValue("isNullOrEmpty", (Func<string, bool>)string.IsNullOrEmpty);
 

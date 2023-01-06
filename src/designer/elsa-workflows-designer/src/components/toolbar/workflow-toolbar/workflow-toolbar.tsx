@@ -20,10 +20,9 @@ export class WorkflowToolbar {
     this.eventBus = Container.get(EventBus);
   }
 
-  onNotificationClick = e => {
+  onNotificationClick = async e => {
     e.stopPropagation();
-    this.eventBus.emit(NotificationEventTypes.Toggle, this);
-    // this.eventBus.emit(NotificationEventTypes.Toggle, this);
+    await this.eventBus.emit(NotificationEventTypes.Toggle, this);
     WorkflowToolbar.NotificationService.toogleNotification();
     this.modalState = !this.modalState;
   };

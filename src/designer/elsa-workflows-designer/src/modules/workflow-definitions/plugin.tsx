@@ -3,7 +3,6 @@ import {h} from "@stencil/core";
 import {Container, Service} from "typedi";
 import {ActivityDescriptor, Plugin} from "../../models";
 import newButtonItemStore from "../../data/new-button-item-store";
-import {MenuItem, MenuItemGroup} from "../../components/shared/context-menu/models";
 import {Flowchart} from "../flowchart/models";
 import {generateUniqueActivityName} from '../../utils/generate-activity-name';
 import descriptorsStore from "../../data/descriptors-store";
@@ -12,17 +11,16 @@ import toolbarButtonMenuItemStore from "../../data/toolbar-button-menu-item-stor
 import {ToolbarMenuItem} from "../../components/toolbar/workflow-toolbar-menu/models";
 import {EventBus} from "../../services";
 import toolbarComponentStore from "../../data/toolbar-component-store";
-import {NotificationEventTypes} from "../notifications/event-types";
 import {WorkflowDefinitionManager} from "./services/manager";
 import {WorkflowDefinition, WorkflowDefinitionSummary} from "./models/entities";
 import {WorkflowDefinitionUpdatedArgs} from "./models/ui";
 import {PublishClickedArgs} from "./components/publish-button";
 import {WorkflowDefinitionsApi} from "./services/api";
 import {DefaultModalActions, ModalDialogInstance, ModalDialogService} from "../../components/shared/modal-dialog";
-import {isEqual} from 'lodash'
 import {htmlToElement, isNullOrWhitespace} from "../../utils";
 import NotificationService from "../notifications/notification-service";
 import {uuid} from "@antv/x6/es/util/string/uuid";
+import {DropdownButtonItem} from "../../components/shared/dropdown-button/models";
 
 const FlowchartTypeName = 'Elsa.Flowchart';
 
@@ -41,28 +39,26 @@ export class WorkflowDefinitionsPlugin implements Plugin {
     this.workflowDefinitionManager = Container.get(WorkflowDefinitionManager);
     this.modalDialogService = Container.get(ModalDialogService);
 
-    const newWorkflowDefinitionItem: MenuItem = {
+    const newMenuItems: Array<DropdownButtonItem> = [{
+      order: 0,
+      group: 0,
       text: 'Workflow Definition',
-      clickHandler: this.onNewWorkflowDefinitionSelected
-    }
-
-    const importWorkflowDefinitionItem: MenuItem = {
+      handler: this.onNewWorkflowDefinitionSelected
+    },{
+      order: 0,
+      group: 2,
       text: 'Import',
-      clickHandler: this.onImportWorkflowDefinitionClick
-    }
+      handler: this.onImportWorkflowDefinitionClick
+    }];
 
-    const newItemGroup: MenuItemGroup = {
-      menuItems: [newWorkflowDefinitionItem, importWorkflowDefinitionItem]
-    }
-
-    const workflowDefinitionBrowserItem: ToolbarMenuItem = {
+    const toolbarItems: Array<ToolbarMenuItem> = [{
       text: 'Workflow Definitions',
       onClick: this.onBrowseWorkflowDefinitions,
       order: 5
-    };
+    }]
 
-    newButtonItemStore.items = [...newButtonItemStore.items, newItemGroup];
-    toolbarButtonMenuItemStore.items = [...toolbarButtonMenuItemStore.items, workflowDefinitionBrowserItem];
+    newButtonItemStore.items = [...newButtonItemStore.items, ...newMenuItems];
+    toolbarButtonMenuItemStore.items = [...toolbarButtonMenuItemStore.items, ...toolbarItems];
   }
 
   async initialize(): Promise<void> {

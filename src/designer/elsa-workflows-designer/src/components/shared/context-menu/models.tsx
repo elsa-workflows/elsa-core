@@ -1,14 +1,12 @@
-﻿export interface MenuItem {
+﻿export interface ContextMenuItem {
   text: string;
   anchorUrl?: string;
-  clickHandler?: (e: MouseEvent) => void;
+  handler?: (e: MouseEvent) => void;
   icon?: any;
   isToggle?: boolean; // Whether this item can be checked/unchecked.
   checked?: boolean;
-}
-
-export interface MenuItemGroup {
-  menuItems: Array<MenuItem>
+  order?: number;
+  group?: string;
 }
 
 export enum ContextMenuAnchorPoint {

@@ -1,7 +1,13 @@
 ﻿import {h} from '@stencil/core';
 import {createStore} from '@stencil/store';
+import {DropdownButtonItem} from "../components/shared/dropdown-button/models";
 
-const {state, onChange} = createStore({
+export interface NewButtonItemStore {
+  items: Array<DropdownButtonItem>;
+  mainItem: DropdownButtonItem;
+}
+
+const {state, onChange} = createStore<NewButtonItemStore>({
   items: [],
   mainItem: null
 });

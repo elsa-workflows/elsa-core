@@ -3,7 +3,6 @@ import {h} from "@stencil/core";
 import {Container, Service} from "typedi";
 import {ActivityDescriptor, Plugin} from "../../models";
 import newButtonItemStore from "../../data/new-button-item-store";
-import {MenuItem, MenuItemGroup} from "../../components/shared/context-menu/models";
 import {Flowchart} from "../flowchart/models";
 import {generateUniqueActivityName} from '../../utils/generate-activity-name';
 import descriptorsStore from "../../data/descriptors-store";
@@ -18,6 +17,7 @@ import {ActivityDefinitionManager} from "./services/manager";
 import {ActivityDefinition, ActivityDefinitionSummary, ActivityDefinitionUpdatedArgs} from "./models";
 import {ActivityDefinitionsApi} from "./services/api";
 import {DefaultModalActions, ModalDialogInstance, ModalDialogService} from "../../components/shared/modal-dialog";
+import {DropdownButtonItem} from "../../components/shared/dropdown-button/models";
 
 const FlowchartTypeName = 'Elsa.Flowchart';
 
@@ -38,23 +38,19 @@ export class ActivityDefinitionsPlugin implements Plugin {
     this.activityDescriptorManager = Container.get(ActivityDescriptorManager);
     this.modalDialogService = Container.get(ModalDialogService);
 
-    const newActivityDefinitionItem: MenuItem = {
+    const newMenuItems: Array<DropdownButtonItem> = [{
       text: 'Activity Definition',
-      clickHandler: this.onNewActivityDefinitionClick
-    }
+      handler: this.onNewActivityDefinitionClick
+    }];
 
-    const newItemGroup: MenuItemGroup = {
-      menuItems: [newActivityDefinitionItem]
-    };
-
-    const activityDefinitionBrowserItem: ToolbarMenuItem = {
-      text: 'Activity Definitions',
+    const toolbarItems: Array<ToolbarMenuItem> = [{
+      text: 'Workflow Definitions',
       onClick: this.onBrowseActivityDefinitions,
       order: 5
-    };
+    }]
 
-    newButtonItemStore.items = [...newButtonItemStore.items, newItemGroup];
-    toolbarButtonMenuItemStore.items = [...toolbarButtonMenuItemStore.items, activityDefinitionBrowserItem];
+    newButtonItemStore.items = [...newButtonItemStore.items, ...newMenuItems];
+    toolbarButtonMenuItemStore.items = [...toolbarButtonMenuItemStore.items, ...toolbarItems];
   }
 
   async initialize(): Promise<void> {
