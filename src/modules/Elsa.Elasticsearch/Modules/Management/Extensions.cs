@@ -13,7 +13,7 @@ public static class Extensions
         configure += f =>
         {
             f.Options = options;
-            f.IndexConfig = indexConfig ?? new Dictionary<string, string>();
+            f.IndexConfig = indexConfig ?? options.Indices ?? new Dictionary<string, string>();
         };
         
         feature.Module.Configure(configure);
