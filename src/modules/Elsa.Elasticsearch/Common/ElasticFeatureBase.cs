@@ -1,5 +1,7 @@
 using Elasticsearch.Net;
+using Elsa.Elasticsearch.Extensions;
 using Elsa.Elasticsearch.Options;
+using Elsa.Elasticsearch.Services;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,8 +28,8 @@ public abstract class ElasticFeatureBase : FeatureBase
     private ConnectionSettings GetSettings()
     {
         return new ConnectionSettings(new Uri(Options.Endpoint))
-            .SetupAuthentication(Options)
-            .SetupMappingsAndIndices();
+            .ConfigureAuthentication(Options)
+            .ConfigureMapping();
     }
 
     protected void AddStore<TModel, TStore>() where TModel : class where TStore : class
