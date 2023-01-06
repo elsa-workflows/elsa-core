@@ -1,14 +1,14 @@
 ﻿import {h} from '@stencil/core';
 import {createStore} from '@stencil/store';
-import {MenuItem, MenuItemGroup} from "../components/shared/context-menu/models";
+import {DropdownButtonItem} from "../components/shared/dropdown-button/models";
 
 export interface NewButtonItemStore {
-  groups: Array<MenuItemGroup>;
-  mainItem: MenuItem;
+  items: Array<DropdownButtonItem>;
+  mainItem: DropdownButtonItem;
 }
 
 const {state, onChange} = createStore<NewButtonItemStore>({
-  groups: [],
+  items: [],
   mainItem: null
 });
 

@@ -73,8 +73,8 @@ export class VariablesEditor {
                     <td class="pr-6">
                       <elsa-context-menu
                         menuItems={[
-                          {text: 'Edit', clickHandler: e => this.onEditClick(e, variable), icon: <EditIcon/>},
-                          {text: 'Delete', clickHandler: e => this.onDeleteClick(e, variable), icon: <DeleteIcon/>},
+                          {text: 'Edit', handler: e => this.onEditClick(e, variable), icon: <EditIcon/>},
+                          {text: 'Delete', handler: e => this.onDeleteClick(e, variable), icon: <DeleteIcon/>},
                         ]}
                       />
                     </td>

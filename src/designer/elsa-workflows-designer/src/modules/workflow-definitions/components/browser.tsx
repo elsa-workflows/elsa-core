@@ -288,15 +288,15 @@ export class WorkflowDefinitionBrowser {
                     <td class="pr-6">
                       <elsa-context-menu
                         menuItems={[
-                          {text: 'Edit', clickHandler: e => this.onWorkflowDefinitionClick(e, workflowDefinition), icon: <EditIcon/>},
+                          {text: 'Edit', handler: e => this.onWorkflowDefinitionClick(e, workflowDefinition), icon: <EditIcon/>},
                           isPublished
-                            ? {text: 'Unpublish', clickHandler: e => this.onUnPublishClick(e, workflowDefinition), icon: <UnPublishIcon/>}
+                            ? {text: 'Unpublish', handler: e => this.onUnPublishClick(e, workflowDefinition), icon: <UnPublishIcon/>}
                             : {
                               text: 'Publish',
-                              clickHandler: e => this.onPublishClick(e, workflowDefinition),
+                              handler: e => this.onPublishClick(e, workflowDefinition),
                               icon: <PublishIcon/>,
                             },
-                          {text: 'Delete', clickHandler: e => this.onDeleteClick(e, workflowDefinition), icon: <DeleteIcon/>},
+                          {text: 'Delete', handler: e => this.onDeleteClick(e, workflowDefinition), icon: <DeleteIcon/>},
                         ]}
                       />
                     </td>
