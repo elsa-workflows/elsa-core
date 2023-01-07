@@ -8,12 +8,12 @@ public static class Extensions
     /// <summary>
     /// Configures the <see cref="WorkflowInstanceFeature"/> to use the <see cref="ElasticWorkflowInstanceFeature"/>.
     /// </summary>
-    public static WorkflowInstanceFeature UseElasticsearch(this WorkflowInstanceFeature feature, ElasticsearchOptions options, IDictionary<string,string>? indexConfig = default, Action<ElasticWorkflowInstanceFeature>? configure = default)
+    public static WorkflowInstanceFeature UseElasticsearch(this WorkflowInstanceFeature feature, ElasticsearchOptions options, IDictionary<string,string>? aliasConfig = default, Action<ElasticWorkflowInstanceFeature>? configure = default)
     {
         configure += f =>
         {
             f.Options = options;
-            f.IndexConfig = indexConfig ?? options.Indices ?? new Dictionary<string, string>();
+            f.AliasConfig = aliasConfig ?? options.Aliases ?? f.AliasConfig;
         };
         
         feature.Module.Configure(configure);

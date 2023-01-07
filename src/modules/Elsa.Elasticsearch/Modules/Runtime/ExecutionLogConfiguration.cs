@@ -7,11 +7,9 @@ namespace Elsa.Elasticsearch.Modules.Runtime;
 
 public class ExecutionLogConfiguration : IElasticConfiguration
 {
-    private const string IndexName = "workflow-execution-log";
-    
-    public void Apply(ConnectionSettings connectionSettings, IDictionary<string,string> indexConfig)
+    public void Apply(ConnectionSettings connectionSettings, IDictionary<string,string> aliasConfig)
     {
         connectionSettings.DefaultMappingFor<WorkflowExecutionLogRecord>(m => 
-            m.IndexName(IElasticConfiguration.ResolveIndexName<WorkflowExecutionLogRecord>(indexConfig, IndexName)));
+            m.IndexName(aliasConfig[nameof(WorkflowExecutionLogRecord)]));
     }
 }

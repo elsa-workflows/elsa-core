@@ -1,15 +1,15 @@
-using Elsa.Elasticsearch.Options;
+using Elsa.Elasticsearch.Common;
 using Nest;
 
 namespace Elsa.Elasticsearch.Services;
 
 public interface IElasticConfiguration
 {
-    void Apply(ConnectionSettings connectionSettings, IDictionary<string,string> indexConfig);
-    
-    public static string ResolveIndexName<T>(IDictionary<string,string> indices, string? indexName = default)
+    void Apply(ConnectionSettings connectionSettings, IDictionary<string,string> aliasConfig);
+
+    internal static IDictionary<string,string> GetDefaultAliasConfig()
     {
-        var indexNameFromConfig = indices[typeof(T).Name];
-        return string.IsNullOrWhiteSpace(indexNameFromConfig) ? indexName : indexNameFromConfig;
+        var types = Utils.GetElasticDocumentTypes();
+        return new Dictionary<string, string>(types.Select(t => new KeyValuePair<string, string>(t.Name, t.Name)));
     }
 }

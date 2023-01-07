@@ -16,21 +16,22 @@ public abstract class ElasticFeatureBase : FeatureBase
     }
     
     internal ElasticsearchOptions Options { get; set; } = new();
-    internal IDictionary<string,string> IndexConfig { get; set; }
+    internal IDictionary<string, string> AliasConfig { get; set; } = IElasticConfiguration.GetDefaultAliasConfig();
 
     public override void Apply()
     {
-        if (Services.All(x => x.ServiceType != typeof(ElasticClient)))
-        {
-            Services.AddSingleton(new ElasticClient(GetSettings()));
-        }
+        if (Services.Any(x => x.ServiceType == typeof(ElasticClient))) return;
+        
+        var elasticClient = new ElasticClient(GetSettings());
+        elasticClient.ConfigureIndicesAndAliases(AliasConfig);
+        Services.AddSingleton(elasticClient);
     }
 
     private ConnectionSettings GetSettings()
     {
         return new ConnectionSettings(new Uri(Options.Endpoint))
             .ConfigureAuthentication(Options)
-            .ConfigureMapping(IndexConfig);
+            .ConfigureMapping(AliasConfig);
     }
 
     protected void AddStore<TModel, TStore>() where TModel : class where TStore : class

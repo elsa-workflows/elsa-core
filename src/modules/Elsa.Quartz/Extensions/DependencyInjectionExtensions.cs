@@ -12,6 +12,7 @@ public static class DependencyInjectionExtensions
     {
         quartz.AddJob<RunWorkflowJob>();
         quartz.AddJob<ResumeWorkflowJob>();
+        quartz.AddJob<ConfigureElasticIndicesJob>();
 
         return quartz;
     }

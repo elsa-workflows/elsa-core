@@ -27,6 +27,7 @@ public class SchedulingFeature : FeatureBase
         Services
             .AddSingleton<IWorkflowTriggerScheduler, WorkflowTriggerScheduler>()
             .AddSingleton<IWorkflowBookmarkScheduler, WorkflowBookmarkScheduler>()
+            .AddSingleton<IElasticCongurationScheduler, ElasticCongurationScheduler>()
             .AddNotificationHandlersFrom<ScheduleWorkflows>();
 
         Module.Configure<WorkflowManagementFeature>(management => management.AddActivitiesFrom<SchedulingFeature>());
