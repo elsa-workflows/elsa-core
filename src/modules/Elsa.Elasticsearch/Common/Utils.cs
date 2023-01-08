@@ -15,10 +15,11 @@ public static class Utils
     public static IEnumerable<Type> GetElasticConfigurationTypes() =>
         AppDomain.CurrentDomain.GetAssemblies()
             .SelectMany(s => s.GetTypes())
-            .Where(p => typeof(IElasticConfiguration).IsAssignableFrom(p) && p.IsClass);
+            .Where(p => 
+                typeof(IElasticConfiguration).IsAssignableFrom(p) && 
+                p is {IsClass: true, IsAbstract: false});
 
     public static IEnumerable<Type> GetElasticDocumentTypes() =>
         GetElasticConfigurationTypes()
-            .Select(type => (IElasticConfiguration) Activator.CreateInstance(type)!)
-            .Select(instance => instance.DocumentType());
+            .Select(t => t.BaseType!.GenericTypeArguments.First()).ToList();
 }

@@ -1,15 +1,12 @@
-using Elsa.Elasticsearch.Options;
-using Elsa.Elasticsearch.Services;
+using Elsa.Elasticsearch.Common;
 using Elsa.Workflows.Runtime.Entities;
 using Nest;
 
 namespace Elsa.Elasticsearch.Modules.Runtime;
 
-public class ExecutionLogConfiguration : IElasticConfiguration
+public class ExecutionLogConfiguration : ElasticConfiguration<WorkflowExecutionLogRecord>
 {
-    public Type DocumentType() => typeof(WorkflowExecutionLogRecord);
-    
-    public void Apply(ConnectionSettings connectionSettings, IDictionary<string,string> aliasConfig)
+    public override void Apply(ConnectionSettings connectionSettings, IDictionary<string, string> aliasConfig)
     {
         connectionSettings.DefaultMappingFor<WorkflowExecutionLogRecord>(m => 
             m.IndexName(aliasConfig[nameof(WorkflowExecutionLogRecord)]));

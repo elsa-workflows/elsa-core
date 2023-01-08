@@ -5,8 +5,6 @@ namespace Elsa.Elasticsearch.Services;
 
 public interface IElasticConfiguration
 {
-    Type DocumentType();
-    
     void Apply(ConnectionSettings connectionSettings, IDictionary<string,string> aliasConfig);
 
     public static IDictionary<string, string> GetDefaultAliasConfig()

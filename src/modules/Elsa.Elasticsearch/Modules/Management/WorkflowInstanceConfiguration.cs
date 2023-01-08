@@ -1,15 +1,12 @@
-using Elsa.Elasticsearch.Services;
-using Elsa.Workflows.Core.State;
+using Elsa.Elasticsearch.Common;
 using Elsa.Workflows.Management.Entities;
 using Nest;
 
 namespace Elsa.Elasticsearch.Modules.Management;
 
-public class WorkflowInstanceConfiguration : IElasticConfiguration
+public class WorkflowInstanceConfiguration : ElasticConfiguration<WorkflowInstance>
 {
-    public Type DocumentType() => typeof(WorkflowInstance);
-    
-    public void Apply(ConnectionSettings connectionSettings, IDictionary<string,string> aliasConfig)
+    public override void Apply(ConnectionSettings connectionSettings, IDictionary<string,string> aliasConfig)
     {
         connectionSettings
             .DefaultMappingFor<WorkflowInstance>(m => m
