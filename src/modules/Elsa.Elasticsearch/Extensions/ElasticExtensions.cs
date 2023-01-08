@@ -45,11 +45,11 @@ public static class ElasticExtensions
             if (indexExists) continue;
             
             var response = client.Indices.Create(indexName, s => s
-                .Aliases(a => a.Alias(aliasName)));
+                .Aliases(a => a.Alias(aliasName))
+                .Map(m => m.AutoMap(type)));
                 
             if (response.IsValid) continue;
             throw response.OriginalException;
-                
         }
     }
 }

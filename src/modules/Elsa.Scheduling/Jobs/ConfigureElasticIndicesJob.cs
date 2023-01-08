@@ -29,10 +29,11 @@ public class ConfigureElasticIndicesJob : Job
             var indexExists = (await client.Indices.ExistsAsync(newIndexName)).Exists;
             if (indexExists) continue;
             
-            // Point the alias to the new index
+            // Point the alias to the new writable index
             await client.Indices.BulkAliasAsync(aliases => aliases
                 .Remove(a => a.Alias(aliasPointingCurrentIndex).Index(currentIndexName))
-                .Add(a => a.Alias(aliasPointingCurrentIndex).Index(newIndexName)));
+                .Add(a => a.Alias(aliasPointingCurrentIndex).Index(currentIndexName).IsWriteIndex(false))
+                .Add(a => a.Alias(aliasPointingCurrentIndex).Index(newIndexName).IsWriteIndex()));
         }
     }
 }
