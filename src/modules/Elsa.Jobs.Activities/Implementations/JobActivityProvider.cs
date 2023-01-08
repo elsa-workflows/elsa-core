@@ -30,6 +30,7 @@ public class JobActivityProvider : IActivityProvider
         _jobRegistry = jobRegistry;
     }
 
+    /// <inheritdoc />
     public ValueTask<IEnumerable<ActivityDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default)
     {
         var jobTypes = _jobRegistry.List();
