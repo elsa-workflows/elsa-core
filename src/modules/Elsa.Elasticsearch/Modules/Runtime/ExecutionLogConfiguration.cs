@@ -7,6 +7,8 @@ namespace Elsa.Elasticsearch.Modules.Runtime;
 
 public class ExecutionLogConfiguration : IElasticConfiguration
 {
+    public Type DocumentType() => typeof(WorkflowExecutionLogRecord);
+    
     public void Apply(ConnectionSettings connectionSettings, IDictionary<string,string> aliasConfig)
     {
         connectionSettings.DefaultMappingFor<WorkflowExecutionLogRecord>(m => 

@@ -24,11 +24,7 @@ public static class ElasticExtensions
     
     public static ConnectionSettings ConfigureMapping(this ConnectionSettings settings, IDictionary<string,string> aliasConfig)
     {
-        var configs = AppDomain.CurrentDomain.GetAssemblies()
-            .SelectMany(s => s.GetTypes())
-            .Where(p => typeof(IElasticConfiguration).IsAssignableFrom(p) && p.IsClass);
-        
-        foreach (var config in configs)
+        foreach (var config in Utils.GetElasticConfigurationTypes())
         {
             var configInstance = (IElasticConfiguration)Activator.CreateInstance(config)!;
             configInstance.Apply(settings, aliasConfig);
@@ -44,9 +40,16 @@ public static class ElasticExtensions
             var aliasName = aliasConfig[type.Name];
             var indexName = Utils.GenerateIndexName(aliasName);
             
-            client.Indices.Create(indexName, s => s
-                .Aliases(a => a.Alias(aliasName))
-                .Map(m => m.AutoMap(type)));
+            var indexExists = client.Indices.Exists(indexName).Exists;
+
+            if (indexExists) continue;
+            
+            var response = client.Indices.Create(indexName, s => s
+                .Aliases(a => a.Alias(aliasName)));
+                
+            if (response.IsValid) continue;
+            throw response.OriginalException;
+                
         }
     }
 }

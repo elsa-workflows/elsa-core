@@ -11,9 +11,14 @@ public static class Utils
         
         return aliasName + "-" + year + "-" + month;
     }
-    
-    public static IEnumerable<Type> GetElasticDocumentTypes() =>
+
+    public static IEnumerable<Type> GetElasticConfigurationTypes() =>
         AppDomain.CurrentDomain.GetAssemblies()
             .SelectMany(s => s.GetTypes())
             .Where(p => typeof(IElasticConfiguration).IsAssignableFrom(p) && p.IsClass);
+
+    public static IEnumerable<Type> GetElasticDocumentTypes() =>
+        GetElasticConfigurationTypes()
+            .Select(type => (IElasticConfiguration) Activator.CreateInstance(type)!)
+            .Select(instance => instance.DocumentType());
 }

@@ -5,11 +5,12 @@ namespace Elsa.Elasticsearch.Services;
 
 public interface IElasticConfiguration
 {
+    Type DocumentType();
+    
     void Apply(ConnectionSettings connectionSettings, IDictionary<string,string> aliasConfig);
 
-    internal static IDictionary<string,string> GetDefaultAliasConfig()
+    public static IDictionary<string, string> GetDefaultAliasConfig()
     {
-        var types = Utils.GetElasticDocumentTypes();
-        return new Dictionary<string, string>(types.Select(t => new KeyValuePair<string, string>(t.Name, t.Name)));
+        return Utils.GetElasticDocumentTypes().ToDictionary(type => type.Name, type => type.Name.ToLower());
     }
 }
