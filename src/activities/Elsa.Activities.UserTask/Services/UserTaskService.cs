@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,7 +11,6 @@ using Elsa.Persistence.Specifications;
 using Elsa.Persistence.Specifications.Bookmarks;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Activities.UserTask.Services;
 

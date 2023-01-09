@@ -1,4 +1,3 @@
-using Elsa.Persistence.EntityFramework.Sqlite;
 using Elsa.Secrets.Persistence.EntityFramework.Core;
 using Microsoft.EntityFrameworkCore;
 

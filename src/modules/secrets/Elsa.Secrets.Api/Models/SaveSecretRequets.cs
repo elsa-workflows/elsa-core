@@ -1,8 +1,6 @@
 using Elsa.Secrets.Models;
 using Newtonsoft.Json;
-using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Elsa.Secrets.Api.Models
 {

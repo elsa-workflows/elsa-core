@@ -1,6 +1,5 @@
 using Elsa.Expressions;
 using Elsa.Options;
-using Elsa.Secrets.Enrichers;
 using Elsa.Secrets.Handlers;
 using Elsa.Secrets.Manager;
 using Elsa.Secrets.Persistence;

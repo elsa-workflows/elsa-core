@@ -1,7 +1,4 @@
 using Elsa.Activities.RabbitMq.Configuration;
-using Elsa.Services.Models;
-using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 

@@ -1,5 +1,4 @@
 ﻿using System;
-using Elsa.Models;
 using MongoDB.Bson.Serialization;
 using Rebus.Extensions;
 

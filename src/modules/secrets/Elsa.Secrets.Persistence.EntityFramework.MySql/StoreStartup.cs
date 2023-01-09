@@ -1,11 +1,8 @@
 using Elsa.Attributes;
 using Elsa.Options;
 using Elsa.Secrets.Persistence.EntityFramework.Core;
-using Elsa.Secrets.Persistence.EntityFramework.MySql.ValueFormatters;
-using Elsa.Secrets.ValueFormatters;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Secrets.Persistence.EntityFramework.MySql
 {

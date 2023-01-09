@@ -1,6 +1,4 @@
 using Elsa.Models;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Elsa.Retention.Specifications
 {
