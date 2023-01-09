@@ -1,11 +1,11 @@
 namespace Elsa.WorkflowServer.Web.Messages;
 
 // ReSharper disable once InconsistentNaming
-public interface OrderCreated
-{
-    string Id { get; set; }
-    string CustomerId { get; set; }
-    string Product { get; set; }
-    int Quantity { get; set; }
-    decimal Total { get; set; }
-}
+public record OrderCreated(
+
+    string Id,
+    string CustomerId,
+    string Product,
+    int Quantity,
+    decimal Total
+);

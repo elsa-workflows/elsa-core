@@ -47,6 +47,7 @@ public static class ObjectConverter
         options.Converters.Add(new JsonStringEnumConverter());
 
         var underlyingTargetType = Nullable.GetUnderlyingType(targetType) ?? targetType;
+        var underlyingSourceType = Nullable.GetUnderlyingType(sourceType) ?? sourceType;
 
         if (value is JsonElement jsonNumber && jsonNumber.ValueKind == JsonValueKind.Number && underlyingTargetType == typeof(string))
             return jsonNumber.ToString().ConvertTo(underlyingTargetType);
@@ -55,8 +56,23 @@ public static class ObjectConverter
         {
             if (jsonObject.ValueKind == JsonValueKind.String && underlyingTargetType != typeof(string))
                 return jsonObject.GetString().ConvertTo(underlyingTargetType);
-
+            
             return jsonObject.Deserialize(targetType, options);
+        }
+        
+        if (underlyingSourceType == typeof(string) && !underlyingTargetType.IsPrimitive)
+        {
+            var stringValue = (string)value;
+
+            try
+            {
+                if (stringValue.TrimStart().StartsWith("{"))
+                    return JsonSerializer.Deserialize(stringValue, underlyingTargetType);
+            }
+            catch (Exception e)
+            {
+                throw new TypeConversionException($"Failed to deserialize {stringValue} to {underlyingTargetType}", value, underlyingTargetType, e);
+            }
         }
 
         if (targetType == typeof(object))
@@ -64,8 +80,6 @@ public static class ObjectConverter
 
         if (underlyingTargetType.IsInstanceOfType(value))
             return value;
-
-        var underlyingSourceType = Nullable.GetUnderlyingType(sourceType) ?? sourceType;
 
         if (underlyingSourceType == underlyingTargetType)
             return value;
@@ -94,20 +108,7 @@ public static class ObjectConverter
                 return Enum.ToObject(underlyingTargetType, Convert.ChangeType(value, typeof(int)));
         }
 
-        if (underlyingSourceType == typeof(string) && !underlyingTargetType.IsPrimitive)
-        {
-            var stringValue = (string)value;
-
-            try
-            {
-                if (stringValue.TrimStart().StartsWith("{"))
-                    return JsonSerializer.Deserialize(stringValue, underlyingTargetType);
-            }
-            catch (Exception e)
-            {
-                throw new TypeConversionException($"Failed to deserialize {stringValue} to {underlyingTargetType}", value, underlyingTargetType, e);
-            }
-        }
+        
 
         if (value is string s && string.IsNullOrWhiteSpace(s))
             return null;
