@@ -4,7 +4,7 @@ public class ElasticsearchOptions
 {
     public const string Elasticsearch = "Elasticsearch";
 
-    public Dictionary<string, string>? Aliases { get; set; }
+    public Dictionary<string, string>? IndexConfig { get; set; }
     public string Endpoint { get; set; }
     public string Username { get; set; }
     public string Password { get; set; }

@@ -20,7 +20,7 @@ public class ElasticStore<T> where T : class
     {
         var response = await _elasticClient.GetAsync(DocumentPath<T>.Id(id), ct: cancellationToken);
 
-        if (response.IsValid) return response.Source;
+        if (response.ApiCall.Success) return response.Source;
         
         _logger.LogError("Failed to fetch data from Elasticsearch: {message}", response.ServerError?.ToString());
         return null;
@@ -36,7 +36,8 @@ public class ElasticStore<T> where T : class
 
         var response = await _elasticClient.SearchAsync<T>(search, cancellationToken);
         
-        if (response.IsValid) return new Page<T>(response.Hits.Select(hit => hit.Source).ToList(), response.Total);
+        if (response.ApiCall.Success) 
+            return new Page<T>(response.Hits.Select(hit => hit.Source).ToList(), response.Total);
         
         _logger.LogError("Failed to search data in Elasticsearch: {message}", response.ServerError?.ToString());
         return new Page<T>(new Collection<T>(), 0);
@@ -51,7 +52,8 @@ public class ElasticStore<T> where T : class
 
         var response = await _elasticClient.SearchAsync<T>(search, cancellationToken);
         
-        if (response.IsValid) return new Page<T>(response.Hits.Select(hit => hit.Source).ToList(), response.Total);
+        if (response.ApiCall.Success) 
+            return new Page<T>(response.Hits.Select(hit => hit.Source).ToList(), response.Total);
         
         _logger.LogError("Failed to search data in Elasticsearch: {message}", response.ServerError?.ToString());
         return new Page<T>(new Collection<T>(), 0);
@@ -61,7 +63,7 @@ public class ElasticStore<T> where T : class
     {
         var response = await _elasticClient.IndexAsync(model, descriptor => descriptor, cancellationToken);
 
-        if (response.IsValid) return true;
+        if (response.ApiCall.Success) return true;
         
         _logger.LogError("Failed to save data in Elasticsearch: {message}", response.ServerError?.ToString());
         return false;
@@ -71,7 +73,7 @@ public class ElasticStore<T> where T : class
     {
         var response = await _elasticClient.IndexManyAsync(documents, cancellationToken: cancellationToken);
 
-        if (response.IsValid) return true;
+        if (response.ApiCall.Success) return true;
         
         _logger.LogError("Failed to save data in Elasticsearch: {message}", response.ServerError?.ToString());
         return false;
@@ -81,7 +83,7 @@ public class ElasticStore<T> where T : class
     {
         var response = await _elasticClient.DeleteAsync(DocumentPath<T>.Id(id), ct: cancellationToken);
 
-        if (response.IsValid) return true;
+        if (response.ApiCall.Success) return true;
         
         _logger.LogError("Failed to delete data in Elasticsearch: {message}", response.ServerError?.ToString());
         return false;
@@ -91,7 +93,7 @@ public class ElasticStore<T> where T : class
     {
         var response = await _elasticClient.DeleteManyAsync(list, cancellationToken: cancellationToken);
 
-        if (response.IsValid) return 0;
+        if (response.ApiCall.Success) return 0;
         
         _logger.LogError("Failed to delete data in Elasticsearch: {message}", response.ServerError?.ToString());
         return response.Items.Count;
@@ -102,7 +104,7 @@ public class ElasticStore<T> where T : class
         var response = await _elasticClient.DeleteByQueryAsync<T>(q => q
             .Query(query), cancellationToken);
 
-        if (response.IsValid) return true;
+        if (response.ApiCall.Success) return true;
         
         _logger.LogError("Failed to delete data in Elasticsearch: {message}", response.ServerError?.ToString());
         return false;
@@ -113,7 +115,7 @@ public class ElasticStore<T> where T : class
         var response = await _elasticClient.CountAsync<T>(s =>
             s.Query(query), cancellationToken);
         
-        if (response.IsValid) return response.Count;
+        if (response.ApiCall.Success) return response.Count;
         
         _logger.LogError("Failed to count data in Elasticsearch: {message}", response.ServerError?.ToString());
         return 0;

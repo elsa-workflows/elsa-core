@@ -6,11 +6,11 @@ namespace Elsa.Elasticsearch.Modules.Management;
 
 public class WorkflowInstanceConfiguration : ElasticConfiguration<WorkflowInstance>
 {
-    public override void Apply(ConnectionSettings connectionSettings, IDictionary<string,string> aliasConfig)
+    public override void Apply(ConnectionSettings connectionSettings, IDictionary<Type,string> indexConfig)
     {
         connectionSettings
             .DefaultMappingFor<WorkflowInstance>(m => m
-                .IndexName(aliasConfig[nameof(WorkflowInstance)])
+                .IndexName(indexConfig[typeof(WorkflowInstance)])
                 .Ignore(p => p.WorkflowState));
     }
 }

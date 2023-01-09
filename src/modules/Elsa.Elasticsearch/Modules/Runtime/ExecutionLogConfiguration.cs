@@ -6,9 +6,9 @@ namespace Elsa.Elasticsearch.Modules.Runtime;
 
 public class ExecutionLogConfiguration : ElasticConfiguration<WorkflowExecutionLogRecord>
 {
-    public override void Apply(ConnectionSettings connectionSettings, IDictionary<string, string> aliasConfig)
+    public override void Apply(ConnectionSettings connectionSettings, IDictionary<Type, string> indexConfig)
     {
         connectionSettings.DefaultMappingFor<WorkflowExecutionLogRecord>(m => 
-            m.IndexName(aliasConfig[nameof(WorkflowExecutionLogRecord)]));
+            m.IndexName(indexConfig[typeof(WorkflowExecutionLogRecord)]));
     }
 }

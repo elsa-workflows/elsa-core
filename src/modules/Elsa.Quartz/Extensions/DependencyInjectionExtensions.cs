@@ -1,3 +1,4 @@
+using Elsa.Elasticsearch.Scheduling;
 using Elsa.Quartz.Jobs;
 using Elsa.Scheduling.Jobs;
 using Quartz;

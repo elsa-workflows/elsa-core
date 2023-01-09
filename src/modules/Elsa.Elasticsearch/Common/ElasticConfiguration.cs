@@ -5,5 +5,5 @@ namespace Elsa.Elasticsearch.Common;
 
 public abstract class ElasticConfiguration<T> : IElasticConfiguration
 {
-    public abstract void Apply(ConnectionSettings connectionSettings, IDictionary<string, string> aliasConfig);
+    public abstract void Apply(ConnectionSettings connectionSettings, IDictionary<Type, string> indexConfig);
 }

@@ -4,7 +4,7 @@ using Elsa.Jobs.Models;
 using Nest;
 using Job = Elsa.Jobs.Abstractions.Job;
 
-namespace Elsa.Scheduling.Jobs;
+namespace Elsa.Elasticsearch.Scheduling;
 
 public class ConfigureElasticIndicesJob : Job
 {

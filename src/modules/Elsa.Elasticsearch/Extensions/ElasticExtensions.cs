@@ -1,8 +1,11 @@
 using Elasticsearch.Net;
 using Elsa.Elasticsearch.Common;
+using Elsa.Elasticsearch.Implementations.RolloverStrategies;
+using Elsa.Elasticsearch.Models;
 using Elsa.Elasticsearch.Options;
 using Elsa.Elasticsearch.Services;
 using Nest;
+using Index = Nest.Index;
 
 namespace Elsa.Elasticsearch.Extensions;
 
@@ -22,34 +25,20 @@ public static class ElasticExtensions
         return settings;
     }
     
-    public static ConnectionSettings ConfigureMapping(this ConnectionSettings settings, IDictionary<string,string> aliasConfig)
+    public static ConnectionSettings ConfigureMapping(this ConnectionSettings settings, IDictionary<Type,string> indexConfig)
     {
         foreach (var config in Utils.GetElasticConfigurationTypes())
         {
             var configInstance = (IElasticConfiguration)Activator.CreateInstance(config)!;
-            configInstance.Apply(settings, aliasConfig);
+            configInstance.Apply(settings, indexConfig);
         }
 
         return settings;
     }
     
-    public static void ConfigureIndicesAndAliases(this ElasticClient client, IDictionary<string,string> aliasConfig)
+    public static void ApplyRolloverStrategy(this ElasticClient client, IDictionary<Type,string> aliasConfig, IndexRolloverStrategy strategy)
     {
-        foreach (var type in Utils.GetElasticDocumentTypes())
-        {
-            var aliasName = aliasConfig[type.Name];
-            var indexName = Utils.GenerateIndexName(aliasName);
-            
-            var indexExists = client.Indices.Exists(indexName).Exists;
-
-            if (indexExists) continue;
-            
-            var response = client.Indices.Create(indexName, s => s
-                .Aliases(a => a.Alias(aliasName))
-                .Map(m => m.AutoMap(type)));
-                
-            if (response.IsValid) continue;
-            throw response.OriginalException;
-        }
+        var strategyInstance = (IRolloverStrategy)Activator.CreateInstance(strategy.Value, args: client)!;
+        strategyInstance.Apply(Utils.GetElasticDocumentTypes(), aliasConfig);
     }
 }
