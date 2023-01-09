@@ -23,10 +23,13 @@ namespace Elsa.Server.Authentication.Controllers
         [AllowAnonymous]
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<IActionResult> Handle()
+        public Task<IActionResult> Handle()
         {
-            return Ok(new { AuthenticationStyles = ElsaAuthenticationContext.AuthenticationStyles.ConvertAll(x=>x.ToString()) , 
-                ElsaAuthenticationContext.CurrentTenantAccessorName , ElsaAuthenticationContext.TenantAccessorKeyName });
+            return Task.FromResult((IActionResult) Ok(new
+            {
+                AuthenticationStyles = ElsaAuthenticationContext.AuthenticationStyles.ConvertAll(x => x.ToString()),
+                ElsaAuthenticationContext.CurrentTenantAccessorName, ElsaAuthenticationContext.TenantAccessorKeyName
+            }));
         }
     }
 }
