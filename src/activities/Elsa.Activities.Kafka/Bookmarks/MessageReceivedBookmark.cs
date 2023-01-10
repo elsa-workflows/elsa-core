@@ -12,7 +12,7 @@ namespace Elsa.Activities.Kafka.Bookmarks
         {
         }
 
-        public MessageReceivedBookmark(string connectionString,string topic,string group, Dictionary<string, string> headers)
+        public MessageReceivedBookmark(string connectionString,string topic,string group, Dictionary<string, string>? headers)
         {
             Topic = topic;
             Group = group;

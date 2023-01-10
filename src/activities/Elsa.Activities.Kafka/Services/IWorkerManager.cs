@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Activities.Kafka.Configuration;
 using Elsa.Models;
 
 namespace Elsa.Activities.Kafka.Services

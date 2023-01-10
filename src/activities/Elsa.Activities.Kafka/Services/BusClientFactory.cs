@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -41,7 +40,7 @@ namespace Elsa.Activities.Kafka.Services
             try
             {
                 _receivers.Remove(key);
-                receiverClient.Dispose();
+                await receiverClient.Dispose();
             }
             finally
             {
@@ -77,7 +76,7 @@ namespace Elsa.Activities.Kafka.Services
             try
             {
                 _senders.Remove(key);
-                senderClient.Dispose();
+                await senderClient.Dispose();
             }
             finally
             {

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Kafka.Bookmarks;
@@ -24,7 +23,7 @@ namespace Elsa.Activities.Kafka.Services
         private readonly IBookmarkSerializer _bookmarkSerializer;
 
         public WorkerManager(
-            IServiceProvider serviceProvider, 
+            IServiceProvider serviceProvider,
             ILogger<WorkerManager> logger,
             IBookmarkSerializer bookmarkSerializer)
         {
@@ -33,7 +32,7 @@ namespace Elsa.Activities.Kafka.Services
             _bookmarkSerializer = bookmarkSerializer;
             _workers = new List<Worker>();
         }
-        
+
         public async Task CreateWorkersAsync(IReadOnlyCollection<Trigger> triggers, CancellationToken cancellationToken = default)
         {
             await _semaphore.WaitAsync(cancellationToken);
@@ -45,7 +44,7 @@ namespace Elsa.Activities.Kafka.Services
                 foreach (var trigger in filteredTriggers)
                 {
                     var bookmark = _bookmarkSerializer.Deserialize<MessageReceivedBookmark>(trigger.Model);
-                    await GetOrCreateWorkerAsync(trigger.WorkflowDefinitionId, CreateConfigurationFromBookmark(bookmark,trigger.ActivityId), cancellationToken);
+                    await GetOrCreateWorkerAsync(trigger.WorkflowDefinitionId, CreateConfigurationFromBookmark(bookmark, trigger.ActivityId), cancellationToken);
                 }
             }
             finally
@@ -65,7 +64,7 @@ namespace Elsa.Activities.Kafka.Services
                 foreach (var bookmark in filteredBookmarks)
                 {
                     var bookmarkModel = _bookmarkSerializer.Deserialize<MessageReceivedBookmark>(bookmark.Model);
-                    await GetOrCreateWorkerAsync(bookmark.WorkflowInstanceId, CreateConfigurationFromBookmark(bookmarkModel,bookmark.ActivityId), cancellationToken);
+                    await GetOrCreateWorkerAsync(bookmark.WorkflowInstanceId, CreateConfigurationFromBookmark(bookmarkModel, bookmark.ActivityId), cancellationToken);
                 }
             }
             finally
@@ -96,7 +95,6 @@ namespace Elsa.Activities.Kafka.Services
             }
         }
         
-        
         private async Task GetOrCreateWorkerAsync(string tag, KafkaConfiguration configuration, CancellationToken cancellationToken)
         {
             try
@@ -111,11 +109,10 @@ namespace Elsa.Activities.Kafka.Services
                         configuration.Topic,
                         configuration.Group ?? "",
                         new Client(configuration),
-                        (Func<Worker,IClient, Task>)(async (w,c) => await RemoveAndRespawnWorkerAsync(w,c, tag, configuration)));
+                        (Func<Worker, IClient, Task>)(async (w, c) => await RemoveAndRespawnWorkerAsync(w, c, tag, configuration)));
 
                     _logger.LogDebug("Created worker for {QueueOrTopic}", worker.Topic);
                     _workers.Add(worker);
-
                     _logger.LogDebug("Starting worker for {QueueOrTopic}", worker.Topic);
                     await worker.StartAsync(cancellationToken);
                 }
@@ -133,10 +130,9 @@ namespace Elsa.Activities.Kafka.Services
                 throw;
             }
         }
-        
-        private async Task RemoveAndRespawnWorkerAsync(Worker worker,IClient c, string tag, KafkaConfiguration configuration)
+
+        private async Task RemoveAndRespawnWorkerAsync(Worker worker, IClient c, string tag, KafkaConfiguration configuration)
         {
-         //   _logger.LogDebug(args.Exception, "Error occurred in processor for {QueueOrTopic}. Error source: {ErrorSource}", worker.topic, args.ErrorSource);
             await RemoveWorkerAsync(worker);
 
             _logger.LogDebug("Respawning worker for {QueueOrTopic}", worker.Topic);
@@ -149,13 +145,13 @@ namespace Elsa.Activities.Kafka.Services
             await worker.DisposeAsync();
             _workers.Remove(worker);
         }
-        
+
         private IEnumerable<Bookmark> Filter(IEnumerable<Bookmark> triggers)
         {
             var modeType = typeof(MessageReceivedBookmark).GetSimpleAssemblyQualifiedName();
             return triggers.Where(x => x.ModelType == modeType);
         }
-        
+
         private IEnumerable<Trigger> Filter(IEnumerable<Trigger> triggers)
         {
             var bookmarkType = typeof(MessageReceivedBookmark).GetSimpleAssemblyQualifiedName();
