@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Azure.ResourceManager;
+﻿using Azure.ResourceManager;
 using Azure.ResourceManager.AppContainers;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
@@ -44,20 +40,17 @@ public class AzureContainerAppsProvider : IClusterProvider
     public AzureContainerAppsProvider(
         ArmClient client,
         string resourceGroup,
-        [CanBeNull] string containerAppName = default,
-        [CanBeNull] string revision = default,
-        [CanBeNull] string replicaName = default,
-        [CanBeNull] string advertisedHost = default)
+        string? containerAppName = default,
+        string? revision = default,
+        string? replicaName = default,
+        string? advertisedHost = default)
     {
         _client = client;
         _resourceGroup = resourceGroup;
-        _containerAppName = containerAppName ?? Environment.GetEnvironmentVariable("CONTAINER_APP_NAME");
-        _revisionName = revision ?? Environment.GetEnvironmentVariable("CONTAINER_APP_REVISION");
-        _replicaName = replicaName ?? Environment.GetEnvironmentVariable("HOSTNAME");
-        _advertisedHost = advertisedHost;
-
-        if (string.IsNullOrEmpty(_advertisedHost)) 
-            _advertisedHost = ConfigUtils.FindIpAddress().ToString();
+        _containerAppName = containerAppName ?? Environment.GetEnvironmentVariable("CONTAINER_APP_NAME") ?? throw new Exception("No app name provided");
+        _revisionName = revision ?? Environment.GetEnvironmentVariable("CONTAINER_APP_REVISION") ?? throw new Exception("No app revision provided");
+        _replicaName = replicaName ?? Environment.GetEnvironmentVariable("HOSTNAME")  ?? throw new Exception("No replica name provided");
+        _advertisedHost = !string.IsNullOrEmpty(advertisedHost) ? advertisedHost : ConfigUtils.FindSmallestIpAddress().ToString();
     }
 
     public async Task StartMemberAsync(global::Proto.Cluster.Cluster cluster)
