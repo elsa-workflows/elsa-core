@@ -8,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.Elasticsearch.Modules.Management;
 
 [DependsOn(typeof(WorkflowManagementFeature))]
-public class ElasticWorkflowInstanceFeature : ElasticFeatureBase
+public class ElasticWorkflowInstanceFeature : ElasticPersistanceFeatureBase
 {
     public ElasticWorkflowInstanceFeature(IModule module) : base(module)
     {

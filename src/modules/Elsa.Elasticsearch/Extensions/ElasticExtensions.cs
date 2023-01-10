@@ -1,6 +1,5 @@
 using Elasticsearch.Net;
 using Elsa.Elasticsearch.Common;
-using Elsa.Elasticsearch.Implementations.RolloverStrategies;
 using Elsa.Elasticsearch.Models;
 using Elsa.Elasticsearch.Options;
 using Elsa.Elasticsearch.Services;
@@ -36,9 +35,9 @@ public static class ElasticExtensions
         return settings;
     }
     
-    public static void ApplyRolloverStrategy(this ElasticClient client, IDictionary<Type,string> aliasConfig, IndexRolloverStrategy strategy)
+    public static void ConfigureAliasNaming(this ElasticClient client, IDictionary<Type,string> aliasConfig, IndexRolloverStrategy strategy)
     {
-        var strategyInstance = (IRolloverStrategy)Activator.CreateInstance(strategy.Value, args: client)!;
-        strategyInstance.Apply(Utils.GetElasticDocumentTypes(), aliasConfig);
+        var namingStrategy = (IIndexNamingStrategy)Activator.CreateInstance(strategy.IndexNamingStrategy, args: client)!;
+        namingStrategy.Apply(Utils.GetElasticDocumentTypes(), aliasConfig);
     }
 }
