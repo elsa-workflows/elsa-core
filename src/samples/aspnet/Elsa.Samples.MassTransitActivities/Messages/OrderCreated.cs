@@ -1,4 +1,4 @@
-namespace Elsa.WorkflowServer.Web.Messages;
+namespace Elsa.Samples.MassTransitActivities.Messages;
 
 // ReSharper disable once InconsistentNaming
 public record OrderCreated(

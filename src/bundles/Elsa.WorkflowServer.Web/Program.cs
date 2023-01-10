@@ -1,13 +1,10 @@
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.Extensions;
 using Elsa.Identity.Options;
-using Elsa.Jobs.Activities.Services;
 using Elsa.EntityFrameworkCore.Modules.ActivityDefinitions;
 using Elsa.EntityFrameworkCore.Modules.Labels;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
-using Elsa.WorkflowServer.Web.Jobs;
-using Elsa.WorkflowServer.Web.Messages;
 using Microsoft.Data.Sqlite;
 using Proto.Persistence.Sqlite;
 
@@ -15,7 +12,6 @@ var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 var configuration = builder.Configuration;
 var sqliteConnectionString = configuration.GetConnectionString("Sqlite")!;
-var rabbitMqConnectionString = configuration.GetConnectionString("RabbitMq")!;
 var identityOptions = new IdentityOptions();
 var identityTokenOptions = new IdentityTokenOptions();
 var identitySection = configuration.GetSection("Identity");
@@ -41,12 +37,6 @@ services
             runtime.UseAsyncWorkflowStateExporter();
             runtime.UseMassTransitDispatcher();
         })
-        .UseMassTransit(massTransit =>
-        {
-            massTransit.UseRabbitMq(rabbitMqConnectionString);
-            massTransit.AddMessageType<OrderCompleted>();
-            massTransit.AddMessageType<OrderCreated>();
-        })
         .UseLabels(labels => labels.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
         .UseActivityDefinitions(feature => feature.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
         .UseJobs(jobs => jobs.ConfigureOptions = options => options.WorkerCount = 10)
@@ -65,11 +55,6 @@ services.AddHttpContextAccessor();
 
 // Configure middleware pipeline.
 var app = builder.Build();
-var serviceProvider = app.Services;
-
-// Register a dummy job for demo purposes.
-var jobRegistry = serviceProvider.GetRequiredService<IJobRegistry>();
-jobRegistry.Add(typeof(IndexBlockchainJob));
 
 if (app.Environment.IsDevelopment())
     app.UseDeveloperExceptionPage();

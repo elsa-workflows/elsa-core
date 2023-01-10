@@ -1,8 +1,8 @@
-using Elsa.WorkflowServer.Web.Messages;
+using Elsa.Samples.MassTransitActivities.Messages;
 using FastEndpoints;
 using MassTransit;
 
-namespace Elsa.WorkflowServer.Web.Endpoints.Orders.Create;
+namespace Elsa.Samples.MassTransitActivities.Endpoints.Orders.Create;
 
 public class Create : EndpointWithoutRequest
 {

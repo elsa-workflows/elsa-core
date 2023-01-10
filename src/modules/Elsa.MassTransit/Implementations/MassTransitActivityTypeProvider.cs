@@ -71,6 +71,16 @@ public class MassTransitActivityTypeProvider : IActivityProvider
             Kind = ActivityKind.Trigger,
             IsBrowsable = true,
             ActivityType = typeof(MessageReceived),
+            Outputs =
+            {
+                new OutputDescriptor
+                {
+                    Description = "The received message",
+                    DisplayName = "Received Message",
+                    Name = nameof(MessageReceived.Result),
+                    Type = typeof(object)
+                }
+            },
             Constructor = context =>
             {
                 var activity = _activityFactory.Create<MessageReceived>(context);

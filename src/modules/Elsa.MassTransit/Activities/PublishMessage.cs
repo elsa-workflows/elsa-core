@@ -38,17 +38,6 @@ public class PublishMessage : Activity
     {
         var bus = context.GetRequiredService<IBus>();
         var message = Message.Get(context).ConvertTo(MessageType)!;
-        
-        var genericPublishMethod = typeof(IPublishEndpoint).GetMethods().First(x =>
-        {
-            var parameters = x.GetParameters();
-            return x.GetGenericArguments().Length == 1 && parameters.Length == 2 && parameters.First().ParameterType.IsGenericParameter;
-        });
-        
-        var publishMethod = genericPublishMethod.MakeGenericMethod(MessageType);
-        
-        var task = (Task)publishMethod.Invoke(bus, new[] { message, context.CancellationToken })!;
-        await task;
-        //await bus.Publish(message, context.CancellationToken);
+        await bus.Publish(message, context.CancellationToken);
     }
 }

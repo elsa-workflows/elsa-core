@@ -1,11 +1,18 @@
+using System.ComponentModel;
+using System.Reflection;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Elsa.MassTransit.Consumers;
 using Elsa.MassTransit.Implementations;
 using Elsa.MassTransit.Options;
+using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.Serialization.Converters;
+using Elsa.Workflows.Management.Models;
+using Elsa.Workflows.Management.Options;
+using Humanizer;
 using MassTransit;
 using MassTransit.Serialization;
 using Microsoft.Extensions.DependencyInjection;
@@ -40,11 +47,27 @@ public class MassTransitFeature : FeatureBase
     /// <inheritdoc />
     public override void Apply()
     {
+        var messageTypes = this.GetMessages();
+        
         Services.AddActivityProvider<MassTransitActivityTypeProvider>();
         AddMassTransit(BusConfigurator);
 
         // Add collected message types to options.
-        Services.Configure<MassTransitActivityOptions>(options => options.MessageTypes = new HashSet<Type>(this.GetMessages()));
+        Services.Configure<MassTransitActivityOptions>(options => options.MessageTypes = new HashSet<Type>(messageTypes));
+        
+        // Add collected message types as available variable types.
+        Services.Configure<ManagementOptions>(options =>
+        {
+            foreach (var messageType in messageTypes)
+            {
+                var activityAttr = messageType.GetCustomAttribute<ActivityAttribute>();
+                var categoryAttr = messageType.GetCustomAttribute<CategoryAttribute>();
+                var category = categoryAttr?.Category ?? activityAttr?.Category ?? "MassTransit";
+                var descriptionAttr = messageType.GetCustomAttribute<DescriptionAttribute>();
+                var description = descriptionAttr?.Description ?? activityAttr?.Description;
+                options.VariableDescriptors.Add(new VariableDescriptor(messageType, category, description));
+            }
+        });
         
         // Configure message serializer.
         SystemTextJsonMessageSerializer.Options.Converters.Add(new TypeJsonConverter(new WellKnownTypeRegistry()));
