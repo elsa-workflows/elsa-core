@@ -1,3 +1,5 @@
+using Azure.Identity;
+using Azure.ResourceManager;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.Extensions;
 using Elsa.Identity.Options;
@@ -6,7 +8,9 @@ using Elsa.EntityFrameworkCore.Modules.Labels;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Microsoft.Data.Sqlite;
+using Elsa.ProtoActor.Cluster.AzureContainerApps;
 using Proto.Persistence.Sqlite;
+using Proto.Remote.GrpcNet;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -32,7 +36,12 @@ services
         .UseWorkflowManagement(management => management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
         .UseWorkflowRuntime(runtime =>
         {
-            runtime.UseProtoActor(proto => proto.PersistenceProvider = _ => new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString)));
+            runtime.UseProtoActor(proto =>
+            {
+                proto.PersistenceProvider = _ => new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString));
+                proto.ClusterProvider = sp => sp.GetRequiredService<AzureContainerAppsProvider>();
+                proto.RemoteConfig = sp => GrpcNetRemoteConfig.BindToAllInterfaces();
+            });
             runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
             runtime.UseAsyncWorkflowStateExporter();
             runtime.UseMassTransitDispatcher();
@@ -47,6 +56,12 @@ services
         .UseLiquid()
         .UseHttp()
     );
+
+services.AddSingleton(sp =>
+{
+    var armClient = new ArmClient(new DefaultAzureCredential());
+    return new AzureContainerAppsProvider(armClient, "CyberdyneMortgage-dev", "skynet-workflow-server-v3-dev", "skynet-workflow-server-v3-dev--vk8lzb5", "skynet-workflow-server-v3-dev--vk8lzb5-685f9f56f6-m9fb5");
+});
 
 services.AddHandlersFrom<Program>();
 services.AddHealthChecks();
