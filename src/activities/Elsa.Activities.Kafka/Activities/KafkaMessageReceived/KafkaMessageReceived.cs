@@ -6,7 +6,6 @@ using Elsa.Design;
 using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Rebus.Messages;
 
 namespace Elsa.Activities.Kafka.Activities.KafkaMessageReceived
 {
@@ -60,8 +59,6 @@ namespace Elsa.Activities.Kafka.Activities.KafkaMessageReceived
         private IActivityExecutionResult ExecuteInternalAsync(ActivityExecutionContext context)
         {
             var message = (string)context.Input!;
-
-        //    var messageBody = System.Text.Encoding.UTF8.GetString(message);
 
             Output = message;
 

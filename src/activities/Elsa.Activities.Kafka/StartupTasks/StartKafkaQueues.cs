@@ -13,6 +13,7 @@ namespace Elsa.Activities.Kafka.StartupTasks
     {
         private readonly IWorkerManager _workerManager;
         private readonly IServiceScopeFactory _scopeFactory;
+
         public StartKafkaQueues(IWorkerManager workerManager, IServiceScopeFactory scopeFactory)
         {
             _workerManager = workerManager;
@@ -37,6 +38,5 @@ namespace Elsa.Activities.Kafka.StartupTasks
             // For each trigger, start a worker.
             await _workerManager.CreateWorkersAsync(triggers, stoppingToken);
         }
-        
     }
 }

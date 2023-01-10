@@ -4,7 +4,6 @@ using Elsa.Options;
 using Elsa.Services.Startup;
 using Microsoft.Extensions.Configuration;
 
-
 namespace Elsa.Activities.Kafka
 {
     [Feature("Kafka")]

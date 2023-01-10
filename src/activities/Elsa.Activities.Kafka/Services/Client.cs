@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,17 +13,17 @@ namespace Elsa.Activities.Kafka.Services
 {
     public class Client : IClient
     {
-        public KafkaConfiguration Configuration { get; }
-        
         private CancellationToken _cancellationToken;
         private IConsumer<Ignore, string>? _consumer;
-
         private Func<KafkaMessageEvent, Task>? _messageHandler;
         private Func<Exception, Task>? _errHandler;
+        
         public Client(KafkaConfiguration configuration)
         {
             Configuration = configuration;
         }
+        
+        public KafkaConfiguration Configuration { get; }
         
         public void SetHandlers(Func<KafkaMessageEvent, Task> receiveHandler,Func<Exception, Task> errorHandler,CancellationToken cancellationToken)
         {
@@ -33,7 +32,7 @@ namespace Elsa.Activities.Kafka.Services
             _errHandler = errorHandler;
         }
 
-        public async Task StartProcessing(string topic,string group)
+        public Task StartProcessing(string topic,string group)
         {
             _consumer = new ConsumerBuilder<Ignore, string>(new ConsumerConfig()
             {
@@ -41,10 +40,10 @@ namespace Elsa.Activities.Kafka.Services
                 GroupId = group
             }).Build();
             
-            if (_consumer != null)
-            {
-                Consumer.Consume(topic,_consumer).Subscribe(HandleMessage,OnError,_cancellationToken);
-            }
+            if (_consumer != null) 
+                Consumer.Consume(topic, _consumer).Subscribe(HandleMessage, OnError, _cancellationToken);
+
+            return Task.CompletedTask;
         }
         
         public async Task PublishMessage(string message)
@@ -53,11 +52,9 @@ namespace Elsa.Activities.Kafka.Services
             {
                 BootstrapServers = Configuration.ConnectionString
             };
-            
-            using (var producer = new ProducerBuilder<Null, string>(producerConfig).Build())
-            {
-                await producer.ProduceAsync(Configuration.Topic, new Message<Null, string> {Headers = GetHeaders(),Value=message }, _cancellationToken);
-            }
+
+            using var producer = new ProducerBuilder<Null, string>(producerConfig).Build();
+            await producer.ProduceAsync(Configuration.Topic, new Message<Null, string> {Headers = GetHeaders(),Value=message }, _cancellationToken);
         }
 
         public async Task Dispose()
@@ -78,8 +75,6 @@ namespace Elsa.Activities.Kafka.Services
            
         }
 
-   
-        
         private async void OnError(Exception error)
         {
             if (_errHandler != null) await _errHandler(error);
@@ -88,19 +83,17 @@ namespace Elsa.Activities.Kafka.Services
         private async void HandleMessage(Message<Ignore, string> message)
         {
             var ev = new KafkaMessageEvent(message, _cancellationToken);
-            if (_messageHandler != null)
-            { 
+            
+            if (_messageHandler != null) 
                 await _messageHandler(ev);
-            }
         }
 
         private Headers GetHeaders()
         {
             var headers = new Headers();
-            foreach (KeyValuePair<string,string> entry in Configuration.Headers)
-            {
+            
+            foreach (var entry in Configuration.Headers) 
                 headers.Add(entry.Key, Encoding.ASCII.GetBytes(entry.Value));
-            }
 
             return headers;
         }
