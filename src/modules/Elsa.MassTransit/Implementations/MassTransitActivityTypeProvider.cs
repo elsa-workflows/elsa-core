@@ -43,7 +43,9 @@ public class MassTransitActivityTypeProvider : IActivityProvider
         foreach (var messageType in messageTypes)
         {
             yield return CreateMessageReceivedDescriptor(messageType);
-            yield return CreatePublishMessageDescriptor(messageType);
+            
+            if(messageType.IsClass)
+                yield return CreatePublishMessageDescriptor(messageType);
         }
     }
 
