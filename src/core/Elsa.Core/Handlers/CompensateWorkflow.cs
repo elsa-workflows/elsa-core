@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Compensation;
@@ -23,7 +24,7 @@ public class CompensateWorkflow : INotificationHandler<WorkflowFaulting>
     {
         var activityExecutionContext = notification.ActivityExecutionContext;
         var exception = activityExecutionContext.WorkflowExecutionContext.Exception;
-        var message = activityExecutionContext.WorkflowInstance.Fault?.Message;
+        var message = activityExecutionContext.WorkflowInstance.Faults.FirstOrDefault(x => x.FaultedActivityId == notification.ActivityExecutionContext.ActivityId)?.Message;
         _compensationService.Compensate(notification.ActivityExecutionContext, exception, message);
         return Task.CompletedTask;
     }

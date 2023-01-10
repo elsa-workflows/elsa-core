@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Text;
 using Elsa.Models;
 using Elsa.Scripting.JavaScript.Services;
 using Elsa.Services.Models;
@@ -49,6 +50,7 @@ namespace Elsa.Scripting.JavaScript.Typings
             typeof(ActivityExecutionContext),
             typeof(WorkflowExecutionContext),
             typeof(WorkflowInstance),
+            typeof(Encoding)
         };
     }
 }

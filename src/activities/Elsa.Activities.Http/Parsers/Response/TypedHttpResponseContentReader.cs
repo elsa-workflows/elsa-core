@@ -1,4 +1,5 @@
 using System;
+using System.Xml;
 using System.Dynamic;
 using System.Net.Http;
 using System.Threading;
@@ -11,32 +12,32 @@ namespace Elsa.Activities.Http.Parsers.Response
     public class TypedHttpResponseContentReader : IHttpResponseContentReader
     {
         public string Name => ".NET Type";
-        public int Priority => 0;
-        public bool GetSupportsContentType(string contentType) => GetIsJsonContentType(contentType);
+        public int Priority => 10;
+        public bool GetSupportsContentType(string contentType) => GetIsJsonContentType(contentType) || GetIsXmlContentType(contentType);
 
         public async Task<object> ReadAsync(HttpResponseMessage response, object context, CancellationToken cancellationToken)
         {
             var activity = context as SendHttpRequest;
-            var contentType = response.Content.Headers.ContentType.MediaType;
+            var contentType = response.Content.Headers.ContentType?.MediaType;
 
-            if (GetIsJsonContentType(contentType))
-            {
-                var json = (await response.Content.ReadAsStringAsync()).Trim();
-                var targetType = activity?.ResponseContentTargetType ?? typeof(ExpandoObject);
-                return JsonConvert.DeserializeObject(json, targetType)!;
-            }
-
+            if (!GetIsJsonContentType(contentType) && !GetIsXmlContentType(contentType)) 
+                throw new NotSupportedException();
+            
+            var responseText = (await response.Content.ReadAsStringAsync()).Trim();
+            
             if (GetIsXmlContentType(contentType))
             {
-                // TODO: parse XML.
-                throw new NotImplementedException();
+                var doc = new XmlDocument();
+                doc.LoadXml(responseText);
+                responseText = JsonConvert.SerializeXmlNode(doc);
             }
-
-            throw new NotSupportedException();
+            
+            var targetType = activity?.ResponseContentTargetType ?? (responseText.StartsWith('[') ? typeof(ExpandoObject[]) : typeof(ExpandoObject));
+            return JsonConvert.DeserializeObject(responseText, targetType)!;
         }
 
-        private bool GetIsJsonContentType(string contentType) => GetIsContentType(contentType, "json");
-        private bool GetIsXmlContentType(string contentType) => GetIsContentType(contentType, "xml");
-        private bool GetIsContentType(string contentType, string match) => contentType.Contains($"/{match}", StringComparison.OrdinalIgnoreCase);
+        private bool GetIsJsonContentType(string? contentType) => GetIsContentType(contentType, "json");
+        private bool GetIsXmlContentType(string? contentType) => GetIsContentType(contentType, "xml");
+        private bool GetIsContentType(string? contentType, string match) => contentType?.Contains($"/{match}", StringComparison.OrdinalIgnoreCase) ?? false;
     }
 }

@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.Workflows.Helper;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Expressions;
 using Elsa.Models;
+using Elsa.Persistence;
 using Elsa.Providers.WorkflowStorage;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -26,12 +28,19 @@ namespace Elsa.Activities.Workflows
         private readonly IStartsWorkflow _startsWorkflow;
         private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IWorkflowStorageService _workflowStorageService;
-
-        public RunWorkflow(IStartsWorkflow startsWorkflow, IWorkflowRegistry workflowRegistry, IWorkflowStorageService workflowStorageService)
+        private readonly IWorkflowReviver _workflowReviver;
+        private readonly IWorkflowInstanceStore _workflowInstanceStore;
+        private readonly IWorkflowDefinitionDispatcher _workflowDefinitionDispatcher;
+        
+        public RunWorkflow(IStartsWorkflow startsWorkflow, IWorkflowRegistry workflowRegistry, IWorkflowStorageService workflowStorageService, IWorkflowReviver workflowReviver,
+            IWorkflowInstanceStore workflowInstanceStore, IWorkflowDefinitionDispatcher workflowDefinitionDispatcher)
         {
             _startsWorkflow = startsWorkflow;
             _workflowRegistry = workflowRegistry;
             _workflowStorageService = workflowStorageService;
+            _workflowReviver = workflowReviver;
+            _workflowInstanceStore = workflowInstanceStore;
+            _workflowDefinitionDispatcher = workflowDefinitionDispatcher;
         }
 
         [ActivityInput(
@@ -98,25 +107,106 @@ namespace Elsa.Activities.Workflows
             set => SetState(value);
         }
 
+        [ActivityInput(
+            Label = "Retry failed workflow",
+            Hint = "True to retry existing ChildWorkflow instance instead of creating a new one when faulted.",
+            Category = PropertyCategories.Advanced,
+            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
+        )]
+        public bool RetryFailedActivities { get; set; } = default!;
+        public Dictionary<string, string> AlreadyExecutedChildren
+        {
+            get => GetState<Dictionary<string,string>>()!;
+            set => SetState(value);
+        }
+
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
             var cancellationToken = context.CancellationToken;
+
             var workflowBlueprint = await FindWorkflowBlueprintAsync(cancellationToken);
+            WorkflowStatus? childWorkflowStatus = null;
+            WorkflowInstance? childWorkflowInstance = null;
 
-            if (workflowBlueprint == null || workflowBlueprint.Id == context.WorkflowInstance.DefinitionId)
-                return Outcome("Not Found");
+            // Somehow the initial input changes when retrying, so we hash the values
+            // when retrying this activity if faulted. If there is only one with this activity id in the workflow, we don't need to use the hash because
+            // ChildWorkflowInstanceId will have the id of the sub workflow. But if it has failed in a loop, as ChildWorkflowInstanceId is metadata, it will always
+            // have stored just the last workflow instance executed, but not the rest, so we need to discover what is the real workflow instance using hashed input.
 
-            var result = await _startsWorkflow.StartWorkflowAsync(workflowBlueprint!, TenantId, new WorkflowInput(Input), CorrelationId, ContextId, cancellationToken: cancellationToken);
-            var childWorkflowInstance = result.WorkflowInstance!;
-            var childWorkflowStatus = childWorkflowInstance.WorkflowStatus;
-            ChildWorkflowInstanceId = childWorkflowInstance.Id;
+            string hash = default!;
 
-            context.JournalData.Add("Workflow Blueprint ID", workflowBlueprint.Id);
-            context.JournalData.Add("Workflow Instance ID", childWorkflowInstance.Id);
-            context.JournalData.Add("Workflow Instance Status", childWorkflowInstance.WorkflowStatus);
+            if (RetryFailedActivities)
+            {
+                AlreadyExecutedChildren ??= new Dictionary<string, string>();
+                hash = HashHelper.Hash(context.Input);
+            }
 
+            //We know it is a retry if ChildWorkflowInstanceId has a value here, but that value is not the real associated ChildWorkflow
+            if (RetryFailedActivities && !string.IsNullOrEmpty(ChildWorkflowInstanceId) && AlreadyExecutedChildren.ContainsKey(hash))
+            {
+                ChildWorkflowInstanceId = AlreadyExecutedChildren.GetValueOrDefault(hash);
+                childWorkflowInstance = await _workflowInstanceStore.FindByIdAsync(ChildWorkflowInstanceId);
+
+                if (childWorkflowInstance == null)
+                {
+                    throw new Exception();
+                }
+                switch (childWorkflowInstance.WorkflowStatus)
+                {
+                    case WorkflowStatus.Idle:
+                    case WorkflowStatus.Finished:
+                    case WorkflowStatus.Suspended:
+                    case WorkflowStatus.Running:
+                    case WorkflowStatus.Cancelled:
+                        break;
+                    case WorkflowStatus.Faulted:
+                        await _workflowReviver.ReviveAndRunAsync(childWorkflowInstance, cancellationToken);
+                        break;
+                    default:
+                        break;
+                }
+                childWorkflowStatus = childWorkflowInstance.WorkflowStatus;
+                ChildWorkflowInstanceId = childWorkflowInstance.Id;
+
+                context.JournalData.Add("Workflow Blueprint ID", workflowBlueprint?.Id);
+                context.JournalData.Add("Workflow Instance ID", childWorkflowInstance.Id);
+                context.JournalData.Add("Workflow Instance Status", childWorkflowInstance.WorkflowStatus);
+
+            }
+            else
+            {
+                if (workflowBlueprint == null || workflowBlueprint.Id == context.WorkflowInstance.DefinitionId)
+                    return Outcome("Not Found");
+
+                if (Mode == RunWorkflowMode.DispatchAndForget)
+                {
+                    var startingActivity = workflowBlueprint.Activities.FirstOrDefault(x => !workflowBlueprint.GetInboundConnections(x.Id).Any());
+
+                    if (startingActivity == null)
+                        throw new Exception();
+                    
+                    await _workflowDefinitionDispatcher.DispatchAsync(
+                        new ExecuteWorkflowDefinitionRequest(workflowBlueprint.Id, startingActivity.Id, new WorkflowInput(Input), CorrelationId, ContextId, TenantId), cancellationToken: cancellationToken);
+                }
+                else
+                {
+                    var result = await _startsWorkflow.StartWorkflowAsync(workflowBlueprint!, tenantId: TenantId, input: new WorkflowInput(Input), correlationId: CorrelationId, contextId: ContextId, cancellationToken: cancellationToken); ;
+                    childWorkflowInstance = result.WorkflowInstance!;
+                    childWorkflowStatus = childWorkflowInstance.WorkflowStatus;
+                    ChildWorkflowInstanceId = childWorkflowInstance.Id;
+                    context.JournalData.Add("Workflow Instance ID", childWorkflowInstance.Id);
+                    context.JournalData.Add("Workflow Instance Status", childWorkflowInstance.WorkflowStatus);
+                }
+
+                context.JournalData.Add("Workflow Blueprint ID", workflowBlueprint.Id);
+
+                if (RetryFailedActivities)
+                    AlreadyExecutedChildren.Add(HashHelper.Hash(context.Input), ChildWorkflowInstanceId);
+            }
+            
             return Mode switch
             {
+                RunWorkflowMode.DispatchAndForget => Done(),
                 RunWorkflowMode.FireAndForget => Done(),
                 RunWorkflowMode.Blocking when childWorkflowStatus == WorkflowStatus.Finished => await ResumeSynchronouslyAsync(context, childWorkflowInstance, cancellationToken),
                 RunWorkflowMode.Blocking when childWorkflowStatus == WorkflowStatus.Suspended => Suspend(),
@@ -184,6 +274,11 @@ namespace Elsa.Activities.Workflows
 
         public enum RunWorkflowMode
         {
+            /// <summary>
+            /// Dispatches the specified workflow and directly continues.
+            /// </summary>
+            DispatchAndForget,
+            
             /// <summary>
             /// Run the specified workflow and continue with the current one. 
             /// </summary>

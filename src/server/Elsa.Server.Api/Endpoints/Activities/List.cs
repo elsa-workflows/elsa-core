@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -38,7 +38,7 @@ namespace Elsa.Server.Api.Endpoints.Activities
         public async Task<IActionResult> Handle(CancellationToken cancellationToken)
         {
             var activityTypes = await _activityTypeService.GetActivityTypesAsync(cancellationToken);
-            var tasks = activityTypes.Where(x => x.IsBrowsable).Select(x => DescribeActivity(x, cancellationToken)).ToList();
+            var tasks = activityTypes.Select(x => DescribeActivity(x, cancellationToken)).ToList();
             var descriptors = await Task.WhenAll(tasks);
             return Json(descriptors, _serializerSettingsProvider.GetSettings());
         }
@@ -49,7 +49,8 @@ namespace Elsa.Server.Api.Endpoints.Activities
 
             // Filter out any non-browsable properties.
             activityDescriptor.InputProperties = activityDescriptor.InputProperties.Where(x => x.IsBrowsable is true or null).ToArray();
-            
+            activityDescriptor.OutputProperties = activityDescriptor.OutputProperties.Where(x => x.IsBrowsable is true or null).ToArray();
+
             return activityDescriptor;
         }
     }

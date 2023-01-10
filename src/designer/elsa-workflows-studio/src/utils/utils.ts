@@ -207,12 +207,12 @@ export function htmlEncode(value) {
 
 export function durationToString(duration: Duration) {
   return !!duration ? duration.asHours() > 1
-    ? `${duration.asHours().toFixed(3)} h`
-    : duration.asMinutes() > 1
-      ? `${duration.asMinutes().toFixed(3)} m`
-      : duration.asSeconds() > 1
-        ? `${duration.asSeconds().toFixed(3)} s`
-        : `${duration.asMilliseconds()} ms`
+      ? `${duration.asHours().toFixed(3)} h`
+      : duration.asMinutes() > 1
+        ? `${duration.asMinutes().toFixed(3)} m`
+        : duration.asSeconds() > 1
+          ? `${duration.asSeconds().toFixed(3)} s`
+          : `${duration.asMilliseconds()} ms`
     : null;
 }
 
@@ -223,3 +223,20 @@ export function clip(el) {
   sel.removeAllRanges();
   sel.addRange(range);
 }
+
+export async function awaitElement(selector) {
+  while (document.querySelector(selector) === null) {
+    await new Promise(resolve => requestAnimationFrame(resolve))
+  }
+  return document.querySelector(selector);
+}
+
+export interface Hash<TValue> {
+  [key: string]: TValue;
+}
+
+export const stripActivityNameSpace = (name: string): string => {
+  const lastDotIndex = name.lastIndexOf('.');
+  return lastDotIndex < 0 ? name : name.substr(lastDotIndex + 1);
+};
+

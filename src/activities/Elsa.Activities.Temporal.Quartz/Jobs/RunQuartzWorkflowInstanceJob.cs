@@ -1,4 +1,3 @@
-﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Elsa.Services;
 using Microsoft.Extensions.Logging;
@@ -24,7 +23,7 @@ namespace Elsa.Activities.Temporal.Quartz.Jobs
             var workflowInstanceId = dataMap.GetString("WorkflowInstanceId")!;
             var activityId = dataMap.GetString("ActivityId")!;
 
-            using var loggingScope = _logger.BeginScope(new Dictionary<string, object> { ["WorkflowInstanceId"] = workflowInstanceId });
+            using var loggingScope = _logger.BeginScope(new WorkflowInstanceLogScope(workflowInstanceId));
             await _workflowInstanceDispatcher.DispatchAsync(new ExecuteWorkflowInstanceRequest(workflowInstanceId, activityId), cancellationToken);
         }
     }

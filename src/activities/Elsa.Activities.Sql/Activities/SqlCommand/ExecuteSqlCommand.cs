@@ -1,11 +1,11 @@
-using Elsa.Services;
-using Elsa.Attributes;
-using Elsa.Services.Models;
-using Elsa.ActivityResults;
-using Elsa.Design;
-using Elsa.Expressions;
 using Elsa.Activities.Sql.Factory;
 using Elsa.Activities.Sql.Models;
+using Elsa.ActivityResults;
+using Elsa.Attributes;
+using Elsa.Design;
+using Elsa.Expressions;
+using Elsa.Services;
+using Elsa.Services.Models;
 
 namespace Elsa.Activities.Sql.Activities
 {
@@ -26,7 +26,7 @@ namespace Elsa.Activities.Sql.Activities
         [ActivityInput(
             UIHint = ActivityInputUIHints.Dropdown,
             Hint = "Allowed databases to run SQL.",
-            Options = new[] { "MSSQL Server", "PostgreSql" },
+            Options = new[] { "", "MSSQL Server", "PostgreSql" },
             SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string? Database { get; set; }
@@ -41,23 +41,17 @@ namespace Elsa.Activities.Sql.Activities
         )]
         public string Command { get; set; } = default!;
 
-        /// <summary>
-        /// Connection string to run SQL
-        /// </summary>
         [ActivityInput(
-            Hint = "Connection string to run SQL",
-            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
-        )]
-        public string ConnectionString { get; set; } = default!;
+            Label = "Connection string",
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
+         )]
+        public string? ConnectionString { get; set; }
 
         [ActivityOutput] public int? Output { get; set; }
 
         private readonly ISqlClientFactory _sqlClientFactory;
 
-        public ExecuteSqlCommand(ISqlClientFactory sqlClientFactory) 
-        {
-            _sqlClientFactory = sqlClientFactory;
-        }
+        public ExecuteSqlCommand(ISqlClientFactory sqlClientFactory) => _sqlClientFactory = sqlClientFactory;
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => ExecuteCommand();
 

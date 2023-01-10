@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Contracts;
 using Elsa.Activities.Http.Models;
+using Elsa.Activities.Http.Options;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Design;
@@ -16,6 +17,7 @@ using Elsa.Metadata;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 using HttpRequestHeaders = Elsa.Activities.Http.Models.HttpRequestHeaders;
 
@@ -32,13 +34,16 @@ namespace Elsa.Activities.Http
     {
         private readonly HttpClient _httpClient;
         private readonly IEnumerable<IHttpResponseContentReader> _parsers;
+        private readonly string? _defaultContentParserName;
 
         public SendHttpRequest(
             IHttpClientFactory httpClientFactory,
-            IEnumerable<IHttpResponseContentReader> parsers)
+            IEnumerable<IHttpResponseContentReader> parsers,
+            IOptions<HttpActivityOptions> options)
         {
             _httpClient = httpClientFactory.CreateClient(nameof(SendHttpRequest));
             _parsers = parsers;
+            _defaultContentParserName = options.Value.DefaultContentParserName;
         }
 
         /// <summary>
@@ -62,7 +67,7 @@ namespace Elsa.Activities.Http
         /// The body to send along with the request.
         /// </summary>
         [ActivityInput(Hint = "The HTTP content to send along with the request.", UIHint = ActivityInputUIHints.MultiLine, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
-        public string? Content { get; set; }
+        public object? Content { get; set; }
 
         /// <summary>
         /// The Content Type header to send along with the request body.
@@ -74,12 +79,21 @@ namespace Elsa.Activities.Http
             SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string? ContentType { get; set; }
+
         /// <summary>
         /// The Authorization header value to send.
         /// </summary>
-
-        [ActivityInput(Hint = "The Authorization header value to send.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }, Category = PropertyCategories.Advanced)]
+        /// <summary>
+        /// The Authorization header value to send.
+        /// </summary>
+        [ActivityInput(
+            Label = "Authorization",
+            Hint = "The Authorization header value to send.",
+            Category = PropertyCategories.Advanced,
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
+        )]
         public string? Authorization { get; set; }
+
 
         /// <summary>
         /// The headers to send along with the request.
@@ -98,6 +112,8 @@ namespace Elsa.Activities.Http
         [ActivityInput(Hint = "Read the content of the response.", SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public bool ReadContent { get; set; }
 
+        private string? _responseContentParserName;
+
         /// <summary>
         /// The parser to use to parse the response content. Plain Text, JSON, .NET Type, Expando Object, JToken, File
         /// </summary>
@@ -108,7 +124,22 @@ namespace Elsa.Activities.Http
             UIHint = ActivityInputUIHints.Dropdown,
             OptionsProvider = typeof(SendHttpRequest)
         )]
-        public string? ResponseContentParserName { get; set; }
+        public string? ResponseContentParserName
+        {
+            get => _responseContentParserName;
+            set
+            {
+                _responseContentParserName = value switch
+                {
+                    // Once upon a time there were two additional parser but were obsoleted
+                    // because they did the same thing as existing ones.
+                    // Automatically changing to appropriate name here so old workflows continue to work.
+                    "Expando Object" => ".NET Type",
+                    "JSON" => "Plain Text",
+                    _ => value
+                };
+            }
+        }
 
         /// <summary>
         /// The assembly-qualified .NET type name to deserialize the received content into.
@@ -139,12 +170,14 @@ namespace Elsa.Activities.Http
         /// <summary>
         /// The status code and headers of HTTP response.
         /// </summary>
-        [ActivityOutput] public HttpResponseModel? Response { get; set; }
+        [ActivityOutput]
+        public HttpResponseModel? Response { get; set; }
 
         /// <summary>
         /// The content HTTP of the response formatted to <see cref="ResponseContentTargetType"/>
         /// </summary>
-        [ActivityOutput] public object? ResponseContent { get; set; }
+        [ActivityOutput]
+        public object? ResponseContent { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
@@ -154,9 +187,9 @@ namespace Elsa.Activities.Http
             var hasContent = response.Content != null!;
             var contentType = response.Content?.Headers.ContentType?.MediaType;
 
-            var allHeaders = 
-            response.Headers.ToDictionary(x => x.Key, x => x.Value.ToArray())
-                .Concat(response.Content?.Headers.ToDictionary(x => x.Key, x => x.Value.ToArray()));
+            var allHeaders =
+                response.Headers.ToDictionary(x => x.Key, x => x.Value.ToArray())
+                    .Concat(response.Content?.Headers.ToDictionary(x => x.Key, x => x.Value.ToArray())!);
 
             var responseModel = new HttpResponseModel
             {
@@ -166,8 +199,16 @@ namespace Elsa.Activities.Http
 
             if (hasContent && ReadContent)
             {
-                var formatter = SelectContentParser(ResponseContentParserName, contentType);
-                ResponseContent = await formatter.ReadAsync(response, this, cancellationToken);
+                // Only attempt to parse content if the status code represents success.
+                if (response.IsSuccessStatusCode)
+                {
+                    var formatter = SelectContentParser(ResponseContentParserName, contentType);
+                    ResponseContent = await formatter.ReadAsync(response, this, cancellationToken);
+                }
+                else
+                {
+                    ResponseContent = response.Content != null ? await response.Content.ReadAsStringAsync() : "";
+                }
             }
 
             var statusCode = (int)response.StatusCode;
@@ -187,6 +228,14 @@ namespace Elsa.Activities.Http
         {
             if (string.IsNullOrWhiteSpace(parserName))
             {
+                if (_defaultContentParserName != null)
+                {
+                    var defaultParser = _parsers.FirstOrDefault(x => x.Name == _defaultContentParserName);
+
+                    if (defaultParser != null)
+                        return defaultParser;
+                }
+
                 var simpleContentType = contentType?.Split(';').First() ?? "";
                 var parser = _parsers.OrderByDescending(x => x.Priority).ToList();
 
@@ -214,11 +263,17 @@ namespace Elsa.Activities.Http
 
             if (methodSupportsBody)
             {
-                var body = Content;
+                var bodyAsString = Content as string;
+                var bodyAsBytes = Content as byte[];
                 var contentType = ContentType;
 
-                if (!string.IsNullOrWhiteSpace(body))
-                    request.Content = new StringContent(body, Encoding.UTF8, contentType);
+                if (!string.IsNullOrWhiteSpace(bodyAsString))
+                    request.Content = new StringContent(bodyAsString, Encoding.UTF8, contentType);
+                else if (bodyAsBytes != null)
+                {
+                    request.Content = new ByteArrayContent(bodyAsBytes);
+                    request.Content.Headers.ContentType = MediaTypeHeaderValue.Parse(contentType);
+                }
             }
 
             if (!string.IsNullOrWhiteSpace(authorizationHeaderValue))
@@ -229,14 +284,14 @@ namespace Elsa.Activities.Http
 
             return request;
         }
-        
+
         object? IActivityPropertyOptionsProvider.GetOptions(PropertyInfo property)
         {
             if (property.Name != nameof(ResponseContentParserName))
                 return null;
-            
-            var items =  _parsers.Select(x => new SelectListItem(x.Name, x.Name)).ToList();
-            
+
+            var items = _parsers.Select(x => new SelectListItem(x.Name, x.Name)).ToList();
+
             items.Insert(0, new SelectListItem("Auto Select", ""));
             return items;
         }

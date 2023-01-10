@@ -9,10 +9,12 @@ namespace Elsa.Models
         public string? Name { get; set; }
         public string? DisplayName { get; set; }
         public string? Description { get; set; }
+        public int? X { get; set; }
+        public int? Y { get; set; }
         public bool PersistWorkflow { get; set; }
         public bool LoadWorkflowContext { get; set; }
         public bool SaveWorkflowContext { get; set; }
         public ICollection<ActivityDefinitionProperty> Properties { get; set; } = new List<ActivityDefinitionProperty>();
-        public IDictionary<string, string> PropertyStorageProviders { get; } = new Dictionary<string, string>();
+        public IDictionary<string, string> PropertyStorageProviders { get; set; } = new Dictionary<string, string>();
     }
 }

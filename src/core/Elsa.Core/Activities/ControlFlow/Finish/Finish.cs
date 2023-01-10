@@ -40,13 +40,7 @@ namespace Elsa.Activities.ControlFlow
             var isRoot = parentBlueprint == null;
 
             // Remove any blocking activities within the scope of the composite activity.
-            var blockingActivities = context.WorkflowExecutionContext.WorkflowInstance.BlockingActivities;
-            var blockingActivityIds = blockingActivities.Select(x => x.ActivityId).ToList();
-            var containedBlockingActivityIds = parentBlueprint == null ? blockingActivityIds : parentBlueprint.Activities.Where(x => blockingActivityIds.Contains(x.Id)).Select(x => x.Id).ToList();
-            var containedBlockingActivities = blockingActivities.Where(x => containedBlockingActivityIds.Contains(x.ActivityId));
-
-            foreach (var blockingActivity in containedBlockingActivities)
-                await context.WorkflowExecutionContext.RemoveBlockingActivityAsync(blockingActivity);
+            await context.WorkflowExecutionContext.RemoveBlockingActivitiesAsync(parentBlueprint?.Id);
 
             // Evict & remove any scope activities within the scope of the composite activity.
             var scopes = context.WorkflowInstance.Scopes.Select(x => x).Reverse().ToList();
@@ -70,6 +64,11 @@ namespace Elsa.Activities.ControlFlow
             {
                 // Clear activity scheduler to prevent other scheduled activities from adding new blocking activities, which would prevent the workflow from completing.
                 context.WorkflowExecutionContext.ClearScheduledActivities();
+            }
+            else
+            {
+                // Clear all activities scheduled by the parent composite.
+                context.WorkflowExecutionContext.ClearScheduledActivities(parentBlueprint!.Id);
             }
             
             return Noop();

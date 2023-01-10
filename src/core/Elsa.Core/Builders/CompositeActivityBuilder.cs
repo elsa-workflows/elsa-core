@@ -184,7 +184,8 @@ namespace Elsa.Builders
                 Type = ActivityTypeName,
                 PersistWorkflow = PersistWorkflowEnabled,
                 LoadWorkflowContext = LoadWorkflowContextEnabled,
-                SaveWorkflowContext = SaveWorkflowContextEnabled
+                SaveWorkflowContext = SaveWorkflowContextEnabled,
+                Source = Source
             };
 
             var activityBuilders = ActivityBuilders.ToList();

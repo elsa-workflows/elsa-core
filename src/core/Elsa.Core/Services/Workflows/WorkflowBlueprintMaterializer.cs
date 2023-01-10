@@ -81,7 +81,7 @@ namespace Elsa.Services.Workflows
             foreach (var activityDefinition in activityDefinitions)
             {
                 var activityType = await _activityTypeService.GetActivityTypeAsync(activityDefinition.Type, cancellationToken);
-                var activityDescriptor = await activityType.DescribeAsync();
+                var activityDescriptor = await _activityTypeService.DescribeActivityType(activityType);
                 var propertyDescriptors = activityDescriptor.InputProperties;
 
                 foreach (var property in activityDefinition.Properties)
@@ -192,7 +192,9 @@ namespace Elsa.Services.Workflows
                     PersistWorkflow = activityDefinition.PersistWorkflow,
                     LoadWorkflowContext = activityDefinition.LoadWorkflowContext,
                     SaveWorkflowContext = activityDefinition.SaveWorkflowContext,
-                    PropertyStorageProviders = activityDefinition.PropertyStorageProviders
+                    PropertyStorageProviders = activityDefinition.PropertyStorageProviders,
+                    X = activityDefinition.X,
+                    Y = activityDefinition.Y
                 });
             }
 

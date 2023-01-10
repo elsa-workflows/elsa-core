@@ -61,11 +61,6 @@ namespace Elsa.Attributes
         public bool IsReadOnly { get; set; }
 
         /// <summary>
-        /// A value indicating whether this property should be visible.
-        /// </summary>
-        public bool IsBrowsable { get; set; } = true;
-        
-        /// <summary>
         /// A value indicating whether this property MUST be evaluated at runtime to support the workflow designer.
         /// </summary>
         public bool IsDesignerCritical { get; set; }
@@ -74,5 +69,14 @@ namespace Elsa.Attributes
         /// A value indicating whether this property values should be used as outcomes in the workflow designer.
         /// </summary>
         public bool ConsiderValuesAsOutcomes { get; set; }
+
+        /// <summary>
+        /// A list of dependents property of the activity that can trigger event
+        /// </summary>
+        public string[]? DependsOnEvents { get; set; }
+        /// <summary>
+        /// A list of dependents property value of the activity that should be embedded with the event triggered
+        /// </summary>
+        public string[]? DependsOnValues { get; set; }
     }
 }

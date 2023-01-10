@@ -8,5 +8,15 @@ export const resources = {
       'BottomTop': 'Bottom to Top',
       'RightLeft': 'Right to Left',
     }
+  },
+  'de-De': {
+    default: {
+      'workflowLayoutName': 'Ablauf Layout',
+      'workflowLayoutDescription': 'Bestimmt die Richtung, in welche der Ablauf angezeigt wird',
+      'TopBottom': 'Von Oben nach Unten',
+      'LeftRight': 'Von Links nach Rechts',
+      'BottomTop': 'Von Unten nach Oben',
+      'RightLeft': 'Von Rechts nach Links',
+    }
   }
 };

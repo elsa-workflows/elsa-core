@@ -2,7 +2,7 @@
     <Import Project="..\..\..\..\configureawait.props" />
 
     <PropertyGroup>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFramework>net7.0</TargetFramework>
         <LangVersion>latest</LangVersion>
         <IsPackable>false</IsPackable>
         <Nullable>enable</Nullable>
@@ -29,10 +29,10 @@
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.UserTask\Elsa.Activities.UserTask.csproj" />
         <ProjectReference Include="..\..\..\activities\webhooks\Elsa.Activities.Webhooks\Elsa.Activities.Webhooks.csproj" />
         <ProjectReference Include="..\..\..\activities\webhooks\Elsa.Webhooks.Api\Elsa.Webhooks.Api.csproj" />
-        <ProjectReference Include="..\..\..\activities\webhooks\Elsa.Webhooks.Persistence.EntityFramework.MySql\Elsa.Webhooks.Persistence.EntityFramework.MySql.csproj" />
         <ProjectReference Include="..\..\..\activities\webhooks\Elsa.Webhooks.Persistence.EntityFramework.PostgreSql\Elsa.Webhooks.Persistence.EntityFramework.PostgreSql.csproj" />
         <ProjectReference Include="..\..\..\activities\webhooks\Elsa.Webhooks.Persistence.EntityFramework.Sqlite\Elsa.Webhooks.Persistence.EntityFramework.Sqlite.csproj" />
-        <ProjectReference Include="..\..\..\activities\webhooks\Elsa.Webhooks.Persistence.EntityFramework.SqlServer\Elsa.Webhooks.Persistence.EntityFramework.SqlServer.csproj" />
+        <ProjectReference Include="..\..\..\activities\webhooks\Elsa.Webhooks.Persistence.EntityFramework.SqlServer\Elsa.Webhooks.Persistence.EntityFramework.SqlServer.csproj" />        
+        <ProjectReference Include="..\..\..\activities\webhooks\Elsa.Webhooks.Persistence.EntityFramework.MySql\Elsa.Webhooks.Persistence.EntityFramework.MySql.csproj" />
         <ProjectReference Include="..\..\..\activities\webhooks\Elsa.Webhooks.Persistence.MongoDb\Elsa.Webhooks.Persistence.MongoDb.csproj" />
         <ProjectReference Include="..\..\..\activities\webhooks\Elsa.Webhooks.Persistence.YesSql\Elsa.Webhooks.Persistence.YesSql.csproj" />
         <ProjectReference Include="..\..\..\caching\Elsa.Caching.Rebus\Elsa.Caching.Rebus.csproj" />
@@ -40,21 +40,26 @@
         <ProjectReference Include="..\..\..\locking\Elsa.DistributedLocking.AzureBlob\Elsa.DistributedLocking.AzureBlob.csproj" />
         <ProjectReference Include="..\..\..\locking\Elsa.DistributedLocking.Redis\Elsa.DistributedLocking.Redis.csproj" />
         <ProjectReference Include="..\..\..\locking\Elsa.DistributedLocking.SqlServer\Elsa.DistributedLocking.SqlServer.csproj" />
+        <ProjectReference Include="..\..\..\modules\secrets\Elsa.Secrets.Api\Elsa.Secrets.Api.csproj" />
+        <ProjectReference Include="..\..\..\modules\secrets\Elsa.Secrets.Http\Elsa.Secrets.Http.csproj" />
+        <ProjectReference Include="..\..\..\modules\secrets\Elsa.Secrets.Persistence.EntityFramework.MySql\Elsa.Secrets.Persistence.EntityFramework.MySql.csproj" />
+        <ProjectReference Include="..\..\..\modules\secrets\Elsa.Secrets.Persistence.EntityFramework.Sqlite\Elsa.Secrets.Persistence.EntityFramework.Sqlite.csproj" />
+        <ProjectReference Include="..\..\..\modules\secrets\Elsa.Secrets.Sql\Elsa.Secrets.Sql.csproj" />
         <ProjectReference Include="..\..\..\modules\workflowtesting\Elsa.WorkflowTesting.Api\Elsa.WorkflowTesting.Api.csproj" />
         <ProjectReference Include="..\..\..\modules\workflowtesting\Elsa.WorkflowTesting\Elsa.WorkflowTesting.csproj" />
         <ProjectReference Include="..\..\..\modules\retention\Elsa.Retention\Elsa.Retention.csproj" />
         <ProjectReference Include="..\..\..\modules\workflowsettings\Elsa.WorkflowSettings.Api\Elsa.WorkflowSettings.Api.csproj" />
-        <ProjectReference Include="..\..\..\modules\workflowsettings\Elsa.WorkflowSettings.Persistence.EntityFramework.MySql\Elsa.WorkflowSettings.Persistence.EntityFramework.MySql.csproj" />
         <ProjectReference Include="..\..\..\modules\workflowsettings\Elsa.WorkflowSettings.Persistence.EntityFramework.PostgreSql\Elsa.WorkflowSettings.Persistence.EntityFramework.PostgreSql.csproj" />
         <ProjectReference Include="..\..\..\modules\workflowsettings\Elsa.WorkflowSettings.Persistence.EntityFramework.Sqlite\Elsa.WorkflowSettings.Persistence.EntityFramework.Sqlite.csproj" />
-        <ProjectReference Include="..\..\..\modules\workflowsettings\Elsa.WorkflowSettings.Persistence.EntityFramework.SqlServer\Elsa.WorkflowSettings.Persistence.EntityFramework.SqlServer.csproj" />
+        <ProjectReference Include="..\..\..\modules\workflowsettings\Elsa.WorkflowSettings.Persistence.EntityFramework.SqlServer\Elsa.WorkflowSettings.Persistence.EntityFramework.SqlServer.csproj" />        
+        <ProjectReference Include="..\..\..\modules\workflowsettings\Elsa.WorkflowSettings.Persistence.EntityFramework.MySql\Elsa.WorkflowSettings.Persistence.EntityFramework.MySql.csproj" /> 
         <ProjectReference Include="..\..\..\modules\workflowsettings\Elsa.WorkflowSettings.Persistence.MongoDb\Elsa.WorkflowSettings.Persistence.MongoDb.csproj" />
         <ProjectReference Include="..\..\..\modules\workflowsettings\Elsa.WorkflowSettings.Persistence.YesSql\Elsa.WorkflowSettings.Persistence.YesSql.csproj" />
         <ProjectReference Include="..\..\..\modules\workflowsettings\Elsa.WorkflowSettings\Elsa.WorkflowSettings.csproj" />
-        <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.MySql\Elsa.Persistence.EntityFramework.MySql.csproj" />
         <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.PostgreSql\Elsa.Persistence.EntityFramework.PostgreSql.csproj" />
         <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.Sqlite\Elsa.Persistence.EntityFramework.Sqlite.csproj" />
-        <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.SqlServer\Elsa.Persistence.EntityFramework.SqlServer.csproj" />
+        <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.SqlServer\Elsa.Persistence.EntityFramework.SqlServer.csproj" />     
+        <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.MySql\Elsa.Persistence.EntityFramework.MySql.csproj" />        
         <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.MongoDb\Elsa.Persistence.MongoDb.csproj" />
         <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.YesSql\Elsa.Persistence.YesSql.csproj" />
         <ProjectReference Include="..\..\..\providers\Elsa.Providers.Redis\Elsa.Providers.Redis.csproj" />
@@ -68,7 +73,7 @@
     <ItemGroup>
         <PackageReference Include="Hangfire.InMemory" Version="0.3.4" />
         <PackageReference Include="Hangfire.SqlServer" Version="1.7.28" />
-        <PackageReference Include="Quartz.Serialization.Json" Version="3.3.3" />
+        <PackageReference Include="Quartz.Serialization.Json" Version="3.5.0" />
         <PackageReference Include="Hangfire.SQLite" Version="1.4.2" />
     </ItemGroup>
 

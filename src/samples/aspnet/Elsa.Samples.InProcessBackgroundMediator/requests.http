@@ -1,0 +1,7 @@
+﻿# Create document.
+POST https://localhost:5443/work/start
+Content-Type: application/json
+
+{
+    "message": "Hello World!"
+}

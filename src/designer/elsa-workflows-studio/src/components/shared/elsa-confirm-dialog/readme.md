@@ -39,6 +39,7 @@ Type: `Promise<boolean>`
 
 ### Used by
 
+ - [elsa-credential-manager-list-screen](../../../modules/credential-manager/components)
  - [elsa-studio-root](../../dashboard/pages/elsa-studio-root)
  - [elsa-version-history-panel](../../screens/workflow-definition-editor/elsa-version-history-panel)
  - [elsa-webhook-definitions-list-screen](../../../modules/elsa-webhooks/components/screens/webhook-definition-list/else-webhook-definitions-screen)
@@ -54,6 +55,7 @@ Type: `Promise<boolean>`
 ```mermaid
 graph TD;
   elsa-confirm-dialog --> elsa-modal-dialog
+  elsa-credential-manager-list-screen --> elsa-confirm-dialog
   elsa-studio-root --> elsa-confirm-dialog
   elsa-version-history-panel --> elsa-confirm-dialog
   elsa-webhook-definitions-list-screen --> elsa-confirm-dialog

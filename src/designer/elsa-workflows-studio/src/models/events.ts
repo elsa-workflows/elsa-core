@@ -20,6 +20,7 @@ export const EventTypes = {
   ShowWorkflowSettings: 'show-workflow-settings',
   ActivityPicked: 'activity-picked',
   UpdateActivity: 'update-activity',
+  UpdateActivityProperties: 'update-activity-properties',
   UpdateWorkflowSettings: 'update-workflow-settings',
   WorkflowModelChanged: 'workflow-model-changed',
   ActivityDesignDisplaying: 'activity-design-displaying',
@@ -51,7 +52,13 @@ export const EventTypes = {
   TestActivityMessageReceived: 'test-activity-message-received',
   FlyoutPanelTabSelected: 'flyout-panel-tab-selected',
   ComponentLoadingCustomButton: 'component-loading-custom-button',
-  ComponentCustomButtonClick: 'component-custom-button-click'
+  ComponentCustomButtonClick: 'component-custom-button-click',
+
+  HubConnectionCreated: 'hubconnection-created',
+  HubConnectionStarted: 'hubconnection-started',
+  HubConnectionConnected: 'hubconnection-connected',
+  HubConnectionFailed: 'hubconnection-failed',
+  HubConnectionClosed: 'hubconnection-closed'
 };
 
 export interface AddActivityEventArgs {
@@ -65,9 +72,9 @@ export interface ActivityPickedEventArgs {
 export interface ActivityDesignDisplayContext {
   activityModel: ActivityModel;
   activityDescriptor: ActivityDescriptor;
-  activityIcon: any;
+  activityIcon?: any;
   displayName?: string;
-  bodyDisplay: string;
+  bodyDisplay?: string;
   outcomes: Array<string>;
   expanded?: boolean;
 }

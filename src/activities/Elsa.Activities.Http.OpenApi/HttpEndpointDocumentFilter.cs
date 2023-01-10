@@ -1,10 +1,12 @@
 ﻿using System.Runtime.CompilerServices;
 using Elsa.Activities.Http.Bookmarks;
+using Elsa.Activities.Http.Options;
 using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using Open.Linq.AsyncExtensions;
 using Swashbuckle.AspNetCore.SwaggerGen;
@@ -18,11 +20,13 @@ public class HttpEndpointDocumentFilter : IDocumentFilter
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ISchemaGenerator _schemaGenerator;
+    private readonly HttpActivityOptions _options;
 
-    public HttpEndpointDocumentFilter(IServiceScopeFactory scopeFactory, ISchemaGenerator schemaGenerator)
+    public HttpEndpointDocumentFilter(IServiceScopeFactory scopeFactory, ISchemaGenerator schemaGenerator, IOptions<HttpActivityOptions> options)
     {
         _scopeFactory = scopeFactory;
         _schemaGenerator = schemaGenerator;
+        _options = options.Value;
     }
 
     public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)
@@ -43,7 +47,7 @@ public class HttpEndpointDocumentFilter : IDocumentFilter
 
         foreach (var grouping in httpEndpoints)
         {
-            var path = grouping.Key;
+            var path = _options.BasePath?.Add(grouping.Key) ?? grouping.Key;
             var first = grouping.First();
 
             swaggerDoc.Paths.Add(path, new OpenApiPathItem
@@ -106,7 +110,7 @@ public class HttpEndpointDocumentFilter : IDocumentFilter
     {
         var activityId = workflowTrigger.ActivityId;
         var httpEndpointActivity = workflowExecutionContext.WorkflowBlueprint.GetActivity(activityId)!;
-        var httpEndpointBookmark = (HttpEndpointBookmark)workflowTrigger.Bookmark;
+        var httpEndpointBookmark = (HttpEndpointBookmark) workflowTrigger.Bookmark;
         var activityExecutionContext = activityExecutionContextFactory.CreateActivityExecutionContext(httpEndpointActivity, workflowExecutionContext, CancellationToken.None);
         var httpEndpointActivityAccessor = new ActivityBlueprintWrapper<HttpEndpoint>(activityExecutionContext);
         var displayName = httpEndpointActivity.DisplayName;
@@ -118,7 +122,7 @@ public class HttpEndpointDocumentFilter : IDocumentFilter
 
         return new HttpEndpointDescriptor(activityId, path, method, displayName, description, targetType, schema);
     }
-    
+
     private OperationType GetOperationType(HttpEndpointDescriptor httpEndpoint) =>
         httpEndpoint.Method switch
         {

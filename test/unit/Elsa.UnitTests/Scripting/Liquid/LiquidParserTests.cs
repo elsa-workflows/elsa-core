@@ -1,12 +1,7 @@
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Elsa.Scripting.Liquid.Options;
 using Elsa.Scripting.Liquid.Services;
-using Elsa.Testing.Shared;
 using Fluid;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
@@ -24,7 +19,7 @@ namespace Elsa.Scripting.Liquid
             var parser = new LiquidParser(new OptionsWrapper<LiquidOptions>(options));
             var template = parser.Parse("{% render 'header' %}");
 
-            var root = Path.Combine(Path.GetDirectoryName(GetType().Assembly.Location), "Scripting\\Liquid");
+            var root = Path.Combine(Path.GetDirectoryName(GetType().Assembly.Location), "Scripting", "Liquid");
 
             var context = new TemplateContext(options)
             {

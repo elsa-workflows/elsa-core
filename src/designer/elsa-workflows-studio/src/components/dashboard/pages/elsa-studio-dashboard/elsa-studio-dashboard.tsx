@@ -1,11 +1,12 @@
 import {Component, h, Prop, getAssetPath} from '@stencil/core';
 import {loadTranslations} from "../../../i18n/i18n-loader";
 import {resources} from "./localizations";
-import {i18n} from "i18next";
+import {i18n, t} from "i18next";
 import {GetIntlMessage} from "../../../i18n/intl-message";
 import Tunnel from "../../../../data/dashboard";
 import {EventTypes, ConfigureDashboardMenuContext} from '../../../../models';
 import {eventBus} from '../../../../services';
+import { DropdownButtonItem, DropdownButtonOrigin } from '../../../controls/elsa-dropdown-button/models';
 
 @Component({
   tag: 'elsa-studio-dashboard',
@@ -47,7 +48,15 @@ export class ElsaStudioDashboard {
     const basePath = this.basePath || '';
     const IntlMessage = GetIntlMessage(this.i18next);
 
-    let menuItems = this.dashboardMenu.data != null ? this.dashboardMenu.data.menuItems : [];
+    const menuItemsNamespace = "menuItems"
+
+    let menuItems = (this.dashboardMenu.data != null ? this.dashboardMenu.data.menuItems : [])
+      .map(([route, label]) =>
+        this.i18next.exists(`${menuItemsNamespace}:${route}`) ?
+          [route, this.i18next.t(`${menuItemsNamespace}:${route}`)] :
+          [route, label]
+      );
+    
     let routes = this.dashboardMenu.data != null ? this.dashboardMenu.data.routes : [];
 
     const renderFeatureMenuItem = (item: any, basePath: string) => {
@@ -61,6 +70,7 @@ export class ElsaStudioDashboard {
     }
 
     return (
+      
       <div class="elsa-h-screen elsa-bg-gray-100">
         <nav class="elsa-bg-gray-800">
           <div class="elsa-px-4 sm:elsa-px-6 lg:elsa-px-8">
@@ -77,10 +87,11 @@ export class ElsaStudioDashboard {
                   </div>
                 </div>
               </div>
+              <elsa-user-context-menu></elsa-user-context-menu>
             </div>
           </div>
-        </nav>
 
+        </nav>
         <main>
           <stencil-router>
             <stencil-route-switch scrollTopOffset={0}>
@@ -88,9 +99,9 @@ export class ElsaStudioDashboard {
             </stencil-route-switch>
           </stencil-router>
         </main>
+
       </div>
     );
   }
 }
-
 Tunnel.injectProps(ElsaStudioDashboard, ['culture', 'basePath']);

@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Telnyx.Extensions;
-using Elsa.Activities.Telnyx.Models;
 using Elsa.Activities.Telnyx.Providers.Bookmarks;
 using Elsa.Activities.Telnyx.Webhooks.Events;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
@@ -34,7 +33,10 @@ namespace Elsa.Activities.Telnyx.Handlers
         public async Task Handle(TelnyxWebhookReceived notification, CancellationToken cancellationToken)
         {
             var supportedPayloadTypes = GetSupportedPayloadTypes().ToHashSet();
-            var receivedPayload = (CallPayload) notification.Webhook.Data.Payload;
+
+            if(notification.Webhook.Data.Payload is not CallPayload receivedPayload)
+                return;
+            
             var receivedPayloadType = receivedPayload.GetType();
 
             if (!supportedPayloadTypes.Contains(receivedPayloadType))

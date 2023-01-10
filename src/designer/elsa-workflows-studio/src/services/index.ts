@@ -8,3 +8,4 @@ export * from './features-data-manager';
 export * from './plugin-manager';
 export * from './property-display-driver';
 export * from './property-display-manager';
+export * from './monaco-editor-dialog-service';

@@ -1,0 +1,75 @@
+:host {
+  display: block;
+}
+
+.workflow-canvas {
+  background-color: #fbfbfb;
+  width: 100%;
+  height: calc(100vh - 64px);
+  box-sizing: border-box;
+}
+
+.outcome {
+  background-color: #fbfbfb;
+}
+
+.start-btn {
+  display: flex;
+  top: 1rem;
+  width: 100%;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.start-btn > * {
+  pointer-events: initial;
+}
+
+.layout-btn {
+  display: flex;
+  left: 1rem;
+  bottom: 2rem;
+}
+
+.elsa-workflow-wrapper {
+  width: 100%;
+  height: calc(100vh - 64px);
+  overflow: hidden;
+}
+
+.workflow-canvas .x6-graph-scroller {
+  position: relative;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.x6-port-out .x6-port-label {
+  opacity: 0;
+  transition: opacity 0.2s ease-in;
+}
+
+.x6-port-out:hover .x6-port-label {
+  opacity: 1;
+}
+
+.context-menu-button-container button {
+  position: relative;
+}
+.context-menu-button-container button:before {
+  content: '';
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  cursor: pointer;
+}
+
+/* Custom selection box, that does not block creating connections from the nodes */
+.x6-node-selected elsa-default-activity-template:after {
+  content: '';
+  width: calc(100% + 8px);
+  height: calc(100% + 8px);
+  top: -4px;
+  left: -4px;
+  position: absolute;
+  border: 2px dashed #feb663;
+}

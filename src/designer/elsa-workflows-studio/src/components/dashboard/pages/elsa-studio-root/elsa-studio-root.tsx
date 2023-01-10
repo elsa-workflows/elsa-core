@@ -17,6 +17,7 @@ import {AxiosInstance} from "axios";
 import {EventTypes} from "../../../../models";
 import {ToastNotificationOptions} from "../../../shared/elsa-toast-notification/elsa-toast-notification";
 import {getOrCreateProperty, htmlToElement} from "../../../../utils/utils";
+import state from '../../../../utils/store';
 
 @Component({
   tag: 'elsa-studio-root',
@@ -28,6 +29,7 @@ export class ElsaStudioRoot {
   @Prop({attribute: 'monaco-lib-path', reflect: true}) monacoLibPath: string;
   @Prop({attribute: 'culture', reflect: true}) culture: string;
   @Prop({attribute: 'base-path', reflect: true}) basePath: string = '';
+  @Prop({attribute: 'use-x6-graphs', reflect: true}) useX6Graphs: boolean = false;
   @Prop() features: any;
   @Prop() config: string;
   @State() featuresConfig: any;
@@ -68,6 +70,8 @@ export class ElsaStudioRoot {
   }
 
   async componentWillLoad() {
+    state.useX6Graphs = this.useX6Graphs;
+
     const elsaClientFactory: () => Promise<ElsaClient> = () => createElsaClient(this.serverUrl);
     const httpClientFactory: () => Promise<AxiosInstance> = () => createHttpClient(this.serverUrl);
 
@@ -92,6 +96,7 @@ export class ElsaStudioRoot {
       basePath: this.basePath,
       features: this.featuresConfig,
       serverFeatures: [],
+      serverVersion: null,
       eventBus,
       pluginManager,
       propertyDisplayManager,
@@ -105,13 +110,14 @@ export class ElsaStudioRoot {
     };
 
     this.initializing.emit(elsaStudio);
-    await eventBus.emit(EventTypes.Root.Initializing);
     pluginManager.initialize(elsaStudio);
+    await eventBus.emit(EventTypes.Root.Initializing);
     propertyDisplayManager.initialize(elsaStudio);
     featuresDataManager.initialize(elsaStudio);
 
     const elsaClient = await elsaClientFactory();
     elsaStudio.serverFeatures = await elsaClient.featuresApi.list();
+    elsaStudio.serverVersion = await elsaClient.versionApi.get();
   }
 
   async componentDidLoad() {
@@ -132,6 +138,7 @@ export class ElsaStudioRoot {
       serverUrl: this.serverUrl,
       basePath: this.basePath,
       serverFeatures: this.elsaStudio.serverFeatures,
+      serverVersion: this.elsaStudio.serverVersion,
       culture,
       monacoLibPath: this.monacoLibPath
     };

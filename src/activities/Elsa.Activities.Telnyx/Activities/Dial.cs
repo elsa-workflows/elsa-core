@@ -23,7 +23,7 @@ namespace Elsa.Activities.Telnyx.Activities
     [Action(
         Category = Constants.Category,
         Description = "Dial a number or SIP URI from a given connection.",
-        Outcomes = new[] { TelnyxOutcomeNames.CallInitiated, TelnyxOutcomeNames.Answered, TelnyxOutcomeNames.Hangup, OutcomeNames.Done },
+        Outcomes = new[] { TelnyxOutcomeNames.CallInitiated, TelnyxOutcomeNames.Answered, TelnyxOutcomeNames.Hangup, TelnyxOutcomeNames.MachineGreetingEnded, OutcomeNames.Done },
         DisplayName = "Dial"
     )]
     public class Dial : Activity
@@ -126,12 +126,13 @@ namespace Elsa.Activities.Telnyx.Activities
         [ActivityOutput] public CallAnsweredPayload? AnsweredOutput { get; set; }
         [ActivityOutput] public CallHangupPayload? HangupOutput { get; set; }
         [ActivityOutput] public CallInitiatedPayload? InitiatedOutput { get; set; }
+        [ActivityOutput] public CallMachineGreetingEndedBase MachineGreetingEndedOutput { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
             var response = await DialAsync(context);
             DialResponse = response;
-            
+
             context.LogOutputProperty(this, "Dial Response", response);
 
             return !SuspendWorkflow
@@ -143,11 +144,19 @@ namespace Elsa.Activities.Telnyx.Activities
         {
             var payload = context.GetInput<CallPayload>();
             Output = payload;
-            
+
             context.LogOutputProperty(this, "Output", payload);
+            
+            if (!context.HasCallControlId())
+                context.SetCallControlId(payload!.CallControlId);
+            
+            if(!context.HasCallLegId())
+                context.SetCallLegId(payload!.CallLegId);
 
             return payload switch
             {
+                CallMachineGreetingEnded greetingEndedPayload => MachineGreetingEndedOutcome(greetingEndedPayload),
+                CallMachinePremiumGreetingEnded premiumGreetingEndedPayload => MachineGreetingEndedOutcome(premiumGreetingEndedPayload),
                 CallAnsweredPayload answeredPayload => AnsweredOutcome(answeredPayload),
                 CallHangupPayload hangupPayload => HangupOutcome(hangupPayload),
                 CallInitiatedPayload initiatedPayload => Combine(InitiatedOutcome(initiatedPayload), Suspend()),
@@ -173,6 +182,12 @@ namespace Elsa.Activities.Telnyx.Activities
             return Outcome(TelnyxOutcomeNames.CallInitiated, payload);
         }
 
+        private IActivityExecutionResult MachineGreetingEndedOutcome(CallMachineGreetingEndedBase payload)
+        {
+            MachineGreetingEndedOutput = payload;
+            return Outcome(TelnyxOutcomeNames.MachineGreetingEnded, payload);
+        }
+
         private async Task<DialResponse> DialAsync(ActivityExecutionContext context)
         {
             var connectionId = string.IsNullOrWhiteSpace(ConnectionId) ? _telnyxOptions.CallControlAppId : ConnectionId;
@@ -181,14 +196,13 @@ namespace Elsa.Activities.Telnyx.Activities
                 throw new MissingCallControlAppIdException("No Call Control ID specified and no default value configured");
 
             var fromNumber = context.GetFromNumber(From);
-
             var clientState = new ClientStatePayload(context.CorrelationId!).ToBase64();
 
             var request = new DialRequest(
                 connectionId,
                 To,
                 fromNumber,
-                FromDisplayName,
+                FromDisplayName.SanitizeCallerName(),
                 AnsweringMachineDetection,
                 AnsweringMachineDetectionConfig,
                 clientState,

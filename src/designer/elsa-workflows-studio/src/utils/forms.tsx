@@ -17,7 +17,7 @@ export class FormContext {
   public updater: (model: any) => any;
 }
 
-export function textInput(context: FormContext, fieldName: string, label: string, value: string, hint?: string, fieldId?: string) {
+export function textInput(context: FormContext, fieldName: string, label: string, value: string, hint?: string, fieldId?: string, readonlyField?: boolean) {
   fieldId = fieldId || fieldName
   return (
     <div>
@@ -25,8 +25,10 @@ export function textInput(context: FormContext, fieldName: string, label: string
         {label}
       </label>
       <div class="elsa-mt-1">
-        <input type="text" id={fieldId} name={fieldName} value={value} onChange={e => onTextInputChange(e, context)}
+        {readonlyField ? <input type="text" readonly id={fieldId} name={fieldName} value={value}
                class="focus:elsa-ring-blue-500 focus:elsa-border-blue-500 block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300"/>
+          : <input type="text" id={fieldId} name={fieldName} value={value} onChange={e => onTextInputChange(e, context)}
+                   class="focus:elsa-ring-blue-500 focus:elsa-border-blue-500 block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300"/>}
       </div>
       {hint && hint.length > 0 ? <p class="elsa-mt-2 elsa-text-sm elsa-text-gray-500">{hint}</p> : undefined}
     </div>);

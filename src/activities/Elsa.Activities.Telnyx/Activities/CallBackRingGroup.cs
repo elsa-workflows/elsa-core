@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Telnyx.Client.Models;
 using Elsa.Activities.Telnyx.Client.Services;
-using Elsa.Activities.Telnyx.Extensions;
 using Elsa.Activities.Telnyx.Models;
 using Elsa.Activities.Telnyx.Services;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
@@ -26,7 +25,7 @@ namespace Elsa.Activities.Telnyx.Activities
     [Action(
         Category = Constants.Category,
         Description = "Call a ring group and connect them to the given phone number.",
-        Outcomes = new[] {TelnyxOutcomeNames.Connected, TelnyxOutcomeNames.NoResponse},
+        Outcomes = new[] { TelnyxOutcomeNames.Connected, TelnyxOutcomeNames.NoResponse },
         DisplayName = "Call Back Ring Group"
     )]
     public class CallBackRingGroup : CompositeActivity, IActivityPropertyDefaultValueProvider
@@ -38,14 +37,14 @@ namespace Elsa.Activities.Telnyx.Activities
             _logger = logger;
         }
 
-        [ActivityInput(UIHint = ActivityInputUIHints.MultiText, DefaultSyntax = SyntaxNames.Json, SupportedSyntaxes = new[] {SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid})]
+        [ActivityInput(UIHint = ActivityInputUIHints.MultiText, DefaultSyntax = SyntaxNames.Json, SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public IList<string> Extensions
         {
             get => GetState<IList<string>>(() => new List<string>());
             set => SetState(value);
         }
 
-        [ActivityInput(Label = "Call Control ID", Hint = "Unique identifier and token for controlling the call.", Category = PropertyCategories.Advanced, SupportedSyntaxes = new[] {SyntaxNames.JavaScript, SyntaxNames.Liquid})]
+        [ActivityInput(Label = "Call Control ID", Hint = "Unique identifier and token for controlling the call.", Category = PropertyCategories.Advanced, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string CallControlId
         {
             get => GetState<string>()!;
@@ -56,7 +55,7 @@ namespace Elsa.Activities.Telnyx.Activities
             Label = "Call Control App ID",
             Hint = "The ID of the Call Control App (formerly ID of the connection) to be used when dialing the destination.",
             Category = PropertyCategories.Advanced,
-            SupportedSyntaxes = new[] {SyntaxNames.JavaScript, SyntaxNames.Liquid}
+            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string? CallControlAppId
         {
@@ -64,7 +63,7 @@ namespace Elsa.Activities.Telnyx.Activities
             set => SetState(value);
         }
 
-        [ActivityInput(SupportedSyntaxes = new[] {SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid})]
+        [ActivityInput(SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public RingGroupStrategy Strategy
         {
             get => GetState<RingGroupStrategy>();
@@ -73,7 +72,7 @@ namespace Elsa.Activities.Telnyx.Activities
 
         [ActivityInput(
             Hint = "The 'from' number to be used as the caller id presented to the destination ('To' number). The number should be in +E164 format. This attribute will default to the 'From' number of the original call if omitted.",
-            SupportedSyntaxes = new[] {SyntaxNames.JavaScript, SyntaxNames.Liquid}
+            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string? From
         {
@@ -84,7 +83,7 @@ namespace Elsa.Activities.Telnyx.Activities
         [ActivityInput(
             Hint =
                 "The string to be used as the caller id name (SIP From Display Name) presented to the destination ('To' number). The string should have a maximum of 128 characters, containing only letters, numbers, spaces, and -_~!.+ special characters. If omitted, the display name will be the same as the number in the 'From' field.",
-            SupportedSyntaxes = new[] {SyntaxNames.JavaScript, SyntaxNames.Liquid}
+            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string? FromDisplayName
         {
@@ -94,7 +93,7 @@ namespace Elsa.Activities.Telnyx.Activities
 
         [ActivityInput(
             Hint = "The 'to' number to call. The number should be in +E164 format.",
-            SupportedSyntaxes = new[] {SyntaxNames.JavaScript, SyntaxNames.Liquid}
+            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string? To
         {
@@ -102,7 +101,10 @@ namespace Elsa.Activities.Telnyx.Activities
             set => SetState(value);
         }
 
-        [ActivityInput(DefaultValueProvider = typeof(CallRingGroup), SupportedSyntaxes = new[] {SyntaxNames.JavaScript, SyntaxNames.Liquid})]
+        [ActivityInput(
+            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid },
+            DefaultValueProvider = typeof(CallRingGroup)
+        )]
         public Duration RingTime
         {
             get => GetState(() => Duration.FromSeconds(20));
@@ -111,7 +113,7 @@ namespace Elsa.Activities.Telnyx.Activities
 
         [ActivityInput(
             Hint = "The maximum time to wait for anyone to pickup before giving up.",
-            SupportedSyntaxes = new[] {SyntaxNames.JavaScript, SyntaxNames.Liquid}
+            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public Duration MaxQueueWaitTime
         {
@@ -122,10 +124,10 @@ namespace Elsa.Activities.Telnyx.Activities
         [ActivityInput(
             Hint = "Enables Answering Machine Detection.",
             UIHint = ActivityInputUIHints.Dropdown,
-            Options = new[] {"disabled", "detect", "detect_beep", "detect_words", "greeting_end"},
+            Options = new[] { "disabled", "detect", "detect_beep", "detect_words", "greeting_end" },
             DefaultValue = "disabled",
             Category = PropertyCategories.Advanced,
-            SupportedSyntaxes = new[] {SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid})]
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string? AnsweringMachineDetection
         {
             get => GetState<string>(() => "disabled");
@@ -135,9 +137,9 @@ namespace Elsa.Activities.Telnyx.Activities
         [ActivityInput(
             Hint = "The language you want spoken.",
             UIHint = ActivityInputUIHints.Dropdown,
-            Options = new[] {"en-US", "en-AU", "nl-NL", "es-ES", "ru-RU"},
+            Options = new[] { "en-US", "en-AU", "nl-NL", "es-ES", "ru-RU" },
             DefaultValue = "en-US",
-            SupportedSyntaxes = new[] {SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid}
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string Language
         {
@@ -148,9 +150,9 @@ namespace Elsa.Activities.Telnyx.Activities
         [ActivityInput(
             Hint = "The gender of the voice used to speak back the text.",
             UIHint = ActivityInputUIHints.Dropdown,
-            Options = new[] {"female", "male"},
+            Options = new[] { "female", "male" },
             DefaultValue = "female",
-            SupportedSyntaxes = new[] {SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid}
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string Voice
         {
@@ -158,7 +160,7 @@ namespace Elsa.Activities.Telnyx.Activities
             set => SetState(value);
         }
 
-        [ActivityInput(Hint = "The text or SSML to be converted into speech. There is a 5,000 character limit.", SupportedSyntaxes = new[] {SyntaxNames.JavaScript, SyntaxNames.Liquid})]
+        [ActivityInput(Hint = "The text or SSML to be converted into speech. There is a 5,000 character limit.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string Payload
         {
             get => GetState<string>(() => default!);
@@ -168,8 +170,8 @@ namespace Elsa.Activities.Telnyx.Activities
         [ActivityInput(
             Hint = "The type of the provided payload. The payload can either be plain text, or Speech Synthesis Markup Language (SSML).",
             UIHint = ActivityInputUIHints.Dropdown,
-            Options = new[] {"", "text", "ssml"},
-            SupportedSyntaxes = new[] {SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid}
+            Options = new[] { "", "text", "ssml" },
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string? PayloadType
         {
@@ -180,9 +182,9 @@ namespace Elsa.Activities.Telnyx.Activities
         [ActivityInput(
             Hint = "This parameter impacts speech quality, language options and payload types. When using `basic`, only the `en-US` language and payload type `text` are allowed.",
             UIHint = ActivityInputUIHints.Dropdown,
-            Options = new[] {"", "basic", "premium"},
+            Options = new[] { "", "basic", "premium" },
             Category = PropertyCategories.Advanced,
-            SupportedSyntaxes = new[] {SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid}
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string? ServiceLevel
         {
@@ -227,7 +229,7 @@ namespace Elsa.Activities.Telnyx.Activities
                 });
         }
 
-        protected override async ValueTask OnExitAsync(ActivityExecutionContext context, object? output)
+        protected override async ValueTask OnExitAsync(ActivityExecutionContext context, object? output, IList<string> outcomes)
         {
             // Hang up any pending calls.
             context.JournalData.Add("Exiting", true);
@@ -237,7 +239,7 @@ namespace Elsa.Activities.Telnyx.Activities
             var client = context.GetService<ITelnyxClient>();
 
             context.JournalData.Add("Outgoing Calls", outgoingCalls);
-            
+
             foreach (var outgoingCall in outgoingCalls)
             {
                 try
@@ -257,14 +259,13 @@ namespace Elsa.Activities.Telnyx.Activities
                     .Then<Dial>(dial => dial
                             .WithConnectionId(() => CallControlAppId)
                             .WithTo(ResolveExtensionAsync)
-                            .WithTimeoutSecs(() => (int) RingTime.TotalSeconds)
+                            .WithTimeoutSecs(() => (int)RingTime.TotalSeconds)
                             .WithFrom(() => From)
                             .WithFromDisplayName(() => FromDisplayName),
                         dial =>
                         {
                             dial
                                 .When(TelnyxOutcomeNames.Answered)
-                                .Then(context => context.SetCallControlId(context.GetInput<CallAnsweredPayload>()!.CallControlId))
                                 .Then<SpeakText>(speakText => speakText
                                         .WithLanguage(() => Language)
                                         .WithPayload(() => Payload)
@@ -280,7 +281,7 @@ namespace Elsa.Activities.Telnyx.Activities
                                                     .WithFrom(() => From)
                                                     .WithFromDisplayName(() => FromDisplayName)
                                                     .WithTo(() => To)
-                                                    .WithTimeoutSecs(() => (int) RingTime.TotalSeconds)
+                                                    .WithTimeoutSecs(() => (int)RingTime.TotalSeconds)
                                                 ,
                                                 dialCustomer => dialCustomer
                                                     .When(TelnyxOutcomeNames.Answered)
@@ -309,7 +310,7 @@ namespace Elsa.Activities.Telnyx.Activities
                         .Then(context =>
                         {
                             AgentCallAnsweredPayload = context.GetInput<CallAnsweredPayload>()!;
-                            context.SetCallControlId(AgentCallAnsweredPayload.CallControlId);
+                            //context.SetCallControlId(AgentCallAnsweredPayload.CallControlId);
                         })
                         .Then<SpeakText>(speakText => speakText
                                 .WithLanguage(() => Language)
@@ -326,7 +327,7 @@ namespace Elsa.Activities.Telnyx.Activities
                                             .WithFrom(() => From)
                                             .WithFromDisplayName(() => FromDisplayName)
                                             .WithTo(() => To)
-                                            .WithTimeoutSecs(() => (int) RingTime.TotalSeconds)
+                                            .WithTimeoutSecs(() => (int)RingTime.TotalSeconds)
                                         ,
                                         dialCustomer => dialCustomer
                                             .When(TelnyxOutcomeNames.Answered)
@@ -351,7 +352,7 @@ namespace Elsa.Activities.Telnyx.Activities
                                 .WithSuspendWorkflow(false)
                                 .WithConnectionId(() => CallControlAppId)
                                 .WithTo(ResolveExtensionAsync)
-                                .WithTimeoutSecs(() => (int) RingTime.TotalSeconds)
+                                .WithTimeoutSecs(() => (int)RingTime.TotalSeconds)
                                 .WithFrom(() => From)
                                 .WithFromDisplayName(() => FromDisplayName)
                             )

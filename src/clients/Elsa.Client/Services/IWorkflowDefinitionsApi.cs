@@ -21,5 +21,8 @@ namespace Elsa.Client.Services
 
         [Delete("/v1/workflow-definitions/{workflowDefinitionId}")]
         Task DeleteAsync(string workflowDefinitionId, CancellationToken cancellationToken = default);
+
+        [Delete("/v1/workflow-definitions/{workflowDefinitionId}/{versionOptions}")]
+        Task DeleteAsync(string workflowDefinitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default);
     }
 }

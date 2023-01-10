@@ -3,5 +3,6 @@
     public interface ITelnyxClient
     {
         ICallsApi Calls { get; }
+        INumberLookupApi NumberLookup { get; }
     }
 }

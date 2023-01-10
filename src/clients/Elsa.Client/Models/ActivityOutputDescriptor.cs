@@ -1,4 +1,4 @@
-﻿using System.Runtime.Serialization;
+using System.Runtime.Serialization;
 
 namespace Elsa.Client.Models;
 
@@ -10,4 +10,5 @@ public class ActivityOutputDescriptor
     [DataMember(Order = 3)] public string? Hint { get; set; }
     [DataMember(Order = 4)] public string? DefaultWorkflowStorageProvider { get; set; }
     [DataMember(Order = 5)] public bool DisableWorkflowProviderSelection { get; set; }
+    [DataMember(Order = 6)] public bool? IsBrowsable { get; set; }
 }

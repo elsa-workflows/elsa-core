@@ -29,6 +29,32 @@ export const resources = {
       'WorkflowInstances': 'فرآیندهای اجرا شده',
       'WorkflowRegistry': 'Workflow Registry',
       'WebhookDefinitions': 'مشخصات Webhookها',
+    },
+  },
+  'es-ES': {
+    default: {
+      'WorkflowDefinitions': 'Definiciones de flujos',
+      'WorkflowInstances': 'Ejecuciones de flujos',
+      'WorkflowRegistry': 'Registro de flujos',
+      'WebhookDefinitions': 'Definiciones de webhooks',
+    },
+    menuItems: {
+      'workflow-definitions': 'Definiciones de flujos',
+      'workflow-instances': 'Ejecuciones de flujos',
+      'workflow-registry': 'Registro de flujos',
+    }
+  },
+  'de-DE': {
+    default: {
+      'WorkflowDefinitions': 'Ablaufdefinitionen',
+      'WorkflowInstances': 'Ablaufinstanzen',
+      'WorkflowRegistry': 'Ablaufverzeichnis',
+      'WebhookDefinitions': 'Webhook Definitionen',
+    },
+    menuItems: {
+      'workflow-definitions': 'Ablaufdefinitionen',
+      'workflow-instances': 'Ablaufinstanzen',
+      'workflow-registry': 'Ablaufverzeichnis',
     }
   }
 };

@@ -1,4 +1,3 @@
-﻿using System.Collections.Generic;
 using System.IO.Pipelines;
 using System.Text;
 using System.Threading.Tasks;
@@ -41,7 +40,7 @@ namespace Elsa.Activities.Telnyx.Webhooks.Services
             
             if (!string.IsNullOrEmpty(correlationId))
             {
-                using var loggingScope = _logger.BeginScope(new Dictionary<string, object> { ["CorrelationId"] = correlationId });
+                using var loggingScope = _logger.BeginScope(new TelnyxWebhookLogScope(correlationId));
                 _logger.LogDebug("Telnyx webhook payload received: {@Webhook}", webhook);
                 await _mediator.Publish(new TelnyxWebhookReceived(webhook), cancellationToken);
             }

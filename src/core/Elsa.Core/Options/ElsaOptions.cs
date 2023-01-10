@@ -64,6 +64,9 @@ namespace Elsa.Options
         public Type DefaultWorkflowStorageProviderType { get; set; }
         public WorkflowChannelOptions WorkflowChannelOptions { get; set; } = new();
 
+        [Obsolete("ElsaOptions.UseTenantSignaler = true is deprecated, please use ElsaOptionsBuilder.UseTenantSignaler() instead.", false)]
+        public bool UseTenantSignaler { get; set; } = false;
+
         internal Func<IServiceProvider, IWorkflowDefinitionStore> WorkflowDefinitionStoreFactory { get; set; }
         internal Func<IServiceProvider, IWorkflowInstanceStore> WorkflowInstanceStoreFactory { get; set; }
         internal Func<IServiceProvider, IWorkflowExecutionLogStore> WorkflowExecutionLogStoreFactory { get; set; }

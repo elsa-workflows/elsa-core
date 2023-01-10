@@ -15,5 +15,7 @@ namespace Elsa.Services.Models
         bool SaveWorkflowContext { get; set; }
         string? Source { get; set; }
         IDictionary<string, string> PropertyStorageProviders { get; }
+        int? X { get; set; }
+        int? Y { get; set; }
     }
 }

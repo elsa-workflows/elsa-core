@@ -11,10 +11,11 @@ namespace Elsa.Core.IntegrationTests.Autofixture
 
         public override Action<ElsaHostBuilderBuilder> GetBuilderCustomizer()
         {
+            var connectionString = Environment.GetEnvironmentVariable("TEST_MONGODB") ?? "mongodb://localhost:27017";
             return builder => {
                 builder.ElsaCallbacks.Add(elsa => {
                     elsa.UseMongoDbPersistence(opts => {
-                        opts.ConnectionString = "mongodb://localhost:27017";
+                        opts.ConnectionString = connectionString;
                         opts.DatabaseName = dbName;
                     });
                 });

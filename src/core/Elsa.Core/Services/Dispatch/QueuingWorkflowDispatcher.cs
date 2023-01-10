@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
@@ -30,7 +29,7 @@ namespace Elsa.Services.Dispatch
 
         public async Task DispatchAsync(ExecuteWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
         {
-            using var loggingScope = _logger.BeginScope(new Dictionary<string, object> { ["WorkflowInstanceId"] = request.WorkflowInstanceId });
+            using var loggingScope = _logger.BeginScope(new WorkflowInstanceLogScope(request.WorkflowInstanceId));
             var workflowInstance = await _workflowInstanceStore.FindByIdAsync(request.WorkflowInstanceId, cancellationToken);
 
             if (workflowInstance == null)

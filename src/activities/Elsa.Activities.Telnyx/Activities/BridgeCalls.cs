@@ -63,7 +63,7 @@ namespace Elsa.Activities.Telnyx.Activities
 
         [ActivityOutput] public CallBridgedPayload? CallBridgedPayloadA { get; set; }
         [ActivityOutput] public CallBridgedPayload? CallBridgedPayloadB { get; set; }
-        [ActivityOutput] public CallBridgedPayload? Output { get; set; }
+        [ActivityOutput] public BridgedCallsOutput? Output { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
@@ -109,18 +109,17 @@ namespace Elsa.Activities.Telnyx.Activities
             if (payload.CallControlId == CallControlIdA)
             {
                 CallBridgedPayloadA = payload;
-                Output = payload;
             }
 
             if (payload.CallControlId == CallControlIdB)
             {
                 CallBridgedPayloadB = payload;
-                Output = payload;
             }
 
             if (CallBridgedPayloadA != null && CallBridgedPayloadB != null)
             {
-                results.Add(Outcome(TelnyxOutcomeNames.Bridged, new BridgedCallsOutput(CallBridgedPayloadA, CallBridgedPayloadB)));
+                Output = new BridgedCallsOutput(CallBridgedPayloadA, CallBridgedPayloadB);
+                results.Add(Outcome(TelnyxOutcomeNames.Bridged));
             }
             else
             {

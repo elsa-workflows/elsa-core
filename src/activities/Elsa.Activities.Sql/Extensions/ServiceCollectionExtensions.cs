@@ -8,8 +8,7 @@ namespace Elsa.Activities.Sql.Extensions
     {
         public static ElsaOptionsBuilder AddSqlServerActivities(this ElsaOptionsBuilder elsa)
         {
-            elsa.Services
-                .AddSingleton<ISqlClientFactory, SqlClientFactory>();
+            elsa.Services.AddSingleton<ISqlClientFactory, SqlClientFactory>();
             elsa.AddActivity<Activities.ExecuteSqlQuery>();
             elsa.AddActivity<Activities.ExecuteSqlCommand>();
 

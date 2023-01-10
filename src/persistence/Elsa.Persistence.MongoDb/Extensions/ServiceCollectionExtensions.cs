@@ -1,4 +1,3 @@
-using System;
 using Elsa.Options;
 using Elsa.Persistence.MongoDb.Options;
 using Elsa.Persistence.MongoDb.Services;
@@ -6,31 +5,35 @@ using Elsa.Persistence.MongoDb.Stores;
 using Elsa.Runtime;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using System;
 
 namespace Elsa.Persistence.MongoDb
 {
     public static class ServiceCollectionExtensions
     {
         public static ElsaOptionsBuilder UseMongoDbPersistence(this ElsaOptionsBuilder elsa, Action<ElsaMongoDbOptions> configureOptions) => UseMongoDbPersistence<ElsaMongoDbContext>(elsa, configureOptions);
-        
-        public static ElsaOptionsBuilder UseMongoDbPersistence<TDbContext>(this ElsaOptionsBuilder elsa, Action<ElsaMongoDbOptions> configureOptions) where TDbContext: ElsaMongoDbContext
+
+        public static ElsaOptionsBuilder UseMongoDbPersistence<TDbContext>(this ElsaOptionsBuilder elsa, Action<ElsaMongoDbOptions> configureOptions) where TDbContext : ElsaMongoDbContext
         {
-            AddCore<TDbContext>(elsa);
+            var tempConfig = new ElsaMongoDbOptions();
+            configureOptions(tempConfig);
             elsa.Services.Configure(configureOptions);
+            AddCore<TDbContext>(elsa, tempConfig);
 
             return elsa;
         }
 
         public static ElsaOptionsBuilder UseMongoDbPersistence(this ElsaOptionsBuilder elsa, IConfiguration configuration) => UseMongoDbPersistence<ElsaMongoDbContext>(elsa, configuration);
 
-        public static ElsaOptionsBuilder UseMongoDbPersistence<TDbContext>(this ElsaOptionsBuilder elsa, IConfiguration configuration) where TDbContext: ElsaMongoDbContext
+        public static ElsaOptionsBuilder UseMongoDbPersistence<TDbContext>(this ElsaOptionsBuilder elsa, IConfiguration configuration) where TDbContext : class, IElsaMongoDbContext
         {
-            AddCore<TDbContext>(elsa);
             elsa.Services.Configure<ElsaMongoDbOptions>(configuration);
+            var tempConfig = configuration.Get<ElsaMongoDbOptions>();
+            AddCore<TDbContext>(elsa, tempConfig);
             return elsa;
         }
 
-        private static void AddCore<TDbContext>(ElsaOptionsBuilder elsa) where TDbContext : ElsaMongoDbContext
+        private static void AddCore<TDbContext>(ElsaOptionsBuilder elsa, ElsaMongoDbOptions mongoDbOptions) where TDbContext : class, IElsaMongoDbContext
         {
             elsa.Services
                 .AddSingleton<MongoDbWorkflowDefinitionStore>()
@@ -39,7 +42,7 @@ namespace Elsa.Persistence.MongoDb
                 .AddSingleton<MongoDbBookmarkStore>()
                 .AddSingleton<MongoDbTriggerStore>()
                 .AddSingleton<TDbContext>()
-                .AddSingleton<ElsaMongoDbContext, TDbContext>()
+                .AddSingleton<IElsaMongoDbContext, TDbContext>()
                 .AddSingleton(sp => sp.GetRequiredService<TDbContext>().WorkflowDefinitions)
                 .AddSingleton(sp => sp.GetRequiredService<TDbContext>().WorkflowInstances)
                 .AddSingleton(sp => sp.GetRequiredService<TDbContext>().WorkflowExecutionLog)
@@ -54,7 +57,7 @@ namespace Elsa.Persistence.MongoDb
                 .UseBookmarkStore(sp => sp.GetRequiredService<MongoDbBookmarkStore>())
                 .UseTriggerStore(sp => sp.GetRequiredService<MongoDbTriggerStore>());
 
-            DatabaseRegister.RegisterMapsAndSerializers();
+            DatabaseRegister.RegisterMapsAndSerializers(mongoDbOptions);
         }
     }
 }

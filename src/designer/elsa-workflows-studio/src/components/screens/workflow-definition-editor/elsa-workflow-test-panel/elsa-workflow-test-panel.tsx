@@ -1,9 +1,9 @@
-import {Component, h, Host, Prop, State, Watch} from '@stencil/core';
-import {HubConnection, HubConnectionBuilder} from '@microsoft/signalr';
-import {EventTypes, WorkflowDefinition, WorkflowStatus, WorkflowTestActivityMessage} from "../../../../models";
-import {i18n} from "i18next";
-import {loadTranslations} from "../../../i18n/i18n-loader";
-import {resources} from "./localizations";
+import { Component, h, Host, Prop, State, Watch } from '@stencil/core';
+import { HubConnection, HubConnectionBuilder } from '@microsoft/signalr';
+import { EventTypes, WorkflowDefinition, WorkflowStatus, WorkflowTestActivityMessage } from "../../../../models";
+import { i18n } from "i18next";
+import { loadTranslations } from "../../../i18n/i18n-loader";
+import { resources } from "./localizations";
 import {
   createElsaClient,
   eventBus,
@@ -11,7 +11,7 @@ import {
   WorkflowTestRestartFromActivityRequest
 } from "../../../../services";
 import Tunnel from "../../../../data/dashboard";
-import {clip} from "../../../../utils/utils";
+import { clip } from "../../../../utils/utils";
 
 @Component({
   tag: 'elsa-workflow-test-panel',
@@ -23,6 +23,7 @@ export class ElsaWorkflowTestPanel {
   @Prop() workflowTestActivityId: string;
   @Prop() culture: string;
   @Prop() serverUrl: string;
+  @Prop() selectedActivityId?: string;
   @State() hubConnection: HubConnection;
   @State() workflowTestActivityMessages: Array<WorkflowTestActivityMessage> = [];
   @State() workflowStarted: boolean = false;
@@ -44,13 +45,20 @@ export class ElsaWorkflowTestPanel {
   }
 
   private connectMessageHub(): void {
-    this.hubConnection = new HubConnectionBuilder()
-      .withUrl(this.serverUrl + "/hubs/workflowTest")
-      .build();
+    const builder = new HubConnectionBuilder()
+      .withUrl(this.serverUrl + "/hubs/workflowTest");
+
+    eventBus.emit(EventTypes.HubConnectionCreated, this, builder);
+    this.hubConnection = builder.build();
 
     this.hubConnection.on('Connected', (message) => {
       this.signalRConnectionId = message;
+      eventBus.emit(EventTypes.HubConnectionConnected, this, { hubConnection: this.hubConnection, connectionId: message });
     });
+
+    this.hubConnection.onclose((e) => {
+      eventBus.emit(EventTypes.HubConnectionClosed, this, { hubConnection: this.hubConnection, error: e});
+    })
 
     this.hubConnection.on('DispatchMessage', async (message) => {
       message = message as WorkflowTestActivityMessage;
@@ -63,25 +71,31 @@ export class ElsaWorkflowTestPanel {
         this.workflowStarted = false;
       }
 
-      if (message.workflowStatus === 'Suspended'){
+      if (message.workflowStatus === 'Suspended') {
         this.workflowStarted = true;
       }
 
-      if (!this.message){
+      if (!this.message) {
         this.message = message;
       }
     });
 
     this.hubConnection.start()
-      .then(() => this.hubConnection.invoke("Connecting"))
-      .catch((err) => console.log('Failed to establish a SignalR connection.'));
+      .then(() => {
+        this.hubConnection.invoke("Connecting");
+        eventBus.emit(EventTypes.HubConnectionStarted, this, this.hubConnection);
+      })
+      .catch((err) => {
+        console.log('Failed to establish a SignalR connection.')
+        eventBus.emit(EventTypes.HubConnectionFailed, this, { hubConnection: this.hubConnection, err: err });
+      });
   }
 
-  connectedCallback(){
+  connectedCallback() {
     eventBus.on(EventTypes.WorkflowRestarted, this.onRestartWorkflow);
   }
 
-  disconnectedCallback(){
+  disconnectedCallback() {
     eventBus.detach(EventTypes.WorkflowRestarted, this.onRestartWorkflow);
   }
 
@@ -96,13 +110,14 @@ export class ElsaWorkflowTestPanel {
     const request: WorkflowTestExecuteRequest = {
       workflowDefinitionId: this.workflowDefinition.definitionId,
       version: this.workflowDefinition.version,
-      signalRConnectionId: this.signalRConnectionId
+      signalRConnectionId: this.signalRConnectionId,
+      startActivityId: this.selectedActivityId
     };
 
     const client = await createElsaClient(this.serverUrl);
     const response = await client.workflowTestApi.execute(request);
 
-    if(!response.isSuccess && response.isAnotherInstanceRunning){
+    if (!response.isSuccess && response.isAnotherInstanceRunning) {
       this.workflowStarted = false;
 
       const t = x => this.i18next.t(x);
@@ -158,7 +173,7 @@ export class ElsaWorkflowTestPanel {
 
     const renderActivityTestMessage = () => {
 
-      const {message} = this;
+      const { message } = this;
 
       if (message == undefined || !message)
         return
@@ -168,22 +183,22 @@ export class ElsaWorkflowTestPanel {
       const renderEndpointUrl = () => {
         if (!message.activityData || !message.activityData["Path"]) return undefined;
 
-        const endpointUrl = this.serverUrl + '/workflows' + message.activityData["Path"].value + '?correlation=' + message.correlationId;
+        const endpointUrl = this.serverUrl + '/workflows' + message.activityData["Path"] + '?correlation=' + message.correlationId;
 
         return (
           <div>
-              <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
-                <dt class="elsa-text-gray-500">
-                  <span class="elsa-mr-1">{t('EntryEndpoint')}</span>
-                  <elsa-copy-button value={endpointUrl} />
-                </dt>
-              </div>
-              <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
-                <dt class="elsa-text-gray-900">
-                  <span class="elsa-break-all font-mono" onClick={e => clip(e.currentTarget)}>{endpointUrl}</span>
-                </dt>
-              </div>
+            <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
+              <dt class="elsa-text-gray-500">
+                <span class="elsa-mr-1">{t('EntryEndpoint')}</span>
+                <elsa-copy-button value={endpointUrl} />
+              </dt>
             </div>
+            <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
+              <dt class="elsa-text-gray-900">
+                <span class="elsa-break-all font-mono" onClick={e => clip(e.currentTarget)}>{endpointUrl}</span>
+              </dt>
+            </div>
+          </div>
         );
       };
 
@@ -204,21 +219,21 @@ export class ElsaWorkflowTestPanel {
           <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
             {!this.workflowStarted ?
               <button type="button"
-                      onClick={() => this.onExecuteWorkflowClick()}
-                      class="elsa-ml-0 elsa-w-full elsa-inline-flex elsa-justify-center elsa-rounded-md elsa-border elsa-border-transparent elsa-shadow-sm elsa-px-4 elsa-py-2 elsa-bg-blue-600 elsa-text-base elsa-font-medium elsa-text-white hover:elsa-bg-blue-700 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500 sm:elsa-ml-3 sm:elsa-w-auto sm:elsa-text-sm">
+                onClick={() => this.onExecuteWorkflowClick()}
+                class="elsa-ml-0 elsa-w-full elsa-inline-flex elsa-justify-center elsa-rounded-md elsa-border elsa-border-transparent elsa-shadow-sm elsa-px-4 elsa-py-2 elsa-bg-blue-600 elsa-text-base elsa-font-medium elsa-text-white hover:elsa-bg-blue-700 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500 sm:elsa-ml-3 sm:elsa-w-auto sm:elsa-text-sm">
                 {t('ExecuteWorkflow')}
               </button>
               :
               <button type="button"
-                      onClick={() => this.onStopWorkflowClick()}
-                      class="elsa-ml-0 elsa-w-full elsa-inline-flex elsa-justify-center elsa-rounded-md elsa-border elsa-border-transparent elsa-shadow-sm elsa-px-4 elsa-py-2 elsa-bg-red-600 elsa-text-base elsa-font-medium elsa-text-white hover:elsa-bg-red-700 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-red-500 sm:elsa-ml-3 sm:elsa-w-auto sm:elsa-text-sm">
+                onClick={() => this.onStopWorkflowClick()}
+                class="elsa-ml-0 elsa-w-full elsa-inline-flex elsa-justify-center elsa-rounded-md elsa-border elsa-border-transparent elsa-shadow-sm elsa-px-4 elsa-py-2 elsa-bg-red-600 elsa-text-base elsa-font-medium elsa-text-white hover:elsa-bg-red-700 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-red-500 sm:elsa-ml-3 sm:elsa-w-auto sm:elsa-text-sm">
                 {t('StopWorkflow')}
               </button>
             }
           </div>
         </dl>
         {renderActivityTestMessage()}
-        <elsa-confirm-dialog ref={el => this.confirmDialog = el} culture={this.culture}/>
+        <elsa-confirm-dialog ref={el => this.confirmDialog = el} culture={this.culture} />
       </Host>
     );
   }

@@ -1,5 +1,6 @@
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Expressions;
 using Elsa.Services.Models;
 using System;
 using System.Threading.Tasks;
@@ -14,7 +15,8 @@ namespace Elsa.Activities.Rpa.Web
         {
         }
 
-        [ActivityInput(Hint = "The URL to navigate to")]
+        [ActivityInput(Hint = "The URL to navigate to",
+            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string? Url { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)

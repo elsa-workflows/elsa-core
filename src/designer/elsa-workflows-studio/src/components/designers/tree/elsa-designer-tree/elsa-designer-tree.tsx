@@ -546,8 +546,14 @@ export class ElsaWorkflowDesigner {
         scale: transform.k,
         initialZoom: this.zoomParams.initialZoom,
       };
+
+      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+      if (isSafari) {
+          d3.selectAll('g.label > * > * > div, g.label > * > div').style('transform', `scale(${transform.k})`);
+      }
     });
-    this.svgD3Selected.call(this.zoom);
+
+    this.svgD3Selected.call(this.zoom);    
   }
 
   applyInitialZoom() {

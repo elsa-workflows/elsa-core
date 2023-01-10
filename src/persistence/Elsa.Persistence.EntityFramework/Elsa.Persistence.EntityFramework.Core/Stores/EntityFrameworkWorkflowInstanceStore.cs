@@ -10,6 +10,9 @@ using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Core.Services;
 using Elsa.Persistence.Specifications;
 using Elsa.Serialization;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
@@ -44,21 +47,25 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
 
         public override async Task<int> DeleteManyAsync(ISpecification<WorkflowInstance> specification, CancellationToken cancellationToken = default)
         {
-            var workflowInstances = (await FindManyAsync(specification, cancellationToken: cancellationToken)).ToList();
-            var workflowInstanceIds = workflowInstances.Select(x => x.Id).ToArray();
+            var workflowInstanceIds = (await FindManyAsync<string>(specification, (wf) => wf.Id, cancellationToken: cancellationToken)).ToList();
             await DeleteManyByIdsAsync(workflowInstanceIds, cancellationToken);
-            return workflowInstances.Count;
+            return workflowInstanceIds.Count;
         }
 
         public async Task DeleteManyByIdsAsync(IEnumerable<string> ids, CancellationToken cancellationToken = default)
         {
             var idList = ids.ToList();
 
+            if (!idList.Any())
+                return;
+
             await DoWork(async dbContext =>
             {
-                await dbContext.Set<WorkflowExecutionLogRecord>().AsQueryable().Where(x => idList.Contains(x.WorkflowInstanceId)).BatchDeleteWithWorkAroundAsync(dbContext, cancellationToken);
-                await dbContext.Set<Bookmark>().AsQueryable().Where(x => idList.Contains(x.WorkflowInstanceId)).BatchDeleteWithWorkAroundAsync(dbContext, cancellationToken);
-                await dbContext.Set<WorkflowInstance>().AsQueryable().Where(x => idList.Contains(x.Id)).BatchDeleteWithWorkAroundAsync(dbContext, cancellationToken);
+                var helper = dbContext.GetService<ISqlGenerationHelper>();
+                var placeholders = string.Join(",", Enumerable.Range(0, idList.Count).Select(i => "{" + i + "}"));
+                await dbContext.Database.ExecuteSqlRawAsync($"delete from {dbContext.WorkflowExecutionLogRecords.EntityType.GetSchemaQualifiedTableNameWithQuotes(helper)} where WorkflowInstanceId in ({placeholders})", idList, cancellationToken);
+                await dbContext.Database.ExecuteSqlRawAsync($"delete from {dbContext.Bookmarks.EntityType.GetSchemaQualifiedTableNameWithQuotes(helper)} where WorkflowInstanceId in ({placeholders})", idList, cancellationToken);
+                await dbContext.Database.ExecuteSqlRawAsync($"delete from {dbContext.WorkflowInstances.EntityType.GetSchemaQualifiedTableNameWithQuotes(helper)} where Id in ({placeholders})", idList, cancellationToken);
             }, cancellationToken);
         }
 
@@ -80,6 +87,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
                 entity.ScheduledActivities,
                 entity.Scopes,
                 entity.Fault,
+                entity.Faults,
                 entity.CurrentActivity
             };
 
@@ -101,6 +109,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
                 entity.ScheduledActivities,
                 entity.Scopes,
                 entity.Fault,
+                entity.Faults,
                 entity.CurrentActivity
             };
 
@@ -127,6 +136,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
             entity.ScheduledActivities = data.ScheduledActivities;
             entity.Scopes = data.Scopes;
             entity.Fault = data.Fault;
+            entity.Faults = data.Faults;
             entity.CurrentActivity = data.CurrentActivity;
         }
     }

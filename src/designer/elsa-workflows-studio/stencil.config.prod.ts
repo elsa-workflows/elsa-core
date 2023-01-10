@@ -8,7 +8,7 @@ import cssnano from 'cssnano';
 const purgecss = require('@fullhuman/postcss-purgecss')({
   content: ['./src/**/*.tsx', './src/**/*.html'],
   defaultExtractor: content => content.match(/[A-Za-z0-9-_:/]+/g) || [],
-  safelist: ['jtk-connector'],
+  safelist: ['hidden', 'jtk-connector', 'jtk-endpoint', 'x6-node', 'x6-node-selected', 'elsa-default-activity-template', 'x6-port-out', 'x6-port-label', 'x6-graph-scroller', 'rose', 'sky', /gray/, /pink/, /blue/, /green/, /red/, /yellow/, /rose/, 'label-container', 'node', 'start', 'activity', 'elsa-border-blue-600', 'elsa-border-green-600', 'elsa-border-red-600']
 });
 
 export const config: Config = {

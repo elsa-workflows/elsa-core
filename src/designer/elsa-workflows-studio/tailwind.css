@@ -3,38 +3,45 @@
 @tailwind utilities;
 
 svg.jtk-connector path {
-    @apply elsa-stroke-current;
-    @apply elsa-text-gray-400;
+  @apply elsa-stroke-current;
+  @apply elsa-text-gray-400;
 }
 
 svg.jtk-connector.jtk-hover path {
-    @apply elsa-stroke-current;
-    @apply elsa-stroke-2;
-    @apply elsa-text-blue-400;
+  @apply elsa-stroke-current;
+  @apply elsa-stroke-2;
+  @apply elsa-text-blue-400;
+}
+
+.jtk-endpoint {
+  z-index: 3;
 }
 
 .elsa-w-2-5 {
-    width: 0.625rem;
+  width: 0.625rem;
 }
 
 .elsa-h-2-5 {
-    height: 0.625rem;
+  height: 0.625rem;
 }
 
 .elsa-space-x-0-5 > :not([hidden]) ~ :not([hidden]) {
-    --tw-space-x-reverse: 0;
-    margin-right: calc(0.125rem * var(--tw-space-x-reverse));
-    margin-left: calc(0.125rem * calc(1 - var(--tw-space-x-reverse)));
+  --tw-space-x-reverse: 0;
+  margin-right: calc(0.125rem * var(--tw-space-x-reverse));
+  margin-left: calc(0.125rem * calc(1 - var(--tw-space-x-reverse)));
 }
 
-.node.activity, .node.start, .node.add .label-container {
-    fill: transparent;
+.node.activity,
+.node.start,
+.node.add .label-container {
+  fill: transparent;
 }
 
-.node.activity .label-container, .node.start .label-container {
-    stroke: none;
+.node.activity .label-container,
+.node.start .label-container {
+  stroke: none;
 }
 
 .hidden {
-    display: none;
+  display: none;
 }

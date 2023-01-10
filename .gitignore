@@ -32,7 +32,6 @@ _ReSharper*/
 # VS Code/Omnisharp crash dumps
 mono_crash.mem*.blob
 
-
 #Nuget packages folder
 packages/
 
@@ -41,6 +40,9 @@ packages/
 
 #Rider
 .idea
+
+#macos
+.DS_Store
 
 #wwwroot
 wwwroot/
@@ -70,3 +72,4 @@ src/designer/elsa-workflows-studio/loader
 
 # Created by developers using GNU/Linux
 .directory
+launchSettings.json

@@ -17,6 +17,7 @@
 
 ### Used by
 
+ - [elsa-credential-manager-list-screen](../../../modules/credential-manager/components)
  - [elsa-version-history-panel](../../screens/workflow-definition-editor/elsa-version-history-panel)
  - [elsa-webhook-definitions-list-screen](../../../modules/elsa-webhooks/components/screens/webhook-definition-list/else-webhook-definitions-screen)
  - [elsa-workflow-definitions-list-screen](../../screens/workflow-definition-list/elsa-workflow-definitions-screen)
@@ -26,6 +27,7 @@
 ### Graph
 ```mermaid
 graph TD;
+  elsa-credential-manager-list-screen --> elsa-context-menu
   elsa-version-history-panel --> elsa-context-menu
   elsa-webhook-definitions-list-screen --> elsa-context-menu
   elsa-workflow-definitions-list-screen --> elsa-context-menu

@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html dir="ltr" lang="en">
+
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0"/>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0" />
   <title>Elsa Dashboard</title>
   <link rel="icon" type="image/png" sizes="32x32" href="/build/assets/images/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/build/assets/images/favicon-16x16.png">
@@ -12,300 +13,343 @@
   <script type="module" src="/build/elsa-workflows-studio.esm.js"></script>
   <script nomodule src="/build/elsa-workflows-studio.js"></script>
 </head>
+
 <body>
 
-<elsa-studio-root server-url="https://localhost:11000" monaco-lib-path="build/assets/js/monaco-editor/min" culture="en-US" config="build/assets/designer.config.json">
-  <!-- The root dashboard component -->
-  <elsa-studio-dashboard></elsa-studio-dashboard>
+  <elsa-studio-root server-url="https://localhost:11000" monaco-lib-path="build/assets/js/monaco-editor/min" culture="en-US" config="build/assets/designer.config.json">
+    <!-- The root dashboard component -->
+    <elsa-studio-dashboard></elsa-studio-dashboard>
 
-  <!-- Instead of using the full dashboard component, you can display lower-level components instead-->
-  <!-- <elsa-workflow-instance-list-screen workflow-id="7448d8d2ded64c868b474b8afce9e852"></elsa-workflow-instance-list-screen>-->
-  <!--<elsa-workflow-definition-editor-screen workflow-definition-id="{workflowDefinitionId}"></elsa-workflow-definition-editor-screen>-->
-  <!--<elsa-workflow-instance-viewer-screen id="workflowInstanceViewer" workflow-instance-id="8014e2358d8b4907946eb5f0e075c63c"></elsa-workflow-instance-viewer-screen>-->
-</elsa-studio-root>
+    <!-- Instead of using the full dashboard component, you can display lower-level components instead-->
+    <!-- <elsa-workflow-instance-list-screen workflow-id="7448d8d2ded64c868b474b8afce9e852"></elsa-workflow-instance-list-screen>-->
+    <!--<elsa-workflow-definition-editor-screen workflow-definition-id="{workflowDefinitionId}"></elsa-workflow-definition-editor-screen>-->
+    <!--<elsa-workflow-instance-viewer-screen id="workflowInstanceViewer" workflow-instance-id="8014e2358d8b4907946eb5f0e075c63c"></elsa-workflow-instance-viewer-screen>-->
+  </elsa-studio-root>
 
-<!-- Keep this to avoid Stencil from stripping classes added by dagre-d3 and dynamically computed classes <!-->
-<div
-  class="node add label-container hidden elsa-border-blue-600 elsa-border-green-600 elsa-border-red-200 elsa-border-blue-200 elsa-border-green-200 elsa-border-red-200 elsa-bg-gray-600 elsa-bg-rose-600 elsa-bg-blue-600 elsa-bg-green-600 elsa-bg-red-600 elsa-bg-yellow-600 elsa-right-44 elsa-right-60"></div>
+  <!-- Keep this to avoid Stencil from stripping classes added by dagre-d3 and dynamically computed classes <!-->
+  <div class="node add label-container hidden elsa-border-blue-600 elsa-border-green-600 elsa-border-red-200 elsa-border-blue-200 elsa-border-green-200 elsa-border-red-200 elsa-bg-gray-600 elsa-bg-rose-600 elsa-bg-blue-600 elsa-bg-green-600 elsa-bg-red-600 elsa-bg-yellow-600 elsa-right-44 elsa-right-60"></div>
 
-<script type="module">
-  // Integration demos.
+  <script type="module">
+    // Integration demos.
 
-  // Import publicly exposed services and models.
-  import {confirmDialogService, EventTypes, WebhooksPlugin, WorkflowSettingsPlugin} from "/build/index.esm.js";
+    // Import publicly exposed services and models.
+    import {confirmDialogService, EventTypes, WebhooksPlugin, CredentialManagerPlugin, WorkflowSettingsPlugin, Auth0Plugin} from "/build/index.esm.js";
 
-  // Custom plugin that changes the icon of the ReadLine activity.
-  function CustomReadLinePlugin(elsaStudio) {
-    // Replace icon used for 'ReadLine' activity.
-    elsaStudio.activityIconProvider.register(
-      'ReadLine',
-      `<span class="elsa-rounded-lg elsa-inline-flex elsa-p-3 elsa-bg-blue-50 elsa-text-blue-700 elsa-ring-4 elsa-ring-white">
+    function accessTokenFactory() {
+      return  (Math.random() + 1).toString(36).substring(7);
+    }
+
+    function CustomHubConnectionPlugin(elsaStudio) {
+      const eventBus = elsaStudio.eventBus;
+
+      eventBus.on('hubconnection-created', e => {
+        // e: HubConnectionBuilder
+        //example to modify the with url for Bearer token handling.
+        e.withUrl(e.url, { accessTokenFactory: accessTokenFactory });
+        console.log('Hub Connection Created ', e);
+      });
+      eventBus.on('hubconnection-started', e => {
+        // e: HubConnection
+        console.log('Hub Connection Started ', e)
+      });
+      eventBus.on('hubconnection-connected', e => {
+        // e: {
+        //  hubConnection: HubConnection
+        //  connectionId: string
+        // }
+        console.log('Hub Connection Connected ', e.hubConnection, e.connectionId);
+      });
+      eventBus.on('hubconnection-closed', e => {
+        // e: {
+        //  hubConnection: HubConnection
+        //  error: Error?
+        // }
+        console.log('Hub Connection Closed ', e.hubConnection, e.error);
+      });
+    }
+
+    // Custom plugin that changes the icon of the ReadLine activity.
+    function CustomReadLinePlugin(elsaStudio) {
+      // Replace icon used for 'ReadLine' activity.
+      elsaStudio.activityIconProvider.register(
+        'ReadLine',
+        `<span class="elsa-rounded-lg elsa-inline-flex elsa-p-3 elsa-bg-blue-50 elsa-text-blue-700 elsa-ring-4 elsa-ring-white">
           <svg class="elsa-h-6 elsa-w-6" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
             <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
           </svg>
         </span>`);
-  }
-
-  // Custom plugin that adds a menu item to the bulk actions list on the workflow instance list view.
-  function CustomBulkActionsPlugin(elsaStudio) {
-    const eventBus = elsaStudio.eventBus;
-
-    eventBus.on(EventTypes.WorkflowInstanceBulkActionsLoading, async e => {
-      e.bulkActions.push({
-        name: 'Reset', text: 'Reset', handler: async () => {
-          if (!await confirmDialogService.show("Reset Workflows", "Are you sure you want to do this??"))
-            return;
-
-          alert('Resetting workflows!');
-        }
-      });
-    })
-  }
-
-  // Custom plugin that intercepts outgoing HTTP requests and their responses.
-  function CustomHttpMiddlewarePlugin(elsaStudio) {
-    const eventBus = elsaStudio.eventBus;
-
-    eventBus.on('http-client-created', e => {
-      // Register a sample middleware.
-      e.service.register({
-        onRequest(request) {
-          return request;
-        },
-
-        onResponse(response) {
-          return response;
-        }
-      });
-    });
-
-    eventBus.on('workflow-imported', e => {
-      console.log('workflow-imported');
-    });
-  }
-
-  // Simple plugin that listens for the 'workflow-model-changed' event.
-  function WorkflowModelChangedListenerPlugin(elsaStudio) {
-    const {eventBus} = elsaStudio;
-
-    eventBus.on('workflow-model-changed', e => {
-      console.log(`Workflow model changed. New model: ${e}`)
-    });
-  }
-
-  // Plugin that completely customizes the activity editor for the WriteLine activity.
-  function CustomActivityEditorPlugin(elsaStudio) {
-    const {eventBus, getOrCreateProperty, htmlToElement} = elsaStudio;
-
-    // When the activity editor is about to be rendered.
-    eventBus.on('activity-editor.rendering', e => {
-      const {activityDescriptor, activityModel} = e;
-
-      // We only handle WriteLine activities.
-      if (activityDescriptor.type !== 'WriteLine')
-        return;
-
-      let tabs = [...e.tabs];
-
-      // Remove the 'Properties' tab:
-      tabs = tabs.filter(x => x.tabName !== 'Properties');
-
-      // Create a custom tab.
-      const customTab = {
-        tabName: 'Custom Tab',
-        renderContent: () => this.renderWriteLineEditor(activityDescriptor, activityModel)
-      }
-
-      // Add the custom tab.
-      tabs = [customTab, ...tabs];
-
-      // Update the tabs array.
-      e.tabs = tabs;
-    });
-
-    this.renderWriteLineEditor = (activityDescriptor, activityModel) => {
-      const propertyEditor = document.createElement('elsa-property-editor');
-      const propertyDescriptor = activityDescriptor.inputProperties.find(x => x.name === 'Text');
-      const propertyModel = getOrCreateProperty(activityModel, propertyDescriptor.name);
-      const defaultSyntax = propertyDescriptor?.defaultSyntax || 'Literal';
-      const currentValue = propertyModel.expressions[defaultSyntax] || '';
-      const editorHtml = `<textarea class="focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300" rows="5">${currentValue}</textarea>`;
-      const editorElement = htmlToElement(editorHtml);
-
-      propertyEditor.append(editorElement);
-      propertyEditor.propertyDescriptor = propertyDescriptor;
-      propertyEditor.propertyModel = propertyModel;
-      propertyEditor.activityModel = activityModel;
-
-      editorElement.addEventListener('change', (e) => {
-        const input = e.currentTarget;
-        propertyModel.expressions[defaultSyntax] = input.value;
-      });
-
-      return propertyEditor;
     }
-  }
 
-  // Custom activity property type input control plugin:
-  function CustomPropertyFieldPlugin(elsaStudio) {
-    const {propertyDisplayManager} = elsaStudio;
+    // Custom plugin that adds a menu item to the bulk actions list on the workflow instance list view.
+    function CustomBulkActionsPlugin(elsaStudio) {
+      const eventBus = elsaStudio.eventBus;
 
-    // Register custom driver.
-    propertyDisplayManager.addDriver('my-custom-property-type', () => new CustomPropertyFieldDriver(elsaStudio));
-  }
+      eventBus.on(EventTypes.WorkflowInstanceBulkActionsLoading, async e => {
+        e.bulkActions.push({
+          name: 'Reset', text: 'Reset', handler: async () => {
+            if (!await confirmDialogService.show("Reset Workflows", "Are you sure you want to do this??"))
+              return;
 
-  // Custom activity property type input control driver:
-  function CustomPropertyFieldDriver(elsaStudio) {
+            alert('Resetting workflows!');
+          }
+        });
+      })
+    }
 
-    // Get convenience methods.
-    const {getOrCreateProperty, htmlToElement} = elsaStudio;
+    // Custom plugin that intercepts outgoing HTTP requests and their responses.
+    function CustomHttpMiddlewarePlugin(elsaStudio) {
+      const eventBus = elsaStudio.eventBus;
 
-    this.display = (activity, propertyDescriptor) => {
+      eventBus.on('http-client-created', e => {
+        // Register a sample middleware.
+        e.service.register({
+          onRequest(request) {
+            return request;
+          },
 
-      // Get the property model.
-      const propertyModel = getOrCreateProperty(activity, propertyDescriptor.name);
+          onResponse(response) {
+            return response;
+          }
+        });
+      });
 
-      // Get the configured default syntax name.
-      const defaultSyntax = propertyDescriptor.defaultSyntax || 'Literal';
+      eventBus.on('workflow-imported', e => {
+        console.log('workflow-imported');
+      });
+    }
 
-      // Get the current property value for the default syntax.
-      const currentValue = propertyModel.expressions[defaultSyntax] || '';
+    // Simple plugin that listens for the 'workflow-model-changed' event.
+    function WorkflowModelChangedListenerPlugin(elsaStudio) {
+      const { eventBus } = elsaStudio;
 
-      // Create a property editor element (for displaying label, hint and syntax toggle).
-      // This will wrap our custom control.
-      const propertyEditor = document.createElement('elsa-property-editor');
+      eventBus.on('workflow-model-changed', e => {
+        console.log(`Workflow model changed. New model: ${e}`)
+      });
+    }
 
-      // Our custom input element control. Can be anything you want.
-      // Using HTML string to easily construct an actual element object.
-      // Better yet would be to implement a component with Stencil, Angular or React if you;re using any of these frameworks.
-      const inputHtml =
-        `<input type="text"
+    // Plugin that completely customizes the activity editor for the WriteLine activity.
+    function CustomActivityEditorPlugin(elsaStudio) {
+      const { eventBus, getOrCreateProperty, htmlToElement } = elsaStudio;
+
+      // When the activity editor is about to be rendered.
+      eventBus.on('activity-editor.rendering', e => {
+        const { activityDescriptor, activityModel } = e;
+
+        // We only handle WriteLine activities.
+        if (activityDescriptor.type !== 'WriteLine')
+          return;
+
+        let tabs = [...e.tabs];
+
+        // Remove the 'Properties' tab:
+        tabs = tabs.filter(x => x.tabName !== 'Properties');
+
+        // Create a custom tab.
+        const customTab = {
+          tabName: 'Custom Tab',
+          renderContent: () => this.renderWriteLineEditor(activityDescriptor, activityModel)
+        }
+
+        // Add the custom tab.
+        tabs = [customTab, ...tabs];
+
+        // Update the tabs array.
+        e.tabs = tabs;
+      });
+
+      this.renderWriteLineEditor = (activityDescriptor, activityModel) => {
+        const propertyEditor = document.createElement('elsa-property-editor');
+        const propertyDescriptor = activityDescriptor.inputProperties.find(x => x.name === 'Text');
+        const propertyModel = getOrCreateProperty(activityModel, propertyDescriptor.name);
+        const defaultSyntax = propertyDescriptor?.defaultSyntax || 'Literal';
+        const currentValue = propertyModel.expressions[defaultSyntax] || '';
+        const editorHtml = `<textarea class="focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300" rows="5">${currentValue}</textarea>`;
+        const editorElement = htmlToElement(editorHtml);
+
+        propertyEditor.append(editorElement);
+        propertyEditor.propertyDescriptor = propertyDescriptor;
+        propertyEditor.propertyModel = propertyModel;
+        propertyEditor.activityModel = activityModel;
+
+        editorElement.addEventListener('change', (e) => {
+          const input = e.currentTarget;
+          propertyModel.expressions[defaultSyntax] = input.value;
+        });
+
+        return propertyEditor;
+      }
+    }
+
+    // Custom activity property type input control plugin:
+    function CustomPropertyFieldPlugin(elsaStudio) {
+      const { propertyDisplayManager } = elsaStudio;
+
+      // Register custom driver.
+      propertyDisplayManager.addDriver('my-custom-property-type', () => new CustomPropertyFieldDriver(elsaStudio));
+    }
+
+    // Custom activity property type input control driver:
+    function CustomPropertyFieldDriver(elsaStudio) {
+
+      // Get convenience methods.
+      const { getOrCreateProperty, htmlToElement } = elsaStudio;
+
+      this.display = (activity, propertyDescriptor) => {
+
+        // Get the property model.
+        const propertyModel = getOrCreateProperty(activity, propertyDescriptor.name);
+
+        // Get the configured default syntax name.
+        const defaultSyntax = propertyDescriptor.defaultSyntax || 'Literal';
+
+        // Get the current property value for the default syntax.
+        const currentValue = propertyModel.expressions[defaultSyntax] || '';
+
+        // Create a property editor element (for displaying label, hint and syntax toggle).
+        // This will wrap our custom control.
+        const propertyEditor = document.createElement('elsa-property-editor');
+
+        // Our custom input element control. Can be anything you want.
+        // Using HTML string to easily construct an actual element object.
+        // Better yet would be to implement a component with Stencil, Angular or React if you;re using any of these frameworks.
+        const inputHtml =
+          `<input type="text"
                    class="disabled:elsa-opacity-50 disabled:elsa-cursor-not-allowed focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300"
                    value="${currentValue}"
                 />`;
 
-      // Create an actual input element from the HTML string.
-      const inputElement = htmlToElement(inputHtml);
+        // Create an actual input element from the HTML string.
+        const inputElement = htmlToElement(inputHtml);
 
-      // Add the custom input control element to the property editor as a child.
-      propertyEditor.append(inputElement);
+        // Add the custom input control element to the property editor as a child.
+        propertyEditor.append(inputElement);
 
-      // Initialize the property editor.
-      propertyEditor.propertyDescriptor = propertyDescriptor;
-      propertyEditor.propertyModel = propertyModel;
-      propertyEditor.activityModel = activity;
+        // Initialize the property editor.
+        propertyEditor.propertyDescriptor = propertyDescriptor;
+        propertyEditor.propertyModel = propertyModel;
+        propertyEditor.activityModel = activity;
 
-      // Setup change handler for custom control that updates the property model.
-      inputElement.addEventListener('change', (e) => {
-        const input = e.currentTarget;
-        propertyModel.expressions[defaultSyntax] = input.value;
+        // Setup change handler for custom control that updates the property model.
+        inputElement.addEventListener('change', (e) => {
+          const input = e.currentTarget;
+          propertyModel.expressions[defaultSyntax] = input.value;
+        });
+
+        // return the created custom control.
+        return propertyEditor;
+      };
+    }
+
+    // Awaits the existence of an element.
+    const awaitElement = async selector => {
+      while (document.querySelector(selector) === null) {
+        await new Promise(resolve => requestAnimationFrame(resolve))
+      }
+      return document.querySelector(selector);
+    };
+
+    // A sample plugin for the VehicleActivity sample activity.
+    function VehicleActivityPlugin(elsaStudio) {
+      const { eventBus, httpClientFactory, activityIconProvider } = elsaStudio;
+
+      // A function that requests a list of models from the server based on the selected car brand.
+      const updateModels = async (brand, currentModel) => {
+        let models = [];
+
+        // Only attempt to fetch car models if a brand was given.
+        if (!!brand) {
+          const httpClient = await httpClientFactory();
+          const response = await httpClient.get(`api/samples/brands/${brand}/models`);
+          models = response.data;
+        }
+
+        // Get a reference to the models select list.
+        const modelsSelectList = await awaitElement('#Model');
+        modelsSelectList.innerHTML = "";
+
+        // Build up the models dropdown list.
+        for (const model of models) {
+          const selected = model === currentModel;
+          const option = new Option(model, model, selected, selected);
+          modelsSelectList.options.add(option);
+        }
+      }
+
+      const onBrandChanged = async e => {
+        await updateModels(e.currentTarget.value);
+      };
+
+      // When the activity editor is opened, setup an event handler on the Brands dropdown list.
+      eventBus.on('activity-editor-appearing', async e => {
+        // We are only interested in our custom activity being editor.
+        if (e.activityDescriptor.type !== 'VehicleActivity')
+          return;
+
+        // Listen for change events on the Brand dropdown list.
+        const brandsSelectList = await awaitElement('#Brand');
+        const currentBrand = brandsSelectList.value;
+        const currentModel = e.activityModel.properties.find(p => p.name === 'Model').expressions['Literal'];
+
+        brandsSelectList.addEventListener('change', onBrandChanged);
+
+        await updateModels(currentBrand, currentModel);
       });
 
-      // return the created custom control.
-      return propertyEditor;
-    };
-  }
+      // When the activity editor is closing, dispose event handlers.
+      eventBus.on('activity-editor-disappearing', e => {
+        if (e.activityDescriptor.type !== 'VehicleActivity')
+          return;
 
-  // Awaits the existence of an element.
-  const awaitElement = async selector => {
-    while (document.querySelector(selector) === null) {
-      await new Promise(resolve => requestAnimationFrame(resolve))
-    }
-    return document.querySelector(selector);
-  };
+        document.querySelector('#Brand').removeEventListener('change', onBrandChanged);
+      });
 
-  // A sample plugin for the VehicleActivity sample activity.
-  function VehicleActivityPlugin(elsaStudio) {
-    const {eventBus, httpClientFactory, activityIconProvider} = elsaStudio;
+      const vehicleIcon = '<span class="elsa-rounded-lg elsa-inline-flex elsa-p-3 elsa-bg-pink-50 elsa-text-pink-700 elsa-ring-4 elsa-ring-white">' +
+        '  <svg class="elsa-h-6 elsa-w-6" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">' +
+        '    <path stroke="none" d="M0 0h24v24H0z"/>' +
+        '    <circle cx="7" cy="17" r="2" />' +
+        '    <circle cx="17" cy="17" r="2" />' +
+        '    <path d="M5 17h-2v-6l2-5h9l4 5h1a2 2 0 0 1 2 2v4h-2m-4 0h-6m-6 -6h15m-6 0v-5" />' +
+        '  </svg>' +
+        '</span>';
 
-    // A function that requests a list of models from the server based on the selected car brand.
-    const updateModels = async (brand, currentModel) => {
-      let models = [];
-
-      // Only attempt to fetch car models if a brand was given.
-      if (!!brand) {
-        const httpClient = await httpClientFactory();
-        const response = await httpClient.get(`api/samples/brands/${brand}/models`);
-        models = response.data;
-      }
-
-      // Get a reference to the models select list.
-      const modelsSelectList = await awaitElement('#Model');
-      modelsSelectList.innerHTML = "";
-
-      // Build up the models dropdown list.
-      for (const model of models) {
-        const selected = model === currentModel;
-        const option = new Option(model, model, selected, selected);
-        modelsSelectList.options.add(option);
-      }
+      // Install a custom icon for this activity.
+      activityIconProvider.register('VehicleActivity', vehicleIcon);
     }
 
-    const onBrandChanged = async e => {
-      await updateModels(e.currentTarget.value);
-    };
+    // Get a handle to the elsa-studio-root element.
+    const elsaStudioRoot = document.querySelector('elsa-studio-root');
 
-    // When the activity editor is opened, setup an event handler on the Brands dropdown list.
-    eventBus.on('activity-editor-appearing', async e => {
-      // We are only interested in our custom activity being editor.
-      if (e.activityDescriptor.type !== 'VehicleActivity')
-        return;
+    // Configure Elsa during the 'initializing' event.
+    elsaStudioRoot.addEventListener('initializing', e => {
+      const elsa = e.detail;
+      elsa.pluginManager.registerPlugins([
+        CustomReadLinePlugin,
+        CustomBulkActionsPlugin,
+        CustomHttpMiddlewarePlugin,
+        CustomPropertyFieldPlugin,
+        WorkflowModelChangedListenerPlugin,
+        CustomActivityEditorPlugin,
+        VehicleActivityPlugin,
+        WebhooksPlugin,
+        CredentialManagerPlugin,
+        WorkflowSettingsPlugin,
+        CustomHubConnectionPlugin
+      ]);
 
-      // Listen for change events on the Brand dropdown list.
-      const brandsSelectList = await awaitElement('#Brand');
-      const currentBrand = brandsSelectList.value;
-      const currentModel = e.activityModel.properties.find(p => p.name === 'Model').expressions['Literal'];
-
-      brandsSelectList.addEventListener('change', onBrandChanged);
-
-      await updateModels(currentBrand, currentModel);
+      // Uncomment below to register the Auth0 plugin.
+      // elsa.pluginManager.registerPluginFactory(() => new Auth0Plugin({
+      //   client_id: null, // TODO: enter client ID.
+      //   domain: null, // TODO: enter domain.
+      //   audience: null, // TODO: enter audience.
+      // }));
     });
 
-    // When the activity editor is closing, dispose event handlers.
-    eventBus.on('activity-editor-disappearing', e => {
-      if (e.activityDescriptor.type !== 'VehicleActivity')
-        return;
-
-      document.querySelector('#Brand').removeEventListener('change', onBrandChanged);
-    });
-
-    const vehicleIcon = '<span class="elsa-rounded-lg elsa-inline-flex elsa-p-3 elsa-bg-pink-50 elsa-text-pink-700 elsa-ring-4 elsa-ring-white">' +
-      '  <svg class="elsa-h-6 elsa-w-6" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">' +
-      '    <path stroke="none" d="M0 0h24v24H0z"/>' +
-      '    <circle cx="7" cy="17" r="2" />' +
-      '    <circle cx="17" cy="17" r="2" />' +
-      '    <path d="M5 17h-2v-6l2-5h9l4 5h1a2 2 0 0 1 2 2v4h-2m-4 0h-6m-6 -6h15m-6 0v-5" />' +
-      '  </svg>' +
-      '</span>';
-
-    // Install a custom icon for this activity.
-    activityIconProvider.register('VehicleActivity', vehicleIcon);
-  }
-
-  // Get a handle to the elsa-studio-root element.
-  const elsaStudioRoot = document.querySelector('elsa-studio-root');
-
-  // Configure Elsa during the 'initializing' event.
-  elsaStudioRoot.addEventListener('initializing', e => {
-    const elsa = e.detail;
-    elsa.pluginManager.registerPlugins([
-      CustomReadLinePlugin,
-      CustomBulkActionsPlugin,
-      CustomHttpMiddlewarePlugin,
-      CustomPropertyFieldPlugin,
-      WorkflowModelChangedListenerPlugin,
-      CustomActivityEditorPlugin,
-      VehicleActivityPlugin,
-      WebhooksPlugin,
-      WorkflowSettingsPlugin
-    ]);
-  });
-
-  // Some components publish DOM events that we can handle directly:
-  elsaStudioRoot.addEventListener('workflow-changed', e => {
-    console.log('Workflow model changed! New model: ${e.detail}');
-  })
-</script>
+    // Some components publish DOM events that we can handle directly:
+    elsaStudioRoot.addEventListener('workflow-changed', e => {
+      console.log('Workflow model changed! New model: ${e.detail}');
+    })
+  </script>
 
 </body>
+
 </html>

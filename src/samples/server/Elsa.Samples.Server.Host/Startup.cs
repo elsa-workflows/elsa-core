@@ -1,9 +1,6 @@
 using Elsa.Activities.Http.OpenApi;
 using Elsa.Models;
-using Elsa.Providers.Workflows;
-using Elsa.Rebus.RabbitMq;
 using Elsa.Retention.Extensions;
-using Elsa.Retention.Filters;
 using Elsa.WorkflowTesting.Api.Extensions;
 using Hangfire;
 using Hangfire.SQLite;
@@ -14,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NodaTime;
 using NodaTime.Serialization.JsonNet;
+using Elsa.Retention.Specifications;
 
 namespace Elsa.Samples.Server.Host
 {
@@ -79,6 +77,10 @@ namespace Elsa.Samples.Server.Host
                 typeof(WorkflowSettings.Persistence.YesSql.SqlServerStartup),
                 typeof(WorkflowSettings.Persistence.YesSql.MySqlStartup),
                 typeof(WorkflowSettings.Persistence.YesSql.PostgreSqlStartup),
+                typeof(Secrets.Persistence.EntityFramework.Sqlite.Startup),
+                typeof(Secrets.Persistence.EntityFramework.MySql.Startup),
+                typeof(Secrets.Sql.Startup),
+                typeof(Secrets.Http.Startup),
             };
 
             services
@@ -105,11 +107,10 @@ namespace Elsa.Samples.Server.Host
                     // Bind options from configuration.
                     elsaSection.GetSection("Retention").Bind(options);
 
-                    // Configure a custom filter pipeline that deletes completed AND faulted workflows.
-                    options.ConfigurePipeline = pipeline => pipeline
-                        .AddFilter(new WorkflowStatusFilter(WorkflowStatus.Cancelled, WorkflowStatus.Faulted, WorkflowStatus.Finished))
-                        // Could add additional filters. For example, if there's a way to know that some workflow is a child workflow, maybe don't delete the parent.
-                        ;
+                    // Configure a custom specification filter pipeline that deletes cancelled, faulted and completed workflows.
+                    options.ConfigureSpecificationFilter = filter => filter.AddAndSpecification(
+                        new WorkflowStatusFilterSpecification(WorkflowStatus.Cancelled, WorkflowStatus.Faulted, WorkflowStatus.Finished))
+                    ;
                 });
 
             // Elsa API endpoints.

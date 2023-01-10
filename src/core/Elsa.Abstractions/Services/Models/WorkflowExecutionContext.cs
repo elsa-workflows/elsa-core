@@ -75,6 +75,19 @@ namespace Elsa.Services.Models
         public ScheduledActivity PopScheduledActivity() => WorkflowInstance.ScheduledActivities.Pop();
         public ScheduledActivity PeekScheduledActivity() => WorkflowInstance.ScheduledActivities.Peek();
         public void ClearScheduledActivities() => WorkflowInstance.ScheduledActivities.Clear();
+        
+        public void ClearScheduledActivities(string parentId)
+        {
+            var scheduledActivities = WorkflowInstance.ScheduledActivities.ToList(); // Create a copy of the list.
+            
+            foreach (var scheduledActivity in scheduledActivities)
+            {
+                var activity = GetActivityBlueprintById(scheduledActivity.ActivityId);
+
+                if (activity?.Parent?.Id == parentId)
+                    WorkflowInstance.ScheduledActivities.Remove(scheduledActivity);
+            }
+        }
 
         public string CorrelationId
         {
@@ -115,6 +128,18 @@ namespace Elsa.Services.Models
         {
             WorkflowInstance.BlockingActivities.Remove(blockingActivity);
             await Mediator.Publish(new BlockingActivityRemoved(this, blockingActivity));
+        }
+        
+        public async Task RemoveBlockingActivitiesAsync(string? parentId = default)
+        {
+            var parentBlueprint = parentId != null ? GetActivityBlueprintById(parentId) as CompositeActivityBlueprint : default;
+            var blockingActivities = WorkflowInstance.BlockingActivities;
+            var blockingActivityIds = blockingActivities.Select(x => x.ActivityId).ToList();
+            var containedBlockingActivityIds = parentBlueprint == null ? blockingActivityIds : parentBlueprint.Activities.Where(x => blockingActivityIds.Contains(x.Id)).Select(x => x.Id).ToList();
+            var containedBlockingActivities = blockingActivities.Where(x => containedBlockingActivityIds.Contains(x.ActivityId));
+
+            foreach (var blockingActivity in containedBlockingActivities)
+                await RemoveBlockingActivityAsync(blockingActivity);
         }
 
         public async Task EvictScopeAsync(IActivityBlueprint scope) => await Mediator.Publish(new ScopeEvicted(this, scope));
@@ -188,7 +213,7 @@ namespace Elsa.Services.Models
             var clock = ServiceProvider.GetRequiredService<IClock>();
             WorkflowInstance.WorkflowStatus = WorkflowStatus.Faulted;
             WorkflowInstance.FaultedAt = clock.GetCurrentInstant();
-            WorkflowInstance.Fault = new WorkflowFault(SimpleException.FromException(exception), message, activityId, activityInput, resuming);
+            WorkflowInstance.Faults.Push(new WorkflowFault(SimpleException.FromException(exception), message, activityId, activityInput, resuming));
             Exception = exception;
         }
 
@@ -197,7 +222,7 @@ namespace Elsa.Services.Models
             var clock = ServiceProvider.GetRequiredService<IClock>();
             WorkflowInstance.WorkflowStatus = WorkflowStatus.Cancelled;
             WorkflowInstance.CancelledAt = clock.GetCurrentInstant();
-            WorkflowInstance.Fault = new WorkflowFault(SimpleException.FromException(exception), message, activityId, activityInput, resuming);
+            WorkflowInstance.Faults.Push(new WorkflowFault(SimpleException.FromException(exception), message, activityId, activityInput, resuming));
         }
 
         public async Task CompleteAsync()
@@ -218,7 +243,7 @@ namespace Elsa.Services.Models
                 WorkflowInstance.WorkflowStatus = WorkflowStatus.Cancelled;
                 WorkflowInstance.CancelledAt = now;
             }
-            if(WorkflowInstance.Fault != null)
+            if(WorkflowInstance.Faults != null && WorkflowInstance.Faults.Count > 0)
             {
                 WorkflowInstance.WorkflowStatus = WorkflowStatus.Faulted;
                 WorkflowInstance.FaultedAt = now;

@@ -152,7 +152,7 @@ namespace Elsa.Core.IntegrationTests.Scripting.JavaScript
                 var workflowInstance = runWorkflowResult.WorkflowInstance!;
 
                 Assert.NotNull(workflowInstance);
-                Assert.Null(workflowInstance.Fault);
+                Assert.Empty(workflowInstance.Faults);
             }
 
             public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;

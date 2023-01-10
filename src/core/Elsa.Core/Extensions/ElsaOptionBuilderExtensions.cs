@@ -38,9 +38,13 @@ namespace Elsa
 
             foreach (var type in startupTypes)
             {
-                var instance = (IStartup)Activator.CreateInstance(type, null);
-                instance.ConfigureElsa(builder, configuration);
-                builder.ElsaOptions.Startups.Add(instance);
+                // Only load & configure features once.
+                if (builder.ElsaOptions.Startups.Where(t => t.GetType() == type).Any() == false)
+                {
+                    var instance = (IStartup)Activator.CreateInstance(type, null);
+                    builder.ElsaOptions.Startups.Add(instance);
+                    instance.ConfigureElsa(builder, configuration);
+                }
             }
 
             return builder;

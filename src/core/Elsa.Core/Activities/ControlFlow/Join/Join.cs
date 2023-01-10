@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -35,6 +35,9 @@ namespace Elsa.Activities.ControlFlow
             WaitAll,
             WaitAny
         }
+        
+        [ActivityInput(Hint = "True if all blocking activities within the fork should be cleared.", UIHint = ActivityInputUIHints.SingleLine, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        public bool EagerJoin { get; set; }
 
         [ActivityInput(
             UIHint = ActivityInputUIHints.Dropdown,
@@ -56,7 +59,12 @@ namespace Elsa.Activities.ControlFlow
             
             context.JournalData.Add("Completed", isDone);
             context.JournalData.Add("Current Inbound Transitions", InboundTransitions);
-            
+
+            if (context.WorkflowInstance.Faults.Count > 0)
+            {
+                context.JournalData.Add("Current Faulted Transitions", context.WorkflowInstance.Faults.Select(x => x.FaultedActivityId));
+
+            }
             if (!isDone)
                 return Noop();
             
@@ -68,6 +76,7 @@ namespace Elsa.Activities.ControlFlow
 
             await RemoveBlockingActivitiesAsync(workflowExecutionContext, owningFork);
             await RemoveScopeActivitiesAsync(workflowExecutionContext, ancestors, owningFork);
+            RemoveScheduledActivitiesAsync(workflowExecutionContext, owningFork);
 
             // Clear the recorded inbound transitions. This is necessary in case we're in a looping construct. 
             InboundTransitions = new List<string>();
@@ -82,8 +91,18 @@ namespace Elsa.Activities.ControlFlow
 
             return Mode switch
             {
-                JoinMode.WaitAll => inboundConnections.All(x => recordedInboundTransitions.Contains(GetTransitionKey(x))),
-                JoinMode.WaitAny => inboundConnections.Any(x => recordedInboundTransitions.Contains(GetTransitionKey(x))),
+                JoinMode.WaitAll => inboundConnections.All(x => recordedInboundTransitions.Contains(GetTransitionKey(x)) &&
+                        (
+                        !context.WorkflowInstance.Faults.Contains(f => f.FaultedActivityId == GetActivityId(x)) &&
+                        !context.WorkflowInstance.ScheduledActivities.Contains(f => f.ActivityId == GetActivityId(x))
+                        )
+                    ),
+                JoinMode.WaitAny => inboundConnections.Any(x => recordedInboundTransitions.Contains(GetTransitionKey(x)) &&
+                        (
+                        !context.WorkflowInstance.Faults.Contains(f => f.FaultedActivityId == GetActivityId(x)) &&
+                        !context.WorkflowInstance.ScheduledActivities.Contains(f => f.ActivityId == GetActivityId(x))
+                        )
+                    ),
                 _ => false
             };
         }
@@ -106,12 +125,43 @@ namespace Elsa.Activities.ControlFlow
                     blockingActivityAncestors = blockingActivityAncestors.Concat(compositeBlockingActivityAncestors).ToList();
                 }
 
-                // If the fork is inbound in the blocking activity AND the blocking activity is inbound in this Join, then clear it.
-                var blockingActivityHasInboundFork = fork == null || blockingActivityAncestors.Contains(fork.Id);
-                var joinActivityHasInboundBlockingActivity = inboundActivities.Contains(blockingActivity.ActivityId);
+                if (EagerJoin)
+                {
+                    if (fork == null || blockingActivityAncestors.Contains(fork.Id))
+                        await workflowExecutionContext.RemoveBlockingActivityAsync(blockingActivity);
+                }
+                else
+                {
+                    // If the fork is inbound in the blocking activity AND the blocking activity is inbound in this Join, then clear it.
+                    var blockingActivityHasInboundFork = fork == null || blockingActivityAncestors.Contains(fork.Id);
+                    var joinActivityHasInboundBlockingActivity = inboundActivities.Contains(blockingActivity.ActivityId);
                 
-                if (blockingActivityHasInboundFork && joinActivityHasInboundBlockingActivity)
-                    await workflowExecutionContext.RemoveBlockingActivityAsync(blockingActivity);
+                    if (blockingActivityHasInboundFork && joinActivityHasInboundBlockingActivity)
+                        await workflowExecutionContext.RemoveBlockingActivityAsync(blockingActivity);
+                }
+            }
+        }
+        
+        private void RemoveScheduledActivitiesAsync(WorkflowExecutionContext workflowExecutionContext, IActivityBlueprint? fork)
+        {
+            if (!EagerJoin) return;
+            
+            var scheduledActivities = workflowExecutionContext.WorkflowInstance.ScheduledActivities.ToList();
+            
+            foreach (var scheduledActivity in scheduledActivities)
+            {
+                var blockingActivityBlueprint = workflowExecutionContext.WorkflowBlueprint.GetActivity(scheduledActivity.ActivityId)!;
+                var blockingActivityAncestors = workflowExecutionContext.GetInboundActivityPath(scheduledActivity.ActivityId).ToList();
+
+                // Include composite activities in the equation.
+                if (blockingActivityBlueprint.Parent != null)
+                {
+                    var compositeBlockingActivityAncestors = workflowExecutionContext.GetInboundActivityPath(blockingActivityBlueprint.Parent.Id).ToList();
+                    blockingActivityAncestors = blockingActivityAncestors.Concat(compositeBlockingActivityAncestors).ToList();
+                }
+                
+                if (fork == null || blockingActivityAncestors.Contains(fork.Id))
+                    workflowExecutionContext.WorkflowInstance.ScheduledActivities.Remove(scheduledActivity);
             }
         }
 
@@ -208,6 +258,10 @@ namespace Elsa.Activities.ControlFlow
             var sourceOutcomeName = connection.Source.Outcome;
 
             return $"@{sourceActivityId}_{sourceOutcomeName}";
+        }
+        private string GetActivityId(IConnection connection)
+        {
+            return connection.Source.Activity.Id;
         }
 
         public Task Handle(WorkflowExecutionPassCompleted notification, CancellationToken cancellationToken)

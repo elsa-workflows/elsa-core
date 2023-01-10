@@ -3,7 +3,8 @@
 const { state, onChange } = createStore({
   activityDescriptors: [],
   workflowStorageDescriptors: [],
-  monacoLibPath: ''
+  monacoLibPath: '',
+  useX6Graphs: false
 });
 
 export default state;
