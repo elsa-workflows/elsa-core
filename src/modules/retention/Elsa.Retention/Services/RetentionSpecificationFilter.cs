@@ -1,9 +1,6 @@
 using Elsa.Models;
 using Elsa.Persistence.Specifications;
 using Elsa.Retention.Contracts;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Elsa.Retention.Services
 {

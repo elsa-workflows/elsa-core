@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using System;
 using Elsa.Secrets.Manager;
-using Elsa.Secrets.Models;
 using Elsa.Secrets.ValueFormatters;
 using Microsoft.Extensions.Logging;
 

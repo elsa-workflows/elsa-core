@@ -5,7 +5,6 @@ using Elsa.Activities.MassTransit.Consumers;
 using Elsa.Activities.MassTransit.Options;
 using Elsa.Options;
 using MassTransit;
-using MassTransit.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Activities.MassTransit.Extensions

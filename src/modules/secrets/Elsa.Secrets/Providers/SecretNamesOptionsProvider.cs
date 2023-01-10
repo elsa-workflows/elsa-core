@@ -3,7 +3,6 @@ using System.Reflection;
 using Elsa.Design;
 using Elsa.Metadata;
 using Elsa.Secrets.Manager;
-using Elsa.Secrets.Models;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Secrets.Providers

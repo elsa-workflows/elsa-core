@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -7,11 +5,9 @@ using System.Threading.Tasks;
 using Elsa.Design;
 using Elsa.Events;
 using Elsa.Expressions;
-using Elsa.Metadata;
 using Elsa.Secrets.Enrichers;
 using Elsa.Secrets.Providers;
 using MediatR;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Secrets.Handlers
 {
