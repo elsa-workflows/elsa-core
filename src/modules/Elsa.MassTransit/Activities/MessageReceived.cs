@@ -41,7 +41,7 @@ public class MessageReceived : Trigger<object>
             return;
         }
 
-        // Provide the received HTTP request as output.
+        // Provide the received message as output.
         context.Set(Result, message);
         
         // Complete.
