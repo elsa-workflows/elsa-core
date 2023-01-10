@@ -1,5 +1,6 @@
 using Elsa.Extensions;
 using Elsa.Mediator.Services;
+using Elsa.ProtoActor.Extensions;
 using Elsa.ProtoActor.Grains;
 using Elsa.ProtoActor.Protos;
 using Elsa.Workflows.Core.Notifications;
@@ -32,7 +33,7 @@ internal class UpdateRunningWorkflowsHandler : INotificationHandler<WorkflowExec
             {
                 DefinitionId = workflowState.DefinitionId,
                 Version = workflowState.DefinitionVersion,
-                CorrelationId = workflowState.CorrelationId,
+                CorrelationId = workflowState.CorrelationId.EmptyIfNull(),
                 InstanceId = workflowState.Id
             };
             
