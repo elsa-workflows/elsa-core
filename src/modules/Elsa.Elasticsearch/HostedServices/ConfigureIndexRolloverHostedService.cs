@@ -20,8 +20,7 @@ public class ConfigureIndexRolloverHostedService : IHostedService
         var schedule = new CronSchedule
         {
             // At the beginning of every month
-            //CronExpression = "0 0 1 * *"
-            CronExpression = "*/5 * * * *"
+            CronExpression = "0 0 1 * *"
         };
         
         await _jobScheduler.ScheduleAsync(job, GetType().Name, schedule, cancellationToken: cancellationToken);
