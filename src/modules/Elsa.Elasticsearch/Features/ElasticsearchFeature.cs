@@ -33,18 +33,22 @@ public class ElasticsearchFeature : FeatureBase
     public override void Apply()
     {
         var elasticClient = new ElasticsearchClient(GetSettings());
-        
+
         Services.AddSingleton(elasticClient);
 
-        if (IndexRolloverStrategy == null) return;
-        
-        elasticClient.ConfigureAliasNaming(IndexConfig, IndexRolloverStrategy);
+        if (IndexRolloverStrategy != null)
+        {
+            elasticClient.ConfigureAliasNaming(IndexConfig, IndexRolloverStrategy);
 
-        var namingInstance = (IIndexNamingStrategy) Activator.CreateInstance(IndexRolloverStrategy.IndexNamingStrategy)!;
-        Services.AddSingleton<IIndexNamingStrategy>(_ => namingInstance);
-            
-        var rolloverInstance = (IIndexRolloverStrategy) Activator.CreateInstance(IndexRolloverStrategy.Value, elasticClient, namingInstance)!;
-        Services.AddSingleton<IIndexRolloverStrategy>(_ => rolloverInstance);
+            var namingInstance =
+                (IIndexNamingStrategy) Activator.CreateInstance(IndexRolloverStrategy.IndexNamingStrategy)!;
+            Services.AddSingleton<IIndexNamingStrategy>(_ => namingInstance);
+
+            var rolloverInstance =
+                (IIndexRolloverStrategy) Activator.CreateInstance(IndexRolloverStrategy.Value, elasticClient,
+                    namingInstance)!;
+            Services.AddSingleton<IIndexRolloverStrategy>(_ => rolloverInstance);
+        }
     }
 
     private ElasticsearchClientSettings GetSettings()

@@ -1,6 +1,5 @@
 using System.Collections.ObjectModel;
 using Elastic.Clients.Elasticsearch;
-using Elastic.Clients.Elasticsearch.QueryDsl;
 using Elsa.Common.Models;
 using Microsoft.Extensions.Logging;
 using Exception = System.Exception;
@@ -52,16 +51,6 @@ public class ElasticStore<T> where T : class
         throw new Exception($"Failed to save data in Elasticsearch: {response.ElasticsearchServerError}");
     }
 
-    public async Task<bool> DeleteByIdAsync(string id, CancellationToken cancellationToken)
-    {
-        var response = await _elasticClient.DeleteAsync<T>(id, cancellationToken);
-
-        if (response.IsSuccess()) return true;
-        
-        _logger.LogError("Failed to delete data in Elasticsearch: {message}", response.ElasticsearchServerError.ToString());
-        return false;
-    }
-    
     public async Task<long> DeleteManyAsync(IEnumerable<T> list, CancellationToken cancellationToken)
     {
         var response = await _elasticClient.BulkAsync(b => b.DeleteMany(list), cancellationToken);
@@ -79,17 +68,6 @@ public class ElasticStore<T> where T : class
         if (response.IsSuccess()) return response.Deleted ?? 0;
         
         _logger.LogError("Failed to delete data in Elasticsearch: {message}", response.ElasticsearchServerError.ToString());
-        return 0;
-    }
-    
-    public async Task<long> CountAsync(Action<QueryDescriptor<T>> query, CancellationToken cancellationToken)
-    {
-        var response = await _elasticClient.CountAsync<T>(s =>
-            s.Query(query), cancellationToken);
-        
-        if (response.IsSuccess()) return response.Count;
-        
-        _logger.LogError("Failed to count data in Elasticsearch: {message}", response.ElasticsearchServerError.ToString());
         return 0;
     }
 }

@@ -1,4 +1,3 @@
-using System.DirectoryServices.Protocols;
 using Elastic.Clients.Elasticsearch;
 using Elastic.Clients.Elasticsearch.QueryDsl;
 using Elsa.Common.Entities;
@@ -37,11 +36,28 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
     public async Task SaveManyAsync(IEnumerable<WorkflowInstance> records, CancellationToken cancellationToken = default) => 
         await _store.SaveManyAsync(records, cancellationToken);
 
-    public async Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default) => 
-        await _store.DeleteByIdAsync(id, cancellationToken);
+    public async Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default)
+    {
+        var result = await _store.DeleteByQueryAsync(desc => desc
+                .Query(q => q
+                    .Term(t => t
+                        .Field(f => f.Id)
+                        .Value(id))), 
+            cancellationToken);
+        return result > 0;
+    }
 
-    public async Task<int> DeleteManyAsync(IEnumerable<string> ids, CancellationToken cancellationToken = default) => 
-        (int)await _store.DeleteManyAsync(ids.Select(id => new WorkflowInstance {Id = id}), cancellationToken);
+    public async Task<int> DeleteManyAsync(IEnumerable<string> ids, CancellationToken cancellationToken = default)
+    {
+        var result = await _store.DeleteByQueryAsync(desc => desc
+                .Query(q => q
+                    .Terms(t => t
+                        .Field(f => f.Id)
+                        .Terms(new TermsQueryField(ids.Select(FieldValue.String).ToList()))
+                    )),
+            cancellationToken);
+        return (int)result;
+    }
 
     public async Task DeleteManyByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default) =>
         await _store.DeleteByQueryAsync(desc => desc
@@ -53,8 +69,7 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
 
     public async Task<Page<WorkflowInstanceSummary>> FindManyAsync(FindWorkflowInstancesArgs args, CancellationToken cancellationToken = default)
     {
-        // var queryDescriptor = new QueryContainerDescriptor<WorkflowInstance>();
-        var searchDescriptor = new SearchRequestDescriptor<WorkflowInstance>();
+        var sortDescriptor = new SortOptionsDescriptor<WorkflowInstance>();
         var query = new QueryDescriptor<WorkflowInstance>();
 
         var (searchTerm, definitionId, version, correlationId, workflowStatus, workflowSubStatus, pageArgs, orderBy,
@@ -64,48 +79,39 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
             query = query.Match(m => m.Field(f => f.DefinitionId).Query(definitionId));
 
         if (version != null)
-            query = query.Match(m => m.Field(f => f.Version).Query(args.Version.ToString()));
+            query = query.Match(m => m.Field(f => f.Version).Query(version.ToString()!));
 
         if (!string.IsNullOrWhiteSpace(correlationId))
-            query = query.Match(m => m.Field(f => f.CorrelationId).Query(args.CorrelationId));
+            query = query.Match(m => m.Field(f => f.CorrelationId).Query(correlationId));
 
         if (workflowStatus != null)
-            query = query.Match(m => m.Field(f => f.Status).Query(args.WorkflowStatus?.ToString()));
+            query = query.Match(m => m.Field(f => f.Status).Query(workflowStatus.ToString()!));
 
         if (workflowSubStatus != null)
-            query = query.Match(m => m.Field(f => f.SubStatus).Query(args.WorkflowSubStatus?.ToString()));
+            query = query.Match(m => m.Field(f => f.SubStatus).Query(workflowSubStatus.ToString()!));
 
         if(!string.IsNullOrWhiteSpace(searchTerm))
         {
             query = query
-                .MultiMatch(c => c
-                    .Type(TextQueryType.Phrase)
-                    .Fields(new []
-                    {
-                        nameof(WorkflowInstance.Id), 
-                        nameof(WorkflowInstance.Name), 
-                        nameof(WorkflowInstance.DefinitionId), 
-                        nameof(WorkflowInstance.CorrelationId)
-                    })
-                    .Lenient()
+                .QueryString(c => c
                     .Query(searchTerm));
         }
-        
-        searchDescriptor = orderBy switch
+
+        sortDescriptor = orderBy switch
         {
             OrderBy.Finished => orderDirection == OrderDirection.Ascending
-                ? searchDescriptor.Sort(x => x.Field(f => f.FinishedAt, cfg => cfg.Order(SortOrder.Asc)))
-                : searchDescriptor.Sort(x => x.Field(f => f.FinishedAt, cfg => cfg.Order(SortOrder.Desc))),
+                ? sortDescriptor.Field(f => f.FinishedAt, cfg => cfg.Order(SortOrder.Asc))
+                : sortDescriptor.Field(f => f.FinishedAt, cfg => cfg.Order(SortOrder.Desc)),
             OrderBy.LastExecuted => orderDirection == OrderDirection.Ascending
-                ? searchDescriptor.Sort(x => x.Field(f => f.LastExecutedAt, cfg => cfg.Order(SortOrder.Asc)))
-                : searchDescriptor.Sort(x => x.Field(f => f.LastExecutedAt, cfg => cfg.Order(SortOrder.Desc))),
+                ? sortDescriptor.Field(f => f.LastExecutedAt, cfg => cfg.Order(SortOrder.Asc))
+                : sortDescriptor.Field(f => f.LastExecutedAt, cfg => cfg.Order(SortOrder.Desc)),
             OrderBy.Created => orderDirection == OrderDirection.Ascending
-                ? searchDescriptor.Sort(x => x.Field(f => f.CreatedAt, cfg => cfg.Order(SortOrder.Asc)))
-                : searchDescriptor.Sort(x => x.Field(f => f.CreatedAt, cfg => cfg.Order(SortOrder.Desc))),
-            _ => searchDescriptor
+                ? sortDescriptor.Field(f => f.CreatedAt, cfg => cfg.Order(SortOrder.Asc))
+                : sortDescriptor.Field(f => f.CreatedAt, cfg => cfg.Order(SortOrder.Desc)),
+            _ => sortDescriptor
         };
 
-        var result = await _store.SearchAsync(s => searchDescriptor.Query(query), args.PageArgs, cancellationToken);
+        var result = await _store.SearchAsync(s => s.Sort(sortDescriptor).Query(query), args.PageArgs, cancellationToken);
         return new Page<WorkflowInstanceSummary>(result.Items.Select(WorkflowInstanceSummary.FromInstance).ToList(),
             result.TotalCount);
     }
