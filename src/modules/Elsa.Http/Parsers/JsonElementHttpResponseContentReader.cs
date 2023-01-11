@@ -9,7 +9,7 @@ public class JsonElementHttpResponseContentReader : IHttpResponseContentReader
     public bool GetSupportsContentType(string contentType) => contentType.Contains("/json", StringComparison.OrdinalIgnoreCase);
     public async Task<object> ReadAsync(HttpResponseMessage response, object context, CancellationToken cancellationToken)
     {
-        var json = (await response.Content.ReadAsStringAsync()).Trim();
+        var json = (await response.Content.ReadAsStringAsync(cancellationToken)).Trim();
         return JsonDocument.Parse(json).RootElement;
     }
 }

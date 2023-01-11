@@ -83,7 +83,12 @@ const BulkActions: FunctionalComponent<BulkActionsProps> = ({ onBulkDelete, onBu
     }
   };
 
-  return <elsa-dropdown-button text="Bulk Actions" items={bulkActions} icon={<BulkActionsIcon />} origin={DropdownButtonOrigin.TopLeft} onItemSelected={onBulkActionSelected} />;
+  return <elsa-dropdown-button text="Bulk Actions"
+                               items={bulkActions}
+                               theme="Secondary"
+                               icon={<BulkActionsIcon />}
+                               origin={DropdownButtonOrigin.TopLeft}
+                               onItemSelected={onBulkActionSelected} />;
 };
 
 const PageSizeFilter: FunctionalComponent<PageSizeFilterProps> = ({ selectedPageSize, onChange }) => {
@@ -97,7 +102,7 @@ const PageSizeFilter: FunctionalComponent<PageSizeFilterProps> = ({ selectedPage
 
   const onPageSizeChanged = (e: CustomEvent<DropdownButtonItem>) => onChange(parseInt(e.detail.value));
 
-  return <elsa-dropdown-button text={selectedPageSizeText} items={items} icon={<PageSizeIcon />} origin={DropdownButtonOrigin.TopRight} onItemSelected={onPageSizeChanged} />;
+  return <elsa-dropdown-button text={selectedPageSizeText} items={items} theme="Secondary" icon={<PageSizeIcon />} origin={DropdownButtonOrigin.TopRight} onItemSelected={onPageSizeChanged} />;
 };
 
 const OrderByFilter: FunctionalComponent<OrderByFilterProps> = ({ selectedOrderBy, onChange }) => {
@@ -106,5 +111,5 @@ const OrderByFilter: FunctionalComponent<OrderByFilterProps> = ({ selectedOrderB
   const items: Array<DropdownButtonItem> = orderByValues.map(x => ({ text: x, value: x, isSelected: x == selectedOrderBy }));
   const onOrderByChanged = (e: CustomEvent<DropdownButtonItem>) => onChange(e.detail.value);
 
-  return <elsa-dropdown-button text={selectedOrderByText} items={items} icon={<OrderByIcon />} origin={DropdownButtonOrigin.TopRight} onItemSelected={onOrderByChanged} />;
+  return <elsa-dropdown-button text={selectedOrderByText} items={items} theme="Secondary" icon={<OrderByIcon />} origin={DropdownButtonOrigin.TopRight} onItemSelected={onOrderByChanged} />;
 };

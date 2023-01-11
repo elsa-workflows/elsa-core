@@ -1,31 +1,27 @@
-using Elsa.Elasticsearch.Modules.Management;
-using Elsa.Elasticsearch.Modules.Runtime;
-using Elsa.Elasticsearch.Options;
+using Azure.Identity;
+using Azure.ResourceManager;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.Extensions;
 using Elsa.Identity.Options;
-using Elsa.Jobs.Activities.Services;
 using Elsa.EntityFrameworkCore.Modules.ActivityDefinitions;
 using Elsa.EntityFrameworkCore.Modules.Labels;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
-using Elsa.WorkflowServer.Web.Jobs;
 using Microsoft.Data.Sqlite;
+using Elsa.ProtoActor.Cluster.AzureContainerApps;
 using Proto.Persistence.Sqlite;
+using Proto.Remote.GrpcNet;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 var configuration = builder.Configuration;
 var sqliteConnectionString = configuration.GetConnectionString("Sqlite")!;
-var rabbitMqConnectionString = configuration.GetConnectionString("RabbitMq")!;
 var identityOptions = new IdentityOptions();
 var identityTokenOptions = new IdentityTokenOptions();
 var identitySection = configuration.GetSection("Identity");
 var identityTokenSection = identitySection.GetSection("Tokens");
 identitySection.Bind(identityOptions);
 identityTokenSection.Bind(identityTokenOptions);
-var elasticOptions = new ElasticsearchOptions();
-configuration.GetSection(ElasticsearchOptions.Elasticsearch).Bind(elasticOptions);
 
 // Add Elsa services.
 services
@@ -44,23 +40,33 @@ services
         })
         .UseWorkflowRuntime(runtime =>
         {
-            runtime.UseProtoActor(proto => proto.PersistenceProvider = _ => new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString)));
+            runtime.UseProtoActor(proto =>
+            {
+                proto.PersistenceProvider = _ => new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString));
+                proto.ClusterProvider = sp => sp.GetRequiredService<AzureContainerAppsProvider>();
+                proto.RemoteConfig = sp => GrpcNetRemoteConfig.BindToAllInterfaces();
+            });
             runtime.UseDefaultRuntime(df => df.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)));
             runtime.UseExecutionLogRecords(e => e.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)));
             runtime.UseAsyncWorkflowStateExporter();
             runtime.UseMassTransitDispatcher();
         })
-        .UseMassTransit(massTransit => massTransit.UseRabbitMq(rabbitMqConnectionString))
         .UseLabels(labels => labels.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
         .UseActivityDefinitions(feature => feature.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
         .UseJobs(jobs => jobs.ConfigureOptions = options => options.WorkerCount = 10)
         .UseJobActivities()
         .UseScheduling()
-        .UseWorkflowsApi()
+        .UseWorkflowsApi(api => api.AddFastEndpointsAssembly<Program>())
         .UseJavaScript()
         .UseLiquid()
         .UseHttp()
     );
+
+services.AddSingleton(sp =>
+{
+    var armClient = new ArmClient(new DefaultAzureCredential());
+    return new AzureContainerAppsProvider(armClient, "CyberdyneMortgage-dev", "skynet-workflow-server-v3-dev", "skynet-workflow-server-v3-dev--vk8lzb5", "skynet-workflow-server-v3-dev--vk8lzb5-685f9f56f6-m9fb5");
+});
 
 services.AddHandlersFrom<Program>();
 services.AddHealthChecks();
@@ -69,11 +75,6 @@ services.AddHttpContextAccessor();
 
 // Configure middleware pipeline.
 var app = builder.Build();
-var serviceProvider = app.Services;
-
-// Register a dummy job for demo purposes.
-var jobRegistry = serviceProvider.GetRequiredService<IJobRegistry>();
-jobRegistry.Add(typeof(IndexBlockchainJob));
 
 if (app.Environment.IsDevelopment())
     app.UseDeveloperExceptionPage();

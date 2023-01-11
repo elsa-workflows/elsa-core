@@ -1,10 +1,20 @@
+using System.ComponentModel;
+using System.Reflection;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
+using Elsa.MassTransit.Consumers;
+using Elsa.MassTransit.Implementations;
+using Elsa.MassTransit.Options;
+using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Helpers;
+using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.Serialization.Converters;
+using Elsa.Workflows.Management.Models;
+using Elsa.Workflows.Management.Options;
+using Humanizer;
 using MassTransit;
 using MassTransit.Serialization;
-using MassTransit.Serialization.JsonConverters;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.MassTransit.Features;
@@ -22,7 +32,7 @@ public class MassTransitFeature : FeatureBase
     /// <summary>
     /// A delegate that can be set to configure MassTransit's <see cref="IBusRegistrationConfigurator"/>. 
     /// </summary>
-    public Action<IBusRegistrationConfigurator>? BusConfigurator { get; set; } 
+    public Action<IBusRegistrationConfigurator>? BusConfigurator { get; set; }
 
     /// <inheritdoc />
     public override void Configure()
@@ -31,12 +41,36 @@ public class MassTransitFeature : FeatureBase
         {
             configure.UsingInMemory((context, configurator) => { configurator.ConfigureEndpoints(context); });
         };
+        
     }
 
     /// <inheritdoc />
     public override void Apply()
     {
+        var messageTypes = this.GetMessages();
+        
+        Services.AddActivityProvider<MassTransitActivityTypeProvider>();
         AddMassTransit(BusConfigurator);
+
+        // Add collected message types to options.
+        Services.Configure<MassTransitActivityOptions>(options => options.MessageTypes = new HashSet<Type>(messageTypes));
+        
+        // Add collected message types as available variable types.
+        Services.Configure<ManagementOptions>(options =>
+        {
+            foreach (var messageType in messageTypes)
+            {
+                var activityAttr = messageType.GetCustomAttribute<ActivityAttribute>();
+                var categoryAttr = messageType.GetCustomAttribute<CategoryAttribute>();
+                var category = categoryAttr?.Category ?? activityAttr?.Category ?? "MassTransit";
+                var descriptionAttr = messageType.GetCustomAttribute<DescriptionAttribute>();
+                var description = descriptionAttr?.Description ?? activityAttr?.Description;
+                options.VariableDescriptors.Add(new VariableDescriptor(messageType, category, description));
+            }
+        });
+        
+        // Configure message serializer.
+        SystemTextJsonMessageSerializer.Options.Converters.Add(new TypeJsonConverter(new WellKnownTypeRegistry()));
     }
     
     /// <summary>
@@ -44,7 +78,12 @@ public class MassTransitFeature : FeatureBase
     /// </summary>
     private void AddMassTransit(Action<IBusRegistrationConfigurator>? config)
     {
-        var consumerTypes = this.GetConsumers().ToArray();
+        // For each message type, create a concrete WorkflowMessageConsumer<T>.
+        var workflowMessageConsumerType = typeof(WorkflowMessageConsumer<>);
+        var workflowMessageConsumers = this.GetMessages().Select(x => workflowMessageConsumerType.MakeGenericType(x));
+
+        // Concatenate the manually registered consumers with the workflow message consumers.
+        var consumerTypes = this.GetConsumers().Concat(workflowMessageConsumers).ToArray();
 
         Services.AddMassTransit(bus =>
         {

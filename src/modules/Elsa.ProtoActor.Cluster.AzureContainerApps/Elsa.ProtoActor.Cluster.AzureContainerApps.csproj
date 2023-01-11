@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
+
+    <Import Project="..\..\..\common.props" />
+    <Import Project="..\..\..\configureawait.props" />
+    
+    <PropertyGroup>
+        <LangVersion>10</LangVersion>
+        <TargetFrameworks>netcoreapp3.1;net6.0;net7.0</TargetFrameworks>
+        <Description>
+            This is a temporary stand-in until Proto.Actor provides an updated version of Proto.Cluster.AzureContainerApps.
+        </Description>
+        <PackageTags>elsa module runtime protoactor cluster azure container apps</PackageTags>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="Azure.ResourceManager.AppContainers" Version="1.0.1" />
+        <PackageReference Include="Azure.ResourceManager.Resources" Version="1.3.1" />
+        <PackageReference Include="JetBrains.Annotations" Version="2022.3.1" />
+        <PackageReference Include="Proto.Cluster" Version="1.0.0" />
+    </ItemGroup>
+</Project>

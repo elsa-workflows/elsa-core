@@ -3,6 +3,7 @@ namespace Elsa.Jobs.Activities.Attributes;
 [AttributeUsage(AttributeTargets.Class)]
 public class JobAttribute : Attribute
 {
+    /// <inheritdoc />
     public JobAttribute(string @namespace, string? category, string? description = default)
     {
         Namespace = @namespace;
@@ -10,6 +11,7 @@ public class JobAttribute : Attribute
         Category = category;
     }
 
+    /// <inheritdoc />
     public JobAttribute(string @namespace, string? description = default)
     {
         Namespace = @namespace;
@@ -17,6 +19,7 @@ public class JobAttribute : Attribute
         Category = @namespace;
     }
 
+    /// <inheritdoc />
     public JobAttribute(string @namespace, string? activityType, string? description = default, string? category = default)
     {
         Namespace = @namespace;

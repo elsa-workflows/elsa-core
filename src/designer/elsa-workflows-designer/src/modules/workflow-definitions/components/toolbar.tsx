@@ -24,8 +24,8 @@ export class Toolbar {
 
     return (
       <div class="elsa-panel-toolbar flex justify-center absolute border-b border-gray-200 top-0 px-1 pl-4 pb-2 text-sm bg-white z-10 space-x-2">
-        <elsa-dropdown-button text="Auto-layout" theme="Primary" items={layoutButtons}/>
-        <button onClick={this.zoomToFit}class="btn btn-primary">
+        <elsa-dropdown-button text="Auto-layout" theme="Primary" items={layoutButtons} class="mt-2"/>
+        <button onClick={this.zoomToFit} class="btn btn-primary">
           Zoom to fit
         </button>
       </div>

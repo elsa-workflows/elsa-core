@@ -143,8 +143,8 @@ export class WorkflowInstanceBrowser {
                     <td class="optional">{formatTimestamp(workflowInstance.finishedAt, '-')}</td>
                     <td class="pr-6">
                       <elsa-context-menu menuItems={[
-                        {text: 'Edit', clickHandler: e => this.onWorkflowInstanceClick(e, workflowInstance), icon: <EditIcon/>},
-                        {text: 'Delete', clickHandler: e => this.onDeleteClick(e, workflowInstance), icon: <DeleteIcon/>}
+                        {text: 'Edit', handler: e => this.onWorkflowInstanceClick(e, workflowInstance), icon: <EditIcon/>},
+                        {text: 'Delete', handler: e => this.onDeleteClick(e, workflowInstance), icon: <DeleteIcon/>}
                       ]}/>
                     </td>
                   </tr>

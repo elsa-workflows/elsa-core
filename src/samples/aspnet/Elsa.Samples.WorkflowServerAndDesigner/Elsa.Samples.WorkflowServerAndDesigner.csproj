@@ -15,9 +15,4 @@
         <ProjectReference Include="..\..\..\modules\Elsa.Workflows.Designer\Elsa.Workflows.Designer.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <AdditionalFiles Include="Pages\Index.cshtml" />
-      <AdditionalFiles Include="Pages\_ViewImports.cshtml" />
-    </ItemGroup>
-
 </Project>

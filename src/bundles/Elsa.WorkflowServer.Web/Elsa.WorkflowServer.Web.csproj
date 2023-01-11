@@ -18,6 +18,7 @@
       <ProjectReference Include="..\..\modules\Elsa.MassTransit\Elsa.MassTransit.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.ProtoActor\Elsa.ProtoActor.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Identity\Elsa.Identity.csproj" />
+      <ProjectReference Include="..\..\modules\Elsa.ProtoActor.Cluster.AzureContainerApps\Elsa.ProtoActor.Cluster.AzureContainerApps.csproj" />
       <ProjectReference Include="..\Elsa\Elsa.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Hangfire\Elsa.Hangfire.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Http\Elsa.Http.csproj" />
@@ -29,6 +30,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <PackageReference Include="Azure.Identity" Version="1.6.0" />
       <PackageReference Include="Proto.Persistence.Sqlite" Version="0.33.0" />
     </ItemGroup>
 

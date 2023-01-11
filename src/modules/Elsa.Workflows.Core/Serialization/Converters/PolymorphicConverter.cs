@@ -14,7 +14,7 @@ public class PolymorphicConverter : JsonConverter<object>
     public override void Write(Utf8JsonWriter writer, object value, JsonSerializerOptions options)
     {
         var typeName = value.GetType().GetSimpleAssemblyQualifiedName();
-        var wrappedValue = JsonSerializer.SerializeToNode(value)!;
+        var wrappedValue = JsonSerializer.SerializeToNode(value, options)!;
         wrappedValue["$type"] = typeName;
         wrappedValue.WriteTo(writer);
     }
@@ -25,7 +25,7 @@ public class PolymorphicConverter : JsonConverter<object>
         var element = JsonElement.ParseValue(ref reader);
         var typeName = element.GetProperty("$type").GetString()!;
         var type = Type.GetType(typeName)!;
-        var value = element.Deserialize(type);
+        var value = element.Deserialize(type, options);
 
         return value!;
     }

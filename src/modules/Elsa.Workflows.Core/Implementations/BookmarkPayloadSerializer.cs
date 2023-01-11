@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Elsa.Workflows.Core.Serialization.Converters;
 using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Core.Implementations;
@@ -7,13 +8,15 @@ public class BookmarkPayloadSerializer : IBookmarkPayloadSerializer
 {
     private readonly JsonSerializerOptions _settings;
 
-    public BookmarkPayloadSerializer()
+    public BookmarkPayloadSerializer(IWellKnownTypeRegistry wellKnownTypeRegistry)
     {
         _settings = new JsonSerializerOptions
         {
             // Enables serialization of ValueTuples, which use fields instead of properties.
             IncludeFields = true
         };
+        
+        _settings.Converters.Add(new TypeJsonConverter(wellKnownTypeRegistry));
     }
 
     public T Deserialize<T>(string json) where T : notnull => JsonSerializer.Deserialize<T>(json, _settings)!;

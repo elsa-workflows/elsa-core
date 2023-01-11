@@ -111,7 +111,7 @@ public class WorkflowsFeature : FeatureBase
             .AddSingleton<IBookmarkHasher, BookmarkHasher>()
             .AddSingleton<IIdentityGenerator, GuidIdentityGenerator>()
             .AddSingleton<IWorkflowExecutionContextFactory, DefaultWorkflowExecutionContextFactory>()
-            .AddSingleton<IBookmarkPayloadSerializer, BookmarkPayloadSerializer>()
+            .AddSingleton<IBookmarkPayloadSerializer>(sp => ActivatorUtilities.CreateInstance<BookmarkPayloadSerializer>(sp))
             .AddTransient<WorkflowBuilder>()
             .AddSingleton(typeof(Func<IWorkflowBuilder>), sp => () => sp.GetRequiredService<WorkflowBuilder>())
             .AddSingleton<IWorkflowBuilderFactory, WorkflowBuilderFactory>()
