@@ -12,7 +12,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="EFCore.BulkExtensions" Version="6.6.4" />
+        <PackageReference Include="EFCore.BulkExtensions" Version="6.6.5" />
         <PackageReference Include="LinqKit" Version="1.2.3" />
         <PackageReference Include="Open.Linq.AsyncExtensions" Version="1.2.0" />
         <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="7.0.0" />
