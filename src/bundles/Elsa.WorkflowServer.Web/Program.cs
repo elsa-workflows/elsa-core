@@ -39,8 +39,6 @@ services
             runtime.UseProtoActor(proto =>
             {
                 proto.PersistenceProvider = _ => new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString));
-                proto.ClusterProvider = sp => sp.GetRequiredService<AzureContainerAppsProvider>();
-                proto.RemoteConfig = sp => GrpcNetRemoteConfig.BindToAllInterfaces();
             });
             runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
             runtime.UseAsyncWorkflowStateExporter();
@@ -56,12 +54,6 @@ services
         .UseLiquid()
         .UseHttp()
     );
-
-services.AddSingleton(sp =>
-{
-    var armClient = new ArmClient(new DefaultAzureCredential());
-    return new AzureContainerAppsProvider(armClient, "CyberdyneMortgage-dev", "skynet-workflow-server-v3-dev", "skynet-workflow-server-v3-dev--vk8lzb5", "skynet-workflow-server-v3-dev--vk8lzb5-685f9f56f6-m9fb5");
-});
 
 services.AddHandlersFrom<Program>();
 services.AddHealthChecks();
