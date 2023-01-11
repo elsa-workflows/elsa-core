@@ -8,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.Elasticsearch.Modules.Runtime;
 
 [DependsOn(typeof(WorkflowRuntimeFeature))]
-public class ElasticExecutionLogRecordFeature : ElasticPersistanceFeatureBase
+public class ElasticExecutionLogRecordFeature : ElasticPersistenceFeatureBase
 {
     public ElasticExecutionLogRecordFeature(IModule module) : base(module)
     {

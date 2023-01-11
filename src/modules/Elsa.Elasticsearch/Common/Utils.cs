@@ -17,15 +17,12 @@ public static class Utils
     
     public static IDictionary<Type, string> ResolveAliasConfig(
         IDictionary<Type, string> defaultConfig, 
-        IDictionary<string, string>? option1, 
-        IDictionary<string, string>? option2)
+        IDictionary<string, string>? userDefinedConfig)
     {
         var types = GetElasticDocumentTypes();
         
-        return option1?.Select(kvp => new KeyValuePair<Type, string>(types.First(t => t.Name == kvp.Key), kvp.Value))
-                   .ToDictionary(x => x.Key, x => x.Value) ?? 
-               option2?.Select(kvp => new KeyValuePair<Type, string>(types.First(t => t.Name == kvp.Key), kvp.Value))
-                   .ToDictionary(x => x.Key, x => x.Value) ??
-               defaultConfig;
+        return userDefinedConfig?.Select(kvp => 
+                new KeyValuePair<Type, string>(types.First(t => t.Name == kvp.Key), kvp.Value))
+            .ToDictionary(x => x.Key, x => x.Value) ?? defaultConfig;
     }
 }

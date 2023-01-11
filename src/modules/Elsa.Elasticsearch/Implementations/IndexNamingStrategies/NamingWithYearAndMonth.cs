@@ -9,10 +9,7 @@ public class NamingWithYearAndMonth : IIndexNamingStrategy
         var now = DateTime.Now;
         var month = now.ToString("MM");
         var year = now.Year;
-        var day = now.Day;
-        var hour = now.Hour;
-        var minute = now.Minute;
 
-        return aliasName + "-" + year + "-" + month + "-" + day + hour + minute;
+        return aliasName + "-" + year + "-" + month;
     }
 }

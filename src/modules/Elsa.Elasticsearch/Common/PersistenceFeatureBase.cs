@@ -4,9 +4,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Elasticsearch.Common;
 
-public abstract class ElasticPersistanceFeatureBase : FeatureBase
+public abstract class ElasticPersistenceFeatureBase : FeatureBase
 {
-    public ElasticPersistanceFeatureBase(IModule module) : base(module)
+    public ElasticPersistenceFeatureBase(IModule module) : base(module)
     {
     }
 
