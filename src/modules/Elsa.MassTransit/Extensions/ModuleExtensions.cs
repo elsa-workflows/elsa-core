@@ -13,11 +13,7 @@ public static class ModuleExtensions
     /// <summary>
     /// Enable and configure MassTransit.
     /// </summary>
-    public static IModule UseMassTransit(this IModule module, Action<MassTransitFeature>? configure = default)
-    {
-        module.Configure(configure);
-        return module;
-    }
+    public static IModule UseMassTransit(this IModule module, Action<MassTransitFeature>? configure = default) => module.Use(configure);
 
     /// <summary>
     /// Enable and configure the RabbitMQ broker for MassTransit.

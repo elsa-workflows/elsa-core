@@ -1,4 +1,4 @@
-﻿using Azure.Messaging.ServiceBus;
+using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
 using Elsa.AzureServiceBus.Handlers;
 using Elsa.AzureServiceBus.HostedServices;
@@ -6,24 +6,55 @@ using Elsa.AzureServiceBus.Implementations;
 using Elsa.AzureServiceBus.Options;
 using Elsa.AzureServiceBus.Providers;
 using Elsa.AzureServiceBus.Services;
+using Elsa.Extensions;
+using Elsa.Features.Abstractions;
+using Elsa.Features.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
-// ReSharper disable once CheckNamespace
-namespace Elsa.Extensions;
+namespace Elsa.AzureServiceBus.Features;
 
-public static class DependencyInjectionExtensions
+/// <summary>
+/// Enables and configures the Azure Service Bus feature.
+/// </summary>
+public class AzureServiceBusFeature : FeatureBase
 {
-    /// <summary>
-    /// Register required services for the Azure Service Bus module. 
-    /// </summary>
-    /// <param name="autoCreateQueuesTopicsAndSubscriptions">A value indicating whether or not queues, topics and subscriptions should be created at application startup.</param>
-    public static IServiceCollection AddAzureServiceBusServices(this IServiceCollection services, Action<AzureServiceBusOptions> configure, bool autoCreateQueuesTopicsAndSubscriptions = true)
+    /// <inheritdoc />
+    public AzureServiceBusFeature(IModule module) : base(module)
     {
-        services.Configure(configure);
+    }
 
-        services
+    /// <summary>
+    /// A value controlling whether or not queues, topics and subscriptions should be created automatically. 
+    /// </summary>
+    public bool CreateQueuesTopicsAndSubscriptions { get; set; } = true;
+
+    /// <summary>
+    /// A delegate to configure <see cref="AzureServiceBusOptions"/>.
+    /// </summary>
+    public Action<AzureServiceBusOptions> AzureServiceBusOptions { get; set; } = _ => { };
+
+    /// <inheritdoc />
+    public override void ConfigureHostedServices()
+    {
+        if (CreateQueuesTopicsAndSubscriptions)
+            Services.AddHostedService<CreateQueuesTopicsAndSubscriptions>();
+    }
+
+    /// <inheritdoc />
+    public override void Configure()
+    {
+        // Activities.
+        Module.AddActivitiesFrom<AzureServiceBusFeature>();
+    }
+
+    /// <inheritdoc />
+    public override void Apply()
+    {
+        Services.Configure(AzureServiceBusOptions);
+
+        Services
             .AddSingleton(CreateServiceBusManagementClient)
             .AddSingleton(CreateServiceBusClient)
             .AddSingleton<ConfigurationQueueTopicAndSubscriptionProvider>()
@@ -31,21 +62,15 @@ public static class DependencyInjectionExtensions
             .AddTransient<IServiceBusInitializer, ServiceBusInitializer>();
 
         // Definition providers.
-        services
+        Services
             .AddSingleton<IQueueProvider>(sp => sp.GetRequiredService<ConfigurationQueueTopicAndSubscriptionProvider>())
             .AddSingleton<ITopicProvider>(sp => sp.GetRequiredService<ConfigurationQueueTopicAndSubscriptionProvider>())
             .AddSingleton<ISubscriptionProvider>(sp => sp.GetRequiredService<ConfigurationQueueTopicAndSubscriptionProvider>());
 
-        // Hosted services.
-        if (autoCreateQueuesTopicsAndSubscriptions)
-            services.AddHostedService<CreateQueuesTopicsAndSubscriptions>();
-
         // Handlers.
-        services.AddHandlersFrom<UpdateWorkers>();
-
-        return services;
+        Services.AddHandlersFrom<UpdateWorkers>();
     }
-
+    
     private static ServiceBusClient CreateServiceBusClient(IServiceProvider serviceProvider) => new(GetConnectionString(serviceProvider));
     private static ServiceBusAdministrationClient CreateServiceBusManagementClient(IServiceProvider serviceProvider) => new(GetConnectionString(serviceProvider));
 

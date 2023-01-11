@@ -9,7 +9,14 @@ namespace Elsa.AzureServiceBus.HostedServices;
 public class CreateQueuesTopicsAndSubscriptions : IHostedService
 {
     private readonly IServiceBusInitializer _serviceBusInitializer;
+    /// <summary>
+    /// Constructor.
+    /// </summary>
     public CreateQueuesTopicsAndSubscriptions(IServiceBusInitializer serviceBusInitializer) => _serviceBusInitializer = serviceBusInitializer;
+
+    /// <inheritdoc />
     public Task StartAsync(CancellationToken cancellationToken) => _serviceBusInitializer.InitializeAsync(cancellationToken);
+
+    /// <inheritdoc />
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }

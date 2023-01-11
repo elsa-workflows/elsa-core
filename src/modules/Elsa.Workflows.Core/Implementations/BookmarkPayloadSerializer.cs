@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Elsa.Expressions.Services;
 using Elsa.Workflows.Core.Serialization.Converters;
 using Elsa.Workflows.Core.Services;
 
@@ -13,7 +14,8 @@ public class BookmarkPayloadSerializer : IBookmarkPayloadSerializer
         _settings = new JsonSerializerOptions
         {
             // Enables serialization of ValueTuples, which use fields instead of properties.
-            IncludeFields = true
+            IncludeFields = true,
+            PropertyNameCaseInsensitive = true
         };
         
         _settings.Converters.Add(new TypeJsonConverter(wellKnownTypeRegistry));

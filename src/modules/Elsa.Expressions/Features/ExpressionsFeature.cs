@@ -16,6 +16,7 @@ public class ExpressionsFeature : FeatureBase
     {
         Services
             .AddSingleton<IExpressionEvaluator, ExpressionEvaluator>()
-            .AddSingleton<IExpressionHandlerRegistry, ExpressionHandlerRegistry>();
+            .AddSingleton<IExpressionHandlerRegistry, ExpressionHandlerRegistry>()
+            .AddSingleton<IWellKnownTypeRegistry, WellKnownTypeRegistry>();
     }
 }

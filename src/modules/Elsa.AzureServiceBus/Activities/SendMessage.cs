@@ -1,32 +1,59 @@
 using Azure.Messaging.ServiceBus;
 using Elsa.Common.Implementations;
 using Elsa.Common.Services;
+using Elsa.Extensions;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.AzureServiceBus.Activities;
 
+/// <summary>
+/// 
+/// </summary>
 [Activity("Elsa.AzureServiceBus.Send", "Azure Service Bus", "Send a message to a queue or topic")]
+[PublicAPI]
 public class SendMessage : Activity
 {
+    /// <summary>
+    /// The contents of the message to send.
+    /// </summary>
+    [Input(Description = "The contents of the message to send.")]
     public Input<object> MessageBody { get; set; } = default!;
-    public Input<string> QueueOrTopic { get; set; } = default!;
-    public Input<string>? ContentType { get; set; }
-    public Input<string>? Subject { get; set; }
-    public Input<string>? CorrelationId { get; set; }
-    public IFormatter? Formatter { get; set; }
 
+    /// <summary>
+    /// The queue or topic to send the message to.
+    /// </summary>
+    public Input<string> QueueOrTopic { get; set; } = default!;
+
+    /// <summary>
+    /// The content type of the message.
+    /// </summary>
+    public Input<string>? ContentType { get; set; }
+
+    /// <summary>
+    /// The subject of the message.
+    /// </summary>
+    public Input<string>? Subject { get; set; }
+
+    /// <summary>
+    /// The correlation ID of the message.
+    /// </summary>
+    public Input<string>? CorrelationId { get; set; }
+
+    /// <summary>
+    /// The formatter to use when serializing the message body.
+    /// </summary>
+    public Input<Type?> FormatterType { get; set; } = default!;
+
+    /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var queueOrTopic = context.Get(QueueOrTopic);
         var messageBody = context.Get(MessageBody);
-
-        if (!ValidatePreconditions(context, queueOrTopic, messageBody))
-            return;
-
         var cancellationToken = context.CancellationToken;
-        var serializedMessageBody = await SerializeMessageBodyAsync(messageBody!, cancellationToken);
+        var serializedMessageBody = await SerializeMessageBodyAsync(context, messageBody!, cancellationToken);
 
         var message = new ServiceBusMessage(serializedMessageBody)
         {
@@ -34,7 +61,7 @@ public class SendMessage : Activity
             Subject = context.Get(Subject),
             CorrelationId = context.Get(CorrelationId)
 
-            // TODO: Maybe expose additional members.
+            // TODO: Maybe expose additional members?
         };
 
         var client = context.GetRequiredService<ServiceBusClient>();
@@ -43,32 +70,14 @@ public class SendMessage : Activity
         await sender.SendMessageAsync(message, cancellationToken);
     }
 
-    private async ValueTask<BinaryData> SerializeMessageBodyAsync(object value, CancellationToken cancellationToken)
+    private async ValueTask<BinaryData> SerializeMessageBodyAsync(ActivityExecutionContext context, object value, CancellationToken cancellationToken)
     {
         if (value is string s) return BinaryData.FromString(s);
 
-        var formatter = Formatter ?? new JsonFormatter();
+        var formatterType = FormatterType.TryGet(context) ?? typeof(JsonFormatter);
+        var formatter = context.GetServices<IFormatter>().First(x => x.GetType() == formatterType);
         var data = await formatter.ToStringAsync(value, cancellationToken);
 
         return BinaryData.FromString(data);
-    }
-
-    private static bool ValidatePreconditions(ActivityExecutionContext context, string? queueOrTopic, object? messageBody)
-    {
-        var logger = context.GetRequiredService<ILogger<SendMessage>>();
-
-        if (string.IsNullOrWhiteSpace(queueOrTopic))
-        {
-            logger.LogWarning("Can't send a message because no queue or topic was specified");
-            return false;
-        }
-
-        if (messageBody == null)
-        {
-            logger.LogWarning("Can't send a message because no message body was specified");
-            return false;
-        }
-
-        return true;
     }
 }

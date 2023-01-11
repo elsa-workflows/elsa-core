@@ -4,18 +4,24 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Exceptions;
 using Elsa.Expressions.Models;
+using Elsa.Expressions.Services;
 using Elsa.Extensions;
 
 namespace Elsa.Expressions.Helpers;
+
+/// <summary>
+/// Provides options to the conversion method.
+/// </summary>
+public record ObjectConverterOptions(JsonSerializerOptions? SerializerOptions = default, IWellKnownTypeRegistry? WellKnownTypeRegistry = default);
 
 /// <summary>
 /// A helper that attempts many strategies to try and convert the source value into the destination type. 
 /// </summary>
 public static class ObjectConverter
 {
-    public static Result TryConvertTo<T>(this object? value, JsonSerializerOptions? serializerOptions = null) => value.TryConvertTo(typeof(T), serializerOptions);
+    public static Result TryConvertTo<T>(this object? value, ObjectConverterOptions? serializerOptions = null) => value.TryConvertTo(typeof(T), serializerOptions);
     
-    public static Result TryConvertTo(this object? value, Type targetType, JsonSerializerOptions? serializerOptions = null)
+    public static Result TryConvertTo(this object? value, Type targetType, ObjectConverterOptions? serializerOptions = null)
     {
         try
         {
@@ -28,9 +34,9 @@ public static class ObjectConverter
         }
     }
 
-    public static T? ConvertTo<T>(this object? value, JsonSerializerOptions? serializerOptions = null) => value != null ? (T?)value.ConvertTo(typeof(T), serializerOptions) : default;
+    public static T? ConvertTo<T>(this object? value, ObjectConverterOptions? serializerOptions = null) => value != null ? (T?)value.ConvertTo(typeof(T), serializerOptions) : default;
 
-    public static object? ConvertTo(this object? value, Type targetType, JsonSerializerOptions? serializerOptions = null)
+    public static object? ConvertTo(this object? value, Type targetType, ObjectConverterOptions? converterOptions = null)
     {
         if (value == null)
             return default!;
@@ -40,7 +46,7 @@ public static class ObjectConverter
         if (sourceType == targetType)
             return value;
 
-        var options = serializerOptions ?? new JsonSerializerOptions();
+        var options = converterOptions?.SerializerOptions ?? new JsonSerializerOptions();
         options.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
         options.ReferenceHandler = ReferenceHandler.Preserve;
         options.PropertyNameCaseInsensitive = true;
@@ -107,11 +113,15 @@ public static class ObjectConverter
             if (underlyingSourceType == typeof(double))
                 return Enum.ToObject(underlyingTargetType, Convert.ChangeType(value, typeof(int)));
         }
-
         
-
-        if (value is string s && string.IsNullOrWhiteSpace(s))
-            return null;
+        if (value is string s)
+        {
+            if(string.IsNullOrWhiteSpace(s))
+                return null;
+            
+            if(underlyingTargetType == typeof(Type))
+                return converterOptions?.WellKnownTypeRegistry != null ? converterOptions.WellKnownTypeRegistry.GetTypeOrDefault(s) : Type.GetType(s);
+        }
         
         if (value is IEnumerable enumerable)
         {

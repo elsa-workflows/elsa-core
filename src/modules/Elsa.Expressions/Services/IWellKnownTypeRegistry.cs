@@ -1,6 +1,6 @@
 using Elsa.Extensions;
 
-namespace Elsa.Workflows.Core.Services;
+namespace Elsa.Expressions.Services;
 
 public interface IWellKnownTypeRegistry
 {
@@ -29,4 +29,6 @@ public static class WellKnowTypeRegistryExtensions
 
     public static string GetAliasOrDefault(this IWellKnownTypeRegistry registry, Type type) =>
         registry.TryGetAlias(type, out var alias) ? alias : type.GetSimpleAssemblyQualifiedName();
+    
+    public static Type GetTypeOrDefault(this IWellKnownTypeRegistry registry, string alias) => registry.TryGetType(alias, out var type) ? type : Type.GetType(alias)!;
 }

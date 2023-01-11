@@ -1,8 +1,11 @@
+using JetBrains.Annotations;
+
 namespace Elsa.AzureServiceBus.Models;
 
 /// <summary>
 /// A serializable version of <see cref="Azure.Messaging.ServiceBus.ServiceBusReceivedMessage"/>.
 /// </summary>
+[PublicAPI]
 public record ReceivedServiceBusMessageModel(
     byte[] Body,
     string Subject,

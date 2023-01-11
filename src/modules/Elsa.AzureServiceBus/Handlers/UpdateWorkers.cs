@@ -16,6 +16,9 @@ public class UpdateWorkers : INotificationHandler<WorkflowTriggersIndexed>, INot
     private readonly IBookmarkPayloadSerializer _serializer;
     private readonly IWorkerManager _workerManager;
 
+    /// <summary>
+    /// Constructor.
+    /// </summary>
     public UpdateWorkers(IBookmarkPayloadSerializer serializer, IWorkerManager workerManager)
     {
         _serializer = serializer;

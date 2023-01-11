@@ -7,5 +7,8 @@ namespace Elsa.AzureServiceBus.Services;
 /// </summary>
 public interface ITopicProvider
 {
+    /// <summary>
+    /// Returns a list of <see cref="TopicDefinition"/>s.
+    /// </summary>
     ValueTask<ICollection<TopicDefinition>> GetTopicsAsync(CancellationToken cancellationToken);
 }

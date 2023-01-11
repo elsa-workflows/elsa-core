@@ -1,6 +1,8 @@
 using Elsa.Common.Features;
 using Elsa.Expressions;
 using Elsa.Expressions.Features;
+using Elsa.Expressions.Implementations;
+using Elsa.Expressions.Services;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
@@ -115,7 +117,6 @@ public class WorkflowsFeature : FeatureBase
             .AddTransient<WorkflowBuilder>()
             .AddSingleton(typeof(Func<IWorkflowBuilder>), sp => () => sp.GetRequiredService<WorkflowBuilder>())
             .AddSingleton<IWorkflowBuilderFactory, WorkflowBuilderFactory>()
-            .AddSingleton<IWellKnownTypeRegistry, WellKnownTypeRegistry>()
             .AddSingleton<IVariablePersistenceManager, VariablePersistenceManager>()
 
             // Pipelines.

@@ -13,7 +13,7 @@ public class WorkerManager : IWorkerManager, IAsyncDisposable
         _serviceProvider = serviceProvider;
     }
 
-    public IReadOnlyCollection<Worker> Workers => _workers.ToList();
+    public IEnumerable<Worker> Workers => _workers.ToList();
     public Worker? FindWorkerFor(string queueOrTopic, string? subscription) => _workers.FirstOrDefault(x => x.QueueOrTopic == queueOrTopic && x.Subscription == subscription);
 
     public async Task StartWorkerAsync(string queueOrTopic, string? subscription, CancellationToken cancellationToken = default)

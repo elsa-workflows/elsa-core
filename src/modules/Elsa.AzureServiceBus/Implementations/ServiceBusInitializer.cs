@@ -3,6 +3,7 @@ using Elsa.AzureServiceBus.Services;
 
 namespace Elsa.AzureServiceBus.Implementations;
 
+/// <inheritdoc />
 public class ServiceBusInitializer : IServiceBusInitializer
 {
     private readonly ServiceBusAdministrationClient _serviceBusAdministrationClient;
@@ -10,6 +11,9 @@ public class ServiceBusInitializer : IServiceBusInitializer
     private readonly IReadOnlyCollection<ITopicProvider> _topicProviders;
     private readonly IReadOnlyCollection<ISubscriptionProvider> _subscriptionProviders;
 
+    /// <summary>
+    /// Constructor.
+    /// </summary>
     public ServiceBusInitializer(
         ServiceBusAdministrationClient serviceBusAdministrationClient,
         IEnumerable<IQueueProvider> queueProviders,
@@ -22,6 +26,7 @@ public class ServiceBusInitializer : IServiceBusInitializer
         _subscriptionProviders = subscriptionProviders.ToList();
     }
 
+    /// <inheritdoc />
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
         var tasks = new[] { CreateQueuesAsync(cancellationToken), CreateTopicsAsync(cancellationToken), CreateSubscriptionsAsync(cancellationToken) };

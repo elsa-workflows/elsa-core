@@ -25,9 +25,11 @@ public static class ActivityExecutionContextExtensions
     /// </summary>
     public static bool TryGetInput<T>(this ActivityExecutionContext context, string key, out T value, JsonSerializerOptions? serializerOptions = default)
     {
+        var wellKnownTypeRegistry = context.GetRequiredService<IWellKnownTypeRegistry>();
+        
         if (context.Input.TryGetValue(key, out var v))
         {
-            value = v.ConvertTo<T>(serializerOptions)!;
+            value = v.ConvertTo<T>(new ObjectConverterOptions(serializerOptions, wellKnownTypeRegistry))!;
             return true;
         }
 
@@ -39,11 +41,15 @@ public static class ActivityExecutionContextExtensions
     /// Gets a value from the input provided via <see cref="WorkflowExecutionContext"/>. If a value was found, an attempt is made to convert it into the specified type <code>T</code>.
     /// </summary>
     public static T GetInput<T>(this ActivityExecutionContext context, JsonSerializerOptions? serializerOptions = default) => context.GetInput<T>(typeof(T).Name, serializerOptions);
-    
+
     /// <summary>
     /// Gets a value from the input provided via <see cref="WorkflowExecutionContext"/>. If a value was found, an attempt is made to convert it into the specified type <code>T</code>.
     /// </summary>
-    public static T GetInput<T>(this ActivityExecutionContext context, string key, JsonSerializerOptions? serializerOptions = default) => context.Input[key].ConvertTo<T>(serializerOptions)!;
+    public static T GetInput<T>(this ActivityExecutionContext context, string key, JsonSerializerOptions? serializerOptions = default)
+    {
+        var wellKnownTypeRegistry = context.GetRequiredService<IWellKnownTypeRegistry>();
+        return context.Input[key].ConvertTo<T>(new ObjectConverterOptions(serializerOptions, wellKnownTypeRegistry))!;
+    }
 
     /// <summary>
     /// Returns true if this activity is triggered for the first time and not being resumed.
@@ -53,6 +59,7 @@ public static class ActivityExecutionContextExtensions
     /// <summary>
     /// Adds a new <see cref="WorkflowExecutionLogEntry"/> to the execution log of the current <see cref="WorkflowExecutionContext"/>.
     /// </summary>
+    /// <param name="context">The <see cref="ActivityExecutionContext"/></param> being extended.
     /// <param name="eventName">The name of the event.</param>
     /// <param name="message">The message of the event.</param>
     /// <param name="source">The source of the activity. For example, the source file name and line number in case of composite activities.</param>
