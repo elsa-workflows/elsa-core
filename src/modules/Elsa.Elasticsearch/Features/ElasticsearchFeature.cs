@@ -33,7 +33,6 @@ public class ElasticsearchFeature : FeatureBase
     public override void Apply()
     {
         var elasticClient = new ElasticsearchClient(GetSettings());
-
         Services.AddSingleton(elasticClient);
 
         if (IndexRolloverStrategy != null)
