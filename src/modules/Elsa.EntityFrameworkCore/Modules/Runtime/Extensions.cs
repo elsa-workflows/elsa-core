@@ -10,9 +10,18 @@ namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 public static class Extensions
 {
     /// <summary>
-    /// Configures the <see cref="WorkflowRuntimeFeature"/> to use the <see cref="EFCoreRuntimePersistenceFeature"/>.
+    /// Configures the <see cref="DefaultRuntimeFeature"/> to use the <see cref="EFCoreDefaultRuntimePersistenceFeature"/>.
     /// </summary>
-    public static WorkflowRuntimeFeature UseEntityFrameworkCore(this WorkflowRuntimeFeature feature, Action<EFCoreRuntimePersistenceFeature>? configure = default)
+    public static DefaultRuntimeFeature UseEntityFrameworkCore(this DefaultRuntimeFeature feature, Action<EFCoreDefaultRuntimePersistenceFeature>? configure = default)
+    {
+        feature.Module.Configure(configure);
+        return feature;
+    }
+        
+    /// <summary>
+    /// Configures the <see cref="ExecutionLogRecordFeature"/> to use the <see cref="EFCoreWorkflowExecutionLogStore"/>.
+    /// </summary>
+    public static ExecutionLogRecordFeature UseEntityFrameworkCore(this ExecutionLogRecordFeature feature, Action<EFCoreExecutionLogRecordPersistenceFeature>? configure = default)
     {
         feature.Module.Configure(configure);
         return feature;

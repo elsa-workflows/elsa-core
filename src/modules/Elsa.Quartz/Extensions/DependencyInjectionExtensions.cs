@@ -1,3 +1,4 @@
+using Elsa.Elasticsearch.Scheduling;
 using Elsa.Quartz.Jobs;
 using Elsa.Scheduling.Jobs;
 using Quartz;
@@ -12,6 +13,7 @@ public static class DependencyInjectionExtensions
     {
         quartz.AddJob<RunWorkflowJob>();
         quartz.AddJob<ResumeWorkflowJob>();
+        quartz.AddJob<ConfigureIndexRolloverJob>();
 
         return quartz;
     }

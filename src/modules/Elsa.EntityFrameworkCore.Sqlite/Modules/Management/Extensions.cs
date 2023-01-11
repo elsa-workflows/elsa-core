@@ -11,4 +11,10 @@ public static partial class Extensions
         feature.DbContextOptionsBuilder = (_, db) => db.UseElsaSqlite(connectionString);
         return feature;
     }
+    
+    public static EFCoreWorkflowInstancePersistenceFeature UseSqlite(this EFCoreWorkflowInstancePersistenceFeature feature, string connectionString = Constants.DefaultConnectionString)
+    {
+        feature.DbContextOptionsBuilder = (_, db) => db.UseElsaSqlite(connectionString);
+        return feature;
+    }
 }
