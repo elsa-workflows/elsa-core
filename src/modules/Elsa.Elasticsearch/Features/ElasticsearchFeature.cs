@@ -1,3 +1,4 @@
+using Elastic.Clients.Elasticsearch;
 using Elsa.Elasticsearch.Extensions;
 using Elsa.Elasticsearch.HostedServices;
 using Elsa.Elasticsearch.Models;
@@ -6,7 +7,6 @@ using Elsa.Elasticsearch.Services;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Microsoft.Extensions.DependencyInjection;
-using Nest;
 
 namespace Elsa.Elasticsearch.Features;
 
@@ -32,22 +32,24 @@ public class ElasticsearchFeature : FeatureBase
 
     public override void Apply()
     {
-        var elasticClient = new ElasticClient(GetSettings());
-        
-        if (IndexRolloverStrategy != null)
-        {
-            elasticClient.ConfigureAliasNaming(IndexConfig, IndexRolloverStrategy);
-
-            var typeInstance = (IIndexRolloverStrategy) Activator.CreateInstance(IndexRolloverStrategy.Value, args: elasticClient)!;
-            Services.AddSingleton<IIndexRolloverStrategy>(_ => typeInstance);
-        }
+        var elasticClient = new ElasticsearchClient(GetSettings());
         
         Services.AddSingleton(elasticClient);
+
+        if (IndexRolloverStrategy == null) return;
+        
+        elasticClient.ConfigureAliasNaming(IndexConfig, IndexRolloverStrategy);
+
+        var namingInstance = (IIndexNamingStrategy) Activator.CreateInstance(IndexRolloverStrategy.IndexNamingStrategy)!;
+        Services.AddSingleton<IIndexNamingStrategy>(_ => namingInstance);
+            
+        var rolloverInstance = (IIndexRolloverStrategy) Activator.CreateInstance(IndexRolloverStrategy.Value, elasticClient, namingInstance)!;
+        Services.AddSingleton<IIndexRolloverStrategy>(_ => rolloverInstance);
     }
 
-    private ConnectionSettings GetSettings()
+    private ElasticsearchClientSettings GetSettings()
     {
-        return new ConnectionSettings(new Uri(Options.Endpoint))
+        return new ElasticsearchClientSettings(new Uri(Options.Endpoint))
             .ConfigureAuthentication(Options)
             .ConfigureMapping(IndexConfig);
     }

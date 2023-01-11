@@ -1,25 +1,24 @@
+using Elastic.Clients.Elasticsearch;
 using Elsa.Workflows.Management.Entities;
 using Microsoft.Extensions.Hosting;
-using Nest;
 
 namespace Elsa.Elasticsearch.HostedServices;
 
 public class ConfigureMappingHostedService : IHostedService
 {
-    private readonly ElasticClient _elasticClient;
+    private readonly ElasticsearchClient _elasticClient;
 
-    public ConfigureMappingHostedService(ElasticClient elasticClient)
+    public ConfigureMappingHostedService(ElasticsearchClient elasticClient)
     {
         _elasticClient = elasticClient;
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        await _elasticClient.Indices.PutMappingAsync<WorkflowInstance>(
-            descriptor => descriptor
+        await _elasticClient.Indices.CreateAsync<WorkflowInstance>(
+            descriptor => descriptor.Mappings(m => m
                 .Properties(p => p
-                    .Flattened(d => d
-                        .Name(p => p.WorkflowState.Properties))),
+                    .Flattened(d => d.WorkflowState.Properties))),
             cancellationToken);
     }
 

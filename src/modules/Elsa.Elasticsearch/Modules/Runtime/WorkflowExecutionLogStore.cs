@@ -22,10 +22,9 @@ public class ElasticWorkflowExecutionLogStore : IWorkflowExecutionLogStore
 
     public async Task<Page<WorkflowExecutionLogRecord>> FindManyByWorkflowInstanceIdAsync(string workflowInstanceId, PageArgs? pageArgs = default, CancellationToken cancellationToken = default) =>
         await _store
-            .SearchAsync(q => q
-                .Match(m => m
-                    .Field(f => f.WorkflowInstanceId)
-                    .Query(workflowInstanceId)), 
-                pageArgs, 
-                cancellationToken);
+            .SearchAsync(desc => desc
+                .Query(q => q
+                    .Match(m => m
+                        .Field(f => f.WorkflowInstanceId)
+                        .Query(workflowInstanceId))), pageArgs, cancellationToken);
 }

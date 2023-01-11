@@ -1,5 +1,4 @@
 using System.Text.Json.Serialization;
-using Elsa.Elasticsearch.Common;
 using Elsa.Elasticsearch.Services;
 using Elsa.Jobs.Models;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,6 +16,6 @@ public class ConfigureIndexRolloverJob : Job
     protected override async ValueTask ExecuteAsync(JobExecutionContext context)
     {
         var rolloverStrategy = context.ServiceProvider.GetRequiredService<IIndexRolloverStrategy>();
-        await rolloverStrategy.ApplyAsync(Utils.GetElasticDocumentTypes(), context.CancellationToken);
+        await rolloverStrategy.ApplyAsync(context.CancellationToken);
     }
 }

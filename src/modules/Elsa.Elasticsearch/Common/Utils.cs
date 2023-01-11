@@ -4,18 +4,6 @@ namespace Elsa.Elasticsearch.Common;
 
 public static class Utils
 {
-    public static string GenerateIndexName(string aliasName)
-    {
-        var now = DateTime.Now;
-        var month = now.ToString("MM");
-        var year = now.Year;
-        var day = now.Day;
-        var hour = now.Hour;
-        var minute = now.Minute;
-
-        return aliasName + "-" + year + "-" + month + "-" + day + hour + minute;
-    }
-
     public static IEnumerable<Type> GetElasticConfigurationTypes() =>
         AppDomain.CurrentDomain.GetAssemblies()
             .SelectMany(s => s.GetTypes())
