@@ -35,7 +35,7 @@ public static class ElasticExtensions
         return settings;
     }
     
-    public static void ConfigureAliasNaming(this ElasticsearchClient client, IDictionary<Type,string> aliasConfig, IndexRolloverStrategy strategy)
+    public static void ConfigureAliases(this ElasticsearchClient client, IDictionary<Type,string> aliasConfig, IndexRolloverStrategy strategy)
     {
         var namingStrategy = (IIndexNamingStrategy)Activator.CreateInstance(strategy.IndexNamingStrategy)!;
         

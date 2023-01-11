@@ -38,7 +38,7 @@ public class ElasticsearchFeature : FeatureBase
 
         if (IndexRolloverStrategy != null)
         {
-            elasticClient.ConfigureAliasNaming(IndexConfig, IndexRolloverStrategy);
+            elasticClient.ConfigureAliases(IndexConfig, IndexRolloverStrategy);
 
             var namingInstance =
                 (IIndexNamingStrategy) Activator.CreateInstance(IndexRolloverStrategy.IndexNamingStrategy)!;
