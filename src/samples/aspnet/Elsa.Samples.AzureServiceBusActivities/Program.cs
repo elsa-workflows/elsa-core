@@ -13,7 +13,7 @@ builder.Services.AddElsa(elsa =>
     elsa.UseWorkflowManagement(management => management.UseEntityFrameworkCore(ef => ef.UseSqlite()));
     
     // Configure runtime feature to use EF Core.
-    elsa.UseWorkflowRuntime(runtime => runtime.UseEntityFrameworkCore(ef => ef.UseSqlite()));
+    elsa.UseWorkflowRuntime(runtime => runtime.UseDefaultRuntime(d => d.UseEntityFrameworkCore(ef => ef.UseSqlite())));
     
     // Expose API endpoints.
     elsa.UseWorkflowsApi(api => api.AddFastEndpointsAssembly<Program>());
