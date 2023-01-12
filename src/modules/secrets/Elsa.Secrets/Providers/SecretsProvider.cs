@@ -73,19 +73,9 @@ namespace Elsa.Secrets.Providers
         public async Task<IDictionary<string, string>> GetSecretsDictionaryAsync(string type)
         {
             var secrets = await _secretsManager.GetSecrets(type);
-
-            var formatter = _valueFormatters.FirstOrDefault(x => x.Type == type);
-
-            try
-            {
-                if (formatter != null)
-                    return secrets.ToDictionary(x => x.Name ?? x.DisplayName ?? x.Id, x => formatter.FormatSecretValue(x).Result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating dictionary of secrets for {type}", type);
-            }
-            return new Dictionary<string, string>();
+            return secrets
+                .GroupBy(x => $"{type}:{x.Name}").Select(x => x.First())
+                .ToDictionary(x => $"{type}:{x.Name}", x => x.Name ?? x.DisplayName ?? x.Id);
         }
 
         public async Task<IDictionary<string, string>> GetSecretsForSelectListAsync(string type)

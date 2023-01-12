@@ -1,6 +1,6 @@
 import { AxiosInstance } from "axios";
 import { createHttpClient } from '../../../services';
-import { Secret, SecretModel } from "../models/secret.model";
+import { SecretModel } from "../models/secret.model";
 
 let _elsaSecretsClient: ElsaSecretsClient = null;
 
@@ -18,7 +18,7 @@ export const createElsaSecretsClient = async function (serverUrl: string): Promi
         return response.data;
       },
       save: async request => {
-        const response = await httpClient.post<Secret>('v1/secrets', request);
+        const response = await httpClient.post<SecretModel>('v1/secrets', request);
         return response.data;
       },
       delete: async id => {
@@ -38,7 +38,7 @@ export interface SecretsApi {
 
   list(): Promise<Array<SecretModel>>;
 
-  save(request: SecretModel): Promise<Secret>;
+  save(request: SecretModel): Promise<SecretModel>;
 
   delete(secretId: string): Promise<void>;
 }

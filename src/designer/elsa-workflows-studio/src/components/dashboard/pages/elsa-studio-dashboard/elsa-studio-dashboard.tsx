@@ -33,6 +33,7 @@ export class ElsaStudioDashboard {
         ['workflow-definitions/:id', 'elsa-studio-workflow-definitions-edit'],
         ['workflow-instances', 'elsa-studio-workflow-instances-list', true],
         ['workflow-instances/:id', 'elsa-studio-workflow-instances-view'],
+        ['oauth2-authorized', 'elsa-oauth2-authorized', true],
       ]
     }
   };
@@ -70,7 +71,6 @@ export class ElsaStudioDashboard {
     }
 
     return (
-      
       <div class="elsa-h-screen elsa-bg-gray-100">
         <nav class="elsa-bg-gray-800">
           <div class="elsa-px-4 sm:elsa-px-6 lg:elsa-px-8">

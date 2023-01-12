@@ -23,17 +23,29 @@ export class CredentialManagerListScreen {
 
     async componentWillLoad() {
       await this.loadSecrets();
-
-      eventBus.on(SecretEventTypes.SecretPicked, this.onSecretPicked);
-      eventBus.on(SecretEventTypes.UpdateSecret, this.onUpdateSecret);
-      eventBus.on(SecretEventTypes.SecretUpdated, () => this.loadSecrets());
     }
 
-    async onUpdateSecret(secretModel: SecretModel) {
-      const client = await createElsaSecretsClient(this.serverUrl);
-      await client.secretsApi.save(secretModel)
+    async connectedCallback() {
+      eventBus.on(SecretEventTypes.SecretPicked, this.onSecretPicked);
+      eventBus.on(SecretEventTypes.SecretUpdated, () => this.loadSecrets());
 
-      this.secrets = await client.secretsApi.list();
+      window.addEventListener("message", this.listenToMessages);
+    }
+
+    async disconnectedCallback() {
+      eventBus.detach(SecretEventTypes.SecretPicked, this.onSecretPicked);
+      eventBus.detach(SecretEventTypes.SecretUpdated, () => this.loadSecrets());
+
+      window.removeEventListener("message", this.listenToMessages);
+    }
+
+    listenToMessages = (e: MessageEvent) => {
+      if (e.origin !== window.origin) {
+        return;
+      }
+      if (e.data == "refreshSecrets") {
+        this.loadSecrets();
+      }
     }
 
     onSecretPicked = async args => {
@@ -104,6 +116,7 @@ export class CredentialManagerListScreen {
       const elsaClient = await createElsaSecretsClient(this.serverUrl);
 
       this.secrets = await elsaClient.secretsApi.list();
+      await eventBus.emit(SecretEventTypes.SecretsLoaded, this, this.secrets);
     }
 
     render() {
