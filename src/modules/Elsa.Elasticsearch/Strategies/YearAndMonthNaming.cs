@@ -1,5 +1,6 @@
 using Elsa.Common.Services;
 using Elsa.Elasticsearch.Services;
+using Humanizer;
 using JetBrains.Annotations;
 
 namespace Elsa.Elasticsearch.Strategies;
@@ -27,6 +28,6 @@ public class YearAndMonthNaming : IIndexNamingStrategy
         var month = now.ToString("MM");
         var year = now.Year;
 
-        return aliasName + "-" + year + "-" + month;
+        return aliasName.Kebaberize() + "-" + year + "-" + month;
     }
 }

@@ -1,4 +1,5 @@
 using Elsa.Elasticsearch.Services;
+using Humanizer;
 
 namespace Elsa.Elasticsearch.Strategies;
 
@@ -8,5 +9,5 @@ namespace Elsa.Elasticsearch.Strategies;
 public class DefaultNaming : IIndexNamingStrategy
 {
     /// <inheritdoc />
-    public string GenerateName(string aliasName) => aliasName;
+    public string GenerateName(string aliasName) => aliasName.Kebaberize();
 }

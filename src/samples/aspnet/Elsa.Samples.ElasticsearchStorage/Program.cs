@@ -1,5 +1,6 @@
 using Elsa.Elasticsearch.Extensions;
 using Elsa.Elasticsearch.Modules.Management;
+using Elsa.Elasticsearch.Modules.Runtime;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
@@ -24,7 +25,9 @@ builder.Services.AddElsa(elsa =>
     // Configure runtime feature to use EF Core.
     elsa.UseWorkflowRuntime(runtime =>
     {
-        runtime.UseDefaultRuntime(d => d.UseEntityFrameworkCore());
+        runtime.UseDefaultRuntime(d => d.UseEntityFrameworkCore(ef => ef.UseSqlite()));
+        runtime.UseExecutionLogRecords(log => log.UseElasticsearch());
+        runtime.UseAsyncWorkflowStateExporter();
     });
     
     // Expose API endpoints.
