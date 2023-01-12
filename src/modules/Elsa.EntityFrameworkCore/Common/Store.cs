@@ -16,12 +16,6 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
         _dbContextFactory = dbContextFactory;
     }
 
-    public async Task<TDbContext> GetDbContextAsync(CancellationToken cancellationToken)
-    {
-        await using var dbContext = await CreateDbContextAsync(cancellationToken);
-        return dbContext;
-    }
-
     public async Task<TDbContext> CreateDbContextAsync(CancellationToken cancellationToken = default) => await _dbContextFactory.CreateDbContextAsync(cancellationToken);
     public async Task SaveAsync(TEntity entity, CancellationToken cancellationToken = default) => await SaveAsync(entity, default, cancellationToken);
 

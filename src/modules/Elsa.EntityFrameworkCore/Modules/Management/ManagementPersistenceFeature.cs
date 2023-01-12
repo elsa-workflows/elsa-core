@@ -19,7 +19,6 @@ public class EFCoreManagementPersistenceFeature : PersistenceFeatureBase<Managem
         Module.Configure<WorkflowManagementFeature>(feature =>
         {
             feature.WorkflowDefinitionStore = sp => sp.GetRequiredService<EFCoreWorkflowDefinitionStore>();
-            feature.WorkflowInstanceStore = sp => sp.GetRequiredService<EFCoreWorkflowInstanceStore>();
         });
     }
 
@@ -28,6 +27,5 @@ public class EFCoreManagementPersistenceFeature : PersistenceFeatureBase<Managem
         base.Apply();
 
         AddStore<WorkflowDefinition, EFCoreWorkflowDefinitionStore>();
-        AddStore<WorkflowInstance, EFCoreWorkflowInstanceStore>();
     }
 }

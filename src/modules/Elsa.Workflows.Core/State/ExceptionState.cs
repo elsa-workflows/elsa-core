@@ -7,7 +7,7 @@ namespace Elsa.Workflows.Core.State;
 /// <summary>
 /// A simplified, serializable model representing an exception.
 /// </summary>
-public record ExceptionState(Type Type, string Message, string? StackTrace, IDictionary Data, ExceptionState? InnerException = default)
+public record ExceptionState(Type Type, string Message, string? StackTrace, ExceptionState? InnerException = default)
 {
     // /// <summary>
     // /// Constructor
@@ -26,6 +26,6 @@ public record ExceptionState(Type Type, string Message, string? StackTrace, IDic
         if (ex == null)
             return null;
             
-        return new ExceptionState(ex.GetType(), ex.Message, ex.StackTrace, ex.Data, FromException(ex.InnerException));
+        return new ExceptionState(ex.GetType(), ex.Message, ex.StackTrace, FromException(ex.InnerException));
     }
 }

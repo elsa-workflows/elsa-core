@@ -23,6 +23,15 @@ public static class ModuleExtensions
         });
         return module;
     }
+    
+    /// <summary>
+    /// Adds the workflow instance feature to workflow management module. 
+    /// </summary>
+    public static WorkflowManagementFeature UseWorkflowInstances(this WorkflowManagementFeature feature, Action<WorkflowInstanceFeature>? configure = default)
+    {
+        feature.Module.Configure(configure);
+        return feature;
+    }
 
     /// <summary>
     /// Adds all types implementing <see cref="IActivity"/> to the system.
