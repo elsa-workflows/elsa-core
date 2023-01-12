@@ -1,3 +1,5 @@
+using Humanizer;
+
 namespace Elsa.Elasticsearch.Options;
 
 /// <summary>
@@ -34,4 +36,14 @@ public class ElasticsearchOptions
     /// A map between type and index name to use. When no index name is configured for a given type, the name of the type is used.
     /// </summary>
     public IDictionary<Type, string> IndexNameMappings { get; set; } = new Dictionary<Type, string>();
+    
+    /// <summary>
+    /// Returns an index name for the specified document type. If no mapping was found, the simple name of the type is used.
+    /// </summary>
+    public string GetIndexNameFor<T>() => GetIndexNameFor(typeof(T));
+    
+    /// <summary>
+    /// Returns an index name for the specified document type. If no mapping was found, the simple name of the type is used.
+    /// </summary>
+    public string GetIndexNameFor(Type documentType) => IndexNameMappings.TryGetValue(documentType, out var index) ? index : documentType.Name.Dasherize();
 }

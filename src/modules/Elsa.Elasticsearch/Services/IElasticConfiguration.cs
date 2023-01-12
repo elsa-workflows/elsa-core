@@ -1,14 +1,32 @@
 using Elastic.Clients.Elasticsearch;
-using Elsa.Elasticsearch.Common;
 
 namespace Elsa.Elasticsearch.Services;
 
+/// <summary>
+/// Implement this interface to get a chance to configure some aspect of Elasticsearch, such as index mappings.
+/// </summary>
 public interface IElasticConfiguration
 {
-    void Apply(ElasticsearchClientSettings settings, IDictionary<Type,string> indexConfig);
+    /// <summary>
+    /// The document type to configure.
+    /// </summary>
+    Type DocumentType { get; }
+    
+    /// <summary>
+    /// The index naming strategy to use for rollovers.
+    /// </summary>
+    IIndexNamingStrategy IndexNamingStrategy { get; }
+    
+    /// <summary>
+    /// Invoked by the system to configure <see cref="settings"/>.
+    /// </summary>
+    /// <param name="settings">The settings to configure.</param>
+    void ConfigureClientSettings(ElasticsearchClientSettings settings);
 
-    public static IDictionary<Type, string> GetDefaultIndexConfig()
-    {
-        return Utils.GetElasticDocumentTypes().ToDictionary(type => type, type => type.Name.ToLower());
-    }
+    /// <summary>
+    /// Invoked by the system to configure the <see cref="client"/>.
+    /// </summary>
+    /// <param name="client">The <see cref="ElasticsearchClient"/></param> to configure.
+    /// <param name="cancellationToken">A cancellation token.</param>
+    ValueTask ConfigureClient(ElasticsearchClient client, CancellationToken cancellationToken);
 }

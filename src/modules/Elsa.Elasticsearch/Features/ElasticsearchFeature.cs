@@ -1,8 +1,8 @@
 using Elastic.Clients.Elasticsearch;
 using Elsa.Elasticsearch.Extensions;
 using Elsa.Elasticsearch.HostedServices;
-using Elsa.Elasticsearch.Implementations.RolloverStrategies;
-using Elsa.Elasticsearch.Models;
+using Elsa.Elasticsearch.Modules.Management;
+using Elsa.Elasticsearch.Modules.Runtime;
 using Elsa.Elasticsearch.Options;
 using Elsa.Elasticsearch.Services;
 using Elsa.Features.Abstractions;
@@ -31,16 +31,11 @@ public class ElasticsearchFeature : FeatureBase
     /// True to enable index name rollovers, false otherwise.
     /// </summary>
     public bool EnableRollover { get; set; }
-    
-    /// <summary>
-    /// A delegate that resolves the <see cref="IIndexRolloverStrategy"/> to use when rolling over.
-    /// </summary>
-    public Func<IServiceProvider, IIndexRolloverStrategy> IndexRolloverStrategy { get; set; } = sp => sp.GetRequiredService<MonthlyRollover>();
 
     /// <inheritdoc />
     public override void ConfigureHostedServices()
     {
-        Module.ConfigureHostedService<ConfigureMappingHostedService>(-1);
+        Module.ConfigureHostedService<ConfigureElasticsearchClientHostedService>(-2);
 
         if (EnableRollover) 
             Module.ConfigureHostedService<ConfigureIndexRolloverHostedService>(-1);
@@ -50,22 +45,20 @@ public class ElasticsearchFeature : FeatureBase
     public override void Apply()
     {
         Services.Configure(Options);
-        
-        Services.AddSingleton(sp =>
-        {
-            var options = sp.GetRequiredService<IOptions<ElasticsearchOptions>>().Value;
-            var client = new ElasticsearchClient(GetSettings(options));
-
-            return client;
-        });
-
-        Services.AddSingleton(IndexRolloverStrategy);
+        Services.AddSingleton(sp => new ElasticsearchClient(GetSettings(sp)));
+        Services.AddSingleton<IElasticConfiguration, ExecutionLogConfiguration>();
+        Services.AddSingleton<IElasticConfiguration, WorkflowInstanceConfiguration>();
     }
 
-    private ElasticsearchClientSettings GetSettings(ElasticsearchOptions options)
+    private static ElasticsearchClientSettings GetSettings(IServiceProvider serviceProvider)
     {
-        return new ElasticsearchClientSettings(options.Endpoint)
-            .ConfigureAuthentication(options)
-            .ConfigureMapping(IndexConfig);
+        var options = serviceProvider.GetRequiredService<IOptions<ElasticsearchOptions>>().Value;
+        var configs = serviceProvider.GetServices<IElasticConfiguration>();
+        var settings = new ElasticsearchClientSettings(options.Endpoint).ConfigureAuthentication(options);
+
+        foreach (var config in configs) 
+            config.ConfigureClientSettings(settings);
+
+        return settings;
     }
 }

@@ -1,11 +1,14 @@
 using Elsa.Elasticsearch.Features;
-using Elsa.Elasticsearch.Implementations.RolloverStrategies;
 using Elsa.Elasticsearch.Options;
-using Elsa.Elasticsearch.Services;
 using Elsa.Features.Services;
+using JetBrains.Annotations;
 
 namespace Elsa.Elasticsearch.Extensions;
 
+/// <summary>
+/// Extends <see cref="IModule"/> to configure the <see cref="ElasticsearchFeature"/> feature.
+/// </summary>
+[PublicAPI]
 public static class ModuleExtensions
 {
     /// <summary>
@@ -14,15 +17,9 @@ public static class ModuleExtensions
     public static IModule UseElasticsearch(
         this IModule module, 
         Action<ElasticsearchOptions> options,
-        Func<IServiceProvider, IIndexRolloverStrategy>? rolloverStrategy = default,
         Action<ElasticsearchFeature>? configure = default)
     {
-        configure += f =>
-        {
-            f.Options += options;
-            f.IndexRolloverStrategy = rolloverStrategy ?? (_ => new NoRollover()) ;
-        };
-        
+        configure += f => f.Options += options;
         module.Configure(configure);
         return module;
     }
