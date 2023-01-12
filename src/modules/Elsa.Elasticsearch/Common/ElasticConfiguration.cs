@@ -19,5 +19,5 @@ public abstract class ElasticConfiguration<T> : IElasticConfiguration
     public abstract void ConfigureClientSettings(ElasticsearchClientSettings settings);
 
     /// <inheritdoc />
-    public virtual ValueTask ConfigureClient(ElasticsearchClient client, CancellationToken cancellationToken) => ValueTask.CompletedTask;
+    public virtual ValueTask ConfigureClientAsync(ElasticsearchClient client, CancellationToken cancellationToken) => ValueTask.CompletedTask;
 }

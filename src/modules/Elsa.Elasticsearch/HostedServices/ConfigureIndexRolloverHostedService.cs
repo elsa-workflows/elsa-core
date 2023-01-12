@@ -1,5 +1,4 @@
 using Elastic.Clients.Elasticsearch;
-using Elastic.Clients.Elasticsearch.IndexManagement;
 using Elsa.Elasticsearch.Options;
 using Elsa.Elasticsearch.Services;
 using Microsoft.Extensions.Hosting;
@@ -29,34 +28,10 @@ public class ConfigureIndexRolloverHostedService : BackgroundService
     /// <inheritdoc />
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        await CreateAliasesAsync(stoppingToken);
-
         while (!stoppingToken.IsCancellationRequested)
         {
             await Task.Delay(_options.RolloverInterval, stoppingToken);
             await RolloverAsync(stoppingToken);
-        }
-    }
-
-    private async Task CreateAliasesAsync(CancellationToken cancellationToken)
-    {
-        foreach (var configuration in _configurations)
-        {
-            var alias = _options.GetIndexNameFor(configuration.DocumentType);
-            var indexName = configuration.IndexNamingStrategy.GenerateName(alias);
-            var indexExists = (await _client.Indices.ExistsAsync(indexName, cancellationToken)).Exists;
-
-            if (indexExists)
-                continue;
-
-            var response = await _client.Indices.CreateAsync(indexName, c => c
-                .Aliases(a => a.Add(alias, new Alias { IsWriteIndex = true })), cancellationToken);
-
-            if (response.IsValidResponse)
-                continue;
-
-            if (response.TryGetOriginalException(out var exception))
-                throw exception!;
         }
     }
 

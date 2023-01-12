@@ -28,5 +28,5 @@ public interface IElasticConfiguration
     /// </summary>
     /// <param name="client">The <see cref="ElasticsearchClient"/></param> to configure.
     /// <param name="cancellationToken">A cancellation token.</param>
-    ValueTask ConfigureClient(ElasticsearchClient client, CancellationToken cancellationToken);
+    ValueTask ConfigureClientAsync(ElasticsearchClient client, CancellationToken cancellationToken);
 }

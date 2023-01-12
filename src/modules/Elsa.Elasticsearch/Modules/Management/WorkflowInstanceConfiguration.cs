@@ -28,7 +28,7 @@ public class WorkflowInstanceConfiguration : ElasticConfiguration<WorkflowInstan
     }
 
     /// <inheritdoc />
-    public override async ValueTask ConfigureClient(ElasticsearchClient client, CancellationToken cancellationToken)
+    public override async ValueTask ConfigureClientAsync(ElasticsearchClient client, CancellationToken cancellationToken)
     {
         await client.Indices.CreateAsync<WorkflowInstance>(
             descriptor => descriptor.Mappings(m => m
