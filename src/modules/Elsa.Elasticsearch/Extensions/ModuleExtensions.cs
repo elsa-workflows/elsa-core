@@ -22,7 +22,7 @@ public static class ModuleExtensions
         {
             f.Options = options;
             f.IndexRolloverStrategy = rolloverStrategy;
-            f.IndexConfig = Utils.ResolveAliasConfig(f.IndexConfig, options.IndexConfig ?? indexConfig);
+            f.IndexConfig = Utils.ResolveIndexConfig(f.IndexConfig, options.IndexConfig ?? indexConfig);
         };
         
         module.Configure(configure);

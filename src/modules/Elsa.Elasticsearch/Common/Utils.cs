@@ -15,7 +15,7 @@ public static class Utils
         GetElasticConfigurationTypes()
             .Select(t => t.BaseType!.GenericTypeArguments.First()).ToList();
     
-    public static IDictionary<Type, string> ResolveAliasConfig(
+    public static IDictionary<Type, string> ResolveIndexConfig(
         IDictionary<Type, string> defaultConfig, 
         IDictionary<string, string>? userDefinedConfig)
     {

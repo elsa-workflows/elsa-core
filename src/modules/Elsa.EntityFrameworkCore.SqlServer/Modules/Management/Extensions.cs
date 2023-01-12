@@ -5,7 +5,7 @@ namespace Elsa.EntityFrameworkCore.Extensions;
 
 public static partial class Extensions
 {
-    public static EFCoreManagementPersistenceFeature UseSqlServer(this EFCoreManagementPersistenceFeature feature, string connectionString)
+    public static EFCoreDefaultManagementPersistenceFeature UseSqlServer(this EFCoreDefaultManagementPersistenceFeature feature, string connectionString)
     {
         feature.DbContextOptionsBuilder = (_, db) => db.UseElsaSqlServer(connectionString);
         return feature;

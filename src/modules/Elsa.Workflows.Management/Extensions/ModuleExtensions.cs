@@ -25,6 +25,15 @@ public static class ModuleExtensions
     }
     
     /// <summary>
+    /// Adds the default workflow management feature to the specified module. 
+    /// </summary>
+    public static WorkflowManagementFeature UseDefaultManagement(this WorkflowManagementFeature feature, Action<DefaultManagementFeature>? configure = default)
+    {
+        feature.Module.Configure(configure);
+        return feature;
+    }
+    
+    /// <summary>
     /// Adds the workflow instance feature to workflow management module. 
     /// </summary>
     public static WorkflowManagementFeature UseWorkflowInstances(this WorkflowManagementFeature feature, Action<WorkflowInstanceFeature>? configure = default)
