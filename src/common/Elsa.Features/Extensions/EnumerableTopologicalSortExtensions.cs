@@ -1,8 +1,15 @@
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
 
+/// <summary>
+/// Adds extension methods to sort collections by their dependencies, also known as a topological sort.
+/// </summary>
 public static class EnumerableTopologicalSortExtensions
 {
+    /// <summary>
+    /// Returns a topologically sorted copy of the specified list.
+    /// </summary>
+    // ReSharper disable once InconsistentNaming
     public static IEnumerable<T> TSort<T>(this IEnumerable<T> source, Func<T, IEnumerable<T>> dependencies, bool throwOnCycle = false)
     {
         var sorted = new List<T>();

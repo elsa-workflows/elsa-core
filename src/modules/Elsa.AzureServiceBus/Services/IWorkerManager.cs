@@ -7,15 +7,14 @@ namespace Elsa.AzureServiceBus.Services;
 /// </summary>
 public interface IWorkerManager
 {
-    IReadOnlyCollection<Worker> Workers { get; }
+    /// <summary>
+    /// A list of workers under management.
+    /// </summary>
+    IEnumerable<Worker> Workers { get; }
 
     /// <summary>
     /// Returns a value indicating whether a worker exists for the specified trigger.
     /// </summary>
-    /// <param name="queueOrTopic"></param>
-    /// <param name="subscription"></param>
-    /// <param name="payload"></param>
-    /// <returns></returns>
     Worker? FindWorkerFor(string queueOrTopic, string? subscription);
     
     /// <summary>

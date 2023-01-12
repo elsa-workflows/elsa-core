@@ -5,5 +5,8 @@ namespace Elsa.AzureServiceBus.Models;
 /// </summary>
 public class TopicDefinition
 {
+    /// <summary>
+    /// The topic name.
+    /// </summary>
     public string Name { get; set; } = default!;
 }

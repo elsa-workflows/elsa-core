@@ -18,7 +18,7 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "6.0.11")
+                .HasAnnotation("ProductVersion", "6.0.12")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder, 1L, 1);
@@ -206,6 +206,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("CorrelationId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Data")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Hash")

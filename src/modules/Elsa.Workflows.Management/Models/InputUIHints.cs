@@ -15,6 +15,7 @@ public static class InputUIHints
     public const string MultiText = "multi-text";
     public const string CodeEditor = "code-editor";
     public const string VariablePicker = "variable-picker";
+    public const string TypePicker = "type-picker";
 
     /// <summary>
     /// An editor that allows the user to write a blob of JSON.
@@ -27,17 +28,20 @@ public static class InputUIHints
             return inputAttribute.UIHint;
 
         if (wrappedPropertyType == typeof(bool) || wrappedPropertyType == typeof(bool?))
-            return InputUIHints.Checkbox;
+            return Checkbox;
 
         if (wrappedPropertyType == typeof(string))
-            return InputUIHints.SingleLine;
+            return SingleLine;
+
+        if (wrappedPropertyType == typeof(Type))
+            return TypePicker;
 
         if (typeof(IEnumerable).IsAssignableFrom(wrappedPropertyType))
-            return InputUIHints.Dropdown;
+            return Dropdown;
 
         if (wrappedPropertyType.IsEnum || wrappedPropertyType.IsNullableType() && wrappedPropertyType.GetTypeOfNullable().IsEnum)
-            return InputUIHints.Dropdown;
+            return Dropdown;
 
-        return InputUIHints.SingleLine;
+        return SingleLine;
     }
 }

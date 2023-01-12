@@ -4,15 +4,18 @@ using Elsa.Common.Services;
 
 namespace Elsa.Common.Implementations;
 
+/// <inheritdoc />
 public class JsonFormatter : IFormatter
 {
-    public ValueTask<string> ToStringAsync(object body, CancellationToken cancellationToken)
+    /// <inheritdoc />
+    public ValueTask<string> ToStringAsync(object value, CancellationToken cancellationToken = default)
     {
-        var json = JsonSerializer.Serialize(body);
+        var json = JsonSerializer.Serialize(value);
         return ValueTask.FromResult(json);
     }
 
-    public ValueTask<object> FromStringAsync(string data, Type? returnType, CancellationToken cancellationToken)
+    /// <inheritdoc />
+    public ValueTask<object> FromStringAsync(string data, Type? returnType, CancellationToken cancellationToken = default)
     {
         var options = new JsonSerializerOptions();
         options.Converters.Add(new JsonStringEnumConverter());

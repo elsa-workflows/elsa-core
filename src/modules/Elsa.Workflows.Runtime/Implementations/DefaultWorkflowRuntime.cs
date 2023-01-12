@@ -202,27 +202,16 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
 
     private async Task StoreBookmarksAsync(string workflowInstanceId, ICollection<Bookmark> bookmarks, string? correlationId, CancellationToken cancellationToken)
     {
-        var groupedBookmarks = bookmarks.GroupBy(x => (x.Name, x.Hash));
-
-        foreach (var groupedBookmark in groupedBookmarks)
+        foreach (var bookmark in bookmarks)
         {
-            var key = groupedBookmark.Key;
-            var bookmarkIds = groupedBookmark.Select(x => x.Id).ToList();
-            await _bookmarkStore.SaveAsync(key.Name, key.Hash, workflowInstanceId, bookmarkIds, correlationId, cancellationToken);
+            var storedBookmark = new StoredBookmark(bookmark.Name, bookmark.Hash, workflowInstanceId, bookmark.Id, correlationId, bookmark.Data);
+            await _bookmarkStore.SaveAsync(storedBookmark, cancellationToken);
         }
     }
 
-    private async Task RemoveBookmarksAsync(
-        string workflowInstanceId,
-        IEnumerable<Bookmark> bookmarks,
-        CancellationToken cancellationToken)
+    private async Task RemoveBookmarksAsync(string workflowInstanceId, IEnumerable<Bookmark> bookmarks, CancellationToken cancellationToken)
     {
-        var groupedBookmarks = bookmarks.GroupBy(x => x.Hash);
-
-        foreach (var groupedBookmark in groupedBookmarks)
-        {
-            var key = groupedBookmark.Key;
-            await _bookmarkStore.DeleteAsync(key, workflowInstanceId, cancellationToken);
-        }
+        foreach (var bookmark in bookmarks) 
+            await _bookmarkStore.DeleteAsync(bookmark.Hash, workflowInstanceId, cancellationToken);
     }
 }

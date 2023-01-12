@@ -5,6 +5,13 @@ namespace Elsa.AzureServiceBus.Models;
 /// </summary>
 public class SubscriptionDefinition
 {
+    /// <summary>
+    /// The subscription name.
+    /// </summary>
     public string Name { get; set; } = default!;
+    
+    /// <summary>
+    /// The topic.
+    /// </summary>
     public string Topic { get; set; } = default!;
 }

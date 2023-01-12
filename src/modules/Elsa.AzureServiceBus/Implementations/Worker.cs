@@ -3,6 +3,8 @@ using Elsa.AzureServiceBus.Activities;
 using Elsa.AzureServiceBus.Models;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Runtime.Models;
+using Elsa.Workflows.Runtime.Services;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.AzureServiceBus.Implementations;
@@ -15,15 +17,16 @@ public class Worker : IAsyncDisposable
 {
     private static readonly string BookmarkName = TypeNameHelper.GenerateTypeName<MessageReceived>();
     private readonly ServiceBusProcessor _processor;
+    private readonly IWorkflowDispatcher _workflowDispatcher;
     private readonly IHasher _hasher;
-    //private readonly IWorkflowService _workflowService;
     private readonly ILogger _logger;
     private int _refCount = 1;
 
-    public Worker(string queueOrTopic, string? subscription, ServiceBusClient client, IHasher hasher, ILogger<Worker> logger)
+    public Worker(string queueOrTopic, string? subscription, IWorkflowDispatcher workflowDispatcher, ServiceBusClient client, IHasher hasher, ILogger<Worker> logger)
     {
         QueueOrTopic = queueOrTopic;
         Subscription = subscription == "" ? default : subscription;
+        _workflowDispatcher = workflowDispatcher;
         _hasher = hasher;
         _logger = logger;
 
@@ -71,9 +74,9 @@ public class Worker : IAsyncDisposable
         var correlationId = message.CorrelationId;
         var messageModel = CreateMessageModel(message);
         var input = new Dictionary<string, object> { [MessageReceived.InputKey] = messageModel };
-        //var executionResults = (await _workflowService.DispatchStimulusAsync(BookmarkName, payload, input, correlationId, cancellationToken)).ToList();
-
-        //_logger.LogInformation("Triggered {WorkflowCount} workflows", executionResults.Count);
+        var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<MessageReceived>();
+        var dispatchRequest = new DispatchTriggerWorkflowsRequest(activityTypeName, payload, correlationId, input);
+        await _workflowDispatcher.DispatchAsync(dispatchRequest, cancellationToken);
     }
 
     private ReceivedServiceBusMessageModel CreateMessageModel(ServiceBusReceivedMessage message) =>
