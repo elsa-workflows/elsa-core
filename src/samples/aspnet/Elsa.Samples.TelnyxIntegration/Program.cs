@@ -29,23 +29,26 @@ identityTokenSection.Bind(identityTokenOptions);
 // Add Elsa services.
 services
     .AddElsa(elsa => elsa
-        .UseWorkflowManagement(management => management
-            .UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString))
-            .AddActivity<WriteLine>()
-            .AddActivity<ReadLine>()
-            .AddActivity<If>()
-            .AddActivity<Flowchart>()
-            .AddActivity<FlowDecision>()
-            .AddActivity<FlowSwitch>()
-            .AddActivity<FlowJoin>()
-            .AddActivity<Elsa.Scheduling.Activities.Delay>()
-            .AddActivity<Elsa.Scheduling.Activities.Timer>()
-            .AddActivity<ForEach>()
-            .AddActivity<Switch>()
-            .AddActivity<RunJavaScript>()
-            .AddActivity<Event>()
-            .AddActivitiesFrom<Program>()
-        )
+        .UseWorkflowManagement(management =>
+        {
+            management
+                .UseDefaultManagement(dm => dm.UseEntityFrameworkCore(ef => ef.UseSqlite()))
+                .UseWorkflowInstances(w => w.UseEntityFrameworkCore(ef => ef.UseSqlite()))
+                .AddActivity<WriteLine>()
+                .AddActivity<ReadLine>()
+                .AddActivity<If>()
+                .AddActivity<Flowchart>()
+                .AddActivity<FlowDecision>()
+                .AddActivity<FlowSwitch>()
+                .AddActivity<FlowJoin>()
+                .AddActivity<Elsa.Scheduling.Activities.Delay>()
+                .AddActivity<Elsa.Scheduling.Activities.Timer>()
+                .AddActivity<ForEach>()
+                .AddActivity<Switch>()
+                .AddActivity<RunJavaScript>()
+                .AddActivity<Event>()
+                .AddActivitiesFrom<Program>();
+        })
         .UseIdentity(identity =>
         {
             identity.IdentityOptions = identityOptions;
@@ -58,6 +61,7 @@ services
                 //proto.PersistenceProvider = _ => new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString));
             });
             runtime.UseDefaultRuntime(dr => dr.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)));
+            runtime.UseExecutionLogRecords(d => d.UseEntityFrameworkCore(ef => ef.UseSqlite()));
             runtime.UseExecutionLogRecords(e => e.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)));
             runtime.WorkflowStateExporter = sp => sp.GetRequiredService<AsyncWorkflowStateExporter>();
         })

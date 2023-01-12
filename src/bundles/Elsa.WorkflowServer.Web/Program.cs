@@ -1,5 +1,3 @@
-using Azure.Identity;
-using Azure.ResourceManager;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.Extensions;
 using Elsa.Identity.Options;
@@ -8,9 +6,7 @@ using Elsa.EntityFrameworkCore.Modules.Labels;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Microsoft.Data.Sqlite;
-using Elsa.ProtoActor.Cluster.AzureContainerApps;
 using Proto.Persistence.Sqlite;
-using Proto.Remote.GrpcNet;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -35,7 +31,7 @@ services
         .UseDefaultAuthentication()
         .UseWorkflowManagement(management =>
         {
-            management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
+            management.UseDefaultManagement(m => m.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)));
             management.UseWorkflowInstances(w => w.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)));
         })
         .UseWorkflowRuntime(runtime =>
