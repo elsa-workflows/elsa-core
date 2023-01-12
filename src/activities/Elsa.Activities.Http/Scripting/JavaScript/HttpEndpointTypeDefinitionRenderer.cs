@@ -16,7 +16,17 @@ namespace Elsa.Activities.Http.JavaScript
     public class HttpEndpointTypeDefinitionRenderer : DefaultActivityTypeDefinitionRenderer
     {
         public override bool GetCanRenderType(ActivityType activityType) => activityType.Type == typeof(HttpEndpoint);
+        
+        private static string FirstLetterToUpperCase(string str)
+        {
+            if (string.IsNullOrEmpty(str))
+                return str;
 
+            var a = str.ToCharArray();
+            a[0] = char.ToUpper(a[0]);
+            return new string(a);
+        }
+        
         public override async ValueTask RenderTypeDeclarationAsync(
             RenderingTypeScriptDefinitions notification,
             ActivityType activityType,
@@ -77,7 +87,7 @@ namespace Elsa.Activities.Http.JavaScript
             }
             else if (!string.IsNullOrWhiteSpace(targetTypeSchema))
             {
-                typeScriptType = $"{activityDefinition.Name}Output";
+                typeScriptType = FirstLetterToUpperCase($"{activityDefinition.Name}Output");
             }
 
             writer.AppendLine($"{propertyName}(): {typeScriptType}");
