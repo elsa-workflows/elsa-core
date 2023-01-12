@@ -1,4 +1,3 @@
-using Elsa;
 using Elsa.Activities.Http;
 using Elsa.Activities.Http.Bookmarks;
 using Elsa.ActivityResults;
@@ -7,7 +6,6 @@ using Elsa.Events;
 using Elsa.Services;
 using Elsa.Services.Models;
 using MediatR;
-using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.Linq;

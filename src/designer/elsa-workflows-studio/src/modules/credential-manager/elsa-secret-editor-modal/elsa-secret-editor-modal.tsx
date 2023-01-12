@@ -9,6 +9,9 @@ import secretState from "../utils/secret.store";
 import { SecretDescriptor, SecretEditorRenderProps, SecretModel, SecretPropertyDescriptor } from "../models/secret.model";
 import { SecretEventTypes } from "../models/secret.events";
 import state from '../../../utils/store';
+import { SyntaxNames } from '../../../models';
+import { createElsaOauth2Client } from '../services/oauth2.client';
+import { createElsaSecretsClient } from '../services/credential-manager.client';
 
 @Component({
     tag: 'elsa-secret-editor-modal',
@@ -17,9 +20,12 @@ import state from '../../../utils/store';
 export class ElsaSecretEditorModal {
   @Prop({ attribute: 'monaco-lib-path' }) monacoLibPath: string;
   @Prop() culture: string;
+  @Prop() serverUrl: string;
   @State() secretModel: SecretModel;
   @State() secretDescriptor: SecretDescriptor;
   @State() renderProps: SecretEditorRenderProps = {};
+  @State() preventClosing: boolean;
+  @State() updateCounter = 0;// Used to force update, when a property changes value
   i18next: i18n;
   dialog: HTMLElsaModalDialogElement;
   formContext: FormContext;
@@ -28,10 +34,12 @@ export class ElsaSecretEditorModal {
 
   connectedCallback() {
     eventBus.on(SecretEventTypes.SecretsEditor.Show, this.onShowSecretEditor);
+    eventBus.on(SecretEventTypes.SecretsLoaded, this.onSecretsLoaded);
   }
 
   disconnectedCallback() {
     eventBus.detach(SecretEventTypes.SecretsEditor.Show, this.onShowSecretEditor);
+    eventBus.detach(SecretEventTypes.SecretsLoaded, this.onSecretsLoaded);
   }
 
   async componentWillLoad() {
@@ -42,13 +50,30 @@ export class ElsaSecretEditorModal {
 
   t = (key: string) => this.i18next.t(key);
 
-  updateSecret(formData: FormData) {
-    const secret = this.secretModel;
+  updateSecret(formData: FormData, secret: SecretModel) {
     const secretDescriptor = this.secretDescriptor;
     const inputProperties: Array<SecretPropertyDescriptor> = secretDescriptor.inputProperties;
 
     for (const property of inputProperties)
       propertyDisplayManager.update(secret, property, formData);
+  }
+
+  get isAuthorizeButtonVisible() {
+    if (!this.secretModel) {
+      return false;
+    }
+    const grantType = this.secretModel.properties.find(x => x.name === 'GrantType').expressions[SyntaxNames.Literal];
+    const isTokenMissing = this.secretModel.properties.findIndex(x => x.name === 'Token') === -1;
+    return grantType === 'authorization_code' && isTokenMissing;
+  }
+
+  get isAuthorizeButtonDisabled() {
+    const authUrl = this.secretModel.properties.find(x => x.name === 'AuthorizationUrl').expressions[SyntaxNames.Literal];
+    const tokenUrl = this.secretModel.properties.find(x => x.name === 'AccessTokenUrl').expressions[SyntaxNames.Literal];
+    const clientId = this.secretModel.properties.find(x => x.name === 'ClientId').expressions[SyntaxNames.Literal];
+    const clientSecret = this.secretModel.properties.find(x => x.name === 'ClientSecret').expressions[SyntaxNames.Literal];
+
+    return !authUrl || !tokenUrl || !clientId || !clientSecret;
   }
 
   async componentWillRender() {
@@ -85,15 +110,39 @@ export class ElsaSecretEditorModal {
     await this.hide(true);
   }
 
+  async onGetConsentClick(e: Event) {
+    e.preventDefault();
+
+    const client = await createElsaSecretsClient(this.serverUrl);
+    const secret = await client.secretsApi.save(this.secretModel);
+
+    this.secretModel = secret;
+    const oauthClient = await createElsaOauth2Client(this.serverUrl);
+    const url = await oauthClient.oauth2Api.getUrl(secret.id);
+    window.open(url, '_blank', 'location=yes,height=600,width=600,scrollbars=yes,status=yes');
+  }
+
   onSubmit = async (e: Event) => {
     e.preventDefault();
     const form: any = e.target;
     const formData = new FormData(form);
-    this.updateSecret(formData);
-    await eventBus.emit(SecretEventTypes.UpdateSecret, this, this.secretModel);
+    this.updateSecret(formData, this.secretModel);
+    const client = await createElsaSecretsClient(this.serverUrl);
+    await client.secretsApi.save(this.secretModel);
+
     await this.hide(true);
 
     await eventBus.emit(SecretEventTypes.SecretUpdated, this, this.secretModel);
+  };
+
+  onSecretsLoaded = async (secrets: SecretModel[]) => {
+    if (!this.secretModel) {
+      return;
+    }
+    var secret = secrets.find(x => x.id === this.secretModel.id);
+    if (secret) {
+      this.secretModel = secret;
+    }
   };
 
   onShowSecretEditor = async (secret: SecretModel, animate: boolean) => {
@@ -141,7 +190,14 @@ export class ElsaSecretEditorModal {
 
                     <div class="elsa-mt-8">
                       {this.renderProperties(secretModel)}
-
+                      {this.isAuthorizeButtonVisible &&
+                        <button
+                          disabled={this.isAuthorizeButtonDisabled}
+                          onClick={e => this.onGetConsentClick(e)}
+                          class="elsa-mt-6 elsa-w-full elsa-inline-flex elsa-justify-center elsa-rounded-md elsa-border elsa-border-gray-300 elsa-shadow-sm elsa-px-4 elsa-py-2 elsa-bg-white elsa-text-base elsa-font-medium elsa-text-gray-700 hover:elsa-bg-gray-50 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500 sm:elsa-w-auto sm:elsa-text-sm disabled:elsa-opacity-50">
+                            Authorize
+                        </button>
+                      }
                     </div>
                   </div>
 
@@ -199,6 +255,6 @@ export class ElsaSecretEditorModal {
     const display = propertyDisplayManager.display(secret, property);
     const id = `${property.name}Control`;
 
-    return <elsa-control key={key} id={id} class="sm:elsa-col-span-6" content={display}/>;
+    return <elsa-control key={key} id={id} class="sm:elsa-col-span-6" content={display} onChange={() => this.updateCounter++}/>;
   }
 }

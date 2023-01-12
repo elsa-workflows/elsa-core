@@ -1,4 +1,3 @@
-using Elsa.Persistence.EntityFramework.MySql;
 using Elsa.Secrets.Persistence.EntityFramework.Core;
 using Microsoft.EntityFrameworkCore;
 using Pomelo.EntityFrameworkCore.MySql.Infrastructure;

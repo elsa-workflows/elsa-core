@@ -1,24 +1,14 @@
-using Elsa.Server.Api;
 using Elsa.Server.Authentication.Contexts;
 using Elsa.Server.Authentication.Controllers;
 using Elsa.Server.Authentication.ExtensionOptions;
 using Elsa.Server.Authentication.TenantAccessors;
 using Elsa.Services;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.OAuth.Claims;
-using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.IdentityModel.Tokens;
 using NetBox.Extensions;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Elsa.Server.Authentication.Extensions
 {

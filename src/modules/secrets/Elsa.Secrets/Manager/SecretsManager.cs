@@ -2,7 +2,6 @@ using Elsa.Persistence.Specifications;
 using Elsa.Secrets.Models;
 using Elsa.Secrets.Persistence;
 using Elsa.Secrets.Specifications;
-using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;

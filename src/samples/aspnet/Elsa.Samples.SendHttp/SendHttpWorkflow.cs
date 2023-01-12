@@ -1,8 +1,6 @@
 using Elsa.Activities.Http;
 using Elsa.Builders;
 using System;
-using System.Dynamic;
-using System.Text.Json;
 using Elsa.Activities.Primitives;
 
 namespace Elsa.Samples.SendHttp

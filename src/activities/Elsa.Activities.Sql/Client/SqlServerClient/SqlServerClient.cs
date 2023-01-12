@@ -1,8 +1,5 @@
 using Microsoft.Data.SqlClient;
-using Newtonsoft.Json;
-using System;
 using System.Data;
-using System.Text;
 
 namespace Elsa.Activities.Sql.Client
 {

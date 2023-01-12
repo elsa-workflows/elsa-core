@@ -1,6 +1,5 @@
 using Elsa.Expressions;
 using Elsa.Options;
-using Elsa.Secrets.Enrichers;
 using Elsa.Secrets.Handlers;
 using Elsa.Secrets.Manager;
 using Elsa.Secrets.Persistence;
@@ -16,9 +15,9 @@ namespace Elsa.Secrets.Extensions
         public static ElsaOptionsBuilder AddSecrets(this ElsaOptionsBuilder elsaOptions)
         {
             elsaOptions.Services
-                .AddSingleton<ISecretValueFormatter, MsSqlSecretValueFormatter>()
-                .AddSingleton<ISecretValueFormatter, PostgreSqlSecretValueFormatter>()
-                .AddSingleton<ISecretValueFormatter, AuthorizationHeaderSecretValueFormatter>()
+                .AddScoped<ISecretValueFormatter, MsSqlSecretValueFormatter>()
+                .AddScoped<ISecretValueFormatter, PostgreSqlSecretValueFormatter>()
+                .AddScoped<ISecretValueFormatter, AuthorizationHeaderSecretValueFormatter>()
                 .AddScoped<ISecretsManager, SecretsManager>()
                 .AddScoped<ISecretsProvider, SecretsProvider>()
                 .Decorate<ISecretsStore, EventPublishingSecretsStore>()

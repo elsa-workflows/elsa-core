@@ -8,5 +8,5 @@
   ShowSecretsPicker: 'show-secrets-picker',
   SecretPicked: 'secret-picked',
   SecretUpdated: 'secret-updated',
-  UpdateSecret: 'update-secret',
+  SecretsLoaded: 'secrets-loaded',
 }

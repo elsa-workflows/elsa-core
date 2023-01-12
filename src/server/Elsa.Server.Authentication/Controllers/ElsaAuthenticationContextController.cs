@@ -1,16 +1,7 @@
 using Elsa.Server.Authentication.Contexts;
-using Elsa.Services;
-using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Claims;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Elsa.Server.Authentication.Controllers
 {
@@ -23,10 +14,13 @@ namespace Elsa.Server.Authentication.Controllers
         [AllowAnonymous]
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<IActionResult> Handle()
+        public Task<IActionResult> Handle()
         {
-            return Ok(new { AuthenticationStyles = ElsaAuthenticationContext.AuthenticationStyles.ConvertAll(x=>x.ToString()) , 
-                ElsaAuthenticationContext.CurrentTenantAccessorName , ElsaAuthenticationContext.TenantAccessorKeyName });
+            return Task.FromResult((IActionResult) Ok(new
+            {
+                AuthenticationStyles = ElsaAuthenticationContext.AuthenticationStyles.ConvertAll(x => x.ToString()),
+                ElsaAuthenticationContext.CurrentTenantAccessorName, ElsaAuthenticationContext.TenantAccessorKeyName
+            }));
         }
     }
 }
