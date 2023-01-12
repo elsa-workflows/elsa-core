@@ -97,12 +97,14 @@ public class MessageReceived : Trigger
 
         // Provide the received message as output.
         await SetResultAsync(receivedMessage, context);
+        await context.CompleteActivityAsync();
     }
 
     private async ValueTask Resume(ActivityExecutionContext context)
     {
         var receivedMessage = context.GetInput<ReceivedServiceBusMessageModel>(InputKey);
         await SetResultAsync(receivedMessage, context);
+        await context.CompleteActivityAsync();
     }
 
     private async Task SetResultAsync(ReceivedServiceBusMessageModel receivedMessage, ActivityExecutionContext context)

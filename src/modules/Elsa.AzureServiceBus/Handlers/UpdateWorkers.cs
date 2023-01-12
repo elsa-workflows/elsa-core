@@ -11,7 +11,7 @@ namespace Elsa.AzureServiceBus.Handlers;
 /// <summary>
 /// Creates workers for each trigger & bookmark in response to updated workflow trigger indexes and bookmarks.
 /// </summary>
-public class UpdateWorkers : INotificationHandler<WorkflowTriggersIndexed>, INotificationHandler<WorkflowBookmarksDeleted>, INotificationHandler<WorkflowBookmarksSaved>
+public class UpdateWorkers : INotificationHandler<WorkflowTriggersIndexed>, INotificationHandler<WorkflowBookmarksIndexed>
 {
     private readonly IBookmarkPayloadSerializer _serializer;
     private readonly IWorkerManager _workerManager;
@@ -33,6 +33,20 @@ public class UpdateWorkers : INotificationHandler<WorkflowTriggersIndexed>, INot
         var added = notification.IndexedWorkflowTriggers.AddedTriggers.Filter<MessageReceived>().Select(x => DeserializePayload(x.Data!));
         var removed = notification.IndexedWorkflowTriggers.RemovedTriggers.Filter<MessageReceived>().Select(x => DeserializePayload(x.Data!));
         var unchanged = notification.IndexedWorkflowTriggers.UnchangedTriggers.Filter<MessageReceived>().Select(x => DeserializePayload(x.Data!));
+
+        await StopWorkersAsync(removed, cancellationToken);
+        await StartWorkersAsync(added, cancellationToken);
+        await EnsureWorkersAsync(unchanged, cancellationToken);
+    }
+    
+    /// <summary>
+    /// Adds, updates and removes workers based on added and removed bookmarks.
+    /// </summary>
+    public async Task HandleAsync(WorkflowBookmarksIndexed notification, CancellationToken cancellationToken)
+    {
+        var added = notification.IndexedWorkflowBookmarks.AddedBookmarks.Filter<MessageReceived>().Select(x => DeserializePayload(x.Data!));
+        var removed = notification.IndexedWorkflowBookmarks.RemovedBookmarks.Filter<MessageReceived>().Select(x => DeserializePayload(x.Data!));
+        var unchanged = notification.IndexedWorkflowBookmarks.UnchangedBookmarks.Filter<MessageReceived>().Select(x => DeserializePayload(x.Data!));
 
         await StopWorkersAsync(removed, cancellationToken);
         await StartWorkersAsync(added, cancellationToken);

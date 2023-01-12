@@ -11,20 +11,20 @@ public abstract class PersistenceFeatureBase<TDbContext> : FeatureBase where TDb
     {
     }
 
-    public bool ContextPoolingIsEnabled { get; set; }
-    public bool AutoRunMigrationsIsEnabled { get; set; } = true;
+    public bool UseContextPooling { get; set; }
+    public bool RunMigrations { get; set; } = true;
     public ServiceLifetime DbContextFactoryLifetime { get; set; } = ServiceLifetime.Singleton;
     public Action<IServiceProvider, DbContextOptionsBuilder> DbContextOptionsBuilder = (_, _) => { };
 
     public override void ConfigureHostedServices()
     {
-        if (AutoRunMigrationsIsEnabled)
+        if (RunMigrations)
             Module.ConfigureHostedService<RunMigrationsHostedService<TDbContext>>(-1); // Migrations need to run before other hosted services that depend on DB access.
     }
 
     public override void Apply()
     {
-        if (ContextPoolingIsEnabled)
+        if (UseContextPooling)
             Services.AddPooledDbContextFactory<TDbContext>(DbContextOptionsBuilder);
         else
             Services.AddDbContextFactory<TDbContext>(DbContextOptionsBuilder, DbContextFactoryLifetime);

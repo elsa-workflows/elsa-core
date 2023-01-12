@@ -39,7 +39,9 @@ public class AzureServiceBusFeature : FeatureBase
     public override void ConfigureHostedServices()
     {
         if (CreateQueuesTopicsAndSubscriptions)
-            Services.AddHostedService<CreateQueuesTopicsAndSubscriptions>();
+            Module.ConfigureHostedService<CreateQueuesTopicsAndSubscriptions>();
+
+        Module.ConfigureHostedService<StartWorkers>();
     }
 
     /// <inheritdoc />

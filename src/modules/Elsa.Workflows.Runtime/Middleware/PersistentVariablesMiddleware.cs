@@ -5,7 +5,7 @@ using Elsa.Workflows.Core.Services;
 namespace Elsa.Workflows.Runtime.Middleware;
 
 /// <summary>
-/// Takes care of loading & persisting workflow variables.
+/// Takes care of loading and persisting workflow variables.
 /// </summary>
 public class PersistentVariablesMiddleware : WorkflowExecutionMiddleware
 {
