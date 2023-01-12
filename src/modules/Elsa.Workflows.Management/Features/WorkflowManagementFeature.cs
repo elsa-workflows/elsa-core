@@ -69,11 +69,7 @@ public class WorkflowManagementFeature : FeatureBase
     /// The factory to create new instances of <see cref="IWorkflowDefinitionStore"/>.
     /// </summary>
     public Func<IServiceProvider, IWorkflowDefinitionStore> WorkflowDefinitionStore { get; set; } = sp => sp.GetRequiredService<MemoryWorkflowDefinitionStore>();
-
-    /// <summary>
-    /// The factory to create new instances of <see cref="IWorkflowInstanceStore"/>.
-    /// </summary>
-    public Func<IServiceProvider, IWorkflowInstanceStore> WorkflowInstanceStore { get; set; } = sp => sp.GetRequiredService<MemoryWorkflowInstanceStore>();
+    
 
     /// <summary>
     /// Adds the specified activity type to the system.
@@ -131,7 +127,6 @@ public class WorkflowManagementFeature : FeatureBase
             .AddMemoryStore<WorkflowDefinition, MemoryWorkflowDefinitionStore>()
             .AddMemoryStore<WorkflowInstance, MemoryWorkflowInstanceStore>()
             .AddActivityProvider<TypedActivityProvider>()
-            .AddSingleton(WorkflowInstanceStore)
             .AddSingleton(WorkflowDefinitionStore)
             .AddSingleton<IWorkflowDefinitionPublisher, WorkflowDefinitionPublisher>()
             .AddSingleton<IWorkflowDefinitionManager, WorkflowDefinitionManager>()

@@ -1,7 +1,7 @@
-using Elsa.Elasticsearch.Common;
 using Elsa.Elasticsearch.Features;
-using Elsa.Elasticsearch.Models;
+using Elsa.Elasticsearch.Implementations.RolloverStrategies;
 using Elsa.Elasticsearch.Options;
+using Elsa.Elasticsearch.Services;
 using Elsa.Features.Services;
 
 namespace Elsa.Elasticsearch.Extensions;
@@ -13,16 +13,14 @@ public static class ModuleExtensions
     /// </summary>
     public static IModule UseElasticsearch(
         this IModule module, 
-        ElasticsearchOptions options,
-        IndexRolloverStrategy? rolloverStrategy = default,
-        IDictionary<string,string>? indexConfig = default,
+        Action<ElasticsearchOptions> options,
+        Func<IServiceProvider, IIndexRolloverStrategy>? rolloverStrategy = default,
         Action<ElasticsearchFeature>? configure = default)
     {
         configure += f =>
         {
-            f.Options = options;
-            f.IndexRolloverStrategy = rolloverStrategy;
-            f.IndexConfig = Utils.ResolveAliasConfig(f.IndexConfig, options.IndexConfig ?? indexConfig);
+            f.Options += options;
+            f.IndexRolloverStrategy = rolloverStrategy ?? (_ => new NoRollover()) ;
         };
         
         module.Configure(configure);

@@ -158,6 +158,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ProtoActor.Cluster.Azu
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.AzureServiceBusActivities", "src\samples\aspnet\Elsa.Samples.AzureServiceBusActivities\Elsa.Samples.AzureServiceBusActivities.csproj", "{C25CFDCF-8E06-4DD8-A83E-FF7EF9FDA02E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.ElasticsearchStorage", "src\samples\aspnet\Elsa.Samples.ElasticsearchStorage\Elsa.Samples.ElasticsearchStorage.csproj", "{4A54379F-4775-41B6-9752-FF300288916A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -404,6 +406,10 @@ Global
 		{C25CFDCF-8E06-4DD8-A83E-FF7EF9FDA02E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C25CFDCF-8E06-4DD8-A83E-FF7EF9FDA02E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C25CFDCF-8E06-4DD8-A83E-FF7EF9FDA02E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4A54379F-4775-41B6-9752-FF300288916A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4A54379F-4775-41B6-9752-FF300288916A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4A54379F-4775-41B6-9752-FF300288916A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4A54379F-4775-41B6-9752-FF300288916A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{155227F0-A33B-40AA-A4B4-06F813EB921B} = {61017E64-6D00-49CB-9E81-5002DC8F7D5F}
@@ -473,5 +479,6 @@ Global
 		{A1A8AD89-C9C4-41BF-BBCB-EF0544A28BFB} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 		{9F79BBEC-02CE-4F76-AED4-BC191DA3054B} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 		{C25CFDCF-8E06-4DD8-A83E-FF7EF9FDA02E} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
+		{4A54379F-4775-41B6-9752-FF300288916A} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 	EndGlobalSection
 EndGlobal

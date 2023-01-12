@@ -1,7 +1,9 @@
 using Elsa.Elasticsearch.Implementations.IndexNamingStrategies;
+using JetBrains.Annotations;
 
 namespace Elsa.Elasticsearch.Models;
 
+[PublicAPI]
 public class IndexNamingStrategy
 {
     private IndexNamingStrategy(Type value) { Value = value; }
@@ -10,8 +12,6 @@ public class IndexNamingStrategy
 
     public static IndexNamingStrategy NamingWithYearAndMonth => new (typeof(NamingWithYearAndMonth));
 
-    public override string ToString()
-    {
-        return Value.Name;
-    }
+    /// <inheritdoc />
+    public override string ToString() => Value.Name;
 }

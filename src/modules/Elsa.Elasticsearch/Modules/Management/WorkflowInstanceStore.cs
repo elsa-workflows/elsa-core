@@ -9,15 +9,22 @@ using Elsa.Workflows.Management.Services;
 
 namespace Elsa.Elasticsearch.Modules.Management;
 
+/// <summary>
+/// Stores and retrieves workflow instances from Elasticsearch.
+/// </summary>
 public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
 {
     private readonly ElasticStore<WorkflowInstance> _store;
     
+    /// <summary>
+    /// Constructor.
+    /// </summary>
     public ElasticWorkflowInstanceStore(ElasticStore<WorkflowInstance> store)
     {
         _store = store;
     }
 
+    /// <inheritdoc />
     public async Task<WorkflowInstance?> FindByIdAsync(string id, CancellationToken cancellationToken = default)
     {
         var instances = await _store
@@ -30,12 +37,15 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
         return instances.Items.MaxBy(x => x.LastExecutedAt);
     }
 
+    /// <inheritdoc />
     public async Task SaveAsync(WorkflowInstance record, CancellationToken cancellationToken = default) => 
         await _store.SaveAsync(record, cancellationToken);
 
+    /// <inheritdoc />
     public async Task SaveManyAsync(IEnumerable<WorkflowInstance> records, CancellationToken cancellationToken = default) => 
         await _store.SaveManyAsync(records, cancellationToken);
 
+    /// <inheritdoc />
     public async Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default)
     {
         var result = await _store.DeleteByQueryAsync(desc => desc
@@ -47,6 +57,7 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
         return result > 0;
     }
 
+    /// <inheritdoc />
     public async Task<int> DeleteManyAsync(IEnumerable<string> ids, CancellationToken cancellationToken = default)
     {
         var result = await _store.DeleteByQueryAsync(desc => desc
@@ -59,6 +70,7 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
         return (int)result;
     }
 
+    /// <inheritdoc />
     public async Task DeleteManyByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default) =>
         await _store.DeleteByQueryAsync(desc => desc
                 .Query(q => q
@@ -67,6 +79,7 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
                         .Value(definitionId))), 
             cancellationToken);
 
+    /// <inheritdoc />
     public async Task<Page<WorkflowInstanceSummary>> FindManyAsync(FindWorkflowInstancesArgs args, CancellationToken cancellationToken = default)
     {
         var sortDescriptor = new SortOptionsDescriptor<WorkflowInstance>();
@@ -100,11 +113,11 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
         sortDescriptor = orderBy switch
         {
             OrderBy.Finished => orderDirection == OrderDirection.Ascending
-                ? sortDescriptor.Field(f => f.FinishedAt, cfg => cfg.Order(SortOrder.Asc))
-                : sortDescriptor.Field(f => f.FinishedAt, cfg => cfg.Order(SortOrder.Desc)),
+                ? sortDescriptor.Field(f => f.FinishedAt!, cfg => cfg.Order(SortOrder.Asc))
+                : sortDescriptor.Field(f => f.FinishedAt!, cfg => cfg.Order(SortOrder.Desc)),
             OrderBy.LastExecuted => orderDirection == OrderDirection.Ascending
-                ? sortDescriptor.Field(f => f.LastExecutedAt, cfg => cfg.Order(SortOrder.Asc))
-                : sortDescriptor.Field(f => f.LastExecutedAt, cfg => cfg.Order(SortOrder.Desc)),
+                ? sortDescriptor.Field(f => f.LastExecutedAt!, cfg => cfg.Order(SortOrder.Asc))
+                : sortDescriptor.Field(f => f.LastExecutedAt!, cfg => cfg.Order(SortOrder.Desc)),
             OrderBy.Created => orderDirection == OrderDirection.Ascending
                 ? sortDescriptor.Field(f => f.CreatedAt, cfg => cfg.Order(SortOrder.Asc))
                 : sortDescriptor.Field(f => f.CreatedAt, cfg => cfg.Order(SortOrder.Desc)),

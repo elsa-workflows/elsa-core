@@ -1,7 +1,12 @@
 using Elsa.Workflows.Management.Features;
+using JetBrains.Annotations;
 
 namespace Elsa.Elasticsearch.Modules.Management;
 
+/// <summary>
+/// Extends the <see cref="WorkflowInstanceFeature"/> feature.
+/// </summary>
+[PublicAPI]
 public static class Extensions
 {
     /// <summary>

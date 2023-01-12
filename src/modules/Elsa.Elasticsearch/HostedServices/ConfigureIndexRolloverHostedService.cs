@@ -1,30 +1,34 @@
-using Elsa.Elasticsearch.Scheduling;
-using Elsa.Jobs.Schedules;
-using Elsa.Jobs.Services;
+using Elsa.Elasticsearch.Options;
+using Elsa.Elasticsearch.Services;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Elasticsearch.HostedServices;
 
-public class ConfigureIndexRolloverHostedService : IHostedService
+/// <summary>
+/// Configures a recurring job that applies the rollover strategy.
+/// </summary>
+public class ConfigureIndexRolloverHostedService : BackgroundService
 {
-    private readonly IJobScheduler _jobScheduler;
+    private readonly IIndexRolloverStrategy _rolloverStrategy;
+    private readonly ElasticsearchOptions _options;
 
-    public ConfigureIndexRolloverHostedService(IJobScheduler jobScheduler)
+    /// <summary>
+    /// Constructor.
+    /// </summary>
+    public ConfigureIndexRolloverHostedService(IIndexRolloverStrategy rolloverStrategy, IOptions<ElasticsearchOptions> options)
     {
-        _jobScheduler = jobScheduler;
+        _rolloverStrategy = rolloverStrategy;
+        _options = options.Value;
     }
 
-    public async Task StartAsync(CancellationToken cancellationToken)
+    /// <inheritdoc />
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var job = new ConfigureIndexRolloverJob();
-        var schedule = new CronSchedule
+        while (!stoppingToken.IsCancellationRequested)
         {
-            // At the beginning of every month
-            CronExpression = "0 0 1 * *"
-        };
-        
-        await _jobScheduler.ScheduleAsync(job, GetType().Name, schedule, cancellationToken: cancellationToken);
+            await Task.Delay(_options.RolloverInterval, stoppingToken);
+            await _rolloverStrategy.ApplyAsync(stoppingToken);
+        }
     }
-
-    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }
