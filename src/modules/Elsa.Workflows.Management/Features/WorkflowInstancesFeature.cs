@@ -9,10 +9,10 @@ namespace Elsa.Workflows.Management.Features;
 /// <summary>
 /// Enables storage of workflow instances.
 /// </summary>
-public class WorkflowInstanceFeature : FeatureBase
+public class WorkflowInstancesFeature : FeatureBase
 {
     /// <inheritdoc />
-    public WorkflowInstanceFeature(IModule module) : base(module)
+    public WorkflowInstancesFeature(IModule module) : base(module)
     {
     }
     

@@ -7,21 +7,27 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.EntityFrameworkCore.Modules.Management;
 
+/// <summary>
+/// Configures the <see cref="WorkflowDefinitionsFeature"/> with EF Core.
+/// </summary>
 [DependsOn(typeof(WorkflowManagementFeature))]
-public class EFCoreManagementPersistenceFeature : PersistenceFeatureBase<ManagementElsaDbContext>
+public class EFCoreWorkflowDefinitionPersistenceFeature : PersistenceFeatureBase<ManagementElsaDbContext>
 {
-    public EFCoreManagementPersistenceFeature(IModule module) : base(module)
+    /// <inheritdoc />
+    public EFCoreWorkflowDefinitionPersistenceFeature(IModule module) : base(module)
     {
     }
 
+    /// <inheritdoc />
     public override void Configure()
     {
-        Module.Configure<WorkflowManagementFeature>(feature =>
+        Module.Configure<WorkflowDefinitionsFeature>(feature =>
         {
             feature.WorkflowDefinitionStore = sp => sp.GetRequiredService<EFCoreWorkflowDefinitionStore>();
         });
     }
 
+    /// <inheritdoc />
     public override void Apply()
     {
         base.Apply();

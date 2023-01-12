@@ -1,16 +1,18 @@
 using Humanizer;
+using JetBrains.Annotations;
 
 namespace Elsa.Elasticsearch.Options;
 
 /// <summary>
 /// Contains Elasticsearch settings.
 /// </summary>
+[PublicAPI]
 public class ElasticsearchOptions
 {
     /// <summary>
-    /// The URL of the Elasticsearch server. 
+    /// The URL of the Elasticsearch server or the name of a connection string that in turn stores the URL. 
     /// </summary>
-    public Uri Endpoint { get; set; } = default!;
+    public string Endpoint { get; set; } = default!;
     
     /// <summary>
     /// The username to use when connecting with the Elasticsearch server.

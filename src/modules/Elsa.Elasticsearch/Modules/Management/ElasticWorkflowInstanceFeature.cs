@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.Elasticsearch.Modules.Management;
 
 /// <summary>
-/// Configures the <see cref="WorkflowInstanceFeature"/> feature with Elasticsearch.
+/// Configures the <see cref="WorkflowInstancesFeature"/> feature with Elasticsearch.
 /// </summary>
 [DependsOn(typeof(WorkflowManagementFeature))]
 [DependsOn(typeof(ElasticsearchFeature))]
@@ -23,7 +23,7 @@ public class ElasticWorkflowInstanceFeature : ElasticPersistenceFeatureBase
     /// <inheritdoc />
     public override void Configure()
     {
-        Module.Configure<WorkflowInstanceFeature>(feature =>
+        Module.Configure<WorkflowInstancesFeature>(feature =>
         {
             feature.WorkflowInstanceStore = sp => sp.GetRequiredService<ElasticWorkflowInstanceStore>();
         });

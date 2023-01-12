@@ -32,7 +32,7 @@ services
         .UseWorkflowManagement(management =>
         {
             management
-                .UseDefaultManagement(dm => dm.UseEntityFrameworkCore(ef => ef.UseSqlite()))
+                .UseWorkflowDefinitions(dm => dm.UseEntityFrameworkCore(ef => ef.UseSqlite()))
                 .UseWorkflowInstances(w => w.UseEntityFrameworkCore(ef => ef.UseSqlite()))
                 .AddActivity<WriteLine>()
                 .AddActivity<ReadLine>()
