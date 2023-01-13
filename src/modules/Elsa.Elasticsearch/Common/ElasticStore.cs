@@ -31,18 +31,17 @@ public class ElasticStore<T> where T : class
     /// </summary>
     public async Task<Page<T>> SearchAsync(Action<SearchRequestDescriptor<T>> search, PageArgs? pageArgs, CancellationToken cancellationToken)
     {
-        if (pageArgs != default)
+        if (pageArgs?.Page != null && pageArgs?.PageSize != null)
         {
             search += s => s.From(pageArgs.Offset).Size(pageArgs.Limit);
         }
 
         var response = await _elasticClient.SearchAsync(search, cancellationToken);
-        
-        if (response.IsSuccess())
-            return new Page<T>(response.Hits.Select(hit => hit.Source).ToList()!, response.Total);
-        
-        _logger.LogError("Failed to search data in Elasticsearch: {Message}", response.ElasticsearchServerError.ToString());
-        return new Page<T>(new Collection<T>(), 0);
+
+        if (!response.IsSuccess())
+            throw new Exception(response.DebugInformation);
+            
+        return new Page<T>(response.Hits.Select(hit => hit.Source).ToList()!, response.Total);
     }
 
     /// <summary>

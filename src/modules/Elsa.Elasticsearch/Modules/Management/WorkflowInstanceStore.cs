@@ -83,32 +83,9 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
     public async Task<Page<WorkflowInstanceSummary>> FindManyAsync(FindWorkflowInstancesArgs args, CancellationToken cancellationToken = default)
     {
         var sortDescriptor = new SortOptionsDescriptor<WorkflowInstance>();
-        var query = new QueryDescriptor<WorkflowInstance>();
 
         var (searchTerm, definitionId, version, correlationId, workflowStatus, workflowSubStatus, pageArgs, orderBy,
             orderDirection) = args;
-
-        if (!string.IsNullOrWhiteSpace(definitionId))
-            query = query.Match(m => m.Field(f => f.DefinitionId).Query(definitionId));
-
-        if (version != null)
-            query = query.Match(m => m.Field(f => f.Version).Query(version.ToString()!));
-
-        if (!string.IsNullOrWhiteSpace(correlationId))
-            query = query.Match(m => m.Field(f => f.CorrelationId).Query(correlationId));
-
-        if (workflowStatus != null)
-            query = query.Match(m => m.Field(f => f.Status).Query(workflowStatus.ToString()!));
-
-        if (workflowSubStatus != null)
-            query = query.Match(m => m.Field(f => f.SubStatus).Query(workflowSubStatus.ToString()!));
-
-        if(!string.IsNullOrWhiteSpace(searchTerm))
-        {
-            query = query
-                .QueryString(c => c
-                    .Query(searchTerm));
-        }
 
         sortDescriptor = orderBy switch
         {
@@ -124,7 +101,30 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
             _ => sortDescriptor
         };
 
-        var result = await _store.SearchAsync(s => s.Sort(sortDescriptor).Query(query), args.PageArgs, cancellationToken);
+        var result = await _store.SearchAsync(s =>
+        {
+            if (!string.IsNullOrWhiteSpace(definitionId))
+                s.Query(q => q.Match(m => m.Field(f => f.DefinitionId).Query(definitionId)));
+
+            if (version != null)
+                s.Query(q => q.Match(m => m.Field(f => f.Version).Query(version.ToString()!)));
+
+            if (!string.IsNullOrWhiteSpace(correlationId))
+                s.Query(q => q.Match(m => m.Field(f => f.CorrelationId).Query(correlationId)));
+
+            if (workflowStatus != null)
+                s.Query(q => q.Match(m => m.Field(f => f.Status).Query(workflowStatus.ToString()!)));
+
+            if (workflowSubStatus != null)
+                s.Query(q => q.Match(m => m.Field(f => f.SubStatus).Query(workflowSubStatus.ToString()!)));
+            
+            if(!string.IsNullOrWhiteSpace(searchTerm))
+                s.Query(q => q
+                    .QueryString(c => c
+                        .Query(searchTerm)));
+
+            s.Sort(sortDescriptor);
+        }, args.PageArgs, cancellationToken);
         return new Page<WorkflowInstanceSummary>(result.Items.Select(WorkflowInstanceSummary.FromInstance).ToList(),
             result.TotalCount);
     }
