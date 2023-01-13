@@ -39,4 +39,10 @@ public static class ModuleExtensions
         feature.Module.Configure(configure);
         return feature;
     }
+    
+    public static WorkflowRuntimeFeature UseAsyncWorkflowStateExporter(this WorkflowRuntimeFeature feature, Action<AsyncWorkflowStateExporterFeature>? configure = default)
+    {
+        feature.Module.Configure(configure);
+        return feature;
+    }
 }
