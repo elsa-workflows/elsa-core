@@ -1,8 +1,17 @@
 ﻿import {h} from '@stencil/core';
 import {createStore} from '@stencil/store';
 
-const {state, onChange} = createStore({
+export interface AuthStore {
+  accessToken: string;
+  refreshToken: string;
+  name: string;
+  permissions: Array<string>;
+  signedIn: boolean;
+}
+
+const {state, onChange} = createStore<AuthStore>({
   accessToken: null,
+  refreshToken: null,
   name: null,
   permissions: [],
   signedIn: false
