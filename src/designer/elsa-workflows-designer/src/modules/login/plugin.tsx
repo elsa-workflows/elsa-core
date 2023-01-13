@@ -6,6 +6,8 @@ import {Container, Service} from "typedi";
 import {StudioService, AuthContext, EventBus, ElsaClient, ElsaApiClientProvider} from "../../services";
 import descriptorsStore from '../../data/descriptors-store';
 import {SignedInArgs} from "./models";
+import {AxiosInstance} from "axios";
+import {LoginApi} from "./services";
 
 @Service()
 export class LoginPlugin implements Plugin {
@@ -48,7 +50,7 @@ export class LoginPlugin implements Plugin {
 
   private onHttpClientCreated = async (e) => {
     const service: MiddlewareService = e.service;
-    const studioService = this.studioService;
+    const loginApi = Container.get(LoginApi);
 
     service.register({
       async onRequest(request) {
@@ -56,16 +58,33 @@ export class LoginPlugin implements Plugin {
         const token = authContext.getAccessToken();
 
         if (!!token)
-          request.headers = {...request.headers, 'Authorization': `Bearer ${token}`};
+          request.headers = {...request.headers, Authorization: `Bearer ${token}`};
 
         return request;
       },
 
       async onResponseError(error) {
-        if (error.response.status !== 401)
+        if (error.response.status !== 401 || error.response.config.hasRetriedRequest)
           return;
 
-        studioService.show(() => <elsa-login-page onSignedIn={this.onSignedIn}/>);
+        const authContext = Container.get(AuthContext);
+        const loginResponse = await loginApi.refreshAccessToken(authContext.getRefreshToken());
+
+        if (loginResponse.isAuthenticated) {
+
+          await authContext.signinTokens(loginResponse.accessToken, loginResponse.refreshToken, true);
+
+          const t = await service.http({
+            ...error.config,
+            hasRetriedRequest: true,
+            headers: {
+              ...error.config.headers,
+              Authorization: `Bearer ${loginResponse.accessToken}`
+            }
+          });
+
+          return t;
+        }
       }
     });
   };

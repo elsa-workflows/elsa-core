@@ -41,11 +41,9 @@ export class LoginPage {
     this.signedIn.emit();
 
     const accessToken = loginResponse.accessToken;
-    const claims = jwt_decode<any>(accessToken);
-    const permissions = claims.permissions || [];
-    const name = claims.name || '';
+    const refreshToken = loginResponse.refreshToken;
     const authContext = Container.get(AuthContext);
-    await authContext.signIn(name, permissions, accessToken, rememberMe);
+    await authContext.signinTokens(accessToken, refreshToken, rememberMe);
   }
 
   private renderError = () => {

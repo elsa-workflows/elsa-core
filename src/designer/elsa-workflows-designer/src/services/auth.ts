@@ -4,6 +4,7 @@ import cookies from 'js-cookie';
 import authStore from "../data/auth-store";
 import {EventBus} from "./event-bus";
 import {EventTypes} from "../models";
+import jwt_decode from "jwt-decode";
 
 export const AuthEventTypes = {
   Unauthorized: 'auth:unauthorized'
@@ -24,14 +25,23 @@ export class AuthContext {
       authStore.permissions = authData.permissions;
       authStore.signedIn = authData.signedIn;
       authStore.accessToken = authData.accessToken;
+      authStore.refreshToken = authData.refreshToken;
     }
   }
 
-  async signIn(name: string, permissions: Array<string>, accessToken: string, createPersistentCookie: boolean) {
+  async signinTokens(accessToken: string, refreshToken: string, createPersistentCookie: boolean){
+    const claims = jwt_decode<any>(accessToken);
+    const permissions = claims.permissions || [];
+    const name = claims.name || '';
+    await this.signIn(name, permissions, accessToken, refreshToken, createPersistentCookie);
+  }
+
+  async signIn(name: string, permissions: Array<string>, accessToken: string, refreshToken: string, createPersistentCookie: boolean) {
     authStore.name = name;
     authStore.permissions = permissions;
     authStore.signedIn = true;
     authStore.accessToken = accessToken;
+    authStore.refreshToken = refreshToken;
 
     const data = JSON.stringify(authStore);
     sessionStorage.setItem('dashboard-session', data);
@@ -47,7 +57,10 @@ export class AuthContext {
     authStore.name = null;
     authStore.permissions = [];
     authStore.signedIn = false;
-    authStore.accessToken = false;
+    authStore.accessToken = null;
+    authStore.refreshToken = null;
+    sessionStorage.clear();
+    cookies.remove('dashboard-session');
     await this.eventBus.emit(EventTypes.Auth.SignedOut)
   }
 
@@ -57,5 +70,9 @@ export class AuthContext {
 
   getAccessToken() {
     return authStore.accessToken;
+  }
+
+  getRefreshToken() {
+    return authStore.refreshToken;
   }
 }

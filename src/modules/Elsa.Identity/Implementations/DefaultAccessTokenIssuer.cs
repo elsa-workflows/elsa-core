@@ -20,10 +20,10 @@ public class DefaultAccessTokenIssuer : IAccessTokenIssuer
         _identityOptions = identityOptions.Value;
     }
 
-    public ValueTask<string> IssueTokenAsync(User user, CancellationToken cancellationToken = default)
+    public ValueTask<IssuedTokens> IssueTokensAsync(User user, CancellationToken cancellationToken = default)
     {
         var permissions = user.Roles.SelectMany(x => x.Permissions).ToList();
-        var (signingKey, issuer, audience, lifetime) = _identityOptions;
+        var (signingKey, issuer, audience, accessTokenLifetime, refreshTokenLifetime) = _identityOptions;
 
         if (string.IsNullOrWhiteSpace(signingKey)) throw new Exception("No signing key configured");
         if (string.IsNullOrWhiteSpace(issuer)) throw new Exception("No issuer configured");
@@ -32,9 +32,13 @@ public class DefaultAccessTokenIssuer : IAccessTokenIssuer
         var nameClaim = new Claim(JwtRegisteredClaimNames.Name, user.Name);
         var claims = new[] { nameClaim };
 
-        var expiresAt = lifetime != null ? _systemClock.UtcNow.Add(lifetime.Value) : default(DateTimeOffset?);
-        var token = JWTBearer.CreateToken(signingKey, expiresAt?.DateTime, permissions, issuer: issuer, audience: audience, claims: claims);
+        var accessTokenExpiresAt = _systemClock.UtcNow.Add(accessTokenLifetime);
+        var refreshTokenExpiresAt = _systemClock.UtcNow.Add(refreshTokenLifetime);
+        var accessToken = JWTBearer.CreateToken(signingKey, accessTokenExpiresAt.UtcDateTime, permissions, issuer: issuer, audience: audience, claims: claims);
+        var refreshToken = JWTBearer.CreateToken(signingKey, refreshTokenExpiresAt.UtcDateTime, permissions, issuer: issuer, audience: audience, claims: claims);
 
-        return new(token);
+        return new (new IssuedTokens(accessToken, refreshToken));
     }
 }
+
+public record IssuedTokens(string AccessToken, string RefreshToken);

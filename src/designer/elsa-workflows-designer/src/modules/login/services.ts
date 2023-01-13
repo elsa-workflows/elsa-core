@@ -1,20 +1,33 @@
 import 'reflect-metadata';
-import {Service} from "typedi";
-import {ElsaApiClientProvider} from "../../services";
+import {Container, Service} from "typedi";
+import {ElsaApiClientProvider, EventBus, ServerSettings} from "../../services";
 import {LoginResponse} from "./models";
-import {AxiosError} from "axios";
+import axios, {AxiosError, AxiosRequestConfig} from "axios";
+import {EventTypes} from "../../models";
 
 @Service()
 export class LoginApi {
-  private provider: ElsaApiClientProvider;
 
-  constructor(provider: ElsaApiClientProvider) {
+  constructor(private provider: ElsaApiClientProvider, private serverSettings: ServerSettings) {
     this.provider = provider;
   }
 
   async login(username: string, password: string): Promise<LoginResponse> {
     const httpClient = await this.provider.getHttpClient();
     const response = await httpClient.post<LoginResponse>(`identity/login`, {username, password},);
+    return response.data;
+  }
+
+  async refreshAccessToken(refreshToken: string): Promise<LoginResponse> {
+        const config: AxiosRequestConfig = {
+      baseURL: this.serverSettings.baseAddress,
+      headers: {
+        Authorization: `Bearer ${refreshToken}`
+      }
+    };
+
+    const httpClient = axios.create(config);
+    const response = await httpClient.post<LoginResponse>(`identity/refresh-token`);
     return response.data;
   }
 }

@@ -228,7 +228,6 @@ export class WorkflowDefinitionEditor {
   private onZoomToFit = async () => await this.flowchart.zoomToFit();
 
   private onAutoLayout = async (direction: LayoutDirection) => {
-    debugger;
     await this.flowchart.autoLayout(direction);
   };
 

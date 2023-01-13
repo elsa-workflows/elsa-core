@@ -115,7 +115,6 @@ export class FlowchartComponent {
 
   @Method()
   async autoLayout(direction: LayoutDirection) {
-    debugger;
     const dagreLayout = new DagreLayout({
       type: 'dagre',
       rankdir: direction,

@@ -28,7 +28,7 @@ public static class ModuleExtensions
         {
             Audience = audience,
             Issuer = issuer,
-            Lifetime = tokenLifetime ?? TimeSpan.FromHours(1),
+            AccessTokenLifetime = tokenLifetime ?? TimeSpan.FromHours(1),
             SigningKey = signingKey
         });
         return module;
