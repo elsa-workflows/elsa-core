@@ -29,6 +29,7 @@ namespace Elsa.Workflows.Management.Features;
 [DependsOn(typeof(MediatorFeature))]
 [DependsOn(typeof(SystemClockFeature))]
 [DependsOn(typeof(WorkflowsFeature))]
+[DependsOn(typeof(WorkflowDefinitionsFeature))]
 public class WorkflowManagementFeature : FeatureBase
 {
     private const string PrimitivesCategory = "Primitives";

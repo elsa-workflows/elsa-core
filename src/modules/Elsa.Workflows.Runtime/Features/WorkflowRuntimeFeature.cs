@@ -72,7 +72,7 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// <summary>
     /// A factory that instantiates an <see cref="IWorkflowStateExporter"/>.
     /// </summary>
-    public Func<IServiceProvider, IWorkflowStateExporter> WorkflowStateExporter { get; set; } = sp => sp.GetRequiredService<NoopWorkflowStateExporter>();
+    public Func<IServiceProvider, IWorkflowStateExporter> WorkflowStateExporter { get; set; } = ActivatorUtilities.GetServiceOrCreateInstance<NoopWorkflowStateExporter>;
 
     /// <summary>
     /// A factory that instantiates an <see cref="ITaskDispatcher"/>.
@@ -145,8 +145,6 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddWorkflowDefinitionProvider<ClrWorkflowDefinitionProvider>()
             
             // Workflow state exporter.
-            .AddSingleton<NoopWorkflowStateExporter>()
-            .AddSingleton<AsyncWorkflowStateExporter>()
             .AddSingleton(WorkflowStateExporter)
 
             // Domain handlers.
