@@ -8,17 +8,15 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.WorkflowContexts.Middleware;
 
 /// <summary>
-/// Middleware that loads & save workflow context into the currently executing workflow using installed workflow context providers. 
+/// Middleware that loads and save workflow context into the currently executing workflow using installed workflow context providers. 
 /// </summary>
 public class WorkflowContextWorkflowExecutionMiddleware : WorkflowExecutionMiddleware
 {
-    private readonly IServiceProvider _serviceProvider;
     private readonly IServiceScopeFactory _serviceScopeFactory;
 
     /// <inheritdoc />
-    public WorkflowContextWorkflowExecutionMiddleware(WorkflowMiddlewareDelegate next, IServiceProvider serviceProvider, IServiceScopeFactory serviceScopeFactory) : base(next)
+    public WorkflowContextWorkflowExecutionMiddleware(WorkflowMiddlewareDelegate next, IServiceScopeFactory serviceScopeFactory) : base(next)
     {
-        _serviceProvider = serviceProvider;
         _serviceScopeFactory = serviceScopeFactory;
     }
 

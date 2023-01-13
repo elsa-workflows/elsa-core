@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.WorkflowContexts.Middleware;
 
 /// <summary>
-/// Middleware that loads & save workflow context into the currently executing workflow using installed workflow context providers. 
+/// Middleware that loads and save workflow context into the currently executing workflow using installed workflow context providers. 
 /// </summary>
 public class WorkflowContextActivityExecutionMiddleware : IActivityExecutionMiddleware
 {
