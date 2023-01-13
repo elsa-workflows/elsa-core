@@ -4,6 +4,7 @@ using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Features;
 using Elsa.Elasticsearch.Common;
 using Elsa.Elasticsearch.Features;
+using Elsa.Elasticsearch.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Elasticsearch.Modules.Runtime;
@@ -19,6 +20,11 @@ public class ElasticExecutionLogRecordFeature : ElasticPersistenceFeatureBase
     public ElasticExecutionLogRecordFeature(IModule module) : base(module)
     {
     }
+    
+    /// <summary>
+    /// A delegate that creates an instance of a concrete implementation if <see cref="IIndexConfiguration"/> for <see cref="WorkflowExecutionLogRecord"/>.
+    /// </summary>
+    public Func<IServiceProvider, IIndexConfiguration<WorkflowExecutionLogRecord>> IndexConfiguration { get; set; } = sp => ActivatorUtilities.CreateInstance<ExecutionLogConfiguration>(sp);
 
     /// <inheritdoc />
     public override void Configure()
@@ -35,5 +41,6 @@ public class ElasticExecutionLogRecordFeature : ElasticPersistenceFeatureBase
         base.Apply();
 
         AddStore<WorkflowExecutionLogRecord, ElasticWorkflowExecutionLogStore>();
+        AddIndexConfiguration(IndexConfiguration);
     }
 }

@@ -9,7 +9,7 @@ namespace Elsa.Elasticsearch.Modules.Management;
 /// <summary>
 /// Configures Elasticsearch with mappings for <see cref="WorkflowInstance"/>.
 /// </summary>
-public class WorkflowInstanceConfiguration : ElasticConfiguration<WorkflowInstance>
+public class WorkflowInstanceConfiguration : IndexConfiguration<WorkflowInstance>
 {
     private readonly ElasticsearchOptions _options;
 

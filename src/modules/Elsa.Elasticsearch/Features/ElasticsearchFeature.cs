@@ -7,6 +7,8 @@ using Elsa.Elasticsearch.Options;
 using Elsa.Elasticsearch.Services;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
+using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Runtime.Entities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -28,18 +30,10 @@ public class ElasticsearchFeature : FeatureBase
     /// </summary>
     public Action<ElasticsearchOptions> Options { get; set; } = _ => { };
 
-    /// <summary>
-    /// True to enable index name rollovers, false otherwise.
-    /// </summary>
-    public bool EnableRollover { get; set; }
-
     /// <inheritdoc />
     public override void ConfigureHostedServices()
     {
         Module.ConfigureHostedService<ConfigureElasticsearchClientHostedService>(-2);
-
-        if (EnableRollover) 
-            Module.ConfigureHostedService<ConfigureIndexRolloverHostedService>(-1);
     }
 
     /// <inheritdoc />
@@ -47,15 +41,13 @@ public class ElasticsearchFeature : FeatureBase
     {
         Services.Configure(Options);
         Services.AddSingleton(sp => new ElasticsearchClient(GetSettings(sp)));
-        Services.AddSingleton<IElasticConfiguration, ExecutionLogConfiguration>();
-        Services.AddSingleton<IElasticConfiguration, WorkflowInstanceConfiguration>();
     }
 
     private static ElasticsearchClientSettings GetSettings(IServiceProvider serviceProvider)
     {
         var options = serviceProvider.GetRequiredService<IOptions<ElasticsearchOptions>>().Value;
         var configuration = serviceProvider.GetRequiredService<IConfiguration>();
-        var configs = serviceProvider.GetServices<IElasticConfiguration>();
+        var configs = serviceProvider.GetServices<IIndexConfiguration>();
         var url = configuration.GetConnectionString(options.Endpoint) ?? options.Endpoint;
         var settings = new ElasticsearchClientSettings(new Uri(url)).ConfigureAuthentication(options);
 

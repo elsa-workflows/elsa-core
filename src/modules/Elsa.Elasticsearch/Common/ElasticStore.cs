@@ -74,10 +74,7 @@ public class ElasticStore<T> where T : class
         var response = await _elasticClient.BulkAsync(b => b.DeleteMany(documents), cancellationToken);
 
         if (!response.IsSuccess())
-        {
-            _logger.LogError("Failed to bulk delete data in Elasticsearch: {Message}", response.ElasticsearchServerError.ToString());
-            return 0;
-        }
+            throw new Exception(response.DebugInformation);
 
         return response.Items.Count(i => i.IsValid);
     }
@@ -90,10 +87,7 @@ public class ElasticStore<T> where T : class
         var response = await _elasticClient.DeleteByQueryAsync(Indices.All, query, cancellationToken);
         
         if (!response.IsSuccess())
-        {
-            _logger.LogError("Failed to delete data in Elasticsearch: {Message}", response.ElasticsearchServerError.ToString());
-            return 0;
-        }
+            throw new Exception(response.DebugInformation);
 
         return response.Deleted ?? 0;
     }

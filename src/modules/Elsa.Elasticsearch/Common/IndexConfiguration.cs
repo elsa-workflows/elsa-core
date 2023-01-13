@@ -7,7 +7,7 @@ namespace Elsa.Elasticsearch.Common;
 /// <summary>
 /// A convenience base class for document type configurations.
 /// </summary>
-public abstract class ElasticConfiguration<T> : IElasticConfiguration
+public abstract class IndexConfiguration<T> : IIndexConfiguration<T>
 {
     /// <inheritdoc />
     public Type DocumentType => typeof(T);

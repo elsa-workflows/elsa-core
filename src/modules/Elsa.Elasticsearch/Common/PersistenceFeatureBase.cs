@@ -1,3 +1,4 @@
+using Elsa.Elasticsearch.Services;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,4 +26,9 @@ public abstract class ElasticPersistenceFeatureBase : FeatureBase
             .AddSingleton<ElasticStore<TModel>>()
             .AddSingleton<TStore>();
     }
+
+    /// <summary>
+    /// Registers an <see cref="IIndexConfiguration"/>.
+    /// </summary>
+    protected void AddIndexConfiguration<TDocument>(Func<IServiceProvider, IIndexConfiguration<TDocument>> configuration) => Services.AddSingleton<IIndexConfiguration>(configuration);
 }

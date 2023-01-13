@@ -14,12 +14,12 @@ public class ConfigureElasticsearchClientHostedService : IHostedService
 {
     private readonly ElasticsearchClient _client;
     private readonly ElasticsearchOptions _options;
-    private readonly IEnumerable<IElasticConfiguration> _configurations;
+    private readonly IEnumerable<IIndexConfiguration> _configurations;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public ConfigureElasticsearchClientHostedService(ElasticsearchClient client, IOptions<ElasticsearchOptions> options, IEnumerable<IElasticConfiguration> configurations)
+    public ConfigureElasticsearchClientHostedService(ElasticsearchClient client, IOptions<ElasticsearchOptions> options, IEnumerable<IIndexConfiguration> configurations)
     {
         _client = client;
         _options = options.Value;

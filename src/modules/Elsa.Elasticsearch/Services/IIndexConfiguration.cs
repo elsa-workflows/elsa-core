@@ -5,7 +5,7 @@ namespace Elsa.Elasticsearch.Services;
 /// <summary>
 /// Implement this interface to get a chance to configure some aspect of Elasticsearch, such as index mappings.
 /// </summary>
-public interface IElasticConfiguration
+public interface IIndexConfiguration
 {
     /// <summary>
     /// The document type to configure.
@@ -29,4 +29,11 @@ public interface IElasticConfiguration
     /// <param name="client">The <see cref="ElasticsearchClient"/></param> to configure.
     /// <param name="cancellationToken">A cancellation token.</param>
     ValueTask ConfigureClientAsync(ElasticsearchClient client, CancellationToken cancellationToken);
+}
+
+/// <summary>
+/// Implement this interface to get a chance to configure some aspect of Elasticsearch, such as index mappings.
+/// </summary>
+public interface IIndexConfiguration<TDocument> : IIndexConfiguration
+{
 }

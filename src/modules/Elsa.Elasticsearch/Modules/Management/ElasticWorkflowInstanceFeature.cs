@@ -1,5 +1,6 @@
 using Elsa.Elasticsearch.Common;
 using Elsa.Elasticsearch.Features;
+using Elsa.Elasticsearch.Services;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Workflows.Management.Entities;
@@ -19,6 +20,11 @@ public class ElasticWorkflowInstanceFeature : ElasticPersistenceFeatureBase
     public ElasticWorkflowInstanceFeature(IModule module) : base(module)
     {
     }
+    
+    /// <summary>
+    /// A delegate that creates an instance of a concrete implementation if <see cref="IIndexConfiguration"/> for <see cref="WorkflowInstance"/>.
+    /// </summary>
+    public Func<IServiceProvider, IIndexConfiguration<WorkflowInstance>> IndexConfiguration { get; set; } = sp => ActivatorUtilities.CreateInstance<WorkflowInstanceConfiguration>(sp);
 
     /// <inheritdoc />
     public override void Configure()
@@ -33,7 +39,8 @@ public class ElasticWorkflowInstanceFeature : ElasticPersistenceFeatureBase
     public override void Apply()
     {
         base.Apply();
-
+        
         AddStore<WorkflowInstance, ElasticWorkflowInstanceStore>();
+        AddIndexConfiguration(IndexConfiguration);
     }
 }

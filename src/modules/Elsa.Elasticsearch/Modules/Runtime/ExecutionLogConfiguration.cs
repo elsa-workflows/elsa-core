@@ -9,7 +9,7 @@ namespace Elsa.Elasticsearch.Modules.Runtime;
 /// <summary>
 /// Configures Elasticsearch with mappings for <see cref="WorkflowExecutionLogRecord"/>.
 /// </summary>
-public class ExecutionLogConfiguration : ElasticConfiguration<WorkflowExecutionLogRecord>
+public class ExecutionLogConfiguration : IndexConfiguration<WorkflowExecutionLogRecord>
 {
     private readonly ElasticsearchOptions _options;
 
