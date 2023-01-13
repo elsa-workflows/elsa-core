@@ -33,7 +33,7 @@ public class ElasticsearchFeature : FeatureBase
     /// <inheritdoc />
     public override void ConfigureHostedServices()
     {
-        Module.ConfigureHostedService<ConfigureElasticsearchClientHostedService>(-2);
+        Module.ConfigureHostedService<ConfigureAliasesHostedService>(-2);
     }
 
     /// <inheritdoc />

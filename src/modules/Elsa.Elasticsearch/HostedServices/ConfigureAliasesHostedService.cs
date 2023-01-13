@@ -8,9 +8,9 @@ using Microsoft.Extensions.Options;
 namespace Elsa.Elasticsearch.HostedServices;
 
 /// <summary>
-/// Configures the Elasticsearch client.
+/// Configures aliases.
 /// </summary>
-public class ConfigureElasticsearchClientHostedService : IHostedService
+public class ConfigureAliasesHostedService : IHostedService
 {
     private readonly ElasticsearchClient _client;
     private readonly ElasticsearchOptions _options;
@@ -19,7 +19,7 @@ public class ConfigureElasticsearchClientHostedService : IHostedService
     /// <summary>
     /// Constructor.
     /// </summary>
-    public ConfigureElasticsearchClientHostedService(ElasticsearchClient client, IOptions<ElasticsearchOptions> options, IEnumerable<IIndexConfiguration> configurations)
+    public ConfigureAliasesHostedService(ElasticsearchClient client, IOptions<ElasticsearchOptions> options, IEnumerable<IIndexConfiguration> configurations)
     {
         _client = client;
         _options = options.Value;
