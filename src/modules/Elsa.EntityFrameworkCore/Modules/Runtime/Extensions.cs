@@ -1,6 +1,4 @@
 ﻿using Elsa.Workflows.Runtime.Features;
-using Elsa.Workflows.Runtime.Implementations;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 
@@ -24,15 +22,6 @@ public static class Extensions
     public static ExecutionLogRecordFeature UseEntityFrameworkCore(this ExecutionLogRecordFeature feature, Action<EFCoreExecutionLogRecordPersistenceFeature>? configure = default)
     {
         feature.Module.Configure(configure);
-        return feature;
-    }
-        
-    /// <summary>
-    /// Configures the workflow runtime to send workflow state to the <see cref="AsyncWorkflowStateExporter"/>.
-    /// </summary>
-    public static WorkflowRuntimeFeature UseAsyncWorkflowStateExporter(this WorkflowRuntimeFeature feature)
-    {
-        feature.WorkflowStateExporter = sp => ActivatorUtilities.CreateInstance<AsyncWorkflowStateExporter>(sp);
         return feature;
     }
 }

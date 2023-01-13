@@ -92,7 +92,6 @@ function updatePortsAndEdgeOfNodeCouple(graph: Graph, sourceNode: Node<Node.Prop
   if (edge != null) {
     const sourcePortOfConnection = edge.data.sourcePort;
     if(!optionsStore.enableFlexiblePorts && isNewCalculationNeededForInflexiblePort(graph, sourceNode, sourcePortOfConnection)){
-      debugger
       const outgoingEdges = findOutgoingEdges(graph, sourceNode, sourcePortOfConnection);
       const targetNodes = graph.getNodes().filter(node => outgoingEdges.map(edge => edge.data.target).includes(node.id));
       const nodeCouplesWithPositions = calculatePositionsForInflexibleNode(sourceNode, targetNodes);
@@ -102,7 +101,7 @@ function updatePortsAndEdgeOfNodeCouple(graph: Graph, sourceNode: Node<Node.Prop
       });
 
       return;
-    };
+    }
 
     updatePortsAndEdge(graph, sourceNode, targetNode, portPositionOfSourceNode, portPositionOfTargetNode);
   }

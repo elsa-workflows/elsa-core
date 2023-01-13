@@ -1,8 +1,9 @@
 using Elsa.Identity.Entities;
+using Elsa.Identity.Implementations;
 
 namespace Elsa.Identity.Services;
 
 public interface IAccessTokenIssuer
 {
-    ValueTask<string> IssueTokenAsync(User user, CancellationToken cancellationToken = default);
+    ValueTask<IssuedTokens> IssueTokensAsync(User user, CancellationToken cancellationToken = default);
 }

@@ -1,14 +1,9 @@
 using Elastic.Clients.Elasticsearch;
 using Elsa.Elasticsearch.Extensions;
-using Elsa.Elasticsearch.HostedServices;
-using Elsa.Elasticsearch.Modules.Management;
-using Elsa.Elasticsearch.Modules.Runtime;
 using Elsa.Elasticsearch.Options;
 using Elsa.Elasticsearch.Services;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
-using Elsa.Workflows.Management.Entities;
-using Elsa.Workflows.Runtime.Entities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -29,12 +24,6 @@ public class ElasticsearchFeature : FeatureBase
     /// A delegate that configures Elasticsearch.
     /// </summary>
     public Action<ElasticsearchOptions> Options { get; set; } = _ => { };
-
-    /// <inheritdoc />
-    public override void ConfigureHostedServices()
-    {
-        Module.ConfigureHostedService<ConfigureAliasesHostedService>(-2);
-    }
 
     /// <inheritdoc />
     public override void Apply()

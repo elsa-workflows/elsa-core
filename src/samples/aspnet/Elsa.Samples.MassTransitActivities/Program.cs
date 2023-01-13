@@ -40,7 +40,7 @@ builder.Services.AddElsa(elsa =>
     {
         identity.IdentityOptions.CreateDefaultAdmin = builder.Environment.IsDevelopment();
         identity.TokenOptions.SigningKey = "secret-token-signing-key";
-        identity.TokenOptions.Lifetime = TimeSpan.FromDays(1);
+        identity.TokenOptions.AccessTokenLifetime = TimeSpan.FromDays(1);
     });
     
     // Use default authentication (JWT).
