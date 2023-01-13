@@ -2,6 +2,7 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Workflows.Management.Features;
+using Elsa.Workflows.Runtime.Commands;
 using Elsa.Workflows.Runtime.Implementations;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -22,5 +23,6 @@ public class AsyncWorkflowStateExporterFeature : FeatureBase
     public override void Configure()
     {
         Module.Configure<WorkflowRuntimeFeature>(workflowRuntime => workflowRuntime.WorkflowStateExporter = sp => ActivatorUtilities.CreateInstance<AsyncWorkflowStateExporter>(sp));
+        Services.AddCommandHandler<AsyncWorkflowStateExporter, ExportWorkflowStateToDbCommand>();
     }
 }

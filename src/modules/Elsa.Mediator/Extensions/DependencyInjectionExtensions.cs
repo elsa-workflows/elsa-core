@@ -76,8 +76,7 @@ public static class DependencyInjectionExtensions
     /// Registers a <see cref="ICommandHandler{T}"/> with the service container.
     /// </summary>
     public static IServiceCollection AddCommandHandler<THandler, TCommand>(this IServiceCollection services)
-        where THandler : class, ICommandHandler<TCommand>
-        where TCommand : ICommand<Unit> =>
+        where THandler : class, ICommandHandler<TCommand> where TCommand : ICommand<Unit> =>
         services.AddCommandHandler<THandler, TCommand, Unit>();
 
     /// <summary>
