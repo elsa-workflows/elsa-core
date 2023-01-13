@@ -34,7 +34,7 @@ namespace Elsa.Scripting.JavaScript.Handlers
             output.AppendLine("declare function durationFromDays(days: number): Duration;");
             output.AppendLine("declare function formatInstant(instant: Instant, format: string, culture?: CultureInfo): string;");
             output.AppendLine("declare function localDateFromInstant(instant: Instant): LocalDate;");
-            output.AppendLine("declare function instantFromLocalDate(localDate: LocalDate): LocalDate;");
+            output.AppendLine("declare function instantFromLocalDate(localDate: LocalDate): Instant;");
             output.AppendLine("declare function durationBetween(a: Instant, b: Instant): Duration;");
             output.AppendLine("declare function periodFromNow(pastInstant: Instant): Period;");
             output.AppendLine("declare function jsonEncode(value: any): string;");
