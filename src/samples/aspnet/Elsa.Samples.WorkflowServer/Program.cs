@@ -12,7 +12,7 @@ builder.Services.AddElsa(elsa =>
     // Configure management feature to use EF Core.
     elsa.UseWorkflowManagement(management =>
     {
-        management.UseDefaultManagement(dm => dm.UseEntityFrameworkCore(ef => ef.UseSqlite()));
+        management.UseWorkflowDefinitions(dm => dm.UseEntityFrameworkCore(ef => ef.UseSqlite()));
         management.UseWorkflowInstances(w => w.UseEntityFrameworkCore(ef => ef.UseSqlite()));
     });
     

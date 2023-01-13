@@ -1,10 +1,13 @@
+using Elsa.Elasticsearch.Extensions;
+using Elsa.Elasticsearch.Modules.Management;
+using Elsa.Elasticsearch.Modules.Runtime;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
-var configuration = builder.Configuration;
+var configuration = builder.Configuration; 
 
 // Add services to the container.
 builder.Services.AddElsa(elsa =>
@@ -12,14 +15,19 @@ builder.Services.AddElsa(elsa =>
     // Configure management feature to use EF Core.
     elsa.UseWorkflowManagement(management =>
     {
-        management.UseEntityFrameworkCore(ef => ef.UseSqlite());
+        management.UseWorkflowDefinitions(d => d.UseEntityFrameworkCore(ef => ef.UseSqlite()));
+        management.UseWorkflowInstances(i => i.UseElasticsearch());
     });
+    
+    // Configure Elasticsearch.
+    elsa.UseElasticsearch(options => configuration.GetSection("Elasticsearch").Bind(options));
     
     // Configure runtime feature to use EF Core.
     elsa.UseWorkflowRuntime(runtime =>
     {
         runtime.UseDefaultRuntime(d => d.UseEntityFrameworkCore(ef => ef.UseSqlite()));
-        runtime.UseExecutionLogRecords(d => d.UseEntityFrameworkCore(ef => ef.UseSqlite()));
+        runtime.UseExecutionLogRecords(log => log.UseElasticsearch());
+        runtime.UseAsyncWorkflowStateExporter();
     });
     
     // Expose API endpoints.
@@ -42,9 +50,6 @@ builder.Services.AddElsa(elsa =>
     
     // Use default authentication (JWT).
     elsa.UseDefaultAuthentication();
-    
-    // Configure Azure Service bus.
-    elsa.UseAzureServiceBus(asb => asb.AzureServiceBusOptions += options => configuration.GetSection("AzureServiceBus").Bind(options));
 });
 
 builder.Services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()));

@@ -1,4 +1,3 @@
-using Elsa.Elasticsearch.Scheduling;
 using Elsa.Quartz.Jobs;
 using Elsa.Scheduling.Jobs;
 using Quartz;
@@ -7,13 +6,15 @@ using IJob = Elsa.Jobs.Services.IJob;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
 
+/// <summary>
+/// Extends <see cref="IServiceCollectionQuartzConfigurator"/>.
+/// </summary>
 public static class DependencyInjectionExtensions
 {
     public static IServiceCollectionQuartzConfigurator AddElsaJobs(this IServiceCollectionQuartzConfigurator quartz)
     {
         quartz.AddJob<RunWorkflowJob>();
         quartz.AddJob<ResumeWorkflowJob>();
-        quartz.AddJob<ConfigureIndexRolloverJob>();
 
         return quartz;
     }

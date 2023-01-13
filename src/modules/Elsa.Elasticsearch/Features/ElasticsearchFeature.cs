@@ -1,59 +1,59 @@
 using Elastic.Clients.Elasticsearch;
 using Elsa.Elasticsearch.Extensions;
 using Elsa.Elasticsearch.HostedServices;
-using Elsa.Elasticsearch.Models;
+using Elsa.Elasticsearch.Modules.Management;
+using Elsa.Elasticsearch.Modules.Runtime;
 using Elsa.Elasticsearch.Options;
 using Elsa.Elasticsearch.Services;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
+using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Runtime.Entities;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Elasticsearch.Features;
 
+/// <summary>
+/// Configures Elasticsearch.
+/// </summary>
 public class ElasticsearchFeature : FeatureBase
 {
+    /// <inheritdoc />
     public ElasticsearchFeature(IModule module) : base(module)
     {
     }
-    
-    internal ElasticsearchOptions Options { get; set; } = new();
-    internal IDictionary<Type, string> IndexConfig { get; set; } = IElasticConfiguration.GetDefaultIndexConfig();
-    internal IndexRolloverStrategy? IndexRolloverStrategy { get; set; }
 
+    /// <summary>
+    /// A delegate that configures Elasticsearch.
+    /// </summary>
+    public Action<ElasticsearchOptions> Options { get; set; } = _ => { };
+
+    /// <inheritdoc />
     public override void ConfigureHostedServices()
     {
-        Module.ConfigureHostedService<ConfigureMappingHostedService>(-1);
-
-        if (IndexRolloverStrategy != null)
-        {
-            Module.ConfigureHostedService<ConfigureIndexRolloverHostedService>(-1);
-        }
+        Module.ConfigureHostedService<ConfigureAliasesHostedService>(-2);
     }
 
+    /// <inheritdoc />
     public override void Apply()
     {
-        var elasticClient = new ElasticsearchClient(GetSettings());
-        Services.AddSingleton(elasticClient);
-
-        if (IndexRolloverStrategy != null)
-        {
-            elasticClient.ConfigureAliases(IndexConfig, IndexRolloverStrategy);
-
-            var namingInstance =
-                (IIndexNamingStrategy) Activator.CreateInstance(IndexRolloverStrategy.IndexNamingStrategy)!;
-            Services.AddSingleton<IIndexNamingStrategy>(_ => namingInstance);
-
-            var rolloverInstance =
-                (IIndexRolloverStrategy) Activator.CreateInstance(IndexRolloverStrategy.Value, elasticClient,
-                    namingInstance)!;
-            Services.AddSingleton<IIndexRolloverStrategy>(_ => rolloverInstance);
-        }
+        Services.Configure(Options);
+        Services.AddSingleton(sp => new ElasticsearchClient(GetSettings(sp)));
     }
 
-    private ElasticsearchClientSettings GetSettings()
+    private static ElasticsearchClientSettings GetSettings(IServiceProvider serviceProvider)
     {
-        return new ElasticsearchClientSettings(new Uri(Options.Endpoint))
-            .ConfigureAuthentication(Options)
-            .ConfigureMapping(IndexConfig);
+        var options = serviceProvider.GetRequiredService<IOptions<ElasticsearchOptions>>().Value;
+        var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+        var configs = serviceProvider.GetServices<IIndexConfiguration>();
+        var url = configuration.GetConnectionString(options.Endpoint) ?? options.Endpoint;
+        var settings = new ElasticsearchClientSettings(new Uri(url)).ConfigureAuthentication(options);
+
+        foreach (var config in configs) 
+            config.ConfigureClientSettings(settings);
+
+        return settings;
     }
 }

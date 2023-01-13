@@ -19,7 +19,7 @@ public abstract class PersistenceFeatureBase<TDbContext> : FeatureBase where TDb
     public override void ConfigureHostedServices()
     {
         if (RunMigrations)
-            Module.ConfigureHostedService<RunMigrationsHostedService<TDbContext>>(-1); // Migrations need to run before other hosted services that depend on DB access.
+            Module.ConfigureHostedService<RunMigrationsHostedService<TDbContext>>(-100); // Migrations need to run before other hosted services that depend on DB access.
     }
 
     public override void Apply()
