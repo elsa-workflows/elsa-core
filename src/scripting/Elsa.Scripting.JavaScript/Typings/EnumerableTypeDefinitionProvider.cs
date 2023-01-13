@@ -22,7 +22,7 @@ namespace Elsa.Scripting.JavaScript.Typings
             var providers = _serviceProvider.GetServices<ITypeDefinitionProvider>().Where(x => x is not EnumerableTypeDefinitionProvider).ToList();
             var commonTypesProvider = providers.OfType<CommonTypeDefinitionProvider>().FirstOrDefault();
             var elementType = type.IsArray ? type.GetElementType()! : type.GetGenericArguments().FirstOrDefault();
-            var typeScriptType = elementType!= null ?
+            var typeScriptType = elementType != null ?
                 commonTypesProvider?.SupportsType(context, elementType) == true ?
                     commonTypesProvider.GetTypeDefinition(context, elementType)
                     : elementType.Name
