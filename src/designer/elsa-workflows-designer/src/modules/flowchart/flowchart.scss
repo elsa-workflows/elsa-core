@@ -1,3 +1,4 @@
+/* purgecss start ignore */
 .x6-graph-scroller {
   &.x6-graph-scroller-pannable[data-panning='false'] {
     cursor: default;
@@ -25,3 +26,5 @@
   border: 2px solid #34D399;
   box-shadow: none;
 }
+
+/* purgecss end ignore */
