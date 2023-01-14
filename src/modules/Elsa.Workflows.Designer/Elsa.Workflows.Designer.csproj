@@ -13,7 +13,6 @@
         <ContentTargetFolders>staticwebassets</ContentTargetFolders>
     </PropertyGroup>
     
-
     <!--
       1. Install npm packages
       "Inputs" and "Outputs" are used for incremental builds. If all output items are up-to-date, MSBuild skips the target.
@@ -41,7 +40,7 @@
         MSBuild runs NpmInstall before this task because of the DependsOnTargets attribute.
      -->
     <Target Name="NpmRunBuild" DependsOnTargets="NpmInstall" BeforeTargets="BeforeBuild">
-        <Exec Command="npm run build" />
+        <Exec Command="npm run build:release" />
     </Target>
 
     <ItemGroup>
@@ -49,9 +48,16 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="6.0.10" />
-        <PackageReference Include="Microsoft.Extensions.Options" Version="6.0.0" />
-        <PackageReference Include="System.Text.Json" Version="6.0.2" />
+        <PackageReference Include="Microsoft.Extensions.Options" Version="7.0.0" />
+        <PackageReference Include="System.Text.Json" Version="7.0.1" />
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(TargetFramework)' == 'net6.0'">
+        <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="6.0.13" />
+    </ItemGroup>
+    
+    <ItemGroup Condition=" '$(TargetFramework)' == 'net7.0'">
+        <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="7.0.2" />
     </ItemGroup>
 
     <ItemGroup>
