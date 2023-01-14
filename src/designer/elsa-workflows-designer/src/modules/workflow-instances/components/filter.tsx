@@ -38,7 +38,6 @@ export interface OrderByFilterProps {
   onChange: (orderBy: OrderBy) => void;
 }
 
-
 export const Filter: FunctionalComponent<FilterProps> = ({pageSizeFilter, workflowFilter, statusFilter, subStatusFilter, orderByFilter}) => {
 
   return <div class="p-8 flex content-end justify-right bg-white space-x-4">
@@ -78,6 +77,7 @@ const BulkActions: FunctionalComponent = () => {
   return <elsa-dropdown-button
     text="Bulk Actions" items={bulkActions} icon={<BulkActionsIcon/>}
     origin={DropdownButtonOrigin.TopLeft}
+    theme="Secondary"
     onItemSelected={onBulkActionSelected}/>
 }
 
@@ -95,6 +95,7 @@ const PageSizeFilter: FunctionalComponent<PageSizeFilterProps> = ({selectedPageS
   return <elsa-dropdown-button
     text={selectedPageSizeText} items={items} icon={<PageSizeIcon/>}
     origin={DropdownButtonOrigin.TopRight}
+    theme="Secondary"
     onItemSelected={onPageSizeChanged}/>
 }
 
@@ -111,6 +112,7 @@ const WorkflowFilter: FunctionalComponent<WorkflowFilterProps> = ({workflows, se
   return <elsa-dropdown-button
     text={selectedWorkflowText} items={items} icon={<WorkflowIcon/>}
     origin={DropdownButtonOrigin.TopRight}
+    theme="Secondary"
     onItemSelected={onWorkflowChanged}/>
 }
 
@@ -123,6 +125,7 @@ const StatusFilter: FunctionalComponent<StatusFilterProps> = ({selectedStatus, o
   return <elsa-dropdown-button
     text={selectedStatusText} items={statusOptions} icon={<WorkflowStatusIcon/>}
     origin={DropdownButtonOrigin.TopRight}
+    theme="Secondary"
     onItemSelected={onStatusChanged}/>
 }
 
@@ -135,6 +138,7 @@ const SubStatusFilter: FunctionalComponent<SubStatusFilterProps> = ({selectedSta
   return <elsa-dropdown-button
     text={selectedSubStatusText} items={subStatusOptions} icon={<WorkflowStatusIcon/>}
     origin={DropdownButtonOrigin.TopRight}
+    theme="Secondary"
     onItemSelected={onStatusChanged}/>
 }
 
@@ -146,6 +150,7 @@ const OrderByFilter: FunctionalComponent<OrderByFilterProps> = ({selectedOrderBy
 
   return <elsa-dropdown-button
     text={selectedOrderByText} items={items} icon={<OrderByIcon/>}
+    theme="Secondary"
     origin={DropdownButtonOrigin.TopRight}
     onItemSelected={onOrderByChanged}/>
 }
