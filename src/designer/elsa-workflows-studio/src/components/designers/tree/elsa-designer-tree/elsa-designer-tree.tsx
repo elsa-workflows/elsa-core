@@ -269,10 +269,10 @@ export class ElsaWorkflowDesigner {
     if (rect.height === 0 || rect.width === 0) {
       const observer = new ResizeObserver(entries => {
         for (let entry of entries) {
-          const rect = this.el.getBoundingClientRect();
+          const rect = entry.contentRect;
           if (rect.height > 0 && rect.width > 0) {
             this.renderTree();
-            observer.unobserve(this.el);
+            observer.unobserve(entry.target);
           }
         }
       });
