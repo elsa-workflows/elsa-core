@@ -1,5 +1,5 @@
 import {Component, Element, Event, EventEmitter, h, Listen, Method, Prop, State, Watch} from '@stencil/core';
-import {debounce} from 'lodash';
+import {debounce, isEqual} from 'lodash';
 import {Container} from "typedi";
 import {PanelPosition, PanelStateChangedArgs} from '../../../components/panel/models';
 import {
@@ -16,6 +16,8 @@ import {WorkflowDefinition} from "../models/entities";
 import {WorkflowDefinitionsApi} from "../services/api"
 import WorkflowDefinitionTunnel, {WorkflowDefinitionState} from "../../../state/workflow-definition-state";
 import {LayoutDirection} from "../../flowchart/models";
+import { cloneDeep } from '@antv/x6/lib/util/object/object';
+import { removeGuidsFromPortNames } from '../../../utils/graph';
 
 @Component({
   tag: 'elsa-workflow-definition-editor',
@@ -34,6 +36,7 @@ export class WorkflowDefinitionEditor {
   private readonly emitActivityChangedDebounced: (e: ActivityPropertyChangedEventArgs) => void;
   private readonly saveChangesDebounced: () => void;
   private readonly workflowDefinitionApi: WorkflowDefinitionsApi;
+  private currentFlowchartConnections;
 
   constructor() {
     this.eventBus = Container.get(EventBus);
@@ -188,9 +191,27 @@ export class WorkflowDefinitionEditor {
   };
 
   private saveChanges = async (): Promise<void> => {
-    const latestVersion = this.workflowVersions.find(v => v.isLatest);
-    this.workflowUpdated.emit({workflowDefinition: this.workflowDefinitionState, latestVersionNumber: latestVersion?.version});
+    const updatedWorkflowDefinition = this.workflowDefinitionState;
+
+    // This function is called everytime graphUpdated event is published which does not necessarily mean workflow is updated.
+    // To prevent redundant post requests to server, save changes only if there is a difference 
+    // between existing workflow definition on server side and updated workflow definition on client side.
+    if (await this.hasWorkflowDefinitionAnyUpdatedData(updatedWorkflowDefinition)) {
+      if (updatedWorkflowDefinition.isPublished) {
+        updatedWorkflowDefinition.version = this.workflowVersions.find(v => v.isLatest).version;
+      }
+      this.workflowUpdated.emit({workflowDefinition: this.workflowDefinitionState});
+    }
   };
+
+  private hasWorkflowDefinitionAnyUpdatedData = async (updatedWorkflowDefinition : WorkflowDefinition): Promise<boolean> => {
+    const existingWorkflowDefinition = await this.workflowDefinitionApi.get({definitionId: updatedWorkflowDefinition.definitionId, versionOptions: {version: updatedWorkflowDefinition.version}});
+
+    const updatedWorkflowDefinitionClone = cloneDeep(updatedWorkflowDefinition);
+    removeGuidsFromPortNames(updatedWorkflowDefinitionClone.root);
+
+    return !isEqual(existingWorkflowDefinition, updatedWorkflowDefinitionClone);
+  }
 
   private updateLayout = async () => {
     await this.flowchart.updateLayout();

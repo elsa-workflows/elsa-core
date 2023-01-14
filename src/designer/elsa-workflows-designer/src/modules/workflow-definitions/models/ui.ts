@@ -27,7 +27,6 @@ export interface ActivityPropertyChangedEventArgs {
 
 export interface WorkflowDefinitionUpdatedArgs {
   workflowDefinition: WorkflowDefinition;
-  latestVersionNumber: number;
 }
 
 export interface WorkflowDefinitionPropsUpdatedArgs {

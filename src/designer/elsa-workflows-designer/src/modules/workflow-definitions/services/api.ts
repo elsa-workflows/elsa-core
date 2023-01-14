@@ -4,7 +4,7 @@ import {Activity, PagedList, Variable, VersionedEntity, VersionOptions} from "..
 import {Service} from "typedi";
 import {ElsaApiClientProvider} from "../../../services";
 import {AxiosResponse} from "axios";
-import { adjustConnectionsInRequestModel, adjustConnectionsInResponseModel } from '../../../utils/graph';
+import { removeGuidsFromPortNames, addGuidsToPortNames } from '../../../utils/graph';
 import { cloneDeep } from '@antv/x6/lib/util/object/object';
 
 @Service()
@@ -49,12 +49,12 @@ export class WorkflowDefinitionsApi {
     //TODO: Written as a workaround for different server and client models.
     //To be deleted after the port model on backend is updated.
     const requestClone = cloneDeep(request);
-    adjustConnectionsInRequestModel(requestClone.root);
+    removeGuidsFromPortNames(requestClone.root);
 
     const httpClient = await this.getHttpClient();
     const response = await httpClient.post<WorkflowDefinition>('workflow-definitions', requestClone);
 
-    adjustConnectionsInResponseModel(response.data.root);
+    addGuidsToPortNames(response.data.root);
     return response.data;
   }
 
@@ -144,7 +144,7 @@ export class WorkflowDefinitionsApi {
 
     //TODO: Written as a workaround for different server and client models.
     //To be deleted after the connection model on backend is updated.
-    adjustConnectionsInResponseModel(workflowDefinition.root);
+    addGuidsToPortNames(workflowDefinition.root);
 
     return {workflowDefinition: workflowDefinition};
   }

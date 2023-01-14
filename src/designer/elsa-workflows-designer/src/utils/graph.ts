@@ -235,7 +235,7 @@ function createEdge(connection: Connection): Edge.Metadata {
   };
 }
 
-export function adjustConnectionsInRequestModel(root: Activity) {
+export function removeGuidsFromPortNames(root: Activity) {
   if (root.connections?.length > 0) {
     root.connections.forEach((connection: { sourcePort: string; targetPort: string; }) => {
       connection.sourcePort = getPortNameByPortId(connection.sourcePort);
@@ -244,11 +244,11 @@ export function adjustConnectionsInRequestModel(root: Activity) {
   }
   let activitiesWithConnections = root.activities?.filter(act => act.body?.connections?.length > 0);
   activitiesWithConnections.forEach(activity => {
-    adjustConnectionsInRequestModel(activity.body);
+    removeGuidsFromPortNames(activity.body);
   });
 }
 
-export function adjustConnectionsInResponseModel(root: Activity) {
+export function addGuidsToPortNames(root: Activity) {
   if (root.connections.length > 0) {
     root.connections.forEach((connection: { sourcePort: string; targetPort: string; }) => {
       connection.sourcePort = uuid() + '_' + connection.sourcePort;
@@ -257,6 +257,6 @@ export function adjustConnectionsInResponseModel(root: Activity) {
   }
   let activitiesWithConnections = root.activities?.filter(act => act.body?.connections?.length > 0);
   activitiesWithConnections.forEach(activity => {
-    adjustConnectionsInResponseModel(activity.body);
+    addGuidsToPortNames(activity.body);
   });
 }
