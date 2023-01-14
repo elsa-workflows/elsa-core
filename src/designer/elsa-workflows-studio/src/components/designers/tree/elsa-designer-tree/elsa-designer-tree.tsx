@@ -269,8 +269,11 @@ export class ElsaWorkflowDesigner {
     if (rect.height === 0 || rect.width === 0) {
       const observer = new ResizeObserver(entries => {
         for (let entry of entries) {
-          this.renderTree();
-          observer.unobserve(this.el);
+          const rect = this.el.getBoundingClientRect();
+          if (rect.height > 0 && rect.width > 0) {
+            this.renderTree();
+            observer.unobserve(this.el);
+          }
         }
       });
 
@@ -546,7 +549,8 @@ export class ElsaWorkflowDesigner {
         scale: transform.k,
         initialZoom: this.zoomParams.initialZoom,
       };
-
+      
+      //fix for safari
       const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
       if (isSafari) {
           d3.selectAll('g.label > * > * > div, g.label > * > div').style('transform', `scale(${transform.k})`);
