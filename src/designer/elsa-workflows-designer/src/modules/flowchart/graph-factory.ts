@@ -287,4 +287,4 @@ export function createGraph(
   });
 
   return graph;
-};
+}
