@@ -202,7 +202,6 @@ export class WorkflowDefinitionEditor {
     }
   };
 
-  // This function is called everytime graphUpdated event is published which does not necessarily mean workflow is updated.
   // To prevent redundant post requests to server, save changes only if there is a difference 
   // between existing workflow definition on server side and updated workflow definition on client side.
   private hasWorkflowDefinitionAnyUpdatedData = async (updatedWorkflowDefinition : WorkflowDefinition): Promise<boolean> => {
