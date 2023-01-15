@@ -193,10 +193,8 @@ export class WorkflowDefinitionEditor {
   private saveChanges = async (): Promise<void> => {
     const updatedWorkflowDefinition = this.workflowDefinitionState;
 
-    // This function is called everytime graphUpdated event is published which does not necessarily mean workflow is updated.
-    // To prevent redundant post requests to server, save changes only if there is a difference 
-    // between existing workflow definition on server side and updated workflow definition on client side.
     if (await this.hasWorkflowDefinitionAnyUpdatedData(updatedWorkflowDefinition)) {
+      // If workflow definition is published, override the latest version.
       if (updatedWorkflowDefinition.isPublished) {
         updatedWorkflowDefinition.version = this.workflowVersions.find(v => v.isLatest).version;
       }
@@ -204,6 +202,9 @@ export class WorkflowDefinitionEditor {
     }
   };
 
+  // This function is called everytime graphUpdated event is published which does not necessarily mean workflow is updated.
+  // To prevent redundant post requests to server, save changes only if there is a difference 
+  // between existing workflow definition on server side and updated workflow definition on client side.
   private hasWorkflowDefinitionAnyUpdatedData = async (updatedWorkflowDefinition : WorkflowDefinition): Promise<boolean> => {
     const existingWorkflowDefinition = await this.workflowDefinitionApi.get({definitionId: updatedWorkflowDefinition.definitionId, versionOptions: {version: updatedWorkflowDefinition.version}});
 
