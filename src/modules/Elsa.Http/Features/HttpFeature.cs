@@ -21,9 +21,23 @@ public class HttpFeature : FeatureBase
     {
     }
 
-    public Action<HttpActivityOptions>? ConfigureHttpOptions { get; set; } 
+    /// <summary>
+    /// A delegate to configure <see cref="HttpActivityOptions"/>.
+    /// </summary>
+    public Action<HttpActivityOptions>? ConfigureHttpOptions { get; set; }
+    
     public Func<IServiceProvider, IHttpEndpointAuthorizationHandler> HttpEndpointAuthorizationHandlerFactory { get; set; } = ActivatorUtilities.GetServiceOrCreateInstance<AllowAnonymousHttpEndpointAuthorizationHandler>;
     public Func<IServiceProvider, IHttpEndpointWorkflowFaultHandler> HttpEndpointWorkflowFaultHandlerFactory { get; set; } = ActivatorUtilities.GetServiceOrCreateInstance<DefaultHttpEndpointWorkflowFaultHandler>;
+    
+    /// <summary>
+    /// A delegate to configure the <see cref="HttpClient"/> used when by the <see cref="SendHttpRequest"/> activity.
+    /// </summary>
+    public Action<IServiceProvider, HttpClient> HttpClient { get; set; } = (_, _) => { };
+    
+    /// <summary>
+    /// A delegate to configure the <see cref="HttpClientBuilder"/> for <see cref="HttpClient"/>.
+    /// </summary>
+    public Action<IHttpClientBuilder> HttpClientBuilder { get; set; } = _ => { };
 
     /// <inheritdoc />
     public override void Configure()
@@ -44,23 +58,27 @@ public class HttpFeature : FeatureBase
             options.BasePath = "/workflows";
             options.BaseUrl = new Uri("http://localhost");
         });
-        
+
         Services.Configure(configureOptions);
 
+        var httpClientBuilder = Services.AddHttpClient<SendHttpRequest>(HttpClient);
+        HttpClientBuilder(httpClientBuilder);
+
         Services
-            .AddHttpClient()
             .AddSingleton<IRouteMatcher, RouteMatcher>()
             .AddSingleton<IRouteTable, RouteTable>()
             .AddSingleton<IAbsoluteUrlProvider, DefaultAbsoluteUrlProvider>()
             .AddNotificationHandlersFrom<UpdateRouteTable>()
             .AddHttpContextAccessor()
-            
-            // Add Content Parsers
-            .AddSingleton<IHttpResponseContentReader, JsonElementHttpResponseContentReader>()
 
-            //Add Request Content Writers
-            .AddSingleton<IHttpRequestContentWriter, StringHttpRequestContentWriter>()
-            .AddSingleton<IHttpRequestContentWriter, FormUrlEncodedHttpRequestContentWriter>()
+            // Add Content Parsers.
+            .AddSingleton<IHttpContentParser, StringHttpContentParser>()
+            .AddSingleton<IHttpContentParser, JsonHttpContentParser>()
+            .AddSingleton<IHttpContentParser, XmlHttpContentParser>()
+
+            // Add Request Content Writers.
+            .AddSingleton<IHttpContentWriter, StringHttpContentWriter>()
+            .AddSingleton<IHttpContentWriter, FormUrlEncodedHttpContentWriter>()
             ;
     }
 }

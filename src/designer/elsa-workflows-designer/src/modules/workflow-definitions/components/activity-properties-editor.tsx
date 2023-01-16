@@ -137,6 +137,7 @@ export class ActivityPropertiesEditor {
       <elsa-form-panel
         mainTitle={mainTitle}
         subTitle={subTitle}
+        orientation="Landscape"
         tabs={tabs}
         selectedTabIndex={selectedTabIndex}
         onSelectedTabIndexChanged={e => this.onSelectedTabIndexChanged(e)}

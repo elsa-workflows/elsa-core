@@ -7,7 +7,7 @@ namespace Elsa.Http.ContentWriters;
 /// <summary>
 /// A content writer that writes content in the application/x-www-form-urlencoded format. 
 /// </summary>
-public class FormUrlEncodedHttpRequestContentWriter : IHttpRequestContentWriter
+public class FormUrlEncodedHttpContentWriter : IHttpContentWriter
 {
     private readonly List<string> _supportedContentTypes = new() {MimeTypes.ApplicationWwwFormUrlEncoded};
 

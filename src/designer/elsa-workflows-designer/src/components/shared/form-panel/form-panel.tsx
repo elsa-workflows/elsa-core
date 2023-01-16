@@ -9,6 +9,7 @@ import {PanelActionClickArgs, PanelActionDefinition, PanelActionType} from "./mo
 export class FormPanel {
   @Prop() public mainTitle: string;
   @Prop() public subTitle: string;
+  @Prop() public orientation: 'Landscape' | 'Portrait' = 'Portrait';
   @Prop() public tabs: Array<TabDefinition> = [];
   @Prop({mutable: true}) public selectedTabIndex?: number;
   @Prop() public actions: Array<PanelActionDefinition> = [];
@@ -39,24 +40,39 @@ export class FormPanel {
     const actions = this.actions;
     const mainTitle = this.mainTitle;
     const subTitle = this.subTitle;
+    const orientation = this.orientation;
 
     return (
       <div class="absolute inset-0 overflow-hidden">
         <form class="h-full flex flex-col bg-white shadow-xl" onSubmit={e => this.onSubmit(e)} method="post">
           <div class="flex flex-col flex-1">
 
-            <div class="px-4 py-6 bg-gray-50 sm:px-6">
-              <div class="flex items-start justify-between space-x-3">
-                <div class="space-y-1">
-                  <h2 class="text-lg font-medium text-gray-900">
-                    {mainTitle}
-                  </h2>
-                  {!isNullOrWhitespace(subTitle) ? <h3 class="text-sm text-gray-700">{subTitle}</h3> : undefined}
-                </div>
-              </div>
-            </div>
+            {orientation == 'Portrait' && (
+              <div class="px-4 py-6 bg-gray-50">
 
-            <div class="border-b border-gray-200 pl-4">
+                <div class="flex items-start justify-between space-x-3">
+                  <div class="space-y-1">
+                    <h2 class="text-lg font-medium text-gray-900">
+                      {mainTitle}
+                    </h2>
+                    {!isNullOrWhitespace(subTitle) ? <h3 class="text-sm text-gray-700">{subTitle}</h3> : undefined}
+                  </div>
+                </div>
+              </div>)}
+
+            {orientation == 'Landscape' && (
+              <div class="px-10 py-4 bg-gray-50">
+                <div class="flex items-start justify-between space-x-3">
+                  <div class="space-y-0">
+                    <h2 class="text-md font-medium text-gray-900">
+                      {mainTitle}
+                    </h2>
+                    {!isNullOrWhitespace(subTitle) ? <h3 class="text-xs text-gray-700">{subTitle}</h3> : undefined}
+                  </div>
+                </div>
+              </div>)}
+
+            <div class={`border-b border-gray-200 ${orientation == 'Landscape' ? 'pl-10' : 'pl-4'}`}>
               <nav class="-mb-px flex justify-start space-x-5" aria-label="Tabs">
                 {tabs.map((tab, tabIndex) => {
                   const cssClass = tabIndex == selectedTabIndex ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300';
@@ -69,17 +85,16 @@ export class FormPanel {
               </nav>
             </div>
 
-            <div class="flex-1 relative">
-
-              <div class="absolute inset-0 overflow-y-scroll">
-                {tabs.map((tab, tabIndex) => {
-                  const cssClass = tabIndex == selectedTabIndex ? '' : 'hidden';
-                  return <div class={cssClass}>
-                    {tab.content()}
-                  </div>
-                })}
+              <div class={`flex-1 relative`}>
+                <div class={`absolute inset-0 overflow-y-scroll ${orientation == 'Landscape' ? 'px-6' : ''}`}>
+                  {tabs.map((tab, tabIndex) => {
+                    const cssClass = tabIndex == selectedTabIndex ? '' : 'hidden';
+                    return <div class={cssClass}>
+                      {tab.content()}
+                    </div>
+                  })}
+                </div>
               </div>
-            </div>
           </div>
 
           {actions.length > 0 ? (

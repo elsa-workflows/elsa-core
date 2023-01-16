@@ -4,7 +4,7 @@ using Elsa.Http.Constants;
 
 namespace Elsa.Http.ContentWriters;
 
-public class StringHttpRequestContentWriter : IHttpRequestContentWriter
+public class StringHttpContentWriter : IHttpContentWriter
 {
     private List<string> SupportedContentTypes = new() {MimeTypes.ApplicationJson, MimeTypes.ApplicationXml};
 

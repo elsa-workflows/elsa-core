@@ -108,6 +108,9 @@ public class ActivityDescriber : IActivityDescriber
             var isWrappedProperty = typeof(Input).IsAssignableFrom(propertyType);
             var wrappedPropertyType = !isWrappedProperty ? propertyType : propertyInfo.PropertyType.GenericTypeArguments[0];
 
+            if (wrappedPropertyType.IsNullableType())
+                wrappedPropertyType = wrappedPropertyType.GetTypeOfNullable();
+
             yield return new InputDescriptor
             (
                 inputAttribute?.Name ?? propertyInfo.Name,
@@ -167,6 +170,9 @@ public class ActivityDescriber : IActivityDescriber
         
         if (wrappedPropertyType == typeof(Variable))
             return InputUIHints.VariablePicker;
+        
+        if (wrappedPropertyType == typeof(Type))
+            return InputUIHints.TypePicker;
 
         return InputUIHints.SingleLine;
     }

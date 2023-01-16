@@ -1,5 +1,5 @@
 import {Component, h, Prop, Event, EventEmitter, Method} from "@stencil/core";
-import {_, groupBy} from 'lodash';
+import {groupBy} from 'lodash';
 import {StorageDriverDescriptor, Variable} from "../../../models";
 import {FormEntry} from "../../shared/forms/form-entry";
 import {isNullOrWhitespace} from "../../../utils";
@@ -25,7 +25,7 @@ export class VariableEditorDialogContent {
     const variable: Variable = this.variable ?? {name: '', typeName: 'Object'};
     const variableTypeName = variable.typeName;
     const availableTypes: Array<VariableDescriptor> = descriptorsStore.variableDescriptors;
-    const groupedVariableTypes = _.groupBy(availableTypes, x => x.category);
+    const groupedVariableTypes = groupBy(availableTypes, x => x.category);
     const storageDrivers: Array<StorageDriverDescriptor> = descriptorsStore.storageDrivers;
 
     return (
