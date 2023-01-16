@@ -18,7 +18,8 @@ public class EFCoreWorkflowDefinitionLabelStore : IWorkflowDefinitionLabelStore
 
     public async Task ReplaceAsync(IEnumerable<WorkflowDefinitionLabel> removed, IEnumerable<WorkflowDefinitionLabel> added, CancellationToken cancellationToken = default)
     {
-        await _store.DeleteManyAsync(removed, cancellationToken);
+        var idList = removed.Select(r => r.Id);
+        await _store.DeleteWhereAsync(w => idList.Contains(w.Id), cancellationToken);
         await _store.SaveManyAsync(added, cancellationToken);
     }
 

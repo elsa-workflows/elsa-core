@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using EFCore.BulkExtensions;
 using Elsa.Common.Services;
+using Elsa.EntityFrameworkCore.Common;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.Serialization.Converters;
@@ -17,11 +17,13 @@ public class EFCoreWorkflowStateStore : IWorkflowStateStore
     private readonly SerializerOptionsProvider _serializerOptionsProvider;
     private readonly ISystemClock _systemClock;
     private readonly IDbContextFactory<RuntimeElsaDbContext> _dbContextFactory;
+    private readonly Store<RuntimeElsaDbContext, WorkflowState> _store;
 
     /// <summary>
     /// Constructor.
     /// </summary>
     public EFCoreWorkflowStateStore(
+        Store<RuntimeElsaDbContext, WorkflowState> store,
         IDbContextFactory<RuntimeElsaDbContext> dbContextFactory,
         SerializerOptionsProvider serializerOptionsProvider,
         ISystemClock systemClock)
@@ -29,26 +31,12 @@ public class EFCoreWorkflowStateStore : IWorkflowStateStore
         _serializerOptionsProvider = serializerOptionsProvider;
         _systemClock = systemClock;
         _dbContextFactory = dbContextFactory;
+        _store = store;
     }
 
     /// <inheritdoc />
-    public async ValueTask SaveAsync(string id, WorkflowState state, CancellationToken cancellationToken = default)
-    {
-        await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
-        var options = _serializerOptionsProvider.CreatePersistenceOptions(ReferenceHandler.Preserve);
-        var json = JsonSerializer.Serialize(state, options);
-        var now = _systemClock.UtcNow;
-        var entry = dbContext.Entry(state);
-
-        if (entry.Property<DateTimeOffset>("CreatedAt").CurrentValue == DateTimeOffset.MinValue)
-            entry.Property<DateTimeOffset>("CreatedAt").CurrentValue = now;
-
-        entry.Property<string>("Data").CurrentValue = json;
-        entry.Property<DateTimeOffset>("UpdatedAt").CurrentValue = now;
-
-        var entities = new[] { state };
-        await dbContext.BulkInsertOrUpdateAsync(entities, new BulkConfig { EnableShadowProperties = true }, cancellationToken: cancellationToken);
-    }
+    public async ValueTask SaveAsync(string id, WorkflowState state, CancellationToken cancellationToken = default) => 
+        await _store.SaveAsync(state, Save, cancellationToken: cancellationToken);
 
     /// <inheritdoc />
     public async ValueTask<WorkflowState?> LoadAsync(string id, CancellationToken cancellationToken = default)
@@ -79,5 +67,22 @@ public class EFCoreWorkflowStateStore : IWorkflowStateStore
         if (args.CorrelationId != null) query = query.Where(x => x.CorrelationId == args.CorrelationId);
 
         return await query.CountAsync(cancellationToken);
+    }
+    
+    private WorkflowState Save(RuntimeElsaDbContext dbContext, WorkflowState entity)
+    {
+        var options = _serializerOptionsProvider.CreatePersistenceOptions(ReferenceHandler.Preserve);
+        var json = JsonSerializer.Serialize(entity, options);
+        var now = _systemClock.UtcNow;
+        var entry = dbContext.Entry(entity);
+
+        if (entry.Property<DateTimeOffset>("CreatedAt").CurrentValue == DateTimeOffset.MinValue)
+            entry.Property<DateTimeOffset>("CreatedAt").CurrentValue = now;
+
+        entry.Property<string>("Data").CurrentValue = json;
+        entry.Property<DateTimeOffset>("UpdatedAt").CurrentValue = now;
+
+        dbContext.Entry(entity).Property("Data").CurrentValue = json;
+        return entity;
     }
 }

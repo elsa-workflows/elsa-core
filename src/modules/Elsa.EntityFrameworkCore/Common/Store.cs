@@ -1,5 +1,4 @@
 using System.Linq.Expressions;
-using EFCore.BulkExtensions;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.EntityFrameworkCore.Extensions;
@@ -17,18 +16,27 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
     }
 
     public async Task<TDbContext> CreateDbContextAsync(CancellationToken cancellationToken = default) => await _dbContextFactory.CreateDbContextAsync(cancellationToken);
-    public async Task SaveAsync(TEntity entity, CancellationToken cancellationToken = default) => await SaveAsync(entity, default, cancellationToken);
+    
+    public async Task SaveAsync(TEntity entity, CancellationToken cancellationToken = default) => await SaveAsync(entity, default, default, cancellationToken);
+    
+    public async Task SaveAsync(TEntity entity, Expression<Func<TEntity, object>>? uniqueField = default, CancellationToken cancellationToken = default) => await SaveAsync(entity, uniqueField, default, cancellationToken);
+    
+    public async Task SaveAsync(TEntity entity, Func<TDbContext, TEntity, TEntity>? onSaving = default, CancellationToken cancellationToken = default) => await SaveAsync(entity, default, onSaving, cancellationToken);
 
-    public async Task SaveAsync(TEntity entity, Func<TDbContext, TEntity, TEntity>? onSaving = default, CancellationToken cancellationToken = default)
+    public async Task SaveAsync(TEntity entity, Expression<Func<TEntity, object>>? uniqueField = default, Func<TDbContext, TEntity, TEntity>? onSaving = default, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await CreateDbContextAsync(cancellationToken);
         entity = onSaving?.Invoke(dbContext, entity) ?? entity;
-        await dbContext.BulkUpsertAsync(new[] {entity}, cancellationToken);
+        await dbContext.BulkUpsertAsync(new[] {entity}, uniqueField, cancellationToken);
     }
 
-    public async Task SaveManyAsync(IEnumerable<TEntity> entities, CancellationToken cancellationToken = default) => await SaveManyAsync(entities, default, cancellationToken);
-
-    public async Task SaveManyAsync(IEnumerable<TEntity> entities, Func<TDbContext, TEntity, TEntity>? onSaving = default, CancellationToken cancellationToken = default)
+    public async Task SaveManyAsync(IEnumerable<TEntity> entities, CancellationToken cancellationToken = default) => await SaveManyAsync(entities, default, default, cancellationToken);
+    
+    public async Task SaveManyAsync(IEnumerable<TEntity> entities, Expression<Func<TEntity, object>>? uniqueField = default, CancellationToken cancellationToken = default) => await SaveManyAsync(entities, uniqueField, default, cancellationToken);
+    
+    public async Task SaveManyAsync(IEnumerable<TEntity> entities, Func<TDbContext, TEntity, TEntity>? onSaving = default, CancellationToken cancellationToken = default) => await SaveManyAsync(entities, default, onSaving, cancellationToken);
+    
+    public async Task SaveManyAsync(IEnumerable<TEntity> entities, Expression<Func<TEntity, object>>? uniqueField = default, Func<TDbContext, TEntity, TEntity>? onSaving = default, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await CreateDbContextAsync(cancellationToken);
         var entityList = entities.ToList();
@@ -36,7 +44,7 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
         if (onSaving != null)
             entityList = entityList.Select(x => onSaving(dbContext, x)).ToList();
 
-        await dbContext.BulkUpsertAsync(entityList, cancellationToken);
+        await dbContext.BulkUpsertAsync(entityList, uniqueField, cancellationToken);
     }
 
     public async Task<TEntity?> FindAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default) => await FindAsync(predicate, default, cancellationToken);
@@ -111,19 +119,11 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
         return await dbContext.SaveChangesAsync(cancellationToken) == 1;
     }
 
-    public async Task<int> DeleteManyAsync(IEnumerable<TEntity> entities, CancellationToken cancellationToken = default)
-    {
-        await using var dbContext = await CreateDbContextAsync(cancellationToken);
-        var list = entities.ToList();
-        await dbContext.BulkDeleteAsync(list, cancellationToken: cancellationToken);
-        return list.Count;
-    }
-
     public async Task<int> DeleteWhereAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await CreateDbContextAsync(cancellationToken);
         var set = dbContext.Set<TEntity>();
-        return await set.DeleteWhereAsync(dbContext, predicate, cancellationToken);
+        return await set.Where(predicate).ExecuteDeleteAsync(cancellationToken);
     }
 
     public async Task<IEnumerable<TEntity>> QueryAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> query, CancellationToken cancellationToken = default) => await QueryAsync(query, default, cancellationToken);

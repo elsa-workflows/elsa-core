@@ -16,14 +16,19 @@ namespace Elsa.EntityFrameworkCore.Modules.Management;
 public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
 {
     private readonly Store<ManagementElsaDbContext, WorkflowDefinition> _store;
+    private readonly Store<ManagementElsaDbContext, WorkflowInstance> _workflowInstanceStore;
     private readonly SerializerOptionsProvider _serializerOptionsProvider;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public EFCoreWorkflowDefinitionStore(Store<ManagementElsaDbContext, WorkflowDefinition> store, SerializerOptionsProvider serializerOptionsProvider)
+    public EFCoreWorkflowDefinitionStore(
+        Store<ManagementElsaDbContext, WorkflowDefinition> store,
+        Store<ManagementElsaDbContext, WorkflowInstance> workflowInstanceStore,
+        SerializerOptionsProvider serializerOptionsProvider)
     {
         _store = store;
+        _workflowInstanceStore = workflowInstanceStore;
         _serializerOptionsProvider = serializerOptionsProvider;
     }
 
@@ -93,16 +98,16 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
     public async Task<int> DeleteByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
-        await dbContext.WorkflowInstances.DeleteWhereAsync(dbContext, x => x.DefinitionId == definitionId, cancellationToken);
-        return await dbContext.WorkflowDefinitions.DeleteWhereAsync(dbContext, x => x.DefinitionId == definitionId, cancellationToken);
+        await _workflowInstanceStore.DeleteWhereAsync(x => x.DefinitionId == definitionId, cancellationToken);
+        return await _store.DeleteWhereAsync(x => x.DefinitionId == definitionId, cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task<int> DeleteByDefinitionIdAndVersionAsync(string definitionId, int version, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
-        await dbContext.WorkflowInstances.DeleteWhereAsync(dbContext, x => x.DefinitionId == definitionId && x.Version == version, cancellationToken);
-        return await dbContext.WorkflowDefinitions.DeleteWhereAsync(dbContext, x => x.DefinitionId == definitionId && x.Version == version, cancellationToken);
+        await _workflowInstanceStore.DeleteWhereAsync(x => x.DefinitionId == definitionId && x.Version == version, cancellationToken);
+        return await _store.DeleteWhereAsync(x => x.DefinitionId == definitionId && x.Version == version, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -110,7 +115,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
     {
         var definitionIdList = definitionIds.ToList();
         await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
-        await dbContext.WorkflowInstances.DeleteWhereAsync(dbContext, x => definitionIdList.Contains(x.DefinitionId), cancellationToken);
+        await _workflowInstanceStore.DeleteWhereAsync(x => definitionIdList.Contains(x.DefinitionId), cancellationToken);
         return await _store.DeleteWhereAsync(x => definitionIdList.Contains(x.DefinitionId), cancellationToken);
     }
 
