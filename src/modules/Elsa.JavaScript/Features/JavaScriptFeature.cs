@@ -34,6 +34,7 @@ public class JavaScriptFeature : FeatureBase
             .AddSingleton<IExpressionSyntaxProvider, JavaScriptExpressionSyntaxProvider>()
             .AddSingleton<IJavaScriptEvaluator, JintJavaScriptEvaluator>()
             .AddSingleton<IActivityPropertyOptionsProvider, RunJavaScriptOptionsProvider>()
+            .AddSingleton<ITypeDefinitionService, TypeDefinitionService>()
             .AddExpressionHandler<JavaScriptExpressionHandler, JavaScriptExpression>()
             ;
 
