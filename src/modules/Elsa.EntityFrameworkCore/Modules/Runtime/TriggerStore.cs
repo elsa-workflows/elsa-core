@@ -34,7 +34,7 @@ public class EFCoreTriggerStore : ITriggerStore
     /// <inheritdoc />
     public async ValueTask ReplaceAsync(IEnumerable<StoredTrigger> removed, IEnumerable<StoredTrigger> added, CancellationToken cancellationToken = default)
     {
-        await _store.DeleteManyAsync(removed, cancellationToken);
+        await DeleteManyAsync(removed.Select(r => r.Id), cancellationToken);
         await _store.SaveManyAsync(added, cancellationToken);
     }
 

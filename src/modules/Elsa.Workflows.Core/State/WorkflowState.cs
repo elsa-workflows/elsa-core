@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Elsa.Common.Entities;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Serialization.Converters;
 
@@ -7,13 +8,8 @@ namespace Elsa.Workflows.Core.State;
 /// <summary>
 /// Represents the current state of a workflow. 
 /// </summary>
-public class WorkflowState
+public class WorkflowState : Entity
 {
-    /// <summary>
-    /// A unique workflow instance ID.
-    /// </summary>
-    public string Id { get; set; } = default!;
-    
     /// <summary>
     /// The workflow definition ID.
     /// </summary>

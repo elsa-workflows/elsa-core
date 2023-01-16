@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
-using EFCore.BulkExtensions;
+using Elsa.Common.Entities;
 using Elsa.Common.Models;
+using Elsa.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.EntityFrameworkCore.Extensions;
@@ -11,33 +12,28 @@ namespace Elsa.EntityFrameworkCore.Extensions;
 public static class QueryableExtensions
 {
     /// <summary>
-    /// Deletes the matching results in bulk.
-    /// </summary>
-    public static async Task<int> BulkDeleteAsync<T>(this IQueryable<T> queryable, DbContext elsaContext, CancellationToken cancellationToken = default) where T : class
-    {
-#if NET7_0_OR_GREATER
-            return await queryable.ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
-#else
-        if (!elsaContext.Database.IsPostgres() && !elsaContext.Database.IsMySql() && !elsaContext.Database.IsOracle()) 
-            return await queryable.BatchDeleteAsync(cancellationToken);
-        
-        // Need this workaround https://github.com/borisdj/EFCore.BulkExtensions/issues/553 is solved.
-        // Oracle also https://github.com/borisdj/EFCore.BulkExtensions/issues/375
-        var records = await queryable.ToListAsync(cancellationToken);
-
-        foreach (var record in records)
-            elsaContext.Remove(record);
-
-        return records.Count;
-
-#endif
-    }
-
-    /// <summary>
     /// Inserts or updates a list of entities in bulk.
     /// </summary>
-    public static async Task BulkUpsertAsync<TDbContext, TEntity>(this TDbContext dbContext, IList<TEntity> entities, CancellationToken cancellationToken = default) where TDbContext : DbContext where TEntity : class => 
-        await dbContext.BulkInsertOrUpdateAsync(entities, config => { config.EnableShadowProperties = true; }, cancellationToken: cancellationToken);
+    public static async Task BulkUpsertAsync<TDbContext, TEntity>(this TDbContext dbContext, IList<TEntity> entities, Expression<Func<TEntity, object>>? uniqueFieldExpression = default, CancellationToken cancellationToken = default) where TDbContext : DbContext where TEntity : class
+    {
+        uniqueFieldExpression = ResolveUniqueFieldExpression(uniqueFieldExpression);
+        var uniqueFieldDelegate = uniqueFieldExpression.Compile();
+        var propertyInfo = uniqueFieldExpression.GetProperty()!;
+
+        var set = dbContext.Set<TEntity>();
+        var lambda = uniqueFieldDelegate.BuildContainsExpression(entities, propertyInfo);
+
+        var existingEntities = await set.AsNoTracking().Where(lambda).ToListAsync(cancellationToken);
+        var entitiesToUpdate = entities.Where(e => existingEntities.Any(ex => uniqueFieldDelegate.Invoke(ex).ToString() == uniqueFieldDelegate.Invoke(e).ToString())).ToList();
+        var entitiesToInsert = entities.Except(entitiesToUpdate).ToList();
+
+        if (entitiesToUpdate.Any())
+            set.UpdateRange(entitiesToUpdate);
+        if (entitiesToInsert.Any())
+            await set.AddRangeAsync(entitiesToInsert, cancellationToken);
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
 
     /// <summary>
     /// Returns a paged result from the specified query.
@@ -61,5 +57,21 @@ public static class QueryableExtensions
         if (pageArgs?.Limit != null) queryable = queryable.Take(pageArgs.Limit.Value);
         var results = await queryable.ToListAsync();
         return Page.Of(results, count);
+    }
+
+    private static Expression<Func<TEntity, object>> ResolveUniqueFieldExpression<TEntity>(Expression<Func<TEntity, object>>? uniqueFieldExpression) where TEntity : class
+    {
+        if (uniqueFieldExpression != null) return uniqueFieldExpression;
+        try
+        {
+            uniqueFieldExpression = e => ((Entity)(object)e).Id;
+        }
+        catch (Exception)
+        {
+            throw new Exception(
+                "Unique field expression must be passed via BulkUpsertAsync if default object to upsert is not of type Entity.");
+        }
+
+        return uniqueFieldExpression;
     }
 }
