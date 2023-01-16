@@ -18,7 +18,7 @@ public class StringHttpContentParser : IHttpContentParser
     public async Task<object> ReadAsync(Stream content, Type? returnType, CancellationToken cancellationToken)
     {
         using var reader = new StreamReader(content, leaveOpen: true);
-        var text = await reader.ReadToEndAsync(cancellationToken);
+        var text = await reader.ReadToEndAsync();
         return returnType == null ? text : text.ConvertTo(returnType)!;
     }
 }

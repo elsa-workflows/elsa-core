@@ -26,7 +26,7 @@ public class JsonHttpContentParser : IHttpContentParser
         };
 
         using var reader = new StreamReader(content, leaveOpen: true);
-        var json = await reader.ReadToEndAsync(cancellationToken);
+        var json = await reader.ReadToEndAsync();
 
         if (returnType == null || returnType.IsPrimitive)
             return json.ConvertTo(returnType ?? typeof(string))!;

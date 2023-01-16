@@ -18,7 +18,7 @@ public class XmlHttpContentParser : IHttpContentParser
     public async Task<object> ReadAsync(Stream content, Type? returnType, CancellationToken cancellationToken)
     {
         using var reader = new StreamReader(content, leaveOpen: true);
-        var xml = await reader.ReadToEndAsync(cancellationToken);
+        var xml = await reader.ReadToEndAsync();
 
         if (returnType == null || returnType == typeof(string))
             return xml;
