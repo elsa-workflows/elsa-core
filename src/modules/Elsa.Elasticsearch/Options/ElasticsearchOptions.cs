@@ -28,11 +28,6 @@ public class ElasticsearchOptions
     /// The API key to use when connecting with the Elasticsearch server.
     /// </summary>
     public string? ApiKey { get; set; }
-    
-    /// <summary>
-    /// The interval to attempt a rollover.
-    /// </summary>
-    public TimeSpan RolloverInterval { get; set; } = TimeSpan.FromDays(10);
 
     /// <summary>
     /// A map between type and index name to use. When no index name is configured for a given type, the name of the type is used.
