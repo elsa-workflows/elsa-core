@@ -127,6 +127,7 @@ export namespace Components {
     interface ElsaFormPanel {
         "actions": Array<PanelActionDefinition>;
         "mainTitle": string;
+        "orientation": 'Landscape' | 'Portrait';
         "selectedTabIndex"?: number;
         "subTitle": string;
         "tabs": Array<TabDefinition>;
@@ -230,6 +231,9 @@ export namespace Components {
     interface ElsaTooltip {
         "tooltipContent": any;
         "tooltipPosition"?: string;
+    }
+    interface ElsaTypePickerInput {
+        "inputContext": ActivityInputContext;
     }
     interface ElsaVariableEditorDialogContent {
         "getVariable": () => Promise<Variable>;
@@ -667,6 +671,12 @@ declare global {
         prototype: HTMLElsaTooltipElement;
         new (): HTMLElsaTooltipElement;
     };
+    interface HTMLElsaTypePickerInputElement extends Components.ElsaTypePickerInput, HTMLStencilElement {
+    }
+    var HTMLElsaTypePickerInputElement: {
+        prototype: HTMLElsaTypePickerInputElement;
+        new (): HTMLElsaTypePickerInputElement;
+    };
     interface HTMLElsaVariableEditorDialogContentElement extends Components.ElsaVariableEditorDialogContent, HTMLStencilElement {
     }
     var HTMLElsaVariableEditorDialogContentElement: {
@@ -827,6 +837,7 @@ declare global {
         "elsa-studio": HTMLElsaStudioElement;
         "elsa-switch-editor": HTMLElsaSwitchEditorElement;
         "elsa-tooltip": HTMLElsaTooltipElement;
+        "elsa-type-picker-input": HTMLElsaTypePickerInputElement;
         "elsa-variable-editor-dialog-content": HTMLElsaVariableEditorDialogContentElement;
         "elsa-variable-picker-input": HTMLElsaVariablePickerInputElement;
         "elsa-variables-editor": HTMLElsaVariablesEditorElement;
@@ -943,6 +954,7 @@ declare namespace LocalJSX {
         "onActionInvoked"?: (event: ElsaFormPanelCustomEvent<PanelActionClickArgs>) => void;
         "onSelectedTabIndexChanged"?: (event: ElsaFormPanelCustomEvent<TabChangedArgs>) => void;
         "onSubmitted"?: (event: ElsaFormPanelCustomEvent<FormData>) => void;
+        "orientation"?: 'Landscape' | 'Portrait';
         "selectedTabIndex"?: number;
         "subTitle"?: string;
         "tabs"?: Array<TabDefinition>;
@@ -1054,6 +1066,9 @@ declare namespace LocalJSX {
     interface ElsaTooltip {
         "tooltipContent"?: any;
         "tooltipPosition"?: string;
+    }
+    interface ElsaTypePickerInput {
+        "inputContext"?: ActivityInputContext;
     }
     interface ElsaVariableEditorDialogContent {
         "onVariableChanged"?: (event: ElsaVariableEditorDialogContentCustomEvent<Variable>) => void;
@@ -1182,6 +1197,7 @@ declare namespace LocalJSX {
         "elsa-studio": ElsaStudio;
         "elsa-switch-editor": ElsaSwitchEditor;
         "elsa-tooltip": ElsaTooltip;
+        "elsa-type-picker-input": ElsaTypePickerInput;
         "elsa-variable-editor-dialog-content": ElsaVariableEditorDialogContent;
         "elsa-variable-picker-input": ElsaVariablePickerInput;
         "elsa-variables-editor": ElsaVariablesEditor;
@@ -1247,6 +1263,7 @@ declare module "@stencil/core" {
             "elsa-studio": LocalJSX.ElsaStudio & JSXBase.HTMLAttributes<HTMLElsaStudioElement>;
             "elsa-switch-editor": LocalJSX.ElsaSwitchEditor & JSXBase.HTMLAttributes<HTMLElsaSwitchEditorElement>;
             "elsa-tooltip": LocalJSX.ElsaTooltip & JSXBase.HTMLAttributes<HTMLElsaTooltipElement>;
+            "elsa-type-picker-input": LocalJSX.ElsaTypePickerInput & JSXBase.HTMLAttributes<HTMLElsaTypePickerInputElement>;
             "elsa-variable-editor-dialog-content": LocalJSX.ElsaVariableEditorDialogContent & JSXBase.HTMLAttributes<HTMLElsaVariableEditorDialogContentElement>;
             "elsa-variable-picker-input": LocalJSX.ElsaVariablePickerInput & JSXBase.HTMLAttributes<HTMLElsaVariablePickerInputElement>;
             "elsa-variables-editor": LocalJSX.ElsaVariablesEditor & JSXBase.HTMLAttributes<HTMLElsaVariablesEditorElement>;

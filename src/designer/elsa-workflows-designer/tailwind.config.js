@@ -1,5 +1,8 @@
 const defaultTheme = require('tailwindcss/defaultTheme');
-const colors = require('tailwindcss/colors')
+const colors = require('tailwindcss/colors');
+
+// @ts-ignore
+const dev = process.argv && process.argv.indexOf('--dev') > -1;
 
 module.exports = {
   content: ['./src/**/*.tsx', './src/**/*.ts'],

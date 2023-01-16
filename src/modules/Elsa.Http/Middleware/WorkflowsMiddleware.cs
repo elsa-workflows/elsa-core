@@ -5,42 +5,47 @@ using Elsa.Http.Models;
 using Elsa.Http.Options;
 using Elsa.Http.Services;
 using Elsa.Workflows.Core.Helpers;
-using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Runtime.Services;
+using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Extensions;
-using Microsoft.AspNetCore.Routing;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Http.Middleware;
 
+/// <summary>
+/// An ASP.NET middleware component that tries to match the inbound request path to an associated workflow and then run that workflow.
+/// </summary>
+[PublicAPI]
 public class WorkflowsMiddleware
 {
     private readonly RequestDelegate _next;
-    private readonly IBookmarkHasher _hasher;
     private readonly IWorkflowRuntime _workflowRuntime;
     private readonly IWorkflowHostFactory _workflowHostFactory;
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly HttpActivityOptions _options;
     private readonly string _activityTypeName = ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>();
 
+    /// <summary>
+    /// Constructor.
+    /// </summary>
     public WorkflowsMiddleware(
         RequestDelegate next,
-        IBookmarkHasher hasher,
         IWorkflowRuntime workflowRuntime,
         IWorkflowHostFactory workflowHostFactory,
         IWorkflowDefinitionService workflowDefinitionService,
         IOptions<HttpActivityOptions> options)
     {
         _next = next;
-        _hasher = hasher;
         _workflowRuntime = workflowRuntime;
         _workflowHostFactory = workflowHostFactory;
         _workflowDefinitionService = workflowDefinitionService;
         _options = options.Value;
     }
 
+    
+    /// <summary>
+    /// Attempts to matches the inbound request path to an associated workflow and then run that workflow.
+    /// </summary>
     public async Task InvokeAsync(HttpContext httpContext, IRouteMatcher routeMatcher)
     {
         var path = GetPath(httpContext);
@@ -59,36 +64,30 @@ public class WorkflowsMiddleware
             path = path.Substring(basePath.Value.Value.Length);
         }
 
-        var request = httpContext.Request;
-        var method = request.Method!.ToLowerInvariant();
-        var cancellationToken = httpContext.RequestAborted;
-        var routeData = GetRouteData(httpContext, routeMatcher, path);
-
-        var requestModel = new HttpRequestModel(
-            new Uri(request.GetEncodedUrl()),
-            request.Path,
-            request.Method,
-            request.Query.ToDictionary(x => x.Key, x => x.Value.ToString()),
-            routeData.Values,
-            request.Headers.ToDictionary(x => x.Key, x => x.Value.ToString())
-        );
-
-        var input = new Dictionary<string, object> { [HttpEndpoint.InputKey] = requestModel };
+        var input = new Dictionary<string, object>
+        {
+            [HttpEndpoint.HttpContextInputKey] = httpContext,
+            [HttpEndpoint.RequestPathInputKey] = path
+        };
 
         // TODO: Get correlation ID from query string or header etc.
         var correlationId = default(string);
-
-        // Trigger the workflow.
+        var request = httpContext.Request;
+        var method = request.Method!.ToLowerInvariant();
         var bookmarkPayload = new HttpEndpointBookmarkPayload(path, method);
         var triggerOptions = new TriggerWorkflowsRuntimeOptions(correlationId, input);
-
+        var cancellationToken = httpContext.RequestAborted;
+        
+        // Trigger the workflow.
         var triggerResult = await _workflowRuntime.TriggerWorkflowsAsync(
             _activityTypeName,
             bookmarkPayload,
             triggerOptions,
             cancellationToken);
 
-        // Check to see if we received any WriteHttpResponse activity bookmarks. If we do, acquire a lock on the workflow instance and resume it from here within an actual HTTP context so that the activity can complete its HTTP response.
+        // We must assume that the workflow executed in a different process (when e.g. using Proto.Actor)
+        // and check if we received any `WriteHttpResponse` activity bookmarks.
+        // If we did, acquire a lock on the workflow instance and resume it from here within an actual HTTP context so that the activity can complete its HTTP response.
         var writeHttpResponseTypeName = ActivityTypeNameHelper.GenerateTypeName<WriteHttpResponse>();
 
         var query =
@@ -154,28 +153,6 @@ public class WorkflowsMiddleware
             await response.WriteAsync(json, cancellationToken);
         }
     }
-
-    private static RouteData GetRouteData(HttpContext httpContext, IRouteMatcher routeMatcher, string path)
-    {
-        var routeData = httpContext.GetRouteData();
-        var routeTable = httpContext.RequestServices.GetRequiredService<IRouteTable>();
-
-        var matchingRouteQuery =
-            from route in routeTable
-            let routeValues = routeMatcher.Match(route, path)
-            where routeValues != null
-            select new { route, routeValues };
-
-        var matchingRoute = matchingRouteQuery.FirstOrDefault();
-
-        if (matchingRoute == null)
-            return routeData;
-
-        foreach (var (key, value) in matchingRoute.routeValues!)
-            routeData.Values[key] = value;
-
-        return routeData;
-    }
-
+    
     private string GetPath(HttpContext httpContext) => httpContext.Request.Path.Value.ToLowerInvariant();
 }

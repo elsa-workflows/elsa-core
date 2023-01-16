@@ -1,5 +1,7 @@
 using System.ComponentModel;
+using System.Dynamic;
 using System.Reflection;
+using System.Text.Json.Nodes;
 using Elsa.Common.Features;
 using Elsa.Expressions.Services;
 using Elsa.Extensions;
@@ -33,6 +35,7 @@ namespace Elsa.Workflows.Management.Features;
 public class WorkflowManagementFeature : FeatureBase
 {
     private const string PrimitivesCategory = "Primitives";
+    private const string DynamicCategory = "Dynamic";
 
     /// <inheritdoc />
     public WorkflowManagementFeature(IModule module) : base(module)
@@ -63,7 +66,9 @@ public class WorkflowManagementFeature : FeatureBase
         new(typeof(DateTimeOffset), PrimitivesCategory, "A value type that consists of a DateTime and a time zone offset."),
         new(typeof(TimeSpan), PrimitivesCategory, "Represents a duration of time."),
         new(typeof(DateOnly), PrimitivesCategory, "Represents dates with values ranging from January 1, 0001 Anno Domini (Common Era) through December 31, 9999 A.D. (C.E.) in the Gregorian calendar."),
-        new(typeof(TimeOnly), PrimitivesCategory, "Represents a time of day, as would be read from a clock, within the range 00:00:00 to 23:59:59.9999999.")
+        new(typeof(TimeOnly), PrimitivesCategory, "Represents a time of day, as would be read from a clock, within the range 00:00:00 to 23:59:59.9999999."),
+        new (typeof(ExpandoObject), DynamicCategory, "A dictionary that can be typed as dynamic to access members using dot notation."),
+        new (typeof(JsonObject), DynamicCategory, "A type from System.Text.Json that provides dynamic access to the object.")
     };
 
     /// <summary>
@@ -98,7 +103,12 @@ public class WorkflowManagementFeature : FeatureBase
     /// <summary>
     /// Adds the specified variable type to the system.
     /// </summary>
-    public WorkflowManagementFeature AddVariableType<T>(string category) => AddVariableTypes(new[] { typeof(T) }, category);
+    public WorkflowManagementFeature AddVariableType<T>(string category) => AddVariableType(typeof(T), category);
+    
+    /// <summary>
+    /// Adds the specified variable type to the system.
+    /// </summary>
+    public WorkflowManagementFeature AddVariableType(Type type, string category) => AddVariableTypes(new[] { type }, category);
 
     /// <summary>
     /// Adds the specified variable types to the system.

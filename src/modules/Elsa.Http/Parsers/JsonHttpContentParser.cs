@@ -1,0 +1,40 @@
+using System.Dynamic;
+using System.Text.Json;
+using Elsa.Expressions.Helpers;
+using Elsa.Http.Services;
+using Elsa.Workflows.Core.Serialization.Converters;
+
+namespace Elsa.Http.Parsers;
+
+/// <summary>
+/// Reads application/json and text/json content type streams.
+/// </summary>
+public class JsonHttpContentParser : IHttpContentParser
+{
+    /// <inheritdoc />
+    public int Priority => 0;
+
+    /// <inheritdoc />
+    public bool GetSupportsContentType(string contentType) => contentType.Contains("json", StringComparison.InvariantCultureIgnoreCase);
+
+    /// <inheritdoc />
+    public async Task<object> ReadAsync(Stream content, Type? returnType, CancellationToken cancellationToken)
+    {
+        var options = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        };
+
+        using var reader = new StreamReader(content, leaveOpen: true);
+        var json = await reader.ReadToEndAsync();
+
+        if (returnType == null || returnType.IsPrimitive)
+            return json.ConvertTo(returnType ?? typeof(string))!;
+
+        if (returnType != typeof(ExpandoObject)) 
+            return JsonSerializer.Deserialize(json, returnType, options)!;
+        
+        options.Converters.Add(new ExpandoObjectConverter());
+        return JsonSerializer.Deserialize<object>(json, options)!;
+    }
+}

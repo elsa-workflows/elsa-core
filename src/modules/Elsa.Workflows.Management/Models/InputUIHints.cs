@@ -21,27 +21,4 @@ public static class InputUIHints
     /// An editor that allows the user to write a blob of JSON.
     /// </summary>
     public const string Json = "json";
-
-    public static string GetUIHint(Type wrappedPropertyType, InputAttribute? inputAttribute)
-    {
-        if (inputAttribute?.UIHint != null)
-            return inputAttribute.UIHint;
-
-        if (wrappedPropertyType == typeof(bool) || wrappedPropertyType == typeof(bool?))
-            return Checkbox;
-
-        if (wrappedPropertyType == typeof(string))
-            return SingleLine;
-
-        if (wrappedPropertyType == typeof(Type))
-            return TypePicker;
-
-        if (typeof(IEnumerable).IsAssignableFrom(wrappedPropertyType))
-            return Dropdown;
-
-        if (wrappedPropertyType.IsEnum || wrappedPropertyType.IsNullableType() && wrappedPropertyType.GetTypeOfNullable().IsEnum)
-            return Dropdown;
-
-        return SingleLine;
-    }
 }

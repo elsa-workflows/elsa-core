@@ -1,125 +1,123 @@
 using System.Net.Http.Headers;
+using Elsa.Extensions;
 using Elsa.Http.ContentWriters;
-using Elsa.Http.Models;
-using Elsa.Http.Parsers;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Models;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Primitives;
 using HttpRequestHeaders = Elsa.Http.Models.HttpRequestHeaders;
 
 namespace Elsa.Http;
 
-[Activity("Elsa", "HTTP", "Send Http Request.", DisplayName = "HTTP Request", Kind = ActivityKind.Task)]
-public class SendHttpRequest : Activity
+/// <summary>
+/// Send an HTTP request.
+/// </summary>
+[Activity("Elsa", "HTTP", "Send an HTTP request.", DisplayName = "HTTP Request", Kind = ActivityKind.Task)]
+public class SendHttpRequest : Activity<HttpResponse>
 {
     [Input] public Input<Uri?> Url { get; set; } = default!;
 
+    /// <summary>
+    /// The HTTP method to use when sending the request.
+    /// </summary>
     [Input(
+        Description = "The HTTP method to use when sending the request.",
         Options = new[] { "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD" },
+        DefaultValue = "GET",
         UIHint = InputUIHints.Dropdown
     )]
-    public Input<string?> Method { get; set; }
+    public Input<string> Method { get; set; } = new("GET");
 
-    public Input<string?> Content { get; set; } = default!;
+    /// <summary>
+    /// The content to send with the request. Can be a string, an object, a byte array or a stream.
+    /// </summary>
+    [Input(Description = "The content to send with the request. Can be a string, an object, a byte array or a stream.")]
+    public Input<object?> Content { get; set; } = default!;
 
+    /// <summary>
+    /// The content type to use when sending the request.
+    /// </summary>
     [Input(
+        Description = "The content type to use when sending the request.",
         Options = new[] { "", "text/plain", "text/html", "application/json", "application/xml", "application/x-www-form-urlencoded" },
         UIHint = InputUIHints.Dropdown
     )]
     public Input<string?> ContentType { get; set; } = default!;
 
-    [Input(Category = "Security")] public Input<string?> Authorization { get; set; } = default!;
-
-    public Input<bool> ReadContent { get; set; } = new(false);
-
+    /// <summary>
+    /// The Authorization header value to send with the request.
+    /// </summary>
+    /// <example>Bearer {some-access-token}</example>
     [Input(
-        Options = new[] { "", "JsonElement", "Plain Text" },
-        UIHint = InputUIHints.Dropdown
+        Description = "The Authorization header value to send with the request. For example: Bearer {some-access-token}",
+        Category = "Security"
     )]
-    public Input<string?> ResponseContentParserName { get; set; } = default!;
+    public Input<string?> Authorization { get; set; } = default!;
 
-    [Input(Category = "Security")] public Input<Dictionary<string, string>?> RequestHeaders { get; set; } = new(new HttpRequestHeaders());
+    /// <summary>
+    /// The headers to send along with the request.
+    /// </summary>
+    [Input(Description = "The headers to send along with the request.", Category = "Advanced")]
+    public Input<HttpRequestHeaders?> RequestHeaders { get; set; } = new(new HttpRequestHeaders());
 
-    [Output] public Output<object>? ResponseContent { get; set; }
+    /// <summary>
+    /// The parsed content, if any.
+    /// </summary>
+    [Output(Description = "The parsed content, if any.")]
+    public Output<object?> ParsedContent { get; set; } = default!;
 
-    [Output] public Output<HttpResponseModel>? Response { get; set; }
-
+    /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var request = PrepareRequest(context);
-
         var httpClientFactory = context.GetRequiredService<IHttpClientFactory>();
         var httpClient = httpClientFactory.CreateClient(nameof(SendHttpRequest));
-
         var cancellationToken = context.CancellationToken;
         var response = await httpClient.SendAsync(request, cancellationToken);
+        var parsedContent = await ParseContentAsync(context, response.Content);
 
-        var allHeaders =
-            response.Headers.ToDictionary(x => x.Key, x => x.Value.ToArray())
-                .Concat(response.Content.Headers.ToDictionary(x => x.Key, x => x.Value.ToArray()));
-
-        var responseModel = new HttpResponseModel(response.StatusCode, new Dictionary<string, string[]>())
-        {
-            StatusCode = response!.StatusCode,
-            Headers = new Dictionary<string, string[]>(allHeaders)
-        };
-
-        context.Set(Response, responseModel);
-
-        if (HasContent(response) && context.Get(ReadContent))
-        {
-            var parsers = context.GetServices<IHttpResponseContentReader>();
-            var formatter = SelectContentParser(parsers.ToList(), context.Get(ResponseContentParserName), context.Get(ContentType));
-            context.Set(ResponseContent, await formatter.ReadAsync(response, context, cancellationToken));
-        }
+        context.Set(Result, response);
+        context.Set(ParsedContent, parsedContent);
     }
 
-    private IHttpResponseContentReader SelectContentParser(List<IHttpResponseContentReader> parsers, string? parserName, string? contentType)
+    private async Task<object?> ParseContentAsync(ActivityExecutionContext context, HttpContent httpContent)
     {
-        if (string.IsNullOrWhiteSpace(parserName))
-        {
-            var simpleContentType = contentType?.Split(';').First() ?? "";
-            var parser = parsers.OrderByDescending(x => x.Priority).ToList();
+        if (!HasContent(httpContent))
+            return null;
 
-            return parser.FirstOrDefault(x => x.GetSupportsContentType(simpleContentType)) ?? parser.Last();
-        }
-        else
-        {
-            var parser = parsers.FirstOrDefault(x => x.Name == parserName);
-
-            if (parser == null)
-                throw new InvalidOperationException("The specified parser does not exist");
-
-            return parser;
-        }
+        var cancellationToken = context.CancellationToken;
+        var targetType = ParsedContent.GetTargetType(context);
+        var contentStream = await httpContent.ReadAsStreamAsync(cancellationToken);
+        var contentType = httpContent.Headers.ContentType?.MediaType!;
+        
+        return await context.ParseContentAsync(contentStream, contentType, targetType, cancellationToken);
     }
-
-    private bool HasContent(HttpResponseMessage response) => response?.Content != null && response.Content.Headers.ContentLength > 0;
+    
+    private static bool HasContent(HttpContent httpContent) => httpContent.Headers.ContentLength > 0;
 
     private HttpRequestMessage PrepareRequest(ActivityExecutionContext context)
     {
-        var method = context.Get(Method)!;
-        var request = new HttpRequestMessage(new HttpMethod(method), context.Get(Url));
+        var method = Method.TryGet(context) ?? "GET";
+        var url = Url.Get(context);
+        var request = new HttpRequestMessage(new HttpMethod(method), url);
+        var headers = RequestHeaders.TryGet(context) ?? new HttpRequestHeaders();
+        var authorization = Authorization.TryGet(context);
 
-        var headers = context.Get(RequestHeaders)!;
-        var requestHeaders = new HeaderDictionary(headers.ToDictionary(x => x.Key, x => new StringValues(x.Value.Split(','))));
+        if (!string.IsNullOrWhiteSpace(authorization))
+            request.Headers.Authorization = AuthenticationHeaderValue.Parse(authorization);
 
-        if (!string.IsNullOrWhiteSpace(context.Get(Authorization)))
-            request.Headers.Authorization = AuthenticationHeaderValue.Parse(context.Get(Authorization));
-
-        foreach (var header in requestHeaders)
+        foreach (var header in headers)
             request.Headers.Add(header.Key, header.Value.AsEnumerable());
 
-        var contentType = context.Get(ContentType)!;
-        var contentWriters = context.GetServices<IHttpRequestContentWriter>();
+        var contentType = ContentType.TryGet(context);
+        var contentWriters = context.GetServices<IHttpContentWriter>();
         var contentWriter = SelectContentWriter(contentType, contentWriters);
-        request.Content = contentWriter.GetContent(contentType, context.Get(Content));
+        var content = Content.TryGet(context);
+        request.Content = contentWriter.GetContent(content, contentType);
 
         return request;
     }
 
-    private IHttpRequestContentWriter SelectContentWriter(string contentType, IEnumerable<IHttpRequestContentWriter> requestContentWriters) => 
-        string.IsNullOrWhiteSpace(contentType) ? new StringHttpRequestContentWriter() : requestContentWriters.First(w => w.SupportsContentType(contentType));
+    private IHttpContentWriter SelectContentWriter(string? contentType, IEnumerable<IHttpContentWriter> requestContentWriters) =>
+        string.IsNullOrWhiteSpace(contentType) ? new StringHttpContentWriter() : requestContentWriters.First(w => w.SupportsContentType(contentType));
 }

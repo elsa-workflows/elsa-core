@@ -43,7 +43,8 @@ export class WorkflowDefinitionEditor {
     this.pluginRegistry = Container.get(PluginRegistry);
     this.activityNameFormatter = Container.get(ActivityNameFormatter);
     this.portProviderRegistry = Container.get(PortProviderRegistry);
-    this.emitActivityChangedDebounced = debounce(this.emitActivityChanged, 100);
+    //this.emitActivityChangedDebounced = debounce(this.emitActivityChanged, 100);
+    this.emitActivityChangedDebounced = e => this.emitActivityChanged(e.activity, e.propertyName);
     this.saveChangesDebounced = debounce(this.saveChanges, 1000);
     this.workflowDefinitionApi = Container.get(WorkflowDefinitionsApi);
   }
