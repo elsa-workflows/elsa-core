@@ -14,7 +14,7 @@ public class EFCoreBookmarkStore : IBookmarkStore
     public EFCoreBookmarkStore(Store<RuntimeElsaDbContext, StoredBookmark> store) => _store = store;
 
     /// <inheritdoc />
-    public async ValueTask SaveAsync(StoredBookmark record, CancellationToken cancellationToken = default) => await _store.SaveAsync(record, s => s.Hash, cancellationToken);
+    public async ValueTask SaveAsync(StoredBookmark record, CancellationToken cancellationToken = default) => await _store.SaveAsync(record, s => s.BookmarkId, cancellationToken);
 
     /// <inheritdoc />
     public async ValueTask<IEnumerable<StoredBookmark>> FindByWorkflowInstanceAsync(string workflowInstanceId, CancellationToken cancellationToken = default) =>
