@@ -5,13 +5,9 @@ using Elsa.Http.Models;
 using Elsa.Http.Options;
 using Elsa.Http.Services;
 using Elsa.Workflows.Core.Helpers;
-using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Runtime.Services;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Extensions;
-using Microsoft.AspNetCore.Routing;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Http.Middleware;

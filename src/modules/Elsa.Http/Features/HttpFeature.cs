@@ -6,7 +6,6 @@ using Elsa.Features.Services;
 using Elsa.Http.ContentWriters;
 using Elsa.Http.Handlers;
 using Elsa.Http.Implementations;
-using Elsa.Http.Models;
 using Elsa.Http.Options;
 using Elsa.Http.Parsers;
 using Elsa.Http.Services;

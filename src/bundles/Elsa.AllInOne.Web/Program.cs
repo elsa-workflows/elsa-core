@@ -1,4 +1,3 @@
-using Elsa.AllInOne.Web.Models;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.Extensions;
 using Elsa.Identity;
@@ -34,12 +33,7 @@ services
             identity.TokenOptions = identityTokenOptions;
         })
         .UseDefaultAuthentication()
-        .UseWorkflowManagement(management => management
-            .UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString))
-            .AddVariableType(typeof(ApiModel<>), "Demo")
-            .AddVariableType(typeof(UserModel), "Demo")
-            .AddVariableType(typeof(ApiModel<UserModel>), "Demo")
-        )
+        .UseWorkflowManagement(management => management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
         .UseWorkflowRuntime(runtime =>
         {
             runtime.UseDefaultRuntime(dr => dr.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)));
