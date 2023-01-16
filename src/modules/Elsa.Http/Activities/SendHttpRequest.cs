@@ -87,7 +87,7 @@ public class SendHttpRequest : Activity<HttpResponse>
         var targetType = GetTargetType(context);
         var contentStream = await httpContent.ReadAsStreamAsync(cancellationToken);
         var contentType = httpContent.Headers.ContentType?.MediaType!;
-        var parsers = context.GetServices<IHttpContentParser>().OrderBy(x => x.Priority).ToList();
+        var parsers = context.GetServices<IHttpContentParser>().OrderByDescending(x => x.Priority).ToList();
         var contentParser = parsers.First(x => x.GetSupportsContentType(contentType));
 
         return await contentParser.ReadAsync(contentStream, targetType, cancellationToken);

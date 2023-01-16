@@ -7,7 +7,7 @@ public interface IHttpContentParser
 {
     /// <summary>
     /// The priority of the parser as compared to other parsers.
-    /// The lower the number, the higher priority.
+    /// The higher the number, the higher priority.
     /// </summary>
     int Priority { get; }
     
