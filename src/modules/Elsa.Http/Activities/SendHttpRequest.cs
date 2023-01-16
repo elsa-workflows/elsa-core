@@ -1,7 +1,6 @@
 using System.Net.Http.Headers;
 using Elsa.Extensions;
 using Elsa.Http.ContentWriters;
-using Elsa.Http.Services;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Models;
@@ -10,7 +9,10 @@ using HttpRequestHeaders = Elsa.Http.Models.HttpRequestHeaders;
 
 namespace Elsa.Http;
 
-[Activity("Elsa", "HTTP", "Send Http Request.", DisplayName = "HTTP Request", Kind = ActivityKind.Task)]
+/// <summary>
+/// Send an HTTP request.
+/// </summary>
+[Activity("Elsa", "HTTP", "Send an HTTP request.", DisplayName = "HTTP Request", Kind = ActivityKind.Task)]
 public class SendHttpRequest : Activity<HttpResponse>
 {
     [Input] public Input<Uri?> Url { get; set; } = default!;
@@ -59,9 +61,9 @@ public class SendHttpRequest : Activity<HttpResponse>
     public Input<HttpRequestHeaders?> RequestHeaders { get; set; } = new(new HttpRequestHeaders());
 
     /// <summary>
-    /// The parsed content, if any. The type of the value is whatever was specified via the <see cref="TargetType"/> property.
+    /// The parsed content, if any.
     /// </summary>
-    [Output(Description = "The parsed content, if any. The type of the value is whatever was specified via the TargetType property.")]
+    [Output(Description = "The parsed content, if any.")]
     public Output<object?> ParsedContent { get; set; } = default!;
 
     /// <inheritdoc />
@@ -84,28 +86,13 @@ public class SendHttpRequest : Activity<HttpResponse>
             return null;
 
         var cancellationToken = context.CancellationToken;
-        var targetType = GetTargetType(context);
+        var targetType = ParsedContent.GetTargetType(context);
         var contentStream = await httpContent.ReadAsStreamAsync(cancellationToken);
         var contentType = httpContent.Headers.ContentType?.MediaType!;
-        var parsers = context.GetServices<IHttpContentParser>().OrderByDescending(x => x.Priority).ToList();
-        var contentParser = parsers.First(x => x.GetSupportsContentType(contentType));
-
-        return await contentParser.ReadAsync(contentStream, targetType, cancellationToken);
+        
+        return await context.ParseContentAsync(contentStream, contentType, targetType, cancellationToken);
     }
     
-    // Get the target type of the response based on the specified variable type to capture the content, if any.
-    private Type? GetTargetType(ActivityExecutionContext context)
-    {
-        var parsedContentBlock = ParsedContent.MemoryBlockReference() is Variable parsedContentVariable
-            ? context.WorkflowExecutionContext.MemoryRegister.TryGetBlock(parsedContentVariable.Id, out var block)
-                ? block
-                : default
-            : default;
-
-        var parsedContentVariableType = (parsedContentBlock?.Metadata as VariableBlockMetadata)?.Variable.GetType();
-        return parsedContentVariableType?.GenericTypeArguments.FirstOrDefault();
-    }
-
     private static bool HasContent(HttpContent httpContent) => httpContent.Headers.ContentLength > 0;
 
     private HttpRequestMessage PrepareRequest(ActivityExecutionContext context)

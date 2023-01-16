@@ -10,6 +10,8 @@ using Elsa.Http.Models;
 using Elsa.Http.Options;
 using Elsa.Http.Parsers;
 using Elsa.Http.Services;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Http.Features;
@@ -25,15 +27,15 @@ public class HttpFeature : FeatureBase
     /// A delegate to configure <see cref="HttpActivityOptions"/>.
     /// </summary>
     public Action<HttpActivityOptions>? ConfigureHttpOptions { get; set; }
-    
+
     public Func<IServiceProvider, IHttpEndpointAuthorizationHandler> HttpEndpointAuthorizationHandlerFactory { get; set; } = ActivatorUtilities.GetServiceOrCreateInstance<AllowAnonymousHttpEndpointAuthorizationHandler>;
     public Func<IServiceProvider, IHttpEndpointWorkflowFaultHandler> HttpEndpointWorkflowFaultHandlerFactory { get; set; } = ActivatorUtilities.GetServiceOrCreateInstance<DefaultHttpEndpointWorkflowFaultHandler>;
-    
+
     /// <summary>
     /// A delegate to configure the <see cref="HttpClient"/> used when by the <see cref="SendHttpRequest"/> activity.
     /// </summary>
     public Action<IServiceProvider, HttpClient> HttpClient { get; set; } = (_, _) => { };
-    
+
     /// <summary>
     /// A delegate to configure the <see cref="HttpClientBuilder"/> for <see cref="HttpClient"/>.
     /// </summary>
@@ -42,12 +44,17 @@ public class HttpFeature : FeatureBase
     /// <inheritdoc />
     public override void Configure()
     {
-        Module.UseWorkflowManagement(management => management.AddVariableTypes(new[]
+        Module.UseWorkflowManagement(management =>
         {
-            typeof(HttpRequestHeaders),
-            typeof(HttpRequestModel),
-            typeof(HttpResponseModel)
-        }, "HTTP").AddActivitiesFrom<HttpFeature>());
+            management.AddVariableTypes(new[]
+            {
+                typeof(RouteData),
+                typeof(HttpRequest),
+                typeof(HttpResponse)
+            }, "HTTP");
+            
+            management.AddActivitiesFrom<HttpFeature>();
+        });
     }
 
     /// <inheritdoc />
