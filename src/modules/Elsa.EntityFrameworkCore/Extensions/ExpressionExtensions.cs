@@ -5,16 +5,6 @@ namespace Elsa.EntityFrameworkCore.Extensions;
 
 public static class ExpressionExtensions
 {
-    public static PropertyInfo GetPropertyInfo<TType, TReturn>(this Expression<Func<TType, TReturn>> propertyExpression)
-    {
-        LambdaExpression lambda = propertyExpression;
-        var memberExpression = lambda.Body is UnaryExpression expression
-            ? (MemberExpression) expression.Operand
-            : (MemberExpression) lambda.Body;
-
-        return (PropertyInfo) memberExpression.Member;
-    }
-    
     public static Expression<Func<TEntity, bool>> BuildContainsExpression<TEntity>(this Func<TEntity, object> uniqueFieldDelegate, IEnumerable<TEntity> entities, PropertyInfo property) where TEntity : class
     {
         var list = entities.Select(uniqueFieldDelegate.Invoke);

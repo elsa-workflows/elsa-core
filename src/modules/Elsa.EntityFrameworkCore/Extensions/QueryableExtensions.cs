@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
+using Elsa.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.EntityFrameworkCore.Extensions;
@@ -17,7 +18,7 @@ public static class QueryableExtensions
     {
         uniqueFieldExpression = ResolveUniqueFieldExpression(uniqueFieldExpression);
         var uniqueFieldDelegate = uniqueFieldExpression.Compile();
-        var propertyInfo = uniqueFieldExpression.GetPropertyInfo();
+        var propertyInfo = uniqueFieldExpression.GetProperty()!;
 
         var set = dbContext.Set<TEntity>();
         var lambda = uniqueFieldDelegate.BuildContainsExpression(entities, propertyInfo);
@@ -25,15 +26,15 @@ public static class QueryableExtensions
         var existingEntities = await set.AsNoTracking().Where(lambda).ToListAsync(cancellationToken);
         var entitiesToUpdate = entities.Where(e => existingEntities.Any(ex => uniqueFieldDelegate.Invoke(ex).ToString() == uniqueFieldDelegate.Invoke(e).ToString())).ToList();
         var entitiesToInsert = entities.Except(entitiesToUpdate).ToList();
-        
-        if(entitiesToUpdate.Any())
+
+        if (entitiesToUpdate.Any())
             set.UpdateRange(entitiesToUpdate);
-        if(entitiesToInsert.Any())
+        if (entitiesToInsert.Any())
             await set.AddRangeAsync(entitiesToInsert, cancellationToken);
-        
+
         await dbContext.SaveChangesAsync(cancellationToken);
     }
-    
+
     /// <summary>
     /// Returns a paged result from the specified query.
     /// </summary>
@@ -57,19 +58,20 @@ public static class QueryableExtensions
         var results = await queryable.ToListAsync();
         return Page.Of(results, count);
     }
-    
+
     private static Expression<Func<TEntity, object>> ResolveUniqueFieldExpression<TEntity>(Expression<Func<TEntity, object>>? uniqueFieldExpression) where TEntity : class
     {
         if (uniqueFieldExpression != null) return uniqueFieldExpression;
         try
         {
-            uniqueFieldExpression = e => ((Entity) (object) e).Id;
+            uniqueFieldExpression = e => ((Entity)(object)e).Id;
         }
         catch (Exception)
         {
             throw new Exception(
-                "Unique field expression must be passed via BulkUpsertAsync if default object to upsert is not type of Entity.");
+                "Unique field expression must be passed via BulkUpsertAsync if default object to upsert is not of type Entity.");
         }
+
         return uniqueFieldExpression;
     }
 }
