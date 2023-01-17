@@ -18,6 +18,5 @@ public record WorkflowFaultState(ExceptionState? Exception, string Message, stri
     [JsonConstructor]
     public WorkflowFaultState() : this(default, default!, default)
     {
-        var y = "";
     }
 }
