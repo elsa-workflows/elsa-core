@@ -1,4 +1,4 @@
-﻿using System.Collections;
+﻿using System.Text.Json.Serialization;
 
 // ReSharper disable NotAccessedPositionalProperty.Global
 
@@ -7,17 +7,17 @@ namespace Elsa.Workflows.Core.State;
 /// <summary>
 /// A simplified, serializable model representing an exception.
 /// </summary>
-public record ExceptionState(Type Type, string Message, string? StackTrace, ExceptionState? InnerException = default)
+public record ExceptionState(Type Type, string Message, string? StackTrace, ExceptionState? InnerException)
 {
-    // /// <summary>
-    // /// Constructor
-    // /// </summary>
-    // [JsonConstructor]
-    // public ExceptionState() : this(default!, default!, default, default!, default)
-    // {
-    //     
-    // }
-    //
+    /// <summary>
+    /// Constructor
+    /// </summary>
+    [JsonConstructor]
+    public ExceptionState() : this(default!, default!, default, default)
+    {
+        
+    }
+    
     /// <summary>
     /// Creates a new <see cref="ExceptionState"/> from the specified exception. 
     /// </summary>
