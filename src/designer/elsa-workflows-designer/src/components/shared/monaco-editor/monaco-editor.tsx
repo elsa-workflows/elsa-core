@@ -39,15 +39,6 @@ export class MonacoEditor {
     this.monaco.editor.setModelLanguage(model, this.language);
   }
 
-  @Watch('value')
-  valueChangeHandler(newValue: string) {
-    if (!this.editor)
-      return;
-
-    const model = this.editor.getModel();
-    //model.setValue(newValue || '');
-  }
-
   @Method()
   async setJavaScriptLibs(libs: Array<MonacoLib>) {
     const monaco = this.monaco;
