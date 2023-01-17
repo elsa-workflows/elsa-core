@@ -1,3 +1,4 @@
+using Elsa.Expressions.Extensions;
 using Elsa.Expressions.Services;
 
 namespace Elsa.Expressions.Implementations;
@@ -41,4 +42,7 @@ public class WellKnownTypeRegistry : IWellKnownTypeRegistry
 
     /// <inheritdoc />
     public bool TryGetType(string alias, out Type type) => _aliasTypeDictionary.TryGetValue(alias, out type!);
+
+    /// <inheritdoc />
+    public IEnumerable<Type> ListTypes() => _typeAliasDictionary.Keys;
 }

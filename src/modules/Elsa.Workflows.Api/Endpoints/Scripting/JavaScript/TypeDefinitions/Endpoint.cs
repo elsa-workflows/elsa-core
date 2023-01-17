@@ -6,7 +6,7 @@ using Elsa.Workflows.Runtime.Services;
 using FastEndpoints;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.Api.Endpoints.JavaScript.Intellisense;
+namespace Elsa.Workflows.Api.Endpoints.Scripting.JavaScript.TypeDefinitions;
 
 /// <summary>
 /// Returns a TypeScript definition that is used by the Monaco editor to display intellisense for JavaScript expressions.
@@ -27,7 +27,7 @@ public class Get : Endpoint<Request>
     /// <inheritdoc />
     public override void Configure()
     {
-        Post("javascript/intellisense/{workflowDefinitionId}");
+        Post("scripting/javascript/type-definitions/{workflowDefinitionId}");
     }
 
     /// <inheritdoc />
@@ -42,8 +42,8 @@ public class Get : Endpoint<Request>
         }
 
         var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
-        var intellisenseContext = new IntellisenseContext(workflow, request.ActivityTypeName, request.PropertyName);
-        var typeDefinitions = await _typeDefinitionService.GenerateTypeDefinitionsAsync(intellisenseContext, cancellationToken);
+        var intellisenseContext = new TypeDefinitionContext(workflow, request.ActivityTypeName, request.PropertyName, cancellationToken);
+        var typeDefinitions = await _typeDefinitionService.GenerateTypeDefinitionsAsync(intellisenseContext);
         var fileName = $"elsa.{request.WorkflowDefinitionId}.d.ts";
         var data = Encoding.UTF8.GetBytes(typeDefinitions);
 

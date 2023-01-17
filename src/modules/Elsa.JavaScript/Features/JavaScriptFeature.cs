@@ -38,6 +38,13 @@ public class JavaScriptFeature : FeatureBase
             .AddExpressionHandler<JavaScriptExpressionHandler, JavaScriptExpression>()
             ;
 
+        Services
+            .AddSingleton<ITypeDefinitionService, TypeDefinitionService>()
+            .AddSingleton<ITypeDescriber, TypeDescriber>()
+            .AddSingleton<ITypeDefinitionDocumentRenderer, TypeDefinitionDocumentRenderer>()
+            .AddSingleton<ITypeAliasRegistry, TypeAliasRegistry>()
+            .AddSingleton<IFunctionDefinitionProvider, CommonFunctionsProvider>();
+
         Module.UseWorkflowManagement(management => management.AddActivitiesFrom<JavaScriptFeature>());
     }
 }
