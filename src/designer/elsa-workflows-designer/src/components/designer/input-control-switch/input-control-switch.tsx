@@ -20,12 +20,11 @@ export interface ExpressionChangedArs {
 export class InputControlSwitch {
   private contextMenu: HTMLElement;
   private monacoEditor: HTMLElsaMonacoEditorElement;
-  private defaultSyntaxValue: string;
   private contextMenuWidget: HTMLElement;
   private readonly onExpressionChangedDebounced: (e: MonacoValueChangedArgs) => void;
 
   constructor() {
-    this.onExpressionChangedDebounced = debounce(this.onExpressionChanged, 1000);
+    this.onExpressionChangedDebounced = debounce(this.onExpressionChanged, 10);
   }
 
   @Prop() label: string;
