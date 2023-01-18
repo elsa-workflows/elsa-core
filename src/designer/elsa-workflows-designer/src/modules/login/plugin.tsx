@@ -64,14 +64,13 @@ export class LoginPlugin implements Plugin {
       },
 
       async onResponseError(error) {
-        if (error.response.status !== 401 || error.response.config.hasRetriedRequest)
+        if (error.response.status !== 401 || error.response.config.hasRetriedRequest) 
           return;
 
         const authContext = Container.get(AuthContext);
         const loginResponse = await loginApi.refreshAccessToken(authContext.getRefreshToken());
-
         if (loginResponse.isAuthenticated) {
-
+          
           await authContext.signinTokens(loginResponse.accessToken, loginResponse.refreshToken, true);
 
           const t = await service.http({
@@ -84,6 +83,9 @@ export class LoginPlugin implements Plugin {
           });
 
           return t;
+        }
+        else {
+          authContext.signOut();
         }
       }
     });

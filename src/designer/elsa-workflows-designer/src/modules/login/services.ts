@@ -19,7 +19,7 @@ export class LoginApi {
   }
 
   async refreshAccessToken(refreshToken: string): Promise<LoginResponse> {
-        const config: AxiosRequestConfig = {
+    const config: AxiosRequestConfig = {
       baseURL: this.serverSettings.baseAddress,
       headers: {
         Authorization: `Bearer ${refreshToken}`
@@ -27,7 +27,9 @@ export class LoginApi {
     };
 
     const httpClient = axios.create(config);
-    const response = await httpClient.post<LoginResponse>(`identity/refresh-token`);
-    return response.data;
+
+    return await httpClient.post<LoginResponse>(`identity/refresh-token`)
+      .then(response => response.data)
+      .catch(error => error.response)
   }
 }
