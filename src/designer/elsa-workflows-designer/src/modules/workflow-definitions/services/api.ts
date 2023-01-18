@@ -2,16 +2,16 @@ import {getVersionOptionsString, serializeQueryString} from '../../../utils';
 import {WorkflowDefinition, WorkflowDefinitionSummary, WorkflowOptions} from "../models/entities";
 import {Activity, PagedList, Variable, VersionedEntity, VersionOptions} from "../../../models";
 import {Service} from "typedi";
-import {ElsaApiClientProvider} from "../../../services";
 import {AxiosResponse} from "axios";
 import { removeGuidsFromPortNames, addGuidsToPortNames } from '../../../utils/graph';
 import { cloneDeep } from '@antv/x6/lib/util/object/object';
+import {ElsaClientProvider} from "../../../services";
 
 @Service()
 export class WorkflowDefinitionsApi {
-  private provider: ElsaApiClientProvider;
+  private provider: ElsaClientProvider;
 
-  constructor(provider: ElsaApiClientProvider) {
+  constructor(provider: ElsaClientProvider) {
     this.provider = provider;
   }
 

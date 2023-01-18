@@ -1,9 +1,9 @@
 import {Component, Prop, h} from '@stencil/core';
 import {SyntaxNames, Variable} from "../../models";
-import {ActivityInputContext} from "../../services/node-input-driver";
+import {ActivityInputContext} from "../../services/activity-input-driver";
 import {getPropertyValue} from "../../utils";
 import {FormEntry} from "../shared/forms/form-entry";
-import WorkflowDefinitionTunnel from "../../state/workflow-definition-state";
+import WorkflowDefinitionTunnel from "../../modules/workflow-definitions/state";
 
 @Component({
   tag: 'elsa-variable-picker-input',

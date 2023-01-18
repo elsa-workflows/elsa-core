@@ -3,11 +3,11 @@ import {
   RuntimeSelectListProviderSettings,
   SelectList,
 } from "../models";
-import {ElsaApiClientProvider} from "../services";
 import {Container} from "typedi";
+import {ElsaClientProvider} from "../services";
 
 async function fetchRuntimeItems(options: RuntimeSelectListProviderSettings): Promise<SelectList> {
-  const elsaClientProvider = Container.get(ElsaApiClientProvider);
+  const elsaClientProvider = Container.get(ElsaClientProvider);
   const elsaClient = await elsaClientProvider.getElsaClient();
   return await elsaClient.designer.runtimeSelectListApi.get(options.runtimeSelectListProviderType, options.context || {});
 }

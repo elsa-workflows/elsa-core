@@ -33,7 +33,7 @@ public class Get : Endpoint<Request>
     /// <inheritdoc />
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
-        var workflowDefinition = await _workflowDefinitionService.FindAsync(request.WorkflowDefinitionId, VersionOptions.Latest, cancellationToken);
+        var workflowDefinition = await _workflowDefinitionService.FindAsync(request.ContainerId, VersionOptions.Latest, cancellationToken);
 
         if (workflowDefinition == null)
         {
@@ -44,16 +44,16 @@ public class Get : Endpoint<Request>
         var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
         var intellisenseContext = new TypeDefinitionContext(workflow, request.ActivityTypeName, request.PropertyName, cancellationToken);
         var typeDefinitions = await _typeDefinitionService.GenerateTypeDefinitionsAsync(intellisenseContext);
-        var fileName = $"elsa.{request.WorkflowDefinitionId}.d.ts";
+        var fileName = $"elsa.{request.ContainerId}.d.ts";
         var data = Encoding.UTF8.GetBytes(typeDefinitions);
 
         await SendBytesAsync(data, fileName, "application/x-typescript", cancellation: cancellationToken);
     }
 }
 
-public record Request(string WorkflowDefinitionId, string? ActivityTypeName, string? PropertyName)
+public record Request(string ContainerType, string ContainerId, string? ActivityTypeName, string? PropertyName)
 {
-    public Request() : this(default!, default, default)
+    public Request() : this(default!, default!, default, default)
     {
     }
 }

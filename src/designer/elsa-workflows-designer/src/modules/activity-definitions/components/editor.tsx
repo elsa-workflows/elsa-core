@@ -153,6 +153,8 @@ export class Editor {
   private renderSelectedObject = () => {
     if (!!this.selectedActivity)
       return <elsa-activity-properties-editor
+        containerType="activity-definition"
+        containerId={this.activityDefinition.definitionId}
         activity={this.selectedActivity}
         variables={this.activityDefinitionState.variables}
         onActivityUpdated={e => this.onActivityUpdated(e)}/>;

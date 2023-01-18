@@ -1,13 +1,13 @@
 import {List} from "../../models";
 import {Label} from "./models";
-import {ElsaApiClientProvider} from "../../services";
+import {ElsaClientProvider} from "../../services";
 import {Service} from "typedi";
 
 @Service()
 export class LabelsApi {
-  private provider: ElsaApiClientProvider;
+  private provider: ElsaClientProvider;
 
-  constructor(provider: ElsaApiClientProvider) {
+  constructor(provider: ElsaClientProvider) {
     this.provider = provider;
   }
 
@@ -38,9 +38,9 @@ export class LabelsApi {
 
 @Service()
 export class WorkflowDefinitionLabelsApi {
-  private provider: ElsaApiClientProvider;
+  private provider: ElsaClientProvider;
 
-  constructor(provider: ElsaApiClientProvider) {
+  constructor(provider: ElsaClientProvider) {
     this.provider = provider;
   }
 

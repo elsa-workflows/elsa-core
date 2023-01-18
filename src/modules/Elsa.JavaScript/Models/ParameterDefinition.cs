@@ -6,17 +6,17 @@ namespace Elsa.JavaScript.Models;
 public class ParameterDefinition
 {
     /// <summary>
-    /// The name of the field.
+    /// The name of the parameter.
     /// </summary>
     public string Name { get; set; } = default!;
     
     /// <summary>
-    /// The type name of the field.
+    /// The type name of the parameter.
     /// </summary>
-    public Type Type { get; set; } = default!;
+    public string Type { get; set; } = default!;
     
     /// <summary>
-    /// A value indicating whether the field is optional or not.
+    /// A value indicating whether the parameter is optional or not.
     /// </summary>
     public bool IsOptional { get; set; }
 }

@@ -1,14 +1,14 @@
 import {OrderBy, OrderDirection, PagedList, VersionOptions, WorkflowExecutionLogRecord, WorkflowInstance, WorkflowInstanceSummary, WorkflowStatus, WorkflowSubStatus} from "../../../models";
 import {getVersionOptionsString, serializeQueryString} from "../../../utils";
-import {ElsaApiClientProvider} from "../../../services";
 import {Service} from "typedi";
+import {ElsaClientProvider} from "../../../services";
 
 @Service()
 export class WorkflowInstancesApi {
 
-  private provider: ElsaApiClientProvider;
+  private provider: ElsaClientProvider;
 
-  constructor(provider: ElsaApiClientProvider) {
+  constructor(provider: ElsaClientProvider) {
     this.provider = provider;
   }
 

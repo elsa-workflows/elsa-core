@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import {Container, Service} from "typedi";
-import {ElsaApiClientProvider, EventBus, ServerSettings} from "../../services";
+import {ElsaClientProvider, EventBus, ServerSettings} from "../../services";
 import {LoginResponse} from "./models";
 import axios, {AxiosError, AxiosRequestConfig} from "axios";
 import {EventTypes} from "../../models";
@@ -8,7 +8,7 @@ import {EventTypes} from "../../models";
 @Service()
 export class LoginApi {
 
-  constructor(private provider: ElsaApiClientProvider, private serverSettings: ServerSettings) {
+  constructor(private provider: ElsaClientProvider, private serverSettings: ServerSettings) {
     this.provider = provider;
   }
 

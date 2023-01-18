@@ -1,5 +1,6 @@
 using System.Reflection;
 using Elsa.Extensions;
+using Elsa.JavaScript.Extensions;
 using Elsa.JavaScript.Models;
 using Elsa.JavaScript.Services;
 
@@ -8,6 +9,13 @@ namespace Elsa.JavaScript.Implementations;
 /// <inheritdoc />
 public class TypeDescriber : ITypeDescriber
 {
+    private readonly ITypeAliasRegistry _typeAliasRegistry;
+
+    public TypeDescriber(ITypeAliasRegistry typeAliasRegistry)
+    {
+        _typeAliasRegistry = typeAliasRegistry;
+    }
+    
     /// <inheritdoc />
     public TypeDefinition DescribeType(Type type)
     {
@@ -15,7 +23,7 @@ public class TypeDescriber : ITypeDescriber
         {
             DeclarationKeyword = GetDeclarationKeyword(type),
             Name = type.Name,
-            Fields = GetFieldDefinitions(type).ToList(),
+            Properties = GetPropertyDefinitions(type).ToList(),
             Methods = GetMethodDefinitions(type).ToList()
         };
 
@@ -32,12 +40,12 @@ public class TypeDescriber : ITypeDescriber
             {
                 Name = method.Name,
                 Parameters = GetMethodParameters(method).ToList(),
-                ReturnType = method.ReturnType.Name
+                ReturnType = _typeAliasRegistry.GetAliasOrDefault(method.ReturnType)
             };
         }
     }
 
-    private static IEnumerable<ParameterDefinition> GetMethodParameters(MethodInfo method)
+    private IEnumerable<ParameterDefinition> GetMethodParameters(MethodInfo method)
     {
         var parameters = method.GetParameters();
 
@@ -46,22 +54,22 @@ public class TypeDescriber : ITypeDescriber
             yield return new ParameterDefinition
             {
                 Name = parameter.Name!,
-                Type = parameter.ParameterType,
+                Type = _typeAliasRegistry.GetAliasOrDefault(parameter.ParameterType),
                 IsOptional = parameter.IsOptional
             };
         }
     }
 
-    private static IEnumerable<FieldDefinition> GetFieldDefinitions(Type type)
+    private IEnumerable<PropertyDefinition> GetPropertyDefinitions(Type type)
     {
         var properties = type.GetProperties();
 
         foreach (var property in properties)
         {
-            yield return new FieldDefinition
+            yield return new PropertyDefinition
             {
                 Name = property.Name,
-                Type = property.PropertyType.Name,
+                Type = _typeAliasRegistry.GetAliasOrDefault(property.PropertyType),
                 IsOptional = property.PropertyType.IsNullableType()
             };
         }

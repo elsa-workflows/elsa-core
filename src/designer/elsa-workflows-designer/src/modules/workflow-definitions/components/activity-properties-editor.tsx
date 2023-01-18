@@ -4,12 +4,12 @@ import {v4 as uuid} from 'uuid';
 import {Activity, ActivityDescriptor, ActivityInput, ActivityKind, ActivityOutput, Expression, InputDescriptor, OutputDescriptor, PropertyDescriptor, RenderActivityInputContext, RenderActivityPropsContext, TabChangedArgs, TabDefinition, Variable} from '../../../models';
 import {InputDriverRegistry} from "../../../services";
 import {Container} from "typedi";
-import {ActivityInputContext} from "../../../services/node-input-driver";
+import {ActivityInputContext} from "../../../services/activity-input-driver";
 import {CheckboxFormEntry, FormEntry} from "../../../components/shared/forms/form-entry";
 import {isNullOrWhitespace} from "../../../utils";
 import descriptorsStore from "../../../data/descriptors-store";
 import {ActivityUpdatedArgs, DeleteActivityRequestedArgs} from "../models/ui";
-import {WorkflowDefinition} from "../models/entities";
+import InputControlSwitchContextState from "../../../components/designer/input-control-switch/state";
 
 @Component({
   tag: 'elsa-activity-properties-editor',
@@ -23,7 +23,8 @@ export class ActivityPropertiesEditor {
     this.inputDriverRegistry = Container.get(InputDriverRegistry);
   }
 
-  @Prop() workflowDefinition: WorkflowDefinition;
+  @Prop() containerType: string;
+  @Prop() containerId: string;
   @Prop() activity?: Activity;
   @Prop() variables: Array<Variable> = [];
 
@@ -59,15 +60,23 @@ export class ActivityPropertiesEditor {
 
     const renderInputPropertyContexts: Array<RenderActivityInputContext> = activityDescriptor.inputs.map(inputDescriptor => {
       const renderInputContext: ActivityInputContext = {
-        node: activity,
-        nodeDescriptor: activityDescriptor,
+        activity: activity,
+        activityDescriptor: activityDescriptor,
         inputDescriptor,
         notifyInputChanged: () => onInputChanged(inputDescriptor),
         inputChanged: (v, s) => this.onInputPropertyEditorChanged(inputDescriptor, v, s)
       };
 
       const driver = driverRegistry.get(renderInputContext);
-      const control = driver?.renderInput(renderInputContext);
+      const containerType = this.containerType;
+      const containerId = this.containerId;
+      const activityType = activityDescriptor.typeName;
+      const propertyName = inputDescriptor.name;
+
+      const control =
+        <InputControlSwitchContextState.Provider state={{containerType, containerId, activityType, propertyName}}>
+          {driver?.renderInput(renderInputContext)}
+        </InputControlSwitchContextState.Provider>;
 
       return {
         inputContext: renderInputContext,
@@ -86,6 +95,7 @@ export class ActivityPropertiesEditor {
   render() {
     const {activity, activityDescriptor} = this.renderContext;
     const isTask = activityDescriptor.kind == ActivityKind.Task;
+    const activityType = activityDescriptor.typeName;
 
     const commonTab: TabDefinition = {
       displayText: 'General',

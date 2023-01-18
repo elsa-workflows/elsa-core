@@ -1,6 +1,6 @@
 import {h} from "@stencil/core";
 import {createProviderConsumer} from "@stencil/state-tunnel";
-import {WorkflowDefinition} from "../modules/workflow-definitions/models/entities";
+import {WorkflowDefinition} from "./models/entities";
 
 export interface WorkflowDefinitionState {
   workflowDefinition: WorkflowDefinition;

@@ -8,7 +8,7 @@ export interface MonacoValueChangedArgs {
 }
 
 export interface MonacoLib {
-  content: string;
+  content?: string;
   filePath?: string;
 }
 
@@ -45,11 +45,10 @@ export class MonacoEditor {
     const editor = this.editor;
 
     const defaultLib: MonacoLib = {
-      content: "<reference lib=\"es5\" />",
       filePath: "lib.d.ts"
     };
 
-    libs = [...libs];
+    libs = [defaultLib, ...libs];
     monaco.languages.typescript.javascriptDefaults.setExtraLibs(libs);
 
     for (const lib of libs) {

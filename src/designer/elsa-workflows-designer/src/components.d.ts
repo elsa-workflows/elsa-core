@@ -8,14 +8,14 @@ import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
 import { ActivityDefinition, ActivityDefinitionPropsUpdatedArgs, ActivityDefinitionSummary, ActivityDefinitionUpdatedArgs } from "./modules/activity-definitions/models";
 import { ActivityDriverRegistry } from "./services";
 import { Activity, ActivityDeletedArgs, ActivitySelectedArgs, ChildActivitySelectedArgs, ContainerSelectedArgs, EditChildActivityArgs, GraphUpdatedArgs, IntellisenseContext, SelectListItem, TabChangedArgs, TabDefinition, Variable, WorkflowInstance, WorkflowInstanceSummary, WorkflowUpdatedArgs } from "./models";
-import { WorkflowDefinition, WorkflowDefinitionSummary } from "./modules/workflow-definitions/models/entities";
 import { ActivityUpdatedArgs, DeleteActivityRequestedArgs, Widget, WorkflowDefinitionPropsUpdatedArgs, WorkflowDefinitionUpdatedArgs } from "./modules/workflow-definitions/models/ui";
 import { PublishClickedArgs } from "./modules/activity-definitions/components/publish-button";
 import { NotificationType } from "./modules/notifications/models";
 import { Button } from "./components/shared/button-group/models";
-import { ActivityInputContext } from "./services/node-input-driver";
+import { ActivityInputContext } from "./services/activity-input-driver";
 import { ContextMenuAnchorPoint, ContextMenuItem } from "./components/shared/context-menu/models";
 import { DropdownButtonItem, DropdownButtonOrigin } from "./components/shared/dropdown-button/models";
+import { WorkflowDefinition, WorkflowDefinitionSummary } from "./modules/workflow-definitions/models/entities";
 import { Graph } from "@antv/x6";
 import { AddActivityArgs, FlowchartPathItem, LayoutDirection, RenameActivityArgs, UpdateActivityArgs } from "./modules/flowchart/models";
 import { OutNode } from "@antv/layout";
@@ -54,10 +54,11 @@ export namespace Components {
     }
     interface ElsaActivityPropertiesEditor {
         "activity"?: Activity;
+        "containerId": string;
+        "containerType": string;
         "hide": () => Promise<void>;
         "show": () => Promise<void>;
         "variables": Array<Variable>;
-        "workflowDefinition": WorkflowDefinition;
     }
     interface ElsaActivityPublishButton {
         "publishing": boolean;
@@ -135,8 +136,11 @@ export namespace Components {
     interface ElsaHomePage {
     }
     interface ElsaInputControlSwitch {
+        "activityTypeName": string;
         "codeEditorHeight": string;
         "codeEditorSingleLineMode": boolean;
+        "containerId": string;
+        "containerType": string;
         "context"?: IntellisenseContext;
         "defaultSyntax": string;
         "expression"?: string;
@@ -145,6 +149,7 @@ export namespace Components {
         "hint": string;
         "isReadOnly"?: boolean;
         "label": string;
+        "propertyName": string;
         "supportedSyntaxes": Array<string>;
         "syntax"?: string;
     }
@@ -879,10 +884,11 @@ declare namespace LocalJSX {
     }
     interface ElsaActivityPropertiesEditor {
         "activity"?: Activity;
+        "containerId"?: string;
+        "containerType"?: string;
         "onActivityUpdated"?: (event: ElsaActivityPropertiesEditorCustomEvent<ActivityUpdatedArgs>) => void;
         "onDeleteActivityRequested"?: (event: ElsaActivityPropertiesEditorCustomEvent<DeleteActivityRequestedArgs>) => void;
         "variables"?: Array<Variable>;
-        "workflowDefinition"?: WorkflowDefinition;
     }
     interface ElsaActivityPublishButton {
         "onExportClicked"?: (event: ElsaActivityPublishButtonCustomEvent<any>) => void;
@@ -962,8 +968,11 @@ declare namespace LocalJSX {
     interface ElsaHomePage {
     }
     interface ElsaInputControlSwitch {
+        "activityTypeName"?: string;
         "codeEditorHeight"?: string;
         "codeEditorSingleLineMode"?: boolean;
+        "containerId"?: string;
+        "containerType"?: string;
         "context"?: IntellisenseContext;
         "defaultSyntax"?: string;
         "expression"?: string;
@@ -974,6 +983,7 @@ declare namespace LocalJSX {
         "label"?: string;
         "onExpressionChanged"?: (event: ElsaInputControlSwitchCustomEvent<ExpressionChangedArs>) => void;
         "onSyntaxChanged"?: (event: ElsaInputControlSwitchCustomEvent<string>) => void;
+        "propertyName"?: string;
         "supportedSyntaxes"?: Array<string>;
         "syntax"?: string;
     }

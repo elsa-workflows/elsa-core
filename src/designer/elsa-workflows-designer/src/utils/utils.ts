@@ -1,7 +1,7 @@
 import moment from 'moment';
 import _, {camelCase} from 'lodash';
 import {ActivityInput, VersionOptions} from '../models';
-import {ActivityInputContext} from '../services/node-input-driver';
+import {ActivityInputContext} from '../services/activity-input-driver';
 
 export interface Hash<TValue> {
   [key: string]: TValue;
@@ -71,12 +71,12 @@ export const getInputPropertyName = (inputContext: ActivityInputContext) => {
 
 export const getInputPropertyValue = (inputContext: ActivityInputContext): ActivityInput => {
   const propName = getInputPropertyName(inputContext);
-  return inputContext.node[propName] as ActivityInput;
+  return inputContext.activity[propName] as ActivityInput;
 };
 
 export const getPropertyValue = (inputContext: ActivityInputContext): any => {
   const propName = getInputPropertyName(inputContext);
-  return inputContext.node[propName] as any
+  return inputContext.activity[propName] as any
 };
 
 export const stripActivityNameSpace = (name: string): string => {

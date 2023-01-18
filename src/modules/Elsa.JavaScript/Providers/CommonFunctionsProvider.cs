@@ -21,12 +21,12 @@ public class CommonFunctionsProvider : IFunctionDefinitionProvider
                     new ParameterDefinition
                     {
                         Name = "name",
-                        Type = typeof(string)
+                        Type = "string"
                     },
                     new ParameterDefinition
                     {
                         Name = "value",
-                        Type = typeof(object)
+                        Type = "any"
                     }
                 }
             }

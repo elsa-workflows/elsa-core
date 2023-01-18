@@ -1,14 +1,14 @@
 import 'reflect-metadata';
 import {Container, Service} from "typedi";
-import {ElsaApiClientProvider} from "./api-client/api-client";
 import descriptorsStore from "../data/descriptors-store";
+import {ElsaClientProvider} from "./api-client/elsa-client";
 
 @Service()
 export class ActivityDescriptorManager {
-  private readonly elsaClientProvider: ElsaApiClientProvider;
+  private readonly elsaClientProvider: ElsaClientProvider;
 
   constructor() {
-    this.elsaClientProvider = Container.get(ElsaApiClientProvider);
+    this.elsaClientProvider = Container.get(ElsaClientProvider);
   }
 
   async refresh(): Promise<void> {

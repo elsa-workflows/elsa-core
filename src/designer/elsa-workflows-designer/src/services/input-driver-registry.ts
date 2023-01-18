@@ -1,18 +1,18 @@
 import _ from 'lodash';
 import {Service} from 'typedi';
-import {NodeInputDriver, ActivityInputContext} from './node-input-driver';
+import {ActivityInputDriver, ActivityInputContext} from './activity-input-driver';
 import {DefaultInputDriver} from "../drivers/input/default-input-driver";
 
 @Service()
 export class InputDriverRegistry {
-  private drivers: Array<NodeInputDriver> = [new DefaultInputDriver()];
+  private drivers: Array<ActivityInputDriver> = [new DefaultInputDriver()];
 
-  public add(driver: NodeInputDriver) {
-    const drivers: Array<NodeInputDriver> = [...this.drivers, driver]
+  public add(driver: ActivityInputDriver) {
+    const drivers: Array<ActivityInputDriver> = [...this.drivers, driver]
     this.drivers = _.orderBy(drivers, x => x.priority, 'desc');
   }
 
-  public get(context: ActivityInputContext): NodeInputDriver {
+  public get(context: ActivityInputContext): ActivityInputDriver {
     return this.drivers.find(x => x.supportsInput(context));
   }
 }

@@ -1,11 +1,11 @@
-import {NodeInputDriver, ActivityInputContext} from "../../services/node-input-driver";
+import {ActivityInputDriver, ActivityInputContext} from "../../services/activity-input-driver";
 import {Container} from "typedi";
 import {InputControlRegistry} from "../../services/input-control-registry";
 import {h} from "@stencil/core";
 import {FormEntry} from "../../components/shared/forms/form-entry";
 
 // A standard input driver that determines the UI to be displayed based on the UI hint of the activity input property.
-export class DefaultInputDriver implements NodeInputDriver {
+export class DefaultInputDriver implements ActivityInputDriver {
   private inputControlRegistry: InputControlRegistry;
 
   constructor() {

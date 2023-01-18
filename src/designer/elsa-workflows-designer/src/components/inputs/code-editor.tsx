@@ -1,6 +1,6 @@
 import {Component, h, Prop} from '@stencil/core';
 import {EditorHeight, LiteralExpression, SyntaxNames} from "../../models";
-import {ActivityInputContext} from "../../services/node-input-driver";
+import {ActivityInputContext} from "../../services/activity-input-driver";
 import {getInputPropertyValue} from "../../utils";
 import {MonacoValueChangedArgs} from "../shared/monaco-editor/monaco-editor";
 import {ExpressionChangedArs} from "../designer/input-control-switch/input-control-switch";

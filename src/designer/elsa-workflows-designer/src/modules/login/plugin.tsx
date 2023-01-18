@@ -3,7 +3,7 @@ import {h} from "@stencil/core";
 import {Service as MiddlewareService} from 'axios-middleware';
 import {EventTypes, Plugin} from "../../models";
 import {Container, Service} from "typedi";
-import {StudioService, AuthContext, EventBus, ElsaClient, ElsaApiClientProvider} from "../../services";
+import {StudioService, AuthContext, EventBus, ElsaClient, ElsaClientProvider} from "../../services";
 import descriptorsStore from '../../data/descriptors-store';
 import {SignedInArgs} from "./models";
 import {AxiosInstance} from "axios";
@@ -32,7 +32,7 @@ export class LoginPlugin implements Plugin {
   }
 
   private loadDescriptors = async (): Promise<void> => {
-    const elsaClientProvider = Container.get(ElsaApiClientProvider);
+    const elsaClientProvider = Container.get(ElsaClientProvider);
     this.elsaClient = await elsaClientProvider.getElsaClient();
 
     const activityDescriptors = await this.elsaClient.descriptors.activities.list();

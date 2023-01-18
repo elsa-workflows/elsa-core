@@ -1,4 +1,5 @@
 using System.Text;
+using Elsa.JavaScript.Extensions;
 using Elsa.JavaScript.Models;
 using Elsa.JavaScript.Services;
 
@@ -7,36 +8,38 @@ namespace Elsa.JavaScript.Implementations;
 /// <inheritdoc />
 public class TypeDefinitionDocumentRenderer : ITypeDefinitionDocumentRenderer
 {
+    /// <inheritdoc />
     public string Render(TypeDefinitionsDocument document)
     {
         var stringBuilder = new StringBuilder();
 
-        foreach (var functionDefinition in document.Functions) 
+        foreach (var functionDefinition in document.Functions)
             Render(functionDefinition, stringBuilder);
-        
-        foreach (var typeDefinition in document.Types) 
+
+        foreach (var typeDefinition in document.Types)
             Render(typeDefinition, stringBuilder);
 
         return stringBuilder.ToString();
     }
-    
+
     private void Render(FunctionDefinition functionDefinition, StringBuilder output)
     {
-        // TODO.
+        string RenderParameter(ParameterDefinition parameter) => $"{parameter.Name}{(parameter.IsOptional ? "?" : "")}: {parameter.Type}";
+        string RenderParameters(IEnumerable<ParameterDefinition> parameters) => string.Join(", ", parameters.Select(RenderParameter));
+        
+        var returnType = functionDefinition.ReturnType != null ? $": {functionDefinition.ReturnType}" : "";
+        output.AppendLine($"export function {functionDefinition.Name}({RenderParameters(functionDefinition.Parameters)}){returnType};");
     }
-    
+
     private void Render(TypeDefinition typeDefinition, StringBuilder output)
     {
         output.AppendLine($"export {typeDefinition.DeclarationKeyword} {typeDefinition.Name} {{");
 
-        foreach (var member in typeDefinition.Fields) 
-            Render(member, output);
+        foreach (var property in typeDefinition.Properties)
+            Render(property, output);
 
         output.AppendLine("}");
     }
 
-    private void Render(FieldDefinition field, StringBuilder output)
-    {
-        output.AppendLine($"{field.Type}{(field.IsOptional ? "?" : "")} {field.Name}");
-    }
+    private void Render(PropertyDefinition property, StringBuilder output) => output.AppendLine($"{property.Name}{(property.IsOptional ? "?" : "")} {property.Type}");
 }

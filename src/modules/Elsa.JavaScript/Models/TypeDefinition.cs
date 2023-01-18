@@ -19,7 +19,7 @@ public sealed class TypeDefinition
     /// <summary>
     /// A list of fields.
     /// </summary>
-    public ICollection<FieldDefinition> Fields { get; set; } = new List<FieldDefinition>();
+    public ICollection<PropertyDefinition> Properties { get; set; } = new List<PropertyDefinition>();
     
     /// <summary>
     /// A list of methods.

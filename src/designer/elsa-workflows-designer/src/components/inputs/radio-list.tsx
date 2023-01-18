@@ -1,6 +1,6 @@
 import {Component, h, Prop, State} from '@stencil/core';
 import {LiteralExpression, SelectList, SyntaxNames} from "../../models";
-import {ActivityInputContext} from "../../services/node-input-driver";
+import {ActivityInputContext} from "../../services/activity-input-driver";
 import {getSelectListItems, getInputPropertyValue} from "../../utils";
 import {ExpressionChangedArs} from "../designer/input-control-switch/input-control-switch";
 
