@@ -1,7 +1,12 @@
 using System.Net;
+using System.Net.Http.Headers;
+using Elsa.Extensions;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Management.Models;
 using Microsoft.AspNetCore.Http;
+using HttpRequestHeaders = Elsa.Http.Models.HttpRequestHeaders;
+using HttpResponseHeaders = Elsa.Http.Models.HttpResponseHeaders;
 
 namespace Elsa.Http;
 
@@ -23,6 +28,22 @@ public class WriteHttpResponse : Activity
     [Input(Description = "The content to write back.")]
     public Input<string?> Content { get; set; } = new("");
 
+    /// <summary>
+    /// The content type to use when returning the response.
+    /// </summary>
+    [Input(
+        Description = "The content type to use when returning the response.",
+        Options = new[] { "", "text/plain", "text/html", "application/json", "application/xml", "application/x-www-form-urlencoded" },
+        UIHint = InputUIHints.Dropdown
+    )]
+    public Input<string?> ContentType { get; set; } = default!;
+    
+    /// <summary>
+    /// The headers to return along with the response.
+    /// </summary>
+    [Input(Description = "The headers to return along with the response.", Category = "Advanced")]
+    public Input<HttpResponseHeaders?> ResponseHeaders { get; set; } = new(new HttpResponseHeaders());
+
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
@@ -39,11 +60,14 @@ public class WriteHttpResponse : Activity
         }
 
         var response = httpContext.Response;
-
         response.StatusCode = (int)context.Get(StatusCode);
+        
+        var headers = ResponseHeaders.TryGet(context) ?? new HttpResponseHeaders();
+        foreach (var header in headers)
+            response.Headers.Add(header.Key, header.Value);
 
+        response.ContentType = ContentType.TryGet(context);
         var content = context.Get(Content);
-
         if (content != null)
             await response.WriteAsync(content, context.CancellationToken);
     }
