@@ -804,6 +804,8 @@ export class ElsaWorkflowDesigner {
 
           if (activityContext) {
             activityContext.expanded = !activityContext.expanded;
+            
+            this.safeRender();
           }
       });
 
