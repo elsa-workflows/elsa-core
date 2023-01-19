@@ -41,5 +41,5 @@ public class TypeDefinitionDocumentRenderer : ITypeDefinitionDocumentRenderer
         output.AppendLine("}");
     }
 
-    private void Render(PropertyDefinition property, StringBuilder output) => output.AppendLine($"{property.Name}{(property.IsOptional ? "?" : "")} {property.Type}");
+    private void Render(PropertyDefinition property, StringBuilder output) => output.AppendLine($"{property.Name}{(property.IsOptional ? "?" : "")}: {property.Type}");
 }

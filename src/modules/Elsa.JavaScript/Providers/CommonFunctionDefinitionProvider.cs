@@ -1,3 +1,4 @@
+using Elsa.Extensions;
 using Elsa.JavaScript.Abstractions;
 using Elsa.JavaScript.Extensions;
 using Elsa.JavaScript.Models;
@@ -44,9 +45,8 @@ internal class CommonFunctionDefinitionProvider : FunctionDefinitionProvider
         foreach (var variable in context.Variables)
         {
             var pascalName = variable.Name.Pascalize();
-            var variableType = variable.GetType();
-            var type = variableType.GenericTypeArguments.Any() ? variableType.GetGenericArguments().First() : default;
-            var typeAlias = type != null ? _typeAliasRegistry.TryGetAlias(type, out var alias) ? alias : "any" : "any";
+            var variableType = variable.GetVariableType();
+            var typeAlias = _typeAliasRegistry.TryGetAlias(variableType, out var alias) ? alias : "any";
 
             // get{Variable}.
             yield return CreateFunctionDefinition(builder => builder.Name($"get{pascalName}").ReturnType(typeAlias));

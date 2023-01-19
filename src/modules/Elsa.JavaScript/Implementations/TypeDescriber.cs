@@ -11,6 +11,9 @@ public class TypeDescriber : ITypeDescriber
 {
     private readonly ITypeAliasRegistry _typeAliasRegistry;
 
+    /// <summary>
+    /// Constructor.
+    /// </summary>
     public TypeDescriber(ITypeAliasRegistry typeAliasRegistry)
     {
         _typeAliasRegistry = typeAliasRegistry;
@@ -40,7 +43,7 @@ public class TypeDescriber : ITypeDescriber
             {
                 Name = method.Name,
                 Parameters = GetMethodParameters(method).ToList(),
-                ReturnType = _typeAliasRegistry.GetAliasOrDefault(method.ReturnType)
+                ReturnType = _typeAliasRegistry.TryGetAlias(method.ReturnType, out var alias) ? alias : "any"
             };
         }
     }
@@ -54,7 +57,7 @@ public class TypeDescriber : ITypeDescriber
             yield return new ParameterDefinition
             {
                 Name = parameter.Name!,
-                Type = _typeAliasRegistry.GetAliasOrDefault(parameter.ParameterType),
+                Type = _typeAliasRegistry.TryGetAlias(parameter.ParameterType, out var alias) ? alias : "any",
                 IsOptional = parameter.IsOptional
             };
         }
@@ -69,7 +72,7 @@ public class TypeDescriber : ITypeDescriber
             yield return new PropertyDefinition
             {
                 Name = property.Name,
-                Type = _typeAliasRegistry.GetAliasOrDefault(property.PropertyType),
+                Type = _typeAliasRegistry.TryGetAlias(property.PropertyType, out var alias) ? alias : "any",
                 IsOptional = property.PropertyType.IsNullableType()
             };
         }

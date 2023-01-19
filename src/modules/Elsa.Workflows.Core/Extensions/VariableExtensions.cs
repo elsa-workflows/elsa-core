@@ -53,4 +53,13 @@ public static class VariableExtensions
         var genericType = variable.GetType().GenericTypeArguments.FirstOrDefault();
         return genericType == null ? value : value.ConvertTo(genericType)!;
     }
+
+    /// <summary>
+    /// Return the type of the variable.
+    /// </summary>
+    public static Type GetVariableType(this Variable variable)
+    {
+        var variableType = variable.GetType();
+        return variableType.GenericTypeArguments.Any() ? variableType.GetGenericArguments().First() : typeof(object);
+    }
 }
