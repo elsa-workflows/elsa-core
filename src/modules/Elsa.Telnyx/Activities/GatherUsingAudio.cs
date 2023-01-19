@@ -21,7 +21,7 @@ namespace Elsa.Telnyx.Activities;
 [Activity(Constants.Namespace, "Play an audio file on the call until the required DTMF signals are gathered to build interactive menus.", Kind = ActivityKind.Task)]
 [FlowNode("Valid input", "Invalid input", "Disconnected")]
 [WebhookDriven(WebhookEventTypes.CallGatherEnded)]
-public class GatherUsingAudio : ActivityBase<CallGatherEndedPayload>, IBookmarksPersistedHandler
+public class GatherUsingAudio : Activity<CallGatherEndedPayload>, IBookmarksPersistedHandler
 {
     /// <inheritdoc />
     [JsonConstructor]

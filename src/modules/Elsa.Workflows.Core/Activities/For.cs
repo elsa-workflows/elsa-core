@@ -13,7 +13,7 @@ namespace Elsa.Workflows.Core.Activities;
 /// Iterate over a sequence of steps between a start and an end number.
 /// </summary>
 [Activity("Elsa", "Primitives", "Iterate over a sequence of steps between a start and an end number.")]
-public class For : ActivityBase
+public class For : Activity
 {
     private const string CurrentStepProperty = "CurrentStep";
 

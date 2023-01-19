@@ -22,7 +22,7 @@ namespace Elsa.Telnyx.Activities;
 [Activity(Constants.Namespace, "Convert text to speech and play it on the call until the required DTMF signals are gathered to build interactive menus.", Kind = ActivityKind.Task)]
 [FlowNode("Valid input", "Invalid input", "Disconnected")]
 [WebhookDriven(WebhookEventTypes.CallGatherEnded)]
-public class GatherUsingSpeak : ActivityBase<CallGatherEndedPayload>, IBookmarksPersistedHandler
+public class GatherUsingSpeak : Activity<CallGatherEndedPayload>, IBookmarksPersistedHandler
 {
     /// <inheritdoc />
     [JsonConstructor]

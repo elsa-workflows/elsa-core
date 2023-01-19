@@ -13,7 +13,7 @@ namespace Elsa.Workflows.Core.Activities.Flowchart.Activities;
 /// </summary>
 [FlowNode("True", "False")]
 [Activity("Elsa", "Flow", "Evaluate a Boolean condition to determine which path to execute next.")]
-public class FlowDecision : ActivityBase
+public class FlowDecision : Activity
 {
     /// <inheritdoc />
     public FlowDecision([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)

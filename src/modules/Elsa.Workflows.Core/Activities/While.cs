@@ -10,7 +10,7 @@ using Elsa.Workflows.Core.Services;
 namespace Elsa.Workflows.Core.Activities;
 
 [Activity("Elsa", "Primitives", "Execute an activity while a given condition evaluates to true.")]
-public class While : ActivityBase
+public class While : Activity
 {
     /// <summary>
     /// Creates a <see cref="While"/> activity that loops forever.

@@ -12,7 +12,7 @@ namespace Elsa.Workflows.Core.Activities.Flowchart.Activities;
 /// Merge multiple branches into a single branch of execution.
 /// </summary>
 [Activity("Elsa", "Flow", "Merge multiple branches into a single branch of execution.")]
-public class FlowJoin : ActivityBase, IJoinNode
+public class FlowJoin : Activity, IJoinNode
 {
     /// <inheritdoc />
     public FlowJoin([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)

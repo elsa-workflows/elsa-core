@@ -7,7 +7,7 @@ namespace Elsa.Workflows.Core.Models;
 /// A dynamically provided activity with custom properties.
 /// </summary>
 [Browsable(false)]
-public class DynamicActivity : Activity
+public class DynamicActivity : CodeActivity
 {
     public IDictionary<string, object?> Properties { get; set; } = new Dictionary<string, object?>();
     public ExecuteActivityDelegate ExecuteHandler { get; set; } = _ => ValueTask.CompletedTask;

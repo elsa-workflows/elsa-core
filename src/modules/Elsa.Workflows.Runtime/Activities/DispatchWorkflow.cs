@@ -14,7 +14,7 @@ namespace Elsa.Workflows.Runtime.Activities;
 /// </summary>
 [Activity("Elsa", "Primitives", "Create a new workflow instance of the specified workflow and dispatch it for execution.")]
 [PublicAPI]
-public class DispatchWorkflow : Activity
+public class DispatchWorkflow : CodeActivity
 {
     /// <summary>
     /// The definition ID of the workflow to dispatch. 

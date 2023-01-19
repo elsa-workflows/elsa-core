@@ -9,7 +9,7 @@ namespace Elsa.Workflows.Core.Activities;
 /// </summary>
 [Browsable(false)]
 [Activity("Elsa", "System", "A placeholder activity that will be used in case a workflow definition references an activity type that cannot be found.")]
-public class NotFoundActivity : Activity
+public class NotFoundActivity : CodeActivity
 {
     /// <inheritdoc />
     public NotFoundActivity()

@@ -66,7 +66,7 @@ public class StartRecording : StartRecordingBase
 /// </summary>
 [Activity(Constants.Namespace, "Start recording the call.", Kind = ActivityKind.Task)]
 [WebhookDriven(WebhookEventTypes.CallRecordingSaved)]
-public abstract class StartRecordingBase : ActivityBase<CallRecordingSavedPayload>
+public abstract class StartRecordingBase : Activity<CallRecordingSavedPayload>
 {
     /// <inheritdoc />
     protected StartRecordingBase(string? source = default, int? line = default) : base(source, line)

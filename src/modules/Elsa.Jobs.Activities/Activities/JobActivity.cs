@@ -8,7 +8,7 @@ namespace Elsa.Activities.Jobs.Activities;
 /// <summary>
 /// Executes a job of a given type, suspending execution of the workflow until the job finishes.
 /// </summary>
-public class JobActivity : ActivityBase
+public class JobActivity : Activity
 {
     public JobActivity()
     {

@@ -59,7 +59,7 @@ public class BridgeCalls : BridgeCallsBase
 /// Bridge two calls.
 /// </summary>
 [Activity(Constants.Namespace, "Bridge two calls.", Kind = ActivityKind.Task)]
-public abstract class BridgeCallsBase : ActivityBase<BridgedCallsOutput>, IBookmarksPersistedHandler
+public abstract class BridgeCallsBase : Activity<BridgedCallsOutput>, IBookmarksPersistedHandler
 {
     /// <inheritdoc />
     protected BridgeCallsBase(string? source = default, int? line = default) : base(source, line)

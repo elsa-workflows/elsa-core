@@ -16,7 +16,7 @@ namespace Elsa.Telnyx.Activities;
 /// </summary>
 [Activity(Constants.Namespace, "Stop recording the call.", Kind = ActivityKind.Task)]
 [FlowNode("Recording stopped", "Disconnected")]
-public class StopRecording : ActivityBase
+public class StopRecording : Activity
 {
     /// <inheritdoc />
     [JsonConstructor]

@@ -7,7 +7,7 @@ using IJavaScriptEvaluator = Elsa.JavaScript.Services.IJavaScriptEvaluator;
 namespace Elsa.JavaScript.Activities;
 
 [Activity("Elsa", "Scripting", "Executes JavaScript code")]
-public class RunJavaScript : Activity<object?>
+public class RunJavaScript : CodeActivity<object?>
 {
     [JsonConstructor]
     public RunJavaScript()

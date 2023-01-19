@@ -63,7 +63,7 @@ public class PlayAudio : PlayAudioBase
 [Activity(Constants.Namespace, "Play an audio file on the call.", Kind = ActivityKind.Task)]
 [FlowNode("Playback started", "Disconnected")]
 [WebhookDriven(WebhookEventTypes.CallPlaybackStarted)]
-public abstract class PlayAudioBase : ActivityBase, IBookmarksPersistedHandler
+public abstract class PlayAudioBase : Activity, IBookmarksPersistedHandler
 {
     /// <inheritdoc />
     protected PlayAudioBase([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)

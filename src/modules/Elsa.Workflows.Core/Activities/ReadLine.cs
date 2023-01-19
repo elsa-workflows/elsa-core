@@ -12,7 +12,7 @@ namespace Elsa.Workflows.Core.Activities;
 /// Read a line of text from the console.
 /// </summary>
 [Activity("Elsa", "Console", "Read a line of text from the console.")]
-public class ReadLine : Activity<string>
+public class ReadLine : CodeActivity<string>
 {
     /// <inheritdoc />
     [JsonConstructor]

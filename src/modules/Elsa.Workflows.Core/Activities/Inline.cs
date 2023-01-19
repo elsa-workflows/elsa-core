@@ -11,7 +11,7 @@ namespace Elsa.Workflows.Core.Activities;
 /// </summary>
 [Browsable(false)]
 [Activity("Elsa", "Primitives", "Evaluate a Boolean condition to determine which path to execute next.")]
-public class Inline : Activity
+public class Inline : CodeActivity
 {
     private readonly Func<ActivityExecutionContext, ValueTask> _activity;
 
@@ -91,7 +91,7 @@ public class Inline : Activity
 /// <summary>
 /// Represents an inline code activity that can be used to execute arbitrary .NET code from a workflow and return a value.
 /// </summary>
-public class Inline<T> : Activity<T>
+public class Inline<T> : CodeActivity<T>
 {
     private readonly Func<ActivityExecutionContext, ValueTask<T>> _activity;
 

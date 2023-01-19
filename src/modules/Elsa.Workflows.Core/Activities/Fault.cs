@@ -10,7 +10,7 @@ namespace Elsa.Workflows.Core.Activities;
 /// Faults the workflow.
 /// </summary>
 [Activity("Elsa", "Primitives", "Faults the workflow.")]
-public class Fault : ActivityBase
+public class Fault : Activity
 {
     /// <inheritdoc />
     [JsonConstructor]

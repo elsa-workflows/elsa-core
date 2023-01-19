@@ -13,7 +13,7 @@ namespace Elsa.Scheduling.Activities;
 /// Delay execution for the specified amount of time.
 /// </summary>
 [Activity( "Elsa", "Scheduling", "Delay execution for the specified amount of time.")]
-public class Delay : Activity
+public class Delay : CodeActivity
 {
     /// <inheritdoc />
     [JsonConstructor]

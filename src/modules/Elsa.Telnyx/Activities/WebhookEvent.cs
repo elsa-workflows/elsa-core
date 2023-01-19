@@ -16,7 +16,7 @@ namespace Elsa.Telnyx.Activities;
 /// </summary>
 [Activity("Telnyx", "Telnyx", "A Telnyx webhook event that executes when a webhook event is received.", Kind = ActivityKind.Trigger)]
 [Browsable(false)]
-public class WebhookEvent : ActivityBase<Payload>
+public class WebhookEvent : Activity<Payload>
 {
     /// <inheritdoc />
     [JsonConstructor]

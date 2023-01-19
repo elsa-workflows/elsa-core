@@ -9,7 +9,7 @@ namespace Elsa.Workflows.Core.Activities;
 /// Sets a property on the workflow execution context with the specified name value.
 /// </summary>
 [Activity("Elsa", "Primitives", "Set the name of the workflow instance to a specified value.")]
-public class SetName : Activity
+public class SetName : CodeActivity
 {
     /// <summary>
     /// The property key name used to store the workflow instance name.

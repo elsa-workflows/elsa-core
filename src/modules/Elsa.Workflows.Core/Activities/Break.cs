@@ -11,7 +11,7 @@ namespace Elsa.Workflows.Core.Activities;
 /// Break out of a loop.
 /// </summary>
 [Activity("Elsa", "Control Flow", "Break out of a loop.")]
-public class Break : Activity
+public class Break : CodeActivity
 {
     /// <inheritdoc />
     [JsonConstructor]

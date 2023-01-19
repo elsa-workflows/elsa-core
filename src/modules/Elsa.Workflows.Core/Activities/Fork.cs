@@ -12,7 +12,7 @@ namespace Elsa.Workflows.Core.Activities;
 /// Branch execution into multiple branches.
 /// </summary>
 [Activity("Elsa", "Control Flow", "Branch execution into multiple branches.")]
-public class Fork : ActivityBase
+public class Fork : Activity
 {
     /// <inheritdoc />
     [JsonConstructor]

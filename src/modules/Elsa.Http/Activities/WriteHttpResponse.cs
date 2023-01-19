@@ -14,7 +14,7 @@ namespace Elsa.Http;
 /// Write a response to the current HTTP response object.
 /// </summary>
 [Activity("Elsa", "HTTP", "Write a response to the current HTTP response object.", DisplayName = "HTTP Response")]
-public class WriteHttpResponse : Activity
+public class WriteHttpResponse : CodeActivity
 {
     /// <summary>
     /// The status code to return.

@@ -14,7 +14,7 @@ namespace Elsa.AzureServiceBus.Activities;
 /// </summary>
 [Activity("Elsa.AzureServiceBus.Send", "Azure Service Bus", "Send a message to a queue or topic")]
 [PublicAPI]
-public class SendMessage : Activity
+public class SendMessage : CodeActivity
 {
     /// <summary>
     /// The contents of the message to send.

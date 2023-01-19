@@ -23,7 +23,7 @@ namespace Elsa.Telnyx.Activities;
 /// </summary>
 [Activity(Constants.Namespace, "Dial a number or SIP URI.", Kind = ActivityKind.Task)]
 [WebhookDriven(WebhookEventTypes.CallAnswered, WebhookEventTypes.CallHangup, WebhookEventTypes.CallMachineGreetingEnded, WebhookEventTypes.CallMachinePremiumGreetingEnded)]
-public abstract class DialBase : ActivityBase
+public abstract class DialBase : Activity
 {
     /// <inheritdoc />
     protected DialBase(string? source = default, int? line = default) : base(source, line)

@@ -59,7 +59,7 @@ public class HangupCall : HangupCallBase
 /// Hang up the call.
 /// </summary>
 [Activity(Constants.Namespace, "Hang up the call.", Kind = ActivityKind.Task)]
-public abstract class HangupCallBase : ActivityBase
+public abstract class HangupCallBase : Activity
 {
     /// <inheritdoc />
     protected HangupCallBase([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)

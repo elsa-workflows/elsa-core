@@ -20,7 +20,7 @@ namespace Elsa.Telnyx.Activities;
 /// </summary>
 [Activity(Constants.Namespace, "Convert text to speech and play it back on the call.", Kind = ActivityKind.Task)]
 [WebhookDriven(WebhookEventTypes.CallSpeakEnded)]
-public abstract class SpeakTextBase : ActivityBase
+public abstract class SpeakTextBase : Activity
 {
     /// <inheritdoc />
     protected SpeakTextBase([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)

@@ -13,7 +13,7 @@ namespace Elsa.Workflows.Core.Activities;
 ///  Write a line of text to the console.
 /// </summary>
 [Activity("Elsa", "Console", "Write a line of text to the console.")]
-public class WriteLine : Activity
+public class WriteLine : CodeActivity
 {
     /// <inheritdoc />
     internal WriteLine([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)

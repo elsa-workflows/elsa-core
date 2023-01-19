@@ -9,7 +9,7 @@ namespace Elsa.Workflows.Core.Activities;
 /// Mark the workflow as finished.
 /// </summary>
 [Activity("Elsa", "Primitives", "Mark the workflow as finished.")]
-public class Finish : ActivityBase
+public class Finish : Activity
 {
     /// <inheritdoc />
     [JsonConstructor]

@@ -13,7 +13,7 @@ namespace Elsa.Workflows.Core.Activities;
 /// </summary>
 [Browsable(false)]
 [Activity("Elsa", "Primitives", "Assign a workflow variable a value.")]
-public class SetVariable<T> : Activity
+public class SetVariable<T> : CodeActivity
 {
     /// <inheritdoc />
     [JsonConstructor]
@@ -74,7 +74,7 @@ public class SetVariable<T> : Activity
 /// Assign a workflow variable a value.
 /// </summary>
 [Activity("Elsa", "Primitives", "Assign a workflow variable a value.")]
-public class SetVariable : Activity
+public class SetVariable : CodeActivity
 {
     /// <inheritdoc />
     public SetVariable([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)

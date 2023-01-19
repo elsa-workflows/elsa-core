@@ -14,7 +14,7 @@ namespace Elsa.MassTransit.Activities;
 /// A generic activity that publishes a message of a given type. Used by the <see cref="MassTransitActivityTypeProvider"/>.
 /// </summary>
 [Browsable(false)]
-public class PublishMessage : Activity
+public class PublishMessage : CodeActivity
 {
     /// <inheritdoc />
     [JsonConstructor]

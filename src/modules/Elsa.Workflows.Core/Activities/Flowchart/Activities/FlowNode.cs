@@ -10,7 +10,7 @@ namespace Elsa.Workflows.Core.Activities.Flowchart.Activities;
 /// A simple container that executes the specified activity.
 /// </summary>
 [Activity("Elsa", "Flow", "A simple container that executes the specified activity.")]
-public class FlowNode : ActivityBase
+public class FlowNode : Activity
 {
     /// <inheritdoc />
     public FlowNode([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)

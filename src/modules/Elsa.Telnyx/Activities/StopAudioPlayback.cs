@@ -56,7 +56,7 @@ public class StopAudioPlayback : StopAudioPlaybackBase
 /// Stop audio playback.
 /// </summary>
 [Activity(Constants.Namespace, Description = "Stop audio playback.", Kind = ActivityKind.Task)]
-public abstract class StopAudioPlaybackBase : ActivityBase
+public abstract class StopAudioPlaybackBase : Activity
 {
     /// <inheritdoc />
     protected StopAudioPlaybackBase(string? source = default, int? line = default) : base(source, line)

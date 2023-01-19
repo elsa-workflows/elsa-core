@@ -14,7 +14,7 @@ namespace Elsa.Workflows.Core.Activities;
 /// Signals the current composite activity to complete itself as a whole.
 /// </summary>
 [Activity("Elsa", "Primitives", "Signals the current composite activity to complete itself as a whole.")]
-public class Complete : Activity
+public class Complete : CodeActivity
 {
     /// <inheritdoc />
     [JsonConstructor]

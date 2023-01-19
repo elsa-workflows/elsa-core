@@ -13,7 +13,7 @@ namespace Elsa.Http;
 /// Send an HTTP request.
 /// </summary>
 [Activity("Elsa", "HTTP", "Send an HTTP request.", DisplayName = "HTTP Request", Kind = ActivityKind.Task)]
-public class SendHttpRequest : Activity<HttpResponse>
+public class SendHttpRequest : CodeActivity<HttpResponse>
 {
     [Input] public Input<Uri?> Url { get; set; } = default!;
 

@@ -5,7 +5,7 @@ namespace Elsa.Workflows.Core.Models;
 /// <summary>
 /// Represents an activity that acts as a workflow trigger.
 /// </summary>
-public abstract class Trigger : ActivityBase, ITrigger
+public abstract class Trigger : Activity, ITrigger
 {
     /// <inheritdoc />
     protected Trigger(string? source = default, int? line = default) : base(source, line)
@@ -39,7 +39,7 @@ public abstract class Trigger : ActivityBase, ITrigger
     protected virtual object GetTriggerPayload(TriggerIndexingContext context) => new();
 }
 
-public abstract class Trigger<TResult> : ActivityBase<TResult>, ITrigger
+public abstract class Trigger<TResult> : Activity<TResult>, ITrigger
 {
     protected Trigger(string? source = default, int? line = default) : base(source, line)
     {

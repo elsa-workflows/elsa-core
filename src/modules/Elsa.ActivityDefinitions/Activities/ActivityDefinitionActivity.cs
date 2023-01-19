@@ -8,7 +8,7 @@ namespace Elsa.ActivityDefinitions.Activities;
 /// <summary>
 /// Loads & executes an <see cref="ActivityDefinition"/>.
 /// </summary>
-public class ActivityDefinitionActivity : ActivityBase
+public class ActivityDefinitionActivity : Activity
 {
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)

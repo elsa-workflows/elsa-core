@@ -13,7 +13,7 @@ namespace Elsa.Telnyx.Activities;
 /// Returns information about the provided phone number.
 /// </summary>
 [Activity(Constants.Namespace, "Returns information about the provided phone number.", Kind = ActivityKind.Task)]
-public class LookupNumber : Activity<NumberLookupResponse>
+public class LookupNumber : CodeActivity<NumberLookupResponse>
 {
     /// <inheritdoc />
     [JsonConstructor]

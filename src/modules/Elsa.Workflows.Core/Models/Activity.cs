@@ -1,152 +1,178 @@
-using Elsa.Expressions.Models;
+using System.Diagnostics;
+using System.Text.Json.Serialization;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Behaviors;
+using Elsa.Workflows.Core.Helpers;
+using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Core.Models;
 
 /// <summary>
-/// Base class for custom activities with auto-complete behavior.
+/// Base class for custom activities.
 /// </summary>
-public abstract class Activity : ActivityBase
+[DebuggerDisplay("{Type} - {Id}")]
+public abstract class Activity : IActivity, ISignalHandler
 {
-    /// <inheritdoc />
-    protected Activity(string? source = default, int? line = default) : base(source, line)
+    private readonly ICollection<SignalHandlerRegistration> _signalHandlers = new List<SignalHandlerRegistration>();
+
+    /// <summary>
+    /// Constructor.
+    /// </summary>
+    protected Activity(string? source = default, int? line = default)
     {
-        Behaviors.Add<AutoCompleteBehavior>(this);
+        Source = source;
+        Line = line;
+        Type = ActivityTypeNameHelper.GenerateTypeName(GetType());
+        Version = 1;
+        Behaviors.Add<ExecutionLoggingBehavior>(this);
+        Behaviors.Add<ScheduledChildCallbackBehavior>(this);
     }
 
     /// <inheritdoc />
-    protected Activity(string activityType, int version = 1, string? source = default, int? line = default) : base(activityType, version, source, line)
+    protected Activity(string activityType, int version = 1, string? source = default, int? line = default) : this(source, line)
     {
         Type = activityType;
-    }
-}
-
-/// <summary>
-/// Base class for custom activities with auto-complete behavior that return a result.
-/// </summary>
-public abstract class ActivityWithResult : Activity
-{
-    /// <inheritdoc />
-    protected ActivityWithResult(string? source = default, int? line = default) : base(source, line)
-    {
-    }
-
-    /// <inheritdoc />
-    protected ActivityWithResult(string activityType, int version = 1, string? source = default, int? line = default) : base(activityType, version, source, line)
-    {
-    }
-
-    /// <inheritdoc />
-    protected ActivityWithResult(MemoryBlockReference? output, string? source = default, int? line = default) : base(source, line)
-    {
-        if (output != null) Result = new Output(output);
-    }
-
-    /// <inheritdoc />
-    protected ActivityWithResult(Output? output, string? source = default, int? line = default) : base(source, line)
-    {
-        Result = output;
+        Version = version;
     }
 
     /// <summary>
-    /// The result of the activity.
+    /// The unique ID of this activity within the <see cref="Workflow"/>.
     /// </summary>
-    public Output? Result { get; set; }
-}
+    public string Id { get; set; } = default!;
+    
+    /// <summary>
+    /// The technical type name.
+    /// </summary>
+    public string Type { get; set; }
+    
+    /// <summary>
+    /// The version number.
+    /// </summary>
+    public int Version { get; set; }
+    
+    /// <summary>
+    /// A flag indicating whether this activity can be used for starting a workflow.
+    /// Usually used for triggers, but also used to disambiguate between two or more starting activities and no starting activity was specified.
+    /// </summary>
+    public bool CanStartWorkflow { get; set; }
+    
+    
+    /// <summary>
+    /// A flag indicating if this activity should execute synchronously or asynchronously.
+    /// By default, activities with an <see cref="ActivityKind"/> of <see cref="ActivityKind.Action"/>, <see cref="ActivityKind.Task"/> or <see cref="ActivityKind.Trigger"/>
+    /// will execute synchronously, while activities of the <see cref="ActivityKind.Job"/> kind will execute asynchronously.
+    /// </summary>
+    public bool RunAsynchronously { get; set; }
+    
+    /// <summary>
+    /// A bag of properties that can be used by custom activities and other code such as middleware components to store additional values with the activity.
+    /// </summary>
+    public IDictionary<string, object> CustomProperties { get; set; } = new Dictionary<string, object>();
+    
+    /// <summary>
+    /// Automatically set to the current source file name when instantiating this activity inside of a workflow class or composite activity class.
+    /// </summary>
+    public string? Source { get; set; }
+    
+    /// <summary>
+    /// Automatically set to the current line of code when instantiating this activity inside of a workflow class or composite activity class.
+    /// </summary>
+    public int? Line { get; set; }
+    
+    /// <summary>
+    /// Stores metadata such as x and y coordinates when created via the designer.
+    /// </summary>
+    public IDictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
 
-/// <summary>
-/// Base class for custom activities that return a result.
-/// </summary>
-public abstract class ActivityBaseWithResult : ActivityBase
-{
-    /// <inheritdoc />
-    protected ActivityBaseWithResult(string? source = default, int? line = default) : base(source, line)
+    /// <summary>
+    /// A collection of reusable behaviors to add to this activity.
+    /// </summary>
+    [JsonIgnore]
+    public ICollection<IBehavior> Behaviors { get; } = new List<IBehavior>();
+
+    /// <summary>
+    /// Override this method to implement activity-specific logic.
+    /// </summary>
+    protected virtual ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-    }
-
-    /// <inheritdoc />
-    protected ActivityBaseWithResult(string activityType, int version = 1, string? source = default, int? line = default) : base(activityType, version, source, line)
-    {
-    }
-
-    /// <inheritdoc />
-    protected ActivityBaseWithResult(MemoryBlockReference? output, string? source = default, int? line = default) : this(source, line)
-    {
-        if (output != null) Result = new Output(output);
-    }
-
-    /// <inheritdoc />
-    protected ActivityBaseWithResult(Output? output, string? source = default, int? line = default) : this(source, line)
-    {
-        Result = output;
-    }
-
-    public Output? Result { get; set; }
-}
-
-/// <summary>
-/// Base class for custom activities with auto-complete behavior that return a result.
-/// </summary>
-public abstract class Activity<T> : Activity
-{
-    /// <inheritdoc />
-    protected Activity(string? source = default, int? line = default) : base(source, line)
-    {
+        Execute(context);
+        return ValueTask.CompletedTask;
     }
     
-    /// <inheritdoc />
-    protected Activity(string activityType, int version = 1, string? source = default, int? line = default) : base(activityType, version, source, line)
+    /// <summary>
+    /// Override this method to implement activity-specific logic.
+    /// </summary>
+    protected virtual void Execute(ActivityExecutionContext context)
     {
-    }
-
-    /// <inheritdoc />
-    protected Activity(MemoryBlockReference? output, string? source = default, int? line = default) : this(source, line)
-    {
-        if (output != null) Result = new Output<T>(output);
-    }
-
-    /// <inheritdoc />
-    protected Activity(Output<T>? output, string? source = default, int? line = default) : this(source, line)
-    {
-        Result = output;
     }
 
     /// <summary>
-    /// The result of the activity.
+    /// Override this method to handle any signals sent from downstream activities.
     /// </summary>
-    public Output<T>? Result { get; set; }
-}
-
-/// <summary>
-/// Base class for custom activities that return a result.
-/// </summary>
-public abstract class ActivityBase<T> : ActivityBase
-{
-    /// <inheritdoc />
-    protected ActivityBase(string? source = default, int? line = default) : base(source, line)
+    protected virtual ValueTask OnSignalReceivedAsync(object signal, SignalContext context)
     {
-    }
-
-    /// <inheritdoc />
-    protected ActivityBase(string activityType, int version = 1, string? source = default, int? line = default) : base(activityType, version, source, line)
-    {
-    }
-
-    /// <inheritdoc />
-    protected ActivityBase(MemoryBlockReference? output, string? source = default, int? line = default) : this(source, line)
-    {
-        if (output != null) Result = new Output<T>(output);
-    }
-
-    /// <inheritdoc />
-    protected ActivityBase(Output<T>? output, string? source = default, int? line = default) : this(source, line)
-    {
-        Result = output;
+        OnSignalReceived(signal, context);
+        return ValueTask.CompletedTask;
     }
 
     /// <summary>
-    /// The result of the activity.
+    /// Override this method to handle any signals sent from downstream activities.
     /// </summary>
-    public Output<T>? Result { get; set; }
+    protected virtual void OnSignalReceived(object signal, SignalContext context)
+    {
+    }
+
+    /// <summary>
+    /// Register a signal handler delegate.
+    /// </summary>
+    protected void OnSignalReceived(Type signalType, Func<object, SignalContext, ValueTask> handler) => _signalHandlers.Add(new SignalHandlerRegistration(signalType, handler));
+    
+    /// <summary>
+    /// Register a signal handler delegate.
+    /// </summary>
+    protected void OnSignalReceived<T>(Func<T, SignalContext, ValueTask> handler) => OnSignalReceived(typeof(T), (signal, context) => handler((T)signal, context));
+
+    /// <summary>
+    /// Register a signal handler delegate.
+    /// </summary>
+    protected void OnSignalReceived<T>(Action<T, SignalContext> handler)
+    {
+        OnSignalReceived<T>((signal, context) =>
+        {
+            handler(signal, context);
+            return ValueTask.CompletedTask;
+        });
+    }
+    
+    /// <summary>
+    /// Notify the workflow that this activity completed.
+    /// </summary>
+    protected async ValueTask CompleteAsync(ActivityExecutionContext context)
+    {
+        await context.CompleteActivityAsync();
+    }
+
+    async ValueTask IActivity.ExecuteAsync(ActivityExecutionContext context)
+    {
+        await ExecuteAsync(context);
+
+        // Invoke behaviors.
+        foreach (var behavior in Behaviors) await behavior.ExecuteAsync(context);
+    }
+
+    async ValueTask ISignalHandler.HandleSignalAsync(object signal, SignalContext context)
+    {
+        // Give derived activity a chance to do something with the signal.
+        await OnSignalReceivedAsync(signal, context);
+
+        // Invoke registered signal delegates for this particular type of signal.
+        var signalType = signal.GetType();
+        var handlers = _signalHandlers.Where(x => x.SignalType == signalType);
+
+        foreach (var registration in handlers)
+            await registration.Handler(signal, context);
+
+        // Invoke behaviors.
+        foreach (var behavior in Behaviors) await behavior.HandleSignalAsync(signal, context);
+    }
 }

@@ -63,7 +63,7 @@ public class AnswerCall : AnswerCallBase
 /// </summary>
 [Activity(Constants.Namespace, "Answer an incoming call. You must issue this command before executing subsequent commands on an incoming call.", Kind = ActivityKind.Task)]
 [WebhookDriven(WebhookEventTypes.CallAnswered)]
-public abstract class AnswerCallBase : ActivityBase<CallAnsweredPayload>, IBookmarksPersistedHandler
+public abstract class AnswerCallBase : Activity<CallAnsweredPayload>, IBookmarksPersistedHandler
 {
     /// <inheritdoc />
     protected AnswerCallBase(string? source = default, int? line = default) : base(source, line)

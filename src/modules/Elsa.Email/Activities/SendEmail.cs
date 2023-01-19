@@ -18,7 +18,7 @@ namespace Elsa.Email.Activities;
 /// Send an email message.
 /// </summary>
 [Activity("Email", "Send an email message.", Kind = ActivityKind.Task)]
-public class SendEmail : ActivityBase
+public class SendEmail : Activity
 {
     /// <summary>
     /// The sender's email address.

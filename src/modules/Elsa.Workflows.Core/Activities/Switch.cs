@@ -15,7 +15,7 @@ namespace Elsa.Workflows.Core.Activities;
 /// When a case evaluates to true, the associated activity is then scheduled for execution.
 /// </summary>
 [Activity("Elsa", "Control Flow", "Evaluate a set of case conditions and schedule the activity for a matching case.")]
-public class Switch : ActivityBase
+public class Switch : Activity
 {
     /// <inheritdoc />
     public Switch([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)

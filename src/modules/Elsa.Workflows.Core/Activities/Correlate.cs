@@ -6,7 +6,7 @@ using Elsa.Workflows.Core.Models;
 namespace Elsa.Workflows.Core.Activities;
 
 [Activity("Elsa", "Primitives", "Set the CorrelationId of the workflow to a given value.")]
-public class Correlate : Activity
+public class Correlate : CodeActivity
 {
     [JsonConstructor]
     public Correlate()

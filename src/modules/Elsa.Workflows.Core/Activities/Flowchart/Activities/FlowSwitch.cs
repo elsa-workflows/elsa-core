@@ -16,7 +16,7 @@ namespace Elsa.Workflows.Core.Activities.Flowchart.Activities;
 /// </summary>
 [FlowNode("Default")]
 [Activity("Elsa", "Flow", "Evaluate a set of case conditions and schedule the activity for a matching case.")]
-public class FlowSwitch : ActivityBase
+public class FlowSwitch : Activity
 {
     /// <inheritdoc />
     public FlowSwitch([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)

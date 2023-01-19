@@ -13,7 +13,7 @@ namespace Elsa.Workflows.Core.Activities;
 /// <summary>
 /// Represents a composite activity that has a single <see cref="Root"/> activity. Like a workflow, but without workflow-level properties.
 /// </summary>
-public abstract class Composite : ActivityBase, IVariableContainer
+public abstract class Composite : Activity, IVariableContainer
 {
     /// <inheritdoc />
     protected Composite(string? source = default, int? line = default) : base(source, line)

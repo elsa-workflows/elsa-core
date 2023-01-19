@@ -11,7 +11,7 @@ namespace Elsa.Workflows.Runtime.Activities;
 /// Faults the workflow.
 /// </summary>
 [Activity("Elsa", "Primitives", "Publishes an event.")]
-public class PublishEvent : ActivityBase
+public class PublishEvent : Activity
 {
     /// <inheritdoc />
     [JsonConstructor]

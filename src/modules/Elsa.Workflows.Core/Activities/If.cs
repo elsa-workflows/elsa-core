@@ -12,7 +12,7 @@ namespace Elsa.Workflows.Core.Activities;
 /// Evaluate a Boolean condition to determine which activity to execute next.
 /// </summary>
 [Activity("Elsa", "Control Flow", "Evaluate a Boolean condition to determine which activity to execute next.")]
-public class If : ActivityBase<bool>
+public class If : Activity<bool>
 {
     /// <inheritdoc />
     [JsonConstructor]
