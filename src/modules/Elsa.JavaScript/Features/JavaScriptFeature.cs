@@ -34,8 +34,17 @@ public class JavaScriptFeature : FeatureBase
             .AddSingleton<IExpressionSyntaxProvider, JavaScriptExpressionSyntaxProvider>()
             .AddSingleton<IJavaScriptEvaluator, JintJavaScriptEvaluator>()
             .AddSingleton<IActivityPropertyOptionsProvider, RunJavaScriptOptionsProvider>()
+            .AddSingleton<ITypeDefinitionService, TypeDefinitionService>()
             .AddExpressionHandler<JavaScriptExpressionHandler, JavaScriptExpression>()
             ;
+
+        Services
+            .AddSingleton<ITypeDefinitionService, TypeDefinitionService>()
+            .AddSingleton<ITypeDescriber, TypeDescriber>()
+            .AddSingleton<ITypeDefinitionDocumentRenderer, TypeDefinitionDocumentRenderer>()
+            .AddSingleton<ITypeAliasRegistry, TypeAliasRegistry>()
+            .AddSingleton<IFunctionDefinitionProvider, CommonFunctionDefinitionProvider>()
+            .AddSingleton<ITypeDefinitionProvider, VariableTypeDefinitionProvider>();
 
         Module.UseWorkflowManagement(management => management.AddActivitiesFrom<JavaScriptFeature>());
     }

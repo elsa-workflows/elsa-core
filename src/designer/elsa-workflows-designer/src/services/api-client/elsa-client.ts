@@ -1,27 +1,28 @@
-﻿import axios, {AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse} from "axios";
+﻿import axios, {AxiosInstance, AxiosRequestConfig} from "axios";
 import {Service as MiddlewareService} from 'axios-middleware';
 import {Container, Service} from 'typedi';
 import {EventBus} from '../event-bus';
 import 'reflect-metadata';
 import {ServerSettings} from '../server-settings';
 import {DescriptorsApi} from "./descriptors-api";
-import {DesignerApi, DesignerApiImpl} from "./designer-api";
+import {DesignerApi} from "./designer-api";
 import {EventTypes} from "../../models";
+import {ScriptingApi} from "./scripting-api";
 
 export class ElsaClient {
-  httpClient: AxiosInstance;
   descriptors: DescriptorsApi;
   designer: DesignerApi;
+  scripting: ScriptingApi;
 
   constructor(httpClient: AxiosInstance) {
-    this.httpClient = httpClient;
     this.descriptors = new DescriptorsApi(httpClient);
-    this.designer = new DesignerApiImpl(httpClient);
+    this.designer = new DesignerApi(httpClient);
+    this.scripting = new ScriptingApi(httpClient);
   }
 }
 
 @Service()
-export class ElsaApiClientProvider {
+export class ElsaClientProvider {
   private httpClient: AxiosInstance;
   private elsaClient: ElsaClient;
 

@@ -1,4 +1,4 @@
-import {ActivityInputContext} from "../services/node-input-driver";
+import {ActivityInputContext} from "../services/activity-input-driver";
 import {Activity, ActivityDescriptor} from "./core";
 
 export interface TabDefinition {

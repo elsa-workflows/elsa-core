@@ -1,6 +1,6 @@
 import {Component, h, Prop, State, Watch} from "@stencil/core";
 import {camelCase} from 'lodash';
-import {ActivityInputContext} from "../../services/node-input-driver";
+import {ActivityInputContext} from "../../services/activity-input-driver";
 import {mapSyntaxToLanguage} from "../../utils";
 import {SyntaxNames} from "../../models";
 import {SwitchCase} from "./models";
@@ -29,7 +29,7 @@ export class SwitchEditor {
 
   private updateCases(){
     const inputContext = this.inputContext;
-    const activity = this.inputContext.node;
+    const activity = this.inputContext.activity;
     const inputDescriptor = inputContext.inputDescriptor;
     const propertyName = inputDescriptor.name;
     const camelCasePropertyName = camelCase(propertyName);
@@ -68,7 +68,7 @@ export class SwitchEditor {
 
   private updateActivity = () => {
     const inputContext = this.inputContext;
-    const activity = this.inputContext.node;
+    const activity = this.inputContext.activity;
     const inputDescriptor = inputContext.inputDescriptor;
     const propertyName = inputDescriptor.name;
     const camelCasePropertyName = camelCase(propertyName);

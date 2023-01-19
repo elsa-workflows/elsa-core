@@ -7,6 +7,9 @@ import {MonacoValueChangedArgs} from "../../shared/monaco-editor/monaco-editor";
 import {Hint} from "../../shared/forms/hint";
 import {mapSyntaxToLanguage} from "../../../utils";
 import descriptorsStore from "../../../data/descriptors-store";
+import {Container} from "typedi";
+import {ElsaClient, ElsaClientProvider} from "../../../services/api-client/elsa-client";
+import InputControlSwitchContextState from "./state";
 
 export interface ExpressionChangedArs {
   expression: string;
@@ -26,6 +29,12 @@ export class InputControlSwitch {
   constructor() {
     this.onExpressionChangedDebounced = debounce(this.onExpressionChanged, 10);
   }
+
+  // Tunneled props.
+  @Prop() containerType: string;
+  @Prop() containerId: string;
+  @Prop() activityType: string;
+  @Prop() propertyName: string;
 
   @Prop() label: string;
   @Prop() hideLabel: boolean;
@@ -53,8 +62,19 @@ export class InputControlSwitch {
       this.closeContextMenu();
   }
 
-  componentWillLoad() {
+  async componentWillLoad() {
     this.currentExpression = this.expression;
+  }
+
+  async componentDidLoad() {
+    const elsaClient = await Container.get(ElsaClientProvider).getElsaClient();
+    const containerType = this.containerType;
+    const containerId = this.containerId;
+    const activityTypeName = this.activityType;
+    const propertyName = this.propertyName;
+    const typeDefinitions = await elsaClient.scripting.javaScriptApi.getTypeDefinitions({containerType, containerId, activityTypeName, propertyName});
+    const libUri = 'defaultLib:lib.es6.d.ts';
+    await this.monacoEditor.addJavaScriptLib(typeDefinitions, libUri);
   }
 
   render() {
@@ -200,3 +220,5 @@ export class InputControlSwitch {
     this.expressionChanged.emit({expression, syntax: this.syntax});
   }
 }
+
+InputControlSwitchContextState.injectProps(InputControlSwitch, ['containerType', 'containerId', 'activityType', 'propertyName'])

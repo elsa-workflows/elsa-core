@@ -1,7 +1,7 @@
 import {Component, Prop, h} from '@stencil/core';
 import {groupBy} from 'lodash';
 import {LiteralExpression, SyntaxNames} from "../../models";
-import {ActivityInputContext} from "../../services/node-input-driver";
+import {ActivityInputContext} from "../../services/activity-input-driver";
 import {getInputPropertyValue} from "../../utils";
 import descriptorsStore from '../../data/descriptors-store';
 import {VariableDescriptor} from "../../services/api-client/variable-descriptors-api";

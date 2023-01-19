@@ -1,5 +1,4 @@
 import {Service} from "typedi";
-import {ElsaApiClientProvider} from "../../../services";
 import {
   ActivityDefinition,
   ActivityDefinitionSummary,
@@ -12,12 +11,13 @@ import {
 } from "../models";
 import {getVersionOptionsString, serializeQueryString} from "../../../utils";
 import {PagedList} from "../../../models";
+import {ElsaClientProvider} from "../../../services";
 
 @Service()
 export class ActivityDefinitionsApi {
-  private provider: ElsaApiClientProvider;
+  private provider: ElsaClientProvider;
 
-  constructor(provider: ElsaApiClientProvider) {
+  constructor(provider: ElsaClientProvider) {
     this.provider = provider;
   }
 

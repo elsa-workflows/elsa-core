@@ -5,9 +5,9 @@ using Elsa.Workflows.Core.Services;
 
 namespace Elsa.JavaScript.Providers;
 
-public class JavaScriptExpressionSyntaxProvider : IExpressionSyntaxProvider
+internal class JavaScriptExpressionSyntaxProvider : IExpressionSyntaxProvider
 {
-    public const string SyntaxName = "JavaScript";
+    private const string SyntaxName = "JavaScript";
     private readonly IIdentityGenerator _identityGenerator;
 
     public JavaScriptExpressionSyntaxProvider(IIdentityGenerator identityGenerator)

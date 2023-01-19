@@ -14,7 +14,7 @@ import {MonacoEditorSettings} from "../../../services/monaco-editor-settings";
 import {ActivityPropertyChangedEventArgs, WorkflowDefinitionPropsUpdatedArgs, WorkflowDefinitionUpdatedArgs, ActivityUpdatedArgs, WorkflowEditorEventTypes} from "../models/ui";
 import {WorkflowDefinition} from "../models/entities";
 import {WorkflowDefinitionsApi} from "../services/api"
-import WorkflowDefinitionTunnel, {WorkflowDefinitionState} from "../../../state/workflow-definition-state";
+import WorkflowDefinitionTunnel, {WorkflowDefinitionState} from "../state";
 import {LayoutDirection} from "../../flowchart/models";
 import { cloneDeep } from '@antv/x6/lib/util/object/object';
 import { removeGuidsFromPortNames } from '../../../utils/graph';
@@ -36,15 +36,13 @@ export class WorkflowDefinitionEditor {
   private readonly emitActivityChangedDebounced: (e: ActivityPropertyChangedEventArgs) => void;
   private readonly saveChangesDebounced: () => void;
   private readonly workflowDefinitionApi: WorkflowDefinitionsApi;
-  private currentFlowchartConnections;
 
   constructor() {
     this.eventBus = Container.get(EventBus);
     this.pluginRegistry = Container.get(PluginRegistry);
     this.activityNameFormatter = Container.get(ActivityNameFormatter);
     this.portProviderRegistry = Container.get(PortProviderRegistry);
-    //this.emitActivityChangedDebounced = debounce(this.emitActivityChanged, 100);
-    this.emitActivityChangedDebounced = e => this.emitActivityChanged(e.activity, e.propertyName);
+    this.emitActivityChangedDebounced = debounce(this.emitActivityChanged, 10);
     this.saveChangesDebounced = debounce(this.saveChanges, 1000);
     this.workflowDefinitionApi = Container.get(WorkflowDefinitionsApi);
   }
@@ -174,9 +172,10 @@ export class WorkflowDefinitionEditor {
   private renderSelectedObject = () => {
     if (!!this.selectedActivity)
       return <elsa-activity-properties-editor
-        workflowDefinition={this.workflowDefinitionState}
         activity={this.selectedActivity}
         variables={this.workflowDefinitionState.variables}
+        containerType="workflow-definition"
+        containerId={this.workflowDefinition.definitionId}
         onActivityUpdated={e => this.onActivityUpdated(e)}/>;
   }
 
@@ -203,7 +202,7 @@ export class WorkflowDefinitionEditor {
     }
   };
 
-  // To prevent redundant post requests to server, save changes only if there is a difference 
+  // To prevent redundant post requests to server, save changes only if there is a difference
   // between existing workflow definition on server side and updated workflow definition on client side.
   private hasWorkflowDefinitionAnyUpdatedData = async (updatedWorkflowDefinition : WorkflowDefinition): Promise<boolean> => {
     const existingWorkflowDefinition = await this.workflowDefinitionApi.get({definitionId: updatedWorkflowDefinition.definitionId, versionOptions: {version: updatedWorkflowDefinition.version}});
