@@ -43,7 +43,7 @@ public class JavaScriptFeature : FeatureBase
             .AddSingleton<ITypeDescriber, TypeDescriber>()
             .AddSingleton<ITypeDefinitionDocumentRenderer, TypeDefinitionDocumentRenderer>()
             .AddSingleton<ITypeAliasRegistry, TypeAliasRegistry>()
-            .AddSingleton<IFunctionDefinitionProvider, CommonFunctionsProvider>();
+            .AddSingleton<IFunctionDefinitionProvider, CommonFunctionDefinitionProvider>();
 
         Module.UseWorkflowManagement(management => management.AddActivitiesFrom<JavaScriptFeature>());
     }

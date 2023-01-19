@@ -28,12 +28,12 @@ public class TypeDefinitionDocumentRenderer : ITypeDefinitionDocumentRenderer
         string RenderParameters(IEnumerable<ParameterDefinition> parameters) => string.Join(", ", parameters.Select(RenderParameter));
         
         var returnType = functionDefinition.ReturnType != null ? $": {functionDefinition.ReturnType}" : "";
-        output.AppendLine($"export function {functionDefinition.Name}({RenderParameters(functionDefinition.Parameters)}){returnType};");
+        output.AppendLine($"declare function {functionDefinition.Name}({RenderParameters(functionDefinition.Parameters)}){returnType}");
     }
 
     private void Render(TypeDefinition typeDefinition, StringBuilder output)
     {
-        output.AppendLine($"export {typeDefinition.DeclarationKeyword} {typeDefinition.Name} {{");
+        output.AppendLine($"declare {typeDefinition.DeclarationKeyword} {typeDefinition.Name} {{");
 
         foreach (var property in typeDefinition.Properties)
             Render(property, output);

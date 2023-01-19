@@ -25,7 +25,7 @@ import { ExpressionChangedArs } from "./components/designer/input-control-switch
 import { SignedInArgs } from "./modules/login/models";
 import { ModalActionClickArgs, ModalActionDefinition, ModalDialogInstance } from "./components/shared/modal-dialog/models";
 import { ModalType } from "./components/shared/modal-dialog/modal-type";
-import { MonacoLib, MonacoValueChangedArgs } from "./components/shared/monaco-editor/monaco-editor";
+import { MonacoValueChangedArgs } from "./components/shared/monaco-editor/monaco-editor";
 import { PagerData } from "./components/shared/pager/pager";
 import { PanelPosition, PanelStateChangedArgs } from "./components/panel/models";
 import { PublishClickedArgs as PublishClickedArgs1 } from "./modules/workflow-definitions/components/publish-button";
@@ -136,7 +136,7 @@ export namespace Components {
     interface ElsaHomePage {
     }
     interface ElsaInputControlSwitch {
-        "activityTypeName": string;
+        "activityType": string;
         "codeEditorHeight": string;
         "codeEditorSingleLineMode": boolean;
         "containerId": string;
@@ -185,11 +185,11 @@ export namespace Components {
     interface ElsaModalDialogContainer {
     }
     interface ElsaMonacoEditor {
+        "addJavaScriptLib": (libSource: string, libUri: string) => Promise<void>;
         "editorHeight": string;
         "language": string;
-        "monacoLibPath"?: string;
         "padding": string;
-        "setJavaScriptLibs": (libs: Array<MonacoLib>) => Promise<void>;
+        "setValue": (value: string) => Promise<void>;
         "singleLineMode": boolean;
         "value": string;
     }
@@ -968,7 +968,7 @@ declare namespace LocalJSX {
     interface ElsaHomePage {
     }
     interface ElsaInputControlSwitch {
-        "activityTypeName"?: string;
+        "activityType"?: string;
         "codeEditorHeight"?: string;
         "codeEditorSingleLineMode"?: boolean;
         "containerId"?: string;
@@ -1026,7 +1026,6 @@ declare namespace LocalJSX {
     interface ElsaMonacoEditor {
         "editorHeight"?: string;
         "language"?: string;
-        "monacoLibPath"?: string;
         "onValueChanged"?: (event: ElsaMonacoEditorCustomEvent<MonacoValueChangedArgs>) => void;
         "padding"?: string;
         "singleLineMode"?: boolean;

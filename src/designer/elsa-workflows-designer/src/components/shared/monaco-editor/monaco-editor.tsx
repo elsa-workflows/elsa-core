@@ -1,5 +1,5 @@
-import {Component, Event, EventEmitter, h, Host, Method, Prop, Watch} from '@stencil/core';
-import {initializeMonacoWorker, Monaco} from "./utils";
+import { Component, Event, EventEmitter, h, Host, Method, Prop, Watch } from '@stencil/core';
+import { initializeMonacoWorker, Monaco, EditorVariables } from "./utils";
 import monacoStore from '../../../data/monaco-store';
 
 export interface MonacoValueChangedArgs {
@@ -7,28 +7,23 @@ export interface MonacoValueChangedArgs {
   markers: Array<any>;
 }
 
-export interface MonacoLib {
-  content?: string;
-  filePath?: string;
-}
-
 @Component({
   tag: 'elsa-monaco-editor',
   styleUrl: 'monaco-editor.scss',
   shadow: false
 })
-export class MonacoEditor {
+export class ElsaMonaco {
   private monaco: Monaco;
-  private container: HTMLElement;
-  private editor: any;
 
-  @Prop() public monacoLibPath?: string;
-  @Prop() public editorHeight: string = '10em';
-  @Prop() public value: string;
-  @Prop() public language: string;
-  @Prop() public singleLineMode: boolean = false;
-  @Prop() public padding: string;
-  @Event() public valueChanged: EventEmitter<MonacoValueChangedArgs>;
+  @Prop({ attribute: 'editor-height', reflect: true }) editorHeight: string = '5em';
+  @Prop() value: string;
+  @Prop() language: string;
+  @Prop({ attribute: 'single-line', reflect: true }) singleLineMode: boolean = false;
+  @Prop() padding: string;
+  @Event({ eventName: 'valueChanged' }) valueChanged: EventEmitter<MonacoValueChangedArgs>;
+
+  container: HTMLElement;
+  editor: any;
 
   @Watch('language')
   languageChangeHandler(newValue: string) {
@@ -40,34 +35,46 @@ export class MonacoEditor {
   }
 
   @Method()
-  async setJavaScriptLibs(libs: Array<MonacoLib>) {
+  async setValue(value: string) {
+    if (!this.editor)
+      return;
+
+    const model = this.editor.getModel();
+    model.setValue(value || '');
+  }
+
+  @Method()
+  async addJavaScriptLib(libSource: string, libUri: string) {
     const monaco = this.monaco;
-    const editor = this.editor;
 
-    const defaultLib: MonacoLib = {
-      filePath: "lib.d.ts"
-    };
+    monaco.languages.typescript.javascriptDefaults.setExtraLibs([{
+      filePath: "lib.es5.d.ts"
+    }, {
+      content: libSource,
+      filePath: libUri
+    }]);
 
-    libs = [defaultLib, ...libs];
-    monaco.languages.typescript.javascriptDefaults.setExtraLibs(libs);
+    const oldModel = monaco.editor.getModel(libUri);
 
-    for (const lib of libs) {
+    if (oldModel)
+      oldModel.dispose();
 
-      const oldModel = editor.getModel(lib.filePath);
+    const newModel = monaco.editor.createModel(libSource, 'typescript', monaco.Uri.parse(libUri));
+    const matches = libSource.matchAll(/declare const (\w+): (string|number)/g);
 
-      if (oldModel)
-        oldModel.dispose();
+    EditorVariables.splice(0, EditorVariables.length);
 
-      const newModel = monaco.editor.createModel(lib.content, 'typescript', monaco.Uri.parse(lib.filePath));
+    for(const match of matches) {
+      EditorVariables.push({variableName: match[1], type: match[2] });
     }
   }
 
-  public async componentWillLoad() {
-    const monacoLibPath = this.monacoLibPath || monacoStore.monacoLibPath;
+  async componentWillLoad() {
+    const monacoLibPath = monacoStore.monacoLibPath;
     this.monaco = await initializeMonacoWorker(monacoLibPath);
   }
 
-  public async componentDidLoad() {
+  componentDidLoad() {
     const monaco = this.monaco;
     const language = this.language;
 
@@ -117,21 +124,18 @@ export class MonacoEditor {
           lineNumbersMinChars: 0,
           folding: false,
           scrollBeyondLastColumn: 0,
-          scrollbar: {horizontal: 'hidden', vertical: 'hidden'},
-          find: {addExtraSpaceOnTop: false, autoFindInSelection: 'never', seedSearchStringFromSelection: false},
+          scrollbar: { horizontal: 'hidden', vertical: 'hidden' },
+          find: { addExtraSpaceOnTop: false, autoFindInSelection: 'never', seedSearchStringFromSelection: false },
         }
       }
     }
 
     this.editor = monaco.editor.create(this.container, options);
 
-    await this.setJavaScriptLibs([]);
-    this.registerLiquid();
-
     this.editor.onDidChangeModelContent(e => {
       const value = this.editor.getValue();
-      const markers = monaco.editor.getModelMarkers({owner: language});
-      this.valueChanged.emit({value: value, markers: markers});
+      const markers = monaco.editor.getModelMarkers({ owner: language });
+      this.valueChanged.emit({ value: value, markers: markers });
     });
 
     if (this.singleLineMode) {
@@ -165,47 +169,13 @@ export class MonacoEditor {
       editor.dispose();
   }
 
-  registerLiquid() {
-    const monaco = this.monaco;
-    monaco.languages.register({id: 'liquid'});
-
-    monaco.languages.registerCompletionItemProvider('liquid', {
-      provideCompletionItems: () => {
-        const autocompleteProviderItems = [];
-        const keywords = ['assign', 'capture', 'endcapture', 'increment', 'decrement',
-          'if', 'else', 'elsif', 'endif', 'for', 'endfor', 'break',
-          'continue', 'limit', 'offset', 'range', 'reversed', 'cols',
-          'case', 'endcase', 'when', 'block', 'endblock', 'true', 'false',
-          'in', 'unless', 'endunless', 'cycle', 'tablerow', 'endtablerow',
-          'contains', 'startswith', 'endswith', 'comment', 'endcomment',
-          'raw', 'endraw', 'editable', 'endentitylist', 'endentityview', 'endinclude',
-          'endmarker', 'entitylist', 'entityview', 'forloop', 'image', 'include',
-          'marker', 'outputcache', 'plugin', 'style', 'text', 'widget',
-          'abs', 'append', 'at_least', 'at_most', 'capitalize', 'ceil', 'compact',
-          'concat', 'date', 'default', 'divided_by', 'downcase', 'escape',
-          'escape_once', 'first', 'floor', 'join', 'last', 'lstrip', 'map',
-          'minus', 'modulo', 'newline_to_br', 'plus', 'prepend', 'remove',
-          'remove_first', 'replace', 'replace_first', 'reverse', 'round',
-          'rstrip', 'size', 'slice', 'sort', 'sort_natural', 'split', 'strip',
-          'strip_html', 'strip_newlines', 'times', 'truncate', 'truncatewords',
-          'uniq', 'upcase', 'url_decode', 'url_encode'];
-
-        for (let i = 0; i < keywords.length; i++) {
-          autocompleteProviderItems.push({'label': keywords[i], kind: monaco.languages.CompletionItemKind.Keyword});
-        }
-
-        return {suggestions: autocompleteProviderItems};
-      }
-    });
-  }
-
   render() {
     const padding = this.padding || 'pt-1.5 pl-1';
     return (
       <Host
         class="monaco-editor-host border focus:ring-blue-500 focus:border-blue-500 block w-full min-w-0 rounded-md sm:text-sm border-gray-300 p-4"
-        style={{'min-height': this.editorHeight}}>
-        <div ref={el => this.container = el} class={`monaco-editor-container ${padding}`}/>
+        style={{ 'min-height': this.editorHeight }}>
+        <div ref={el => this.container = el} class={`monaco-editor-container ${padding}`} />
       </Host>
     )
   }

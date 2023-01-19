@@ -6,6 +6,32 @@ namespace Elsa.JavaScript.Models;
 public class FunctionDefinition
 {
     /// <summary>
+    /// Constructor.
+    /// </summary>
+    public FunctionDefinition()
+    {
+    }
+
+    /// <summary>
+    /// Constructor.
+    /// </summary>
+    public FunctionDefinition(string name, IEnumerable<ParameterDefinition> parameters)
+    {
+        Name = name;
+        Parameters = parameters.ToList();
+    }
+    
+    /// <summary>
+    /// Constructor.
+    /// </summary>
+    public FunctionDefinition(string name, string? returnType, IEnumerable<ParameterDefinition> parameters)
+    {
+        Name = name;
+        ReturnType = returnType;
+        Parameters = parameters.ToList();
+    }
+    
+    /// <summary>
     /// The name of the method.
     /// </summary>
     public string Name { get; set; } = default!;

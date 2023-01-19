@@ -32,6 +32,7 @@
     "@stencil/core": "^2.20.0",
     "@stencil/state-tunnel": "^1.0.1",
     "@stencil/store": "^2.0.1",
+    "async-mutex": "^0.4.0",
     "axios": "^0.27.2",
     "axios-middleware": "^0.3.1",
     "el-transition": "^0.0.7",

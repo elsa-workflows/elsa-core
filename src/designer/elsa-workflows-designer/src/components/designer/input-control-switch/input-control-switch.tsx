@@ -33,7 +33,7 @@ export class InputControlSwitch {
   // Tunneled props.
   @Prop() containerType: string;
   @Prop() containerId: string;
-  @Prop() activityTypeName: string;
+  @Prop() activityType: string;
   @Prop() propertyName: string;
 
   @Prop() label: string;
@@ -70,13 +70,11 @@ export class InputControlSwitch {
     const elsaClient = await Container.get(ElsaClientProvider).getElsaClient();
     const containerType = this.containerType;
     const containerId = this.containerId;
-    const activityTypeName = this.activityTypeName;
+    const activityTypeName = this.activityType;
     const propertyName = this.propertyName;
-
-    await this.monacoEditor.setJavaScriptLibs([{
-      filePath: 'defaultLib:lib.es6.d.ts',
-      content: await elsaClient.scripting.javaScriptApi.getTypeDefinitions({containerType, containerId, activityTypeName, propertyName})
-    }]);
+    const typeDefinitions = await elsaClient.scripting.javaScriptApi.getTypeDefinitions({containerType, containerId, activityTypeName, propertyName});
+    const libUri = 'defaultLib:lib.es6.d.ts';
+    await this.monacoEditor.addJavaScriptLib(typeDefinitions, libUri);
   }
 
   render() {
