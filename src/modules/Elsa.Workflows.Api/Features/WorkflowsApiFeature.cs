@@ -2,6 +2,7 @@ using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
+using Elsa.JavaScript.Features;
 using Elsa.Workflows.Management.Features;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,6 +14,7 @@ namespace Elsa.Workflows.Api.Features;
 /// </summary>
 [DependsOn(typeof(WorkflowInstancesFeature))]
 [DependsOn(typeof(WorkflowManagementFeature))]
+[DependsOn(typeof(JavaScriptFeature))]
 public class WorkflowsApiFeature : FeatureBase
 {
     /// <inheritdoc />
