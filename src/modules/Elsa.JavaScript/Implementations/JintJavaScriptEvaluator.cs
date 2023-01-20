@@ -1,4 +1,5 @@
-﻿using Elsa.Expressions.Models;
+﻿using System.Text.Json;
+using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.JavaScript.Notifications;
 using Elsa.JavaScript.Options;
@@ -61,6 +62,7 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         
         engine.SetValue("isNullOrWhiteSpace", (Func<string, bool>)string.IsNullOrWhiteSpace);
         engine.SetValue("isNullOrEmpty", (Func<string, bool>)string.IsNullOrEmpty);
+        engine.SetValue("toJson", (Func<object, string>)(value => JsonSerializer.Serialize(value)));
 
         // Add common .NET types.
         engine.RegisterType<DateTime>();

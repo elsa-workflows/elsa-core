@@ -41,6 +41,11 @@ internal class CommonFunctionDefinitionProvider : FunctionDefinitionProvider
             .Parameter("value", "string")
             .ReturnType("boolean"));
         
+        yield return CreateFunctionDefinition(builder => builder
+            .Name("toJson")
+            .Parameter("value", "any")
+            .ReturnType("string"));
+        
         // Variable getter and setters.
         foreach (var variable in context.Variables)
         {
