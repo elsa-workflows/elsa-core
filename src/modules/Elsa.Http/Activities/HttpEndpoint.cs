@@ -4,6 +4,7 @@ using Elsa.Extensions;
 using Elsa.Http.Models;
 using Elsa.Http.Services;
 using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Expressions;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Models;
 using Microsoft.AspNetCore.Http;
@@ -40,7 +41,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
         Description = "The HTTP methods to accept.",
         Options = new[] { "GET", "POST", "PUT", "HEAD", "DELETE" },
         UIHint = InputUIHints.CheckList)]
-    public Input<ICollection<string>> SupportedMethods { get; set; } = new(new[] { HttpMethod.Get.Method });
+    public Input<ICollection<string>> SupportedMethods { get; set; } = new(JsonLiteral.From(new[]{HttpMethods.Get}));
 
     /// <summary>
     /// Allow authenticated requests only.

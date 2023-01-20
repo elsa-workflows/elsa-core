@@ -26,6 +26,4 @@ public class Literal<T> : Literal
     public Literal(T value) : base(value!)
     {
     }
-
-    //public new T? Get(ActivityExecutionContext context) => (T?)base.Get(context);
 }

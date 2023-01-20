@@ -34,7 +34,7 @@ export class CheckList {
     const displayName = inputDescriptor.displayName;
     const hint = inputDescriptor.description;
     const input = getInputPropertyValue(inputContext);
-    const value = (input?.expression as LiteralExpression)?.value; // TODO: The "value" field is currently hardcoded, but we should be able to be more flexible and potentially have different fields for a given syntax.
+    const value = (input?.expression as JsonExpression)?.value; // TODO: The "value" field is currently hardcoded, but we should be able to be more flexible and potentially have different fields for a given syntax.
     const syntax = input?.expression?.type ?? inputDescriptor.defaultSyntax;
     const selectList = this.selectList;
 

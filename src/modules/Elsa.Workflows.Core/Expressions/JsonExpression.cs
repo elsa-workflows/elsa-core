@@ -11,9 +11,9 @@ public class JsonExpression : IExpression
     public string? Value { get; }
 }
 
-public class JsonExpression<T> : LiteralExpression
+public class JsonExpression<T> : JsonExpression
 {
-    public JsonExpression(T? value) : base(value)
+    public JsonExpression(T? value) : base(JsonSerializer.Serialize(value))
     {
     }
 }

@@ -56,6 +56,14 @@ public class Input<T> : Input
     public Input(Literal literal) : base(new LiteralExpression(literal.Value), literal, typeof(T))
     {
     }
+    
+    public Input(JsonLiteral<T> literal) : base(new JsonExpression(literal.Value), literal, typeof(T))
+    {
+    }
+
+    public Input(JsonLiteral literal) : base(new JsonExpression(literal.Value), literal, typeof(T))
+    {
+    }
 
     public Input(DelegateBlockReference delegateBlockReference) : base(new DelegateExpression(delegateBlockReference), delegateBlockReference, typeof(T))
     {
