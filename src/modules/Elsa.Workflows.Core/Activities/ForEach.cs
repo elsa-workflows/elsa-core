@@ -83,22 +83,36 @@ public class ForEach : Activity
     }
 }
 
+/// <summary>
+/// A strongly-typed for-each construct where <see cref="T"/> is the item type.
+/// </summary>
 public class ForEach<T> : ForEach
 {
+    /// <inheritdoc />
     [JsonConstructor]
     public ForEach()
     {
     }
 
+    /// <inheritdoc />
     public ForEach(Input<ICollection<T>> items) : this()
     {
         Items = items;
     }
 
+    /// <inheritdoc />
     public ForEach(ICollection<T> items) : this(new Input<ICollection<T>>(items))
     {
     }
 
+    /// <inheritdoc />
+    public ForEach(Func<ExpressionExecutionContext, ICollection<T>> items) : this(new Input<ICollection<T>>(items))
+    {
+    }
+
+    /// <summary>
+    /// The items to iterate on.
+    /// </summary>
     [Input]
     public new Input<ICollection<T>> Items
     {
@@ -106,6 +120,9 @@ public class ForEach<T> : ForEach
         set => base.Items = new Input<ICollection<object>>(value.Expression, value.MemoryBlockReference());
     }
 
+    /// <summary>
+    /// Provides access to the current value.
+    /// </summary>
     public new Output<T?> CurrentValue
     {
         get =>
