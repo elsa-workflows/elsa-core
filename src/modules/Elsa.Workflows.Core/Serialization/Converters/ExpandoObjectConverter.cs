@@ -43,13 +43,13 @@ public class ExpandoObjectConverter : JsonConverter<object>
             }
             case JsonTokenType.StartArray:
             {
-                var list = new List<object>();
+                var list = new List<ExpandoObject>();
                 while (reader.Read())
                 {
                     switch (reader.TokenType)
                     {
                         default:
-                            list.Add(Read(ref reader, typeof(object), options));
+                            list.Add((ExpandoObject)Read(ref reader, typeof(ExpandoObject), options));
                             break;
                         case JsonTokenType.EndArray:
                             return list;
