@@ -110,10 +110,14 @@ public class SendHttpRequest : CodeActivity<HttpResponse>
             request.Headers.Add(header.Key, header.Value.AsEnumerable());
 
         var contentType = ContentType.TryGet(context);
-        var contentWriters = context.GetServices<IHttpContentWriter>();
-        var contentWriter = SelectContentWriter(contentType, contentWriters);
         var content = Content.TryGet(context);
-        request.Content = contentWriter.GetContent(content, contentType);
+
+        if (contentType != null && content != null)
+        {
+            var contentWriters = context.GetServices<IHttpContentWriter>();
+            var contentWriter = SelectContentWriter(contentType, contentWriters);
+            request.Content = contentWriter.GetContent(content, contentType);
+        }
 
         return request;
     }
