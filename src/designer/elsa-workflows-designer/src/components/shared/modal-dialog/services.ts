@@ -1,8 +1,7 @@
 import 'reflect-metadata';
 import {Service} from "typedi";
 import state from "./state";
-import {ModalActionDefinition, ModalDialogInstance, ShowModalDialogOptions} from "./models";
-import {ModalType} from "../../../components/shared/modal-dialog";
+import {ModalDialogInstance, ShowModalDialogOptions} from "./models";
 
 @Service()
 export class ModalDialogService {

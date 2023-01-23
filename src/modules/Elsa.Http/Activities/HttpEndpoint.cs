@@ -74,30 +74,42 @@ public class HttpEndpoint : Trigger<HttpRequest>
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         // If we did not receive external input, it means we are just now encountering this activity and we need to block execution by creating a bookmark.
-        if (!context.TryGetInput<HttpContext>(HttpContextInputKey, out var httpContext))
+        if (!context.TryGetInput<bool>(HttpContextInputKey, out var isHttpContext))
         {
             // Create bookmarks for when we receive the expected HTTP request.
             context.CreateBookmarks(GetBookmarkPayloads(context.ExpressionExecutionContext));
             return;
         }
+        
+        var httpContextAccessor = context.GetRequiredService<IHttpContextAccessor>();
+        var httpContext = httpContextAccessor.HttpContext;
 
-        // Provide the received HTTP request as output.
-        var request = httpContext.Request;
-        context.Set(Result, request);
-        
-        // Read route data, if any.
-        var path = context.GetInput<PathString>(RequestPathInputKey);
-        var routeData = GetRouteData(httpContext, path);
-        context.Set(RouteData, routeData);
-        
-        // Read content, if any.
-        var content = await ParseContentAsync(context, request);
-        context.Set(ParsedContent, content);
-        
-        // Complete.
-        await context.CompleteActivityAsync();
+        if (httpContext == null)
+        {
+            // We're executing in a non-HTTP context (e.g. in a virtual actor).
+            // Create a bookmark to allow the invoker to export the state and resume execution from there.
+
+            context.CreateBookmark(OnResumeAsync);
+            return;
+        }
+
+        await HandleRequestAsync(context, httpContext);
     }
     
+    private async ValueTask OnResumeAsync(ActivityExecutionContext context)
+    {
+        var httpContextAccessor = context.GetRequiredService<IHttpContextAccessor>();
+        var httpContext = httpContextAccessor.HttpContext;
+
+        if (httpContext == null)
+        {
+            // We're not in an HTTP context, so let's fail.
+            throw new Exception("Cannot execute in a non-HTTP context");
+        }
+
+        await HandleRequestAsync(context, httpContext);
+    }
+
     private async Task<object?> ParseContentAsync(ActivityExecutionContext context, HttpRequest httpRequest)
     {
         if (!HasContent(httpRequest))
@@ -119,6 +131,25 @@ public class HttpEndpoint : Trigger<HttpRequest>
         var path = context.Get(Path);
         var methods = context.Get(SupportedMethods);
         return methods!.Select(x => new HttpEndpointBookmarkPayload(path!, x.ToLowerInvariant())).Cast<object>().ToArray();
+    }
+    
+    private async Task HandleRequestAsync(ActivityExecutionContext context, HttpContext httpContext)
+    {
+        // Provide the received HTTP request as output.
+        var request = httpContext.Request;
+        context.Set(Result, request);
+        
+        // Read route data, if any.
+        var path = context.GetInput<PathString>(RequestPathInputKey);
+        var routeData = GetRouteData(httpContext, path);
+        context.Set(RouteData, routeData);
+        
+        // Read content, if any.
+        var content = await ParseContentAsync(context, request);
+        context.Set(ParsedContent, content);
+        
+        // Complete.
+        await context.CompleteActivityAsync();
     }
     
     private static RouteData GetRouteData(HttpContext httpContext, string path)

@@ -1,7 +1,7 @@
 import {Component, h, Prop, Event, EventEmitter, Method} from "@stencil/core";
 import {groupBy} from 'lodash';
 import {StorageDriverDescriptor, Variable} from "../../../models";
-import {FormEntry} from "../../shared/forms/form-entry";
+import {CheckboxFormEntry, FormEntry} from "../../shared/forms/form-entry";
 import {isNullOrWhitespace} from "../../../utils";
 import descriptorsStore from '../../../data/descriptors-store';
 import {VariableDescriptor} from "../../../services/api-client/variable-descriptors-api";
@@ -22,7 +22,7 @@ export class VariableEditorDialogContent {
   }
 
   render() {
-    const variable: Variable = this.variable ?? {name: '', typeName: 'Object'};
+    const variable: Variable = this.variable ?? {name: '', typeName: 'Object', isArray: false};
     const variableTypeName = variable.typeName;
     const availableTypes: Array<VariableDescriptor> = descriptorsStore.variableDescriptors;
     const groupedVariableTypes = groupBy(availableTypes, x => x.category);
@@ -49,6 +49,10 @@ export class VariableEditorDialogContent {
                   })}
                 </select>
               </FormEntry>
+
+              <CheckboxFormEntry fieldId="variableIsArray" label="This variable is an array" hint="Check if the variable holds an array of the selected type.">
+                <input type="checkbox" name="variableIsArray" id="variableIsArray" value="true" checked={variable.isArray}/>
+              </CheckboxFormEntry>
 
               <FormEntry fieldId="variableValue" label="Value" hint="The value of the variable.">
                 <input type="text" name="variableValue" id="variableValue" value={variable.value}/>
@@ -84,12 +88,14 @@ export class VariableEditorDialogContent {
     const name = formData.get('variableName') as string;
     const value = formData.get('variableValue') as string;
     const type = formData.get('variableTypeName') as string;
+    const isArray = formData.get('variableIsArray') as string == 'true';
     const driverTypeName = formData.get('variableStorageDriverTypeName') as string;
     const variable = this.variable;
 
     variable.name = name;
     variable.typeName = type;
     variable.value = value;
+    variable.isArray = isArray;
     variable.storageDriverTypeName = isNullOrWhitespace(driverTypeName) ? null : driverTypeName;
 
     return variable;

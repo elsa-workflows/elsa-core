@@ -210,6 +210,11 @@ export class FlowchartComponent {
   }
 
   @Method()
+  async getActivity(id: string): Promise<Activity> {
+    return this.activityLookup[id];
+  }
+
+  @Method()
   public async renameActivity(args: RenameActivityArgs) {
     const nodeId = args.originalId;
     const activity = args.activity;

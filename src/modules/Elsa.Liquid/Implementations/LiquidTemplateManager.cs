@@ -44,7 +44,13 @@ public class LiquidTemplateManager : ILiquidTemplateManager
             e =>
             {
                 if (!TryParse(source, out var parsed, out var error))
+                {
+                    error = "{% raw %}\n" + error + "\n{% endraw %}";
                     TryParse(error, out parsed, out error);
+                    
+                    e.SetSlidingExpiration(TimeSpan.FromMilliseconds(100));
+                    return parsed;
+                }
 
                 // TODO: add signal based cache invalidation.
                 e.SetSlidingExpiration(TimeSpan.FromSeconds(30));

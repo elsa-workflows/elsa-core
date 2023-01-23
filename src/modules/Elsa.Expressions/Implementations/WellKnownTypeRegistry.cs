@@ -1,3 +1,4 @@
+using System.Dynamic;
 using Elsa.Expressions.Extensions;
 using Elsa.Expressions.Services;
 
@@ -28,6 +29,7 @@ public class WellKnownTypeRegistry : IWellKnownTypeRegistry
         this.RegisterType<TimeSpan>("TimeSpan");
         this.RegisterType<DateOnly>("DateOnly");
         this.RegisterType<TimeOnly>("TimeOnly");
+        this.RegisterType<ExpandoObject>("ExpandoObject");
     }
 
     /// <inheritdoc />

@@ -59,17 +59,7 @@ public class WriteHttpResponse : CodeActivity
             return;
         }
 
-        var response = httpContext.Response;
-        response.StatusCode = (int)context.Get(StatusCode);
-        
-        var headers = ResponseHeaders.TryGet(context) ?? new HttpResponseHeaders();
-        foreach (var header in headers)
-            response.Headers.Add(header.Key, header.Value);
-
-        response.ContentType = ContentType.TryGet(context);
-        var content = context.Get(Content);
-        if (content != null)
-            await response.WriteAsync(content, context.CancellationToken);
+        await WriteResponseAsync(context, httpContext.Response);
     }
 
     private async ValueTask OnResumeAsync(ActivityExecutionContext context)
@@ -83,10 +73,17 @@ public class WriteHttpResponse : CodeActivity
             throw new Exception("Cannot execute in a non-HTTP context");
         }
 
-        var response = httpContext.Response;
+        await WriteResponseAsync(context, httpContext.Response);
+    }
 
+    private async Task WriteResponseAsync(ActivityExecutionContext context, HttpResponse response)
+    {
         response.StatusCode = (int)context.Get(StatusCode);
 
+        var headers = ResponseHeaders.TryGet(context) ?? new HttpResponseHeaders();
+        foreach (var header in headers)
+            response.Headers.Add(header.Key, header.Value);
+        
         var content = context.Get(Content);
 
         if (content != null)

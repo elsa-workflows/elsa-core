@@ -31,11 +31,12 @@ public class VariableDefinitionMapper
         if (!_wellKnownTypeRegistry.TryGetTypeOrDefault(source.TypeName, out var type))
             return null;
 
-        var variableGenericType = typeof(Variable<>).MakeGenericType(type);
+        var valueType = source.IsArray ? typeof(ICollection<>).MakeGenericType(type) : type;
+        var variableGenericType = typeof(Variable<>).MakeGenericType(valueType);
         var variable = (Variable)Activator.CreateInstance(variableGenericType)!;
 
         variable.Name = source.Name;
-        variable.Value = source.Value.ConvertTo(type);
+        variable.Value = source.Value.ConvertTo(valueType);
         variable.StorageDriverType = !string.IsNullOrEmpty(source.StorageDriverTypeName) ? Type.GetType(source.StorageDriverTypeName) : default;
 
         return variable;
@@ -57,13 +58,16 @@ public class VariableDefinitionMapper
     public VariableDefinition Map(Variable source)
     {
         var variableType = source.GetType();
-        var value = source.Value;
         var valueType = variableType.IsConstructedGenericType ? variableType.GetGenericArguments().FirstOrDefault() ?? typeof(object) : typeof(object);
-        var valueTypeAlias = _wellKnownTypeRegistry.GetAliasOrDefault(valueType);
+        var isArray = valueType.IsGenericType && typeof(ICollection<>).IsAssignableFrom(valueType.GetGenericTypeDefinition());
+        var elementValueType = isArray ? valueType.GenericTypeArguments[0] : valueType; 
+        var value = source.Value;
+        
+        var valueTypeAlias = _wellKnownTypeRegistry.GetAliasOrDefault(elementValueType);
         var storageDriverTypeName = source.StorageDriverType?.GetSimpleAssemblyQualifiedName();
         var serializedValue = value.Format();
 
-        return new VariableDefinition(source.Name, valueTypeAlias, serializedValue, storageDriverTypeName);
+        return new VariableDefinition(source.Name, valueTypeAlias, isArray, serializedValue, storageDriverTypeName);
     }
 
     /// <summary>

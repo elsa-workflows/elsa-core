@@ -109,7 +109,7 @@ export class VariablesEditor {
 
   private onAddVariableClick = async () => {
     const newVariableName = this.generateNewVariableName();
-    const variable = {name: newVariableName, typeName: 'Object', value: null};
+    const variable: Variable = {name: newVariableName, typeName: 'Object', value: null, isArray: false};
 
     this.modalDialogInstance = this.modalDialogService.show(() => <elsa-variable-editor-dialog-content variable={variable}/>, {actions: [this.saveAction]})
   };

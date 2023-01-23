@@ -38,6 +38,8 @@ export interface Workflow extends Activity {
 export interface Variable {
   name: string;
   typeName: string;
+
+  isArray: boolean;
   value?: any;
   storageDriverTypeName?: string;
 }

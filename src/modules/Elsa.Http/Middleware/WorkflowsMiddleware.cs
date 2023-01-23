@@ -66,7 +66,7 @@ public class WorkflowsMiddleware
 
         var input = new Dictionary<string, object>
         {
-            [HttpEndpoint.HttpContextInputKey] = httpContext,
+            [HttpEndpoint.HttpContextInputKey] = true,
             [HttpEndpoint.RequestPathInputKey] = path
         };
 
@@ -86,14 +86,15 @@ public class WorkflowsMiddleware
             cancellationToken);
 
         // We must assume that the workflow executed in a different process (when e.g. using Proto.Actor)
-        // and check if we received any `WriteHttpResponse` activity bookmarks.
+        // and check if we received any `HttpEndpoint` or `WriteHttpResponse` activity bookmarks.
         // If we did, acquire a lock on the workflow instance and resume it from here within an actual HTTP context so that the activity can complete its HTTP response.
+        var httpEndpointTypeName = ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>();
         var writeHttpResponseTypeName = ActivityTypeNameHelper.GenerateTypeName<WriteHttpResponse>();
 
         var query =
             from triggeredWorkflow in triggerResult.TriggeredWorkflows
             from bookmark in triggeredWorkflow.Bookmarks
-            where bookmark.Name == writeHttpResponseTypeName
+            where bookmark.Name == writeHttpResponseTypeName || bookmark.Name == httpEndpointTypeName 
             select (triggeredWorkflow.InstanceId, bookmark.Id);
 
         var workflowExecutionResults = new Stack<(string InstanceId, string BookmarkId)>(query);
@@ -127,7 +128,7 @@ public class WorkflowsMiddleware
                 cancellationToken);
 
             var workflowHost = await _workflowHostFactory.CreateAsync(workflow, workflowState, cancellationToken);
-            var options = new ResumeWorkflowHostOptions(correlationId, result.BookmarkId);
+            var options = new ResumeWorkflowHostOptions(correlationId, result.BookmarkId, Input: input);
             await workflowHost.ResumeWorkflowAsync(options, cancellationToken);
             
             // Import the updated workflow state into the runtime.

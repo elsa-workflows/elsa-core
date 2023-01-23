@@ -112,6 +112,7 @@ export namespace Components {
         "addActivity": (args: AddActivityArgs) => Promise<Activity>;
         "autoLayout": (direction: LayoutDirection) => Promise<void>;
         "export": () => Promise<Activity>;
+        "getActivity": (id: string) => Promise<Activity>;
         "getGraph": () => Promise<Graph>;
         "interactiveMode": boolean;
         "newRoot": () => Promise<Activity>;
