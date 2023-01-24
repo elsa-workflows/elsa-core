@@ -1,5 +1,5 @@
 import {Component, Element, Event, EventEmitter, h, Listen, Method, Prop, State, Watch} from '@stencil/core';
-import {debounce} from 'lodash';
+import {debounce, isEqual} from 'lodash';
 import {Container} from "typedi";
 import {PanelPosition, PanelStateChangedArgs} from '../../../components/panel/models';
 import {
@@ -16,18 +16,22 @@ import {MonacoEditorSettings} from "../../../services/monaco-editor-settings";
 import {ActivityPropertyChangedEventArgs} from "../../workflow-definitions/models/ui";
 import {ActivityDefinition, ActivityDefinitionPropsUpdatedArgs, ActivityDefinitionUpdatedArgs} from "../models";
 import {ActivityIdUpdatedArgs, ActivityUpdatedArgs} from "../../workflow-definitions/models/ui";
+import {ActivityDefinitionsApi} from "../services/api";
+import { cloneDeep } from '@antv/x6/lib/util/object/object';
+import { removeGuidsFromPortNames } from '../../../utils/graph';
 
 @Component({
   tag: 'elsa-activity-definition-editor',
   styleUrl: 'editor.scss',
 })
 export class Editor {
-  @Element() el: HTMLElsaWorkflowDefinitionEditorElement;
+  @Element() el: HTMLElsaActivityDefinitionEditorElement;
 
   private readonly pluginRegistry: PluginRegistry;
   private readonly eventBus: EventBus;
   private readonly activityNameFormatter: ActivityNameFormatter;
   private readonly portProviderRegistry: PortProviderRegistry;
+  private readonly activityDefinitionApi: ActivityDefinitionsApi;
   private flowchartElement: HTMLElsaFlowchartElement;
   private container: HTMLDivElement;
   private toolbox: HTMLElsaWorkflowDefinitionEditorToolboxElement;
@@ -40,6 +44,7 @@ export class Editor {
     this.pluginRegistry = Container.get(PluginRegistry);
     this.activityNameFormatter = Container.get(ActivityNameFormatter);
     this.portProviderRegistry = Container.get(PortProviderRegistry);
+    this.activityDefinitionApi = Container.get(ActivityDefinitionsApi);
     this.emitActivityChangedDebounced = debounce(this.emitActivityChanged, 100);
     this.updateModelDebounced = debounce(this.updateModel, 10);
     this.saveChangesDebounced = debounce(this.saveChanges, 1000);
@@ -50,6 +55,7 @@ export class Editor {
   @Event() activityDefinitionUpdated: EventEmitter<ActivityDefinitionUpdatedArgs>
   @State() private activityDefinitionState: ActivityDefinition;
   @State() private selectedActivity?: Activity;
+  @State() private activityVersions: Array<ActivityDefinition> = [];
 
   @Watch('monacoLibPath')
   private handleMonacoLibPath(value: string) {
@@ -139,8 +145,19 @@ export class Editor {
     return activityDefinition;
   }
 
+  @Method()
+  async loadActivityVersions(): Promise<void> {
+    if (this.activityDefinitionState.definitionId != null && this.activityDefinitionState.definitionId.length > 0) {
+      const activityVersions = await this.activityDefinitionApi.getVersions(this.activityDefinitionState.definitionId);
+      this.activityVersions = activityVersions.sort(x => x.version).reverse();
+    } else {
+      this.activityVersions = [];
+    }
+  }
+
   async componentWillLoad() {
     await this.updateActivityDefinition(this.activityDefinition);
+    await this.loadActivityVersions();
   }
 
   async componentDidLoad() {
@@ -177,8 +194,25 @@ export class Editor {
   };
 
   private saveChanges = async (): Promise<void> => {
-    this.activityDefinitionUpdated.emit({activityDefinition: this.activityDefinitionState});
+    const updatedActivityDefinition = this.activityDefinitionState;
+
+    if (await this.hasActivityDefinitionAnyUpdatedData(updatedActivityDefinition)) {
+      // If activity definition is published, override the latest version.
+      if (updatedActivityDefinition.isPublished) {
+        updatedActivityDefinition.version = this.activityVersions.find(v => v.isLatest).version;
+      }
+      this.activityDefinitionUpdated.emit({activityDefinition: this.activityDefinitionState});
+    }
   };
+
+  private hasActivityDefinitionAnyUpdatedData = async (updatedActivityDefinition : ActivityDefinition): Promise<boolean> => {
+    const existingActivityDefinition = await this.activityDefinitionApi.get({definitionId: updatedActivityDefinition.definitionId, versionOptions: {version: updatedActivityDefinition.version}});
+
+    const updatedActivityDefinitionClone = cloneDeep(updatedActivityDefinition);
+    removeGuidsFromPortNames(updatedActivityDefinitionClone.root);
+
+    return !isEqual(existingActivityDefinition, updatedActivityDefinitionClone);
+  }
 
   private updateLayout = async () => {
     await this.flowchartElement.updateLayout();
@@ -193,6 +227,28 @@ export class Editor {
 
     await this.updateLayout();
   }
+
+  onVersionSelected = async (e: CustomEvent<ActivityDefinition>) => {
+    const activity = e.detail;
+    const activityDefinition = await this.activityDefinitionApi.get({definitionId: activity.definitionId, versionOptions: {version: activity.version}});
+    await this.importDefinition(activityDefinition);
+  };
+
+  onDeleteVersionClicked = async (e: CustomEvent<ActivityDefinition>) => {
+    const activity = e.detail;
+    await this.activityDefinitionApi.deleteVersion({definitionId: activity.definitionId, version: activity.version});
+    const latestWorkflowDefinition = await this.activityDefinitionApi.get({definitionId: activity.definitionId, versionOptions: {isLatest: true}});
+    await this.loadActivityVersions();
+    await this.importDefinition(latestWorkflowDefinition);
+  };
+
+  onRevertVersionClicked = async (e: CustomEvent<ActivityDefinition>) => {
+    const activity = e.detail;
+    await this.activityDefinitionApi.revertVersion({definitionId: activity.definitionId, version: activity.version});
+    const activityDefinition = await this.activityDefinitionApi.get({definitionId: activity.definitionId, versionOptions: {isLatest: true}});
+    await this.loadActivityVersions();
+    await this.importDefinition(activityDefinition);
+  };
 
   private onActivityPickerPanelStateChanged = async (e: PanelStateChangedArgs) => await this.updateContainerLayout('activity-picker-closed', e.expanded)
   private onWorkflowEditorPanelStateChanged = async (e: PanelStateChangedArgs) => await this.updateContainerLayout('object-editor-closed', e.expanded)
@@ -223,7 +279,7 @@ export class Editor {
     });
 
     await this.updateModel();
-    this.emitActivityChangedDebounced({...e.detail, workflowEditor: this.el});
+    this.emitActivityChangedDebounced({...e.detail, activityEditor: this.el});
     this.saveChangesDebounced();
   }
 
@@ -233,7 +289,6 @@ export class Editor {
   }
 
   render() {
-
     return (
       <div class="absolute inset-0" ref={el => this.container = el}>
         <elsa-workflow-definition-editor-toolbar zoomToFit={this.onZoomToFit}/>
@@ -243,8 +298,10 @@ export class Editor {
           onExpandedStateChanged={e => this.onActivityPickerPanelStateChanged(e.detail)}>
           <elsa-workflow-definition-editor-toolbox ref={el => this.toolbox = el}/>
         </elsa-panel>
-        <elsa-canvas
-          class="absolute" ref={el => this.flowchartElement = el}
+        <elsa-flowchart
+          class="absolute" 
+          rootActivity={this.activityDefinition.root}
+          ref={el => this.flowchartElement = el}
           interactiveMode={true}
           onDragOver={this.onDragOver}
           onDrop={this.onDrop}/>
@@ -255,7 +312,11 @@ export class Editor {
           <div class="object-editor-container">
             <elsa-activity-definition-properties-editor
               activityDefinition={this.activityDefinitionState}
+              activityVersions={this.activityVersions}
               onActivityDefinitionPropsUpdated={e => this.onActivityDefinitionPropsUpdated(e)}
+              onVersionSelected={e => this.onVersionSelected(e)}
+              onDeleteVersionClicked={e => this.onDeleteVersionClicked(e)}
+              onRevertVersionClicked={e => this.onRevertVersionClicked(e)}
             />
           </div>
         </elsa-panel>

@@ -42,7 +42,7 @@ export class FlowchartComponent {
     this.portProviderRegistry = Container.get(PortProviderRegistry);
   }
 
-  @Prop() workflowDefinition: WorkflowDefinition;
+  @Prop() rootActivity: Activity;
   @Prop() interactiveMode: boolean = true;
   @Prop() silent: boolean = false;
 
@@ -352,7 +352,7 @@ export class FlowchartComponent {
       return activityLookup[lastItem.activityId];
     }
 
-    return this.workflowDefinition.root;
+    return this.rootActivity;
   };
 
   private getCurrentFlowchartActivity = async (): Promise<Flowchart> => {
@@ -392,7 +392,7 @@ export class FlowchartComponent {
   }
 
   private exportInternal = (): Activity => {
-    return this.workflowDefinition.root;
+    return this.rootActivity;
   }
 
   private getActivityDescriptor = (typeName: string): ActivityDescriptor => descriptorsStore.activityDescriptors.find(x => x.typeName == typeName)
@@ -484,7 +484,7 @@ export class FlowchartComponent {
   };
 
   private updateLookups = () => {
-    const activityNodes = flatten(walkActivities(this.workflowDefinition.root));
+    const activityNodes = flatten(walkActivities(this.rootActivity));
     this.activities = activityNodes.map(x => x.activity);
     this.activityLookup = createActivityLookup(activityNodes);
   }
@@ -677,7 +677,7 @@ export class FlowchartComponent {
       <FlowchartTunnel.Provider state={state}>
         <div class="relative">
           <div class="absolute left-0 top-3 z-10">
-            <elsa-workflow-navigator items={path} workflowDefinition={this.workflowDefinition} onNavigate={this.onNavigateHierarchy}/>
+            <elsa-workflow-navigator items={path} rootActivity={this.rootActivity} onNavigate={this.onNavigateHierarchy}/>
           </div>
           <div
             class="absolute left-0 top-0 right-0 bottom-0"

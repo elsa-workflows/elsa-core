@@ -113,9 +113,9 @@ public class ActivityDefinitionPublisher : IActivityDefinitionPublisher
         return definition;
     }
 
-    public async Task<ActivityDefinition?> GetDraftAsync(string definitionId, CancellationToken cancellationToken = default)
+    public async Task<ActivityDefinition?> GetDraftAsync(string definitionId, int? version = null, CancellationToken cancellationToken = default)
     {
-        var definition = await _activityDefinitionStore.FindByDefinitionIdAsync(definitionId, VersionOptions.Latest, cancellationToken);
+        var definition = await _activityDefinitionStore.FindByDefinitionIdAsync(definitionId, version.HasValue ? VersionOptions.SpecificVersion(version.Value) : VersionOptions.Latest, cancellationToken);
 
         if (definition == null)
             return null;

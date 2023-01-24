@@ -15,7 +15,6 @@ import { Button } from "./components/shared/button-group/models";
 import { ActivityInputContext } from "./services/activity-input-driver";
 import { ContextMenuAnchorPoint, ContextMenuItem } from "./components/shared/context-menu/models";
 import { DropdownButtonItem, DropdownButtonOrigin } from "./components/shared/dropdown-button/models";
-import { WorkflowDefinition, WorkflowDefinitionSummary } from "./modules/workflow-definitions/models/entities";
 import { Graph } from "@antv/x6";
 import { AddActivityArgs, FlowchartPathItem, LayoutDirection, RenameActivityArgs, UpdateActivityArgs } from "./modules/flowchart/models";
 import { OutNode } from "@antv/layout";
@@ -28,6 +27,7 @@ import { ModalType } from "./components/shared/modal-dialog/modal-type";
 import { MonacoValueChangedArgs } from "./components/shared/monaco-editor/monaco-editor";
 import { PagerData } from "./components/shared/pager/pager";
 import { PanelPosition, PanelStateChangedArgs } from "./components/panel/models";
+import { WorkflowDefinition, WorkflowDefinitionSummary } from "./modules/workflow-definitions/models/entities";
 import { PublishClickedArgs as PublishClickedArgs1 } from "./modules/workflow-definitions/components/publish-button";
 export namespace Components {
     interface ElsaActivityDefinitionBrowser {
@@ -37,6 +37,7 @@ export namespace Components {
         "getActivityDefinition": () => Promise<ActivityDefinition>;
         "getFlowchartElement": () => Promise<HTMLElsaFlowchartElement>;
         "importDefinition": (activityDefinition: ActivityDefinition) => Promise<void>;
+        "loadActivityVersions": () => Promise<void>;
         "monacoLibPath": string;
         "newActivityDefinition": () => Promise<ActivityDefinition>;
         "registerActivityDrivers": (register: (registry: ActivityDriverRegistry) => void) => Promise<void>;
@@ -44,8 +45,14 @@ export namespace Components {
     }
     interface ElsaActivityDefinitionPropertiesEditor {
         "activityDefinition"?: ActivityDefinition;
+        "activityVersions": Array<ActivityDefinition>;
         "hide": () => Promise<void>;
         "show": () => Promise<void>;
+    }
+    interface ElsaActivityDefinitionVersionHistory {
+        "activityVersions": Array<ActivityDefinition>;
+        "selectedVersion": ActivityDefinition;
+        "serverUrl": string;
     }
     interface ElsaActivityProperties {
         "activity"?: Activity;
@@ -118,12 +125,12 @@ export namespace Components {
         "newRoot": () => Promise<Activity>;
         "renameActivity": (args: RenameActivityArgs) => Promise<void>;
         "reset": () => Promise<void>;
+        "rootActivity": Activity;
         "scrollToStart": () => Promise<void>;
         "silent": boolean;
         "updateActivity": (args: UpdateActivityArgs) => Promise<void>;
         "updateGraph": () => Promise<void>;
         "updateLayout": () => Promise<void>;
-        "workflowDefinition": WorkflowDefinition;
         "zoomToFit": () => Promise<void>;
     }
     interface ElsaFormPanel {
@@ -316,7 +323,7 @@ export namespace Components {
     }
     interface ElsaWorkflowNavigator {
         "items": Array<FlowchartPathItem>;
-        "workflowDefinition": WorkflowDefinition;
+        "rootActivity": Activity;
     }
     interface ElsaWorkflowPublishButton {
         "publishing": boolean;
@@ -337,6 +344,10 @@ export interface ElsaActivityDefinitionEditorCustomEvent<T> extends CustomEvent<
 export interface ElsaActivityDefinitionPropertiesEditorCustomEvent<T> extends CustomEvent<T> {
     detail: T;
     target: HTMLElsaActivityDefinitionPropertiesEditorElement;
+}
+export interface ElsaActivityDefinitionVersionHistoryCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLElsaActivityDefinitionVersionHistoryElement;
 }
 export interface ElsaActivityPropertiesEditorCustomEvent<T> extends CustomEvent<T> {
     detail: T;
@@ -460,6 +471,12 @@ declare global {
     var HTMLElsaActivityDefinitionPropertiesEditorElement: {
         prototype: HTMLElsaActivityDefinitionPropertiesEditorElement;
         new (): HTMLElsaActivityDefinitionPropertiesEditorElement;
+    };
+    interface HTMLElsaActivityDefinitionVersionHistoryElement extends Components.ElsaActivityDefinitionVersionHistory, HTMLStencilElement {
+    }
+    var HTMLElsaActivityDefinitionVersionHistoryElement: {
+        prototype: HTMLElsaActivityDefinitionVersionHistoryElement;
+        new (): HTMLElsaActivityDefinitionVersionHistoryElement;
     };
     interface HTMLElsaActivityPropertiesElement extends Components.ElsaActivityProperties, HTMLStencilElement {
     }
@@ -807,6 +824,7 @@ declare global {
         "elsa-activity-definition-browser": HTMLElsaActivityDefinitionBrowserElement;
         "elsa-activity-definition-editor": HTMLElsaActivityDefinitionEditorElement;
         "elsa-activity-definition-properties-editor": HTMLElsaActivityDefinitionPropertiesEditorElement;
+        "elsa-activity-definition-version-history": HTMLElsaActivityDefinitionVersionHistoryElement;
         "elsa-activity-properties": HTMLElsaActivityPropertiesElement;
         "elsa-activity-properties-editor": HTMLElsaActivityPropertiesEditorElement;
         "elsa-activity-publish-button": HTMLElsaActivityPublishButtonElement;
@@ -878,7 +896,19 @@ declare namespace LocalJSX {
     }
     interface ElsaActivityDefinitionPropertiesEditor {
         "activityDefinition"?: ActivityDefinition;
+        "activityVersions"?: Array<ActivityDefinition>;
         "onActivityDefinitionPropsUpdated"?: (event: ElsaActivityDefinitionPropertiesEditorCustomEvent<ActivityDefinitionPropsUpdatedArgs>) => void;
+        "onDeleteVersionClicked"?: (event: ElsaActivityDefinitionPropertiesEditorCustomEvent<ActivityDefinition>) => void;
+        "onRevertVersionClicked"?: (event: ElsaActivityDefinitionPropertiesEditorCustomEvent<ActivityDefinition>) => void;
+        "onVersionSelected"?: (event: ElsaActivityDefinitionPropertiesEditorCustomEvent<ActivityDefinition>) => void;
+    }
+    interface ElsaActivityDefinitionVersionHistory {
+        "activityVersions"?: Array<ActivityDefinition>;
+        "onDeleteVersionClicked"?: (event: ElsaActivityDefinitionVersionHistoryCustomEvent<ActivityDefinition>) => void;
+        "onRevertVersionClicked"?: (event: ElsaActivityDefinitionVersionHistoryCustomEvent<ActivityDefinition>) => void;
+        "onVersionSelected"?: (event: ElsaActivityDefinitionVersionHistoryCustomEvent<ActivityDefinition>) => void;
+        "selectedVersion"?: ActivityDefinition;
+        "serverUrl"?: string;
     }
     interface ElsaActivityProperties {
         "activity"?: Activity;
@@ -952,8 +982,8 @@ declare namespace LocalJSX {
         "onContainerSelected"?: (event: ElsaFlowchartCustomEvent<ContainerSelectedArgs>) => void;
         "onGraphUpdated"?: (event: ElsaFlowchartCustomEvent<GraphUpdatedArgs>) => void;
         "onWorkflowUpdated"?: (event: ElsaFlowchartCustomEvent<WorkflowUpdatedArgs>) => void;
+        "rootActivity"?: Activity;
         "silent"?: boolean;
-        "workflowDefinition"?: WorkflowDefinition;
     }
     interface ElsaFormPanel {
         "actions"?: Array<PanelActionDefinition>;
@@ -1153,7 +1183,7 @@ declare namespace LocalJSX {
     interface ElsaWorkflowNavigator {
         "items"?: Array<FlowchartPathItem>;
         "onNavigate"?: (event: ElsaWorkflowNavigatorCustomEvent<FlowchartPathItem>) => void;
-        "workflowDefinition"?: WorkflowDefinition;
+        "rootActivity"?: Activity;
     }
     interface ElsaWorkflowPublishButton {
         "onExportClicked"?: (event: ElsaWorkflowPublishButtonCustomEvent<any>) => void;
@@ -1171,6 +1201,7 @@ declare namespace LocalJSX {
         "elsa-activity-definition-browser": ElsaActivityDefinitionBrowser;
         "elsa-activity-definition-editor": ElsaActivityDefinitionEditor;
         "elsa-activity-definition-properties-editor": ElsaActivityDefinitionPropertiesEditor;
+        "elsa-activity-definition-version-history": ElsaActivityDefinitionVersionHistory;
         "elsa-activity-properties": ElsaActivityProperties;
         "elsa-activity-properties-editor": ElsaActivityPropertiesEditor;
         "elsa-activity-publish-button": ElsaActivityPublishButton;
@@ -1237,6 +1268,7 @@ declare module "@stencil/core" {
             "elsa-activity-definition-browser": LocalJSX.ElsaActivityDefinitionBrowser & JSXBase.HTMLAttributes<HTMLElsaActivityDefinitionBrowserElement>;
             "elsa-activity-definition-editor": LocalJSX.ElsaActivityDefinitionEditor & JSXBase.HTMLAttributes<HTMLElsaActivityDefinitionEditorElement>;
             "elsa-activity-definition-properties-editor": LocalJSX.ElsaActivityDefinitionPropertiesEditor & JSXBase.HTMLAttributes<HTMLElsaActivityDefinitionPropertiesEditorElement>;
+            "elsa-activity-definition-version-history": LocalJSX.ElsaActivityDefinitionVersionHistory & JSXBase.HTMLAttributes<HTMLElsaActivityDefinitionVersionHistoryElement>;
             "elsa-activity-properties": LocalJSX.ElsaActivityProperties & JSXBase.HTMLAttributes<HTMLElsaActivityPropertiesElement>;
             "elsa-activity-properties-editor": LocalJSX.ElsaActivityPropertiesEditor & JSXBase.HTMLAttributes<HTMLElsaActivityPropertiesEditorElement>;
             "elsa-activity-publish-button": LocalJSX.ElsaActivityPublishButton & JSXBase.HTMLAttributes<HTMLElsaActivityPublishButtonElement>;

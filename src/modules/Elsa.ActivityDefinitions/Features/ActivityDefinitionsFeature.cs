@@ -44,6 +44,7 @@ public class ActivityDefinitionsFeature : FeatureBase
             .AddSingleton<IActivityDefinitionMaterializer, ActivityDefinitionMaterializer>()
             .AddSingleton<IActivityDefinitionPublisher, ActivityDefinitionPublisher>()
             .AddSingleton<IActivityPortResolver, ActivityDefinitionPortResolver>()
+            .AddSingleton<IActivityDefinitionManager, ActivityDefinitionManager>()
             .AddActivityProvider<ActivityDefinitionActivityProvider>()
             ;
 

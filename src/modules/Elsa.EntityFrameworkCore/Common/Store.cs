@@ -58,7 +58,8 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
         if (entity == null)
             return null;
 
-        entity = onLoading?.Invoke(dbContext, entity);
+        if(onLoading != default)
+            entity = onLoading.Invoke(dbContext, entity);
 
         return entity;
     }

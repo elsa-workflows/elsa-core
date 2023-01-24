@@ -7,7 +7,8 @@ import {
   ListActivityDefinitionsRequest,
   PublishActivityDefinitionRequest, PublishManyActivityDefinitionRequest, PublishManyActivityDefinitionResponse,
   RetractActivityDefinitionRequest,
-  SaveActivityDefinitionRequest, UnpublishManyActivityDefinitionRequest, UnpublishManyActivityDefinitionResponse
+  SaveActivityDefinitionRequest, UnpublishManyActivityDefinitionRequest, UnpublishManyActivityDefinitionResponse,
+  DeleteActivityVersionRequest, RevertActivityVersionRequest
 } from "../models";
 import {getVersionOptionsString, serializeQueryString} from "../../../utils";
 import {PagedList} from "../../../models";
@@ -53,6 +54,24 @@ export class ActivityDefinitionsApi {
     const queryStringText = serializeQueryString(queryString);
     const httpClient = await this.provider.getHttpClient();
     const response = await httpClient.get<ActivityDefinition>(`activity-definitions/${request.definitionId}${queryStringText}`);
+    return response.data;
+  }
+
+  async getVersions(activityDefinitionId: string): Promise<Array<ActivityDefinition>> {
+    const httpClient = await this.provider.getHttpClient();
+    const response = await httpClient.get<Array<ActivityDefinition>>(`activity-definitions/${activityDefinitionId}/versions`);
+    return response.data;
+  }
+
+  async deleteVersion(request: DeleteActivityVersionRequest): Promise<ActivityDefinition> {
+    const httpClient = await this.provider.getHttpClient();
+    const response = await httpClient.delete<ActivityDefinition>(`activity-definitions/${request.definitionId}/version/${request.version}`);
+    return response.data;
+  }
+
+  async revertVersion(request: RevertActivityVersionRequest): Promise<ActivityDefinition> {
+    const httpClient = await this.provider.getHttpClient();
+    const response = await httpClient.post<ActivityDefinition>(`activity-definitions/${request.definitionId}/revert/${request.version}`);
     return response.data;
   }
 

@@ -25,7 +25,11 @@ export class Properties {
   }
 
   @Prop() activityDefinition?: ActivityDefinition;
+  @Prop() activityVersions: Array<ActivityDefinition>;
   @Event() activityDefinitionPropsUpdated: EventEmitter<ActivityDefinitionPropsUpdatedArgs>;
+  @Event() versionSelected: EventEmitter<ActivityDefinition>;
+  @Event() deleteVersionClicked: EventEmitter<ActivityDefinition>;
+  @Event() revertVersionClicked: EventEmitter<ActivityDefinition>;
   @State() private model: ActivityDefinitionPropertiesEditorModel;
   @State() private selectedTabIndex: number = 0;
 
@@ -123,7 +127,15 @@ export class Properties {
       }
     }
 
-    model.tabModels = [propertiesTabModel, variablesTabModel];
+    const versionHistoryTabModel: TabModel = {
+      name: 'versionHistory',
+      tab: {
+        displayText: 'Version History',
+        content: () => this.renderVersionHistoryTab()
+      }
+    }
+
+    model.tabModels = [propertiesTabModel, variablesTabModel, versionHistoryTabModel];
     this.model = model;
   }
 
@@ -140,6 +152,15 @@ export class Properties {
 
     return <div>
       <elsa-variables-editor variables={variables} onVariablesChanged={e => this.onVariablesUpdated(e)}/>
+    </div>
+  };
+
+  private renderVersionHistoryTab = () => {
+    return <div>
+      <elsa-activity-definition-version-history
+        selectedVersion={this.activityDefinition}
+        activityVersions={this.activityVersions}
+      />
     </div>
   };
 

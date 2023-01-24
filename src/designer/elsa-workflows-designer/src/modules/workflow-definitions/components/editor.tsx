@@ -312,7 +312,7 @@ export class WorkflowDefinitionEditor {
           </elsa-panel>
           <elsa-flowchart
             ref={el => this.flowchart = el}
-            workflowDefinition={workflowDefinition}
+            rootActivity={workflowDefinition.root}
             interactiveMode={true}
             onGraphUpdated={this.onGraphUpdated}
             onDragOver={this.onDragOver}

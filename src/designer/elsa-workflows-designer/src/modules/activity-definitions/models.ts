@@ -128,3 +128,13 @@ export interface ActivityDefinitionPropsUpdatedArgs {
 export interface ActivityDefinitionPropertiesEditorModel {
   tabModels: Array<TabModel>;
 }
+
+export interface DeleteActivityVersionRequest {
+  definitionId: string;
+  version: number;
+}
+
+export interface RevertActivityVersionRequest {
+  definitionId: string;
+  version: number;
+}

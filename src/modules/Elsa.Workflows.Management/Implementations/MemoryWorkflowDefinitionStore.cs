@@ -67,7 +67,7 @@ public class MemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
     public Task<WorkflowDefinition?> FindLastVersionByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken)
     {
         var query = _store.List();
-        return Task.FromResult(query.Where(w => w.DefinitionId == definitionId).OrderByDescending(w => w.Version).FirstOrDefault());
+        return Task.FromResult(query.Where(w => w.DefinitionId == definitionId).MaxBy(w => w.Version));
     }
 
     public Task SaveAsync(WorkflowDefinition record, CancellationToken cancellationToken = default)

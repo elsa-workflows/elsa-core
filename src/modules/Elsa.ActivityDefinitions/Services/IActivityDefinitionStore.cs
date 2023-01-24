@@ -18,8 +18,11 @@ public interface IActivityDefinitionStore
 
     Task<ActivityDefinition?> FindByTypeAsync(string type, int version, CancellationToken cancellationToken = default);
     Task<ActivityDefinition?> FindByDefinitionIdAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default);
+    Task<IEnumerable<ActivityDefinition>> FindManyByDefinitionIdAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default);
+    Task<ActivityDefinition?> FindLastVersionByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken);
     Task<IEnumerable<ActivityDefinition>> FindLatestAndPublishedByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default);
     Task SaveAsync(ActivityDefinition record, CancellationToken cancellationToken = default);
     Task<int> DeleteByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default);
     Task<int> DeleteByDefinitionIdsAsync(IEnumerable<string> definitionIds, CancellationToken cancellationToken = default);
+    Task<int> DeleteByDefinitionIdAndVersionAsync(string definitionId, int version, CancellationToken cancellationToken = default);
 }

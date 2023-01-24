@@ -44,7 +44,7 @@ export class ActivityDefinitionsPlugin implements Plugin {
     }];
 
     const toolbarItems: Array<ToolbarMenuItem> = [{
-      text: 'Workflow Definitions',
+      text: 'Activity Definitions',
       onClick: this.onBrowseActivityDefinitions,
       order: 5
     }]
@@ -93,7 +93,19 @@ export class ActivityDefinitionsPlugin implements Plugin {
 
   private saveActivityDefinition = async (definition: ActivityDefinition, publish: boolean): Promise<ActivityDefinition> => {
     const updatedDefinition = await this.activityDefinitionManager.save(definition, publish);
-    await this.activityDefinitionEditorElement.updateActivityDefinition(updatedDefinition);
+    let reload = false;
+
+    if (definition.id != updatedDefinition.id) reload = true;
+    if (definition.definitionId != updatedDefinition.definitionId) reload = true;
+    if (definition.version != updatedDefinition.version) reload = true;
+    if (definition.isPublished != updatedDefinition.isPublished) reload = true;
+    if (definition.isLatest != updatedDefinition.isLatest) reload = true;
+
+    if (reload) {
+      await this.activityDefinitionEditorElement.updateActivityDefinition(updatedDefinition);
+      await this.activityDefinitionEditorElement.loadActivityVersions();
+    }
+    
     return updatedDefinition;
   }
 
@@ -125,8 +137,8 @@ export class ActivityDefinitionsPlugin implements Plugin {
 
   private onActivityDefinitionSelected = async (e: CustomEvent<ActivityDefinitionSummary>) => {
     const definitionId = e.detail.definitionId;
-    const workflowDefinition = await this.api.get({definitionId});
-    this.showActivityDefinitionEditor(workflowDefinition);
+    const activityDefinition = await this.api.get({definitionId});
+    this.showActivityDefinitionEditor(activityDefinition);
     this.modalDialogService.hide(this.activityDefinitionBrowserInstance);
   }
 

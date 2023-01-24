@@ -43,6 +43,18 @@ public class MemoryActivityDefinitionStore : IActivityDefinitionStore
         var definition = _store.Find(x => x.DefinitionId == definitionId && x.WithVersion(versionOptions));
         return Task.FromResult(definition);
     }
+    
+    public Task<IEnumerable<ActivityDefinition>> FindManyByDefinitionIdAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
+    {
+        var definition = _store.FindMany(x => x.DefinitionId == definitionId && x.WithVersion(versionOptions));
+        return Task.FromResult(definition);
+    }
+    
+    public Task<ActivityDefinition?> FindLastVersionByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken)
+    {
+        var query = _store.List();
+        return Task.FromResult(query.Where(w => w.DefinitionId == definitionId).MaxBy(w => w.Version));
+    }
 
     public Task<IEnumerable<ActivityDefinition>> FindLatestAndPublishedByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default)
     {
@@ -66,6 +78,12 @@ public class MemoryActivityDefinitionStore : IActivityDefinitionStore
     {
         var definitionIdList = definitionIds.ToList();
         var result = _store.DeleteWhere(x => definitionIdList.Contains(x.DefinitionId));
+        return Task.FromResult(result);
+    }
+    
+    public Task<int> DeleteByDefinitionIdAndVersionAsync(string definitionId, int version, CancellationToken cancellationToken = default)
+    {
+        var result = _store.DeleteWhere(x => x.DefinitionId == definitionId && x.Version == version);
         return Task.FromResult(result);
     }
 }

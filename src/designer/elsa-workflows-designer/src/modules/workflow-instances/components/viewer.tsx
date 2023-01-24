@@ -170,7 +170,7 @@ export class WorkflowInstanceViewer {
         </elsa-panel>
         <elsa-flowchart
           ref={el => this.flowchartElement = el}
-          workflowDefinition={workflowDefinition}
+          rootActivity={workflowDefinition.root}
           interactiveMode={false}/>
         <elsa-panel
           class="elsa-workflow-editor-container"

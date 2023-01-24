@@ -22,9 +22,24 @@ public class EFCoreActivityDefinitionStore : IActivityDefinitionStore
         _store = store;
         _serializerOptionsProvider = serializerOptionsProvider;
     }
+    
+    public async Task<IEnumerable<ActivityDefinition>> FindManyByDefinitionIdAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
+    {
+        Expression<Func<ActivityDefinition, bool>> predicate = x => x.DefinitionId == definitionId;
+        predicate = predicate.WithVersion(versionOptions);
+        return await _store.FindManyAsync(predicate, Load, cancellationToken);
+    }
 
     public async Task<IEnumerable<ActivityDefinition>> FindLatestAndPublishedByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default) =>
         await _store.FindManyAsync(x => x.DefinitionId == definitionId && (x.IsLatest || x.IsPublished), cancellationToken);
+    
+    public async Task<ActivityDefinition?> FindLastVersionByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken)
+    {
+        await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
+        var set = dbContext.ActivityDefinitions;
+        var query = set.AsQueryable();
+        return Load(dbContext, query.Where(w => w.DefinitionId == definitionId).OrderByDescending(w => w.Version).FirstOrDefault());
+    }
 
     public async Task SaveAsync(ActivityDefinition record, CancellationToken cancellationToken = default) => await _store.SaveAsync(record, cancellationToken);
 
@@ -75,6 +90,12 @@ public class EFCoreActivityDefinitionStore : IActivityDefinitionStore
         var definitionIdList = definitionIds.ToList();
         await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
         return await _store.DeleteWhereAsync(x => definitionIdList.Contains(x.DefinitionId), cancellationToken);
+    }
+    
+    public async Task<int> DeleteByDefinitionIdAndVersionAsync(string definitionId, int version, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
+        return await _store.DeleteWhereAsync(x => x.DefinitionId == definitionId && x.Version == version, cancellationToken);
     }
 
     public ActivityDefinition Save(ActivityDefinitionsElsaDbContext activityDefinitionsElsaDbContext, ActivityDefinition entity)
