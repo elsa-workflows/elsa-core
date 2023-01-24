@@ -27,8 +27,8 @@ public class HttpFeature : FeatureBase
     /// </summary>
     public Action<HttpActivityOptions>? ConfigureHttpOptions { get; set; }
 
-    public Func<IServiceProvider, IHttpEndpointAuthorizationHandler> HttpEndpointAuthorizationHandlerFactory { get; set; } = ActivatorUtilities.GetServiceOrCreateInstance<AllowAnonymousHttpEndpointAuthorizationHandler>;
-    public Func<IServiceProvider, IHttpEndpointWorkflowFaultHandler> HttpEndpointWorkflowFaultHandlerFactory { get; set; } = ActivatorUtilities.GetServiceOrCreateInstance<DefaultHttpEndpointWorkflowFaultHandler>;
+    public Func<IServiceProvider, IHttpEndpointAuthorizationHandler> HttpEndpointAuthorizationHandler { get; set; } = ActivatorUtilities.GetServiceOrCreateInstance<AllowAnonymousHttpEndpointAuthorizationHandler>;
+    public Func<IServiceProvider, IHttpEndpointWorkflowFaultHandler> HttpEndpointWorkflowFaultHandler { get; set; } = ActivatorUtilities.GetServiceOrCreateInstance<DefaultHttpEndpointWorkflowFaultHandler>;
 
     /// <summary>
     /// A delegate to configure the <see cref="HttpClient"/> used when by the <see cref="SendHttpRequest"/> activity.
@@ -74,6 +74,7 @@ public class HttpFeature : FeatureBase
             .AddSingleton<IRouteMatcher, RouteMatcher>()
             .AddSingleton<IRouteTable, RouteTable>()
             .AddSingleton<IAbsoluteUrlProvider, DefaultAbsoluteUrlProvider>()
+            .AddSingleton<IHttpBookmarkProcessor, HttpBookmarkProcessor>()
             .AddNotificationHandlersFrom<UpdateRouteTable>()
             .AddHttpContextAccessor()
 

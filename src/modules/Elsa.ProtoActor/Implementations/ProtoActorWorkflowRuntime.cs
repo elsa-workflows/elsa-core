@@ -66,7 +66,7 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
     }
 
     /// <inheritdoc />
-    public async Task<StartWorkflowResult> StartWorkflowAsync(string definitionId, StartWorkflowRuntimeOptions options, CancellationToken cancellationToken = default)
+    public async Task<WorkflowExecutionResult> StartWorkflowAsync(string definitionId, StartWorkflowRuntimeOptions options, CancellationToken cancellationToken = default)
     {
         var versionOptions = options.VersionOptions;
         var correlationId = options.CorrelationId;
@@ -87,7 +87,7 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
         var response = await client.Start(request, cancellationToken);
         var bookmarks = Map(response!.Bookmarks).ToList();
 
-        return new StartWorkflowResult(workflowInstanceId, bookmarks);
+        return new WorkflowExecutionResult(workflowInstanceId, bookmarks);
     }
 
     /// <inheritdoc />
@@ -110,7 +110,7 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
     }
 
     /// <inheritdoc />
-    public async Task<ICollection<ResumedWorkflow>> ResumeWorkflowsAsync(string activityTypeName, object bookmarkPayload, ResumeWorkflowRuntimeOptions options, CancellationToken cancellationToken = default)
+    public async Task<ICollection<WorkflowExecutionResult>> ResumeWorkflowsAsync(string activityTypeName, object bookmarkPayload, ResumeWorkflowRuntimeOptions options, CancellationToken cancellationToken = default)
     {
         var hash = _hasher.Hash(activityTypeName, bookmarkPayload);
         var client = _cluster.GetNamedBookmarkGrain(hash);
@@ -129,7 +129,7 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
     /// <inheritdoc />
     public async Task<TriggerWorkflowsResult> TriggerWorkflowsAsync(string activityTypeName, object bookmarkPayload, TriggerWorkflowsRuntimeOptions options, CancellationToken cancellationToken = default)
     {
-        var triggeredWorkflows = new List<TriggeredWorkflow>();
+        var triggeredWorkflows = new List<WorkflowExecutionResult>();
         var hash = _hasher.Hash(activityTypeName, bookmarkPayload);
 
         // Start new workflows.
@@ -147,7 +147,7 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
             
             var startResult = await StartWorkflowAsync(definitionId, startOptions, cancellationToken);
 
-            triggeredWorkflows.Add(new TriggeredWorkflow(startResult.InstanceId, startResult.Bookmarks));
+            triggeredWorkflows.Add(new WorkflowExecutionResult(startResult.InstanceId, startResult.Bookmarks));
         }
         
         // Resume existing workflow instances.
@@ -171,7 +171,7 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
                 new ResumeWorkflowRuntimeOptions(options.CorrelationId, bookmark.BookmarkId, null, options.Input),
                 cancellationToken);
 
-            triggeredWorkflows.Add(new TriggeredWorkflow(workflowInstanceId, resumeResult.Bookmarks));
+            triggeredWorkflows.Add(new WorkflowExecutionResult(workflowInstanceId, resumeResult.Bookmarks));
         }
 
         return new TriggerWorkflowsResult(triggeredWorkflows);
@@ -229,9 +229,9 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
         return response!.Count;
     }
     
-    private async Task<ICollection<ResumedWorkflow>> ResumeWorkflowsAsync(IEnumerable<StoredBookmark> bookmarks, ResumeWorkflowRuntimeOptions runtimeOptions, CancellationToken cancellationToken = default)
+    private async Task<ICollection<WorkflowExecutionResult>> ResumeWorkflowsAsync(IEnumerable<StoredBookmark> bookmarks, ResumeWorkflowRuntimeOptions runtimeOptions, CancellationToken cancellationToken = default)
     {
-        var resumedWorkflows = new List<ResumedWorkflow>();
+        var resumedWorkflows = new List<WorkflowExecutionResult>();
 
         foreach (var bookmark in bookmarks)
         {
@@ -242,7 +242,7 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
                 runtimeOptions with { BookmarkId = bookmark.BookmarkId },
                 cancellationToken);
 
-            resumedWorkflows.Add(new ResumedWorkflow(workflowInstanceId, resumeResult.Bookmarks));
+            resumedWorkflows.Add(new WorkflowExecutionResult(workflowInstanceId, resumeResult.Bookmarks));
         }
 
         return resumedWorkflows;
