@@ -114,14 +114,14 @@ public class SendHttpRequest : CodeActivity<HttpResponse>
 
         if (contentType != null && content != null)
         {
-            var contentWriters = context.GetServices<IHttpContentWriter>();
+            var contentWriters = context.GetServices<IHttpContentFactory>();
             var contentWriter = SelectContentWriter(contentType, contentWriters);
-            request.Content = contentWriter.GetContent(content, contentType);
+            request.Content = contentWriter.CreateHttpContent(content, contentType);
         }
 
         return request;
     }
 
-    private IHttpContentWriter SelectContentWriter(string? contentType, IEnumerable<IHttpContentWriter> requestContentWriters) =>
-        string.IsNullOrWhiteSpace(contentType) ? new StringHttpContentWriter() : requestContentWriters.First(w => w.SupportsContentType(contentType));
+    private IHttpContentFactory SelectContentWriter(string? contentType, IEnumerable<IHttpContentFactory> requestContentWriters) =>
+        string.IsNullOrWhiteSpace(contentType) ? new JsonContentFactory() : requestContentWriters.First(w => w.SupportsContentType(contentType));
 }

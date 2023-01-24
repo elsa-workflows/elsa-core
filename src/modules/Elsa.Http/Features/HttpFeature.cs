@@ -78,14 +78,15 @@ public class HttpFeature : FeatureBase
             .AddNotificationHandlersFrom<UpdateRouteTable>()
             .AddHttpContextAccessor()
 
-            // Add Content Parsers.
+            // Add content parsers.
             .AddSingleton<IHttpContentParser, StringHttpContentParser>()
             .AddSingleton<IHttpContentParser, JsonHttpContentParser>()
             .AddSingleton<IHttpContentParser, XmlHttpContentParser>()
 
-            // Add Request Content Writers.
-            .AddSingleton<IHttpContentWriter, StringHttpContentWriter>()
-            .AddSingleton<IHttpContentWriter, FormUrlEncodedHttpContentWriter>()
+            // Add HTTP content factories.
+            .AddSingleton<IHttpContentFactory, TextContentFactory>()
+            .AddSingleton<IHttpContentFactory, JsonContentFactory>()
+            .AddSingleton<IHttpContentFactory, FormUrlEncodedHttpContentFactory>()
             ;
     }
 }

@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using Elsa.Extensions;
+using Elsa.Http.ContentWriters;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Models;
@@ -25,8 +26,8 @@ public class WriteHttpResponse : CodeActivity
     /// <summary>
     /// The content to write back.
     /// </summary>
-    [Input(Description = "The content to write back.")]
-    public Input<string?> Content { get; set; } = new("");
+    [Input(Description = "The content to write back. String values will be sent as-is, while objects will be serialized to a JSON string. Byte arrays and streams will be sent as files.")]
+    public Input<object?> Content { get; set; } = default!;
 
     /// <summary>
     /// The content type to use when returning the response.
@@ -78,15 +79,30 @@ public class WriteHttpResponse : CodeActivity
 
     private async Task WriteResponseAsync(ActivityExecutionContext context, HttpResponse response)
     {
+        // Set status code.
         response.StatusCode = (int)context.Get(StatusCode);
 
+        // Add headers.
         var headers = ResponseHeaders.TryGet(context) ?? new HttpResponseHeaders();
         foreach (var header in headers)
             response.Headers.Add(header.Key, header.Value);
         
+        // Get content and content type.
         var content = context.Get(Content);
 
-        if (content != null)
-            await response.WriteAsync(content, context.CancellationToken);
+        if (content == null)
+            return;
+        
+        var contentType = ContentType.Get(context) ?? DetermineContentType(content);
+        var contentWriter = context.GetServices<IHttpContentFactory>().FirstOrDefault(x => x.SupportsContentType(contentType)) ?? new TextContentFactory();
+        var httpContent = contentWriter.CreateHttpContent(content, contentType);
+
+        // Set content type.
+        response.ContentType = httpContent.Headers.ContentType?.ToString() ?? contentType;
+        
+        // Write content.
+        await httpContent.CopyToAsync(response.Body);
     }
+
+    private string DetermineContentType(object? content) => content is byte[] or Stream ? "application/octet-stream" : "text/plain";
 }
