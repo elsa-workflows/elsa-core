@@ -4,14 +4,13 @@ using System.Text;
 namespace Elsa.Http.ContentWriters;
 
 /// <summary>
-/// Creates a <see cref="StringContent"/> object for application/json, application/xml, text/json and text/xml content types.
+/// Creates a <see cref="StringContent"/> object for text/plain, text/richtext and text/html content types.
 /// </summary>
 public class TextContentFactory : IHttpContentFactory
 {
     private readonly List<string> _supportedContentTypes = new()
     {
         MediaTypeNames.Text.Plain,
-        MediaTypeNames.Text.Xml,
         MediaTypeNames.Text.RichText,
         MediaTypeNames.Text.Html,
     };

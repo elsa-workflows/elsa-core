@@ -6,11 +6,11 @@ using System.Text;
 namespace Elsa.Http.ContentWriters;
 
 /// <summary>
-/// Creates a <see cref="StringContent"/> object for application/json.
+/// Creates a <see cref="HttpContent"/> object for application/json.
 /// </summary>
 public class JsonContentFactory : IHttpContentFactory
 {
-    private readonly List<string> _supportedContentTypes = new() { MediaTypeNames.Application.Json };
+    private readonly List<string> _supportedContentTypes = new() { MediaTypeNames.Application.Json, "text/json" };
 
     /// <inheritdoc />
     public bool SupportsContentType(string contentType) => _supportedContentTypes.Contains(contentType);

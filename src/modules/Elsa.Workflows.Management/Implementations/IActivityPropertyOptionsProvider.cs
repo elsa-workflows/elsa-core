@@ -2,7 +2,13 @@ using System.Reflection;
 
 namespace Elsa.Workflows.Management.Implementations;
 
+/// <summary>
+/// Provides options about a given activity property.
+/// </summary>
 public interface IActivityPropertyOptionsProvider
 {
-    object? GetOptions(PropertyInfo property);
+    /// <summary>
+    /// Returns options for the specified property.
+    /// </summary>
+    object GetOptions(PropertyInfo property);
 }

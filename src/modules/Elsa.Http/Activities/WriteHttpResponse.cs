@@ -1,13 +1,12 @@
 using System.Net;
-using System.Net.Http.Headers;
 using Elsa.Extensions;
 using Elsa.Http.ContentWriters;
+using Elsa.Http.Models;
+using Elsa.Http.Providers;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Models;
 using Microsoft.AspNetCore.Http;
-using HttpRequestHeaders = Elsa.Http.Models.HttpRequestHeaders;
-using HttpResponseHeaders = Elsa.Http.Models.HttpResponseHeaders;
 
 namespace Elsa.Http;
 
@@ -34,7 +33,7 @@ public class WriteHttpResponse : CodeActivity
     /// </summary>
     [Input(
         Description = "The content type to use when returning the response.",
-        Options = new[] { "", "text/plain", "text/html", "application/json", "application/xml", "application/x-www-form-urlencoded" },
+        OptionsProvider = typeof(WriteHttpResponseContentTypeOptionsProvider),
         UIHint = InputUIHints.Dropdown
     )]
     public Input<string?> ContentType { get; set; } = default!;

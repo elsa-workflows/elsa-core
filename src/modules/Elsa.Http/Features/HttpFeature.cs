@@ -8,7 +8,9 @@ using Elsa.Http.Handlers;
 using Elsa.Http.Implementations;
 using Elsa.Http.Options;
 using Elsa.Http.Parsers;
+using Elsa.Http.Providers;
 using Elsa.Http.Services;
+using Elsa.Workflows.Management.Implementations;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
@@ -78,15 +80,19 @@ public class HttpFeature : FeatureBase
             .AddNotificationHandlersFrom<UpdateRouteTable>()
             .AddHttpContextAccessor()
 
-            // Add content parsers.
+            // Content parsers.
             .AddSingleton<IHttpContentParser, StringHttpContentParser>()
             .AddSingleton<IHttpContentParser, JsonHttpContentParser>()
             .AddSingleton<IHttpContentParser, XmlHttpContentParser>()
 
-            // Add HTTP content factories.
+            // HTTP content factories.
             .AddSingleton<IHttpContentFactory, TextContentFactory>()
             .AddSingleton<IHttpContentFactory, JsonContentFactory>()
+            .AddSingleton<IHttpContentFactory, XmlContentFactory>()
             .AddSingleton<IHttpContentFactory, FormUrlEncodedHttpContentFactory>()
+            
+            // Activity property options providers
+            .AddSingleton<IActivityPropertyOptionsProvider, WriteHttpResponseContentTypeOptionsProvider>()
             ;
     }
 }
