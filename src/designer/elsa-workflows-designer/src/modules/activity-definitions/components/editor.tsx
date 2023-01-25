@@ -115,7 +115,11 @@ export class Editor {
   @Method()
   async importDefinition(activityDefinition: ActivityDefinition): Promise<void> {
     await this.updateActivityDefinition(activityDefinition);
-    //await this.flowchartElement.import(activityDefinition.root);
+
+    // Update the flowchart after state is updated.
+    window.requestAnimationFrame(async () => {
+      await this.flowchartElement.updateGraph();
+    });
   }
 
   // Updates the workflow definition without importing it into the designer.
