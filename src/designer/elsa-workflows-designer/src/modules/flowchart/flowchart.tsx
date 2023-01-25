@@ -239,8 +239,8 @@ export class FlowchartComponent {
     return this.exportInternal();
   }
 
-  @Watch('workflowDefinition')
-  private onWorkflowDefinitionChanged(value: WorkflowDefinition) {
+  @Watch('rootActivity')
+  private onActivityChanged(value: Activity) {
     this.updateLookups();
   }
 
