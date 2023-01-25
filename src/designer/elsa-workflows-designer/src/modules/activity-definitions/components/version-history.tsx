@@ -34,6 +34,7 @@ export class WorkflowDefinitionVersionHistory {
   };
 
   onDeleteVersionClick = async (e: Event, version: ActivityDefinition) => {
+    debugger;
     e.preventDefault();
     this.modalDialogService.show(
       () => DefaultContents.Warning("Are you sure you want to delete this version?"),
@@ -64,10 +65,10 @@ export class WorkflowDefinitionVersionHistory {
           <tbody>
           {this.activityVersions.map(v => {
               let menuItems = [];
-              menuItems.push({text: 'Delete', clickHandler: e => this.onDeleteVersionClick(e, v), icon: <DeleteIcon/>});
+              menuItems.push({text: 'Delete', handler: e => this.onDeleteVersionClick(e, v), icon: <DeleteIcon/>});
 
               if (!v.isLatest)
-                menuItems.push({text: 'Revert', clickHandler: e => this.onRevertVersionClick(e, v), icon: <RevertIcon/>});
+                menuItems.push({text: 'Revert', handler: e => this.onRevertVersionClick(e, v), icon: <RevertIcon/>});
 
               return (
                 <tr>
