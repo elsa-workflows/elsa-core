@@ -292,7 +292,13 @@ export class Editor {
     this.saveChangesDebounced();
   }
 
+  private onGraphUpdated = async (e: CustomEvent<GraphUpdatedArgs>) => {
+    this.saveChangesDebounced();
+  };
+
   render() {
+    const activityDefinition = this.activityDefinitionState;
+
     return (
       <div class="absolute inset-0" ref={el => this.container = el}>
         <elsa-workflow-definition-editor-toolbar zoomToFit={this.onZoomToFit}/>
@@ -304,9 +310,10 @@ export class Editor {
         </elsa-panel>
         <elsa-flowchart
           class="absolute" 
-          rootActivity={this.activityDefinition.root}
+          rootActivity={activityDefinition.root}
           ref={el => this.flowchartElement = el}
           interactiveMode={true}
+          onGraphUpdated={this.onGraphUpdated}
           onDragOver={this.onDragOver}
           onDrop={this.onDrop}/>
         <elsa-panel
