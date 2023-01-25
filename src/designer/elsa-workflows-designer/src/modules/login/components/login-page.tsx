@@ -1,7 +1,6 @@
 import {Component, h, State, Event, EventEmitter} from "@stencil/core";
 import {LoginApi} from "../services";
 import {Container} from "typedi";
-import jwt_decode from "jwt-decode";
 import {AuthContext} from "../../../services";
 import {SignedInArgs} from "../models";
 
@@ -43,7 +42,7 @@ export class LoginPage {
     const accessToken = loginResponse.accessToken;
     const refreshToken = loginResponse.refreshToken;
     const authContext = Container.get(AuthContext);
-    await authContext.signinTokens(accessToken, refreshToken, rememberMe);
+    await authContext.signin(accessToken, refreshToken, rememberMe);
   }
 
   private renderError = () => {

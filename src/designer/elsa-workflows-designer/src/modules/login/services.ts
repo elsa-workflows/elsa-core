@@ -1,9 +1,8 @@
 import 'reflect-metadata';
-import {Container, Service} from "typedi";
-import {ElsaClientProvider, EventBus, ServerSettings} from "../../services";
+import {Service} from "typedi";
+import {ElsaClientProvider, ServerSettings} from "../../services";
 import {LoginResponse} from "./models";
-import axios, {AxiosError, AxiosRequestConfig} from "axios";
-import {EventTypes} from "../../models";
+import axios, {AxiosRequestConfig} from "axios";
 
 @Service()
 export class LoginApi {

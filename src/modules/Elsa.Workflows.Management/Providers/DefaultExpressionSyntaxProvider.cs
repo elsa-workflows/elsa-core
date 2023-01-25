@@ -34,7 +34,7 @@ public class DefaultExpressionSyntaxProvider : IExpressionSyntaxProvider
     private ExpressionSyntaxDescriptor CreateJsonDescriptor() => CreateDescriptor<JsonExpression>(
         "Json",
         CreateJsonExpression,
-        context => new JsonObject(context.GetExpression<JsonExpression>().Value),
+        context => new JsonLiteral(context.GetExpression<JsonExpression>().Value),
         expression => expression.Value);
 
     private ExpressionSyntaxDescriptor CreateDelegateDescriptor() => CreateDescriptor<DelegateExpression>(

@@ -29,14 +29,19 @@ export class AuthContext {
     }
   }
 
-  async signinTokens(accessToken: string, refreshToken: string, createPersistentCookie: boolean){
+  async signin(accessToken: string, refreshToken: string, createPersistentCookie: boolean){
+    await this.updateTokens(accessToken, refreshToken, createPersistentCookie);
+    await this.eventBus.emit(EventTypes.Auth.SignedIn)
+  }
+
+  async updateTokens(accessToken: string, refreshToken: string, createPersistentCookie: boolean){
     const claims = jwt_decode<any>(accessToken);
     const permissions = claims.permissions || [];
     const name = claims.name || '';
-    await this.signIn(name, permissions, accessToken, refreshToken, createPersistentCookie);
+    await this.updateSession(name, permissions, accessToken, refreshToken, createPersistentCookie);
   }
 
-  async signIn(name: string, permissions: Array<string>, accessToken: string, refreshToken: string, createPersistentCookie: boolean) {
+  updateSession(name: string, permissions: Array<string>, accessToken: string, refreshToken: string, createPersistentCookie: boolean) {
     authStore.name = name;
     authStore.permissions = permissions;
     authStore.signedIn = true;
@@ -49,8 +54,6 @@ export class AuthContext {
     if (createPersistentCookie) {
       cookies.set("dashboard-session", data);
     }
-
-    await this.eventBus.emit(EventTypes.Auth.SignedIn)
   }
 
   async signOut() {

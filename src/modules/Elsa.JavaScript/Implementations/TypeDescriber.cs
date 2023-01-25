@@ -26,8 +26,8 @@ public class TypeDescriber : ITypeDescriber
         {
             DeclarationKeyword = GetDeclarationKeyword(type),
             Name = type.Name,
-            Properties = GetPropertyDefinitions(type).ToList(),
-            Methods = GetMethodDefinitions(type).ToList()
+            Properties = GetPropertyDefinitions(type).DistinctBy(x => x.Name).ToList(),
+            Methods = GetMethodDefinitions(type).DistinctBy(x => x.Name).ToList()
         };
 
         return typeDefinition;

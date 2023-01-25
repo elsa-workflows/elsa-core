@@ -6,7 +6,6 @@ import {Container, Service} from "typedi";
 import {StudioService, AuthContext, EventBus, ElsaClient, ElsaClientProvider} from "../../services";
 import descriptorsStore from '../../data/descriptors-store';
 import {SignedInArgs} from "./models";
-import {AxiosInstance} from "axios";
 import {LoginApi} from "./services";
 
 @Service()
@@ -64,14 +63,16 @@ export class LoginPlugin implements Plugin {
       },
 
       async onResponseError(error) {
-        if (error.response.status !== 401 || error.response.config.hasRetriedRequest) 
+
+        if (error.response.status !== 401 || error.response.config.hasRetriedRequest)
           return;
 
         const authContext = Container.get(AuthContext);
         const loginResponse = await loginApi.refreshAccessToken(authContext.getRefreshToken());
+
         if (loginResponse.isAuthenticated) {
-          
-          await authContext.signinTokens(loginResponse.accessToken, loginResponse.refreshToken, true);
+
+          await authContext.updateTokens(loginResponse.accessToken, loginResponse.refreshToken, true);
 
           const t = await service.http({
             ...error.config,
@@ -85,7 +86,7 @@ export class LoginPlugin implements Plugin {
           return t;
         }
         else {
-          authContext.signOut();
+          await authContext.signOut();
         }
       }
     });
