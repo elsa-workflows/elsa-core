@@ -13,6 +13,8 @@ import {
 import {getVersionOptionsString, serializeQueryString} from "../../../utils";
 import {PagedList} from "../../../models";
 import {ElsaClientProvider} from "../../../services";
+import { removeGuidsFromPortNames, addGuidsToPortNames } from '../../../utils/graph';
+import { cloneDeep } from '@antv/x6/lib/util/object/object';
 
 @Service()
 export class ActivityDefinitionsApi {
@@ -41,8 +43,15 @@ export class ActivityDefinitionsApi {
   }
 
   async post(request: SaveActivityDefinitionRequest): Promise<ActivityDefinition> {
+    //TODO: Written as a workaround for different server and client models.
+    //To be deleted after the port model on backend is updated.
+    const requestClone = cloneDeep(request);
+    removeGuidsFromPortNames(requestClone.root);
+
     const httpClient = await this.provider.getHttpClient();
-    const response = await httpClient.post<ActivityDefinition>('activity-definitions', request);
+    const response = await httpClient.post<ActivityDefinition>('activity-definitions', requestClone);
+
+    addGuidsToPortNames(response.data.root);
     return response.data;
   }
 
@@ -128,6 +137,11 @@ export class ActivityDefinitionsApi {
     });
 
     const activityDefinition = response.data;
+    
+    //TODO: Written as a workaround for different server and client models.
+    //To be deleted after the connection model on backend is updated.
+    addGuidsToPortNames(activityDefinition.root);
+
     return {activityDefinition: activityDefinition};
   }
 
