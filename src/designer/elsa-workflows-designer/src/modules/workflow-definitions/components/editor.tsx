@@ -16,8 +16,8 @@ import {WorkflowDefinition} from "../models/entities";
 import {WorkflowDefinitionsApi} from "../services/api"
 import WorkflowDefinitionTunnel, {WorkflowDefinitionState} from "../state";
 import {LayoutDirection} from "../../flowchart/models";
-import { cloneDeep } from '@antv/x6/lib/util/object/object';
-import { removeGuidsFromPortNames } from '../../../utils/graph';
+import {cloneDeep} from '@antv/x6/lib/util/object/object';
+import {removeGuidsFromPortNames} from '../../../utils/graph';
 
 @Component({
   tag: 'elsa-workflow-definition-editor',
@@ -204,7 +204,7 @@ export class WorkflowDefinitionEditor {
 
   // To prevent redundant post requests to server, save changes only if there is a difference
   // between existing workflow definition on server side and updated workflow definition on client side.
-  private hasWorkflowDefinitionAnyUpdatedData = async (updatedWorkflowDefinition : WorkflowDefinition): Promise<boolean> => {
+  private hasWorkflowDefinitionAnyUpdatedData = async (updatedWorkflowDefinition: WorkflowDefinition): Promise<boolean> => {
     const existingWorkflowDefinition = await this.workflowDefinitionApi.get({definitionId: updatedWorkflowDefinition.definitionId, versionOptions: {version: updatedWorkflowDefinition.version}});
 
     const updatedWorkflowDefinitionClone = cloneDeep(updatedWorkflowDefinition);
