@@ -22,6 +22,7 @@ public class WorkflowsMiddleware
     private readonly IWorkflowRuntime _workflowRuntime;
     private readonly IWorkflowHostFactory _workflowHostFactory;
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
+    private readonly IHttpBookmarkProcessor _httpBookmarkProcessor;
     private readonly HttpActivityOptions _options;
     private readonly string _activityTypeName = ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>();
 
@@ -33,12 +34,14 @@ public class WorkflowsMiddleware
         IWorkflowRuntime workflowRuntime,
         IWorkflowHostFactory workflowHostFactory,
         IWorkflowDefinitionService workflowDefinitionService,
+        IHttpBookmarkProcessor httpBookmarkProcessor,
         IOptions<HttpActivityOptions> options)
     {
         _next = next;
         _workflowRuntime = workflowRuntime;
         _workflowHostFactory = workflowHostFactory;
         _workflowDefinitionService = workflowDefinitionService;
+        _httpBookmarkProcessor = httpBookmarkProcessor;
         _options = options.Value;
     }
 
@@ -79,61 +82,10 @@ public class WorkflowsMiddleware
         var cancellationToken = httpContext.RequestAborted;
         
         // Trigger the workflow.
-        var triggerResult = await _workflowRuntime.TriggerWorkflowsAsync(
-            _activityTypeName,
-            bookmarkPayload,
-            triggerOptions,
-            cancellationToken);
-
-        // We must assume that the workflow executed in a different process (when e.g. using Proto.Actor)
-        // and check if we received any `HttpEndpoint` or `WriteHttpResponse` activity bookmarks.
-        // If we did, acquire a lock on the workflow instance and resume it from here within an actual HTTP context so that the activity can complete its HTTP response.
-        var httpEndpointTypeName = ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>();
-        var writeHttpResponseTypeName = ActivityTypeNameHelper.GenerateTypeName<WriteHttpResponse>();
-
-        var query =
-            from triggeredWorkflow in triggerResult.TriggeredWorkflows
-            from bookmark in triggeredWorkflow.Bookmarks
-            where bookmark.Name == writeHttpResponseTypeName || bookmark.Name == httpEndpointTypeName 
-            select (triggeredWorkflow.InstanceId, bookmark.Id);
-
-        var workflowExecutionResults = new Stack<(string InstanceId, string BookmarkId)>(query);
-
-        while (workflowExecutionResults.TryPop(out var result))
-        {
-            // Resume the workflow "in-process".
-            var workflowState = await _workflowRuntime.ExportWorkflowStateAsync(
-                result.InstanceId,
-                cancellationToken);
-
-            if (workflowState == null)
-            {
-                // TODO: log this, shouldn't normally happen.
-                continue;
-            }
-
-            var workflowDefinition = await _workflowDefinitionService.FindAsync(
-                workflowState.DefinitionId,
-                VersionOptions.SpecificVersion(workflowState.DefinitionVersion),
-                cancellationToken);
-
-            if (workflowDefinition == null)
-            {
-                // TODO: Log this, shouldn't normally happen.
-                continue;
-            }
-
-            var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(
-                workflowDefinition,
-                cancellationToken);
-
-            var workflowHost = await _workflowHostFactory.CreateAsync(workflow, workflowState, cancellationToken);
-            var options = new ResumeWorkflowHostOptions(correlationId, result.BookmarkId, Input: input);
-            await workflowHost.ResumeWorkflowAsync(options, cancellationToken);
-            
-            // Import the updated workflow state into the runtime.
-            await _workflowRuntime.ImportWorkflowStateAsync(workflowState, cancellationToken);
-        }
+        var triggerResult = await _workflowRuntime.TriggerWorkflowsAsync(_activityTypeName, bookmarkPayload, triggerOptions, cancellationToken);
+        
+        // Process the trigger result by resuming each HTTP bookmark, if any.
+        await _httpBookmarkProcessor.ProcessBookmarks(triggerResult.TriggeredWorkflows, correlationId, input, cancellationToken);
     }
 
     private static async Task WriteResponseAsync(HttpContext httpContext, CancellationToken cancellationToken)

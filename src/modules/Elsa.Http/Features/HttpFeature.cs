@@ -8,7 +8,9 @@ using Elsa.Http.Handlers;
 using Elsa.Http.Implementations;
 using Elsa.Http.Options;
 using Elsa.Http.Parsers;
+using Elsa.Http.Providers;
 using Elsa.Http.Services;
+using Elsa.Workflows.Management.Implementations;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,8 +29,8 @@ public class HttpFeature : FeatureBase
     /// </summary>
     public Action<HttpActivityOptions>? ConfigureHttpOptions { get; set; }
 
-    public Func<IServiceProvider, IHttpEndpointAuthorizationHandler> HttpEndpointAuthorizationHandlerFactory { get; set; } = ActivatorUtilities.GetServiceOrCreateInstance<AllowAnonymousHttpEndpointAuthorizationHandler>;
-    public Func<IServiceProvider, IHttpEndpointWorkflowFaultHandler> HttpEndpointWorkflowFaultHandlerFactory { get; set; } = ActivatorUtilities.GetServiceOrCreateInstance<DefaultHttpEndpointWorkflowFaultHandler>;
+    public Func<IServiceProvider, IHttpEndpointAuthorizationHandler> HttpEndpointAuthorizationHandler { get; set; } = ActivatorUtilities.GetServiceOrCreateInstance<AllowAnonymousHttpEndpointAuthorizationHandler>;
+    public Func<IServiceProvider, IHttpEndpointWorkflowFaultHandler> HttpEndpointWorkflowFaultHandler { get; set; } = ActivatorUtilities.GetServiceOrCreateInstance<DefaultHttpEndpointWorkflowFaultHandler>;
 
     /// <summary>
     /// A delegate to configure the <see cref="HttpClient"/> used when by the <see cref="SendHttpRequest"/> activity.
@@ -74,17 +76,23 @@ public class HttpFeature : FeatureBase
             .AddSingleton<IRouteMatcher, RouteMatcher>()
             .AddSingleton<IRouteTable, RouteTable>()
             .AddSingleton<IAbsoluteUrlProvider, DefaultAbsoluteUrlProvider>()
+            .AddSingleton<IHttpBookmarkProcessor, HttpBookmarkProcessor>()
             .AddNotificationHandlersFrom<UpdateRouteTable>()
             .AddHttpContextAccessor()
 
-            // Add Content Parsers.
+            // Content parsers.
             .AddSingleton<IHttpContentParser, StringHttpContentParser>()
             .AddSingleton<IHttpContentParser, JsonHttpContentParser>()
             .AddSingleton<IHttpContentParser, XmlHttpContentParser>()
 
-            // Add Request Content Writers.
-            .AddSingleton<IHttpContentWriter, StringHttpContentWriter>()
-            .AddSingleton<IHttpContentWriter, FormUrlEncodedHttpContentWriter>()
+            // HTTP content factories.
+            .AddSingleton<IHttpContentFactory, TextContentFactory>()
+            .AddSingleton<IHttpContentFactory, JsonContentFactory>()
+            .AddSingleton<IHttpContentFactory, XmlContentFactory>()
+            .AddSingleton<IHttpContentFactory, FormUrlEncodedHttpContentFactory>()
+            
+            // Activity property options providers
+            .AddSingleton<IActivityPropertyOptionsProvider, WriteHttpResponseContentTypeOptionsProvider>()
             ;
     }
 }

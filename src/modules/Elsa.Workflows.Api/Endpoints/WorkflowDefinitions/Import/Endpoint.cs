@@ -38,7 +38,7 @@ internal class Import : ElsaEndpoint<WorkflowDefinitionRequest, WorkflowDefiniti
     public override void Configure()
     {
         Routes("workflow-definitions/import", "workflow-definitions/{definitionId}/import");
-        Verbs(Http.POST, Http.PUT);
+        Verbs(FastEndpoints.Http.POST, FastEndpoints.Http.PUT);
         ConfigurePermissions("write:workflow-definitions");
     }
 

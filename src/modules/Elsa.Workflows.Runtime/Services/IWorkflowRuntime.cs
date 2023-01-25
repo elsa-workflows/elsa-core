@@ -21,7 +21,7 @@ public interface IWorkflowRuntime
     /// <param name="definitionId">The workflow definition ID to run.</param>
     /// <param name="options"></param>
     /// <param name="cancellationToken"></param>
-    Task<StartWorkflowResult> StartWorkflowAsync(string definitionId, StartWorkflowRuntimeOptions options, CancellationToken cancellationToken = default);
+    Task<WorkflowExecutionResult> StartWorkflowAsync(string definitionId, StartWorkflowRuntimeOptions options, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Resumes an existing workflow instance.
@@ -34,7 +34,7 @@ public interface IWorkflowRuntime
     /// <summary>
     /// Resumes all workflows that are bookmarked on the specified activity type. 
     /// </summary>
-    Task<ICollection<ResumedWorkflow>> ResumeWorkflowsAsync(string activityTypeName, object bookmarkPayload, ResumeWorkflowRuntimeOptions options, CancellationToken cancellationToken = default);
+    Task<ICollection<WorkflowExecutionResult>> ResumeWorkflowsAsync(string activityTypeName, object bookmarkPayload, ResumeWorkflowRuntimeOptions options, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Starts all workflows and resumes existing workflow instances based on the specified activity type and bookmark payload.
@@ -65,12 +65,10 @@ public interface IWorkflowRuntime
 public record StartWorkflowRuntimeOptions(string? CorrelationId = default, IDictionary<string, object>? Input = default, VersionOptions VersionOptions = default, string? TriggerActivityId = default);
 public record ResumeWorkflowRuntimeOptions(string? CorrelationId = default, string? BookmarkId = default, string? ActivityId = default, IDictionary<string, object>? Input = default);
 public record CanStartWorkflowResult(string? InstanceId, bool CanStart);
-public record StartWorkflowResult(string InstanceId, ICollection<Bookmark> Bookmarks);
 public record ResumeWorkflowResult(ICollection<Bookmark> Bookmarks);
 public record TriggerWorkflowsRuntimeOptions(string? CorrelationId = default, IDictionary<string, object>? Input = default);
-public record TriggerWorkflowsResult(ICollection<TriggeredWorkflow> TriggeredWorkflows);
-public record ResumedWorkflow(string InstanceId, ICollection<Bookmark> Bookmarks);
-public record TriggeredWorkflow(string InstanceId, ICollection<Bookmark> Bookmarks);
+public record TriggerWorkflowsResult(ICollection<WorkflowExecutionResult> TriggeredWorkflows);
+public record WorkflowExecutionResult(string InstanceId, ICollection<Bookmark> Bookmarks);
 public record UpdateBookmarksContext(string InstanceId, Diff<Bookmark> Diff, string? CorrelationId);
 
 /// <summary>

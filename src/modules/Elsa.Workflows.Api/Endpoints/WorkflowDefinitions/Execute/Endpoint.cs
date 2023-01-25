@@ -1,5 +1,6 @@
 using Elsa.Abstractions;
 using Elsa.Common.Models;
+using Elsa.Http.Services;
 using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Runtime.Services;
 using JetBrains.Annotations;
@@ -14,12 +15,14 @@ public class Execute : ElsaEndpoint<Request, Response>
 {
     private readonly IWorkflowDefinitionStore _store;
     private readonly IWorkflowRuntime _workflowRuntime;
+    private readonly IHttpBookmarkProcessor _httpBookmarkProcessor;
 
     /// <inheritdoc />
-    public Execute(IWorkflowDefinitionStore store, IWorkflowRuntime workflowRuntime)
+    public Execute(IWorkflowDefinitionStore store, IWorkflowRuntime workflowRuntime, IHttpBookmarkProcessor httpBookmarkProcessor)
     {
         _store = store;
         _workflowRuntime = workflowRuntime;
+        _httpBookmarkProcessor = httpBookmarkProcessor;
     }
 
     /// <inheritdoc />
@@ -44,6 +47,9 @@ public class Execute : ElsaEndpoint<Request, Response>
         var correlationId = request.CorrelationId;
         var startWorkflowOptions = new StartWorkflowRuntimeOptions(correlationId, VersionOptions: VersionOptions.Published);
         var result = await _workflowRuntime.StartWorkflowAsync(definitionId, startWorkflowOptions, cancellationToken);
+
+        // Resume any HTTP bookmarks.
+        await _httpBookmarkProcessor.ProcessBookmarks(new[] { result }, correlationId, default, cancellationToken);
 
         if (!HttpContext.Response.HasStarted)
             await SendOkAsync(new Response(result.InstanceId), cancellationToken);
