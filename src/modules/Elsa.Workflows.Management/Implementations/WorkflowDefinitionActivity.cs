@@ -11,24 +11,13 @@ namespace Elsa.Workflows.Management.Implementations;
 /// </summary>
 public class WorkflowDefinitionActivity : Activity
 {
-    private readonly IWorkflowDefinitionStore _store;
-    
-    [JsonConstructor]
-    public WorkflowDefinitionActivity()
-    {
-    }
-
-    public WorkflowDefinitionActivity(IWorkflowDefinitionStore store)
-    {
-        _store = store;
-    }
-    
     public string WorkflowDefinitionId { get; set; } = default!;
     
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        var workflowDefinition = await _store.FindPublishedByDefinitionIdAsync(WorkflowDefinitionId, context.CancellationToken);
+        var workflowDefinitionStore = context.GetRequiredService<IWorkflowDefinitionStore>();
+        var workflowDefinition = await workflowDefinitionStore.FindPublishedByDefinitionIdAsync(WorkflowDefinitionId, context.CancellationToken);
 
         // Construct the root activity stored in the activity definitions.
         var materializer = context.GetRequiredService<IWorkflowMaterializer>();
