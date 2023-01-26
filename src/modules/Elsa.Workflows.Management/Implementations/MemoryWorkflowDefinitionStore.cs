@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using Elsa.Common.Implementations;
 using Elsa.Common.Models;
 using Elsa.Extensions;
@@ -44,6 +45,13 @@ public class MemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
         return Task.FromResult(definition);
     }
 
+    public Task<IEnumerable<WorkflowDefinition>> FindByPredicateAsync(Expression<Func<WorkflowDefinition, bool>> predicate, VersionOptions versionOptions, CancellationToken cancellationToken = default)
+    {
+        predicate = predicate.WithVersion(versionOptions);
+        var definition = _store.FindMany(predicate.Compile());
+        return Task.FromResult(definition);
+    }
+
     public Task<IEnumerable<WorkflowDefinitionSummary>> FindManySummariesAsync(IEnumerable<string> definitionIds, VersionOptions? versionOptions = default, CancellationToken cancellationToken = default)
     {
         var query = _store.List();
@@ -56,6 +64,12 @@ public class MemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
 
         var summaries = query.Select(WorkflowDefinitionSummary.FromDefinition).ToList().AsEnumerable();
         return Task.FromResult(summaries);
+    }
+
+    public Task<WorkflowDefinition?> FindPublishedByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default)
+    {
+        var definition = _store.Find(x => x.DefinitionId == definitionId && x.WithVersion(VersionOptions.Published));
+        return Task.FromResult(definition);
     }
 
     public Task<IEnumerable<WorkflowDefinition>> FindLatestAndPublishedByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default)

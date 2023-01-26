@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using Elsa.Common.Models;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Models;
@@ -25,8 +26,14 @@ public interface IWorkflowDefinitionStore
     /// Finds a workflow definition by name and specified version options.
     /// </summary>
     Task<WorkflowDefinition?> FindByNameAsync(string name, VersionOptions versionOptions, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Finds a workflow definition by custom expression.
+    /// </summary>
+    Task<IEnumerable<WorkflowDefinition>> FindByPredicateAsync(Expression<Func<WorkflowDefinition, bool>> predicate, VersionOptions versionOptions, CancellationToken cancellationToken = default);
 
     Task<IEnumerable<WorkflowDefinitionSummary>> FindManySummariesAsync(IEnumerable<string> definitionIds, VersionOptions? versionOptions = default, CancellationToken cancellationToken = default);
+    Task<WorkflowDefinition?> FindPublishedByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default);
     Task<IEnumerable<WorkflowDefinition>> FindLatestAndPublishedByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default);
     Task<WorkflowDefinition?> FindLastVersionByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken);
     Task SaveAsync(WorkflowDefinition record, CancellationToken cancellationToken = default);

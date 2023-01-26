@@ -60,6 +60,12 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         return await _store.FindAsync(predicate, Load, cancellationToken);
     }
 
+    public async Task<IEnumerable<WorkflowDefinition>> FindByPredicateAsync(Expression<Func<WorkflowDefinition, bool>> predicate, VersionOptions versionOptions, CancellationToken cancellationToken = default)
+    {
+        predicate = predicate.WithVersion(versionOptions);
+        return await _store.FindManyAsync(predicate, Load, cancellationToken);
+    }
+
     /// <inheritdoc />
     public async Task<IEnumerable<WorkflowDefinitionSummary>> FindManySummariesAsync(IEnumerable<string> definitionIds, VersionOptions? versionOptions = default, CancellationToken cancellationToken = default)
     {
@@ -73,6 +79,13 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         query = query.Where(x => definitionIds.Contains(x.DefinitionId));
 
         return query.OrderBy(x => x.Name).Select(x => WorkflowDefinitionSummary.FromDefinition(Load(dbContext, x)!)).ToList();
+    }
+
+    public async Task<WorkflowDefinition?> FindPublishedByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default)
+    {
+        Expression<Func<WorkflowDefinition, bool>> predicate = x => x.DefinitionId == definitionId;
+        predicate = predicate.WithVersion(VersionOptions.Published);
+        return await _store.FindAsync(predicate, Load, cancellationToken);
     }
 
     /// <inheritdoc />

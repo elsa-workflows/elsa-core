@@ -15,7 +15,7 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Management
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "6.0.11");
+            modelBuilder.HasAnnotation("ProductVersion", "7.0.2");
 
             modelBuilder.Entity("Elsa.Workflows.Management.Entities.WorkflowDefinition", b =>
                 {
@@ -57,6 +57,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Management
 
                     b.Property<string>("StringData")
                         .HasColumnType("TEXT");
+
+                    b.Property<bool?>("UsableAsActivity")
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("Version")
                         .HasColumnType("INTEGER");

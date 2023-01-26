@@ -1,11 +1,14 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Management
 {
+    /// <inheritdoc />
     public partial class Initial : Migration
     {
+        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.EnsureSchema(
@@ -24,6 +27,7 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Management
                     MaterializerContext = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     StringData = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     BinaryData = table.Column<byte[]>(type: "varbinary(max)", nullable: true),
+                    UsableAsActivity = table.Column<bool>(type: "bit", nullable: true),
                     Data = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     Version = table.Column<int>(type: "int", nullable: false),
@@ -170,6 +174,7 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Management
                 columns: new[] { "SubStatus", "DefinitionId" });
         }
 
+        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
