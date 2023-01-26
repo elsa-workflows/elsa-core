@@ -13,7 +13,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\common\Elsa.Api.Common\Elsa.Api.Common.csproj" />
-        <ProjectReference Include="..\Elsa.ActivityDefinitions\Elsa.ActivityDefinitions.csproj" />
         <ProjectReference Include="..\Elsa.Http\Elsa.Http.csproj" />
         <ProjectReference Include="..\Elsa.JavaScript\Elsa.JavaScript.csproj" />
         <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj" />

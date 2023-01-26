@@ -6,7 +6,6 @@ import {SequencePlugin} from "../modules/sequence/sequence-plugin";
 import {FlowSwitchPlugin} from "../modules/flow-switch/flow-switch-plugin";
 import {WorkflowDefinitionsPlugin} from "../modules/workflow-definitions/plugin";
 import {WorkflowInstancesPlugin} from "../modules/workflow-instances/plugin";
-import {ActivityDefinitionsPlugin} from "../modules/activity-definitions/plugin";
 import {LoginPlugin} from "../modules/login/plugin";
 import {HomePagePlugin} from "../modules/home/plugin";
 
@@ -20,7 +19,6 @@ export class PluginRegistry {
     this.add(Container.get(HomePagePlugin));
     this.add(Container.get(WorkflowDefinitionsPlugin));
     this.add(Container.get(WorkflowInstancesPlugin));
-    this.add(Container.get(ActivityDefinitionsPlugin));
     this.add(Container.get(SequencePlugin));
     this.add(Container.get(SwitchPlugin));
     this.add(Container.get(FlowSwitchPlugin));

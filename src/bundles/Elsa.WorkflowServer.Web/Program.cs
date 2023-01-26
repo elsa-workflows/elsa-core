@@ -1,7 +1,6 @@
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.Extensions;
 using Elsa.Identity.Options;
-using Elsa.EntityFrameworkCore.Modules.ActivityDefinitions;
 using Elsa.EntityFrameworkCore.Modules.Labels;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
@@ -41,7 +40,6 @@ services
             runtime.UseMassTransitDispatcher();
         })
         .UseLabels(labels => labels.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
-        .UseActivityDefinitions(feature => feature.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
         .UseJobs(jobs => jobs.ConfigureOptions = options => options.WorkerCount = 10)
         .UseJobActivities()
         .UseScheduling()

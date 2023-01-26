@@ -1,5 +1,4 @@
 using System.Text;
-using Elsa.ActivityDefinitions.Services;
 using Elsa.Common.Models;
 using Elsa.JavaScript.Models;
 using Elsa.JavaScript.Services;
@@ -55,14 +54,7 @@ internal class Get : Endpoint<Request>
             {
                 var workflowDefinitionService = _serviceProvider.GetService<IWorkflowDefinitionService>();
                 var workflowDefinition = workflowDefinitionService != null ? await workflowDefinitionService.FindAsync(containerId, VersionOptions.Latest, cancellationToken) : default;
-                var x = workflowDefinition;
                 return workflowDefinition?.Variables ?? new List<Variable>();
-            }
-            case "activity-definition":
-            {
-                var activityDefinitionStore = _serviceProvider.GetService<IActivityDefinitionStore>();
-                var activityDefinition = activityDefinitionStore != null ? await activityDefinitionStore.FindByDefinitionIdAsync(containerId, VersionOptions.Latest, cancellationToken) : default;
-                return activityDefinition?.Variables ?? new List<Variable>();
             }
         }
 
