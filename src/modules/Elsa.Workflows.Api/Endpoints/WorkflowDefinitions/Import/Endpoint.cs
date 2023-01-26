@@ -76,6 +76,7 @@ internal class Import : ElsaEndpoint<WorkflowDefinitionRequest, WorkflowDefiniti
         draft.CustomProperties = request.CustomProperties ?? new Dictionary<string, object>();
         draft.Variables = variables;
         draft.Options = request.Options;
+        draft.UsableAsActivity = request.UsableAsActivity;
         draft = request.Publish ? await _workflowDefinitionPublisher.PublishAsync(draft, cancellationToken) : await _workflowDefinitionPublisher.SaveDraftAsync(draft, cancellationToken);
 
         // Materialize the workflow definition for serialization.
@@ -92,6 +93,7 @@ internal class Import : ElsaEndpoint<WorkflowDefinitionRequest, WorkflowDefiniti
             draft.CustomProperties,
             draft.IsLatest,
             draft.IsPublished,
+            draft.UsableAsActivity,
             workflow.Root,
             draft.Options);
 

@@ -8,6 +8,7 @@ export interface WorkflowDefinition extends VersionedEntity {
   customProperties?: Map<string, any>;
   materializerName: string;
   materializerContext?: string;
+  usableAsActivity?: boolean;
   options?: WorkflowOptions;
   root: Activity;
 }

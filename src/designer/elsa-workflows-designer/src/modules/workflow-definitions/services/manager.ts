@@ -20,7 +20,8 @@ export class WorkflowDefinitionManager {
       publish: publish,
       root: definition.root,
       variables: definition.variables,
-      options: definition.options
+      options: definition.options,
+      usableAsActivity: definition.usableAsActivity
     };
 
     return await this.api.post(request);

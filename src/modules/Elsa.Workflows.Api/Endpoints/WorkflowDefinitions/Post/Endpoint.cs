@@ -65,6 +65,7 @@ internal class Post : ElsaEndpoint<WorkflowDefinitionRequest, WorkflowDefinition
         draft.CustomProperties = request.CustomProperties ?? new Dictionary<string, object>();
         draft.Variables = variables;
         draft.Options = request.Options;
+        draft.UsableAsActivity = request.UsableAsActivity;
         draft = request.Publish ? await _workflowDefinitionPublisher.PublishAsync(draft, cancellationToken) : await _workflowDefinitionPublisher.SaveDraftAsync(draft, cancellationToken);
 
         var response = new WorkflowDefinitionResponse(
@@ -78,6 +79,7 @@ internal class Post : ElsaEndpoint<WorkflowDefinitionRequest, WorkflowDefinition
             draft.CustomProperties,
             draft.IsLatest,
             draft.IsPublished,
+            draft.UsableAsActivity,
             root,
             draft.Options);
 
