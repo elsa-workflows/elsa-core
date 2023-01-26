@@ -37,7 +37,7 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
     {
         return new()
         {
-            TypeName = definition.DefinitionId,
+            TypeName = definition.Name!,
             Version = definition.Version,
             DisplayName = definition.Name,
             Description = definition.Description,
@@ -48,7 +48,8 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
             Constructor = context =>
             {
                 var activity = (WorkflowDefinitionActivity)_activityFactory.Create(typeof(WorkflowDefinitionActivity), context);
-                activity.Type = definition.DefinitionId;
+                activity.Type = definition.Name!;
+                activity.WorkflowDefinitionId = definition.DefinitionId;
                 activity.Version = definition.Version;
                 return activity;
             }

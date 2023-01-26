@@ -10,11 +10,13 @@ namespace Elsa.Workflows.Management.Implementations;
 /// </summary>
 public class WorkflowDefinitionActivityPortResolver : IActivityPortResolver
 {
-    private readonly IWorkflowDefinitionActivityMaterializer _materializer;
+    private readonly IWorkflowMaterializer _materializer;
+    private readonly IWorkflowDefinitionStore _store;
 
-    public WorkflowDefinitionActivityPortResolver(IWorkflowDefinitionActivityMaterializer materializer)
+    public WorkflowDefinitionActivityPortResolver(IWorkflowMaterializer materializer, IWorkflowDefinitionStore store)
     {
         _materializer = materializer;
+        _store = store;
     }
 
     public int Priority => 0;
@@ -22,7 +24,10 @@ public class WorkflowDefinitionActivityPortResolver : IActivityPortResolver
 
     public async ValueTask<IEnumerable<IActivity>> GetPortsAsync(IActivity activity, CancellationToken cancellationToken = default)
     {
-        var root = await _materializer.MaterializeAsync((WorkflowDefinitionActivity)activity, cancellationToken);
+        var definitionActivity = (WorkflowDefinitionActivity)activity;
+        var workflowDefinition = await _store.FindPublishedByDefinitionIdAsync(definitionActivity.WorkflowDefinitionId, cancellationToken);
+        
+        var root = await _materializer.MaterializeAsync(workflowDefinition!, cancellationToken);
 
         return new[] { root };
     }

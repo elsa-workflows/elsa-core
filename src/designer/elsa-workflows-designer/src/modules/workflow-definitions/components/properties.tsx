@@ -166,7 +166,7 @@ export class WorkflowDefinitionPropertiesEditor {
       {
         name: 'useAsActivity',
         order: 0,
-        content: () => <FormEntry label="Use As Activity" fieldId="useAsActivity" hint="Allow this workflow to be used as an activity">
+        content: () => <FormEntry label="Usable As Activity" fieldId="useAsActivity" hint="Allow this workflow to be used as an activity">
           <select name="workflowActivityFeature" onChange={e => this.onPropertyEditorChanged(wf => {
             const selectElement = (e.target as HTMLSelectElement);
             wf.usableAsActivity = selectElement.value == "false" ? false : true;

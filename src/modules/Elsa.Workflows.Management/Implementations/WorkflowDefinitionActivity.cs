@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Entities;
@@ -10,12 +11,28 @@ namespace Elsa.Workflows.Management.Implementations;
 /// </summary>
 public class WorkflowDefinitionActivity : Activity
 {
+    private readonly IWorkflowDefinitionStore _store;
+    
+    [JsonConstructor]
+    public WorkflowDefinitionActivity()
+    {
+    }
+
+    public WorkflowDefinitionActivity(IWorkflowDefinitionStore store)
+    {
+        _store = store;
+    }
+    
+    public string WorkflowDefinitionId { get; set; } = default!;
+    
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
+        var workflowDefinition = await _store.FindPublishedByDefinitionIdAsync(WorkflowDefinitionId, context.CancellationToken);
+
         // Construct the root activity stored in the activity definitions.
-        var materializer = context.GetRequiredService<IWorkflowDefinitionActivityMaterializer>();
-        var root = await materializer.MaterializeAsync(this, context.CancellationToken);
+        var materializer = context.GetRequiredService<IWorkflowMaterializer>();
+        var root = await materializer.MaterializeAsync(workflowDefinition, context.CancellationToken);
 
         // Schedule the activity for execution.
         await context.ScheduleActivityAsync(root, OnChildCompletedAsync);
