@@ -9,7 +9,7 @@ import descriptorsStore from "../../data/descriptors-store";
 import studioComponentStore from "../../data/studio-component-store";
 import toolbarButtonMenuItemStore from "../../data/toolbar-button-menu-item-store";
 import {ToolbarMenuItem} from "../../components/toolbar/workflow-toolbar-menu/models";
-import {EventBus} from "../../services";
+import {ActivityDescriptorManager, EventBus} from "../../services";
 import toolbarComponentStore from "../../data/toolbar-component-store";
 import {WorkflowDefinitionManager} from "./services/manager";
 import {WorkflowDefinition, WorkflowDefinitionSummary} from "./models/entities";
@@ -29,6 +29,7 @@ export class WorkflowDefinitionsPlugin implements Plugin {
   private readonly eventBus: EventBus;
   private readonly workflowDefinitionManager: WorkflowDefinitionManager;
   private readonly modalDialogService: ModalDialogService;
+  private readonly activityDescriptorManager: ActivityDescriptorManager;
   private api: WorkflowDefinitionsApi;
   private workflowDefinitionEditorElement: HTMLElsaWorkflowDefinitionEditorElement;
   private workflowDefinitionBrowserInstance: ModalDialogInstance;
@@ -38,6 +39,7 @@ export class WorkflowDefinitionsPlugin implements Plugin {
     this.api = Container.get(WorkflowDefinitionsApi);
     this.workflowDefinitionManager = Container.get(WorkflowDefinitionManager);
     this.modalDialogService = Container.get(ModalDialogService);
+    this.activityDescriptorManager = Container.get(ActivityDescriptorManager);
 
     const newMenuItems: Array<DropdownButtonItem> = [{
       order: 0,
@@ -182,6 +184,9 @@ export class WorkflowDefinitionsPlugin implements Plugin {
 
     NotificationService.updateNotification(notification, {title: 'Workflow published', text: 'Published !'})
     e.detail.complete();
+
+    // Reload activity descriptors.
+    await this.activityDescriptorManager.refresh();
   }
 
   private onExportClicked = async (e: CustomEvent) => {

@@ -34,7 +34,6 @@ export class WorkflowDefinitionVersionHistory {
   };
 
   onDeleteVersionClick = async (e: Event, version: ActivityDefinition) => {
-    debugger;
     e.preventDefault();
     this.modalDialogService.show(
       () => DefaultContents.Warning("Are you sure you want to delete this version?"),
