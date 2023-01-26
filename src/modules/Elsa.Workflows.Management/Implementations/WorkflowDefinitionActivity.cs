@@ -1,4 +1,3 @@
-using System.Text.Json.Serialization;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Entities;
@@ -7,7 +6,7 @@ using Elsa.Workflows.Management.Services;
 namespace Elsa.Workflows.Management.Implementations;
 
 /// <summary>
-/// Loads & executes an <see cref="WorkflowDefinition"/>.
+/// Loads and executes an <see cref="WorkflowDefinition"/>.
 /// </summary>
 public class WorkflowDefinitionActivity : Activity
 {
