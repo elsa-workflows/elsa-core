@@ -4,6 +4,7 @@ using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Services;
+using Humanizer;
 
 namespace Elsa.Workflows.Management.Implementations;
 
@@ -24,6 +25,7 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
         _activityFactory = activityFactory;
     }
 
+    /// <inheritdoc />
     public async ValueTask<IEnumerable<ActivityDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default)
     {
         var definitions = (await _store.FindByPredicateAsync(w => w.UsableAsActivity == true, VersionOptions.Published, cancellationToken)).ToList();
@@ -35,9 +37,11 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
 
     private ActivityDescriptor CreateDescriptor(WorkflowDefinition definition)
     {
+        var typeName = definition.Name!.Pascalize();
+        
         return new()
         {
-            TypeName = definition.Name!,
+            TypeName = typeName,
             Version = definition.Version,
             DisplayName = definition.Name,
             Description = definition.Description,
@@ -48,7 +52,7 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
             Constructor = context =>
             {
                 var activity = (WorkflowDefinitionActivity)_activityFactory.Create(typeof(WorkflowDefinitionActivity), context);
-                activity.Type = definition.Name!;
+                activity.Type = typeName;
                 activity.WorkflowDefinitionId = definition.DefinitionId;
                 activity.Version = definition.Version;
                 return activity;
