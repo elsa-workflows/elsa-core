@@ -108,7 +108,7 @@ export class WorkflowDefinitionEditor {
   @Method()
   async updateWorkflowDefinition(workflowDefinition: WorkflowDefinition): Promise<void> {
     this.workflowDefinitionState = workflowDefinition;
-    
+
     window.requestAnimationFrame(async () => {
       await this.updateSelectedActivity();
     });
