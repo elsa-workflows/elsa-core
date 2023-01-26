@@ -75,22 +75,6 @@ export class WorkflowDefinitionEditor {
     this.selectedActivity = e.detail.activity;
   }
 
-  @Listen('activitySelected')
-  private async handleActivitySelected(e: CustomEvent<ActivitySelectedArgs>) {
-    this.selectedActivity = e.detail.activity;
-  }
-
-  @Listen('childActivitySelected')
-  private async handleChildActivitySelected(e: CustomEvent<ChildActivitySelectedArgs>) {
-    const {childActivity} = e.detail;
-    this.selectedActivity = childActivity;
-  }
-
-  @Listen('graphUpdated')
-  private async handleGraphUpdated(e: CustomEvent<GraphUpdatedArgs>) {
-    this.saveChangesDebounced();
-  }
-
   @Method()
   async getFlowchart(): Promise<HTMLElsaFlowchartElement> {
     return this.flowchart;
@@ -114,6 +98,7 @@ export class WorkflowDefinitionEditor {
     // Update the flowchart after state is updated.
     window.requestAnimationFrame(async () => {
       await this.flowchart.updateGraph();
+      await this.updateSelectedActivity();
     });
 
     await this.eventBus.emit(WorkflowEditorEventTypes.WorkflowDefinition.Imported, this, {workflowDefinition});
@@ -123,6 +108,10 @@ export class WorkflowDefinitionEditor {
   @Method()
   async updateWorkflowDefinition(workflowDefinition: WorkflowDefinition): Promise<void> {
     this.workflowDefinitionState = workflowDefinition;
+    
+    window.requestAnimationFrame(async () => {
+      await this.updateSelectedActivity();
+    });
   }
 
   @Method()
@@ -200,6 +189,8 @@ export class WorkflowDefinitionEditor {
       }
       this.workflowUpdated.emit({workflowDefinition: this.workflowDefinitionState});
     }
+
+    await this.updateSelectedActivity();
   };
 
   // To prevent redundant post requests to server, save changes only if there is a difference
@@ -267,9 +258,31 @@ export class WorkflowDefinitionEditor {
     this.saveChangesDebounced();
   }
 
-  private onGraphUpdated = async (e: CustomEvent<GraphUpdatedArgs>) => {
+  private async onActivitySelected(e: CustomEvent<ActivitySelectedArgs>) {
+    const selectedActivity = e.detail.activity;
+    const activityId = selectedActivity.id;
+    const freshSelectedActivity = await this.flowchart.getActivity(activityId);
+
+    console.debug("selected activity == fresh selection: " + (selectedActivity === freshSelectedActivity));
+
+    this.selectedActivity = freshSelectedActivity;
+  }
+
+  private async onChildActivitySelected(e: CustomEvent<ChildActivitySelectedArgs>) {
+    const {childActivity} = e.detail;
+    this.selectedActivity = childActivity;
+  }
+
+  private async onGraphUpdated(e: CustomEvent<GraphUpdatedArgs>) {
+    console.debug("graph updated");
+    await this.updateSelectedActivity();
     this.saveChangesDebounced();
-  };
+  }
+
+  private async updateSelectedActivity() {
+    if (!!this.selectedActivity)
+      this.selectedActivity = await this.flowchart.getActivity(this.selectedActivity.id);
+  }
 
   onVersionSelected = async (e: CustomEvent<WorkflowDefinition>) => {
     const workflowToView = e.detail;
@@ -314,9 +327,11 @@ export class WorkflowDefinitionEditor {
             ref={el => this.flowchart = el}
             rootActivity={workflowDefinition.root}
             interactiveMode={true}
-            onGraphUpdated={this.onGraphUpdated}
-            onDragOver={this.onDragOver}
-            onDrop={this.onDrop}/>
+            onActivitySelected={e => this.onActivitySelected(e)}
+            onChildActivitySelected={e => this.onChildActivitySelected(e)}
+            onGraphUpdated={e => this.onGraphUpdated(e)}
+            onDragOver={e => this.onDragOver(e)}
+            onDrop={e => this.onDrop(e)}/>
           <elsa-panel
             class="elsa-workflow-editor-container z-30"
             position={PanelPosition.Right}
