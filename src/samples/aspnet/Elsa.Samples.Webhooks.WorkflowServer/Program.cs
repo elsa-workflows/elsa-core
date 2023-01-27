@@ -1,4 +1,3 @@
-using System;
 using Elsa.Extensions;
 using Elsa.Samples.Webhooks.WorkflowServer.Workflows;
 using Elsa.Webhooks.Extensions;

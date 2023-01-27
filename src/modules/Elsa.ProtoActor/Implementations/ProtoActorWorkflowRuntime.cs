@@ -2,7 +2,6 @@ using System.Text.Json;
 using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.ProtoActor.Extensions;
-using Elsa.ProtoActor.Grains;
 using Elsa.ProtoActor.Protos;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Serialization;

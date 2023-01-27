@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using Elsa.Mediator.Middleware.Command.Contracts;
 using Elsa.Mediator.Models;
 using Microsoft.Extensions.Logging;

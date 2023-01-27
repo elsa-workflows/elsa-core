@@ -1,6 +1,5 @@
 using Elsa.Common.Models;
 using Elsa.Extensions;
-using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;

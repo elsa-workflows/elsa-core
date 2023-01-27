@@ -1,5 +1,4 @@
-﻿using Elsa.Extensions;
-using Elsa.Workflows.Management.Features;
+﻿using Elsa.Workflows.Management.Features;
 
 namespace Elsa.EntityFrameworkCore.Modules.Management;
 

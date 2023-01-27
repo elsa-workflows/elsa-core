@@ -1,4 +1,3 @@
-using Elsa.Samples.Webhooks.ExternalApp.Controllers;
 using Elsa.Samples.Webhooks.ExternalApp.Jobs;
 
 var builder = WebApplication.CreateBuilder(args);

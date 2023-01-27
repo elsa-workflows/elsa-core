@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using Elastic.Clients.Elasticsearch;
 using Elsa.Common.Models;
 using JetBrains.Annotations;

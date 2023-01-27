@@ -4,8 +4,6 @@ using Elsa.Identity.Options;
 using Elsa.EntityFrameworkCore.Modules.Labels;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
-using Microsoft.Data.Sqlite;
-using Proto.Persistence.Sqlite;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;

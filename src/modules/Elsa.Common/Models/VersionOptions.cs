@@ -3,6 +3,9 @@ using Elsa.Common.TypeConverters;
 
 namespace Elsa.Common.Models;
 
+/// <summary>
+/// Provides parameters for querying a given version of versioned entities.
+/// </summary>
 [TypeConverter(typeof(VersionOptionsTypeConverter))]
 public struct VersionOptions
 {

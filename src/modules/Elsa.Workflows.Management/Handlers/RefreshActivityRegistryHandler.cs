@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Elsa.Mediator.Services;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Implementations;

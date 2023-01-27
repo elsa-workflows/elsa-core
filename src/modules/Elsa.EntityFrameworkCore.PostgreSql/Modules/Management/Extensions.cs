@@ -1,5 +1,4 @@
 ﻿using Elsa.EntityFrameworkCore.Modules.Management;
-using Elsa.EntityFrameworkCore.Modules.Runtime;
 using JetBrains.Annotations;
 
 // ReSharper disable once CheckNamespace
