@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Models;
@@ -40,6 +41,7 @@ public abstract class Composite : Activity, IVariableContainer
     /// The activity to schedule when this activity executes.
     /// </summary>
     [Port]
+    [Browsable(false)]
     [JsonIgnore] // Composite activities' Root is intended to be constructed from code only.
     public IActivity Root { get; set; } = new Sequence();
 
