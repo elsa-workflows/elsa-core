@@ -34,34 +34,15 @@ public class IdentityGraphService : IIdentityGraphService
     public void AssignIdentities(ICollection<ActivityNode> flattenedList)
     {
         var identityCounters = new Dictionary<string, int>();
-        var localActivityIdLookup = new Dictionary<ActivityNode, string>();
 
         foreach (var node in flattenedList)
         {
-            var localId = CreateId(node, identityCounters, flattenedList);
-            localActivityIdLookup[node] = localId;
-        }
-        
-        foreach (var node in flattenedList)
-        {
-            var localId = localActivityIdLookup[node];
-            node.Activity.Id = CreateScopedId(node, localActivityIdLookup, localId);
+            node.Activity.Id = CreateId(node, identityCounters, flattenedList);
             AssignInputOutputs(node.Activity);
             
             if(node.Activity is IVariableContainer variableContainer)
                 AssignVariables(variableContainer);
         }
-    }
-
-    private string CreateScopedId(ActivityNode node, IDictionary<ActivityNode, string> localIdLookup, string localId)
-    {
-        var ancestorIds = node.Ancestors().Reverse().Select(x => localIdLookup[x]).ToList();
-
-        if (!ancestorIds.Any())
-            return localId;
-        
-        var ancestorPrefix = string.Join(":", ancestorIds);
-        return $"{ancestorPrefix}:{localId}";
     }
 
     /// <inheritdoc />
