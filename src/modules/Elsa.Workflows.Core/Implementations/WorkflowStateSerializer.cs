@@ -56,11 +56,11 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
     {
         foreach (var completionCallbackEntry in state.CompletionCallbacks)
         {
-            var owner = workflowExecutionContext.ActivityExecutionContexts.First(x => x.Id == completionCallbackEntry.OwnerId);
-            var child = workflowExecutionContext.FindNodeById(completionCallbackEntry.ChildId).Activity;
+            var ownerActivityExecutionContext = workflowExecutionContext.ActivityExecutionContexts.First(x => x.Id == completionCallbackEntry.OwnerInstanceId);
+            var childNode = workflowExecutionContext.ActivityExecutionContexts.First(x => x.NodeId == completionCallbackEntry.ChildNodeId).ActivityNode;
             var callbackName = completionCallbackEntry.MethodName;
-            var callbackDelegate = !string.IsNullOrEmpty(callbackName) ? owner.Activity.GetActivityCompletionCallback(callbackName) : default;
-            workflowExecutionContext.AddCompletionCallback(owner, child, callbackDelegate);
+            var callbackDelegate = !string.IsNullOrEmpty(callbackName) ? ownerActivityExecutionContext.Activity.GetActivityCompletionCallback(callbackName) : default;
+            workflowExecutionContext.AddCompletionCallback(ownerActivityExecutionContext, childNode, callbackDelegate);
         }
     }
 
@@ -69,13 +69,13 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
         // Assert all referenced owner contexts exist.
         foreach (var completionCallback in workflowExecutionContext.CompletionCallbacks)
         {
-            var owmnerContext = workflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x == completionCallback.Owner);
+            var ownerContext = workflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x == completionCallback.Owner);
 
-            if (owmnerContext == null)
+            if (ownerContext == null)
                 throw new Exception("Lost an owner context");
         }
         
-        var completionCallbacks = workflowExecutionContext.CompletionCallbacks.Select(x => new CompletionCallbackState(x.Owner.Id, x.Child.Id, x.CompletionCallback?.Method.Name));
+        var completionCallbacks = workflowExecutionContext.CompletionCallbacks.Select(x => new CompletionCallbackState(x.Owner.Id, x.Child.NodeId, x.CompletionCallback?.Method.Name));
         state.CompletionCallbacks = completionCallbacks.ToList();
     }
 
@@ -97,8 +97,8 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
             {
                 Id = activityExecutionContext.Id,
                 ParentContextId = activityExecutionContext.ParentActivityExecutionContext?.Id,
-                ScheduledActivityId = activityExecutionContext.Activity.Id,
-                OwnerActivityId = activityExecutionContext.ParentActivityExecutionContext?.Activity.Id,
+                ScheduledActivityNodeId = activityExecutionContext.NodeId,
+                OwnerActivityNodeId = activityExecutionContext.ParentActivityExecutionContext?.NodeId,
                 Properties = activityExecutionContext.Properties,
             };
             return activityExecutionContextState;
@@ -111,7 +111,7 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
     {
         ActivityExecutionContext CreateActivityExecutionContext(ActivityExecutionContextState activityExecutionContextState)
         {
-            var activity = workflowExecutionContext.FindActivityById(activityExecutionContextState.ScheduledActivityId);
+            var activity = workflowExecutionContext.FindActivityByNodeId(activityExecutionContextState.ScheduledActivityNodeId);
             var properties = activityExecutionContextState.Properties;
             var activityExecutionContext = workflowExecutionContext.CreateActivityExecutionContext(activity);
             activityExecutionContext.Id = activityExecutionContextState.Id;

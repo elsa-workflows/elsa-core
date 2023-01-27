@@ -2,7 +2,6 @@ using System.Text.Json;
 using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.ProtoActor.Extensions;
-using Elsa.ProtoActor.Grains;
 using Elsa.ProtoActor.Protos;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Serialization;
@@ -288,7 +287,7 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
                 x.Name,
                 x.Hash,
                 x.Data.NullIfEmpty(),
-                x.ActivityId,
+                x.ActivityNodeId,
                 x.ActivityInstanceId,
                 x.AutoBurn,
                 x.CallbackMethodName.NullIfEmpty()));

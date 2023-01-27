@@ -1,4 +1,3 @@
-using Elsa.Features.Services;
 using Elsa.Workflows.Core.Middleware.Workflows;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Core.Services;

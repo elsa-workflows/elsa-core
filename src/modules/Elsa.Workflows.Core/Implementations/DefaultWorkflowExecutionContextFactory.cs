@@ -47,7 +47,7 @@ public class DefaultWorkflowExecutionContextFactory : IWorkflowExecutionContextF
         // Build graph.
         var graph = await _activityWalker.WalkAsync(root, cancellationToken);
         var flattenedList = graph.Flatten().ToList();
-        var needsIdentityAssignment = flattenedList.Any(x => string.IsNullOrEmpty(x.NodeId));
+        var needsIdentityAssignment = flattenedList.Any(x => string.IsNullOrEmpty(x.Activity.Id));
 
         if (needsIdentityAssignment)
             _identityGraphService.AssignIdentities(flattenedList);

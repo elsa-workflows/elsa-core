@@ -15,4 +15,5 @@ internal class WorkflowDefinitionRequest
     public IActivity? Root { get; set; } = default!;
     public WorkflowOptions? Options { get; set; }
     public bool Publish { get; set; }
+    public bool? UsableAsActivity { get; set; }
 }

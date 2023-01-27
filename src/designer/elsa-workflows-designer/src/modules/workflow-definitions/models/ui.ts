@@ -23,7 +23,6 @@ export interface ActivityPropertyChangedEventArgs {
   propertyName?: string;
   inputDescriptor?: InputDescriptor;
   workflowEditor?: HTMLElsaWorkflowDefinitionEditorElement;
-  activityEditor?: HTMLElsaActivityDefinitionEditorElement;
 }
 
 export interface WorkflowDefinitionUpdatedArgs {

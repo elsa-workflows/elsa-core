@@ -1,6 +1,5 @@
 using Elsa.Extensions;
 using Elsa.JavaScript.Abstractions;
-using Elsa.JavaScript.Extensions;
 using Elsa.JavaScript.Models;
 using Elsa.JavaScript.Services;
 using Humanizer;

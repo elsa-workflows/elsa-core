@@ -235,7 +235,7 @@ public class WorkflowGrain : WorkflowGrainBase
         {
             Id = x.Id,
             Name = x.Name,
-            ActivityId = x.ActivityId,
+            ActivityNodeId = x.ActivityNodeId,
             ActivityInstanceId = x.ActivityInstanceId,
             Hash = x.Hash,
             Data = x.Data.EmptyIfNull(),

@@ -57,6 +57,11 @@ public class WorkflowDefinition : VersionedEntity
     /// A binary representation of the workflow. The data is to be interpreted by the configured materializer.
     /// </summary>
     public byte[]? BinaryData { get; set; }
+
+    /// <summary>
+    /// An option to use the workflow as an activity in another workflow.
+    /// </summary>
+    public bool? UsableAsActivity { get; set; } = false;
     
     /// <summary>
     /// Creates and returns a shallow copy of the workflow definition.

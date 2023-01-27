@@ -17,6 +17,7 @@ internal class WorkflowDefinitionResponse
         IDictionary<string, object> metadata,
         bool isLatest,
         bool isPublished,
+        bool? usableAsActivity,
         IActivity root,
         WorkflowOptions? options)
     {
@@ -30,6 +31,7 @@ internal class WorkflowDefinitionResponse
         Metadata = metadata;
         IsLatest = isLatest;
         IsPublished = isPublished;
+        UsableAsActivity = usableAsActivity;
         Root = root;
         Options = options;
     }
@@ -44,6 +46,7 @@ internal class WorkflowDefinitionResponse
     public IDictionary<string, object> Metadata { get; }
     public bool IsLatest { get; }
     public bool IsPublished { get; }
+    public bool? UsableAsActivity { get; }
     public IActivity Root { get; }
     public WorkflowOptions? Options { get; set; }
 }

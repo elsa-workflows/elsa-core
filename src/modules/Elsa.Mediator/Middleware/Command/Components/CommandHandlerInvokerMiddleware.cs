@@ -3,17 +3,24 @@ using Elsa.Mediator.Services;
 
 namespace Elsa.Mediator.Middleware.Command.Components;
 
+/// <summary>
+/// A command middleware that invokes the command.
+/// </summary>
 public class CommandHandlerInvokerMiddleware : ICommandMiddleware
 {
     private readonly CommandMiddlewareDelegate _next;
     private readonly IEnumerable<ICommandHandler> _commandHandlers;
 
+    /// <summary>
+    /// Constructor.
+    /// </summary>
     public CommandHandlerInvokerMiddleware(CommandMiddlewareDelegate next, IEnumerable<ICommandHandler> commandHandlers)
     {
         _next = next;
-        _commandHandlers = commandHandlers;
+        _commandHandlers = commandHandlers.DistinctBy(x => x.GetType()).ToList();
     }
 
+    /// <inheritdoc />
     public async ValueTask InvokeAsync(CommandContext context)
     {
         // Find all handlers for the specified command.

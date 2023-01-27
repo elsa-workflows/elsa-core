@@ -1,17 +1,25 @@
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Services;
 using ActivityNode = Elsa.Workflows.Core.Models.ActivityNode;
 
 namespace Elsa.Workflows.Core.Implementations;
 
+/// <inheritdoc />
 public class ActivityWalker : IActivityWalker
 {
+    private readonly IServiceProvider _serviceProvider;
     private readonly IEnumerable<IActivityPortResolver> _portResolvers;
 
-    public ActivityWalker(IEnumerable<IActivityPortResolver> portResolvers)
+    /// <summary>
+    /// Constructor.
+    /// </summary>
+    public ActivityWalker(IEnumerable<IActivityPortResolver> portResolvers, IServiceProvider serviceProvider)
     {
+        _serviceProvider = serviceProvider;
         _portResolvers = portResolvers.OrderByDescending(x => x.Priority).ToList();
     }
 
+    /// <inheritdoc />
     public async Task<ActivityNode> WalkAsync(IActivity activity, CancellationToken cancellationToken = default)
     {
         var collectedActivities = new HashSet<IActivity>(new[] { activity });
@@ -23,6 +31,12 @@ public class ActivityWalker : IActivityWalker
 
     private async Task WalkRecursiveAsync((ActivityNode Node, IActivity Activity) pair, HashSet<IActivity> collectedActivities, HashSet<ActivityNode> collectedNodes, CancellationToken cancellationToken)
     {
+        if (pair.Activity is IInitializable initializable)
+        {
+            var context = new InitializationContext(_serviceProvider, cancellationToken);
+            await initializable.InitializeAsync(context);
+        }
+
         await WalkPortsRecursiveAsync(pair, collectedActivities, collectedNodes, cancellationToken);
     }
 
@@ -40,7 +54,7 @@ public class ActivityWalker : IActivityWalker
             // Continue if the specified activity was already encountered.
             if (collectedActivities.Contains(port))
                 continue;
-            
+
             var childNode = collectedNodes.FirstOrDefault(x => x.Activity == port);
 
             if (childNode == null)

@@ -61,7 +61,15 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
     }
 
     /// <inheritdoc />
-    public async Task<IEnumerable<WorkflowDefinitionSummary>> FindManySummariesAsync(IEnumerable<string> definitionIds, VersionOptions? versionOptions = default, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<WorkflowDefinition>> FindWithActivityBehaviorAsync(VersionOptions versionOptions, CancellationToken cancellationToken = default)
+    {
+        Expression<Func<WorkflowDefinition, bool>> predicate = x => x.UsableAsActivity == true;
+        predicate = predicate.WithVersion(versionOptions);
+        return await _store.FindManyAsync(predicate, Load, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<IEnumerable<WorkflowDefinitionSummary>> FindSummariesAsync(IEnumerable<string> definitionIds, VersionOptions? versionOptions = default, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
         var set = dbContext.WorkflowDefinitions;
@@ -76,11 +84,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
     }
 
     /// <inheritdoc />
-    public async Task<IEnumerable<WorkflowDefinition>> FindLatestAndPublishedByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default) =>
-        await _store.FindManyAsync(x => x.DefinitionId == definitionId && (x.IsLatest || x.IsPublished), Load, cancellationToken);
-
-    /// <inheritdoc />
-    public async Task<WorkflowDefinition?> FindLastVersionByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken)
+    public async Task<WorkflowDefinition?> FindLastVersionAsync(string definitionId, CancellationToken cancellationToken)
     {
         await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
         var set = dbContext.WorkflowDefinitions;

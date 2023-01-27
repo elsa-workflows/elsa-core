@@ -186,6 +186,7 @@ export interface SaveWorkflowDefinitionRequest {
   root?: Activity;
   variables?: Array<Variable>;
   options?: WorkflowOptions;
+  usableAsActivity?: boolean;
 }
 
 export interface BaseManyWorkflowDefinitionRequest {

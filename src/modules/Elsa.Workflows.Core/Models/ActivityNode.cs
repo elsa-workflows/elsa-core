@@ -12,7 +12,15 @@ public class ActivityNode
         Activity = activity;
     }
 
-    public string NodeId => Activity.Id;
+    public string NodeId
+    {
+        get
+        {
+            var ancestorIds = Ancestors().Reverse().Select(x => x.Activity.Id).ToList();
+            return ancestorIds.Any() ? $"{string.Join(":", ancestorIds)}:{Activity.Id}" : Activity.Id;
+        }
+    }
+
     public IActivity Activity { get; }
     public ICollection<ActivityNode> Parents { get; set; } = new List<ActivityNode>();
     public ICollection<ActivityNode> Children { get; set; } = new List<ActivityNode>();

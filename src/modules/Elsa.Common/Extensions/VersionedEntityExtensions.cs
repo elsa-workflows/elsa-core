@@ -22,6 +22,8 @@ public static class VersionedEntityExtensions
             return isPublished;
         if (versionOptions.IsLatestOrPublished)
             return isPublished || isLatest;
+        if (versionOptions.IsLatestAndPublished)
+            return isPublished && isLatest;
         if (versionOptions.AllVersions)
             return true;
         if (versionOptions.Version > 0)
@@ -44,13 +46,15 @@ public static class VersionedEntityExtensions
             return query.Where(x => x.IsPublished);
         if (versionOptions.IsLatestOrPublished)
             return query.Where(x => x.IsPublished || x.IsLatest);
+        if (versionOptions.IsLatestAndPublished)
+            return query.Where(x => x.IsPublished && x.IsLatest);
         if (versionOptions.Version > 0)
             return query.Where(x => x.Version == versionOptions.Version);
 
         return query;
     }
 
-    public static Expression<Func<T, bool>> WithVersion<T>(this Expression<Func<T, bool>> predicate, VersionOptions versionOptions) where T:VersionedEntity
+    public static Expression<Func<T, bool>> WithVersion<T>(this Expression<Func<T, bool>> predicate, VersionOptions versionOptions) where T : VersionedEntity
     {
         if (versionOptions.IsDraft)
             return predicate.And(x => !x.IsPublished);
@@ -60,6 +64,8 @@ public static class VersionedEntityExtensions
             return predicate.And(x => x.IsPublished);
         if (versionOptions.IsLatestOrPublished)
             return predicate.And(x => x.IsPublished || x.IsLatest);
+        if (versionOptions.IsLatestAndPublished)
+            return predicate.And(x => x.IsPublished && x.IsLatest);
         if (versionOptions.Version > 0)
             return predicate.And(x => x.Version == versionOptions.Version);
 

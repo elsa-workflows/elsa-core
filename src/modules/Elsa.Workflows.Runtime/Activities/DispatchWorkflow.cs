@@ -5,7 +5,6 @@ using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Services;
 using JetBrains.Annotations;
-using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Runtime.Activities;
 

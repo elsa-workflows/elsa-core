@@ -84,15 +84,15 @@ public static class WorkflowExecutionContextExtensions
     /// </summary>
     public static void Schedule(
         this WorkflowExecutionContext workflowExecutionContext,
-        IActivity activity,
+        ActivityNode activityNode,
         ActivityExecutionContext owner,
         ActivityCompletionCallback? completionCallback = default,
         object? tag = default)
     {
         var activityInvoker = workflowExecutionContext.GetRequiredService<IActivityInvoker>();
-        var workItem = new ActivityWorkItem(activity.Id, async () => await activityInvoker.InvokeAsync(workflowExecutionContext, activity, owner), tag);
+        var workItem = new ActivityWorkItem(activityNode.NodeId, async () => await activityInvoker.InvokeAsync(workflowExecutionContext, activityNode.Activity, owner), tag);
         workflowExecutionContext.Scheduler.Schedule(workItem);
-        workflowExecutionContext.AddCompletionCallback(owner, activity, completionCallback);
+        workflowExecutionContext.AddCompletionCallback(owner, activityNode, completionCallback);
     }
 
     /// <summary>

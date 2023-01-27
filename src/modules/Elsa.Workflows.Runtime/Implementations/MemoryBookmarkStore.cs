@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using Elsa.Common.Implementations;
 using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Services;

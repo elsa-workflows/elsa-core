@@ -1,6 +1,5 @@
 using System.Reflection;
 using Elsa.Extensions;
-using Elsa.JavaScript.Extensions;
 using Elsa.JavaScript.Models;
 using Elsa.JavaScript.Services;
 

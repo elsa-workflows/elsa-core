@@ -164,7 +164,7 @@ export class WorkflowDefinitionEditor {
         activity={this.selectedActivity}
         variables={this.workflowDefinitionState.variables}
         containerType="workflow-definition"
-        containerId={this.workflowDefinition.definitionId}
+        containerId={this.workflowDefinitionState.definitionId}
         onActivityUpdated={e => this.onActivityUpdated(e)}/>;
   }
 

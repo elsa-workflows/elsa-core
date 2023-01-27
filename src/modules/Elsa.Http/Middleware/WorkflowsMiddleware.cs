@@ -1,6 +1,5 @@
 using System.Net.Mime;
 using System.Text.Json;
-using Elsa.Common.Models;
 using Elsa.Http.Models;
 using Elsa.Http.Options;
 using Elsa.Http.Services;

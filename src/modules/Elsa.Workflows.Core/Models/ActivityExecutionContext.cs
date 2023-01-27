@@ -58,6 +58,11 @@ public class ActivityExecutionContext
     public ActivityNode ActivityNode => WorkflowExecutionContext.FindNodeByActivity(Activity);
 
     /// <summary>
+    /// Returns the global node ID for the current activity within the graph.
+    /// </summary>
+    public string NodeId => ActivityNode.NodeId;
+
+    /// <summary>
     /// A list of bookmarks created by the current activity.
     /// </summary>
     public IReadOnlyCollection<Bookmark> Bookmarks => new ReadOnlyCollection<Bookmark>(_bookmarks);
@@ -87,12 +92,24 @@ public class ActivityExecutionContext
 
     public async ValueTask ScheduleActivityAsync(IActivity? activity, ActivityCompletionCallback? completionCallback = default, object? tag = default)
     {
-        await ScheduleActivityAsync(activity, this, completionCallback, tag);
+        var activityNode = activity != null ? WorkflowExecutionContext.FindNodeByActivity(activity) : default;
+        await ScheduleActivityAsync(activityNode, completionCallback, tag);
     }
-
+    
     public async ValueTask ScheduleActivityAsync(IActivity? activity, ActivityExecutionContext owner, ActivityCompletionCallback? completionCallback = default, object? tag = default)
     {
-        if (activity == null)
+        var activityNode = activity != null ? WorkflowExecutionContext.FindNodeByActivity(activity) : default;
+        await ScheduleActivityAsync(activityNode, this, completionCallback, tag);
+    }
+    
+    public async ValueTask ScheduleActivityAsync(ActivityNode? activityNode, ActivityCompletionCallback? completionCallback = default, object? tag = default)
+    {
+        await ScheduleActivityAsync(activityNode, this, completionCallback, tag);
+    }
+
+    public async ValueTask ScheduleActivityAsync(ActivityNode? activityNode, ActivityExecutionContext owner, ActivityCompletionCallback? completionCallback = default, object? tag = default)
+    {
+        if (activityNode == null)
         {
             if (completionCallback != null)
                 await completionCallback(this, this);
@@ -101,7 +118,7 @@ public class ActivityExecutionContext
             return;
         }
 
-        WorkflowExecutionContext.Schedule(activity, owner, completionCallback, tag);
+        WorkflowExecutionContext.Schedule(activityNode, owner, completionCallback, tag);
     }
 
     public async ValueTask ScheduleActivitiesAsync(params IActivity?[] activities) => await ScheduleActivities(activities);
@@ -145,7 +162,7 @@ public class ActivityExecutionContext
             activityTypeName,
             hash,
             payloadJson,
-            Activity.Id,
+            ActivityNode.NodeId,
             Id,
             options?.AutoBurn ?? true,
             callback?.Method.Name);

@@ -77,6 +77,7 @@ public class IdentityGraphService : IIdentityGraphService
         }
     }
 
+    /// <inheritdoc />
     public void AssignVariables(IVariableContainer activity)
     {
         var variables = activity.GetVariables();
@@ -88,8 +89,8 @@ public class IdentityGraphService : IIdentityGraphService
 
     private string CreateId(ActivityNode activityNode, IDictionary<string, int> identityCounters, ICollection<ActivityNode> allNodes)
     {
-        if (!string.IsNullOrWhiteSpace(activityNode.NodeId))
-            return activityNode.NodeId;
+        if (!string.IsNullOrWhiteSpace(activityNode.Activity.Id))
+            return activityNode.Activity.Id;
 
         while (true)
         {

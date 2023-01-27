@@ -4,7 +4,6 @@ using Elsa.Extensions;
 using Elsa.Http.Models;
 using Elsa.Http.Services;
 using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Expressions;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Models;
 using Microsoft.AspNetCore.Http;

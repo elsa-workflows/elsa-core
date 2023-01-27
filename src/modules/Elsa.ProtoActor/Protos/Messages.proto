@@ -67,7 +67,7 @@ message BookmarkDto {
   string Name = 2;
   string Hash = 3;
   optional string Data = 4;
-  string ActivityId = 5;
+  string ActivityNodeId = 5;
   string ActivityInstanceId = 6;
   optional bool AutoBurn = 7;
   optional string CallbackMethodName = 8;

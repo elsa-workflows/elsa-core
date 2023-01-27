@@ -27,8 +27,8 @@ public class BreakBehavior : Behavior
         var descendants = context.ReceiverActivityExecutionContext.ActivityNode.Descendants().Select(x => x.Activity).ToList();
         var workflowExecutionContext = context.SenderActivityExecutionContext.WorkflowExecutionContext;
 
-        foreach (var descendant in descendants)
-            await workflowExecutionContext.CancelActivityAsync(descendant.Id);
+        foreach (var descendant in descendants) 
+            await workflowExecutionContext.CancelActivityAsync(descendant);
 
         // Remove child activity execution contexts.
         await context.ReceiverActivityExecutionContext.RemoveChildrenAsync();

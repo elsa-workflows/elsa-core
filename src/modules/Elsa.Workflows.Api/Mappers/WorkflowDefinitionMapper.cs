@@ -26,6 +26,7 @@ internal class WorkflowDefinitionMapper : ResponseMapper<WorkflowDefinitionRespo
             entity.CustomProperties,
             entity.IsLatest,
             entity.IsPublished,
+            entity.UsableAsActivity,
             workflow.Root,
             workflow.Options);
     }

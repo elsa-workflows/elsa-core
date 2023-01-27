@@ -6,7 +6,6 @@ using Elsa.MassTransit.Implementations;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 using MassTransit;
-using MassTransit.Middleware;
 
 namespace Elsa.MassTransit.Activities;
 

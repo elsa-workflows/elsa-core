@@ -18,10 +18,10 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Management
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "6.0.11")
+                .HasAnnotation("ProductVersion", "7.0.2")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
-            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder, 1L, 1);
+            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
             modelBuilder.Entity("Elsa.Workflows.Management.Entities.WorkflowDefinition", b =>
                 {
@@ -62,6 +62,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Management
 
                     b.Property<string>("StringData")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool?>("UsableAsActivity")
+                        .HasColumnType("bit");
 
                     b.Property<int>("Version")
                         .HasColumnType("int");

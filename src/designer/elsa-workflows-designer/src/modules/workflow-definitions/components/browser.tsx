@@ -8,6 +8,7 @@ import {updateSelectedWorkflowDefinitions} from '../services/utils';
 import {WorkflowDefinitionSummary} from "../models/entities";
 import {WorkflowDefinitionsApi, WorkflowDefinitionsOrderBy} from "../services/api";
 import {ModalDialogService, DefaultModalActions, DefaultContents, ModalType} from "../../../components/shared/modal-dialog";
+import {ActivityDescriptorManager} from "../../../services";
 
 @Component({
   tag: 'elsa-workflow-definition-browser',
@@ -22,10 +23,12 @@ export class WorkflowDefinitionBrowser {
   private readonly api: WorkflowDefinitionsApi;
   private selectAllCheckbox: HTMLInputElement;
   private readonly modalDialogService: ModalDialogService;
+  private readonly activityDescriptorManager: ActivityDescriptorManager;
 
   constructor() {
     this.api = Container.get(WorkflowDefinitionsApi);
     this.modalDialogService = Container.get(ModalDialogService);
+    this.activityDescriptorManager = Container.get(ActivityDescriptorManager);
   }
 
   @Event() workflowDefinitionSelected: EventEmitter<WorkflowDefinitionSummary>;
@@ -62,8 +65,9 @@ export class WorkflowDefinitionBrowser {
       () => DefaultContents.Warning("Are you sure you want to delete this workflow definition?"),
       {
         actions: [DefaultModalActions.Delete(async () => {
-           await this.api.delete(workflowDefinition);
-           await this.loadWorkflowDefinitions();
+          await this.api.delete(workflowDefinition);
+          await this.loadWorkflowDefinitions();
+          await this.activityDescriptorManager.refresh();
         }), DefaultModalActions.Cancel()],
         modalType: ModalType.Confirmation
       });
@@ -76,6 +80,7 @@ export class WorkflowDefinitionBrowser {
         actions: [DefaultModalActions.Delete(async () => {
           await this.api.deleteMany({definitionIds: this.selectedWorkflowDefinitionIds});
           await this.loadWorkflowDefinitions();
+          await this.activityDescriptorManager.refresh();
         }), DefaultModalActions.Cancel()],
         modalType: ModalType.Confirmation
       });

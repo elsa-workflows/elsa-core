@@ -2,7 +2,6 @@ using Elsa.Common.Services;
 using Elsa.Mediator.Services;
 using Elsa.Webhooks.Models;
 using Elsa.Webhooks.Services;
-using Elsa.Workflows.Runtime.Bookmarks;
 using Elsa.Workflows.Runtime.Notifications;
 
 namespace Elsa.Webhooks.Handlers;

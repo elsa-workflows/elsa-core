@@ -162,6 +162,19 @@ export class WorkflowDefinitionPropertiesEditor {
             {strategies.map(strategy => <option value={strategy.typeName} selected={strategy.typeName == options.activationStrategyType}>{strategy.displayName}</option>)}
           </select>
         </FormEntry>
+      },
+      {
+        name: 'useAsActivity',
+        order: 0,
+        content: () => <FormEntry label="Usable As Activity" fieldId="useAsActivity" hint="Allow this workflow to be used as an activity">
+          <select name="workflowActivityFeature" onChange={e => this.onPropertyEditorChanged(wf => {
+            const selectElement = (e.target as HTMLSelectElement);
+            wf.usableAsActivity = selectElement.value == "false" ? false : true;
+          })}>
+            <option value="false" selected={!this.workflowDefinition.usableAsActivity}>No</option>
+            <option value="true" selected={this.workflowDefinition.usableAsActivity}>Yes</option>
+          </select>
+        </FormEntry>
       }
     ];
 

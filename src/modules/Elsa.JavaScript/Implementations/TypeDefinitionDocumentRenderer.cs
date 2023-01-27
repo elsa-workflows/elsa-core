@@ -1,5 +1,4 @@
 using System.Text;
-using Elsa.JavaScript.Extensions;
 using Elsa.JavaScript.Models;
 using Elsa.JavaScript.Services;
 

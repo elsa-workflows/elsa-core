@@ -110,7 +110,7 @@ public class WorkflowRunner : IWorkflowRunner
         var triggerActivityId = options?.TriggerActivityId;
         var workflowExecutionContext = await CreateWorkflowExecutionContextAsync(workflow, workflowState.Id, correlationId, workflowState, input, default, triggerActivityId, cancellationToken);
         var bookmarkId = options?.BookmarkId;
-        var activityId = options?.ActivityId;
+        var nodeId = options?.ActivityNodeId;
 
         if (bookmarkId != null)
         {
@@ -120,10 +120,10 @@ public class WorkflowRunner : IWorkflowRunner
             if (bookmark != null)
                 workflowExecutionContext.ScheduleBookmark(bookmark);
         }
-        else if (activityId != null)
+        else if (nodeId != null)
         {
             // Schedule the activity.
-            var activity = workflowExecutionContext.FindActivityById(activityId);
+            var activity = workflowExecutionContext.FindActivityByNodeId(nodeId);
             workflowExecutionContext.ScheduleActivity(activity);
         }
         else

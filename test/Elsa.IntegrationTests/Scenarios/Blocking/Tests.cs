@@ -37,7 +37,7 @@ public class Tests
         
         // Start workflow.
         var result = await _workflowRunner.RunAsync(workflow);
-        var bookmark = result.WorkflowState.Bookmarks.FirstOrDefault(x => x.ActivityId == "Resume");
+        var bookmark = result.WorkflowState.Bookmarks.FirstOrDefault(x => x.ActivityNodeId == "Resume");
 
         // Resume workflow.
         var runOptions = new RunWorkflowOptions(BookmarkId: bookmark!.Id);
