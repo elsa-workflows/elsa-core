@@ -28,7 +28,7 @@ jobs:
           node-version: 18.12.1
       
       - run: npm install
-      - run: npm version ${{ github.ref_name }}
+      - run: npm version ${{ github.ref_name }} --allow-same-version
       - run: npm run build
 
       # - name: NPM Publish Preview
