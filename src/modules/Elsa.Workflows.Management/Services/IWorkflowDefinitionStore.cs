@@ -30,7 +30,7 @@ public interface IWorkflowDefinitionStore
     /// <summary>
     /// Finds a workflow definition by custom expression.
     /// </summary>
-    Task<IEnumerable<WorkflowDefinition>> FindByPredicateAsync(Expression<Func<WorkflowDefinition, bool>> predicate, VersionOptions versionOptions, CancellationToken cancellationToken = default);
+    Task<IEnumerable<WorkflowDefinition>> FindWorkflowsWithActivityBehaviourAsync(CancellationToken cancellationToken = default);
 
     Task<IEnumerable<WorkflowDefinitionSummary>> FindManySummariesAsync(IEnumerable<string> definitionIds, VersionOptions? versionOptions = default, CancellationToken cancellationToken = default);
     Task<WorkflowDefinition?> FindPublishedByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default);

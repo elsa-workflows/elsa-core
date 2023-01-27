@@ -28,7 +28,7 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
     /// <inheritdoc />
     public async ValueTask<IEnumerable<ActivityDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default)
     {
-        var definitions = (await _store.FindByPredicateAsync(w => w.UsableAsActivity == true, VersionOptions.Published, cancellationToken)).ToList();
+        var definitions = (await _store.FindWorkflowsWithActivityBehaviourAsync(cancellationToken)).ToList();
         var descriptors = CreateDescriptors(definitions);
         return descriptors;
     }

@@ -60,11 +60,9 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         return await _store.FindAsync(predicate, Load, cancellationToken);
     }
 
-    public async Task<IEnumerable<WorkflowDefinition>> FindByPredicateAsync(Expression<Func<WorkflowDefinition, bool>> predicate, VersionOptions versionOptions, CancellationToken cancellationToken = default)
-    {
-        predicate = predicate.WithVersion(versionOptions);
-        return await _store.FindManyAsync(predicate, Load, cancellationToken);
-    }
+    /// <inheritdoc />
+    public async Task<IEnumerable<WorkflowDefinition>> FindWorkflowsWithActivityBehaviourAsync(CancellationToken cancellationToken = default) => 
+        await _store.FindManyAsync(w => w.UsableAsActivity == true && w.WithVersion(VersionOptions.Published), Load, cancellationToken);
 
     /// <inheritdoc />
     public async Task<IEnumerable<WorkflowDefinitionSummary>> FindManySummariesAsync(IEnumerable<string> definitionIds, VersionOptions? versionOptions = default, CancellationToken cancellationToken = default)

@@ -45,10 +45,9 @@ public class MemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
         return Task.FromResult(definition);
     }
 
-    public Task<IEnumerable<WorkflowDefinition>> FindByPredicateAsync(Expression<Func<WorkflowDefinition, bool>> predicate, VersionOptions versionOptions, CancellationToken cancellationToken = default)
+    public Task<IEnumerable<WorkflowDefinition>> FindWorkflowsWithActivityBehaviourAsync(CancellationToken cancellationToken = default)
     {
-        predicate = predicate.WithVersion(versionOptions);
-        var definition = _store.FindMany(predicate.Compile());
+        var definition = _store.FindMany(w => w.UsableAsActivity == true && w.WithVersion(VersionOptions.Published));
         return Task.FromResult(definition);
     }
 
