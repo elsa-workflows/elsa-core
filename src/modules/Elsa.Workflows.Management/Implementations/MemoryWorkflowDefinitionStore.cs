@@ -47,7 +47,7 @@ public class MemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
 
     public Task<IEnumerable<WorkflowDefinition>> FindWorkflowsWithActivityBehaviourAsync(CancellationToken cancellationToken = default)
     {
-        var definition = _store.FindMany(w => w.UsableAsActivity == true && w.WithVersion(VersionOptions.Published));
+        var definition = _store.FindMany(w => w.UsableAsActivity == true && w.IsPublished);
         return Task.FromResult(definition);
     }
 
