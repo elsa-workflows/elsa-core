@@ -14,7 +14,7 @@ environment:
         secure: qaE9kOVkGGFM7ZMf3YeliZxDU9udTCy6W5xXHJ9T+tXv5qXPMYlIdR7hyNgxW04A
     myget_api_key:
         secure: H+Iel+3hA9EiGlhZUUEmrhkka+lTF5UbnW24xwpIrwEcikyW5Qm+MGJQfqgZU29Q
-    NODE_OPTIONS: --max-old-space-size=3072
+    NODE_OPTIONS: --max-old-space-size=4096
 
 init:
     -   cmd: git config --global core.autocrlf true
