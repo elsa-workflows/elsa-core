@@ -862,6 +862,7 @@ declare namespace LocalJSX {
         "interactiveMode"?: boolean;
         "onActivityDeleted"?: (event: ElsaFlowchartCustomEvent<ActivityDeletedArgs>) => void;
         "onActivitySelected"?: (event: ElsaFlowchartCustomEvent<ActivitySelectedArgs>) => void;
+        "onChildActivitySelected"?: (event: ElsaFlowchartCustomEvent<ChildActivitySelectedArgs>) => void;
         "onContainerSelected"?: (event: ElsaFlowchartCustomEvent<ContainerSelectedArgs>) => void;
         "onGraphUpdated"?: (event: ElsaFlowchartCustomEvent<GraphUpdatedArgs>) => void;
         "onWorkflowUpdated"?: (event: ElsaFlowchartCustomEvent<WorkflowUpdatedArgs>) => void;

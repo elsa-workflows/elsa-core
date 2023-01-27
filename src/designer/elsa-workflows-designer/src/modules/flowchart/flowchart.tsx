@@ -5,7 +5,7 @@ import {Edge, Graph, Model, Node, NodeView, Point} from '@antv/x6';
 import './shapes';
 import './ports';
 import {ActivityNodeShape} from './shapes';
-import {Activity, ActivityDeletedArgs, ActivityDescriptor, ActivitySelectedArgs, ContainerSelectedArgs, EditChildActivityArgs, GraphUpdatedArgs, Port, WorkflowUpdatedArgs} from '../../models';
+import {Activity, ActivityDeletedArgs, ActivityDescriptor, ActivitySelectedArgs, ChildActivitySelectedArgs, ContainerSelectedArgs, EditChildActivityArgs, GraphUpdatedArgs, Port, WorkflowUpdatedArgs} from '../../models';
 import {createGraph} from './graph-factory';
 import {AddActivityArgs, Connection, Flowchart, FlowchartModel, FlowchartNavigationItem, FlowchartPathItem, LayoutDirection, RenameActivityArgs, UpdateActivityArgs} from './models';
 import {NodeFactory} from "./node-factory";
@@ -54,12 +54,18 @@ export class FlowchartComponent {
   @Event() activitySelected: EventEmitter<ActivitySelectedArgs>;
   @Event() activityDeleted: EventEmitter<ActivityDeletedArgs>;
   @Event() containerSelected: EventEmitter<ContainerSelectedArgs>;
+  @Event() childActivitySelected: EventEmitter<ChildActivitySelectedArgs>;
   @Event() graphUpdated: EventEmitter<GraphUpdatedArgs>;
   @Event() workflowUpdated: EventEmitter<WorkflowUpdatedArgs>;
 
   @State() private activityLookup: Hash<Activity> = {};
   @State() private activities: Array<Activity> = [];
   @State() private path: Array<FlowchartPathItem> = [];
+
+  @Listen('childActivitySelected')
+  private async handleChildActivitySelected(e: CustomEvent<ChildActivitySelectedArgs>) {
+    this.childActivitySelected.emit(e.detail);
+  }
 
   @Method()
   async newRoot(): Promise<Activity> {
