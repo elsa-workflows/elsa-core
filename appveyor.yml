@@ -16,7 +16,7 @@ environment:
         secure: H+Iel+3hA9EiGlhZUUEmrhkka+lTF5UbnW24xwpIrwEcikyW5Qm+MGJQfqgZU29Q
 
 init:
-    -   cmd: set NODE_OPTIONS=--max-old-space-size=2048
+    -   cmd: set NODE_OPTIONS=--max-old-space-size=4096
     -   cmd: git config --global core.autocrlf true
     -   ps: |
             if ($env:APPVEYOR_REPO_TAG -eq "true")
@@ -88,7 +88,7 @@ build_script:
     -   ps: >-
             cd .\src\designer\elsa-workflows-studio
 
-            npm version $env:elsa_build_version
+            npm version $env:elsa_build_version --allow-same-version
 
             npm run build
 
