@@ -178,11 +178,11 @@ export class WorkflowDefinitionsPlugin implements Plugin {
 
   private onPublishClicked = async (e: CustomEvent<PublishClickedArgs>) => {
     e.detail.begin();
-    const notification = NotificationService.createNotification({title: 'Publishing', id: uuid(), text: 'Workflow is being publishing. Please wait'})
+    const notification = NotificationService.createNotification({title: 'Publishing', id: uuid(), text: 'Workflow is being published. Please wait.'})
     const workflowDefinition = await this.workflowDefinitionEditorElement.getWorkflowDefinition();
     await this.saveWorkflowDefinition(workflowDefinition, true);
 
-    NotificationService.updateNotification(notification, {title: 'Workflow published', text: 'Published !'})
+    NotificationService.updateNotification(notification, {title: 'Workflow published', text: 'Published!'})
     e.detail.complete();
 
     // Reload activity descriptors.
