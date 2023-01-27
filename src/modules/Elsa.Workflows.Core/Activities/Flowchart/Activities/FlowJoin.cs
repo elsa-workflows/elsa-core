@@ -33,14 +33,14 @@ public class FlowJoin : Activity, IJoinNode
 
         switch (mode)
         {
-            case Models.FlowJoinMode.WaitAll:
+            case FlowJoinMode.WaitAll:
                 // If all left-inbound activities have executed, complete & continue.
                 var haveAllInboundActivitiesExecuted = inboundActivities.All(x => flowScope.GetExecutionCount(x) > executionCount);
 
                 if (haveAllInboundActivitiesExecuted)
                     await context.CompleteActivityAsync();
                 break;
-            case Models.FlowJoinMode.WaitAny:
+            case FlowJoinMode.WaitAny:
                 // Only complete if we haven't already executed.
                 var alreadyExecuted = inboundActivities.Max(x => flowScope.GetExecutionCount(x)) == executionCount;
 
@@ -57,7 +57,8 @@ public class FlowJoin : Activity, IJoinNode
     {
         // Clear any bookmarks created between this join and its most recent fork.
         var connections = flowchart.Connections;
-        var inboundActivities = connections.LeftAncestorActivities(this).Select(x => x.Id).ToList();
-        context.WorkflowExecutionContext.Bookmarks.RemoveWhere(x => inboundActivities.Contains(x.ActivityId));
+        var workflowExecutionContext = context.WorkflowExecutionContext;
+        var inboundActivities = connections.LeftAncestorActivities(this).Select(x => workflowExecutionContext.FindNodeByActivity(x)).Select(x => x.NodeId).ToList();
+        context.WorkflowExecutionContext.Bookmarks.RemoveWhere(x => inboundActivities.Contains(x.ActivityNodeId));
     }
 }

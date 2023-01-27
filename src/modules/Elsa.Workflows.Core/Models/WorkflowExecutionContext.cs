@@ -13,7 +13,7 @@ namespace Elsa.Workflows.Core.Models;
 /// <param name="Owner">The activity scheduling the <see cref="Child"/> activity.</param>
 /// <param name="Child">The child <see cref="IActivity"/> being scheduled.</param>
 /// <param name="CompletionCallback">The <see cref="ActivityCompletionCallback"/> delegate to invoke when the scheduled <see cref="Child"/> activity completes.</param>
-public record ActivityCompletionCallbackEntry(ActivityExecutionContext Owner, IActivity Child, ActivityCompletionCallback? CompletionCallback);
+public record ActivityCompletionCallbackEntry(ActivityExecutionContext Owner, ActivityNode Child, ActivityCompletionCallback? CompletionCallback);
 
 /// <summary>
 /// Provides context to the currently executing workflow.
@@ -224,7 +224,7 @@ public class WorkflowExecutionContext
     /// <summary>
     /// Registers a completion callback for the specified activity.
     /// </summary>
-    internal void AddCompletionCallback(ActivityExecutionContext owner, IActivity child, ActivityCompletionCallback? completionCallback = default)
+    internal void AddCompletionCallback(ActivityExecutionContext owner, ActivityNode child, ActivityCompletionCallback? completionCallback = default)
     {
         var entry = new ActivityCompletionCallbackEntry(owner, child, completionCallback);
         _completionCallbackEntries.Add(entry);
@@ -233,7 +233,7 @@ public class WorkflowExecutionContext
     /// <summary>
     /// Unregisters the completion callback for the specified owner and child activity.
     /// </summary>
-    internal ActivityCompletionCallbackEntry? PopCompletionCallback(ActivityExecutionContext owner, IActivity child)
+    internal ActivityCompletionCallbackEntry? PopCompletionCallback(ActivityExecutionContext owner, ActivityNode child)
     {
         var entry = _completionCallbackEntries.FirstOrDefault(x => x.Owner == owner && x.Child == child);
 
@@ -255,7 +255,7 @@ public class WorkflowExecutionContext
     /// <summary>
     /// Returns the <see cref="ActivityNode"/> with the specified activity ID from the workflow graph.
     /// </summary>
-    public ActivityNode FindNodeById(string activityId) => NodeIdLookup[activityId];
+    public ActivityNode FindNodeById(string nodeId) => NodeIdLookup[nodeId];
     
     /// <summary>
     /// Returns the <see cref="ActivityNode"/> containing the specified activity from the workflow graph.
@@ -265,7 +265,7 @@ public class WorkflowExecutionContext
     /// <summary>
     /// Returns the <see cref="IActivity"/> with the specified ID from the workflow graph.
     /// </summary>
-    public IActivity FindActivityById(string activityId) => FindNodeById(activityId).Activity;
+    public IActivity FindActivityByNodeId(string nodeId) => FindNodeById(nodeId).Activity;
     
     /// <summary>
     /// Returns a custom property with the specified key from the <see cref="Properties"/> dictionary.
@@ -350,14 +350,15 @@ public class WorkflowExecutionContext
     /// <summary>
     /// Cancels the specified activity. 
     /// </summary>
-    public async Task CancelActivityAsync(string activityId)
+    public async Task CancelActivityAsync(IActivity activity)
     {
-        var activityExecutionContext = ActivityExecutionContexts.FirstOrDefault(x => x.Id == activityId);
+        var activityExecutionContext = ActivityExecutionContexts.FirstOrDefault(x => x.Activity == activity);
 
-        if (activityExecutionContext != null) 
+        if (activityExecutionContext != null)
+        {
             await activityExecutionContext.CancelActivityAsync();
-
-        Bookmarks.RemoveWhere(x => x.ActivityId == activityId);
+            Bookmarks.RemoveWhere(x => x.ActivityNodeId == activityExecutionContext.ActivityNode.NodeId);
+        }
     }
 
     private WorkflowStatus GetMainStatus(WorkflowSubStatus subStatus) =>

@@ -20,8 +20,8 @@ public class ScheduledChildCallbackBehavior : Behavior
     {
         var activityExecutionContext = context.ReceiverActivityExecutionContext;
         var childActivityExecutionContext = context.SenderActivityExecutionContext;
-        var childActivity = childActivityExecutionContext.Activity;
-        var callbackEntry = activityExecutionContext.WorkflowExecutionContext.PopCompletionCallback(activityExecutionContext, childActivity);
+        var childActivityNode = childActivityExecutionContext.ActivityNode;
+        var callbackEntry = activityExecutionContext.WorkflowExecutionContext.PopCompletionCallback(activityExecutionContext, childActivityNode);
 
         if (callbackEntry == null)
             return;

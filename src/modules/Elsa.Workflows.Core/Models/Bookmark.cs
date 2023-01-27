@@ -7,7 +7,7 @@ public record Bookmark(
     string Name,
     string Hash,
     string? Data,
-    string ActivityId,
+    string ActivityNodeId,
     string ActivityInstanceId,
     bool AutoBurn = true,
     string? CallbackMethodName = default

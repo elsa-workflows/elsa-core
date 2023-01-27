@@ -1,6 +1,7 @@
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.Extensions;
+using Elsa.Samples.WorkflowServer.Activities;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +17,9 @@ builder.Services.AddElsa(elsa =>
     // Add services for HTTP activities and workflow middleware.
     elsa.UseHttp();
     
+    // Use timers.
+    elsa.UseScheduling();
+    
     // Configure identity so that we can create a default admin user.
     elsa.UseIdentity(identity =>
     {
@@ -25,6 +29,9 @@ builder.Services.AddElsa(elsa =>
     
     // Use default authentication (JWT).
     elsa.UseDefaultAuthentication();
+    
+    // Register custom activities.
+    elsa.AddActivity<ConsoleGreeter>();
 });
 
 // Configure CORS to allow designer app hosted on a different origin to invoke the APIs.

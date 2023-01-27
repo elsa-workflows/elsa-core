@@ -22,6 +22,6 @@ public record RunWorkflowOptions(
     string? InstanceId = default, 
     string? CorrelationId = default, 
     string? BookmarkId = default, 
-    string? ActivityId = default, 
+    string? ActivityNodeId = default, 
     IDictionary<string, object>? Input = default, 
     string? TriggerActivityId = default);

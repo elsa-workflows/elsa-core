@@ -61,8 +61,10 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
     }
 
     /// <inheritdoc />
-    public async Task<IEnumerable<WorkflowDefinition>> FindWorkflowsWithActivityBehaviourAsync(CancellationToken cancellationToken = default) => 
-        await _store.FindManyAsync(w => w.UsableAsActivity == true && w.IsPublished, Load, cancellationToken);
+    public async Task<IEnumerable<WorkflowDefinition>> FindWorkflowsWithActivityBehaviourAsync(CancellationToken cancellationToken = default)
+    {
+        return await _store.FindManyAsync(w => w.UsableAsActivity == true && w.IsPublished, Load, cancellationToken);
+    }
 
     /// <inheritdoc />
     public async Task<IEnumerable<WorkflowDefinitionSummary>> FindManySummariesAsync(IEnumerable<string> definitionIds, VersionOptions? versionOptions = default, CancellationToken cancellationToken = default)

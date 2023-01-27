@@ -288,7 +288,7 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
                 x.Name,
                 x.Hash,
                 x.Data.NullIfEmpty(),
-                x.ActivityId,
+                x.ActivityNodeId,
                 x.ActivityInstanceId,
                 x.AutoBurn,
                 x.CallbackMethodName.NullIfEmpty()));

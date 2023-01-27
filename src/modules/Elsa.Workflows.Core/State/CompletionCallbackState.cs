@@ -13,14 +13,14 @@ public class CompletionCallbackState
     {
     }
 
-    public CompletionCallbackState(string ownerId, string childId, string? methodName)
+    public CompletionCallbackState(string ownerInstanceId, string childNodeId, string? methodName)
     {
-        OwnerId = ownerId;
-        ChildId = childId;
+        OwnerInstanceId = ownerInstanceId;
+        ChildNodeId = childNodeId;
         MethodName = methodName;
     }
 
-    public string OwnerId { get; init; } = default!;
-    public string ChildId { get; init; } = default!;
+    public string OwnerInstanceId { get; init; } = default!;
+    public string ChildNodeId { get; init; } = default!;
     public string? MethodName { get; init; } = default!;
 }
