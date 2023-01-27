@@ -8,7 +8,7 @@ import {Hint} from "../../shared/forms/hint";
 import {mapSyntaxToLanguage} from "../../../utils";
 import descriptorsStore from "../../../data/descriptors-store";
 import {Container} from "typedi";
-import {ElsaClient, ElsaClientProvider} from "../../../services/api-client/elsa-client";
+import {ElsaClient, ElsaClientProvider} from "../../../services";
 import InputControlSwitchContextState from "./state";
 
 export interface ExpressionChangedArs {
