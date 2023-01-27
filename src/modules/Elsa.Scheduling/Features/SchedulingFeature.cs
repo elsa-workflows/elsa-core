@@ -2,6 +2,7 @@ using Elsa.Common.Features;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
+using Elsa.Jobs.Features;
 using Elsa.Scheduling.Handlers;
 using Elsa.Scheduling.Implementations;
 using Elsa.Scheduling.Services;
@@ -14,6 +15,7 @@ namespace Elsa.Scheduling.Features;
 /// Provides scheduling features to the system.
 /// </summary>
 [DependsOn(typeof(SystemClockFeature))]
+[DependsOn(typeof(JobsFeature))]
 public class SchedulingFeature : FeatureBase
 {
     /// <inheritdoc />
