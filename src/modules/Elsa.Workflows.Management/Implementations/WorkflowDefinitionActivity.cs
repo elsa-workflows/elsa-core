@@ -1,3 +1,4 @@
+using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
@@ -34,7 +35,7 @@ public class WorkflowDefinitionActivity : Activity, IInitializable
         var serviceProvider = context.ServiceProvider;
         var cancellationToken = context.CancellationToken;
         var workflowDefinitionStore = serviceProvider.GetRequiredService<IWorkflowDefinitionStore>();
-        var workflowDefinition = await workflowDefinitionStore.FindPublishedByDefinitionIdAsync(WorkflowDefinitionId, cancellationToken);
+        var workflowDefinition = await workflowDefinitionStore.FindByDefinitionIdAsync(WorkflowDefinitionId, VersionOptions.Published, cancellationToken);
 
         if (workflowDefinition == null)
             throw new Exception($"Workflow definition {WorkflowDefinitionId} not found");

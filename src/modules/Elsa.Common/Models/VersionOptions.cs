@@ -9,33 +9,38 @@ public struct VersionOptions
     /// <summary>
     /// Gets the latest version.
     /// </summary>
-    public static readonly VersionOptions Latest = new VersionOptions { IsLatest = true };
+    public static readonly VersionOptions Latest = new() { IsLatest = true };
 
     /// <summary>
     /// Gets the published version.
     /// </summary>
-    public static readonly VersionOptions Published = new VersionOptions { IsPublished = true };
-        
+    public static readonly VersionOptions Published = new() { IsPublished = true };
+
     /// <summary>
     /// Gets the published version if available, and if not, the latest version.
     /// </summary>
-    public static readonly VersionOptions LatestOrPublished = new VersionOptions { IsLatestOrPublished = true };
+    public static readonly VersionOptions LatestOrPublished = new() { IsLatestOrPublished = true };
+
+    /// <summary>
+    /// Gets the latest, published version.
+    /// </summary>
+    public static readonly VersionOptions LatestAndPublished = new() { IsLatestOrPublished = true };
 
     /// <summary>
     /// Gets the draft version.
     /// </summary>
-    public static readonly VersionOptions Draft = new VersionOptions { IsDraft = true };
-        
+    public static readonly VersionOptions Draft = new() { IsDraft = true };
+
     /// <summary>
     /// Gets all versions.
     /// </summary>
-    public static readonly VersionOptions All = new VersionOptions { AllVersions = true };
+    public static readonly VersionOptions All = new() { AllVersions = true };
 
     /// <summary>
     /// Gets a specific version.
     /// </summary>
-    public static VersionOptions SpecificVersion(int version) => new VersionOptions { Version = version };
-        
+    public static VersionOptions SpecificVersion(int version) => new() { Version = version };
+
     /// <summary>
     /// Parses a string into a <see cref="VersionOptions"/>. 
     /// </summary>
@@ -47,6 +52,7 @@ public struct VersionOptions
             "Latest" => Latest,
             "Published" => Published,
             "LatestOrPublished" => LatestOrPublished,
+            "LatestAndPublished" => LatestAndPublished,
             _ => SpecificVersion(int.Parse(value))
         };
 
@@ -60,27 +66,32 @@ public struct VersionOptions
     /// Gets the latest version.
     /// </summary>
     public bool IsLatest { get; private set; }
-        
+
     /// <summary>
     /// Gets the published version if available, and if not, the latest version.
     /// </summary>
     public bool IsLatestOrPublished { get; private set; }
-        
+
+    /// <summary>
+    /// Gets the latest, published version.
+    /// </summary>
+    public bool IsLatestAndPublished { get; private set; }
+
     /// <summary>
     /// Gets the published version.
     /// </summary>
     public bool IsPublished { get; private set; }
-        
+
     /// <summary>
     /// Gets the draft version.
     /// </summary>
     public bool IsDraft { get; private set; }
-        
+
     /// <summary>
     /// Gets all versions.
     /// </summary>
     public bool AllVersions { get; private set; }
-        
+
     /// <summary>
     /// Gets a specific version.
     /// </summary>
@@ -89,5 +100,5 @@ public struct VersionOptions
     /// <summary>
     /// Returns a simple string representation of this <see cref="VersionOptions"/>.
     /// </summary>
-    public override string ToString() => AllVersions ? "AllVersions" : IsDraft ? "Draft" : IsLatest ? "Latest" : IsPublished ? "Published" : IsLatestOrPublished ? "LatestOrPublished" : Version.ToString();
+    public override string ToString() => AllVersions ? "AllVersions" : IsDraft ? "Draft" : IsLatest ? "Latest" : IsPublished ? "Published" : IsLatestOrPublished ? "LatestOrPublished" : IsLatestAndPublished ? "LatestAndPublished" : Version.ToString();
 }

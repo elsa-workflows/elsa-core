@@ -28,7 +28,7 @@ public class List : ElsaEndpoint<Request, Response>
 
         if (splitIds.Any())
         {
-            var summaries = await _store.FindManySummariesAsync(splitIds, versionOptions, cancellationToken).ToList();
+            var summaries = await _store.FindSummariesAsync(splitIds, versionOptions, cancellationToken).ToList();
             return new Response(summaries, summaries.Count);
         }
         else

@@ -12,6 +12,7 @@ using Elsa.Workflows.Management.Services;
 
 namespace Elsa.Workflows.Management.Implementations;
 
+/// <inheritdoc />
 public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
 {
     private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
@@ -20,6 +21,9 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
     private readonly SerializerOptionsProvider _serializerOptionsProvider;
     private readonly ISystemClock _systemClock;
 
+    /// <summary>
+    /// Constructor.
+    /// </summary>
     public WorkflowDefinitionPublisher(
         IWorkflowDefinitionStore workflowDefinitionStore, 
         IEventPublisher eventPublisher,
@@ -34,6 +38,7 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
         _systemClock = systemClock;
     }
 
+    /// <inheritdoc />
     public WorkflowDefinition New()
     {
         var id = _identityGenerator.GenerateId();
@@ -53,6 +58,7 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
         };
     }
 
+    /// <inheritdoc />
     public async Task<WorkflowDefinition?> PublishAsync(string definitionId, CancellationToken cancellationToken = default)
     {
         var definition = (await _workflowDefinitionStore.FindManyByDefinitionIdAsync(definitionId, VersionOptions.Latest, cancellationToken)).FirstOrDefault();
@@ -63,12 +69,13 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
         return await PublishAsync(definition, cancellationToken);
     }
 
+    /// <inheritdoc />
     public async Task<WorkflowDefinition> PublishAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
     {
         var definitionId = definition.DefinitionId;
 
         // Reset current latest and published definitions.
-        var publishedAndOrLatestWorkflows = await _workflowDefinitionStore.FindLatestAndPublishedByDefinitionIdAsync(definitionId, cancellationToken);
+        var publishedAndOrLatestWorkflows = await _workflowDefinitionStore.FindManyByDefinitionIdAsync(definitionId, VersionOptions.LatestAndPublished, cancellationToken);
 
         foreach (var publishedAndOrLatestWorkflow in publishedAndOrLatestWorkflows)
         {
@@ -87,6 +94,7 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
         return definition;
     }
 
+    /// <inheritdoc />
     public async Task<WorkflowDefinition?> RetractAsync(string definitionId, CancellationToken cancellationToken = default)
     {
         var definition = (await _workflowDefinitionStore.FindManyByDefinitionIdAsync(definitionId, VersionOptions.Published, cancellationToken)).FirstOrDefault();
@@ -97,6 +105,7 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
         return await RetractAsync(definition, cancellationToken);
     }
 
+    /// <inheritdoc />
     public async Task<WorkflowDefinition> RetractAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
     {
         if (!definition.IsPublished)
@@ -111,6 +120,7 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
         return definition;
     }
 
+    /// <inheritdoc />
     public async Task<WorkflowDefinition?> GetDraftAsync(string definitionId, int? version, CancellationToken cancellationToken = default)
     {
         var definition = (await _workflowDefinitionStore.FindManyByDefinitionIdAsync(definitionId, version.HasValue ? VersionOptions.SpecificVersion(version.Value) : VersionOptions.Latest, cancellationToken)).FirstOrDefault();
@@ -130,6 +140,7 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
         return draft;
     }
 
+    /// <inheritdoc />
     public async Task<WorkflowDefinition> SaveDraftAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
     {
         var draft = definition;

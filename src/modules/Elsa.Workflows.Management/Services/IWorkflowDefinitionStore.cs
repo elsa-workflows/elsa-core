@@ -5,6 +5,9 @@ using Elsa.Workflows.Management.Models;
 
 namespace Elsa.Workflows.Management.Services;
 
+/// <summary>
+/// Represents a store of <see cref="WorkflowDefinition"/>s.
+/// </summary>
 public interface IWorkflowDefinitionStore
 {
     /// <summary>
@@ -28,14 +31,13 @@ public interface IWorkflowDefinitionStore
     Task<WorkflowDefinition?> FindByNameAsync(string name, VersionOptions versionOptions, CancellationToken cancellationToken = default);
     
     /// <summary>
-    /// Finds a workflow definition by custom expression.
+    /// Returns all workflow definitions that can be used as activities.
     /// </summary>
-    Task<IEnumerable<WorkflowDefinition>> FindWorkflowsWithActivityBehaviourAsync(CancellationToken cancellationToken = default);
+    Task<IEnumerable<WorkflowDefinition>> FindWithActivityBehaviorAsync(VersionOptions versionOptions, CancellationToken cancellationToken = default);
 
-    Task<IEnumerable<WorkflowDefinitionSummary>> FindManySummariesAsync(IEnumerable<string> definitionIds, VersionOptions? versionOptions = default, CancellationToken cancellationToken = default);
-    Task<WorkflowDefinition?> FindPublishedByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default);
-    Task<IEnumerable<WorkflowDefinition>> FindLatestAndPublishedByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default);
-    Task<WorkflowDefinition?> FindLastVersionByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken);
+    Task<IEnumerable<WorkflowDefinitionSummary>> FindSummariesAsync(IEnumerable<string> definitionIds, VersionOptions? versionOptions = default, CancellationToken cancellationToken = default);
+    
+    Task<WorkflowDefinition?> FindLastVersionAsync(string definitionId, CancellationToken cancellationToken);
     Task SaveAsync(WorkflowDefinition record, CancellationToken cancellationToken = default);
     Task SaveManyAsync(IEnumerable<WorkflowDefinition> records, CancellationToken cancellationToken = default);
     Task<int> DeleteByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default);
