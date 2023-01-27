@@ -5,6 +5,6 @@ namespace Elsa.Mediator.Middleware.Command;
 
 public static class CommandPipelineBuilderExtensions
 {
-    public static ICommandPipelineBuilder UseCommandHandlers(this ICommandPipelineBuilder builder) => builder.UseMiddleware<CommandHandlerInvokerMiddleware>();
+    public static ICommandPipelineBuilder UseCommandInvoker(this ICommandPipelineBuilder builder) => builder.UseMiddleware<CommandHandlerInvokerMiddleware>();
     public static ICommandPipelineBuilder UseCommandLogging(this ICommandPipelineBuilder builder) => builder.UseMiddleware<CommandLoggingMiddleware>();
 }
