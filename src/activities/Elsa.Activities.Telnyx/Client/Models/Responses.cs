@@ -8,13 +8,8 @@ namespace Elsa.Activities.Telnyx.Client.Models
         public T Data { get; set; } = default!;
     }
 
-    public class DialResponse
+    public class DialResponse : CallStatus
     {
-        public string CallControlId { get; set; } = default!;
-        public string CallLegId { get; set; } = default!;
-        public string CallSessionId { get; set; } = default!;
-        public bool IsAlive { get; set; } = default!;
-        public string RecordType { get; set; } = default!;
     }
 
     public class NumberLookupResponse
@@ -59,5 +54,14 @@ namespace Elsa.Activities.Telnyx.Client.Models
     {
         [JsonProperty("caller_name")] public string Name { get; set; } = default!;
         public string ErrorCode { get; set; } = default!;
+    }
+
+    public class CallStatus
+    {
+        public string CallControlId { get; set; } = default!;
+        public string CallLegId { get; set; } = default!;
+        public string CallSessionId { get; set; } = default!;
+        public bool IsAlive { get; set; } = default!;
+        public string RecordType { get; set; } = default!;
     }
 }

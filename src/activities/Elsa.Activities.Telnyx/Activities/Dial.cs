@@ -80,6 +80,14 @@ namespace Elsa.Activities.Telnyx.Activities
             SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string? CommandId { get; set; }
 
+        [ActivityInput(
+            Hint = "Start recording automatically after an event. Disabled by default.",
+            UIHint = ActivityInputUIHints.Dropdown,
+            Options = new[] { "", "record-from-answer" },
+            DefaultValue = "",
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        public string? Record { get; set; }
+
         [ActivityInput(Label = "Custom Headers", Hint = "Custom headers to be added to the SIP INVITE.", Category = PropertyCategories.Advanced, UIHint = ActivityInputUIHints.Json)]
         public IList<Header>? CustomHeaders { get; set; }
 
@@ -146,11 +154,11 @@ namespace Elsa.Activities.Telnyx.Activities
             Output = payload;
 
             context.LogOutputProperty(this, "Output", payload);
-            
+
             if (!context.HasCallControlId())
                 context.SetCallControlId(payload!.CallControlId);
-            
-            if(!context.HasCallLegId())
+
+            if (!context.HasCallLegId())
                 context.SetCallLegId(payload!.CallLegId);
 
             return payload switch
@@ -210,6 +218,7 @@ namespace Elsa.Activities.Telnyx.Activities
                 CustomHeaders,
                 SipAuthUsername,
                 SipAuthPassword,
+                string.IsNullOrEmpty(Record) ? null : Record,
                 TimeLimitSecs,
                 TimeoutSecs,
                 WebhookUrl,
@@ -321,5 +330,11 @@ namespace Elsa.Activities.Telnyx.Activities
         public static ISetupActivity<Dial> WithSuspendWorkflow(this ISetupActivity<Dial> setup, Func<ValueTask<bool>> value) => setup.Set(x => x.SuspendWorkflow, value);
         public static ISetupActivity<Dial> WithSuspendWorkflow(this ISetupActivity<Dial> setup, Func<bool> value) => setup.Set(x => x.SuspendWorkflow, value);
         public static ISetupActivity<Dial> WithSuspendWorkflow(this ISetupActivity<Dial> setup, bool value) => setup.Set(x => x.SuspendWorkflow, value);
+        
+        public static ISetupActivity<Dial> WithRecord(this ISetupActivity<Dial> setup, Func<ActivityExecutionContext, ValueTask<string?>> value) => setup.Set(x => x.Record, value);
+        public static ISetupActivity<Dial> WithRecord(this ISetupActivity<Dial> setup, Func<ActivityExecutionContext, string?> value) => setup.Set(x => x.Record, value);
+        public static ISetupActivity<Dial> WithRecord(this ISetupActivity<Dial> setup, Func<ValueTask<string?>> value) => setup.Set(x => x.Record, value);
+        public static ISetupActivity<Dial> WithRecord(this ISetupActivity<Dial> setup, Func<string?> value) => setup.Set(x => x.Record, value);
+        public static ISetupActivity<Dial> WithRecord(this ISetupActivity<Dial> setup, string? value) => setup.Set(x => x.Record, value);
     }
 }
