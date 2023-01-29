@@ -11,6 +11,7 @@ public class WorkflowDefinitionTagSpecification : Specification<WorkflowDefiniti
     {
         Tag = tag;
         VersionOptions = versionOptions;
+        TenantId = tenantId;
     }
 
     public string Tag { get; set; }
