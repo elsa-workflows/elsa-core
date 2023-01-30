@@ -7,7 +7,7 @@ using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Services;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Workflows.Management.Implementations;
+namespace Elsa.Workflows.Management.Activities;
 
 /// <summary>
 /// Loads and executes an <see cref="WorkflowDefinition"/>.
