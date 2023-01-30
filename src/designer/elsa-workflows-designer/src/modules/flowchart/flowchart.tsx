@@ -337,9 +337,9 @@ export class FlowchartComponent {
     graph.on('edge:connected', this.onEdgeConnected);
     graph.on('node:moved', this.onNodeMoved);
 
-    //graph.on('node:change:*', this.onGraphChanged);
     graph.on('node:moved', this.onGraphChanged);
-    graph.on('node:added', this.onGraphChanged);
+    //graph.on('node:added', this.onGraphChanged);
+    graph.on('node:added', this.onNodeAdded);
     graph.on('node:removed', this.onNodeRemoved);
     graph.on('node:removed', this.onGraphChanged);
     graph.on('edge:added', this.onGraphChanged);
@@ -615,12 +615,19 @@ export class FlowchartComponent {
     this.activityDeleted.emit({activity});
   };
 
+  private onNodeAdded = async (e: any) => {
+    debugger;
+    const activity = e.node.data as Activity;
+    const activityDescriptor = this.getActivityDescriptor(activity.type);
+    activity.id = await this.generateUniqueActivityName(activityDescriptor)
+    e.node.activity = {...activity};
+    await this.onGraphChanged(e);
+  };
+
   private onToggleCanStartWorkflowClicked = (node: ActivityNodeShape) => {
     const activity = node.data as Activity;
     activity.canStartWorkflow = !activity.canStartWorkflow;
     node.activity = {...activity};
-    // this.onGraphChanged().then(_ => {
-    // });
   };
 
   private onDeleteActivityClicked = (node: ActivityNodeShape) => {
