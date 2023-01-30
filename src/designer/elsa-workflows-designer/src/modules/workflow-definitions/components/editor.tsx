@@ -94,6 +94,7 @@ export class WorkflowDefinitionEditor {
   @Method()
   async importWorkflow(workflowDefinition: WorkflowDefinition): Promise<void> {
     await this.updateWorkflowDefinition(workflowDefinition);
+    await this.loadWorkflowVersions();
 
     // Update the flowchart after state is updated.
     window.requestAnimationFrame(async () => {
