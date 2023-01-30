@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Elsa.Abstractions;
+using Elsa.Common.Models;
 using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Management.Mappers;
@@ -48,7 +49,7 @@ internal class Import : ElsaEndpoint<WorkflowDefinitionRequest, WorkflowDefiniti
 
         // Get a workflow draft version.
         var draft = !string.IsNullOrWhiteSpace(definitionId)
-            ? await _workflowDefinitionPublisher.GetDraftAsync(definitionId, cancellationToken:cancellationToken)
+            ? await _workflowDefinitionPublisher.GetDraftAsync(definitionId, VersionOptions.Latest, cancellationToken)
             : default;
 
         var isNew = draft == null;

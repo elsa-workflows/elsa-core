@@ -87,15 +87,13 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
         var publishedAndLatestVersions = (await _store.FindManyByDefinitionIdAsync(definitionId, VersionOptions.LatestAndPublished, cancellationToken)).ToList();
 
         if (publishedAndLatestVersions.Any(v => v.Version == version))
-        {
             throw new Exception("Latest or published versions cannot be reverted");
-        }
 
         var latestVersion = publishedAndLatestVersions.First(v => v.IsLatest);
         latestVersion.IsLatest = false;
         await _store.SaveAsync(latestVersion, cancellationToken);
 
-        var draft = await _workflowPublisher.GetDraftAsync(definitionId, version, cancellationToken);
+        var draft = await _workflowPublisher.GetDraftAsync(definitionId, VersionOptions.SpecificVersion(version), cancellationToken);
         draft!.Id = _identityGenerator.GenerateId();
         draft.Version = latestVersion.Version + 1;
         draft.IsLatest = true;

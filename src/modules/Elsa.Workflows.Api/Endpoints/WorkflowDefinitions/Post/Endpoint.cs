@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Elsa.Abstractions;
+using Elsa.Common.Models;
 using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Serialization;
@@ -37,9 +38,17 @@ internal class Post : ElsaEndpoint<WorkflowDefinitionRequest, WorkflowDefinition
         var definitionId = request.DefinitionId;
 
         // Get a workflow draft version.
+        var draftVersion = request.Version != null ? VersionOptions.SpecificVersion(request.Version.Value) : VersionOptions.Latest;
+        
         var draft = !string.IsNullOrWhiteSpace(definitionId)
-            ? await _workflowDefinitionPublisher.GetDraftAsync(definitionId, request.Version, cancellationToken)
+            ? await _workflowDefinitionPublisher.GetDraftAsync(definitionId, draftVersion, cancellationToken)
             : default;
+
+        if (draft == null && request.Version != null)
+        {
+            AddError("The requested version does not exist");
+            await SendErrorsAsync(cancellation: cancellationToken);
+        }
 
         var isNew = draft == null;
 

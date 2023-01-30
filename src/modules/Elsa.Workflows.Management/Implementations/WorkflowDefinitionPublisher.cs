@@ -121,9 +121,9 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
     }
 
     /// <inheritdoc />
-    public async Task<WorkflowDefinition?> GetDraftAsync(string definitionId, int? version, CancellationToken cancellationToken = default)
+    public async Task<WorkflowDefinition?> GetDraftAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
     {
-        var definition = (await _workflowDefinitionStore.FindManyByDefinitionIdAsync(definitionId, version.HasValue ? VersionOptions.SpecificVersion(version.Value) : VersionOptions.Latest, cancellationToken)).FirstOrDefault();
+        var definition = (await _workflowDefinitionStore.FindManyByDefinitionIdAsync(definitionId, versionOptions, cancellationToken)).FirstOrDefault();
 
         if (definition == null)
             return null;
