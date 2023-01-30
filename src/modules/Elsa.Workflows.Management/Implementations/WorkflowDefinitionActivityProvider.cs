@@ -1,5 +1,6 @@
 using Elsa.Common.Models;
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Management.Activities;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Services;
 using Humanizer;
@@ -26,7 +27,7 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
     /// <inheritdoc />
     public async ValueTask<IEnumerable<ActivityDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default)
     {
-        var definitions = (await _store.FindWithActivityBehaviorAsync(VersionOptions.Published, cancellationToken)).ToList();
+        var definitions = (await _store.FindWithActivityBehaviorAsync(VersionOptions.All, cancellationToken)).ToList();
         var descriptors = CreateDescriptors(definitions);
         return descriptors;
     }
