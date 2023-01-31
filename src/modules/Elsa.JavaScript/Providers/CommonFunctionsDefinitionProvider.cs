@@ -9,11 +9,11 @@ namespace Elsa.JavaScript.Providers;
 /// <summary>
 /// Produces <see cref="FunctionDefinition"/>s for common functions.
 /// </summary>
-internal class CommonFunctionDefinitionProvider : FunctionDefinitionProvider
+internal class CommonFunctionsDefinitionProvider : FunctionDefinitionProvider
 {
     private readonly ITypeAliasRegistry _typeAliasRegistry;
 
-    public CommonFunctionDefinitionProvider(ITypeAliasRegistry typeAliasRegistry)
+    public CommonFunctionsDefinitionProvider(ITypeAliasRegistry typeAliasRegistry)
     {
         _typeAliasRegistry = typeAliasRegistry;
     }

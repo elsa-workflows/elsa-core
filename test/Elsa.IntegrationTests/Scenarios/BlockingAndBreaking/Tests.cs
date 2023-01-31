@@ -31,7 +31,7 @@ public class Tests
         var result1 = await _workflowRunner.RunAsync(workflow);
 
         // Resume one of the branches.
-        var bookmark = result1.WorkflowState.Bookmarks.FirstOrDefault(x => x.ActivityNodeId == "Branch 1");
+        var bookmark = result1.WorkflowState.Bookmarks.FirstOrDefault(x => x.ActivityNodeId == "Workflow1:While1:Sequence1:Fork1:Sequence2:Branch 1");
         var runOptions = new RunWorkflowOptions(BookmarkId: bookmark!.Id);
         var result2 = await _workflowRunner.RunAsync(workflow, result1.WorkflowState, runOptions);
         
