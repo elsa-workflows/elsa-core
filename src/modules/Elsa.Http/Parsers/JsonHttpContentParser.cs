@@ -1,5 +1,6 @@
 using System.Dynamic;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Elsa.Expressions.Helpers;
 using Elsa.Http.Services;
 using Elsa.Workflows.Core.Serialization.Converters;
@@ -24,6 +25,8 @@ public class JsonHttpContentParser : IHttpContentParser
         {
             PropertyNameCaseInsensitive = true
         };
+        
+        options.Converters.Add(new JsonStringEnumConverter());
 
         using var reader = new StreamReader(content, leaveOpen: true);
         var json = await reader.ReadToEndAsync();
