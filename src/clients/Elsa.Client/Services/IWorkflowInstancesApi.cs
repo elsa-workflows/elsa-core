@@ -1,4 +1,4 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Client.Models;
 using ElsaDashboard.Shared.Rpc;
@@ -17,7 +17,7 @@ namespace Elsa.Client.Services
             int? pageSize = default,
             [AliasAs("workflow")] string? workflowDefinitionId = default,
             [AliasAs("status")] WorkflowStatus? workflowStatus = default,
-            OrderBy? orderBy = default,
+            WorkflowInstanceOrderBy? orderBy = default,
             string? searchTerm = default,
             CancellationToken cancellationToken = default);
 

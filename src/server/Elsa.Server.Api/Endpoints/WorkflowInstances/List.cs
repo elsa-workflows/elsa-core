@@ -53,7 +53,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
             [FromQuery(Name = "workflow")] string? workflowDefinitionId = default,
             [FromQuery(Name = "status")] WorkflowStatus? workflowStatus = default,
             [FromQuery] string? correlationId = default,
-            [FromQuery] OrderBy? orderBy = default,
+            [FromQuery] WorkflowInstanceOrderBy? orderBy = default,
             [FromQuery] string? searchTerm = default,
             int page = 0,
             int pageSize = 25,
@@ -83,9 +83,9 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
             {
                 orderBySpecification = orderBy switch
                 {
-                    OrderBy.Started => OrderBySpecification.OrderByDescending<WorkflowInstance>(x => x.CreatedAt),
-                    OrderBy.LastExecuted => OrderBySpecification.OrderByDescending<WorkflowInstance>(x => x.LastExecutedAt!),
-                    OrderBy.Finished => OrderBySpecification.OrderByDescending<WorkflowInstance>(x => x.FinishedAt!),
+                    WorkflowInstanceOrderBy.Started => OrderBySpecification.OrderByDescending<WorkflowInstance>(x => x.CreatedAt),
+                    WorkflowInstanceOrderBy.LastExecuted => OrderBySpecification.OrderByDescending<WorkflowInstance>(x => x.LastExecutedAt!),
+                    WorkflowInstanceOrderBy.Finished => OrderBySpecification.OrderByDescending<WorkflowInstance>(x => x.FinishedAt!),
                     _ => OrderBySpecification.OrderByDescending<WorkflowInstance>(x => x.FinishedAt!)
                 };
             }
