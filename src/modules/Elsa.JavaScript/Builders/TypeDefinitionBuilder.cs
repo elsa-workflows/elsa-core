@@ -8,7 +8,24 @@ namespace Elsa.JavaScript.Builders;
 public class TypeDefinitionBuilder
 {
     private readonly TypeDefinition _typeDefinition = new();
+    
+    /// <summary>
+    /// Set the name of the function.
+    /// </summary>
+    public TypeDefinitionBuilder Name(string name)
+    {
+        _typeDefinition.Name = name;
+        return this;
+    }
 
+    /// <summary>
+    /// Set the return type of the function.
+    /// </summary>
+    public TypeDefinitionBuilder DeclarationKeyword(string keyword)
+    {
+        _typeDefinition.DeclarationKeyword = keyword;
+        return this;
+    }
 
     /// <summary>
     /// Build a <see cref="TypeDefinition"/> using the collected information.

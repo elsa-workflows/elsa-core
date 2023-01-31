@@ -27,7 +27,7 @@ public class TypeDefinitionDocumentRenderer : ITypeDefinitionDocumentRenderer
         string RenderParameters(IEnumerable<ParameterDefinition> parameters) => string.Join(", ", parameters.Select(RenderParameter));
         
         var returnType = functionDefinition.ReturnType != null ? $": {functionDefinition.ReturnType}" : "";
-        output.AppendLine($"declare function {functionDefinition.Name}({RenderParameters(functionDefinition.Parameters)}){returnType}");
+        output.AppendLine($"declare function {functionDefinition.Name}({RenderParameters(functionDefinition.Parameters)}){returnType};");
     }
 
     private void Render(TypeDefinition typeDefinition, StringBuilder output)
@@ -40,5 +40,5 @@ public class TypeDefinitionDocumentRenderer : ITypeDefinitionDocumentRenderer
         output.AppendLine("}");
     }
 
-    private void Render(PropertyDefinition property, StringBuilder output) => output.AppendLine($"{property.Name}{(property.IsOptional ? "?" : "")}: {property.Type}");
+    private void Render(PropertyDefinition property, StringBuilder output) => output.AppendLine($"{property.Name}{(property.IsOptional ? "?" : "")}: {property.Type};");
 }

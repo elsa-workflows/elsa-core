@@ -10,5 +10,5 @@ public interface IActivityPropertyOptionsProvider
     /// <summary>
     /// Returns options for the specified property.
     /// </summary>
-    object GetOptions(PropertyInfo property);
+    object? GetOptions(PropertyInfo property);
 }
