@@ -22,6 +22,10 @@ public class TextContentFactory : IHttpContentFactory
     public HttpContent CreateHttpContent(object content, string contentType)
     {
         var text = content as string ?? "";
+
+        if (string.IsNullOrWhiteSpace(contentType))
+            contentType = MediaTypeNames.Text.Plain;
+        
         return new StringContent(text, Encoding.UTF8, contentType);
     }
 }
