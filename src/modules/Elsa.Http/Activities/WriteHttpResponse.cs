@@ -37,7 +37,7 @@ public class WriteHttpResponse : CodeActivity
         UIHint = InputUIHints.Dropdown
     )]
     public Input<string?> ContentType { get; set; } = default!;
-    
+
     /// <summary>
     /// The headers to return along with the response.
     /// </summary>
@@ -85,20 +85,24 @@ public class WriteHttpResponse : CodeActivity
         var headers = ResponseHeaders.TryGet(context) ?? new HttpResponseHeaders();
         foreach (var header in headers)
             response.Headers.Add(header.Key, header.Value);
-        
+
         // Get content and content type.
         var content = context.Get(Content);
 
         if (content == null)
             return;
-        
-        var contentType = ContentType.Get(context) ?? DetermineContentType(content);
+
+        var contentType = ContentType.Get(context);
+
+        if (string.IsNullOrWhiteSpace(contentType))
+            contentType = DetermineContentType(content);
+
         var contentWriter = context.GetServices<IHttpContentFactory>().FirstOrDefault(x => x.SupportsContentType(contentType)) ?? new TextContentFactory();
         var httpContent = contentWriter.CreateHttpContent(content, contentType);
 
         // Set content type.
         response.ContentType = httpContent.Headers.ContentType?.ToString() ?? contentType;
-        
+
         // Write content.
         await httpContent.CopyToAsync(response.Body);
     }

@@ -21,6 +21,18 @@ internal class CommonFunctionsDefinitionProvider : FunctionDefinitionProvider
     protected override IEnumerable<FunctionDefinition> GetFunctionDefinitions(TypeDefinitionContext context)
     {
         yield return CreateFunctionDefinition(builder => builder
+            .Name("getWorkflowInstanceId")
+            .ReturnType("string"));
+        
+        yield return CreateFunctionDefinition(builder => builder
+            .Name("getCorrelationId")
+            .ReturnType("string"));
+        
+        yield return CreateFunctionDefinition(builder => builder
+            .Name("setCorrelationId")
+            .Parameter("value", "string"));
+        
+        yield return CreateFunctionDefinition(builder => builder
             .Name("setVariable")
             .Parameter("name", "string")
             .Parameter("value", "any"));
@@ -39,6 +51,11 @@ internal class CommonFunctionsDefinitionProvider : FunctionDefinitionProvider
             .Name("isNullOrEmpty")
             .Parameter("value", "string")
             .ReturnType("boolean"));
+        
+        yield return CreateFunctionDefinition(builder => builder
+            .Name("parseGuid")
+            .Parameter("value", "string")
+            .ReturnType("Guid"));
         
         yield return CreateFunctionDefinition(builder => builder
             .Name("toJson")

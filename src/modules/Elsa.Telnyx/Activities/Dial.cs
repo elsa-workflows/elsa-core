@@ -1,18 +1,12 @@
-﻿using System.Runtime.CompilerServices;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 using Elsa.Extensions;
-using Elsa.Telnyx.Attributes;
-using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Client.Models;
 using Elsa.Telnyx.Client.Services;
 using Elsa.Telnyx.Exceptions;
 using Elsa.Telnyx.Extensions;
 using Elsa.Telnyx.Options;
-using Elsa.Telnyx.Payloads.Call;
-using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Models;
 using Microsoft.Extensions.Options;
 
@@ -22,97 +16,64 @@ namespace Elsa.Telnyx.Activities;
 /// Dial a number or SIP URI.
 /// </summary>
 [Activity(Constants.Namespace, "Dial a number or SIP URI.", Kind = ActivityKind.Task)]
-[WebhookDriven(WebhookEventTypes.CallAnswered, WebhookEventTypes.CallHangup, WebhookEventTypes.CallMachineGreetingEnded, WebhookEventTypes.CallMachinePremiumGreetingEnded)]
-public abstract class DialBase : Activity
+public class Dial : CodeActivity<DialResponse>
 {
     /// <inheritdoc />
-    protected DialBase(string? source = default, int? line = default) : base(source, line)
+    [JsonConstructor]
+    public Dial(string? source = default, int? line = default) : base(source, line)
     {
     }
     
+    /// <summary>
+    /// The DID or SIP URI to dial out and bridge to the given call.
+    /// </summary>
     [Input(Description = "The DID or SIP URI to dial out and bridge to the given call.")]
     public Input<string> To { get; set; } = default!;
 
+    /// <summary>
+    /// The 'from' number to be used as the caller id presented to the destination ('To' number). The number should be in +E164 format. This attribute will default to the 'From' number of the original call if omitted.
+    /// </summary>
     [Input(Description = "The 'from' number to be used as the caller id presented to the destination ('To' number). The number should be in +E164 format. This attribute will default to the 'From' number of the original call if omitted.")]
     public Input<string?> From { get; set; } = default!;
 
+    /// <summary>
+    /// The string to be used as the caller id name (SIP From Display Name) presented to the destination ('To' number). The string should have a maximum of 128 characters, containing only letters, numbers, spaces, and -_~!.+ special characters. If omitted, the display name will be the same as the number in the 'From' field.
+    /// </summary>
     [Input(Description =
         "The string to be used as the caller id name (SIP From Display Name) presented to the destination ('To' number). The string should have a maximum of 128 characters, containing only letters, numbers, spaces, and -_~!.+ special characters. If omitted, the display name will be the same as the number in the 'From' field.")]
     public Input<string?> FromDisplayName { get; set; } = default!;
 
+    /// <summary>
+    /// Enables answering machine detection.
+    /// </summary>
     [Input(
-        Description = "Enables Answering Machine Detection.",
+        Description = "Enables answering machine detection.",
         UIHint = InputUIHints.Dropdown,
         Options = new[] { "disabled", "detect", "detect_beep", "detect_words", "greeting_end", "premium" },
         DefaultValue = "disabled")]
     public Input<string?> AnsweringMachineDetection { get; set; } = new("disabled");
 
-    public Output<string?> MachineDetectionResult { get; set; } = default!;
-    public Output<CallHangupPayload>? HangupPayload { get; set; }
-
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        await DialAsync(context);
-        var eventTypes = new[] { WebhookEventTypes.CallAnswered, WebhookEventTypes.CallHangup, WebhookEventTypes.CallMachineGreetingEnded, WebhookEventTypes.CallMachinePremiumGreetingEnded };
-        var payloads = eventTypes.Select(x => new WebhookEventBookmarkPayload(x)).ToList();
-        context.CreateBookmarks(payloads, ResumeAsync);
-    }
-
-    private async ValueTask ResumeAsync(ActivityExecutionContext context)
-    {
-        var payload = context.GetInput<CallPayload>();
-
-        if (!context.HasPrimaryCallControlId())
-            context.SetPrimaryCallControlId(payload.CallControlId);
-        else
-            context.SetSecondaryCallControlId(payload.CallControlId);
-
-        switch (payload)
-        {
-            case CallMachineGreetingEnded greetingEndedPayload:
-                await HandleMachineGreetingEnded(context, greetingEndedPayload);
-                break;
-            case CallMachinePremiumGreetingEnded premiumGreetingEndedPayload:
-                await HandleMachineGreetingEnded(context, premiumGreetingEndedPayload);
-                break;
-            case CallAnsweredPayload answeredPayload:
-                await HandleAnsweredAsync(context, answeredPayload);
-                break;
-            case CallHangupPayload hangupPayload:
-                context.Set(HangupPayload, hangupPayload);
-                await HandleHangupAsync(context, hangupPayload);
-                break;
-        }
-    }
-
-    private async ValueTask HandleMachineGreetingEnded(ActivityExecutionContext context, CallMachineGreetingEndedBase payload)
-    {
-        context.Set(MachineDetectionResult, payload.Result);
-        await OnHandleMachineGreetingEndedAsync(context, payload);
+        var response = await DialAsync(context);
+        Result.Set(context, response);
     }
     
-    private ValueTask HandleAnsweredAsync(ActivityExecutionContext context, CallAnsweredPayload payload) => OnHandleAnsweredAsync(context, payload);
-    private ValueTask HandleHangupAsync(ActivityExecutionContext context, CallHangupPayload payload) => OnHandleHangupAsync(context, payload);
-    
-    protected abstract ValueTask OnHandleAnsweredAsync(ActivityExecutionContext context, CallAnsweredPayload payload);
-    protected abstract ValueTask OnHandleHangupAsync(ActivityExecutionContext context, CallHangupPayload payload);
-    protected abstract ValueTask OnHandleMachineGreetingEndedAsync(ActivityExecutionContext context, CallMachineGreetingEndedBase payload);
-
-    private async Task DialAsync(ActivityExecutionContext context)
+    private async Task<DialResponse> DialAsync(ActivityExecutionContext context)
     {
         var telnyxOptions = context.GetRequiredService<IOptions<TelnyxOptions>>().Value;
         var callControlAppId = telnyxOptions.CallControlAppId;
 
         if (callControlAppId == null)
-            throw new MissingCallControlAppIdException("No Call Control ID specified and no default value configured");
+            throw new MissingCallControlAppIdException("No Call Control ID configured");
 
         var fromNumber = context.Get(From);
         var clientState = context.CreateCorrelatingClientState();
 
         var request = new DialRequest(
             callControlAppId,
-            To.Get(context) ?? throw new Exception("To is required"),
+            To.Get(context),
             fromNumber,
             FromDisplayName.Get(context).SanitizeCallerName(),
             AnsweringMachineDetection.Get(context),
@@ -120,63 +81,8 @@ public abstract class DialBase : Activity
         );
 
         var telnyxClient = context.GetRequiredService<ITelnyxClient>();
-        await telnyxClient.Calls.DialAsync(request, context.CancellationToken);
+        var response = await telnyxClient.Calls.DialAsync(request, context.CancellationToken);
+
+        return response.Data;
     }
-}
-
-/// <inheritdoc />
-[FlowNode("Answered", "Hangup", "Voicemail")]
-public class FlowDial : DialBase
-{
-    [JsonConstructor]
-    private FlowDial([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
-    {
-    }
-
-    /// <inheritdoc />
-    protected override async ValueTask OnHandleAnsweredAsync(ActivityExecutionContext context, CallAnsweredPayload payload) => await context.CompleteActivityWithOutcomesAsync("Answered");
-
-    /// <inheritdoc />
-    protected override async ValueTask OnHandleHangupAsync(ActivityExecutionContext context, CallHangupPayload payload) => await context.CompleteActivityWithOutcomesAsync("Hangup");
-
-    /// <inheritdoc />
-    protected override async ValueTask OnHandleMachineGreetingEndedAsync(ActivityExecutionContext context, CallMachineGreetingEndedBase payload) => await context.CompleteActivityWithOutcomesAsync("Voicemail");
-}
-
-/// <summary>
-/// Dial a phone number or SIP URI.
-/// </summary>
-public class Dial : DialBase
-{
-    /// <inheritdoc />
-    [JsonConstructor]    
-    public Dial([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
-    {
-    }
-
-    /// <summary>
-    /// The <see cref="IActivity"/> to execute when the call was answered.
-    /// </summary>
-    [Port] public IActivity? Answered { get; set; }
-    
-    /// <summary>
-    /// The <see cref="IActivity"/> to execute when there is no reply.
-    /// </summary>
-    [Port] public IActivity? Hangup { get; set; }
-    
-    /// <summary>
-    /// The <see cref="IActivity"/> to execute when a robot answered the call.  
-    /// </summary>
-    [Port] public IActivity? Voicemail { get; set; }
-
-    /// <inheritdoc />
-    protected override async ValueTask OnHandleAnsweredAsync(ActivityExecutionContext context, CallAnsweredPayload payload) => 
-        await context.ScheduleActivityAsync(Answered);
-
-    /// <inheritdoc />
-    protected override async ValueTask OnHandleHangupAsync(ActivityExecutionContext context, CallHangupPayload payload) => await context.ScheduleActivityAsync(Hangup);
-
-    /// <inheritdoc />
-    protected override async ValueTask OnHandleMachineGreetingEndedAsync(ActivityExecutionContext context, CallMachineGreetingEndedBase payload) => 
-        await context.ScheduleActivityAsync(Voicemail);
 }
