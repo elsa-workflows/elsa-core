@@ -23,7 +23,18 @@ namespace Elsa.Activities.Telnyx.Activities
     [Action(
         Category = Constants.Category,
         Description = "Dial a number or SIP URI from a given connection.",
-        Outcomes = new[] { TelnyxOutcomeNames.CallInitiated, TelnyxOutcomeNames.Answered, TelnyxOutcomeNames.Hangup, TelnyxOutcomeNames.MachineGreetingEnded, OutcomeNames.Done },
+        Outcomes = new[]
+        {
+            TelnyxOutcomeNames.CallInitiated,
+            TelnyxOutcomeNames.Answered,
+            TelnyxOutcomeNames.Hangup,
+            TelnyxOutcomeNames.MachineDetectionEnded,
+            TelnyxOutcomeNames.MachineDetected,
+            TelnyxOutcomeNames.MachineGreetingEnded,
+            TelnyxOutcomeNames.AnsweredByHuman,
+            TelnyxOutcomeNames.AnsweredByMachine,
+            OutcomeNames.Done
+        },
         DisplayName = "Dial"
     )]
     public class Dial : Activity
@@ -129,12 +140,19 @@ namespace Elsa.Activities.Telnyx.Activities
             SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public bool SuspendWorkflow { get; set; } = true;
 
+        [ActivityInput(
+            Hint = "Set to true to use advanced dial flow.",
+            Category = PropertyCategories.Advanced,
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        public bool UseAdvancedFlow { get; set; }
+
         [ActivityOutput] public DialResponse? DialResponse { get; set; }
         [ActivityOutput] public CallPayload? Output { get; set; }
         [ActivityOutput] public CallAnsweredPayload? AnsweredOutput { get; set; }
         [ActivityOutput] public CallHangupPayload? HangupOutput { get; set; }
         [ActivityOutput] public CallInitiatedPayload? InitiatedOutput { get; set; }
         [ActivityOutput] public CallMachineGreetingEndedBase MachineGreetingEndedOutput { get; set; }
+        [ActivityOutput] public CallMachineDetectionEndedBase MachineDetectionEndedOutput { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
@@ -163,11 +181,13 @@ namespace Elsa.Activities.Telnyx.Activities
 
             return payload switch
             {
+                CallInitiatedPayload initiatedPayload => InitiatedOutcome(initiatedPayload),
+                CallHangupPayload hangupPayload => HangupOutcome(hangupPayload),
+                CallAnsweredPayload answeredPayload => AnsweredOutcome(answeredPayload),
+                CallMachinePremiumDetectionEnded machinePremiumDetectionEnded => MachineDetectionEndedOutcome(machinePremiumDetectionEnded),
                 CallMachineGreetingEnded greetingEndedPayload => MachineGreetingEndedOutcome(greetingEndedPayload),
                 CallMachinePremiumGreetingEnded premiumGreetingEndedPayload => MachineGreetingEndedOutcome(premiumGreetingEndedPayload),
-                CallAnsweredPayload answeredPayload => AnsweredOutcome(answeredPayload),
-                CallHangupPayload hangupPayload => HangupOutcome(hangupPayload),
-                CallInitiatedPayload initiatedPayload => Combine(InitiatedOutcome(initiatedPayload), Suspend()),
+
                 _ => throw new ArgumentOutOfRangeException(nameof(payload))
             };
         }
@@ -175,7 +195,16 @@ namespace Elsa.Activities.Telnyx.Activities
         private IActivityExecutionResult AnsweredOutcome(CallAnsweredPayload payload)
         {
             AnsweredOutput = payload;
-            return Outcome(TelnyxOutcomeNames.Answered, payload);
+
+            var results = new List<IActivityExecutionResult>
+            {
+                Outcome(TelnyxOutcomeNames.Answered, payload)
+            };
+
+            if (UseAdvancedFlow && AnsweringMachineDetection != "disabled" && !string.IsNullOrWhiteSpace(AnsweringMachineDetection))
+                results.Add(Suspend());
+
+            return Combine(results);
         }
 
         private IActivityExecutionResult HangupOutcome(CallHangupPayload payload)
@@ -187,13 +216,36 @@ namespace Elsa.Activities.Telnyx.Activities
         private IActivityExecutionResult InitiatedOutcome(CallInitiatedPayload payload)
         {
             InitiatedOutput = payload;
-            return Outcome(TelnyxOutcomeNames.CallInitiated, payload);
+            return Combine(Outcome(TelnyxOutcomeNames.CallInitiated, payload), Suspend());
+        }
+
+        private IActivityExecutionResult MachineDetectionEndedOutcome(CallMachinePremiumDetectionEnded payload)
+        {
+            MachineDetectionEndedOutput = payload;
+
+            var results = new List<IActivityExecutionResult>
+            {
+                Outcome(TelnyxOutcomeNames.MachineDetectionEnded)
+            };
+
+            if (UseAdvancedFlow)
+            {
+                if (payload.Result == "machine")
+                {
+                    results.Add(Outcome(TelnyxOutcomeNames.MachineDetected));
+                    results.Add(Suspend());
+                }
+                else
+                    results.Add(Outcome(TelnyxOutcomeNames.AnsweredByHuman));
+            }
+
+            return Combine(results);
         }
 
         private IActivityExecutionResult MachineGreetingEndedOutcome(CallMachineGreetingEndedBase payload)
         {
             MachineGreetingEndedOutput = payload;
-            return Outcome(TelnyxOutcomeNames.MachineGreetingEnded, payload);
+            return Outcomes(new[] { TelnyxOutcomeNames.MachineGreetingEnded, TelnyxOutcomeNames.AnsweredByMachine }, payload);
         }
 
         private async Task<DialResponse> DialAsync(ActivityExecutionContext context)
@@ -330,7 +382,7 @@ namespace Elsa.Activities.Telnyx.Activities
         public static ISetupActivity<Dial> WithSuspendWorkflow(this ISetupActivity<Dial> setup, Func<ValueTask<bool>> value) => setup.Set(x => x.SuspendWorkflow, value);
         public static ISetupActivity<Dial> WithSuspendWorkflow(this ISetupActivity<Dial> setup, Func<bool> value) => setup.Set(x => x.SuspendWorkflow, value);
         public static ISetupActivity<Dial> WithSuspendWorkflow(this ISetupActivity<Dial> setup, bool value) => setup.Set(x => x.SuspendWorkflow, value);
-        
+
         public static ISetupActivity<Dial> WithRecord(this ISetupActivity<Dial> setup, Func<ActivityExecutionContext, ValueTask<string?>> value) => setup.Set(x => x.Record, value);
         public static ISetupActivity<Dial> WithRecord(this ISetupActivity<Dial> setup, Func<ActivityExecutionContext, string?> value) => setup.Set(x => x.Record, value);
         public static ISetupActivity<Dial> WithRecord(this ISetupActivity<Dial> setup, Func<ValueTask<string?>> value) => setup.Set(x => x.Record, value);
