@@ -64,7 +64,7 @@ namespace Elsa.Activities.Kafka.Services
 
         private async Task OnMessageReceivedAsync(KafkaMessageEvent ev)
         {
-            _logger.LogWarning("Message received for Topic {Topic}", _client.Configuration.Topic);
+            _logger.LogInformation("Message received for Topic {Topic}", _client.Configuration.Topic);
 
             await TriggerWorkflowsAsync(ev, ev.CancellationToken);
         }
