@@ -98,7 +98,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
 
         private async Task TriggerWorkflowsAsync(ServiceBusMessage message, CancellationToken cancellationToken)
         {
-            var tenantId = await _tenantIdResolver.Resolve(message, QueueOrTopic, Subscription, Tags, cancellationToken);
+            var tenantId = await _tenantIdResolver.ResolveAsync(message, QueueOrTopic, Subscription, Tags, cancellationToken);
             var correlationId = message.CorrelationId;
 
             var model = new MessageModel

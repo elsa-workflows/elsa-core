@@ -24,6 +24,6 @@ namespace Elsa.Activities.AzureServiceBus.Services
         /// <returns>
         /// A string?
         /// </returns>
-        ValueTask<string?> Resolve(ServiceBusMessage message, string queueOrTopic, string? subscription, HashSet<string> tags, CancellationToken cancellationToken);
+        ValueTask<string?> ResolveAsync(ServiceBusMessage message, string queueOrTopic, string? subscription, HashSet<string> tags, CancellationToken cancellationToken);
     }
 }
