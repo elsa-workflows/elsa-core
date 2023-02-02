@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Confluent.Kafka;
 using Elsa.Activities.Kafka.Bookmarks;
 using Elsa.Activities.Kafka.Configuration;
 using Elsa.Activities.Kafka.Helpers;
@@ -165,8 +166,9 @@ namespace Elsa.Activities.Kafka.Services
             var group = bookmark.Group;
             var headers = bookmark.Headers;
             var clientId = KafkaClientConfigurationHelper.GetClientId(activityId);
+            var autoOffsetReset = bookmark.AutoOffsetReset;
 
-            return new KafkaConfiguration(connectionString!, topic!, group!, headers, clientId);
+            return new KafkaConfiguration(connectionString!, topic!, group!, headers, clientId, autoOffsetReset);
         }
     }
 }

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Confluent.Kafka;
 using Elsa.Activities.Kafka.Configuration;
 using Elsa.Activities.Kafka.Helpers;
 using Elsa.Activities.Kafka.Services;
@@ -38,8 +39,8 @@ namespace Elsa.Activities.Kafka.Activities.SendKafkaMessage
             Order = 3,
             UIHint = ActivityInputUIHints.Dictionary,
             DefaultSyntax = SyntaxNames.Json,
-            SupportedSyntaxes = new[] { SyntaxNames.Json,SyntaxNames.JavaScript })]
-        
+            SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript })]
+
         public Dictionary<string, string> Headers { get; set; } = new Dictionary<string, string>();
 
         [ActivityInput(
@@ -55,8 +56,8 @@ namespace Elsa.Activities.Kafka.Activities.SendKafkaMessage
             UIHint = ActivityInputUIHints.MultiLine,
             SupportedSyntaxes = new[] { SyntaxNames.Json })]
         public string Message { get; set; } = default!;
-        
-        
+
+
         public string ClientId => KafkaClientConfigurationHelper.GetClientId(Id);
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)

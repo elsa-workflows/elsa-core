@@ -17,35 +17,36 @@ namespace Elsa.Activities.Kafka.Services
         private IConsumer<Ignore, string>? _consumer;
         private Func<KafkaMessageEvent, Task>? _messageHandler;
         private Func<Exception, Task>? _errHandler;
-        
+
         public Client(KafkaConfiguration configuration)
         {
             Configuration = configuration;
         }
-        
+
         public KafkaConfiguration Configuration { get; }
-        
-        public void SetHandlers(Func<KafkaMessageEvent, Task> receiveHandler,Func<Exception, Task> errorHandler,CancellationToken cancellationToken)
+
+        public void SetHandlers(Func<KafkaMessageEvent, Task> receiveHandler, Func<Exception, Task> errorHandler, CancellationToken cancellationToken)
         {
             _messageHandler = receiveHandler;
             _cancellationToken = cancellationToken;
             _errHandler = errorHandler;
         }
 
-        public Task StartProcessing(string topic,string group)
+        public Task StartProcessing(string topic, string group)
         {
             _consumer = new ConsumerBuilder<Ignore, string>(new ConsumerConfig()
             {
                 BootstrapServers = Configuration.ConnectionString,
-                GroupId = group
+                GroupId = group,
+                AutoOffsetReset = Configuration.AutoOffsetReset
             }).Build();
-            
-            if (_consumer != null) 
+
+            if (_consumer != null)
                 Consumer.Consume(topic, _consumer).Subscribe(HandleMessage, OnError, _cancellationToken);
 
             return Task.CompletedTask;
         }
-        
+
         public async Task PublishMessage(string message)
         {
             var producerConfig = new ProducerConfig()
@@ -54,7 +55,7 @@ namespace Elsa.Activities.Kafka.Services
             };
 
             using var producer = new ProducerBuilder<Null, string>(producerConfig).Build();
-            await producer.ProduceAsync(Configuration.Topic, new Message<Null, string> {Headers = GetHeaders(),Value=message }, _cancellationToken);
+            await producer.ProduceAsync(Configuration.Topic, new Message<Null, string> { Headers = GetHeaders(), Value = message }, _cancellationToken);
         }
 
         public async Task Dispose()
@@ -65,14 +66,12 @@ namespace Elsa.Activities.Kafka.Services
                 {
                     _consumer.Unsubscribe();
                     _consumer.Close();
-                
                 }
                 catch (Exception e)
                 {
                     if (_errHandler != null) await _errHandler(e);
                 }
             }
-           
         }
 
         private async void OnError(Exception error)
@@ -83,16 +82,16 @@ namespace Elsa.Activities.Kafka.Services
         private async void HandleMessage(Message<Ignore, string> message)
         {
             var ev = new KafkaMessageEvent(message, _cancellationToken);
-            
-            if (_messageHandler != null) 
+
+            if (_messageHandler != null)
                 await _messageHandler(ev);
         }
 
         private Headers GetHeaders()
         {
             var headers = new Headers();
-            
-            foreach (var entry in Configuration.Headers) 
+
+            foreach (var entry in Configuration.Headers)
                 headers.Add(entry.Key, Encoding.ASCII.GetBytes(entry.Value));
 
             return headers;
