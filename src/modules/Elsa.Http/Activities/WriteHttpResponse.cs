@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Mime;
 using Elsa.Extensions;
 using Elsa.Http.ContentWriters;
 using Elsa.Http.Models;
@@ -92,7 +93,7 @@ public class WriteHttpResponse : CodeActivity
         if (content == null)
             return;
 
-        var contentType = ContentType.Get(context);
+        var contentType = ContentType.TryGet(context) ?? MediaTypeNames.Text.Plain;
 
         if (string.IsNullOrWhiteSpace(contentType))
             contentType = DetermineContentType(content);
