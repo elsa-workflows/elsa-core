@@ -12,6 +12,7 @@
         public const string ValidInput = "Valid Input";
         public const string InvalidInput = "Invalid Input";
         public const string Transferring = "Transferring";
+        public const string Bridging = "Bridging";
         public const string Bridged = "Bridged";
         public const string LegABridged = "Call A Answered";
         public const string LegBBridged = "Call B Answered";
