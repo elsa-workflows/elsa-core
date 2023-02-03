@@ -1,6 +1,6 @@
-﻿namespace Elsa.Server.Api.Models
+namespace Elsa.Client.Models
 {
-    public enum OrderBy
+    public enum WorkflowInstanceOrderBy
     {
         Started,
         LastExecuted,

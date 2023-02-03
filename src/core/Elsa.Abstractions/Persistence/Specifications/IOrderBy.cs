@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq.Expressions;
 
 namespace Elsa.Persistence.Specifications
@@ -23,7 +23,7 @@ namespace Elsa.Persistence.Specifications
 
     public static class OrderBySpecification
     {
-        public static OrderBy<T> OrderBy<T>(Expression<Func<T, object>> expression) => new(expression, SortDirection.Ascending);
-        public static OrderBy<T> OrderByDescending<T>(Expression<Func<T, object>> expression) => new(expression, SortDirection.Descending);
+        public static OrderBy<T> OrderBy<T>(Expression<Func<T, object>> expression, SortDirection sortDirection = SortDirection.Ascending) => new(expression, sortDirection);
+        public static OrderBy<T> OrderByDescending<T>(Expression<Func<T, object>> expression, SortDirection sortDirection = SortDirection.Descending) => new(expression, sortDirection);
     }
 }

@@ -1,6 +1,8 @@
 using System;
 using Elsa.Models;
 using Elsa.Server.Api.Endpoints.WorkflowDefinitions;
+using NodaTime;
+using Parlot.Fluent;
 using Swashbuckle.AspNetCore.Filters;
 
 namespace Elsa.Server.Api.Swagger.Examples
@@ -20,7 +22,8 @@ namespace Elsa.Server.Api.Swagger.Examples
                 WorkflowPersistenceBehavior.Suspended,
                 true,
                 false,
-				new Variables()
+                new Variables(),
+                SystemClock.Instance.GetCurrentInstant()
             );
     }
 }
