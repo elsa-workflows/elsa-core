@@ -44,13 +44,6 @@ internal class Post : ElsaEndpoint<WorkflowDefinitionRequest, WorkflowDefinition
             ? await _workflowDefinitionPublisher.GetDraftAsync(definitionId, draftVersion, cancellationToken)
             : default;
 
-        if (draft == null && request.Version != null)
-        {
-            AddError("The requested version does not exist");
-            await SendErrorsAsync(cancellation: cancellationToken);
-            return;
-        }
-
         var isNew = draft == null;
 
         // Create a new workflow in case no existing definition was found.
