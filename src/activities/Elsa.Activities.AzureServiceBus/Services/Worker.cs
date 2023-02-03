@@ -24,6 +24,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
         private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly ILogger _logger;
         private readonly ServiceBusProcessor _processor;
+        private readonly IAzureServiceBusTenantIdResolver _tenantIdResolver;
 
         public Worker(
             string queueOrTopic,
@@ -33,6 +34,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
             ServiceBusAdministrationClient administrationClient,
             IServiceScopeFactory serviceScopeFactory,
             IOptions<AzureServiceBusOptions> options,
+            IAzureServiceBusTenantIdResolver tenantIdResolver,
             ILogger<Worker> logger)
         {
             QueueOrTopic = queueOrTopic;
@@ -42,6 +44,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
             _administrationClient = administrationClient;
             _serviceScopeFactory = serviceScopeFactory;
             _logger = logger;
+            _tenantIdResolver = tenantIdResolver;
 
             var processorOptions = new ServiceBusProcessorOptions
             {
@@ -95,6 +98,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
 
         private async Task TriggerWorkflowsAsync(ServiceBusMessage message, CancellationToken cancellationToken)
         {
+            var tenantId = await _tenantIdResolver.ResolveAsync(message, QueueOrTopic, Subscription, Tags, cancellationToken);
             var correlationId = message.CorrelationId;
 
             var model = new MessageModel
@@ -116,7 +120,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
             };
 
             var bookmark = new MessageReceivedBookmark(QueueOrTopic, Subscription);
-            var launchContext = new WorkflowsQuery(ActivityType, bookmark, correlationId);
+            var launchContext = new WorkflowsQuery(ActivityType, bookmark, correlationId, TenantId: tenantId);
 
             using var scope = _serviceScopeFactory.CreateScope();
             var workflowLaunchpad = scope.ServiceProvider.GetRequiredService<IWorkflowLaunchpad>();
