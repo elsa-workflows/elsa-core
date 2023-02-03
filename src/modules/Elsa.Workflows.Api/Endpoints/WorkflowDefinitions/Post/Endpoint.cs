@@ -48,6 +48,7 @@ internal class Post : ElsaEndpoint<WorkflowDefinitionRequest, WorkflowDefinition
         {
             AddError("The requested version does not exist");
             await SendErrorsAsync(cancellation: cancellationToken);
+            return;
         }
 
         var isNew = draft == null;
