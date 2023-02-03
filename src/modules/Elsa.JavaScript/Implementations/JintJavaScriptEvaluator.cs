@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using System.Text.Json.Serialization;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.JavaScript.Notifications;
@@ -8,6 +9,8 @@ using Elsa.Mediator.Services;
 using Humanizer;
 using Jint;
 using Microsoft.Extensions.Options;
+
+// ReSharper disable ConvertClosureToMethodGroup
 
 namespace Elsa.JavaScript.Implementations;
 
@@ -50,24 +53,28 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         });
 
         configureEngine?.Invoke(engine);
-            
+
         // Add common functions.
+        engine.SetValue("getWorkflowInstanceId", (Func<string>)(() => context.GetActivityExecutionContext().WorkflowExecutionContext.Id));
+        engine.SetValue("setCorrelationId", (Action<string?>)(value => context.GetActivityExecutionContext().WorkflowExecutionContext.CorrelationId = value));
+        engine.SetValue("getCorrelationId", (Func<string?>)(() => context.GetActivityExecutionContext().WorkflowExecutionContext.CorrelationId));
+        engine.SetValue("setCorrelationId", (Action<string?>)(value => context.GetActivityExecutionContext().WorkflowExecutionContext.CorrelationId = value));
         engine.SetValue("setVariable", (Action<string, object>)((name, value) => context.SetVariable(name, value)));
-            
-        // ReSharper disable once ConvertClosureToMethodGroup (Jint does not understand method groups).
         engine.SetValue("getVariable", (Func<string, object?>)(name => context.GetVariable(name)));
-            
+
         // Create variable setters and getters for each variable.
         CreateVariableAccessors(engine, context);
-        
-        engine.SetValue("isNullOrWhiteSpace", (Func<string, bool>)string.IsNullOrWhiteSpace);
-        engine.SetValue("isNullOrEmpty", (Func<string, bool>)string.IsNullOrEmpty);
-        engine.SetValue("toJson", (Func<object, string>)(value => JsonSerializer.Serialize(value)));
+
+        engine.SetValue("isNullOrWhiteSpace", (Func<string, bool>)(value => string.IsNullOrWhiteSpace(value)));
+        engine.SetValue("isNullOrEmpty", (Func<string, bool>)(value => string.IsNullOrEmpty(value)));
+        engine.SetValue("parseGuid", (Func<string, Guid>)(value => Guid.Parse(value)));
+        engine.SetValue("toJson", (Func<object, string>)(value => Serialize(value)));
 
         // Add common .NET types.
         engine.RegisterType<DateTime>();
         engine.RegisterType<DateTimeOffset>();
         engine.RegisterType<TimeSpan>();
+        engine.RegisterType<Guid>();
 
         // Allow listeners invoked by the mediator to configure the engine.
         await _mediator.PublishAsync(new EvaluatingJavaScript(engine, context), cancellationToken);
@@ -91,5 +98,13 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
     {
         var result = engine.Evaluate(expression);
         return result.ToObject();
+    }
+
+    private string Serialize(object value)
+    {
+        var options = new JsonSerializerOptions();
+        options.Converters.Add(new JsonStringEnumConverter());
+
+        return JsonSerializer.Serialize(value, options);
     }
 }

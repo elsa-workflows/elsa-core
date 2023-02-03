@@ -99,6 +99,23 @@ public class ActivityDescriber : IActivityDescriber
         return ValueTask.FromResult(descriptor);
     }
 
+    public OutputDescriptor DescribeOutputProperty(PropertyInfo propertyInfo)
+    {
+        var outputAttribute = propertyInfo.GetCustomAttribute<OutputAttribute>();
+        var descriptionAttribute = propertyInfo.GetCustomAttribute<DescriptionAttribute>();
+        var typeArgs = propertyInfo.PropertyType.GenericTypeArguments;
+        var wrappedPropertyType = typeArgs.Any() ? typeArgs[0] : typeof(object);
+
+        return new OutputDescriptor
+        (
+            (outputAttribute?.Name ?? propertyInfo.Name).Pascalize(),
+            outputAttribute?.DisplayName ?? propertyInfo.Name.Humanize(LetterCasing.Title),
+            wrappedPropertyType,
+            descriptionAttribute?.Description ?? outputAttribute?.Description,
+            outputAttribute?.IsBrowsable ?? true
+        );
+    }
+
     private IEnumerable<InputDescriptor> DescribeInputProperties(IEnumerable<PropertyInfo> properties)
     {
         foreach (var propertyInfo in properties)
@@ -132,25 +149,7 @@ public class ActivityDescriber : IActivityDescriber
         }
     }
 
-    private IEnumerable<OutputDescriptor> DescribeOutputProperties(IEnumerable<PropertyInfo> properties)
-    {
-        foreach (var propertyInfo in properties)
-        {
-            var outputAttribute = propertyInfo.GetCustomAttribute<OutputAttribute>();
-            var descriptionAttribute = propertyInfo.GetCustomAttribute<DescriptionAttribute>();
-            var typeArgs = propertyInfo.PropertyType.GenericTypeArguments;
-            var wrappedPropertyType = typeArgs.Any() ? typeArgs[0] : typeof(object);
-
-            yield return new OutputDescriptor
-            (
-                (outputAttribute?.Name ?? propertyInfo.Name).Pascalize(),
-                outputAttribute?.DisplayName ?? propertyInfo.Name.Humanize(LetterCasing.Title),
-                wrappedPropertyType,
-                descriptionAttribute?.Description ?? outputAttribute?.Description,
-                outputAttribute?.IsBrowsable ?? true
-            );
-        }
-    }
+    private IEnumerable<OutputDescriptor> DescribeOutputProperties(IEnumerable<PropertyInfo> properties) => properties.Select(DescribeOutputProperty);
 
     private static string GetUIHint(Type wrappedPropertyType, InputAttribute? inputAttribute)
     {
@@ -168,10 +167,10 @@ public class ActivityDescriber : IActivityDescriber
 
         if (wrappedPropertyType.IsEnum || wrappedPropertyType.IsNullableType() && wrappedPropertyType.GetTypeOfNullable().IsEnum)
             return InputUIHints.Dropdown;
-        
+
         if (wrappedPropertyType == typeof(Variable))
             return InputUIHints.VariablePicker;
-        
+
         if (wrappedPropertyType == typeof(Type))
             return InputUIHints.TypePicker;
 

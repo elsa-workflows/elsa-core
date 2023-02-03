@@ -19,7 +19,6 @@ namespace Elsa.Telnyx.Activities;
 /// Convert text to speech and play it back on the call.
 /// </summary>
 [Activity(Constants.Namespace, "Convert text to speech and play it back on the call.", Kind = ActivityKind.Task)]
-[WebhookDriven(WebhookEventTypes.CallSpeakEnded)]
 public abstract class SpeakTextBase : Activity
 {
     /// <inheritdoc />
@@ -107,7 +106,7 @@ public abstract class SpeakTextBase : Activity
         try
         {
             await telnyxClient.Calls.SpeakTextAsync(callControlId, request, context.CancellationToken);
-            context.CreateBookmark(new WebhookEventBookmarkPayload(WebhookEventTypes.CallSpeakEnded), ResumeAsync);
+            await HandleDone(context);
         }
         catch (ApiException e)
         {
@@ -124,13 +123,13 @@ public abstract class SpeakTextBase : Activity
     /// <summary>
     /// Called when speaking has finished.
     /// </summary>
-    protected abstract ValueTask HandleFinishedSpeaking(ActivityExecutionContext context);
+    protected abstract ValueTask HandleDone(ActivityExecutionContext context);
 
-    private async ValueTask ResumeAsync(ActivityExecutionContext context) => await HandleFinishedSpeaking(context);
+    private async ValueTask ResumeAsync(ActivityExecutionContext context) => await HandleDone(context);
 }
 
 /// <inheritdoc />
-[FlowNode("Finished speaking", "Disconnected")]
+[FlowNode("Done", "Disconnected")]
 public class FlowSpeakText : SpeakTextBase
 {
     /// <inheritdoc />
@@ -140,10 +139,10 @@ public class FlowSpeakText : SpeakTextBase
     }
 
     /// <inheritdoc />
-    protected override async ValueTask HandleDisconnected(ActivityExecutionContext context) => await context.CompleteActivityWithOutcomesAsync("Disconnected");
+    protected override async ValueTask HandleDisconnected(ActivityExecutionContext context) => await context.CompleteActivityWithOutcomesAsync("Disconnected", "Done");
 
     /// <inheritdoc />
-    protected override async ValueTask HandleFinishedSpeaking(ActivityExecutionContext context) => await context.CompleteActivityWithOutcomesAsync("Finished speaking");
+    protected override async ValueTask HandleDone(ActivityExecutionContext context) => await context.CompleteActivityWithOutcomesAsync("Done");
 }
 
 /// <inheritdoc />
@@ -154,12 +153,7 @@ public class SpeakText : SpeakTextBase
     public SpeakText([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
-    
-    /// <summary>
-    /// The <see cref="IActivity"/> to execute when speaking has finished.
-    /// </summary>
-    [Port]public IActivity? FinishedSpeaking { get; set; }
-    
+
     /// <summary>
     /// The <see cref="IActivity"/> to execute when the call was no longer active.
     /// </summary>
@@ -169,5 +163,5 @@ public class SpeakText : SpeakTextBase
     protected override async ValueTask HandleDisconnected(ActivityExecutionContext context) => await context.ScheduleActivityAsync(Disconnected);
 
     /// <inheritdoc />
-    protected override async ValueTask HandleFinishedSpeaking(ActivityExecutionContext context) => await context.ScheduleActivityAsync(FinishedSpeaking);
+    protected override async ValueTask HandleDone(ActivityExecutionContext context) => await context.CompleteActivityAsync();
 }
