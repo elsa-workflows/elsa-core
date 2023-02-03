@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Confluent.Kafka;
 
 namespace Elsa.Activities.Kafka.Configuration
 {
@@ -8,25 +9,26 @@ namespace Elsa.Activities.Kafka.Configuration
         public string ConnectionString { get; }
         public string Topic { get; }
         public string Group { get; }
-        
+        public Confluent.Kafka.AutoOffsetReset AutoOffsetReset { get; }
         public string ClientId { get; }
-        
+
         public Dictionary<string, string> Headers { get; }
 
-        public KafkaConfiguration(string connectionString, string topic, string group, Dictionary<string, string> headers,string clientId)
+        public KafkaConfiguration(string connectionString, string topic, string group, Dictionary<string, string> headers, string clientId, Confluent.Kafka.AutoOffsetReset autoOffsetReset = AutoOffsetReset.Earliest)
         {
             ConnectionString = connectionString;
             Topic = topic;
             Group = group;
-            ClientId = clientId;
             Headers = headers;
+            ClientId = clientId;
+            AutoOffsetReset = autoOffsetReset;
         }
 
         public override int GetHashCode()
         {
-           var headersString = string.Concat(Headers.Select((x, y) => string.Concat(x, y)));
+            var headersString = string.Concat(Headers.Select((x, y) => string.Concat(x, y)));
 
-            return System.HashCode.Combine(ConnectionString, Topic, Group,headersString);
+            return System.HashCode.Combine(ConnectionString, Topic, Group, headersString);
         }
 
         public string TopicFullName => string.IsNullOrEmpty(Topic) ? Group : $"{Topic}@{Group}";

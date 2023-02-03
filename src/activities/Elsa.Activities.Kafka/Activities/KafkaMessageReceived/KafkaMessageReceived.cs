@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Confluent.Kafka;
 using Elsa.Activities.Kafka.Helpers;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
@@ -17,7 +18,6 @@ namespace Elsa.Activities.Kafka.Activities.KafkaMessageReceived
     )]
     public class KafkaMessageReceived : Activity
     {
-
         [ActivityInput(
             Hint = "Topic to listen to",
             Order = 1,
@@ -35,8 +35,8 @@ namespace Elsa.Activities.Kafka.Activities.KafkaMessageReceived
             Order = 3,
             UIHint = ActivityInputUIHints.Dictionary,
             DefaultSyntax = SyntaxNames.Json,
-            SupportedSyntaxes = new[] { SyntaxNames.Json,SyntaxNames.JavaScript })]
-        
+            SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript })]
+
         public Dictionary<string, string> Headers { get; set; } = new Dictionary<string, string>();
 
         [ActivityInput(
@@ -45,6 +45,14 @@ namespace Elsa.Activities.Kafka.Activities.KafkaMessageReceived
             Order = 2,
             Category = PropertyCategories.Configuration)]
         public string ConnectionString { get; set; } = default!;
+
+        [ActivityInput(
+            UIHint = ActivityInputUIHints.Dropdown,
+            OptionsProvider = typeof(AutoOffsetResetOptionsProvider),
+            Category = PropertyCategories.Configuration,
+            Order = 3
+        )]
+        public string AutoOffsetReset { get; set; } = default!;
 
         public string ClientId => KafkaClientConfigurationHelper.GetClientId(Id);
 

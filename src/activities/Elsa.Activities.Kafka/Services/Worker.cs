@@ -82,7 +82,7 @@ namespace Elsa.Activities.Kafka.Services
 
             var config = _client.Configuration;
 
-            var bookmark = new MessageReceivedBookmark(config.ConnectionString, config.Topic, config.Group, GetHeaders(ev.Message.Headers));
+            var bookmark = new MessageReceivedBookmark(config.ConnectionString, config.Topic, config.Group, GetHeaders(ev.Message.Headers), config.AutoOffsetReset);
             var launchContext = new WorkflowsQuery(ActivityType, bookmark);
 
             using var scope = _scopeFactory.CreateScope();
