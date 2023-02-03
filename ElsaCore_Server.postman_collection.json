@@ -1,0 +1,425 @@
+{
+	"info": {
+		"_postman_id": "31acd2fe-7112-4336-a79e-daaa5de693db",
+		"name": "ElsaCore",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "17756224"
+	},
+	"item": [
+		{
+			"name": "Create Workflow Definition A",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"workflowDefinitionId\": \"A001\",\r\n  \"name\": \"A\",\r\n  \"displayName\": \"string\",\r\n  \"description\": \"Normal\",\r\n  \"tag\": \"string\",\r\n  \"channel\": \"string\",\r\n  \"variables\": \"\",\r\n  \"contextOptions\": {\r\n    \"contextType\": \"System.String, mscorlib\",\r\n    \"contextFidelity\": \"Burst\"\r\n  },\r\n  \"isSingleton\": true,\r\n  \"persistenceBehavior\": \"Suspended\",\r\n  \"deleteCompletedInstances\": true,\r\n  \"publish\": true,\r\n  \"activities\": [\r\n    {\r\n      \"activityId\": \"string\",\r\n      \"type\": \"string\",\r\n      \"name\": \"string\",\r\n      \"displayName\": \"string\",\r\n      \"description\": \"string\",\r\n      \"x\": 0,\r\n      \"y\": 0,\r\n      \"persistWorkflow\": true,\r\n      \"loadWorkflowContext\": true,\r\n      \"saveWorkflowContext\": true,\r\n      \"properties\": [\r\n        {\r\n          \"name\": \"string\",\r\n          \"syntax\": \"string\",\r\n          \"expressions\": {\r\n            \"additionalProp1\": \"string\",\r\n            \"additionalProp2\": \"string\",\r\n            \"additionalProp3\": \"string\"\r\n          }\r\n        }\r\n      ],\r\n      \"propertyStorageProviders\": {\r\n        \"additionalProp1\": \"string\",\r\n        \"additionalProp2\": \"string\",\r\n        \"additionalProp3\": \"string\"\r\n      }\r\n    }\r\n  ],\r\n  \"connections\": [\r\n    {\r\n      \"sourceActivityId\": \"string\",\r\n      \"targetActivityId\": \"string\",\r\n      \"outcome\": \"string\"\r\n    }\r\n  ],\r\n  \"customAttributes\": \"\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://localhost:11000/v1/workflow-definitions",
+					"protocol": "https",
+					"host": [
+						"localhost"
+					],
+					"port": "11000",
+					"path": [
+						"v1",
+						"workflow-definitions"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create Workflow Definition B",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"workflowDefinitionId\": \"B001\",\r\n  \"name\": \"B\",\r\n  \"displayName\": \"string\",\r\n  \"description\": \"Hard\",\r\n  \"tag\": \"string\",\r\n  \"channel\": \"string\",\r\n  \"variables\": \"\",\r\n  \"contextOptions\": {\r\n    \"contextType\": \"System.String, mscorlib\",\r\n    \"contextFidelity\": \"Burst\"\r\n  },\r\n  \"isSingleton\": true,\r\n  \"persistenceBehavior\": \"Suspended\",\r\n  \"deleteCompletedInstances\": true,\r\n  \"publish\": true,\r\n  \"activities\": [\r\n    {\r\n      \"activityId\": \"string\",\r\n      \"type\": \"string\",\r\n      \"name\": \"string\",\r\n      \"displayName\": \"string\",\r\n      \"description\": \"string\",\r\n      \"x\": 0,\r\n      \"y\": 0,\r\n      \"persistWorkflow\": true,\r\n      \"loadWorkflowContext\": true,\r\n      \"saveWorkflowContext\": true,\r\n      \"properties\": [\r\n        {\r\n          \"name\": \"string\",\r\n          \"syntax\": \"string\",\r\n          \"expressions\": {\r\n            \"additionalProp1\": \"string\",\r\n            \"additionalProp2\": \"string\",\r\n            \"additionalProp3\": \"string\"\r\n          }\r\n        }\r\n      ],\r\n      \"propertyStorageProviders\": {\r\n        \"additionalProp1\": \"string\",\r\n        \"additionalProp2\": \"string\",\r\n        \"additionalProp3\": \"string\"\r\n      }\r\n    }\r\n  ],\r\n  \"connections\": [\r\n    {\r\n      \"sourceActivityId\": \"string\",\r\n      \"targetActivityId\": \"string\",\r\n      \"outcome\": \"string\"\r\n    }\r\n  ],\r\n  \"customAttributes\": \"\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://localhost:11000/v1/workflow-definitions",
+					"protocol": "https",
+					"host": [
+						"localhost"
+					],
+					"port": "11000",
+					"path": [
+						"v1",
+						"workflow-definitions"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create Workflow Definition C",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"workflowDefinitionId\": \"C001\",\r\n  \"name\": \"C\",\r\n  \"displayName\": \"string\",\r\n  \"description\": \"Easy\",\r\n  \"tag\": \"string\",\r\n  \"channel\": \"string\",\r\n  \"variables\": \"\",\r\n  \"contextOptions\": {\r\n    \"contextType\": \"System.String, mscorlib\",\r\n    \"contextFidelity\": \"Burst\"\r\n  },\r\n  \"isSingleton\": true,\r\n  \"persistenceBehavior\": \"Suspended\",\r\n  \"deleteCompletedInstances\": true,\r\n  \"publish\": true,\r\n  \"activities\": [\r\n    {\r\n      \"activityId\": \"string\",\r\n      \"type\": \"string\",\r\n      \"name\": \"string\",\r\n      \"displayName\": \"string\",\r\n      \"description\": \"string\",\r\n      \"x\": 0,\r\n      \"y\": 0,\r\n      \"persistWorkflow\": true,\r\n      \"loadWorkflowContext\": true,\r\n      \"saveWorkflowContext\": true,\r\n      \"properties\": [\r\n        {\r\n          \"name\": \"string\",\r\n          \"syntax\": \"string\",\r\n          \"expressions\": {\r\n            \"additionalProp1\": \"string\",\r\n            \"additionalProp2\": \"string\",\r\n            \"additionalProp3\": \"string\"\r\n          }\r\n        }\r\n      ],\r\n      \"propertyStorageProviders\": {\r\n        \"additionalProp1\": \"string\",\r\n        \"additionalProp2\": \"string\",\r\n        \"additionalProp3\": \"string\"\r\n      }\r\n    }\r\n  ],\r\n  \"connections\": [\r\n    {\r\n      \"sourceActivityId\": \"string\",\r\n      \"targetActivityId\": \"string\",\r\n      \"outcome\": \"string\"\r\n    }\r\n  ],\r\n  \"customAttributes\": \"\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://localhost:11000/v1/workflow-definitions",
+					"protocol": "https",
+					"host": [
+						"localhost"
+					],
+					"port": "11000",
+					"path": [
+						"v1",
+						"workflow-definitions"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get WorflowDefinition Order by Name Ascending",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"let response = pm.response.json();\r",
+							"\r",
+							"pm.test(\"Ordered by Name is correctly sorted\", function () {\r",
+							"    pm.expect(response.items[0].name).to.be.eql(\"A\");\r",
+							"    pm.expect(response.items[1].name).to.be.eql(\"B\");\r",
+							"    pm.expect(response.items[2].name).to.be.eql(\"C\");\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://localhost:11000/v1/workflow-definitions?orderBy=Name&sortBy=Ascending",
+					"protocol": "https",
+					"host": [
+						"localhost"
+					],
+					"port": "11000",
+					"path": [
+						"v1",
+						"workflow-definitions"
+					],
+					"query": [
+						{
+							"key": "orderBy",
+							"value": "Name"
+						},
+						{
+							"key": "sortBy",
+							"value": "Ascending"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get WorflowDefinition Order by CreatedAt Ascending",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"let response = pm.response.json();\r",
+							"\r",
+							"pm.test(\"Ordered by Name is correctly sorted\", function () {\r",
+							"    pm.expect(response.items[0].name).to.be.eql(\"A\");\r",
+							"    pm.expect(response.items[1].name).to.be.eql(\"B\");\r",
+							"    pm.expect(response.items[2].name).to.be.eql(\"C\");\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://localhost:11000/v1/workflow-definitions?orderBy=CreatedAt&sortBy=Ascending",
+					"protocol": "https",
+					"host": [
+						"localhost"
+					],
+					"port": "11000",
+					"path": [
+						"v1",
+						"workflow-definitions"
+					],
+					"query": [
+						{
+							"key": "orderBy",
+							"value": "CreatedAt"
+						},
+						{
+							"key": "sortBy",
+							"value": "Ascending"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get WorflowDefinition Order by Description Ascending",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"let response = pm.response.json();\r",
+							"\r",
+							"pm.test(\"Ordered by Name is correctly sorted\", function () {\r",
+							"    pm.expect(response.items[0].description).to.be.eql(\"Easy\");\r",
+							"    pm.expect(response.items[1].description).to.be.eql(\"Hard\");\r",
+							"    pm.expect(response.items[2].description).to.be.eql(\"Normal\");\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://localhost:11000/v1/workflow-definitions?orderBy=Description&sortBy=Ascending",
+					"protocol": "https",
+					"host": [
+						"localhost"
+					],
+					"port": "11000",
+					"path": [
+						"v1",
+						"workflow-definitions"
+					],
+					"query": [
+						{
+							"key": "orderBy",
+							"value": "Description"
+						},
+						{
+							"key": "sortBy",
+							"value": "Ascending"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get WorflowDefinition Order by Name Descending",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"let response = pm.response.json();\r",
+							"\r",
+							"pm.test(\"Ordered by Name is correctly sorted\", function () {\r",
+							"    pm.expect(response.items[0].name).to.be.eql(\"C\");\r",
+							"    pm.expect(response.items[1].name).to.be.eql(\"B\");\r",
+							"    pm.expect(response.items[2].name).to.be.eql(\"A\");\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://localhost:11000/v1/workflow-definitions?orderBy=Name&sortBy=Descending",
+					"protocol": "https",
+					"host": [
+						"localhost"
+					],
+					"port": "11000",
+					"path": [
+						"v1",
+						"workflow-definitions"
+					],
+					"query": [
+						{
+							"key": "orderBy",
+							"value": "Name"
+						},
+						{
+							"key": "sortBy",
+							"value": "Descending"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get WorflowDefinition Order by CreatedAt Descending",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"let response = pm.response.json();\r",
+							"\r",
+							"pm.test(\"Ordered by Name is correctly sorted\", function () {\r",
+							"    pm.expect(response.items[0].name).to.be.eql(\"C\");\r",
+							"    pm.expect(response.items[1].name).to.be.eql(\"B\");\r",
+							"    pm.expect(response.items[2].name).to.be.eql(\"A\");\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://localhost:11000/v1/workflow-definitions?orderBy=CreatedAt&sortBy=Descending",
+					"protocol": "https",
+					"host": [
+						"localhost"
+					],
+					"port": "11000",
+					"path": [
+						"v1",
+						"workflow-definitions"
+					],
+					"query": [
+						{
+							"key": "orderBy",
+							"value": "CreatedAt"
+						},
+						{
+							"key": "sortBy",
+							"value": "Descending"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get WorflowDefinition Order by Description Descending",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"let response = pm.response.json();\r",
+							"\r",
+							"pm.test(\"Ordered by Name is correctly sorted\", function () {\r",
+							"    pm.expect(response.items[0].description).to.be.eql(\"Normal\");\r",
+							"    pm.expect(response.items[1].description).to.be.eql(\"Hard\");\r",
+							"    pm.expect(response.items[2].description).to.be.eql(\"Easy\");\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://localhost:11000/v1/workflow-definitions?orderBy=Description&sortBy=Descending",
+					"protocol": "https",
+					"host": [
+						"localhost"
+					],
+					"port": "11000",
+					"path": [
+						"v1",
+						"workflow-definitions"
+					],
+					"query": [
+						{
+							"key": "orderBy",
+							"value": "Description"
+						},
+						{
+							"key": "sortBy",
+							"value": "Descending"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
