@@ -133,7 +133,10 @@ namespace Elsa.Providers.Workflows
         }
 
         public override async ValueTask<IEnumerable<IWorkflowBlueprint>> FindManyByTagAsync(string tag, VersionOptions versionOptions, string? tenantId = default, CancellationToken cancellationToken = default) => 
-            await ListInternalAsync(cancellationToken).Where(x => string.Equals(tag, x.Tag, StringComparison.OrdinalIgnoreCase) && x.WithVersion(versionOptions)).ToListAsync(cancellationToken);
+            await ListInternalAsync(cancellationToken)
+                .Where(x => string.Equals(tag, x.Tag, StringComparison.OrdinalIgnoreCase) 
+                            && x.WithVersion(versionOptions) && (x.TenantId == default || x.TenantId == tenantId))
+                .ToListAsync(cancellationToken);
 
         private async IAsyncEnumerable<IWorkflowBlueprint> ListInternalAsync([EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
