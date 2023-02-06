@@ -136,8 +136,10 @@ export class ElsaWorkflowDesigner {
 
   @Watch('model')
   handleModelChanged(newValue: WorkflowModel) {
-    this.updateWorkflowModel(newValue, false);
-    setTimeout(() => this.updateGraph(), 1);
+    if(this.model !== newValue){
+      this.updateWorkflowModel(newValue, false);
+      setTimeout(() => this.updateGraph(), 1);
+    }
   }
 
   @Method()
