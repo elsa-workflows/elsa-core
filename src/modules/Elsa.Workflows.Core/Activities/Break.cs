@@ -10,7 +10,7 @@ namespace Elsa.Workflows.Core.Activities;
 /// <summary>
 /// Break out of a loop.
 /// </summary>
-[Activity("Elsa", "Control Flow", "Break out of a loop.")]
+[Activity("Elsa", "Looping", "Break out of a loop.")]
 public class Break : CodeActivity
 {
     /// <inheritdoc />

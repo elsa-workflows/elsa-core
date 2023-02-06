@@ -14,7 +14,7 @@ namespace Elsa.Workflows.Core.Activities;
 /// The Switch activity is an approximation of the `switch` construct in C#.
 /// When a case evaluates to true, the associated activity is then scheduled for execution.
 /// </summary>
-[Activity("Elsa", "Control Flow", "Evaluate a set of case conditions and schedule the activity for a matching case.")]
+[Activity("Elsa", "Branching", "Evaluate a set of case conditions and schedule the activity for a matching case.")]
 public class Switch : Activity
 {
     /// <inheritdoc />

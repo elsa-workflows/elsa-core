@@ -11,7 +11,7 @@ namespace Elsa.Workflows.Core.Activities;
 /// <summary>
 /// Evaluate a Boolean condition to determine which activity to execute next.
 /// </summary>
-[Activity("Elsa", "Control Flow", "Evaluate a Boolean condition to determine which activity to execute next.")]
+[Activity("Elsa", "Branching", "Evaluate a Boolean condition to determine which activity to execute next.")]
 public class If : Activity<bool>
 {
     /// <inheritdoc />

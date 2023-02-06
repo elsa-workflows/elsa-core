@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Activities.Flowchart.Contracts;
@@ -14,6 +15,7 @@ namespace Elsa.Workflows.Core.Activities.Flowchart.Activities;
 /// A flowchart consists of a collection of activities and connections between them.
 /// </summary>
 [Activity("Elsa", "Flow", "A flowchart is a collection of activities and connections between them.")]
+[Browsable(false)]
 public class Flowchart : Container
 {
     internal const string ScopeProperty = "Scope";

@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 using Elsa.Extensions;
@@ -12,6 +13,7 @@ namespace Elsa.Workflows.Core.Activities;
 /// Branch execution into multiple branches.
 /// </summary>
 [Activity("Elsa", "Control Flow", "Branch execution into multiple branches.")]
+[Browsable(false)]
 public class Fork : Activity
 {
     /// <inheritdoc />

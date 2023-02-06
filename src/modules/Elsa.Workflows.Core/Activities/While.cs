@@ -9,7 +9,7 @@ using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Core.Activities;
 
-[Activity("Elsa", "Control Flow", "Execute an activity while a given condition evaluates to true.")]
+[Activity("Elsa", "Looping", "Execute an activity while a given condition evaluates to true.")]
 public class While : Activity
 {
     /// <summary>

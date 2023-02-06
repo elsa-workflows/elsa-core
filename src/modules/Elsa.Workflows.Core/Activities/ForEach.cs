@@ -12,7 +12,7 @@ namespace Elsa.Workflows.Core.Activities;
 /// <summary>
 /// Iterate over a set of values.
 /// </summary>
-[Activity("Elsa", "Primitives", "Iterate over a set of values.")]
+[Activity("Elsa", "Looping", "Iterate over a set of values.")]
 public class ForEach : Activity
 {
     private const string CurrentIndexProperty = "CurrentIndex";

@@ -11,7 +11,7 @@ namespace Elsa.Workflows.Core.Activities;
 /// Schedule an activity for each item in parallel.
 /// </summary>
 /// <typeparam name="T"></typeparam>
-[Activity("Elsa", "Primitives", "Schedule an activity for each item in parallel.")]
+[Activity("Elsa", "Looping", "Schedule an activity for each item in parallel.")]
 public class ParallelForEach<T> : CodeActivity
 {
     private const string CollectedCountProperty = nameof(CollectedCountProperty);
