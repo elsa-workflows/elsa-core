@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Confluent.Kafka;
 using Elsa.Activities.Kafka.Bookmarks;
 using Elsa.Activities.Kafka.Configuration;
 using Elsa.Activities.Kafka.Helpers;
@@ -12,6 +11,7 @@ using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Rebus.Extensions;
+using static System.String;
 
 namespace Elsa.Activities.Kafka.Services
 {
@@ -95,15 +95,22 @@ namespace Elsa.Activities.Kafka.Services
                 _semaphore.Release();
             }
         }
-        
+
+        /// <summary>
+        /// Get or create a worker if a topic and a connectionString are provided.
+        /// </summary>
+        /// <param name="tag"></param>
+        /// <param name="configuration"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         private async Task GetOrCreateWorkerAsync(string tag, KafkaConfiguration configuration, CancellationToken cancellationToken)
         {
             try
             {
                 var worker = _workers.FirstOrDefault(x => x.Topic == configuration.Topic && x.Group == configuration.Group);
 
-                // Create worker if not found.
-                if (worker is null)
+                // Create worker if not found and a topic and connectionString are provided.
+                if (worker is null && !IsNullOrEmpty(configuration.Topic) && !IsNullOrEmpty(configuration.ConnectionString))
                 {
                     worker = ActivatorUtilities.CreateInstance<Worker>(
                         _serviceProvider,
@@ -119,7 +126,7 @@ namespace Elsa.Activities.Kafka.Services
                 }
 
                 // Tag worker.
-                worker.Tags.Add(tag);
+                worker?.Tags.Add(tag);
             }
             catch (Exception e)
             {
