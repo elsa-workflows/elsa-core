@@ -20,6 +20,7 @@ namespace Elsa.Activities.Kafka.Extensions
                 .AddSingleton<IMessageSenderClientFactory>(sp => sp.GetRequiredService<BusClientFactory>())
                 .AddSingleton<IWorkerManager, WorkerManager>()
                 .AddHostedService<StartKafkaQueues>()
+                .AddSingleton<IKafkaTenantIdResolver, DefaultKafkaTenantIdResolver>()
                 .AddBookmarkProvider<QueueMessageReceivedBookmarkProvider>();
 
             options.AddPubSubConsumer<UpdateWorkers, TriggerIndexingFinished>("WorkflowManagementEvents");

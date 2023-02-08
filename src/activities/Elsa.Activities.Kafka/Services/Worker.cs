@@ -20,21 +20,24 @@ namespace Elsa.Activities.Kafka.Services
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IClient _client;
         private readonly ILogger _logger;
-        private readonly Func<Worker,IClient, Task> _disposeReceiverAction;
+        private readonly Func<Worker, IClient, Task> _disposeReceiverAction;
+        private readonly IKafkaTenantIdResolver _tenantIdResolver;
+
+
         private string ActivityType => nameof(KafkaMessageReceived);
         private TimeSpan _delay = TimeSpan.FromMilliseconds(200);
-
         public string Topic { get; }
         public string Group { get; }
-        
+
         public HashSet<string> Tags { get; } = new();
-        
+
         public Worker(
             string topic,
             string group,
             IServiceScopeFactory scopeFactory,
             IClient client,
-            Func<Worker,IClient,Task> disposeReceiverAction,
+            Func<Worker, IClient, Task> disposeReceiverAction,
+            IKafkaTenantIdResolver tenantIdResolver,
             ILogger<Worker> logger)
         {
             Topic = topic;
@@ -43,23 +46,20 @@ namespace Elsa.Activities.Kafka.Services
             _client = client;
             _disposeReceiverAction = disposeReceiverAction;
             _logger = logger;
+            _tenantIdResolver = tenantIdResolver;
 
-            _client.SetHandlers(OnMessageReceivedAsync,OnErrorAsync,new CancellationTokenSource().Token);
-           
+            _client.SetHandlers(OnMessageReceivedAsync, OnErrorAsync, new CancellationTokenSource().Token);
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            await _client.StartProcessing(Topic,Group);
+            await _client.StartProcessing(Topic, Group);
         }
 
 
         public async ValueTask DisposeAsync()
         {
-            await Task.Run(() =>
-            {
-                 _client.Dispose(); 
-            });
+            await Task.Run(() => { _client.Dispose(); });
         }
 
         private async Task OnMessageReceivedAsync(KafkaMessageEvent ev)
@@ -68,7 +68,7 @@ namespace Elsa.Activities.Kafka.Services
 
             await TriggerWorkflowsAsync(ev, ev.CancellationToken);
         }
-        
+
         private async Task OnErrorAsync(Exception e)
         {
             _logger.LogError("Error on consuming");
@@ -79,17 +79,18 @@ namespace Elsa.Activities.Kafka.Services
         {
             //avoid handler being triggered earlier than workflow is suspended
             await Task.Delay(_delay, cancellationToken);
-
             var config = _client.Configuration;
+            
+            var tenantId = await _tenantIdResolver.ResolveAsync(ev, config.Topic, config.Group, Tags, cancellationToken);
 
             var bookmark = new MessageReceivedBookmark(config.ConnectionString, config.Topic, config.Group, GetHeaders(ev.Message.Headers), config.AutoOffsetReset);
-            var launchContext = new WorkflowsQuery(ActivityType, bookmark);
+            var launchContext = new WorkflowsQuery(ActivityType, bookmark, TenantId: tenantId);
 
             using var scope = _scopeFactory.CreateScope();
             var workflowLaunchpad = scope.ServiceProvider.GetRequiredService<IWorkflowLaunchpad>();
             await workflowLaunchpad.CollectAndDispatchWorkflowsAsync(launchContext, new WorkflowInput(ev.Message.Value), cancellationToken);
         }
-        
+
         private Dictionary<string, string> GetHeaders(Headers headers)
         {
             var result = new Dictionary<string, string>();
