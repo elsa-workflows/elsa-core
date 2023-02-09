@@ -43,11 +43,11 @@ namespace Elsa.Activities.Telnyx.Handlers
                 return;
 
             var correlationId = receivedPayload.GetCorrelationId();
-            var bookmark = CreateBookmark();
+            var bookmark = CreateBookmark(receivedPayload);
             var context = new WorkflowsQuery(ActivityTypeName, bookmark, correlationId);
             await _workflowLaunchpad.CollectAndDispatchWorkflowsAsync(context, new WorkflowInput(receivedPayload), cancellationToken);
         }
 
-        protected virtual IBookmark CreateBookmark() => new GatherUsingSpeakBookmark();
+        protected abstract IBookmark CreateBookmark(CallPayload receivedPayload);
     }
 }

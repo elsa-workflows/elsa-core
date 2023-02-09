@@ -21,7 +21,7 @@ namespace Elsa.Activities.Telnyx.Activities
     [Action(
         Category = Constants.Category,
         Description = "Bridge two call control calls.",
-        Outcomes = new[] { TelnyxOutcomeNames.Bridged, TelnyxOutcomeNames.CallIsNoLongerActive },
+        Outcomes = new[] { TelnyxOutcomeNames.Bridging, TelnyxOutcomeNames.Bridged, TelnyxOutcomeNames.CallIsNoLongerActive },
         DisplayName = "Bridge Calls"
     )]
     public class BridgeCalls : Activity
@@ -88,7 +88,7 @@ namespace Elsa.Activities.Telnyx.Activities
             try
             {
                 await _telnyxClient.Calls.BridgeCallsAsync(callControlIdA, request, context.CancellationToken);
-                return Suspend();
+                return Combine(Outcome(TelnyxOutcomeNames.Bridging), Suspend());
             }
             catch (ApiException e)
             {
