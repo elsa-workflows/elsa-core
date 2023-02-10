@@ -1,10 +1,7 @@
-import {Component, Event, EventEmitter, h, Prop, State, Watch} from "@stencil/core";
-import {DeleteIcon, EditIcon} from "../../icons/tooling";
+import {Component, h, Prop, } from "@stencil/core";
 import {StorageDriverDescriptor, Variable, WorkflowInstance} from "../../../models";
 import descriptorsStore from "../../../data/descriptors-store";
-import {ModalActionClickArgs, ModalActionDefinition, ModalActionType, ModalDialogInstance, ModalDialogService} from "../../shared/modal-dialog";
-import {Container} from "typedi";
-import {WorkflowDefinition} from "../../../modules/workflow-definitions/models/entities";
+import {WorkflowDefinition} from "../models/entities";
 
 @Component({
   tag: 'elsa-variables-viewer',

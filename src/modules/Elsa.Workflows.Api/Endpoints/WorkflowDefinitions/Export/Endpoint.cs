@@ -20,6 +20,7 @@ public class Export : ElsaEndpoint<Request>
     private readonly SerializerOptionsProvider _serializerOptionsProvider;
     private readonly VariableDefinitionMapper _variableDefinitionMapper;
 
+    /// <inheritdoc />
     public Export(
         IWorkflowDefinitionStore store,
         IWorkflowDefinitionService workflowDefinitionService,
@@ -63,6 +64,7 @@ public class Export : ElsaEndpoint<Request>
             definition.CreatedAt,
             definition.Version,
             variables,
+            definition.Inputs,
             definition.CustomProperties,
             definition.IsLatest,
             definition.IsPublished,

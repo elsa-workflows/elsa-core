@@ -2,7 +2,7 @@ import {Component, Prop, h} from '@stencil/core';
 import {LiteralExpression, SyntaxNames} from "../../models";
 import {ActivityInputContext} from "../../services/activity-input-driver";
 import {getInputPropertyValue} from "../../utils";
-import {ExpressionChangedArs} from "../designer/input-control-switch/input-control-switch";
+import {ExpressionChangedArs} from "../shared/input-control-switch/input-control-switch";
 
 @Component({
   tag: 'elsa-multi-line-input',

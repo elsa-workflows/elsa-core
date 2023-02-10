@@ -1,7 +1,7 @@
 import {Component, Event, EventEmitter, h, Method, Prop, State, Watch} from '@stencil/core';
 import {Container} from "typedi";
 import {EventBus} from "../../../services";
-import {WorkflowDefinition, WorkflowOptions} from "../models/entities";
+import {InputDefinition, WorkflowDefinition, WorkflowOptions} from "../models/entities";
 import {PropertiesTabModel, TabModel, Widget, WorkflowDefinitionPropsUpdatedArgs, WorkflowPropertiesEditorDisplayingArgs, WorkflowPropertiesEditorEventTypes, WorkflowPropertiesEditorModel} from "../models/ui";
 import {FormEntry} from "../../../components/shared/forms/form-entry";
 import {isNullOrWhitespace} from "../../../utils";
@@ -141,6 +141,14 @@ export class WorkflowDefinitionPropertiesEditor {
       }
     }
 
+    const inputOutputTabModel: TabModel = {
+      name: 'input-output',
+      tab: {
+        displayText: 'Arguments',
+        content: () => this.renderInputOutputTab()
+      }
+    }
+
     const strategies = descriptorsStore.workflowActivationStrategyDescriptors;
     const firstStrategy = strategies.length > 0 ? strategies[0] : null;
     const defaultDescription = firstStrategy?.description ?? '';
@@ -166,10 +174,10 @@ export class WorkflowDefinitionPropertiesEditor {
       {
         name: 'useAsActivity',
         order: 0,
-        content: () => <FormEntry label="Usable As Activity" fieldId="useAsActivity" hint="Allow this workflow to be used as an activity">
+        content: () => <FormEntry label="Usable As Activity" fieldId="useAsActivity" hint="Allow this workflow to be used as an activity.">
           <select name="workflowActivityFeature" onChange={e => this.onPropertyEditorChanged(wf => {
             const selectElement = (e.target as HTMLSelectElement);
-            wf.usableAsActivity = selectElement.value == "false" ? false : true;
+            wf.usableAsActivity = selectElement.value != "false";
           })}>
             <option value="false" selected={!this.workflowDefinition.usableAsActivity}>No</option>
             <option value="true" selected={this.workflowDefinition.usableAsActivity}>Yes</option>
@@ -194,7 +202,7 @@ export class WorkflowDefinitionPropertiesEditor {
       }
     }
 
-    model.tabModels = [propertiesTabModel, variablesTabModel, settingsTabModel, versionHistoryTabModel];
+    model.tabModels = [propertiesTabModel, variablesTabModel, inputOutputTabModel, settingsTabModel, versionHistoryTabModel];
 
     const args: WorkflowPropertiesEditorDisplayingArgs = {model};
 
@@ -210,6 +218,14 @@ export class WorkflowDefinitionPropertiesEditor {
 
     return <div>
       <elsa-variables-editor variables={variables} onVariablesChanged={e => this.onVariablesUpdated(e)}/>
+    </div>
+  };
+
+  private renderInputOutputTab = () => {
+    const inputs: Array<InputDefinition> = this.workflowDefinition?.inputs ?? [];
+
+    return <div>
+      <elsa-input-output-editor inputs={inputs} onInputsChanged={e => this.onInputsUpdated(e)}/>
     </div>
   };
 
@@ -237,6 +253,17 @@ export class WorkflowDefinitionPropertiesEditor {
       return;
 
     workflowDefinition.variables = e.detail;
+    this.workflowPropsUpdated.emit({workflowDefinition});
+    await this.createModel();
+  }
+
+  private onInputsUpdated = async (e: CustomEvent<Array<InputDefinition>>) => {
+    const workflowDefinition = this.workflowDefinition;
+
+    if (!workflowDefinition)
+      return;
+
+    workflowDefinition.inputs = e.detail;
     this.workflowPropsUpdated.emit({workflowDefinition});
     await this.createModel();
   }

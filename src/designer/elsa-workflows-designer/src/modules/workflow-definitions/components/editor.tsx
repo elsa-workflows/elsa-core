@@ -164,8 +164,7 @@ export class WorkflowDefinitionEditor {
       return <elsa-activity-properties-editor
         activity={this.selectedActivity}
         variables={this.workflowDefinitionState.variables}
-        containerType="workflow-definition"
-        containerId={this.workflowDefinitionState.definitionId}
+        workflowDefinitionId={this.workflowDefinitionState.definitionId}
         onActivityUpdated={e => this.onActivityUpdated(e)}/>;
   }
 
@@ -251,6 +250,7 @@ export class WorkflowDefinitionEditor {
       activity: e.detail.activity
     });
 
+    debugger;
     this.emitActivityChangedDebounced({...e.detail, workflowEditor: this.el});
     this.saveChangesDebounced();
   }
@@ -263,9 +263,6 @@ export class WorkflowDefinitionEditor {
     const selectedActivity = e.detail.activity;
     const activityId = selectedActivity.id;
     const freshSelectedActivity = await this.flowchart.getActivity(activityId);
-
-    console.debug("selected activity == fresh selection: " + (selectedActivity === freshSelectedActivity));
-
     this.selectedActivity = freshSelectedActivity;
   }
 
@@ -275,7 +272,6 @@ export class WorkflowDefinitionEditor {
   }
 
   private async onGraphUpdated(e: CustomEvent<GraphUpdatedArgs>) {
-    console.debug("graph updated");
     await this.updateSelectedActivity();
     this.saveChangesDebounced();
   }

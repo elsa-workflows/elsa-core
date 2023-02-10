@@ -75,5 +75,8 @@ internal class CommonFunctionsDefinitionProvider : FunctionDefinitionProvider
             // set{Variable}.
             yield return CreateFunctionDefinition(builder => builder.Name($"set{pascalName}").Parameter("value", typeAlias));
         }
+        
+        // Input argument getters.
+        
     }
 }

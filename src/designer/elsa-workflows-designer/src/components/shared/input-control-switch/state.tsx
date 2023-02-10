@@ -2,16 +2,14 @@ import {h} from "@stencil/core";
 import {createProviderConsumer} from "@stencil/state-tunnel";
 
 export interface InputControlSwitchContextState {
-  containerType: string;
-  containerId: string;
+  workflowDefinitionId: string;
   activityType: string;
   propertyName: string;
 }
 
 export default createProviderConsumer<InputControlSwitchContextState>(
   {
-    containerType: null,
-    containerId: null,
+    workflowDefinitionId: null,
     activityType: null,
     propertyName: null
   },

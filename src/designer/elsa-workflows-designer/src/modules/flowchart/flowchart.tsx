@@ -616,7 +616,6 @@ export class FlowchartComponent {
   };
 
   private onNodeAdded = async (e: any) => {
-    debugger;
     const activity = e.node.data as Activity;
     const activityDescriptor = this.getActivityDescriptor(activity.type);
     activity.id = await this.generateUniqueActivityName(activityDescriptor)

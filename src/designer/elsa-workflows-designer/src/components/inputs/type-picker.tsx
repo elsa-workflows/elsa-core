@@ -5,7 +5,7 @@ import {ActivityInputContext} from "../../services/activity-input-driver";
 import {getInputPropertyValue} from "../../utils";
 import descriptorsStore from '../../data/descriptors-store';
 import {VariableDescriptor} from "../../services/api-client/variable-descriptors-api";
-import {ExpressionChangedArs} from "../designer/input-control-switch/input-control-switch";
+import {ExpressionChangedArs} from "../shared/input-control-switch/input-control-switch";
 
 @Component({
   tag: 'elsa-type-picker-input',

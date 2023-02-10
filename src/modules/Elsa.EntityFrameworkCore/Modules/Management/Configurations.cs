@@ -6,11 +6,12 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Elsa.EntityFrameworkCore.Modules.Management;
 
-public class Configurations : IEntityTypeConfiguration<WorkflowDefinition>, IEntityTypeConfiguration<WorkflowInstance>
+internal class Configurations : IEntityTypeConfiguration<WorkflowDefinition>, IEntityTypeConfiguration<WorkflowInstance>
 {
     public void Configure(EntityTypeBuilder<WorkflowDefinition> builder)
     {
         builder.Ignore(x => x.Variables);
+        builder.Ignore(x => x.Inputs);
         builder.Ignore(x => x.CustomProperties);
         builder.Ignore(x => x.Options);
         builder.Property<string>("Data");

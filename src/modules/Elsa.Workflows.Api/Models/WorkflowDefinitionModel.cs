@@ -11,6 +11,7 @@ internal record WorkflowDefinitionModel(
     DateTimeOffset CreatedAt,
     int Version,
     ICollection<VariableDefinition> Variables,
+    ICollection<InputDefinition> Inputs,
     IDictionary<string, object> Metadata,
     bool IsLatest,
     bool IsPublished,

@@ -6,14 +6,13 @@ export class JavaScriptApi {
   }
 
   async getTypeDefinitions(request: GetTypeDefinitionsRequest): Promise<string> {
-    const response = await this.httpClient.post(`scripting/javascript/type-definitions/${request.containerId}`, request);
+    const response = await this.httpClient.post(`scripting/javascript/type-definitions/${request.workflowDefinitionId}`, request);
     return response.data;
   }
 }
 
 export interface GetTypeDefinitionsRequest {
-  containerType: string;
-  containerId: string;
+  workflowDefinitionId: string;
   activityTypeName?: string;
   propertyName?: string;
 }

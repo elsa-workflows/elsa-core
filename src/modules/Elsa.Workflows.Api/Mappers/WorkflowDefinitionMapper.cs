@@ -23,6 +23,7 @@ internal class WorkflowDefinitionMapper : ResponseMapper<WorkflowDefinitionRespo
             entity.CreatedAt,
             entity.Version,
             variables,
+            entity.Inputs,
             entity.CustomProperties,
             entity.IsLatest,
             entity.IsPublished,

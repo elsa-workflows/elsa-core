@@ -1,10 +1,11 @@
-import {Activity, Variable, VersionedEntity} from "../../../models";
+import {Activity, Type, Variable, VersionedEntity} from "../../../models";
 
 export interface WorkflowDefinition extends VersionedEntity {
   definitionId: string;
   name?: string;
   description?: string;
   variables?: Array<Variable>;
+  inputs?: Array<InputDefinition>;
   customProperties?: Map<string, any>;
   materializerName: string;
   materializerContext?: string;
@@ -24,7 +25,18 @@ export interface WorkflowDefinitionSummary {
   materializerName: string;
 }
 
-
 export interface WorkflowOptions {
   activationStrategyType?: string;
+}
+
+export interface ArgumentDefinition {
+  type: Type;
+  name: string;
+  displayName?: string;
+  description?: string;
+  category?: string;
+}
+
+export interface InputDefinition extends ArgumentDefinition {
+  uiHint?: string;
 }

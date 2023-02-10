@@ -53,8 +53,7 @@ export class DefaultActivityTemplate {
           const activity: Activity = nodeMap[activityId];
           const ports = portProvider.getOutboundPorts({activityDescriptor, activity});
           const embeddedPorts = ports.filter(x => x.mode == PortMode.Embedded);
-          const hasEmbeddedPorts = embeddedPorts.length > 0;
-          const canStartWorkflow = activity?.canStartWorkflow;
+                    const canStartWorkflow = activity?.canStartWorkflow;
           const icon = this.icon;
           const hasIcon = !!icon;
           const textColor = canStartWorkflow ? 'text-white' : 'text-gray-700';

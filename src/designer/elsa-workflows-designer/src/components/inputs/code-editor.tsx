@@ -3,8 +3,7 @@ import {EditorHeight, LiteralExpression, SyntaxNames} from "../../models";
 import {ActivityInputContext} from "../../services/activity-input-driver";
 import {getInputPropertyValue} from "../../utils";
 import {MonacoValueChangedArgs} from "../shared/monaco-editor/monaco-editor";
-import {ExpressionChangedArs} from "../designer/input-control-switch/input-control-switch";
-import descriptorsStore from "../../data/descriptors-store";
+import {ExpressionChangedArs} from "../shared/input-control-switch/input-control-switch";
 import {FormEntry} from "../shared/forms/form-entry";
 
 interface CodeEditorOptions {

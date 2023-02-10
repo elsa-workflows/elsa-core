@@ -3,12 +3,12 @@ import {debounce} from 'lodash';
 import {enter, leave, toggle} from 'el-transition'
 import {IntellisenseContext, SyntaxNames} from "../../../models";
 import {SyntaxSelectorIcon} from "../../icons/tooling/syntax-selector";
-import {MonacoValueChangedArgs} from "../../shared/monaco-editor/monaco-editor";
-import {Hint} from "../../shared/forms/hint";
+import {MonacoValueChangedArgs} from "../monaco-editor/monaco-editor";
+import {Hint} from "../forms/hint";
 import {mapSyntaxToLanguage} from "../../../utils";
 import descriptorsStore from "../../../data/descriptors-store";
 import {Container} from "typedi";
-import {ElsaClient, ElsaClientProvider} from "../../../services";
+import {ElsaClientProvider} from "../../../services";
 import InputControlSwitchContextState from "./state";
 
 export interface ExpressionChangedArs {
@@ -31,8 +31,7 @@ export class InputControlSwitch {
   }
 
   // Tunneled props.
-  @Prop() containerType: string;
-  @Prop() containerId: string;
+  @Prop() workflowDefinitionId: string;
   @Prop() activityType: string;
   @Prop() propertyName: string;
 
@@ -43,7 +42,7 @@ export class InputControlSwitch {
   @Prop() syntax?: string;
   @Prop() expression?: string;
   @Prop() defaultSyntax: string = SyntaxNames.Literal;
-  @Prop() supportedSyntaxes: Array<string> = ['JavaScript', 'Liquid']; // TODO: Get available syntaxes from some more centralized settings.
+  @Prop() supportedSyntaxes: Array<string> = ['JavaScript', 'Liquid']; // TODO: Get available syntaxes from server.
   @Prop() isReadOnly?: boolean;
   @Prop() codeEditorHeight: string = '16em';
   @Prop() codeEditorSingleLineMode: boolean = false;
@@ -68,11 +67,10 @@ export class InputControlSwitch {
 
   async componentDidLoad() {
     const elsaClient = await Container.get(ElsaClientProvider).getElsaClient();
-    const containerType = this.containerType;
-    const containerId = this.containerId;
+    const workflowDefinitionId = this.workflowDefinitionId;
     const activityTypeName = this.activityType;
     const propertyName = this.propertyName;
-    const typeDefinitions = await elsaClient.scripting.javaScriptApi.getTypeDefinitions({containerType, containerId, activityTypeName, propertyName});
+    const typeDefinitions = await elsaClient.scripting.javaScriptApi.getTypeDefinitions({workflowDefinitionId, activityTypeName, propertyName});
     const libUri = 'defaultLib:lib.es6.d.ts';
     await this.monacoEditor.addJavaScriptLib(typeDefinitions, libUri);
   }
@@ -221,4 +219,4 @@ export class InputControlSwitch {
   }
 }
 
-InputControlSwitchContextState.injectProps(InputControlSwitch, ['containerType', 'containerId', 'activityType', 'propertyName'])
+InputControlSwitchContextState.injectProps(InputControlSwitch, ['workflowDefinitionId', 'activityType', 'propertyName'])

@@ -3,7 +3,7 @@ import {uniq} from 'lodash'
 import {JsonExpression, LiteralExpression, SelectList, SyntaxNames} from "../../models";
 import {ActivityInputContext} from "../../services/activity-input-driver";
 import {getSelectListItems, getInputPropertyValue, parseJson} from "../../utils";
-import {ExpressionChangedArs} from "../designer/input-control-switch/input-control-switch";
+import {ExpressionChangedArs} from "../shared/input-control-switch/input-control-switch";
 
 @Component({
   tag: 'elsa-check-list-input',

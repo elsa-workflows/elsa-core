@@ -9,7 +9,7 @@ import {CheckboxFormEntry, FormEntry} from "../../../components/shared/forms/for
 import {isNullOrWhitespace} from "../../../utils";
 import descriptorsStore from "../../../data/descriptors-store";
 import {ActivityUpdatedArgs, DeleteActivityRequestedArgs} from "../models/ui";
-import InputControlSwitchContextState from "../../../components/designer/input-control-switch/state";
+import InputControlSwitchContextState from "../../../components/shared/input-control-switch/state";
 
 @Component({
   tag: 'elsa-activity-properties-editor',
@@ -23,8 +23,7 @@ export class ActivityPropertiesEditor {
     this.inputDriverRegistry = Container.get(InputDriverRegistry);
   }
 
-  @Prop() containerType: string;
-  @Prop() containerId: string;
+  @Prop() workflowDefinitionId: string;
   @Prop() activity?: Activity;
   @Prop() variables: Array<Variable> = [];
 
@@ -68,13 +67,12 @@ export class ActivityPropertiesEditor {
       };
 
       const driver = driverRegistry.get(renderInputContext);
-      const containerType = this.containerType;
-      const containerId = this.containerId;
+      const workflowDefinitionId = this.workflowDefinitionId;
       const activityType = activityDescriptor.typeName;
       const propertyName = inputDescriptor.name;
 
       const control =
-        <InputControlSwitchContextState.Provider state={{containerType, containerId, activityType, propertyName}}>
+        <InputControlSwitchContextState.Provider state={{workflowDefinitionId, activityType, propertyName}}>
           {driver?.renderInput(renderInputContext)}
         </InputControlSwitchContextState.Provider>;
 

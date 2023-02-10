@@ -2,6 +2,7 @@ using Elsa.Mediator.Services;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Implementations;
 using Elsa.Workflows.Management.Notifications;
+using Elsa.Workflows.Management.Providers;
 using Elsa.Workflows.Management.Services;
 
 namespace Elsa.Workflows.Management.Handlers;
