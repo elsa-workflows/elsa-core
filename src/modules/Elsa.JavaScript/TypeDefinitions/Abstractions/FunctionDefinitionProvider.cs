@@ -1,8 +1,8 @@
-using Elsa.JavaScript.Builders;
-using Elsa.JavaScript.Models;
-using Elsa.JavaScript.Services;
+using Elsa.JavaScript.TypeDefinitions.Builders;
+using Elsa.JavaScript.TypeDefinitions.Contracts;
+using Elsa.JavaScript.TypeDefinitions.Models;
 
-namespace Elsa.JavaScript.Abstractions;
+namespace Elsa.JavaScript.TypeDefinitions.Abstractions;
 
 /// <summary>
 /// A base class for function definition providers.

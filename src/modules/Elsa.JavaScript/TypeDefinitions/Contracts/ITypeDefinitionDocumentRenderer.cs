@@ -1,6 +1,6 @@
-using Elsa.JavaScript.Models;
+using Elsa.JavaScript.TypeDefinitions.Models;
 
-namespace Elsa.JavaScript.Services;
+namespace Elsa.JavaScript.TypeDefinitions.Contracts;
 
 /// <summary>
 /// Renders a <see cref="TypeDefinitionsDocument"/> to a string.

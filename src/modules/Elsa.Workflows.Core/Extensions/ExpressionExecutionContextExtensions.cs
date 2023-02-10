@@ -55,9 +55,9 @@ public static class ExpressionExecutionContextExtensions
     }
     
     /// <summary>
-    /// Returns a dictionary of variable keys and their values across scopes.
+    /// Returns a dictionary of memory block keys and values across scopes.
     /// </summary>
-    public static IDictionary<string, object> GetVariableValues(this ExpressionExecutionContext context)
+    public static IDictionary<string, object> ReadAndFlattenMemoryBlocks(this ExpressionExecutionContext context)
     {
         var currentRegister = context.Memory;
         var memoryBlocks = new Dictionary<string, object>();
@@ -67,7 +67,7 @@ public static class ExpressionExecutionContextExtensions
             foreach (var l in currentRegister.Blocks)
             {
                 if (!memoryBlocks.ContainsKey(l.Key))
-                    memoryBlocks.Add(l.Key, l.Value!.Value!);
+                    memoryBlocks.Add(l.Key, l.Value.Value!);
             }
 
             currentRegister = currentRegister.Parent;

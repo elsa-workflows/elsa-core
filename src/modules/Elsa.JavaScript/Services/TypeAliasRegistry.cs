@@ -1,10 +1,10 @@
 using System.Dynamic;
+using Elsa.JavaScript.Contracts;
 using Elsa.JavaScript.Extensions;
-using Elsa.JavaScript.Services;
 using Elsa.Workflows.Management.Options;
 using Microsoft.Extensions.Options;
 
-namespace Elsa.JavaScript.Implementations;
+namespace Elsa.JavaScript.Services;
 
 /// <inheritdoc />
 public class TypeAliasRegistry : ITypeAliasRegistry

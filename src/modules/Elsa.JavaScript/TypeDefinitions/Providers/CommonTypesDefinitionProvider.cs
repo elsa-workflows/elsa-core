@@ -1,9 +1,9 @@
 using System.Text.Json.Nodes;
-using Elsa.JavaScript.Abstractions;
-using Elsa.JavaScript.Models;
-using Elsa.JavaScript.Services;
+using Elsa.JavaScript.TypeDefinitions.Abstractions;
+using Elsa.JavaScript.TypeDefinitions.Contracts;
+using Elsa.JavaScript.TypeDefinitions.Models;
 
-namespace Elsa.JavaScript.Providers;
+namespace Elsa.JavaScript.TypeDefinitions.Providers;
 
 /// <summary>
 /// Produces <see cref="FunctionDefinition"/>s for common functions.

@@ -2,9 +2,9 @@
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
+using Elsa.JavaScript.Contracts;
 using Elsa.JavaScript.Notifications;
 using Elsa.JavaScript.Options;
-using Elsa.JavaScript.Services;
 using Elsa.Mediator.Services;
 using Humanizer;
 using Jint;
@@ -12,7 +12,7 @@ using Microsoft.Extensions.Options;
 
 // ReSharper disable ConvertClosureToMethodGroup
 
-namespace Elsa.JavaScript.Implementations;
+namespace Elsa.JavaScript.Services;
 
 /// <summary>
 /// Provides a JavaScript evaluator using Jint.
@@ -62,8 +62,8 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         engine.SetValue("setVariable", (Action<string, object>)((name, value) => context.SetVariable(name, value)));
         engine.SetValue("getVariable", (Func<string, object?>)(name => context.GetVariable(name)));
 
-        // Create variable setters and getters for each variable.
-        CreateVariableAccessors(engine, context);
+        // Create variable & input setters and getters for each variable.
+        CreateMemoryBlockAccessors(engine, context);
 
         engine.SetValue("isNullOrWhiteSpace", (Func<string, bool>)(value => string.IsNullOrWhiteSpace(value)));
         engine.SetValue("isNullOrEmpty", (Func<string, bool>)(value => string.IsNullOrEmpty(value)));
@@ -82,9 +82,9 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         return engine;
     }
 
-    private static void CreateVariableAccessors(Engine engine, ExpressionExecutionContext context)
+    private static void CreateMemoryBlockAccessors(Engine engine, ExpressionExecutionContext context)
     {
-        var variablesDictionary = context.GetVariableValues();
+        var variablesDictionary = context.ReadAndFlattenMemoryBlocks();
 
         foreach (var variable in variablesDictionary)
         {
@@ -93,7 +93,7 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
             engine.SetValue($"set{pascalName}", (Action<object?>)(value => context.SetVariable(variable.Key, value)));
         }
     }
-
+    
     private static object? ExecuteExpressionAndGetResult(Engine engine, string expression)
     {
         var result = engine.Evaluate(expression);

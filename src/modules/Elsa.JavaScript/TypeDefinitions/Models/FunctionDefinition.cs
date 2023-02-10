@@ -1,4 +1,4 @@
-namespace Elsa.JavaScript.Models;
+namespace Elsa.JavaScript.TypeDefinitions.Models;
 
 /// <summary>
 /// A method definition.

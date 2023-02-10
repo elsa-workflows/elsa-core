@@ -1,10 +1,10 @@
 using Elsa.Extensions;
-using Elsa.JavaScript.Abstractions;
-using Elsa.JavaScript.Models;
-using Elsa.JavaScript.Services;
+using Elsa.JavaScript.Contracts;
+using Elsa.JavaScript.TypeDefinitions.Abstractions;
+using Elsa.JavaScript.TypeDefinitions.Models;
 using Humanizer;
 
-namespace Elsa.JavaScript.Providers;
+namespace Elsa.JavaScript.TypeDefinitions.Providers;
 
 /// <summary>
 /// Produces <see cref="FunctionDefinition"/>s for common functions.
@@ -63,7 +63,7 @@ internal class CommonFunctionsDefinitionProvider : FunctionDefinitionProvider
             .ReturnType("string"));
         
         // Variable getter and setters.
-        foreach (var variable in context.Variables)
+        foreach (var variable in context.WorkflowDefinition.Variables)
         {
             var pascalName = variable.Name.Pascalize();
             var variableType = variable.GetVariableType();
@@ -77,6 +77,14 @@ internal class CommonFunctionsDefinitionProvider : FunctionDefinitionProvider
         }
         
         // Input argument getters.
-        
+        foreach (var input in context.WorkflowDefinition.Inputs)
+        {
+            var pascalName = input.Name.Pascalize();
+            var variableType = input.Type;
+            var typeAlias = _typeAliasRegistry.TryGetAlias(variableType, out var alias) ? alias : "any";
+
+            // get{Input}.
+            yield return CreateFunctionDefinition(builder => builder.Name($"get{pascalName}").ReturnType(typeAlias));
+        }
     }
 }

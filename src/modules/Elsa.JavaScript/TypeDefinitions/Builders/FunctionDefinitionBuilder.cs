@@ -1,6 +1,6 @@
-using Elsa.JavaScript.Models;
+using Elsa.JavaScript.TypeDefinitions.Models;
 
-namespace Elsa.JavaScript.Builders;
+namespace Elsa.JavaScript.TypeDefinitions.Builders;
 
 /// <summary>
 /// A builder API for building <see cref="FunctionDefinition"/>s.

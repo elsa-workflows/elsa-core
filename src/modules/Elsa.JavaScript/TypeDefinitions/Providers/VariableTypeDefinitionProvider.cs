@@ -1,10 +1,10 @@
 using System.Dynamic;
 using Elsa.Extensions;
-using Elsa.JavaScript.Abstractions;
-using Elsa.JavaScript.Models;
-using Elsa.JavaScript.Services;
+using Elsa.JavaScript.TypeDefinitions.Abstractions;
+using Elsa.JavaScript.TypeDefinitions.Contracts;
+using Elsa.JavaScript.TypeDefinitions.Models;
 
-namespace Elsa.JavaScript.Providers;
+namespace Elsa.JavaScript.TypeDefinitions.Providers;
 
 /// <summary>
 /// Produces <see cref="TypeDefinition"/>s for variable types.
@@ -27,8 +27,10 @@ internal class VariableTypeDefinitionProvider : TypeDefinitionProvider
             type => type == typeof(object)
         };
 
+        var variables = context.WorkflowDefinition.Variables;
+
         var variableTypeQuery =
-            from variable in context.Variables
+            from variable in variables
             let variableType = variable.GetVariableType()
             where (variableType.IsClass || variableType.IsInterface) && !variableType.IsPrimitive && !excludedTypes.Any(x => x(variableType))
             select variableType;

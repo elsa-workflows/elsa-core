@@ -1,6 +1,6 @@
-using Elsa.JavaScript.Models;
+using Elsa.JavaScript.TypeDefinitions.Models;
 
-namespace Elsa.JavaScript.Services;
+namespace Elsa.JavaScript.TypeDefinitions.Contracts;
 
 /// <summary>
 /// Returns a <see cref="TypeDefinition"/> from a given <see cref="Type"/>.

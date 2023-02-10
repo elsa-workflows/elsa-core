@@ -1,7 +1,7 @@
 ﻿using Elsa.Expressions.Models;
 using Jint;
 
-namespace Elsa.JavaScript.Services;
+namespace Elsa.JavaScript.Contracts;
 
 public interface IJavaScriptEvaluator
 {

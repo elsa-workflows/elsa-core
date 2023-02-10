@@ -1,7 +1,7 @@
-using Elsa.JavaScript.Models;
-using Elsa.JavaScript.Services;
+using Elsa.JavaScript.TypeDefinitions.Contracts;
+using Elsa.JavaScript.TypeDefinitions.Models;
 
-namespace Elsa.JavaScript.Implementations;
+namespace Elsa.JavaScript.TypeDefinitions.Services;
 
 /// <inheritdoc />
 public class TypeDefinitionService : ITypeDefinitionService

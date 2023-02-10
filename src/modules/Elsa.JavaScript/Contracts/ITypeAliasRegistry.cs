@@ -1,4 +1,4 @@
-namespace Elsa.JavaScript.Services;
+namespace Elsa.JavaScript.Contracts;
 
 /// <summary>
 /// A central registry of type aliases.
