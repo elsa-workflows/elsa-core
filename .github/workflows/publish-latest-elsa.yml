@@ -23,11 +23,11 @@ jobs:
 
       - name: Set preview VERSION variable
         run: echo "VERSION=$ELSA_VERSION-preview.${{ github.run_number }}" >> $GITHUB_ENV
-        if: ${{ githhub.event_name != 'release' }}
+        if: ${{ github.event_name != 'release' }}
 
       - name: Set release VERSION variable
         run: echo "VERSION=${{ github.ref_name }}" >> $GITHUB_ENV
-        if: ${{ githhub.event_name == 'release' }}
+        if: ${{ github.event_name == 'release' }}
 
       - name: Checkout
         uses: actions/checkout@v1
@@ -61,7 +61,7 @@ jobs:
 
       # - name: Run Tests
       #   run: dotnet test --configuration Release --no-build
-      
+
       - name: Pack Elsa
         run: dotnet pack --configuration Release /p:Version=$VERSION
 
