@@ -29,7 +29,7 @@ public class InputJsonConverter<T> : JsonConverter<Input<T>>
         if (!JsonDocument.TryParseValue(ref reader, out var doc))
             return default!;
 
-        // If the value is an object, it represents an Input-wrapped property
+        // If the value is an object, it represents an Input-wrapped property.
         if (doc.RootElement.ValueKind == JsonValueKind.Object)
         {
             if (!doc.RootElement.TryGetProperty("typeName", out _))

@@ -62,7 +62,6 @@ public class JobActivityProvider : IActivityProvider
             Category = category,
             Kind = ActivityKind.Job,
             IsBrowsable = true,
-            ActivityType = typeof(JobActivity),
             Constructor = context =>
             {
                 var activity = _activityFactory.Create<JobActivity>(context);

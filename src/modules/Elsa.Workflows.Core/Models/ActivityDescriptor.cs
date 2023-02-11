@@ -18,12 +18,8 @@ public class ActivityDescriptor
     public string? Description { get; init; }
     public ICollection<InputDescriptor> Inputs { get; init; } = new List<InputDescriptor>();
     public ICollection<OutputDescriptor> Outputs { get; init; } = new List<OutputDescriptor>();
-    
-    /// <summary>
-    /// The concrete type that this descriptor instantiates via the <see cref="Constructor"/> factory.
-    /// </summary>
-    public Type ActivityType { get; set; } = default!;
-    
+    public ICollection<Attribute> Attributes { get; set; } = new List<Attribute>();
+
     /// <summary>
     /// Instantiates a concrete instance of an <see cref="IActivity"/>.
     /// </summary>

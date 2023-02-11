@@ -1,5 +1,4 @@
-﻿using System.Reflection;
-using Elsa.Extensions;
+﻿using Elsa.Extensions;
 using Elsa.Mediator.Services;
 using Elsa.Telnyx.Attributes;
 using Elsa.Telnyx.Bookmarks;
@@ -41,5 +40,5 @@ internal class TriggerWebhookDrivenActivities : INotificationHandler<TelnyxWebho
     }
 
     private IEnumerable<ActivityDescriptor> FindActivityDescriptors(string eventType) =>
-        _activityRegistry.FindMany(descriptor => descriptor.ActivityType.GetCustomAttribute<WebhookDrivenAttribute>()?.EventTypes.Contains(eventType) == true);
+        _activityRegistry.FindMany(descriptor => descriptor.GetAttribute<WebhookDrivenAttribute>()?.EventTypes.Contains(eventType) == true);
 }

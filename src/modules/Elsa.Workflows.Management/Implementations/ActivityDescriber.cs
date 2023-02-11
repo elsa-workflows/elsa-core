@@ -87,7 +87,6 @@ public class ActivityDescriber : IActivityDescriber
             Outputs = DescribeOutputProperties(outputProperties).ToList(),
             IsContainer = typeof(IContainer).IsAssignableFrom(activityType),
             IsBrowsable = browsableAttr == null || browsableAttr.Browsable,
-            ActivityType = activityType,
             Constructor = context =>
             {
                 var activity = _activityFactory.Create(activityType, context);
