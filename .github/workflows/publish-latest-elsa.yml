@@ -1,0 +1,81 @@
+name: Build and Publish Elsa Packages
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+  release:
+    types: [published]
+
+env:
+  NODE_OPTIONS: --max-old-space-size=4096
+  ELSA_VERSION: 2.11.0
+
+jobs:
+  build_and_publish:
+    name: Build and Publish Elsa
+    runs-on: ubuntu-latest
+    
+    steps:
+
+      - name: Set preview VERSION variable
+        run: echo "VERSION=$ELSA_VERSION-preview.${{ github.run_number }}" >> $GITHUB_ENV
+        if: ${{ githhub.event_name != 'release' }}
+
+      - name: Set release VERSION variable
+        run: echo "VERSION=${{ github.ref_name }}" >> $GITHUB_ENV
+        if: ${{ githhub.event_name == 'release' }}
+
+      - name: Checkout
+        uses: actions/checkout@v1
+      
+      - name: Setup Node
+        uses: actions/setup-node@v1
+        with:
+          node-version: 18.12.1
+      
+      - run: echo $VERSION
+      - run: node --version
+      - run: npm --version
+
+      - name: Build Designer
+        working-directory: ./src/designer/elsa-workflows-studio
+        run: |
+          npm install --force
+          npm version $VERSION --allow-same-version
+          npm run build
+      
+      - name: Build Bindings
+        working-directory: ./src/designer/bindings/aspnet/Elsa.Designer.Components.Web
+        run: |
+          npm install --force
+          npm install -g webpack
+          npm install -g webpack-cli
+          npm run build
+      
+      - name: Build Elsa
+        run: dotnet build --configuration Release /p:Version=$VERSION
+
+      # - name: Run Tests
+      #   run: dotnet test --configuration Release --no-build
+      
+      - name: Pack Elsa
+        run: dotnet pack --configuration Release /p:Version=$VERSION
+
+      # - name: NPM Publish Preview
+      #   if: github.event_name == 'push'
+      #   uses: JS-DevTools/npm-publish@v1
+      #   with:
+      #     package: ./src/designer/elsa-workflows-studio/package.json
+      #     token: ${{ secrets.NPM_TOKEN }}
+      #     tag: preview
+        
+      # - name: NPM Publish Release
+      #   if: github.event_name == 'release'
+      #   uses: JS-DevTools/npm-publish@v1
+      #   with:
+      #     package: ./src/designer/elsa-workflows-studio/package.json
+      #     token: ${{ secrets.NPM_TOKEN }}
