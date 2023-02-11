@@ -52,7 +52,6 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
             Category = "Workflows",
             Kind = ActivityKind.Action,
             IsBrowsable = definition.IsPublished,
-            ActivityType = typeof(WorkflowDefinitionActivity),
             Inputs = DescribeInputs(definition).ToList(),
             Constructor = context =>
             {
@@ -64,12 +63,7 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
                 foreach (var inputDefinition in definition.Inputs)
                 {
                     var inputName = inputDefinition.Name;
-                    var variable = definition.Variables.FirstOrDefault(x => x.Name == inputName);
-                    
-                    if(variable == null)
-                        continue;
-
-                    var propertyName = inputName.ToLowerInvariant();
+                    var propertyName = inputName.Camelize();
                     var nakedType = inputDefinition.Type;
                     var wrappedType = typeof(Input<>).MakeGenericType(nakedType);
                     
@@ -77,7 +71,7 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
                     {
                         var json = propertyElement.ToString();
                         var inputValue = JsonSerializer.Deserialize(json, wrappedType, context.SerializerOptions);
-                        activity.ResolvedInputValues[variable.Name] = inputValue!;
+                        activity.ResolvedInputValues[inputName] = inputValue!;
                     }
                 }
                 

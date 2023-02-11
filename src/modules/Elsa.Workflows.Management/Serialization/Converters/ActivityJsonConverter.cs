@@ -1,10 +1,16 @@
+using System.Reflection;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using Elsa.Expressions.Models;
+using Elsa.Expressions.Services;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Services;
+using Humanizer;
+using String = System.String;
 
 namespace Elsa.Workflows.Management.Serialization.Converters;
 
@@ -15,13 +21,22 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
 {
     private readonly IActivityRegistry _activityRegistry;
     private readonly IActivityFactory _activityFactory;
+    private readonly IActivityDescriber _activityDescriber;
+    private readonly IExpressionSyntaxRegistry _expressionSyntaxRegistry;
     private readonly IServiceProvider _serviceProvider;
 
     /// <inheritdoc />
-    public ActivityJsonConverter(IActivityRegistry activityRegistry, IActivityFactory activityFactory, IServiceProvider serviceProvider)
+    public ActivityJsonConverter(
+        IActivityRegistry activityRegistry, 
+        IActivityFactory activityFactory, 
+        IActivityDescriber activityDescriber,
+        IExpressionSyntaxRegistry expressionSyntaxRegistry,
+        IServiceProvider serviceProvider)
     {
         _activityRegistry = activityRegistry;
         _activityFactory = activityFactory;
+        _activityDescriber = activityDescriber;
+        _expressionSyntaxRegistry = expressionSyntaxRegistry;
         _serviceProvider = serviceProvider;
     }
 
@@ -41,11 +56,11 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
         var newOptions = new JsonSerializerOptions(options);
         newOptions.Converters.Add(new InputJsonConverterFactory(_serviceProvider));
         newOptions.Converters.Add(new OutputJsonConverterFactory(_serviceProvider));
-        
+
         if (activityDescriptor == null)
         {
             var notFoundContext = new ActivityConstructorContext(doc.RootElement, newOptions);
-            var notFoundActivity =  (NotFoundActivity)_activityFactory.Create(typeof(NotFoundActivity), notFoundContext);
+            var notFoundActivity = (NotFoundActivity)_activityFactory.Create(typeof(NotFoundActivity), notFoundContext);
 
             notFoundActivity.Type = ActivityTypeNameHelper.GenerateTypeName<NotFoundActivity>();
             notFoundActivity.MissingTypeName = activityTypeName;
@@ -56,15 +71,81 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
         var context = new ActivityConstructorContext(doc.RootElement, newOptions);
         var activity = activityDescriptor.Constructor(context);
         
+        // Reconstruct inputs.
+        foreach (var inputDefinition in activityDescriptor.Inputs)
+        {
+            var inputName = inputDefinition.Name;
+            var propertyName = inputName.Camelize();
+            var nakedType = inputDefinition.Type;
+            var wrappedType = typeof(Input<>).MakeGenericType(nakedType);
+                    
+            if (doc.RootElement.TryGetProperty(propertyName, out var propertyElement))
+            {
+                var json = propertyElement.ToString();
+                var inputValue = JsonSerializer.Deserialize(json, wrappedType, newOptions);
+
+                activity.SyntheticProperties[inputName] = inputValue!;
+            }
+        }
+
         return activity;
     }
 
     /// <inheritdoc />
     public override void Write(Utf8JsonWriter writer, IActivity value, JsonSerializerOptions options)
     {
+        var activityDescriptor = _activityRegistry.Find(value.Type, value.Version)!;
         var newOptions = new JsonSerializerOptions(options);
+        
         newOptions.Converters.Add(new InputJsonConverterFactory(_serviceProvider));
         newOptions.Converters.Add(new OutputJsonConverterFactory(_serviceProvider));
-        JsonSerializer.Serialize(writer, value, value.GetType(), newOptions);
+        
+        // Write to a JsonObject so that we can add additional information.
+        var activityModel = JsonSerializer.SerializeToNode(value, value.GetType(), newOptions)!;
+        var activityType = value.GetType();
+        var typedInputs = _activityDescriber.DescribeInputProperties(activityType).ToDictionary(x => x.Name);
+        var syntheticInputs = activityDescriptor.Inputs.Where(x => !typedInputs.ContainsKey(x.Name)).ToList(); 
+
+        // Store synthetic inputs in a property bag. 
+        foreach (var inputDescriptor in syntheticInputs)
+        {
+            var inputName = inputDescriptor.Name;
+            var propertyName = inputName.Camelize();
+            
+            if (value.SyntheticProperties.TryGetValue(inputName, out var inputValue))
+            {
+                var input = (Input?)inputValue;
+
+                if (input == null)
+                {
+                    activityModel[propertyName] = null;
+                    continue;
+                }
+                
+                var expression = input.Expression;
+                var expressionType = expression.GetType();
+                var targetType = value.Type;
+                var memoryReferenceId = input.MemoryBlockReference().Id;
+                var expressionSyntaxDescriptor = _expressionSyntaxRegistry.Find(x => x.Type == expressionType);
+
+                if (expressionSyntaxDescriptor == null)
+                    throw new Exception($"Syntax descriptor with expression type {expressionType} not found in registry");
+
+                var inputModel = new
+                {
+                    TypeName = targetType,
+                    Expression = expressionSyntaxDescriptor.CreateSerializableObject(new SerializableObjectConstructorContext(expression)),
+                    MemoryReference = new
+                    {
+                        Id = memoryReferenceId
+                    }
+                };
+
+                activityModel[propertyName] = JsonSerializer.SerializeToNode(inputModel);
+            }
+        }
+        
+        // Send the model to the writer.
+        JsonSerializer.Serialize(writer, activityModel);
     }
 }

@@ -8,4 +8,5 @@ public interface IActivityDescriber
 {
     ValueTask<ActivityDescriptor> DescribeActivityAsync([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type activityType, CancellationToken cancellationToken = default);
     OutputDescriptor DescribeOutputProperty(PropertyInfo propertyInfo);
+    IEnumerable<InputDescriptor> DescribeInputProperties([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type activityType);
 }
