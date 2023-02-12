@@ -35,7 +35,7 @@ public class WorkflowDefinitionActivity : Activity, IInitializable
         var serviceProvider = context.ServiceProvider;
         var cancellationToken = context.CancellationToken;
         var workflowDefinitionStore = serviceProvider.GetRequiredService<IWorkflowDefinitionStore>();
-        var workflowDefinition = await workflowDefinitionStore.FindByDefinitionIdAsync(WorkflowDefinitionId, VersionOptions.Published, cancellationToken);
+        var workflowDefinition = await workflowDefinitionStore.FindByDefinitionIdAsync(WorkflowDefinitionId, VersionOptions.SpecificVersion(Version), cancellationToken);
 
         if (workflowDefinition == null)
             throw new Exception($"Workflow definition {WorkflowDefinitionId} not found");
