@@ -94,8 +94,6 @@ public class ActivityDescriber : IActivityDescriber
             }
         };
         
-        descriptor.Inputs.Add(new InputDescriptor("Dummy", typeof(Input<string>), true, InputUIHints.SingleLine, "Dummy", "A synthetic dummy field"));
-
         return ValueTask.FromResult(descriptor);
     }
     

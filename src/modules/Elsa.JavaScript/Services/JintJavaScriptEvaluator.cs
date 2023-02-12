@@ -1,11 +1,15 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Models;
+using Elsa.Expressions.Services;
 using Elsa.Extensions;
 using Elsa.JavaScript.Contracts;
 using Elsa.JavaScript.Notifications;
 using Elsa.JavaScript.Options;
 using Elsa.Mediator.Services;
+using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Management.Activities;
+using Elsa.Workflows.Management.Services;
 using Humanizer;
 using Jint;
 using Microsoft.Extensions.Options;
@@ -20,14 +24,18 @@ namespace Elsa.JavaScript.Services;
 public class JintJavaScriptEvaluator : IJavaScriptEvaluator
 {
     private readonly IEventPublisher _mediator;
+    private readonly IActivityRegistry _activityRegistry;
+    private readonly IExpressionEvaluator _expressionEvaluator;
     private readonly JintOptions _jintOptions;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public JintJavaScriptEvaluator(IEventPublisher mediator, IOptions<JintOptions> scriptOptions)
+    public JintJavaScriptEvaluator(IEventPublisher mediator, IActivityRegistry activityRegistry, IExpressionEvaluator expressionEvaluator, IOptions<JintOptions> scriptOptions)
     {
         _mediator = mediator;
+        _activityRegistry = activityRegistry;
+        _expressionEvaluator = expressionEvaluator;
         _jintOptions = scriptOptions.Value;
     }
 
@@ -64,6 +72,9 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
 
         // Create variable & input setters and getters for each variable.
         CreateMemoryBlockAccessors(engine, context);
+        
+        // Create input getters.
+        await CreateInputAccessorsAsync(engine, context);
 
         engine.SetValue("isNullOrWhiteSpace", (Func<string, bool>)(value => string.IsNullOrWhiteSpace(value)));
         engine.SetValue("isNullOrEmpty", (Func<string, bool>)(value => string.IsNullOrEmpty(value)));
@@ -80,6 +91,42 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         await _mediator.PublishAsync(new EvaluatingJavaScript(engine, context), cancellationToken);
 
         return engine;
+    }
+    
+    private async Task CreateInputAccessorsAsync(Engine engine, ExpressionExecutionContext context)
+    {
+        var workflowDefinitionActivity = GetFirstWorkflowDefinitionActivity(context);
+
+        if (workflowDefinitionActivity == null)
+            return;
+        
+        var descriptor = _activityRegistry.Find(workflowDefinitionActivity.Type, workflowDefinitionActivity.Version)!;
+        var inputDefinitions = descriptor.Inputs;
+
+        foreach (var inputDefinition in inputDefinitions)
+        {
+            var inputPascalName = inputDefinition.Name.Pascalize();
+            var input = workflowDefinitionActivity.SyntheticProperties.TryGetValue(inputDefinition.Name, out var inputValue) ? (Input?)inputValue : default;
+            var evaluatedExpression = input != null ? await _expressionEvaluator.EvaluateAsync(input, context) : input;
+
+            engine.SetValue($"get{inputPascalName}", (Func<object?>)(() => evaluatedExpression));
+        }
+    }
+
+    private static WorkflowDefinitionActivity? GetFirstWorkflowDefinitionActivity(ExpressionExecutionContext context)
+    {
+        var activityExecutionContext = context.GetActivityExecutionContext();
+
+        // Get the closest ancestor that is of type WorkflowDefinitionActivity.
+        while (activityExecutionContext != null)
+        {
+            if (activityExecutionContext.Activity is WorkflowDefinitionActivity workflowDefinitionActivity)
+                return workflowDefinitionActivity;
+
+            activityExecutionContext = activityExecutionContext.ParentActivityExecutionContext;
+        }
+
+        return null;
     }
 
     private static void CreateMemoryBlockAccessors(Engine engine, ExpressionExecutionContext context)

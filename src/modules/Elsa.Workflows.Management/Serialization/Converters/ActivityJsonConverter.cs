@@ -103,7 +103,7 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
         var typedInputs = _activityDescriber.DescribeInputProperties(activityType).ToDictionary(x => x.Name);
         var syntheticInputs = activityDescriptor.Inputs.Where(x => !typedInputs.ContainsKey(x.Name)).ToList(); 
 
-        // Write out synthetic inputs. 
+        // Write synthetic inputs. 
         foreach (var inputDescriptor in syntheticInputs)
         {
             var inputName = inputDescriptor.Name;

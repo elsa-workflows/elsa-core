@@ -59,21 +59,6 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
                 activity.Type = typeName;
                 activity.WorkflowDefinitionId = definition.DefinitionId;
                 activity.Version = definition.Version;
-
-                foreach (var inputDefinition in definition.Inputs)
-                {
-                    var inputName = inputDefinition.Name;
-                    var propertyName = inputName.Camelize();
-                    var nakedType = inputDefinition.Type;
-                    var wrappedType = typeof(Input<>).MakeGenericType(nakedType);
-                    
-                    if (context.Element.TryGetProperty(propertyName, out var propertyElement))
-                    {
-                        var json = propertyElement.ToString();
-                        var inputValue = JsonSerializer.Deserialize(json, wrappedType, context.SerializerOptions);
-                        activity.ResolvedInputValues[inputName] = inputValue!;
-                    }
-                }
                 
                 return activity;
             }
@@ -84,11 +69,10 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
         definition.Inputs.Select(inputDefinition =>
         {
             var nakedType = inputDefinition.Type;
-            var wrappedType = typeof(Input<>).MakeGenericType(nakedType);
             
             return new InputDescriptor
             {
-                Type = wrappedType,
+                Type = nakedType,
                 IsWrapped = true,
                 Name = inputDefinition.Name,
                 DisplayName = inputDefinition.DisplayName,

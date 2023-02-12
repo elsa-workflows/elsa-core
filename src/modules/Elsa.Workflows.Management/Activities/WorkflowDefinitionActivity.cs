@@ -1,5 +1,4 @@
 using Elsa.Common.Models;
-using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
@@ -22,8 +21,6 @@ public class WorkflowDefinitionActivity : Activity, IInitializable
     /// </summary>
     public string WorkflowDefinitionId { get; set; } = default!;
 
-    public IDictionary<string, object> ResolvedInputValues { get; set; } = new Dictionary<string, object>();
-    
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
