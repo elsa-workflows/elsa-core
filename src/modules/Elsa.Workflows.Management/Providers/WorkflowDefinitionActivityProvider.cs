@@ -53,6 +53,7 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
             Kind = ActivityKind.Action,
             IsBrowsable = definition.IsPublished,
             Inputs = DescribeInputs(definition).ToList(),
+            Outputs = DescribeOutputs(definition).ToList(),
             Constructor = context =>
             {
                 var activity = (WorkflowDefinitionActivity)_activityFactory.Create(typeof(WorkflowDefinitionActivity), context);
@@ -65,7 +66,7 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
         };
     }
 
-    private IEnumerable<InputDescriptor> DescribeInputs(WorkflowDefinition definition) =>
+    private static IEnumerable<InputDescriptor> DescribeInputs(WorkflowDefinition definition) =>
         definition.Inputs.Select(inputDefinition =>
         {
             var nakedType = inputDefinition.Type;
@@ -79,6 +80,20 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
                 Description = inputDefinition.Description,
                 Category = inputDefinition.Category,
                 UIHint = inputDefinition.UIHint
+            };
+        });
+    
+    private static IEnumerable<OutputDescriptor> DescribeOutputs(WorkflowDefinition definition) =>
+        definition.Outputs.Select(outputDefinition =>
+        {
+            var nakedType = outputDefinition.Type;
+            
+            return new OutputDescriptor
+            {
+                Type = nakedType,
+                Name = outputDefinition.Name,
+                DisplayName = outputDefinition.DisplayName,
+                Description = outputDefinition.Description
             };
         });
 }

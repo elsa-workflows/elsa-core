@@ -70,11 +70,11 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
         var activity = activityDescriptor.Constructor(context);
         
         // Reconstruct inputs.
-        foreach (var inputDefinition in activityDescriptor.Inputs)
+        foreach (var inputDescriptor in activityDescriptor.Inputs)
         {
-            var inputName = inputDefinition.Name;
+            var inputName = inputDescriptor.Name;
             var propertyName = inputName.Camelize();
-            var nakedType = inputDefinition.Type;
+            var nakedType = inputDescriptor.Type;
             var wrappedType = typeof(Input<>).MakeGenericType(nakedType);
                     
             if (doc.RootElement.TryGetProperty(propertyName, out var propertyElement) && propertyElement.ValueKind != JsonValueKind.Null && propertyElement.ValueKind != JsonValueKind.Undefined)
@@ -84,6 +84,28 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
 
                 activity.SyntheticProperties[inputName] = inputValue!;
             }
+        }
+        
+        // Reconstruct outputs.
+        foreach (var outputDescriptor in activityDescriptor.Outputs)
+        {
+            var outputName = outputDescriptor.Name;
+            var propertyName = outputName.Camelize();
+            var nakedType = outputDescriptor.Type;
+            var wrappedType = typeof(Output<>).MakeGenericType(nakedType);
+
+            if (!doc.RootElement.TryGetProperty(propertyName, out var propertyElement) || propertyElement.ValueKind == JsonValueKind.Null || propertyElement.ValueKind == JsonValueKind.Undefined) 
+                continue;
+            
+            var memoryReferenceElement = propertyElement.GetProperty("memoryReference");
+
+            if (!memoryReferenceElement.TryGetProperty("id", out var memoryReferenceIdElement)) 
+                continue;
+            
+            var variable = new Variable(memoryReferenceIdElement.GetString()!);
+            var output = Activator.CreateInstance(wrappedType, variable)!;
+
+            activity.SyntheticProperties[outputName] = output!;
         }
 
         return activity;
@@ -102,7 +124,9 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
         var activityModel = JsonSerializer.SerializeToNode(value, value.GetType(), newOptions)!;
         var activityType = value.GetType();
         var typedInputs = _activityDescriber.DescribeInputProperties(activityType).ToDictionary(x => x.Name);
-        var syntheticInputs = activityDescriptor.Inputs.Where(x => !typedInputs.ContainsKey(x.Name)).ToList(); 
+        var typedOutputs = _activityDescriber.DescribeOutputProperties(activityType).ToDictionary(x => x.Name);
+        var syntheticInputs = activityDescriptor.Inputs.Where(x => !typedInputs.ContainsKey(x.Name)).ToList();
+        var syntheticOutputs = activityDescriptor.Outputs.Where(x => !typedOutputs.ContainsKey(x.Name)).ToList();
 
         // Write synthetic inputs. 
         foreach (var inputDescriptor in syntheticInputs)
@@ -140,6 +164,38 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
                 };
 
                 activityModel[propertyName] = JsonSerializer.SerializeToNode(inputModel, inputModel.GetType(), newOptions);
+            }
+        }
+        
+        // Write synthetic outputs. 
+        foreach (var outputDescriptor in syntheticOutputs)
+        {
+            var outputName = outputDescriptor.Name;
+            var propertyName = outputName.Camelize();
+            
+            if (value.SyntheticProperties.TryGetValue(outputName, out var outputValue))
+            {
+                var output = (Output?)outputValue;
+
+                if (output == null)
+                {
+                    activityModel[propertyName] = null;
+                    continue;
+                }
+                
+                var outputType = outputDescriptor.Type;
+                var memoryReferenceId = output.MemoryBlockReference().Id;
+                
+                var outputModel = new
+                {
+                    TypeName = outputType,
+                    MemoryReference = new
+                    {
+                        Id = memoryReferenceId
+                    }
+                };
+
+                activityModel[propertyName] = JsonSerializer.SerializeToNode(outputModel, outputModel.GetType(), newOptions);
             }
         }
         

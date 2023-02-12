@@ -44,6 +44,7 @@ export namespace Components {
     interface ElsaActivityPropertiesEditor {
         "activity"?: Activity;
         "hide": () => Promise<void>;
+        "outputs": Array<OutputDefinition>;
         "show": () => Promise<void>;
         "variables": Array<Variable>;
         "workflowDefinitionId": string;
@@ -868,6 +869,7 @@ declare namespace LocalJSX {
         "activity"?: Activity;
         "onActivityUpdated"?: (event: ElsaActivityPropertiesEditorCustomEvent<ActivityUpdatedArgs>) => void;
         "onDeleteActivityRequested"?: (event: ElsaActivityPropertiesEditorCustomEvent<DeleteActivityRequestedArgs>) => void;
+        "outputs"?: Array<OutputDefinition>;
         "variables"?: Array<Variable>;
         "workflowDefinitionId"?: string;
     }

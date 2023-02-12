@@ -10,6 +10,7 @@ import {isNullOrWhitespace} from "../../../utils";
 import descriptorsStore from "../../../data/descriptors-store";
 import {ActivityUpdatedArgs, DeleteActivityRequestedArgs} from "../models/ui";
 import InputControlSwitchContextState from "../../../components/shared/input-control-switch/state";
+import {OutputDefinition} from "../models/entities";
 
 @Component({
   tag: 'elsa-activity-properties-editor',
@@ -26,6 +27,7 @@ export class ActivityPropertiesEditor {
   @Prop() workflowDefinitionId: string;
   @Prop() activity?: Activity;
   @Prop() variables: Array<Variable> = [];
+  @Prop() outputs: Array<OutputDefinition> = [];
 
   @Event() activityUpdated: EventEmitter<ActivityUpdatedArgs>;
   @Event() deleteActivityRequested: EventEmitter<DeleteActivityRequestedArgs>;
@@ -242,15 +244,18 @@ export class ActivityPropertiesEditor {
     this.updateActivity(propertyName);
   }
 
-  private onOutputPropertyEditorChanged = (outputDescriptor: OutputDescriptor, variableName: string) => {
+  private onOutputPropertyEditorChanged = (outputDescriptor: OutputDescriptor, outputTargetValue: string) => {
     const activity = this.activity;
     const propertyName = outputDescriptor.name;
     const camelCasePropertyName = camelCase(propertyName);
+    const outputTargetValuePair = outputTargetValue.split(':');
+    const kind = outputTargetValuePair[0];
+    const outputTargetId = outputTargetValuePair[1];
 
     const property: ActivityOutput = {
       typeName: outputDescriptor.typeName,
       memoryReference: {
-        id: variableName
+        id: outputTargetId
       }
     }
 
@@ -315,9 +320,17 @@ export class ActivityPropertiesEditor {
   private renderOutputTab = () => {
     const {activity, activityDescriptor} = this.renderContext;
     const outputs = activityDescriptor.outputs;
+    const outputDefinitions = this.outputs || [];
+    const variables = this.variables || [];
     const activityId = activity.id;
     const key = `${activityId}`;
-    const variableOptions: Array<any> = [null, {label: 'Variables', items: [...this.variables.map(x => ({value: x.name, name: x.name}))]}];
+    const outputTargetOptions: Array<any> = [null];
+
+    if(variables.length > 0)
+      outputTargetOptions.push({label: 'Variables', items: [...variables.map(x => ({value: x.name, name: x.name}))], kind: 'variable'});
+
+    if(outputDefinitions.length > 0)
+      outputTargetOptions.push({label: 'Outputs', items: [...outputDefinitions.map(x => ({value: x.name, name: x.name}))], kind: 'output'});
 
     return <div key={key}>
       {outputs.map(propertyDescriptor => {
@@ -334,18 +347,18 @@ export class ActivityPropertiesEditor {
 
             <div class="relative">
               <select onChange={e => this.onOutputPropertyEditorChanged(propertyDescriptor, (e.currentTarget as HTMLSelectElement).value)}>
-                {variableOptions.map(group => {
-                  if (!group) {
+                {outputTargetOptions.map(outputTarget => {
+                  if (!outputTarget) {
                     return <option value="" selected={!propertyValue?.memoryReference?.id}>-</option>
                   }
 
-                  const items = group.items;
+                  const items = outputTarget.items;
 
                   return (
-                    <optgroup label={group.label}>
-                      {items.map(variable => {
-                        const isSelected = propertyValue?.memoryReference?.id == variable.value;
-                        return <option value={variable.value} selected={isSelected}>{variable.name}</option>;
+                    <optgroup label={outputTarget.label}>
+                      {items.map(item => {
+                        const isSelected = propertyValue?.memoryReference?.id == item.value;
+                        return <option value={`${item.kind}:${item.value}`} selected={isSelected}>{item.name}</option>;
                       })}
                     </optgroup>);
                 })}

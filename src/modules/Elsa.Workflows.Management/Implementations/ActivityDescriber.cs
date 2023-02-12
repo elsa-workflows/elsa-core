@@ -123,6 +123,9 @@ public class ActivityDescriber : IActivityDescriber
     public IEnumerable<InputDescriptor> DescribeInputProperties([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]Type activityType) => 
         DescribeInputProperties(GetInputProperties(activityType));
     
+    public IEnumerable<OutputDescriptor> DescribeOutputProperties([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]Type activityType) => 
+        DescribeOutputProperties(GetOutputProperties(activityType));
+    
     public IEnumerable<InputDescriptor> DescribeInputProperties(IEnumerable<PropertyInfo> properties)
     {
         foreach (var propertyInfo in properties)
