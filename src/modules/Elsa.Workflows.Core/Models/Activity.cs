@@ -34,39 +34,40 @@ public abstract class Activity : IActivity, ISignalHandler
         Type = activityType;
         Version = version;
     }
-    
+
     /// <inheritdoc />
     public string Id { get; set; } = default!;
-    
+
     /// <inheritdoc />
     public string Type { get; set; }
-    
+
     /// <inheritdoc />
     public int Version { get; set; }
-    
+
     /// <inheritdoc />
     public bool CanStartWorkflow { get; set; }
 
     /// <inheritdoc />
     public bool RunAsynchronously { get; set; }
-    
+
     /// <inheritdoc />
     public IDictionary<string, object> CustomProperties { get; set; } = new Dictionary<string, object>();
 
 
     /// <inheritdoc />
+    [JsonIgnore]
     public IDictionary<string, object> SyntheticProperties { get; set; } = new Dictionary<string, object>();
-    
+
     /// <summary>
     /// Automatically set to the current source file name when instantiating this activity inside of a workflow class or composite activity class.
     /// </summary>
     public string? Source { get; set; }
-    
+
     /// <summary>
     /// Automatically set to the current line of code when instantiating this activity inside of a workflow class or composite activity class.
     /// </summary>
     public int? Line { get; set; }
-    
+
     /// <summary>
     /// Stores metadata such as x and y coordinates when created via the designer.
     /// </summary>
@@ -86,7 +87,7 @@ public abstract class Activity : IActivity, ISignalHandler
         Execute(context);
         return ValueTask.CompletedTask;
     }
-    
+
     /// <summary>
     /// Override this method to implement activity-specific logic.
     /// </summary>
@@ -114,7 +115,7 @@ public abstract class Activity : IActivity, ISignalHandler
     /// Register a signal handler delegate.
     /// </summary>
     protected void OnSignalReceived(Type signalType, Func<object, SignalContext, ValueTask> handler) => _signalHandlers.Add(new SignalHandlerRegistration(signalType, handler));
-    
+
     /// <summary>
     /// Register a signal handler delegate.
     /// </summary>
@@ -131,7 +132,7 @@ public abstract class Activity : IActivity, ISignalHandler
             return ValueTask.CompletedTask;
         });
     }
-    
+
     /// <summary>
     /// Notify the workflow that this activity completed.
     /// </summary>

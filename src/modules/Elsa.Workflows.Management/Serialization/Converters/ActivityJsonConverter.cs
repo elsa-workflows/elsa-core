@@ -1,6 +1,4 @@
-using System.Reflection;
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Models;
 using Elsa.Expressions.Services;
@@ -10,7 +8,6 @@ using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Services;
 using Humanizer;
-using String = System.String;
 
 namespace Elsa.Workflows.Management.Serialization.Converters;
 
@@ -79,7 +76,7 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
             var nakedType = inputDefinition.Type;
             var wrappedType = typeof(Input<>).MakeGenericType(nakedType);
                     
-            if (doc.RootElement.TryGetProperty(propertyName, out var propertyElement))
+            if (doc.RootElement.TryGetProperty(propertyName, out var propertyElement) && propertyElement.ValueKind != JsonValueKind.Null && propertyElement.ValueKind != JsonValueKind.Undefined)
             {
                 var json = propertyElement.ToString();
                 var inputValue = JsonSerializer.Deserialize(json, wrappedType, newOptions);
@@ -106,7 +103,7 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
         var typedInputs = _activityDescriber.DescribeInputProperties(activityType).ToDictionary(x => x.Name);
         var syntheticInputs = activityDescriptor.Inputs.Where(x => !typedInputs.ContainsKey(x.Name)).ToList(); 
 
-        // Store synthetic inputs in a property bag. 
+        // Write out synthetic inputs. 
         foreach (var inputDescriptor in syntheticInputs)
         {
             var inputName = inputDescriptor.Name;
@@ -124,7 +121,7 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
                 
                 var expression = input.Expression;
                 var expressionType = expression.GetType();
-                var targetType = value.Type;
+                var inputType = input.Type;
                 var memoryReferenceId = input.MemoryBlockReference().Id;
                 var expressionSyntaxDescriptor = _expressionSyntaxRegistry.Find(x => x.Type == expressionType);
 
@@ -133,7 +130,7 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
 
                 var inputModel = new
                 {
-                    TypeName = targetType,
+                    TypeName = inputType,
                     Expression = expressionSyntaxDescriptor.CreateSerializableObject(new SerializableObjectConstructorContext(expression)),
                     MemoryReference = new
                     {
@@ -141,11 +138,11 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
                     }
                 };
 
-                activityModel[propertyName] = JsonSerializer.SerializeToNode(inputModel);
+                activityModel[propertyName] = JsonSerializer.SerializeToNode(inputModel, inputModel.GetType(), newOptions);
             }
         }
         
         // Send the model to the writer.
-        JsonSerializer.Serialize(writer, activityModel);
+        JsonSerializer.Serialize(writer, activityModel, newOptions);
     }
 }

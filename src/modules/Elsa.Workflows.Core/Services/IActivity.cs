@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Workflows.Core.Services;
@@ -43,6 +44,7 @@ public interface IActivity
     /// <summary>
     /// Synthetic properties are dynamic properties not found on the activity class itself.
     /// </summary>
+    [JsonIgnore]
     IDictionary<string, object> SyntheticProperties { get; set; }
 
     /// <summary>

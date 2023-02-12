@@ -156,9 +156,6 @@ export class InputControlSwitch {
     const showMonaco = !!selectedSyntax && selectedSyntax != 'Literal' && !!this.supportedSyntaxes.find(x => x === selectedSyntax);
     const expressionEditorClass = showMonaco ? 'block' : 'hidden';
     const defaultEditorClass = showMonaco ? 'hidden' : 'block';
-    const propertyType = "Object";
-    const typeDescriptor = descriptorsStore.variableDescriptors.find(x => x.typeName == propertyType);
-    const propertyTypeName = typeDescriptor?.displayName ?? propertyType;
 
     return (
       <div>
