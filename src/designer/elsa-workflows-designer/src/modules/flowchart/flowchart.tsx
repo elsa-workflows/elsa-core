@@ -609,12 +609,10 @@ export class FlowchartComponent {
     await this.updateModel();
     this.graphUpdated.emit();
   }
-
   private onNodeRemoved = (e: any) => {
     const activity = e.node.data as Activity;
     this.activityDeleted.emit({activity});
   };
-
   private onNodeAdded = async (e: any) => {
     const activity = e.node.data as Activity;
     const activityDescriptor = this.getActivityDescriptor(activity.type);
@@ -622,13 +620,11 @@ export class FlowchartComponent {
     e.node.activity = {...activity};
     await this.onGraphChanged(e);
   };
-
   private onToggleCanStartWorkflowClicked = (node: ActivityNodeShape) => {
     const activity = node.data as Activity;
     activity.canStartWorkflow = !activity.canStartWorkflow;
     node.activity = {...activity};
   };
-
   private onDeleteActivityClicked = (node: ActivityNodeShape) => {
     let cells = this.graph.getSelectedCells();
 
@@ -642,7 +638,6 @@ export class FlowchartComponent {
       this.activityDeleted.emit({activity: activity});
     }
   };
-
   private onCopyActivityClicked = (node: ActivityNodeShape) => {
     let cells = this.graph.getSelectedCells();
 

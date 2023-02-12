@@ -39,36 +39,6 @@ export class Studio {
     settings.monacoLibPath = value;
   }
 
-  // @Listen('workflowInstanceSelected')
-  // private async handleWorkflowInstanceSelected(e: CustomEvent<WorkflowInstanceSummary>) {
-  //   const workflowManagerElement = this.workflowManagerElement;
-  //
-  //   if (!workflowManagerElement)
-  //     return;
-  //
-  //   const workflowInstanceSummary = e.detail;
-  //   const definitionId = workflowInstanceSummary.definitionId;
-  //   const version = workflowInstanceSummary.version;
-  //   const versionOptions: VersionOptions = {version};
-  //   const workflowDefinition = await this.elsaClient.workflowDefinitions.get({definitionId, versionOptions});
-  //   const workflowInstance = await this.elsaClient.workflowInstances.get({id: workflowInstanceSummary.id});
-  //
-  //   workflowManagerElement.workflowDefinition = workflowDefinition;
-  //   workflowManagerElement.workflowInstance = workflowInstance;
-  // }
-
-  // @Listen('unPublishClicked')
-  // private async handleUnPublishClicked(e: CustomEvent) {
-  //   const workflowManagerElement = this.workflowManagerElement;
-  //
-  //   if (!workflowManagerElement) return;
-  //
-  //   const workflow = await workflowManagerElement.getWorkflowDefinition();
-  //   await this.eventBus.emit(NotificationEventTypes.Add, this, {id: workflow.definitionId, message: `Starting unpublishing ${workflow.name}`});
-  //   await this.retractWorkflowDefinition(workflow);
-  //   await this.eventBus.emit(NotificationEventTypes.Update, this, {id: workflow.definitionId, message: `${workflow.name} unpublish finished`});
-  // }
-
   async componentWillLoad() {
     this.handleMonacoLibPath(this.monacoLibPath);
     this.handleServerUrl(this.serverUrl);
@@ -76,12 +46,6 @@ export class Studio {
     await this.eventBus.emit(EventTypes.Studio.Initializing, this);
     await this.pluginRegistry.initialize();
   }
-
-  // private retractWorkflowDefinition = async (definition: WorkflowDefinition): Promise<WorkflowDefinition> => {
-  //   const updatedWorkflow = await this.workflowDefinitionManager.retractWorkflow(definition);
-  //   await this.workflowManagerElement.updateWorkflowDefinition(updatedWorkflow);
-  //   return updatedWorkflow;
-  // }
 
   render() {
     return <Host>
