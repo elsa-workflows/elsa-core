@@ -1,6 +1,7 @@
 import {Component, h, Prop, State, Watch} from "@stencil/core";
 import {Addon, Graph} from '@antv/x6';
 import groupBy from 'lodash/groupBy';
+import uniqBy from 'lodash/uniqBy';
 import {Container} from 'typedi';
 import {ActivityDescriptor} from "../../../models";
 import descriptorsStore from "../../../data/descriptors-store";
@@ -43,14 +44,18 @@ export class ToolboxActivities {
     const expandedCategories = this.expandedCategories;
     const isExpanded = !!expandedCategories.find(x => x == category);
 
-    if(isExpanded)
+    if (isExpanded)
       this.expandedCategories = expandedCategories.filter(x => x != category);
     else
       this.expandedCategories = [...expandedCategories, category];
   }
 
   buildModel = (): any => {
-    const browsableDescriptors = descriptorsStore.activityDescriptors.filter(x => x.isBrowsable);
+    const browsableDescriptors = uniqBy(descriptorsStore.activityDescriptors
+      .filter(x => x.isBrowsable)
+      .sort((a, b) => a.version > b.version ? 1 : -1), x => `${x.typeName}:${x.version}`);
+
+    debugger;
     const categorizedActivitiesLookup = groupBy(browsableDescriptors, x => x.category);
     const categories = Object.keys(categorizedActivitiesLookup).sort((a, b) => a.localeCompare(b));
     const renderedActivities: Map<string, string> = new Map<string, string>();
@@ -86,7 +91,7 @@ export class ToolboxActivities {
   render() {
 
     const model = this.buildModel();
-    const categoryModels:Array<ActivityCategoryModel> = model.categories;
+    const categoryModels: Array<ActivityCategoryModel> = model.categories;
     const renderedActivities = model.activities;
 
     return <nav class="flex-1 px-2 space-y-1 font-sans text-sm text-gray-600">

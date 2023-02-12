@@ -153,7 +153,7 @@ export class ActivityPropertiesEditor {
     );
   }
 
-  private findActivityDescriptor = (): ActivityDescriptor => !!this.activity ? descriptorsStore.activityDescriptors.find(x => x.typeName == this.activity.type) : null;
+  private findActivityDescriptor = (): ActivityDescriptor => !!this.activity ? descriptorsStore.activityDescriptors.find(x => x.typeName == this.activity.type && x.version == this.activity.version) : null;
   private onSelectedTabIndexChanged = (e: CustomEvent<TabChangedArgs>) => this.selectedTabIndex = e.detail.selectedTabIndex
 
   private onActivityIdChanged = (e: any) => {

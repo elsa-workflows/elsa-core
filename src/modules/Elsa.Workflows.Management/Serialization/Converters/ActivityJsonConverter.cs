@@ -60,6 +60,7 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
             var notFoundActivity = (NotFoundActivity)_activityFactory.Create(typeof(NotFoundActivity), notFoundContext);
 
             notFoundActivity.Type = ActivityTypeNameHelper.GenerateTypeName<NotFoundActivity>();
+            notFoundActivity.Version = 1;
             notFoundActivity.MissingTypeName = activityTypeName;
             notFoundActivity.MissingTypeVersion = activityTypeVersion;
             return notFoundActivity;
