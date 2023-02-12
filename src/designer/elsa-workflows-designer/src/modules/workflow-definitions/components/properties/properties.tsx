@@ -1,14 +1,14 @@
 import {Component, Event, EventEmitter, h, Method, Prop, State, Watch} from '@stencil/core';
 import {Container} from "typedi";
-import {EventBus} from "../../../services";
-import {InputDefinition, WorkflowDefinition, WorkflowOptions} from "../models/entities";
-import {PropertiesTabModel, TabModel, Widget, WorkflowDefinitionPropsUpdatedArgs, WorkflowPropertiesEditorDisplayingArgs, WorkflowPropertiesEditorEventTypes, WorkflowPropertiesEditorModel} from "../models/ui";
-import {FormEntry} from "../../../components/shared/forms/form-entry";
-import {isNullOrWhitespace} from "../../../utils";
-import {InfoList} from "../../../components/shared/forms/info-list";
-import {TabChangedArgs, Variable, VersionedEntity} from "../../../models";
-import {WorkflowDefinitionsApi} from "../services/api";
-import descriptorsStore from "../../../data/descriptors-store";
+import {EventBus} from "../../../../services";
+import {InputDefinition, OutputDefinition, WorkflowDefinition, WorkflowOptions} from "../../models/entities";
+import {PropertiesTabModel, TabModel, Widget, WorkflowDefinitionPropsUpdatedArgs, WorkflowPropertiesEditorDisplayingArgs, WorkflowPropertiesEditorEventTypes, WorkflowPropertiesEditorModel} from "../../models/ui";
+import {FormEntry} from "../../../../components/shared/forms/form-entry";
+import {isNullOrWhitespace} from "../../../../utils";
+import {InfoList} from "../../../../components/shared/forms/info-list";
+import {TabChangedArgs, Variable} from "../../../../models";
+import {WorkflowDefinitionsApi} from "../../services/api";
+import descriptorsStore from "../../../../data/descriptors-store";
 
 @Component({
   tag: 'elsa-workflow-definition-properties-editor',
@@ -130,6 +130,7 @@ export class WorkflowDefinitionPropertiesEditor {
 
     propertiesTabModel.tab = {
       displayText: 'Properties',
+      order: 0,
       content: () => this.renderPropertiesTab(propertiesTabModel)
     };
 
@@ -137,15 +138,8 @@ export class WorkflowDefinitionPropertiesEditor {
       name: 'variables',
       tab: {
         displayText: 'Variables',
+        order: 5,
         content: () => this.renderVariablesTab()
-      }
-    }
-
-    const inputOutputTabModel: TabModel = {
-      name: 'input-output',
-      tab: {
-        displayText: 'Arguments',
-        content: () => this.renderInputOutputTab()
       }
     }
 
@@ -178,6 +172,7 @@ export class WorkflowDefinitionPropertiesEditor {
           <select name="workflowActivityFeature" onChange={e => this.onPropertyEditorChanged(wf => {
             const selectElement = (e.target as HTMLSelectElement);
             wf.usableAsActivity = selectElement.value != "false";
+            this.createModel();
           })}>
             <option value="false" selected={!this.workflowDefinition.usableAsActivity}>No</option>
             <option value="true" selected={this.workflowDefinition.usableAsActivity}>Yes</option>
@@ -190,7 +185,17 @@ export class WorkflowDefinitionPropertiesEditor {
       name: 'settings',
       tab: {
         displayText: 'Settings',
+        order: 10,
         content: () => <elsa-widgets widgets={settingsWidgets}/>
+      }
+    }
+
+    const activityTabModel: TabModel = {
+      name: 'activity',
+      tab: {
+        displayText: 'Activity',
+        order: 15,
+        content: () => this.renderActivitySettingsTab()
       }
     }
 
@@ -198,11 +203,15 @@ export class WorkflowDefinitionPropertiesEditor {
       name: 'versionHistory',
       tab: {
         displayText: 'Version History',
+        order: 20,
         content: () => this.renderVersionHistoryTab()
       }
     }
 
-    model.tabModels = [propertiesTabModel, variablesTabModel, inputOutputTabModel, settingsTabModel, versionHistoryTabModel];
+    model.tabModels = [propertiesTabModel, variablesTabModel, settingsTabModel, versionHistoryTabModel];
+
+    if(workflowDefinition.usableAsActivity)
+      model.tabModels.push(activityTabModel);
 
     const args: WorkflowPropertiesEditorDisplayingArgs = {model};
 
@@ -221,11 +230,17 @@ export class WorkflowDefinitionPropertiesEditor {
     </div>
   };
 
-  private renderInputOutputTab = () => {
+  private renderActivitySettingsTab = () => {
     const inputs: Array<InputDefinition> = this.workflowDefinition?.inputs ?? [];
+    const outputs: Array<OutputDefinition> = this.workflowDefinition?.outputs ?? [];
 
     return <div>
-      <elsa-input-output-editor inputs={inputs} onInputsChanged={e => this.onInputsUpdated(e)}/>
+      <elsa-workflow-definition-activity-settings
+        inputs={inputs}
+        outputs={outputs}
+        onInputsChanged={e => this.onInputsUpdated(e)}
+        onOutputsChanged={e => this.onOutputsUpdated(e)}
+      />
     </div>
   };
 
@@ -264,6 +279,17 @@ export class WorkflowDefinitionPropertiesEditor {
       return;
 
     workflowDefinition.inputs = e.detail;
+    this.workflowPropsUpdated.emit({workflowDefinition});
+    await this.createModel();
+  }
+
+  private onOutputsUpdated = async (e: CustomEvent<Array<OutputDefinition>>) => {
+    const workflowDefinition = this.workflowDefinition;
+
+    if (!workflowDefinition)
+      return;
+
+    workflowDefinition.outputs = e.detail;
     this.workflowPropsUpdated.emit({workflowDefinition});
     await this.createModel();
   }

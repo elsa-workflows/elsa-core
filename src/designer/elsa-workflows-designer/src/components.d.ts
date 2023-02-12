@@ -5,6 +5,7 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
+import { InputDefinition, OutputDefinition, WorkflowDefinition, WorkflowDefinitionSummary } from "./modules/workflow-definitions/models/entities";
 import { Activity, ActivityDeletedArgs, ActivitySelectedArgs, ChildActivitySelectedArgs, ContainerSelectedArgs, EditChildActivityArgs, GraphUpdatedArgs, IntellisenseContext, SelectListItem, TabChangedArgs, TabDefinition, Variable, WorkflowInstance, WorkflowInstanceSummary, WorkflowUpdatedArgs } from "./models";
 import { ActivityUpdatedArgs, DeleteActivityRequestedArgs, Widget, WorkflowDefinitionPropsUpdatedArgs, WorkflowDefinitionUpdatedArgs } from "./modules/workflow-definitions/models/ui";
 import { NotificationType } from "./modules/notifications/models";
@@ -18,7 +19,6 @@ import { OutNode } from "@antv/layout";
 import { ActivityNodeShape } from "./modules/flowchart/shapes";
 import { PanelActionClickArgs, PanelActionDefinition } from "./components/shared/form-panel/models";
 import { ExpressionChangedArs } from "./components/shared/input-control-switch/input-control-switch";
-import { InputDefinition, WorkflowDefinition, WorkflowDefinitionSummary } from "./modules/workflow-definitions/models/entities";
 import { SignedInArgs } from "./modules/login/models";
 import { ModalActionClickArgs, ModalActionDefinition, ModalDialogInstance } from "./components/shared/modal-dialog/models";
 import { ModalType } from "./components/shared/modal-dialog/modal-type";
@@ -28,6 +28,14 @@ import { PanelPosition, PanelStateChangedArgs } from "./components/panel/models"
 import { ActivityDriverRegistry } from "./services";
 import { PublishClickedArgs } from "./modules/workflow-definitions/components/publish-button";
 export namespace Components {
+    interface ElsaActivityInputEditorDialogContent {
+        "getInput": () => Promise<InputDefinition>;
+        "input": InputDefinition;
+    }
+    interface ElsaActivityOutputEditorDialogContent {
+        "getOutput": () => Promise<OutputDefinition>;
+        "output": OutputDefinition;
+    }
     interface ElsaActivityProperties {
         "activity"?: Activity;
         "hide": () => Promise<void>;
@@ -129,13 +137,6 @@ export namespace Components {
         "supportedSyntaxes": Array<string>;
         "syntax"?: string;
         "workflowDefinitionId": string;
-    }
-    interface ElsaInputDefinitionEditorDialogContent {
-        "getInput": () => Promise<InputDefinition>;
-        "input": InputDefinition;
-    }
-    interface ElsaInputOutputEditor {
-        "inputs"?: Array<InputDefinition>;
     }
     interface ElsaInputTags {
         "fieldId"?: string;
@@ -244,6 +245,10 @@ export namespace Components {
     interface ElsaWidgets {
         "widgets": Array<Widget>;
     }
+    interface ElsaWorkflowDefinitionActivitySettings {
+        "inputs"?: Array<InputDefinition>;
+        "outputs"?: Array<OutputDefinition>;
+    }
     interface ElsaWorkflowDefinitionBrowser {
     }
     interface ElsaWorkflowDefinitionEditor {
@@ -311,6 +316,14 @@ export namespace Components {
     interface ElsaWorkflowToolbarMenu {
     }
 }
+export interface ElsaActivityInputEditorDialogContentCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLElsaActivityInputEditorDialogContentElement;
+}
+export interface ElsaActivityOutputEditorDialogContentCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLElsaActivityOutputEditorDialogContentElement;
+}
 export interface ElsaActivityPropertiesEditorCustomEvent<T> extends CustomEvent<T> {
     detail: T;
     target: HTMLElsaActivityPropertiesEditorElement;
@@ -334,14 +347,6 @@ export interface ElsaFormPanelCustomEvent<T> extends CustomEvent<T> {
 export interface ElsaInputControlSwitchCustomEvent<T> extends CustomEvent<T> {
     detail: T;
     target: HTMLElsaInputControlSwitchElement;
-}
-export interface ElsaInputDefinitionEditorDialogContentCustomEvent<T> extends CustomEvent<T> {
-    detail: T;
-    target: HTMLElsaInputDefinitionEditorDialogContentElement;
-}
-export interface ElsaInputOutputEditorCustomEvent<T> extends CustomEvent<T> {
-    detail: T;
-    target: HTMLElsaInputOutputEditorElement;
 }
 export interface ElsaInputTagsCustomEvent<T> extends CustomEvent<T> {
     detail: T;
@@ -387,6 +392,10 @@ export interface ElsaVariablesEditorCustomEvent<T> extends CustomEvent<T> {
     detail: T;
     target: HTMLElsaVariablesEditorElement;
 }
+export interface ElsaWorkflowDefinitionActivitySettingsCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLElsaWorkflowDefinitionActivitySettingsElement;
+}
 export interface ElsaWorkflowDefinitionBrowserCustomEvent<T> extends CustomEvent<T> {
     detail: T;
     target: HTMLElsaWorkflowDefinitionBrowserElement;
@@ -420,6 +429,18 @@ export interface ElsaWorkflowPublishButtonCustomEvent<T> extends CustomEvent<T> 
     target: HTMLElsaWorkflowPublishButtonElement;
 }
 declare global {
+    interface HTMLElsaActivityInputEditorDialogContentElement extends Components.ElsaActivityInputEditorDialogContent, HTMLStencilElement {
+    }
+    var HTMLElsaActivityInputEditorDialogContentElement: {
+        prototype: HTMLElsaActivityInputEditorDialogContentElement;
+        new (): HTMLElsaActivityInputEditorDialogContentElement;
+    };
+    interface HTMLElsaActivityOutputEditorDialogContentElement extends Components.ElsaActivityOutputEditorDialogContent, HTMLStencilElement {
+    }
+    var HTMLElsaActivityOutputEditorDialogContentElement: {
+        prototype: HTMLElsaActivityOutputEditorDialogContentElement;
+        new (): HTMLElsaActivityOutputEditorDialogContentElement;
+    };
     interface HTMLElsaActivityPropertiesElement extends Components.ElsaActivityProperties, HTMLStencilElement {
     }
     var HTMLElsaActivityPropertiesElement: {
@@ -521,18 +542,6 @@ declare global {
     var HTMLElsaInputControlSwitchElement: {
         prototype: HTMLElsaInputControlSwitchElement;
         new (): HTMLElsaInputControlSwitchElement;
-    };
-    interface HTMLElsaInputDefinitionEditorDialogContentElement extends Components.ElsaInputDefinitionEditorDialogContent, HTMLStencilElement {
-    }
-    var HTMLElsaInputDefinitionEditorDialogContentElement: {
-        prototype: HTMLElsaInputDefinitionEditorDialogContentElement;
-        new (): HTMLElsaInputDefinitionEditorDialogContentElement;
-    };
-    interface HTMLElsaInputOutputEditorElement extends Components.ElsaInputOutputEditor, HTMLStencilElement {
-    }
-    var HTMLElsaInputOutputEditorElement: {
-        prototype: HTMLElsaInputOutputEditorElement;
-        new (): HTMLElsaInputOutputEditorElement;
     };
     interface HTMLElsaInputTagsElement extends Components.ElsaInputTags, HTMLStencilElement {
     }
@@ -684,6 +693,12 @@ declare global {
         prototype: HTMLElsaWidgetsElement;
         new (): HTMLElsaWidgetsElement;
     };
+    interface HTMLElsaWorkflowDefinitionActivitySettingsElement extends Components.ElsaWorkflowDefinitionActivitySettings, HTMLStencilElement {
+    }
+    var HTMLElsaWorkflowDefinitionActivitySettingsElement: {
+        prototype: HTMLElsaWorkflowDefinitionActivitySettingsElement;
+        new (): HTMLElsaWorkflowDefinitionActivitySettingsElement;
+    };
     interface HTMLElsaWorkflowDefinitionBrowserElement extends Components.ElsaWorkflowDefinitionBrowser, HTMLStencilElement {
     }
     var HTMLElsaWorkflowDefinitionBrowserElement: {
@@ -775,6 +790,8 @@ declare global {
         new (): HTMLElsaWorkflowToolbarMenuElement;
     };
     interface HTMLElementTagNameMap {
+        "elsa-activity-input-editor-dialog-content": HTMLElsaActivityInputEditorDialogContentElement;
+        "elsa-activity-output-editor-dialog-content": HTMLElsaActivityOutputEditorDialogContentElement;
         "elsa-activity-properties": HTMLElsaActivityPropertiesElement;
         "elsa-activity-properties-editor": HTMLElsaActivityPropertiesEditorElement;
         "elsa-awhile-notifications": HTMLElsaAwhileNotificationsElement;
@@ -792,8 +809,6 @@ declare global {
         "elsa-form-panel": HTMLElsaFormPanelElement;
         "elsa-home-page": HTMLElsaHomePageElement;
         "elsa-input-control-switch": HTMLElsaInputControlSwitchElement;
-        "elsa-input-definition-editor-dialog-content": HTMLElsaInputDefinitionEditorDialogContentElement;
-        "elsa-input-output-editor": HTMLElsaInputOutputEditorElement;
         "elsa-input-tags": HTMLElsaInputTagsElement;
         "elsa-input-tags-dropdown": HTMLElsaInputTagsDropdownElement;
         "elsa-label-picker": HTMLElsaLabelPickerElement;
@@ -819,6 +834,7 @@ declare global {
         "elsa-variables-editor": HTMLElsaVariablesEditorElement;
         "elsa-variables-viewer": HTMLElsaVariablesViewerElement;
         "elsa-widgets": HTMLElsaWidgetsElement;
+        "elsa-workflow-definition-activity-settings": HTMLElsaWorkflowDefinitionActivitySettingsElement;
         "elsa-workflow-definition-browser": HTMLElsaWorkflowDefinitionBrowserElement;
         "elsa-workflow-definition-editor": HTMLElsaWorkflowDefinitionEditorElement;
         "elsa-workflow-definition-editor-toolbar": HTMLElsaWorkflowDefinitionEditorToolbarElement;
@@ -837,6 +853,14 @@ declare global {
     }
 }
 declare namespace LocalJSX {
+    interface ElsaActivityInputEditorDialogContent {
+        "input"?: InputDefinition;
+        "onInputChanged"?: (event: ElsaActivityInputEditorDialogContentCustomEvent<InputDefinition>) => void;
+    }
+    interface ElsaActivityOutputEditorDialogContent {
+        "onOutputChanged"?: (event: ElsaActivityOutputEditorDialogContentCustomEvent<OutputDefinition>) => void;
+        "output"?: OutputDefinition;
+    }
     interface ElsaActivityProperties {
         "activity"?: Activity;
     }
@@ -935,14 +959,6 @@ declare namespace LocalJSX {
         "supportedSyntaxes"?: Array<string>;
         "syntax"?: string;
         "workflowDefinitionId"?: string;
-    }
-    interface ElsaInputDefinitionEditorDialogContent {
-        "input"?: InputDefinition;
-        "onInputChanged"?: (event: ElsaInputDefinitionEditorDialogContentCustomEvent<InputDefinition>) => void;
-    }
-    interface ElsaInputOutputEditor {
-        "inputs"?: Array<InputDefinition>;
-        "onInputsChanged"?: (event: ElsaInputOutputEditorCustomEvent<Array<InputDefinition>>) => void;
     }
     interface ElsaInputTags {
         "fieldId"?: string;
@@ -1057,6 +1073,12 @@ declare namespace LocalJSX {
     interface ElsaWidgets {
         "widgets"?: Array<Widget>;
     }
+    interface ElsaWorkflowDefinitionActivitySettings {
+        "inputs"?: Array<InputDefinition>;
+        "onInputsChanged"?: (event: ElsaWorkflowDefinitionActivitySettingsCustomEvent<Array<InputDefinition>>) => void;
+        "onOutputsChanged"?: (event: ElsaWorkflowDefinitionActivitySettingsCustomEvent<Array<OutputDefinition>>) => void;
+        "outputs"?: Array<OutputDefinition>;
+    }
     interface ElsaWorkflowDefinitionBrowser {
         "onNewWorkflowDefinitionSelected"?: (event: ElsaWorkflowDefinitionBrowserCustomEvent<any>) => void;
         "onWorkflowDefinitionSelected"?: (event: ElsaWorkflowDefinitionBrowserCustomEvent<WorkflowDefinitionSummary>) => void;
@@ -1126,6 +1148,8 @@ declare namespace LocalJSX {
     interface ElsaWorkflowToolbarMenu {
     }
     interface IntrinsicElements {
+        "elsa-activity-input-editor-dialog-content": ElsaActivityInputEditorDialogContent;
+        "elsa-activity-output-editor-dialog-content": ElsaActivityOutputEditorDialogContent;
         "elsa-activity-properties": ElsaActivityProperties;
         "elsa-activity-properties-editor": ElsaActivityPropertiesEditor;
         "elsa-awhile-notifications": ElsaAwhileNotifications;
@@ -1143,8 +1167,6 @@ declare namespace LocalJSX {
         "elsa-form-panel": ElsaFormPanel;
         "elsa-home-page": ElsaHomePage;
         "elsa-input-control-switch": ElsaInputControlSwitch;
-        "elsa-input-definition-editor-dialog-content": ElsaInputDefinitionEditorDialogContent;
-        "elsa-input-output-editor": ElsaInputOutputEditor;
         "elsa-input-tags": ElsaInputTags;
         "elsa-input-tags-dropdown": ElsaInputTagsDropdown;
         "elsa-label-picker": ElsaLabelPicker;
@@ -1170,6 +1192,7 @@ declare namespace LocalJSX {
         "elsa-variables-editor": ElsaVariablesEditor;
         "elsa-variables-viewer": ElsaVariablesViewer;
         "elsa-widgets": ElsaWidgets;
+        "elsa-workflow-definition-activity-settings": ElsaWorkflowDefinitionActivitySettings;
         "elsa-workflow-definition-browser": ElsaWorkflowDefinitionBrowser;
         "elsa-workflow-definition-editor": ElsaWorkflowDefinitionEditor;
         "elsa-workflow-definition-editor-toolbar": ElsaWorkflowDefinitionEditorToolbar;
@@ -1191,6 +1214,8 @@ export { LocalJSX as JSX };
 declare module "@stencil/core" {
     export namespace JSX {
         interface IntrinsicElements {
+            "elsa-activity-input-editor-dialog-content": LocalJSX.ElsaActivityInputEditorDialogContent & JSXBase.HTMLAttributes<HTMLElsaActivityInputEditorDialogContentElement>;
+            "elsa-activity-output-editor-dialog-content": LocalJSX.ElsaActivityOutputEditorDialogContent & JSXBase.HTMLAttributes<HTMLElsaActivityOutputEditorDialogContentElement>;
             "elsa-activity-properties": LocalJSX.ElsaActivityProperties & JSXBase.HTMLAttributes<HTMLElsaActivityPropertiesElement>;
             "elsa-activity-properties-editor": LocalJSX.ElsaActivityPropertiesEditor & JSXBase.HTMLAttributes<HTMLElsaActivityPropertiesEditorElement>;
             "elsa-awhile-notifications": LocalJSX.ElsaAwhileNotifications & JSXBase.HTMLAttributes<HTMLElsaAwhileNotificationsElement>;
@@ -1208,8 +1233,6 @@ declare module "@stencil/core" {
             "elsa-form-panel": LocalJSX.ElsaFormPanel & JSXBase.HTMLAttributes<HTMLElsaFormPanelElement>;
             "elsa-home-page": LocalJSX.ElsaHomePage & JSXBase.HTMLAttributes<HTMLElsaHomePageElement>;
             "elsa-input-control-switch": LocalJSX.ElsaInputControlSwitch & JSXBase.HTMLAttributes<HTMLElsaInputControlSwitchElement>;
-            "elsa-input-definition-editor-dialog-content": LocalJSX.ElsaInputDefinitionEditorDialogContent & JSXBase.HTMLAttributes<HTMLElsaInputDefinitionEditorDialogContentElement>;
-            "elsa-input-output-editor": LocalJSX.ElsaInputOutputEditor & JSXBase.HTMLAttributes<HTMLElsaInputOutputEditorElement>;
             "elsa-input-tags": LocalJSX.ElsaInputTags & JSXBase.HTMLAttributes<HTMLElsaInputTagsElement>;
             "elsa-input-tags-dropdown": LocalJSX.ElsaInputTagsDropdown & JSXBase.HTMLAttributes<HTMLElsaInputTagsDropdownElement>;
             "elsa-label-picker": LocalJSX.ElsaLabelPicker & JSXBase.HTMLAttributes<HTMLElsaLabelPickerElement>;
@@ -1235,6 +1258,7 @@ declare module "@stencil/core" {
             "elsa-variables-editor": LocalJSX.ElsaVariablesEditor & JSXBase.HTMLAttributes<HTMLElsaVariablesEditorElement>;
             "elsa-variables-viewer": LocalJSX.ElsaVariablesViewer & JSXBase.HTMLAttributes<HTMLElsaVariablesViewerElement>;
             "elsa-widgets": LocalJSX.ElsaWidgets & JSXBase.HTMLAttributes<HTMLElsaWidgetsElement>;
+            "elsa-workflow-definition-activity-settings": LocalJSX.ElsaWorkflowDefinitionActivitySettings & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionActivitySettingsElement>;
             "elsa-workflow-definition-browser": LocalJSX.ElsaWorkflowDefinitionBrowser & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionBrowserElement>;
             "elsa-workflow-definition-editor": LocalJSX.ElsaWorkflowDefinitionEditor & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionEditorElement>;
             "elsa-workflow-definition-editor-toolbar": LocalJSX.ElsaWorkflowDefinitionEditorToolbar & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionEditorToolbarElement>;

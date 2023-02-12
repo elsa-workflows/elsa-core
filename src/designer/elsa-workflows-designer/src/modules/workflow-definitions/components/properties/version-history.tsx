@@ -1,11 +1,11 @@
 import {Component, Event, EventEmitter, h, Prop, Watch} from '@stencil/core';
 import {Container} from "typedi";
-import {EventBus} from "../../../services";
-import {WorkflowDefinition} from "../models/entities";
-import {WorkflowDefinitionsApi} from "../services/api";
-import {DeleteIcon, RevertIcon, PublishedIcon} from "../../../components/icons/tooling";
+import {EventBus} from "../../../../services";
+import {WorkflowDefinition} from "../../models/entities";
+import {WorkflowDefinitionsApi} from "../../services/api";
+import {DeleteIcon, RevertIcon, PublishedIcon} from "../../../../components/icons/tooling";
 import moment from "moment";
-import {ModalDialogService, DefaultModalActions, DefaultContents, ModalType} from "../../../components/shared/modal-dialog";
+import {ModalDialogService, DefaultModalActions, DefaultContents, ModalType} from "../../../../components/shared/modal-dialog";
 
 @Component({
   tag: 'elsa-workflow-definition-version-history',

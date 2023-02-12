@@ -6,6 +6,7 @@ export interface WorkflowDefinition extends VersionedEntity {
   description?: string;
   variables?: Array<Variable>;
   inputs?: Array<InputDefinition>;
+  outputs?: Array<OutputDefinition>;
   customProperties?: Map<string, any>;
   materializerName: string;
   materializerContext?: string;
@@ -39,4 +40,7 @@ export interface ArgumentDefinition {
 
 export interface InputDefinition extends ArgumentDefinition {
   uiHint?: string;
+}
+
+export interface OutputDefinition extends ArgumentDefinition {
 }

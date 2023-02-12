@@ -61,6 +61,7 @@ internal class Post : ElsaEndpoint<WorkflowDefinitionRequest, WorkflowDefinition
         var stringData = JsonSerializer.Serialize(root, serializerOptions);
         var variables = _variableDefinitionMapper.Map(request.Variables).ToList();
         var inputs = request.Inputs ?? new List<InputDefinition>();
+        var outputs = request.Outputs ?? new List<OutputDefinition>();
 
         draft!.StringData = stringData;
         draft.MaterializerName = JsonWorkflowMaterializer.MaterializerName;
@@ -69,6 +70,7 @@ internal class Post : ElsaEndpoint<WorkflowDefinitionRequest, WorkflowDefinition
         draft.CustomProperties = request.CustomProperties ?? new Dictionary<string, object>();
         draft.Variables = variables;
         draft.Inputs = inputs;
+        draft.Outputs = outputs;
         draft.Options = request.Options;
         draft.UsableAsActivity = request.UsableAsActivity;
         draft = request.Publish ? await _workflowDefinitionPublisher.PublishAsync(draft, cancellationToken) : await _workflowDefinitionPublisher.SaveDraftAsync(draft, cancellationToken);
@@ -82,6 +84,7 @@ internal class Post : ElsaEndpoint<WorkflowDefinitionRequest, WorkflowDefinition
             draft.Version,
             request.Variables ?? new List<VariableDefinition>(),
             inputs,
+            outputs,
             draft.CustomProperties,
             draft.IsLatest,
             draft.IsPublished,

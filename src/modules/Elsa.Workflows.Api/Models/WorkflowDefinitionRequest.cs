@@ -12,6 +12,7 @@ internal class WorkflowDefinitionRequest
     public int? Version { get; set; }
     public ICollection<VariableDefinition>? Variables { get; set; } = default!;
     public ICollection<InputDefinition>? Inputs { get; set; } = default!;
+    public ICollection<OutputDefinition>? Outputs { get; set; } = default!;
     public IDictionary<string, object>? CustomProperties { get; set; } = default!;
     public IActivity? Root { get; set; } = default!;
     public WorkflowOptions? Options { get; set; }

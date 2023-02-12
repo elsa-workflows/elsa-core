@@ -186,6 +186,7 @@ export interface SaveWorkflowDefinitionRequest {
   root?: Activity;
   variables?: Array<Variable>;
   inputs?: Array<InputDefinition>;
+  outputs?: Array<InputDefinition>;
   options?: WorkflowOptions;
   usableAsActivity?: boolean;
 }

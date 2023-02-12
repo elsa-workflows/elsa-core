@@ -6,10 +6,10 @@ import {InputDefinition} from "../models/entities";
 import {FormEntry} from "../../../components/shared/forms/form-entry";
 
 @Component({
-  tag: 'elsa-input-definition-editor-dialog-content',
+  tag: 'elsa-activity-input-editor-dialog-content',
   shadow: false
 })
-export class InputDefinitionEditorDialogContent {
+export class ActivityInputEditorDialogContent {
   private formElement: HTMLFormElement;
 
   @Prop() input: InputDefinition;

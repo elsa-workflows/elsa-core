@@ -12,6 +12,7 @@ internal class Configurations : IEntityTypeConfiguration<WorkflowDefinition>, IE
     {
         builder.Ignore(x => x.Variables);
         builder.Ignore(x => x.Inputs);
+        builder.Ignore(x => x.Outputs);
         builder.Ignore(x => x.CustomProperties);
         builder.Ignore(x => x.Options);
         builder.Property<string>("Data");

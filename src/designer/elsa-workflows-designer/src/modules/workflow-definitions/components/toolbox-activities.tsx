@@ -55,7 +55,6 @@ export class ToolboxActivities {
       .filter(x => x.isBrowsable)
       .sort((a, b) => a.version > b.version ? 1 : -1), x => `${x.typeName}:${x.version}`);
 
-    debugger;
     const categorizedActivitiesLookup = groupBy(browsableDescriptors, x => x.category);
     const categories = Object.keys(categorizedActivitiesLookup).sort((a, b) => a.localeCompare(b));
     const renderedActivities: Map<string, string> = new Map<string, string>();

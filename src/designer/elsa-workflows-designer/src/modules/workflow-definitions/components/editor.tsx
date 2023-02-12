@@ -197,8 +197,8 @@ export class WorkflowDefinitionEditor {
   // between existing workflow definition on server side and updated workflow definition on client side.
   private hasWorkflowDefinitionAnyUpdatedData = async (updatedWorkflowDefinition: WorkflowDefinition): Promise<boolean> => {
     const existingWorkflowDefinition = await this.workflowDefinitionApi.get({definitionId: updatedWorkflowDefinition.definitionId, versionOptions: {version: updatedWorkflowDefinition.version}});
-
     const updatedWorkflowDefinitionClone = cloneDeep(updatedWorkflowDefinition);
+
     removeGuidsFromPortNames(updatedWorkflowDefinitionClone.root);
 
     return !isEqual(existingWorkflowDefinition, updatedWorkflowDefinitionClone);
@@ -250,7 +250,6 @@ export class WorkflowDefinitionEditor {
       activity: e.detail.activity
     });
 
-    debugger;
     this.emitActivityChangedDebounced({...e.detail, workflowEditor: this.el});
     this.saveChangesDebounced();
   }

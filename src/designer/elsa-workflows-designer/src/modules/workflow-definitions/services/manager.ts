@@ -21,11 +21,11 @@ export class WorkflowDefinitionManager {
       root: definition.root,
       variables: definition.variables,
       inputs: definition.inputs,
+      outputs: definition.outputs,
       options: definition.options,
       usableAsActivity: definition.usableAsActivity
     };
 
-    debugger;
     return await this.api.post(request);
   };
 

@@ -1,7 +1,7 @@
 import {Component, h, Prop, } from "@stencil/core";
-import {StorageDriverDescriptor, Variable, WorkflowInstance} from "../../../models";
-import descriptorsStore from "../../../data/descriptors-store";
-import {WorkflowDefinition} from "../models/entities";
+import {StorageDriverDescriptor, Variable, WorkflowInstance} from "../../../../models";
+import descriptorsStore from "../../../../data/descriptors-store";
+import {WorkflowDefinition} from "../../models/entities";
 
 @Component({
   tag: 'elsa-variables-viewer',

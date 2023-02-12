@@ -40,6 +40,11 @@ public class WorkflowDefinition : VersionedEntity
     public ICollection<InputDefinition> Inputs { get; set; } = new List<InputDefinition>();
     
     /// <summary>
+    /// A set of output definitions.
+    /// </summary>
+    public ICollection<OutputDefinition> Outputs { get; set; } = new List<OutputDefinition>();
+    
+    /// <summary>
     /// Stores custom information about the workflow. Can be used to store application-specific properties to associate with the workflow.
     /// </summary>
     public IDictionary<string, object> CustomProperties { get; set; } = new Dictionary<string, object>();
