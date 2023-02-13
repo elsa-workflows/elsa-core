@@ -42,6 +42,7 @@ export function walkActivities(root: Activity): ActivityNode {
   const collectedActivities = new Set<Activity>([root]);
   const graph: ActivityNode = {activity: root, parents: [], children: []};
   const collectedNodes = new Set<ActivityNode>([graph]);
+
   walkRecursive(graph, root, collectedActivities, collectedNodes, descriptors);
   return graph;
 }

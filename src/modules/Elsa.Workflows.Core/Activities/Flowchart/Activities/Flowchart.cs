@@ -26,7 +26,7 @@ public class Flowchart : Container
         OnSignalReceived<ActivityCompleted>(OnDescendantCompletedAsync);
     }
 
-    [Node] public IActivity? Start { get; set; }
+    [Port] [Browsable(false)] public IActivity? Start { get; set; }
     public ICollection<Connection> Connections { get; set; } = new List<Connection>();
 
     protected override async ValueTask ScheduleChildrenAsync(ActivityExecutionContext context)

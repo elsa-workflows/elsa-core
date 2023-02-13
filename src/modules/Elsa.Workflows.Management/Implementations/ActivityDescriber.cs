@@ -51,12 +51,12 @@ public class ActivityDescriber : IActivityDescriber
             where typeof(IActivity).IsAssignableFrom(prop.PropertyType) || typeof(IEnumerable<IActivity>).IsAssignableFrom(prop.PropertyType)
             let portAttr = prop.GetCustomAttribute<PortAttribute>()
             let portBrowsableAttr = prop.GetCustomAttribute<BrowsableAttribute>()
-            where portAttr != null && (portBrowsableAttr == null || portBrowsableAttr.Browsable)
             select new Port
             {
-                Name = portAttr.Name ?? prop.Name,
-                DisplayName = portAttr.DisplayName ?? portAttr.Name ?? prop.Name,
-                Mode = PortMode.Embedded
+                Name = portAttr?.Name ?? prop.Name,
+                DisplayName = portAttr?.DisplayName ?? portAttr?.Name ?? prop.Name,
+                Mode = PortMode.Embedded,
+                IsBrowsable = portAttr != null && (portBrowsableAttr == null || portBrowsableAttr.Browsable)
             };
 
         var flowNodeAttr = activityType.GetCustomAttribute<FlowNodeAttribute>();

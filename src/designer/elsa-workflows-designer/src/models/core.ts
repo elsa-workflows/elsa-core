@@ -116,6 +116,7 @@ export interface Port {
   name: string;
   displayName: string;
   mode: PortMode;
+  isBrowsable?: boolean;
 }
 
 export enum PortMode {

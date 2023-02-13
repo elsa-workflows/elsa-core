@@ -215,8 +215,14 @@ export class Journal {
       };
     });
 
-    for (const block of blocks)
-      block.children = this.findChildBlocks(blocks, block.activityInstanceId);
+    for (const block of blocks) {
+      // For now, only get child blocks if the associated activity actually has child nodes as well.
+      // If not, it means this is a composed activity for which we did not load it child nodes.
+      // This is something we might want to reconsider in a future iteration.
+      const activityNode =  this.nodeMap[block.activityId];
+      if (activityNode?.children.length > 0)
+        block.children = this.findChildBlocks(blocks, block.activityInstanceId);
+    }
 
     return blocks;
   };

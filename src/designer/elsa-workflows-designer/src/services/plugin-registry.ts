@@ -8,6 +8,7 @@ import {WorkflowDefinitionsPlugin} from "../modules/workflow-definitions/plugin"
 import {WorkflowInstancesPlugin} from "../modules/workflow-instances/plugin";
 import {LoginPlugin} from "../modules/login/plugin";
 import {HomePagePlugin} from "../modules/home/plugin";
+import {FlowchartPlugin} from "../modules/flowchart/plugin";
 
 // A registry of plugins.
 @Service()
@@ -15,6 +16,7 @@ export class PluginRegistry {
   private readonly plugins: Array<Plugin> = [];
 
   constructor() {
+    this.add(Container.get(FlowchartPlugin))
     this.add(Container.get(LoginPlugin));
     this.add(Container.get(HomePagePlugin));
     this.add(Container.get(WorkflowDefinitionsPlugin));

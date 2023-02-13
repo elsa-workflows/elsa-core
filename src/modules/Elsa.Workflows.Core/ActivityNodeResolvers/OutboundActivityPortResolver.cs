@@ -24,8 +24,7 @@ public class OutboundActivityPortResolver : IActivityPortResolver
             from prop in activityType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
             where typeof(IActivity).IsAssignableFrom(prop.PropertyType) || typeof(IEnumerable<IActivity>).IsAssignableFrom(prop.PropertyType)
             let portAttr = prop.GetCustomAttribute<PortAttribute>()
-            let nodeAttr = prop.GetCustomAttribute<NodeAttribute>()
-            where portAttr != null || nodeAttr != null
+            where portAttr != null
             let value = prop.GetValue(activity)
             let isCollection = GetPropertyIsCollection(prop.PropertyType)
             select isCollection ? (IEnumerable<IActivity>)value : new[] { (IActivity)value };
