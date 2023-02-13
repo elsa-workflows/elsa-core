@@ -8125,7 +8125,7 @@ elsa-studio-root .elsa-pt-1 {
   padding-top: 0.25rem;
 }
 
-elsa-studio-root .elsa-pt-4 {
+.elsa-pt-4 {
   padding-top: 1rem;
 }
 
@@ -8177,11 +8177,7 @@ elsa-studio-root .elsa-pr-5 {
   padding-right: 1.25rem;
 }
 
-elsa-studio-root .elsa-pl-8 {
-  padding-left: 2rem;
-}
-
-elsa-studio-root .elsa-pr-28 {
+.elsa-pr-28 {
   padding-right: 7rem;
 }
 
@@ -8197,8 +8193,8 @@ elsa-studio-root .elsa-pr-2 {
   padding-right: 0.5rem;
 }
 
-elsa-studio-root .elsa-pr-3 {
-  padding-right: 0.75rem;
+.elsa-pl-8 {
+  padding-left: 2rem;
 }
 
 elsa-studio-root .elsa-pb-10 {
@@ -8423,7 +8419,7 @@ elsa-studio-root .elsa-text-rose-400 {
   color: rgb(251 113 133 / var(--tw-text-opacity));
 }
 
-elsa-studio-root .elsa-text-red-700 {
+.elsa-text-blue-400 {
   --tw-text-opacity: 1;
   color: rgb(185 28 28 / var(--tw-text-opacity));
 }
@@ -8478,7 +8474,12 @@ elsa-studio-root .elsa-text-red-400 {
   color: rgb(248 113 113 / var(--tw-text-opacity));
 }
 
-elsa-studio-root .elsa-text-red-800 {
+.elsa-text-red-700 {
+  --tw-text-opacity: 1;
+  color: rgb(185 28 28 / var(--tw-text-opacity));
+}
+
+.elsa-text-red-800 {
   --tw-text-opacity: 1;
   color: rgb(153 27 27 / var(--tw-text-opacity));
 }
