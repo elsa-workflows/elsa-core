@@ -1,11 +1,14 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Confluent.Kafka;
 using Elsa.Activities.Kafka.Activities.KafkaMessageReceived;
 using Elsa.Activities.Kafka.Bookmarks;
+using Elsa.Activities.Kafka.Configuration;
 using Elsa.Activities.Kafka.Models;
 using Elsa.Models;
 using Elsa.Services;
@@ -22,10 +25,12 @@ namespace Elsa.Activities.Kafka.Services
         private readonly ILogger _logger;
         private readonly Func<Worker, IClient, Task> _disposeReceiverAction;
         private readonly IKafkaTenantIdResolver _tenantIdResolver;
+        private readonly IKafkaCustomActivityProvider? _kafkaCustomActivityProvider;
 
 
         private string ActivityType => nameof(KafkaMessageReceived);
         private TimeSpan _delay = TimeSpan.FromMilliseconds(200);
+
         public string Topic { get; }
         public string Group { get; }
 
@@ -38,7 +43,8 @@ namespace Elsa.Activities.Kafka.Services
             IClient client,
             Func<Worker, IClient, Task> disposeReceiverAction,
             IKafkaTenantIdResolver tenantIdResolver,
-            ILogger<Worker> logger)
+            ILogger<Worker> logger,
+            IKafkaCustomActivityProvider? kafkaCustomActivityProvider)
         {
             Topic = topic;
             Group = group;
@@ -47,6 +53,7 @@ namespace Elsa.Activities.Kafka.Services
             _disposeReceiverAction = disposeReceiverAction;
             _logger = logger;
             _tenantIdResolver = tenantIdResolver;
+            _kafkaCustomActivityProvider = kafkaCustomActivityProvider;
 
             _client.SetHandlers(OnMessageReceivedAsync, OnErrorAsync, new CancellationTokenSource().Token);
         }
@@ -80,7 +87,7 @@ namespace Elsa.Activities.Kafka.Services
             //avoid handler being triggered earlier than workflow is suspended
             await Task.Delay(_delay, cancellationToken);
             var config = _client.Configuration;
-            
+
             var tenantId = await _tenantIdResolver.ResolveAsync(ev, config.Topic, config.Group, Tags, cancellationToken);
 
             var bookmark = new MessageReceivedBookmark(config.ConnectionString, config.Topic, config.Group, GetHeaders(ev.Message.Headers), config.AutoOffsetReset);
@@ -89,6 +96,16 @@ namespace Elsa.Activities.Kafka.Services
             using var scope = _scopeFactory.CreateScope();
             var workflowLaunchpad = scope.ServiceProvider.GetRequiredService<IWorkflowLaunchpad>();
             await workflowLaunchpad.CollectAndDispatchWorkflowsAsync(launchContext, new WorkflowInput(ev.Message.Value), cancellationToken);
+
+            // Launch all activities where the trigger inherits from ActivityType
+            if (_kafkaCustomActivityProvider != null && _kafkaCustomActivityProvider.KafkaOverrideTriggers != null)
+            {
+                foreach (var t in _kafkaCustomActivityProvider.KafkaOverrideTriggers)
+                {
+                    var customLaunchContext = new WorkflowsQuery(t ?? "", bookmark, TenantId: tenantId);
+                    await workflowLaunchpad.CollectAndDispatchWorkflowsAsync(customLaunchContext, new WorkflowInput(ev.Message.Value), cancellationToken);
+                }
+            }
         }
 
         private Dictionary<string, string> GetHeaders(Headers headers)
