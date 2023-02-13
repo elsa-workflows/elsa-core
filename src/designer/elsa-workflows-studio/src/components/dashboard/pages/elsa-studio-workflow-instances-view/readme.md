@@ -26,6 +26,7 @@ graph TD;
   elsa-workflow-instance-viewer-screen --> elsa-workflow-performance-information
   elsa-workflow-instance-viewer-screen --> elsa-workflow-instance-journal
   elsa-workflow-instance-viewer-screen --> elsa-designer-tree
+  elsa-workflow-instance-viewer-screen --> x6-designer
   elsa-workflow-instance-viewer-screen --> context-consumer
   elsa-workflow-instance-journal --> elsa-copy-button
   elsa-workflow-instance-journal --> elsa-workflow-definition-editor-notifications

@@ -15,6 +15,13 @@
 | `serverUrl`          | `server-url` |             | `string`                     | `undefined` |
 
 
+## Events
+
+| Event         | Description | Type                                                             |
+| ------------- | ----------- | ---------------------------------------------------------------- |
+| `valueChange` |             | `CustomEvent<(string \| number \| boolean \| SelectListItem)[]>` |
+
+
 ## Dependencies
 
 ### Depends on

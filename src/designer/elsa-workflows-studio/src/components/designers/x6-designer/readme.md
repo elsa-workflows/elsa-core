@@ -13,14 +13,12 @@
 | `activityContextMenu`                       | --                            |             | `ActivityContextMenuState`                                                                                                  | `undefined`                                                                                                         |
 | `activityContextMenuButton`                 | --                            |             | `(activity: ActivityModel) => string`                                                                                       | `undefined`                                                                                                         |
 | `activityContextTestMenu`                   | --                            |             | `ActivityContextMenuState`                                                                                                  | `undefined`                                                                                                         |
-| `activityDefinitions`                       | --                            |             | `ActivityDefinitions[]`                                                                                                     | `[]`                                                                                                                |
 | `connectionContextMenu`                     | --                            |             | `ActivityContextMenuState`                                                                                                  | `undefined`                                                                                                         |
 | `enableMultipleConnectionsFromSingleSource` | `enable-multiple-connections` |             | `boolean`                                                                                                                   | `undefined`                                                                                                         |
 | `layoutDirection`                           | `layout-direction`            |             | `LayoutDirection.BottomTop \| LayoutDirection.LeftRight \| LayoutDirection.RightLeft \| LayoutDirection.TopBottom`          | `LayoutDirection.TopBottom`                                                                                         |
 | `mode`                                      | `mode`                        |             | `WorkflowDesignerMode.Blueprint \| WorkflowDesignerMode.Edit \| WorkflowDesignerMode.Instance \| WorkflowDesignerMode.Test` | `WorkflowDesignerMode.Edit`                                                                                         |
 | `model`                                     | --                            |             | `WorkflowModel`                                                                                                             | `{     activities: [],     connections: [],     persistenceBehavior: WorkflowPersistenceBehavior.WorkflowBurst   }` |
 | `selectedActivityIds`                       | --                            |             | `string[]`                                                                                                                  | `[]`                                                                                                                |
-| `workflow`                                  | --                            |             | `WorkflowModel`                                                                                                             | `{     activities: [],     connections: []   }`                                                                     |
 
 
 ## Events
@@ -29,6 +27,7 @@
 | -------------------------------------- | ----------- | --------------------------------------- |
 | `activityContextMenuButtonClicked`     |             | `CustomEvent<ActivityContextMenuState>` |
 | `activityContextMenuButtonTestClicked` |             | `CustomEvent<ActivityContextMenuState>` |
+| `activityDeleted`                      |             | `CustomEvent<ActivityDeletedArgs>`      |
 | `activityDeselected`                   |             | `CustomEvent<ActivityModel>`            |
 | `activitySelected`                     |             | `CustomEvent<ActivityModel>`            |
 | `connectionContextMenuButtonClicked`   |             | `CustomEvent<ActivityContextMenuState>` |
@@ -67,18 +66,32 @@ Type: `Promise<void>`
 
 
 
+### `updateLayout() => Promise<void>`
+
+
+
+#### Returns
+
+Type: `Promise<void>`
+
+
+
 
 ## Dependencies
 
 ### Used by
 
- - [elsa-workflow-definition-editor-screen](../screens/workflow-definition-editor/elsa-workflow-definition-editor-screen)
+ - [elsa-workflow-blueprint-viewer-screen](../../screens/workflow-blueprint-viewer/elsa-workflow-blueprint-viewer-screen)
+ - [elsa-workflow-definition-editor-screen](../../screens/workflow-definition-editor/elsa-workflow-definition-editor-screen)
+ - [elsa-workflow-instance-viewer-screen](../../screens/workflow-instance-viewer/elsa-workflow-instance-viewer-screen)
 
 ### Graph
 ```mermaid
 graph TD;
-  elsa-workflow-definition-editor-screen --> elsa-designer-tree-test
-  style elsa-designer-tree-test fill:#f9f,stroke:#333,stroke-width:4px
+  elsa-workflow-blueprint-viewer-screen --> x6-designer
+  elsa-workflow-definition-editor-screen --> x6-designer
+  elsa-workflow-instance-viewer-screen --> x6-designer
+  style x6-designer fill:#f9f,stroke:#333,stroke-width:4px
 ```
 
 ----------------------------------------------

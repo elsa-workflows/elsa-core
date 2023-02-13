@@ -54,6 +54,7 @@ Type: `Promise<void>`
  - [elsa-expression-editor](../../editors/elsa-expression-editor)
  - [elsa-json-property](../../editors/properties/elsa-json-property)
  - [elsa-script-property](../../editors/properties/elsa-script-property)
+ - [elsa-workflow-definition-editor-screen](../../screens/workflow-definition-editor/elsa-workflow-definition-editor-screen)
  - [elsa-workflow-settings-modal](../../screens/workflow-definition-editor/elsa-workflow-settings-modal)
 
 ### Graph
@@ -62,6 +63,7 @@ graph TD;
   elsa-expression-editor --> elsa-monaco
   elsa-json-property --> elsa-monaco
   elsa-script-property --> elsa-monaco
+  elsa-workflow-definition-editor-screen --> elsa-monaco
   elsa-workflow-settings-modal --> elsa-monaco
   style elsa-monaco fill:#f9f,stroke:#333,stroke-width:4px
 ```

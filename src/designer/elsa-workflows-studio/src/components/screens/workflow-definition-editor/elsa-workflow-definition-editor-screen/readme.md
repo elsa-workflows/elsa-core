@@ -83,12 +83,15 @@ Type: `Promise<void>`
 - [elsa-tab-content](../../../shared/elsa-tab-content)
 - [elsa-designer-panel](../../../shared/elsa-designer-panel)
 - [elsa-version-history-panel](../elsa-version-history-panel)
+- [elsa-modal-dialog](../../../shared/elsa-modal-dialog)
+- [elsa-monaco](../../../controls/elsa-monaco)
 - [elsa-designer-tree](../../../designers/tree/elsa-designer-tree)
+- [x6-designer](../../../designers/x6-designer)
 - [elsa-workflow-settings-modal](../elsa-workflow-settings-modal)
 - [elsa-workflow-definition-editor-notifications](../elsa-workflow-definition-editor-notifications)
+- [elsa-confirm-dialog](../../../shared/elsa-confirm-dialog)
 - [elsa-activity-picker-modal](../elsa-activity-picker-modal)
 - [elsa-activity-editor-modal](../elsa-activity-editor-modal)
-- [elsa-modal-dialog](../../../shared/elsa-modal-dialog)
 - [elsa-workflow-publish-button](../elsa-workflow-publish-button)
 - [elsa-flyout-panel](../../../shared/elsa-flyout-panel)
 - [elsa-workflow-properties-panel](../elsa-workflow-properties-panel)
@@ -104,12 +107,15 @@ graph TD;
   elsa-workflow-definition-editor-screen --> elsa-tab-content
   elsa-workflow-definition-editor-screen --> elsa-designer-panel
   elsa-workflow-definition-editor-screen --> elsa-version-history-panel
+  elsa-workflow-definition-editor-screen --> elsa-modal-dialog
+  elsa-workflow-definition-editor-screen --> elsa-monaco
   elsa-workflow-definition-editor-screen --> elsa-designer-tree
+  elsa-workflow-definition-editor-screen --> x6-designer
   elsa-workflow-definition-editor-screen --> elsa-workflow-settings-modal
   elsa-workflow-definition-editor-screen --> elsa-workflow-definition-editor-notifications
+  elsa-workflow-definition-editor-screen --> elsa-confirm-dialog
   elsa-workflow-definition-editor-screen --> elsa-activity-picker-modal
   elsa-workflow-definition-editor-screen --> elsa-activity-editor-modal
-  elsa-workflow-definition-editor-screen --> elsa-modal-dialog
   elsa-workflow-definition-editor-screen --> elsa-workflow-publish-button
   elsa-workflow-definition-editor-screen --> elsa-flyout-panel
   elsa-workflow-definition-editor-screen --> elsa-workflow-properties-panel

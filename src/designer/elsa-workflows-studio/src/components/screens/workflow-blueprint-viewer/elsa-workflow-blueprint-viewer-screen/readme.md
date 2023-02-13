@@ -36,6 +36,7 @@ Type: `Promise<string>`
 ### Depends on
 
 - [elsa-designer-tree](../../../designers/tree/elsa-designer-tree)
+- [x6-designer](../../../designers/x6-designer)
 - [elsa-flyout-panel](../../../shared/elsa-flyout-panel)
 - [elsa-tab-header](../../../shared/elsa-tab-header)
 - [elsa-tab-content](../../../shared/elsa-tab-content)
@@ -46,6 +47,7 @@ Type: `Promise<string>`
 ```mermaid
 graph TD;
   elsa-workflow-blueprint-viewer-screen --> elsa-designer-tree
+  elsa-workflow-blueprint-viewer-screen --> x6-designer
   elsa-workflow-blueprint-viewer-screen --> elsa-flyout-panel
   elsa-workflow-blueprint-viewer-screen --> elsa-tab-header
   elsa-workflow-blueprint-viewer-screen --> elsa-tab-content

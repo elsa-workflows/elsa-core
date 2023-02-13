@@ -13,6 +13,7 @@
 | `editorHeight`         | `editor-height`          |             | `string`              | `'6em'`     |
 | `expression`           | `expression`             |             | `string`              | `undefined` |
 | `language`             | `language`               |             | `string`              | `undefined` |
+| `opensModal`           | `opens-modal`            |             | `boolean`             | `false`     |
 | `padding`              | `padding`                |             | `string`              | `undefined` |
 | `serverUrl`            | `server-url`             |             | `string`              | `undefined` |
 | `singleLineMode`       | `single-line`            |             | `boolean`             | `false`     |
