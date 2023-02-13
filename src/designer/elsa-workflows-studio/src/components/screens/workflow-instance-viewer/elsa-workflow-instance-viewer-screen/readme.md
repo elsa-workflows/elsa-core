@@ -39,6 +39,7 @@ Type: `Promise<string>`
 - [elsa-workflow-performance-information](../../../shared/elsa-workflow-debug-information)
 - [elsa-workflow-instance-journal](../elsa-workflow-instance-journal)
 - [elsa-designer-tree](../../../designers/tree/elsa-designer-tree)
+- [x6-designer](../../../designers/x6-designer)
 - context-consumer
 
 ### Graph
@@ -48,6 +49,7 @@ graph TD;
   elsa-workflow-instance-viewer-screen --> elsa-workflow-performance-information
   elsa-workflow-instance-viewer-screen --> elsa-workflow-instance-journal
   elsa-workflow-instance-viewer-screen --> elsa-designer-tree
+  elsa-workflow-instance-viewer-screen --> x6-designer
   elsa-workflow-instance-viewer-screen --> context-consumer
   elsa-workflow-instance-journal --> elsa-copy-button
   elsa-workflow-instance-journal --> elsa-workflow-definition-editor-notifications

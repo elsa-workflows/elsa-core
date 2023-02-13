@@ -18,6 +18,7 @@
 
 | Event              | Description | Type                |
 | ------------------ | ----------- | ------------------- |
+| `deleteClicked`    |             | `CustomEvent<any>`  |
 | `exportClicked`    |             | `CustomEvent<any>`  |
 | `importClicked`    |             | `CustomEvent<File>` |
 | `publishClicked`   |             | `CustomEvent<any>`  |
