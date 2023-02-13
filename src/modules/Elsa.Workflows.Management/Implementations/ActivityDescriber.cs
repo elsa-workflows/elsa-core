@@ -68,9 +68,8 @@ public class ActivityDescriber : IActivityDescriber
         }).ToDictionary(x => x.Name) ?? new Dictionary<string, Port>();
 
         var allPorts = embeddedPorts.Concat(flowPorts.Values);
-        var properties = activityType.GetProperties();
-        var inputProperties = properties.Where(x => typeof(Input).IsAssignableFrom(x.PropertyType) || x.GetCustomAttribute<InputAttribute>() != null).ToList();
-        var outputProperties = properties.Where(x => typeof(Output).IsAssignableFrom(x.PropertyType)).DistinctBy(x => x.Name).ToList();
+        var inputProperties = GetInputProperties(activityType).ToList();
+        var outputProperties = GetOutputProperties(activityType).ToList();
         var isTrigger = activityType.IsAssignableTo(typeof(ITrigger));
         var browsableAttr = activityType.GetCustomAttribute<BrowsableAttribute>();
 
@@ -87,7 +86,6 @@ public class ActivityDescriber : IActivityDescriber
             Outputs = DescribeOutputProperties(outputProperties).ToList(),
             IsContainer = typeof(IContainer).IsAssignableFrom(activityType),
             IsBrowsable = browsableAttr == null || browsableAttr.Browsable,
-            ActivityType = activityType,
             Constructor = context =>
             {
                 var activity = _activityFactory.Create(activityType, context);
@@ -95,9 +93,15 @@ public class ActivityDescriber : IActivityDescriber
                 return activity;
             }
         };
-
+        
         return ValueTask.FromResult(descriptor);
     }
+    
+    public IEnumerable<PropertyInfo> GetInputProperties([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type activityType) => 
+        activityType.GetProperties().Where(x => typeof(Input).IsAssignableFrom(x.PropertyType) || x.GetCustomAttribute<InputAttribute>() != null);
+    
+    public IEnumerable<PropertyInfo> GetOutputProperties([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type activityType) => 
+        activityType.GetProperties().Where(x => typeof(Output).IsAssignableFrom(x.PropertyType)).DistinctBy(x => x.Name).ToList();
 
     public OutputDescriptor DescribeOutputProperty(PropertyInfo propertyInfo)
     {
@@ -116,7 +120,13 @@ public class ActivityDescriber : IActivityDescriber
         );
     }
 
-    private IEnumerable<InputDescriptor> DescribeInputProperties(IEnumerable<PropertyInfo> properties)
+    public IEnumerable<InputDescriptor> DescribeInputProperties([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]Type activityType) => 
+        DescribeInputProperties(GetInputProperties(activityType));
+    
+    public IEnumerable<OutputDescriptor> DescribeOutputProperties([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]Type activityType) => 
+        DescribeOutputProperties(GetOutputProperties(activityType));
+    
+    public IEnumerable<InputDescriptor> DescribeInputProperties(IEnumerable<PropertyInfo> properties)
     {
         foreach (var propertyInfo in properties)
         {

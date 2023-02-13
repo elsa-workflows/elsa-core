@@ -3,6 +3,7 @@ using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Services;
+using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Core.Models;
 
@@ -11,6 +12,7 @@ namespace Elsa.Workflows.Core.Models;
 /// </summary>
 [Browsable(false)]
 [Activity("Elsa", "Workflows", "A workflow is an activity that executes its Root activity.")]
+[PublicAPI]
 public class Workflow : Composite, ICloneable
 {
     /// <summary>

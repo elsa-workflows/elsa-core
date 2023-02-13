@@ -2,7 +2,7 @@ import {Component, Prop, h} from '@stencil/core';
 import {LiteralExpression, SelectList, SyntaxNames} from "../../models";
 import {ActivityInputContext} from "../../services/activity-input-driver";
 import {getInputPropertyValue, getSelectListItems} from "../../utils";
-import {ExpressionChangedArs} from "../designer/input-control-switch/input-control-switch";
+import {ExpressionChangedArs} from "../shared/input-control-switch/input-control-switch";
 
 @Component({
   tag: 'elsa-dropdown-input',

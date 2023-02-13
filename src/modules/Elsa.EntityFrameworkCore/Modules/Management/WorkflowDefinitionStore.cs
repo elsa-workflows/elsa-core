@@ -152,7 +152,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
 
     private WorkflowDefinition Save(ManagementElsaDbContext managementElsaDbContext, WorkflowDefinition entity)
     {
-        var data = new WorkflowDefinitionState(entity.Options, entity.Variables, entity.CustomProperties);
+        var data = new WorkflowDefinitionState(entity.Options, entity.Variables, entity.Inputs, entity.Outputs, entity.CustomProperties);
         var options = _serializerOptionsProvider.CreatePersistenceOptions();
         var json = JsonSerializer.Serialize(data, options);
 
@@ -165,7 +165,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         if (entity == null)
             return null;
 
-        var data = new WorkflowDefinitionState(entity.Options, entity.Variables, entity.CustomProperties);
+        var data = new WorkflowDefinitionState(entity.Options, entity.Variables, entity.Inputs, entity.Outputs, entity.CustomProperties);
         var json = (string?)managementElsaDbContext.Entry(entity).Property("Data").CurrentValue;
 
         if (!string.IsNullOrWhiteSpace(json))
@@ -176,6 +176,8 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
 
         entity.Options = data.Options;
         entity.Variables = data.Variables;
+        entity.Inputs = data.Inputs;
+        entity.Outputs = data.Outputs;
         entity.CustomProperties = data.CustomProperties;
 
         return entity;
@@ -187,15 +189,25 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         {
         }
 
-        public WorkflowDefinitionState(WorkflowOptions? options, ICollection<Variable> variables, IDictionary<string, object> customProperties)
+        public WorkflowDefinitionState(
+            WorkflowOptions? options, 
+            ICollection<Variable> variables, 
+            ICollection<InputDefinition> inputs, 
+            ICollection<OutputDefinition> outputs,
+            IDictionary<string, object> customProperties
+        )
         {
             Options = options;
             Variables = variables;
+            Inputs = inputs;
+            Outputs = outputs;
             CustomProperties = customProperties;
         }
 
         public WorkflowOptions? Options { get; set; }
         public ICollection<Variable> Variables { get; set; } = new List<Variable>();
+        public ICollection<InputDefinition> Inputs { get; set; } = new List<InputDefinition>();
+        public ICollection<OutputDefinition> Outputs { get; set; } = new List<OutputDefinition>();
         public IDictionary<string, object> CustomProperties { get; set; } = new Dictionary<string, object>();
     }
 }

@@ -75,6 +75,8 @@ internal class Import : ElsaEndpoint<WorkflowDefinitionRequest, WorkflowDefiniti
         draft.Description = request.Description?.Trim();
         draft.CustomProperties = request.CustomProperties ?? new Dictionary<string, object>();
         draft.Variables = variables;
+        draft.Inputs = request.Inputs ?? new List<InputDefinition>();
+        draft.Outputs = request.Outputs ?? new List<OutputDefinition>();
         draft.Options = request.Options;
         draft.UsableAsActivity = request.UsableAsActivity;
         draft = request.Publish ? await _workflowDefinitionPublisher.PublishAsync(draft, cancellationToken) : await _workflowDefinitionPublisher.SaveDraftAsync(draft, cancellationToken);
@@ -90,6 +92,8 @@ internal class Import : ElsaEndpoint<WorkflowDefinitionRequest, WorkflowDefiniti
             draft.CreatedAt,
             draft.Version,
             request.Variables ?? new List<VariableDefinition>(),
+            draft.Inputs,
+            draft.Outputs,
             draft.CustomProperties,
             draft.IsLatest,
             draft.IsPublished,

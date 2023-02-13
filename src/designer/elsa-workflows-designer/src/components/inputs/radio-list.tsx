@@ -2,7 +2,7 @@ import {Component, h, Prop, State} from '@stencil/core';
 import {LiteralExpression, SelectList, SyntaxNames} from "../../models";
 import {ActivityInputContext} from "../../services/activity-input-driver";
 import {getSelectListItems, getInputPropertyValue} from "../../utils";
-import {ExpressionChangedArs} from "../designer/input-control-switch/input-control-switch";
+import {ExpressionChangedArs} from "../shared/input-control-switch/input-control-switch";
 
 @Component({
   tag: 'elsa-radio-list-input',

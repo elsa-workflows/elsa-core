@@ -62,7 +62,7 @@ public class WebhookEventActivityProvider : IActivityProvider
             Category = category,
             Kind = ActivityKind.Job,
             IsBrowsable = true,
-            ActivityType = typeof(WebhookEvent),
+            Attributes = { webhookAttribute! },
             Outputs = { outputPropertyDescriptor },
             Constructor = context =>
             {

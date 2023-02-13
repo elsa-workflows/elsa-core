@@ -1,5 +1,5 @@
 using Elsa.Extensions;
-using Elsa.JavaScript.Services;
+using Elsa.JavaScript.Contracts;
 
 namespace Elsa.JavaScript.Extensions;
 

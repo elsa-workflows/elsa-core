@@ -35,50 +35,39 @@ public abstract class Activity : IActivity, ISignalHandler
         Version = version;
     }
 
-    /// <summary>
-    /// The unique ID of this activity within the <see cref="Workflow"/>.
-    /// </summary>
+    /// <inheritdoc />
     public string Id { get; set; } = default!;
-    
-    /// <summary>
-    /// The technical type name.
-    /// </summary>
+
+    /// <inheritdoc />
     public string Type { get; set; }
-    
-    /// <summary>
-    /// The version number.
-    /// </summary>
+
+    /// <inheritdoc />
     public int Version { get; set; }
-    
-    /// <summary>
-    /// A flag indicating whether this activity can be used for starting a workflow.
-    /// Usually used for triggers, but also used to disambiguate between two or more starting activities and no starting activity was specified.
-    /// </summary>
+
+    /// <inheritdoc />
     public bool CanStartWorkflow { get; set; }
-    
-    
-    /// <summary>
-    /// A flag indicating if this activity should execute synchronously or asynchronously.
-    /// By default, activities with an <see cref="ActivityKind"/> of <see cref="ActivityKind.Action"/>, <see cref="ActivityKind.Task"/> or <see cref="ActivityKind.Trigger"/>
-    /// will execute synchronously, while activities of the <see cref="ActivityKind.Job"/> kind will execute asynchronously.
-    /// </summary>
+
+    /// <inheritdoc />
     public bool RunAsynchronously { get; set; }
-    
-    /// <summary>
-    /// A bag of properties that can be used by custom activities and other code such as middleware components to store additional values with the activity.
-    /// </summary>
+
+    /// <inheritdoc />
     public IDictionary<string, object> CustomProperties { get; set; } = new Dictionary<string, object>();
-    
+
+
+    /// <inheritdoc />
+    [JsonIgnore]
+    public IDictionary<string, object> SyntheticProperties { get; set; } = new Dictionary<string, object>();
+
     /// <summary>
     /// Automatically set to the current source file name when instantiating this activity inside of a workflow class or composite activity class.
     /// </summary>
     public string? Source { get; set; }
-    
+
     /// <summary>
     /// Automatically set to the current line of code when instantiating this activity inside of a workflow class or composite activity class.
     /// </summary>
     public int? Line { get; set; }
-    
+
     /// <summary>
     /// Stores metadata such as x and y coordinates when created via the designer.
     /// </summary>
@@ -98,7 +87,7 @@ public abstract class Activity : IActivity, ISignalHandler
         Execute(context);
         return ValueTask.CompletedTask;
     }
-    
+
     /// <summary>
     /// Override this method to implement activity-specific logic.
     /// </summary>
@@ -126,7 +115,7 @@ public abstract class Activity : IActivity, ISignalHandler
     /// Register a signal handler delegate.
     /// </summary>
     protected void OnSignalReceived(Type signalType, Func<object, SignalContext, ValueTask> handler) => _signalHandlers.Add(new SignalHandlerRegistration(signalType, handler));
-    
+
     /// <summary>
     /// Register a signal handler delegate.
     /// </summary>
@@ -143,7 +132,7 @@ public abstract class Activity : IActivity, ISignalHandler
             return ValueTask.CompletedTask;
         });
     }
-    
+
     /// <summary>
     /// Notify the workflow that this activity completed.
     /// </summary>

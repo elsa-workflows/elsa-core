@@ -2,7 +2,7 @@
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Models;
-using IJavaScriptEvaluator = Elsa.JavaScript.Services.IJavaScriptEvaluator;
+using IJavaScriptEvaluator = Elsa.JavaScript.Contracts.IJavaScriptEvaluator;
 
 namespace Elsa.JavaScript.Activities;
 

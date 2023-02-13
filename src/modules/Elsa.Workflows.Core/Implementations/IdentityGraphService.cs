@@ -80,7 +80,7 @@ public class IdentityGraphService : IIdentityGraphService
     /// <inheritdoc />
     public void AssignVariables(IVariableContainer activity)
     {
-        var variables = activity.GetVariables();
+        var variables = activity.Variables;
         var seed = 0;
 
         foreach (var variable in variables)

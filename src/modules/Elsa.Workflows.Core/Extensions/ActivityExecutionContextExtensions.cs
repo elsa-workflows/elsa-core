@@ -87,7 +87,7 @@ public static class ActivityExecutionContextExtensions
     /// <summary>
     /// Returns a dictionary of variable keys and their values across scopes.
     /// </summary>
-    public static IDictionary<string, object> GetVariableValues(this ActivityExecutionContext activityExecutionContext) => activityExecutionContext.ExpressionExecutionContext.GetVariableValues();
+    public static IDictionary<string, object> GetVariableValues(this ActivityExecutionContext activityExecutionContext) => activityExecutionContext.ExpressionExecutionContext.ReadAndFlattenMemoryBlocks();
 
     /// <summary>
     /// Evaluates each input property of the activity.

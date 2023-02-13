@@ -14,6 +14,8 @@ internal class WorkflowDefinitionResponse
         DateTimeOffset createdAt,
         int version,
         ICollection<VariableDefinition> variables,
+        ICollection<InputDefinition> inputs,
+        ICollection<OutputDefinition> outputs,
         IDictionary<string, object> metadata,
         bool isLatest,
         bool isPublished,
@@ -28,6 +30,8 @@ internal class WorkflowDefinitionResponse
         CreatedAt = createdAt;
         Version = version;
         Variables = variables;
+        Inputs = inputs;
+        Outputs = outputs;
         Metadata = metadata;
         IsLatest = isLatest;
         IsPublished = isPublished;
@@ -43,6 +47,8 @@ internal class WorkflowDefinitionResponse
     public DateTimeOffset CreatedAt { get; }
     public int Version { get; }
     public ICollection<VariableDefinition> Variables { get; }
+    public ICollection<InputDefinition> Inputs { get; }
+    public ICollection<OutputDefinition> Outputs { get; }
     public IDictionary<string, object> Metadata { get; }
     public bool IsLatest { get; }
     public bool IsPublished { get; }

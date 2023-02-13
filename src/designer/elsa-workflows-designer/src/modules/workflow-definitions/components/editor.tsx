@@ -164,8 +164,8 @@ export class WorkflowDefinitionEditor {
       return <elsa-activity-properties-editor
         activity={this.selectedActivity}
         variables={this.workflowDefinitionState.variables}
-        containerType="workflow-definition"
-        containerId={this.workflowDefinitionState.definitionId}
+        outputs={this.workflowDefinitionState.outputs}
+        workflowDefinitionId={this.workflowDefinitionState.definitionId}
         onActivityUpdated={e => this.onActivityUpdated(e)}/>;
   }
 
@@ -198,8 +198,8 @@ export class WorkflowDefinitionEditor {
   // between existing workflow definition on server side and updated workflow definition on client side.
   private hasWorkflowDefinitionAnyUpdatedData = async (updatedWorkflowDefinition: WorkflowDefinition): Promise<boolean> => {
     const existingWorkflowDefinition = await this.workflowDefinitionApi.get({definitionId: updatedWorkflowDefinition.definitionId, versionOptions: {version: updatedWorkflowDefinition.version}});
-
     const updatedWorkflowDefinitionClone = cloneDeep(updatedWorkflowDefinition);
+
     removeGuidsFromPortNames(updatedWorkflowDefinitionClone.root);
 
     return !isEqual(existingWorkflowDefinition, updatedWorkflowDefinitionClone);
@@ -263,9 +263,6 @@ export class WorkflowDefinitionEditor {
     const selectedActivity = e.detail.activity;
     const activityId = selectedActivity.id;
     const freshSelectedActivity = await this.flowchart.getActivity(activityId);
-
-    console.debug("selected activity == fresh selection: " + (selectedActivity === freshSelectedActivity));
-
     this.selectedActivity = freshSelectedActivity;
   }
 
@@ -275,7 +272,6 @@ export class WorkflowDefinitionEditor {
   }
 
   private async onGraphUpdated(e: CustomEvent<GraphUpdatedArgs>) {
-    console.debug("graph updated");
     await this.updateSelectedActivity();
     this.saveChangesDebounced();
   }
@@ -285,13 +281,13 @@ export class WorkflowDefinitionEditor {
       this.selectedActivity = await this.flowchart.getActivity(this.selectedActivity.id);
   }
 
-  onVersionSelected = async (e: CustomEvent<WorkflowDefinition>) => {
+  private onVersionSelected = async (e: CustomEvent<WorkflowDefinition>) => {
     const workflowToView = e.detail;
     const workflowDefinition = await this.workflowDefinitionApi.get({definitionId: workflowToView.definitionId, versionOptions: {version: workflowToView.version}});
     await this.importWorkflow(workflowDefinition);
   };
 
-  onDeleteVersionClicked = async (e: CustomEvent<WorkflowDefinition>) => {
+  private onDeleteVersionClicked = async (e: CustomEvent<WorkflowDefinition>) => {
     const workflowToDelete = e.detail;
     await this.workflowDefinitionApi.deleteVersion({definitionId: workflowToDelete.definitionId, version: workflowToDelete.version});
     const latestWorkflowDefinition = await this.workflowDefinitionApi.get({definitionId: workflowToDelete.definitionId, versionOptions: {isLatest: true}});
@@ -299,7 +295,7 @@ export class WorkflowDefinitionEditor {
     await this.importWorkflow(latestWorkflowDefinition);
   };
 
-  onRevertVersionClicked = async (e: CustomEvent<WorkflowDefinition>) => {
+  private onRevertVersionClicked = async (e: CustomEvent<WorkflowDefinition>) => {
     const workflowToRevert = e.detail;
     await this.workflowDefinitionApi.revertVersion({definitionId: workflowToRevert.definitionId, version: workflowToRevert.version});
     const workflowDefinition = await this.workflowDefinitionApi.get({definitionId: workflowToRevert.definitionId, versionOptions: {isLatest: true}});

@@ -1,5 +1,5 @@
 import {getVersionOptionsString, serializeQueryString} from '../../../utils';
-import {WorkflowDefinition, WorkflowDefinitionSummary, WorkflowOptions} from "../models/entities";
+import {InputDefinition, WorkflowDefinition, WorkflowDefinitionSummary, WorkflowOptions} from "../models/entities";
 import {Activity, PagedList, Variable, VersionedEntity, VersionOptions} from "../../../models";
 import {Service} from "typedi";
 import {AxiosResponse} from "axios";
@@ -142,8 +142,8 @@ export class WorkflowDefinitionsApi {
 
     const workflowDefinition = response.data;
 
-    //TODO: Written as a workaround for different server and client models.
-    //To be deleted after the connection model on backend is updated.
+    // TODO: Written as a workaround for different server and client models.
+    // To be deleted after the connection model on backend is updated.
     addGuidsToPortNames(workflowDefinition.root);
 
     return {workflowDefinition: workflowDefinition};
@@ -185,6 +185,8 @@ export interface SaveWorkflowDefinitionRequest {
   publish: boolean;
   root?: Activity;
   variables?: Array<Variable>;
+  inputs?: Array<InputDefinition>;
+  outputs?: Array<InputDefinition>;
   options?: WorkflowOptions;
   usableAsActivity?: boolean;
 }

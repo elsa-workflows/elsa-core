@@ -20,7 +20,7 @@ public class WorkflowDefinitionActivity : Activity, IInitializable
     /// The definition ID of the workflow to schedule for execution.
     /// </summary>
     public string WorkflowDefinitionId { get; set; } = default!;
-    
+
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
@@ -28,14 +28,34 @@ public class WorkflowDefinitionActivity : Activity, IInitializable
         await context.ScheduleActivityAsync(Root, OnChildCompletedAsync);
     }
 
-    private async ValueTask OnChildCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext) => await context.CompleteActivityAsync();
-    
+    private async ValueTask OnChildCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext)
+    {
+        var activityRegistry = context.GetRequiredService<IActivityRegistry>();
+        var activity = context.Activity;
+        var activityDescriptor = activityRegistry.Find(activity.Type, activity.Version)!;
+        var outputDescriptors = activityDescriptor.Outputs;
+
+        foreach (var outputDescriptor in outputDescriptors)
+        {
+            var output = activity.SyntheticProperties.TryGetValue(outputDescriptor.Name, out var outputProp) ? (Output)outputProp : default;
+            
+            if(output == null)
+                continue;
+
+            var valueVariable = new Variable(outputDescriptor.Name);
+            var outputValue = valueVariable.Get(context);
+            context.Set(output, outputValue);
+        }
+        
+        await context.CompleteActivityAsync();
+    }
+
     async ValueTask IInitializable.InitializeAsync(InitializationContext context)
     {
         var serviceProvider = context.ServiceProvider;
         var cancellationToken = context.CancellationToken;
         var workflowDefinitionStore = serviceProvider.GetRequiredService<IWorkflowDefinitionStore>();
-        var workflowDefinition = await workflowDefinitionStore.FindByDefinitionIdAsync(WorkflowDefinitionId, VersionOptions.Published, cancellationToken);
+        var workflowDefinition = await workflowDefinitionStore.FindByDefinitionIdAsync(WorkflowDefinitionId, VersionOptions.SpecificVersion(Version), cancellationToken);
 
         if (workflowDefinition == null)
             throw new Exception($"Workflow definition {WorkflowDefinitionId} not found");
@@ -43,7 +63,7 @@ public class WorkflowDefinitionActivity : Activity, IInitializable
         // Construct the root activity stored in the activity definitions.
         var materializer = serviceProvider.GetRequiredService<IWorkflowMaterializer>();
         var root = await materializer.MaterializeAsync(workflowDefinition, cancellationToken);
-
+        
         Root = root;
     }
 }

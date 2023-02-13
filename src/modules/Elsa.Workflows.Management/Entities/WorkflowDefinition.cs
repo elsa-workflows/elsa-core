@@ -1,5 +1,6 @@
 using Elsa.Common.Entities;
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Management.Models;
 
 namespace Elsa.Workflows.Management.Entities;
 
@@ -32,6 +33,16 @@ public class WorkflowDefinition : VersionedEntity
     /// A set of workflow variables that are accessible throughout the workflow.
     /// </summary>
     public ICollection<Variable> Variables { get; set; } = new List<Variable>();
+
+    /// <summary>
+    /// A set of input definitions.
+    /// </summary>
+    public ICollection<InputDefinition> Inputs { get; set; } = new List<InputDefinition>();
+    
+    /// <summary>
+    /// A set of output definitions.
+    /// </summary>
+    public ICollection<OutputDefinition> Outputs { get; set; } = new List<OutputDefinition>();
     
     /// <summary>
     /// Stores custom information about the workflow. Can be used to store application-specific properties to associate with the workflow.

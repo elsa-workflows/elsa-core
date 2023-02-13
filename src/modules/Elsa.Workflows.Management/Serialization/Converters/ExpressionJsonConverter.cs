@@ -12,11 +12,13 @@ public class ExpressionJsonConverter : JsonConverter<IExpression>
 {
     private readonly IExpressionSyntaxRegistry _expressionSyntaxRegistry;
 
+    /// <inheritdoc />
     public ExpressionJsonConverter(IExpressionSyntaxRegistry expressionSyntaxRegistry)
     {
         _expressionSyntaxRegistry = expressionSyntaxRegistry;
     }
 
+    /// <inheritdoc />
     public override IExpression Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         if (!JsonDocument.TryParseValue(ref reader, out var doc))
@@ -24,23 +26,20 @@ public class ExpressionJsonConverter : JsonConverter<IExpression>
 
         if (!doc.RootElement.TryGetProperty("type", out var syntaxElement))
             throw new JsonException("Failed to extract expression type property");
-        
-        // if (!doc.RootElement.TryGetProperty("expression", out var expressionElement))
-        //     throw new JsonException("Failed to extract expression type property");
 
         var syntax = syntaxElement.GetString()!;
         var expressionSyntaxDescriptor = _expressionSyntaxRegistry.Find(syntax);
 
         if (expressionSyntaxDescriptor == null)
             throw new Exception($"Expression with syntax {syntax} not found in registry");
-
-        //var context = new ExpressionConstructorContext(expressionElement, options);
+        
         var context = new ExpressionConstructorContext(doc.RootElement, options);
         var expression = expressionSyntaxDescriptor.CreateExpression(context);
 
         return expression;
     }
 
+    /// <inheritdoc />
     public override void Write(Utf8JsonWriter writer, IExpression value, JsonSerializerOptions options)
     {
         var expressionType = value.GetType();

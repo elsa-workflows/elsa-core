@@ -70,7 +70,6 @@ public class MassTransitActivityTypeProvider : IActivityProvider
             Category = category,
             Kind = ActivityKind.Trigger,
             IsBrowsable = true,
-            ActivityType = typeof(MessageReceived),
             Outputs =
             {
                 new OutputDescriptor
@@ -113,7 +112,6 @@ public class MassTransitActivityTypeProvider : IActivityProvider
             Category = category,
             Kind = ActivityKind.Action,
             IsBrowsable = true,
-            ActivityType = typeof(PublishMessage),
             Inputs =
             {
                 new InputDescriptor

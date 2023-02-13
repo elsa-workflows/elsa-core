@@ -1,8 +1,9 @@
 using System.Text;
 using Elsa.Common.Models;
-using Elsa.JavaScript.Models;
-using Elsa.JavaScript.Services;
+using Elsa.JavaScript.TypeDefinitions.Contracts;
+using Elsa.JavaScript.TypeDefinitions.Models;
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Runtime.Services;
 using FastEndpoints;
 using JetBrains.Annotations;
@@ -29,42 +30,40 @@ internal class Get : Endpoint<Request>
     /// <inheritdoc />
     public override void Configure()
     {
-        Post("scripting/javascript/type-definitions/{containerId}");
+        Post("scripting/javascript/type-definitions/{workflowDefinitionId}");
     }
 
     /// <inheritdoc />
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
-        var variables = await GetVariables(request.ContainerType, request.ContainerId, cancellationToken);
-        var intellisenseContext = new TypeDefinitionContext(variables, request.ActivityTypeName, request.PropertyName, cancellationToken);
-        var typeDefinitions = await _typeDefinitionService.GenerateTypeDefinitionsAsync(intellisenseContext);
-        var fileName = $"elsa.{request.ContainerId}.d.ts";
+        var workflowDefinition = await GetWorkflowDefinition(request.WorkflowDefinitionId, cancellationToken);
+
+        if (workflowDefinition == null)
+        {
+            AddError($"Workflow definition {request.WorkflowDefinitionId} not found");
+            await SendErrorsAsync(cancellation: cancellationToken);
+            return;
+        }
+        
+        var typeDefinitionContext = new TypeDefinitionContext(workflowDefinition, request.ActivityTypeName, request.PropertyName, cancellationToken);
+        var typeDefinitions = await _typeDefinitionService.GenerateTypeDefinitionsAsync(typeDefinitionContext);
+        var fileName = $"elsa.{request.WorkflowDefinitionId}.d.ts";
         var data = Encoding.UTF8.GetBytes(typeDefinitions);
 
         await SendBytesAsync(data, fileName, "application/x-typescript", cancellation: cancellationToken);
     }
 
-    private async Task<ICollection<Variable>> GetVariables(string containerType, string containerId, CancellationToken cancellationToken)
+    private async Task<WorkflowDefinition?> GetWorkflowDefinition(string workflowDefinitionId, CancellationToken cancellationToken)
     {
-        // TODO: Make this extensible.
-
-        switch (containerType)
-        {
-            case "workflow-definition":
-            {
-                var workflowDefinitionService = _serviceProvider.GetService<IWorkflowDefinitionService>();
-                var workflowDefinition = workflowDefinitionService != null ? await workflowDefinitionService.FindAsync(containerId, VersionOptions.Latest, cancellationToken) : default;
-                return workflowDefinition?.Variables ?? new List<Variable>();
-            }
-        }
-
-        return new List<Variable>();
+        var workflowDefinitionService = _serviceProvider.GetService<IWorkflowDefinitionService>();
+        var workflowDefinition = workflowDefinitionService != null ? await workflowDefinitionService.FindAsync(workflowDefinitionId, VersionOptions.Latest, cancellationToken) : default;
+        return workflowDefinition;
     }
 }
 
-internal record Request(string ContainerType, string ContainerId, string? ActivityTypeName, string? PropertyName)
+internal record Request(string WorkflowDefinitionId, string? ActivityTypeName, string? PropertyName)
 {
-    public Request() : this(default!, default!, default, default)
+    public Request() : this(default!, default!, default)
     {
     }
 }
