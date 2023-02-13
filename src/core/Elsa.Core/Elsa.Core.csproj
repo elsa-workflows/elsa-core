@@ -36,8 +36,8 @@
         <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="7.0.0" />
         <PackageReference Include="NodaTime.Serialization.JsonNet" Version="3.0.0" />
         <PackageReference Include="Open.Linq.AsyncExtensions" Version="1.2.0" />
-        <PackageReference Include="Rebus.Microsoft.Extensions.Logging" Version="3.0.0" />
-        <PackageReference Include="Rebus.ServiceProvider" Version="7.0.0" />
+        <PackageReference Include="Rebus.Microsoft.Extensions.Logging" Version="4.0.0" />
+        <PackageReference Include="Rebus.ServiceProvider" Version="8.4.0" />
         <PackageReference Include="Scrutor" Version="3.3.0" />
         <PackageReference Include="Storage.Net" Version="9.3.0" />
         <PackageReference Include="System.Linq.Async" Version="5.1.0" />
