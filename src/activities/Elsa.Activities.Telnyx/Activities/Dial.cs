@@ -98,6 +98,14 @@ namespace Elsa.Activities.Telnyx.Activities
             DefaultValue = "",
             SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string? Record { get; set; }
+        
+        [ActivityInput(
+            Hint = "Defines the format of the recording ('wav' or 'mp3') when `record` is specified",
+            UIHint = ActivityInputUIHints.Dropdown,
+            Options = new[] { "mp3", "wav" },
+            DefaultValue = "mp3",
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        public string? RecordFormat { get; set; }
 
         [ActivityInput(Label = "Custom Headers", Hint = "Custom headers to be added to the SIP INVITE.", Category = PropertyCategories.Advanced, UIHint = ActivityInputUIHints.Json)]
         public IList<Header>? CustomHeaders { get; set; }
@@ -271,6 +279,7 @@ namespace Elsa.Activities.Telnyx.Activities
                 SipAuthUsername,
                 SipAuthPassword,
                 string.IsNullOrEmpty(Record) ? null : Record,
+                string.IsNullOrEmpty(RecordFormat) ? null : RecordFormat,
                 TimeLimitSecs,
                 TimeoutSecs,
                 WebhookUrl,
@@ -388,5 +397,11 @@ namespace Elsa.Activities.Telnyx.Activities
         public static ISetupActivity<Dial> WithRecord(this ISetupActivity<Dial> setup, Func<ValueTask<string?>> value) => setup.Set(x => x.Record, value);
         public static ISetupActivity<Dial> WithRecord(this ISetupActivity<Dial> setup, Func<string?> value) => setup.Set(x => x.Record, value);
         public static ISetupActivity<Dial> WithRecord(this ISetupActivity<Dial> setup, string? value) => setup.Set(x => x.Record, value);
+        
+        public static ISetupActivity<Dial> WithRecordFormat(this ISetupActivity<Dial> setup, Func<ActivityExecutionContext, ValueTask<string?>> value) => setup.Set(x => x.RecordFormat, value);
+        public static ISetupActivity<Dial> WithRecordFormat(this ISetupActivity<Dial> setup, Func<ActivityExecutionContext, string?> value) => setup.Set(x => x.RecordFormat, value);
+        public static ISetupActivity<Dial> WithRecordFormat(this ISetupActivity<Dial> setup, Func<ValueTask<string?>> value) => setup.Set(x => x.RecordFormat, value);
+        public static ISetupActivity<Dial> WithRecordFormat(this ISetupActivity<Dial> setup, Func<string?> value) => setup.Set(x => x.RecordFormat, value);
+        public static ISetupActivity<Dial> WithRecordFormat(this ISetupActivity<Dial> setup, string? value) => setup.Set(x => x.RecordFormat, value);
     }
 }

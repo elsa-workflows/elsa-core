@@ -47,6 +47,18 @@ jobs:
           npm install --force
           npm version $VERSION --allow-same-version
           npm run build
+
+      - name: Pack Designer
+        working-directory: ./src/designer/elsa-workflows-studio
+        run: npm pack
+        if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
+
+      - name: Upload Designer Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: designer-npm-package
+          path: src/designer/elsa-workflows-studio/elsa-*.tgz
+        if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
       
       - name: Build Bindings
         working-directory: ./src/designer/bindings/aspnet/Elsa.Designer.Components.Web
@@ -63,8 +75,15 @@ jobs:
       #   run: dotnet test --configuration Release --no-build
 
       - name: Pack Elsa
-        run: dotnet pack --configuration Release /p:Version=$VERSION
+        run: dotnet pack --configuration Release /p:Version=$VERSION -o out
+        if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
 
+      - name: Upload Elsa Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: elsa-nuget-package
+          path: out/*nupkg
+        if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
       # - name: NPM Publish Preview
       #   if: github.event_name == 'push'
       #   uses: JS-DevTools/npm-publish@v1
