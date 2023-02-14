@@ -70,6 +70,7 @@ namespace Elsa.Activities.Telnyx.Client.Models
         string? SipAuthUsername,
         string? SipAuthPassword,
         string? Record,
+        string? RecordFormat,
         int? TimeLimitSecs,
         int? TimeoutSecs,
         string? WebhookUrl,
