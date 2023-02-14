@@ -105,6 +105,26 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.MYGET_ELSA_2_NPM }}
 
+  publish_npm_release:
+    name: Publish to npm
+    needs: build_and_pack
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'release' }}
+    steps:
+      - name: Download NPM Package
+        uses: actions/download-artifact@v3
+        with:
+          name: designer-npm-package
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18.12.1
+          registry-url: 'https://registry.npmjs.org'
+
+      - run: npm publish *.tgz
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
   publish_nuget_myget:
     name: Publish to MyGet Nuget
     needs: build_and_pack
