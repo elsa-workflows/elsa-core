@@ -75,8 +75,15 @@ jobs:
       #   run: dotnet test --configuration Release --no-build
 
       - name: Pack Elsa
-        run: dotnet pack --configuration Release /p:Version=$VERSION
+        run: dotnet pack --configuration Release /p:Version=$VERSION -o out
+        if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
 
+      - name: Upload Elsa Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: elsa-nuget-package
+          path: out/*nupkg
+        if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
       # - name: NPM Publish Preview
       #   if: github.event_name == 'push'
       #   uses: JS-DevTools/npm-publish@v1
