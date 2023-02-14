@@ -84,27 +84,14 @@ jobs:
           name: elsa-nuget-package
           path: out/*nupkg
         if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
-      # - name: NPM Publish Preview
-      #   if: github.event_name == 'push'
-      #   uses: JS-DevTools/npm-publish@v1
-      #   with:
-      #     package: ./src/designer/elsa-workflows-studio/package.json
-      #     token: ${{ secrets.NPM_TOKEN }}
-      #     tag: preview
-        
-      # - name: NPM Publish Release
-      #   if: github.event_name == 'release'
-      #   uses: JS-DevTools/npm-publish@v1
-      #   with:
-      #     package: ./src/designer/elsa-workflows-studio/package.json
-      #     token: ${{ secrets.NPM_TOKEN }}
+      
   publish_npm_myget:
-    name: Publish to MYGET NPM
+    name: Publish to MyGet npm
     needs: build_and_pack
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
     steps:
-      - name: Download NPM Pack
+      - name: Download NPM Package
         uses: actions/download-artifact@v3
         with:
           name: designer-npm-package
@@ -117,3 +104,17 @@ jobs:
       - run: npm publish *.tgz
         env:
           NODE_AUTH_TOKEN: ${{ secrets.MYGET_ELSA_2_NPM }}
+
+  publish_nuget_myget:
+    name: Publish to MyGet Nuget
+    needs: build_and_pack
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
+    steps:
+      - name: Download Nuget Packages
+        uses: actions/download-artifact@v3
+        with:
+          name: elsa-nuget-package
+      
+      - name: Publish Nuget Packages to MyGet
+        run: dotnet nuget push *.nupkg -k ${{ secrets.MYGET_ELSA_2 }} -s https://www.myget.org/F/elsa-2/api/v2/package -ss https://www.myget.org/F/elsa-2/api/v2/symbolpackage
