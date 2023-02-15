@@ -16,15 +16,20 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Liquid.Features;
 
+/// <summary>
+/// Configures liquid functionality.
+/// </summary>
 [DependsOn(typeof(MemoryCacheFeature))]
 [DependsOn(typeof(MediatorFeature))]
 [DependsOn(typeof(ExpressionsFeature))]
 public class LiquidFeature : FeatureBase
 {
+    /// <inheritdoc />
     public LiquidFeature(IModule serviceConfiguration) : base(serviceConfiguration)
     {
     }
 
+    /// <inheritdoc />
     public override void Configure()
     {
         Services
@@ -34,6 +39,8 @@ public class LiquidFeature : FeatureBase
             .AddSingleton<LiquidParser>()
             .AddExpressionHandler<LiquidExpressionHandler, LiquidExpression>()
             .AddLiquidFilter<JsonFilter>("json")
-            .AddLiquidFilter<Base64Filter>("base64");
+            .AddLiquidFilter<Base64Filter>("base64")
+            .AddLiquidFilter<DictionaryKeysFilter>("keys")
+            ;
     }
 }

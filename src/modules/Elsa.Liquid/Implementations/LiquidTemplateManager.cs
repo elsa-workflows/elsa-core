@@ -1,10 +1,13 @@
 ﻿using System.Text.Encodings.Web;
 using Elsa.Expressions.Models;
+using Elsa.Extensions;
 using Elsa.Liquid.Notifications;
+using Elsa.Liquid.Options;
 using Elsa.Liquid.Services;
 using Elsa.Mediator.Services;
 using Fluid;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Liquid.Implementations;
 
@@ -14,15 +17,17 @@ public class LiquidTemplateManager : ILiquidTemplateManager
     private readonly LiquidParser _parser;
     private readonly IMemoryCache _memoryCache;
     private readonly IEventPublisher _eventPublisher;
+    private readonly FluidOptions _options;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public LiquidTemplateManager(LiquidParser parser, IMemoryCache memoryCache, IEventPublisher eventPublisher)
+    public LiquidTemplateManager(LiquidParser parser, IMemoryCache memoryCache, IEventPublisher eventPublisher, IOptions<FluidOptions> options, IServiceProvider serviceProvider)
     {
         _parser = parser;
         _memoryCache = memoryCache;
         _eventPublisher = eventPublisher;
+        _options = options.Value;
     }
 
     /// <inheritdoc />
@@ -32,7 +37,8 @@ public class LiquidTemplateManager : ILiquidTemplateManager
             return default!;
 
         var result = GetCachedTemplate(template);
-        var templateContext =  await CreateTemplateContextAsync(expressionExecutionContext, cancellationToken);
+        var templateContext = await CreateTemplateContextAsync(expressionExecutionContext, cancellationToken);
+        templateContext.AddFilters(_options, expressionExecutionContext.ServiceProvider);
 
         return await result.RenderAsync(templateContext, HtmlEncoder.Default);
     }
@@ -47,7 +53,7 @@ public class LiquidTemplateManager : ILiquidTemplateManager
                 {
                     error = "{% raw %}\n" + error + "\n{% endraw %}";
                     TryParse(error, out parsed, out error);
-                    
+
                     e.SetSlidingExpiration(TimeSpan.FromMilliseconds(100));
                     return parsed;
                 }

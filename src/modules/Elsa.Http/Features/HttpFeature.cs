@@ -10,6 +10,8 @@ using Elsa.Http.Options;
 using Elsa.Http.Parsers;
 using Elsa.Http.Providers;
 using Elsa.Http.Services;
+using Elsa.JavaScript.Features;
+using Elsa.Liquid.Features;
 using Elsa.Workflows.Management.Implementations;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -17,9 +19,15 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Http.Features;
 
+/// <summary>
+/// Installs services related to HTTP services and activities.
+/// </summary>
 [DependsOn(typeof(MemoryCacheFeature))]
+[DependsOn(typeof(LiquidFeature))]
+[DependsOn(typeof(JavaScriptFeature))]
 public class HttpFeature : FeatureBase
 {
+    /// <inheritdoc />
     public HttpFeature(IModule module) : base(module)
     {
     }
@@ -29,7 +37,14 @@ public class HttpFeature : FeatureBase
     /// </summary>
     public Action<HttpActivityOptions>? ConfigureHttpOptions { get; set; }
 
+    /// <summary>
+    /// A delegate that is invoked when authorizing an inbound HTTP request.
+    /// </summary>
     public Func<IServiceProvider, IHttpEndpointAuthorizationHandler> HttpEndpointAuthorizationHandler { get; set; } = ActivatorUtilities.GetServiceOrCreateInstance<AllowAnonymousHttpEndpointAuthorizationHandler>;
+    
+    /// <summary>
+    /// A delegate that is invoked when an HTTP workflow faults. 
+    /// </summary>
     public Func<IServiceProvider, IHttpEndpointWorkflowFaultHandler> HttpEndpointWorkflowFaultHandler { get; set; } = ActivatorUtilities.GetServiceOrCreateInstance<DefaultHttpEndpointWorkflowFaultHandler>;
 
     /// <summary>
@@ -91,7 +106,7 @@ public class HttpFeature : FeatureBase
             .AddSingleton<IHttpContentFactory, XmlContentFactory>()
             .AddSingleton<IHttpContentFactory, FormUrlEncodedHttpContentFactory>()
             
-            // Activity property options providers
+            // Activity property options providers.
             .AddSingleton<IActivityPropertyOptionsProvider, WriteHttpResponseContentTypeOptionsProvider>()
             ;
     }

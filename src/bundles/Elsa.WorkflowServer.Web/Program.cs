@@ -4,6 +4,7 @@ using Elsa.Identity.Options;
 using Elsa.EntityFrameworkCore.Modules.Labels;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
+using Elsa.JavaScript.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -44,6 +45,7 @@ services
         .UseHttp()
     );
 
+services.Configure<JintOptions>(options => options.AllowClrAccess = true);
 services.AddHandlersFrom<Program>();
 services.AddHealthChecks();
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()));

@@ -90,7 +90,7 @@ public class WorkflowRunner : IWorkflowRunner
         var input = options?.Input;
         var correlationId = options?.CorrelationId;
         var triggerActivityId = options?.TriggerActivityId;
-        var workflowExecutionContext = await CreateWorkflowExecutionContextAsync(workflow, instanceId, correlationId, default, input, default, triggerActivityId, cancellationToken);
+        var workflowExecutionContext = await CreateWorkflowExecutionContextAsync(scope.ServiceProvider, workflow, instanceId, correlationId, default, input, default, triggerActivityId, cancellationToken);
 
         // Schedule the first activity.
         workflowExecutionContext.ScheduleWorkflow();
@@ -108,7 +108,7 @@ public class WorkflowRunner : IWorkflowRunner
         var input = options?.Input;
         var correlationId = options?.CorrelationId ?? workflowState.CorrelationId;
         var triggerActivityId = options?.TriggerActivityId;
-        var workflowExecutionContext = await CreateWorkflowExecutionContextAsync(workflow, workflowState.Id, correlationId, workflowState, input, default, triggerActivityId, cancellationToken);
+        var workflowExecutionContext = await CreateWorkflowExecutionContextAsync(scope.ServiceProvider, workflow, workflowState.Id, correlationId, workflowState, input, default, triggerActivityId, cancellationToken);
         var bookmarkId = options?.BookmarkId;
         var nodeId = options?.ActivityNodeId;
 
@@ -165,6 +165,7 @@ public class WorkflowRunner : IWorkflowRunner
     }
 
     private async Task<WorkflowExecutionContext> CreateWorkflowExecutionContextAsync(
+        IServiceProvider serviceProvider,
         Workflow workflow,
         string instanceId,
         string? correlationId,
@@ -173,5 +174,5 @@ public class WorkflowRunner : IWorkflowRunner
         ExecuteActivityDelegate? executeActivityDelegate,
         string? triggerActivityId,
         CancellationToken cancellationToken) =>
-        await _workflowExecutionContextFactory.CreateAsync(workflow, instanceId, workflowState, input, correlationId, executeActivityDelegate, triggerActivityId, cancellationToken);
+        await _workflowExecutionContextFactory.CreateAsync(serviceProvider, workflow, instanceId, workflowState, input, correlationId, executeActivityDelegate, triggerActivityId, cancellationToken);
 }
