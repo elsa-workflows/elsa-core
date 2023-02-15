@@ -27,7 +27,8 @@ public class TaskBasedWorkflowDispatcher : IWorkflowDispatcher
             request.DefinitionId, 
             request.VersionOptions, 
             request.Input,
-            request.CorrelationId);
+            request.CorrelationId,
+            request.InstanceId);
         
         await _backgroundCommandSender.SendAsync(command, cancellationToken);
         return new DispatchWorkflowDefinitionResponse();

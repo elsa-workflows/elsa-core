@@ -9,6 +9,7 @@ public record DispatchWorkflowDefinitionCommand(
     string DefinitionId, 
     VersionOptions VersionOptions, 
     IDictionary<string, object>? Input = default, 
-    string? CorrelationId = default) : ICommand<Unit>;
+    string? CorrelationId = default,
+    string? InstanceId = default) : ICommand<Unit>;
 
 // ReSharper disable once UnusedType.Global

@@ -62,7 +62,7 @@ public interface IWorkflowRuntime
     Task<int> CountRunningWorkflowsAsync(CountRunningWorkflowsArgs args, CancellationToken cancellationToken = default);
 }
 
-public record StartWorkflowRuntimeOptions(string? CorrelationId = default, IDictionary<string, object>? Input = default, VersionOptions VersionOptions = default, string? TriggerActivityId = default);
+public record StartWorkflowRuntimeOptions(string? CorrelationId = default, IDictionary<string, object>? Input = default, VersionOptions VersionOptions = default, string? TriggerActivityId = default, string? InstanceId = default);
 public record ResumeWorkflowRuntimeOptions(string? CorrelationId = default, string? BookmarkId = default, string? ActivityId = default, IDictionary<string, object>? Input = default);
 public record CanStartWorkflowResult(string? InstanceId, bool CanStart);
 public record ResumeWorkflowResult(ICollection<Bookmark> Bookmarks);

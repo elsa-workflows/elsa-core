@@ -83,10 +83,12 @@ public class WorkflowHost : IWorkflowHost
     /// </summary>
     public async Task<ResumeWorkflowHostResult> ResumeWorkflowAsync(ResumeWorkflowHostOptions? options = default, CancellationToken cancellationToken = default)
     {
+        var originalBookmarks = WorkflowState.Bookmarks.ToList();
+        
         if (WorkflowState.Status != WorkflowStatus.Running)
         {
             _logger.LogWarning("Attempt to resume workflow {WorkflowInstanceId} that is not in the Running state. The actual state is {ActualWorkflowStatus}", WorkflowState.Id, WorkflowState.Status);
-            return new ResumeWorkflowHostResult();
+            return new ResumeWorkflowHostResult(Diff.For(originalBookmarks, new List<Bookmark>()));
         }
 
         var instanceId = WorkflowState.Id;
@@ -95,6 +97,8 @@ public class WorkflowHost : IWorkflowHost
         var workflowResult = await _workflowRunner.RunAsync(Workflow, WorkflowState, runOptions, cancellationToken);
 
         WorkflowState = workflowResult.WorkflowState;
-        return new ResumeWorkflowHostResult();
+        
+        var updatedBookmarks = WorkflowState.Bookmarks;
+        return new ResumeWorkflowHostResult(Diff.For(originalBookmarks, updatedBookmarks));
     }
 }

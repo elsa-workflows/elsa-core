@@ -59,7 +59,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         var input = options.Input;
         var correlationId = options.CorrelationId;
         var workflowHost = await CreateWorkflowHostAsync(definitionId, options, cancellationToken);
-        var startWorkflowOptions = new StartWorkflowHostOptions(default, correlationId, input, options.TriggerActivityId);
+        var startWorkflowOptions = new StartWorkflowHostOptions(options.InstanceId, correlationId, input, options.TriggerActivityId);
         await workflowHost.StartWorkflowAsync(startWorkflowOptions, cancellationToken);
         var workflowState = workflowHost.WorkflowState;
 
