@@ -2,6 +2,7 @@ using Elsa.Extensions;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Core.State;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Core.Implementations;
 
@@ -12,7 +13,6 @@ public class DefaultWorkflowExecutionContextFactory : IWorkflowExecutionContextF
     private readonly IIdentityGraphService _identityGraphService;
     private readonly IActivitySchedulerFactory _schedulerFactory;
     private readonly IWorkflowStateSerializer _workflowStateSerializer;
-    private readonly IServiceProvider _serviceProvider;
 
     /// <summary>
     /// Constructor.
@@ -21,18 +21,17 @@ public class DefaultWorkflowExecutionContextFactory : IWorkflowExecutionContextF
         IActivityWalker activityWalker,
         IIdentityGraphService identityGraphService,
         IActivitySchedulerFactory schedulerFactory,
-        IWorkflowStateSerializer workflowStateSerializer,
-        IServiceProvider serviceProvider)
+        IWorkflowStateSerializer workflowStateSerializer)
     {
         _activityWalker = activityWalker;
         _identityGraphService = identityGraphService;
         _schedulerFactory = schedulerFactory;
         _workflowStateSerializer = workflowStateSerializer;
-        _serviceProvider = serviceProvider;
     }
 
     /// <inheritdoc />
     public async Task<WorkflowExecutionContext> CreateAsync(
+        IServiceProvider serviceProvider,
         Workflow workflow,
         string instanceId,
         WorkflowState? workflowState,
@@ -57,7 +56,7 @@ public class DefaultWorkflowExecutionContextFactory : IWorkflowExecutionContextF
 
         // Setup a workflow execution context.
         var workflowExecutionContext = new WorkflowExecutionContext(
-            _serviceProvider,
+            serviceProvider,
             instanceId,
             correlationId,
             workflow,

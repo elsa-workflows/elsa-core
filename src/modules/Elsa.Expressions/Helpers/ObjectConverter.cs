@@ -67,7 +67,7 @@ public static class ObjectConverter
             return jsonObject.Deserialize(targetType, options);
         }
         
-        if (underlyingSourceType == typeof(string) && !underlyingTargetType.IsPrimitive)
+        if (underlyingSourceType == typeof(string) && !underlyingTargetType.IsPrimitive && underlyingTargetType != typeof(object))
         {
             var stringValue = (string)value;
 

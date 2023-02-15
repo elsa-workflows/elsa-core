@@ -5,7 +5,9 @@ namespace Elsa.Workflows.Core.Services;
 
 public interface IWorkflowExecutionContextFactory
 {
-    Task<WorkflowExecutionContext> CreateAsync(Workflow workflow,
+    Task<WorkflowExecutionContext> CreateAsync(
+        IServiceProvider serviceProvider,
+        Workflow workflow,
         string instanceId,
         WorkflowState? workflowState,
         IDictionary<string, object>? input = default,

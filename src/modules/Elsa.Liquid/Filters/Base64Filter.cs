@@ -7,8 +7,12 @@ using Fluid.Values;
 
 namespace Elsa.Liquid.Filters;
 
+/// <summary>
+/// A liquid filter that converts a value into a base 64 string representation.
+/// </summary>
 public class Base64Filter : ILiquidFilter
 {
+    /// <inheritdoc />
     public ValueTask<FluidValue> ProcessAsync(FluidValue input, FilterArguments arguments, TemplateContext context)
     {
         var text = InputToString(input, context);
@@ -22,7 +26,7 @@ public class Base64Filter : ILiquidFilter
         return new ValueTask<FluidValue>(new StringValue(base64));
     }
 
-    private string? InputToString(FluidValue input, TemplateContext context)
+    private static string? InputToString(FluidValue input, TemplateContext context)
     {
         return input.Type switch
         {

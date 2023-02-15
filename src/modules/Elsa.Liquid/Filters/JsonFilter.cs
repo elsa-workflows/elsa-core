@@ -5,6 +5,9 @@ using Fluid.Values;
 
 namespace Elsa.Liquid.Filters;
 
+/// <summary>
+/// A liquid filter that converts a value into a JSON string representation.
+/// </summary>
 public class JsonFilter : ILiquidFilter
 {
     public ValueTask<FluidValue> ProcessAsync(FluidValue input, FilterArguments arguments, TemplateContext context)

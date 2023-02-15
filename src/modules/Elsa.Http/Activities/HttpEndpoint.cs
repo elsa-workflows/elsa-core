@@ -30,7 +30,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
     /// <summary>
     /// The path to associate with the workflow.
     /// </summary>
-    [Input(Description = "The path to associate with the workflow.")] 
+    [Input(Description = "The path to associate with the workflow.")]
     public Input<string> Path { get; set; } = default!;
 
     /// <summary>
@@ -40,7 +40,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
         Description = "The HTTP methods to accept.",
         Options = new[] { "GET", "POST", "PUT", "HEAD", "DELETE" },
         UIHint = InputUIHints.CheckList)]
-    public Input<ICollection<string>> SupportedMethods { get; set; } = new(JsonLiteral.From(new[]{HttpMethods.Get}));
+    public Input<ICollection<string>> SupportedMethods { get; set; } = new(JsonLiteral.From(new[] { HttpMethods.Get }));
 
     /// <summary>
     /// Allow authenticated requests only.
@@ -53,13 +53,13 @@ public class HttpEndpoint : Trigger<HttpRequest>
     /// </summary>
     [Input(Description = "Provide a policy to evaluate. If the policy fails, the request is forbidden.", Category = "Security")]
     public Input<string?> Policy { get; set; } = new(default(string?));
-    
+
     /// <summary>
     /// The parsed request content, if any.
     /// </summary>
     [Output(Description = "The parsed request content, if any.")]
     public Output<object?> ParsedContent { get; set; } = default!;
-    
+
     /// <summary>
     /// The parsed route data, if any.
     /// </summary>
@@ -79,7 +79,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
             context.CreateBookmarks(GetBookmarkPayloads(context.ExpressionExecutionContext));
             return;
         }
-        
+
         var httpContextAccessor = context.GetRequiredService<IHttpContextAccessor>();
         var httpContext = httpContextAccessor.HttpContext;
 
@@ -94,7 +94,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
 
         await HandleRequestAsync(context, httpContext);
     }
-    
+
     private async ValueTask OnResumeAsync(ActivityExecutionContext context)
     {
         var httpContextAccessor = context.GetRequiredService<IHttpContextAccessor>();
@@ -118,10 +118,10 @@ public class HttpEndpoint : Trigger<HttpRequest>
         var targetType = ParsedContent.GetTargetType(context);
         var contentStream = httpRequest.Body;
         var contentType = httpRequest.ContentType;
-        
+
         return await context.ParseContentAsync(contentStream, contentType, targetType, cancellationToken);
     }
-    
+
     private static bool HasContent(HttpRequest httpRequest) => httpRequest.Headers.ContentLength > 0;
 
     private IEnumerable<object> GetBookmarkPayloads(ExpressionExecutionContext context)
@@ -131,26 +131,26 @@ public class HttpEndpoint : Trigger<HttpRequest>
         var methods = context.Get(SupportedMethods);
         return methods!.Select(x => new HttpEndpointBookmarkPayload(path!, x.ToLowerInvariant())).Cast<object>().ToArray();
     }
-    
+
     private async Task HandleRequestAsync(ActivityExecutionContext context, HttpContext httpContext)
     {
         // Provide the received HTTP request as output.
         var request = httpContext.Request;
         context.Set(Result, request);
-        
+
         // Read route data, if any.
         var path = context.GetInput<PathString>(RequestPathInputKey);
         var routeData = GetRouteData(httpContext, path);
         context.Set(RouteData, routeData);
-        
+
         // Read content, if any.
         var content = await ParseContentAsync(context, request);
         context.Set(ParsedContent, content);
-        
+
         // Complete.
         await context.CompleteActivityAsync();
     }
-    
+
     private static RouteData GetRouteData(HttpContext httpContext, string path)
     {
         var routeData = httpContext.GetRouteData();
@@ -173,5 +173,4 @@ public class HttpEndpoint : Trigger<HttpRequest>
 
         return routeData;
     }
-
 }

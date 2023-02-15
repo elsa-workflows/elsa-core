@@ -7,8 +7,6 @@ namespace Elsa.Expressions.Models;
 /// </summary>
 public class ExpressionExecutionContext
 {
-    private readonly IServiceProvider _serviceProvider;
-
     /// <summary>
     /// Constructor.
     /// </summary>
@@ -19,12 +17,17 @@ public class ExpressionExecutionContext
         IDictionary<object, object>? transientProperties = default,
         CancellationToken cancellationToken = default)
     {
-        _serviceProvider = serviceProvider;
+        ServiceProvider = serviceProvider;
         Memory = memory;
         TransientProperties = transientProperties ?? new Dictionary<object, object>();
         ParentContext = parentContext;
         CancellationToken = cancellationToken;
     }
+    
+    /// <summary>
+    /// A scoped service provider.
+    /// </summary>
+    public IServiceProvider ServiceProvider { get; }
 
     /// <summary>
     /// A shared register of computer memory. 
@@ -68,7 +71,7 @@ public class ExpressionExecutionContext
         block.Value = value;
     }
 
-    public T GetRequiredService<T>() where T : notnull => _serviceProvider.GetRequiredService<T>();
+    public T GetRequiredService<T>() where T : notnull => ServiceProvider.GetRequiredService<T>();
 
     //private MemoryDatum? GetMemoryDatumInternal(MemoryDatumReference locationReference) => MemoryRegister.TryGetMemoryDatum(locationReference.Id, out var location) ? location : ParentContext?.GetMemoryDatumInternal(locationReference);
     private MemoryBlock? GetBlockInternal(MemoryBlockReference blockReference) => Memory.TryGetBlock(blockReference.Id, out var location) ? location : default;

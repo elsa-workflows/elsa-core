@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
 
-public static class TemplateContextExtensions
+internal static class TemplateContextExtensions
 {
     internal static void AddFilters(this TemplateContext templateContext, FluidOptions options, IServiceProvider services)
     {
