@@ -83,11 +83,11 @@ namespace Elsa.Activities.Telnyx.Activities
                 PlayBeep
             );
 
-            var callControlId = context.GetCallControlId(CallControlId);
+            CallControlId = context.GetCallControlId(CallControlId);
 
             try
             {
-                await _telnyxClient.Calls.StartRecordingAsync(callControlId, request, context.CancellationToken);
+                await _telnyxClient.Calls.StartRecordingAsync(CallControlId, request, context.CancellationToken);
                 return Suspend();
             }
             catch (ApiException e)

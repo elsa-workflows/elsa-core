@@ -16,7 +16,10 @@ namespace Elsa.Activities.Telnyx.Handlers
         protected override IEnumerable<Type> GetSupportedPayloadTypes() => new[] {typeof(CallAnsweredPayload), typeof(CallHangupPayload)};
         protected override IBookmark CreateBookmark(CallPayload receivedPayload)
         {
-            return new TransferCallBookmark();
+            return new TransferCallBookmark
+            {
+                CallControlId = receivedPayload.CallControlId
+            };
         }
     }
 }
