@@ -20,6 +20,7 @@ public static class WorkflowExecutionPipelineBuilderExtensions
             .UsePersistentVariables()
             .UseBookmarkPersistence()
             .UseWorkflowExecutionLogPersistence()
+            .UseWorkflowStatePersistence()
             .UseDefaultActivityScheduler();
 
     /// <summary>
@@ -36,4 +37,9 @@ public static class WorkflowExecutionPipelineBuilderExtensions
     /// Installs middleware that persist the workflow execution journal.
     /// </summary>
     public static IWorkflowExecutionPipelineBuilder UseWorkflowExecutionLogPersistence(this IWorkflowExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<PersistWorkflowExecutionLogMiddleware>();
+    
+    /// <summary>
+    /// Installs middleware that persist the workflow execution state.
+    /// </summary>
+    public static IWorkflowExecutionPipelineBuilder UseWorkflowStatePersistence(this IWorkflowExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<PersistWorkflowStateMiddleware>();
 }

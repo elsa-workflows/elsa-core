@@ -157,9 +157,10 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddCommandHandler<DispatchWorkflowRequestHandler, DispatchWorkflowInstanceCommand>()
             .AddCommandHandler<DispatchWorkflowRequestHandler, DispatchResumeWorkflowsCommand>()
             .AddNotificationHandler<ExportWorkflowStateHandler, WorkflowExecuted>()
-            .AddNotificationHandler<IndexWorkflowTriggers, WorkflowDefinitionPublished>()
-            .AddNotificationHandler<IndexWorkflowTriggers, WorkflowDefinitionRetracted>()
-            
+            .AddNotificationHandler<ResumeDispatchWorkflowActivityHandler, WorkflowExecuted>()
+            .AddNotificationHandler<IndexWorkflowTriggersHandler, WorkflowDefinitionPublished>()
+            .AddNotificationHandler<IndexWorkflowTriggersHandler, WorkflowDefinitionRetracted>()
+
             // Workflow activation strategies.
             .AddSingleton<IWorkflowActivationStrategy, SingletonStrategy>()
             .AddSingleton<IWorkflowActivationStrategy, CorrelatedSingletonStrategy>()

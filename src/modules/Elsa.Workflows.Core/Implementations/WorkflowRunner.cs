@@ -141,10 +141,10 @@ public class WorkflowRunner : IWorkflowRunner
     {
         var workflow = workflowExecutionContext.Workflow;
         var cancellationToken = workflowExecutionContext.CancellationToken;
-        
+
         // Publish domain event.
         await _eventPublisher.PublishAsync(new WorkflowExecuting(workflow), cancellationToken);
-        
+
         // Transition into the Running state.
         workflowExecutionContext.TransitionTo(WorkflowSubStatus.Executing);
 
@@ -152,14 +152,16 @@ public class WorkflowRunner : IWorkflowRunner
         await _pipeline.ExecuteAsync(workflowExecutionContext);
 
         // Extract workflow state.
-        var workflowState = _workflowStateSerializer.SerializeState(workflowExecutionContext);
+        var workflowState = workflowExecutionContext.TransientProperties.TryGetValue(workflowExecutionContext, out var state)
+            ? (WorkflowState)state
+            : _workflowStateSerializer.SerializeState(workflowExecutionContext);
 
         // Read captured output, if any.
         var result = workflow.ResultVariable?.Get(workflowExecutionContext.MemoryRegister);
-        
+
         // Publish domain event.
         await _eventPublisher.PublishAsync(new WorkflowExecuted(workflow, workflowState), cancellationToken);
-        
+
         // Return workflow execution result containing state + bookmarks.
         return new RunWorkflowResult(workflowState, workflowExecutionContext.Workflow, result);
     }

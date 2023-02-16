@@ -3,14 +3,13 @@ using Elsa.Workflows.Core.Serialization.Converters;
 
 namespace Elsa.MassTransit.Messages;
 
-// ReSharper disable once InconsistentNaming
-public interface DispatchTriggerWorkflows
-{
-    string ActivityTypeName { get; set; }
+public record DispatchTriggerWorkflows
+(
+    string ActivityTypeName,
 
-    [JsonConverter(typeof(PolymorphicConverter))]
-    object BookmarkPayload { get; set; }
+    [property: JsonConverter(typeof(PolymorphicConverter))]
+    object BookmarkPayload,
 
-    string? CorrelationId { get; set; }
-    IDictionary<string, object>? Input { get; set; }
-}
+    string? CorrelationId,
+    IDictionary<string, object>? Input
+);

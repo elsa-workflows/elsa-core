@@ -41,4 +41,4 @@ public record ResumeWorkflowHostOptions(string? CorrelationId = default, string?
 
 public record StartWorkflowHostResult(Diff<Bookmark> BookmarksDiff);
 
-public record ResumeWorkflowHostResult;
+public record ResumeWorkflowHostResult(Diff<Bookmark> BookmarksDiff);

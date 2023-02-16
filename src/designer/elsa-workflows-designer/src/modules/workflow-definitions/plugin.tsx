@@ -9,7 +9,7 @@ import descriptorsStore from "../../data/descriptors-store";
 import studioComponentStore from "../../data/studio-component-store";
 import toolbarButtonMenuItemStore from "../../data/toolbar-button-menu-item-store";
 import {ToolbarMenuItem} from "../../components/toolbar/workflow-toolbar-menu/models";
-import {ActivityDescriptorManager, EventBus} from "../../services";
+import {ActivityDescriptorManager, EventBus, InputControlRegistry} from "../../services";
 import toolbarComponentStore from "../../data/toolbar-component-store";
 import {WorkflowDefinitionManager} from "./services/manager";
 import {WorkflowDefinition, WorkflowDefinitionSummary} from "./models/entities";
@@ -33,6 +33,7 @@ export class WorkflowDefinitionsPlugin implements Plugin {
   private api: WorkflowDefinitionsApi;
   private workflowDefinitionEditorElement: HTMLElsaWorkflowDefinitionEditorElement;
   private workflowDefinitionBrowserInstance: ModalDialogInstance;
+  private inputControlRegistry: InputControlRegistry;
 
   constructor() {
     this.eventBus = Container.get(EventBus);
@@ -40,13 +41,14 @@ export class WorkflowDefinitionsPlugin implements Plugin {
     this.workflowDefinitionManager = Container.get(WorkflowDefinitionManager);
     this.modalDialogService = Container.get(ModalDialogService);
     this.activityDescriptorManager = Container.get(ActivityDescriptorManager);
+    this.inputControlRegistry = Container.get(InputControlRegistry)
 
     const newMenuItems: Array<DropdownButtonItem> = [{
       order: 0,
       group: 0,
       text: 'Workflow Definition',
       handler: this.onNewWorkflowDefinitionSelected
-    },{
+    }, {
       order: 0,
       group: 2,
       text: 'Import',
@@ -64,6 +66,7 @@ export class WorkflowDefinitionsPlugin implements Plugin {
   }
 
   async initialize(): Promise<void> {
+    this.inputControlRegistry.add("workflow-definition-picker", c => <elsa-workflow-definition-picker-input inputContext={c}/>);
   }
 
   newWorkflow = async () => {

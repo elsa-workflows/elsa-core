@@ -1,5 +1,8 @@
 namespace Elsa.Workflows.Management.Models;
 
+/// <summary>
+/// Provides a set of well-known UI hints.
+/// </summary>
 public static class InputUIHints
 {
     public const string SingleLine = "single-line";
@@ -12,9 +15,6 @@ public static class InputUIHints
     public const string CodeEditor = "code-editor";
     public const string VariablePicker = "variable-picker";
     public const string TypePicker = "type-picker";
-
-    /// <summary>
-    /// An editor that allows the user to write a blob of JSON.
-    /// </summary>
-    public const string Json = "json";
+    public const string WorkflowDefinitionPicker = "workflow-definition-picker";
+    public const string JsonEditor = "json-editor";
 }
