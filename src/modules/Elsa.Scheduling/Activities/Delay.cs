@@ -44,7 +44,7 @@ public class Delay : CodeActivity
         [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
         TimeSpan = timeSpan;
-        Strategy = blockingStrategy;
+        Strategy = new(blockingStrategy);
     }
 
     /// <inheritdoc />
@@ -54,17 +54,17 @@ public class Delay : CodeActivity
         [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
         TimeSpan = new Input<TimeSpan>(timeSpan);
-        Strategy = blockingStrategy;
+        Strategy = new(blockingStrategy);
     }
 
     /// <inheritdoc />
     public Delay(
         Variable<TimeSpan> timeSpan, 
-        DelayBlockingStrategy blockingStrategy = DelayBlockingStrategy.NonBlocking,
+        DelayBlockingStrategy blockingStrategy = DelayBlockingStrategy.Blocking,
         [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
         TimeSpan = new Input<TimeSpan>(timeSpan);
-        Strategy = blockingStrategy;
+        Strategy = new(blockingStrategy);
     }
 
     /// <summary>
@@ -75,7 +75,8 @@ public class Delay : CodeActivity
     /// <summary>
     /// A value controlling whether the delay should happen in-process (synchronously or out of process (asynchronously).
     /// </summary>
-    [Input] public DelayBlockingStrategy Strategy { get; set; } = DelayBlockingStrategy.NonBlocking;
+    [Input(Description = "")] 
+    public Input<DelayBlockingStrategy> Strategy { get; set; } = new(DelayBlockingStrategy.Blocking);
     
     /// <summary>
     /// The threshold used by the <see cref="DelayBlockingStrategy.Auto"/>
@@ -86,7 +87,7 @@ public class Delay : CodeActivity
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var timeSpan = context.ExpressionExecutionContext.Get(TimeSpan);
-        var blockingMode = Strategy;
+        var blockingMode = Strategy.Get(context);
 
         switch (blockingMode)
         {

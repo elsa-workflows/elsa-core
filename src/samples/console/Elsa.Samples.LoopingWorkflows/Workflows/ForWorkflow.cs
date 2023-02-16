@@ -31,7 +31,7 @@ public static class ForWorkflow
                             {
                                 // The strategy determines whether the workflow should suspend or wait synchronously.
                                 // For console applications without a host, long-running workflows aren't supported, so we use the Blocking strategy. 
-                                Strategy = DelayBlockingStrategy.Blocking,
+                                Strategy = new(DelayBlockingStrategy.Blocking),
                                 TimeSpan = new Input<TimeSpan>(TimeSpan.FromSeconds(1))
                             }
                         }
