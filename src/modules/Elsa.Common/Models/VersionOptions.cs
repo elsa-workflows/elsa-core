@@ -1,5 +1,6 @@
 using System.ComponentModel;
-using Elsa.Common.TypeConverters;
+using System.Text.Json.Serialization;
+using Elsa.Common.Converters;
 
 namespace Elsa.Common.Models;
 
@@ -7,6 +8,7 @@ namespace Elsa.Common.Models;
 /// Provides parameters for querying a given version of versioned entities.
 /// </summary>
 [TypeConverter(typeof(VersionOptionsTypeConverter))]
+[JsonConverter(typeof(VersionOptionsJsonConverter))]
 public struct VersionOptions
 {
     /// <summary>

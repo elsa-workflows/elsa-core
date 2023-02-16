@@ -3,6 +3,7 @@ using Elsa.Extensions;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Runtime.Bookmarks;
 using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Services;
@@ -20,7 +21,10 @@ public class DispatchWorkflow : Activity, IBookmarksPersistedHandler
     /// <summary>
     /// The definition ID of the workflow to dispatch. 
     /// </summary>
-    [Input(Description = "The definition ID of the workflow to dispatch.")]
+    [Input(
+        Description = "The definition ID of the workflow to dispatch.",
+        UIHint = InputUIHints.WorkflowDefinitionPicker
+    )]
     public Input<string> WorkflowDefinitionId { get; set; } = default!;
 
     /// <summary>
