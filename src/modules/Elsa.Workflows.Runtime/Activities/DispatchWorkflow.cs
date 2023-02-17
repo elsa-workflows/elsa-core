@@ -49,18 +49,21 @@ public class DispatchWorkflow : Activity, IBookmarksPersistedHandler
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var waitForCompletion = WaitForCompletion.TryGet(context);
+        var identityGenerator = context.GetRequiredService<IIdentityGenerator>();
+        var instanceId = identityGenerator.GenerateId();
+        context.TransientProperties["ChildInstanceId"] = instanceId;
 
         // If we need to wait for the child workflow to complete, create a bookmark.
         if (waitForCompletion)
         {
-            var identityGenerator = context.GetRequiredService<IIdentityGenerator>();
-            var instanceId = identityGenerator.GenerateId();
-            context.TransientProperties["ChildInstanceId"] = instanceId;
             context.CreateBookmark(new DispatchWorkflowBookmark(instanceId));
         }
         else
-            // Otherwise, we can complete. 
+        {
+            // Otherwise, we can complete.
+            await BookmarksPersistedAsync(context);
             await context.CompleteActivityAsync();
+        }
     }
 
     /// <summary>
