@@ -27,7 +27,7 @@ namespace Elsa.Retention.Specifications
                 if (i == 0)
                     exp = equality;
                 else
-                    exp = Expression.And(exp, equality);
+                    exp = Expression.Or(exp, equality);
                 i++;
             }
 
