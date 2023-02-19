@@ -718,8 +718,7 @@ export class ElsaWorkflowDesigner {
     const prevTransform = this.innerD3Selected.attr('transform');
     const scaleAfter = this.zoomParams.scale;
     const root = d3.select(this.el);
-    this.svgD3Selected.call(this.zoom.scaleTo, 1);
-    console.log("DagreD3 Render");
+    this.svgD3Selected.call(this.zoom.scaleTo, 1);    
     this.dagreD3Renderer(this.innerD3Selected as any, this.graph as any);
     this.svgD3Selected.call(this.zoom.scaleTo, scaleAfter);
     this.innerD3Selected.attr('transform', prevTransform);
