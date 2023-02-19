@@ -75,7 +75,7 @@ jobs:
       #   run: dotnet test --configuration Release --no-build
 
       - name: Pack Elsa
-        run: dotnet pack --configuration Release /p:Version=$VERSION /p:PublishDir=./out
+        run: dotnet pack --configuration Release /p:Version=$VERSION /p:PackageOutputPath=out 
         if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
 
       - name: Upload Elsa Artifact
