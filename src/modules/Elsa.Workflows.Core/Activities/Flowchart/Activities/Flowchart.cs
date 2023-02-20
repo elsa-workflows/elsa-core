@@ -27,17 +27,25 @@ public class Flowchart : Container
     }
 
     [Port] [Browsable(false)] public IActivity? Start { get; set; }
+    /// <summary>
+    /// A list of connections between activities.
+    /// </summary>
     public ICollection<Connection> Connections { get; set; } = new List<Connection>();
 
+    /// <inheritdoc />
     protected override async ValueTask ScheduleChildrenAsync(ActivityExecutionContext context)
     {
-        if (Start == null!)
+        var triggerActivityId = context.WorkflowExecutionContext.TriggerActivityId;
+        var triggerActivity = triggerActivityId != null ? Activities.FirstOrDefault(x => x.Id == triggerActivityId) : default;
+        var startActivity = triggerActivity ?? Start;
+        
+        if (startActivity == null!)
         {
             await context.CompleteActivityAsync();
             return;
         }
 
-        await context.ScheduleActivityAsync(Start);
+        await context.ScheduleActivityAsync(startActivity);
     }
 
     private async ValueTask OnDescendantCompletedAsync(ActivityCompleted signal, SignalContext context)

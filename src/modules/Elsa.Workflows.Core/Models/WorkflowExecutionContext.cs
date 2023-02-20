@@ -266,7 +266,7 @@ public class WorkflowExecutionContext
     /// Returns the <see cref="IActivity"/> with the specified ID from the workflow graph.
     /// </summary>
     public IActivity FindActivityByNodeId(string nodeId) => FindNodeById(nodeId).Activity;
-    
+
     /// <summary>
     /// Returns a custom property with the specified key from the <see cref="Properties"/> dictionary.
     /// </summary>
