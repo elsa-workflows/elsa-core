@@ -52,7 +52,7 @@ public class DispatchWorkflowRequestConsumer :
     public async Task Consume(ConsumeContext<DispatchResumeWorkflows> context)
     {
         var message = context.Message;
-        var options = new ResumeWorkflowRuntimeOptions(CorrelationId: message.CorrelationId, Input: message.Input);
+        var options = new TriggerWorkflowsRuntimeOptions(CorrelationId: message.CorrelationId, Input: message.Input);
         await _workflowRuntime.ResumeWorkflowsAsync(message.ActivityTypeName, message.BookmarkPayload, options, context.CancellationToken);
     }
 }

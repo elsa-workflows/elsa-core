@@ -90,6 +90,31 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
     }
 
     /// <inheritdoc />
+    public async Task<ICollection<WorkflowExecutionResult>> StartWorkflowsAsync(string activityTypeName, object bookmarkPayload, TriggerWorkflowsRuntimeOptions options, CancellationToken cancellationToken = default)
+    {
+        var hash = _hasher.Hash(activityTypeName, bookmarkPayload);
+        var triggers = await _triggerStore.FindAsync(hash, cancellationToken);
+        var results = new List<WorkflowExecutionResult>();
+
+        foreach (var trigger in triggers)
+        {
+            var definitionId = trigger.WorkflowDefinitionId;
+            var startOptions = new StartWorkflowRuntimeOptions(options.CorrelationId, options.Input, VersionOptions.Published, trigger.ActivityId);
+            var canStartResult = await CanStartWorkflowAsync(definitionId, startOptions, cancellationToken);
+            
+            // If we can't start the workflow, don't try it.
+            if(!canStartResult.CanStart)
+                continue;
+            
+            var startResult = await StartWorkflowAsync(definitionId, startOptions, cancellationToken);
+
+            results.Add(new WorkflowExecutionResult(startResult.InstanceId, startResult.Bookmarks));
+        }
+
+        return results;
+    }
+
+    /// <inheritdoc />
     public async Task<ResumeWorkflowResult> ResumeWorkflowAsync(string workflowInstanceId, ResumeWorkflowRuntimeOptions options, CancellationToken cancellationToken = default)
     {
         var request = new ResumeWorkflowRequest
@@ -109,7 +134,7 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
     }
 
     /// <inheritdoc />
-    public async Task<ICollection<WorkflowExecutionResult>> ResumeWorkflowsAsync(string activityTypeName, object bookmarkPayload, ResumeWorkflowRuntimeOptions options, CancellationToken cancellationToken = default)
+    public async Task<ICollection<WorkflowExecutionResult>> ResumeWorkflowsAsync(string activityTypeName, object bookmarkPayload, TriggerWorkflowsRuntimeOptions options, CancellationToken cancellationToken = default)
     {
         var hash = _hasher.Hash(activityTypeName, bookmarkPayload);
         var client = _cluster.GetNamedBookmarkGrain(hash);
@@ -122,58 +147,17 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
 
         var bookmarksResponse = await client.Resolve(request, cancellationToken);
         var bookmarks = bookmarksResponse!.Bookmarks;
-        return await ResumeWorkflowsAsync(bookmarks, options, cancellationToken);
+        return await ResumeWorkflowsAsync(bookmarks, new ResumeWorkflowRuntimeOptions(options.CorrelationId, Input: options.Input), cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task<TriggerWorkflowsResult> TriggerWorkflowsAsync(string activityTypeName, object bookmarkPayload, TriggerWorkflowsRuntimeOptions options, CancellationToken cancellationToken = default)
     {
-        var triggeredWorkflows = new List<WorkflowExecutionResult>();
-        var hash = _hasher.Hash(activityTypeName, bookmarkPayload);
+        var startedWorkflows = await StartWorkflowsAsync(activityTypeName, bookmarkPayload, options, cancellationToken);
+        var resumedWorkflows = await ResumeWorkflowsAsync(activityTypeName, bookmarkPayload, options, cancellationToken);
+        var results = startedWorkflows.Concat(resumedWorkflows).ToList();
 
-        // Start new workflows.
-        var triggers = await _triggerStore.FindAsync(hash, cancellationToken);
-
-        foreach (var trigger in triggers)
-        {
-            var definitionId = trigger.WorkflowDefinitionId;
-            var startOptions = new StartWorkflowRuntimeOptions(options.CorrelationId, options.Input, VersionOptions.Published, trigger.ActivityId);
-            var canStartResult = await CanStartWorkflowAsync(definitionId, startOptions, cancellationToken);
-            
-            // If we can't start the workflow, don't try it.
-            if(!canStartResult.CanStart)
-                continue;
-            
-            var startResult = await StartWorkflowAsync(definitionId, startOptions, cancellationToken);
-
-            triggeredWorkflows.Add(new WorkflowExecutionResult(startResult.InstanceId, startResult.Bookmarks));
-        }
-        
-        // Resume existing workflow instances.
-        var client = _cluster.GetNamedBookmarkGrain(hash);
-
-        var request = new ResolveBookmarksRequest
-        {
-            ActivityTypeName = activityTypeName,
-            CorrelationId = options.CorrelationId.EmptyIfNull()
-        };
-
-        var bookmarksResponse = await client.Resolve(request, cancellationToken);
-        var bookmarks = bookmarksResponse!.Bookmarks;
-
-        foreach (var bookmark in bookmarks)
-        {
-            var workflowInstanceId = bookmark.WorkflowInstanceId;
-
-            var resumeResult = await ResumeWorkflowAsync(
-                workflowInstanceId,
-                new ResumeWorkflowRuntimeOptions(options.CorrelationId, bookmark.BookmarkId, null, options.Input),
-                cancellationToken);
-
-            triggeredWorkflows.Add(new WorkflowExecutionResult(workflowInstanceId, resumeResult.Bookmarks));
-        }
-
-        return new TriggerWorkflowsResult(triggeredWorkflows);
+        return new TriggerWorkflowsResult(results);
     }
 
     /// <inheritdoc />

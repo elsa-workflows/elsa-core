@@ -7,15 +7,22 @@ using Elsa.Workflows.Runtime.Services;
 
 namespace Elsa.Jobs.Activities.Handlers;
 
+/// <summary>
+/// A handler that resumes workflows waiting for a given job to complete.
+/// </summary>
 public class JobExecutedHandler : INotificationHandler<JobExecuted>
 {
     private readonly IWorkflowRuntime _workflowRuntime;
 
+    /// <summary>
+    /// Constructor.
+    /// </summary>
     public JobExecutedHandler(IWorkflowRuntime workflowRuntime)
     {
         _workflowRuntime = workflowRuntime;
     }
 
+    /// <inheritdoc />
     public async Task HandleAsync(JobExecuted notification, CancellationToken cancellationToken)
     {
         var job = notification.Job;
@@ -33,7 +40,7 @@ public class JobExecutedHandler : INotificationHandler<JobExecuted>
             var jobType = notification.Job.GetType();
             var payload = new EnqueuedJobPayload(job.Id);
             var jobTypeName = JobTypeNameHelper.GenerateTypeName(jobType);
-            await _workflowRuntime.ResumeWorkflowsAsync(jobTypeName, payload, new ResumeWorkflowRuntimeOptions(), cancellationToken);
+            await _workflowRuntime.ResumeWorkflowsAsync(jobTypeName, payload, new TriggerWorkflowsRuntimeOptions(), cancellationToken);
         }
     }
 }

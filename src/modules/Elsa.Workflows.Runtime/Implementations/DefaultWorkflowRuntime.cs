@@ -69,6 +69,40 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
     }
 
     /// <inheritdoc />
+    public async Task<ICollection<WorkflowExecutionResult>> StartWorkflowsAsync(
+        string activityTypeName,
+        object bookmarkPayload,
+        TriggerWorkflowsRuntimeOptions options,
+        CancellationToken cancellationToken = default)
+    {
+        var results = new List<WorkflowExecutionResult>();
+        var hash = _hasher.Hash(activityTypeName, bookmarkPayload);
+
+        // Start new workflows. Notice that this happens in a process-synchronized fashion to avoid multiple instances from being created. 
+        var sharedResource = $"{nameof(DefaultWorkflowRuntime)}__StartTriggeredWorkflows__{hash}";
+        await using (await _distributedLockProvider.AcquireLockAsync(sharedResource, TimeSpan.FromMinutes(10), cancellationToken))
+        {
+            var triggers = await _triggerStore.FindAsync(hash, cancellationToken);
+
+            foreach (var trigger in triggers)
+            {
+                var definitionId = trigger.WorkflowDefinitionId;
+                var startOptions = new StartWorkflowRuntimeOptions(options.CorrelationId, options.Input, VersionOptions.Published, trigger.ActivityId);
+                var canStartResult = await CanStartWorkflowAsync(definitionId, startOptions, cancellationToken);
+
+                // If we can't start the workflow, don't try it.
+                if (!canStartResult.CanStart)
+                    continue;
+
+                var startResult = await StartWorkflowAsync(definitionId, startOptions, cancellationToken);
+                results.Add(new WorkflowExecutionResult(startResult.InstanceId, startResult.Bookmarks));
+            }
+        }
+        
+        return results;
+    }
+
+    /// <inheritdoc />
     public async Task<ResumeWorkflowResult> ResumeWorkflowAsync(string workflowInstanceId, ResumeWorkflowRuntimeOptions options, CancellationToken cancellationToken = default)
     {
         await using (await _distributedLockProvider.AcquireLockAsync(workflowInstanceId, TimeSpan.FromMinutes(1), cancellationToken))
@@ -104,52 +138,21 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
     }
 
     /// <inheritdoc />
-    public async Task<ICollection<WorkflowExecutionResult>> ResumeWorkflowsAsync(string activityTypeName, object bookmarkPayload, ResumeWorkflowRuntimeOptions options, CancellationToken cancellationToken = default)
+    public async Task<ICollection<WorkflowExecutionResult>> ResumeWorkflowsAsync(string activityTypeName, object bookmarkPayload, TriggerWorkflowsRuntimeOptions options, CancellationToken cancellationToken = default)
     {
         var hash = _hasher.Hash(activityTypeName, bookmarkPayload);
         var correlationId = options.CorrelationId;
-        var bookmarks = correlationId == null ? await _bookmarkStore.FindByHashAsync(hash, cancellationToken) : await _bookmarkStore.FindByCorrelationAndHashAsync(correlationId, hash, cancellationToken);
-        return await ResumeWorkflowsAsync(bookmarks, options, cancellationToken);
+        var bookmarks = string.IsNullOrWhiteSpace(correlationId) ? await _bookmarkStore.FindByHashAsync(hash, cancellationToken) : await _bookmarkStore.FindByCorrelationAndHashAsync(correlationId, hash, cancellationToken);
+        return await ResumeWorkflowsAsync(bookmarks, new ResumeWorkflowRuntimeOptions(options.CorrelationId, Input: options.Input), cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task<TriggerWorkflowsResult> TriggerWorkflowsAsync(
-        string activityTypeName,
-        object bookmarkPayload,
-        TriggerWorkflowsRuntimeOptions options,
-        CancellationToken cancellationToken = default)
+    public async Task<TriggerWorkflowsResult> TriggerWorkflowsAsync(string activityTypeName, object bookmarkPayload, TriggerWorkflowsRuntimeOptions options, CancellationToken cancellationToken = default)
     {
-        var triggeredWorkflows = new List<WorkflowExecutionResult>();
-        var hash = _hasher.Hash(activityTypeName, bookmarkPayload);
-
-        // Start new workflows. Notice that this happens in a process-synchronized fashion to avoid multiple instances being created. 
-        const string sharedResource = $"{nameof(DefaultWorkflowRuntime)}__StartTriggeredWorkflows";
-        await using (await _distributedLockProvider.AcquireLockAsync(sharedResource, TimeSpan.FromMinutes(10), cancellationToken))
-        {
-            var triggers = await _triggerStore.FindAsync(hash, cancellationToken);
-
-            foreach (var trigger in triggers)
-            {
-                var definitionId = trigger.WorkflowDefinitionId;
-                var startOptions = new StartWorkflowRuntimeOptions(options.CorrelationId, options.Input, VersionOptions.Published, trigger.ActivityId);
-                var canStartResult = await CanStartWorkflowAsync(definitionId, startOptions, cancellationToken);
-
-                // If we can't start the workflow, don't try it.
-                if (!canStartResult.CanStart)
-                    continue;
-
-                var startResult = await StartWorkflowAsync(definitionId, startOptions, cancellationToken);
-                triggeredWorkflows.Add(new WorkflowExecutionResult(startResult.InstanceId, startResult.Bookmarks));
-            }
-        }
-
-        // Resume bookmarks.
-        var correlationId = options.CorrelationId;
-        var bookmarks = (string.IsNullOrEmpty(correlationId) ? await _bookmarkStore.FindByHashAsync(hash, cancellationToken) : await _bookmarkStore.FindByCorrelationAndHashAsync(correlationId, hash, cancellationToken)).ToList();
-        var resumedWorkflows = await ResumeWorkflowsAsync(bookmarks, new ResumeWorkflowRuntimeOptions(options.CorrelationId, Input: options.Input), cancellationToken);
-
-        triggeredWorkflows.AddRange(resumedWorkflows.Select(x => new WorkflowExecutionResult(x.InstanceId, x.Bookmarks)));
-        return new TriggerWorkflowsResult(triggeredWorkflows);
+        var startedWorkflows = await StartWorkflowsAsync(activityTypeName, bookmarkPayload, options, cancellationToken);
+        var resumedWorkflows = await ResumeWorkflowsAsync(activityTypeName, bookmarkPayload, options, cancellationToken);
+        var results = startedWorkflows.Concat(resumedWorkflows).ToList();
+        return new TriggerWorkflowsResult(results);
     }
 
     /// <inheritdoc />
