@@ -29,6 +29,6 @@ internal class ResumeDispatchWorkflowActivityHandler : INotificationHandler<Work
 
         var bookmark = new DispatchWorkflowBookmark(notification.WorkflowState.Id);
         var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<DispatchWorkflow>();
-        await _workflowRuntime.TriggerWorkflowsAsync(activityTypeName, bookmark, new TriggerWorkflowsRuntimeOptions(), cancellationToken);
+        await _workflowRuntime.ResumeWorkflowsAsync(activityTypeName, bookmark, new TriggerWorkflowsRuntimeOptions(), cancellationToken);
     }
 }
