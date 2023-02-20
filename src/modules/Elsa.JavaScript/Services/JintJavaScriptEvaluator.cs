@@ -9,6 +9,7 @@ using Elsa.JavaScript.Options;
 using Elsa.Mediator.Services;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Activities;
+using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Management.Services;
 using Humanizer;
 using Jint;
@@ -113,21 +114,8 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         }
     }
 
-    private static WorkflowDefinitionActivity? GetFirstWorkflowDefinitionActivity(ExpressionExecutionContext context)
-    {
-        var activityExecutionContext = context.GetActivityExecutionContext();
-
-        // Get the closest ancestor that is of type WorkflowDefinitionActivity.
-        while (activityExecutionContext != null)
-        {
-            if (activityExecutionContext.Activity is WorkflowDefinitionActivity workflowDefinitionActivity)
-                return workflowDefinitionActivity;
-
-            activityExecutionContext = activityExecutionContext.ParentActivityExecutionContext;
-        }
-
-        return null;
-    }
+    private static WorkflowDefinitionActivity? GetFirstWorkflowDefinitionActivity(ExpressionExecutionContext context) => 
+        context.GetActivityExecutionContext().GetFirstWorkflowDefinitionActivity();
 
     private static void CreateMemoryBlockAccessors(Engine engine, ExpressionExecutionContext context)
     {
@@ -141,13 +129,13 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         }
     }
     
-    private static object? ExecuteExpressionAndGetResult(Engine engine, string expression)
+    private static object ExecuteExpressionAndGetResult(Engine engine, string expression)
     {
         var result = engine.Evaluate(expression);
         return result.ToObject();
     }
 
-    private string Serialize(object value)
+    private static string Serialize(object value)
     {
         var options = new JsonSerializerOptions();
         options.Converters.Add(new JsonStringEnumConverter());
