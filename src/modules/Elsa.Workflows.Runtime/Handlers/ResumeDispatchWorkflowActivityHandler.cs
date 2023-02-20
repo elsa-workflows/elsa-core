@@ -4,6 +4,7 @@ using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Notifications;
 using Elsa.Workflows.Runtime.Activities;
 using Elsa.Workflows.Runtime.Bookmarks;
+using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Services;
 using JetBrains.Annotations;
 
@@ -15,9 +16,9 @@ namespace Elsa.Workflows.Runtime.Handlers;
 [PublicAPI]
 internal class ResumeDispatchWorkflowActivityHandler : INotificationHandler<WorkflowExecuted>
 {
-    private readonly IWorkflowRuntime _workflowRuntime;
+    private readonly IWorkflowDispatcher _workflowRuntime;
 
-    public ResumeDispatchWorkflowActivityHandler(IWorkflowRuntime workflowRuntime)
+    public ResumeDispatchWorkflowActivityHandler(IWorkflowDispatcher workflowRuntime)
     {
         _workflowRuntime = workflowRuntime;
     }
@@ -29,6 +30,7 @@ internal class ResumeDispatchWorkflowActivityHandler : INotificationHandler<Work
 
         var bookmark = new DispatchWorkflowBookmark(notification.WorkflowState.Id);
         var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<DispatchWorkflow>();
-        await _workflowRuntime.ResumeWorkflowsAsync(activityTypeName, bookmark, new TriggerWorkflowsRuntimeOptions(), cancellationToken);
+        var request = new DispatchResumeWorkflowsRequest(activityTypeName, bookmark);
+        await _workflowRuntime.DispatchAsync(request, cancellationToken);
     }
 }
