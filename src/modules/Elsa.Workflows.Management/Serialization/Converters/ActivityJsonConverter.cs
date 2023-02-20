@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Expressions.Services;
 using Elsa.Workflows.Core.Activities;
@@ -68,9 +69,10 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
 
         var context = new ActivityConstructorContext(doc.RootElement, newOptions);
         var activity = activityDescriptor.Constructor(context);
+
+        // Reconstruct synthetic inputs.
         
-        // Reconstruct inputs.
-        foreach (var inputDescriptor in activityDescriptor.Inputs)
+        foreach (var inputDescriptor in activityDescriptor.Inputs.Where(x => x.IsSynthetic))
         {
             var inputName = inputDescriptor.Name;
             var propertyName = inputName.Camelize();
@@ -79,15 +81,24 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
                     
             if (doc.RootElement.TryGetProperty(propertyName, out var propertyElement) && propertyElement.ValueKind != JsonValueKind.Null && propertyElement.ValueKind != JsonValueKind.Undefined)
             {
-                var json = propertyElement.ToString();
-                var inputValue = JsonSerializer.Deserialize(json, wrappedType, newOptions);
+                var isWrapped = propertyElement.ValueKind == JsonValueKind.Object && propertyElement.GetProperty("typeName").ValueKind != JsonValueKind.Undefined;
+                
+                if (isWrapped)
+                {
+                    var json = propertyElement.ToString();
+                    var inputValue = JsonSerializer.Deserialize(json, wrappedType, newOptions);
 
-                activity.SyntheticProperties[inputName] = inputValue!;
+                    activity.SyntheticProperties[inputName] = inputValue!;    
+                }
+                else
+                {
+                    activity.SyntheticProperties[inputName] = propertyElement.ConvertTo(inputDescriptor.Type)!;
+                }
             }
         }
         
-        // Reconstruct outputs.
-        foreach (var outputDescriptor in activityDescriptor.Outputs)
+        // Reconstruct synthetic outputs.
+        foreach (var outputDescriptor in activityDescriptor.Outputs.Where(x => x.IsSynthetic))
         {
             var outputName = outputDescriptor.Name;
             var propertyName = outputName.Camelize();
@@ -122,11 +133,8 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
         
         // Write to a JsonObject so that we can add additional information.
         var activityModel = JsonSerializer.SerializeToNode(value, value.GetType(), newOptions)!;
-        var activityType = value.GetType();
-        var typedInputs = _activityDescriber.DescribeInputProperties(activityType).ToDictionary(x => x.Name);
-        var typedOutputs = _activityDescriber.DescribeOutputProperties(activityType).ToDictionary(x => x.Name);
-        var syntheticInputs = activityDescriptor.Inputs.Where(x => !typedInputs.ContainsKey(x.Name)).ToList();
-        var syntheticOutputs = activityDescriptor.Outputs.Where(x => !typedOutputs.ContainsKey(x.Name)).ToList();
+        var syntheticInputs = activityDescriptor.Inputs.Where(x => x.IsSynthetic).ToList();
+        var syntheticOutputs = activityDescriptor.Outputs.Where(x => x.IsSynthetic).ToList();
 
         // Write synthetic inputs. 
         foreach (var inputDescriptor in syntheticInputs)
