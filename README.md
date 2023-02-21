@@ -13,7 +13,7 @@
 [![Docker Image Version (latest semver)](https://img.shields.io/docker/v/elsaworkflows/elsa-dashboard-and-server?label=docker&logo=docker)](https://hub.docker.com/repository/docker/elsaworkflows/elsa-dashboard-and-server)
 
 
-[![Build Elsa](https://github.com/elsa-workflows/elsa-core/actions/workflows/publish-latest-elsa.yml/badge.svg)](https://github.com/elsa-workflows/elsa-core/actions/workflows/publish-latest-elsa.yml)
+[![Build Elsa](https://github.com/elsa-workflows/elsa-core/actions/workflows/publish-latest-elsa.yml/badge.svg?branch=master)](https://github.com/elsa-workflows/elsa-core/actions/workflows/publish-latest-elsa.yml)
 [![Build elsa-dashboard:latest](https://github.com/elsa-workflows/elsa-core/actions/workflows/publish-latest-dashboard-and-server-docker.yml/badge.svg)](https://github.com/elsa-workflows/elsa-core/actions/workflows/publish-latest-dashboard-and-server-docker.yml)
 
 [![Discord](https://img.shields.io/discord/814605913783795763?label=chat&logo=discord)](https://discord.gg/hhChk5H472)
