@@ -6,10 +6,10 @@ import {InputDefinition, OutputDefinition} from "../../models/entities";
 import {DeleteIcon, EditIcon} from "../../../../components/icons/tooling";
 
 @Component({
-  tag: 'elsa-workflow-definition-activity-settings',
+  tag: 'elsa-workflow-definition-input-output-settings',
   shadow: false
 })
-export class ActivitySettings {
+export class InputOutputSettings {
   private readonly modalDialogService: ModalDialogService;
   private readonly inputSaveAction: ModalActionDefinition;
   private readonly outputSaveAction: ModalActionDefinition;

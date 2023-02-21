@@ -190,12 +190,12 @@ export class WorkflowDefinitionPropertiesEditor {
       }
     }
 
-    const activityTabModel: TabModel = {
-      name: 'activity',
+    const inputOutputTabModel: TabModel = {
+      name: 'input-output',
       tab: {
-        displayText: 'Activity',
+        displayText: 'Input/output',
         order: 15,
-        content: () => this.renderActivitySettingsTab()
+        content: () => this.renderInputOutputTab()
       }
     }
 
@@ -208,10 +208,7 @@ export class WorkflowDefinitionPropertiesEditor {
       }
     }
 
-    model.tabModels = [propertiesTabModel, variablesTabModel, settingsTabModel, versionHistoryTabModel];
-
-    if(workflowDefinition.usableAsActivity)
-      model.tabModels.push(activityTabModel);
+    model.tabModels = [propertiesTabModel, variablesTabModel, settingsTabModel, versionHistoryTabModel, inputOutputTabModel];
 
     const args: WorkflowPropertiesEditorDisplayingArgs = {model};
 
@@ -230,12 +227,12 @@ export class WorkflowDefinitionPropertiesEditor {
     </div>
   };
 
-  private renderActivitySettingsTab = () => {
+  private renderInputOutputTab = () => {
     const inputs: Array<InputDefinition> = this.workflowDefinition?.inputs ?? [];
     const outputs: Array<OutputDefinition> = this.workflowDefinition?.outputs ?? [];
 
     return <div>
-      <elsa-workflow-definition-activity-settings
+      <elsa-workflow-definition-input-output-settings
         inputs={inputs}
         outputs={outputs}
         onInputsChanged={e => this.onInputsUpdated(e)}
