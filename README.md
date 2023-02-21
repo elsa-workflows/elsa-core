@@ -9,11 +9,11 @@
 [![Nuget (with prereleases)](https://img.shields.io/nuget/vpre/Elsa)](https://www.nuget.org/packages/Elsa/)
 [![npm](https://img.shields.io/npm/v/@elsa-workflows/elsa-workflows-studio)](https://www.npmjs.com/package/@elsa-workflows/elsa-workflows-studio)
 [![MyGet (with prereleases)](https://img.shields.io/myget/elsa-2/vpre/Elsa?label=myget%20%28nuget%29)](https://www.myget.org/gallery/elsa-2)
-[![MyGet npm](https://img.shields.io/badge/dynamic/json?color=orange&label=myget%20%28npm%29&query=%24%5B%27dist-tags%27%5D.latest&url=https%3A%2F%2Fwww.myget.org%2FF%2Felsa-2-npm%2Fnpm%2F%40elsa-workflows%2Felsa-workflows-studio)](https://www.myget.org/feed/elsa-2-npm/package/npm/@elsa-workflows/elsa-workflows-studio)
+[![MyGet npm](https://img.shields.io/badge/dynamic/json?color=yellow&label=myget%20%28npm%29&prefix=v&query=%24%5B%27dist-tags%27%5D.latest&url=https%3A%2F%2Fwww.myget.org%2FF%2Felsa-2-npm%2Fnpm%2F%40elsa-workflows%2Felsa-workflows-studio)](https://www.myget.org/feed/elsa-2-npm/package/npm/@elsa-workflows/elsa-workflows-studio)
 [![Docker Image Version (latest semver)](https://img.shields.io/docker/v/elsaworkflows/elsa-dashboard-and-server?label=docker&logo=docker)](https://hub.docker.com/repository/docker/elsaworkflows/elsa-dashboard-and-server)
 
 
-[![Build Elsa](https://github.com/elsa-workflows/elsa-core/actions/workflows/publish-latest-elsa.yml/badge.svg)](https://github.com/elsa-workflows/elsa-core/actions/workflows/publish-latest-elsa.yml.yml)
+[![Build Elsa](https://github.com/elsa-workflows/elsa-core/actions/workflows/publish-latest-elsa.yml/badge.svg)](https://github.com/elsa-workflows/elsa-core/actions/workflows/publish-latest-elsa.yml)
 [![Build elsa-dashboard:latest](https://github.com/elsa-workflows/elsa-core/actions/workflows/publish-latest-dashboard-and-server-docker.yml/badge.svg)](https://github.com/elsa-workflows/elsa-core/actions/workflows/publish-latest-dashboard-and-server-docker.yml)
 
 [![Discord](https://img.shields.io/discord/814605913783795763?label=chat&logo=discord)](https://discord.gg/hhChk5H472)
