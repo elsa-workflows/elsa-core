@@ -2,7 +2,6 @@ using Elsa.Common.Models;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Activities;
 using Elsa.Workflows.Management.Entities;
-using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Management.Services;
 using Humanizer;
 
@@ -58,6 +57,8 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
                 activity.Type = typeName;
                 activity.WorkflowDefinitionId = definition.DefinitionId;
                 activity.Version = definition.Version;
+                activity.UseVersion = definition.Version;
+                activity.AlwaysUsePublishedVersion = true;
                 
                 return activity;
             }
