@@ -12,4 +12,10 @@ public static class ActivityDescriberExtensions
         var propertyInfo = expression.GetProperty()!;
         return activityDescriber.DescribeOutputProperty(propertyInfo);
     }
+    
+    public static InputDescriptor DescribeInputProperty<TActivity, TProperty>(this IActivityDescriber activityDescriber, Expression<Func<TActivity, TProperty>> expression)
+    {
+        var propertyInfo = expression.GetProperty()!;
+        return activityDescriber.DescribeInputProperty(propertyInfo);
+    }
 }

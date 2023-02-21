@@ -103,6 +103,7 @@ public class ActivityDescriber : IActivityDescriber
     public IEnumerable<PropertyInfo> GetOutputProperties([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type activityType) => 
         activityType.GetProperties().Where(x => typeof(Output).IsAssignableFrom(x.PropertyType)).DistinctBy(x => x.Name).ToList();
 
+    /// <inheritdoc />
     public OutputDescriptor DescribeOutputProperty(PropertyInfo propertyInfo)
     {
         var outputAttribute = propertyInfo.GetCustomAttribute<OutputAttribute>();
@@ -119,10 +120,42 @@ public class ActivityDescriber : IActivityDescriber
             outputAttribute?.IsBrowsable ?? true
         );
     }
+    
+    public InputDescriptor DescribeInputProperty(PropertyInfo propertyInfo)
+    {
+        var inputAttribute = propertyInfo.GetCustomAttribute<InputAttribute>();
+        var descriptionAttribute = propertyInfo.GetCustomAttribute<DescriptionAttribute>();
+        var propertyType = propertyInfo.PropertyType;
+        var isWrappedProperty = typeof(Input).IsAssignableFrom(propertyType);
+        var wrappedPropertyType = !isWrappedProperty ? propertyType : propertyInfo.PropertyType.GenericTypeArguments[0];
 
+        if (wrappedPropertyType.IsNullableType())
+            wrappedPropertyType = wrappedPropertyType.GetTypeOfNullable();
+
+        return new InputDescriptor
+        (
+            inputAttribute?.Name ?? propertyInfo.Name,
+            wrappedPropertyType,
+            isWrappedProperty,
+            GetUIHint(wrappedPropertyType, inputAttribute),
+            inputAttribute?.DisplayName ?? propertyInfo.Name.Humanize(LetterCasing.Title),
+            descriptionAttribute?.Description ?? inputAttribute?.Description,
+            _optionsResolver.GetOptions(propertyInfo),
+            inputAttribute?.Category,
+            inputAttribute?.Order ?? 0,
+            _defaultValueResolver.GetDefaultValue(propertyInfo),
+            inputAttribute?.DefaultSyntax,
+            //inputAttribute?.SupportedSyntaxes, TODO: Come up with a different way to specify support languages for activity inputs. By default, maybe all props should support all registered scripting languages?
+            inputAttribute?.IsReadOnly ?? false,
+            inputAttribute?.IsBrowsable ?? true
+        );
+    }
+
+    /// <inheritdoc />
     public IEnumerable<InputDescriptor> DescribeInputProperties([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]Type activityType) => 
         DescribeInputProperties(GetInputProperties(activityType));
-    
+
+    /// <inheritdoc />
     public IEnumerable<OutputDescriptor> DescribeOutputProperties([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]Type activityType) => 
         DescribeOutputProperties(GetOutputProperties(activityType));
     

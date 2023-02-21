@@ -2,6 +2,7 @@ using Elsa.Common.Models;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Activities;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Management.Services;
 using Humanizer;
 
@@ -14,14 +15,16 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
 {
     private readonly IWorkflowDefinitionStore _store;
     private readonly IActivityFactory _activityFactory;
+    private readonly IActivityDescriber _activityDescriber;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public WorkflowDefinitionActivityProvider(IWorkflowDefinitionStore store, IActivityFactory activityFactory)
+    public WorkflowDefinitionActivityProvider(IWorkflowDefinitionStore store, IActivityFactory activityFactory, IActivityDescriber activityDescriber)
     {
         _store = store;
         _activityFactory = activityFactory;
+        _activityDescriber = activityDescriber;
     }
 
     /// <inheritdoc />
@@ -61,11 +64,12 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
         };
     }
 
-    private static IEnumerable<InputDescriptor> DescribeInputs(WorkflowDefinition definition) =>
-        definition.Inputs.Select(inputDefinition =>
+    private IEnumerable<InputDescriptor> DescribeInputs(WorkflowDefinition definition)
+    {
+        var inputs = definition.Inputs.Select(inputDefinition =>
         {
             var nakedType = inputDefinition.Type;
-            
+
             return new InputDescriptor
             {
                 Type = nakedType,
@@ -78,7 +82,15 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
                 IsSynthetic = true
             };
         });
-    
+
+        foreach (var input in inputs)
+        {
+            yield return input;
+        }
+
+        //yield return _activityDescriber.DescribeInputProperty<WorkflowDefinitionActivity, bool>(x => x.AlwaysUsePublishedVersion);
+    }
+
     private static IEnumerable<OutputDescriptor> DescribeOutputs(WorkflowDefinition definition) =>
         definition.Outputs.Select(outputDefinition =>
         {
