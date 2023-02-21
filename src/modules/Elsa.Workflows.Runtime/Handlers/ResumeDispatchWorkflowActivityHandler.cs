@@ -22,15 +22,18 @@ internal class ResumeDispatchWorkflowActivityHandler : INotificationHandler<Work
     {
         _workflowRuntime = workflowRuntime;
     }
-    
+
     public async Task HandleAsync(WorkflowExecuted notification, CancellationToken cancellationToken)
     {
-        if (notification.WorkflowState.Status != WorkflowStatus.Finished)
+        var workflowState = notification.WorkflowState;
+
+        if (workflowState.Status != WorkflowStatus.Finished)
             return;
 
         var bookmark = new DispatchWorkflowBookmark(notification.WorkflowState.Id);
         var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<DispatchWorkflow>();
-        var request = new DispatchResumeWorkflowsRequest(activityTypeName, bookmark);
+        var input = workflowState.Output;
+        var request = new DispatchResumeWorkflowsRequest(activityTypeName, bookmark, Input: input);
         await _workflowRuntime.DispatchAsync(request, cancellationToken);
     }
 }

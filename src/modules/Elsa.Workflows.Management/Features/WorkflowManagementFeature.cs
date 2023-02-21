@@ -128,6 +128,12 @@ public class WorkflowManagementFeature : FeatureBase
     }
 
     /// <inheritdoc />
+    public override void Configure()
+    {
+        AddActivitiesFrom<WorkflowManagementFeature>();
+    }
+
+    /// <inheritdoc />
     public override void Apply()
     {
         Services

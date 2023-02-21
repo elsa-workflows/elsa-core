@@ -1,3 +1,4 @@
+using Elsa.Extensions;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Activities;
 
@@ -20,19 +21,6 @@ public static class ActivityExecutionContextExtensions
     /// <summary>
     /// Returns the first <see cref="WorkflowDefinitionActivity"/> in scope of the specified <see cref="ActivityExecutionContext"/>.
     /// </summary>
-    public static ActivityExecutionContext? GetFirstWorkflowDefinitionActivityExecutionContext(this ActivityExecutionContext context)
-    {
-        var currentContext = context;
-        
-        // Get the closest ancestor that is of type WorkflowDefinitionActivity.
-        while (currentContext != null)
-        {
-            if (currentContext.Activity is WorkflowDefinitionActivity workflowDefinitionActivity)
-                return currentContext;
-
-            currentContext = currentContext.ParentActivityExecutionContext;
-        }
-
-        return null;
-    }
+    public static ActivityExecutionContext? GetFirstWorkflowDefinitionActivityExecutionContext(this ActivityExecutionContext context) => 
+        context.GetAncestors().FirstOrDefault(x => x.Activity is WorkflowDefinitionActivity);
 }

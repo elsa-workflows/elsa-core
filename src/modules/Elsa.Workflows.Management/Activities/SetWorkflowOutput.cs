@@ -33,13 +33,27 @@ public class SetWorkflowOutput : CodeActivity
         // Get the first workflow definition activity in scope, so that we can get its output definitions.
         var workflowDefinitionActivityContext = context.GetFirstWorkflowDefinitionActivityExecutionContext();
 
-        if (workflowDefinitionActivityContext == null)
-            return;
+        if (workflowDefinitionActivityContext != null)
+            // Set the output on the first workflow definition activity execution context in scope.
+            await SetWorkflowDefinitionActivityOutputAsync(context, workflowDefinitionActivityContext);
+        else
+            // If no workflow definition activity is in scope, set the output on the workflow execution context.
+            SetWorkflowDefinitionOutput(context);
+    }
 
+    private void SetWorkflowDefinitionOutput(ActivityExecutionContext context)
+    {
+        var outputName = OutputName.Get(context);
+        var workflowActivityContext = context.GetAncestors().Last(x => x.Activity is Workflow);
+        var outputValue = OutputValue.Get(context);
+        workflowActivityContext.WorkflowExecutionContext.Output[outputName] = outputValue!;
+    }
+
+    private async Task SetWorkflowDefinitionActivityOutputAsync(ActivityExecutionContext context, ActivityExecutionContext workflowDefinitionActivityContext)
+    {
         var workflowDefinitionStore = context.GetRequiredService<IWorkflowDefinitionStore>();
         var workflowDefinitionActivity = (WorkflowDefinitionActivity)workflowDefinitionActivityContext.Activity;
-        var workflowDefinitionIdentity = workflowDefinitionActivityContext.WorkflowExecutionContext.Workflow.Identity;
-        var workflowDefinition = await workflowDefinitionStore.FindByDefinitionIdAsync(workflowDefinitionIdentity.DefinitionId, VersionOptions.SpecificVersion(workflowDefinitionIdentity.Version));
+        var workflowDefinition = await workflowDefinitionStore.FindByDefinitionIdAsync(workflowDefinitionActivity.WorkflowDefinitionId, VersionOptions.SpecificVersion(workflowDefinitionActivity.Version));
 
         if (workflowDefinition == null)
             return;

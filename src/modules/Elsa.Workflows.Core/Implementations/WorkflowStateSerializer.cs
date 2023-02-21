@@ -20,6 +20,7 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
             Status = workflowExecutionContext.Status,
             SubStatus = workflowExecutionContext.SubStatus,
             Bookmarks = workflowExecutionContext.Bookmarks,
+            Output = workflowExecutionContext.Output,
             Fault = SerializeFault(workflowExecutionContext.Fault)
         };
 
@@ -37,6 +38,7 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
         workflowExecutionContext.CorrelationId = state.CorrelationId;
         workflowExecutionContext.SubStatus = state.SubStatus;
         workflowExecutionContext.Bookmarks = state.Bookmarks;
+        workflowExecutionContext.Output = state.Output;
         DeserializeProperties(state, workflowExecutionContext);
         DeserializeActivityExecutionContexts(state, workflowExecutionContext);
         DeserializeCompletionCallbacks(state, workflowExecutionContext);

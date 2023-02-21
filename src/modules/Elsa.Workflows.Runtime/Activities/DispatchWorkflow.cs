@@ -14,9 +14,9 @@ namespace Elsa.Workflows.Runtime.Activities;
 /// <summary>
 /// Creates a new workflow instance of the specified workflow and dispatches it for execution.
 /// </summary>
-[Activity("Elsa", "Primitives", "Create a new workflow instance of the specified workflow and dispatch it for execution.")]
+[Activity("Elsa", "Composition", "Create a new workflow instance of the specified workflow and dispatch it for execution.")]
 [PublicAPI]
-public class DispatchWorkflow : Activity, IBookmarksPersistedHandler
+public class DispatchWorkflow : Activity<object>, IBookmarksPersistedHandler
 {
     /// <summary>
     /// The definition ID of the workflow to dispatch. 
@@ -56,7 +56,7 @@ public class DispatchWorkflow : Activity, IBookmarksPersistedHandler
         // If we need to wait for the child workflow to complete, create a bookmark.
         if (waitForCompletion)
         {
-            context.CreateBookmark(new DispatchWorkflowBookmark(instanceId));
+            context.CreateBookmark(new DispatchWorkflowBookmark(instanceId), OnChildWorkflowCompletedAsync);
         }
         else
         {
@@ -85,5 +85,12 @@ public class DispatchWorkflow : Activity, IBookmarksPersistedHandler
         
         // Dispatch the child workflow.
         await workflowDispatcher.DispatchAsync(request, context.CancellationToken);
+    }
+    
+    private async ValueTask OnChildWorkflowCompletedAsync(ActivityExecutionContext context)
+    {
+        var input = context.Input;
+        context.Set(Result, input);
+        await context.CompleteActivityAsync();
     }
 }

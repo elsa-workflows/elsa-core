@@ -89,7 +89,8 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
                 Type = nakedType,
                 Name = outputDefinition.Name,
                 DisplayName = outputDefinition.DisplayName,
-                Description = outputDefinition.Description
+                Description = outputDefinition.Description,
+                IsSynthetic = true
             };
         });
 }
