@@ -13,7 +13,10 @@ namespace Elsa.Activities.Telnyx.Handlers
 
         protected override IBookmark CreateBookmark(CallPayload receivedPayload)
         {
-            return new GatherUsingSpeakBookmark();
+            return new GatherUsingSpeakBookmark
+            {
+                CallControlId = receivedPayload.CallControlId
+            };
         }
     }
 }

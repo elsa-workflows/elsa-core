@@ -73,9 +73,9 @@ namespace Elsa.Activities.Telnyx.Activities
         {
             try
             {
-                var callControlId = context.GetCallControlId(CallControlId);
+                CallControlId = context.GetCallControlId(CallControlId);
                 var request = new AnswerCallRequest(BillingGroupId, ClientState, CommandId, WebhookUrl, WebhookUrlMethod);
-                await _telnyxClient.Calls.AnswerCallAsync(callControlId, request, context.CancellationToken);
+                await _telnyxClient.Calls.AnswerCallAsync(CallControlId, request, context.CancellationToken);
                 return Suspend();
             }
             catch (ApiException e)
