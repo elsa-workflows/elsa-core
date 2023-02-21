@@ -16,5 +16,6 @@ public static class InputUIHints
     public const string VariablePicker = "variable-picker";
     public const string TypePicker = "type-picker";
     public const string WorkflowDefinitionPicker = "workflow-definition-picker";
+    public const string OutputPicker = "output-picker";
     public const string JsonEditor = "json-editor";
 }

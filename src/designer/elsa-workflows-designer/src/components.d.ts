@@ -188,6 +188,9 @@ export namespace Components {
     interface ElsaNotificationsManager {
         "modalState": boolean;
     }
+    interface ElsaOutputPickerInput {
+        "inputContext": ActivityInputContext;
+    }
     interface ElsaPager {
         "page": number;
         "pageSize": number;
@@ -246,10 +249,6 @@ export namespace Components {
     interface ElsaWidgets {
         "widgets": Array<Widget>;
     }
-    interface ElsaWorkflowDefinitionActivitySettings {
-        "inputs"?: Array<InputDefinition>;
-        "outputs"?: Array<OutputDefinition>;
-    }
     interface ElsaWorkflowDefinitionBrowser {
     }
     interface ElsaWorkflowDefinitionEditor {
@@ -271,6 +270,10 @@ export namespace Components {
     }
     interface ElsaWorkflowDefinitionEditorToolboxActivities {
         "graph": Graph;
+    }
+    interface ElsaWorkflowDefinitionInputOutputSettings {
+        "inputs"?: Array<InputDefinition>;
+        "outputs"?: Array<OutputDefinition>;
     }
     interface ElsaWorkflowDefinitionPickerInput {
         "inputContext": ActivityInputContext;
@@ -396,10 +399,6 @@ export interface ElsaVariablesEditorCustomEvent<T> extends CustomEvent<T> {
     detail: T;
     target: HTMLElsaVariablesEditorElement;
 }
-export interface ElsaWorkflowDefinitionActivitySettingsCustomEvent<T> extends CustomEvent<T> {
-    detail: T;
-    target: HTMLElsaWorkflowDefinitionActivitySettingsElement;
-}
 export interface ElsaWorkflowDefinitionBrowserCustomEvent<T> extends CustomEvent<T> {
     detail: T;
     target: HTMLElsaWorkflowDefinitionBrowserElement;
@@ -411,6 +410,10 @@ export interface ElsaWorkflowDefinitionEditorCustomEvent<T> extends CustomEvent<
 export interface ElsaWorkflowDefinitionEditorToolbarCustomEvent<T> extends CustomEvent<T> {
     detail: T;
     target: HTMLElsaWorkflowDefinitionEditorToolbarElement;
+}
+export interface ElsaWorkflowDefinitionInputOutputSettingsCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLElsaWorkflowDefinitionInputOutputSettingsElement;
 }
 export interface ElsaWorkflowDefinitionPropertiesEditorCustomEvent<T> extends CustomEvent<T> {
     detail: T;
@@ -607,6 +610,12 @@ declare global {
         prototype: HTMLElsaNotificationsManagerElement;
         new (): HTMLElsaNotificationsManagerElement;
     };
+    interface HTMLElsaOutputPickerInputElement extends Components.ElsaOutputPickerInput, HTMLStencilElement {
+    }
+    var HTMLElsaOutputPickerInputElement: {
+        prototype: HTMLElsaOutputPickerInputElement;
+        new (): HTMLElsaOutputPickerInputElement;
+    };
     interface HTMLElsaPagerElement extends Components.ElsaPager, HTMLStencilElement {
     }
     var HTMLElsaPagerElement: {
@@ -697,12 +706,6 @@ declare global {
         prototype: HTMLElsaWidgetsElement;
         new (): HTMLElsaWidgetsElement;
     };
-    interface HTMLElsaWorkflowDefinitionActivitySettingsElement extends Components.ElsaWorkflowDefinitionActivitySettings, HTMLStencilElement {
-    }
-    var HTMLElsaWorkflowDefinitionActivitySettingsElement: {
-        prototype: HTMLElsaWorkflowDefinitionActivitySettingsElement;
-        new (): HTMLElsaWorkflowDefinitionActivitySettingsElement;
-    };
     interface HTMLElsaWorkflowDefinitionBrowserElement extends Components.ElsaWorkflowDefinitionBrowser, HTMLStencilElement {
     }
     var HTMLElsaWorkflowDefinitionBrowserElement: {
@@ -732,6 +735,12 @@ declare global {
     var HTMLElsaWorkflowDefinitionEditorToolboxActivitiesElement: {
         prototype: HTMLElsaWorkflowDefinitionEditorToolboxActivitiesElement;
         new (): HTMLElsaWorkflowDefinitionEditorToolboxActivitiesElement;
+    };
+    interface HTMLElsaWorkflowDefinitionInputOutputSettingsElement extends Components.ElsaWorkflowDefinitionInputOutputSettings, HTMLStencilElement {
+    }
+    var HTMLElsaWorkflowDefinitionInputOutputSettingsElement: {
+        prototype: HTMLElsaWorkflowDefinitionInputOutputSettingsElement;
+        new (): HTMLElsaWorkflowDefinitionInputOutputSettingsElement;
     };
     interface HTMLElsaWorkflowDefinitionPickerInputElement extends Components.ElsaWorkflowDefinitionPickerInput, HTMLStencilElement {
     }
@@ -829,6 +838,7 @@ declare global {
         "elsa-multi-line-input": HTMLElsaMultiLineInputElement;
         "elsa-multi-text-input": HTMLElsaMultiTextInputElement;
         "elsa-notifications-manager": HTMLElsaNotificationsManagerElement;
+        "elsa-output-picker-input": HTMLElsaOutputPickerInputElement;
         "elsa-pager": HTMLElsaPagerElement;
         "elsa-panel": HTMLElsaPanelElement;
         "elsa-radio-list-input": HTMLElsaRadioListInputElement;
@@ -844,12 +854,12 @@ declare global {
         "elsa-variables-editor": HTMLElsaVariablesEditorElement;
         "elsa-variables-viewer": HTMLElsaVariablesViewerElement;
         "elsa-widgets": HTMLElsaWidgetsElement;
-        "elsa-workflow-definition-activity-settings": HTMLElsaWorkflowDefinitionActivitySettingsElement;
         "elsa-workflow-definition-browser": HTMLElsaWorkflowDefinitionBrowserElement;
         "elsa-workflow-definition-editor": HTMLElsaWorkflowDefinitionEditorElement;
         "elsa-workflow-definition-editor-toolbar": HTMLElsaWorkflowDefinitionEditorToolbarElement;
         "elsa-workflow-definition-editor-toolbox": HTMLElsaWorkflowDefinitionEditorToolboxElement;
         "elsa-workflow-definition-editor-toolbox-activities": HTMLElsaWorkflowDefinitionEditorToolboxActivitiesElement;
+        "elsa-workflow-definition-input-output-settings": HTMLElsaWorkflowDefinitionInputOutputSettingsElement;
         "elsa-workflow-definition-picker-input": HTMLElsaWorkflowDefinitionPickerInputElement;
         "elsa-workflow-definition-properties-editor": HTMLElsaWorkflowDefinitionPropertiesEditorElement;
         "elsa-workflow-definition-version-history": HTMLElsaWorkflowDefinitionVersionHistoryElement;
@@ -1025,6 +1035,9 @@ declare namespace LocalJSX {
     interface ElsaNotificationsManager {
         "modalState"?: boolean;
     }
+    interface ElsaOutputPickerInput {
+        "inputContext"?: ActivityInputContext;
+    }
     interface ElsaPager {
         "onPaginated"?: (event: ElsaPagerCustomEvent<PagerData>) => void;
         "page"?: number;
@@ -1085,12 +1098,6 @@ declare namespace LocalJSX {
     interface ElsaWidgets {
         "widgets"?: Array<Widget>;
     }
-    interface ElsaWorkflowDefinitionActivitySettings {
-        "inputs"?: Array<InputDefinition>;
-        "onInputsChanged"?: (event: ElsaWorkflowDefinitionActivitySettingsCustomEvent<Array<InputDefinition>>) => void;
-        "onOutputsChanged"?: (event: ElsaWorkflowDefinitionActivitySettingsCustomEvent<Array<OutputDefinition>>) => void;
-        "outputs"?: Array<OutputDefinition>;
-    }
     interface ElsaWorkflowDefinitionBrowser {
         "onNewWorkflowDefinitionSelected"?: (event: ElsaWorkflowDefinitionBrowserCustomEvent<any>) => void;
         "onWorkflowDefinitionSelected"?: (event: ElsaWorkflowDefinitionBrowserCustomEvent<WorkflowDefinitionSummary>) => void;
@@ -1109,6 +1116,12 @@ declare namespace LocalJSX {
     }
     interface ElsaWorkflowDefinitionEditorToolboxActivities {
         "graph"?: Graph;
+    }
+    interface ElsaWorkflowDefinitionInputOutputSettings {
+        "inputs"?: Array<InputDefinition>;
+        "onInputsChanged"?: (event: ElsaWorkflowDefinitionInputOutputSettingsCustomEvent<Array<InputDefinition>>) => void;
+        "onOutputsChanged"?: (event: ElsaWorkflowDefinitionInputOutputSettingsCustomEvent<Array<OutputDefinition>>) => void;
+        "outputs"?: Array<OutputDefinition>;
     }
     interface ElsaWorkflowDefinitionPickerInput {
         "inputContext"?: ActivityInputContext;
@@ -1192,6 +1205,7 @@ declare namespace LocalJSX {
         "elsa-multi-line-input": ElsaMultiLineInput;
         "elsa-multi-text-input": ElsaMultiTextInput;
         "elsa-notifications-manager": ElsaNotificationsManager;
+        "elsa-output-picker-input": ElsaOutputPickerInput;
         "elsa-pager": ElsaPager;
         "elsa-panel": ElsaPanel;
         "elsa-radio-list-input": ElsaRadioListInput;
@@ -1207,12 +1221,12 @@ declare namespace LocalJSX {
         "elsa-variables-editor": ElsaVariablesEditor;
         "elsa-variables-viewer": ElsaVariablesViewer;
         "elsa-widgets": ElsaWidgets;
-        "elsa-workflow-definition-activity-settings": ElsaWorkflowDefinitionActivitySettings;
         "elsa-workflow-definition-browser": ElsaWorkflowDefinitionBrowser;
         "elsa-workflow-definition-editor": ElsaWorkflowDefinitionEditor;
         "elsa-workflow-definition-editor-toolbar": ElsaWorkflowDefinitionEditorToolbar;
         "elsa-workflow-definition-editor-toolbox": ElsaWorkflowDefinitionEditorToolbox;
         "elsa-workflow-definition-editor-toolbox-activities": ElsaWorkflowDefinitionEditorToolboxActivities;
+        "elsa-workflow-definition-input-output-settings": ElsaWorkflowDefinitionInputOutputSettings;
         "elsa-workflow-definition-picker-input": ElsaWorkflowDefinitionPickerInput;
         "elsa-workflow-definition-properties-editor": ElsaWorkflowDefinitionPropertiesEditor;
         "elsa-workflow-definition-version-history": ElsaWorkflowDefinitionVersionHistory;
@@ -1259,6 +1273,7 @@ declare module "@stencil/core" {
             "elsa-multi-line-input": LocalJSX.ElsaMultiLineInput & JSXBase.HTMLAttributes<HTMLElsaMultiLineInputElement>;
             "elsa-multi-text-input": LocalJSX.ElsaMultiTextInput & JSXBase.HTMLAttributes<HTMLElsaMultiTextInputElement>;
             "elsa-notifications-manager": LocalJSX.ElsaNotificationsManager & JSXBase.HTMLAttributes<HTMLElsaNotificationsManagerElement>;
+            "elsa-output-picker-input": LocalJSX.ElsaOutputPickerInput & JSXBase.HTMLAttributes<HTMLElsaOutputPickerInputElement>;
             "elsa-pager": LocalJSX.ElsaPager & JSXBase.HTMLAttributes<HTMLElsaPagerElement>;
             "elsa-panel": LocalJSX.ElsaPanel & JSXBase.HTMLAttributes<HTMLElsaPanelElement>;
             "elsa-radio-list-input": LocalJSX.ElsaRadioListInput & JSXBase.HTMLAttributes<HTMLElsaRadioListInputElement>;
@@ -1274,12 +1289,12 @@ declare module "@stencil/core" {
             "elsa-variables-editor": LocalJSX.ElsaVariablesEditor & JSXBase.HTMLAttributes<HTMLElsaVariablesEditorElement>;
             "elsa-variables-viewer": LocalJSX.ElsaVariablesViewer & JSXBase.HTMLAttributes<HTMLElsaVariablesViewerElement>;
             "elsa-widgets": LocalJSX.ElsaWidgets & JSXBase.HTMLAttributes<HTMLElsaWidgetsElement>;
-            "elsa-workflow-definition-activity-settings": LocalJSX.ElsaWorkflowDefinitionActivitySettings & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionActivitySettingsElement>;
             "elsa-workflow-definition-browser": LocalJSX.ElsaWorkflowDefinitionBrowser & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionBrowserElement>;
             "elsa-workflow-definition-editor": LocalJSX.ElsaWorkflowDefinitionEditor & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionEditorElement>;
             "elsa-workflow-definition-editor-toolbar": LocalJSX.ElsaWorkflowDefinitionEditorToolbar & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionEditorToolbarElement>;
             "elsa-workflow-definition-editor-toolbox": LocalJSX.ElsaWorkflowDefinitionEditorToolbox & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionEditorToolboxElement>;
             "elsa-workflow-definition-editor-toolbox-activities": LocalJSX.ElsaWorkflowDefinitionEditorToolboxActivities & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionEditorToolboxActivitiesElement>;
+            "elsa-workflow-definition-input-output-settings": LocalJSX.ElsaWorkflowDefinitionInputOutputSettings & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionInputOutputSettingsElement>;
             "elsa-workflow-definition-picker-input": LocalJSX.ElsaWorkflowDefinitionPickerInput & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionPickerInputElement>;
             "elsa-workflow-definition-properties-editor": LocalJSX.ElsaWorkflowDefinitionPropertiesEditor & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionPropertiesEditorElement>;
             "elsa-workflow-definition-version-history": LocalJSX.ElsaWorkflowDefinitionVersionHistory & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionVersionHistoryElement>;

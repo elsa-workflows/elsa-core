@@ -30,10 +30,10 @@ export class VariablePickerInput {
     return (
       <WorkflowDefinitionTunnel.Consumer>
         {({workflowDefinition}) => {
-          let  variables: Variable[] = workflowDefinition?.variables ?? [];
+          let variables: Variable[] = workflowDefinition?.variables ?? [];
           variables = [null, ...variables];
           return <FormEntry fieldId={fieldId} label={displayName} hint={description}>
-          <select id={fieldId} name={fieldName} onChange={e => this.onChange(e)}>
+            <select id={fieldId} name={fieldName} onChange={e => this.onChange(e)}>
               {variables.map((variable: Variable) => {
                 const variableName = variable?.name;
                 const isSelected = variableName == currentValue?.name;

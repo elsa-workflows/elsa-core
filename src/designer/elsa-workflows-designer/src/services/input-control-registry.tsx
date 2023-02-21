@@ -20,6 +20,7 @@ export class InputControlRegistry {
     this.add('checkbox', c => <elsa-checkbox-input inputContext={c}/>);
     this.add('variable-picker', c => <elsa-variable-picker-input inputContext={c}/>);
     this.add('type-picker', c => <elsa-type-picker-input inputContext={c}/>);
+    this.add('output-picker', c => <elsa-output-picker-input inputContext={c}/>);
   }
 
   public add(uiHint: UIHint, control: RenderActivityPropInputControl) {

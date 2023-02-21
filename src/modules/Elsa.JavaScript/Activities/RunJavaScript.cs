@@ -6,7 +6,7 @@ using IJavaScriptEvaluator = Elsa.JavaScript.Contracts.IJavaScriptEvaluator;
 
 namespace Elsa.JavaScript.Activities;
 
-[Activity("Elsa", "Scripting", "Executes JavaScript code")]
+[Activity("Elsa", "Scripting", "Executes JavaScript code", DisplayName = "Run JavaScript")]
 public class RunJavaScript : CodeActivity<object?>
 {
     [JsonConstructor]

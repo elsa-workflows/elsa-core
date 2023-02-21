@@ -3,6 +3,7 @@ using Elsa.Extensions;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Extensions;
+using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Services;
 using JetBrains.Annotations;
 
@@ -18,7 +19,10 @@ public class SetWorkflowOutput : CodeActivity
     /// <summary>
     /// The name of the output to assign.
     /// </summary>
-    [Input(Description = "The output to assign.")]
+    [Input(
+        Description = "The output to assign.",
+        UIHint = InputUIHints.OutputPicker
+    )]
     public Input<string> OutputName { get; set; } = default!;
 
     /// <summary>
