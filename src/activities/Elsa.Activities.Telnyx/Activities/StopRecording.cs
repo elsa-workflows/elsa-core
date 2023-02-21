@@ -54,11 +54,11 @@ namespace Elsa.Activities.Telnyx.Activities
                 EmptyToNull(CommandId)
             );
 
-            var callControlId = context.GetCallControlId(CallControlId);
+            CallControlId = context.GetCallControlId(CallControlId);
 
             try
             {
-                await _telnyxClient.Calls.StopRecordingAsync(callControlId, request, context.CancellationToken);
+                await _telnyxClient.Calls.StopRecordingAsync(CallControlId, request, context.CancellationToken);
                 return Done();
             }
             catch (ApiException e)
