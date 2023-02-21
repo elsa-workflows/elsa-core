@@ -25,6 +25,7 @@ public class Configurations :
         builder.Ignore(x => x.CompletionCallbacks);
         builder.Ignore(x => x.ActivityExecutionContexts);
         builder.Ignore(x => x.Fault);
+        builder.Ignore(x => x.Output);
         builder.Property<string>("Data");
         builder.Property<DateTimeOffset>("CreatedAt");
         builder.Property<DateTimeOffset>("UpdatedAt");

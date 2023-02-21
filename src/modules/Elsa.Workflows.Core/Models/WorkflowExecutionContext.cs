@@ -129,7 +129,7 @@ public class WorkflowExecutionContext
     /// <summary>
     /// A dictionary of outputs provided by the current workflow execution. 
     /// </summary>
-    public IDictionary<string, object> Output { get; } = new Dictionary<string, object>();
+    public IDictionary<string, object> Output { get; set; } = new Dictionary<string, object>();
 
     /// <summary>
     /// A dictionary that can be used by application code and activities to store information. Values need to be serializable. 

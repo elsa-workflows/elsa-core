@@ -30,23 +30,6 @@ public class WorkflowDefinitionActivity : Activity, IInitializable
 
     private async ValueTask OnChildCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext)
     {
-        var activityRegistry = context.GetRequiredService<IActivityRegistry>();
-        var activity = context.Activity;
-        var activityDescriptor = activityRegistry.Find(activity.Type, activity.Version)!;
-        var outputDescriptors = activityDescriptor.Outputs;
-
-        foreach (var outputDescriptor in outputDescriptors)
-        {
-            var output = activity.SyntheticProperties.TryGetValue(outputDescriptor.Name, out var outputProp) ? (Output)outputProp : default;
-            
-            if(output == null)
-                continue;
-
-            var valueVariable = new Variable(outputDescriptor.Name);
-            var outputValue = valueVariable.Get(context);
-            context.Set(output, outputValue);
-        }
-        
         await context.CompleteActivityAsync();
     }
 

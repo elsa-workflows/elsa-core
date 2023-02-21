@@ -1,7 +1,4 @@
-using System.Text.Json;
 using Elsa.Common.Models;
-using Elsa.Expressions.Helpers;
-using Elsa.Expressions.Services;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Activities;
 using Elsa.Workflows.Management.Entities;
@@ -17,16 +14,14 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
 {
     private readonly IWorkflowDefinitionStore _store;
     private readonly IActivityFactory _activityFactory;
-    private readonly IWellKnownTypeRegistry _wellKnownTypeRegistry;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public WorkflowDefinitionActivityProvider(IWorkflowDefinitionStore store, IActivityFactory activityFactory, IWellKnownTypeRegistry wellKnownTypeRegistry)
+    public WorkflowDefinitionActivityProvider(IWorkflowDefinitionStore store, IActivityFactory activityFactory)
     {
         _store = store;
         _activityFactory = activityFactory;
-        _wellKnownTypeRegistry = wellKnownTypeRegistry;
     }
 
     /// <inheritdoc />
@@ -79,7 +74,8 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
                 DisplayName = inputDefinition.DisplayName,
                 Description = inputDefinition.Description,
                 Category = inputDefinition.Category,
-                UIHint = inputDefinition.UIHint
+                UIHint = inputDefinition.UIHint,
+                IsSynthetic = true
             };
         });
     
@@ -93,7 +89,8 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
                 Type = nakedType,
                 Name = outputDefinition.Name,
                 DisplayName = outputDefinition.DisplayName,
-                Description = outputDefinition.Description
+                Description = outputDefinition.Description,
+                IsSynthetic = true
             };
         });
 }

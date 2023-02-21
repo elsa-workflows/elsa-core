@@ -54,6 +54,11 @@ public class WorkflowState : Entity
     /// A flattened list of <see cref="ActivityExecutionContextState"/> objects, representing the various active "call stacks" of the workflow.
     /// </summary>
     public ICollection<ActivityExecutionContextState> ActivityExecutionContexts { get; set; } = new List<ActivityExecutionContextState>();
+    
+    /// <summary>
+    /// A dictionary of outputs produced by the workflow.
+    /// </summary>
+    public IDictionary<string, object> Output { get; set; } = new Dictionary<string, object>();
 
     /// <summary>
     /// A global property bag that contains properties set by application code and/or activities.
