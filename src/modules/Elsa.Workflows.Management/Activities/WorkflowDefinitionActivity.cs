@@ -43,7 +43,7 @@ public class WorkflowDefinitionActivity : Activity, IInitializable
     private async ValueTask OnChildCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext)
     {
         var activityRegistry = context.GetRequiredService<IActivityRegistry>();
-        var activityDescriptor = activityRegistry.Find(context.Activity.Type)!;
+        var activityDescriptor = activityRegistry.Find(Type, Version)!;
         var outputDescriptors = activityDescriptor.Outputs;
 
         foreach (var outputDescriptor in outputDescriptors)
