@@ -11,18 +11,6 @@ export interface TabChangedArgs {
   selectedTabIndex: number;
 }
 
-export interface RenderActivityPropsContext {
-  activity: Activity;
-  activityDescriptor: ActivityDescriptor;
-  title: string;
-  inputs: Array<RenderActivityInputContext>;
-}
-
-export interface RenderActivityInputContext {
-  inputContext: ActivityInputContext
-  inputControl?: any;
-}
-
 export interface SelectList {
   items: Array<SelectListItem> | Array<string>;
   isFlagsEnum: boolean;

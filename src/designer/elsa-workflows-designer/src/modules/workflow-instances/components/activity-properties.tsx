@@ -4,7 +4,6 @@ import {
   Activity,
   ActivityDescriptor,
   Lookup,
-  RenderActivityPropsContext,
   TabChangedArgs,
   TabDefinition
 } from '../../../models';
@@ -16,7 +15,6 @@ import descriptorsStore from "../../../data/descriptors-store";
 })
 export class ActivityProperties {
   private slideOverPanel: HTMLElsaSlideOverPanelElement;
-  private renderContext: RenderActivityPropsContext;
 
   constructor() {
   }

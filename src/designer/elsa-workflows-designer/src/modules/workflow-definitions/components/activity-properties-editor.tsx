@@ -1,7 +1,7 @@
 import {Component, Event, EventEmitter, h, Method, Prop, State} from '@stencil/core';
 import {camelCase} from 'lodash';
 import {v4 as uuid} from 'uuid';
-import {Activity, ActivityDescriptor, ActivityInput, ActivityKind, ActivityOutput, Expression, InputDescriptor, OutputDescriptor, PropertyDescriptor, RenderActivityInputContext, RenderActivityPropsContext, TabChangedArgs, TabDefinition, Variable} from '../../../models';
+import {Activity, ActivityDescriptor, ActivityInput, ActivityKind, ActivityOutput, Expression, InputDescriptor, OutputDescriptor, PropertyDescriptor, TabChangedArgs, TabDefinition, Variable} from '../../../models';
 import {InputDriverRegistry} from "../../../services";
 import {Container} from "typedi";
 import {ActivityInputContext} from "../../../services/activity-input-driver";
@@ -11,6 +11,7 @@ import descriptorsStore from "../../../data/descriptors-store";
 import {ActivityUpdatedArgs, DeleteActivityRequestedArgs} from "../models/ui";
 import InputControlSwitchContextState from "../../../components/shared/input-control-switch/state";
 import {OutputDefinition} from "../models/entities";
+import {RenderActivityInputContext, RenderActivityPropsContext} from "./models";
 
 @Component({
   tag: 'elsa-activity-properties-editor',
@@ -45,9 +46,97 @@ export class ActivityPropertiesEditor {
 
   componentWillRender() {
     const activity = this.activity;
-    const activityId = activity.id;
     const activityDescriptor = this.findActivityDescriptor();
     const title = activityDescriptor?.displayName ?? activityDescriptor?.typeName ?? 'Unknown Activity';
+    const renderInputPropertyContexts = this.createInputs();
+    const tabs = this.createTabs();
+    const selectedTabIndex = this.getSelectedTabIndex(tabs);
+
+    this.renderContext = {
+      activity,
+      activityDescriptor,
+      title,
+      inputs: renderInputPropertyContexts,
+      tabs,
+      selectedTabIndex
+    }
+  }
+
+  render() {
+    const {activity, activityDescriptor, tabs, selectedTabIndex} = this.renderContext;
+    const actions = [];
+    const mainTitle = activity.id;
+    const subTitle = activityDescriptor.displayName;
+
+    return (
+      <elsa-form-panel
+        mainTitle={mainTitle}
+        subTitle={subTitle}
+        orientation="Landscape"
+        tabs={tabs}
+        selectedTabIndex={selectedTabIndex}
+        onSelectedTabIndexChanged={e => this.onSelectedTabIndexChanged(e)}
+        actions={actions}/>
+    );
+  }
+
+  private getSelectedTabIndex = (tabs: Array<TabDefinition>): number => {
+    let selectedTabIndex = this.selectedTabIndex;
+
+    if (selectedTabIndex >= tabs.length)
+      selectedTabIndex = tabs.length - 1;
+
+    if (selectedTabIndex < 0)
+      selectedTabIndex = 0;
+
+    return selectedTabIndex;
+  };
+
+  private createTabs = (): Array<TabDefinition> => {
+    const activityDescriptor = this.findActivityDescriptor();
+    const isTask = activityDescriptor.kind == ActivityKind.Task;
+
+    const commonTab: TabDefinition = {
+      displayText: 'General',
+      order: 0,
+      content: () => this.renderCommonTab()
+    };
+
+    const inputTab: TabDefinition = {
+      displayText: 'Settings',
+      order: 10,
+      content: () => this.renderInputTab()
+    };
+
+    const tabs = !!activityDescriptor ? [inputTab, commonTab] : [];
+
+    if (activityDescriptor.outputs.length > 0) {
+      const outputTab: TabDefinition = {
+        displayText: 'Output',
+        order: 11,
+        content: () => this.renderOutputTab()
+      };
+
+      tabs.push(outputTab);
+    }
+
+    if (isTask) {
+      const taskTab: TabDefinition = {
+        displayText: 'Task',
+        order: 12,
+        content: () => this.renderTaskTab()
+      };
+
+      tabs.push(taskTab);
+    }
+
+    return tabs;
+  };
+
+  private createInputs = (): Array<RenderActivityInputContext> => {
+    const activity = this.activity;
+    const activityId = activity.id;
+    const activityDescriptor = this.findActivityDescriptor();
     const driverRegistry = this.inputDriverRegistry;
 
     const onInputChanged = (inputDescriptor: InputDescriptor) => this.activityUpdated.emit({
@@ -84,76 +173,8 @@ export class ActivityPropertiesEditor {
       }
     });
 
-    this.renderContext = {
-      activity,
-      activityDescriptor,
-      title,
-      inputs: renderInputPropertyContexts
-    }
-  }
-
-  render() {
-    const {activity, activityDescriptor} = this.renderContext;
-    const isTask = activityDescriptor.kind == ActivityKind.Task;
-    const activityType = activityDescriptor.typeName;
-
-    const commonTab: TabDefinition = {
-      displayText: 'General',
-      order: 0,
-      content: () => this.renderCommonTab()
-    };
-
-    const inputTab: TabDefinition = {
-      displayText: 'Settings',
-      order: 10,
-      content: () => this.renderInputTab()
-    };
-
-    const tabs = !!activityDescriptor ? [inputTab, commonTab] : [];
-
-    if (activityDescriptor.outputs.length > 0) {
-      const outputTab: TabDefinition = {
-        displayText: 'Output',
-        order: 11,
-        content: () => this.renderOutputTab()
-      };
-
-      tabs.push(outputTab);
-    }
-
-    if (isTask) {
-      const taskTab: TabDefinition = {
-        displayText: 'Task',
-        order: 12,
-        content: () => this.renderTaskTab()
-      };
-
-      tabs.push(taskTab);
-    }
-
-    let selectedTabIndex = this.selectedTabIndex;
-
-    if (selectedTabIndex >= tabs.length)
-      selectedTabIndex = tabs.length - 1;
-
-    if (selectedTabIndex < 0)
-      selectedTabIndex = 0;
-
-    const actions = [];
-    const mainTitle = activity.id;
-    const subTitle = activityDescriptor.displayName;
-
-    return (
-      <elsa-form-panel
-        mainTitle={mainTitle}
-        subTitle={subTitle}
-        orientation="Landscape"
-        tabs={tabs}
-        selectedTabIndex={selectedTabIndex}
-        onSelectedTabIndexChanged={e => this.onSelectedTabIndexChanged(e)}
-        actions={actions}/>
-    );
-  }
+    return renderInputPropertyContexts;
+  };
 
   private findActivityDescriptor = (): ActivityDescriptor => !!this.activity ? descriptorsStore.activityDescriptors.find(x => x.typeName == this.activity.type && x.version == this.activity.version) : null;
   private onSelectedTabIndexChanged = (e: CustomEvent<TabChangedArgs>) => this.selectedTabIndex = e.detail.selectedTabIndex
@@ -326,10 +347,10 @@ export class ActivityPropertiesEditor {
     const key = `${activityId}`;
     const outputTargetOptions: Array<any> = [null];
 
-    if(variables.length > 0)
+    if (variables.length > 0)
       outputTargetOptions.push({label: 'Variables', items: [...variables.map(x => ({value: x.name, name: x.name}))], kind: 'variable'});
 
-    if(outputDefinitions.length > 0)
+    if (outputDefinitions.length > 0)
       outputTargetOptions.push({label: 'Outputs', items: [...outputDefinitions.map(x => ({value: x.name, name: x.name}))], kind: 'output'});
 
     return <div key={key}>
