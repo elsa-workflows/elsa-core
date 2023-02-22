@@ -18,15 +18,18 @@ public class ActivityDescriptor
     public string? Description { get; init; }
     public ICollection<InputDescriptor> Inputs { get; init; } = new List<InputDescriptor>();
     public ICollection<OutputDescriptor> Outputs { get; init; } = new List<OutputDescriptor>();
-    public ICollection<Attribute> Attributes { get; set; } = new List<Attribute>();
+    [JsonIgnore] public ICollection<Attribute> Attributes { get; set; } = new List<Attribute>();
 
     /// <summary>
     /// Instantiates a concrete instance of an <see cref="IActivity"/>.
     /// </summary>
-    [JsonIgnore] public Func<ActivityConstructorContext, IActivity> Constructor { get; init; } = default!;
+    [JsonIgnore]
+    public Func<ActivityConstructorContext, IActivity> Constructor { get; init; } = default!;
+
     public ActivityKind Kind { get; set; } = ActivityKind.Action;
     public ICollection<Port> Ports { get; init; } = new List<Port>();
-    
+    public IDictionary<string, object> CustomProperties { get; set; } = new Dictionary<string, object>();
+
     /// <summary>
     /// A value indicating whether this activity is a container of child activities.
     /// </summary>
@@ -36,7 +39,6 @@ public class ActivityDescriptor
     /// Whether this activity type is selectable from activity pickers.
     /// </summary>
     public bool IsBrowsable { get; set; }
-
 }
 
 public record ActivityConstructorContext(JsonElement Element, JsonSerializerOptions SerializerOptions);

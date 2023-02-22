@@ -17,6 +17,10 @@ export const WorkflowPropertiesEditorEventTypes = {
   Displaying: 'workflow-properties:displaying'
 }
 
+export const ActivityPropertyPanelEvents = {
+  Rendering: 'ActivityPropertyPanel:Rendering'
+}
+
 export interface ActivityPropertyChangedEventArgs {
   activity: Activity;
   activityDescriptor: ActivityDescriptor;
@@ -65,12 +69,12 @@ export interface WorkflowEditorReadyArgs {
 }
 
 export interface ActivityUpdatedArgs {
-  originalId: string;
-  newId: string;
+  originalId?: string;
+  newId?: string;
   activity: Activity;
   activityDescriptor: ActivityDescriptor;
-  propertyName?: string;
-  propertyDescriptor?: PropertyDescriptor;
+  // propertyName?: string;
+  // propertyDescriptor?: PropertyDescriptor;
 }
 
 export interface ActivityIdUpdatedArgs {

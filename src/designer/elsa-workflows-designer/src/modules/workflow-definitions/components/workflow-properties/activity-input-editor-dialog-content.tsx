@@ -1,9 +1,9 @@
 import {Component, h, Prop, Event, EventEmitter, Method} from "@stencil/core";
 import {groupBy} from 'lodash';
-import descriptorsStore from '../../../data/descriptors-store';
-import {VariableDescriptor} from "../../../services/api-client/variable-descriptors-api";
-import {InputDefinition} from "../models/entities";
-import {FormEntry} from "../../../components/shared/forms/form-entry";
+import descriptorsStore from '../../../../data/descriptors-store';
+import {VariableDescriptor} from "../../../../services/api-client/variable-descriptors-api";
+import {InputDefinition} from "../../models/entities";
+import {FormEntry} from "../../../../components/shared/forms/form-entry";
 
 @Component({
   tag: 'elsa-activity-input-editor-dialog-content',

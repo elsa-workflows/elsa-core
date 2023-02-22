@@ -85,6 +85,7 @@ export interface ActivityDescriptor {
   outputs: Array<OutputDescriptor>;
   kind: ActivityKind;
   ports: Array<Port>;
+  customProperties: any;
   isContainer: boolean;
   isBrowsable: boolean;
 }

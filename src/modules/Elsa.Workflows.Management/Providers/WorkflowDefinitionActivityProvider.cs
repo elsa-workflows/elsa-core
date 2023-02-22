@@ -51,6 +51,7 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
             IsBrowsable = definition.IsPublished,
             Inputs = DescribeInputs(definition).ToList(),
             Outputs = DescribeOutputs(definition).ToList(),
+            CustomProperties = { ["RootType"] = nameof(WorkflowDefinitionActivity) },
             Constructor = context =>
             {
                 var activity = (WorkflowDefinitionActivity)_activityFactory.Create(typeof(WorkflowDefinitionActivity), context);

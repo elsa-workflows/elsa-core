@@ -1,17 +1,17 @@
 import {Component, Event, EventEmitter, h, Method, Prop, State} from '@stencil/core';
 import {camelCase} from 'lodash';
 import {v4 as uuid} from 'uuid';
-import {Activity, ActivityDescriptor, ActivityInput, ActivityKind, ActivityOutput, Expression, InputDescriptor, OutputDescriptor, PropertyDescriptor, TabChangedArgs, TabDefinition, Variable} from '../../../models';
-import {InputDriverRegistry} from "../../../services";
+import {Activity, ActivityDescriptor, ActivityInput, ActivityKind, ActivityOutput, Expression, InputDescriptor, OutputDescriptor, PropertyDescriptor, TabChangedArgs, TabDefinition, Variable} from '../../../../models';
+import {EventBus, InputDriverRegistry} from "../../../../services";
 import {Container} from "typedi";
-import {ActivityInputContext} from "../../../services/activity-input-driver";
-import {CheckboxFormEntry, FormEntry} from "../../../components/shared/forms/form-entry";
-import {isNullOrWhitespace} from "../../../utils";
-import descriptorsStore from "../../../data/descriptors-store";
-import {ActivityUpdatedArgs, DeleteActivityRequestedArgs} from "../models/ui";
-import InputControlSwitchContextState from "../../../components/shared/input-control-switch/state";
-import {OutputDefinition} from "../models/entities";
-import {RenderActivityInputContext, RenderActivityPropsContext} from "./models";
+import {ActivityInputContext} from "../../../../services/activity-input-driver";
+import {CheckboxFormEntry, FormEntry} from "../../../../components/shared/forms/form-entry";
+import {isNullOrWhitespace} from "../../../../utils";
+import descriptorsStore from "../../../../data/descriptors-store";
+import {ActivityPropertyPanelEvents, ActivityUpdatedArgs, DeleteActivityRequestedArgs} from "../../models/ui";
+import InputControlSwitchContextState from "../../../../components/shared/input-control-switch/state";
+import {OutputDefinition} from "../../models/entities";
+import {RenderActivityInputContext, RenderActivityPropsContext} from "../models";
 
 @Component({
   tag: 'elsa-activity-properties-editor',
@@ -20,9 +20,11 @@ export class ActivityPropertiesEditor {
   private slideOverPanel: HTMLElsaSlideOverPanelElement;
   private renderContext: RenderActivityPropsContext;
   private readonly inputDriverRegistry: InputDriverRegistry;
+  private readonly eventBus: EventBus;
 
   constructor() {
     this.inputDriverRegistry = Container.get(InputDriverRegistry);
+    this.eventBus = Container.get(EventBus);
   }
 
   @Prop() workflowDefinitionId: string;
@@ -44,22 +46,31 @@ export class ActivityPropertiesEditor {
     await this.slideOverPanel.hide();
   }
 
-  componentWillRender() {
+  async componentWillRender() {
     const activity = this.activity;
+    const activityId = activity.id;
     const activityDescriptor = this.findActivityDescriptor();
     const title = activityDescriptor?.displayName ?? activityDescriptor?.typeName ?? 'Unknown Activity';
-    const renderInputPropertyContexts = this.createInputs();
+    const inputs = this.createInputs();
     const tabs = this.createTabs();
     const selectedTabIndex = this.getSelectedTabIndex(tabs);
+
+    const onActivityChanged = () => this.activityUpdated.emit({
+      activity,
+      activityDescriptor
+    });
 
     this.renderContext = {
       activity,
       activityDescriptor,
       title,
-      inputs: renderInputPropertyContexts,
+      inputs,
       tabs,
-      selectedTabIndex
+      selectedTabIndex,
+      notifyActivityChanged: () => onActivityChanged()
     }
+
+    await this.eventBus.emit(ActivityPropertyPanelEvents.Rendering, this, this.renderContext);
   }
 
   render() {
@@ -144,8 +155,8 @@ export class ActivityPropertiesEditor {
       originalId: activityId,
       activity,
       activityDescriptor,
-      propertyName: camelCase(inputDescriptor.name),
-      propertyDescriptor: inputDescriptor
+      // propertyName: camelCase(inputDescriptor.name),
+      // propertyDescriptor: inputDescriptor
     });
 
     const renderInputPropertyContexts: Array<RenderActivityInputContext> = activityDescriptor.inputs.map(inputDescriptor => {
@@ -199,8 +210,8 @@ export class ActivityPropertiesEditor {
       originalId: originalId,
       activity,
       activityDescriptor,
-      propertyName: 'id',
-      propertyDescriptor: inputDescriptor
+      // propertyName: 'id',
+      // propertyDescriptor: inputDescriptor
     });
   }
 
@@ -295,8 +306,8 @@ export class ActivityPropertiesEditor {
       originalId: activityId,
       activity,
       activityDescriptor,
-      propertyName: propertyName,
-      propertyDescriptor: propertyDescriptor
+      // propertyName: propertyName,
+      // propertyDescriptor: propertyDescriptor
     });
   }
 
