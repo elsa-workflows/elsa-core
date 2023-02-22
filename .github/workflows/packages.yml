@@ -27,7 +27,7 @@ jobs:
       - name: Test
         run: dotnet test --configuration Release /p:Version=${VERSION} --no-build
       - name: Pack
-        run: dotnet pack --configuration Release /p:Version=${VERSION} --output .
+        run: dotnet pack --configuration Release /p:Version=${VERSION} /p:PackageOutputPath=$(pwd)
       - name: Authenticate
         run: dotnet nuget add source ${{ env.nuget_feed_source }} --name ${{ env.nuget_feed_name }} --username az --password ${{ secrets.AZURE_DEVOPS_TOKEN }} --store-password-in-clear-text --configfile ${{ env.nuget_config }}
       - name: Push
