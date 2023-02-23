@@ -1,6 +1,3 @@
-import {ActivityInputContext} from "../services/activity-input-driver";
-import {Activity, ActivityDescriptor} from "./core";
-
 export interface TabDefinition {
   displayText: string;
   content: () => any;
@@ -9,18 +6,6 @@ export interface TabDefinition {
 
 export interface TabChangedArgs {
   selectedTabIndex: number;
-}
-
-export interface RenderActivityPropsContext {
-  activity: Activity;
-  activityDescriptor: ActivityDescriptor;
-  title: string;
-  inputs: Array<RenderActivityInputContext>;
-}
-
-export interface RenderActivityInputContext {
-  inputContext: ActivityInputContext
-  inputControl?: any;
 }
 
 export interface SelectList {

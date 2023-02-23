@@ -1,16 +1,17 @@
 import {Component, Event, EventEmitter, h, Method, Prop, State} from '@stencil/core';
 import {camelCase} from 'lodash';
 import {v4 as uuid} from 'uuid';
-import {Activity, ActivityDescriptor, ActivityInput, ActivityKind, ActivityOutput, Expression, InputDescriptor, OutputDescriptor, PropertyDescriptor, RenderActivityInputContext, RenderActivityPropsContext, TabChangedArgs, TabDefinition, Variable} from '../../../models';
-import {InputDriverRegistry} from "../../../services";
+import {Activity, ActivityDescriptor, ActivityInput, ActivityKind, ActivityOutput, Expression, InputDescriptor, OutputDescriptor, PropertyDescriptor, TabChangedArgs, TabDefinition, Variable} from '../../../../models';
+import {EventBus, InputDriverRegistry} from "../../../../services";
 import {Container} from "typedi";
-import {ActivityInputContext} from "../../../services/activity-input-driver";
-import {CheckboxFormEntry, FormEntry} from "../../../components/shared/forms/form-entry";
-import {isNullOrWhitespace} from "../../../utils";
-import descriptorsStore from "../../../data/descriptors-store";
-import {ActivityUpdatedArgs, DeleteActivityRequestedArgs} from "../models/ui";
-import InputControlSwitchContextState from "../../../components/shared/input-control-switch/state";
-import {OutputDefinition} from "../models/entities";
+import {ActivityInputContext} from "../../../../services/activity-input-driver";
+import {CheckboxFormEntry, FormEntry} from "../../../../components/shared/forms/form-entry";
+import {isNullOrWhitespace} from "../../../../utils";
+import descriptorsStore from "../../../../data/descriptors-store";
+import {ActivityPropertyPanelEvents, ActivityUpdatedArgs, DeleteActivityRequestedArgs} from "../../models/ui";
+import InputControlSwitchContextState from "../../../../components/shared/input-control-switch/state";
+import {OutputDefinition} from "../../models/entities";
+import {RenderActivityInputContext, RenderActivityPropsContext} from "../models";
 
 @Component({
   tag: 'elsa-activity-properties-editor',
@@ -19,9 +20,11 @@ export class ActivityPropertiesEditor {
   private slideOverPanel: HTMLElsaSlideOverPanelElement;
   private renderContext: RenderActivityPropsContext;
   private readonly inputDriverRegistry: InputDriverRegistry;
+  private readonly eventBus: EventBus;
 
   constructor() {
     this.inputDriverRegistry = Container.get(InputDriverRegistry);
+    this.eventBus = Container.get(EventBus);
   }
 
   @Prop() workflowDefinitionId: string;
@@ -43,59 +46,64 @@ export class ActivityPropertiesEditor {
     await this.slideOverPanel.hide();
   }
 
-  componentWillRender() {
+  async componentWillRender() {
     const activity = this.activity;
-    const activityId = activity.id;
     const activityDescriptor = this.findActivityDescriptor();
     const title = activityDescriptor?.displayName ?? activityDescriptor?.typeName ?? 'Unknown Activity';
-    const driverRegistry = this.inputDriverRegistry;
+    const inputs = this.createInputs();
+    const tabs = this.createTabs();
 
-    const onInputChanged = (inputDescriptor: InputDescriptor) => this.activityUpdated.emit({
-      newId: activityId,
-      originalId: activityId,
+    const onActivityChanged = () => this.activityUpdated.emit({
       activity,
-      activityDescriptor,
-      propertyName: camelCase(inputDescriptor.name),
-      propertyDescriptor: inputDescriptor
-    });
-
-    const renderInputPropertyContexts: Array<RenderActivityInputContext> = activityDescriptor.inputs.map(inputDescriptor => {
-      const renderInputContext: ActivityInputContext = {
-        activity: activity,
-        activityDescriptor: activityDescriptor,
-        inputDescriptor,
-        notifyInputChanged: () => onInputChanged(inputDescriptor),
-        inputChanged: (v, s) => this.onInputPropertyEditorChanged(inputDescriptor, v, s)
-      };
-
-      const driver = driverRegistry.get(renderInputContext);
-      const workflowDefinitionId = this.workflowDefinitionId;
-      const activityType = activityDescriptor.typeName;
-      const propertyName = inputDescriptor.name;
-
-      const control =
-        <InputControlSwitchContextState.Provider state={{workflowDefinitionId, activityType, propertyName}}>
-          {driver?.renderInput(renderInputContext)}
-        </InputControlSwitchContextState.Provider>;
-
-      return {
-        inputContext: renderInputContext,
-        inputControl: control,
-      }
+      activityDescriptor
     });
 
     this.renderContext = {
       activity,
       activityDescriptor,
       title,
-      inputs: renderInputPropertyContexts
+      inputs,
+      tabs,
+      notifyActivityChanged: () => onActivityChanged()
     }
+
+    await this.eventBus.emit(ActivityPropertyPanelEvents.Displaying, this, this.renderContext);
   }
 
   render() {
-    const {activity, activityDescriptor} = this.renderContext;
+    const {activity, activityDescriptor, tabs} = this.renderContext;
+    const actions = [];
+    const mainTitle = activity.id;
+    const subTitle = activityDescriptor.displayName;
+    const selectedTabIndex = this.getSelectedTabIndex(tabs);
+
+    return (
+      <elsa-form-panel
+        mainTitle={mainTitle}
+        subTitle={subTitle}
+        orientation="Landscape"
+        tabs={tabs}
+        selectedTabIndex={selectedTabIndex}
+        onSelectedTabIndexChanged={e => this.onSelectedTabIndexChanged(e)}
+        actions={actions}/>
+    );
+  }
+
+  private getSelectedTabIndex = (tabs: Array<TabDefinition>): number => {
+    let selectedTabIndex = this.selectedTabIndex;
+
+    if (selectedTabIndex >= tabs.length)
+      selectedTabIndex = tabs.length - 1;
+
+    if (selectedTabIndex < 0)
+      selectedTabIndex = 0;
+
+    return selectedTabIndex;
+  };
+
+  private createTabs = (): Array<TabDefinition> => {
+    const activityDescriptor = this.findActivityDescriptor();
     const isTask = activityDescriptor.kind == ActivityKind.Task;
-    const activityType = activityDescriptor.typeName;
 
     const commonTab: TabDefinition = {
       displayText: 'General',
@@ -131,29 +139,51 @@ export class ActivityPropertiesEditor {
       tabs.push(taskTab);
     }
 
-    let selectedTabIndex = this.selectedTabIndex;
+    return tabs;
+  };
 
-    if (selectedTabIndex >= tabs.length)
-      selectedTabIndex = tabs.length - 1;
+  private createInputs = (): Array<RenderActivityInputContext> => {
+    const activity = this.activity;
+    const activityId = activity.id;
+    const activityDescriptor = this.findActivityDescriptor();
+    const driverRegistry = this.inputDriverRegistry;
 
-    if (selectedTabIndex < 0)
-      selectedTabIndex = 0;
+    const onInputChanged = (inputDescriptor: InputDescriptor) => this.activityUpdated.emit({
+      newId: activityId,
+      originalId: activityId,
+      activity,
+      activityDescriptor,
+      // propertyName: camelCase(inputDescriptor.name),
+      // propertyDescriptor: inputDescriptor
+    });
 
-    const actions = [];
-    const mainTitle = activity.id;
-    const subTitle = activityDescriptor.displayName;
+    const renderInputPropertyContexts: Array<RenderActivityInputContext> = activityDescriptor.inputs.map(inputDescriptor => {
+      const renderInputContext: ActivityInputContext = {
+        activity: activity,
+        activityDescriptor: activityDescriptor,
+        inputDescriptor,
+        notifyInputChanged: () => onInputChanged(inputDescriptor),
+        inputChanged: (v, s) => this.onInputPropertyEditorChanged(inputDescriptor, v, s)
+      };
 
-    return (
-      <elsa-form-panel
-        mainTitle={mainTitle}
-        subTitle={subTitle}
-        orientation="Landscape"
-        tabs={tabs}
-        selectedTabIndex={selectedTabIndex}
-        onSelectedTabIndexChanged={e => this.onSelectedTabIndexChanged(e)}
-        actions={actions}/>
-    );
-  }
+      const driver = driverRegistry.get(renderInputContext);
+      const workflowDefinitionId = this.workflowDefinitionId;
+      const activityType = activityDescriptor.typeName;
+      const propertyName = inputDescriptor.name;
+
+      const control =
+        <InputControlSwitchContextState.Provider state={{workflowDefinitionId, activityType, propertyName}}>
+          {driver?.renderInput(renderInputContext)}
+        </InputControlSwitchContextState.Provider>;
+
+      return {
+        inputContext: renderInputContext,
+        inputControl: control,
+      }
+    });
+
+    return renderInputPropertyContexts;
+  };
 
   private findActivityDescriptor = (): ActivityDescriptor => !!this.activity ? descriptorsStore.activityDescriptors.find(x => x.typeName == this.activity.type && x.version == this.activity.version) : null;
   private onSelectedTabIndexChanged = (e: CustomEvent<TabChangedArgs>) => this.selectedTabIndex = e.detail.selectedTabIndex
@@ -178,8 +208,8 @@ export class ActivityPropertiesEditor {
       originalId: originalId,
       activity,
       activityDescriptor,
-      propertyName: 'id',
-      propertyDescriptor: inputDescriptor
+      // propertyName: 'id',
+      // propertyDescriptor: inputDescriptor
     });
   }
 
@@ -274,8 +304,8 @@ export class ActivityPropertiesEditor {
       originalId: activityId,
       activity,
       activityDescriptor,
-      propertyName: propertyName,
-      propertyDescriptor: propertyDescriptor
+      // propertyName: propertyName,
+      // propertyDescriptor: propertyDescriptor
     });
   }
 
@@ -326,10 +356,10 @@ export class ActivityPropertiesEditor {
     const key = `${activityId}`;
     const outputTargetOptions: Array<any> = [null];
 
-    if(variables.length > 0)
+    if (variables.length > 0)
       outputTargetOptions.push({label: 'Variables', items: [...variables.map(x => ({value: x.name, name: x.name}))], kind: 'variable'});
 
-    if(outputDefinitions.length > 0)
+    if (outputDefinitions.length > 0)
       outputTargetOptions.push({label: 'Outputs', items: [...outputDefinitions.map(x => ({value: x.name, name: x.name}))], kind: 'output'});
 
     return <div key={key}>

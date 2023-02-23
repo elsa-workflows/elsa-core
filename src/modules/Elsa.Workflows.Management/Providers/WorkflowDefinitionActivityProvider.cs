@@ -2,7 +2,6 @@ using Elsa.Common.Models;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Activities;
 using Elsa.Workflows.Management.Entities;
-using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Management.Services;
 using Humanizer;
 
@@ -15,29 +14,29 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
 {
     private readonly IWorkflowDefinitionStore _store;
     private readonly IActivityFactory _activityFactory;
-    private readonly IActivityDescriber _activityDescriber;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public WorkflowDefinitionActivityProvider(IWorkflowDefinitionStore store, IActivityFactory activityFactory, IActivityDescriber activityDescriber)
+    public WorkflowDefinitionActivityProvider(IWorkflowDefinitionStore store, IActivityFactory activityFactory)
     {
         _store = store;
         _activityFactory = activityFactory;
-        _activityDescriber = activityDescriber;
     }
 
     /// <inheritdoc />
     public async ValueTask<IEnumerable<ActivityDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default)
     {
         var definitions = (await _store.FindWithActivityBehaviorAsync(VersionOptions.All, cancellationToken)).ToList();
-        var descriptors = CreateDescriptors(definitions);
+        var latestPublishedVersion = definitions.Where(x => x.IsPublished).Select(x => x.Version).Max();
+        var descriptors = CreateDescriptors(definitions, latestPublishedVersion);
         return descriptors;
     }
 
-    private IEnumerable<ActivityDescriptor> CreateDescriptors(IEnumerable<WorkflowDefinition> definitions) => definitions.Select(CreateDescriptor);
+    private IEnumerable<ActivityDescriptor> CreateDescriptors(IEnumerable<WorkflowDefinition> definitions, int latestPublishedVersion) => 
+        definitions.Select(x => CreateDescriptor(x, latestPublishedVersion));
 
-    private ActivityDescriptor CreateDescriptor(WorkflowDefinition definition)
+    private ActivityDescriptor CreateDescriptor(WorkflowDefinition definition, int latestPublishedVersion)
     {
         var typeName = definition.Name!.Pascalize();
 
@@ -52,13 +51,15 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
             IsBrowsable = definition.IsPublished,
             Inputs = DescribeInputs(definition).ToList(),
             Outputs = DescribeOutputs(definition).ToList(),
+            CustomProperties = { ["RootType"] = nameof(WorkflowDefinitionActivity) },
             Constructor = context =>
             {
                 var activity = (WorkflowDefinitionActivity)_activityFactory.Create(typeof(WorkflowDefinitionActivity), context);
                 activity.Type = typeName;
                 activity.WorkflowDefinitionId = definition.DefinitionId;
                 activity.Version = definition.Version;
-                
+                activity.LatestAvailablePublishedVersion = latestPublishedVersion;
+
                 return activity;
             }
         };
@@ -87,8 +88,6 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
         {
             yield return input;
         }
-
-        //yield return _activityDescriber.DescribeInputProperty<WorkflowDefinitionActivity, bool>(x => x.AlwaysUsePublishedVersion);
     }
 
     private static IEnumerable<OutputDescriptor> DescribeOutputs(WorkflowDefinition definition) =>

@@ -15,7 +15,7 @@ import {ActivityPropertyChangedEventArgs, WorkflowDefinitionPropsUpdatedArgs, Wo
 import {WorkflowDefinition} from "../models/entities";
 import {WorkflowDefinitionsApi} from "../services/api"
 import WorkflowDefinitionTunnel, {WorkflowDefinitionState} from "../state";
-import {LayoutDirection} from "../../flowchart/models";
+import {LayoutDirection, UpdateActivityArgs} from "../../flowchart/models";
 import {cloneDeep} from '@antv/x6/lib/util/object/object';
 import {removeGuidsFromPortNames} from '../../../utils/graph';
 
@@ -33,7 +33,6 @@ export class WorkflowDefinitionEditor {
   private flowchart: HTMLElsaFlowchartElement;
   private container: HTMLDivElement;
   private toolbox: HTMLElsaWorkflowDefinitionEditorToolboxElement;
-  private readonly emitActivityChangedDebounced: (e: ActivityPropertyChangedEventArgs) => void;
   private readonly saveChangesDebounced: () => void;
   private readonly workflowDefinitionApi: WorkflowDefinitionsApi;
 
@@ -42,7 +41,6 @@ export class WorkflowDefinitionEditor {
     this.pluginRegistry = Container.get(PluginRegistry);
     this.activityNameFormatter = Container.get(ActivityNameFormatter);
     this.portProviderRegistry = Container.get(PortProviderRegistry);
-    this.emitActivityChangedDebounced = debounce(this.emitActivityChanged, 10);
     this.saveChangesDebounced = debounce(this.saveChanges, 1000);
     this.workflowDefinitionApi = Container.get(WorkflowDefinitionsApi);
   }
@@ -108,11 +106,14 @@ export class WorkflowDefinitionEditor {
   // Updates the workflow definition without importing it into the designer.
   @Method()
   async updateWorkflowDefinition(workflowDefinition: WorkflowDefinition): Promise<void> {
-    this.workflowDefinitionState = workflowDefinition;
+    if(this.workflowDefinitionState != workflowDefinition) {
+      this.workflowDefinitionState = workflowDefinition;
 
-    window.requestAnimationFrame(async () => {
-      await this.updateSelectedActivity();
-    });
+      window.requestAnimationFrame(async () => {
+        await this.updateSelectedActivity();
+        await this.eventBus.emit(WorkflowEditorEventTypes.WorkflowEditor.WorkflowLoaded, this, {workflowEditor: this, workflowDefinition: workflowDefinition});
+      });
+    }
   }
 
   @Method()
@@ -145,6 +146,16 @@ export class WorkflowDefinitionEditor {
     }
   }
 
+  @Method()
+  async updateActivity(activity: Activity) {
+    const args: UpdateActivityArgs = {
+      activity: activity,
+      id: activity.id,
+      originalId: activity.id
+    };
+    await this.updateActivityInternal(args);
+  }
+
   async componentWillLoad() {
     await this.updateWorkflowDefinition(this.workflowDefinition);
     await this.loadWorkflowVersions();
@@ -156,7 +167,7 @@ export class WorkflowDefinitionEditor {
     else
       await this.importWorkflow(this.workflowDefinitionState);
 
-    await this.eventBus.emit(WorkflowEditorEventTypes.WorkflowEditor.Ready, this, {workflowEditor: this});
+    await this.eventBus.emit(WorkflowEditorEventTypes.WorkflowEditor.Ready, this, {workflowEditor: this, workflowDefinition: this.workflowDefinitionState});
   }
 
   private renderSelectedObject = () => {
@@ -174,10 +185,6 @@ export class WorkflowDefinitionEditor {
     const workflowDefinition = this.workflowDefinitionState;
     workflowDefinition.root = activity;
     return workflowDefinition;
-  };
-
-  private emitActivityChanged = async (activity: Activity, propertyName: string) => {
-    await this.eventBus.emit(WorkflowEditorEventTypes.Activity.PropertyChanged, this, activity, propertyName, this);
   };
 
   private saveChanges = async (): Promise<void> => {
@@ -219,6 +226,11 @@ export class WorkflowDefinitionEditor {
     await this.updateLayout();
   }
 
+  private updateActivityInternal = async (args: UpdateActivityArgs) => {
+    await this.flowchart.updateActivity(args);
+    this.saveChangesDebounced();
+  }
+
   private onActivityPickerPanelStateChanged = async (e: PanelStateChangedArgs) => await this.updateContainerLayout('activity-picker-closed', e.expanded)
   private onWorkflowEditorPanelStateChanged = async (e: PanelStateChangedArgs) => await this.updateContainerLayout('object-editor-closed', e.expanded)
   private onActivityEditorPanelStateChanged = async (e: PanelStateChangedArgs) => await this.updateContainerLayout('activity-editor-closed', e.expanded)
@@ -245,14 +257,13 @@ export class WorkflowDefinitionEditor {
   };
 
   private onActivityUpdated = async (e: CustomEvent<ActivityUpdatedArgs>) => {
-    await this.flowchart.updateActivity({
+    const args: UpdateActivityArgs = {
+      activity: e.detail.activity,
       id: e.detail.newId,
-      originalId: e.detail.originalId,
-      activity: e.detail.activity
-    });
+      originalId: e.detail.originalId
+    };
 
-    this.emitActivityChangedDebounced({...e.detail, workflowEditor: this.el});
-    this.saveChangesDebounced();
+    await this.updateActivityInternal(args);
   }
 
   private onWorkflowPropsUpdated = (e: CustomEvent<WorkflowDefinitionPropsUpdatedArgs>) => {

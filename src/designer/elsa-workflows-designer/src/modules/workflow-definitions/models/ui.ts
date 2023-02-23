@@ -9,12 +9,17 @@ export const WorkflowEditorEventTypes = {
     PropertyChanged: 'workflow-editor:activity:property-changed'
   },
   WorkflowEditor: {
-    Ready: 'workflow-editor:ready'
+    Ready: 'workflow-editor:ready',
+    WorkflowLoaded: 'workflow-editor:workflow-loaded'
   }
 }
 
 export const WorkflowPropertiesEditorEventTypes = {
   Displaying: 'workflow-properties:displaying'
+}
+
+export const ActivityPropertyPanelEvents = {
+  Displaying: 'activity-property-panel:displaying'
 }
 
 export interface ActivityPropertyChangedEventArgs {
@@ -65,12 +70,12 @@ export interface WorkflowEditorReadyArgs {
 }
 
 export interface ActivityUpdatedArgs {
-  originalId: string;
-  newId: string;
+  originalId?: string;
+  newId?: string;
   activity: Activity;
   activityDescriptor: ActivityDescriptor;
-  propertyName?: string;
-  propertyDescriptor?: PropertyDescriptor;
+  // propertyName?: string;
+  // propertyDescriptor?: PropertyDescriptor;
 }
 
 export interface ActivityIdUpdatedArgs {

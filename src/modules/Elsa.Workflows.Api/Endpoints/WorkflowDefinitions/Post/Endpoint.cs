@@ -8,9 +8,11 @@ using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Services;
+using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Post;
 
+[PublicAPI]
 internal class Post : ElsaEndpoint<WorkflowDefinitionRequest, WorkflowDefinitionResponse>
 {
     private readonly SerializerOptionsProvider _serializerOptionsProvider;
