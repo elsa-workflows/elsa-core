@@ -5,9 +5,7 @@ on:
     branches:
       - v3
 env:
-  nuget_feed_name: 'Packages'
   nuget_feed_source: 'https://f.feedz.io/elsa-workflows/elsa-3/nuget/index.json'
-  nuget_config: 'NuGet.Config'
   
 jobs:
   build:
@@ -28,9 +26,7 @@ jobs:
         run: dotnet test --configuration Release /p:Version=${VERSION} --no-build
       - name: Pack
         run: dotnet pack --configuration Release /p:Version=${VERSION} /p:PackageOutputPath=$(pwd)
-      - name: Authenticate
-        run: dotnet nuget add source ${{ env.nuget_feed_source }} --name ${{ env.nuget_feed_name }} --username az --password ${{ secrets.FEEDZ_API_KEY }} --store-password-in-clear-text --configfile ${{ env.nuget_config }}
       - name: Push
-        run: dotnet nuget push *.nupkg --api-key az --source ${{ env.nuget_feed_name }}
+        run: dotnet nuget push *.nupkg --api-key ${{ secrets.FEEDZ_API_KEY }} --source ${{ env.nuget_feed_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
