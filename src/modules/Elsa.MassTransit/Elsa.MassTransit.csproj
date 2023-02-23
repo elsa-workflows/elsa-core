@@ -18,8 +18,8 @@
 
     <ItemGroup>
         <PackageReference Include="MassTransit.Extensions.DependencyInjection" Version="7.3.1" />
-        <PackageReference Include="MassTransit" Version="8.0.10-develop.696" />
-        <PackageReference Include="MassTransit.RabbitMQ" Version="8.0.10-develop.696" />
+        <PackageReference Include="MassTransit" Version="8.0.13" />
+        <PackageReference Include="MassTransit.RabbitMQ" Version="8.0.13" />
     </ItemGroup>
 
 </Project>

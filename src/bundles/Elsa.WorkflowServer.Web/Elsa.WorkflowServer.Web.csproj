@@ -29,8 +29,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Azure.Identity" Version="1.6.0" />
-      <PackageReference Include="Proto.Persistence.Sqlite" Version="0.33.0" />
+      <PackageReference Include="Azure.Identity" Version="1.8.2" />
+      <PackageReference Include="Proto.Persistence.Sqlite" Version="1.1.0" />
     </ItemGroup>
 
 </Project>

@@ -13,9 +13,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="FastEndpoints" Version="5.4.1" />
-      <PackageReference Include="FastEndpoints.Security" Version="5.4.1" />
-      <PackageReference Include="FastEndpoints.Swagger" Version="5.4.1" />
+      <PackageReference Include="FastEndpoints" Version="5.7.2" />
+      <PackageReference Include="FastEndpoints.Security" Version="5.7.2" />
+      <PackageReference Include="FastEndpoints.Swagger" Version="5.7.2" />
     </ItemGroup>
 
     <ItemGroup>
