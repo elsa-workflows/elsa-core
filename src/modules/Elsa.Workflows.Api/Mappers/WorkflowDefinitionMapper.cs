@@ -8,11 +8,11 @@ namespace Elsa.Workflows.Api.Mappers;
 
 internal class WorkflowDefinitionMapper : ResponseMapper<WorkflowDefinitionResponse, WorkflowDefinition>
 {
-    public override async Task<WorkflowDefinitionResponse> FromEntityAsync(WorkflowDefinition entity)
+    public override async Task<WorkflowDefinitionResponse> FromEntityAsync(WorkflowDefinition entity, CancellationToken cancellationToken = default)
     {
         var workflowDefinitionService = Resolve<IWorkflowDefinitionService>();
         var variableDefinitionMapper = Resolve<VariableDefinitionMapper>();
-        var workflow = await workflowDefinitionService.MaterializeWorkflowAsync(entity);
+        var workflow = await workflowDefinitionService.MaterializeWorkflowAsync(entity, cancellationToken);
         var variables = variableDefinitionMapper.Map(workflow.Variables).ToList();
 
         return new(
