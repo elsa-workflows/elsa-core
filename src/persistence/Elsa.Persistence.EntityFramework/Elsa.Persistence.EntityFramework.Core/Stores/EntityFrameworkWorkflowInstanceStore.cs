@@ -61,11 +61,9 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
 
             await DoWork(async dbContext =>
             {
-                var helper = dbContext.GetService<ISqlGenerationHelper>();
-                var placeholders = string.Join(",", Enumerable.Range(0, idList.Count).Select(i => "{" + i + "}"));
-                await dbContext.Database.ExecuteSqlRawAsync($"delete from {dbContext.WorkflowExecutionLogRecords.EntityType.GetSchemaQualifiedTableNameWithQuotes(helper)} where WorkflowInstanceId in ({placeholders})", idList, cancellationToken);
-                await dbContext.Database.ExecuteSqlRawAsync($"delete from {dbContext.Bookmarks.EntityType.GetSchemaQualifiedTableNameWithQuotes(helper)} where WorkflowInstanceId in ({placeholders})", idList, cancellationToken);
-                await dbContext.Database.ExecuteSqlRawAsync($"delete from {dbContext.WorkflowInstances.EntityType.GetSchemaQualifiedTableNameWithQuotes(helper)} where Id in ({placeholders})", idList, cancellationToken);
+                await dbContext.Set<WorkflowExecutionLogRecord>().AsQueryable().Where(x => idList.Contains(x.WorkflowInstanceId)).BatchDeleteWithWorkAroundAsync(dbContext, cancellationToken);
+                await dbContext.Set<Bookmark>().AsQueryable().Where(x => idList.Contains(x.WorkflowInstanceId)).BatchDeleteWithWorkAroundAsync(dbContext, cancellationToken);
+                await dbContext.Set<WorkflowInstance>().AsQueryable().Where(x => idList.Contains(x.Id)).BatchDeleteWithWorkAroundAsync(dbContext, cancellationToken);
             }, cancellationToken);
         }
 

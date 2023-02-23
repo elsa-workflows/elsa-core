@@ -18,7 +18,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Extensions
             => await queryable.ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
 #else
         {
-            if (elsaContext.Database.IsPostgres() || elsaContext.Database.IsMySql() || elsaContext.Database.IsOracle())
+            if (elsaContext.Database.IsMySql() || elsaContext.Database.IsOracle())
             {
                 // Need this workaround https://github.com/borisdj/EFCore.BulkExtensions/issues/553 is solved.
                 // Oracle also https://github.com/borisdj/EFCore.BulkExtensions/issues/375
