@@ -85,8 +85,8 @@ jobs:
           path: out/*nupkg
         if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
       
-  publish_npm_myget:
-    name: Publish to MyGet npm
+  publish_npm_preview:
+    name: Publish to npm (Preview)
     needs: build_and_pack
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
@@ -99,11 +99,11 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 18.12.1
-          registry-url: 'https://www.myget.org/F/elsa-2-npm/npm/'
+          registry-url: 'https://f.feedz.io/elsa-workflows/elsa-2/npm/'
 
       - run: npm publish *.tgz
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.MYGET_ELSA_2_NPM }}
+          NODE_AUTH_TOKEN: ${{ secrets.FEEDZ_API_KEY }}
 
   publish_npm_release:
     name: Publish to npm
@@ -125,8 +125,8 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-  publish_nuget_myget:
-    name: Publish to MyGet Nuget
+  publish_nuget_preview:
+    name: Publish Nuget (Preview)
     needs: build_and_pack
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
@@ -137,7 +137,7 @@ jobs:
           name: elsa-nuget-package
       
       - name: Publish Nuget Packages to MyGet
-        run: dotnet nuget push *nupkg -k ${{ secrets.MYGET_ELSA_2 }} -s https://www.myget.org/F/elsa-2/api/v3/index.json
+        run: dotnet nuget push *nupkg -k ${{ secrets.FEEDZ_API_KEY }} -s https://f.feedz.io/elsa-workflows/elsa-2/nuget/index.json
 
   publish_nuget_release:
     name: Publish to Nuget
