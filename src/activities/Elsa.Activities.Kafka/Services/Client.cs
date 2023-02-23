@@ -34,12 +34,15 @@ namespace Elsa.Activities.Kafka.Services
 
         public Task StartProcessing(string topic, string group)
         {
-            _consumer = new ConsumerBuilder<Ignore, string>(new ConsumerConfig()
+
+            var consumerConfig = new ConsumerConfig(Configuration.Headers)
             {
                 BootstrapServers = Configuration.ConnectionString,
                 GroupId = group,
-                AutoOffsetReset = Configuration.AutoOffsetReset
-            }).Build();
+                AutoOffsetReset = Configuration.AutoOffsetReset,
+            };
+
+            _consumer = new ConsumerBuilder<Ignore, string>(consumerConfig).Build();
 
             if (_consumer != null)
                 Consumer.Consume(topic, _consumer).Subscribe(HandleMessage, OnError, _cancellationToken);
