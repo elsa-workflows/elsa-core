@@ -9,7 +9,8 @@ export const WorkflowEditorEventTypes = {
     PropertyChanged: 'workflow-editor:activity:property-changed'
   },
   WorkflowEditor: {
-    Ready: 'workflow-editor:ready'
+    Ready: 'workflow-editor:ready',
+    WorkflowLoaded: 'workflow-editor:workflow-loaded'
   }
 }
 
@@ -18,7 +19,7 @@ export const WorkflowPropertiesEditorEventTypes = {
 }
 
 export const ActivityPropertyPanelEvents = {
-  Rendering: 'ActivityPropertyPanel:Rendering'
+  Displaying: 'activity-property-panel:displaying'
 }
 
 export interface ActivityPropertyChangedEventArgs {

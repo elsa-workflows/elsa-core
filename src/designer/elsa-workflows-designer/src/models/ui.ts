@@ -1,6 +1,3 @@
-import {ActivityInputContext} from "../services/activity-input-driver";
-import {Activity, ActivityDescriptor} from "./core";
-
 export interface TabDefinition {
   displayText: string;
   content: () => any;

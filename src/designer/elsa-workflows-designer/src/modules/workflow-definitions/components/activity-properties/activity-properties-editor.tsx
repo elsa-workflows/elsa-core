@@ -48,12 +48,10 @@ export class ActivityPropertiesEditor {
 
   async componentWillRender() {
     const activity = this.activity;
-    const activityId = activity.id;
     const activityDescriptor = this.findActivityDescriptor();
     const title = activityDescriptor?.displayName ?? activityDescriptor?.typeName ?? 'Unknown Activity';
     const inputs = this.createInputs();
     const tabs = this.createTabs();
-    const selectedTabIndex = this.getSelectedTabIndex(tabs);
 
     const onActivityChanged = () => this.activityUpdated.emit({
       activity,
@@ -66,18 +64,18 @@ export class ActivityPropertiesEditor {
       title,
       inputs,
       tabs,
-      selectedTabIndex,
       notifyActivityChanged: () => onActivityChanged()
     }
 
-    await this.eventBus.emit(ActivityPropertyPanelEvents.Rendering, this, this.renderContext);
+    await this.eventBus.emit(ActivityPropertyPanelEvents.Displaying, this, this.renderContext);
   }
 
   render() {
-    const {activity, activityDescriptor, tabs, selectedTabIndex} = this.renderContext;
+    const {activity, activityDescriptor, tabs} = this.renderContext;
     const actions = [];
     const mainTitle = activity.id;
     const subTitle = activityDescriptor.displayName;
+    const selectedTabIndex = this.getSelectedTabIndex(tabs);
 
     return (
       <elsa-form-panel

@@ -7,7 +7,6 @@ export interface RenderActivityPropsContext {
   title: string;
   inputs: Array<RenderActivityInputContext>;
   tabs: Array<TabDefinition>;
-  selectedTabIndex: number;
   notifyActivityChanged: () => void;
 }
 
@@ -17,6 +16,6 @@ export interface RenderActivityInputContext {
 }
 
 export interface WorkflowDefinitionActivity extends Activity {
-  alwaysUsePublishedVersion: boolean;
-  useVersion: number;
+  workflowDefinitionId: string;
+  latestAvailablePublishedVersion: number;
 }

@@ -25,25 +25,9 @@ public class WorkflowDefinitionActivity : Activity, IInitializable
     public string WorkflowDefinitionId { get; set; } = default!;
 
     /// <summary>
-    /// True to always use the published version of the workflow definition. False to use the version at the time it was added to the workflow.
+    /// the latest published version number set by the provider. This is used by tooling to let the user know that a newer version is available.
     /// </summary>
-    [Input(
-        DisplayName = "Always use published version", 
-        Description = "Set this option to always use the published version of the workflow definition. If not set, the activity will be pinpointed to the version at the time it was added to the workflow.",
-        DefaultValue = true,
-        Category = "Advanced"
-    )]
-    public bool AlwaysUsePublishedVersion { get; set; } = true;
-    
-    /// <summary>
-    /// Use the specified version of the workflow definition.
-    /// </summary>
-    [Input(
-        DisplayName = "Version", 
-        Description = "The version to use.",
-        Category = "Advanced"
-    )]
-    public int UseVersion { get; set; }
+    public int LatestAvailablePublishedVersion { get; set; }
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
@@ -81,9 +65,7 @@ public class WorkflowDefinitionActivity : Activity, IInitializable
         var serviceProvider = context.ServiceProvider;
         var cancellationToken = context.CancellationToken;
         var workflowDefinitionStore = serviceProvider.GetRequiredService<IWorkflowDefinitionStore>();
-        var usePublishedVersion = AlwaysUsePublishedVersion;
-        var versionOptions = usePublishedVersion ? VersionOptions.Published : VersionOptions.SpecificVersion(Version);
-        //var versionOptions = VersionOptions.Published;
+        var versionOptions = VersionOptions.SpecificVersion(Version);
         var workflowDefinition = await workflowDefinitionStore.FindByDefinitionIdAsync(WorkflowDefinitionId, versionOptions, cancellationToken);
 
         if (workflowDefinition == null)

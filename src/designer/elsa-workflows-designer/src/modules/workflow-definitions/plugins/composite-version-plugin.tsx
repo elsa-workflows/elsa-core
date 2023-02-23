@@ -1,17 +1,20 @@
 import {h} from '@stencil/core';
 import {Container, Service} from "typedi";
 import {Plugin, TabDefinition} from "../../../models";
-import {EventBus} from "../../../services";
-import {RenderActivityPropsContext} from "../components/models";
-import {ActivityPropertyPanelEvents} from "../models/ui";
+import {EventBus, flatten, walkActivities} from "../../../services";
+import {ActivityPropertyPanelEvents, WorkflowEditorEventTypes} from "../models/ui";
+import {RenderActivityPropsContext, WorkflowDefinitionActivity} from "../components/models";
+import {WorkflowDefinitionsApi} from "../services/api";
 
 @Service()
 export class CompositeActivityVersionPlugin implements Plugin {
   private readonly eventBus: EventBus
+  private readonly workflowDefinitionsApi: WorkflowDefinitionsApi;
 
   constructor() {
     this.eventBus = Container.get(EventBus);
-    this.eventBus.on(ActivityPropertyPanelEvents.Rendering, this.onPropertyPanelRendering);
+    this.workflowDefinitionsApi = Container.get(WorkflowDefinitionsApi);
+    this.eventBus.on(ActivityPropertyPanelEvents.Displaying, this.onPropertyPanelRendering);
   }
 
   async initialize(): Promise<void> {
@@ -25,9 +28,9 @@ export class CompositeActivityVersionPlugin implements Plugin {
     const versionTab: TabDefinition = {
       order: 20,
       displayText: 'Version',
-      content: () => <elsa-workflow-definition-activity-version-settings/>
+      content: () => <elsa-workflow-definition-activity-version-settings renderContext={context}/>
     };
 
     context.tabs.push(versionTab);
-  };
+  }
 }

@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import {Component, Element, Event, EventEmitter, h, Listen, Method, Prop, State, Watch} from '@stencil/core';
-import {camelCase, first} from 'lodash';
+import {first} from 'lodash';
 import {Edge, Graph, Model, Node, NodeView, Point} from '@antv/x6';
 import './shapes';
 import './ports';
@@ -10,7 +10,7 @@ import {createGraph} from './graph-factory';
 import {AddActivityArgs, Connection, Flowchart, FlowchartModel, FlowchartNavigationItem, FlowchartPathItem, LayoutDirection, RenameActivityArgs, UpdateActivityArgs} from './models';
 import {NodeFactory} from "./node-factory";
 import {Container} from "typedi";
-import {ActivityNode, createActivityLookup, EventBus, flatten, PortProviderRegistry, walkActivities} from "../../services";
+import {createActivityLookup, EventBus, flatten, PortProviderRegistry, walkActivities} from "../../services";
 import {ConnectionCreatedEventArgs, FlowchartEvents} from "./events";
 import {ContextMenuAnchorPoint, ContextMenuItem} from "../../components/shared/context-menu/models";
 import descriptorsStore from "../../data/descriptors-store";
@@ -21,7 +21,6 @@ import PointLike = Point.PointLike;
 import {generateUniqueActivityName} from "../../utils/generate-activity-name";
 import {DagreLayout, OutNode} from '@antv/layout';
 import {adjustPortMarkupByNode, rebuildGraph} from '../../utils/graph';
-import {WorkflowDefinition} from "../workflow-definitions/models/entities";
 import FlowchartTunnel, {FlowchartState} from "./state";
 
 const FlowchartTypeName = 'Elsa.Flowchart';

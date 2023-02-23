@@ -263,6 +263,7 @@ export namespace Components {
         "monacoLibPath": string;
         "newWorkflow": () => Promise<WorkflowDefinition>;
         "registerActivityDrivers": (register: (registry: ActivityDriverRegistry) => void) => Promise<void>;
+        "updateActivity": (activity: Activity) => Promise<void>;
         "updateWorkflowDefinition": (workflowDefinition: WorkflowDefinition) => Promise<void>;
         "workflowDefinition"?: WorkflowDefinition;
     }

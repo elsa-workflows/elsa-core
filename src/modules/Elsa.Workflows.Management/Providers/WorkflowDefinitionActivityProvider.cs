@@ -14,29 +14,29 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
 {
     private readonly IWorkflowDefinitionStore _store;
     private readonly IActivityFactory _activityFactory;
-    private readonly IActivityDescriber _activityDescriber;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public WorkflowDefinitionActivityProvider(IWorkflowDefinitionStore store, IActivityFactory activityFactory, IActivityDescriber activityDescriber)
+    public WorkflowDefinitionActivityProvider(IWorkflowDefinitionStore store, IActivityFactory activityFactory)
     {
         _store = store;
         _activityFactory = activityFactory;
-        _activityDescriber = activityDescriber;
     }
 
     /// <inheritdoc />
     public async ValueTask<IEnumerable<ActivityDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default)
     {
         var definitions = (await _store.FindWithActivityBehaviorAsync(VersionOptions.All, cancellationToken)).ToList();
-        var descriptors = CreateDescriptors(definitions);
+        var latestPublishedVersion = definitions.Where(x => x.IsPublished).Select(x => x.Version).Max();
+        var descriptors = CreateDescriptors(definitions, latestPublishedVersion);
         return descriptors;
     }
 
-    private IEnumerable<ActivityDescriptor> CreateDescriptors(IEnumerable<WorkflowDefinition> definitions) => definitions.Select(CreateDescriptor);
+    private IEnumerable<ActivityDescriptor> CreateDescriptors(IEnumerable<WorkflowDefinition> definitions, int latestPublishedVersion) => 
+        definitions.Select(x => CreateDescriptor(x, latestPublishedVersion));
 
-    private ActivityDescriptor CreateDescriptor(WorkflowDefinition definition)
+    private ActivityDescriptor CreateDescriptor(WorkflowDefinition definition, int latestPublishedVersion)
     {
         var typeName = definition.Name!.Pascalize();
 
@@ -58,9 +58,8 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
                 activity.Type = typeName;
                 activity.WorkflowDefinitionId = definition.DefinitionId;
                 activity.Version = definition.Version;
-                activity.UseVersion = definition.Version;
-                activity.AlwaysUsePublishedVersion = true;
-                
+                activity.LatestAvailablePublishedVersion = latestPublishedVersion;
+
                 return activity;
             }
         };
@@ -89,8 +88,6 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
         {
             yield return input;
         }
-
-        //yield return _activityDescriber.DescribeInputProperty<WorkflowDefinitionActivity, bool>(x => x.AlwaysUsePublishedVersion);
     }
 
     private static IEnumerable<OutputDescriptor> DescribeOutputs(WorkflowDefinition definition) =>
