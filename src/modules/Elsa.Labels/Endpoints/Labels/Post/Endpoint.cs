@@ -2,10 +2,12 @@ using Elsa.Labels.Services;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.Services;
 using FastEndpoints;
+using JetBrains.Annotations;
 
 namespace Elsa.Labels.Endpoints.Labels.Post;
 
-public class Create : Endpoint<Request, Response, LabelMapper>
+[PublicAPI]
+internal class Create : Endpoint<Request, Response, LabelMapper>
 {
     private readonly ILabelStore _store;
 
@@ -24,7 +26,7 @@ public class Create : Endpoint<Request, Response, LabelMapper>
     {
         var label = Map.ToEntity(request);
         await _store.SaveAsync(label, cancellationToken);
-        var response = await Map.FromEntityAsync(label);
+        var response = Map.FromEntity(label);
         await SendCreatedAtAsync<Get.Get>(new { Id = label.Id }, response, cancellation: cancellationToken);
     }
 }

@@ -3,7 +3,7 @@ using FastEndpoints;
 
 namespace Elsa.Labels.Endpoints.Labels.Update;
 
-public class LabelMapper : Mapper<Request, Response, Label>
+internal class LabelMapper : Mapper<Request, Response, Label>
 {
     public override Label ToEntity(Request request) => new()
     {
@@ -13,13 +13,13 @@ public class LabelMapper : Mapper<Request, Response, Label>
         Color = request.Color?.Trim()
     };
 
-    public override Task<Response> FromEntityAsync(Label e) => Task.FromResult(new Response
+    public override Response FromEntity(Label e) => new Response
     {
         Id = e.Id,
         Color = e.Color,
         Description = e.Description,
         NormalizedName = e.NormalizedName
-    });
+    };
 
     public override Label UpdateEntity(Request r, Label e)
     {

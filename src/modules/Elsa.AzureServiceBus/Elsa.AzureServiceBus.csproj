@@ -12,8 +12,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.11.1" />
-        <PackageReference Include="Microsoft.Azure.Management.ServiceBus.Fluent" Version="1.38.0" />
+        <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.12.0" />
+        <PackageReference Include="Azure.ResourceManager.ServiceBus" Version="1.0.0" />
         <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="7.0.0" />
         <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="7.0.0" />
         <PackageReference Include="System.Linq.Async" Version="6.0.1" />

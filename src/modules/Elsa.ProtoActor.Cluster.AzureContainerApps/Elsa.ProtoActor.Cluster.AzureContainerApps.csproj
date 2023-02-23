@@ -12,8 +12,8 @@
         <PackageTags>elsa module runtime protoactor cluster azure container apps</PackageTags>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Azure.ResourceManager.AppContainers" Version="1.0.1" />
-        <PackageReference Include="Azure.ResourceManager.Resources" Version="1.3.1" />
-        <PackageReference Include="Proto.Cluster" Version="1.0.0" />
+        <PackageReference Include="Azure.ResourceManager.AppContainers" Version="1.0.2" />
+        <PackageReference Include="Azure.ResourceManager.Resources" Version="1.4.0" />
+        <PackageReference Include="Proto.Cluster" Version="1.1.0" />
     </ItemGroup>
 </Project>

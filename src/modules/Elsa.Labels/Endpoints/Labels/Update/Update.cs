@@ -1,10 +1,12 @@
 using Elsa.Labels.Services;
 using Elsa.Workflows.Core.Serialization;
 using FastEndpoints;
+using JetBrains.Annotations;
 
 namespace Elsa.Labels.Endpoints.Labels.Update;
 
-public class Update : Endpoint<Request, Response, LabelMapper>
+[PublicAPI]
+internal class Update : Endpoint<Request, Response, LabelMapper>
 {
     private readonly ILabelStore _store;
 
@@ -32,7 +34,7 @@ public class Update : Endpoint<Request, Response, LabelMapper>
         label = Map.UpdateEntity(request, label);
 
         await _store.SaveAsync(label, cancellationToken);
-        var response = await Map.FromEntityAsync(label);
+        var response = Map.FromEntity(label);
         await SendOkAsync(response, cancellationToken);
     }
 }

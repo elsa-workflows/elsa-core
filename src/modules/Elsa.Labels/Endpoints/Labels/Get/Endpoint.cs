@@ -3,7 +3,7 @@ using FastEndpoints;
 
 namespace Elsa.Labels.Endpoints.Labels.Get;
 
-public class Get : Endpoint<Request, Response, LabelMapper>
+internal class Get : Endpoint<Request, Response, LabelMapper>
 {
     private readonly ILabelStore _store;
 
@@ -26,7 +26,7 @@ public class Get : Endpoint<Request, Response, LabelMapper>
             await SendNotFoundAsync(cancellationToken);
         else
         {
-            var response = await Map.FromEntityAsync(label);
+            var response = Map.FromEntity(label);
             await SendOkAsync(response, cancellationToken);
         }
     }
