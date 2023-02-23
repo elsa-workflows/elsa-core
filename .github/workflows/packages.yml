@@ -9,6 +9,7 @@ env:
   
 jobs:
   build:
+    name: Build packages
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -25,12 +26,25 @@ jobs:
       - name: Test
         run: dotnet test --configuration Release /p:Version=${VERSION} --no-build
       - name: Pack
-        run: dotnet pack --configuration Release /p:Version=${VERSION} /p:PackageOutputPath=$(pwd)
-          
-  deploy:
-    runs-on: ubuntu-latest
+        run: dotnet pack --configuration Release /p:Version=${VERSION} /p:PackageOutputPath=$(pwd)/packages
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: elsa-nuget-packages
+          path: packages/*nupkg
+        if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
+        
+  publish:
+    name: Publish packages
     needs: build
+    runs-on: ubuntu-latest
     timeout-minutes: 10
+    if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
     steps:
-      - name: Push
-        run: dotnet nuget push *.nupkg --api-key ${{ secrets.FEEDZ_API_KEY }} --source ${{ env.nuget_feed_source }}
+      - name: Download Packages
+        uses: actions/download-artifact@v3
+        with:
+          name: elsa-nuget-packages
+
+      - name: Publish to feedz.io
+        run: dotnet nuget push *nupkg -k ${{ secrets.FEEDZ_API_KEY }} -s ${{ env.nuget_feed_source }}
