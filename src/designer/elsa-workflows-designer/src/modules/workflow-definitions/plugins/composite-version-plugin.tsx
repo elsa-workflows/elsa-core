@@ -1,8 +1,8 @@
 import {h} from '@stencil/core';
 import {Container, Service} from "typedi";
 import {Plugin, TabDefinition} from "../../../models";
-import {EventBus, flatten, walkActivities} from "../../../services";
-import {ActivityPropertyPanelEvents, WorkflowEditorEventTypes} from "../models/ui";
+import {EventBus} from "../../../services";
+import {ActivityPropertyPanelEvents} from "../models/ui";
 import {RenderActivityPropsContext, WorkflowDefinitionActivity} from "../components/models";
 import {WorkflowDefinitionsApi} from "../services/api";
 

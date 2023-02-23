@@ -28,7 +28,7 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
     public async ValueTask<IEnumerable<ActivityDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default)
     {
         var definitions = (await _store.FindWithActivityBehaviorAsync(VersionOptions.All, cancellationToken)).ToList();
-        var latestPublishedVersion = definitions.Where(x => x.IsPublished).Select(x => x.Version).Max();
+        var latestPublishedVersion = definitions.Where(x => x.IsPublished).Select(x => x.Version).OrderByDescending(x => x).FirstOrDefault();
         var descriptors = CreateDescriptors(definitions, latestPublishedVersion);
         return descriptors;
     }
