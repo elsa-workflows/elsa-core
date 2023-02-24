@@ -86,7 +86,7 @@ jobs:
         if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
       
   publish_npm_preview:
-    name: Publish to npm (Preview)
+    name: Publish npm (Preview)
     needs: build_and_pack
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
