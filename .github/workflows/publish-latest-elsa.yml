@@ -103,7 +103,7 @@ jobs:
 
       - run: npm publish *.tgz
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.FEEDZ_API_KEY }}
+          NODE_AUTH_TOKEN: ${{ secrets.FEEDZ_IO_NPM }}
 
   publish_npm_release:
     name: Publish to npm
