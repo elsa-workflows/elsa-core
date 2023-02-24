@@ -8,7 +8,7 @@
 
 [![Nuget (with prereleases)](https://img.shields.io/nuget/vpre/Elsa)](https://www.nuget.org/packages/Elsa/)
 [![npm](https://img.shields.io/npm/v/@elsa-workflows/elsa-workflows-studio)](https://www.npmjs.com/package/@elsa-workflows/elsa-workflows-studio)
-[![feedz.io](https://img.shields.io/badge/endpoint.svg?url=https%3A%2F%2Ff.feedz.io%2Felsa-workflows%2Felsa-2%2Fshield%2FElsa%2Flatest)](https://f.feedz.io/elsa-workflows/elsa-2/packages/Elsa/latest/download)
+[![feedz.io](https://img.shields.io/badge/endpoint.svg?url=https%3A%2F%2Ff.feedz.io%2Felsa-workflows%2Felsa-2%2Fshield%2FElsa%2Flatest)](https://f.feedz.io/elsa-workflows/elsa-2/nuget/index.json)
 
 [![MyGet npm](https://img.shields.io/badge/dynamic/json?color=yellow&label=myget%20%28npm%29&prefix=v&query=%24%5B%27dist-tags%27%5D.latest&url=https%3A%2F%2Fwww.myget.org%2FF%2Felsa-2-npm%2Fnpm%2F%40elsa-workflows%2Felsa-workflows-studio)](https://www.myget.org/feed/elsa-2-npm/package/npm/@elsa-workflows/elsa-workflows-studio)
 [![Docker Image Version (latest semver)](https://img.shields.io/docker/v/elsaworkflows/elsa-dashboard-and-server?label=docker&logo=docker)](https://hub.docker.com/repository/docker/elsaworkflows/elsa-dashboard-and-server)
