@@ -18,6 +18,20 @@ jobs:
   build_and_pack:
     name: Build and Pack Elsa
     runs-on: ubuntu-latest
+
+    services:
+      mongo:
+        image: mongo
+        ports:
+          - 27017:27017
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_USER: root
+          POSTGRES_PASSWORD: Password12!
+          POSTGRES_DB: elsa
+        ports:
+          - 5432:5432
     
     steps:
 
@@ -73,8 +87,8 @@ jobs:
       - name: Build Elsa
         run: dotnet build --configuration Release /p:Version=$VERSION
 
-      # - name: Run Tests
-      #   run: dotnet test --configuration Release --no-build
+      - name: Run Tests
+        run: dotnet test --configuration Release --no-build --no-restore
 
       - name: Pack Elsa
         run: dotnet pack --configuration Release /p:Version=$VERSION /p:PackageOutputPath=$(pwd)/out 
