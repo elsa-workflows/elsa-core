@@ -36,6 +36,8 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: 18.12.1
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
       
       - run: echo $VERSION
       - run: node --version
