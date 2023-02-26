@@ -2,11 +2,13 @@ using Elsa.Labels.Services;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Management.Services;
 using FastEndpoints;
+using JetBrains.Annotations;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Labels.Endpoints.WorkflowDefinitionLabels.List;
 
-public class List : Endpoint<Request, Response>
+[PublicAPI]
+internal class List : Endpoint<Request, Response>
 {
     private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
     private readonly IWorkflowDefinitionLabelStore _workflowDefinitionLabelStore;
@@ -28,7 +30,7 @@ public class List : Endpoint<Request, Response>
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
-        var workflowDefinition = await _workflowDefinitionStore.FindByIdAsync(request.Id, cancellationToken);
+        var workflowDefinition = await _workflowDefinitionStore.FindAsync(new WorkflowDefinitionFilter { Id = request.Id }, cancellationToken);
 
         if (workflowDefinition == null)
         {

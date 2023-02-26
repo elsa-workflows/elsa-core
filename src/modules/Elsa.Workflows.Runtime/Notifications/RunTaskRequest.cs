@@ -7,5 +7,5 @@ namespace Elsa.Workflows.Runtime.Notifications;
 /// </summary>
 /// <param name="TaskId">A unique identifier for an individual task request.</param>
 /// <param name="TaskName">The name of the task requested to run.</param>
-/// <param name="TaskParams">Any parameters supplied by the requester of the task.</param>
+/// <param name="TaskParams">AnyAsync parameters supplied by the requester of the task.</param>
 public record RunTaskRequest(string TaskId, string TaskName, object? TaskParams) : INotification;

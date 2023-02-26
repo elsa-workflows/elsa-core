@@ -18,7 +18,7 @@ namespace Elsa.Workflows.Management.Activities;
 public class WorkflowDefinitionActivity : Activity, IInitializable
 {
     internal IActivity Root { get; set; } = default!;
-    
+
     /// <summary>
     /// The definition ID of the workflow to schedule for execution.
     /// </summary>
@@ -50,13 +50,13 @@ public class WorkflowDefinitionActivity : Activity, IInitializable
                 return;
 
             // If there's a block with the same name as the output property, we need to read its value and bind it against our output.
-            if (!context.ExpressionExecutionContext.Memory.HasBlock(outputDescriptor.Name)) 
+            if (!context.ExpressionExecutionContext.Memory.HasBlock(outputDescriptor.Name))
                 continue;
-            
+
             var outputValue = context.ExpressionExecutionContext.Memory.Blocks[outputDescriptor.Name].Value;
             context.Set(output, outputValue);
         }
-        
+
         await context.CompleteActivityAsync();
     }
 
@@ -66,7 +66,8 @@ public class WorkflowDefinitionActivity : Activity, IInitializable
         var cancellationToken = context.CancellationToken;
         var workflowDefinitionStore = serviceProvider.GetRequiredService<IWorkflowDefinitionStore>();
         var versionOptions = VersionOptions.SpecificVersion(Version);
-        var workflowDefinition = await workflowDefinitionStore.FindByDefinitionIdAsync(WorkflowDefinitionId, versionOptions, cancellationToken);
+        var filter = new WorkflowDefinitionFilter { DefinitionId = WorkflowDefinitionId, VersionOptions = versionOptions };
+        var workflowDefinition = await workflowDefinitionStore.FindAsync(filter, cancellationToken);
 
         if (workflowDefinition == null)
             throw new Exception($"Workflow definition {WorkflowDefinitionId} not found");
@@ -74,7 +75,7 @@ public class WorkflowDefinitionActivity : Activity, IInitializable
         // Construct the root activity stored in the activity definitions.
         var materializer = serviceProvider.GetRequiredService<IWorkflowMaterializer>();
         var root = await materializer.MaterializeAsync(workflowDefinition, cancellationToken);
-        
+
         Root = root;
     }
 }

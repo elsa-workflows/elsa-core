@@ -27,18 +27,29 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
     /// <inheritdoc />
     public async ValueTask<IEnumerable<ActivityDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default)
     {
-        var definitions = (await _store.FindWithActivityBehaviorAsync(VersionOptions.All, cancellationToken)).ToList();
-        var latestPublishedVersion = definitions.Where(x => x.IsPublished).Select(x => x.Version).OrderByDescending(x => x).FirstOrDefault();
-        var descriptors = CreateDescriptors(definitions, latestPublishedVersion);
+        var filter = new WorkflowDefinitionFilter
+        {
+            UsableAsActivity = true, 
+            VersionOptions = VersionOptions.All
+        };
+        
+        var definitions = (await _store.FindManyAsync(filter, cancellationToken)).ToList();
+        var descriptors = CreateDescriptors(definitions);
         return descriptors;
     }
 
-    private IEnumerable<ActivityDescriptor> CreateDescriptors(IEnumerable<WorkflowDefinition> definitions, int latestPublishedVersion) => 
-        definitions.Select(x => CreateDescriptor(x, latestPublishedVersion));
+    private IEnumerable<ActivityDescriptor> CreateDescriptors(ICollection<WorkflowDefinition> definitions) =>
+        definitions.Select(x => CreateDescriptor(x, definitions));
 
-    private ActivityDescriptor CreateDescriptor(WorkflowDefinition definition, int latestPublishedVersion)
+    private ActivityDescriptor CreateDescriptor(WorkflowDefinition definition, ICollection<WorkflowDefinition> allDefinitions)
     {
         var typeName = definition.Name!.Pascalize();
+        
+        var latestPublishedVersion = allDefinitions
+            .Where(x => x.DefinitionId == definition.DefinitionId && x.IsPublished)
+            .Select(x => x.Version)
+            .OrderByDescending(x => x)
+            .FirstOrDefault();
 
         return new()
         {
@@ -94,7 +105,7 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
         definition.Outputs.Select(outputDefinition =>
         {
             var nakedType = outputDefinition.Type;
-            
+
             return new OutputDescriptor
             {
                 Type = nakedType,

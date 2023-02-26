@@ -24,7 +24,14 @@ internal class Get : ElsaEndpoint<Request, WorkflowDefinitionResponse, WorkflowD
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
         var versionOptions = request.VersionOptions != null ? VersionOptions.FromString(request.VersionOptions) : VersionOptions.Latest;
-        var definition = (await _store.FindManyByDefinitionIdAsync(request.DefinitionId, versionOptions, cancellationToken)).FirstOrDefault();
+        
+        var filter = new WorkflowDefinitionFilter
+        {
+            DefinitionId = request.DefinitionId,
+            VersionOptions = versionOptions
+        };
+        
+        var definition = (await _store.FindManyAsync(filter, cancellationToken: cancellationToken)).FirstOrDefault();
 
         if (definition == null)
         {

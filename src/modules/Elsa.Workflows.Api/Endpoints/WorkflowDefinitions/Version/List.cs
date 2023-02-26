@@ -1,11 +1,13 @@
 ﻿using Elsa.Common.Models;
 using Elsa.Workflows.Management.Services;
 using FastEndpoints;
+using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Version;
 
-public class ListVersions : EndpointWithoutRequest
+[PublicAPI]
+internal class ListVersions : EndpointWithoutRequest
 {
     private readonly IWorkflowDefinitionStore _store;
     
@@ -20,17 +22,24 @@ public class ListVersions : EndpointWithoutRequest
         AllowAnonymous();
     }
 
-    public override async Task HandleAsync(CancellationToken ct)
+    public override async Task HandleAsync(CancellationToken cancellationToken)
     {
         var definitionId = Route<string>("definitionId")!;
-
-        var result = await _store.FindManyByDefinitionIdAsync(definitionId, VersionOptions.All, ct);
-        if (!result.Any())
+        
+        var filter = new WorkflowDefinitionFilter
         {
-            await SendNotFoundAsync(ct);
+            DefinitionId = definitionId,
+            VersionOptions = VersionOptions.All
+        };
+        
+        var definitions = await _store.FindManyAsync(filter, cancellationToken);
+        
+        if (!definitions.Any())
+        {
+            await SendNotFoundAsync(cancellationToken);
             return;
         }
 
-        await SendAsync(result, StatusCodes.Status200OK, ct);
+        await SendAsync(definitions, StatusCodes.Status200OK, cancellationToken);
     }
 }

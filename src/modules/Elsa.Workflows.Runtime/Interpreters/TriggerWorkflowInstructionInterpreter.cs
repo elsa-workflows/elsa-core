@@ -65,5 +65,5 @@
 //         return new DispatchWorkflowInstructionResult();
 //     }
 //
-//     private async Task<bool> GetDefinitionExistsAsync(string definitionId, CancellationToken cancellationToken) => await _workflowDefinitionStore.GetExistsAsync(definitionId, VersionOptions.Published, cancellationToken);
+//     private async Task<bool> GetDefinitionExistsAsync(string definitionId, CancellationToken cancellationToken) => await _workflowDefinitionStore.AnyAsync(definitionId, VersionOptions.Published, cancellationToken);
 // }

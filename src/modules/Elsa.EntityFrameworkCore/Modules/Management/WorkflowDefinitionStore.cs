@@ -1,3 +1,4 @@
+using System.Data.Entity;
 using System.Linq.Expressions;
 using System.Text.Json;
 using Elsa.Common.Models;
@@ -9,6 +10,7 @@ using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Services;
+using Open.Linq.AsyncExtensions;
 
 namespace Elsa.EntityFrameworkCore.Modules.Management;
 
@@ -31,66 +33,47 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         _workflowInstanceStore = workflowInstanceStore;
         _serializerOptionsProvider = serializerOptionsProvider;
     }
+    
+    /// <inheritdoc />
+    public async Task<WorkflowDefinition?> FindAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default) =>
+        await _store.QueryAsync(queryable => Filter(queryable, filter), Load, cancellationToken).FirstOrDefault();
 
     /// <inheritdoc />
-    public async Task<WorkflowDefinition?> FindByIdAsync(string id, CancellationToken cancellationToken = default) =>
-        await _store.FindAsync(x => x.Id == id, Load, cancellationToken);
-
-    /// <inheritdoc />
-    public async Task<IEnumerable<WorkflowDefinition>> FindManyByDefinitionIdAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
+    public async Task<Page<WorkflowDefinition>> FindManyAsync(WorkflowDefinitionFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
-        Expression<Func<WorkflowDefinition, bool>> predicate = x => x.DefinitionId == definitionId;
-        predicate = predicate.WithVersion(versionOptions);
-        return await _store.FindManyAsync(predicate, Load, cancellationToken);
+        var count = await _store.QueryAsync(queryable => Filter(queryable, filter), cancellationToken).LongCount();
+        var results = await _store.QueryAsync(queryable => Paginate(Filter(queryable, filter), pageArgs), Load, cancellationToken).ToList();
+        return new(results, count);
     }
+    
+    /// <inheritdoc />
+    public async Task<IEnumerable<WorkflowDefinition>> FindManyAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default) => 
+        await _store.QueryAsync(queryable => Filter(queryable, filter), Load, cancellationToken).ToList();
 
     /// <inheritdoc />
-    public async Task<WorkflowDefinition?> FindByDefinitionIdAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
-    {
-        Expression<Func<WorkflowDefinition, bool>> predicate = x => x.DefinitionId == definitionId;
-        predicate = predicate.WithVersion(versionOptions);
-        return await _store.FindAsync(predicate, Load, cancellationToken);
-    }
-
-    /// <inheritdoc />
-    public async Task<WorkflowDefinition?> FindByNameAsync(string name, VersionOptions versionOptions, CancellationToken cancellationToken = default)
-    {
-        Expression<Func<WorkflowDefinition, bool>> predicate = x => x.Name == name;
-        predicate = predicate.WithVersion(versionOptions);
-        return await _store.FindAsync(predicate, Load, cancellationToken);
-    }
-
-    /// <inheritdoc />
-    public async Task<IEnumerable<WorkflowDefinition>> FindWithActivityBehaviorAsync(VersionOptions versionOptions, CancellationToken cancellationToken = default)
-    {
-        Expression<Func<WorkflowDefinition, bool>> predicate = x => x.UsableAsActivity == true;
-        predicate = predicate.WithVersion(versionOptions);
-        return await _store.FindManyAsync(predicate, Load, cancellationToken);
-    }
-
-    /// <inheritdoc />
-    public async Task<IEnumerable<WorkflowDefinitionSummary>> FindSummariesAsync(IEnumerable<string> definitionIds, VersionOptions? versionOptions = default, CancellationToken cancellationToken = default)
+    public async Task<Page<WorkflowDefinitionSummary>> FindSummariesAsync(WorkflowDefinitionFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
         var set = dbContext.WorkflowDefinitions;
-        var query = set.AsQueryable();
+        var queryable = Filter(set.AsQueryable(), filter);
+        var count = await queryable.LongCountAsync(cancellationToken);
+        var results = await queryable.Select(x => WorkflowDefinitionSummary.FromDefinition(x)).ToListAsync(cancellationToken);
 
-        if (versionOptions != null)
-            query = query.WithVersion(versionOptions.Value);
-
-        query = query.Where(x => definitionIds.Contains(x.DefinitionId));
-
-        return query.OrderBy(x => x.Name).Select(x => WorkflowDefinitionSummary.FromDefinition(Load(dbContext, x)!)).ToList();
+        return new(results, count);
     }
-
+    
     /// <inheritdoc />
-    public async Task<WorkflowDefinition?> FindLastVersionAsync(string definitionId, CancellationToken cancellationToken)
+    public async Task<IEnumerable<WorkflowDefinitionSummary>> FindSummariesAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
         var set = dbContext.WorkflowDefinitions;
-        var query = set.AsQueryable();
-        return Load(dbContext, query.Where(w => w.DefinitionId == definitionId).OrderByDescending(w => w.Version).FirstOrDefault());
+        var queryable = Filter(set.AsQueryable(), filter);
+        return await queryable.Select(x => WorkflowDefinitionSummary.FromDefinition(x)).ToListAsync(cancellationToken);
     }
+
+    /// <inheritdoc />
+    public async Task<WorkflowDefinition?> FindLastVersionAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken) =>
+        await _store.QueryAsync(queryable => Filter(queryable, filter).OrderByDescending(x => x.Version), cancellationToken).FirstOrDefault();
 
     /// <inheritdoc />
     public async Task SaveAsync(WorkflowDefinition record, CancellationToken cancellationToken = default) => await _store.SaveAsync(record, Save, cancellationToken);
@@ -99,56 +82,19 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
     public async Task SaveManyAsync(IEnumerable<WorkflowDefinition> records, CancellationToken cancellationToken = default) => await _store.SaveManyAsync(records, Save, cancellationToken);
 
     /// <inheritdoc />
-    public async Task<int> DeleteByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default)
+    public async Task<int> DeleteAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
-        await _workflowInstanceStore.DeleteWhereAsync(x => x.DefinitionId == definitionId, cancellationToken);
-        return await _store.DeleteWhereAsync(x => x.DefinitionId == definitionId, cancellationToken);
+        var set = dbContext.WorkflowDefinitions;
+        var queryable = set.AsQueryable();
+        var definitionIds = await Filter(queryable, filter).Select(x => x.DefinitionId).Distinct().ToListAsync(cancellationToken);
+        
+        await _workflowInstanceStore.DeleteWhereAsync(x => definitionIds.Contains(x.DefinitionId), cancellationToken);
+        return await _store.DeleteWhereAsync(x => definitionIds.Contains(x.DefinitionId), cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task<int> DeleteByDefinitionIdAndVersionAsync(string definitionId, int version, CancellationToken cancellationToken = default)
-    {
-        await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
-        await _workflowInstanceStore.DeleteWhereAsync(x => x.DefinitionId == definitionId && x.Version == version, cancellationToken);
-        return await _store.DeleteWhereAsync(x => x.DefinitionId == definitionId && x.Version == version, cancellationToken);
-    }
-
-    /// <inheritdoc />
-    public async Task<int> DeleteByDefinitionIdsAsync(IEnumerable<string> definitionIds, CancellationToken cancellationToken = default)
-    {
-        var definitionIdList = definitionIds.ToList();
-        await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
-        await _workflowInstanceStore.DeleteWhereAsync(x => definitionIdList.Contains(x.DefinitionId), cancellationToken);
-        return await _store.DeleteWhereAsync(x => definitionIdList.Contains(x.DefinitionId), cancellationToken);
-    }
-
-    /// <inheritdoc />
-    public async Task<Page<WorkflowDefinitionSummary>> ListSummariesAsync(
-        VersionOptions? versionOptions = default,
-        string? materializerName = default,
-        PageArgs? pageArgs = default,
-        CancellationToken cancellationToken = default)
-    {
-        await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
-        var workflowDefinitions = dbContext.WorkflowDefinitions;
-        var query = workflowDefinitions.AsQueryable();
-
-        if (versionOptions != null) query = query.WithVersion(versionOptions.Value);
-        if (!string.IsNullOrWhiteSpace(materializerName)) query = query.Where(x => x.MaterializerName == materializerName);
-
-        query = query.OrderBy(x => x.Name);
-
-        return await query.PaginateAsync(x => WorkflowDefinitionSummary.FromDefinition(x), pageArgs);
-    }
-
-    /// <inheritdoc />
-    public async Task<bool> GetExistsAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
-    {
-        Expression<Func<WorkflowDefinition, bool>> predicate = x => x.DefinitionId == definitionId;
-        predicate = predicate.WithVersion(versionOptions);
-        return await _store.AnyAsync(predicate, cancellationToken);
-    }
+    public async Task<bool> AnyAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default) => await _store.QueryAsync(queryable => Filter(queryable, filter), cancellationToken).Any();
 
     private WorkflowDefinition Save(ManagementElsaDbContext managementElsaDbContext, WorkflowDefinition entity)
     {
@@ -183,6 +129,28 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         return entity;
     }
 
+    private IQueryable<WorkflowDefinition> Filter(IQueryable<WorkflowDefinition> queryable, WorkflowDefinitionFilter filter)
+    {
+        if (filter.DefinitionId != null) queryable = queryable.Where(x => x.DefinitionId == filter.DefinitionId);
+        if (filter.DefinitionIds != null) queryable = queryable.Where(x => filter.DefinitionIds.Contains(x.DefinitionId));
+        if (filter.Id != null) queryable = queryable.Where(x => x.Id == filter.Id);
+        if (filter.Ids != null) queryable = queryable.Where(x => filter.Ids.Contains(x.Id));
+        if (filter.VersionOptions != null) queryable = queryable.WithVersion(filter.VersionOptions.Value);
+        if (filter.MaterializerName != null) queryable = queryable.Where(x => x.MaterializerName == filter.MaterializerName);
+        if (filter.Name != null) queryable = queryable.Where(x => x.Name == filter.Name);
+        if (filter.Names != null) queryable = queryable.Where(x => filter.Names.Contains(x.Name));
+        if (filter.UsableAsActivity != null) queryable = queryable.Where(x => x.UsableAsActivity == filter.UsableAsActivity);
+
+        return queryable;
+    }
+
+    private IQueryable<WorkflowDefinition> Paginate(IQueryable<WorkflowDefinition> queryable, PageArgs? pageArgs)
+    {
+        if (pageArgs?.Offset != null) queryable = queryable.Skip(pageArgs.Offset.Value);
+        if (pageArgs?.Limit != null) queryable = queryable.Take(pageArgs.Limit.Value);
+        return queryable;
+    }
+
     private class WorkflowDefinitionState
     {
         public WorkflowDefinitionState()
@@ -190,9 +158,9 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         }
 
         public WorkflowDefinitionState(
-            WorkflowOptions? options, 
-            ICollection<Variable> variables, 
-            ICollection<InputDefinition> inputs, 
+            WorkflowOptions? options,
+            ICollection<Variable> variables,
+            ICollection<InputDefinition> inputs,
             ICollection<OutputDefinition> outputs,
             IDictionary<string, object> customProperties
         )

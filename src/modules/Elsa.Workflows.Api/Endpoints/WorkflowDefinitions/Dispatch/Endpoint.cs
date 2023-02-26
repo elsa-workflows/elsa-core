@@ -3,10 +3,12 @@ using Elsa.Common.Models;
 using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Services;
+using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Dispatch;
 
-public class Endpoint : ElsaEndpoint<Request, Response>
+[PublicAPI]
+internal class Endpoint : ElsaEndpoint<Request, Response>
 {
     private readonly IWorkflowDefinitionStore _store;
     private readonly IWorkflowDispatcher _workflowDispatcher;
@@ -25,7 +27,7 @@ public class Endpoint : ElsaEndpoint<Request, Response>
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
-        var exists = await _store.GetExistsAsync(request.DefinitionId, VersionOptions.Published, cancellationToken);
+        var exists = await _store.AnyAsync(new WorkflowDefinitionFilter{ DefinitionId = request.DefinitionId, VersionOptions = VersionOptions.Published}, cancellationToken);
 
         if (!exists)
         {

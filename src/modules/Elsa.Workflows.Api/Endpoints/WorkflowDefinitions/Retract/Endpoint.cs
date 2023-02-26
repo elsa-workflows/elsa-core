@@ -25,7 +25,13 @@ internal class Retract : ElsaEndpoint<Request, WorkflowDefinitionResponse, Workf
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
-        var definition = (await _store.FindManyByDefinitionIdAsync(request.DefinitionId, VersionOptions.LatestOrPublished, cancellationToken)).FirstOrDefault();
+        var filter = new WorkflowDefinitionFilter
+        {
+            DefinitionId = request.DefinitionId,
+            VersionOptions = VersionOptions.LatestOrPublished
+        };
+        
+        var definition = await _store.FindAsync(filter, cancellationToken);
 
         if (definition == null)
         {
@@ -41,7 +47,7 @@ internal class Retract : ElsaEndpoint<Request, WorkflowDefinitionResponse, Workf
         }
 
         await _workflowDefinitionPublisher.RetractAsync(definition, cancellationToken);
-        var response = await Map.FromEntityAsync(definition);
+        var response = await Map.FromEntityAsync(definition, cancellationToken);
         await SendOkAsync(response, cancellationToken);
     }
 }

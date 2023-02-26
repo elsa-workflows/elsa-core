@@ -37,7 +37,7 @@ public class Execute : ElsaEndpoint<Request, Response>
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
         var definitionId = request.DefinitionId;
-        var exists = await _store.GetExistsAsync(definitionId, VersionOptions.Published, cancellationToken);
+        var exists = await _store.AnyAsync(new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = VersionOptions.Published }, cancellationToken);
 
         if (!exists)
         {

@@ -25,7 +25,13 @@ internal class Publish : ElsaEndpoint<Request, WorkflowDefinitionResponse, Workf
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
-        var definition = (await _store.FindManyByDefinitionIdAsync(request.DefinitionId, VersionOptions.Latest, cancellationToken)).FirstOrDefault();
+        var filter = new WorkflowDefinitionFilter
+        {
+            DefinitionId = request.DefinitionId,
+            VersionOptions = VersionOptions.Latest
+        };
+        
+        var definition = await _store.FindAsync(filter, cancellationToken);
 
         if (definition == null)
         {
@@ -42,7 +48,7 @@ internal class Publish : ElsaEndpoint<Request, WorkflowDefinitionResponse, Workf
 
         await _workflowDefinitionPublisher.PublishAsync(definition, cancellationToken);
 
-        var response = await Map.FromEntityAsync(definition);
+        var response = await Map.FromEntityAsync(definition, cancellationToken);
         await SendOkAsync(response, cancellationToken);
     }
 }
