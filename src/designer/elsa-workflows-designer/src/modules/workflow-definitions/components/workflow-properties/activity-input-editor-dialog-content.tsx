@@ -82,8 +82,8 @@ export class ActivityInputEditorDialogContent {
                 </select>
               </FormEntry>
 
-              <CheckboxFormEntry fieldId="variableIsArray" label="This variable is an array" hint="Check if the variable holds an array of the selected type.">
-                <input type="checkbox" name="variableIsArray" id="variableIsArray" value="true" checked={input.isArray}/>
+              <CheckboxFormEntry fieldId="inputIsArray" label="This input is an array" hint="Check if the input holds an array of the selected type.">
+                <input type="checkbox" name="inputIsArray" id="inputIsArray" value="true" checked={input.isArray}/>
               </CheckboxFormEntry>
 
               <FormEntry fieldId="inputDisplayName" label="Display name" hint="The user friendly display name of the input.">
@@ -129,6 +129,7 @@ export class ActivityInputEditorDialogContent {
     const description = formData.get('inputDescription') as string;
     const category = formData.get('inputCategory') as string;
     const uiHint = formData.get('inputUIHint') as string;
+    const isArray = formData.get('inputIsArray') as string === 'true';
     const input = this.input;
 
     input.name = name;
@@ -137,6 +138,7 @@ export class ActivityInputEditorDialogContent {
     input.category = category;
     input.description = description;
     input.uiHint = uiHint;
+    input.isArray = isArray;
 
     return input;
   };

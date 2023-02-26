@@ -30,4 +30,9 @@ public static class TypeExtensions
     /// Constructs a collection type from the specified type.
     /// </summary>
     public static Type MakeCollectionType(this Type type) => typeof(ICollection<>).MakeGenericType(type);
+
+    /// <summary>
+    /// Returns the element type of the specified collection type.
+    /// </summary>
+    public static Type GetCollectionElementType(this Type type) => type.GenericTypeArguments[0];
 }

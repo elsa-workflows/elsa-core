@@ -27,8 +27,10 @@ public class ArgumentJsonConverter : JsonConverter<ArgumentDefinition>
         var newOptions = new JsonSerializerOptions(options);
         newOptions.Converters.RemoveWhere(x => x is ArgumentJsonConverterFactory);
         
-        var jsonObject = (JsonObject)JsonSerializer.SerializeToNode(value, newOptions)!;
-        jsonObject["isArray"] = value.Type.IsCollectionType();
+        var jsonObject = (JsonObject)JsonSerializer.SerializeToNode(value, value.GetType(), newOptions)!;
+        var isArray = value.Type.IsCollectionType();
+        jsonObject["isArray"] = isArray;
+        jsonObject["type"] = _wellKnownTypeRegistry.GetAliasOrDefault(isArray ? value.Type.GetCollectionElementType() : value.Type);
 
         JsonSerializer.Serialize(writer, jsonObject, newOptions);
     }

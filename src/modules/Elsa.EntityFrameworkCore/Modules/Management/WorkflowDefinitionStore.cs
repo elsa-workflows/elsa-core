@@ -1,15 +1,13 @@
-using System.Data.Entity;
-using System.Linq.Expressions;
 using System.Text.Json;
 using Elsa.Common.Models;
 using Elsa.EntityFrameworkCore.Common;
-using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Services;
+using Microsoft.EntityFrameworkCore;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.EntityFrameworkCore.Modules.Management;
