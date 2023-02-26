@@ -39,6 +39,15 @@ public class WellKnownTypeRegistry : IWellKnownTypeRegistry
     {
         _typeAliasDictionary[type] = alias;
         _aliasTypeDictionary[alias] = type;
+
+        if (type.IsPrimitive || type.IsValueType && Nullable.GetUnderlyingType(type) == null)
+        {
+            var nullableType = typeof(Nullable<>).MakeGenericType(type);
+            var nullableAlias = alias + "?";
+            _typeAliasDictionary[nullableType] = nullableAlias;
+            _aliasTypeDictionary[nullableAlias] = nullableType;
+        }
+            
     }
 
     /// <inheritdoc />
