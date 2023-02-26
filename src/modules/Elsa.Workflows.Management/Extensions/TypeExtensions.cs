@@ -20,4 +20,14 @@ public static class TypeExtensions
     /// Returns the wrapped type of the specified nullable type.
     /// </summary>
     public static Type GetTypeOfNullable(this Type type) => type.GenericTypeArguments[0];
+
+    /// <summary>
+    /// Returns true if the specified type is a collection type, false otherwise.
+    /// </summary>
+    public static bool IsCollectionType(this Type type) => type.IsGenericType && typeof(ICollection<>).IsAssignableFrom(type.GetGenericTypeDefinition());
+
+    /// <summary>
+    /// Constructs a collection type from the specified type.
+    /// </summary>
+    public static Type MakeCollectionType(this Type type) => typeof(ICollection<>).MakeGenericType(type);
 }

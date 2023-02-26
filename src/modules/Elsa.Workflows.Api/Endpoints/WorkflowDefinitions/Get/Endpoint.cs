@@ -32,7 +32,7 @@ internal class Get : ElsaEndpoint<Request, WorkflowDefinitionResponse, WorkflowD
             return;
         }
 
-        var response = await Map.FromEntityAsync(definition);
+        var response = await Map.FromEntityAsync(definition, cancellationToken);
         await SendOkAsync(response, cancellationToken);
     }
 }

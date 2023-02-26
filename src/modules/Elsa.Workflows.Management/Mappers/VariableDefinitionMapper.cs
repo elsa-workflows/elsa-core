@@ -58,7 +58,7 @@ public class VariableDefinitionMapper
     {
         var variableType = source.GetType();
         var valueType = variableType.IsConstructedGenericType ? variableType.GetGenericArguments().FirstOrDefault() ?? typeof(object) : typeof(object);
-        var isArray = valueType.IsGenericType && typeof(ICollection<>).IsAssignableFrom(valueType.GetGenericTypeDefinition());
+        var isArray = valueType.IsCollectionType();
         var elementValueType = isArray ? valueType.GenericTypeArguments[0] : valueType; 
         var value = source.Value;
         

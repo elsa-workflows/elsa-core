@@ -40,7 +40,8 @@ public static class WebApplicationExtensions
 
     private static Task SerializeRequestAsync(HttpResponse httpResponse, object? dto, string contentType, JsonSerializerContext? serializerContext, CancellationToken cancellationToken)
     {
-        var serializerOptionsProvider = httpResponse.HttpContext.RequestServices.GetRequiredService<SerializerOptionsProvider>();
+        var services = httpResponse.HttpContext.RequestServices;
+        var serializerOptionsProvider = services.GetRequiredService<SerializerOptionsProvider>();
         var options = serializerOptionsProvider.CreateApiOptions();
 
         httpResponse.ContentType = contentType;

@@ -3,7 +3,7 @@ import {groupBy} from 'lodash';
 import descriptorsStore from '../../../../data/descriptors-store';
 import {VariableDescriptor} from "../../../../services/api-client/variable-descriptors-api";
 import {InputDefinition} from "../../models/entities";
-import {FormEntry} from "../../../../components/shared/forms/form-entry";
+import {CheckboxFormEntry, FormEntry} from "../../../../components/shared/forms/form-entry";
 
 @Component({
   tag: 'elsa-activity-input-editor-dialog-content',
@@ -21,7 +21,7 @@ export class ActivityInputEditorDialogContent {
   }
 
   render() {
-    const input: InputDefinition = this.input ?? {name: '', type: 'Object'};
+    const input: InputDefinition = this.input ?? {name: '', type: 'Object', isArray: false};
     const inputTypeName = input.type;
     const availableTypes: Array<VariableDescriptor> = descriptorsStore.variableDescriptors;
     const groupedTypes = groupBy(availableTypes, x => x.category);
@@ -82,6 +82,10 @@ export class ActivityInputEditorDialogContent {
                 </select>
               </FormEntry>
 
+              <CheckboxFormEntry fieldId="variableIsArray" label="This variable is an array" hint="Check if the variable holds an array of the selected type.">
+                <input type="checkbox" name="variableIsArray" id="variableIsArray" value="true" checked={input.isArray}/>
+              </CheckboxFormEntry>
+
               <FormEntry fieldId="inputDisplayName" label="Display name" hint="The user friendly display name of the input.">
                 <input type="text" name="inputDisplayName" id="inputDisplayName" value={input.displayName}/>
               </FormEntry>
@@ -94,7 +98,7 @@ export class ActivityInputEditorDialogContent {
                 <input type="text" name="inputCategory" id="inputCategory" value={input.category}/>
               </FormEntry>
 
-              <FormEntry fieldId="inputUIHint" label="Category" hint="A custom category.">
+              <FormEntry fieldId="inputUIHint" label="Control" hint="The control to use for this input.">
                 <select name="inputUIHint" id="inputUIHint">
                   {uiHints.map(uiHint => {
                     const isSelected = uiHint.value == selectedUIHint;
