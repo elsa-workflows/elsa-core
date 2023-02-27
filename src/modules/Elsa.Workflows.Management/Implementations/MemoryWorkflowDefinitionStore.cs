@@ -27,60 +27,47 @@ public class MemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
     }
 
     /// <inheritdoc />
-    public Task<WorkflowDefinition?> FindByIdAsync(string id, CancellationToken cancellationToken = default)
+    public Task<WorkflowDefinition?> FindAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
-        var definition = _store.Find(x => x.Id == id);
-        return Task.FromResult(definition);
+        var result = _store.Query(query => Filter(query, filter)).FirstOrDefault();
+        return Task.FromResult(result);
     }
 
     /// <inheritdoc />
-    public Task<IEnumerable<WorkflowDefinition>> FindManyByDefinitionIdAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
+    public Task<Page<WorkflowDefinition>> FindManyAsync(WorkflowDefinitionFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
-        var definition = _store.FindMany(x => x.DefinitionId == definitionId && x.WithVersion(versionOptions));
-        return Task.FromResult(definition);
-    }
-
-    /// <inheritdoc />
-    public Task<WorkflowDefinition?> FindByDefinitionIdAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
-    {
-        var definition = _store.Find(x => x.DefinitionId == definitionId && x.WithVersion(versionOptions));
-        return Task.FromResult(definition);
-    }
-
-    /// <inheritdoc />
-    public Task<WorkflowDefinition?> FindByNameAsync(string name, VersionOptions versionOptions, CancellationToken cancellationToken = default)
-    {
-        var definition = _store.Find(x => x.Name == name && x.WithVersion(versionOptions));
-        return Task.FromResult(definition);
-    }
-
-    /// <inheritdoc />
-    public Task<IEnumerable<WorkflowDefinition>> FindWithActivityBehaviorAsync(VersionOptions versionOptions, CancellationToken cancellationToken = default)
-    {
-        var definition = _store.FindMany(w => w.UsableAsActivity == true && w.WithVersion(versionOptions));
-        return Task.FromResult(definition);
-    }
-
-    /// <inheritdoc />
-    public Task<IEnumerable<WorkflowDefinitionSummary>> FindSummariesAsync(IEnumerable<string> definitionIds, VersionOptions? versionOptions = default, CancellationToken cancellationToken = default)
-    {
-        var query = _store.List();
-
-        if (versionOptions != null)
-            query = query.WithVersion(versionOptions.Value);
-
-        var definitionIdList = definitionIds.ToList();
-        query = query.Where(x => definitionIdList.Contains(x.Id));
-
-        var summaries = query.Select(WorkflowDefinitionSummary.FromDefinition).ToList().AsEnumerable();
-        return Task.FromResult(summaries);
+        var count = _store.Query(query => Filter(query, filter)).LongCount();
+        var result = _store.Query(query => Filter(query, filter).Paginate(pageArgs)).ToList();
+        return Task.FromResult(Page.Of(result, count));
     }
     
     /// <inheritdoc />
-    public Task<WorkflowDefinition?> FindLastVersionAsync(string definitionId, CancellationToken cancellationToken)
+    public Task<IEnumerable<WorkflowDefinition>> FindManyAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
-        var query = _store.List();
-        return Task.FromResult(query.Where(w => w.DefinitionId == definitionId).MaxBy(w => w.Version));
+        var result = _store.Query(query => Filter(query, filter)).ToList().AsEnumerable();
+        return Task.FromResult(result);
+    }
+
+    /// <inheritdoc />
+    public Task<Page<WorkflowDefinitionSummary>> FindSummariesAsync(WorkflowDefinitionFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
+    {
+        var count = _store.Query(query => Filter(query, filter)).LongCount();
+        var result = _store.Query(query => Filter(query, filter).Paginate(pageArgs)).Select(WorkflowDefinitionSummary.FromDefinition).ToList();
+        return Task.FromResult(Page.Of(result, count));
+    }
+    
+    /// <inheritdoc />
+    public Task<IEnumerable<WorkflowDefinitionSummary>> FindSummariesAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
+    {
+        var result = _store.Query(query => Filter(query, filter)).Select(WorkflowDefinitionSummary.FromDefinition).ToList().AsEnumerable();
+        return Task.FromResult(result);
+    }
+
+    /// <inheritdoc />
+    public Task<WorkflowDefinition?> FindLastVersionAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken)
+    {
+        var result = _store.Query(query => Filter(query, filter)).MaxBy(x => x.Version);
+        return Task.FromResult(result);
     }
 
     /// <inheritdoc />
@@ -98,52 +85,22 @@ public class MemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
     }
 
     /// <inheritdoc />
-    public Task<int> DeleteByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default)
+    public Task<int> DeleteAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
-        _instanceStore.DeleteWhere(x => x.DefinitionId == definitionId);
-        var result = _store.DeleteWhere(x => x.DefinitionId == definitionId);
-        return Task.FromResult(result);
-    }
-    
-    /// <inheritdoc />
-    public Task<int> DeleteByDefinitionIdAndVersionAsync(string definitionId, int version, CancellationToken cancellationToken = default)
-    {
-        _instanceStore.DeleteWhere(x => x.DefinitionId == definitionId && x.Version == version);
-        var result = _store.DeleteWhere(x => x.DefinitionId == definitionId && x.Version == version);
-        return Task.FromResult(result);
+        var workflowDefinitionIds = _store.Query(query => Filter(query, filter)).Select(x => x.DefinitionId).Distinct().ToList();
+        _instanceStore.DeleteWhere(x => workflowDefinitionIds.Contains(x.DefinitionId));
+        _store.DeleteWhere(x => workflowDefinitionIds.Contains(x.DefinitionId));
+        return Task.FromResult(workflowDefinitionIds.Count);
     }
 
     /// <inheritdoc />
-    public Task<int> DeleteByDefinitionIdsAsync(IEnumerable<string> definitionIds, CancellationToken cancellationToken = default)
+    public Task<bool> AnyAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
-        var definitionIdList = definitionIds.ToList();
-        _instanceStore.DeleteWhere(x => definitionIdList.Contains(x.DefinitionId));
-        var result = _store.DeleteWhere(x => definitionIdList.Contains(x.DefinitionId));
-        return Task.FromResult(result);
-    }
-
-    /// <inheritdoc />
-    public Task<Page<WorkflowDefinitionSummary>> ListSummariesAsync(
-        VersionOptions? versionOptions = default,
-        string? materializerName = default,
-        PageArgs? pageArgs = default,
-        CancellationToken cancellationToken = default)
-    {
-        var query = _store.List().AsQueryable();
-
-        if (versionOptions != null) query = query.WithVersion(versionOptions.Value);
-        if (!string.IsNullOrWhiteSpace(materializerName)) query = query.Where(x => x.MaterializerName == materializerName);
-
-        var page = query.Paginate(x => WorkflowDefinitionSummary.FromDefinition(x), pageArgs);
-        return Task.FromResult(page);
-    }
-
-    /// <inheritdoc />
-    public Task<bool> GetExistsAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
-    {
-        var exists = _store.AnyAsync(x => x.DefinitionId == definitionId && x.WithVersion(versionOptions));
+        var exists = _store.Query(query => Filter(query, filter)).Any();
         return Task.FromResult(exists);
     }
+    
+    private IQueryable<WorkflowDefinition> Filter(IQueryable<WorkflowDefinition> queryable, WorkflowDefinitionFilter filter) => filter.Apply(queryable);
 
     private string GetId(WorkflowDefinition workflowDefinition) => workflowDefinition.Id;
 }

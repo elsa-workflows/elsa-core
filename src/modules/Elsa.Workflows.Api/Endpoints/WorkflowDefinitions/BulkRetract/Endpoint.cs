@@ -1,10 +1,12 @@
 using Elsa.Abstractions;
 using Elsa.Common.Models;
 using Elsa.Workflows.Management.Services;
+using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.BulkRetract;
 
-public class BulkRetract : ElsaEndpoint<Request, Response>
+[PublicAPI]
+internal class BulkRetract : ElsaEndpoint<Request, Response>
 {
     private readonly IWorkflowDefinitionStore _store;
     private readonly IWorkflowDefinitionPublisher _workflowDefinitionPublisher;
@@ -29,7 +31,11 @@ public class BulkRetract : ElsaEndpoint<Request, Response>
 
         foreach (var definitionId in request.DefinitionIds)
         {
-            var definition = (await _store.FindManyByDefinitionIdAsync(definitionId, VersionOptions.Latest, cancellationToken)).FirstOrDefault();
+            var definition = (await _store.FindManyAsync(new WorkflowDefinitionFilter
+            {
+                DefinitionId = definitionId,
+                VersionOptions = VersionOptions.Latest
+            }, cancellationToken: cancellationToken)).FirstOrDefault();
 
             if (definition == null)
             {

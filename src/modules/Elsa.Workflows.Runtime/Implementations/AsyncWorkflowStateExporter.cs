@@ -50,13 +50,15 @@ public class AsyncWorkflowStateExporter : IWorkflowStateExporter, ICommandHandle
         var definitionId = workflowState.DefinitionId;
         var version = workflowState.DefinitionVersion;
         var versionOptions = VersionOptions.SpecificVersion(version);
-        var definition = await _workflowDefinitionStore.FindByDefinitionIdAsync(definitionId, versionOptions, cancellationToken);
+        var definitionFilter = new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = versionOptions };
+        var definition = await _workflowDefinitionStore.FindAsync(definitionFilter, cancellationToken);
 
         if (definition == null)
             throw new Exception(
                 $"Can't find workflow definition with definition ID {definitionId} and version {version}");
 
-        var workflowInstance = await _workflowInstanceStore.FindByIdAsync(workflowState.Id, cancellationToken);
+        var instanceFilter = new WorkflowInstanceFilter { Id = workflowState.Id };
+        var workflowInstance = await _workflowInstanceStore.FindAsync(instanceFilter, cancellationToken);
         var now = _systemClock.UtcNow;
 
         workflowInstance ??= new WorkflowInstance

@@ -1,11 +1,10 @@
 using Elsa.Abstractions;
 using Elsa.Common.Models;
 using Elsa.Workflows.Management.Services;
-using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.List;
 
-public class List : ElsaEndpoint<Request, Response>
+internal class List : ElsaEndpoint<Request, Response>
 {
     private readonly IWorkflowDefinitionStore _store;
 
@@ -23,18 +22,18 @@ public class List : ElsaEndpoint<Request, Response>
     public override async Task<Response> ExecuteAsync(Request request, CancellationToken cancellationToken)
     {
         var pageArgs = new PageArgs(request.Page, request.PageSize);
+        var filter = CreateFilter(request);
+        var summaries = await _store.FindSummariesAsync(filter, pageArgs, cancellationToken);
+        return new Response(summaries.Items, summaries.TotalCount);
+    }
+
+    private WorkflowDefinitionFilter CreateFilter(Request request)
+    {
         var versionOptions = request.VersionOptions != null ? VersionOptions.FromString(request.VersionOptions) : default(VersionOptions?);
         var splitIds = request.DefinitionIds ?? Array.Empty<string>();
 
-        if (splitIds.Any())
-        {
-            var summaries = await _store.FindSummariesAsync(splitIds, versionOptions, cancellationToken).ToList();
-            return new Response(summaries, summaries.Count);
-        }
-        else
-        {
-            var summaries = await _store.ListSummariesAsync(versionOptions, request.MaterializerName, pageArgs, cancellationToken);
-            return new Response(summaries.Items, summaries.TotalCount);
-        }
+        return splitIds.Any()
+            ? new WorkflowDefinitionFilter { DefinitionIds = splitIds, VersionOptions = versionOptions }
+            : new WorkflowDefinitionFilter { MaterializerName = request.MaterializerName, VersionOptions = versionOptions };
     }
 }

@@ -47,17 +47,17 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
         var correlationId = options.CorrelationId;
         var input = options.Input;
         var workflowInstanceId = _identityGenerator.GenerateId();
-        
+
         var request = new StartWorkflowRequest
         {
             DefinitionId = definitionId,
-            InstanceId = workflowInstanceId, 
+            InstanceId = workflowInstanceId,
             VersionOptions = versionOptions.ToString(),
             CorrelationId = correlationId.EmptyIfNull(),
             Input = input?.Serialize(),
             TriggerActivityId = options.TriggerActivityId.EmptyIfNull()
         };
-        
+
         var client = _cluster.GetNamedWorkflowGrain(workflowInstanceId);
         var response = await client.CanStart(request, cancellationToken);
 
@@ -81,7 +81,7 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
             Input = input?.Serialize(),
             TriggerActivityId = options.TriggerActivityId.WithDefault("")
         };
-        
+
         var client = _cluster.GetNamedWorkflowGrain(workflowInstanceId);
         var response = await client.Start(request, cancellationToken);
         var bookmarks = Map(response!.Bookmarks).ToList();
@@ -93,7 +93,8 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
     public async Task<ICollection<WorkflowExecutionResult>> StartWorkflowsAsync(string activityTypeName, object bookmarkPayload, TriggerWorkflowsRuntimeOptions options, CancellationToken cancellationToken = default)
     {
         var hash = _hasher.Hash(activityTypeName, bookmarkPayload);
-        var triggers = await _triggerStore.FindAsync(hash, cancellationToken);
+        var filter = new TriggerFilter { Hash = hash };
+        var triggers = await _triggerStore.FindManyAsync(filter, cancellationToken);
         var results = new List<WorkflowExecutionResult>();
 
         foreach (var trigger in triggers)
@@ -101,11 +102,11 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
             var definitionId = trigger.WorkflowDefinitionId;
             var startOptions = new StartWorkflowRuntimeOptions(options.CorrelationId, options.Input, VersionOptions.Published, trigger.ActivityId);
             var canStartResult = await CanStartWorkflowAsync(definitionId, startOptions, cancellationToken);
-            
+
             // If we can't start the workflow, don't try it.
-            if(!canStartResult.CanStart)
+            if (!canStartResult.CanStart)
                 continue;
-            
+
             var startResult = await StartWorkflowAsync(definitionId, startOptions, cancellationToken);
 
             results.Add(new WorkflowExecutionResult(startResult.InstanceId, startResult.Bookmarks));
@@ -125,7 +126,7 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
             ActivityId = options.ActivityId.EmptyIfNull(),
             Input = options.Input?.Serialize()
         };
-        
+
         var client = _cluster.GetNamedWorkflowGrain(workflowInstanceId);
         var response = await client.Resume(request, cancellationToken);
         var bookmarks = Map(response!.Bookmarks).ToList();
@@ -200,18 +201,18 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
     public async Task<int> CountRunningWorkflowsAsync(CountRunningWorkflowsArgs args, CancellationToken cancellationToken = default)
     {
         var client = _cluster.GetNamedRunningWorkflowsGrain();
-        
+
         var request = new CountRunningWorkflowsRequest
         {
             DefinitionId = args.DefinitionId,
             Version = args.Version ?? -1,
             CorrelationId = args.CorrelationId
         };
-        
+
         var response = await client.Count(request, cancellationToken);
         return response!.Count;
     }
-    
+
     private async Task<ICollection<WorkflowExecutionResult>> ResumeWorkflowsAsync(IEnumerable<StoredBookmark> bookmarks, ResumeWorkflowRuntimeOptions runtimeOptions, CancellationToken cancellationToken = default)
     {
         var resumedWorkflows = new List<WorkflowExecutionResult>();

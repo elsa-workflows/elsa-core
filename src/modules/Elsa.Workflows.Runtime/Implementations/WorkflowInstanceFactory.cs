@@ -9,6 +9,7 @@ using Elsa.Workflows.Runtime.Services;
 
 namespace Elsa.Workflows.Runtime.Implementations;
 
+/// <inheritdoc />
 public class WorkflowInstanceFactory : IWorkflowInstanceFactory
 {
     private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
@@ -16,6 +17,9 @@ public class WorkflowInstanceFactory : IWorkflowInstanceFactory
     private readonly IIdentityGenerator _identityGenerator;
     private readonly ISystemClock _systemClock;
 
+    /// <summary>
+    /// Constructor.
+    /// </summary>
     public WorkflowInstanceFactory(
         IWorkflowDefinitionStore workflowDefinitionStore,
         IWorkflowDefinitionService workflowDefinitionService,
@@ -28,21 +32,19 @@ public class WorkflowInstanceFactory : IWorkflowInstanceFactory
         _systemClock = systemClock;
     }
 
+    /// <inheritdoc />
     public async Task<WorkflowInstance> CreateAsync(string workflowDefinitionId, string? correlationId, CancellationToken cancellationToken = default) =>
         await CreateAsync(workflowDefinitionId, VersionOptions.Published, correlationId, cancellationToken);
 
+    /// <inheritdoc />
     public async Task<WorkflowInstance> CreateAsync(string workflowDefinitionId, VersionOptions versionOptions, string? correlationId, CancellationToken cancellationToken = default)
     {
-        var workflow = (await _workflowDefinitionStore.FindManyByDefinitionIdAsync(workflowDefinitionId, versionOptions, cancellationToken)).FirstOrDefault()!;
+        var filter = new WorkflowDefinitionFilter { DefinitionId = workflowDefinitionId, VersionOptions = versionOptions};
+        var workflow = (await _workflowDefinitionStore.FindAsync(filter, cancellationToken))!;
         return await CreateAsync(workflow, correlationId, cancellationToken);
     }
 
-    public async Task<WorkflowInstance> CreateAsync(WorkflowDefinition definition, string? correlationId, CancellationToken cancellationToken = default)
-    {
-        var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(definition, cancellationToken);
-        return Create(workflow, correlationId);
-    }
-
+    /// <inheritdoc />
     public WorkflowInstance Create(Workflow workflow, string? correlationId)
     {
         var workflowInstanceId = _identityGenerator.GenerateId();
@@ -67,5 +69,11 @@ public class WorkflowInstanceFactory : IWorkflowInstanceFactory
         };
 
         return workflowInstance;
+    }
+    
+    private async Task<WorkflowInstance> CreateAsync(WorkflowDefinition definition, string? correlationId, CancellationToken cancellationToken = default)
+    {
+        var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(definition, cancellationToken);
+        return Create(workflow, correlationId);
     }
 }

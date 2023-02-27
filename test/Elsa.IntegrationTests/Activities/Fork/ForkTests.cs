@@ -31,7 +31,7 @@ public class ForkTests
         Assert.Equal(new[]{ "Branch 3", "Branch 2", "Branch 1" }, lines);
     }
     
-    [Fact(DisplayName = "Wait Any causes workflow to continue")]
+    [Fact(DisplayName = "Wait AnyAsync causes workflow to continue")]
     public async Task Test2()
     {
         var workflow = await _workflowBuilderFactory.CreateBuilder().BuildWorkflowAsync<JoinAnyForkWorkflow>();

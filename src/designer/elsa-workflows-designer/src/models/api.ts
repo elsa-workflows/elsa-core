@@ -1,5 +1,3 @@
-import {WorkflowState} from "./core";
-
 export enum WorkflowStatus {
   Running = 'Running',
   Finished = 'Finished'

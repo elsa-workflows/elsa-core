@@ -25,10 +25,10 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
     /// Constructor.
     /// </summary>
     public WorkflowDefinitionPublisher(
-        IWorkflowDefinitionStore workflowDefinitionStore, 
+        IWorkflowDefinitionStore workflowDefinitionStore,
         IEventPublisher eventPublisher,
-        IIdentityGenerator identityGenerator, 
-        SerializerOptionsProvider serializerOptionsProvider, 
+        IIdentityGenerator identityGenerator,
+        SerializerOptionsProvider serializerOptionsProvider,
         ISystemClock systemClock)
     {
         _workflowDefinitionStore = workflowDefinitionStore;
@@ -61,7 +61,8 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
     /// <inheritdoc />
     public async Task<WorkflowDefinition?> PublishAsync(string definitionId, CancellationToken cancellationToken = default)
     {
-        var definition = (await _workflowDefinitionStore.FindManyByDefinitionIdAsync(definitionId, VersionOptions.Latest, cancellationToken)).FirstOrDefault();
+        var filter = new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = VersionOptions.Latest };
+        var definition = await _workflowDefinitionStore.FindAsync(filter, cancellationToken);
 
         if (definition == null)
             return null;
@@ -75,7 +76,8 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
         var definitionId = definition.DefinitionId;
 
         // Reset current latest and published definitions.
-        var publishedAndOrLatestWorkflows = await _workflowDefinitionStore.FindManyByDefinitionIdAsync(definitionId, VersionOptions.LatestAndPublished, cancellationToken);
+        var filter = new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = VersionOptions.LatestAndPublished };
+        var publishedAndOrLatestWorkflows = await _workflowDefinitionStore.FindManyAsync(filter, cancellationToken);
 
         foreach (var publishedAndOrLatestWorkflow in publishedAndOrLatestWorkflows)
         {
@@ -97,7 +99,8 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
     /// <inheritdoc />
     public async Task<WorkflowDefinition?> RetractAsync(string definitionId, CancellationToken cancellationToken = default)
     {
-        var definition = (await _workflowDefinitionStore.FindManyByDefinitionIdAsync(definitionId, VersionOptions.Published, cancellationToken)).FirstOrDefault();
+        var filter = new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = VersionOptions.Published };
+        var definition = await _workflowDefinitionStore.FindAsync(filter, cancellationToken);
 
         if (definition == null)
             return null;
@@ -123,7 +126,8 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
     /// <inheritdoc />
     public async Task<WorkflowDefinition?> GetDraftAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
     {
-        var definition = (await _workflowDefinitionStore.FindManyByDefinitionIdAsync(definitionId, versionOptions, cancellationToken)).FirstOrDefault();
+        var filter = new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = versionOptions };
+        var definition = await _workflowDefinitionStore.FindAsync(filter, cancellationToken);
 
         if (definition == null)
             return null;
@@ -145,7 +149,8 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
     {
         var draft = definition;
         var definitionId = definition.DefinitionId;
-        var latestVersion = (await _workflowDefinitionStore.FindManyByDefinitionIdAsync(definitionId, VersionOptions.Latest, cancellationToken)).FirstOrDefault();
+        var filter = new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = VersionOptions.Latest };
+        var latestVersion = await _workflowDefinitionStore.FindAsync(filter, cancellationToken);
 
         if (latestVersion is { IsPublished: true, IsLatest: true })
         {

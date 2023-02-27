@@ -12,7 +12,6 @@ public class MemoryBookmarkStore : IBookmarkStore
     /// <summary>
     /// Constructor.
     /// </summary>
-    /// <param name="store"></param>
     public MemoryBookmarkStore(MemoryStore<StoredBookmark> store)
     {
         _store = store;
@@ -26,44 +25,18 @@ public class MemoryBookmarkStore : IBookmarkStore
     }
 
     /// <inheritdoc />
-    public ValueTask<IEnumerable<StoredBookmark>> FindByWorkflowInstanceAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
+    public ValueTask<IEnumerable<StoredBookmark>> FindManyAsync(BookmarkFilter filter, CancellationToken cancellationToken = default)
     {
-        var bookmarks = _store.FindMany(x => x.WorkflowInstanceId == workflowInstanceId).ToList();
-        return new(bookmarks);
+        var entities = _store.Query(query => Filter(query, filter)).AsEnumerable();
+        return new(entities);
     }
 
     /// <inheritdoc />
-    public ValueTask<IEnumerable<StoredBookmark>> FindByHashAsync(string hash, CancellationToken cancellationToken = default)
+    public async ValueTask<long> DeleteAsync(BookmarkFilter filter, CancellationToken cancellationToken = default)
     {
-        var bookmarks = _store.FindMany(x => x.Hash == hash).ToList(); 
-        return new(bookmarks);
+        var ids = (await FindManyAsync(filter, cancellationToken)).Select(x => x.BookmarkId);
+        return _store.DeleteMany(ids);
     }
-
-    /// <inheritdoc />
-    public ValueTask<IEnumerable<StoredBookmark>> FindByWorkflowInstanceAndHashAsync(string workflowInstanceId, string hash, CancellationToken cancellationToken = default)
-    {
-        var bookmarks = _store.FindMany(x => x.WorkflowInstanceId == workflowInstanceId && x.Hash == hash).ToList();
-        return new(bookmarks);
-    }
-
-    /// <inheritdoc />
-    public ValueTask<IEnumerable<StoredBookmark>> FindByCorrelationAndHashAsync(string correlationId, string hash, CancellationToken cancellationToken = default)
-    {
-        var bookmarks = _store.FindMany(x => x.CorrelationId == correlationId && x.Hash == hash).ToList();
-        return new(bookmarks);
-    }
-
-    /// <inheritdoc />
-    public ValueTask<IEnumerable<StoredBookmark>> FindByActivityTypeAsync(string activityType, CancellationToken cancellationToken = default)
-    {
-        var bookmarks = _store.FindMany(x => x.ActivityTypeName == activityType).ToList();
-        return new(bookmarks);
-    }
-
-    /// <inheritdoc />
-    public ValueTask DeleteAsync(string hash, string workflowInstanceId, CancellationToken cancellationToken = default)
-    {
-        _store.DeleteWhere(x => x.Hash == hash && x.WorkflowInstanceId == workflowInstanceId);
-        return ValueTask.CompletedTask;
-    }
+    
+    private static IQueryable<StoredBookmark> Filter(IQueryable<StoredBookmark> query, BookmarkFilter filter) => filter.Apply(query);
 }

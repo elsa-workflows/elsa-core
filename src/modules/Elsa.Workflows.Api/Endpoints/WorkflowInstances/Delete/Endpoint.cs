@@ -1,9 +1,11 @@
 using Elsa.Abstractions;
 using Elsa.Workflows.Management.Services;
+using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.Delete;
 
-public class Delete : ElsaEndpoint<Request>
+[PublicAPI]
+internal class Delete : ElsaEndpoint<Request>
 {
     private readonly IWorkflowInstanceStore _store;
     public Delete(IWorkflowInstanceStore store) => _store = store;
@@ -16,7 +18,8 @@ public class Delete : ElsaEndpoint<Request>
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
-        var deleted = await _store.DeleteAsync(request.Id, cancellationToken);
+        var filter = new WorkflowInstanceFilter { Id = request.Id };
+        var deleted = await _store.DeleteAsync(filter, cancellationToken);
 
         if (deleted)
             await SendNoContentAsync(cancellationToken);

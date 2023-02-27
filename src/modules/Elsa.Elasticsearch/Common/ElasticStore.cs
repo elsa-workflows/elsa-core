@@ -1,5 +1,6 @@
 using Elastic.Clients.Elasticsearch;
 using Elsa.Common.Models;
+using Elsa.Workflows.Management.Entities;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Exception = System.Exception;
@@ -24,16 +25,37 @@ public class ElasticStore<T> where T : class
         _elasticClient = elasticClient;
         _logger = logger;
     }
+    
+    /// <summary>
+    /// Searches the index using the specified search descriptor.
+    /// </summary>
+    public async Task<IEnumerable<T>> SearchAsync(Action<SearchRequestDescriptor<T>> search, CancellationToken cancellationToken = default)
+    {
+        var page = new PageArgs(0, 1000);
+        var collectedItems = new List<T>();
+        
+        while(true)
+        {
+            var result = await SearchAsync(search, page, cancellationToken);
+
+            collectedItems.AddRange(result.Items);
+            
+            if (result.Items.Count < page.PageSize)
+                break;
+
+            page = page.Next();
+        }
+
+        return collectedItems;
+    }
 
     /// <summary>
     /// Searches the index using the specified search descriptor.
     /// </summary>
-    public async Task<Page<T>> SearchAsync(Action<SearchRequestDescriptor<T>> search, PageArgs? pageArgs, CancellationToken cancellationToken)
+    public async Task<Page<T>> SearchAsync(Action<SearchRequestDescriptor<T>> search, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
-        if (pageArgs?.Page != null && pageArgs?.PageSize != null)
-        {
-            search += s => s.From(pageArgs.Offset).Size(pageArgs.Limit);
-        }
+        search += s => s.From(pageArgs.Offset);
+        search += s => s.Size(pageArgs.Limit);
 
         var response = await _elasticClient.SearchAsync(search, cancellationToken);
 

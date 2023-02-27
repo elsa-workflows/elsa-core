@@ -198,14 +198,14 @@ export class InputOutputSettings {
 
   private onAddInputClick = async () => {
     const newName = this.generateNewInputName();
-    const input: InputDefinition = {name: newName, type: 'Object', displayName: newName};
+    const input: InputDefinition = {name: newName, type: 'Object', displayName: newName, isArray: false};
 
     this.modalDialogInstance = this.modalDialogService.show(() => <elsa-activity-input-editor-dialog-content input={input}/>, {actions: [this.inputSaveAction]})
   };
 
   private onAddOutputClick = async () => {
     const newName = this.generateNewOutputName();
-    const output: OutputDefinition = {name: newName, type: 'Object', displayName: newName};
+    const output: OutputDefinition = {name: newName, type: 'Object', displayName: newName, isArray: false};
 
     this.modalDialogInstance = this.modalDialogService.show(() => <elsa-activity-output-editor-dialog-content output={output}/>, {actions: [this.outputSaveAction]})
   };

@@ -1,5 +1,6 @@
 using Elsa.Abstractions;
 using Elsa.Common.Models;
+using Elsa.Extensions;
 using Elsa.Http.Services;
 using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Runtime.Services;
@@ -36,7 +37,7 @@ public class Execute : ElsaEndpoint<Request, Response>
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
         var definitionId = request.DefinitionId;
-        var exists = await _store.GetExistsAsync(definitionId, VersionOptions.Published, cancellationToken);
+        var exists = await _store.AnyAsync(new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = VersionOptions.Published }, cancellationToken);
 
         if (!exists)
         {
@@ -45,7 +46,8 @@ public class Execute : ElsaEndpoint<Request, Response>
         }
 
         var correlationId = request.CorrelationId;
-        var startWorkflowOptions = new StartWorkflowRuntimeOptions(correlationId, VersionOptions: VersionOptions.Published);
+        var input = (IDictionary<string, object>?)request.Input;
+        var startWorkflowOptions = new StartWorkflowRuntimeOptions(correlationId, input, VersionOptions.Published);
         var result = await _workflowRuntime.StartWorkflowAsync(definitionId, startWorkflowOptions, cancellationToken);
 
         // Resume any HTTP bookmarks.

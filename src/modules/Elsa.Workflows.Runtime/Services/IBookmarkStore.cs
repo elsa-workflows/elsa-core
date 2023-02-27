@@ -2,6 +2,25 @@ using Elsa.Workflows.Runtime.Models;
 
 namespace Elsa.Workflows.Runtime.Services;
 
+public class BookmarkFilter
+{
+    public string? WorkflowInstanceId { get; set; }
+    public string? Hash { get; set; }
+    public string? CorrelationId { get; set; }
+    public string? ActivityTypeName { get; set; }
+
+    public IQueryable<StoredBookmark> Apply(IQueryable<StoredBookmark> query)
+    {
+        var filter = this;
+        if (filter.CorrelationId != null) query = query.Where(x => x.CorrelationId == filter.CorrelationId);
+        if (filter.Hash != null) query = query.Where(x => x.Hash == filter.Hash);
+        if (filter.WorkflowInstanceId != null) query = query.Where(x => x.WorkflowInstanceId == filter.WorkflowInstanceId);
+        if (filter.ActivityTypeName != null) query = query.Where(x => x.ActivityTypeName == filter.ActivityTypeName);
+
+        return query;
+    }
+}
+
 /// <summary>
 /// Provides access to stored bookmarks.
 /// </summary>
@@ -11,34 +30,14 @@ public interface IBookmarkStore
     /// Adds or updates the specified bookmark. 
     /// </summary>
     ValueTask SaveAsync(StoredBookmark record, CancellationToken cancellationToken = default);
-    
+
     /// <summary>
-    /// Returns a set of bookmarks matching the specified workflow instance ID.
+    /// Returns a set of bookmarks matching the specified filter.
     /// </summary>
-    ValueTask<IEnumerable<StoredBookmark>> FindByWorkflowInstanceAsync(string workflowInstanceId, CancellationToken cancellationToken = default);
-    
+    ValueTask<IEnumerable<StoredBookmark>> FindManyAsync(BookmarkFilter filter, CancellationToken cancellationToken = default);
+
     /// <summary>
-    /// Returns a set of bookmarks matching the specified hash.
+    /// Deletes a set of bookmarks matching the specified filter.
     /// </summary>
-    ValueTask<IEnumerable<StoredBookmark>> FindByHashAsync(string hash, CancellationToken cancellationToken = default);
-    
-    /// <summary>
-    /// Returns a set of bookmarks matching the specified workflow instance ID and hash.
-    /// </summary>
-    ValueTask<IEnumerable<StoredBookmark>> FindByWorkflowInstanceAndHashAsync(string workflowInstanceId, string hash, CancellationToken cancellationToken = default);
-    
-    /// <summary>
-    /// Returns a set of bookmarks matching the specified correlation ID and hash.
-    /// </summary>
-    ValueTask<IEnumerable<StoredBookmark>> FindByCorrelationAndHashAsync(string correlationId, string hash, CancellationToken cancellationToken = default);
-    
-    /// <summary>
-    /// Deletes a set of bookmarks matching the specified workflow instance ID and hash.
-    /// </summary>
-    ValueTask DeleteAsync(string hash, string workflowInstanceId, CancellationToken cancellationToken = default);
-    
-    /// <summary>
-    /// Returns a set of bookmarks matching the specified activity type.
-    /// </summary>
-    ValueTask<IEnumerable<StoredBookmark>> FindByActivityTypeAsync(string activityType, CancellationToken cancellationToken = default);
+    ValueTask<long> DeleteAsync(BookmarkFilter filter, CancellationToken cancellationToken = default);
 }

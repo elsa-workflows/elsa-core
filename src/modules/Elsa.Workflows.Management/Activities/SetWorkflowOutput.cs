@@ -57,7 +57,10 @@ public class SetWorkflowOutput : CodeActivity
     {
         var workflowDefinitionStore = context.GetRequiredService<IWorkflowDefinitionStore>();
         var workflowDefinitionActivity = (WorkflowDefinitionActivity)workflowDefinitionActivityContext.Activity;
-        var workflowDefinition = await workflowDefinitionStore.FindByDefinitionIdAsync(workflowDefinitionActivity.WorkflowDefinitionId, VersionOptions.SpecificVersion(workflowDefinitionActivity.Version));
+        var definitionId = workflowDefinitionActivity.WorkflowDefinitionId;
+        var versionOptions = VersionOptions.SpecificVersion(workflowDefinitionActivity.Version);
+        var filter = new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = versionOptions};
+        var workflowDefinition = await workflowDefinitionStore.FindAsync(filter, context.CancellationToken);
 
         if (workflowDefinition == null)
             return;

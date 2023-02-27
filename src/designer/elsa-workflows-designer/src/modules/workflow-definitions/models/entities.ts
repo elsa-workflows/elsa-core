@@ -32,6 +32,7 @@ export interface WorkflowOptions {
 
 export interface ArgumentDefinition {
   type: Type;
+  isArray: boolean;
   name: string;
   displayName?: string;
   description?: string;

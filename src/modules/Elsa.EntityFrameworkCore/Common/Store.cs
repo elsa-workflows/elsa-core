@@ -126,6 +126,15 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
         var set = dbContext.Set<TEntity>();
         return await set.Where(predicate).ExecuteDeleteAsync(cancellationToken);
     }
+    
+    public async Task<int> DeleteWhereAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> query, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await CreateDbContextAsync(cancellationToken);
+        var set = dbContext.Set<TEntity>();
+        var queryable = query(set.AsQueryable());
+        var expression = Expression.Lambda<Func<TEntity, bool>>(queryable.Expression);
+        return await set.Where(expression).ExecuteDeleteAsync(cancellationToken);
+    }
 
     public async Task<IEnumerable<TEntity>> QueryAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> query, CancellationToken cancellationToken = default) => await QueryAsync(query, default, cancellationToken);
 
@@ -142,6 +151,16 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
             entities = entities.Select(x => onLoading(dbContext, x)!).ToList();
 
         return entities;
+    }
+    
+    public async Task<IEnumerable<TResult>> QueryAsync<TResult>(Func<IQueryable<TEntity>, IQueryable<TEntity>> query, Expression<Func<TEntity, TResult>> selector, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await CreateDbContextAsync(cancellationToken);
+        var set = dbContext.Set<TEntity>();
+        var queryable = query(set.AsQueryable());
+
+        queryable = query(queryable);
+        return await queryable.Select(selector).ToListAsync(cancellationToken);
     }
 
     public async Task<bool> AnyAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)

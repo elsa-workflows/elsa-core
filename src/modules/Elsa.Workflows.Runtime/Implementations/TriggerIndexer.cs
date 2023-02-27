@@ -91,8 +91,11 @@ public class TriggerIndexer : ITriggerIndexer
         return indexedWorkflow;
     }
 
-    private async Task<IEnumerable<StoredTrigger>> GetCurrentTriggersAsync(string workflowDefinitionId, CancellationToken cancellationToken) =>
-        await _triggerStore.FindByWorkflowDefinitionIdAsync(workflowDefinitionId, cancellationToken);
+    private async Task<IEnumerable<StoredTrigger>> GetCurrentTriggersAsync(string workflowDefinitionId, CancellationToken cancellationToken)
+    {
+        var filter = new TriggerFilter { WorkflowDefinitionId = workflowDefinitionId};
+        return await _triggerStore.FindManyAsync(filter, cancellationToken);
+    }
 
     private async IAsyncEnumerable<StoredTrigger> GetTriggersAsync(Workflow workflow, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {

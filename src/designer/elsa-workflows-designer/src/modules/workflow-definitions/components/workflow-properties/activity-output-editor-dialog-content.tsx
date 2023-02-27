@@ -21,7 +21,7 @@ export class ActivityOutputEditorDialogContent {
   }
 
   render() {
-    const output: OutputDefinition = this.output ?? {name: '', type: 'Object'};
+    const output: OutputDefinition = this.output ?? {name: '', type: 'Object', isArray: false};
     const outputTypeName = output.type;
     const availableTypes: Array<VariableDescriptor> = descriptorsStore.variableDescriptors;
     const groupedTypes = groupBy(availableTypes, x => x.category);

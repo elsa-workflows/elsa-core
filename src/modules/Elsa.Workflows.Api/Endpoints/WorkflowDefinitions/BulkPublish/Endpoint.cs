@@ -2,10 +2,12 @@ using Elsa.Abstractions;
 using Elsa.Common.Models;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Management.Services;
+using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.BulkPublish;
 
-public class BulkPublish : ElsaEndpoint<Request, Response>
+[PublicAPI]
+internal class BulkPublish : ElsaEndpoint<Request, Response>
 {
     private readonly IWorkflowDefinitionStore _store;
     private readonly IWorkflowDefinitionPublisher _workflowDefinitionPublisher;
@@ -28,11 +30,16 @@ public class BulkPublish : ElsaEndpoint<Request, Response>
         var notFound = new List<string>();
         var alreadyPublished = new List<string>();
 
+        var definitions = (await _store.FindManyAsync(new WorkflowDefinitionFilter
+            {
+                DefinitionIds = request.DefinitionIds, VersionOptions = VersionOptions.Latest
+            }, cancellationToken: cancellationToken))
+            .DistinctBy(x => x.DefinitionId)
+            .ToDictionary(x => x.DefinitionId);
+
         foreach (var definitionId in request.DefinitionIds)
         {
-            var definition = (await _store.FindManyByDefinitionIdAsync(definitionId, VersionOptions.Latest, cancellationToken)).FirstOrDefault();
-
-            if (definition == null)
+            if(!definitions.TryGetValue(definitionId, out var definition))
             {
                 notFound.Add(definitionId);
                 continue;

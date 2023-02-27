@@ -30,6 +30,7 @@ public class PopulateWorkflowDefinitionStore : IHostedService
         _workflowDefinitionStore = workflowDefinitionStore;
     }
 
+    /// <inheritdoc />
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         foreach (var provider in _workflowDefinitionProviders)
@@ -47,10 +48,13 @@ public class PopulateWorkflowDefinitionStore : IHostedService
     private async Task AddOrUpdateAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
     {
         // Check if there's already a workflow definition by the definition ID and version.
-        var existingDefinition = (await _workflowDefinitionStore.FindManyByDefinitionIdAsync(
-            definition.DefinitionId,
-            VersionOptions.SpecificVersion(definition.Version),
-            cancellationToken)).FirstOrDefault();
+        var filter = new WorkflowDefinitionFilter
+        {
+            DefinitionId = definition.DefinitionId, 
+            VersionOptions = VersionOptions.SpecificVersion(definition.Version)
+        };
+        
+        var existingDefinition = await _workflowDefinitionStore.FindAsync(filter, cancellationToken);
 
         if (existingDefinition == null)
         {
@@ -73,5 +77,6 @@ public class PopulateWorkflowDefinitionStore : IHostedService
 
     private async Task IndexTriggersAsync(Workflow workflow, CancellationToken cancellationToken) => await _triggerIndexer.IndexTriggersAsync(workflow, cancellationToken);
 
+    /// <inheritdoc />
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }

@@ -1,53 +1,56 @@
 using Elsa.Common.Models;
+using Elsa.Extensions;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Models;
 
 namespace Elsa.Workflows.Management.Services;
 
 /// <summary>
+/// A specification to use when finding workflow definitions. Only non-null fields will be included in the conditional expression.
+/// </summary>
+public class WorkflowDefinitionFilter
+{
+    public string? Id { get; set; }
+    public ICollection<string>? Ids { get; set; }
+    public string? DefinitionId { get; set; }
+    public ICollection<string>? DefinitionIds { get; set; }
+    public VersionOptions? VersionOptions { get; set; }
+    public string? Name { get; set; }
+    public ICollection<string>? Names { get; set; }
+    public string? MaterializerName { get; set; }
+    public bool? UsableAsActivity { get; set; }
+
+    public IQueryable<WorkflowDefinition> Apply(IQueryable<WorkflowDefinition> queryable)
+    {
+        var filter = this;
+        if (filter.DefinitionId != null) queryable = queryable.Where(x => x.DefinitionId == filter.DefinitionId);
+        if (filter.DefinitionIds != null) queryable = queryable.Where(x => filter.DefinitionIds.Contains(x.DefinitionId));
+        if (filter.Id != null) queryable = queryable.Where(x => x.Id == filter.Id);
+        if (filter.Ids != null) queryable = queryable.Where(x => filter.Ids.Contains(x.Id));
+        if (filter.VersionOptions != null) queryable = queryable.WithVersion(filter.VersionOptions.Value);
+        if (filter.MaterializerName != null) queryable = queryable.Where(x => x.MaterializerName == filter.MaterializerName);
+        if (filter.Name != null) queryable = queryable.Where(x => x.Name == filter.Name);
+        if (filter.Names != null) queryable = queryable.Where(x => filter.Names.Contains(x.Name!));
+        if (filter.UsableAsActivity != null) queryable = queryable.Where(x => x.UsableAsActivity == filter.UsableAsActivity);
+        
+        return queryable;
+    }
+}
+
+/// <summary>
 /// Represents a store of <see cref="WorkflowDefinition"/>s.
 /// </summary>
 public interface IWorkflowDefinitionStore
 {
-    /// <summary>
-    /// Finds a workflow definition by its unique version ID.
-    /// </summary>
-    Task<WorkflowDefinition?> FindByIdAsync(string id, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Finds all workflow definitions by its logical definition ID and specified version options.
-    /// </summary>
-    Task<IEnumerable<WorkflowDefinition>> FindManyByDefinitionIdAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default);
-    
-    /// <summary>
-    /// Finds the workflow definition by its logical definition ID and specified version options.
-    /// </summary>
-    Task<WorkflowDefinition?> FindByDefinitionIdAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Finds a workflow definition by name and specified version options.
-    /// </summary>
-    Task<WorkflowDefinition?> FindByNameAsync(string name, VersionOptions versionOptions, CancellationToken cancellationToken = default);
-    
-    /// <summary>
-    /// Returns all workflow definitions that can be used as activities.
-    /// </summary>
-    Task<IEnumerable<WorkflowDefinition>> FindWithActivityBehaviorAsync(VersionOptions versionOptions, CancellationToken cancellationToken = default);
-
-    Task<IEnumerable<WorkflowDefinitionSummary>> FindSummariesAsync(IEnumerable<string> definitionIds, VersionOptions? versionOptions = default, CancellationToken cancellationToken = default);
-    
-    Task<WorkflowDefinition?> FindLastVersionAsync(string definitionId, CancellationToken cancellationToken);
+    Task<WorkflowDefinition?> FindAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default);
+    Task<Page<WorkflowDefinition>> FindManyAsync(WorkflowDefinitionFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default);
+    Task<IEnumerable<WorkflowDefinition>> FindManyAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default);
+    Task<Page<WorkflowDefinitionSummary>> FindSummariesAsync(WorkflowDefinitionFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default);
+    Task<IEnumerable<WorkflowDefinitionSummary>> FindSummariesAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default);
+    Task<WorkflowDefinition?> FindLastVersionAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken);
     Task SaveAsync(WorkflowDefinition record, CancellationToken cancellationToken = default);
     Task SaveManyAsync(IEnumerable<WorkflowDefinition> records, CancellationToken cancellationToken = default);
-    Task<int> DeleteByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default);
-    Task<int> DeleteByDefinitionIdAndVersionAsync(string definitionId, int version, CancellationToken cancellationToken = default);
-    Task<int> DeleteByDefinitionIdsAsync(IEnumerable<string> definitionIds, CancellationToken cancellationToken = default);
+    Task<int> DeleteAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default);
 
-    Task<Page<WorkflowDefinitionSummary>> ListSummariesAsync(
-        VersionOptions? versionOptions = default,
-        string? materializerName = default,
-        PageArgs? pageArgs = default,
-        CancellationToken cancellationToken = default);
-
-    Task<bool> GetExistsAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default);
+    Task<bool> AnyAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default);
 }

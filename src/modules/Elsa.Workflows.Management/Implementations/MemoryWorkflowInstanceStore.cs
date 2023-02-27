@@ -1,108 +1,125 @@
 using Elsa.Common.Entities;
 using Elsa.Common.Implementations;
 using Elsa.Common.Models;
+using Elsa.Extensions;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Services;
 
 namespace Elsa.Workflows.Management.Implementations;
 
+/// <summary>
+/// A non-persistent memory store for saving and loading <see cref="WorkflowInstance"/> entities.
+/// </summary>
 public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
 {
     private readonly MemoryStore<WorkflowInstance> _store;
 
+    /// <summary>
+    /// Constructor.
+    /// </summary>
     public MemoryWorkflowInstanceStore(MemoryStore<WorkflowInstance> store)
     {
         _store = store;
     }
 
-    public Task<WorkflowInstance?> FindByIdAsync(string id, CancellationToken cancellationToken = default)
+    /// <inheritdoc />
+    public Task<WorkflowInstance?> FindAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
-        var instance = _store.Find(x => x.Id == id);
-        return Task.FromResult(instance);
+        var entity = _store.Query(query => Filter(query, filter)).FirstOrDefault();
+        return Task.FromResult(entity);
     }
 
+    /// <inheritdoc />
+    public Task<Page<WorkflowInstance>> FindManyAsync(WorkflowInstanceFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
+    {
+        var count = _store.Query(query => Filter(query, filter)).LongCount();
+        var entities = _store.Query(query => Filter(query, filter).Paginate(pageArgs)).ToList();
+        var page = Page.Of(entities, count);
+        return Task.FromResult(page);
+    }
+
+    /// <inheritdoc />
+    public Task<Page<WorkflowInstance>> FindManyAsync<TOrderBy>(WorkflowInstanceFilter filter, PageArgs pageArgs, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
+    {
+        var count = _store.Query(query => Filter(query, filter)).LongCount();
+        var entities = _store.Query(query => Filter(query, filter).OrderBy(order).Paginate(pageArgs)).ToList();
+        var page = Page.Of(entities, count);
+        return Task.FromResult(page);
+    }
+
+    /// <inheritdoc />
+    public Task<IEnumerable<WorkflowInstance>> FindManyAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
+    {
+        var entities = _store.Query(query => Filter(query, filter)).ToList().AsEnumerable();
+        return Task.FromResult(entities);
+    }
+
+    /// <inheritdoc />
+    public Task<IEnumerable<WorkflowInstance>> FindManyAsync<TOrderBy>(WorkflowInstanceFilter filter, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
+    {
+        var entities = _store.Query(query => Filter(query, filter).OrderBy(order)).ToList().AsEnumerable();
+        return Task.FromResult(entities);
+    }
+
+    /// <inheritdoc />
+    public async Task<Page<WorkflowInstanceSummary>> SummarizeManyAsync(WorkflowInstanceFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
+    {
+        var page = await FindManyAsync(filter, pageArgs, cancellationToken);
+        return new(page.Items.Select(WorkflowInstanceSummary.FromInstance).ToList(), page.TotalCount);
+    }
+
+    /// <inheritdoc />
+    public async Task<Page<WorkflowInstanceSummary>> SummarizeManyAsync<TOrderBy>(WorkflowInstanceFilter filter, PageArgs pageArgs, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
+    {
+        var page = await FindManyAsync(filter, pageArgs, order, cancellationToken);
+        return new(page.Items.Select(WorkflowInstanceSummary.FromInstance).ToList(), page.TotalCount);
+    }
+
+    /// <inheritdoc />
+    public async Task<IEnumerable<WorkflowInstanceSummary>> SummarizeManyAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
+    {
+        var entities = await FindManyAsync(filter, cancellationToken);
+        return entities.Select(WorkflowInstanceSummary.FromInstance);
+    }
+
+    /// <inheritdoc />
+    public async Task<IEnumerable<WorkflowInstanceSummary>> SummarizeManyAsync<TOrderBy>(WorkflowInstanceFilter filter, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
+    {
+        var entities = await FindManyAsync(filter, order, cancellationToken);
+        return entities.Select(WorkflowInstanceSummary.FromInstance);
+    }
+
+    /// <inheritdoc />
     public Task SaveAsync(WorkflowInstance record, CancellationToken cancellationToken = default)
     {
         _store.Save(record, x => x.Id);
         return Task.CompletedTask;
     }
 
+    /// <inheritdoc />
     public Task SaveManyAsync(IEnumerable<WorkflowInstance> records, CancellationToken cancellationToken = default)
     {
         _store.SaveMany(records, GetId);
         return Task.CompletedTask;
     }
 
-    public Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default)
+    /// <inheritdoc />
+    public async Task<bool> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
-        var success = _store.Delete(id);
-        return Task.FromResult(success);
+        var count = await DeleteManyAsync(filter, cancellationToken);
+        return count > 0;
     }
 
-    public Task<int> DeleteManyAsync(IEnumerable<string> ids, CancellationToken cancellationToken = default)
+    /// <inheritdoc />
+    public Task<int> DeleteManyAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
-        var count = _store.DeleteMany(ids);
+        var query = Filter(_store.List().AsQueryable(), filter);
+        var count = _store.DeleteMany(query, x => x.Id);
         return Task.FromResult(count);
     }
 
-    public Task DeleteManyByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default)
-    {
-        _store.DeleteWhere(x => x.DefinitionId == definitionId);
-        return Task.CompletedTask;
-    }
+    private static string GetId(WorkflowInstance workflowInstance) => workflowInstance.Id;
 
-    public Task<Page<WorkflowInstanceSummary>> FindManyAsync(FindWorkflowInstancesArgs args, CancellationToken cancellationToken = default)
-    {
-        var query = _store.List().AsQueryable();
-        var (searchTerm, definitionId, version, correlationId, workflowStatus, workflowSubStatus, pageArgs, orderBy, orderDirection) = args;
-
-        if (!string.IsNullOrWhiteSpace(definitionId))
-            query = query.Where(x => x.DefinitionId == definitionId);
-
-        if (version != null)
-            query = query.Where(x => x.Version == version);
-
-        if (!string.IsNullOrWhiteSpace(correlationId))
-            query = query.Where(x => x.CorrelationId == correlationId);
-
-        if (workflowStatus != null)
-            query = query.Where(x => x.Status == workflowStatus);
-        
-        if (workflowSubStatus != null)
-            query = query.Where(x => x.SubStatus == workflowSubStatus);
-
-        if (!string.IsNullOrWhiteSpace(searchTerm))
-        {
-            const StringComparison comparison = StringComparison.InvariantCultureIgnoreCase;
-
-            query =
-                from instance in query
-                where instance.Name != null && instance.Name.Contains(searchTerm, comparison) == true
-                      || instance.Id.Contains(searchTerm, comparison)
-                      || instance.DefinitionId.Contains(searchTerm, comparison)
-                      || instance.CorrelationId != null && instance.CorrelationId.Contains(searchTerm, comparison)
-                select instance;
-        }
-
-        query = orderBy switch
-        {
-            OrderBy.Finished => orderDirection == OrderDirection.Ascending ? query.OrderBy(x => x.FinishedAt) : query.OrderByDescending(x => x.FinishedAt),
-            OrderBy.LastExecuted => orderDirection == OrderDirection.Ascending ? query.OrderBy(x => x.LastExecutedAt) : query.OrderByDescending(x => x.LastExecutedAt),
-            OrderBy.Created => orderDirection == OrderDirection.Ascending ? query.OrderBy(x => x.CreatedAt) : query.OrderByDescending(x => x.CreatedAt),
-            _ => query
-        };
-
-        var totalCount = query.Count();
-
-        if (pageArgs?.Offset != null) query = query.Skip(pageArgs.Offset.Value);
-        if (pageArgs?.Limit != null) query = query.Take(pageArgs.Limit.Value);
-        
-        var entities = query.ToList();
-        var summaries = entities.Select(WorkflowInstanceSummary.FromInstance).ToList();
-        var pagedList = Page.Of(summaries, totalCount);
-        return Task.FromResult(pagedList);
-    }
-
-    private string GetId(WorkflowInstance workflowInstance) => workflowInstance.Id;
+    private static IQueryable<WorkflowInstance> Filter(IQueryable<WorkflowInstance> query, WorkflowInstanceFilter filter) => filter.Apply(query);
 }

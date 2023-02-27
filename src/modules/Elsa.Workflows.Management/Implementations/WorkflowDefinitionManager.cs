@@ -34,7 +34,8 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
     /// <inheritdoc />
     public async Task<int> DeleteByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default)
     {
-        var count = await _store.DeleteByDefinitionIdAsync(definitionId, cancellationToken);
+        var filter = new WorkflowDefinitionFilter { DefinitionId = definitionId };
+        var count = await _store.DeleteAsync(filter, cancellationToken);
         await _eventPublisher.PublishAsync(new WorkflowDefinitionDeleted(definitionId), cancellationToken);
         return count;
     }
@@ -43,7 +44,8 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
     public async Task<int> BulkDeleteByDefinitionIdsAsync(IEnumerable<string> definitionIds, CancellationToken cancellationToken = default)
     {
         var ids = definitionIds.ToList();
-        var count = await _store.DeleteByDefinitionIdsAsync(ids, cancellationToken);
+        var filter = new WorkflowDefinitionFilter { DefinitionIds = ids };
+        var count = await _store.DeleteAsync(filter, cancellationToken);
         await _eventPublisher.PublishAsync(new WorkflowDefinitionsDeleted(ids), cancellationToken);
         return count;
     }
@@ -51,7 +53,8 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
     /// <inheritdoc />
     public async Task<bool> DeleteVersionAsync(string definitionId, int versionToDelete, CancellationToken cancellationToken = default)
     {
-        var workflows = (await _store.FindManyByDefinitionIdAsync(definitionId, VersionOptions.LatestAndPublished, cancellationToken)).ToList();
+        var filter = new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = VersionOptions.LatestAndPublished };
+        var workflows = (await _store.FindManyAsync(filter, cancellationToken)).ToList();
         var latestVersion = workflows.WithVersion(VersionOptions.Latest).First();
         var publishedVersion = workflows.WithVersion(VersionOptions.Published).FirstOrDefault();
 
@@ -60,7 +63,8 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
             throw new Exception("Published version cannot be deleted");
         }
 
-        var isDeleted = await _store.DeleteByDefinitionIdAndVersionAsync(definitionId, versionToDelete, cancellationToken) > 0;
+        filter = new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = VersionOptions.SpecificVersion(versionToDelete) };
+        var isDeleted = await _store.DeleteAsync(filter, cancellationToken) > 0;
 
         if (!isDeleted)
             return false;
@@ -70,7 +74,8 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
         if (latestVersion.Version != versionToDelete)
             return isDeleted;
 
-        var lastVersion = await _store.FindLastVersionAsync(definitionId, cancellationToken);
+        filter = new WorkflowDefinitionFilter { DefinitionId = definitionId };
+        var lastVersion = await _store.FindLastVersionAsync(filter, cancellationToken);
 
         if (lastVersion is null)
             return isDeleted;
@@ -84,7 +89,8 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
     /// <inheritdoc />
     public async Task<WorkflowDefinition> RevertVersionAsync(string definitionId, int version, CancellationToken cancellationToken = default)
     {
-        var publishedAndLatestVersions = (await _store.FindManyByDefinitionIdAsync(definitionId, VersionOptions.LatestAndPublished, cancellationToken)).ToList();
+        var filter = new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = VersionOptions.LatestAndPublished };
+        var publishedAndLatestVersions = (await _store.FindManyAsync(filter, cancellationToken)).ToList();
 
         if (publishedAndLatestVersions.Any(v => v.Version == version))
             throw new Exception("Latest or published versions cannot be reverted");
