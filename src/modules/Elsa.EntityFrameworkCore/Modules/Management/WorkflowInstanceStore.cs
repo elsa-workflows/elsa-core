@@ -1,6 +1,5 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.EntityFrameworkCore.Common;
 using Elsa.Extensions;
@@ -133,30 +132,5 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
         return entity;
     }
 
-    private IQueryable<WorkflowInstance> Filter(IQueryable<WorkflowInstance> query, WorkflowInstanceFilter filter)
-    {
-        if (!string.IsNullOrWhiteSpace(filter.Id)) query = query.Where(x => x.Id == filter.Id);
-        if (filter.Ids != null) query = query.Where(x => filter.Ids.Contains(x.Id));
-        if (!string.IsNullOrWhiteSpace(filter.DefinitionId)) query = query.Where(x => x.DefinitionId == filter.DefinitionId);
-        if (filter.DefinitionIds != null) query = query.Where(x => filter.DefinitionIds.Contains(x.DefinitionId));
-        if (filter.Version != null) query = query.Where(x => x.Version == filter.Version);
-        if (!string.IsNullOrWhiteSpace(filter.CorrelationId)) query = query.Where(x => x.CorrelationId == filter.CorrelationId);
-        if (filter.CorrelationIds != null) query = query.Where(x => filter.CorrelationIds.Contains(x.CorrelationId!));
-        if (filter.WorkflowStatus != null) query = query.Where(x => x.Status == filter.WorkflowStatus);
-        if (filter.WorkflowSubStatus != null) query = query.Where(x => x.SubStatus == filter.WorkflowSubStatus);
-
-        var searchTerm = filter.SearchTerm;
-        if (!string.IsNullOrWhiteSpace(searchTerm))
-        {
-            query =
-                from instance in query
-                where instance.Name!.Contains(searchTerm)
-                      || instance.Id.Contains(searchTerm)
-                      || instance.DefinitionId.Contains(searchTerm)
-                      || instance.CorrelationId!.Contains(searchTerm)
-                select instance;
-        }
-
-        return query;
-    }
+    private static IQueryable<WorkflowInstance> Filter(IQueryable<WorkflowInstance> query, WorkflowInstanceFilter filter) => filter.Apply(query);
 }

@@ -1,4 +1,5 @@
 using Elsa.Common.Models;
+using Elsa.Extensions;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Models;
 
@@ -18,6 +19,22 @@ public class WorkflowDefinitionFilter
     public ICollection<string>? Names { get; set; }
     public string? MaterializerName { get; set; }
     public bool? UsableAsActivity { get; set; }
+
+    public IQueryable<WorkflowDefinition> Apply(IQueryable<WorkflowDefinition> queryable)
+    {
+        var filter = this;
+        if (filter.DefinitionId != null) queryable = queryable.Where(x => x.DefinitionId == filter.DefinitionId);
+        if (filter.DefinitionIds != null) queryable = queryable.Where(x => filter.DefinitionIds.Contains(x.DefinitionId));
+        if (filter.Id != null) queryable = queryable.Where(x => x.Id == filter.Id);
+        if (filter.Ids != null) queryable = queryable.Where(x => filter.Ids.Contains(x.Id));
+        if (filter.VersionOptions != null) queryable = queryable.WithVersion(filter.VersionOptions.Value);
+        if (filter.MaterializerName != null) queryable = queryable.Where(x => x.MaterializerName == filter.MaterializerName);
+        if (filter.Name != null) queryable = queryable.Where(x => x.Name == filter.Name);
+        if (filter.Names != null) queryable = queryable.Where(x => filter.Names.Contains(x.Name!));
+        if (filter.UsableAsActivity != null) queryable = queryable.Where(x => x.UsableAsActivity == filter.UsableAsActivity);
+        
+        return queryable;
+    }
 }
 
 /// <summary>

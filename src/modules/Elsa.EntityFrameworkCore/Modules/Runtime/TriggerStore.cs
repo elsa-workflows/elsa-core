@@ -24,28 +24,17 @@ public class EFCoreTriggerStore : ITriggerStore
     public async ValueTask SaveManyAsync(IEnumerable<StoredTrigger> records, CancellationToken cancellationToken = default) => await _store.SaveManyAsync(records, cancellationToken);
 
     /// <inheritdoc />
-    public async ValueTask<IEnumerable<StoredTrigger>> FindAsync(string hash, CancellationToken cancellationToken = default) =>
-        await _store.QueryAsync(query => query.Where(x => x.Hash == hash), cancellationToken);
-
-    /// <inheritdoc />
-    public async ValueTask<IEnumerable<StoredTrigger>> FindByWorkflowDefinitionIdAsync(string workflowDefinitionId, CancellationToken cancellationToken = default) =>
-        await _store.QueryAsync(query => query.Where(x => x.WorkflowDefinitionId == workflowDefinitionId), cancellationToken);
+    public async ValueTask<IEnumerable<StoredTrigger>> FindManyAsync(TriggerFilter filter, CancellationToken cancellationToken = default) => await _store.QueryAsync(filter.Apply, cancellationToken);
 
     /// <inheritdoc />
     public async ValueTask ReplaceAsync(IEnumerable<StoredTrigger> removed, IEnumerable<StoredTrigger> added, CancellationToken cancellationToken = default)
     {
-        await DeleteManyAsync(removed.Select(r => r.Id), cancellationToken);
+        var filter = new TriggerFilter { Ids = removed.Select(r => r.Id).ToList() };
+        await DeleteManyAsync(filter, cancellationToken);
         await _store.SaveManyAsync(added, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async ValueTask DeleteManyAsync(IEnumerable<string> ids, CancellationToken cancellationToken = default)
-    {
-        var idList = ids.ToList();
-        await _store.DeleteWhereAsync(x => idList.Contains(x.Id), cancellationToken);
-    }
-
-    /// <inheritdoc />
-    public async ValueTask<IEnumerable<StoredTrigger>> FindByActivityTypeAsync(string activityType, CancellationToken cancellationToken = default) => 
-        await _store.QueryAsync(query => query.Where(x => x.Name == activityType), cancellationToken);
+    public async ValueTask<long> DeleteManyAsync(TriggerFilter filter, CancellationToken cancellationToken = default) =>
+        await _store.DeleteWhereAsync(filter.Apply, cancellationToken);
 }

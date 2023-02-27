@@ -32,19 +32,12 @@ public class MemoryTriggerStore : ITriggerStore
     }
 
     /// <inheritdoc />
-    public ValueTask<IEnumerable<StoredTrigger>> FindAsync(string hash, CancellationToken cancellationToken = default)
+    public ValueTask<IEnumerable<StoredTrigger>> FindManyAsync(TriggerFilter filter, CancellationToken cancellationToken = default)
     {
-        var triggers = _store.Query(query => query.Where(x => x.Hash == hash));
-        return new(triggers.ToList());
+        var entities = _store.Query(filter.Apply);
+        return new(entities);
     }
-
-    /// <inheritdoc />
-    public ValueTask<IEnumerable<StoredTrigger>> FindByWorkflowDefinitionIdAsync(string workflowDefinitionId, CancellationToken cancellationToken = default)
-    {
-        var triggers = _store.Query(query => query.Where(x => x.WorkflowDefinitionId == workflowDefinitionId));
-        return new(triggers.ToList());
-    }
-
+    
     /// <inheritdoc />
     public ValueTask ReplaceAsync(IEnumerable<StoredTrigger> removed, IEnumerable<StoredTrigger> added, CancellationToken cancellationToken = default)
     {
@@ -54,16 +47,9 @@ public class MemoryTriggerStore : ITriggerStore
     }
 
     /// <inheritdoc />
-    public ValueTask DeleteManyAsync(IEnumerable<string> ids, CancellationToken cancellationToken = default)
+    public async ValueTask<long> DeleteManyAsync(TriggerFilter filter, CancellationToken cancellationToken = default)
     {
-        _store.DeleteMany(ids);
-        return new();
-    }
-
-    /// <inheritdoc />
-    public ValueTask<IEnumerable<StoredTrigger>> FindByActivityTypeAsync(string activityType, CancellationToken cancellationToken = default)
-    {
-        var triggers = _store.Query(query => query.Where(x => x.Name == activityType)).ToList();
-        return new(triggers);
+        var ids = (await FindManyAsync(filter, cancellationToken)).Select(x => x.Id);
+        return _store.DeleteMany(ids);
     }
 }

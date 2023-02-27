@@ -2,6 +2,26 @@ using Elsa.Workflows.Runtime.Entities;
 
 namespace Elsa.Workflows.Runtime.Services;
 
+public class TriggerFilter
+{
+    public string? Id { get; set; }
+    public ICollection<string>? Ids { get; set; }
+    public string? WorkflowDefinitionId { get; set; }
+    public string? Name { get; set; }
+    public string? Hash { get; set; }
+
+    public IQueryable<StoredTrigger> Apply(IQueryable<StoredTrigger> queryable)
+    {
+        if (Id != null) queryable = queryable.Where(x => x.Id == Id);
+        if (Ids != null) queryable = queryable.Where(x => Ids.Contains(x.Id));
+        if (WorkflowDefinitionId != null) queryable = queryable.Where(x => x.WorkflowDefinitionId == WorkflowDefinitionId);
+        if (Name != null) queryable = queryable.Where(x => x.Name == Name);
+        if (Hash != null) queryable = queryable.Where(x => x.Hash == Hash);
+
+        return queryable;
+    }
+}
+
 /// <summary>
 /// Provides access to the underlying store of stored triggers.
 /// </summary>
@@ -11,34 +31,24 @@ public interface ITriggerStore
     /// Adds or updates the specified record.
     /// </summary>
     ValueTask SaveAsync(StoredTrigger record, CancellationToken cancellationToken = default);
-    
+
     /// <summary>
     /// Adds or updates the specified set of records. 
     /// </summary>
     ValueTask SaveManyAsync(IEnumerable<StoredTrigger> records, CancellationToken cancellationToken = default);
-    
+
     /// <summary>
-    /// Returns all records matching the specified hash value.
+    /// Returns all records matching the specified filter.
     /// </summary>
-    ValueTask<IEnumerable<StoredTrigger>> FindAsync(string hash, CancellationToken cancellationToken = default);
-    
-    /// <summary>
-    /// Returns all records matching the specified workflow definition ID. 
-    /// </summary>
-    ValueTask<IEnumerable<StoredTrigger>> FindByWorkflowDefinitionIdAsync(string workflowDefinitionId, CancellationToken cancellationToken = default);
+    ValueTask<IEnumerable<StoredTrigger>> FindManyAsync(TriggerFilter filter, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Replaces a set of records based on the specified removed and added records.
     /// </summary>
     ValueTask ReplaceAsync(IEnumerable<StoredTrigger> removed, IEnumerable<StoredTrigger> added, CancellationToken cancellationToken = default);
-    
+
     /// <summary>
-    /// Deletes all records with the specified set of IDs.
+    /// Deletes all records matching the specified filter.
     /// </summary>
-    ValueTask DeleteManyAsync(IEnumerable<string> ids, CancellationToken cancellationToken = default);
-    
-    /// <summary>
-    /// Returns a set of records matching the specified activity type.
-    /// </summary>
-    ValueTask<IEnumerable<StoredTrigger>> FindByActivityTypeAsync(string activityType, CancellationToken cancellationToken = default);
+    ValueTask<long> DeleteManyAsync(TriggerFilter filter, CancellationToken cancellationToken = default);
 }
