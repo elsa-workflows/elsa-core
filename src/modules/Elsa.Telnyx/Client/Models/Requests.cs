@@ -66,6 +66,7 @@ public record DialRequest(
     string? FromDisplayName = default,
     string? AnsweringMachineDetection = default,
     AnsweringMachineConfig? AnsweringMachineConfig = default,
+    string? Record = default,
     string? ClientState = default,
     string? CommandId = default,
     IList<Header>? CustomHeaders = default,

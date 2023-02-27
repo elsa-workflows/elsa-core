@@ -52,6 +52,12 @@ public class Dial : CodeActivity<DialResponse>
         Options = new[] { "disabled", "detect", "detect_beep", "detect_words", "greeting_end", "premium" },
         DefaultValue = "disabled")]
     public Input<string?> AnsweringMachineDetection { get; set; } = new("disabled");
+    
+    /// <summary>
+    /// Enables answering machine detection.
+    /// </summary>
+    [Input(Description = "Start recording automatically after an event. Disabled by default.")]
+    public Input<bool> Record { get; set; } = default!;
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
@@ -68,15 +74,16 @@ public class Dial : CodeActivity<DialResponse>
         if (callControlAppId == null)
             throw new MissingCallControlAppIdException("No Call Control ID configured");
 
-        var fromNumber = context.Get(From);
+        var fromNumber = From.TryGet(context);
         var clientState = context.CreateCorrelatingClientState();
 
         var request = new DialRequest(
             callControlAppId,
             To.Get(context),
             fromNumber,
-            FromDisplayName.Get(context).SanitizeCallerName(),
-            AnsweringMachineDetection.Get(context),
+            FromDisplayName.TryGet(context).SanitizeCallerName(),
+            AnsweringMachineDetection.TryGet(context),
+            Record: Record.TryGet(context) == true ? "record-from-answer" : default,
             ClientState: clientState
         );
 

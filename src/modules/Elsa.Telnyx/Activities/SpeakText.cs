@@ -25,7 +25,7 @@ public abstract class SpeakTextBase : Activity
     protected SpeakTextBase([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
-    
+
     /// <summary>
     /// Unique identifier and token for controlling the call.
     /// </summary>
@@ -119,7 +119,7 @@ public abstract class SpeakTextBase : Activity
     /// Called when the call was no longer active.
     /// </summary>
     protected abstract ValueTask HandleDisconnected(ActivityExecutionContext context);
-    
+
     /// <summary>
     /// Called when speaking has finished.
     /// </summary>
@@ -129,7 +129,7 @@ public abstract class SpeakTextBase : Activity
 }
 
 /// <inheritdoc />
-[FlowNode("Done", "Disconnected")]
+[FlowNode("Done", "Finished speaking", "Disconnected")]
 public class FlowSpeakText : SpeakTextBase
 {
     /// <inheritdoc />
@@ -142,7 +142,7 @@ public class FlowSpeakText : SpeakTextBase
     protected override async ValueTask HandleDisconnected(ActivityExecutionContext context) => await context.CompleteActivityWithOutcomesAsync("Disconnected", "Done");
 
     /// <inheritdoc />
-    protected override async ValueTask HandleDone(ActivityExecutionContext context) => await context.CompleteActivityWithOutcomesAsync("Done");
+    protected override async ValueTask HandleDone(ActivityExecutionContext context) => await context.CompleteActivityWithOutcomesAsync("Finished speaking", "Done");
 }
 
 /// <inheritdoc />
@@ -157,11 +157,18 @@ public class SpeakText : SpeakTextBase
     /// <summary>
     /// The <see cref="IActivity"/> to execute when the call was no longer active.
     /// </summary>
-    [Port]public IActivity? Disconnected { get; set; }
+    [Port]
+    public IActivity? Disconnected { get; set; }
+    
+    /// <summary>
+    /// The <see cref="IActivity"/> to execute when speaking has finished.
+    /// </summary>
+    [Port]
+    public IActivity? FinishedSpeaking { get; set; }
 
     /// <inheritdoc />
     protected override async ValueTask HandleDisconnected(ActivityExecutionContext context) => await context.ScheduleActivityAsync(Disconnected);
 
     /// <inheritdoc />
-    protected override async ValueTask HandleDone(ActivityExecutionContext context) => await context.CompleteActivityAsync();
+    protected override async ValueTask HandleDone(ActivityExecutionContext context) => await context.ScheduleActivityAsync(FinishedSpeaking);
 }
