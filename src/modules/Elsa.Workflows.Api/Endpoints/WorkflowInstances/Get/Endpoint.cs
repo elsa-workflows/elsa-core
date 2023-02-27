@@ -1,9 +1,11 @@
 using Elsa.Abstractions;
 using Elsa.Workflows.Management.Services;
+using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.Get;
 
-public class Get : ElsaEndpoint<Request, Response, WorkflowInstanceMapper>
+[PublicAPI]
+internal class Get : ElsaEndpoint<Request, Response, WorkflowInstanceMapper>
 {
     private readonly IWorkflowInstanceStore _store;
 
@@ -20,7 +22,8 @@ public class Get : ElsaEndpoint<Request, Response, WorkflowInstanceMapper>
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
-        var workflowInstance = await _store.FindByIdAsync(request.Id, cancellationToken);
+        var filter = new WorkflowInstanceFilter { Id = request.Id };
+        var workflowInstance = await _store.FindAsync(filter, cancellationToken);
 
         if (workflowInstance == null)
             await SendNotFoundAsync(cancellationToken);

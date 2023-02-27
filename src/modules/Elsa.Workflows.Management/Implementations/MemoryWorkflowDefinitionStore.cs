@@ -2,6 +2,7 @@ using Elsa.Common.Implementations;
 using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Services;
 
@@ -37,7 +38,7 @@ public class MemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
     public Task<Page<WorkflowDefinition>> FindManyAsync(WorkflowDefinitionFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
         var count = _store.Query(query => Filter(query, filter)).LongCount();
-        var result = _store.Query(query => Paginate(Filter(query, filter), pageArgs)).ToList();
+        var result = _store.Query(query => Filter(query, filter).Paginate(pageArgs)).ToList();
         return Task.FromResult(Page.Of(result, count));
     }
     
@@ -52,7 +53,7 @@ public class MemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
     public Task<Page<WorkflowDefinitionSummary>> FindSummariesAsync(WorkflowDefinitionFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
         var count = _store.Query(query => Filter(query, filter)).LongCount();
-        var result = _store.Query(query => Paginate(Filter(query, filter), pageArgs)).Select(WorkflowDefinitionSummary.FromDefinition).ToList();
+        var result = _store.Query(query => Filter(query, filter).Paginate(pageArgs)).Select(WorkflowDefinitionSummary.FromDefinition).ToList();
         return Task.FromResult(Page.Of(result, count));
     }
     
@@ -112,13 +113,6 @@ public class MemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
         if (filter.Names != null) queryable = queryable.Where(x => filter.Names.Contains(x.Name));
         if (filter.UsableAsActivity != null) queryable = queryable.Where(x => x.UsableAsActivity == filter.UsableAsActivity);
         
-        return queryable;
-    }
-
-    private IQueryable<WorkflowDefinition> Paginate(IQueryable<WorkflowDefinition> queryable, PageArgs? pageArgs)
-    {
-        if (pageArgs?.Offset != null) queryable = queryable.Skip(pageArgs.Offset.Value);
-        if (pageArgs?.Limit != null) queryable = queryable.Take(pageArgs.Limit.Value);
         return queryable;
     }
 

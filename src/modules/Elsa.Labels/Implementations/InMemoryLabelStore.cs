@@ -53,7 +53,7 @@ public class InMemoryLabelStore : ILabelStore
     public Task<Page<Label>> ListAsync(PageArgs? pageArgs = default, CancellationToken cancellationToken = default)
     {
         var query = _labelStore.List().AsQueryable().OrderBy(x => x.Name);
-        var page = query.Paginate(pageArgs);
+        var page = query.ToPage(pageArgs);
         return Task.FromResult(page);
     }
 

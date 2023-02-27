@@ -1,9 +1,11 @@
 using Elsa.Abstractions;
 using Elsa.Workflows.Management.Services;
+using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.BulkDelete;
 
-public class BulkDelete : ElsaEndpoint<Request, Response>
+[PublicAPI]
+internal class BulkDelete : ElsaEndpoint<Request, Response>
 {
     private readonly IWorkflowInstanceStore _store;
 
@@ -20,7 +22,8 @@ public class BulkDelete : ElsaEndpoint<Request, Response>
 
     public override async Task<Response> ExecuteAsync(Request request, CancellationToken cancellationToken)
     {
-        var count = await _store.DeleteManyAsync(request.Ids, cancellationToken);
+        var filter = new WorkflowInstanceFilter { Ids = request.Ids };
+        var count = await _store.DeleteManyAsync(filter, cancellationToken);
 
         return new Response(count);   
     }
