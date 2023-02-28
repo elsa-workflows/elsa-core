@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Mime;
 using System.Text.Json;
 using Elsa.Http.Models;
@@ -44,7 +45,7 @@ public class WorkflowsMiddleware
         _options = options.Value;
     }
 
-    
+
     /// <summary>
     /// Attempts to matches the inbound request path to an associated workflow and then run that workflow.
     /// </summary>
@@ -79,10 +80,16 @@ public class WorkflowsMiddleware
         var bookmarkPayload = new HttpEndpointBookmarkPayload(path, method);
         var triggerOptions = new TriggerWorkflowsRuntimeOptions(correlationId, input);
         var cancellationToken = httpContext.RequestAborted;
-        
+
         // Trigger the workflow.
         var triggerResult = await _workflowRuntime.TriggerWorkflowsAsync(_activityTypeName, bookmarkPayload, triggerOptions, cancellationToken);
-        
+
+        if (await HandleNoWorkflowsFoundAsync(httpContext, triggerResult.TriggeredWorkflows, basePath))
+            return;
+
+        if (await HandleMultipleWorkflowsFoundAsync(httpContext, triggerResult.TriggeredWorkflows, cancellationToken))
+            return;
+
         // Process the trigger result by resuming each HTTP bookmark, if any.
         await _httpBookmarkProcessor.ProcessBookmarks(triggerResult.TriggeredWorkflows, correlationId, input, cancellationToken);
     }
@@ -105,6 +112,43 @@ public class WorkflowsMiddleware
             await response.WriteAsync(json, cancellationToken);
         }
     }
-    
+
     private string GetPath(HttpContext httpContext) => httpContext.Request.Path.Value.ToLowerInvariant();
+
+    private async Task<bool> HandleNoWorkflowsFoundAsync(HttpContext httpContext, ICollection<WorkflowExecutionResult> triggeredWorkflows, PathString? basePath)
+    {
+        if (triggeredWorkflows.Any())
+            return false;
+
+        // If a base path was configured, we are sure the requester tried to execute a workflow that doesn't exist.
+        // Therefore, sending a 404 response seems appropriate instead of continuing with any subsequent middlewares.
+        if (basePath != null)
+        {
+            httpContext.Response.StatusCode = (int)HttpStatusCode.NotFound;
+            return true;
+        }
+
+        // If no base path was configured on the other hand, the request could be targeting anything else and should be handled by subsequent middlewares. 
+        await _next(httpContext);
+
+        return true;
+    }
+
+    private async Task<bool> HandleMultipleWorkflowsFoundAsync(HttpContext httpContext, ICollection<WorkflowExecutionResult> triggeredWorkflows, CancellationToken cancellationToken)
+    {
+        if (triggeredWorkflows.Count <= 1)
+            return false;
+
+        httpContext.Response.ContentType = "application/json";
+        httpContext.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+
+        var responseContent = JsonSerializer.Serialize(new
+        {
+            errorMessage = "The call is ambiguous and matches multiple workflows.",
+            workflows = triggeredWorkflows
+        });
+
+        await httpContext.Response.WriteAsync(responseContent, cancellationToken);
+        return true;
+    }
 }
