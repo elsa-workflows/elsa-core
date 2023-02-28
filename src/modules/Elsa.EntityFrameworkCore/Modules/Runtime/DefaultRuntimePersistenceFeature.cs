@@ -30,8 +30,8 @@ public class EFCoreDefaultRuntimePersistenceFeature : PersistenceFeatureBase<Run
     {
         base.Apply();
 
-        AddStore<WorkflowState, EFCoreWorkflowStateStore>();
-        AddStore<StoredTrigger, EFCoreTriggerStore>();
+        AddEntityStore<WorkflowState, EFCoreWorkflowStateStore>();
+        AddEntityStore<StoredTrigger, EFCoreTriggerStore>();
         AddStore<StoredBookmark, EFCoreBookmarkStore>();
     }
 }

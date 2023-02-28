@@ -17,26 +17,24 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
 
     public async Task<TDbContext> CreateDbContextAsync(CancellationToken cancellationToken = default) => await _dbContextFactory.CreateDbContextAsync(cancellationToken);
 
-    public async Task SaveAsync(TEntity entity, CancellationToken cancellationToken = default) => await SaveAsync(entity, default, default, cancellationToken);
+    public async Task SaveAsync(TEntity entity, Expression<Func<TEntity, string>> keySelector, CancellationToken cancellationToken = default) => await SaveAsync(entity, keySelector, null, cancellationToken);
 
-    public async Task SaveAsync(TEntity entity, Expression<Func<TEntity, object>>? uniqueField = default, CancellationToken cancellationToken = default) => await SaveAsync(entity, uniqueField, default, cancellationToken);
-
-    public async Task SaveAsync(TEntity entity, Func<TDbContext, TEntity, TEntity>? onSaving = default, CancellationToken cancellationToken = default) => await SaveAsync(entity, default, onSaving, cancellationToken);
-
-    public async Task SaveAsync(TEntity entity, Expression<Func<TEntity, object>>? uniqueField = default, Func<TDbContext, TEntity, TEntity>? onSaving = default, CancellationToken cancellationToken = default)
+    public async Task SaveAsync(TEntity entity, Expression<Func<TEntity, string>> keySelector, Func<TDbContext, TEntity, TEntity>? onSaving, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await CreateDbContextAsync(cancellationToken);
         entity = onSaving?.Invoke(dbContext, entity) ?? entity;
-        await dbContext.BulkUpsertAsync(new[] { entity }, uniqueField, cancellationToken);
+        var set = dbContext.Set<TEntity>();
+        var lambda = keySelector.BuildEqualsExpresion(entity);
+        var exists = await set.AnyAsync(lambda, cancellationToken);
+        set.Entry(entity).State = exists ? EntityState.Modified : EntityState.Added;
+
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task SaveManyAsync(IEnumerable<TEntity> entities, CancellationToken cancellationToken = default) => await SaveManyAsync(entities, default, default, cancellationToken);
 
-    public async Task SaveManyAsync(IEnumerable<TEntity> entities, Expression<Func<TEntity, object>>? uniqueField = default, CancellationToken cancellationToken = default) => await SaveManyAsync(entities, uniqueField, default, cancellationToken);
+    public async Task SaveManyAsync(IEnumerable<TEntity> entities, Expression<Func<TEntity, string>> keySelector, CancellationToken cancellationToken = default) => await SaveManyAsync(entities, keySelector, default, cancellationToken);
 
-    public async Task SaveManyAsync(IEnumerable<TEntity> entities, Func<TDbContext, TEntity, TEntity>? onSaving = default, CancellationToken cancellationToken = default) => await SaveManyAsync(entities, default, onSaving, cancellationToken);
-
-    public async Task SaveManyAsync(IEnumerable<TEntity> entities, Expression<Func<TEntity, object>>? uniqueField = default, Func<TDbContext, TEntity, TEntity>? onSaving = default, CancellationToken cancellationToken = default)
+    public async Task SaveManyAsync(IEnumerable<TEntity> entities, Expression<Func<TEntity, string>> keySelector, Func<TDbContext, TEntity, TEntity>? onSaving = default, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await CreateDbContextAsync(cancellationToken);
         var entityList = entities.ToList();
@@ -44,7 +42,7 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
         if (onSaving != null)
             entityList = entityList.Select(x => onSaving(dbContext, x)).ToList();
 
-        await dbContext.BulkUpsertAsync(entityList, uniqueField, cancellationToken);
+        await dbContext.BulkUpsertAsync(entityList, keySelector, cancellationToken);
     }
 
     public async Task<TEntity?> FindAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default) => await FindAsync(predicate, default, cancellationToken);

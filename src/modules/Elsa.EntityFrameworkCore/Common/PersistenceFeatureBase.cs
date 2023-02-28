@@ -1,3 +1,4 @@
+using Elsa.Common.Entities;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Microsoft.EntityFrameworkCore;
@@ -34,6 +35,14 @@ public abstract class PersistenceFeatureBase<TDbContext> : FeatureBase where TDb
     {
         Services
             .AddSingleton<Store<TDbContext, TEntity>>()
+            .AddSingleton<TStore>()
+            ;
+    }
+
+    protected void AddEntityStore<TEntity, TStore>() where TEntity : Entity where TStore : class
+    {
+        Services
+            .AddSingleton<EntityStore<TDbContext, TEntity>>()
             .AddSingleton<TStore>()
             ;
     }

@@ -28,7 +28,7 @@ public class EFCoreLabelPersistenceFeature : PersistenceFeatureBase<LabelsElsaDb
     {
         base.Apply();
 
-        AddStore<Label, EFCoreLabelStore>();
-        AddStore<WorkflowDefinitionLabel, EFCoreWorkflowDefinitionLabelStore>();
+        AddEntityStore<Label, EFCoreLabelStore>();
+        AddEntityStore<WorkflowDefinitionLabel, EFCoreWorkflowDefinitionLabelStore>();
     }
 }

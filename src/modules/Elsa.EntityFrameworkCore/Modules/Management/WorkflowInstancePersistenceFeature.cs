@@ -32,6 +32,6 @@ public class EFCoreWorkflowInstancePersistenceFeature : PersistenceFeatureBase<M
     {
         base.Apply();
 
-        AddStore<WorkflowInstance, EFCoreWorkflowInstanceStore>();
+        AddEntityStore<WorkflowInstance, EFCoreWorkflowInstanceStore>();
     }
 }
