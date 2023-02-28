@@ -17,13 +17,13 @@ namespace Elsa.EntityFrameworkCore.Modules.Management;
 /// </summary>
 public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
 {
-    private readonly Store<ManagementElsaDbContext, WorkflowInstance> _store;
+    private readonly EntityStore<ManagementElsaDbContext, WorkflowInstance> _store;
     private readonly SerializerOptionsProvider _serializerOptionsProvider;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public EFCoreWorkflowInstanceStore(Store<ManagementElsaDbContext, WorkflowInstance> store, SerializerOptionsProvider serializerOptionsProvider)
+    public EFCoreWorkflowInstanceStore(EntityStore<ManagementElsaDbContext, WorkflowInstance> store, SerializerOptionsProvider serializerOptionsProvider)
     {
         _store = store;
         _serializerOptionsProvider = serializerOptionsProvider;

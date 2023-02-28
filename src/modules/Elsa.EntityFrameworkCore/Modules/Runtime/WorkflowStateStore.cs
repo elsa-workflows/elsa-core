@@ -17,13 +17,13 @@ public class EFCoreWorkflowStateStore : IWorkflowStateStore
     private readonly SerializerOptionsProvider _serializerOptionsProvider;
     private readonly ISystemClock _systemClock;
     private readonly IDbContextFactory<RuntimeElsaDbContext> _dbContextFactory;
-    private readonly Store<RuntimeElsaDbContext, WorkflowState> _store;
+    private readonly EntityStore<RuntimeElsaDbContext, WorkflowState> _store;
 
     /// <summary>
     /// Constructor.
     /// </summary>
     public EFCoreWorkflowStateStore(
-        Store<RuntimeElsaDbContext, WorkflowState> store,
+        EntityStore<RuntimeElsaDbContext, WorkflowState> store,
         IDbContextFactory<RuntimeElsaDbContext> dbContextFactory,
         SerializerOptionsProvider serializerOptionsProvider,
         ISystemClock systemClock)

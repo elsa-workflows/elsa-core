@@ -4,18 +4,30 @@ using Elsa.Labels.Services;
 
 namespace Elsa.EntityFrameworkCore.Modules.Labels;
 
+/// <inheritdoc />
 public class EFCoreWorkflowDefinitionLabelStore : IWorkflowDefinitionLabelStore
 {
-    private readonly Store<LabelsElsaDbContext, WorkflowDefinitionLabel> _store;
-    public EFCoreWorkflowDefinitionLabelStore(Store<LabelsElsaDbContext, WorkflowDefinitionLabel> store) => _store = store;
+    private readonly EntityStore<LabelsElsaDbContext, WorkflowDefinitionLabel> _store;
 
+    /// <summary>
+    /// Constructor
+    /// </summary>
+    public EFCoreWorkflowDefinitionLabelStore(EntityStore<LabelsElsaDbContext, WorkflowDefinitionLabel> store) => _store = store;
+
+    /// <inheritdoc />
     public async Task SaveAsync(WorkflowDefinitionLabel record, CancellationToken cancellationToken = default) => await _store.SaveAsync(record, cancellationToken);
+
+    /// <inheritdoc />
     public async Task SaveManyAsync(IEnumerable<WorkflowDefinitionLabel> records, CancellationToken cancellationToken = default) => await _store.SaveManyAsync(records, cancellationToken);
+
+    /// <inheritdoc />
     public async Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default) => await _store.DeleteWhereAsync(x => x.Id == id, cancellationToken) > 0;
 
+    /// <inheritdoc />
     public async Task<IEnumerable<WorkflowDefinitionLabel>> FindByWorkflowDefinitionVersionIdAsync(string workflowDefinitionVersionId, CancellationToken cancellationToken = default) =>
         await _store.FindManyAsync(x => x.WorkflowDefinitionVersionId == workflowDefinitionVersionId, cancellationToken);
 
+    /// <inheritdoc />
     public async Task ReplaceAsync(IEnumerable<WorkflowDefinitionLabel> removed, IEnumerable<WorkflowDefinitionLabel> added, CancellationToken cancellationToken = default)
     {
         var idList = removed.Select(r => r.Id);
@@ -23,18 +35,22 @@ public class EFCoreWorkflowDefinitionLabelStore : IWorkflowDefinitionLabelStore
         await _store.SaveManyAsync(added, cancellationToken);
     }
 
+    /// <inheritdoc />
     public async Task<int> DeleteByWorkflowDefinitionIdAsync(string workflowDefinitionId, CancellationToken cancellationToken = default) =>
         await _store.DeleteWhereAsync(x => x.WorkflowDefinitionId == workflowDefinitionId, cancellationToken);
 
+    /// <inheritdoc />
     public async Task<int> DeleteByWorkflowDefinitionVersionIdAsync(string workflowDefinitionVersionId, CancellationToken cancellationToken = default) =>
         await _store.DeleteWhereAsync(x => x.WorkflowDefinitionVersionId == workflowDefinitionVersionId, cancellationToken);
 
+    /// <inheritdoc />
     public async Task<int> DeleteByWorkflowDefinitionIdsAsync(IEnumerable<string> workflowDefinitionIds, CancellationToken cancellationToken = default)
     {
         var ids = workflowDefinitionIds.ToList();
         return await _store.DeleteWhereAsync(x => ids.Contains(x.WorkflowDefinitionId), cancellationToken);
     }
 
+    /// <inheritdoc />
     public async Task<int> DeleteByWorkflowDefinitionVersionIdsAsync(IEnumerable<string> workflowDefinitionVersionIds, CancellationToken cancellationToken = default)
     {
         var ids = workflowDefinitionVersionIds.ToList();

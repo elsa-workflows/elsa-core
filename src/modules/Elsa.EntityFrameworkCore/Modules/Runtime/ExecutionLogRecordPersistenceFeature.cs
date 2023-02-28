@@ -26,6 +26,6 @@ public class EFCoreExecutionLogRecordPersistenceFeature : PersistenceFeatureBase
     {
         base.Apply();
         
-        AddStore<WorkflowExecutionLogRecord, EFCoreWorkflowExecutionLogStore>();
+        AddEntityStore<WorkflowExecutionLogRecord, EFCoreWorkflowExecutionLogStore>();
     }
 }

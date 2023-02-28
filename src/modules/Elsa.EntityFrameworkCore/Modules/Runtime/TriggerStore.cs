@@ -7,12 +7,12 @@ namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 /// <inheritdoc />
 public class EFCoreTriggerStore : ITriggerStore
 {
-    private readonly Store<RuntimeElsaDbContext, StoredTrigger> _store;
+    private readonly EntityStore<RuntimeElsaDbContext, StoredTrigger> _store;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public EFCoreTriggerStore(Store<RuntimeElsaDbContext, StoredTrigger> store)
+    public EFCoreTriggerStore(EntityStore<RuntimeElsaDbContext, StoredTrigger> store)
     {
         _store = store;
     }
