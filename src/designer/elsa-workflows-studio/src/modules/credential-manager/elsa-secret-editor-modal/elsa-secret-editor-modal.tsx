@@ -62,16 +62,16 @@ export class ElsaSecretEditorModal {
     if (!this.secretModel) {
       return false;
     }
-    const grantType = this.secretModel.properties.find(x => x.name === 'GrantType').expressions[SyntaxNames.Literal];
+    const grantType = this.secretModel.properties.find(x => x.name === 'GrantType')?.expressions[SyntaxNames.Literal];
     const isTokenMissing = this.secretModel.properties.findIndex(x => x.name === 'Token') === -1;
     return grantType === 'authorization_code' && isTokenMissing;
   }
 
   get isAuthorizeButtonDisabled() {
-    const authUrl = this.secretModel.properties.find(x => x.name === 'AuthorizationUrl').expressions[SyntaxNames.Literal];
-    const tokenUrl = this.secretModel.properties.find(x => x.name === 'AccessTokenUrl').expressions[SyntaxNames.Literal];
-    const clientId = this.secretModel.properties.find(x => x.name === 'ClientId').expressions[SyntaxNames.Literal];
-    const clientSecret = this.secretModel.properties.find(x => x.name === 'ClientSecret').expressions[SyntaxNames.Literal];
+    const authUrl = this.secretModel.properties.find(x => x.name === 'AuthorizationUrl')?.expressions[SyntaxNames.Literal];
+    const tokenUrl = this.secretModel.properties.find(x => x.name === 'AccessTokenUrl')?.expressions[SyntaxNames.Literal];
+    const clientId = this.secretModel.properties.find(x => x.name === 'ClientId')?.expressions[SyntaxNames.Literal];
+    const clientSecret = this.secretModel.properties.find(x => x.name === 'ClientSecret')?.expressions[SyntaxNames.Literal];
 
     return !authUrl || !tokenUrl || !clientId || !clientSecret;
   }
