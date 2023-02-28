@@ -9,6 +9,7 @@ using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Services;
 using JetBrains.Annotations;
+using Medallion.Threading;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Post;
 
@@ -18,15 +19,18 @@ internal class Post : ElsaEndpoint<WorkflowDefinitionRequest, WorkflowDefinition
     private readonly SerializerOptionsProvider _serializerOptionsProvider;
     private readonly IWorkflowDefinitionPublisher _workflowDefinitionPublisher;
     private readonly VariableDefinitionMapper _variableDefinitionMapper;
+    private readonly IDistributedLockProvider _distributedLockProvider;
 
     public Post(
         SerializerOptionsProvider serializerOptionsProvider,
         IWorkflowDefinitionPublisher workflowDefinitionPublisher,
-        VariableDefinitionMapper variableDefinitionMapper)
+        VariableDefinitionMapper variableDefinitionMapper,
+        IDistributedLockProvider distributedLockProvider)
     {
         _serializerOptionsProvider = serializerOptionsProvider;
         _workflowDefinitionPublisher = workflowDefinitionPublisher;
         _variableDefinitionMapper = variableDefinitionMapper;
+        _distributedLockProvider = distributedLockProvider;
     }
 
     public override void Configure()
@@ -38,7 +42,10 @@ internal class Post : ElsaEndpoint<WorkflowDefinitionRequest, WorkflowDefinition
     public override async Task HandleAsync(WorkflowDefinitionRequest request, CancellationToken cancellationToken)
     {
         var definitionId = request.DefinitionId;
+        var resourceName = $"{GetType().FullName}:{(!string.IsNullOrWhiteSpace(definitionId) ? definitionId : Guid.NewGuid().ToString())}";
 
+        await using var handle = await _distributedLockProvider.AcquireLockAsync(resourceName, TimeSpan.FromMinutes(1), cancellationToken);
+        
         // Get a workflow draft version.
         var draftVersion = request.Version != null ? VersionOptions.SpecificVersion(request.Version.Value) : VersionOptions.Latest;
         
