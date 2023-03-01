@@ -6,7 +6,8 @@ import {
   ActivitySelectedArgs,
   ContainerSelectedArgs,
   GraphUpdatedArgs,
-  WorkflowInstance
+  WorkflowInstance,
+  WorkflowExecutionLogRecord
 } from '../../../models';
 import {PluginRegistry, ActivityNameFormatter, ActivityDriverRegistry, EventBus} from '../../../services';
 import {MonacoEditorSettings} from "../../../services/monaco-editor-settings";
@@ -23,6 +24,7 @@ export class WorkflowInstanceViewer {
   private readonly activityNameFormatter: ActivityNameFormatter;
   private flowchartElement: HTMLElsaFlowchartElement;
   private container: HTMLDivElement;
+  private workflowJournalElement: HTMLElsaWorkflowJournalElement;
 
   constructor() {
     this.eventBus = Container.get(EventBus);
@@ -37,6 +39,7 @@ export class WorkflowInstanceViewer {
   @State() private workflowDefinitionState: WorkflowDefinition;
   @State() private workflowInstanceState: WorkflowInstance;
   @State() private selectedActivity?: Activity;
+  @State() private selectedActivityExecutionLog?: WorkflowExecutionLogRecord;
 
   @Watch('monacoLibPath')
   private handleMonacoLibPath(value: string) {
@@ -73,6 +76,7 @@ export class WorkflowInstanceViewer {
   @Listen('activitySelected')
   private async handleActivitySelected(e: CustomEvent<ActivitySelectedArgs>) {
     this.selectedActivity = e.detail.activity;
+    this.selectedActivityExecutionLog = await this.workflowJournalElement.getExecutionLogByWorkflowInstanceId(this.selectedActivity.id);
   }
 
   @Listen('graphUpdated')
@@ -129,7 +133,7 @@ export class WorkflowInstanceViewer {
     const activity = this.selectedActivity;
 
     if (!!activity)
-      return <elsa-activity-properties activity={activity}/>;
+      return <elsa-activity-properties activity={activity} activityExecutionLog={this.selectedActivityExecutionLog}/>;
   }
 
   private getWorkflowInternal = async (): Promise<WorkflowDefinition> => {
@@ -156,17 +160,33 @@ export class WorkflowInstanceViewer {
   private onActivityPickerPanelStateChanged = async (e: PanelStateChangedArgs) => await this.updateContainerLayout('activity-picker-closed', e.expanded)
   private onActivityEditorPanelStateChanged = async (e: PanelStateChangedArgs) => await this.updateContainerLayout('object-editor-closed', e.expanded)
 
+  private selectNodeViaJournal = async (activityId: string) => {
+    const graph = await this.flowchartElement.getGraph();
+    const node = graph.getNodes().find(n => n.id == activityId)
+
+    if(node != null) {
+      graph.resetSelection(node);
+      this.selectedActivity = node.data;
+      this.selectedActivityExecutionLog = await this.workflowJournalElement.getExecutionLogByWorkflowInstanceId(this.selectedActivity.id);
+    }
+  }
+
   public render() {
     const workflowDefinition = this.workflowDefinitionState;
     const workflowInstance = this.workflowInstanceState;
-
     return (
+      
       <div class="absolute inset-0" ref={el => this.container = el}>
         <elsa-panel
           class="elsa-activity-picker-container"
           position={PanelPosition.Left}
           onExpandedStateChanged={e => this.onActivityPickerPanelStateChanged(e.detail)}>
-          <elsa-workflow-journal workflowDefinition={workflowDefinition} workflowInstance={workflowInstance}/>
+          <elsa-workflow-journal 
+            workflowDefinition={workflowDefinition} 
+            workflowInstance={workflowInstance} 
+            onOnJournalItemSelected={e => this.selectNodeViaJournal(e.detail)}
+            ref={el => this.workflowJournalElement = el}
+          />
         </elsa-panel>
         <elsa-flowchart
           ref={el => this.flowchartElement = el}
