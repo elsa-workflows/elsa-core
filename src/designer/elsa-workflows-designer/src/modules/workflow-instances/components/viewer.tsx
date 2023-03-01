@@ -25,6 +25,7 @@ export class WorkflowInstanceViewer {
   private flowchartElement: HTMLElsaFlowchartElement;
   private container: HTMLDivElement;
   private workflowJournalElement: HTMLElsaWorkflowJournalElement;
+  private activityPropertiesElement: HTMLElsaActivityPropertiesElement;
 
   constructor() {
     this.eventBus = Container.get(EventBus);
@@ -40,6 +41,7 @@ export class WorkflowInstanceViewer {
   @State() private workflowInstanceState: WorkflowInstance;
   @State() private selectedActivity?: Activity;
   @State() private selectedActivityExecutionLog?: WorkflowExecutionLogRecord;
+  @State() private activityPropertyTabIndex?: number;
 
   @Watch('monacoLibPath')
   private handleMonacoLibPath(value: string) {
@@ -77,6 +79,25 @@ export class WorkflowInstanceViewer {
   private async handleActivitySelected(e: CustomEvent<ActivitySelectedArgs>) {
     this.selectedActivity = e.detail.activity;
     this.selectedActivityExecutionLog = await this.workflowJournalElement.getExecutionLogByWorkflowInstanceId(this.selectedActivity.id);
+  }
+
+  @Listen('journalItemStatusSelected')
+  private async handleJournalStatusSelected(e: CustomEvent<string>) {
+    const activityId = e.detail;
+    const graph = await this.flowchartElement.getGraph();
+    const node = graph.getNodes().find(n => n.id == activityId)
+
+    if(node != null) {
+      graph.resetSelection(node);
+      this.selectedActivity = node.data;
+      this.selectedActivityExecutionLog = await this.workflowJournalElement.getExecutionLogByWorkflowInstanceId(this.selectedActivity.id);
+      if(this.activityPropertiesElement == null) {
+        this.activityPropertyTabIndex = 2;
+      }
+      else {
+        this.activityPropertiesElement.updateSelectedTab(2);
+      }
+    }
   }
 
   @Listen('graphUpdated')
@@ -131,9 +152,8 @@ export class WorkflowInstanceViewer {
 
   private renderSelectedObject = () => {
     const activity = this.selectedActivity;
-
     if (!!activity)
-      return <elsa-activity-properties activity={activity} activityExecutionLog={this.selectedActivityExecutionLog}/>;
+      return <elsa-activity-properties activity={activity} activityExecutionLog={this.selectedActivityExecutionLog} activityPropertyTabIndex={this.activityPropertyTabIndex} ref={el => this.activityPropertiesElement = el}/>;
   }
 
   private getWorkflowInternal = async (): Promise<WorkflowDefinition> => {
@@ -160,17 +180,6 @@ export class WorkflowInstanceViewer {
   private onActivityPickerPanelStateChanged = async (e: PanelStateChangedArgs) => await this.updateContainerLayout('activity-picker-closed', e.expanded)
   private onActivityEditorPanelStateChanged = async (e: PanelStateChangedArgs) => await this.updateContainerLayout('object-editor-closed', e.expanded)
 
-  private selectNodeViaJournal = async (activityId: string) => {
-    const graph = await this.flowchartElement.getGraph();
-    const node = graph.getNodes().find(n => n.id == activityId)
-
-    if(node != null) {
-      graph.resetSelection(node);
-      this.selectedActivity = node.data;
-      this.selectedActivityExecutionLog = await this.workflowJournalElement.getExecutionLogByWorkflowInstanceId(this.selectedActivity.id);
-    }
-  }
-
   public render() {
     const workflowDefinition = this.workflowDefinitionState;
     const workflowInstance = this.workflowInstanceState;
@@ -183,8 +192,7 @@ export class WorkflowInstanceViewer {
           onExpandedStateChanged={e => this.onActivityPickerPanelStateChanged(e.detail)}>
           <elsa-workflow-journal 
             workflowDefinition={workflowDefinition} 
-            workflowInstance={workflowInstance} 
-            onOnJournalItemSelected={e => this.selectNodeViaJournal(e.detail)}
+            workflowInstance={workflowInstance}
             ref={el => this.workflowJournalElement = el}
           />
         </elsa-panel>

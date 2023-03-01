@@ -40,8 +40,10 @@ export namespace Components {
     interface ElsaActivityProperties {
         "activity"?: Activity;
         "activityExecutionLog": WorkflowExecutionLogRecord;
+        "activityPropertyTabIndex"?: number;
         "hide": () => Promise<void>;
         "show": () => Promise<void>;
+        "updateSelectedTab": (tabIndex: number) => Promise<void>;
     }
     interface ElsaActivityPropertiesEditor {
         "activity"?: Activity;
@@ -903,6 +905,7 @@ declare namespace LocalJSX {
     interface ElsaActivityProperties {
         "activity"?: Activity;
         "activityExecutionLog"?: WorkflowExecutionLogRecord;
+        "activityPropertyTabIndex"?: number;
     }
     interface ElsaActivityPropertiesEditor {
         "activity"?: Activity;
@@ -1177,7 +1180,7 @@ declare namespace LocalJSX {
         "workflowInstance"?: WorkflowInstance;
     }
     interface ElsaWorkflowJournal {
-        "onOnJournalItemSelected"?: (event: ElsaWorkflowJournalCustomEvent<string>) => void;
+        "onJournalItemStatusSelected"?: (event: ElsaWorkflowJournalCustomEvent<string>) => void;
         "workflowDefinition"?: WorkflowDefinition;
         "workflowInstance"?: WorkflowInstance;
     }

@@ -1,4 +1,4 @@
-import {Component, h, Method, Prop, State} from '@stencil/core';
+import {Component, Event, EventEmitter, h, Listen, Method, Prop, State} from '@stencil/core';
 import {camelCase} from 'lodash';
 import {
   Activity,
@@ -28,7 +28,7 @@ export class ActivityProperties {
 
   @Prop({mutable: true}) public activity?: Activity;
   @Prop() public activityExecutionLog: WorkflowExecutionLogRecord;
-
+  @Prop() public activityPropertyTabIndex?: number;
   @State() private selectedTabIndex: number = 0;
 
   @Method()
@@ -39,6 +39,17 @@ export class ActivityProperties {
   @Method()
   public async hide(): Promise<void> {
     await this.slideOverPanel.hide();
+  }
+
+  @Method()
+  public async updateSelectedTab(tabIndex : number): Promise<void> {
+    this.selectedTabIndex = tabIndex;
+  }
+
+  async componentWillLoad(): Promise<void> {
+    if(this.activityPropertyTabIndex != null) {
+      this.selectedTabIndex = this.activityPropertyTabIndex;
+    }
   }
 
   public render() {

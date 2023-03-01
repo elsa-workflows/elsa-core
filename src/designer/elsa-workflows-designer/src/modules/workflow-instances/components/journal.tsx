@@ -32,7 +32,7 @@ export class Journal {
   @State() workflowExecutionLogRecords: Array<WorkflowExecutionLogRecord> = [];
   @State() rootBlocks: Array<ActivityExecutionEventBlock> = [];
   @State() expandedBlocks: Array<ActivityExecutionEventBlock> = [];
-  @Event() onJournalItemSelected: EventEmitter<string>;
+  @Event() journalItemStatusSelected: EventEmitter<string>;
 
   @Watch('workflowInstance')
   async onWorkflowInstanceChanged(value: string) {
@@ -251,6 +251,6 @@ export class Journal {
 
   private onStatusClick = async (e: MouseEvent, block: ActivityExecutionEventBlock) => {
     e.preventDefault();
-    this.onJournalItemSelected.emit(block.activityId);
+    this.journalItemStatusSelected.emit(block.activityId);
   };
 }
