@@ -1,14 +1,16 @@
-using System.Net;
-using System.Net.Mime;
-using System.Text.Json;
 using Elsa.Http.Models;
 using Elsa.Http.Options;
 using Elsa.Http.Services;
 using Elsa.Workflows.Core.Helpers;
+using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Runtime.Services;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
+using System.Net;
+using System.Net.Mime;
+using System.Text.Json;
 
 namespace Elsa.Http.Middleware;
 
@@ -23,6 +25,8 @@ public class WorkflowsMiddleware
     private readonly IWorkflowHostFactory _workflowHostFactory;
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly IHttpBookmarkProcessor _httpBookmarkProcessor;
+    private readonly IWorkflowInstanceStore _workflowInstanceStore;
+    private readonly IHttpEndpointWorkflowFaultHandler _httpEndpointWorkflowFaultHandler;
     private readonly HttpActivityOptions _options;
     private readonly string _activityTypeName = ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>();
 
@@ -35,13 +39,17 @@ public class WorkflowsMiddleware
         IWorkflowHostFactory workflowHostFactory,
         IWorkflowDefinitionService workflowDefinitionService,
         IHttpBookmarkProcessor httpBookmarkProcessor,
-        IOptions<HttpActivityOptions> options)
+        IWorkflowInstanceStore workflowInstanceStore,
+        IOptions<HttpActivityOptions> options,
+        IHttpEndpointWorkflowFaultHandler httpEndpointWorkflowFaultHandler)
     {
         _next = next;
         _workflowRuntime = workflowRuntime;
         _workflowHostFactory = workflowHostFactory;
         _workflowDefinitionService = workflowDefinitionService;
         _httpBookmarkProcessor = httpBookmarkProcessor;
+        _workflowInstanceStore = workflowInstanceStore;
+        _httpEndpointWorkflowFaultHandler = httpEndpointWorkflowFaultHandler;
         _options = options.Value;
     }
 
@@ -88,6 +96,9 @@ public class WorkflowsMiddleware
             return;
 
         if (await HandleMultipleWorkflowsFoundAsync(httpContext, triggerResult.TriggeredWorkflows, cancellationToken))
+            return;
+
+        if (await HandleWorkflowFaultAsync(httpContext, triggerResult, cancellationToken))
             return;
 
         // Process the trigger result by resuming each HTTP bookmark, if any.
@@ -150,5 +161,21 @@ public class WorkflowsMiddleware
 
         await httpContext.Response.WriteAsync(responseContent, cancellationToken);
         return true;
+    }
+
+    private async Task<bool> HandleWorkflowFaultAsync(HttpContext httpContext, TriggerWorkflowsResult triggerResult, CancellationToken cancellationToken)
+    {
+        var instanceFilter = new WorkflowInstanceFilter { Id = triggerResult.TriggeredWorkflows.Single().InstanceId };
+        var workflowInstance = await _workflowInstanceStore.FindAsync(instanceFilter, cancellationToken);
+
+        if (workflowInstance is not null
+            && workflowInstance.SubStatus == WorkflowSubStatus.Faulted
+            && !httpContext.Response.HasStarted)
+        {
+            await _httpEndpointWorkflowFaultHandler.HandleAsync(new HttpEndpointFaultedWorkflowContext(httpContext, workflowInstance, null, cancellationToken));
+            return true;
+        }
+
+        return false;
     }
 }

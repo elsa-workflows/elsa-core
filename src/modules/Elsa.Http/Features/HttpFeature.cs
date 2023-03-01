@@ -105,9 +105,12 @@ public class HttpFeature : FeatureBase
             .AddSingleton<IHttpContentFactory, JsonContentFactory>()
             .AddSingleton<IHttpContentFactory, XmlContentFactory>()
             .AddSingleton<IHttpContentFactory, FormUrlEncodedHttpContentFactory>()
-            
+
             // Activity property options providers.
             .AddSingleton<IActivityPropertyOptionsProvider, WriteHttpResponseContentTypeOptionsProvider>()
+
+            // Add Http endpoint handlers
+            .AddSingleton(HttpEndpointWorkflowFaultHandler)
             ;
     }
 }
