@@ -1,8 +1,9 @@
-using System.Text.Json;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Core.Signals;
+using Newtonsoft.Json.Linq;
+using JsonSerializer = Newtonsoft.Json.JsonSerializer;
 
 namespace Elsa.Workflows.Core.Behaviors;
 
@@ -24,11 +25,13 @@ public class ExecutionLoggingBehavior : Behavior
     
     private void OnActivityCompleted(ActivityCompleted signal, SignalContext context)
     {
+        var payload = new JObject();
+
+        foreach (var entry in context.SenderActivityExecutionContext.JournalData)
+            payload[entry.Key] = entry.Value != null ? JToken.FromObject(entry.Value, JsonSerializer.CreateDefault()) : JValue.CreateNull();
+        
         if (context.IsSelf)
-        {
-            context.SenderActivityExecutionContext.AddExecutionLogEntry("Completed",
-                payload: JsonSerializer.Serialize(context.SenderActivityExecutionContext.Input));
-        }
+            context.SenderActivityExecutionContext.AddExecutionLogEntry("Completed", payload: payload);
     }
     
     private void OnActivityFaulted(ActivityFaulted signal, SignalContext context)
