@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
@@ -13,6 +14,7 @@ public class ExecutionLoggingBehavior : Behavior
     public ExecutionLoggingBehavior(IActivity owner) : base(owner)
     {
         OnSignalReceived<ActivityCompleted>(OnActivityCompleted);
+        OnSignalReceived<ActivityFaulted>(OnActivityFaulted);
     }
 
     protected override void Execute(ActivityExecutionContext context)
@@ -23,6 +25,27 @@ public class ExecutionLoggingBehavior : Behavior
     private void OnActivityCompleted(ActivityCompleted signal, SignalContext context)
     {
         if (context.IsSelf)
-            context.SenderActivityExecutionContext.AddExecutionLogEntry("Completed");
+        {
+            context.SenderActivityExecutionContext.AddExecutionLogEntry("Completed",
+                payload: JsonSerializer.Serialize(context.SenderActivityExecutionContext.Input));
+        }
+    }
+    
+    private void OnActivityFaulted(ActivityFaulted signal, SignalContext context)
+    {
+        if (!context.IsSelf) return;
+        
+        var exception = context.SenderActivityExecutionContext.WorkflowExecutionContext.Fault?.Exception;
+        context.SenderActivityExecutionContext.AddExecutionLogEntry("Faulted",
+            payload: new
+            {
+                Exception = new
+                {
+                    exception?.Message,
+                    exception?.Source,
+                    exception?.Data,
+                    Type = exception?.GetType()
+                }
+            });
     }
 }

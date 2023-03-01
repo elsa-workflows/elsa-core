@@ -1,6 +1,8 @@
+using Elsa.Extensions;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Pipelines.ActivityExecution;
 using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Core.Signals;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Core.Middleware.Activities;
@@ -47,6 +49,8 @@ public class ExceptionHandlingMiddleware : IActivityExecutionMiddleware
             _logger.LogWarning(e, "An exception was caught from a downstream middleware component. Transitioning workflow instance {WorkflowInstanceId} into the Faulted state", workflowExecutionContext.Id);
             workflowExecutionContext.Fault = new WorkflowFault(e, e.Message, context.Id);
             workflowExecutionContext.TransitionTo(WorkflowSubStatus.Faulted);
+            
+            await context.SendSignalAsync(new ActivityFaulted());
         }
     }
 }

@@ -143,10 +143,15 @@ public abstract class Activity : IActivity, ISignalHandler
 
     async ValueTask IActivity.ExecuteAsync(ActivityExecutionContext context)
     {
+        // Invoke execution logging behavior prior to execution start.
+        var executionLoggingBehavior = Behaviors.First(x => x.GetType() == typeof(ExecutionLoggingBehavior));
+        await executionLoggingBehavior.ExecuteAsync(context);
+        
         await ExecuteAsync(context);
 
-        // Invoke behaviors.
-        foreach (var behavior in Behaviors) await behavior.ExecuteAsync(context);
+        // Invoke rest of the behaviors.
+        foreach (var behavior in Behaviors.Where(b => b != executionLoggingBehavior)) 
+            await behavior.ExecuteAsync(context);
     }
 
     async ValueTask ISignalHandler.HandleSignalAsync(object signal, SignalContext context)
