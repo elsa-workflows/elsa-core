@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Elsa.Common.Models;
 using Elsa.Common.Services;
 using Elsa.Mediator.Services;
@@ -9,6 +8,7 @@ using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Notifications;
 using Elsa.Workflows.Management.Services;
+using System.Text.Json;
 
 namespace Elsa.Workflows.Management.Implementations;
 
@@ -76,22 +76,20 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
         var definitionId = definition.DefinitionId;
 
         // Reset current latest and published definitions.
-        var filter = new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = VersionOptions.LatestAndPublished };
-        var publishedAndOrLatestWorkflows = await _workflowDefinitionStore.FindManyAsync(filter, cancellationToken);
+        var filter = new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = VersionOptions.Published };
+        var publishedWorkflows = await _workflowDefinitionStore.FindManyAsync(filter, cancellationToken);
 
-        foreach (var publishedAndOrLatestWorkflow in publishedAndOrLatestWorkflows)
+        definition.IsPublished = true;
+        definition = Initialize(definition);
+        await _workflowDefinitionStore.SaveAsync(definition, cancellationToken);
+
+        foreach (var publishedAndOrLatestWorkflow in publishedWorkflows)
         {
             publishedAndOrLatestWorkflow.IsPublished = false;
-            publishedAndOrLatestWorkflow.IsLatest = false;
             await _workflowDefinitionStore.SaveAsync(publishedAndOrLatestWorkflow, cancellationToken);
         }
 
-        definition.IsPublished = true;
-        definition.IsLatest = true;
-        definition = Initialize(definition);
-
         await _eventPublisher.PublishAsync(new WorkflowDefinitionPublishing(definition), cancellationToken);
-        await _workflowDefinitionStore.SaveAsync(definition, cancellationToken);
         await _eventPublisher.PublishAsync(new WorkflowDefinitionPublished(definition), cancellationToken);
         return definition;
     }
@@ -152,17 +150,18 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
         var filter = new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = VersionOptions.Latest };
         var latestVersion = await _workflowDefinitionStore.FindAsync(filter, cancellationToken);
 
+        draft.IsLatest = true;
+        draft.IsPublished = false;
+        draft = Initialize(draft);
+
+        await _workflowDefinitionStore.SaveAsync(draft, cancellationToken);
+
         if (latestVersion is { IsPublished: true, IsLatest: true })
         {
             latestVersion.IsLatest = false;
             await _workflowDefinitionStore.SaveAsync(latestVersion, cancellationToken);
         }
 
-        draft.IsLatest = true;
-        draft.IsPublished = false;
-        draft = Initialize(draft);
-
-        await _workflowDefinitionStore.SaveAsync(draft, cancellationToken);
         return draft;
     }
 

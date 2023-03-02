@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Elsa.Abstractions;
 using Elsa.Common.Models;
 using Elsa.Workflows.Api.Models;
@@ -10,6 +9,7 @@ using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Services;
 using JetBrains.Annotations;
 using Medallion.Threading;
+using System.Text.Json;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Post;
 
@@ -45,10 +45,11 @@ internal class Post : ElsaEndpoint<WorkflowDefinitionRequest, WorkflowDefinition
         var resourceName = $"{GetType().FullName}:{(!string.IsNullOrWhiteSpace(definitionId) ? definitionId : Guid.NewGuid().ToString())}";
 
         await using var handle = await _distributedLockProvider.AcquireLockAsync(resourceName, TimeSpan.FromMinutes(1), cancellationToken);
-        
+
         // Get a workflow draft version.
-        var draftVersion = request.Version != null ? VersionOptions.SpecificVersion(request.Version.Value) : VersionOptions.Latest;
-        
+        var isPublishExistingVersion = request.Publish && request.Version != null;
+        var draftVersion = isPublishExistingVersion ? VersionOptions.SpecificVersion(request.Version.Value) : VersionOptions.Latest;
+
         var draft = !string.IsNullOrWhiteSpace(definitionId)
             ? await _workflowDefinitionPublisher.GetDraftAsync(definitionId, draftVersion, cancellationToken)
             : default;
