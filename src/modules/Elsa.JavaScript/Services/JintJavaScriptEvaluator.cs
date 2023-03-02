@@ -74,8 +74,6 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         // Create variable & input setters and getters for each variable.
         CreateMemoryBlockAccessors(engine, context);
         
-        // Create input getters.
-        await CreateInputAccessorsAsync(engine, context);
 
         engine.SetValue("isNullOrWhiteSpace", (Func<string, bool>)(value => string.IsNullOrWhiteSpace(value)));
         engine.SetValue("isNullOrEmpty", (Func<string, bool>)(value => string.IsNullOrEmpty(value)));
@@ -93,29 +91,6 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
 
         return engine;
     }
-    
-    private async Task CreateInputAccessorsAsync(Engine engine, ExpressionExecutionContext context)
-    {
-        var workflowDefinitionActivity = GetFirstWorkflowDefinitionActivity(context);
-
-        if (workflowDefinitionActivity == null)
-            return;
-        
-        var descriptor = _activityRegistry.Find(workflowDefinitionActivity.Type, workflowDefinitionActivity.Version)!;
-        var inputDefinitions = descriptor.Inputs;
-
-        foreach (var inputDefinition in inputDefinitions)
-        {
-            var inputPascalName = inputDefinition.Name.Pascalize();
-            var input = workflowDefinitionActivity.SyntheticProperties.TryGetValue(inputDefinition.Name, out var inputValue) ? (Input?)inputValue : default;
-            var evaluatedExpression = input != null ? await _expressionEvaluator.EvaluateAsync(input, context) : input;
-
-            engine.SetValue($"get{inputPascalName}", (Func<object?>)(() => evaluatedExpression));
-        }
-    }
-
-    private static WorkflowDefinitionActivity? GetFirstWorkflowDefinitionActivity(ExpressionExecutionContext context) => 
-        context.GetActivityExecutionContext().GetFirstWorkflowDefinitionActivity();
 
     private static void CreateMemoryBlockAccessors(Engine engine, ExpressionExecutionContext context)
     {
