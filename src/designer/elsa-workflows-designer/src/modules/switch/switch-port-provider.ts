@@ -15,7 +15,9 @@ export class SwitchPortProvider implements PortProvider {
       return [];
 
     const cases = activity.cases ?? [];
-    return cases.map(x => ({name: x.label, displayName: x.label, mode: PortMode.Embedded}));
+    const ports = cases.map(x => ({name: x.label, displayName: x.label, mode: PortMode.Embedded}));
+    const defaultPort = {name: 'default', displayName: 'Default', mode: PortMode.Embedded};
+    return [...ports, defaultPort];
   }
 
   resolvePort(portName: string, context: PortProviderContext): Activity | Array<Activity> {
