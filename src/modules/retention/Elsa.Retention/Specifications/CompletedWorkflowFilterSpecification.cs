@@ -5,7 +5,7 @@ namespace Elsa.Retention.Specifications
     public class CompletedWorkflowFilterSpecification : WorkflowStatusFilterSpecification
     {
         public CompletedWorkflowFilterSpecification()
-            : base(new[] { WorkflowStatus.Running, WorkflowStatus.Finished })
+            : base(WorkflowStatus.Finished)
         {
 
         }
