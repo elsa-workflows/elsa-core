@@ -62,4 +62,4 @@ export class CredentialManagerItemsList {
     );
   }
 }
-Tunnel.injectProps(CredentialManagerItemsList, ['culture', 'basePath', 'serverUrl']);
+Tunnel.injectProps(CredentialManagerItemsList, ['culture', 'basePath', 'serverUrl', 'monacoLibPath']);
