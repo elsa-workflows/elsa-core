@@ -73,6 +73,8 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
     /// <inheritdoc />
     public async Task<WorkflowDefinition> PublishAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
     {
+        await _eventPublisher.PublishAsync(new WorkflowDefinitionPublishing(definition), cancellationToken);
+
         var definitionId = definition.DefinitionId;
 
         // Reset current latest and published definitions.
@@ -89,7 +91,6 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
             await _workflowDefinitionStore.SaveAsync(publishedAndOrLatestWorkflow, cancellationToken);
         }
 
-        await _eventPublisher.PublishAsync(new WorkflowDefinitionPublishing(definition), cancellationToken);
         await _eventPublisher.PublishAsync(new WorkflowDefinitionPublished(definition), cancellationToken);
         return definition;
     }
