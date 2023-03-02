@@ -34,7 +34,7 @@ public class Switch : Activity
     public Output<object>? Output { get; set; }
     
     [Input(UIHint = "switch-editor")] public ICollection<SwitchCase> Cases { get; set; } = new List<SwitchCase>();
-    public IActivity? Default { get; set; }
+    [Port]public IActivity? Default { get; set; }
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
@@ -44,13 +44,11 @@ public class Switch : Activity
 
         if (matchingCase != null)
         {
-            if (matchingCase.Activity != null)
-                await context.ScheduleActivityAsync(matchingCase.Activity, OnChildActivityCompletedAsync);
+            await context.ScheduleActivityAsync(matchingCase.Activity, OnChildActivityCompletedAsync);
             return;
         }
 
-        if (Default != null)
-            await context.ScheduleActivityAsync(Default, OnChildActivityCompletedAsync);
+        await context.ScheduleActivityAsync(Default, OnChildActivityCompletedAsync);
     }
 
     private async Task<SwitchCase?> FindMatchingCaseAsync(ExpressionExecutionContext context)
