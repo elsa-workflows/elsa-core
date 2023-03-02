@@ -7,6 +7,11 @@ namespace Elsa.Workflows.Runtime.Services;
 public interface ITriggerIndexer
 {
     /// <summary>
+    /// Indexes triggers of the deleted workflow definitions.
+    /// </summary>
+    Task<List<IndexedWorkflowTriggers>> IndexTriggersDeleteWorkflowAsync(ICollection<string> workflowDefinitionIds, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Indexes triggers of the specified workflow.
     /// </summary>
     Task<IndexedWorkflowTriggers> IndexTriggersAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default);
