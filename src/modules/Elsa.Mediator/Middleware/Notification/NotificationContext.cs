@@ -1,4 +1,4 @@
-using Elsa.Mediator.Services;
+using Elsa.Mediator.Contracts;
 
 namespace Elsa.Mediator.Middleware.Notification;
 

@@ -8,6 +8,7 @@ using Elsa.Features.Services;
 using Elsa.Workflows.Core.ActivationValidators;
 using Elsa.Workflows.Core.ActivityNodeResolvers;
 using Elsa.Workflows.Core.Builders;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Expressions;
 using Elsa.Workflows.Core.Implementations;
 using Elsa.Workflows.Core.Middleware.Activities;

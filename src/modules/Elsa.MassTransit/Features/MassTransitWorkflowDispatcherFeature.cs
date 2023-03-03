@@ -4,8 +4,8 @@ using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.MassTransit.Consumers;
 using Elsa.MassTransit.Implementations;
+using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Features;
-using Elsa.Workflows.Runtime.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.MassTransit.Features;

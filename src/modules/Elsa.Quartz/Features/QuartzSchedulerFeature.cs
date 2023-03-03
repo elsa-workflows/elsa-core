@@ -2,7 +2,7 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Jobs.Features;
-using Elsa.Quartz.Implementations;
+using Elsa.Quartz.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Quartz.Features;

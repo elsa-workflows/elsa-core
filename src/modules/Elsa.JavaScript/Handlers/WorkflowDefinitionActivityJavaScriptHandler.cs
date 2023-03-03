@@ -1,8 +1,8 @@
+using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Models;
-using Elsa.Expressions.Services;
 using Elsa.Extensions;
 using Elsa.JavaScript.Notifications;
-using Elsa.Mediator.Services;
+using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Activities;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;

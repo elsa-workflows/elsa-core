@@ -6,6 +6,7 @@ using Elsa.Telnyx.Client.Services;
 using Elsa.Telnyx.Extensions;
 using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
 using Refit;

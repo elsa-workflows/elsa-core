@@ -4,7 +4,7 @@ using Elsa.JavaScript.TypeDefinitions.Contracts;
 using Elsa.JavaScript.TypeDefinitions.Models;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Entities;
-using Elsa.Workflows.Runtime.Services;
+using Elsa.Workflows.Runtime.Contracts;
 using FastEndpoints;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;

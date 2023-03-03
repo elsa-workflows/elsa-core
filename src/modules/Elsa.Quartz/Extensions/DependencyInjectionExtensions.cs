@@ -1,7 +1,7 @@
 using Elsa.Quartz.Jobs;
 using Elsa.Scheduling.Jobs;
 using Quartz;
-using IJob = Elsa.Jobs.Services.IJob;
+using IJob = Elsa.Jobs.Contracts.IJob;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;

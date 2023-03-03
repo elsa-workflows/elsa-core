@@ -1,0 +1,16 @@
+﻿using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Management.Entities;
+
+namespace Elsa.Workflows.Runtime.Contracts;
+
+/// <summary>
+/// Represents a source of workflow definitions.
+/// </summary>
+public interface IWorkflowDefinitionProvider
+{
+    string Name { get; }
+    ValueTask<IEnumerable<WorkflowDefinitionResult>> GetWorkflowDefinitionsAsync(CancellationToken cancellationToken = default);
+}
+
+
+public record WorkflowDefinitionResult(WorkflowDefinition Definition, Workflow Workflow);

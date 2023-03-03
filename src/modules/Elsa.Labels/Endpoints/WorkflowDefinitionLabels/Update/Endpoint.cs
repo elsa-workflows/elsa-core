@@ -1,5 +1,6 @@
+using Elsa.Labels.Contracts;
 using Elsa.Labels.Entities;
-using Elsa.Labels.Services;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.Services;

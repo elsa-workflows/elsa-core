@@ -1,5 +1,7 @@
 using Elsa.Extensions;
-using Elsa.Mediator.Services;
+using Elsa.Mediator.Contracts;
+using Elsa.Workflows.Core.Abstractions;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Notifications;
 using Elsa.Workflows.Core.Services;

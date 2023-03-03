@@ -1,7 +1,7 @@
 using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Mappers;
-using Elsa.Workflows.Runtime.Services;
+using Elsa.Workflows.Runtime.Contracts;
 using FastEndpoints;
 
 namespace Elsa.Workflows.Api.Mappers;

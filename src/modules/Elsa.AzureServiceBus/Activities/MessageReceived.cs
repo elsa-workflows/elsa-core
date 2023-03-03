@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 using Elsa.AzureServiceBus.Models;
-using Elsa.Common.Services;
+using Elsa.Common.Contracts;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Attributes;

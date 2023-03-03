@@ -1,4 +1,6 @@
+using Elsa.Workflows.Core.Abstractions;
 using Elsa.Workflows.Core.Activities;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Runtime.Activities;
 

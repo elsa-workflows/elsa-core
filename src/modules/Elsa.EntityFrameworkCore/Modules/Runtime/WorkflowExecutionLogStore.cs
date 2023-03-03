@@ -3,8 +3,8 @@ using Elsa.EntityFrameworkCore.Common;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
+using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
-using Elsa.Workflows.Runtime.Services;
 using Microsoft.EntityFrameworkCore;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 

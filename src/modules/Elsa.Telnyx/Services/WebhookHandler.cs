@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using System.Text.Json;
-using Elsa.Mediator.Services;
+using Elsa.Mediator.Contracts;
+using Elsa.Telnyx.Contracts;
 using Elsa.Telnyx.Events;
 using Elsa.Telnyx.Extensions;
 using Elsa.Telnyx.Models;

@@ -1,5 +1,5 @@
-using Elsa.Common.Services;
-using Elsa.Mediator.Services;
+using Elsa.Common.Contracts;
+using Elsa.Mediator.Contracts;
 using Elsa.Webhooks.Models;
 using Elsa.Webhooks.Services;
 using Elsa.Workflows.Runtime.Notifications;

@@ -1,6 +1,7 @@
 using Elsa.Common.Models;
 using Elsa.Extensions;
-using Elsa.Mediator.Services;
+using Elsa.Mediator.Contracts;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;

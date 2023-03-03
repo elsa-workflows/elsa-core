@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using System.Reflection;
 using Elsa.Abstractions;
-using Elsa.Expressions.Services;
+using Elsa.Expressions.Contracts;
 using Elsa.Extensions;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Options;

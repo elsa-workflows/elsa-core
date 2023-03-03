@@ -1,4 +1,4 @@
-using Elsa.Jobs.Services;
+using Elsa.Jobs.Contracts;
 
 namespace Elsa.Hangfire.Jobs;
 

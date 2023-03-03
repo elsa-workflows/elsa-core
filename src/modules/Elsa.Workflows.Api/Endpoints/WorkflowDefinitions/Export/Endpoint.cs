@@ -5,7 +5,7 @@ using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Mappers;
-using Elsa.Workflows.Runtime.Services;
+using Elsa.Workflows.Runtime.Contracts;
 using Humanizer;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Export;

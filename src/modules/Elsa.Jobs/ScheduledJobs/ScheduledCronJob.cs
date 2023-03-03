@@ -1,6 +1,6 @@
 using Cronos;
-using Elsa.Common.Services;
-using Elsa.Jobs.Services;
+using Elsa.Common.Contracts;
+using Elsa.Jobs.Contracts;
 using Timer = System.Timers.Timer;
 
 namespace Elsa.Jobs.ScheduledJobs;
