@@ -4,6 +4,7 @@ using Elsa.Extensions;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Core.Signals;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Microsoft.Extensions.DependencyInjection;
@@ -56,10 +57,10 @@ public class WorkflowDefinitionActivity : Activity, IInitializable
             context.Set(output, outputValue);
         }
 
-        // Do we have an outcome?
-        var outcomesResult = context.WorkflowExecutionContext.TransientProperties.TryGetValue("Outcomes", out var outcomesProp) ? outcomesProp : default;
-        
-        await context.CompleteActivityAsync(outcomesResult);
+        // Do we have a complete composite signal that triggered the completion?
+        var completeCompositeSignal = context.WorkflowExecutionContext.TransientProperties.TryGetValue(nameof(CompleteCompositeSignal), out var signal) ? (CompleteCompositeSignal)signal : default;
+
+        await context.CompleteActivityAsync(completeCompositeSignal?.Value);
     }
 
     async ValueTask IInitializable.InitializeAsync(InitializationContext context)
