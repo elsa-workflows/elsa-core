@@ -6,6 +6,7 @@ using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Client.Models;
 using Elsa.Telnyx.Client.Services;
 using Elsa.Telnyx.Extensions;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;

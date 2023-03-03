@@ -1,6 +1,6 @@
 using System.Reflection;
 
-namespace Elsa.Workflows.Management.Services;
+namespace Elsa.Workflows.Management.Contracts;
 
 public interface IPropertyOptionsResolver
 {

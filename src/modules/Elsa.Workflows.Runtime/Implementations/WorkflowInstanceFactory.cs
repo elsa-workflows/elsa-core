@@ -3,8 +3,8 @@ using Elsa.Common.Services;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Core.State;
+using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
-using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Runtime.Services;
 
 namespace Elsa.Workflows.Runtime.Implementations;

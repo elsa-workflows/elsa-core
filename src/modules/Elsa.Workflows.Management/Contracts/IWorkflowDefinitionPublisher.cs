@@ -1,7 +1,7 @@
 using Elsa.Common.Models;
 using Elsa.Workflows.Management.Entities;
 
-namespace Elsa.Workflows.Management.Services;
+namespace Elsa.Workflows.Management.Contracts;
 
 public interface IWorkflowDefinitionPublisher
 {

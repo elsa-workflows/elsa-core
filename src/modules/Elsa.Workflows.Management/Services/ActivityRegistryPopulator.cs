@@ -1,6 +1,6 @@
-using Elsa.Workflows.Management.Services;
+using Elsa.Workflows.Management.Contracts;
 
-namespace Elsa.Workflows.Management.Implementations;
+namespace Elsa.Workflows.Management.Services;
 
 /// <summary>
 /// Populates the <see cref="IActivityRegistry"/> with descriptors provided by <see cref="IActivityProvider"/>s. 

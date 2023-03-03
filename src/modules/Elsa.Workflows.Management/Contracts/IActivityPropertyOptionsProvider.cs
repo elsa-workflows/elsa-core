@@ -1,6 +1,6 @@
 using System.Reflection;
 
-namespace Elsa.Workflows.Management.Implementations;
+namespace Elsa.Workflows.Management.Contracts;
 
 /// <summary>
 /// Provides options about a given activity property.

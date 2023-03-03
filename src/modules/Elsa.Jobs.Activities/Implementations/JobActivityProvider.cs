@@ -8,7 +8,7 @@ using Elsa.Jobs.Activities.Services;
 using Elsa.Jobs.Services;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Management.Services;
+using Elsa.Workflows.Management.Contracts;
 using Humanizer;
 
 namespace Elsa.Jobs.Activities.Implementations;

@@ -1,4 +1,4 @@
-﻿using Elsa.Workflows.Management.Services;
+﻿using Elsa.Workflows.Management.Contracts;
 using FastEndpoints;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Version;

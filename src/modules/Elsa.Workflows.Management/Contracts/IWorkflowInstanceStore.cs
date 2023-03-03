@@ -4,7 +4,7 @@ using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Models;
 
-namespace Elsa.Workflows.Management.Services;
+namespace Elsa.Workflows.Management.Contracts;
 
 public class WorkflowInstanceFilter
 {

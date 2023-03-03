@@ -1,6 +1,6 @@
 using Elsa.Expressions.Services;
 using Elsa.JavaScript.Handlers;
-using Elsa.Workflows.Management.Services;
+using Elsa.Workflows.Management.Contracts;
 using Moq;
 using Xunit;
 

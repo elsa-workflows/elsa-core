@@ -1,7 +1,7 @@
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Management.Services;
+using Elsa.Workflows.Management.Contracts;
 
-namespace Elsa.Workflows.Management.Implementations;
+namespace Elsa.Workflows.Management.Services;
 
 public class ActivityRegistry : IActivityRegistry
 {

@@ -12,7 +12,7 @@ using Elsa.Http.Providers;
 using Elsa.Http.Services;
 using Elsa.JavaScript.Features;
 using Elsa.Liquid.Features;
-using Elsa.Workflows.Management.Implementations;
+using Elsa.Workflows.Management.Contracts;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;

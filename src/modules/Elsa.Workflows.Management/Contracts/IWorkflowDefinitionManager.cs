@@ -1,6 +1,6 @@
 using Elsa.Workflows.Management.Entities;
 
-namespace Elsa.Workflows.Management.Services;
+namespace Elsa.Workflows.Management.Contracts;
 
 public interface IWorkflowDefinitionManager
 {

@@ -3,7 +3,7 @@ using Elsa.Extensions;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Models;
 
-namespace Elsa.Workflows.Management.Services;
+namespace Elsa.Workflows.Management.Contracts;
 
 /// <summary>
 /// A specification to use when finding workflow definitions. Only non-null fields will be included in the conditional expression.

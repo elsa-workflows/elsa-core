@@ -1,7 +1,7 @@
 using Elsa.Expressions.Models;
 using Elsa.Expressions.Services;
 
-namespace Elsa.Workflows.Management.Implementations;
+namespace Elsa.Workflows.Management.Services;
 
 public class ExpressionSyntaxRegistry : IExpressionSyntaxRegistry
 {

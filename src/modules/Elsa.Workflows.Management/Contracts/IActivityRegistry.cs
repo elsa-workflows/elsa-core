@@ -1,6 +1,6 @@
 using Elsa.Workflows.Core.Models;
 
-namespace Elsa.Workflows.Management.Services;
+namespace Elsa.Workflows.Management.Contracts;
 
 /// <summary>
 /// Stores all activity descriptors available to the system.

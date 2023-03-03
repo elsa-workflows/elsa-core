@@ -4,9 +4,9 @@ using Elsa.EntityFrameworkCore.Common;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Serialization;
+using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Models;
-using Elsa.Workflows.Management.Services;
 using Microsoft.EntityFrameworkCore;
 using Open.Linq.AsyncExtensions;
 
@@ -96,7 +96,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
 
     private WorkflowDefinition Save(ManagementElsaDbContext managementElsaDbContext, WorkflowDefinition entity)
     {
-        var data = new WorkflowDefinitionState(entity.Options, entity.Variables, entity.Inputs, entity.Outputs, entity.CustomProperties);
+        var data = new WorkflowDefinitionState(entity.Options, entity.Variables, entity.Inputs, entity.Outputs, entity.Outcomes, entity.CustomProperties);
         var options = _serializerOptionsProvider.CreatePersistenceOptions();
         var json = JsonSerializer.Serialize(data, options);
 
@@ -109,7 +109,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         if (entity == null)
             return null;
 
-        var data = new WorkflowDefinitionState(entity.Options, entity.Variables, entity.Inputs, entity.Outputs, entity.CustomProperties);
+        var data = new WorkflowDefinitionState(entity.Options, entity.Variables, entity.Inputs, entity.Outputs, entity.Outcomes, entity.CustomProperties);
         var json = (string?)managementElsaDbContext.Entry(entity).Property("Data").CurrentValue;
 
         if (!string.IsNullOrWhiteSpace(json))
@@ -122,6 +122,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         entity.Variables = data.Variables;
         entity.Inputs = data.Inputs;
         entity.Outputs = data.Outputs;
+        entity.Outcomes = data.Outcomes;
         entity.CustomProperties = data.CustomProperties;
 
         return entity;
@@ -147,6 +148,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
             ICollection<Variable> variables,
             ICollection<InputDefinition> inputs,
             ICollection<OutputDefinition> outputs,
+            ICollection<string> outcomes,
             IDictionary<string, object> customProperties
         )
         {
@@ -154,6 +156,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
             Variables = variables;
             Inputs = inputs;
             Outputs = outputs;
+            Outcomes = outcomes;
             CustomProperties = customProperties;
         }
 
@@ -161,6 +164,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         public ICollection<Variable> Variables { get; set; } = new List<Variable>();
         public ICollection<InputDefinition> Inputs { get; set; } = new List<InputDefinition>();
         public ICollection<OutputDefinition> Outputs { get; set; } = new List<OutputDefinition>();
+        public ICollection<string> Outcomes { get; set; } = new List<string>();
         public IDictionary<string, object> CustomProperties { get; set; } = new Dictionary<string, object>();
     }
 }

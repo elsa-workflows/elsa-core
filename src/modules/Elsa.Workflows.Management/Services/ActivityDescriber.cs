@@ -3,16 +3,17 @@ using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Elsa.Extensions;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Models;
-using Elsa.Workflows.Management.Services;
 using Humanizer;
 
-namespace Elsa.Workflows.Management.Implementations;
+namespace Elsa.Workflows.Management.Services;
 
 /// <inheritdoc />
 public class ActivityDescriber : IActivityDescriber

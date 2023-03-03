@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Elsa.Workflows.Core.Models;
 
-namespace Elsa.Workflows.Management.Services;
+namespace Elsa.Workflows.Management.Contracts;
 
 public interface IActivityDescriber
 {
