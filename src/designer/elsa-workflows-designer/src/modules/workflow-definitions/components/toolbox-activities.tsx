@@ -52,7 +52,7 @@ export class ToolboxActivities {
 
   buildModel = (): any => {
     const browsableDescriptors = uniqBy(descriptorsStore.activityDescriptors
-      .filter(x => x.isBrowsable)
+      .filter(x => x.isBrowsable !== false)
       .sort((a, b) => a.version > b.version ? 1 : -1), x => `${x.typeName}:${x.version}`);
 
     const categorizedActivitiesLookup = groupBy(browsableDescriptors, x => x.category);

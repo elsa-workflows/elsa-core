@@ -33,6 +33,13 @@ public class JavaScriptFeature : FeatureBase
     /// <inheritdoc />
     public override void Configure()
     {
+        Module.UseWorkflowManagement(management => management.AddActivitiesFrom<JavaScriptFeature>());
+    }
+
+    /// <inheritdoc />
+    public override void Apply()
+    {
+        // JavaScript services.
         Services
             .AddSingleton<IExpressionSyntaxProvider, JavaScriptExpressionSyntaxProvider>()
             .AddSingleton<IJavaScriptEvaluator, JintJavaScriptEvaluator>()
@@ -41,6 +48,7 @@ public class JavaScriptFeature : FeatureBase
             .AddExpressionHandler<JavaScriptExpressionHandler, JavaScriptExpression>()
             ;
 
+        // Type definition services.
         Services
             .AddSingleton<ITypeDefinitionService, TypeDefinitionService>()
             .AddSingleton<ITypeDescriber, TypeDescriber>()
@@ -50,7 +58,8 @@ public class JavaScriptFeature : FeatureBase
             .AddSingleton<ITypeDefinitionProvider, CommonTypeDefinitionProvider>()
             .AddSingleton<ITypeDefinitionProvider, VariableTypeDefinitionProvider>()
             ;
-
-        Module.UseWorkflowManagement(management => management.AddActivitiesFrom<JavaScriptFeature>());
+        
+        // Handlers.
+        Services.AddNotificationHandlersFrom<JavaScriptFeature>();
     }
 }

@@ -23,7 +23,7 @@ public class Dial : CodeActivity<DialResponse>
     public Dial(string? source = default, int? line = default) : base(source, line)
     {
     }
-    
+
     /// <summary>
     /// The DID or SIP URI to dial out and bridge to the given call.
     /// </summary>
@@ -52,12 +52,23 @@ public class Dial : CodeActivity<DialResponse>
         Options = new[] { "disabled", "detect", "detect_beep", "detect_words", "greeting_end", "premium" },
         DefaultValue = "disabled")]
     public Input<string?> AnsweringMachineDetection { get; set; } = new("disabled");
-    
+
     /// <summary>
     /// Enables answering machine detection.
     /// </summary>
     [Input(Description = "Start recording automatically after an event. Disabled by default.")]
     public Input<bool> Record { get; set; } = default!;
+
+    /// <summary>
+    /// Defines the format of the recording ('wav' or 'mp3') when `record` is specified.
+    /// </summary>
+    [Input(
+        Description = "Defines the format of the recording ('wav' or 'mp3') when `record` is specified.",
+        UIHint = InputUIHints.Dropdown,
+        Options = new[] { "wav", "mp3" },
+        DefaultValue = "mp3"
+    )]
+    public Input<string> RecordFormat { get; set; } = new("mp3");
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
@@ -65,7 +76,7 @@ public class Dial : CodeActivity<DialResponse>
         var response = await DialAsync(context);
         Result.Set(context, response);
     }
-    
+
     private async Task<DialResponse> DialAsync(ActivityExecutionContext context)
     {
         var telnyxOptions = context.GetRequiredService<IOptions<TelnyxOptions>>().Value;
@@ -84,6 +95,7 @@ public class Dial : CodeActivity<DialResponse>
             FromDisplayName.TryGet(context).SanitizeCallerName(),
             AnsweringMachineDetection.TryGet(context),
             Record: Record.TryGet(context) == true ? "record-from-answer" : default,
+            RecordFormat: RecordFormat.TryGet(context) ?? "mp3",
             ClientState: clientState
         );
 
