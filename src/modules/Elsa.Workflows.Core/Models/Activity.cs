@@ -24,7 +24,6 @@ public abstract class Activity : IActivity, ISignalHandler
         Line = line;
         Type = ActivityTypeNameHelper.GenerateTypeName(GetType());
         Version = 1;
-        Behaviors.Add<ExecutionLoggingBehavior>(this);
         Behaviors.Add<ScheduledChildCallbackBehavior>(this);
     }
 

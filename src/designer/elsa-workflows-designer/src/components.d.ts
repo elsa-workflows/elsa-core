@@ -6,7 +6,7 @@
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
 import { InputDefinition, OutputDefinition, WorkflowDefinition, WorkflowDefinitionSummary } from "./modules/workflow-definitions/models/entities";
-import { Activity, ActivityDeletedArgs, ActivitySelectedArgs, ChildActivitySelectedArgs, ContainerSelectedArgs, EditChildActivityArgs, GraphUpdatedArgs, IntellisenseContext, SelectListItem, TabChangedArgs, TabDefinition, Variable, WorkflowInstance, WorkflowInstanceSummary, WorkflowUpdatedArgs } from "./models";
+import { Activity, ActivityDeletedArgs, ActivitySelectedArgs, ChildActivitySelectedArgs, ContainerSelectedArgs, EditChildActivityArgs, GraphUpdatedArgs, IntellisenseContext, SelectListItem, TabChangedArgs, TabDefinition, Variable, WorkflowExecutionLogRecord, WorkflowInstance, WorkflowInstanceSummary, WorkflowUpdatedArgs } from "./models";
 import { ActivityUpdatedArgs, DeleteActivityRequestedArgs, Widget, WorkflowDefinitionPropsUpdatedArgs, WorkflowDefinitionUpdatedArgs } from "./modules/workflow-definitions/models/ui";
 import { NotificationType } from "./modules/notifications/models";
 import { Button } from "./components/shared/button-group/models";
@@ -39,8 +39,11 @@ export namespace Components {
     }
     interface ElsaActivityProperties {
         "activity"?: Activity;
+        "activityExecutionLog": WorkflowExecutionLogRecord;
+        "activityPropertyTabIndex"?: number;
         "hide": () => Promise<void>;
         "show": () => Promise<void>;
+        "updateSelectedTab": (tabIndex: number) => Promise<void>;
     }
     interface ElsaActivityPropertiesEditor {
         "activity"?: Activity;
@@ -313,6 +316,7 @@ export namespace Components {
         "workflowInstance": WorkflowInstance;
     }
     interface ElsaWorkflowJournal {
+        "getExecutionLogByWorkflowInstanceId": (activityId: string) => Promise<WorkflowExecutionLogRecord>;
         "workflowDefinition": WorkflowDefinition;
         "workflowInstance": WorkflowInstance;
     }
@@ -431,6 +435,10 @@ export interface ElsaWorkflowDefinitionVersionHistoryCustomEvent<T> extends Cust
 export interface ElsaWorkflowInstanceBrowserCustomEvent<T> extends CustomEvent<T> {
     detail: T;
     target: HTMLElsaWorkflowInstanceBrowserElement;
+}
+export interface ElsaWorkflowJournalCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLElsaWorkflowJournalElement;
 }
 export interface ElsaWorkflowNavigatorCustomEvent<T> extends CustomEvent<T> {
     detail: T;
@@ -896,6 +904,8 @@ declare namespace LocalJSX {
     }
     interface ElsaActivityProperties {
         "activity"?: Activity;
+        "activityExecutionLog"?: WorkflowExecutionLogRecord;
+        "activityPropertyTabIndex"?: number;
     }
     interface ElsaActivityPropertiesEditor {
         "activity"?: Activity;
@@ -1170,6 +1180,7 @@ declare namespace LocalJSX {
         "workflowInstance"?: WorkflowInstance;
     }
     interface ElsaWorkflowJournal {
+        "onJournalItemStatusSelected"?: (event: ElsaWorkflowJournalCustomEvent<string>) => void;
         "workflowDefinition"?: WorkflowDefinition;
         "workflowInstance"?: WorkflowInstance;
     }

@@ -35,6 +35,7 @@ public class ActivityExecutionPipeline : IActivityExecutionPipeline
         
     private ActivityMiddlewareDelegate CreateDefaultPipeline() => Setup(x => x
         .UseExceptionHandling()
+        .UseExecutionLogging()
         .UseDefaultActivityInvoker()
     );
 }
