@@ -122,12 +122,6 @@ public class TriggerIndexer : ITriggerIndexer
         return await _triggerStore.FindManyAsync(filter, cancellationToken);
     }
 
-    private async Task<IEnumerable<StoredTrigger>> GetTriggersByHashAsync(string hash, CancellationToken cancellationToken)
-    {
-        var filter = new TriggerFilter { Hash = hash };
-        return await _triggerStore.FindManyAsync(filter, cancellationToken);
-    }
-
     private async Task<IEnumerable<StoredTrigger>> GetCurrentTriggersAsync(string workflowDefinitionId, CancellationToken cancellationToken)
     {
         var filter = new TriggerFilter { WorkflowDefinitionId = workflowDefinitionId };
