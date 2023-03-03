@@ -1,16 +1,16 @@
 using Elsa.Http.Models;
 using Elsa.Http.Options;
-using Elsa.Http.Services;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Runtime.Services;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using System.Net;
 using System.Net.Mime;
 using System.Text.Json;
+using Elsa.Http.Contracts;
 using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Runtime.Contracts;
 
 namespace Elsa.Http.Middleware;
 

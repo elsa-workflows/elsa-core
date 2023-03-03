@@ -5,7 +5,7 @@ using Elsa.ProtoActor.Protos;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.State;
-using Elsa.Workflows.Runtime.Services;
+using Elsa.Workflows.Runtime.Contracts;
 using Proto;
 using Proto.Cluster;
 using Proto.Persistence;

@@ -7,7 +7,7 @@ using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Models;
-using Elsa.Workflows.Runtime.Services;
+using Elsa.Workflows.Runtime.Contracts;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Import;
 

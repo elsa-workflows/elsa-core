@@ -1,7 +1,7 @@
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
-using Elsa.Jobs.Activities.Implementations;
+using Elsa.Jobs.Activities.Contracts;
 using Elsa.Jobs.Activities.Services;
 using Elsa.Jobs.Features;
 using Elsa.Mediator.Features;

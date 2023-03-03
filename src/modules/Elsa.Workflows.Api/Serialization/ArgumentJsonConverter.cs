@@ -1,8 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Extensions;
-using Elsa.Expressions.Services;
 using Elsa.Extensions;
 using Elsa.Workflows.Management.Models;
 

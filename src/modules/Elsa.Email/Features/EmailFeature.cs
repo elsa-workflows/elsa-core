@@ -1,4 +1,4 @@
-using Elsa.Email.Implementations;
+using Elsa.Email.Contracts;
 using Elsa.Email.Options;
 using Elsa.Email.Services;
 using Elsa.Features.Abstractions;

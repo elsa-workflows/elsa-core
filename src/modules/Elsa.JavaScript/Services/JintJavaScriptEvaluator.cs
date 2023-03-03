@@ -1,12 +1,12 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
+using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Models;
-using Elsa.Expressions.Services;
 using Elsa.Extensions;
 using Elsa.JavaScript.Contracts;
 using Elsa.JavaScript.Notifications;
 using Elsa.JavaScript.Options;
-using Elsa.Mediator.Services;
+using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Activities;
 using Elsa.Workflows.Management.Contracts;

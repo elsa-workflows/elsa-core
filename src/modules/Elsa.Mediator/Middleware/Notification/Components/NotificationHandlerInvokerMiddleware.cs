@@ -1,5 +1,5 @@
+using Elsa.Mediator.Contracts;
 using Elsa.Mediator.Middleware.Notification.Contracts;
-using Elsa.Mediator.Services;
 
 namespace Elsa.Mediator.Middleware.Notification.Components;
 

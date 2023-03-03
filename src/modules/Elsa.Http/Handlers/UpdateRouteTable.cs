@@ -1,6 +1,6 @@
 ﻿using Elsa.Extensions;
-using Elsa.Http.Services;
-using Elsa.Mediator.Services;
+using Elsa.Http.Contracts;
+using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Runtime.Notifications;
 
 namespace Elsa.Http.Handlers;

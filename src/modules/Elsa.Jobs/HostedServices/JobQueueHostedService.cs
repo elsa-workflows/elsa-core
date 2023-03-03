@@ -1,6 +1,6 @@
 using System.Threading.Channels;
+using Elsa.Jobs.Contracts;
 using Elsa.Jobs.Options;
-using Elsa.Jobs.Services;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;

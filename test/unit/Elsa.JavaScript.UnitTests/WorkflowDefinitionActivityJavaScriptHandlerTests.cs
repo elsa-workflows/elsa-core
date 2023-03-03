@@ -1,4 +1,4 @@
-using Elsa.Expressions.Services;
+using Elsa.Expressions.Contracts;
 using Elsa.JavaScript.Handlers;
 using Elsa.Workflows.Management.Contracts;
 using Moq;

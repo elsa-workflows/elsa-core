@@ -1,4 +1,4 @@
-using Elsa.Mediator.Services;
+using Elsa.Mediator.Contracts;
 using Elsa.Webhooks.Commands;
 using Elsa.Webhooks.Models;
 using Elsa.Webhooks.Services;

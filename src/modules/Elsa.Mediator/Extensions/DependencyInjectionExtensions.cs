@@ -1,6 +1,5 @@
 using System.Reflection;
 using System.Threading.Channels;
-using Elsa.Mediator.Implementations;
 using Elsa.Mediator.Middleware.Command;
 using Elsa.Mediator.Middleware.Command.Contracts;
 using Elsa.Mediator.Middleware.Notification;
@@ -8,10 +7,11 @@ using Elsa.Mediator.Middleware.Notification.Contracts;
 using Elsa.Mediator.Middleware.Request;
 using Elsa.Mediator.Middleware.Request.Contracts;
 using Elsa.Mediator.Models;
-using Elsa.Mediator.Services;
 using Elsa.Features.Services;
+using Elsa.Mediator.Contracts;
 using Elsa.Mediator.HostedServices;
 using Elsa.Mediator.Options;
+using Elsa.Mediator.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 

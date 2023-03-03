@@ -1,7 +1,7 @@
 ﻿using System.Globalization;
 using System.Text;
 using System.Text.Json;
-using Elsa.Liquid.Services;
+using Elsa.Liquid.Contracts;
 using Fluid;
 using Fluid.Values;
 

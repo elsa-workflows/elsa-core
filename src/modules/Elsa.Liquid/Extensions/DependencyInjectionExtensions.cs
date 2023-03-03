@@ -1,4 +1,4 @@
-using Elsa.Liquid.Implementations;
+using Elsa.Liquid.Contracts;
 using Elsa.Liquid.Options;
 using Elsa.Liquid.Services;
 

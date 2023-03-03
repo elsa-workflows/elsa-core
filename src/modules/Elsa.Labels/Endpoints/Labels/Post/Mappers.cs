@@ -1,4 +1,5 @@
 using Elsa.Labels.Entities;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Services;
 using FastEndpoints;
 

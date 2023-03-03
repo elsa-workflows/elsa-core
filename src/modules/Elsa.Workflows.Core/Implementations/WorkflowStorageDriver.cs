@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Elsa.Extensions;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Core.Implementations;

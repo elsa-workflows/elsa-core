@@ -1,4 +1,4 @@
-using Elsa.Mediator.Services;
+using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Notifications;

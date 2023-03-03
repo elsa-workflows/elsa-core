@@ -1,5 +1,5 @@
 using Elsa.Abstractions;
-using Elsa.Workflows.Runtime.Services;
+using Elsa.Workflows.Runtime.Contracts;
 
 namespace Elsa.Workflows.Api.Endpoints.Events.Trigger;
 

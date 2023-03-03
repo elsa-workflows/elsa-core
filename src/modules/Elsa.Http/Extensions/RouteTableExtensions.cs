@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Elsa.Http;
+using Elsa.Http.Contracts;
 using Elsa.Http.Models;
-using Elsa.Http.Services;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Runtime.Entities;

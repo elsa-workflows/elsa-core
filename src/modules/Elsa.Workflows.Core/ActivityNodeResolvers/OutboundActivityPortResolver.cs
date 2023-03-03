@@ -1,5 +1,6 @@
 using System.Reflection;
 using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Core.ActivityNodeResolvers;

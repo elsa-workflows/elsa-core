@@ -1,8 +1,9 @@
 using Elsa.AzureServiceBus.Activities;
+using Elsa.AzureServiceBus.Contracts;
 using Elsa.AzureServiceBus.Models;
-using Elsa.AzureServiceBus.Services;
 using Elsa.Extensions;
-using Elsa.Mediator.Services;
+using Elsa.Mediator.Contracts;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Core.Services;
 

@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Telnyx.Client.Implementations;
 using Elsa.Telnyx.Client.Services;
+using Elsa.Telnyx.Contracts;
 using Elsa.Telnyx.Handlers;
 using Elsa.Telnyx.Options;
 using Elsa.Telnyx.Serialization;

@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using Elsa.Extensions;
 using Elsa.Samples.WorkflowSinks.Workflows;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Services;
 using Microsoft.AspNetCore.Mvc;
 

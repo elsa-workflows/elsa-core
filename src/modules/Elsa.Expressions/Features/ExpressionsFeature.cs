@@ -1,4 +1,4 @@
-using Elsa.Expressions.Implementations;
+using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Services;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;

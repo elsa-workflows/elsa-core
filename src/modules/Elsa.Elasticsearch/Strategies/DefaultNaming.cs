@@ -1,4 +1,4 @@
-using Elsa.Elasticsearch.Services;
+using Elsa.Elasticsearch.Contracts;
 using Humanizer;
 
 namespace Elsa.Elasticsearch.Strategies;
