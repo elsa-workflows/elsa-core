@@ -1,11 +1,9 @@
-using System.Diagnostics;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Pipelines.ActivityExecution;
 using Elsa.Workflows.Core.Services;
-using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace Elsa.Workflows.Core.Middleware.Activities;
 
@@ -44,11 +42,13 @@ public class ExecutionLogMiddleware : IActivityExecutionMiddleware
         {
             await _next(context);
             
-            var payload = new JObject();
+            var payload = new JsonObject();
 
             foreach (var entry in context.JournalData)
-                payload[entry.Key] = entry.Value != null ? JToken.FromObject(entry.Value, JsonSerializer.CreateDefault()) : JValue.CreateNull();
-            
+            {
+                payload[entry.Key] = entry.Value != null ? JsonSerializer.Deserialize<JsonNode>(JsonSerializer.Serialize(entry.Value)) : JsonNode.Parse("null");
+            }
+
             context.AddExecutionLogEntry("Completed", payload: payload);
         }
         catch (Exception exception)
