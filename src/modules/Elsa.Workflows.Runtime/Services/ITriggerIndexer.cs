@@ -9,7 +9,7 @@ public interface ITriggerIndexer
     /// <summary>
     /// Indexes triggers of the deleted workflow definitions.
     /// </summary>
-    Task<List<IndexedWorkflowTriggers>> IndexTriggersDeleteWorkflowAsync(ICollection<string> workflowDefinitionIds, CancellationToken cancellationToken = default);
+    Task<IndexedWorkflowTriggers> IndexTriggersDeleteWorkflowAsync(ICollection<string> workflowDefinitionIds, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Indexes triggers of the specified workflow.
