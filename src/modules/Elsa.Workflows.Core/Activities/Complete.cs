@@ -13,8 +13,8 @@ namespace Elsa.Workflows.Core.Activities;
 /// <summary>
 /// Signals the current composite activity to complete itself as a whole.
 /// </summary>
-[Activity("Elsa", "Primitives", "Signals the current composite activity to complete itself as a whole.")]
-public class Complete : CodeActivity
+[Activity("Elsa", "Composition", "Signals the current composite activity to complete itself as a whole.")]
+public class Complete : Activity
 {
     /// <inheritdoc />
     [JsonConstructor]
@@ -49,7 +49,11 @@ public class Complete : CodeActivity
     /// <summary>
     /// The outcome or set of outcomes to complete this activity with.
     /// </summary>
-    [Description("The outcome or set of outcomes to complete this activity with.")]
+    [Input(
+        Description = "The outcome or set of outcomes to complete this activity with.",
+        UIHint = InputUIHints.OutcomePicker,
+        DefaultSyntax = "Json"
+    )]
     public Input<ICollection<string>> Outcomes { get; set; } = new(new List<string>());
 
     /// <inheritdoc />
@@ -57,5 +61,7 @@ public class Complete : CodeActivity
     {
         var outcomes = Outcomes.Get(context).ToArray();
         await context.SendSignalAsync(new CompleteCompositeSignal(new Outcomes(outcomes)));
+        
+        // Don't complete this activity, as it will be completed by the composite activity.
     }
 }

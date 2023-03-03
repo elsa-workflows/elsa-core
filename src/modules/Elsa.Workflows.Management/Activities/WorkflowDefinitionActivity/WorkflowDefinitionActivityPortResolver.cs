@@ -1,10 +1,9 @@
 using Elsa.Workflows.Core.Services;
-using Elsa.Workflows.Management.Activities;
 
-namespace Elsa.Workflows.Management.Implementations;
+namespace Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 
 /// <summary>
-/// Returns a the root activity for a given <see cref="WorkflowDefinitionActivity"/>.
+/// Returns the root activity for a given <see cref="WorkflowDefinitionActivity"/>.
 /// </summary>
 public class WorkflowDefinitionActivityPortResolver : IActivityPortResolver
 {

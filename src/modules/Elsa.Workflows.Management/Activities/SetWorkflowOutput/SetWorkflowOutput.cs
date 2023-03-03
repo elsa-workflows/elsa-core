@@ -1,13 +1,14 @@
 using Elsa.Common.Models;
 using Elsa.Extensions;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Management.Models;
-using Elsa.Workflows.Management.Services;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.Management.Activities;
+namespace Elsa.Workflows.Management.Activities.SetWorkflowOutput;
 
 /// <summary>
 /// Assigns a given value to a workflow definition's output.
@@ -56,7 +57,7 @@ public class SetWorkflowOutput : CodeActivity
     private async Task SetWorkflowDefinitionActivityOutputAsync(ActivityExecutionContext context, ActivityExecutionContext workflowDefinitionActivityContext)
     {
         var workflowDefinitionStore = context.GetRequiredService<IWorkflowDefinitionStore>();
-        var workflowDefinitionActivity = (WorkflowDefinitionActivity)workflowDefinitionActivityContext.Activity;
+        var workflowDefinitionActivity = (WorkflowDefinitionActivity.WorkflowDefinitionActivity)workflowDefinitionActivityContext.Activity;
         var definitionId = workflowDefinitionActivity.WorkflowDefinitionId;
         var versionOptions = VersionOptions.SpecificVersion(workflowDefinitionActivity.Version);
         var filter = new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = versionOptions};

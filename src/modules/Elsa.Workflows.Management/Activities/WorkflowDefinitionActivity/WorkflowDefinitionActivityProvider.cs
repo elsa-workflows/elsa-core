@@ -1,8 +1,9 @@
 using Elsa.Common.Models;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Activities;
+using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
+using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
-using Elsa.Workflows.Management.Services;
 using Humanizer;
 
 namespace Elsa.Workflows.Management.Providers;
@@ -51,6 +52,14 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
             .OrderByDescending(x => x)
             .FirstOrDefault();
 
+        var ports = definition.Outcomes.Select(outcome => new Port
+        {
+            Name = outcome,
+            DisplayName = outcome,
+            IsBrowsable = true,
+            Mode = PortMode.Port
+        }).ToList();
+
         return new()
         {
             TypeName = typeName,
@@ -62,6 +71,7 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
             IsBrowsable = definition.IsPublished,
             Inputs = DescribeInputs(definition).ToList(),
             Outputs = DescribeOutputs(definition).ToList(),
+            Ports = ports,
             CustomProperties = { ["RootType"] = nameof(WorkflowDefinitionActivity) },
             Constructor = context =>
             {

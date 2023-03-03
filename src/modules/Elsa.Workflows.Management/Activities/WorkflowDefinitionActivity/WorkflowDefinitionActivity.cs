@@ -1,15 +1,14 @@
 using System.ComponentModel;
 using Elsa.Common.Models;
 using Elsa.Extensions;
-using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
-using Elsa.Workflows.Management.Services;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Workflows.Management.Activities;
+namespace Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 
 /// <summary>
 /// Loads and executes an <see cref="WorkflowDefinition"/>.
@@ -57,7 +56,10 @@ public class WorkflowDefinitionActivity : Activity, IInitializable
             context.Set(output, outputValue);
         }
 
-        await context.CompleteActivityAsync();
+        // Do we have an outcome?
+        var outcomesResult = context.WorkflowExecutionContext.TransientProperties.TryGetValue("Outcomes", out var outcomesProp) ? outcomesProp : default;
+        
+        await context.CompleteActivityAsync(outcomesResult);
     }
 
     async ValueTask IInitializable.InitializeAsync(InitializationContext context)

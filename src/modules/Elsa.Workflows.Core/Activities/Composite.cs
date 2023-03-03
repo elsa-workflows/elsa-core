@@ -87,6 +87,9 @@ public abstract class Composite : Activity, IVariableContainer
     
     private async ValueTask OnCompleteCompositeSignal(CompleteCompositeSignal signal, SignalContext context)
     {
+        // Set the outcome into the context for the parent activity to pick up.
+        context.SenderActivityExecutionContext.WorkflowExecutionContext.TransientProperties["Outcomes"] = signal.Value!;
+        
         await OnCompletedAsync(context.ReceiverActivityExecutionContext, context.SenderActivityExecutionContext);
         
         // Complete the sender first so that it notifies its parents to complete.
