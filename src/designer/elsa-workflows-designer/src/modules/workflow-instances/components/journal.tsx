@@ -1,9 +1,8 @@
-import {Component, h, Prop, State, Watch} from "@stencil/core";
-import {ActivityDescriptor, Workflow, WorkflowExecutionLogRecord, WorkflowInstance} from "../../../models";
+import {Component, h, Method, Prop, State, Watch, Event, EventEmitter} from "@stencil/core";
+import {Workflow, WorkflowExecutionLogRecord, WorkflowInstance} from "../../../models";
 import {Container} from "typedi";
 import {ActivityIconRegistry, ActivityNode, createActivityNodeMap, flatten, walkActivities} from "../../../services";
 import {durationToString, formatTime, getDuration, Hash, isNullOrWhitespace} from "../../../utils";
-import descriptorsStore from '../../../data/descriptors-store';
 import {ActivityExecutionEventBlock} from "../models";
 import {ActivityIconSize} from "../../../components/icons/activities";
 import {WorkflowDefinition} from "../../workflow-definitions/models/entities";
@@ -33,6 +32,7 @@ export class Journal {
   @State() workflowExecutionLogRecords: Array<WorkflowExecutionLogRecord> = [];
   @State() rootBlocks: Array<ActivityExecutionEventBlock> = [];
   @State() expandedBlocks: Array<ActivityExecutionEventBlock> = [];
+  @Event() journalItemStatusSelected: EventEmitter<string>;
 
   @Watch('workflowInstance')
   async onWorkflowInstanceChanged(value: string) {
@@ -47,20 +47,18 @@ export class Journal {
     await this.loadJournalPage(0);
   }
 
-  async componentWillLoad() {
+  @Method()
+  public async getExecutionLogByWorkflowInstanceId(activityId: string): Promise<WorkflowExecutionLogRecord> {
+    const logRecords = this.workflowExecutionLogRecords.filter(r => r.activityId === activityId);
+    return logRecords.find(r => r.eventName === "Faulted" || r.eventName === "Completed") ?? logRecords.find(r => r.eventName === "Started");
+  }
+
+  async componentWillLoad(): Promise<void> {
     this.createGraph();
     await this.loadJournalPage(0);
   }
 
   render() {
-    const workflowInstance = this.workflowInstance;
-    const workflowDefinition = this.workflowDefinition;
-    const nodeMap = this.nodeMap;
-    const activityDescriptors: Array<ActivityDescriptor> = descriptorsStore.activityDescriptors;
-    const blocks = this.rootBlocks;
-    const iconRegistry = this.iconRegistry;
-    const expandedBlocks = this.expandedBlocks;
-
     return (
 
       <div class="absolute inset-0 overflow-hidden">
@@ -107,16 +105,17 @@ export class Journal {
     const nodeMap = this.nodeMap;
     const iconRegistry = this.iconRegistry;
     const expandedBlocks = this.expandedBlocks;
-
     return blocks.map((block, index) => {
+
       const activityNode = nodeMap[block.activityId];
       const activity = activityNode.activity;
       const activityMetadata = activity.metadata;
       const activityDisplayText = isNullOrWhitespace(activityMetadata.displayText) ? activity.id : activityMetadata.displayText;
       const duration = durationToString(block.duration);
-      const status = block.completed ? 'Completed' : 'Started';
+      const status = block.completed ? 'Completed' : block.faulted ? 'Faulted' : 'Started';
       const icon = iconRegistry.getOrDefault(activity.type)({size: ActivityIconSize.Small});
       const expanded = !!expandedBlocks.find(x => x == block);
+      const statusColor = block.completed ? "bg-blue-100" : block.faulted ? "bg-red-100" : "bg-green-100";
 
       const toggleIcon = expanded
         ? (
@@ -154,7 +153,9 @@ export class Journal {
             </div>
           </td>
           <td>
-            <span class="inline-flex rounded-full bg-green-100 px-2 text-xs font-semibold leading-5 text-green-800">{status}</span>
+            {block.children.length == 0 ? 
+            (<a href="#" onClick={e => this.onStatusClick(e, block)} class={`inline-flex rounded-full ${statusColor} px-2 text-xs font-semibold leading-5 text-green-800`}>{status}</a>) 
+            : <span class={`inline-flex rounded-full ${statusColor} px-2 text-xs font-semibold leading-5 text-green-800`}>{status}</span>}
           </td>
           <td>{duration}</td>
         </tr>, expanded ? this.renderBlocks(block.children) : undefined]
@@ -187,7 +188,7 @@ export class Journal {
       return;
 
     const workflowInstanceId = this.workflowInstance.id;
-    const pageOfRecords = await this.workflowInstancesApi.getJournal({page, pageSize: PAGE_SIZE, workflowInstanceId: workflowInstanceId})
+    const pageOfRecords = await this.workflowInstancesApi.getJournal({page, pageSize: PAGE_SIZE, workflowInstanceId: workflowInstanceId});
     const blocks = this.createBlocks(pageOfRecords.items);
     const rootBlocks = blocks.filter(x => !x.parentActivityInstanceId);
     this.workflowExecutionLogRecords = [...this.workflowExecutionLogRecords, ...pageOfRecords.items];
@@ -197,9 +198,11 @@ export class Journal {
   private createBlocks = (records: Array<WorkflowExecutionLogRecord>): Array<ActivityExecutionEventBlock> => {
     const startedEvents = records.filter(x => x.eventName == 'Started');
     const completedEvents = records.filter(x => x.eventName == 'Completed');
+    const faultedEvents = records.filter(x => x.eventName == 'Faulted');
 
     const blocks = startedEvents.map(startedRecord => {
       const completedRecord = completedEvents.find(x => x.activityInstanceId == startedRecord.activityInstanceId);
+      const faultedRecord = faultedEvents.find(x => x.activityInstanceId == startedRecord.activityInstanceId);
       const duration = !!completedRecord ? getDuration(completedRecord.timestamp, startedRecord.timestamp) : null;
 
       return {
@@ -207,10 +210,12 @@ export class Journal {
         activityInstanceId: startedRecord.activityInstanceId,
         parentActivityInstanceId: startedRecord.parentActivityInstanceId,
         completed: !!completedRecord,
+        faulted: !!faultedRecord,
         timestamp: startedRecord.timestamp,
         duration: duration,
         startedRecord: startedRecord,
         completedRecord: completedRecord,
+        faultedRecord: faultedRecord,
         children: []
       };
     });
@@ -242,5 +247,10 @@ export class Journal {
 
     const existingBlock = this.expandedBlocks.find(x => x == block);
     this.expandedBlocks = existingBlock ? this.expandedBlocks.filter(x => x != existingBlock) : [...this.expandedBlocks, block];
+  };
+
+  private onStatusClick = async (e: MouseEvent, block: ActivityExecutionEventBlock) => {
+    e.preventDefault();
+    this.journalItemStatusSelected.emit(block.activityId);
   };
 }
