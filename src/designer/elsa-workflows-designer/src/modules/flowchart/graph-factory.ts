@@ -228,10 +228,6 @@ export function createGraph(
         connection.target = idMap[connection.target];
         cell.setData(connection);
       }
-
-      graph.cleanSelection();
-      graph.select(cells);
-
     }
     return false
   });
