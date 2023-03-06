@@ -10,7 +10,6 @@ using Elsa.Workflows.Core.ActivityNodeResolvers;
 using Elsa.Workflows.Core.Builders;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Expressions;
-using Elsa.Workflows.Core.Implementations;
 using Elsa.Workflows.Core.Middleware.Activities;
 using Elsa.Workflows.Core.Middleware.Workflows;
 using Elsa.Workflows.Core.Pipelines.ActivityExecution;

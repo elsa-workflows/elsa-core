@@ -1,7 +1,6 @@
 using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Services;
 
-namespace Elsa.Workflows.Core.Implementations;
+namespace Elsa.Workflows.Core.Services;
 
 public class WorkflowBuilderFactory : IWorkflowBuilderFactory
 {

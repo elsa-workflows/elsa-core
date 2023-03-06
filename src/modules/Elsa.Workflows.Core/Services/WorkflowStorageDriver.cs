@@ -1,9 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Services;
 
-namespace Elsa.Workflows.Core.Implementations;
+namespace Elsa.Workflows.Core.Services;
 
 /// <summary>
 /// A data drive that stores objects in the workflow state itself.

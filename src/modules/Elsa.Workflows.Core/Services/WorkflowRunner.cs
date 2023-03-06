@@ -4,11 +4,10 @@ using Elsa.Workflows.Core.Abstractions;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Notifications;
-using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Core.State;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Workflows.Core.Implementations;
+namespace Elsa.Workflows.Core.Services;
 
 /// <inheritdoc />
 public class WorkflowRunner : IWorkflowRunner

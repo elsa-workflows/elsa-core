@@ -1,25 +1,13 @@
 using System.Security.Cryptography;
 using System.Text;
 using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Services;
 
-namespace Elsa.Workflows.Core.Implementations;
+namespace Elsa.Workflows.Core.Services;
 
+/// <inheritdoc />
 public class Hasher : IHasher
 {
-    private readonly IBookmarkPayloadSerializer _bookmarkPayloadSerializer;
-
-    public Hasher(IBookmarkPayloadSerializer bookmarkPayloadSerializer)
-    {
-        _bookmarkPayloadSerializer = bookmarkPayloadSerializer;
-    }
-    
-    public string Hash(object value)
-    {
-        var json = _bookmarkPayloadSerializer.Serialize(value);
-        return Hash(json);
-    }
-    
+    /// <inheritdoc />
     public string Hash(string value)
     {
         using var sha = HashAlgorithm.Create(HashAlgorithmName.SHA256.ToString())!;

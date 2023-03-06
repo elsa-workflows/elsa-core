@@ -5,6 +5,8 @@ namespace Elsa.Workflows.Core.Contracts;
 /// </summary>
 public interface IHasher
 {
-    public string Hash(object value);
+    /// <summary>
+    /// Produces a hash from the specified string.
+    /// </summary>
     public string Hash(string value);
 }

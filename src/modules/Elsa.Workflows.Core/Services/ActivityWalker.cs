@@ -1,8 +1,7 @@
 using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Services;
 using ActivityNode = Elsa.Workflows.Core.Models.ActivityNode;
 
-namespace Elsa.Workflows.Core.Implementations;
+namespace Elsa.Workflows.Core.Services;
 
 /// <inheritdoc />
 public class ActivityWalker : IActivityWalker
