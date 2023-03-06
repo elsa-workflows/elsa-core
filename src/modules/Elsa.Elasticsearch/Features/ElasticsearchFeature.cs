@@ -1,7 +1,7 @@
 using Elastic.Clients.Elasticsearch;
+using Elsa.Elasticsearch.Contracts;
 using Elsa.Elasticsearch.Extensions;
 using Elsa.Elasticsearch.Options;
-using Elsa.Elasticsearch.Services;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Microsoft.Extensions.Configuration;

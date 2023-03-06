@@ -1,8 +1,8 @@
 using Elsa.Common.Models;
 using Elsa.EntityFrameworkCore.Common;
 using Elsa.Labels.Entities;
-using Elsa.Labels.Services;
 using Elsa.EntityFrameworkCore.Extensions;
+using Elsa.Labels.Contracts;
 
 namespace Elsa.EntityFrameworkCore.Modules.Labels;
 

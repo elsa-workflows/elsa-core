@@ -5,9 +5,9 @@ using Elsa.EntityFrameworkCore.Common;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.State;
+using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Models;
-using Elsa.Workflows.Management.Services;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.EntityFrameworkCore.Modules.Management;

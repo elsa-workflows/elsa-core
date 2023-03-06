@@ -5,6 +5,7 @@ using Elsa.Workflows.Core.Activities.Flowchart.Contracts;
 using Elsa.Workflows.Core.Activities.Flowchart.Extensions;
 using Elsa.Workflows.Core.Activities.Flowchart.Models;
 using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Core.Signals;

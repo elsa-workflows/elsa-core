@@ -1,5 +1,5 @@
 using Elsa.Extensions;
-using Elsa.Mediator.Services;
+using Elsa.Mediator.Contracts;
 using Elsa.Telnyx.Activities;
 using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Events;
@@ -7,7 +7,7 @@ using Elsa.Telnyx.Extensions;
 using Elsa.Telnyx.Payloads.Abstract;
 using Elsa.Telnyx.Payloads.Call;
 using Elsa.Workflows.Core.Helpers;
-using Elsa.Workflows.Runtime.Services;
+using Elsa.Workflows.Runtime.Contracts;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Telnyx.Handlers;

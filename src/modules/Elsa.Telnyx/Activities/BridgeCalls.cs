@@ -8,9 +8,10 @@ using Elsa.Telnyx.Extensions;
 using Elsa.Telnyx.Payloads.Call;
 using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
-using Elsa.Workflows.Runtime.Services;
+using Elsa.Workflows.Runtime.Contracts;
 using Refit;
 
 namespace Elsa.Telnyx.Activities;

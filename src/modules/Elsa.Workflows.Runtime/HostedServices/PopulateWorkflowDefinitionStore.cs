@@ -1,8 +1,8 @@
 using Elsa.Common.Models;
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
-using Elsa.Workflows.Management.Services;
-using Elsa.Workflows.Runtime.Services;
+using Elsa.Workflows.Runtime.Contracts;
 using Microsoft.Extensions.Hosting;
 using Open.Linq.AsyncExtensions;
 

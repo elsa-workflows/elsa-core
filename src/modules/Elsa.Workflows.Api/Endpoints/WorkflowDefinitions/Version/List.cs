@@ -1,5 +1,5 @@
 ﻿using Elsa.Common.Models;
-using Elsa.Workflows.Management.Services;
+using Elsa.Workflows.Management.Contracts;
 using FastEndpoints;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;

@@ -1,6 +1,6 @@
 using Elsa.MassTransit.Messages;
+using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Models;
-using Elsa.Workflows.Runtime.Services;
 using MassTransit;
 
 namespace Elsa.MassTransit.Implementations;

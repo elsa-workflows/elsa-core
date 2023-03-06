@@ -1,8 +1,8 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Workflows.Sinks.Contracts;
 using Elsa.Workflows.Sinks.Models;
-using Elsa.Workflows.Sinks.Services;
 
 namespace Elsa.Samples.WorkflowSinks.Sinks;
 

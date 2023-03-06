@@ -1,6 +1,6 @@
 using Elsa.Abstractions;
 using Elsa.Common.Models;
-using Elsa.Workflows.Runtime.Services;
+using Elsa.Workflows.Runtime.Contracts;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.Journal.Get;
 

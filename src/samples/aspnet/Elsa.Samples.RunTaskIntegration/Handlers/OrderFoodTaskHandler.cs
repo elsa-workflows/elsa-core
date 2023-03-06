@@ -1,9 +1,9 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Mediator.Services;
+using Elsa.Mediator.Contracts;
+using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Notifications;
-using Elsa.Workflows.Runtime.Services;
 
 namespace Elsa.Samples.RunTaskIntegration.Handlers;
 

@@ -5,9 +5,9 @@ using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Elasticsearch.Common;
 using Elsa.Extensions;
+using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Models;
-using Elsa.Workflows.Management.Services;
 
 namespace Elsa.Elasticsearch.Modules.Management;
 

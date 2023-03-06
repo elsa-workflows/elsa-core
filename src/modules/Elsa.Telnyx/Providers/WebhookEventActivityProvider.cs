@@ -6,8 +6,8 @@ using Elsa.Telnyx.Attributes;
 using Elsa.Telnyx.Helpers;
 using Elsa.Telnyx.Payloads.Abstract;
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Extensions;
-using Elsa.Workflows.Management.Services;
 
 namespace Elsa.Telnyx.Providers;
 

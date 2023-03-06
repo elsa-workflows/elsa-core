@@ -6,7 +6,7 @@
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
 import { InputDefinition, OutputDefinition, WorkflowDefinition, WorkflowDefinitionSummary } from "./modules/workflow-definitions/models/entities";
-import { Activity, ActivityDeletedArgs, ActivitySelectedArgs, ChildActivitySelectedArgs, ContainerSelectedArgs, EditChildActivityArgs, GraphUpdatedArgs, IntellisenseContext, SelectListItem, TabChangedArgs, TabDefinition, Variable, WorkflowInstance, WorkflowInstanceSummary, WorkflowUpdatedArgs } from "./models";
+import { Activity, ActivityDeletedArgs, ActivitySelectedArgs, ChildActivitySelectedArgs, ContainerSelectedArgs, EditChildActivityArgs, GraphUpdatedArgs, IntellisenseContext, SelectListItem, TabChangedArgs, TabDefinition, Variable, WorkflowExecutionLogRecord, WorkflowInstance, WorkflowInstanceSummary, WorkflowUpdatedArgs } from "./models";
 import { ActivityUpdatedArgs, DeleteActivityRequestedArgs, Widget, WorkflowDefinitionPropsUpdatedArgs, WorkflowDefinitionUpdatedArgs } from "./modules/workflow-definitions/models/ui";
 import { NotificationType } from "./modules/notifications/models";
 import { Button } from "./components/shared/button-group/models";
@@ -39,8 +39,11 @@ export namespace Components {
     }
     interface ElsaActivityProperties {
         "activity"?: Activity;
+        "activityExecutionLog": WorkflowExecutionLogRecord;
+        "activityPropertyTabIndex"?: number;
         "hide": () => Promise<void>;
         "show": () => Promise<void>;
+        "updateSelectedTab": (tabIndex: number) => Promise<void>;
     }
     interface ElsaActivityPropertiesEditor {
         "activity"?: Activity;
@@ -189,6 +192,9 @@ export namespace Components {
     interface ElsaNotificationsManager {
         "modalState": boolean;
     }
+    interface ElsaOutcomePickerInput {
+        "inputContext": ActivityInputContext;
+    }
     interface ElsaOutputPickerInput {
         "inputContext": ActivityInputContext;
     }
@@ -278,6 +284,7 @@ export namespace Components {
     }
     interface ElsaWorkflowDefinitionInputOutputSettings {
         "inputs"?: Array<InputDefinition>;
+        "outcomes"?: Array<string>;
         "outputs"?: Array<OutputDefinition>;
     }
     interface ElsaWorkflowDefinitionPickerInput {
@@ -313,6 +320,7 @@ export namespace Components {
         "workflowInstance": WorkflowInstance;
     }
     interface ElsaWorkflowJournal {
+        "getExecutionLogByWorkflowInstanceId": (activityId: string) => Promise<WorkflowExecutionLogRecord>;
         "workflowDefinition": WorkflowDefinition;
         "workflowInstance": WorkflowInstance;
     }
@@ -431,6 +439,10 @@ export interface ElsaWorkflowDefinitionVersionHistoryCustomEvent<T> extends Cust
 export interface ElsaWorkflowInstanceBrowserCustomEvent<T> extends CustomEvent<T> {
     detail: T;
     target: HTMLElsaWorkflowInstanceBrowserElement;
+}
+export interface ElsaWorkflowJournalCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLElsaWorkflowJournalElement;
 }
 export interface ElsaWorkflowNavigatorCustomEvent<T> extends CustomEvent<T> {
     detail: T;
@@ -614,6 +626,12 @@ declare global {
     var HTMLElsaNotificationsManagerElement: {
         prototype: HTMLElsaNotificationsManagerElement;
         new (): HTMLElsaNotificationsManagerElement;
+    };
+    interface HTMLElsaOutcomePickerInputElement extends Components.ElsaOutcomePickerInput, HTMLStencilElement {
+    }
+    var HTMLElsaOutcomePickerInputElement: {
+        prototype: HTMLElsaOutcomePickerInputElement;
+        new (): HTMLElsaOutcomePickerInputElement;
     };
     interface HTMLElsaOutputPickerInputElement extends Components.ElsaOutputPickerInput, HTMLStencilElement {
     }
@@ -849,6 +867,7 @@ declare global {
         "elsa-multi-line-input": HTMLElsaMultiLineInputElement;
         "elsa-multi-text-input": HTMLElsaMultiTextInputElement;
         "elsa-notifications-manager": HTMLElsaNotificationsManagerElement;
+        "elsa-outcome-picker-input": HTMLElsaOutcomePickerInputElement;
         "elsa-output-picker-input": HTMLElsaOutputPickerInputElement;
         "elsa-pager": HTMLElsaPagerElement;
         "elsa-panel": HTMLElsaPanelElement;
@@ -896,6 +915,8 @@ declare namespace LocalJSX {
     }
     interface ElsaActivityProperties {
         "activity"?: Activity;
+        "activityExecutionLog"?: WorkflowExecutionLogRecord;
+        "activityPropertyTabIndex"?: number;
     }
     interface ElsaActivityPropertiesEditor {
         "activity"?: Activity;
@@ -1047,6 +1068,9 @@ declare namespace LocalJSX {
     interface ElsaNotificationsManager {
         "modalState"?: boolean;
     }
+    interface ElsaOutcomePickerInput {
+        "inputContext"?: ActivityInputContext;
+    }
     interface ElsaOutputPickerInput {
         "inputContext"?: ActivityInputContext;
     }
@@ -1135,7 +1159,9 @@ declare namespace LocalJSX {
     interface ElsaWorkflowDefinitionInputOutputSettings {
         "inputs"?: Array<InputDefinition>;
         "onInputsChanged"?: (event: ElsaWorkflowDefinitionInputOutputSettingsCustomEvent<Array<InputDefinition>>) => void;
+        "onOutcomesChanged"?: (event: ElsaWorkflowDefinitionInputOutputSettingsCustomEvent<Array<string>>) => void;
         "onOutputsChanged"?: (event: ElsaWorkflowDefinitionInputOutputSettingsCustomEvent<Array<OutputDefinition>>) => void;
+        "outcomes"?: Array<string>;
         "outputs"?: Array<OutputDefinition>;
     }
     interface ElsaWorkflowDefinitionPickerInput {
@@ -1170,6 +1196,7 @@ declare namespace LocalJSX {
         "workflowInstance"?: WorkflowInstance;
     }
     interface ElsaWorkflowJournal {
+        "onJournalItemStatusSelected"?: (event: ElsaWorkflowJournalCustomEvent<string>) => void;
         "workflowDefinition"?: WorkflowDefinition;
         "workflowInstance"?: WorkflowInstance;
     }
@@ -1220,6 +1247,7 @@ declare namespace LocalJSX {
         "elsa-multi-line-input": ElsaMultiLineInput;
         "elsa-multi-text-input": ElsaMultiTextInput;
         "elsa-notifications-manager": ElsaNotificationsManager;
+        "elsa-outcome-picker-input": ElsaOutcomePickerInput;
         "elsa-output-picker-input": ElsaOutputPickerInput;
         "elsa-pager": ElsaPager;
         "elsa-panel": ElsaPanel;
@@ -1289,6 +1317,7 @@ declare module "@stencil/core" {
             "elsa-multi-line-input": LocalJSX.ElsaMultiLineInput & JSXBase.HTMLAttributes<HTMLElsaMultiLineInputElement>;
             "elsa-multi-text-input": LocalJSX.ElsaMultiTextInput & JSXBase.HTMLAttributes<HTMLElsaMultiTextInputElement>;
             "elsa-notifications-manager": LocalJSX.ElsaNotificationsManager & JSXBase.HTMLAttributes<HTMLElsaNotificationsManagerElement>;
+            "elsa-outcome-picker-input": LocalJSX.ElsaOutcomePickerInput & JSXBase.HTMLAttributes<HTMLElsaOutcomePickerInputElement>;
             "elsa-output-picker-input": LocalJSX.ElsaOutputPickerInput & JSXBase.HTMLAttributes<HTMLElsaOutputPickerInputElement>;
             "elsa-pager": LocalJSX.ElsaPager & JSXBase.HTMLAttributes<HTMLElsaPagerElement>;
             "elsa-panel": LocalJSX.ElsaPanel & JSXBase.HTMLAttributes<HTMLElsaPanelElement>;

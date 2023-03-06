@@ -1,5 +1,5 @@
 using System.Xml.Serialization;
-using Elsa.Http.Services;
+using Elsa.Http.Contracts;
 
 namespace Elsa.Http.Parsers;
 

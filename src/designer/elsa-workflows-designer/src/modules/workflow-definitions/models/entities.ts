@@ -7,6 +7,7 @@ export interface WorkflowDefinition extends VersionedEntity {
   variables?: Array<Variable>;
   inputs?: Array<InputDefinition>;
   outputs?: Array<OutputDefinition>;
+  outcomes?: Array<string>;
   customProperties?: Map<string, any>;
   materializerName: string;
   materializerContext?: string;

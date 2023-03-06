@@ -45,6 +45,11 @@ public class WorkflowDefinition : VersionedEntity
     public ICollection<OutputDefinition> Outputs { get; set; } = new List<OutputDefinition>();
     
     /// <summary>
+    /// A set of possible outcomes for this workflow.
+    /// </summary>
+    public ICollection<string> Outcomes { get; set; } = new List<string>();
+    
+    /// <summary>
     /// Stores custom information about the workflow. Can be used to store application-specific properties to associate with the workflow.
     /// </summary>
     public IDictionary<string, object> CustomProperties { get; set; } = new Dictionary<string, object>();

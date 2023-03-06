@@ -2,7 +2,7 @@ using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
-using Elsa.Hangfire.Implementations;
+using Elsa.Hangfire.Services;
 using Elsa.Jobs.Features;
 using Microsoft.Extensions.DependencyInjection;
 

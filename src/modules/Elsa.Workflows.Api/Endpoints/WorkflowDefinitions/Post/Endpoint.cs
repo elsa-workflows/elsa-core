@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Elsa.Abstractions;
 using Elsa.Common.Models;
 using Elsa.Workflows.Api.Models;
@@ -7,14 +6,16 @@ using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Models;
-using Elsa.Workflows.Management.Services;
 using JetBrains.Annotations;
 using Medallion.Threading;
+using System.Text.Json;
+using Elsa.Workflows.Api.Mappers;
+using Elsa.Workflows.Management.Contracts;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Post;
 
 [PublicAPI]
-internal class Post : ElsaEndpoint<WorkflowDefinitionRequest, WorkflowDefinitionResponse>
+internal class Post : ElsaEndpoint<WorkflowDefinitionRequest, WorkflowDefinitionResponse, WorkflowDefinitionMapper>
 {
     private readonly SerializerOptionsProvider _serializerOptionsProvider;
     private readonly IWorkflowDefinitionPublisher _workflowDefinitionPublisher;
@@ -45,10 +46,11 @@ internal class Post : ElsaEndpoint<WorkflowDefinitionRequest, WorkflowDefinition
         var resourceName = $"{GetType().FullName}:{(!string.IsNullOrWhiteSpace(definitionId) ? definitionId : Guid.NewGuid().ToString())}";
 
         await using var handle = await _distributedLockProvider.AcquireLockAsync(resourceName, TimeSpan.FromMinutes(1), cancellationToken);
-        
+
         // Get a workflow draft version.
-        var draftVersion = request.Version != null ? VersionOptions.SpecificVersion(request.Version.Value) : VersionOptions.Latest;
-        
+        var isPublishExistingVersion = request is { Publish: true, Version: { } };
+        var draftVersion = isPublishExistingVersion ? VersionOptions.SpecificVersion(request.Version!.Value) : VersionOptions.Latest;
+
         var draft = !string.IsNullOrWhiteSpace(definitionId)
             ? await _workflowDefinitionPublisher.GetDraftAsync(definitionId, draftVersion, cancellationToken)
             : default;
@@ -71,6 +73,7 @@ internal class Post : ElsaEndpoint<WorkflowDefinitionRequest, WorkflowDefinition
         var variables = _variableDefinitionMapper.Map(request.Variables).ToList();
         var inputs = request.Inputs ?? new List<InputDefinition>();
         var outputs = request.Outputs ?? new List<OutputDefinition>();
+        var outcomes = request.Outcomes ?? new List<string>();
 
         draft!.StringData = stringData;
         draft.MaterializerName = JsonWorkflowMaterializer.MaterializerName;
@@ -80,29 +83,15 @@ internal class Post : ElsaEndpoint<WorkflowDefinitionRequest, WorkflowDefinition
         draft.Variables = variables;
         draft.Inputs = inputs;
         draft.Outputs = outputs;
+        draft.Outcomes = outcomes;
         draft.Options = request.Options;
         draft.UsableAsActivity = request.UsableAsActivity;
         draft = request.Publish ? await _workflowDefinitionPublisher.PublishAsync(draft, cancellationToken) : await _workflowDefinitionPublisher.SaveDraftAsync(draft, cancellationToken);
 
-        var response = new WorkflowDefinitionResponse(
-            draft.Id,
-            draft.DefinitionId,
-            draft.Name,
-            draft.Description,
-            draft.CreatedAt,
-            draft.Version,
-            request.Variables ?? new List<VariableDefinition>(),
-            inputs,
-            outputs,
-            draft.CustomProperties,
-            draft.IsLatest,
-            draft.IsPublished,
-            draft.UsableAsActivity,
-            root,
-            draft.Options);
+        var response = await Map.FromEntityAsync(draft, cancellationToken);
 
         if (isNew)
-            await SendCreatedAtAsync<Get.Get>(new { definitionId = definitionId }, response, cancellation: cancellationToken);
+            await SendCreatedAtAsync<Get.Get>(new { definitionId }, response, cancellation: cancellationToken);
         else
             await SendOkAsync(response, cancellationToken);
     }

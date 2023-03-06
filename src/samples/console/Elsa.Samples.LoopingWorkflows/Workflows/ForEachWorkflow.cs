@@ -1,6 +1,7 @@
 using Elsa.Scheduling.Activities;
 using Elsa.Scheduling.Models;
 using Elsa.Workflows.Core.Activities;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
 

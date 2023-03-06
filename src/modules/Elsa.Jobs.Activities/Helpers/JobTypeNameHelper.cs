@@ -1,6 +1,6 @@
 using System.Reflection;
 using Elsa.Jobs.Activities.Attributes;
-using Elsa.Jobs.Services;
+using Elsa.Jobs.Contracts;
 
 namespace Elsa.Jobs.Activities.Helpers;
 

@@ -21,6 +21,7 @@ export class InputControlRegistry {
     this.add('variable-picker', c => <elsa-variable-picker-input inputContext={c}/>);
     this.add('type-picker', c => <elsa-type-picker-input inputContext={c}/>);
     this.add('output-picker', c => <elsa-output-picker-input inputContext={c}/>);
+    this.add('outcome-picker', c => <elsa-outcome-picker-input inputContext={c}/>);
   }
 
   public add(uiHint: UIHint, control: RenderActivityPropInputControl) {

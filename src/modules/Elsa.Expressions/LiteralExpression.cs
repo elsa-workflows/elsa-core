@@ -1,6 +1,6 @@
+using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
-using Elsa.Expressions.Services;
 
 namespace Elsa.Expressions;
 

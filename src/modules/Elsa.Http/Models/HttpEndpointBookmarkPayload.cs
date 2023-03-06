@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Elsa.Workflows.Core.Attributes;
 
 namespace Elsa.Http.Models;
 
@@ -29,4 +30,7 @@ public record HttpEndpointBookmarkPayload
         get => _method;
         init => _method = value.ToLowerInvariant();
     }
+
+    [ExcludeFromHash]
+    public string Policy { get; set; }
 }

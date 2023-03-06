@@ -1,5 +1,5 @@
 using Elsa.Expressions.Models;
-using Elsa.Mediator.Services;
+using Elsa.Mediator.Contracts;
 using Jint;
 
 namespace Elsa.JavaScript.Notifications;

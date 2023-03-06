@@ -1,4 +1,4 @@
-﻿using Elsa.Identity.Services;
+﻿using Elsa.Identity.Contracts;
 using FastEndpoints;
 
 namespace Elsa.Identity.Endpoints.Password.Hash;

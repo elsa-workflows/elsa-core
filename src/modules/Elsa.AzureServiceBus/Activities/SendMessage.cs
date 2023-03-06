@@ -1,5 +1,5 @@
 using Azure.Messaging.ServiceBus;
-using Elsa.Common.Implementations;
+using Elsa.Common.Contracts;
 using Elsa.Common.Services;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Attributes;

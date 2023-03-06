@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
 

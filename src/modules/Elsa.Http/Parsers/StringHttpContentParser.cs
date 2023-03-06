@@ -1,5 +1,5 @@
 using Elsa.Expressions.Helpers;
-using Elsa.Http.Services;
+using Elsa.Http.Contracts;
 
 namespace Elsa.Http.Parsers;
 

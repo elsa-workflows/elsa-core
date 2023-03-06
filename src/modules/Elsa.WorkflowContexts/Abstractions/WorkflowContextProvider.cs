@@ -1,4 +1,4 @@
-using Elsa.WorkflowContexts.Services;
+using Elsa.WorkflowContexts.Contracts;
 using Elsa.Workflows.Core.Models;
 
 namespace Elsa.WorkflowContexts.Abstractions;

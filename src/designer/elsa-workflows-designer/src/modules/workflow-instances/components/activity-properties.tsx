@@ -1,26 +1,34 @@
-import {Component, h, Method, Prop, State} from '@stencil/core';
+import {Component, Event, EventEmitter, h, Listen, Method, Prop, State} from '@stencil/core';
 import {camelCase} from 'lodash';
 import {
   Activity,
   ActivityDescriptor,
   Lookup,
   TabChangedArgs,
-  TabDefinition
+  TabDefinition,
+  WorkflowExecutionLogRecord
 } from '../../../models';
 import {InfoList} from "../../../components/shared/forms/info-list";
 import descriptorsStore from "../../../data/descriptors-store";
+import moment from 'moment';
+import Container from 'typedi';
+import { ActivityIconRegistry } from '../../../services';
+import { ActivityIconSize } from '../../../components/icons/activities/models';
 
 @Component({
   tag: 'elsa-activity-properties',
 })
 export class ActivityProperties {
   private slideOverPanel: HTMLElsaSlideOverPanelElement;
+  private readonly iconRegistry: ActivityIconRegistry;
 
   constructor() {
+    this.iconRegistry = Container.get(ActivityIconRegistry);
   }
 
   @Prop({mutable: true}) public activity?: Activity;
-
+  @Prop() public activityExecutionLog: WorkflowExecutionLogRecord;
+  @Prop() public activityPropertyTabIndex?: number;
   @State() private selectedTabIndex: number = 0;
 
   @Method()
@@ -31,6 +39,17 @@ export class ActivityProperties {
   @Method()
   public async hide(): Promise<void> {
     await this.slideOverPanel.hide();
+  }
+
+  @Method()
+  public async updateSelectedTab(tabIndex : number): Promise<void> {
+    this.selectedTabIndex = tabIndex;
+  }
+
+  async componentWillLoad(): Promise<void> {
+    if(this.activityPropertyTabIndex != null) {
+      this.selectedTabIndex = this.activityPropertyTabIndex;
+    }
   }
 
   public render() {
@@ -47,7 +66,12 @@ export class ActivityProperties {
       content: () => this.renderCommonTab()
     };
 
-    const tabs = !!activityDescriptor ? [propertiesTab, commonTab] : [];
+    const journalTab: TabDefinition = {
+      displayText: 'Journal',
+      content: () => this.renderJournalTab()
+    };
+
+    const tabs = !!activityDescriptor ? [propertiesTab, commonTab, journalTab] : [];
     const mainTitle = activity.id;
     const subTitle = activityDescriptor.displayName;
 
@@ -92,5 +116,79 @@ export class ActivityProperties {
   private renderCommonTab = () => {
     return <div>
     </div>
+  };
+
+  private renderJournalTab = () => {
+    const log = this.activityExecutionLog;
+    if(log == null) return;
+    
+    const exception = log.payload?.exception;
+    const statusColor = log.eventName == "Completed" ? "bg-blue-100" : log.eventName == "Faulted" ? "bg-red-100" : "bg-green-100";
+    const icon = this.iconRegistry.getOrDefault(log.activityType)({size: ActivityIconSize.Small});
+    return (
+      <div class="border-2 cursor-pointer p-4 rounded">
+        <div class="relative pb-10">
+          <div class="relative flex space-x-3">
+            <div>
+              <span class={`h-8 w-8 rounded p-1 bg-blue-500 flex items-center justify-center ring-8 ring-white mr-1`}>
+                {icon}
+              </span>
+            </div>
+            <div class="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
+              <div>
+                <h3 class="text-lg leading-6 font-medium text-gray-900">
+                  {log.activityType}
+                </h3>
+              </div>
+              <div>
+                <span
+                  class={`relative inline-flex items-center rounded-full ${statusColor} border border-gray-300 px-3 py-0.5 text-sm`}>
+                  <span class="absolute flex-shrink-0 flex items-center justify-center">
+                    <span class={`h-1.5 w-1.5 rounded-full`} aria-hidden="true"/>
+                  </span>
+                  <span class="font-medium text-gray-900">{log.eventName}</span>
+                </span>
+              </div>
+              <div class="text-right text-sm whitespace-nowrap text-gray-500">
+                <span>{moment(log.timestamp).format('DD-MM-YYYY HH:mm:ss')}</span>
+              </div>
+            </div>
+          </div>
+          <div class="ml-12 mt-2">
+            <dl class="sm:divide-y sm:divide-gray-200">
+              <div class="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-2">
+                <div class="sm:col-span-2">
+                  <dt class="text-sm font-medium text-gray-500">
+                    <span>Activity ID</span>
+                    <copy-button value={log.activityId}/>
+                  </dt>
+                  <dd class="mt-1 text-sm text-gray-900 mb-2">{log.activityId}</dd>
+                </div>
+                {!!exception ? (
+                  [<div class="sm:col-span-2">
+                    <dt class="text-sm font-medium text-gray-500">
+                      <span>Exception</span>
+                      <copy-button value={exception.Type + '\n' + exception.Message}/>
+                    </dt>
+                    <dd class="mt-1 text-sm text-gray-900">
+                      {exception.message}
+                    </dd>
+                  </div>,
+                    <div class="sm:col-span-2">
+                      <dt class="text-sm font-medium text-gray-500">
+                        <span>Exception Details</span>
+                        <copy-button value={JSON.stringify(exception, null, 1)}/>
+                      </dt>
+                      <dd class="mt-1 text-sm text-gray-900 overflow-x-auto">
+                        <pre>{JSON.stringify(exception, null, 1)}</pre>
+                      </dd>
+                    </div>]
+                ) : undefined}
+              </div>
+            </dl>
+          </div>
+        </div>
+      </div>
+    )
   };
 }

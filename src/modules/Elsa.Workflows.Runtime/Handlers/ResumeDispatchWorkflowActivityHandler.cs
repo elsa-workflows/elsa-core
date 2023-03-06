@@ -1,11 +1,11 @@
-using Elsa.Mediator.Services;
+using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Notifications;
 using Elsa.Workflows.Runtime.Activities;
 using Elsa.Workflows.Runtime.Bookmarks;
+using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Models;
-using Elsa.Workflows.Runtime.Services;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Runtime.Handlers;
