@@ -1,4 +1,4 @@
-using Elsa.Expressions.Services;
+using Elsa.Expressions.Contracts;
 using Microsoft.Extensions.Hosting;
 
 namespace Elsa.Workflows.Runtime.HostedServices;

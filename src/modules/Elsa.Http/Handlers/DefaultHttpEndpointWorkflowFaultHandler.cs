@@ -1,9 +1,9 @@
 using Elsa.Http.Models;
-using Elsa.Http.Services;
 using Elsa.Workflows.Core.Serialization;
 using Microsoft.AspNetCore.Http;
 using System.Net.Mime;
 using System.Text.Json;
+using Elsa.Http.Contracts;
 
 namespace Elsa.Http.Handlers;
 

@@ -1,5 +1,5 @@
-﻿using Elsa.Identity.Models;
-using Elsa.Identity.Services;
+﻿using Elsa.Identity.Contracts;
+using Elsa.Identity.Models;
 using FastEndpoints;
 
 namespace Elsa.Identity.Endpoints.Login;

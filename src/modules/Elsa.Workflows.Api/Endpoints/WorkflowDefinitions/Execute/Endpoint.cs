@@ -1,9 +1,9 @@
 using Elsa.Abstractions;
 using Elsa.Common.Models;
 using Elsa.Extensions;
-using Elsa.Http.Services;
-using Elsa.Workflows.Management.Services;
-using Elsa.Workflows.Runtime.Services;
+using Elsa.Http.Contracts;
+using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Runtime.Contracts;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Execute;

@@ -1,5 +1,5 @@
+using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Features;
-using Elsa.Expressions.Services;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
@@ -13,7 +13,7 @@ using Elsa.JavaScript.TypeDefinitions.Contracts;
 using Elsa.JavaScript.TypeDefinitions.Providers;
 using Elsa.JavaScript.TypeDefinitions.Services;
 using Elsa.Mediator.Features;
-using Elsa.Workflows.Management.Implementations;
+using Elsa.Workflows.Management.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.JavaScript.Features;
@@ -33,6 +33,13 @@ public class JavaScriptFeature : FeatureBase
     /// <inheritdoc />
     public override void Configure()
     {
+        Module.UseWorkflowManagement(management => management.AddActivitiesFrom<JavaScriptFeature>());
+    }
+
+    /// <inheritdoc />
+    public override void Apply()
+    {
+        // JavaScript services.
         Services
             .AddSingleton<IExpressionSyntaxProvider, JavaScriptExpressionSyntaxProvider>()
             .AddSingleton<IJavaScriptEvaluator, JintJavaScriptEvaluator>()
@@ -41,6 +48,7 @@ public class JavaScriptFeature : FeatureBase
             .AddExpressionHandler<JavaScriptExpressionHandler, JavaScriptExpression>()
             ;
 
+        // Type definition services.
         Services
             .AddSingleton<ITypeDefinitionService, TypeDefinitionService>()
             .AddSingleton<ITypeDescriber, TypeDescriber>()
@@ -50,7 +58,8 @@ public class JavaScriptFeature : FeatureBase
             .AddSingleton<ITypeDefinitionProvider, CommonTypeDefinitionProvider>()
             .AddSingleton<ITypeDefinitionProvider, VariableTypeDefinitionProvider>()
             ;
-
-        Module.UseWorkflowManagement(management => management.AddActivitiesFrom<JavaScriptFeature>());
+        
+        // Handlers.
+        Services.AddNotificationHandlersFrom<JavaScriptFeature>();
     }
 }

@@ -1,4 +1,4 @@
-using Elsa.Http.Services;
+using Elsa.Http.Contracts;
 using Elsa.Workflows.Core.Models;
 
 // ReSharper disable once CheckNamespace

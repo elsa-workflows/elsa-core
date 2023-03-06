@@ -1,6 +1,6 @@
 using System.Net.Mime;
 using Azure.Messaging.ServiceBus;
-using Elsa.Common.Implementations;
+using Elsa.Common.Services;
 using Elsa.Samples.MassTransitActivities.Messages;
 using FastEndpoints;
 

@@ -2,8 +2,8 @@ using System.Text.Json.Serialization;
 using Elsa.Common.Models;
 using Elsa.Jobs.Abstractions;
 using Elsa.Jobs.Models;
+using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Models;
-using Elsa.Workflows.Runtime.Services;
 
 namespace Elsa.Scheduling.Jobs;
 

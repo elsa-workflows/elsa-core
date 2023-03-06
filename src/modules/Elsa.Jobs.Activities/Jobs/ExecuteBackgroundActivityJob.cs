@@ -2,8 +2,9 @@ using Elsa.Common.Models;
 using Elsa.Jobs.Abstractions;
 using Elsa.Jobs.Activities.Middleware.Activities;
 using Elsa.Jobs.Models;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Services;
-using Elsa.Workflows.Runtime.Services;
+using Elsa.Workflows.Runtime.Contracts;
 
 namespace Elsa.Jobs.Activities.Jobs;
 

@@ -1,4 +1,4 @@
-using Elsa.Dsl.Implementations;
+using Elsa.Dsl.Contracts;
 using Elsa.Dsl.Services;
 using Elsa.Expressions.Features;
 using Elsa.Features.Abstractions;

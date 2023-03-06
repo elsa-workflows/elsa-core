@@ -1,4 +1,4 @@
-using Elsa.Expressions.Services;
+using Elsa.Expressions.Contracts;
 
 namespace Elsa.JavaScript.Expressions;
 

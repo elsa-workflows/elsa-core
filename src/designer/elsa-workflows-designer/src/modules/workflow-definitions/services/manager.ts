@@ -22,6 +22,7 @@ export class WorkflowDefinitionManager {
       variables: definition.variables,
       inputs: definition.inputs,
       outputs: definition.outputs,
+      outcomes: definition.outcomes,
       options: definition.options,
       usableAsActivity: definition.usableAsActivity
     };

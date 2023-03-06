@@ -1,7 +1,7 @@
 using System.Text.Json.Serialization;
 using Elsa.Expressions;
+using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Models;
-using Elsa.Expressions.Services;
 using Elsa.Workflows.Core.Expressions;
 
 namespace Elsa.Workflows.Core.Models;

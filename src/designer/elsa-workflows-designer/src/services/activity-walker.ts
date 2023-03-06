@@ -81,10 +81,12 @@ function walkRecursive(node: ActivityNode, activity: Activity, collectedActiviti
     }
 
     if (childNode !== node) {
-      childNode.parents.push(node);
-      node.children.push(childNode);
-      collectedActivities.add(port.activity);
-      walkRecursive(childNode, port.activity, collectedActivities, collectedNodes, descriptors);
+      if(!!childNode.activity) {
+        childNode.parents.push(node);
+        node.children.push(childNode);
+        collectedActivities.add(port.activity)
+        walkRecursive(childNode, port.activity, collectedActivities, collectedNodes, descriptors);
+      }
     }
   }
 }
@@ -103,9 +105,6 @@ function getPorts(node: ActivityNode, activity: Activity, descriptors: Array<Act
 
   for (const port of ports) {
     const value = portProvider.resolvePort(port.name, portProviderContext);
-
-    if (!value)
-      continue;
 
     if (Array.isArray(value)) {
       const activities = value as Array<Activity>;

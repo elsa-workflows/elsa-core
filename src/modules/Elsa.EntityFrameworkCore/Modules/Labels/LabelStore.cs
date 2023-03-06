@@ -1,17 +1,17 @@
 using Elsa.Common.Models;
 using Elsa.EntityFrameworkCore.Common;
 using Elsa.Labels.Entities;
-using Elsa.Labels.Services;
 using Elsa.EntityFrameworkCore.Extensions;
+using Elsa.Labels.Contracts;
 
 namespace Elsa.EntityFrameworkCore.Modules.Labels;
 
 public class EFCoreLabelStore : ILabelStore
 {
-    private readonly Store<LabelsElsaDbContext, Label> _labelStore;
-    private readonly Store<LabelsElsaDbContext, WorkflowDefinitionLabel> _workflowDefinitionLabelStore;
+    private readonly EntityStore<LabelsElsaDbContext, Label> _labelStore;
+    private readonly EntityStore<LabelsElsaDbContext, WorkflowDefinitionLabel> _workflowDefinitionLabelStore;
 
-    public EFCoreLabelStore(Store<LabelsElsaDbContext, Label> labelStore, Store<LabelsElsaDbContext, WorkflowDefinitionLabel> workflowDefinitionLabelStore)
+    public EFCoreLabelStore(EntityStore<LabelsElsaDbContext, Label> labelStore, EntityStore<LabelsElsaDbContext, WorkflowDefinitionLabel> workflowDefinitionLabelStore)
     {
         _labelStore = labelStore;
         _workflowDefinitionLabelStore = workflowDefinitionLabelStore;

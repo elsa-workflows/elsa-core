@@ -1,4 +1,4 @@
-using Elsa.Common.Implementations;
+using Elsa.Common.Contracts;
 using Elsa.Common.Services;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;

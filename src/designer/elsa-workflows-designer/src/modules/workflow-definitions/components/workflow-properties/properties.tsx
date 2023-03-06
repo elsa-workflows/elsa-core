@@ -230,13 +230,16 @@ export class WorkflowDefinitionPropertiesEditor {
   private renderInputOutputTab = () => {
     const inputs: Array<InputDefinition> = this.workflowDefinition?.inputs ?? [];
     const outputs: Array<OutputDefinition> = this.workflowDefinition?.outputs ?? [];
+    const outcomes: Array<string> = this.workflowDefinition?.outcomes ?? [];
 
     return <div>
       <elsa-workflow-definition-input-output-settings
         inputs={inputs}
         outputs={outputs}
+        outcomes={outcomes}
         onInputsChanged={e => this.onInputsUpdated(e)}
         onOutputsChanged={e => this.onOutputsUpdated(e)}
+        onOutcomesChanged={e => this.onOutcomesUpdated(e)}
       />
     </div>
   };
@@ -258,35 +261,23 @@ export class WorkflowDefinitionPropertiesEditor {
     this.workflowPropsUpdated.emit({workflowDefinition});
   }
 
-  private onVariablesUpdated = async (e: CustomEvent<Array<Variable>>) => {
+  private onVariablesUpdated = async (e: CustomEvent<Array<Variable>>) => this.onPropsUpdated('variables', e.detail)
+
+  private onInputsUpdated = async (e: CustomEvent<Array<InputDefinition>>) => this.onPropsUpdated('inputs', e.detail)
+  private onOutputsUpdated = async (e: CustomEvent<Array<OutputDefinition>>) => this.onPropsUpdated('outputs', e.detail)
+
+  private onOutcomesUpdated = async (e: CustomEvent<Array<string>>) => this.onPropsUpdated('outcomes', e.detail)
+
+  private onPropsUpdated = async (
+    propName: string,
+    propValue: Array<Variable> | Array<InputDefinition> | Array<OutputDefinition> | Array<string>
+  ) => {
     const workflowDefinition = this.workflowDefinition;
 
     if (!workflowDefinition)
       return;
 
-    workflowDefinition.variables = e.detail;
-    this.workflowPropsUpdated.emit({workflowDefinition});
-    await this.createModel();
-  }
-
-  private onInputsUpdated = async (e: CustomEvent<Array<InputDefinition>>) => {
-    const workflowDefinition = this.workflowDefinition;
-
-    if (!workflowDefinition)
-      return;
-
-    workflowDefinition.inputs = e.detail;
-    this.workflowPropsUpdated.emit({workflowDefinition});
-    await this.createModel();
-  }
-
-  private onOutputsUpdated = async (e: CustomEvent<Array<OutputDefinition>>) => {
-    const workflowDefinition = this.workflowDefinition;
-
-    if (!workflowDefinition)
-      return;
-
-    workflowDefinition.outputs = e.detail;
+    workflowDefinition[propName] = propValue;
     this.workflowPropsUpdated.emit({workflowDefinition});
     await this.createModel();
   }

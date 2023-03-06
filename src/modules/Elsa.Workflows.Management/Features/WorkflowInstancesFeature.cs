@@ -1,6 +1,6 @@
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
-using Elsa.Workflows.Management.Implementations;
+using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Services;
 using Microsoft.Extensions.DependencyInjection;
 

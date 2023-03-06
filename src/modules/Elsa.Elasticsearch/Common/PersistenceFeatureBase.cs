@@ -1,4 +1,4 @@
-using Elsa.Elasticsearch.Services;
+using Elsa.Elasticsearch.Contracts;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Microsoft.Extensions.DependencyInjection;

@@ -1,5 +1,5 @@
 ﻿using Elsa.Jobs.Activities.Models;
-using Elsa.Jobs.Services;
+using Elsa.Jobs.Contracts;
 using Elsa.Workflows.Core.Models;
 
 // ReSharper disable once CheckNamespace

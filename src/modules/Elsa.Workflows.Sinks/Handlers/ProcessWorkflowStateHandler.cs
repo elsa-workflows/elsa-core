@@ -1,7 +1,7 @@
+using Elsa.Mediator.Contracts;
 using Elsa.Mediator.Models;
-using Elsa.Mediator.Services;
 using Elsa.Workflows.Sinks.Commands;
-using Elsa.Workflows.Sinks.Implementations;
+using Elsa.Workflows.Sinks.Contracts;
 using Elsa.Workflows.Sinks.Services;
 
 namespace Elsa.Workflows.Sinks.Handlers;

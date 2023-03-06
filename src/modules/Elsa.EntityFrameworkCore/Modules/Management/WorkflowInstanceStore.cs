@@ -5,9 +5,9 @@ using Elsa.EntityFrameworkCore.Common;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.State;
+using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Models;
-using Elsa.Workflows.Management.Services;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.EntityFrameworkCore.Modules.Management;
@@ -17,13 +17,13 @@ namespace Elsa.EntityFrameworkCore.Modules.Management;
 /// </summary>
 public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
 {
-    private readonly Store<ManagementElsaDbContext, WorkflowInstance> _store;
+    private readonly EntityStore<ManagementElsaDbContext, WorkflowInstance> _store;
     private readonly SerializerOptionsProvider _serializerOptionsProvider;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public EFCoreWorkflowInstanceStore(Store<ManagementElsaDbContext, WorkflowInstance> store, SerializerOptionsProvider serializerOptionsProvider)
+    public EFCoreWorkflowInstanceStore(EntityStore<ManagementElsaDbContext, WorkflowInstance> store, SerializerOptionsProvider serializerOptionsProvider)
     {
         _store = store;
         _serializerOptionsProvider = serializerOptionsProvider;

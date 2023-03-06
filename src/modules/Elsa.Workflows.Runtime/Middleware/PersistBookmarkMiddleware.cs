@@ -1,10 +1,10 @@
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
+using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Notifications;
-using Elsa.Workflows.Runtime.Services;
-using IEventPublisher = Elsa.Mediator.Services.IEventPublisher;
+using IEventPublisher = Elsa.Mediator.Contracts.IEventPublisher;
 
 namespace Elsa.Workflows.Runtime.Middleware;
 

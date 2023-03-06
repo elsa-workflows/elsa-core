@@ -1,12 +1,12 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Elsa.Common.Services;
+using Elsa.Common.Contracts;
 using Elsa.EntityFrameworkCore.Common;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.Serialization.Converters;
 using Elsa.Workflows.Core.State;
-using Elsa.Workflows.Runtime.Services;
+using Elsa.Workflows.Runtime.Contracts;
 using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.EntityFrameworkCore.Modules.Runtime;
@@ -17,13 +17,13 @@ public class EFCoreWorkflowStateStore : IWorkflowStateStore
     private readonly SerializerOptionsProvider _serializerOptionsProvider;
     private readonly ISystemClock _systemClock;
     private readonly IDbContextFactory<RuntimeElsaDbContext> _dbContextFactory;
-    private readonly Store<RuntimeElsaDbContext, WorkflowState> _store;
+    private readonly EntityStore<RuntimeElsaDbContext, WorkflowState> _store;
 
     /// <summary>
     /// Constructor.
     /// </summary>
     public EFCoreWorkflowStateStore(
-        Store<RuntimeElsaDbContext, WorkflowState> store,
+        EntityStore<RuntimeElsaDbContext, WorkflowState> store,
         IDbContextFactory<RuntimeElsaDbContext> dbContextFactory,
         SerializerOptionsProvider serializerOptionsProvider,
         ISystemClock systemClock)

@@ -4,6 +4,7 @@ import {Container} from "typedi";
 import {ModalActionClickArgs, ModalActionDefinition, ModalActionType, ModalDialogInstance, ModalDialogService} from "../../../../components/shared/modal-dialog";
 import {InputDefinition, OutputDefinition} from "../../models/entities";
 import {DeleteIcon, EditIcon} from "../../../../components/icons/tooling";
+import {FormEntry} from "../../../../components/shared/forms/form-entry";
 
 @Component({
   tag: 'elsa-workflow-definition-input-output-settings',
@@ -37,8 +38,10 @@ export class InputOutputSettings {
 
   @Prop() inputs?: Array<InputDefinition>;
   @Prop() outputs?: Array<OutputDefinition>;
+  @Prop() outcomes?: Array<string>;
   @Event() inputsChanged: EventEmitter<Array<InputDefinition>>;
   @Event() outputsChanged: EventEmitter<Array<OutputDefinition>>;
+  @Event() outcomesChanged: EventEmitter<Array<string>>;
   @State() inputsState: Array<InputDefinition> = [];
   @State() outputsState: Array<OutputDefinition> = [];
 
@@ -63,6 +66,7 @@ export class InputOutputSettings {
       <div>
         {this.renderInputs()}
         {this.renderOutputs()}
+        {this.renderOutcomes()}
       </div>
     );
   }
@@ -156,6 +160,19 @@ export class InputOutputSettings {
       <div class="flex justify-end m-4">
         <button class="btn btn-primary" onClick={e => this.onAddOutputClick()}>Add output parameter</button>
       </div>
+    </div>
+  };
+
+  private renderOutcomes = () => {
+    const outcomes = [...this.outcomes];
+
+    return <div>
+      <div class="p-4">
+        <h3 class="text-md leading-6 font-medium text-gray-900">Outcomes</h3>
+      </div>
+      <FormEntry label="" fieldId="WorkflowDefinitionOutcomes" hint="Enter a list of possible outcomes for this workflow.">
+        <elsa-input-tags placeHolder="Add outcome" values={outcomes} onValueChanged={e => this.onOutcomesChanged(e.detail)}/>
+      </FormEntry>
     </div>
   };
 
@@ -261,4 +278,8 @@ export class InputOutputSettings {
 
     this.updateOutputsState(outputs);
   };
+
+  private onOutcomesChanged = (outcomes: Array<string>) => {
+    this.outcomesChanged.emit(outcomes);
+  }
 }

@@ -3,11 +3,12 @@ using System.Reflection;
 using Elsa.Extensions;
 using Elsa.MassTransit.Activities;
 using Elsa.MassTransit.Options;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Models;
-using Elsa.Workflows.Management.Services;
 using Humanizer;
 using Microsoft.Extensions.Options;
 

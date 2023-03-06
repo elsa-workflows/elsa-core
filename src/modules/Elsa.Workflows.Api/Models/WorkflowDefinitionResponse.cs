@@ -1,3 +1,4 @@
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Models;
@@ -16,6 +17,7 @@ internal class WorkflowDefinitionResponse
         ICollection<VariableDefinition> variables,
         ICollection<InputDefinition> inputs,
         ICollection<OutputDefinition> outputs,
+        ICollection<string> outcomes,
         IDictionary<string, object> metadata,
         bool isLatest,
         bool isPublished,
@@ -32,6 +34,7 @@ internal class WorkflowDefinitionResponse
         Variables = variables;
         Inputs = inputs;
         Outputs = outputs;
+        Outcomes = outcomes;
         Metadata = metadata;
         IsLatest = isLatest;
         IsPublished = isPublished;
@@ -49,6 +52,7 @@ internal class WorkflowDefinitionResponse
     public ICollection<VariableDefinition> Variables { get; }
     public ICollection<InputDefinition> Inputs { get; }
     public ICollection<OutputDefinition> Outputs { get; }
+    public ICollection<string> Outcomes { get; }
     public IDictionary<string, object> Metadata { get; }
     public bool IsLatest { get; }
     public bool IsPublished { get; }

@@ -1,6 +1,6 @@
-using Elsa.Mediator.Services;
+using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Core.Notifications;
-using Elsa.Workflows.Sinks.Services;
+using Elsa.Workflows.Sinks.Contracts;
 
 namespace Elsa.Workflows.Sinks.Handlers;
 

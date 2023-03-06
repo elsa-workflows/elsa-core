@@ -2,6 +2,7 @@ using System.ComponentModel;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Services;
 using JetBrains.Annotations;
 

@@ -1,5 +1,5 @@
 using Elastic.Clients.Elasticsearch;
-using Elsa.Elasticsearch.Services;
+using Elsa.Elasticsearch.Contracts;
 using Elsa.Elasticsearch.Strategies;
 
 namespace Elsa.Elasticsearch.Common;

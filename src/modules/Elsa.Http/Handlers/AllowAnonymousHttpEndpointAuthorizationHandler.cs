@@ -1,5 +1,5 @@
+using Elsa.Http.Contracts;
 using Elsa.Http.Models;
-using Elsa.Http.Services;
 
 namespace Elsa.Http.Handlers;
 
