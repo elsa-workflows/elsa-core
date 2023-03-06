@@ -156,7 +156,7 @@ public class ActivityExecutionContext
         var identityGenerator = GetRequiredService<IIdentityGenerator>();
         var payloadSerializer = GetRequiredService<IBookmarkPayloadSerializer>();
         var payloadJson = payload != null ? payloadSerializer.Serialize(payload) : default;
-        var hash = bookmarkHasher.Hash(activityTypeName, payloadJson);
+        var hash = bookmarkHasher.Hash(activityTypeName, payload);
 
         var bookmark = new Bookmark(
             identityGenerator.GenerateId(),
