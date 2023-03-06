@@ -1,9 +1,9 @@
-using System.Collections.ObjectModel;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
+using System.Collections.ObjectModel;
 
 namespace Elsa.Workflows.Core.Models;
 
@@ -65,57 +65,57 @@ public class WorkflowExecutionContext
     /// The <see cref="Workflow"/> associated with the execution context.
     /// </summary>
     public Workflow Workflow { get; }
-    
+
     /// <summary>
     /// A graph of the workflow structure.
     /// </summary>
     public ActivityNode Graph { get; }
-    
+
     /// <summary>
     /// The current status of the workflow. 
     /// </summary>
     public WorkflowStatus Status => GetMainStatus(SubStatus);
-    
+
     /// <summary>
     /// The current sub status of the workflow.
     /// </summary>
     public WorkflowSubStatus SubStatus { get; internal set; }
-    
+
     /// <summary>
     /// The root <see cref="MemoryRegister"/> associated with the execution context.
     /// </summary>
     public MemoryRegister MemoryRegister { get; }
-    
+
     /// <summary>
     /// A unique ID of the execution context.
     /// </summary>
     public string Id { get; set; }
-    
+
     /// <summary>
     /// An application-specific identifier associated with the execution context.
     /// </summary>
     public string? CorrelationId { get; set; }
-    
+
     /// <summary>
     /// A flattened list of <see cref="ActivityNode"/>s from the <see cref="Graph"/>. 
     /// </summary>
     public IReadOnlyCollection<ActivityNode> Nodes => new ReadOnlyCollection<ActivityNode>(_nodes);
-    
+
     /// <summary>
     /// A map between activity IDs and <see cref="ActivityNode"/>s in the workflow graph.
     /// </summary>
     public IDictionary<string, ActivityNode> NodeIdLookup { get; }
-    
+
     /// <summary>
     /// A map between <see cref="IActivity"/>s and <see cref="ActivityNode"/>s in the workflow graph.
     /// </summary>
     public IDictionary<IActivity, ActivityNode> NodeActivityLookup { get; }
-    
+
     /// <summary>
     /// The <see cref="IActivityScheduler"/> for the execution context.
     /// </summary>
     public IActivityScheduler Scheduler { get; }
-    
+
     /// <summary>
     /// A collection of collected bookmarks during workflow execution. 
     /// </summary>
@@ -151,22 +151,22 @@ public class WorkflowExecutionContext
     /// The current <see cref="ExecuteActivityDelegate"/> delegate to invoke when executing the next activity.
     /// </summary>
     public ExecuteActivityDelegate? ExecuteDelegate { get; set; }
-    
+
     /// <summary>
     /// Provides context about the bookmark that was used to resume workflow execution, if any. 
     /// </summary>
     public ResumedBookmarkContext? ResumedBookmarkContext { get; set; }
-    
+
     /// <summary>
     /// The ID of the activity associated with the trigger that caused this workflow execution, if any. 
     /// </summary>
     public string? TriggerActivityId { get; set; }
-    
+
     /// <summary>
     /// A <see cref="CancellationToken"/> that can be used to cancel asynchronous operations.
     /// </summary>
     public CancellationToken CancellationToken { get; }
-    
+
     /// <summary>
     /// A list of <see cref="ActivityCompletionCallbackEntry"/> callbacks that are invoked when the associated child activity completes.
     /// </summary>
@@ -190,32 +190,32 @@ public class WorkflowExecutionContext
     /// Resolves the specified service type from the service provider.
     /// </summary>
     public T GetRequiredService<T>() where T : notnull => _serviceProvider.GetRequiredService<T>();
-    
+
     /// <summary>
     /// Resolves the specified service type from the service provider.
     /// </summary>
     public object GetRequiredService(Type serviceType) => _serviceProvider.GetRequiredService(serviceType);
-    
+
     /// <summary>
     /// Resolves the specified service type from the service provider, or creates a new instance if the service type was not found in the service container.
     /// </summary>
     public T GetOrCreateService<T>() where T : notnull => ActivatorUtilities.GetServiceOrCreateInstance<T>(_serviceProvider);
-    
+
     /// <summary>
     /// Resolves the specified service type from the service provider, or creates a new instance if the service type was not found in the service container.
     /// </summary>
     public object GetOrCreateService(Type serviceType) => ActivatorUtilities.GetServiceOrCreateInstance(_serviceProvider, serviceType);
-    
+
     /// <summary>
     /// Resolves the specified service type from the service provider.
     /// </summary>
     public T? GetService<T>() where T : notnull => _serviceProvider.GetService<T>();
-    
+
     /// <summary>
     /// Resolves the specified service type from the service provider.
     /// </summary>
     public object? GetService(Type serviceType) => _serviceProvider.GetService(serviceType);
-    
+
     /// <summary>
     /// Resolves multiple implementations of the specified service type from the service provider.
     /// </summary>
@@ -256,22 +256,29 @@ public class WorkflowExecutionContext
     /// Returns the <see cref="ActivityNode"/> with the specified activity ID from the workflow graph.
     /// </summary>
     public ActivityNode FindNodeById(string nodeId) => NodeIdLookup[nodeId];
-    
+
     /// <summary>
     /// Returns the <see cref="ActivityNode"/> containing the specified activity from the workflow graph.
     /// </summary>
     public ActivityNode FindNodeByActivity(IActivity activity) => NodeActivityLookup[activity];
-    
+
     /// <summary>
     /// Returns the <see cref="IActivity"/> with the specified ID from the workflow graph.
     /// </summary>
     public IActivity FindActivityByNodeId(string nodeId) => FindNodeById(nodeId).Activity;
 
     /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="activityId"></param>
+    /// <returns></returns>
+    public IActivity FindActivityByActivityId(string activityId) => FindNodeById(NodeIdLookup.Single(n => n.Key.Contains(activityId)).Value.NodeId).Activity;
+
+    /// <summary>
     /// Returns a custom property with the specified key from the <see cref="Properties"/> dictionary.
     /// </summary>
     public T? GetProperty<T>(string key) => Properties.TryGetValue(key, out var value) ? value.ConvertTo<T>() : default;
-    
+
     /// <summary>
     /// Sets a custom property with the specified key on the <see cref="Properties"/> dictionary.
     /// </summary>
@@ -316,7 +323,7 @@ public class WorkflowExecutionContext
         expressionExecutionContext.TransientProperties[ExpressionExecutionContextExtensions.ActivityExecutionContextKey] = activityExecutionContext;
         return activityExecutionContext;
     }
-    
+
     /// <summary>
     /// Removes the specified <see cref="ActivityExecutionContext"/>.
     /// </summary>
@@ -329,15 +336,15 @@ public class WorkflowExecutionContext
 
         // Remove the context.
         _activityExecutionContexts.Remove(context);
-        
+
         // Remove all associated completion callbacks.
         context.ClearCompletionCallbacks();
-        
+
         // Remove all associated variables.
         var variablePersistenceManager = context.GetRequiredService<IVariablePersistenceManager>();
         var variables = variablePersistenceManager.GetVariables(context);
         await variablePersistenceManager.DeleteVariablesAsync(this, variables);
-        
+
         // Remove all associated bookmarks.
         Bookmarks.RemoveWhere(x => x.ActivityInstanceId == context.Id);
     }

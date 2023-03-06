@@ -1,12 +1,18 @@
+using Elsa.Common.Models;
+using Elsa.Expressions.Models;
+using Elsa.Extensions;
 using Elsa.Http.Models;
 using Elsa.Http.Options;
 using Elsa.Http.Services;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Runtime.Services;
 using JetBrains.Annotations;
+using Jint;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using System.Net;
 using System.Net.Mime;
@@ -27,6 +33,12 @@ public class WorkflowsMiddleware
     private readonly IHttpBookmarkProcessor _httpBookmarkProcessor;
     private readonly IWorkflowInstanceStore _workflowInstanceStore;
     private readonly IHttpEndpointWorkflowFaultHandler _httpEndpointWorkflowFaultHandler;
+    private readonly IHttpEndpointAuthorizationHandler _httpEndpointAuthorizationHandler;
+    private readonly IWorkflowExecutionContextFactory _workflowExecutionContextFactory;
+    private readonly IBookmarkStore _bookmarkStore;
+    private readonly IBookmarkHasher _hasher;
+    private readonly IBookmarkPayloadSerializer _serializer;
+    private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly HttpActivityOptions _options;
     private readonly string _activityTypeName = ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>();
 
@@ -41,7 +53,13 @@ public class WorkflowsMiddleware
         IHttpBookmarkProcessor httpBookmarkProcessor,
         IWorkflowInstanceStore workflowInstanceStore,
         IOptions<HttpActivityOptions> options,
-        IHttpEndpointWorkflowFaultHandler httpEndpointWorkflowFaultHandler)
+        IHttpEndpointWorkflowFaultHandler httpEndpointWorkflowFaultHandler,
+        IHttpEndpointAuthorizationHandler httpEndpointAuthorizationHandler,
+        IWorkflowExecutionContextFactory workflowExecutionContextFactory,
+        IBookmarkStore bookmarkStore,
+        IBookmarkHasher hasher,
+        IBookmarkPayloadSerializer serializer,
+        IServiceScopeFactory serviceScopeFactory)
     {
         _next = next;
         _workflowRuntime = workflowRuntime;
@@ -50,6 +68,12 @@ public class WorkflowsMiddleware
         _httpBookmarkProcessor = httpBookmarkProcessor;
         _workflowInstanceStore = workflowInstanceStore;
         _httpEndpointWorkflowFaultHandler = httpEndpointWorkflowFaultHandler;
+        _httpEndpointAuthorizationHandler = httpEndpointAuthorizationHandler;
+        _workflowExecutionContextFactory = workflowExecutionContextFactory;
+        _bookmarkStore = bookmarkStore;
+        _hasher = hasher;
+        _serializer = serializer;
+        _serviceScopeFactory = serviceScopeFactory;
         _options = options.Value;
     }
 
@@ -89,6 +113,10 @@ public class WorkflowsMiddleware
         var triggerOptions = new TriggerWorkflowsRuntimeOptions(correlationId, input);
         var cancellationToken = httpContext.RequestAborted;
 
+        var hash = _hasher.Hash(_activityTypeName, bookmarkPayload);
+        var bookmarkFilter = new BookmarkFilter() { };
+        var x = (await _bookmarkStore.FindManyAsync(bookmarkFilter, cancellationToken));//.Select(x => _serializer.Deserialize<HttpEndpointBookmarkPayload>(x.Data!)).ToList();
+
         // Trigger the workflow.
         var triggerResult = await _workflowRuntime.TriggerWorkflowsAsync(_activityTypeName, bookmarkPayload, triggerOptions, cancellationToken);
 
@@ -99,6 +127,23 @@ public class WorkflowsMiddleware
             return;
 
         if (await HandleWorkflowFaultAsync(httpContext, triggerResult, cancellationToken))
+            return;
+
+        var workflowState = await _workflowRuntime.ExportWorkflowStateAsync(triggerResult.TriggeredWorkflows.Single().InstanceId, cancellationToken);
+        var workflowDefinition = await _workflowDefinitionService.FindAsync(workflowState.DefinitionId, VersionOptions.SpecificVersion(workflowState.DefinitionVersion), cancellationToken);
+
+        if (workflowDefinition == null)
+            throw new Exception("Workflow definition not found");
+
+        var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
+        var workflowExecutionContext = await _workflowExecutionContextFactory.CreateAsync(_serviceScopeFactory.CreateScope().ServiceProvider, workflow, triggerResult.TriggeredWorkflows.Single().InstanceId, workflowState, cancellationToken: cancellationToken);
+
+
+        var activity = workflowExecutionContext.FindActivityByActivityId(triggerResult.TriggeredWorkflows.Single().ActivityId);
+        var activityExecutionContext = workflowExecutionContext.CreateActivityExecutionContext(activity);
+
+        var xx = activity as HttpEndpoint;
+        if (await AuthorizeAsync(activityExecutionContext, httpContext, xx, triggerResult))
             return;
 
         // Process the trigger result by resuming each HTTP bookmark, if any.
@@ -177,5 +222,28 @@ public class WorkflowsMiddleware
         }
 
         return false;
+    }
+
+    private async Task<bool> AuthorizeAsync(
+        ActivityExecutionContext expressionExecutionContext,
+        HttpContext httpContext,
+        HttpEndpoint httpEndpoint,
+        TriggerWorkflowsResult triggerResult)
+    {
+        var authorize = httpEndpoint.Authorize.TryGet(expressionExecutionContext);
+        /*
+        if (!authorize)
+            return true;
+
+        var workflowInstanceId = triggerResult.TriggeredWorkflows.Single().InstanceId;
+
+        var authorized = await _httpEndpointAuthorizationHandler.AuthorizeAsync(new AuthorizeHttpEndpointContext(expressionExecutionContext, httpContext, httpEndpoint, workflowInstanceId));
+
+        if (!authorized)
+        {
+            httpContext.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
+        }
+        */
+        return true;//!authorized;
     }
 }

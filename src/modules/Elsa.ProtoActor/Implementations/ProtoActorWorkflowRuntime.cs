@@ -161,6 +161,11 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
         return new TriggerWorkflowsResult(results);
     }
 
+    public Task<IEnumerable<CollectedWorkflow>> FindWorkflowsAsync(WorkflowsQuery workflowsQuery, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
+
     /// <inheritdoc />
     public async Task<WorkflowState?> ExportWorkflowStateAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
     {

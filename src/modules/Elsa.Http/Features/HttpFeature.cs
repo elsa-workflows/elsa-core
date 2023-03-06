@@ -41,7 +41,7 @@ public class HttpFeature : FeatureBase
     /// A delegate that is invoked when authorizing an inbound HTTP request.
     /// </summary>
     public Func<IServiceProvider, IHttpEndpointAuthorizationHandler> HttpEndpointAuthorizationHandler { get; set; } = ActivatorUtilities.GetServiceOrCreateInstance<AllowAnonymousHttpEndpointAuthorizationHandler>;
-    
+
     /// <summary>
     /// A delegate that is invoked when an HTTP workflow faults. 
     /// </summary>
@@ -68,7 +68,7 @@ public class HttpFeature : FeatureBase
                 typeof(HttpRequest),
                 typeof(HttpResponse)
             }, "HTTP");
-            
+
             management.AddActivitiesFrom<HttpFeature>();
         });
     }
@@ -111,6 +111,7 @@ public class HttpFeature : FeatureBase
 
             // Add Http endpoint handlers
             .AddSingleton(HttpEndpointWorkflowFaultHandler)
-            ;
+            .AddSingleton(HttpEndpointAuthorizationHandler);
+        ;
     }
 }

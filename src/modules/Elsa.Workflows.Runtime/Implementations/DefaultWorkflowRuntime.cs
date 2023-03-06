@@ -20,6 +20,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
     private readonly IBookmarkStore _bookmarkStore;
     private readonly IBookmarkHasher _hasher;
     private readonly IDistributedLockProvider _distributedLockProvider;
+    private readonly IWorkflowInstanceFactory _workflowInstanceFactory;
 
     /// <summary>
     /// Constructor.
@@ -31,7 +32,8 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         ITriggerStore triggerStore,
         IBookmarkStore bookmarkStore,
         IBookmarkHasher hasher,
-        IDistributedLockProvider distributedLockProvider)
+        IDistributedLockProvider distributedLockProvider,
+        IWorkflowInstanceFactory workflowInstanceFactory)
     {
         _workflowHostFactory = workflowHostFactory;
         _workflowDefinitionService = workflowDefinitionService;
@@ -40,6 +42,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         _bookmarkStore = bookmarkStore;
         _hasher = hasher;
         _distributedLockProvider = distributedLockProvider;
+        _workflowInstanceFactory = workflowInstanceFactory;
     }
 
     /// <inheritdoc />
@@ -96,7 +99,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
                     continue;
 
                 var startResult = await StartWorkflowAsync(definitionId, startOptions, cancellationToken);
-                results.Add(new WorkflowExecutionResult(startResult.InstanceId, startResult.Bookmarks));
+                results.Add(new WorkflowExecutionResult(startResult.InstanceId, startResult.Bookmarks, trigger.ActivityId));
             }
         }
 
@@ -155,6 +158,19 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         var resumedWorkflows = await ResumeWorkflowsAsync(activityTypeName, bookmarkPayload, options, cancellationToken);
         var results = startedWorkflows.Concat(resumedWorkflows).ToList();
         return new TriggerWorkflowsResult(results);
+    }
+    /*
+    public async Task<RunWorkflowResult> ExecutePendingWorkflowAsync(CollectedWorkflow collectedWorkflow, WorkflowInput? input = default, CancellationToken cancellationToken = default)
+    {
+
+    }
+    */
+    public async Task<IEnumerable<CollectedWorkflow>> FindWorkflowsAsync(WorkflowsQuery workflowsQuery, CancellationToken cancellationToken = default)
+    {
+        var startableWorkflows = await CollectStartableWorkflowsAsync(workflowsQuery, cancellationToken);
+        var resumableWorkflows = await CollectResumableWorkflowsAsync(workflowsQuery, cancellationToken);
+        var results = startableWorkflows.Concat(resumableWorkflows).ToList();
+        return results;
     }
 
     /// <inheritdoc />
@@ -220,5 +236,48 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
             var filter = new BookmarkFilter { Hash = bookmark.Hash, WorkflowInstanceId = workflowInstanceId };
             await _bookmarkStore.DeleteAsync(filter, cancellationToken);
         }
+    }
+
+    private async Task<ICollection<CollectedWorkflow>> CollectStartableWorkflowsAsync(
+        WorkflowsQuery workflowsQuery,
+        CancellationToken cancellationToken = default)
+    {
+        var results = new List<CollectedWorkflow>();
+        var hash = _hasher.Hash(workflowsQuery.ActivityTypeName, workflowsQuery.BookmarkPayload);
+
+        // Start new workflows. Notice that this happens in a process-synchronized fashion to avoid multiple instances from being created. 
+        var sharedResource = $"{nameof(DefaultWorkflowRuntime)}__StartTriggeredWorkflows__{hash}";
+        await using (await _distributedLockProvider.AcquireLockAsync(sharedResource, TimeSpan.FromMinutes(10), cancellationToken))
+        {
+            var filter = new TriggerFilter { Hash = hash };
+            var triggers = await _triggerStore.FindManyAsync(filter, cancellationToken);
+
+            foreach (var trigger in triggers)
+            {
+                var definitionId = trigger.WorkflowDefinitionId;
+                var startOptions = new StartWorkflowRuntimeOptions(workflowsQuery.Options.CorrelationId, workflowsQuery.Options.Input, VersionOptions.Published, trigger.ActivityId);
+                var canStartResult = await CanStartWorkflowAsync(definitionId, startOptions, cancellationToken);
+
+                var workflowInstance = await _workflowInstanceFactory.CreateAsync(definitionId, workflowsQuery.Options.CorrelationId, cancellationToken);
+
+                if (canStartResult.CanStart)
+                {
+                    results.Add(new CollectedWorkflow(workflowInstance.Id, workflowInstance, trigger.ActivityId));
+                }
+            }
+        }
+
+        return results;
+    }
+
+    private async Task<ICollection<CollectedWorkflow>> CollectResumableWorkflowsAsync(WorkflowsQuery workflowsQuery, CancellationToken cancellationToken = default)
+    {
+        var hash = _hasher.Hash(workflowsQuery.ActivityTypeName, workflowsQuery.BookmarkPayload);
+        var correlationId = workflowsQuery.Options.CorrelationId;
+        var filter = new BookmarkFilter { Hash = hash, CorrelationId = correlationId };
+        var bookmarks = await _bookmarkStore.FindManyAsync(filter, cancellationToken);
+
+        var collectedWorkflows = bookmarks.Select(b => new CollectedWorkflow(b.WorkflowInstanceId, default, default)).ToList();
+        return collectedWorkflows;
     }
 }
