@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using System.Xml;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Http.Models;
@@ -64,7 +65,19 @@ public class HttpEndpoint : Trigger<HttpRequest>
     /// The parsed route data, if any.
     /// </summary>
     [Output(Description = "The parsed route data, if any.")]
-    public Output<RouteData> RouteData { get; set; } = default!;
+    public Output<Dictionary<string,object>> RouteData { get; set; } = default!;
+
+    /// <summary>
+    /// The querystring data, if any.
+    /// </summary>
+    [Output(Description = "The querystring data, if any.")]
+    public Output<Dictionary<string, object>> QueryStringData { get; set; } = default!;
+
+    /// <summary>
+    /// The headers, if any.
+    /// </summary>
+    [Output(Description = "The headers, if any.")]
+    public Output<Dictionary<string, object>> Headers { get; set; } = default!;
 
     /// <inheritdoc />
     protected override IEnumerable<object> GetTriggerPayloads(TriggerIndexingContext context) => GetBookmarkPayloads(context.ExpressionExecutionContext);
@@ -72,6 +85,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
+
         // If we did not receive external input, it means we are just now encountering this activity and we need to block execution by creating a bookmark.
         if (!context.TryGetInput<bool>(HttpContextInputKey, out var isHttpContext))
         {
@@ -141,7 +155,27 @@ public class HttpEndpoint : Trigger<HttpRequest>
         // Read route data, if any.
         var path = context.GetInput<PathString>(RequestPathInputKey);
         var routeData = GetRouteData(httpContext, path);
-        context.Set(RouteData, routeData);
+
+        var routeDictionary = new Dictionary<string, object>();
+        foreach (var route in routeData.Values) {
+            routeDictionary.Add(route.Key, route.Value);
+        }
+
+        var queryStringDictionary = new Dictionary<string, object>();
+        foreach (var queryString in httpContext.Request.Query)
+        {
+            queryStringDictionary.Add(queryString.Key, queryString.Value[0]);
+        }
+
+        var headersDictionary = new Dictionary<string, object>();
+        foreach (var header in httpContext.Request.Headers)
+        {
+            headersDictionary.Add(header.Key, header.Value[0]);
+        }
+
+        context.Set(RouteData, routeDictionary);
+        context.Set(QueryStringData, queryStringDictionary);
+        context.Set(Headers, headersDictionary);
 
         // Read content, if any.
         var content = await ParseContentAsync(context, request);
