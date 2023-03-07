@@ -1,11 +1,14 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
 {
+    /// <inheritdoc />
     public partial class Initial : Migration
     {
+        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
@@ -40,6 +43,7 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     EventName = table.Column<string>(type: "TEXT", nullable: true),
                     Message = table.Column<string>(type: "TEXT", nullable: true),
                     Source = table.Column<string>(type: "TEXT", nullable: true),
+                    ActivityData = table.Column<string>(type: "TEXT", nullable: true),
                     PayloadData = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
@@ -203,6 +207,7 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                 column: "WorkflowDefinitionId");
         }
 
+        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(

@@ -23,4 +23,8 @@
         <ProjectReference Include="..\Elsa.EntityFrameworkCore\Elsa.EntityFrameworkCore.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Migrations\Runtime" />
+    </ItemGroup>
+
 </Project>
