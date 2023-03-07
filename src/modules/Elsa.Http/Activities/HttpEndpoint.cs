@@ -64,19 +64,19 @@ public class HttpEndpoint : Trigger<HttpRequest>
     /// The parsed route data, if any.
     /// </summary>
     [Output(Description = "The parsed route data, if any.")]
-    public Output<Dictionary<string,object>> RouteData { get; set; } = default!;
+    public Output<IDictionary<string,object>> RouteData { get; set; } = default!;
 
     /// <summary>
     /// The querystring data, if any.
     /// </summary>
     [Output(Description = "The querystring data, if any.")]
-    public Output<Dictionary<string, object>> QueryStringData { get; set; } = default!;
+    public Output<IDictionary<string, object>> QueryStringData { get; set; } = default!;
 
     /// <summary>
     /// The headers, if any.
     /// </summary>
     [Output(Description = "The headers, if any.")]
-    public Output<Dictionary<string, object>> Headers { get; set; } = default!;
+    public Output<IDictionary<string, object>> Headers { get; set; } = default!;
 
     /// <inheritdoc />
     protected override IEnumerable<object> GetTriggerPayloads(TriggerIndexingContext context) => GetBookmarkPayloads(context.ExpressionExecutionContext);
