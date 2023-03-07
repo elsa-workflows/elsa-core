@@ -1,6 +1,7 @@
+using System.Linq.Expressions;
+using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Workflows.Runtime.Entities;
-using Elsa.Workflows.Runtime.Services;
 
 namespace Elsa.Workflows.Runtime.Contracts;
 
@@ -25,9 +26,34 @@ public interface IWorkflowExecutionLogStore
     Task<WorkflowExecutionLogRecord?> FindAsync(WorkflowExecutionLogRecordFilter filter, CancellationToken cancellationToken = default);
     
     /// <summary>
+    /// Returns the first workflow execution log record matching the specified filter.
+    /// </summary>
+    Task<WorkflowExecutionLogRecord?> FindAsync<TOrderBy>(WorkflowExecutionLogRecordFilter filter, WorkflowExecutionLogRecordOrder<TOrderBy> order, CancellationToken cancellationToken = default);
+    
+    /// <summary>
     /// Returns a set of workflow execution log records matching the specified filter.
     /// </summary>
     Task<Page<WorkflowExecutionLogRecord>> FindManyAsync(WorkflowExecutionLogRecordFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Returns a set of workflow execution log records matching the specified filter.
+    /// </summary>
+    Task<Page<WorkflowExecutionLogRecord>> FindManyAsync<TOrderBy>(WorkflowExecutionLogRecordFilter filter, PageArgs pageArgs, WorkflowExecutionLogRecordOrder<TOrderBy> order, CancellationToken cancellationToken = default);
+}
+
+/// <summary>
+/// Represents the order by which to order the results of a query.
+/// </summary>
+public class WorkflowExecutionLogRecordOrder<TProp> : OrderDefinition<WorkflowExecutionLogRecord, TProp>
+{
+    /// <summary>
+    /// Creates a new instance of the <see cref="WorkflowExecutionLogRecordOrder{TProp}"/> class.
+    /// </summary>
+    public WorkflowExecutionLogRecordOrder(Expression<Func<WorkflowExecutionLogRecord, TProp>> keySelector, OrderDirection direction)
+    {
+        KeySelector = keySelector;
+        Direction = direction;
+    }
 }
 
 /// <summary>

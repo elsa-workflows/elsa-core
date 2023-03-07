@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using Elsa.Common.Entities;
 
 namespace Elsa.Workflows.Runtime.Entities;

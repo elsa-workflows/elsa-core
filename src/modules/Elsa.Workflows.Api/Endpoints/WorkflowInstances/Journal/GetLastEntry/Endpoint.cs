@@ -1,4 +1,5 @@
 using Elsa.Abstractions;
+using Elsa.Common.Entities;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using JetBrains.Annotations;
@@ -6,7 +7,7 @@ using JetBrains.Annotations;
 namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.Journal.GetLastEntry;
 
 /// <summary>
-/// Gets the journal for a workflow instance.
+/// Return the last log entry for the specified workflow instance and activity ID.
 /// </summary>
 [PublicAPI]
 public class Get : ElsaEndpoint<Request, WorkflowExecutionLogRecord>
@@ -35,8 +36,13 @@ public class Get : ElsaEndpoint<Request, WorkflowExecutionLogRecord>
             ActivityId = request.ActivityId,
             EventName = request.EventName
         };
-        
-        var entry = await _store.FindAsync(filter, cancellationToken);
+
+        var sort = new WorkflowExecutionLogRecordOrder<DateTimeOffset>(
+            x => x.Timestamp,
+            OrderDirection.Descending
+        );
+
+        var entry = await _store.FindAsync(filter, sort, cancellationToken);
 
         if (entry == null)
         {

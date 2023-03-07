@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using Elsa.EntityFrameworkCore.Common;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Common.Models;
+using Elsa.Extensions;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Open.Linq.AsyncExtensions;
@@ -42,13 +43,27 @@ public class EFCoreWorkflowExecutionLogStore : IWorkflowExecutionLogStore
     }
 
     /// <inheritdoc />
+    public async Task<WorkflowExecutionLogRecord?> FindAsync<TOrderBy>(WorkflowExecutionLogRecordFilter filter, WorkflowExecutionLogRecordOrder<TOrderBy> order, CancellationToken cancellationToken = default)
+    {
+        return await _store.QueryAsync(queryable => Filter(queryable, filter).OrderBy(order), Load, cancellationToken).FirstOrDefault();
+    }
+
+    /// <inheritdoc />
     public async Task<Page<WorkflowExecutionLogRecord>> FindManyAsync(WorkflowExecutionLogRecordFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
         var count = await _store.QueryAsync(queryable => Filter(queryable, filter).OrderBy(x => x.Timestamp), cancellationToken).LongCount();
         var results = await _store.QueryAsync(queryable => Paginate(Filter(queryable, filter), pageArgs), Load, cancellationToken).ToList();
         return new(results, count);
     }
-    
+
+    /// <inheritdoc />
+    public async Task<Page<WorkflowExecutionLogRecord>> FindManyAsync<TOrderBy>(WorkflowExecutionLogRecordFilter filter, PageArgs pageArgs, WorkflowExecutionLogRecordOrder<TOrderBy> order, CancellationToken cancellationToken = default)
+    {
+        var count = await _store.QueryAsync(queryable => Filter(queryable, filter).OrderBy(order), cancellationToken).LongCount();
+        var results = await _store.QueryAsync(queryable => Paginate(Filter(queryable, filter), pageArgs), Load, cancellationToken).ToList();
+        return new(results, count);
+    }
+
     private WorkflowExecutionLogRecord Save(RuntimeElsaDbContext dbContext, WorkflowExecutionLogRecord entity)
     {
         var options = _serializerOptionsProvider.CreatePersistenceOptions(ReferenceHandler.Preserve);

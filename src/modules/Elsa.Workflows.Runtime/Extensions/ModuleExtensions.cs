@@ -1,6 +1,5 @@
 using Elsa.Features.Services;
 using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Runtime.Features;
 
 // ReSharper disable once CheckNamespace

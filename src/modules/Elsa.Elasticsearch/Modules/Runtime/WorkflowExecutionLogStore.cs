@@ -4,8 +4,6 @@ using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Elasticsearch.Common;
 using Elsa.Extensions;
-using Elsa.Workflows.Management.Contracts;
-using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 
@@ -46,15 +44,31 @@ public class ElasticWorkflowExecutionLogStore : IWorkflowExecutionLogStore
     }
 
     /// <inheritdoc />
+    public async Task<WorkflowExecutionLogRecord?> FindAsync<TOrderBy>(WorkflowExecutionLogRecordFilter filter, WorkflowExecutionLogRecordOrder<TOrderBy> order, CancellationToken cancellationToken = default)
+    {
+        var result = await _store.SearchAsync(d => Sort(Filter(d, filter), order), new PageArgs(0, 1), cancellationToken);
+        return result.Items.FirstOrDefault();
+    }
+
+    /// <inheritdoc />
     public async Task<Page<WorkflowExecutionLogRecord>> FindManyAsync(WorkflowExecutionLogRecordFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
         return await _store.SearchAsync(d => Filter(d, filter), pageArgs, cancellationToken);
     }
-    
-    private static SearchRequestDescriptor<WorkflowExecutionLogRecord> Sort<TProp>(SearchRequestDescriptor<WorkflowExecutionLogRecord> descriptor)
+
+    /// <inheritdoc />
+    public async Task<Page<WorkflowExecutionLogRecord>> FindManyAsync<TOrderBy>(WorkflowExecutionLogRecordFilter filter, PageArgs pageArgs, WorkflowExecutionLogRecordOrder<TOrderBy> order, CancellationToken cancellationToken = default)
+    {
+        return await _store.SearchAsync(d => Sort(Filter(d, filter), order), pageArgs, cancellationToken);
+    }
+
+    private static SearchRequestDescriptor<WorkflowExecutionLogRecord> Sort<TProp>(SearchRequestDescriptor<WorkflowExecutionLogRecord> descriptor, WorkflowExecutionLogRecordOrder<TProp> order)
     {
         var sortDescriptor = new SortOptionsDescriptor<WorkflowExecutionLogRecord>();
-        sortDescriptor.Field(x => x.Timestamp, f => f.Order(SortOrder.Asc));
+        var propName = order.KeySelector.GetProperty()!.Name;
+        var sortOrder = order.Direction == OrderDirection.Ascending ? SortOrder.Asc : SortOrder.Desc;
+        sortDescriptor.Field(propName, f => f.Order(sortOrder));
+
         descriptor.Sort(sortDescriptor);
         return descriptor;
     }

@@ -1,4 +1,3 @@
-using System.IO.MemoryMappedFiles;
 using Elastic.Clients.Elasticsearch;
 using Elastic.Clients.Elasticsearch.QueryDsl;
 using Elsa.Common.Entities;
