@@ -1,5 +1,4 @@
 ﻿using System.Text.Json.Serialization;
-using System.Xml;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Http.Contracts;
@@ -7,7 +6,6 @@ using Elsa.Http.Models;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Management.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
@@ -86,7 +84,6 @@ public class HttpEndpoint : Trigger<HttpRequest>
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-
         // If we did not receive external input, it means we are just now encountering this activity and we need to block execution by creating a bookmark.
         if (!context.TryGetInput<bool>(HttpContextInputKey, out var isHttpContext))
         {
