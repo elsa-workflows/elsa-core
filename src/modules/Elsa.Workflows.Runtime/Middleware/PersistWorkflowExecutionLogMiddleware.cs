@@ -12,18 +12,15 @@ namespace Elsa.Workflows.Runtime.Middleware;
 public class PersistWorkflowExecutionLogMiddleware : WorkflowExecutionMiddleware
 {
     private readonly IWorkflowExecutionLogStore _workflowExecutionLogStore;
-    private readonly IActivityStateSerializer _activityStateSerializer;
     private readonly IIdentityGenerator _identityGenerator;
 
     /// <inheritdoc />
     public PersistWorkflowExecutionLogMiddleware(
         WorkflowMiddlewareDelegate next, 
         IWorkflowExecutionLogStore workflowExecutionLogStore,
-        IActivityStateSerializer activityStateSerializer,
         IIdentityGenerator identityGenerator) : base(next)
     {
         _workflowExecutionLogStore = workflowExecutionLogStore;
-        _activityStateSerializer = activityStateSerializer;
         _identityGenerator = identityGenerator;
     }
 

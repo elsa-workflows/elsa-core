@@ -1,6 +1,5 @@
 using Elsa.Abstractions;
 using Elsa.Common.Models;
-using Elsa.Extensions;
 using Elsa.Http.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Runtime.Contracts;

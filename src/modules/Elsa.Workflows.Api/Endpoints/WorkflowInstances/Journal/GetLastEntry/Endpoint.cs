@@ -23,7 +23,7 @@ public class Get : ElsaEndpoint<Request, WorkflowExecutionLogRecord>
     /// <inheritdoc />
     public override void Configure()
     {
-        Get("/workflow-instances/{workflowInstanceId}/journal/{activityId}/{eventName}");
+        Get("/workflow-instances/{workflowInstanceId}/journal/{activityId}");
         ConfigurePermissions("read:workflow-instances");
     }
 
@@ -34,7 +34,7 @@ public class Get : ElsaEndpoint<Request, WorkflowExecutionLogRecord>
         {
             WorkflowInstanceId = request.WorkflowInstanceId,
             ActivityId = request.ActivityId,
-            EventName = request.EventName
+            AnyEventName = new[] { "Started", "Completed", "Faulted" }
         };
 
         var sort = new WorkflowExecutionLogRecordOrder<DateTimeOffset>(

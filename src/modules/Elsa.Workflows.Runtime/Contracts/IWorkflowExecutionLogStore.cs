@@ -77,6 +77,11 @@ public class WorkflowExecutionLogRecordFilter
     public string? EventName { get; set; }
     
     /// <summary>
+    /// Match any of these event names.
+    /// </summary>
+    public ICollection<string>? AnyEventName { get; set; }
+    
+    /// <summary>
     /// Applies the filter to the specified queryable.
     /// </summary>
     public IQueryable<WorkflowExecutionLogRecord> Apply(IQueryable<WorkflowExecutionLogRecord> queryable)
@@ -85,6 +90,7 @@ public class WorkflowExecutionLogRecordFilter
         if (filter.WorkflowInstanceId != null) queryable = queryable.Where(x => x.WorkflowInstanceId == filter.WorkflowInstanceId);
         if (filter.ActivityId != null) queryable = queryable.Where(x => x.ActivityId == filter.ActivityId);
         if (filter.EventName != null) queryable = queryable.Where(x => x.EventName == filter.EventName);
+        if (filter.AnyEventName != null) queryable = queryable.Where(x => filter.AnyEventName.Contains(x.EventName!));
         
         return queryable;
     }

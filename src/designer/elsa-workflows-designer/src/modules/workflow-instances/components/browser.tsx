@@ -2,7 +2,7 @@ import {Component, Event, EventEmitter, h, Host, Method, State} from '@stencil/c
 import _ from 'lodash';
 import {Search} from "./search";
 import {Filter, FilterProps} from "./filter";
-import {ListWorkflowInstancesRequest, WorkflowInstancesApi} from "../services/api";
+import {ListWorkflowInstancesRequest, WorkflowInstancesApi} from "../services/workflow-instances-api";
 import {WorkflowDefinitionSummary} from "../../workflow-definitions/models/entities";
 import {OrderBy, OrderDirection, PagedList, VersionOptions, WorkflowInstanceSummary, WorkflowStatus, WorkflowSubStatus} from "../../../models";
 import {Container} from "typedi";
@@ -11,7 +11,6 @@ import {getSubStatusColor, updateSelectedWorkflowInstances} from "../services/ut
 import {formatTimestamp} from "../../../utils";
 import {DeleteIcon, EditIcon} from "../../../components/icons/tooling";
 import {PagerData} from "../../../components/shared/pager/pager";
-import {DefaultModalActions} from "../../../components/shared/modal-dialog";
 
 @Component({
   tag: 'elsa-workflow-instance-browser',

@@ -1,5 +1,3 @@
-using FastEndpoints;
-
 namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.Journal.GetLastEntry;
 
 /// <summary>
@@ -8,11 +6,13 @@ namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.Journal.GetLastEntry;
 public class Request
 {
     /// <summary>
-    /// The ID of the workflow instance to get the execution log for.
+    /// The ID of the workflow instance to get the last entry for.
     /// </summary>
     public string WorkflowInstanceId { get; set; } = default!;
+    
 
-    public string EventName { get; set; } = default!;
-
+    /// <summary>
+    /// The ID of the activity to get the last entry for.
+    /// </summary>
     public string ActivityId { get; set; } = default!;
 }
