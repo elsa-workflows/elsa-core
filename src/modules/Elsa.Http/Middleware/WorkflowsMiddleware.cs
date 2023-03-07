@@ -1,3 +1,5 @@
+using System.Net.Mime;
+using System.Text.Json;
 using Elsa.Http.Models;
 using Elsa.Http.Options;
 using Elsa.Workflows.Core.Helpers;
@@ -6,8 +8,6 @@ using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using System.Net;
-using System.Net.Mime;
-using System.Text.Json;
 using Elsa.Http.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
@@ -22,9 +22,9 @@ public class WorkflowsMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly IWorkflowRuntime _workflowRuntime;
-    private readonly IWorkflowHostFactory _workflowHostFactory;
-    private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly IHttpBookmarkProcessor _httpBookmarkProcessor;
+    private readonly IRouteMatcher _routeMatcher;
+    private readonly IRouteTable _routeTable;
     private readonly IWorkflowInstanceStore _workflowInstanceStore;
     private readonly IHttpEndpointWorkflowFaultHandler _httpEndpointWorkflowFaultHandler;
     private readonly HttpActivityOptions _options;
@@ -36,28 +36,27 @@ public class WorkflowsMiddleware
     public WorkflowsMiddleware(
         RequestDelegate next,
         IWorkflowRuntime workflowRuntime,
-        IWorkflowHostFactory workflowHostFactory,
-        IWorkflowDefinitionService workflowDefinitionService,
         IHttpBookmarkProcessor httpBookmarkProcessor,
         IWorkflowInstanceStore workflowInstanceStore,
+        IHttpEndpointWorkflowFaultHandler httpEndpointWorkflowFaultHandler,
         IOptions<HttpActivityOptions> options,
-        IHttpEndpointWorkflowFaultHandler httpEndpointWorkflowFaultHandler)
+        IRouteMatcher routeMatcher,
+        IRouteTable routeTable)
     {
         _next = next;
         _workflowRuntime = workflowRuntime;
-        _workflowHostFactory = workflowHostFactory;
-        _workflowDefinitionService = workflowDefinitionService;
         _httpBookmarkProcessor = httpBookmarkProcessor;
         _workflowInstanceStore = workflowInstanceStore;
         _httpEndpointWorkflowFaultHandler = httpEndpointWorkflowFaultHandler;
         _options = options.Value;
+        _routeMatcher = routeMatcher;
+        _routeTable = routeTable;
     }
-
 
     /// <summary>
     /// Attempts to matches the inbound request path to an associated workflow and then run that workflow.
     /// </summary>
-    public async Task InvokeAsync(HttpContext httpContext, IRouteMatcher routeMatcher)
+    public async Task InvokeAsync(HttpContext httpContext)
     {
         var path = GetPath(httpContext);
         var basePath = _options.BasePath;
@@ -75,6 +74,8 @@ public class WorkflowsMiddleware
             path = path.Substring(basePath.Value.Value.Length);
         }
 
+        var matchingPath = GetMatchingRoute(path);
+
         var input = new Dictionary<string, object>
         {
             [HttpEndpoint.HttpContextInputKey] = true,
@@ -85,7 +86,8 @@ public class WorkflowsMiddleware
         var correlationId = default(string);
         var request = httpContext.Request;
         var method = request.Method!.ToLowerInvariant();
-        var bookmarkPayload = new HttpEndpointBookmarkPayload(path, method);
+
+        var bookmarkPayload = new HttpEndpointBookmarkPayload(matchingPath, method);
         var triggerOptions = new TriggerWorkflowsRuntimeOptions(correlationId, input);
         var cancellationToken = httpContext.RequestAborted;
 
@@ -103,6 +105,20 @@ public class WorkflowsMiddleware
 
         // Process the trigger result by resuming each HTTP bookmark, if any.
         await _httpBookmarkProcessor.ProcessBookmarks(triggerResult.TriggeredWorkflows, correlationId, input, cancellationToken);
+    }
+
+    private string? GetMatchingRoute(string? path) {
+
+        var matchingRouteQuery =
+            from route in _routeTable
+            let routeValues = _routeMatcher.Match(route, path)
+            where routeValues != null
+            select new { route, routeValues };
+
+        var matchingRoute = matchingRouteQuery.FirstOrDefault();
+        var routeTemplate = matchingRoute?.route ?? path;
+
+        return routeTemplate;
     }
 
     private static async Task WriteResponseAsync(HttpContext httpContext, CancellationToken cancellationToken)
