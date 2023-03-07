@@ -2,6 +2,9 @@ using Elsa.Workflows.Management.Models;
 
 namespace Elsa.Workflows.Management.Options;
 
+/// <summary>
+/// Options for the management module.
+/// </summary>
 public class ManagementOptions
 {
     /// <summary>
