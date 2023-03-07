@@ -1,21 +1,13 @@
-using Elsa.Common.Models;
-using Elsa.Expressions.Models;
-using Elsa.Extensions;
 using Elsa.Http.Contracts;
 using Elsa.Http.Models;
 using Elsa.Http.Options;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Contracts;
-using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Services;
 using JetBrains.Annotations;
-using Jint;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using System.Net;
 using System.Net.Mime;
@@ -31,17 +23,14 @@ public class WorkflowsMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly IWorkflowRuntime _workflowRuntime;
-    private readonly IWorkflowHostFactory _workflowHostFactory;
-    private readonly IWorkflowDefinitionService _workflowDefinitionService;
-    private readonly IHttpBookmarkProcessor _httpBookmarkProcessor;
     private readonly IWorkflowInstanceStore _workflowInstanceStore;
+    private readonly IHttpBookmarkProcessor _httpBookmarkProcessor;
     private readonly IHttpEndpointWorkflowFaultHandler _httpEndpointWorkflowFaultHandler;
     private readonly IHttpEndpointAuthorizationHandler _httpEndpointAuthorizationHandler;
-    private readonly IWorkflowExecutionContextFactory _workflowExecutionContextFactory;
     private readonly IBookmarkStore _bookmarkStore;
+    private readonly ITriggerStore _triggerStore;
     private readonly IBookmarkHasher _hasher;
     private readonly IBookmarkPayloadSerializer _serializer;
-    private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly HttpActivityOptions _options;
     private readonly string _activityTypeName = ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>();
 
@@ -51,32 +40,26 @@ public class WorkflowsMiddleware
     public WorkflowsMiddleware(
         RequestDelegate next,
         IWorkflowRuntime workflowRuntime,
-        IWorkflowHostFactory workflowHostFactory,
-        IWorkflowDefinitionService workflowDefinitionService,
-        IHttpBookmarkProcessor httpBookmarkProcessor,
         IWorkflowInstanceStore workflowInstanceStore,
         IOptions<HttpActivityOptions> options,
+        IHttpBookmarkProcessor httpBookmarkProcessor,
         IHttpEndpointWorkflowFaultHandler httpEndpointWorkflowFaultHandler,
         IHttpEndpointAuthorizationHandler httpEndpointAuthorizationHandler,
-        IWorkflowExecutionContextFactory workflowExecutionContextFactory,
         IBookmarkStore bookmarkStore,
+        ITriggerStore triggerStore,
         IBookmarkHasher hasher,
-        IBookmarkPayloadSerializer serializer,
-        IServiceScopeFactory serviceScopeFactory)
+        IBookmarkPayloadSerializer serializer)
     {
         _next = next;
         _workflowRuntime = workflowRuntime;
-        _workflowHostFactory = workflowHostFactory;
-        _workflowDefinitionService = workflowDefinitionService;
-        _httpBookmarkProcessor = httpBookmarkProcessor;
         _workflowInstanceStore = workflowInstanceStore;
+        _httpBookmarkProcessor = httpBookmarkProcessor;
         _httpEndpointWorkflowFaultHandler = httpEndpointWorkflowFaultHandler;
         _httpEndpointAuthorizationHandler = httpEndpointAuthorizationHandler;
-        _workflowExecutionContextFactory = workflowExecutionContextFactory;
         _bookmarkStore = bookmarkStore;
+        _triggerStore = triggerStore;
         _hasher = hasher;
         _serializer = serializer;
-        _serviceScopeFactory = serviceScopeFactory;
         _options = options.Value;
     }
 
@@ -116,41 +99,25 @@ public class WorkflowsMiddleware
         var triggerOptions = new TriggerWorkflowsRuntimeOptions(correlationId, input);
         var cancellationToken = httpContext.RequestAborted;
 
-        var hash = _hasher.Hash(_activityTypeName, bookmarkPayload);
-        var bookmarkFilter = new BookmarkFilter() { };
-        var x = (await _bookmarkStore.FindManyAsync(bookmarkFilter, cancellationToken));//.Select(x => _serializer.Deserialize<HttpEndpointBookmarkPayload>(x.Data!)).ToList();
+        var workflowsQuery = new WorkflowsQuery(_activityTypeName, bookmarkPayload, triggerOptions);
+        var pendingWorkflows = await _workflowRuntime.FindWorkflowsAsync(workflowsQuery, cancellationToken);
 
-        // Trigger the workflow.
-        var triggerResult = await _workflowRuntime.TriggerWorkflowsAsync(_activityTypeName, bookmarkPayload, triggerOptions, cancellationToken);
-
-        if (await HandleNoWorkflowsFoundAsync(httpContext, triggerResult.TriggeredWorkflows, basePath))
+        if (await HandleNoWorkflowsFoundAsync(httpContext, pendingWorkflows, basePath))
             return;
 
-        if (await HandleMultipleWorkflowsFoundAsync(httpContext, triggerResult.TriggeredWorkflows, cancellationToken))
+        if (await HandleMultipleWorkflowsFoundAsync(httpContext, pendingWorkflows, cancellationToken))
             return;
 
-        if (await HandleWorkflowFaultAsync(httpContext, triggerResult, cancellationToken))
+        if (await HandleWorkflowFaultAsync(httpContext, pendingWorkflows.Single(), cancellationToken))
             return;
 
-        var workflowState = await _workflowRuntime.ExportWorkflowStateAsync(triggerResult.TriggeredWorkflows.Single().InstanceId, cancellationToken);
-        var workflowDefinition = await _workflowDefinitionService.FindAsync(workflowState.DefinitionId, VersionOptions.SpecificVersion(workflowState.DefinitionVersion), cancellationToken);
-
-        if (workflowDefinition == null)
-            throw new Exception("Workflow definition not found");
-
-        var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
-        var workflowExecutionContext = await _workflowExecutionContextFactory.CreateAsync(_serviceScopeFactory.CreateScope().ServiceProvider, workflow, triggerResult.TriggeredWorkflows.Single().InstanceId, workflowState, cancellationToken: cancellationToken);
-
-
-        var activity = workflowExecutionContext.FindActivityByActivityId(triggerResult.TriggeredWorkflows.Single().ActivityId);
-        var activityExecutionContext = workflowExecutionContext.CreateActivityExecutionContext(activity);
-
-        var xx = activity as HttpEndpoint;
-        if (await AuthorizeAsync(activityExecutionContext, httpContext, xx, triggerResult))
+        if (await AuthorizeAsync(httpContext, pendingWorkflows.Single(), bookmarkPayload, cancellationToken))
             return;
+
+        var executionResult = await _workflowRuntime.ExecutePendingWorkflowAsync(pendingWorkflows.Single(), input, cancellationToken);
 
         // Process the trigger result by resuming each HTTP bookmark, if any.
-        await _httpBookmarkProcessor.ProcessBookmarks(triggerResult.TriggeredWorkflows, correlationId, input, cancellationToken);
+        await _httpBookmarkProcessor.ProcessBookmarks(new List<WorkflowExecutionResult> { executionResult }, correlationId, input, cancellationToken);
     }
 
     private static async Task WriteResponseAsync(HttpContext httpContext, CancellationToken cancellationToken)
@@ -174,9 +141,9 @@ public class WorkflowsMiddleware
 
     private string GetPath(HttpContext httpContext) => httpContext.Request.Path.Value.ToLowerInvariant();
 
-    private async Task<bool> HandleNoWorkflowsFoundAsync(HttpContext httpContext, ICollection<WorkflowExecutionResult> triggeredWorkflows, PathString? basePath)
+    private async Task<bool> HandleNoWorkflowsFoundAsync(HttpContext httpContext, IEnumerable<CollectedWorkflow> pendingWorkflows, PathString? basePath)
     {
-        if (triggeredWorkflows.Any())
+        if (pendingWorkflows.Any())
             return false;
 
         // If a base path was configured, we are sure the requester tried to execute a workflow that doesn't exist.
@@ -193,9 +160,9 @@ public class WorkflowsMiddleware
         return true;
     }
 
-    private async Task<bool> HandleMultipleWorkflowsFoundAsync(HttpContext httpContext, ICollection<WorkflowExecutionResult> triggeredWorkflows, CancellationToken cancellationToken)
+    private async Task<bool> HandleMultipleWorkflowsFoundAsync(HttpContext httpContext, IEnumerable<CollectedWorkflow> pendingWorkflows, CancellationToken cancellationToken)
     {
-        if (triggeredWorkflows.Count <= 1)
+        if (pendingWorkflows.ToList().Count <= 1)
             return false;
 
         httpContext.Response.ContentType = "application/json";
@@ -204,16 +171,16 @@ public class WorkflowsMiddleware
         var responseContent = JsonSerializer.Serialize(new
         {
             errorMessage = "The call is ambiguous and matches multiple workflows.",
-            workflows = triggeredWorkflows
+            workflows = pendingWorkflows
         });
 
         await httpContext.Response.WriteAsync(responseContent, cancellationToken);
         return true;
     }
 
-    private async Task<bool> HandleWorkflowFaultAsync(HttpContext httpContext, TriggerWorkflowsResult triggerResult, CancellationToken cancellationToken)
+    private async Task<bool> HandleWorkflowFaultAsync(HttpContext httpContext, CollectedWorkflow pendingWorkflow, CancellationToken cancellationToken)
     {
-        var instanceFilter = new WorkflowInstanceFilter { Id = triggerResult.TriggeredWorkflows.Single().InstanceId };
+        var instanceFilter = new WorkflowInstanceFilter { Id = pendingWorkflow.WorkflowInstanceId };
         var workflowInstance = await _workflowInstanceStore.FindAsync(instanceFilter, cancellationToken);
 
         if (workflowInstance is not null
@@ -228,25 +195,39 @@ public class WorkflowsMiddleware
     }
 
     private async Task<bool> AuthorizeAsync(
-        ActivityExecutionContext expressionExecutionContext,
         HttpContext httpContext,
-        HttpEndpoint httpEndpoint,
-        TriggerWorkflowsResult triggerResult)
+        CollectedWorkflow pendingWorkflow,
+        HttpEndpointBookmarkPayload bookmarkPayload,
+        CancellationToken cancellationToken = default)
     {
-        var authorize = httpEndpoint.Authorize.TryGet(expressionExecutionContext);
-        /*
-        if (!authorize)
-            return true;
+        var hash = _hasher.Hash(_activityTypeName, bookmarkPayload);
+        var payload = default(HttpEndpointBookmarkPayload);
 
-        var workflowInstanceId = triggerResult.TriggeredWorkflows.Single().InstanceId;
+        if (pendingWorkflow is CollectedStartableWorkflow)
+        {
+            var triggerFilter = new TriggerFilter() { Hash = hash };
+            var triggers = (await _triggerStore.FindManyAsync(triggerFilter, cancellationToken))
+            .Select(x => _serializer.Deserialize<HttpEndpointBookmarkPayload>(x.Data!)).ToList();
+            payload = triggers.Single();
+        }
+        else
+        {
+            var bookmarkFilter = new BookmarkFilter() { Hash = hash };
+            var bookmarks = (await _bookmarkStore.FindManyAsync(bookmarkFilter, cancellationToken))
+                .Select(x => _serializer.Deserialize<HttpEndpointBookmarkPayload>(x.Data!)).ToList();
+            payload = bookmarks.Single();
+        }
 
-        var authorized = await _httpEndpointAuthorizationHandler.AuthorizeAsync(new AuthorizeHttpEndpointContext(expressionExecutionContext, httpContext, httpEndpoint, workflowInstanceId));
+        if (!(payload.Authorize ?? false))
+            return false;
+
+        var authorized = await _httpEndpointAuthorizationHandler.AuthorizeAsync(new AuthorizeHttpEndpointContext(httpContext, pendingWorkflow.WorkflowInstanceId, payload.Policy));
 
         if (!authorized)
         {
             httpContext.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
         }
-        */
-        return true;//!authorized;
+
+        return !authorized;
     }
 }

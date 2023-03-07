@@ -53,6 +53,15 @@ public interface IWorkflowRuntime
     Task<TriggerWorkflowsResult> TriggerWorkflowsAsync(string activityTypeName, object bookmarkPayload, TriggerWorkflowsRuntimeOptions options, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Executes a pending workflow.
+    /// </summary>
+    /// <param name="collectedWorkflow"></param>
+    /// <param name="input"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    Task<WorkflowExecutionResult> ExecutePendingWorkflowAsync(CollectedWorkflow collectedWorkflow, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Finds all the workflows that can be started or resumed based on a query model.
     /// </summary>
     /// <param name="workflowsQuery"></param>
@@ -90,7 +99,11 @@ public record TriggerWorkflowsResult(ICollection<WorkflowExecutionResult> Trigge
 public record WorkflowExecutionResult(string InstanceId, ICollection<Bookmark> Bookmarks, string? ActivityId = null);
 public record UpdateBookmarksContext(string InstanceId, Diff<Bookmark> Diff, string? CorrelationId);
 public record WorkflowsQuery(string ActivityTypeName, object BookmarkPayload, TriggerWorkflowsRuntimeOptions Options);
-public record CollectedWorkflow(string WorkflowInstanceId, WorkflowInstance? WorkflowInstance, string? ActivityId);
+public record CollectedWorkflow(string WorkflowInstanceId, WorkflowInstance? WorkflowInstance, string? CorrelationId);
+public record CollectedStartableWorkflow(string WorkflowInstanceId, WorkflowInstance? WorkflowInstance, string? CorrelationId, string? ActivityId, string? DefinitionId)
+    : CollectedWorkflow(WorkflowInstanceId, WorkflowInstance, CorrelationId);
+public record CollectedResumableWorkflow(string WorkflowInstanceId, WorkflowInstance? WorkflowInstance, string? CorrelationId, string? BookmarkId)
+    : CollectedWorkflow(WorkflowInstanceId, WorkflowInstance, CorrelationId);
 
 /// <summary>
 /// Contains arguments to use for counting the number of workflow instances.

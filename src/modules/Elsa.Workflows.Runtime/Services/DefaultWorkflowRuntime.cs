@@ -159,12 +159,29 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         var results = startedWorkflows.Concat(resumedWorkflows).ToList();
         return new TriggerWorkflowsResult(results);
     }
-    /*
-    public async Task<RunWorkflowResult> ExecutePendingWorkflowAsync(CollectedWorkflow collectedWorkflow, WorkflowInput? input = default, CancellationToken cancellationToken = default)
-    {
 
+    public async Task<WorkflowExecutionResult> ExecutePendingWorkflowAsync(CollectedWorkflow collectedWorkflow, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
+    {
+        if (collectedWorkflow is CollectedStartableWorkflow collectedStartableWorkflow)
+        {
+            var startOptions = new StartWorkflowRuntimeOptions(collectedStartableWorkflow.CorrelationId, input, VersionOptions.Published,
+                collectedStartableWorkflow.ActivityId, collectedStartableWorkflow.WorkflowInstanceId);
+            var startResult = await StartWorkflowAsync(collectedStartableWorkflow.DefinitionId!, startOptions, cancellationToken);
+            return new WorkflowExecutionResult(startResult.InstanceId, startResult.Bookmarks, collectedStartableWorkflow.ActivityId);
+        }
+        else
+        {
+            var collectedResumableWorkflow = (collectedWorkflow as CollectedResumableWorkflow)!;
+            var runtimeOptions = new ResumeWorkflowRuntimeOptions(collectedResumableWorkflow.CorrelationId, Input: input);
+            var resumeResult = await ResumeWorkflowAsync(
+                collectedWorkflow.WorkflowInstanceId,
+                runtimeOptions with { BookmarkId = collectedResumableWorkflow.BookmarkId },
+                cancellationToken);
+
+            return new WorkflowExecutionResult(collectedResumableWorkflow.WorkflowInstanceId, resumeResult.Bookmarks);
+        }
     }
-    */
+
     public async Task<IEnumerable<CollectedWorkflow>> FindWorkflowsAsync(WorkflowsQuery workflowsQuery, CancellationToken cancellationToken = default)
     {
         var startableWorkflows = await CollectStartableWorkflowsAsync(workflowsQuery, cancellationToken);
@@ -208,8 +225,11 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         foreach (var bookmark in bookmarks)
         {
             var workflowInstanceId = bookmark.WorkflowInstanceId;
-            var resumeOptions = new ResumeWorkflowRuntimeOptions(runtimeOptions.CorrelationId, bookmark.BookmarkId, Input: runtimeOptions.Input);
-            var resumeResult = await ResumeWorkflowAsync(workflowInstanceId, resumeOptions, cancellationToken);
+
+            var resumeResult = await ResumeWorkflowAsync(
+                workflowInstanceId,
+                runtimeOptions with { BookmarkId = bookmark.BookmarkId },
+                cancellationToken);
 
             resumedWorkflows.Add(new WorkflowExecutionResult(workflowInstanceId, resumeResult.Bookmarks));
         }
@@ -238,7 +258,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         }
     }
 
-    private async Task<ICollection<CollectedWorkflow>> CollectStartableWorkflowsAsync(
+    private async Task<IEnumerable<CollectedWorkflow>> CollectStartableWorkflowsAsync(
         WorkflowsQuery workflowsQuery,
         CancellationToken cancellationToken = default)
     {
@@ -262,7 +282,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
 
                 if (canStartResult.CanStart)
                 {
-                    results.Add(new CollectedWorkflow(workflowInstance.Id, workflowInstance, trigger.ActivityId));
+                    results.Add(new CollectedStartableWorkflow(workflowInstance.Id, workflowInstance, workflowsQuery.Options.CorrelationId, trigger.ActivityId, definitionId));
                 }
             }
         }
@@ -270,14 +290,14 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         return results;
     }
 
-    private async Task<ICollection<CollectedWorkflow>> CollectResumableWorkflowsAsync(WorkflowsQuery workflowsQuery, CancellationToken cancellationToken = default)
+    private async Task<IEnumerable<CollectedWorkflow>> CollectResumableWorkflowsAsync(WorkflowsQuery workflowsQuery, CancellationToken cancellationToken = default)
     {
         var hash = _hasher.Hash(workflowsQuery.ActivityTypeName, workflowsQuery.BookmarkPayload);
         var correlationId = workflowsQuery.Options.CorrelationId;
         var filter = new BookmarkFilter { Hash = hash, CorrelationId = correlationId };
         var bookmarks = await _bookmarkStore.FindManyAsync(filter, cancellationToken);
 
-        var collectedWorkflows = bookmarks.Select(b => new CollectedWorkflow(b.WorkflowInstanceId, default, default)).ToList();
+        var collectedWorkflows = bookmarks.Select(b => new CollectedResumableWorkflow(b.WorkflowInstanceId, default, correlationId, b.BookmarkId)).ToList();
         return collectedWorkflows;
     }
 }

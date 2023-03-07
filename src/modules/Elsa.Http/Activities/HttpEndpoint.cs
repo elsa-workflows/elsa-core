@@ -130,10 +130,11 @@ public class HttpEndpoint : Trigger<HttpRequest>
         // Generate bookmark data for path and selected methods.
         var path = context.Get(Path);
         var methods = context.Get(SupportedMethods);
-        return methods!.Select(x => new HttpEndpointBookmarkPayload(path!, x.ToLowerInvariant())
-        {
-            Policy = Guid.NewGuid().ToString()
-        }).Cast<object>().ToArray();
+        var authorize = context.Get(Authorize);
+        var policy = context.Get(Policy);
+        return methods!.Select(x =>
+            new HttpEndpointBookmarkPayload(path!, x.ToLowerInvariant(), authorize, policy))
+            .Cast<object>().ToArray();
     }
 
     private async Task HandleRequestAsync(ActivityExecutionContext context, HttpContext httpContext)
