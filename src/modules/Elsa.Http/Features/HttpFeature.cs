@@ -6,6 +6,7 @@ using Elsa.Features.Services;
 using Elsa.Http.ContentWriters;
 using Elsa.Http.Contracts;
 using Elsa.Http.Handlers;
+using Elsa.Http.Models;
 using Elsa.Http.Options;
 using Elsa.Http.Parsers;
 using Elsa.Http.Providers;
@@ -66,7 +67,8 @@ public class HttpFeature : FeatureBase
             {
                 typeof(RouteData),
                 typeof(HttpRequest),
-                typeof(HttpResponse)
+                typeof(HttpResponse),
+                typeof(HttpRequestHeaders)
             }, "HTTP");
             
             management.AddActivitiesFrom<HttpFeature>();
@@ -109,8 +111,11 @@ public class HttpFeature : FeatureBase
             // Activity property options providers.
             .AddSingleton<IActivityPropertyOptionsProvider, WriteHttpResponseContentTypeOptionsProvider>()
 
-            // Add Http endpoint handlers
+            // Add Http endpoint handlers.
             .AddSingleton(HttpEndpointWorkflowFaultHandler)
+            
+            // Add mediator handlers.
+            .AddNotificationHandlersFrom<HttpFeature>()
             ;
     }
 }
