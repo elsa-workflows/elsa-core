@@ -1,3 +1,5 @@
+using System.Linq.Expressions;
+using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Management.Entities;
@@ -38,15 +40,38 @@ public class WorkflowDefinitionFilter
 }
 
 /// <summary>
+/// Represents the order by which to order the results of a query.
+/// </summary>
+public class WorkflowDefinitionOrder<TProp> : OrderDefinition<WorkflowDefinition, TProp>
+{
+    /// <inheritdoc />
+    public WorkflowDefinitionOrder()
+    {
+    }
+
+    /// <summary>
+    /// Creates a new instance of the <see cref="WorkflowDefinitionOrder{TProp}"/> class.
+    /// </summary>
+    public WorkflowDefinitionOrder(Expression<Func<WorkflowDefinition, TProp>> keySelector, OrderDirection direction) : base(keySelector, direction)
+    {
+    }
+}
+
+/// <summary>
 /// Represents a store of <see cref="WorkflowDefinition"/>s.
 /// </summary>
 public interface IWorkflowDefinitionStore
 {
     Task<WorkflowDefinition?> FindAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default);
+    Task<WorkflowDefinition?> FindAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, CancellationToken cancellationToken = default);
     Task<Page<WorkflowDefinition>> FindManyAsync(WorkflowDefinitionFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default);
+    Task<Page<WorkflowDefinition>> FindManyAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, PageArgs pageArgs, CancellationToken cancellationToken = default);
     Task<IEnumerable<WorkflowDefinition>> FindManyAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default);
+    Task<IEnumerable<WorkflowDefinition>> FindManyAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, CancellationToken cancellationToken = default);
     Task<Page<WorkflowDefinitionSummary>> FindSummariesAsync(WorkflowDefinitionFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default);
+    Task<Page<WorkflowDefinitionSummary>> FindSummariesAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, PageArgs pageArgs, CancellationToken cancellationToken = default);
     Task<IEnumerable<WorkflowDefinitionSummary>> FindSummariesAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default);
+    Task<IEnumerable<WorkflowDefinitionSummary>> FindSummariesAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, CancellationToken cancellationToken = default);
     Task<WorkflowDefinition?> FindLastVersionAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken);
     Task SaveAsync(WorkflowDefinition record, CancellationToken cancellationToken = default);
     Task SaveManyAsync(IEnumerable<WorkflowDefinition> records, CancellationToken cancellationToken = default);

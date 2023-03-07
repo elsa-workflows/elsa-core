@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Elsa.Common.Contracts;
+using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Core.Activities;
@@ -79,18 +80,20 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
         var definitionId = definition.DefinitionId;
 
         // Reset current latest and published definitions.
-        var filter = new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = VersionOptions.Published };
+        var filter = new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = VersionOptions.LatestOrPublished };
         var publishedWorkflows = await _workflowDefinitionStore.FindManyAsync(filter, cancellationToken);
-
-        definition.IsPublished = true;
-        definition = Initialize(definition);
-        await _workflowDefinitionStore.SaveAsync(definition, cancellationToken);
 
         foreach (var publishedAndOrLatestWorkflow in publishedWorkflows)
         {
             publishedAndOrLatestWorkflow.IsPublished = false;
+            publishedAndOrLatestWorkflow.IsLatest = false;
             await _workflowDefinitionStore.SaveAsync(publishedAndOrLatestWorkflow, cancellationToken);
         }
+
+        // Save the new published definition.
+        definition.IsPublished = true;
+        definition = Initialize(definition);
+        await _workflowDefinitionStore.SaveAsync(definition, cancellationToken);
 
         await _eventPublisher.PublishAsync(new WorkflowDefinitionPublished(definition), cancellationToken);
         return definition;
@@ -127,9 +130,11 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
     public async Task<WorkflowDefinition?> GetDraftAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
     {
         var filter = new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = versionOptions };
-        var definition = await _workflowDefinitionStore.FindAsync(filter, cancellationToken);
+        var order = new WorkflowDefinitionOrder<int>(x => x.Version, OrderDirection.Descending);
+        var lastVersion = await _workflowDefinitionStore.FindLastVersionAsync(new WorkflowDefinitionFilter { DefinitionId = definitionId }, cancellationToken);
+        var definition = (await _workflowDefinitionStore.FindAsync(filter, order, cancellationToken)) ?? lastVersion;
 
-        if (definition == null)
+        if (definition == null!)
             return null;
 
         if (!definition.IsPublished)
@@ -137,9 +142,10 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
 
         var draft = definition.ShallowClone();
 
-        draft.Version++;
+        draft.Version = lastVersion?.Version + 1 ?? 1;
         draft.Id = _identityGenerator.GenerateId();
         draft.IsLatest = true;
+        draft.IsPublished = false;
 
         return draft;
     }
@@ -149,19 +155,19 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
     {
         var draft = definition;
         var definitionId = definition.DefinitionId;
-        var filter = new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = VersionOptions.Latest };
-        var latestVersion = await _workflowDefinitionStore.FindAsync(filter, cancellationToken);
-
+        var filter = new WorkflowDefinitionFilter { DefinitionId = definitionId };
+        var lastVersion = await _workflowDefinitionStore.FindLastVersionAsync(filter, cancellationToken);
+        
+        draft.Version = draft.Id == lastVersion?.Id ? lastVersion.Version : lastVersion?.Version + 1 ?? 1;
         draft.IsLatest = true;
-        draft.IsPublished = false;
         draft = Initialize(draft);
 
         await _workflowDefinitionStore.SaveAsync(draft, cancellationToken);
 
-        if (latestVersion is { IsPublished: true, IsLatest: true })
+        if (lastVersion is { IsPublished: true, IsLatest: true })
         {
-            latestVersion.IsLatest = false;
-            await _workflowDefinitionStore.SaveAsync(latestVersion, cancellationToken);
+            lastVersion.IsLatest = false;
+            await _workflowDefinitionStore.SaveAsync(lastVersion, cancellationToken);
         }
 
         return draft;

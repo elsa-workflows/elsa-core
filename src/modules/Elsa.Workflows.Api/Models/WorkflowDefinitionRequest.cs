@@ -9,7 +9,6 @@ internal class WorkflowDefinitionRequest
     public string? DefinitionId { get; set; }
     public string? Name { get; set; }
     public string? Description { get; set; }
-    public int? Version { get; set; }
     public ICollection<VariableDefinition>? Variables { get; set; }
     public ICollection<InputDefinition>? Inputs { get; set; }
     public ICollection<OutputDefinition>? Outputs { get; set; }

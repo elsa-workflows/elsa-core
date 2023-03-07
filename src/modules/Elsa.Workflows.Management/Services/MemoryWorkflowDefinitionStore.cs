@@ -34,17 +34,39 @@ public class MemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
     }
 
     /// <inheritdoc />
+    public Task<WorkflowDefinition?> FindAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, CancellationToken cancellationToken = default)
+    {
+        var result = _store.Query(query => Filter(query, filter).OrderBy(order)).FirstOrDefault();
+        return Task.FromResult(result);
+    }
+
+    /// <inheritdoc />
     public Task<Page<WorkflowDefinition>> FindManyAsync(WorkflowDefinitionFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
         var count = _store.Query(query => Filter(query, filter)).LongCount();
         var result = _store.Query(query => Filter(query, filter).Paginate(pageArgs)).ToList();
         return Task.FromResult(Page.Of(result, count));
     }
-    
+
+    /// <inheritdoc />
+    public Task<Page<WorkflowDefinition>> FindManyAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, PageArgs pageArgs, CancellationToken cancellationToken = default)
+    {
+        var count = _store.Query(query => Filter(query, filter).OrderBy(order)).LongCount();
+        var result = _store.Query(query => Filter(query, filter).Paginate(pageArgs)).ToList();
+        return Task.FromResult(Page.Of(result, count));
+    }
+
     /// <inheritdoc />
     public Task<IEnumerable<WorkflowDefinition>> FindManyAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
         var result = _store.Query(query => Filter(query, filter)).ToList().AsEnumerable();
+        return Task.FromResult(result);
+    }
+
+    /// <inheritdoc />
+    public Task<IEnumerable<WorkflowDefinition>> FindManyAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, CancellationToken cancellationToken = default)
+    {
+        var result = _store.Query(query => Filter(query, filter).OrderBy(order)).ToList().AsEnumerable();
         return Task.FromResult(result);
     }
 
@@ -55,11 +77,26 @@ public class MemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
         var result = _store.Query(query => Filter(query, filter).Paginate(pageArgs)).Select(WorkflowDefinitionSummary.FromDefinition).ToList();
         return Task.FromResult(Page.Of(result, count));
     }
-    
+
+    /// <inheritdoc />
+    public Task<Page<WorkflowDefinitionSummary>> FindSummariesAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, PageArgs pageArgs, CancellationToken cancellationToken = default)
+    {
+        var count = _store.Query(query => Filter(query, filter).OrderBy(order)).LongCount();
+        var result = _store.Query(query => Filter(query, filter).Paginate(pageArgs)).Select(WorkflowDefinitionSummary.FromDefinition).ToList();
+        return Task.FromResult(Page.Of(result, count));
+    }
+
     /// <inheritdoc />
     public Task<IEnumerable<WorkflowDefinitionSummary>> FindSummariesAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
         var result = _store.Query(query => Filter(query, filter)).Select(WorkflowDefinitionSummary.FromDefinition).ToList().AsEnumerable();
+        return Task.FromResult(result);
+    }
+
+    /// <inheritdoc />
+    public Task<IEnumerable<WorkflowDefinitionSummary>> FindSummariesAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, CancellationToken cancellationToken = default)
+    {
+        var result = _store.Query(query => Filter(query, filter).OrderBy(order)).Select(WorkflowDefinitionSummary.FromDefinition).ToList().AsEnumerable();
         return Task.FromResult(result);
     }
 
