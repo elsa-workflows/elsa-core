@@ -15,6 +15,7 @@ using Elsa.Workflows.Core.Middleware.Workflows;
 using Elsa.Workflows.Core.Pipelines.ActivityExecution;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Core.Serialization;
+using Elsa.Workflows.Core.Serialization.Providers;
 using Elsa.Workflows.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -136,6 +137,10 @@ public class WorkflowsFeature : FeatureBase
             .AddSingleton<IStorageDriverManager, StorageDriverManager>()
             .AddStorageDriver<WorkflowStorageDriver>()
             .AddStorageDriver<MemoryStorageDriver>()
+            
+            // Activity state serialization.
+            .AddSingleton<IActivityStateSerializer, ActivityStateSerializer>()
+            .AddSingleton<ISerializationProvider, BasicSerializationProvider>()
             
             // Instantiation strategies.
             .AddSingleton<IWorkflowActivationStrategy, AllowAlwaysStrategy>()

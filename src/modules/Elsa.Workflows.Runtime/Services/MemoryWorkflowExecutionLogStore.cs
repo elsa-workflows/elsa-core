@@ -6,35 +6,47 @@ using Elsa.Workflows.Runtime.Entities;
 
 namespace Elsa.Workflows.Runtime.Services;
 
+/// <inheritdoc />
 public class MemoryWorkflowExecutionLogStore : IWorkflowExecutionLogStore
 {
     private readonly MemoryStore<WorkflowExecutionLogRecord> _store;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MemoryWorkflowExecutionLogStore"/> class.
+    /// </summary>
     public MemoryWorkflowExecutionLogStore(MemoryStore<WorkflowExecutionLogRecord> store)
     {
         _store = store;
     }
-    
+
+    /// <inheritdoc />
     public Task SaveAsync(WorkflowExecutionLogRecord record, CancellationToken cancellationToken = default)
     {
         _store.Save(record, x => x.Id);
         return Task.CompletedTask;
     }
 
+    /// <inheritdoc />
     public Task SaveManyAsync(IEnumerable<WorkflowExecutionLogRecord> records, CancellationToken cancellationToken = default)
     {
         _store.SaveMany(records, x => x.Id);
         return Task.CompletedTask;
     }
 
-    public Task<Page<WorkflowExecutionLogRecord>> FindManyByWorkflowInstanceIdAsync(string workflowInstanceId, PageArgs? pageArgs = default, CancellationToken cancellationToken = default)
+    /// <inheritdoc />
+    public Task<WorkflowExecutionLogRecord?> FindAsync(WorkflowExecutionLogRecordFilter filter, CancellationToken cancellationToken = default)
     {
-        var page = _store
-            .FindMany(
-                x => x.WorkflowInstanceId == workflowInstanceId, 
-                x => x.Timestamp)
-            .Paginate();
-        
-        return Task.FromResult(page);
+        var result = _store.Query(query => Filter(query, filter)).FirstOrDefault();
+        return Task.FromResult(result);
     }
+
+    /// <inheritdoc />
+    public Task<Page<WorkflowExecutionLogRecord>> FindManyAsync(WorkflowExecutionLogRecordFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
+    {
+        var count = _store.Query(query => Filter(query, filter)).LongCount();
+        var result = _store.Query(query => Filter(query, filter).Paginate(pageArgs)).ToList();
+        return Task.FromResult(Page.Of(result, count));
+    }
+
+    private IQueryable<WorkflowExecutionLogRecord> Filter(IQueryable<WorkflowExecutionLogRecord> queryable, WorkflowExecutionLogRecordFilter filter) => filter.Apply(queryable);
 }

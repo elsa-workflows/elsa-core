@@ -13,12 +13,18 @@ namespace Elsa.Workflows.Runtime.Middleware;
 public class PersistWorkflowExecutionLogMiddleware : WorkflowExecutionMiddleware
 {
     private readonly IWorkflowExecutionLogStore _workflowExecutionLogStore;
+    private readonly IActivityStateSerializer _activityStateSerializer;
     private readonly IIdentityGenerator _identityGenerator;
 
     /// <inheritdoc />
-    public PersistWorkflowExecutionLogMiddleware(WorkflowMiddlewareDelegate next, IWorkflowExecutionLogStore workflowExecutionLogStore, IIdentityGenerator identityGenerator) : base(next)
+    public PersistWorkflowExecutionLogMiddleware(
+        WorkflowMiddlewareDelegate next, 
+        IWorkflowExecutionLogStore workflowExecutionLogStore,
+        IActivityStateSerializer activityStateSerializer,
+        IIdentityGenerator identityGenerator) : base(next)
     {
         _workflowExecutionLogStore = workflowExecutionLogStore;
+        _activityStateSerializer = activityStateSerializer;
         _identityGenerator = identityGenerator;
     }
 
@@ -29,7 +35,7 @@ public class PersistWorkflowExecutionLogMiddleware : WorkflowExecutionMiddleware
         await Next(context);
 
         // Persist workflow execution log entries.
-        var entries = context.ExecutionLog.Select(x => new WorkflowExecutionLogRecord
+        var entries = await Task.WhenAll(context.ExecutionLog.Select(x => Task.FromResult(new WorkflowExecutionLogRecord
         {
             Id = _identityGenerator.GenerateId(),
             ActivityInstanceId = x.ActivityInstanceId,
@@ -42,9 +48,10 @@ public class PersistWorkflowExecutionLogMiddleware : WorkflowExecutionMiddleware
             WorkflowInstanceId = context.Id,
             WorkflowVersion = context.Workflow.Version,
             Source = x.Source,
+            ActivityState = x.ActivityState,
             Payload = x.Payload,
             Timestamp = x.Timestamp
-        }).ToList();
+        })).ToList());
 
         await _workflowExecutionLogStore.SaveManyAsync(entries, context.CancellationToken);
     }

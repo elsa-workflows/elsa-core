@@ -37,7 +37,7 @@ public class ExecutionLogMiddleware : IActivityExecutionMiddleware
     /// <inheritdoc />
     public async ValueTask InvokeAsync(ActivityExecutionContext context)
     {
-        context.AddExecutionLogEntry("Started");
+        context.AddExecutionLogEntry("Started", includeActivityState: true);
 
         try
         {
@@ -50,11 +50,12 @@ public class ExecutionLogMiddleware : IActivityExecutionMiddleware
                 payload[entry.Key] = entry.Value != null ? JsonSerializer.Deserialize<JsonNode>(JsonSerializer.Serialize(entry.Value)) : JsonNode.Parse("null");
             }
 
-            context.AddExecutionLogEntry("Completed", payload: payload);
+            context.AddExecutionLogEntry("Completed", payload: payload, includeActivityState: true);
         }
         catch (Exception exception)
         {
             context.AddExecutionLogEntry("Faulted",
+                includeActivityState: true,
                 payload: new
                 {
                     Exception = new

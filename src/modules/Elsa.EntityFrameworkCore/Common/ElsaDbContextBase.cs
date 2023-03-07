@@ -9,13 +9,26 @@ namespace Elsa.EntityFrameworkCore.Common;
 /// </summary>
 public abstract class ElsaDbContextBase : DbContext
 {
+    /// <summary>
+    /// The schema used by Elsa.
+    /// </summary>
     public const string ElsaSchema = "Elsa";
+    
+    /// <summary>
+    /// The table used to store the migrations history.
+    /// </summary>
     public const string MigrationsHistoryTable = "__EFMigrationsHistory";
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ElsaDbContextBase"/> class.
+    /// </summary>
     protected ElsaDbContextBase(DbContextOptions options) : base(options)
     {
     }
 
+    /// <summary>
+    /// The schema used by Elsa.
+    /// </summary>
     protected virtual string Schema => ElsaSchema;
 
     /// <inheritdoc />
@@ -33,14 +46,23 @@ public abstract class ElsaDbContextBase : DbContext
         if(Database.IsOracle()) SetupForOracle(modelBuilder);
     }
 
+    /// <summary>
+    /// Override this method to apply entity configurations.
+    /// </summary>
     protected virtual void ApplyEntityConfigurations(ModelBuilder modelBuilder)
     {
     }
 
+    /// <summary>
+    /// Override this method to apply entity configurations.
+    /// </summary>
     protected virtual void Configure(ModelBuilder modelBuilder)
     {
     }
 
+    /// <summary>
+    /// Override this method to apply entity configurations for the SQLite provider.
+    /// </summary>
     protected virtual void SetupForSqlite(ModelBuilder modelBuilder)
     {
         // SQLite does not have proper support for DateTimeOffset via Entity Framework Core, see the limitations
@@ -59,6 +81,9 @@ public abstract class ElsaDbContextBase : DbContext
         }
     }
 
+    /// <summary>
+    /// Override this method to apply entity configurations for the Oracle provider.
+    /// </summary>
     protected virtual void SetupForOracle(ModelBuilder modelBuilder)
     {
     }
