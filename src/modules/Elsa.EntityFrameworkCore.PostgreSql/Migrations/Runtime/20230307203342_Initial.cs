@@ -1,11 +1,14 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
 {
+    /// <inheritdoc />
     public partial class Initial : Migration
     {
+        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.EnsureSchema(
@@ -45,6 +48,7 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                     EventName = table.Column<string>(type: "text", nullable: true),
                     Message = table.Column<string>(type: "text", nullable: true),
                     Source = table.Column<string>(type: "text", nullable: true),
+                    ActivityData = table.Column<string>(type: "text", nullable: true),
                     PayloadData = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
@@ -234,6 +238,7 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                 column: "WorkflowDefinitionId");
         }
 
+        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(

@@ -4,7 +4,9 @@ using Elsa.Mediator.Models;
 
 namespace Elsa.Workflows.Runtime.Commands;
 
-// ReSharper disable once ClassNeverInstantiated.Global
+/// <summary>
+/// Dispatches a workflow definition.
+/// </summary>
 public record DispatchWorkflowDefinitionCommand(
     string DefinitionId, 
     VersionOptions VersionOptions, 

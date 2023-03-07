@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
@@ -102,6 +103,7 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
                 ScheduledActivityNodeId = activityExecutionContext.NodeId,
                 OwnerActivityNodeId = activityExecutionContext.ParentActivityExecutionContext?.NodeId,
                 Properties = activityExecutionContext.Properties,
+                ActivityState = activityExecutionContext.ActivityState
             };
             return activityExecutionContextState;
         }
@@ -118,6 +120,7 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
             var activityExecutionContext = workflowExecutionContext.CreateActivityExecutionContext(activity);
             activityExecutionContext.Id = activityExecutionContextState.Id;
             activityExecutionContext.Properties = properties;
+            activityExecutionContext.ActivityState = activityExecutionContextState.ActivityState ?? new Dictionary<string, JsonElement>();
 
             return activityExecutionContext;
         }

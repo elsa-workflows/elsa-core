@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Workflows.Core.State;
@@ -16,10 +17,35 @@ public class ActivityExecutionContextState
     {
     }
 
+    /// <summary>
+    /// The ID of the activity instance.
+    /// </summary>
     public string Id { get; set; } = default!;
+    
+    /// <summary>
+    /// The ID of the parent of the activity instance.
+    /// </summary>
     public string? ParentContextId { get; set; }
+    
+    /// <summary>
+    /// The node ID of the scheduled activity.
+    /// </summary>
     public string ScheduledActivityNodeId { get; set; } = default!;
+    
+    /// <summary>
+    /// The node ID of the activity that owns the scheduled activity.
+    /// </summary>
     public string? OwnerActivityNodeId { get; set; }
+    
+    /// <summary>
+    /// A bag of properties.
+    /// </summary>
     public PropertyBag Properties { get; set; } = new();
+
+    /// <summary>
+    /// The evaluated values of the activity's properties.
+    /// </summary>
+    public IDictionary<string, JsonElement>? ActivityState { get; set; }
+    
     //public RegisterState Register { get; set; } = default!;
 }

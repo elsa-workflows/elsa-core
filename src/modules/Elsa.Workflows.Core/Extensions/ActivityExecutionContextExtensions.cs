@@ -27,7 +27,7 @@ public static class ActivityExecutionContextExtensions
     public static bool TryGetInput<T>(this ActivityExecutionContext context, string key, out T value, JsonSerializerOptions? serializerOptions = default)
     {
         var wellKnownTypeRegistry = context.GetRequiredService<IWellKnownTypeRegistry>();
-        
+
         if (context.Input.TryGetValue(key, out var v))
         {
             value = v.ConvertTo<T>(new ObjectConverterOptions(serializerOptions, wellKnownTypeRegistry))!;
@@ -65,8 +65,9 @@ public static class ActivityExecutionContextExtensions
     /// <param name="message">The message of the event.</param>
     /// <param name="source">The source of the activity. For example, the source file name and line number in case of composite activities.</param>
     /// <param name="payload">Any contextual data related to this event.</param>
+    /// <param name="includeActivityState">True to include activity state with this event, false otherwise.</param>
     /// <returns>Returns the created <see cref="WorkflowExecutionLogEntry"/>.</returns>
-    public static WorkflowExecutionLogEntry AddExecutionLogEntry(this ActivityExecutionContext context, string eventName, string? message = default, string? source = default, object? payload = default)
+    public static WorkflowExecutionLogEntry AddExecutionLogEntry(this ActivityExecutionContext context, string eventName, string? message = default, string? source = default, object? payload = default, bool includeActivityState = false)
     {
         var activity = context.Activity;
         var activityInstanceId = context.Id;
@@ -76,8 +77,9 @@ public static class ActivityExecutionContextExtensions
 
         if (source == null && activity.Source != null)
             source = $"{Path.GetFileName(activity.Source)}:{activity.Line}";
-            
-        var logEntry = new WorkflowExecutionLogEntry(activityInstanceId, parentActivityInstanceId, activity.Id, activity.Type, now, eventName, message, source, payload);
+
+        var activityState = includeActivityState ? context.ActivityState : default;
+        var logEntry = new WorkflowExecutionLogEntry(activityInstanceId, parentActivityInstanceId, activity.Id, activity.Type, activityState, now, eventName, message, source, payload);
         workflowExecutionContext.ExecutionLog.Add(logEntry);
         return logEntry;
     }
@@ -96,16 +98,24 @@ public static class ActivityExecutionContextExtensions
     public static async Task EvaluateInputPropertiesAsync(this ActivityExecutionContext context)
     {
         var activity = context.Activity;
-        var inputs = activity.GetInputs();
-        var assignedInputs = inputs.Where(x => x.MemoryBlockReference != null!).ToList();
+
+        // TODO: Get inputs from activity descriptor.
+        var inputs = activity.GetNamedInputs();
+
+        var assignedInputs = inputs.Where(x => x.Value.MemoryBlockReference != null!).ToList();
         var evaluator = context.GetRequiredService<IExpressionEvaluator>();
+        var stateSerializer = context.GetRequiredService<IActivityStateSerializer>();
         var expressionExecutionContext = context.ExpressionExecutionContext;
 
         foreach (var input in assignedInputs)
         {
-            var memoryReference = input.MemoryBlockReference();
-            var value = await evaluator.EvaluateAsync(input, expressionExecutionContext);
+            var memoryReference = input.Value.MemoryBlockReference();
+            var value = await evaluator.EvaluateAsync(input.Value, expressionExecutionContext);
             memoryReference.Set(context, value);
+
+            // Also set the evaluated input value on the activity.
+            var serializedValue = await stateSerializer.SerializeAsync(value);
+            context.ActivityState[input.Key] = serializedValue;
         }
 
         context.SetHasEvaluatedProperties();

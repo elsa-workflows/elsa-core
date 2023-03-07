@@ -6,7 +6,7 @@ import {durationToString, formatTime, getDuration, Hash, isNullOrWhitespace} fro
 import {ActivityExecutionEventBlock} from "../models";
 import {ActivityIconSize} from "../../../components/icons/activities";
 import {WorkflowDefinition} from "../../workflow-definitions/models/entities";
-import {WorkflowInstancesApi} from "../services/api";
+import {WorkflowInstancesApi} from "../services/workflow-instances-api";
 
 // TODO: Implement dynamic loading of records.
 const PAGE_SIZE: number = 10000;
@@ -153,8 +153,8 @@ export class Journal {
             </div>
           </td>
           <td>
-            {block.children.length == 0 ? 
-            (<a href="#" onClick={e => this.onStatusClick(e, block)} class={`inline-flex rounded-full ${statusColor} px-2 text-xs font-semibold leading-5 text-green-800`}>{status}</a>) 
+            {block.children.length == 0 ?
+            (<a href="#" onClick={e => this.onStatusClick(e, block)} class={`inline-flex rounded-full ${statusColor} px-2 text-xs font-semibold leading-5 text-green-800`}>{status}</a>)
             : <span class={`inline-flex rounded-full ${statusColor} px-2 text-xs font-semibold leading-5 text-green-800`}>{status}</span>}
           </td>
           <td>{duration}</td>

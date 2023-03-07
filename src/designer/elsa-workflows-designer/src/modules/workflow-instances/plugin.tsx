@@ -6,7 +6,7 @@ import {WorkflowDefinitionsApi} from "../workflow-definitions/services/api";
 import {DefaultModalActions, ModalDialogInstance, ModalDialogService} from "../../components/shared/modal-dialog";
 import {ToolbarMenuItem} from "../../components/toolbar/workflow-toolbar-menu/models";
 import toolbarButtonMenuItemStore from "../../data/toolbar-button-menu-item-store";
-import {WorkflowInstancesApi} from "./services/api";
+import {WorkflowInstancesApi} from "./services/workflow-instances-api";
 import {WorkflowDefinition} from "../workflow-definitions/models/entities";
 import {h} from "@stencil/core";
 import studioComponentStore from "../../data/studio-component-store";

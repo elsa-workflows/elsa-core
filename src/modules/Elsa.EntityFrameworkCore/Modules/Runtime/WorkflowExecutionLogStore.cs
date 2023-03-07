@@ -1,11 +1,12 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.EntityFrameworkCore.Common;
 using Elsa.Workflows.Core.Serialization;
-using Elsa.Common.Entities;
 using Elsa.Common.Models;
+using Elsa.Extensions;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
-using Microsoft.EntityFrameworkCore;
+using Open.Linq.AsyncExtensions;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Elsa.EntityFrameworkCore.Modules.Runtime;
@@ -14,21 +15,16 @@ namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 public class EFCoreWorkflowExecutionLogStore : IWorkflowExecutionLogStore
 {
     private readonly SerializerOptionsProvider _serializerOptionsProvider;
-    private readonly IDbContextFactory<RuntimeElsaDbContext> _dbContextFactory;
     private readonly EntityStore<RuntimeElsaDbContext, WorkflowExecutionLogRecord> _store;
     
     /// <summary>
     /// Constructor
     /// </summary>
 
-    public EFCoreWorkflowExecutionLogStore(
-        EntityStore<RuntimeElsaDbContext, WorkflowExecutionLogRecord> store, 
-        IDbContextFactory<RuntimeElsaDbContext> dbContextFactory,
-        SerializerOptionsProvider serializerOptionsProvider)
+    public EFCoreWorkflowExecutionLogStore(EntityStore<RuntimeElsaDbContext, WorkflowExecutionLogRecord> store, SerializerOptionsProvider serializerOptionsProvider)
     {
         _store = store;
         _serializerOptionsProvider = serializerOptionsProvider;
-        _dbContextFactory = dbContextFactory;
     }
     
     /// <inheritdoc />
@@ -41,37 +37,38 @@ public class EFCoreWorkflowExecutionLogStore : IWorkflowExecutionLogStore
     }
 
     /// <inheritdoc />
-    public async Task<Page<WorkflowExecutionLogRecord>> FindManyByWorkflowInstanceIdAsync(string workflowInstanceId, PageArgs? pageArgs = default, CancellationToken cancellationToken = default)
+    public async Task<WorkflowExecutionLogRecord?> FindAsync(WorkflowExecutionLogRecordFilter filter, CancellationToken cancellationToken = default)
     {
-        var records = await _store.FindManyAsync(
-            x => x.WorkflowInstanceId == workflowInstanceId,
-            x => x.Timestamp,
-            OrderDirection.Ascending,
-            pageArgs,
-            Load,
-            cancellationToken);
-
-        await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
-        
-        foreach (var record in records.Items)
-        {
-            var entry = dbContext.Entry(record);
-            var json = entry.Property<string>("PayloadData").CurrentValue;
-            if (!string.IsNullOrEmpty(json))
-            {
-                record.Payload = JsonSerializer.Deserialize<object>(json);
-            }
-        }
-
-        return records;
+        return await _store.QueryAsync(queryable => Filter(queryable, filter), Load, cancellationToken).FirstOrDefault();
     }
-    
+
+    /// <inheritdoc />
+    public async Task<WorkflowExecutionLogRecord?> FindAsync<TOrderBy>(WorkflowExecutionLogRecordFilter filter, WorkflowExecutionLogRecordOrder<TOrderBy> order, CancellationToken cancellationToken = default)
+    {
+        return await _store.QueryAsync(queryable => Filter(queryable, filter).OrderBy(order), Load, cancellationToken).FirstOrDefault();
+    }
+
+    /// <inheritdoc />
+    public async Task<Page<WorkflowExecutionLogRecord>> FindManyAsync(WorkflowExecutionLogRecordFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
+    {
+        var count = await _store.QueryAsync(queryable => Filter(queryable, filter).OrderBy(x => x.Timestamp), cancellationToken).LongCount();
+        var results = await _store.QueryAsync(queryable => Paginate(Filter(queryable, filter), pageArgs), Load, cancellationToken).ToList();
+        return new(results, count);
+    }
+
+    /// <inheritdoc />
+    public async Task<Page<WorkflowExecutionLogRecord>> FindManyAsync<TOrderBy>(WorkflowExecutionLogRecordFilter filter, PageArgs pageArgs, WorkflowExecutionLogRecordOrder<TOrderBy> order, CancellationToken cancellationToken = default)
+    {
+        var count = await _store.QueryAsync(queryable => Filter(queryable, filter).OrderBy(order), cancellationToken).LongCount();
+        var results = await _store.QueryAsync(queryable => Paginate(Filter(queryable, filter), pageArgs), Load, cancellationToken).ToList();
+        return new(results, count);
+    }
+
     private WorkflowExecutionLogRecord Save(RuntimeElsaDbContext dbContext, WorkflowExecutionLogRecord entity)
     {
         var options = _serializerOptionsProvider.CreatePersistenceOptions(ReferenceHandler.Preserve);
-        var json = JsonSerializer.Serialize(entity.Payload, options);
-
-        dbContext.Entry(entity).Property("PayloadData").CurrentValue = json;
+        dbContext.Entry(entity).Property("ActivityData").CurrentValue = JsonSerializer.Serialize(entity.ActivityState);
+        dbContext.Entry(entity).Property("PayloadData").CurrentValue = JsonSerializer.Serialize(entity.Payload, options);
         return entity;
     }
     
@@ -79,12 +76,31 @@ public class EFCoreWorkflowExecutionLogStore : IWorkflowExecutionLogStore
     {
         if (entity is not null)
         {
-            var json = dbContext.Entry(entity).Property<string>("PayloadData").CurrentValue;
-            if (!string.IsNullOrEmpty(json))
-            {
-                entity.Payload = JsonSerializer.Deserialize<object>(json);
-            }
+            entity.Payload = LoadPayload(dbContext, entity);
+            entity.ActivityState = LoadActivityState(dbContext, entity);
         }
+
         return entity;
+    }
+    
+    private object? LoadPayload(RuntimeElsaDbContext dbContext, WorkflowExecutionLogRecord entity)
+    {
+        var json = dbContext.Entry(entity).Property<string>("PayloadData").CurrentValue;
+        return !string.IsNullOrEmpty(json) ? JsonSerializer.Deserialize<object>(json) : null;
+    }
+    
+    private IDictionary<string, JsonElement>? LoadActivityState(RuntimeElsaDbContext dbContext, WorkflowExecutionLogRecord entity)
+    {
+        var json = dbContext.Entry(entity).Property<string>("ActivityData").CurrentValue;
+        return !string.IsNullOrEmpty(json) ? JsonSerializer.Deserialize<IDictionary<string, JsonElement>>(json) : null;
+    }
+    
+    private IQueryable<WorkflowExecutionLogRecord> Filter(IQueryable<WorkflowExecutionLogRecord> queryable, WorkflowExecutionLogRecordFilter filter) => filter.Apply(queryable);
+
+    private IQueryable<WorkflowExecutionLogRecord> Paginate(IQueryable<WorkflowExecutionLogRecord> queryable, PageArgs? pageArgs)
+    {
+        if (pageArgs?.Offset != null) queryable = queryable.Skip(pageArgs.Offset.Value);
+        if (pageArgs?.Limit != null) queryable = queryable.Take(pageArgs.Limit.Value);
+        return queryable;
     }
 }
