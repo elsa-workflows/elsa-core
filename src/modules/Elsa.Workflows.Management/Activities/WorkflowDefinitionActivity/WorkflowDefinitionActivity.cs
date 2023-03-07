@@ -17,7 +17,10 @@ namespace Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 [Browsable(false)]
 public class WorkflowDefinitionActivity : Activity, IInitializable
 {
-    internal IActivity Root { get; set; } = default!;
+    /// <summary>
+    /// The activity to schedule for execution.
+    /// </summary>
+    public IActivity Root { get; set; } = default!;
 
     /// <summary>
     /// The definition ID of the workflow to schedule for execution.
