@@ -40,6 +40,7 @@ export interface UpdateActivityArgs {
   id: string;
   originalId: string;
   activity: Activity;
+  updatePorts?: boolean;
 }
 
 export interface RenameActivityArgs {

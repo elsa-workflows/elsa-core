@@ -48,7 +48,7 @@ public class HttpFeature : FeatureBase
     public Func<IServiceProvider, IHttpEndpointWorkflowFaultHandler> HttpEndpointWorkflowFaultHandler { get; set; } = ActivatorUtilities.GetServiceOrCreateInstance<DefaultHttpEndpointWorkflowFaultHandler>;
 
     /// <summary>
-    /// A delegate to configure the <see cref="HttpClient"/> used when by the <see cref="SendHttpRequest"/> activity.
+    /// A delegate to configure the <see cref="HttpClient"/> used when by the <see cref="FlowSendHttpRequest"/> activity.
     /// </summary>
     public Action<IServiceProvider, HttpClient> HttpClient { get; set; } = (_, _) => { };
 
@@ -84,7 +84,7 @@ public class HttpFeature : FeatureBase
 
         Services.Configure(configureOptions);
 
-        var httpClientBuilder = Services.AddHttpClient<SendHttpRequest>(HttpClient);
+        var httpClientBuilder = Services.AddHttpClient<SendHttpRequestBase>(HttpClient);
         HttpClientBuilder(httpClientBuilder);
 
         Services

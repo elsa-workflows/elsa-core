@@ -1,4 +1,4 @@
-import {Activity, ActivityInput, Expression} from "../../models";
+import {Activity, ActivityInput, Expression} from "../../../models";
 
 export interface SwitchCase {
   label: string;

@@ -1,9 +1,8 @@
 import 'reflect-metadata';
 import {Service} from "typedi";
-import {camelCase} from 'lodash';
-import {Activity, Port, PortMode} from "../../models";
+import {Activity, Port, PortMode} from "../../../models";
 import {SwitchActivity, SwitchCase} from "./models";
-import {PortProvider, PortProviderContext} from "../../services";
+import {PortProvider, PortProviderContext} from "../../../services";
 
 @Service()
 export class SwitchPortProvider implements PortProvider {
