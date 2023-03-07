@@ -1,3 +1,4 @@
+using System.Collections;
 using System.ComponentModel;
 using System.Net.Http.Headers;
 using System.Text.Json.Serialization;
@@ -51,12 +52,12 @@ public class SendHttpRequest : SendHttpRequestBase
     [Input(
         Description = "A list of expected status codes to handle and the corresponding activity to execute when the status code matches.",
         UIHint = InputUIHints.MultiText,
-        
+
         // TODO: Need to implement a custom UI hint for this.
         IsBrowsable = false
     )]
     public ICollection<HttpStatusCodeCase> ExpectedStatusCodes { get; set; } = new List<HttpStatusCodeCase>();
-    
+
     /// <summary>
     /// The activity to execute when the HTTP status code does not match any of the expected status codes.
     /// </summary>
@@ -102,7 +103,7 @@ public class HttpStatusCodeCase
         StatusCode = statusCode;
         Activity = activity;
     }
-    
+
     /// <summary>
     /// The HTTP status code to match.
     /// </summary>
@@ -122,7 +123,8 @@ public abstract class SendHttpRequestBase : Activity<HttpResponse>
     /// <summary>
     /// The URL to send the request to.
     /// </summary>
-    [Input] public Input<Uri?> Url { get; set; } = default!;
+    [Input]
+    public Input<Uri?> Url { get; set; } = default!;
 
     /// <summary>
     /// The HTTP method to use when sending the request.
@@ -214,7 +216,7 @@ public abstract class SendHttpRequestBase : Activity<HttpResponse>
         var method = Method.TryGet(context) ?? "GET";
         var url = Url.Get(context);
         var request = new HttpRequestMessage(new HttpMethod(method), url);
-        var headers = RequestHeaders.TryGet(context) ?? new HttpRequestHeaders();
+        var headers = GetHeaders(context);
         var authorization = Authorization.TryGet(context);
 
         if (!string.IsNullOrWhiteSpace(authorization))
@@ -234,6 +236,26 @@ public abstract class SendHttpRequestBase : Activity<HttpResponse>
         }
 
         return request;
+    }
+
+    private IEnumerable<KeyValuePair<string, string[]>> GetHeaders(ActivityExecutionContext context)
+    {
+        var value = context.Get(RequestHeaders.MemoryBlockReference());
+
+        if (value is IDictionary<string, string[]> dictionary1)
+            return dictionary1;
+
+        if (value is IDictionary<string, string> dictionary2)
+            return dictionary2.ToDictionary(x => x.Key, x => new[] { x.Value });
+
+        if (value is IDictionary<string, object> dictionary3)
+            return dictionary3.ToDictionary(
+                pair => pair.Key,
+                pair => pair.Value is ICollection<object> collection
+                    ? collection.Select(x => x.ToString()!).ToArray()
+                    : new[] { pair.Value.ToString()! });
+
+        return Array.Empty<KeyValuePair<string, string[]>>();
     }
 
     private IHttpContentFactory SelectContentWriter(string? contentType, IEnumerable<IHttpContentFactory> requestContentWriters) =>
