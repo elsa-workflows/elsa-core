@@ -2,8 +2,9 @@
 using System.Xml;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
+using Elsa.Http.Contracts;
 using Elsa.Http.Models;
-using Elsa.Http.Services;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Models;
@@ -143,7 +144,10 @@ public class HttpEndpoint : Trigger<HttpRequest>
         // Generate bookmark data for path and selected methods.
         var path = context.Get(Path);
         var methods = context.Get(SupportedMethods);
-        return methods!.Select(x => new HttpEndpointBookmarkPayload(path!, x.ToLowerInvariant())).Cast<object>().ToArray();
+        return methods!.Select(x => new HttpEndpointBookmarkPayload(path!, x.ToLowerInvariant())
+        {
+            Policy = Guid.NewGuid().ToString()
+        }).Cast<object>().ToArray();
     }
 
     private async Task HandleRequestAsync(ActivityExecutionContext context, HttpContext httpContext)

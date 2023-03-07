@@ -2,8 +2,8 @@ using Elsa.Jobs.Activities.Helpers;
 using Elsa.Jobs.Activities.Jobs;
 using Elsa.Jobs.Activities.Models;
 using Elsa.Jobs.Notifications;
-using Elsa.Mediator.Services;
-using Elsa.Workflows.Runtime.Services;
+using Elsa.Mediator.Contracts;
+using Elsa.Workflows.Runtime.Contracts;
 
 namespace Elsa.Jobs.Activities.Handlers;
 

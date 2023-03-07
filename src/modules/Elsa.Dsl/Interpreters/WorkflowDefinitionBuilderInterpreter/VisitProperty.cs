@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using Elsa.Expressions.Helpers;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
 

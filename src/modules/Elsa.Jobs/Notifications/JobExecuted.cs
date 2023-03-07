@@ -1,5 +1,5 @@
-using Elsa.Jobs.Services;
-using Elsa.Mediator.Services;
+using Elsa.Jobs.Contracts;
+using Elsa.Mediator.Contracts;
 
 namespace Elsa.Jobs.Notifications;
 

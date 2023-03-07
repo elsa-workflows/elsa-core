@@ -4,15 +4,15 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Http.ContentWriters;
+using Elsa.Http.Contracts;
 using Elsa.Http.Handlers;
-using Elsa.Http.Implementations;
 using Elsa.Http.Options;
 using Elsa.Http.Parsers;
 using Elsa.Http.Providers;
 using Elsa.Http.Services;
 using Elsa.JavaScript.Features;
 using Elsa.Liquid.Features;
-using Elsa.Workflows.Management.Implementations;
+using Elsa.Workflows.Management.Contracts;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
@@ -48,7 +48,7 @@ public class HttpFeature : FeatureBase
     public Func<IServiceProvider, IHttpEndpointWorkflowFaultHandler> HttpEndpointWorkflowFaultHandler { get; set; } = ActivatorUtilities.GetServiceOrCreateInstance<DefaultHttpEndpointWorkflowFaultHandler>;
 
     /// <summary>
-    /// A delegate to configure the <see cref="HttpClient"/> used when by the <see cref="SendHttpRequest"/> activity.
+    /// A delegate to configure the <see cref="HttpClient"/> used when by the <see cref="FlowSendHttpRequest"/> activity.
     /// </summary>
     public Action<IServiceProvider, HttpClient> HttpClient { get; set; } = (_, _) => { };
 
@@ -84,7 +84,7 @@ public class HttpFeature : FeatureBase
 
         Services.Configure(configureOptions);
 
-        var httpClientBuilder = Services.AddHttpClient<SendHttpRequest>(HttpClient);
+        var httpClientBuilder = Services.AddHttpClient<SendHttpRequestBase>(HttpClient);
         HttpClientBuilder(httpClientBuilder);
 
         Services
@@ -105,9 +105,12 @@ public class HttpFeature : FeatureBase
             .AddSingleton<IHttpContentFactory, JsonContentFactory>()
             .AddSingleton<IHttpContentFactory, XmlContentFactory>()
             .AddSingleton<IHttpContentFactory, FormUrlEncodedHttpContentFactory>()
-            
+
             // Activity property options providers.
             .AddSingleton<IActivityPropertyOptionsProvider, WriteHttpResponseContentTypeOptionsProvider>()
+
+            // Add Http endpoint handlers
+            .AddSingleton(HttpEndpointWorkflowFaultHandler)
             ;
     }
 }

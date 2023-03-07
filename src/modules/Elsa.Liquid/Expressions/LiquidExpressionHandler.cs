@@ -1,7 +1,7 @@
+using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
-using Elsa.Expressions.Services;
-using Elsa.Liquid.Services;
+using Elsa.Liquid.Contracts;
 
 namespace Elsa.Liquid.Expressions;
 

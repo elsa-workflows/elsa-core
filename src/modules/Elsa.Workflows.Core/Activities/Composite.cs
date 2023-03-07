@@ -5,6 +5,7 @@ using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Activities.Flowchart.Models;
 using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Core.Signals;
@@ -84,9 +85,12 @@ public abstract class Composite : Activity, IVariableContainer
     protected virtual void OnCompleted(ActivityExecutionContext context, ActivityExecutionContext childContext)
     {
     }
-    
+
     private async ValueTask OnCompleteCompositeSignal(CompleteCompositeSignal signal, SignalContext context)
     {
+        // Set the outcome into the context for the parent activity to pick up.
+        context.SenderActivityExecutionContext.WorkflowExecutionContext.TransientProperties[nameof(CompleteCompositeSignal)] = signal;
+        
         await OnCompletedAsync(context.ReceiverActivityExecutionContext, context.SenderActivityExecutionContext);
         
         // Complete the sender first so that it notifies its parents to complete.

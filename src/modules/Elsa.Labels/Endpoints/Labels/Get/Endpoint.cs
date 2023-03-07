@@ -1,4 +1,4 @@
-using Elsa.Labels.Services;
+using Elsa.Labels.Contracts;
 using FastEndpoints;
 
 namespace Elsa.Labels.Endpoints.Labels.Get;

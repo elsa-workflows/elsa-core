@@ -1,8 +1,8 @@
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
+using Elsa.AzureServiceBus.Contracts;
 using Elsa.AzureServiceBus.Handlers;
 using Elsa.AzureServiceBus.HostedServices;
-using Elsa.AzureServiceBus.Implementations;
 using Elsa.AzureServiceBus.Options;
 using Elsa.AzureServiceBus.Providers;
 using Elsa.AzureServiceBus.Services;

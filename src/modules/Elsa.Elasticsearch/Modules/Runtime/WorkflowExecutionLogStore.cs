@@ -1,7 +1,7 @@
 using Elsa.Common.Models;
 using Elsa.Elasticsearch.Common;
+using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
-using Elsa.Workflows.Runtime.Services;
 
 namespace Elsa.Elasticsearch.Modules.Runtime;
 

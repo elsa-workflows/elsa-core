@@ -1,8 +1,8 @@
 using Elsa.Abstractions;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
+using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Models;
-using Elsa.Workflows.Management.Services;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.List;

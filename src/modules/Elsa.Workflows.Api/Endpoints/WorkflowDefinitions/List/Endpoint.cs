@@ -1,6 +1,6 @@
 using Elsa.Abstractions;
 using Elsa.Common.Models;
-using Elsa.Workflows.Management.Services;
+using Elsa.Workflows.Management.Contracts;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.List;
 

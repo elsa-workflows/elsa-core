@@ -3,11 +3,11 @@ using Elsa.Abstractions;
 using Elsa.Common.Models;
 using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Core.Serialization;
+using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Models;
-using Elsa.Workflows.Management.Services;
-using Elsa.Workflows.Runtime.Services;
+using Elsa.Workflows.Runtime.Contracts;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Import;
 
@@ -77,6 +77,7 @@ internal class Import : ElsaEndpoint<WorkflowDefinitionRequest, WorkflowDefiniti
         draft.Variables = variables;
         draft.Inputs = request.Inputs ?? new List<InputDefinition>();
         draft.Outputs = request.Outputs ?? new List<OutputDefinition>();
+        draft.Outcomes = request.Outcomes ?? new List<string>();
         draft.Options = request.Options;
         draft.UsableAsActivity = request.UsableAsActivity;
         draft = request.Publish ? await _workflowDefinitionPublisher.PublishAsync(draft, cancellationToken) : await _workflowDefinitionPublisher.SaveDraftAsync(draft, cancellationToken);
@@ -94,6 +95,7 @@ internal class Import : ElsaEndpoint<WorkflowDefinitionRequest, WorkflowDefiniti
             request.Variables ?? new List<VariableDefinition>(),
             draft.Inputs,
             draft.Outputs,
+            draft.Outcomes,
             draft.CustomProperties,
             draft.IsLatest,
             draft.IsPublished,

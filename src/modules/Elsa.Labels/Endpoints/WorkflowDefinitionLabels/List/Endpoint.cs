@@ -1,6 +1,6 @@
-using Elsa.Labels.Services;
+using Elsa.Labels.Contracts;
 using Elsa.Workflows.Core.Serialization;
-using Elsa.Workflows.Management.Services;
+using Elsa.Workflows.Management.Contracts;
 using FastEndpoints;
 using JetBrains.Annotations;
 using Open.Linq.AsyncExtensions;

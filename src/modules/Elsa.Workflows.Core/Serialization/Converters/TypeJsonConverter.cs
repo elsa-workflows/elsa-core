@@ -1,6 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Elsa.Expressions.Services;
+using Elsa.Expressions.Contracts;
 using Elsa.Extensions;
 
 namespace Elsa.Workflows.Core.Serialization.Converters;

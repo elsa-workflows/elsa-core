@@ -1,4 +1,5 @@
 ﻿using Elsa.Expressions.Helpers;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Dsl.Interpreters;

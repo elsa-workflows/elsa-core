@@ -3,11 +3,12 @@ using System.Text.Json.Serialization;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Runtime.Bookmarks;
+using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Notifications;
-using Elsa.Workflows.Runtime.Services;
 
 namespace Elsa.Workflows.Runtime.Activities;
 

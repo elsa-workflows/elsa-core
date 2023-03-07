@@ -1,8 +1,9 @@
+using Elsa.Http.Models;
+using Elsa.Workflows.Core.Serialization;
+using Microsoft.AspNetCore.Http;
 using System.Net.Mime;
 using System.Text.Json;
-using Elsa.Http.Models;
-using Elsa.Http.Services;
-using Microsoft.AspNetCore.Http;
+using Elsa.Http.Contracts;
 
 namespace Elsa.Http.Handlers;
 
@@ -12,6 +13,16 @@ namespace Elsa.Http.Handlers;
 /// </summary>
 public class DefaultHttpEndpointWorkflowFaultHandler : IHttpEndpointWorkflowFaultHandler
 {
+    private readonly SerializerOptionsProvider _serializerOptionsProvider;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DefaultHttpEndpointWorkflowFaultHandler"/> class.
+    /// </summary>
+    public DefaultHttpEndpointWorkflowFaultHandler(SerializerOptionsProvider serializerOptionsProvider)
+    {
+        _serializerOptionsProvider = serializerOptionsProvider;
+    }
+
     /// <inheritdoc />
     public virtual async ValueTask HandleAsync(HttpEndpointFaultedWorkflowContext context)
     {
@@ -25,14 +36,14 @@ public class DefaultHttpEndpointWorkflowFaultHandler : IHttpEndpointWorkflowFaul
         var faultedResponse = JsonSerializer.Serialize(new
         {
             errorMessage = $"Workflow faulted at {workflowInstance.FaultedAt!} with error: {fault.Message}",
-            exception = fault.Exception,
+            exception = fault?.Exception,
             workflow = new
             {
                 name = workflowInstance.Name,
                 version = workflowInstance.Version,
                 instanceId = workflowInstance.Id
             }
-        });
+        }, _serializerOptionsProvider.CreatePersistenceOptions());
 
         await httpContext.Response.WriteAsync(faultedResponse, context.CancellationToken);
     }

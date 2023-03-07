@@ -1,6 +1,6 @@
 using System.Reflection;
 using Elsa.Http.Options;
-using Elsa.Workflows.Management.Implementations;
+using Elsa.Workflows.Management.Contracts;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Http.Providers;

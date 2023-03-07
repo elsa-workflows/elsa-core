@@ -42,6 +42,7 @@ export interface ActivityExecutionEventBlock {
   activityInstanceId: string;
   parentActivityInstanceId: string;
   completed: boolean;
+  faulted: boolean;
   timestamp: Date;
   duration?: moment.Duration;
   startedRecord: WorkflowExecutionLogRecord;

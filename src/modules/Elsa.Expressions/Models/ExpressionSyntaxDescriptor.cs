@@ -1,5 +1,5 @@
 using System.Text.Json;
-using Elsa.Expressions.Services;
+using Elsa.Expressions.Contracts;
 
 namespace Elsa.Expressions.Models;
 

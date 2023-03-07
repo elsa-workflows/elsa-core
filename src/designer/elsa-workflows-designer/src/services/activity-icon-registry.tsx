@@ -11,8 +11,7 @@ import {
   IfIcon,
   ReadLineIcon, WriteLineIcon,
   RunJavaScriptIcon,
-  HttpEndpointIcon, HttpResponseIcon, HttpRequestIcon,
-  CorrelateIcon
+  HttpEndpointIcon, HttpResponseIcon, CorrelateIcon
 } from "../components/icons/activities";
 import {ForIcon} from "../components/icons/activities/for";
 import {FinishIcon} from "../components/icons/activities/finish";
@@ -56,7 +55,6 @@ export class ActivityIconRegistry {
     this.add('Elsa.RunJavaScript', settings => <RunJavaScriptIcon size={settings?.size}/>);
     this.add('Elsa.FlowJoin', settings => <FlowJoinIcon size={settings?.size}/>);
     this.add('Elsa.FlowNode', settings => <FlowNodeIcon size={settings?.size}/>);
-    this.add('Elsa.SendHttpRequest', settings => <HttpRequestIcon size={settings?.size}/>);
     this.add("Elsa.Correlate", settings => <CorrelateIcon size={settings?.size}/>)
     this.add("Elsa.Start", settings => <StartIcon size={settings?.size}/>)
     this.add("Elsa.Finish", settings => <FinishIcon size={settings?.size}/>)

@@ -1,11 +1,11 @@
 using Elsa.Extensions;
 using Elsa.Jobs.Activities.Jobs;
 using Elsa.Jobs.Activities.Models;
-using Elsa.Jobs.Services;
+using Elsa.Jobs.Contracts;
 using Elsa.Workflows.Core.Middleware.Activities;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Pipelines.ActivityExecution;
-using Elsa.Workflows.Management.Services;
+using Elsa.Workflows.Management.Contracts;
 
 namespace Elsa.Jobs.Activities.Middleware.Activities;
 

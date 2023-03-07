@@ -4,7 +4,7 @@ using Elsa.Extensions;
 using Elsa.Liquid.Helpers;
 using Elsa.Liquid.Notifications;
 using Elsa.Liquid.Options;
-using Elsa.Mediator.Services;
+using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Management.Options;
 using Fluid;
 using Fluid.Values;

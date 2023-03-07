@@ -1,12 +1,14 @@
 using Elsa.Common.Models;
 using Elsa.Extensions;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Runtime.Bookmarks;
+using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Models;
-using Elsa.Workflows.Runtime.Services;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Runtime.Activities;

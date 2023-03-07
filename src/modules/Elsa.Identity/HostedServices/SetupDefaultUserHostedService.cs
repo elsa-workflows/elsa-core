@@ -1,6 +1,6 @@
+using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
 using Elsa.Identity.Options;
-using Elsa.Identity.Services;
 using Microsoft.Extensions.Hosting;
 
 namespace Elsa.Identity.HostedServices;

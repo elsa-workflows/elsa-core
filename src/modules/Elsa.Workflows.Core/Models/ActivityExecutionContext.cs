@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Core.Models;
@@ -155,7 +156,7 @@ public class ActivityExecutionContext
         var identityGenerator = GetRequiredService<IIdentityGenerator>();
         var payloadSerializer = GetRequiredService<IBookmarkPayloadSerializer>();
         var payloadJson = payload != null ? payloadSerializer.Serialize(payload) : default;
-        var hash = bookmarkHasher.Hash(activityTypeName, payloadJson);
+        var hash = bookmarkHasher.Hash(activityTypeName, payload);
 
         var bookmark = new Bookmark(
             identityGenerator.GenerateId(),

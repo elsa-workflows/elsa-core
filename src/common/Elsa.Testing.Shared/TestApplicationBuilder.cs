@@ -1,5 +1,5 @@
 using Elsa.Extensions;
-using Elsa.Workflows.Core.Implementations;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;

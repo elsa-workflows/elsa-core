@@ -1,6 +1,6 @@
 using Elsa.Abstractions;
 using Elsa.Workflows.Core.Serialization;
-using Elsa.Workflows.Management.Services;
+using Elsa.Workflows.Management.Contracts;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.BulkDelete;
 

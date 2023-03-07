@@ -1,6 +1,7 @@
 using System.Text.Json;
+using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Models;
-using Elsa.Expressions.Services;
+using Elsa.Workflows.Core.Serialization.Converters;
 
 namespace Elsa.Workflows.Core.Expressions;
 
@@ -19,6 +20,7 @@ public class JsonExpression<T> : JsonExpression
 
 public class JsonExpressionHandler : IExpressionHandler
 {
+    /// <inheritdoc />
     public ValueTask<object?> EvaluateAsync(IExpression expression, Type returnType, ExpressionExecutionContext context)
     {
         var jsonExpression = (JsonExpression)expression;
@@ -27,7 +29,10 @@ public class JsonExpressionHandler : IExpressionHandler
         if (string.IsNullOrWhiteSpace(value))
             return ValueTask.FromResult(default(object?));
 
-        var model = JsonSerializer.Deserialize(value, returnType);
+        var serializerOptions = new JsonSerializerOptions();
+        serializerOptions.Converters.Add(new IntegerConverter());
+        
+        var model = JsonSerializer.Deserialize(value, returnType, serializerOptions);
         return ValueTask.FromResult(model);
     }
 }

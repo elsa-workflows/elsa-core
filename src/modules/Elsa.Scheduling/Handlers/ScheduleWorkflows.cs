@@ -1,5 +1,5 @@
-using Elsa.Mediator.Services;
-using Elsa.Scheduling.Services;
+using Elsa.Mediator.Contracts;
+using Elsa.Scheduling.Contracts;
 using Elsa.Workflows.Runtime.Notifications;
 
 namespace Elsa.Scheduling.Handlers;

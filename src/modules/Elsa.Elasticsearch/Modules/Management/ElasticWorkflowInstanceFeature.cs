@@ -1,6 +1,6 @@
 using Elsa.Elasticsearch.Common;
+using Elsa.Elasticsearch.Contracts;
 using Elsa.Elasticsearch.Features;
-using Elsa.Elasticsearch.Services;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Workflows.Management.Entities;

@@ -1,7 +1,7 @@
+using Elsa.Mediator.Contracts;
 using Elsa.Mediator.Models;
-using Elsa.Mediator.Services;
 using Elsa.Workflows.Runtime.Commands;
-using Elsa.Workflows.Runtime.Services;
+using Elsa.Workflows.Runtime.Contracts;
 
 namespace Elsa.Workflows.Runtime.Handlers;
 

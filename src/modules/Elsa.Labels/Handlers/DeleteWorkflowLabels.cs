@@ -1,5 +1,5 @@
-using Elsa.Labels.Services;
-using Elsa.Mediator.Services;
+using Elsa.Labels.Contracts;
+using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Management.Notifications;
 
 namespace Elsa.Labels.Handlers;

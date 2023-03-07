@@ -1,5 +1,5 @@
 using Elsa.MassTransit.Messages;
-using Elsa.Workflows.Runtime.Services;
+using Elsa.Workflows.Runtime.Contracts;
 using MassTransit;
 
 namespace Elsa.MassTransit.Consumers;
