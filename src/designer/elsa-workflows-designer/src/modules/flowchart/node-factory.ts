@@ -16,4 +16,9 @@ export class NodeFactory {
     const handler = this.handlerRegistry.createHandler(activityDescriptor.typeName);
     return handler.createDesignerNode({activityDescriptor, activity, x, y});
   }
+
+  public createPorts(activityDescriptor: ActivityDescriptor, activity: Activity): Array<any> {
+    const handler = this.handlerRegistry.createHandler(activityDescriptor.typeName);
+    return handler.createPorts({activityDescriptor, activity});
+  }
 }

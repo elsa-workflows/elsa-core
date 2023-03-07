@@ -147,7 +147,7 @@ function findMatchingPortForEdge(node: Node<Node.Properties>, position: string, 
   return node.getPorts().find(p => p.position == position && p.type == portType && getPortNameByPortId(p.id) == portName);
 }
 
-function getPortNameByPortId(portId: string) {
+export function getPortNameByPortId(portId: string) {
   return portId.includes('_') ? (portId.split('_')[1] == 'null' ? null : portId.split('_')[1]) : portId;
 }
 

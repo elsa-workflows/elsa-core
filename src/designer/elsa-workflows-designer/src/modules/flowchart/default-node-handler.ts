@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import {Node} from "@antv/x6";
 import {Container, Service} from "typedi"
-import {ActivityNodeHandler, CreateUINodeContext} from "./activity-node-handler";
+import {ActivityNodeHandler, UINodeContext, UIPortContext} from "./activity-node-handler";
 import {PortProviderContext, PortProviderRegistry} from "../../services";
 import {PortMode} from "../../models";
 import {v4 as uuid} from 'uuid';
@@ -14,8 +14,24 @@ export class DefaultNodeHandler implements ActivityNodeHandler {
     this.portProviderRegistry = Container.get(PortProviderRegistry);
   }
 
-  createDesignerNode(context: CreateUINodeContext): Node.Metadata {
+  createDesignerNode(context: UINodeContext): Node.Metadata {
     const {activityDescriptor, activity, x, y} = context;
+    const portModels = this.createPorts(context);
+
+    return {
+      id: activity.id,
+      shape: 'activity',
+      activity: activity,
+      activityDescriptor: activityDescriptor,
+      x: x,
+      y: y,
+      data: activity,
+      ports: portModels
+    } as Node.Metadata;
+  }
+
+  createPorts(context: UIPortContext): Array<any> {
+    const {activityDescriptor, activity} = context;
     const provider = this.portProviderRegistry.get(activityDescriptor.typeName);
     const providerContext: PortProviderContext = {activityDescriptor, activity};
     const inPorts = [{name: 'In', displayName: null, mode: PortMode.Port}];
@@ -54,15 +70,6 @@ export class DefaultNodeHandler implements ActivityNodeHandler {
 
     const portModels = [...leftPortModels, ...rightPortModels];
 
-    return {
-      id: activity.id,
-      shape: 'activity',
-      activity: activity,
-      activityDescriptor: activityDescriptor,
-      x: x,
-      y: y,
-      data: activity,
-      ports: portModels
-    } as Node.Metadata;
+    return portModels;
   }
 }
