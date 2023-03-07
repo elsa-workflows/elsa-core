@@ -1,10 +1,10 @@
 import 'reflect-metadata';
 import {FunctionalComponent, h} from '@stencil/core';
 import {Container, Service} from "typedi";
-import {ActivityIconRegistry, InputControlRegistry, PortProviderRegistry} from "../../services";
-import {Plugin} from "../../models";
+import {ActivityIconRegistry, InputControlRegistry, PortProviderRegistry} from "../../../services";
+import {Plugin} from "../../../models";
 import {SwitchPortProvider} from "./switch-port-provider";
-import {ActivityIconSettings, getActivityIconCssClass} from "../../components/icons/activities";
+import {ActivityIconSettings, getActivityIconCssClass} from "../../../components/icons/activities";
 
 @Service()
 export class SwitchPlugin implements Plugin {

@@ -1,4 +1,4 @@
-import {Activity, Expression} from "../../models";
+import {Activity, Expression} from "../../../models";
 
 export interface FlowSwitchCase {
   label: string;

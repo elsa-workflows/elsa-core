@@ -1,20 +1,20 @@
 import {Component, h, Prop, State, Watch} from "@stencil/core";
 import {camelCase} from 'lodash';
-import {ActivityInputContext} from "../../services/activity-input-driver";
-import {mapSyntaxToLanguage} from "../../utils";
-import {SyntaxNames} from "../../models";
-import {MonacoValueChangedArgs} from "../../components/shared/monaco-editor/monaco-editor";
-import {TrashBinButtonIcon} from "../../components/icons/buttons/trash-bin";
-import {PlusButtonIcon} from "../../components/icons/buttons/plus";
-import {FlowSwitchCase} from "./models";
+import {ActivityInputContext} from "../../../services/activity-input-driver";
+import {mapSyntaxToLanguage} from "../../../utils";
+import {SyntaxNames} from "../../../models";
+import {SwitchCase} from "./models";
+import {MonacoValueChangedArgs} from "../../../components/shared/monaco-editor/monaco-editor";
+import {TrashBinButtonIcon} from "../../../components/icons/buttons/trash-bin";
+import {PlusButtonIcon} from "../../../components/icons/buttons/plus";
 
 @Component({
-  tag: 'elsa-flow-switch-editor',
+  tag: 'elsa-switch-editor',
   shadow: false
 })
-export class FlowSwitchEditor {
+export class SwitchEditor {
   @Prop() inputContext: ActivityInputContext;
-  @State() private cases: Array<FlowSwitchCase> = [];
+  @State() private cases: Array<SwitchCase> = [];
   private supportedSyntaxes: Array<string> = [SyntaxNames.JavaScript, SyntaxNames.Literal];
 
   @Watch('inputContext')
@@ -37,27 +37,27 @@ export class FlowSwitchEditor {
 
   private onAddCaseClick() {
     const caseName = `Case ${this.cases.length + 1}`;
-    const newCase: FlowSwitchCase = {label: caseName, condition: {type: SyntaxNames.JavaScript, value: ''}};
+    const newCase: SwitchCase = {label: caseName, condition: {type: SyntaxNames.JavaScript, value: ''}};
     this.cases = [...this.cases, newCase];
     this.updateActivity();
   }
 
-  private onDeleteCaseClick(switchCase: FlowSwitchCase) {
+  private onDeleteCaseClick(switchCase: SwitchCase) {
     this.cases = this.cases.filter(x => x != switchCase);
     this.updateActivity();
   }
 
-  private onCaseLabelChanged(e: Event, switchCase: FlowSwitchCase) {
+  private onCaseLabelChanged(e: Event, switchCase: SwitchCase) {
     switchCase.label = (e.currentTarget as HTMLInputElement).value.trim();
     this.updateActivity();
   }
 
-  private onCaseExpressionChanged(e: CustomEvent<MonacoValueChangedArgs>, switchCase: FlowSwitchCase) {
+  private onCaseExpressionChanged(e: CustomEvent<MonacoValueChangedArgs>, switchCase: SwitchCase) {
     switchCase.condition = {type: switchCase.condition.type, value: e.detail.value};
     this.updateActivity();
   }
 
-  private onCaseSyntaxChanged(e: Event, switchCase: FlowSwitchCase) {
+  private onCaseSyntaxChanged(e: Event, switchCase: SwitchCase) {
     const select = e.currentTarget as HTMLSelectElement;
     const syntax = select.value;
     switchCase.condition = {...switchCase.condition, type: syntax};

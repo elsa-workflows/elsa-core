@@ -1,5 +1,5 @@
 import {FunctionalComponent, h} from '@stencil/core';
-import {ActivityIconSettings, getActivityIconCssClass} from "./models";
+import {ActivityIconSettings, getActivityIconCssClass} from "../../components/icons/activities";
 
 export const HttpRequestIcon: FunctionalComponent<ActivityIconSettings> = (settings) => (
   <svg class={getActivityIconCssClass(settings)} width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"

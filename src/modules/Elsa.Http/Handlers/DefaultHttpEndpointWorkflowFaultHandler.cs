@@ -15,6 +15,9 @@ public class DefaultHttpEndpointWorkflowFaultHandler : IHttpEndpointWorkflowFaul
 {
     private readonly SerializerOptionsProvider _serializerOptionsProvider;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DefaultHttpEndpointWorkflowFaultHandler"/> class.
+    /// </summary>
     public DefaultHttpEndpointWorkflowFaultHandler(SerializerOptionsProvider serializerOptionsProvider)
     {
         _serializerOptionsProvider = serializerOptionsProvider;
