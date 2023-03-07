@@ -24,7 +24,7 @@ public static class ActivityExtensions
             where inputValue != null
             select (inputProp, inputValue);
 
-        return query.ToDictionary(x => x.inputProp.Name, x => x.inputValue);
+        return query.DistinctBy(x => x.inputProp.Name).ToDictionary(x => x.inputProp.Name, x => x.inputValue);
     }
 
     /// <summary>
