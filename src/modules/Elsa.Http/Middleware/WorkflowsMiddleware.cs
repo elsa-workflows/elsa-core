@@ -23,6 +23,8 @@ public class WorkflowsMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly IWorkflowRuntime _workflowRuntime;
+    private readonly IRouteMatcher _routeMatcher;
+    private readonly IRouteTable _routeTable;
     private readonly IWorkflowInstanceStore _workflowInstanceStore;
     private readonly IHttpBookmarkProcessor _httpBookmarkProcessor;
     private readonly IHttpEndpointWorkflowFaultHandler _httpEndpointWorkflowFaultHandler;
@@ -48,11 +50,14 @@ public class WorkflowsMiddleware
         IBookmarkStore bookmarkStore,
         ITriggerStore triggerStore,
         IBookmarkHasher hasher,
-        IBookmarkPayloadSerializer serializer)
+        IBookmarkPayloadSerializer serializer,
+        IRouteMatcher routeMatcher,
+        IRouteTable routeTable)
     {
         _next = next;
         _workflowRuntime = workflowRuntime;
         _workflowInstanceStore = workflowInstanceStore;
+        _options = options.Value;
         _httpBookmarkProcessor = httpBookmarkProcessor;
         _httpEndpointWorkflowFaultHandler = httpEndpointWorkflowFaultHandler;
         _httpEndpointAuthorizationHandler = httpEndpointAuthorizationHandler;
@@ -60,14 +65,14 @@ public class WorkflowsMiddleware
         _triggerStore = triggerStore;
         _hasher = hasher;
         _serializer = serializer;
-        _options = options.Value;
+        _routeMatcher = routeMatcher;
+        _routeTable = routeTable;
     }
-
 
     /// <summary>
     /// Attempts to matches the inbound request path to an associated workflow and then run that workflow.
     /// </summary>
-    public async Task InvokeAsync(HttpContext httpContext, IRouteMatcher routeMatcher)
+    public async Task InvokeAsync(HttpContext httpContext)
     {
         var path = GetPath(httpContext);
         var basePath = _options.BasePath;
@@ -85,6 +90,8 @@ public class WorkflowsMiddleware
             path = path.Substring(basePath.Value.Value.Length);
         }
 
+        var matchingPath = GetMatchingRoute(path);
+
         var input = new Dictionary<string, object>
         {
             [HttpEndpoint.HttpContextInputKey] = true,
@@ -95,7 +102,8 @@ public class WorkflowsMiddleware
         var correlationId = default(string);
         var request = httpContext.Request;
         var method = request.Method!.ToLowerInvariant();
-        var bookmarkPayload = new HttpEndpointBookmarkPayload(path, method);
+
+        var bookmarkPayload = new HttpEndpointBookmarkPayload(matchingPath, method);
         var triggerOptions = new TriggerWorkflowsRuntimeOptions(correlationId, input);
         var cancellationToken = httpContext.RequestAborted;
 
@@ -118,6 +126,21 @@ public class WorkflowsMiddleware
 
         // Process the trigger result by resuming each HTTP bookmark, if any.
         await _httpBookmarkProcessor.ProcessBookmarks(new List<WorkflowExecutionResult> { executionResult }, correlationId, input, cancellationToken);
+    }
+
+    private string? GetMatchingRoute(string? path)
+    {
+
+        var matchingRouteQuery =
+            from route in _routeTable
+            let routeValues = _routeMatcher.Match(route, path)
+            where routeValues != null
+            select new { route, routeValues };
+
+        var matchingRoute = matchingRouteQuery.FirstOrDefault();
+        var routeTemplate = matchingRoute?.route ?? path;
+
+        return routeTemplate;
     }
 
     private static async Task WriteResponseAsync(HttpContext httpContext, CancellationToken cancellationToken)

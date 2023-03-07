@@ -2,12 +2,16 @@ import {Node} from "@antv/x6";
 import {Activity, ActivityDescriptor} from "../../models";
 
 export interface ActivityNodeHandler {
-  createDesignerNode: (context: CreateUINodeContext) => Node.Metadata;
+  createDesignerNode: (context: UINodeContext) => Node.Metadata;
+  createPorts: (context: UIPortContext) => Array<any>;
 }
 
-export interface CreateUINodeContext {
-  activityDescriptor: ActivityDescriptor;
-  activity: Activity;
+export interface UINodeContext extends UIPortContext{
   x: number;
   y: number;
+}
+
+export interface UIPortContext {
+  activityDescriptor: ActivityDescriptor;
+  activity: Activity;
 }

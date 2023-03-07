@@ -1,10 +1,14 @@
+using System.Collections;
+using System.ComponentModel;
 using System.Net.Http.Headers;
+using System.Text.Json.Serialization;
 using Elsa.Extensions;
 using Elsa.Http.ContentWriters;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Management.Models;
+using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
 using HttpRequestHeaders = Elsa.Http.Models.HttpRequestHeaders;
 
@@ -13,10 +17,114 @@ namespace Elsa.Http;
 /// <summary>
 /// Send an HTTP request.
 /// </summary>
-[Activity("Elsa", "HTTP", "Send an HTTP request.", DisplayName = "HTTP Request", Kind = ActivityKind.Task)]
-public class SendHttpRequest : CodeActivity<HttpResponse>
+[Activity("Elsa", "HTTP", "Send an HTTP request.", DisplayName = "Flow HTTP Request", Kind = ActivityKind.Task)]
+[PublicAPI]
+public class FlowSendHttpRequest : SendHttpRequestBase
 {
-    [Input] public Input<Uri?> Url { get; set; } = default!;
+    /// <summary>
+    /// A list of expected status codes to handle.
+    /// </summary>
+    [Input(Description = "A list of expected status codes to handle.", UIHint = InputUIHints.MultiText)]
+    public Input<ICollection<int>> ExpectedStatusCodes { get; set; } = default!;
+
+    /// <inheritdoc />
+    protected override async ValueTask HandleResponseAsync(ActivityExecutionContext context, HttpResponseMessage response)
+    {
+        var expectedStatusCodes = ExpectedStatusCodes.TryGet(context) ?? new List<int>(0);
+        var statusCode = (int)response.StatusCode;
+        var hasMatchingStatusCode = expectedStatusCodes.Contains(statusCode);
+        var outcome = hasMatchingStatusCode ? statusCode.ToString() : "Catch all";
+
+        await context.CompleteActivityWithOutcomesAsync(outcome);
+    }
+}
+
+/// <summary>
+/// Send an HTTP request.
+/// </summary>
+[Activity("Elsa", "HTTP", "Send an HTTP request.", DisplayName = "HTTP Request", Kind = ActivityKind.Task)]
+[PublicAPI]
+public class SendHttpRequest : SendHttpRequestBase
+{
+    /// <summary>
+    /// A list of expected status codes to handle and the corresponding activity to execute when the status code matches.
+    /// </summary>
+    [Input(
+        Description = "A list of expected status codes to handle and the corresponding activity to execute when the status code matches.",
+        UIHint = InputUIHints.MultiText,
+
+        // TODO: Need to implement a custom UI hint for this.
+        IsBrowsable = false
+    )]
+    public ICollection<HttpStatusCodeCase> ExpectedStatusCodes { get; set; } = new List<HttpStatusCodeCase>();
+
+    /// <summary>
+    /// The activity to execute when the HTTP status code does not match any of the expected status codes.
+    /// </summary>
+    [Port]
+    [Browsable(false)] // TODO: Need to implement a custom UI hint for this.
+    public IActivity? CatchAll { get; set; }
+
+    /// <inheritdoc />
+    protected override async ValueTask HandleResponseAsync(ActivityExecutionContext context, HttpResponseMessage response)
+    {
+        var expectedStatusCodes = ExpectedStatusCodes;
+        var statusCode = (int)response.StatusCode;
+        var matchingCase = expectedStatusCodes.FirstOrDefault(x => x.StatusCode == statusCode);
+        var activity = matchingCase?.Activity ?? CatchAll;
+
+        await context.ScheduleActivityAsync(activity, OnChildActivityCompletedAsync);
+    }
+
+    private async ValueTask OnChildActivityCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext)
+    {
+        await context.CompleteActivityAsync();
+    }
+}
+
+/// <summary>
+/// A binding between an HTTP status code and an activity.
+/// </summary>
+public class HttpStatusCodeCase
+{
+    /// <summary>
+    /// Creates a new instance of the <see cref="HttpStatusCodeCase"/> class.
+    /// </summary>
+    [JsonConstructor]
+    public HttpStatusCodeCase()
+    {
+    }
+
+    /// <summary>
+    /// Creates a new instance of the <see cref="HttpStatusCodeCase"/> class.
+    /// </summary>
+    public HttpStatusCodeCase(int statusCode, IActivity activity)
+    {
+        StatusCode = statusCode;
+        Activity = activity;
+    }
+
+    /// <summary>
+    /// The HTTP status code to match.
+    /// </summary>
+    public int StatusCode { get; set; }
+
+    /// <summary>
+    /// The activity to execute when the HTTP status code matches.
+    /// </summary>
+    public IActivity? Activity { get; set; }
+}
+
+/// <summary>
+/// Base class for activities that send HTTP requests.
+/// </summary>
+public abstract class SendHttpRequestBase : Activity<HttpResponse>
+{
+    /// <summary>
+    /// The URL to send the request to.
+    /// </summary>
+    [Input]
+    public Input<Uri?> Url { get; set; } = default!;
 
     /// <summary>
     /// The HTTP method to use when sending the request.
@@ -72,14 +180,21 @@ public class SendHttpRequest : CodeActivity<HttpResponse>
     {
         var request = PrepareRequest(context);
         var httpClientFactory = context.GetRequiredService<IHttpClientFactory>();
-        var httpClient = httpClientFactory.CreateClient(nameof(SendHttpRequest));
+        var httpClient = httpClientFactory.CreateClient(nameof(SendHttpRequestBase));
         var cancellationToken = context.CancellationToken;
         var response = await httpClient.SendAsync(request, cancellationToken);
         var parsedContent = await ParseContentAsync(context, response.Content);
 
         context.Set(Result, response);
         context.Set(ParsedContent, parsedContent);
+
+        await HandleResponseAsync(context, response);
     }
+
+    /// <summary>
+    /// Handles the response.
+    /// </summary>
+    protected abstract ValueTask HandleResponseAsync(ActivityExecutionContext context, HttpResponseMessage response);
 
     private async Task<object?> ParseContentAsync(ActivityExecutionContext context, HttpContent httpContent)
     {
@@ -90,10 +205,10 @@ public class SendHttpRequest : CodeActivity<HttpResponse>
         var targetType = ParsedContent.GetTargetType(context);
         var contentStream = await httpContent.ReadAsStreamAsync(cancellationToken);
         var contentType = httpContent.Headers.ContentType?.MediaType!;
-        
+
         return await context.ParseContentAsync(contentStream, contentType, targetType, cancellationToken);
     }
-    
+
     private static bool HasContent(HttpContent httpContent) => httpContent.Headers.ContentLength > 0;
 
     private HttpRequestMessage PrepareRequest(ActivityExecutionContext context)
@@ -101,7 +216,7 @@ public class SendHttpRequest : CodeActivity<HttpResponse>
         var method = Method.TryGet(context) ?? "GET";
         var url = Url.Get(context);
         var request = new HttpRequestMessage(new HttpMethod(method), url);
-        var headers = RequestHeaders.TryGet(context) ?? new HttpRequestHeaders();
+        var headers = GetHeaders(context);
         var authorization = Authorization.TryGet(context);
 
         if (!string.IsNullOrWhiteSpace(authorization))
@@ -121,6 +236,26 @@ public class SendHttpRequest : CodeActivity<HttpResponse>
         }
 
         return request;
+    }
+
+    private IEnumerable<KeyValuePair<string, string[]>> GetHeaders(ActivityExecutionContext context)
+    {
+        var value = context.Get(RequestHeaders.MemoryBlockReference());
+
+        if (value is IDictionary<string, string[]> dictionary1)
+            return dictionary1;
+
+        if (value is IDictionary<string, string> dictionary2)
+            return dictionary2.ToDictionary(x => x.Key, x => new[] { x.Value });
+
+        if (value is IDictionary<string, object> dictionary3)
+            return dictionary3.ToDictionary(
+                pair => pair.Key,
+                pair => pair.Value is ICollection<object> collection
+                    ? collection.Select(x => x.ToString()!).ToArray()
+                    : new[] { pair.Value.ToString()! });
+
+        return Array.Empty<KeyValuePair<string, string[]>>();
     }
 
     private IHttpContentFactory SelectContentWriter(string? contentType, IEnumerable<IHttpContentFactory> requestContentWriters) =>

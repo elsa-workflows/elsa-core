@@ -227,6 +227,7 @@ export class WorkflowDefinitionEditor {
   }
 
   private updateActivityInternal = async (args: UpdateActivityArgs) => {
+    args.updatePorts = true; // TODO: Make this configurable from a activity plugin.
     await this.flowchart.updateActivity(args);
     this.saveChangesDebounced();
   }

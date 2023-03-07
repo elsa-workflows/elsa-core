@@ -20,7 +20,7 @@ import FromJSONData = Model.FromJSONData;
 import PointLike = Point.PointLike;
 import {generateUniqueActivityName} from "../../utils/generate-activity-name";
 import {DagreLayout, OutNode} from '@antv/layout';
-import {adjustPortMarkupByNode, rebuildGraph} from '../../utils/graph';
+import {adjustPortMarkupByNode, getPortNameByPortId, rebuildGraph} from '../../utils/graph';
 import FlowchartTunnel, {FlowchartState} from "./state";
 
 const FlowchartTypeName = 'Elsa.Flowchart';
@@ -196,19 +196,25 @@ export class FlowchartComponent {
     const originalId = args.originalId;
     const nodeId = originalId;
     const activity = args.activity;
-    const node = this.graph.getNodes().find(x => x.id == nodeId) as ActivityNodeShape;
+    const node = this.graph.getNodes().find(x => x.id == nodeId);
+    const nodeShape = node as ActivityNodeShape;
 
     if (!!node) {
 
       // Update the node's data with the activity.
-      node.setData(activity, {overwrite: true});
+      nodeShape.setData(activity, {overwrite: true});
 
       // Updating the node's activity property to trigger a rerender.
-      node.activity = activity;
+      nodeShape.activity = activity;
 
       // If the ID of the activity changed, we need to update connection references (X6 stores deep copies of data).
       if (activityId !== originalId)
         this.syncEdgeData(nodeId, activity);
+
+      // Update ports.
+      if (args.updatePorts) {
+        this.updatePorts(node, activity);
+      }
     }
 
     this.updateLookups();
@@ -670,6 +676,22 @@ export class FlowchartComponent {
 
     await this.setupGraph(childFlowchart);
   }
+
+  private updatePorts = (node: any, activity: Activity) => {
+    const descriptor = this.getActivityDescriptor(activity.type);
+    const desiredPorts = this.nodeFactory.createPorts(descriptor, activity);
+    const actualPorts = node.ports.items;
+
+    const addedPorts = desiredPorts.filter(x => !actualPorts.some(y => getPortNameByPortId(y.id) == getPortNameByPortId(x.id)));
+    const removedPorts = actualPorts.filter(x => !desiredPorts.some(y => getPortNameByPortId(y.id) == getPortNameByPortId(x.id)));
+
+    if(addedPorts.length > 0 )
+      node.addPorts(addedPorts);
+
+    if(removedPorts.length > 0)
+      node.removePorts(removedPorts);
+
+  };
 
   render() {
 

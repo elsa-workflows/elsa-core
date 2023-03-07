@@ -6,6 +6,7 @@ using Elsa.Features.Services;
 using Elsa.Http.ContentWriters;
 using Elsa.Http.Contracts;
 using Elsa.Http.Handlers;
+using Elsa.Http.Models;
 using Elsa.Http.Options;
 using Elsa.Http.Parsers;
 using Elsa.Http.Providers;
@@ -48,7 +49,7 @@ public class HttpFeature : FeatureBase
     public Func<IServiceProvider, IHttpEndpointWorkflowFaultHandler> HttpEndpointWorkflowFaultHandler { get; set; } = ActivatorUtilities.GetServiceOrCreateInstance<DefaultHttpEndpointWorkflowFaultHandler>;
 
     /// <summary>
-    /// A delegate to configure the <see cref="HttpClient"/> used when by the <see cref="SendHttpRequest"/> activity.
+    /// A delegate to configure the <see cref="HttpClient"/> used when by the <see cref="FlowSendHttpRequest"/> activity.
     /// </summary>
     public Action<IServiceProvider, HttpClient> HttpClient { get; set; } = (_, _) => { };
 
@@ -66,7 +67,8 @@ public class HttpFeature : FeatureBase
             {
                 typeof(RouteData),
                 typeof(HttpRequest),
-                typeof(HttpResponse)
+                typeof(HttpResponse),
+                typeof(HttpRequestHeaders)
             }, "HTTP");
 
             management.AddActivitiesFrom<HttpFeature>();
@@ -84,7 +86,7 @@ public class HttpFeature : FeatureBase
 
         Services.Configure(configureOptions);
 
-        var httpClientBuilder = Services.AddHttpClient<SendHttpRequest>(HttpClient);
+        var httpClientBuilder = Services.AddHttpClient<SendHttpRequestBase>(HttpClient);
         HttpClientBuilder(httpClientBuilder);
 
         Services
@@ -109,9 +111,11 @@ public class HttpFeature : FeatureBase
             // Activity property options providers.
             .AddSingleton<IActivityPropertyOptionsProvider, WriteHttpResponseContentTypeOptionsProvider>()
 
-            // Add Http endpoint handlers
+            // Add Http endpoint handlers.
             .AddSingleton(HttpEndpointWorkflowFaultHandler)
-            .AddSingleton(HttpEndpointAuthorizationHandler);
-        ;
+            .AddSingleton(HttpEndpointAuthorizationHandler)
+            
+            // Add mediator handlers.
+            .AddNotificationHandlersFrom<HttpFeature>();
     }
 }

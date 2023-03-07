@@ -7,7 +7,6 @@ export * from "./flow-node";
 export * from "./flowchart";
 export * from "./foreach";
 export * from "./http-endpoint";
-export * from "./http-request";
 export * from "./http-response";
 export * from "./if";
 export * from "./models";
