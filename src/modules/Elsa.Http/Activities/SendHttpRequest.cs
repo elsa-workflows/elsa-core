@@ -32,7 +32,7 @@ public class FlowSendHttpRequest : SendHttpRequestBase
         var expectedStatusCodes = ExpectedStatusCodes.TryGet(context) ?? new List<int>(0);
         var statusCode = (int)response.StatusCode;
         var hasMatchingStatusCode = expectedStatusCodes.Contains(statusCode);
-        var outcome = hasMatchingStatusCode ? statusCode.ToString() : "Unmatched status code";
+        var outcome = hasMatchingStatusCode ? statusCode.ToString() : "Catch all";
 
         await context.CompleteActivityWithOutcomesAsync(outcome);
     }
@@ -62,7 +62,7 @@ public class SendHttpRequest : SendHttpRequestBase
     /// </summary>
     [Port]
     [Browsable(false)] // TODO: Need to implement a custom UI hint for this.
-    public IActivity? UnmatchedStatusCode { get; set; }
+    public IActivity? CatchAll { get; set; }
 
     /// <inheritdoc />
     protected override async ValueTask HandleResponseAsync(ActivityExecutionContext context, HttpResponseMessage response)
@@ -70,7 +70,7 @@ public class SendHttpRequest : SendHttpRequestBase
         var expectedStatusCodes = ExpectedStatusCodes;
         var statusCode = (int)response.StatusCode;
         var matchingCase = expectedStatusCodes.FirstOrDefault(x => x.StatusCode == statusCode);
-        var activity = matchingCase?.Activity ?? UnmatchedStatusCode;
+        var activity = matchingCase?.Activity ?? CatchAll;
 
         await context.ScheduleActivityAsync(activity, OnChildActivityCompletedAsync);
     }
