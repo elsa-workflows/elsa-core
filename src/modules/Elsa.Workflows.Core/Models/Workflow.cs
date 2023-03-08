@@ -35,7 +35,6 @@ public class Workflow : Composite, ICloneable
         Variables = variables;
         CustomProperties = customProperties;
         Root = root;
-        Version = identity.Version;
     }
 
     /// <summary>

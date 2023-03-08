@@ -7,7 +7,6 @@ using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Contracts;
 using Humanizer;
 
@@ -20,21 +19,18 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
 {
     private readonly IActivityRegistry _activityRegistry;
     private readonly IActivityFactory _activityFactory;
-    private readonly IActivityDescriber _activityDescriber;
     private readonly IExpressionSyntaxRegistry _expressionSyntaxRegistry;
     private readonly IServiceProvider _serviceProvider;
 
     /// <inheritdoc />
     public ActivityJsonConverter(
         IActivityRegistry activityRegistry, 
-        IActivityFactory activityFactory, 
-        IActivityDescriber activityDescriber,
+        IActivityFactory activityFactory,
         IExpressionSyntaxRegistry expressionSyntaxRegistry,
         IServiceProvider serviceProvider)
     {
         _activityRegistry = activityRegistry;
         _activityFactory = activityFactory;
-        _activityDescriber = activityDescriber;
         _expressionSyntaxRegistry = expressionSyntaxRegistry;
         _serviceProvider = serviceProvider;
     }
