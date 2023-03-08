@@ -1,6 +1,6 @@
 {
   "name": "@elsa-workflows/elsa-workflows-designer",
-  "version": "3.0.2-preview.58",
+  "version": "3.0.2-preview.59",
   "description": "A workflow designer for Elsa 3",
   "main": "./dist/index.cjs.js",
   "module": "./dist/index.js",
