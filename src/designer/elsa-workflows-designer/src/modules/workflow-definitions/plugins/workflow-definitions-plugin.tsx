@@ -104,6 +104,12 @@ export class WorkflowDefinitionsPlugin implements Plugin {
   private generateUniqueActivityName = async (activityDescriptor: ActivityDescriptor): Promise<string> => await generateUniqueActivityName([], activityDescriptor);
 
   private saveWorkflowDefinition = async (definition: WorkflowDefinition, publish: boolean): Promise<WorkflowDefinition> => {
+
+    if(!definition.isLatest) {
+      console.debug('Workflow definition is not latest. Skipping save.');
+      return;
+    }
+
     const updatedWorkflow = await this.workflowDefinitionManager.saveWorkflow(definition, publish);
     let reload = false;
 
@@ -180,10 +186,17 @@ export class WorkflowDefinitionsPlugin implements Plugin {
   }
 
   private onPublishClicked = async (e: CustomEvent<PublishClickedArgs>) => {
+    const definition = await this.workflowDefinitionEditorElement.getWorkflowDefinition();
+
+    if(!definition.isLatest) {
+      console.debug('Workflow definition is not latest. Skipping publish.');
+      return;
+    }
+
     e.detail.begin();
     const notification = NotificationService.createNotification({title: 'Publishing', id: uuid(), text: 'Workflow is being published. Please wait.'})
-    const workflowDefinition = await this.workflowDefinitionEditorElement.getWorkflowDefinition();
-    await this.saveWorkflowDefinition(workflowDefinition, true);
+
+    await this.saveWorkflowDefinition(definition, true);
 
     NotificationService.updateNotification(notification, {title: 'Workflow published', text: 'Published!'})
     e.detail.complete();

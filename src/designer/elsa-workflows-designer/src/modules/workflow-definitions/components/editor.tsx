@@ -18,6 +18,7 @@ import WorkflowDefinitionTunnel, {WorkflowDefinitionState} from "../state";
 import {LayoutDirection, UpdateActivityArgs} from "../../flowchart/models";
 import {cloneDeep} from '@antv/x6/lib/util/object/object';
 import {removeGuidsFromPortNames} from '../../../utils/graph';
+import {constrainTimeouts} from "@stencil/core/mock-doc";
 
 @Component({
   tag: 'elsa-workflow-definition-editor',
@@ -189,6 +190,11 @@ export class WorkflowDefinitionEditor {
 
   private saveChanges = async (): Promise<void> => {
     const updatedWorkflowDefinition = this.workflowDefinitionState;
+
+    if(!updatedWorkflowDefinition.isLatest) {
+      console.debug('Workflow definition is not the latest version. Changes will not be saved.');
+      return;
+    }
 
     if (await this.hasWorkflowDefinitionAnyUpdatedData(updatedWorkflowDefinition)) {
       // If workflow definition is published, override the latest version.
