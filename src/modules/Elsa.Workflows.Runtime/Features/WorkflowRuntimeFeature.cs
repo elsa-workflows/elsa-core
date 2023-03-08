@@ -109,7 +109,8 @@ public class WorkflowRuntimeFeature : FeatureBase
         Module
             .ConfigureHostedService<RegisterDescriptors>()
             .ConfigureHostedService<RegisterExpressionSyntaxDescriptors>()
-            .ConfigureHostedService<PopulateWorkflowDefinitionStore>();
+            .ConfigureHostedService<PopulateWorkflowDefinitionStore>()
+            .ConfigureHostedService<PopulateRouteTable>();
 
     /// <inheritdoc />
     public override void Apply()
