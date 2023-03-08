@@ -1,5 +1,5 @@
-using System.Text.Json.Serialization;
 using Elsa.Workflows.Core.Attributes;
+using System.Text.Json.Serialization;
 
 namespace Elsa.Http.Models;
 
@@ -12,11 +12,14 @@ public record HttpEndpointBookmarkPayload
     public HttpEndpointBookmarkPayload()
     {
     }
-    
-    public HttpEndpointBookmarkPayload(string path, string method)
+
+    public HttpEndpointBookmarkPayload(string path, string method,
+        bool? authorize = default, string? policy = default)
     {
         Path = path;
         Method = method;
+        Authorize = authorize;
+        Policy = policy;
     }
 
     public string Path
@@ -32,5 +35,8 @@ public record HttpEndpointBookmarkPayload
     }
 
     [ExcludeFromHash]
-    public string Policy { get; set; }
+    public string? Policy { get; set; }
+
+    [ExcludeFromHash]
+    public bool? Authorize { get; set; }
 }
