@@ -27,6 +27,7 @@ import { PagerData } from "./components/shared/pager/pager";
 import { PanelPosition, PanelStateChangedArgs } from "./components/panel/models";
 import { RenderActivityPropsContext } from "./modules/workflow-definitions/components/models";
 import { ActivityDriverRegistry } from "./services";
+import { JournalItemSelectedArgs } from "./modules/workflow-instances/events";
 import { PublishClickedArgs } from "./modules/workflow-definitions/components/publish-button";
 export namespace Components {
     interface ElsaActivityInputEditorDialogContent {
@@ -320,7 +321,7 @@ export namespace Components {
         "workflowInstance": WorkflowInstance;
     }
     interface ElsaWorkflowJournal {
-        "getExecutionLogByWorkflowInstanceId": (activityId: string) => Promise<WorkflowExecutionLogRecord>;
+        "getExecutionLogByActivityId": (activityId: string) => Promise<WorkflowExecutionLogRecord>;
         "workflowDefinition": WorkflowDefinition;
         "workflowInstance": WorkflowInstance;
     }
@@ -1196,7 +1197,7 @@ declare namespace LocalJSX {
         "workflowInstance"?: WorkflowInstance;
     }
     interface ElsaWorkflowJournal {
-        "onJournalItemStatusSelected"?: (event: ElsaWorkflowJournalCustomEvent<string>) => void;
+        "onJournalItemSelected"?: (event: ElsaWorkflowJournalCustomEvent<JournalItemSelectedArgs>) => void;
         "workflowDefinition"?: WorkflowDefinition;
         "workflowInstance"?: WorkflowInstance;
     }
