@@ -22,13 +22,14 @@ public class JsonExpandableConverter<T> : JsonConverter<T>
     {
         writer.WriteStartObject();
 
-        var properties = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance);
+        var properties = value?.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance) ?? Array.Empty<PropertyInfo>();
         var newOptions = new JsonSerializerOptions(options);
         
-        newOptions.Converters.RemoveWhere(x => x is JsonExpandableConverterFactory<T>);
-
         foreach (var property in properties)
         {
+            if (property.GetCustomAttribute<JsonIgnoreAttribute>() != null)
+                continue;
+            
             if (property.GetCustomAttribute<JsonExpandableAttribute>() != null)
                 continue;
 
