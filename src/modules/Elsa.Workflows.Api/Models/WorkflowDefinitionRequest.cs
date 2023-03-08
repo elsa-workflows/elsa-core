@@ -1,6 +1,5 @@
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Models;
 
 namespace Elsa.Workflows.Api.Models;
@@ -10,7 +9,6 @@ internal class WorkflowDefinitionRequest
     public string? DefinitionId { get; set; }
     public string? Name { get; set; }
     public string? Description { get; set; }
-    public int? Version { get; set; }
     public ICollection<VariableDefinition>? Variables { get; set; }
     public ICollection<InputDefinition>? Inputs { get; set; }
     public ICollection<OutputDefinition>? Outputs { get; set; }

@@ -46,13 +46,9 @@ internal class Post : ElsaEndpoint<WorkflowDefinitionRequest, WorkflowDefinition
         var resourceName = $"{GetType().FullName}:{(!string.IsNullOrWhiteSpace(definitionId) ? definitionId : Guid.NewGuid().ToString())}";
 
         await using var handle = await _distributedLockProvider.AcquireLockAsync(resourceName, TimeSpan.FromMinutes(1), cancellationToken);
-
-        // Get a workflow draft version.
-        var isPublishExistingVersion = request is { Publish: true, Version: { } };
-        var draftVersion = isPublishExistingVersion ? VersionOptions.SpecificVersion(request.Version!.Value) : VersionOptions.Latest;
-
+        
         var draft = !string.IsNullOrWhiteSpace(definitionId)
-            ? await _workflowDefinitionPublisher.GetDraftAsync(definitionId, draftVersion, cancellationToken)
+            ? await _workflowDefinitionPublisher.GetDraftAsync(definitionId, VersionOptions.Latest, cancellationToken)
             : default;
 
         var isNew = draft == null;
@@ -68,7 +64,7 @@ internal class Post : ElsaEndpoint<WorkflowDefinitionRequest, WorkflowDefinition
 
         // Update the draft with the received model.
         var root = request.Root ?? new Sequence();
-        var serializerOptions = _serializerOptionsProvider.CreateApiOptions();
+        var serializerOptions = _serializerOptionsProvider.CreatePersistenceOptions();
         var stringData = JsonSerializer.Serialize(root, serializerOptions);
         var variables = _variableDefinitionMapper.Map(request.Variables).ToList();
         var inputs = request.Inputs ?? new List<InputDefinition>();

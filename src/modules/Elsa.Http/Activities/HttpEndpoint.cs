@@ -9,6 +9,7 @@ using Elsa.Workflows.Core.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Primitives;
 
 namespace Elsa.Http;
 
@@ -64,7 +65,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
     /// The parsed route data, if any.
     /// </summary>
     [Output(Description = "The parsed route data, if any.")]
-    public Output<IDictionary<string,object>> RouteData { get; set; } = default!;
+    public Output<IDictionary<string, object>> RouteData { get; set; } = default!;
 
     /// <summary>
     /// The querystring data, if any.
@@ -157,22 +158,9 @@ public class HttpEndpoint : Trigger<HttpRequest>
         var path = context.GetInput<PathString>(RequestPathInputKey);
         var routeData = GetRouteData(httpContext, path);
 
-        var routeDictionary = new Dictionary<string, object>();
-        foreach (var route in routeData.Values) {
-            routeDictionary.Add(route.Key, route.Value);
-        }
-
-        var queryStringDictionary = new Dictionary<string, object>();
-        foreach (var queryString in httpContext.Request.Query)
-        {
-            queryStringDictionary.Add(queryString.Key, queryString.Value[0]);
-        }
-
-        var headersDictionary = new Dictionary<string, object>();
-        foreach (var header in httpContext.Request.Headers)
-        {
-            headersDictionary.Add(header.Key, header.Value[0]);
-        }
+        var routeDictionary = routeData.Values.ToDictionary(route => route.Key, route => route.Value);
+        var queryStringDictionary = httpContext.Request.Query.ToDictionary<KeyValuePair<string, StringValues>, string, object>(queryString => queryString.Key, queryString => queryString.Value[0]!);
+        var headersDictionary = httpContext.Request.Headers.ToDictionary<KeyValuePair<string, StringValues>, string, object>(header => header.Key, header => header.Value[0]!);
 
         context.Set(RouteData, routeDictionary);
         context.Set(QueryStringData, queryStringDictionary);

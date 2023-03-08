@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using Elsa.Common.Models;
 using Elsa.Extensions;
+using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
@@ -17,7 +18,11 @@ namespace Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 [Browsable(false)]
 public class WorkflowDefinitionActivity : Activity, IInitializable
 {
-    internal IActivity Root { get; set; } = default!;
+    /// <summary>
+    /// The activity to schedule for execution.
+    /// </summary>
+    [JsonExpandable]
+    public IActivity Root { get; set; } = default!;
 
     /// <summary>
     /// The definition ID of the workflow to schedule for execution.

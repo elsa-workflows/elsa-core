@@ -4,7 +4,6 @@ using System.Reflection;
 using Elsa.Abstractions;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Api.Endpoints.StorageDrivers.List;
 

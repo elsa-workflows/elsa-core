@@ -32,8 +32,7 @@ public class WellKnownTypeRegistry : IWellKnownTypeRegistry
         this.RegisterType<TimeOnly>("TimeOnly");
         this.RegisterType<ExpandoObject>("ExpandoObject");
         this.RegisterType<IDictionary<string, string>>("StringDictionary");
-        this.RegisterType<IDictionary<string, object>>("StringObjectDictionary");
-
+        this.RegisterType<IDictionary<string, object>>("ObjectDictionary");
     }
 
     /// <inheritdoc />

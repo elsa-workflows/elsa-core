@@ -52,8 +52,10 @@ public class Configurations :
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<WorkflowExecutionLogRecord> builder)
     {
+        builder.Ignore(x => x.ActivityState);
         builder.Ignore(x => x.Payload);
         builder.Property<string>("PayloadData");
+        builder.Property<string>("ActivityData");
 
         builder.HasIndex(x => x.Timestamp).HasDatabaseName($"IX_{nameof(WorkflowExecutionLogRecord)}_{nameof(WorkflowExecutionLogRecord.Timestamp)}");
         builder.HasIndex(x => x.ActivityInstanceId).HasDatabaseName($"IX_{nameof(WorkflowExecutionLogRecord)}_{nameof(WorkflowExecutionLogRecord.ActivityInstanceId)}");

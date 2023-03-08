@@ -147,6 +147,7 @@ export interface WorkflowExecutionLogRecord {
   timestamp: Date;
   eventName: string;
   payload?: any;
+  activityState: Map<string, any>;
 }
 
 export enum SyntaxNames {

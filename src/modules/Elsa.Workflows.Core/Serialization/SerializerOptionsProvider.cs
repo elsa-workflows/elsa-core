@@ -21,7 +21,12 @@ public class SerializerOptionsProvider
 
     public JsonSerializerOptions CreateApiOptions(ReferenceHandler? referenceHandler = default) => CreateDefaultOptions(referenceHandler ?? ReferenceHandler.IgnoreCycles);
 
-    public JsonSerializerOptions CreatePersistenceOptions(ReferenceHandler? referenceHandler = default) => CreateDefaultOptions(referenceHandler ?? ReferenceHandler.IgnoreCycles);
+    public JsonSerializerOptions CreatePersistenceOptions(ReferenceHandler? referenceHandler = default)
+    {
+        var options = CreateDefaultOptions(referenceHandler ?? ReferenceHandler.IgnoreCycles);
+        options.Converters.Add(Create<JsonExpandableConverterFactory<IActivity>>());
+        return options;
+    }
 
     public JsonSerializerOptions CreateDefaultOptions(ReferenceHandler? referenceHandling = default)
     {

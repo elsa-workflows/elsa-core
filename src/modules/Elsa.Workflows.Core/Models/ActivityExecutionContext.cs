@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Text.Json;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
@@ -90,6 +91,11 @@ public class ActivityExecutionContext
     public IDictionary<string, object?> JournalData { get; } = new Dictionary<string, object?>();
 
     public ResumedBookmarkContext? ResumedBookmarkContext => WorkflowExecutionContext.ResumedBookmarkContext;
+    
+    /// <summary>
+    /// Stores the evaluated inputs for the current activity.
+    /// </summary>
+    public IDictionary<string, JsonElement> ActivityState { get; set; } = new Dictionary<string, JsonElement>();
 
     public async ValueTask ScheduleActivityAsync(IActivity? activity, ActivityCompletionCallback? completionCallback = default, object? tag = default)
     {

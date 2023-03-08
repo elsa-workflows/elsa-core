@@ -48,6 +48,9 @@ public class WorkflowInstanceFilter
     }
 }
 
+/// <summary>
+/// Represents the order by which to order the results of a query.
+/// </summary>
 public class WorkflowInstanceOrder<TProp> : OrderDefinition<WorkflowInstance, TProp>
 {
 }

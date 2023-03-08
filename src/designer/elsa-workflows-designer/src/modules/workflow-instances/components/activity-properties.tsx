@@ -1,4 +1,4 @@
-import {Component, Event, EventEmitter, h, Listen, Method, Prop, State} from '@stencil/core';
+import {Component, h, Method, Prop, State, Watch} from '@stencil/core';
 import {camelCase} from 'lodash';
 import {
   Activity,
@@ -13,7 +13,7 @@ import descriptorsStore from "../../../data/descriptors-store";
 import moment from 'moment';
 import Container from 'typedi';
 import { ActivityIconRegistry } from '../../../services';
-import { ActivityIconSize } from '../../../components/icons/activities/models';
+import {ActivityIconSize} from "../../../components/icons/activities";
 
 @Component({
   tag: 'elsa-activity-properties',
@@ -27,24 +27,27 @@ export class ActivityProperties {
   }
 
   @Prop({mutable: true}) public activity?: Activity;
-  @Prop() public activityExecutionLog: WorkflowExecutionLogRecord;
-  @Prop() public activityPropertyTabIndex?: number;
+  @Prop() activityExecutionLog: WorkflowExecutionLogRecord;
+  @Prop() activityPropertyTabIndex?: number;
   @State() private selectedTabIndex: number = 0;
 
   @Method()
-  public async show(): Promise<void> {
+  async show(): Promise<void> {
     await this.slideOverPanel.show();
   }
 
   @Method()
-  public async hide(): Promise<void> {
+  async hide(): Promise<void> {
     await this.slideOverPanel.hide();
   }
 
   @Method()
-  public async updateSelectedTab(tabIndex : number): Promise<void> {
+  async updateSelectedTab(tabIndex : number): Promise<void> {
     this.selectedTabIndex = tabIndex;
   }
+
+  @Watch('activity')
+
 
   async componentWillLoad(): Promise<void> {
     if(this.activityPropertyTabIndex != null) {
@@ -52,7 +55,7 @@ export class ActivityProperties {
     }
   }
 
-  public render() {
+  render() {
     const activity = this.activity;
     const activityDescriptor = this.findActivityDescriptor();
 
@@ -95,6 +98,8 @@ export class ActivityProperties {
     const properties = activityDescriptor.inputs;
     const activityId = activity.id;
     const displayText: string = activity.metadata?.displayText ?? '';
+    const executionLogEntry = this.activityExecutionLog;
+    const activityState = executionLogEntry?.activityState ?? {};
 
     const propertyDetails: Lookup<string> = {
       'Activity ID': activityId,
@@ -103,7 +108,8 @@ export class ActivityProperties {
 
     for (const property of properties) {
       const propertyName = camelCase(property.name);
-      const propertyValue = activity[propertyName]?.expression?.value;
+      const loggedPropName = property.name;
+      const propertyValue = activityState[loggedPropName] ?? activity[propertyName]?.expression?.value;
       const propertyValueText = propertyValue != null ? propertyValue.toString() : '';
       propertyDetails[property.displayName] = propertyValueText;
     }
@@ -121,7 +127,7 @@ export class ActivityProperties {
   private renderJournalTab = () => {
     const log = this.activityExecutionLog;
     if(log == null) return;
-    
+
     const exception = log.payload?.exception;
     const statusColor = log.eventName == "Completed" ? "bg-blue-100" : log.eventName == "Faulted" ? "bg-red-100" : "bg-green-100";
     const icon = this.iconRegistry.getOrDefault(log.activityType)({size: ActivityIconSize.Small});

@@ -1,4 +1,5 @@
 using Elsa.Abstractions;
+using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Workflows.Api.Mappers;
 using Elsa.Workflows.Api.Models;
@@ -30,8 +31,9 @@ internal class Get : ElsaEndpoint<Request, WorkflowDefinitionResponse, WorkflowD
             DefinitionId = request.DefinitionId,
             VersionOptions = versionOptions
         };
-        
-        var definition = (await _store.FindManyAsync(filter, cancellationToken: cancellationToken)).FirstOrDefault();
+
+        var order = new WorkflowDefinitionOrder<int>(x => x.Version, OrderDirection.Descending);
+        var definition = (await _store.FindManyAsync(filter, order, cancellationToken: cancellationToken)).FirstOrDefault();
 
         if (definition == null)
         {

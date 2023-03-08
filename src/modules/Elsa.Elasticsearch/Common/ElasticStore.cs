@@ -1,6 +1,5 @@
 using Elastic.Clients.Elasticsearch;
 using Elsa.Common.Models;
-using Elsa.Workflows.Management.Entities;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Exception = System.Exception;
