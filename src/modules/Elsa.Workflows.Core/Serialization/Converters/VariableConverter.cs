@@ -27,7 +27,9 @@ public class VariableConverter : JsonConverter<Variable>
     /// <inheritdoc />
     public override Variable? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        var model = JsonSerializer.Deserialize<VariableModel>(ref reader, options)!;
+        var newOptions = new JsonSerializerOptions(options);
+        newOptions.Converters.Add(new JsonPrimitiveToStringConverter());
+        var model = JsonSerializer.Deserialize<VariableModel>(ref reader, newOptions)!;
         var variable = Map(model);
 
         return variable;
