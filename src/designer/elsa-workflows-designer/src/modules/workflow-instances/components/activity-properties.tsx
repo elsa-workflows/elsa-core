@@ -89,7 +89,14 @@ export class ActivityProperties {
     );
   }
 
-  private findActivityDescriptor = (): ActivityDescriptor => !!this.activity ? descriptorsStore.activityDescriptors.find(x => x.typeName == this.activity.type) : null;
+  private findActivityDescriptor = (): ActivityDescriptor => {
+    const activity = this.activity;
+
+    if(!activity) return null;
+
+    const descriptor = descriptorsStore.activityDescriptors.find(x => x.typeName == activity.type && x.version == activity.version);
+    return descriptor ?? descriptorsStore.activityDescriptors.sort((a, b) => b.version - a.version).find(x => x.typeName == this.activity.type);
+  };
   private onSelectedTabIndexChanged = (e: CustomEvent<TabChangedArgs>) => this.selectedTabIndex = e.detail.selectedTabIndex
 
   private renderPropertiesTab = () => {

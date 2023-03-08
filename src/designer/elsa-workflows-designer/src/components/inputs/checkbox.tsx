@@ -18,7 +18,8 @@ export class Checkbox {
 
   private getSelectedValue = (): boolean => {
     const input = getInputPropertyValue(this.inputContext);
-    return (input?.expression as LiteralExpression)?.value;
+    const value = (input?.expression as LiteralExpression)?.value;
+    return value?.toLowerCase() === 'true';
   };
 
   render() {

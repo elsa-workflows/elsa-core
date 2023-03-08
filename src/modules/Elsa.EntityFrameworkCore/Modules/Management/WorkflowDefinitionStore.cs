@@ -116,7 +116,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
 
     /// <inheritdoc />
     public async Task<WorkflowDefinition?> FindLastVersionAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken) =>
-        await _store.QueryAsync(queryable => Filter(queryable, filter).OrderByDescending(x => x.Version), cancellationToken).FirstOrDefault();
+        await _store.QueryAsync(queryable => Filter(queryable, filter).OrderByDescending(x => x.Version), Load, cancellationToken).FirstOrDefault();
 
     /// <inheritdoc />
     public async Task SaveAsync(WorkflowDefinition record, CancellationToken cancellationToken = default) => await _store.SaveAsync(record, Save, cancellationToken);

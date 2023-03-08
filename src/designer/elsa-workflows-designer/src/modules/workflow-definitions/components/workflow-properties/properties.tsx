@@ -274,8 +274,10 @@ export class WorkflowDefinitionPropertiesEditor {
   ) => {
     const workflowDefinition = this.workflowDefinition;
 
-    if (!workflowDefinition)
+    if (!workflowDefinition || !workflowDefinition.isLatest) {
+      console.debug('onPropsUpdated: workflowDefinition is not latest');
       return;
+    }
 
     workflowDefinition[propName] = propValue;
     this.workflowPropsUpdated.emit({workflowDefinition});
