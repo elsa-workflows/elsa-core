@@ -115,13 +115,13 @@ public class WorkflowsMiddleware
         if (await HandleMultipleWorkflowsFoundAsync(httpContext, workflowMatches, cancellationToken))
             return;
 
-        if (await HandleWorkflowFaultAsync(httpContext, workflowMatches.Single(), cancellationToken))
-            return;
-
         if (await AuthorizeAsync(httpContext, workflowMatches.Single(), bookmarkPayload, cancellationToken))
             return;
 
         var executionResult = await _workflowRuntime.ExecuteWorkflowAsync(workflowMatches.Single(), input, cancellationToken);
+
+        if (await HandleWorkflowFaultAsync(httpContext, executionResult, cancellationToken))
+            return;
 
         // Process the trigger result by resuming each HTTP bookmark, if any.
         await _httpBookmarkProcessor.ProcessBookmarks(new List<WorkflowExecutionResult> { executionResult }, correlationId, input, cancellationToken);
@@ -199,9 +199,9 @@ public class WorkflowsMiddleware
         return true;
     }
 
-    private async Task<bool> HandleWorkflowFaultAsync(HttpContext httpContext, WorkflowMatch workflowMatch, CancellationToken cancellationToken)
+    private async Task<bool> HandleWorkflowFaultAsync(HttpContext httpContext, WorkflowExecutionResult workflowExecutionResult, CancellationToken cancellationToken)
     {
-        var instanceFilter = new WorkflowInstanceFilter { Id = workflowMatch.WorkflowInstanceId };
+        var instanceFilter = new WorkflowInstanceFilter { Id = workflowExecutionResult.InstanceId };
         var workflowInstance = await _workflowInstanceStore.FindAsync(instanceFilter, cancellationToken);
 
         if (workflowInstance is not null
@@ -222,19 +222,19 @@ public class WorkflowsMiddleware
         CancellationToken cancellationToken)
     {
         var payload = await GetBookmarkPayloadAsync(pendingWorkflowMatch, bookmarkPayload, cancellationToken);
-        
+
         if (!(payload.Authorize ?? false))
             return false;
 
         var authorized = await _httpEndpointAuthorizationHandler.AuthorizeAsync(new AuthorizeHttpEndpointContext(httpContext, pendingWorkflowMatch.WorkflowInstanceId, payload.Policy));
 
-        if (!authorized) 
+        if (!authorized)
             httpContext.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
 
         return !authorized;
     }
 
-    private async Task<HttpEndpointBookmarkPayload> GetBookmarkPayloadAsync(WorkflowMatch workflowMatch,HttpEndpointBookmarkPayload bookmarkPayload, CancellationToken cancellationToken)
+    private async Task<HttpEndpointBookmarkPayload> GetBookmarkPayloadAsync(WorkflowMatch workflowMatch, HttpEndpointBookmarkPayload bookmarkPayload, CancellationToken cancellationToken)
     {
         var hash = _hasher.Hash(_activityTypeName, bookmarkPayload);
 
