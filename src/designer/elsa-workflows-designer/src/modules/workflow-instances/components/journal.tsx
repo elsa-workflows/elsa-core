@@ -293,11 +293,4 @@ export class Journal {
     }
     return allActivities;
   }
-  
-  private findActivityRootRecursive(activity: Activity) {
-    if(activity.root == null) {
-      return activity;
-    }
-    this.findActivityRootRecursive(activity.root);
-  }
 }
