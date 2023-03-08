@@ -64,7 +64,7 @@ internal class Post : ElsaEndpoint<WorkflowDefinitionRequest, WorkflowDefinition
 
         // Update the draft with the received model.
         var root = request.Root ?? new Sequence();
-        var serializerOptions = _serializerOptionsProvider.CreateApiOptions();
+        var serializerOptions = _serializerOptionsProvider.CreatePersistenceOptions();
         var stringData = JsonSerializer.Serialize(root, serializerOptions);
         var variables = _variableDefinitionMapper.Map(request.Variables).ToList();
         var inputs = request.Inputs ?? new List<InputDefinition>();
