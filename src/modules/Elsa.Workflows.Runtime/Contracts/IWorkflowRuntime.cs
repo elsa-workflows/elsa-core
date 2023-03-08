@@ -55,19 +55,19 @@ public interface IWorkflowRuntime
     /// <summary>
     /// Executes a pending workflow.
     /// </summary>
-    /// <param name="collectedWorkflow"></param>
+    /// <param name="match">A workflow match to execute.</param>
     /// <param name="input"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    Task<WorkflowExecutionResult> ExecutePendingWorkflowAsync(CollectedWorkflow collectedWorkflow, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default);
+    Task<WorkflowExecutionResult> ExecuteWorkflowAsync(WorkflowMatch match, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Finds all the workflows that can be started or resumed based on a query model.
     /// </summary>
-    /// <param name="workflowsQuery"></param>
+    /// <param name="filter"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    Task<IEnumerable<CollectedWorkflow>> FindWorkflowsAsync(WorkflowsQuery workflowsQuery, CancellationToken cancellationToken = default);
+    Task<IEnumerable<WorkflowMatch>> FindWorkflowsAsync(WorkflowsFilter filter, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Exports the <see cref="WorkflowState"/> of the specified workflow instance.
@@ -98,12 +98,12 @@ public record TriggerWorkflowsRuntimeOptions(string? CorrelationId = default, ID
 public record TriggerWorkflowsResult(ICollection<WorkflowExecutionResult> TriggeredWorkflows);
 public record WorkflowExecutionResult(string InstanceId, ICollection<Bookmark> Bookmarks, string? ActivityId = null);
 public record UpdateBookmarksContext(string InstanceId, Diff<Bookmark> Diff, string? CorrelationId);
-public record WorkflowsQuery(string ActivityTypeName, object BookmarkPayload, TriggerWorkflowsRuntimeOptions Options);
-public record CollectedWorkflow(string WorkflowInstanceId, WorkflowInstance? WorkflowInstance, string? CorrelationId);
-public record CollectedStartableWorkflow(string WorkflowInstanceId, WorkflowInstance? WorkflowInstance, string? CorrelationId, string? ActivityId, string? DefinitionId)
-    : CollectedWorkflow(WorkflowInstanceId, WorkflowInstance, CorrelationId);
-public record CollectedResumableWorkflow(string WorkflowInstanceId, WorkflowInstance? WorkflowInstance, string? CorrelationId, string? BookmarkId)
-    : CollectedWorkflow(WorkflowInstanceId, WorkflowInstance, CorrelationId);
+public record WorkflowsFilter(string ActivityTypeName, object BookmarkPayload, TriggerWorkflowsRuntimeOptions Options);
+public record WorkflowMatch(string WorkflowInstanceId, WorkflowInstance? WorkflowInstance, string? CorrelationId);
+public record StartableWorkflowMatch(string WorkflowInstanceId, WorkflowInstance? WorkflowInstance, string? CorrelationId, string? ActivityId, string? DefinitionId)
+    : WorkflowMatch(WorkflowInstanceId, WorkflowInstance, CorrelationId);
+public record ResumableWorkflowMatch(string WorkflowInstanceId, WorkflowInstance? WorkflowInstance, string? CorrelationId, string? BookmarkId)
+    : WorkflowMatch(WorkflowInstanceId, WorkflowInstance, CorrelationId);
 
 /// <summary>
 /// Contains arguments to use for counting the number of workflow instances.

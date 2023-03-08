@@ -165,9 +165,9 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
     }
 
     /// <inheritdoc />
-    public async Task<WorkflowExecutionResult> ExecutePendingWorkflowAsync(CollectedWorkflow collectedWorkflow, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
+    public async Task<WorkflowExecutionResult> ExecuteWorkflowAsync(WorkflowMatch match, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
     {
-        if (collectedWorkflow is CollectedStartableWorkflow collectedStartableWorkflow)
+        if (match is StartableWorkflowMatch collectedStartableWorkflow)
         {
             var startOptions = new StartWorkflowRuntimeOptions(collectedStartableWorkflow.CorrelationId, input, VersionOptions.Published,
                 collectedStartableWorkflow.ActivityId, collectedStartableWorkflow.WorkflowInstanceId);
@@ -176,10 +176,10 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
         }
         else
         {
-            var collectedResumableWorkflow = (collectedWorkflow as CollectedResumableWorkflow)!;
+            var collectedResumableWorkflow = (match as ResumableWorkflowMatch)!;
             var runtimeOptions = new ResumeWorkflowRuntimeOptions(collectedResumableWorkflow.CorrelationId, Input: input);
             var resumeResult = await ResumeWorkflowAsync(
-                collectedWorkflow.WorkflowInstanceId,
+                match.WorkflowInstanceId,
                 runtimeOptions with { BookmarkId = collectedResumableWorkflow.BookmarkId },
                 cancellationToken);
 
@@ -188,10 +188,10 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
     }
 
     /// <inheritdoc />
-    public async Task<IEnumerable<CollectedWorkflow>> FindWorkflowsAsync(WorkflowsQuery workflowsQuery, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<WorkflowMatch>> FindWorkflowsAsync(WorkflowsFilter filter, CancellationToken cancellationToken = default)
     {
-        var startableWorkflows = await CollectStartableWorkflowsAsync(workflowsQuery, cancellationToken);
-        var resumableWorkflows = await CollectResumableWorkflowsAsync(workflowsQuery, cancellationToken);
+        var startableWorkflows = await CollectStartableWorkflowsAsync(filter, cancellationToken);
+        var resumableWorkflows = await CollectResumableWorkflowsAsync(filter, cancellationToken);
         var results = startableWorkflows.Concat(resumableWorkflows).ToList();
         return results;
     }
@@ -312,45 +312,45 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
                 x.AutoBurn,
                 x.CallbackMethodName.NullIfEmpty()));
 
-    private async Task<IEnumerable<CollectedWorkflow>> CollectStartableWorkflowsAsync(WorkflowsQuery workflowsQuery, CancellationToken cancellationToken)
+    private async Task<IEnumerable<WorkflowMatch>> CollectStartableWorkflowsAsync(WorkflowsFilter workflowsFilter, CancellationToken cancellationToken)
     {
-        var hash = _hasher.Hash(workflowsQuery.ActivityTypeName, workflowsQuery.BookmarkPayload);
+        var hash = _hasher.Hash(workflowsFilter.ActivityTypeName, workflowsFilter.BookmarkPayload);
         var filter = new TriggerFilter { Hash = hash };
         var triggers = await _triggerStore.FindManyAsync(filter, cancellationToken);
-        var results = new List<CollectedWorkflow>();
+        var results = new List<WorkflowMatch>();
 
         foreach (var trigger in triggers)
         {
             var definitionId = trigger.WorkflowDefinitionId;
-            var startOptions = new StartWorkflowRuntimeOptions(workflowsQuery.Options.CorrelationId, workflowsQuery.Options.Input, VersionOptions.Published, trigger.ActivityId);
+            var startOptions = new StartWorkflowRuntimeOptions(workflowsFilter.Options.CorrelationId, workflowsFilter.Options.Input, VersionOptions.Published, trigger.ActivityId);
             var canStartResult = await CanStartWorkflowAsync(definitionId, startOptions, cancellationToken);
 
-            var workflowInstance = await _workflowInstanceFactory.CreateAsync(definitionId, workflowsQuery.Options.CorrelationId, cancellationToken);
+            var workflowInstance = await _workflowInstanceFactory.CreateAsync(definitionId, workflowsFilter.Options.CorrelationId, cancellationToken);
 
             if (canStartResult.CanStart)
             {
-                results.Add(new CollectedStartableWorkflow(workflowInstance.Id, workflowInstance, workflowsQuery.Options.CorrelationId, trigger.ActivityId, definitionId));
+                results.Add(new StartableWorkflowMatch(workflowInstance.Id, workflowInstance, workflowsFilter.Options.CorrelationId, trigger.ActivityId, definitionId));
             }
         }
 
         return results;
     }
 
-    private async Task<IEnumerable<CollectedWorkflow>> CollectResumableWorkflowsAsync(WorkflowsQuery workflowsQuery, CancellationToken cancellationToken)
+    private async Task<IEnumerable<WorkflowMatch>> CollectResumableWorkflowsAsync(WorkflowsFilter workflowsFilter, CancellationToken cancellationToken)
     {
-        var hash = _hasher.Hash(workflowsQuery.ActivityTypeName, workflowsQuery.BookmarkPayload);
+        var hash = _hasher.Hash(workflowsFilter.ActivityTypeName, workflowsFilter.BookmarkPayload);
         var client = _cluster.GetNamedBookmarkGrain(hash);
 
         var request = new ResolveBookmarksRequest
         {
-            ActivityTypeName = workflowsQuery.ActivityTypeName,
-            CorrelationId = workflowsQuery.Options.CorrelationId.EmptyIfNull()
+            ActivityTypeName = workflowsFilter.ActivityTypeName,
+            CorrelationId = workflowsFilter.Options.CorrelationId.EmptyIfNull()
         };
 
         var bookmarksResponse = await client.Resolve(request, cancellationToken);
         var bookmarks = bookmarksResponse!.Bookmarks;
 
-        var collectedWorkflows = bookmarks.Select(b => new CollectedResumableWorkflow(b.WorkflowInstanceId, default, workflowsQuery.Options.CorrelationId, b.BookmarkId)).ToList();
+        var collectedWorkflows = bookmarks.Select(b => new ResumableWorkflowMatch(b.WorkflowInstanceId, default, workflowsFilter.Options.CorrelationId, b.BookmarkId)).ToList();
         return collectedWorkflows;
     }
 }
