@@ -6,8 +6,10 @@ using Microsoft.AspNetCore.Routing.Template;
 
 namespace Elsa.Http.Services;
 
+/// <inheritdoc />
 public class RouteMatcher : IRouteMatcher
 {
+    /// <inheritdoc />
     public RouteValueDictionary? Match(string routeTemplate, string requestPath)
     {
         var template = TemplateParser.Parse(routeTemplate);

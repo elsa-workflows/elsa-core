@@ -1,4 +1,3 @@
-using Elsa.Extensions;
 using Elsa.Http.Contracts;
 using Elsa.Http.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -18,19 +17,16 @@ public class AuthenticationBasedHttpEndpointAuthorizationHandler : IHttpEndpoint
 
         if (identity == null)
             return false;
-            
+
         if (identity.IsAuthenticated == false)
             return false;
-            
-        var httpEndpoint = context.Activity;
-        var expressionExecutionContext = context.ExpressionExecutionContext;
-        var policyName = httpEndpoint.Policy.TryGet(expressionExecutionContext);
 
-        if (string.IsNullOrWhiteSpace(policyName))
+        if (string.IsNullOrWhiteSpace(context.Policy))
             return identity.IsAuthenticated;
 
-        var resource = new HttpWorkflowResource(expressionExecutionContext, httpEndpoint, context.WorkflowInstanceId);
-        var authorizationResult = await _authorizationService.AuthorizeAsync(user, resource, policyName);
+        var authorizationResult = await _authorizationService.AuthorizeAsync(user,
+            new { workflowInstanceId = context.WorkflowInstanceId }, context.Policy!);
+
         return authorizationResult.Succeeded;
     }
 }
