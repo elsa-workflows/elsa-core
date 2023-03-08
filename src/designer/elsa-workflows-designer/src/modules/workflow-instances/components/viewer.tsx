@@ -87,9 +87,9 @@ export class WorkflowInstanceViewer {
 
   @Listen('journalItemSelected')
   private async handleJournalItemSelected(e: CustomEvent<JournalItemSelectedArgs>) {
-    const activityId = e.detail;
+    const activityId = e.detail.activity.id;
     const graph = await this.flowchartElement.getGraph();
-    const node = graph.getNodes().find(n => n.id == e.detail.activity.id)
+    const node = graph.getNodes().find(n => n.id == activityId)
 
     if (node != null) {
       graph.resetSelection(node);
@@ -100,7 +100,7 @@ export class WorkflowInstanceViewer {
       this.selectedActivity = e.detail.activity;
     }
 
-    this.selectedActivityExecutionLog = await this.workflowJournalElement.getExecutionLogByActivityId(e.detail.activity.id);
+    this.selectedActivityExecutionLog = await this.workflowJournalElement.getExecutionLogByActivityId(activityId);
   }
 
   @Listen('graphUpdated')

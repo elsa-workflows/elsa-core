@@ -1,7 +1,7 @@
 import {Component, h, Method, Prop, State, Watch, Event, EventEmitter} from "@stencil/core";
 import {Activity, Workflow, WorkflowExecutionLogRecord, WorkflowInstance, Container as ActivityContainer} from "../../../models";
 import {Container} from "typedi";
-import {ActivityIconRegistry, ActivityNode, createActivityNodeMap, flatten, walkActivities} from "../../../services";
+import {ActivityIconRegistry} from "../../../services";
 import {durationToString, formatTime, getDuration, Hash, isNullOrWhitespace} from "../../../utils";
 import {ActivityExecutionEventBlock} from "../models";
 import {ActivityIconSize} from "../../../components/icons/activities";
@@ -28,8 +28,6 @@ export class Journal {
 
   @Prop() workflowInstance: WorkflowInstance;
   @Prop() workflowDefinition: WorkflowDefinition;
-  @State() nodeMap: Hash<ActivityNode> = {};
-  @State() nodes: Array<ActivityNode> = [];
   @State() workflowExecutionLogRecords: Array<WorkflowExecutionLogRecord> = [];
   @State() rootBlocks: Array<ActivityExecutionEventBlock> = [];
   @State() expandedBlocks: Array<ActivityExecutionEventBlock> = [];
@@ -38,14 +36,14 @@ export class Journal {
 
   @Watch('workflowInstance')
   async onWorkflowInstanceChanged(value: string) {
-    this.createGraph();
+    this.createActivityMapForJournal();
     await this.loadJournalPage(0);
   }
 
   @Watch('workflowDefinition')
   async onWorkflowDefinitionChanged(value: string) {
     this.rootBlocks = [];
-    this.createGraph();
+    this.createActivityMapForJournal();
     await this.loadJournalPage(0);
   }
 
@@ -56,8 +54,7 @@ export class Journal {
   }
 
   async componentWillLoad(): Promise<void> {
-    this.createGraph();
-    this.journalActivityMap = this.createActivityMapForJournal();
+    this.createActivityMapForJournal();
     await this.loadJournalPage(0);
   }
 
@@ -170,26 +167,6 @@ export class Journal {
     });
   }
 
-  private createGraph = () => {
-    if (!this.workflowInstance || !this.workflowDefinition)
-      return;
-
-    const workflow: Workflow = {
-      type: 'Elsa.Workflow',
-      id: 'Workflow1', // Always 'Workflow1'.
-      version: this.workflowDefinition.version,
-      customProperties: this.workflowDefinition.customProperties,
-      canStartWorkflow: false,
-      runAsynchronously: false,
-      metadata: {},
-      root: this.workflowDefinition.root,
-      variables: this.workflowDefinition.variables
-    };
-
-    this.nodes = flatten(walkActivities(workflow));
-    this.nodeMap = createActivityNodeMap(this.nodes);
-  };
-
   private loadJournalPage = async (page: number): Promise<void> => {
     if (!this.workflowInstance || !this.workflowDefinition)
       return;
@@ -272,7 +249,8 @@ export class Journal {
     const map = {};
     for (const activity of allActivities)
       map[activity.id] = activity;
-    return map;
+
+    this.journalActivityMap = map;
   }
   
   private walkActivitiesRecursive(activityContainer: ActivityContainer, allActivities: Array<Activity>) {
