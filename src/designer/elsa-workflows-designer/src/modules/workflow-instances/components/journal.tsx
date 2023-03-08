@@ -1,5 +1,5 @@
 import {Component, h, Method, Prop, State, Watch, Event, EventEmitter} from "@stencil/core";
-import {Workflow, WorkflowExecutionLogRecord, WorkflowInstance} from "../../../models";
+import {Activity, Workflow, WorkflowExecutionLogRecord, WorkflowInstance, Container as ActivityContainer} from "../../../models";
 import {Container} from "typedi";
 import {ActivityIconRegistry, ActivityNode, createActivityNodeMap, flatten, walkActivities} from "../../../services";
 import {durationToString, formatTime, getDuration, Hash, isNullOrWhitespace} from "../../../utils";
@@ -7,6 +7,7 @@ import {ActivityExecutionEventBlock} from "../models";
 import {ActivityIconSize} from "../../../components/icons/activities";
 import {WorkflowDefinition} from "../../workflow-definitions/models/entities";
 import {WorkflowInstancesApi} from "../services/workflow-instances-api";
+import { JournalItemSelectedArgs } from "../events";
 
 // TODO: Implement dynamic loading of records.
 const PAGE_SIZE: number = 10000;
@@ -32,7 +33,8 @@ export class Journal {
   @State() workflowExecutionLogRecords: Array<WorkflowExecutionLogRecord> = [];
   @State() rootBlocks: Array<ActivityExecutionEventBlock> = [];
   @State() expandedBlocks: Array<ActivityExecutionEventBlock> = [];
-  @Event() journalItemStatusSelected: EventEmitter<string>;
+  @State() journalActivityMap: Hash<Activity> = {};
+  @Event() journalItemSelected: EventEmitter<JournalItemSelectedArgs>;
 
   @Watch('workflowInstance')
   async onWorkflowInstanceChanged(value: string) {
@@ -48,13 +50,14 @@ export class Journal {
   }
 
   @Method()
-  public async getExecutionLogByWorkflowInstanceId(activityId: string): Promise<WorkflowExecutionLogRecord> {
+  public async getExecutionLogByActivityId(activityId: string): Promise<WorkflowExecutionLogRecord> {
     const logRecords = this.workflowExecutionLogRecords.filter(r => r.activityId === activityId);
     return logRecords.find(r => r.eventName === "Faulted" || r.eventName === "Completed") ?? logRecords.find(r => r.eventName === "Started");
   }
 
   async componentWillLoad(): Promise<void> {
     this.createGraph();
+    this.journalActivityMap = this.createActivityMapForJournal();
     await this.loadJournalPage(0);
   }
 
@@ -102,13 +105,17 @@ export class Journal {
   }
 
   private renderBlocks = (blocks: Array<ActivityExecutionEventBlock>) => {
-    const nodeMap = this.nodeMap;
+    const journalActivityMap = this.journalActivityMap;
     const iconRegistry = this.iconRegistry;
     const expandedBlocks = this.expandedBlocks;
-    return blocks.map((block, index) => {
+    var sortedBlocks = this.sortByTimestamp(blocks);
+    return sortedBlocks.map((block, index) => {
+      const activity = journalActivityMap[block.activityId];
 
-      const activityNode = nodeMap[block.activityId];
-      const activity = activityNode.activity;
+      if(activity.type == "Elsa.Workflow" || activity.type == "Elsa.Flowchart"){
+        return this.renderBlocks(block.children);
+      }
+
       const activityMetadata = activity.metadata;
       const activityDisplayText = isNullOrWhitespace(activityMetadata.displayText) ? activity.id : activityMetadata.displayText;
       const duration = durationToString(block.duration);
@@ -141,23 +148,23 @@ export class Journal {
               {toggleIcon}
             </a>) : undefined}
           </td>
-          <td>{formatTime(block.timestamp)}</td>
+          <td>
+            <a href="#" onClick={e => this.onJournalItemClick(e, block, activity)}>{formatTime(block.timestamp)}</a>
+          </td>
           <td class="min-w-full">
             <div class="flex items-center space-x-1">
               <div class="flex-shrink">
                 <div class="bg-blue-500 rounded p-1">
-                  {icon}
+                  <a href="#" onClick={e => this.onJournalItemClick(e, block, activity)}>{icon}</a>
                 </div>
               </div>
-              <div>{activityDisplayText}</div>
+              <div><a href="#" onClick={e => this.onJournalItemClick(e, block, activity)}>{activityDisplayText}</a></div>
             </div>
           </td>
           <td>
-            {block.children.length == 0 ?
-            (<a href="#" onClick={e => this.onStatusClick(e, block)} class={`inline-flex rounded-full ${statusColor} px-2 text-xs font-semibold leading-5 text-green-800`}>{status}</a>)
-            : <span class={`inline-flex rounded-full ${statusColor} px-2 text-xs font-semibold leading-5 text-green-800`}>{status}</span>}
+            <a href="#" onClick={e => this.onJournalItemClick(e, block, activity)} class={`inline-flex rounded-full ${statusColor} px-2 text-xs font-semibold leading-5 text-green-800`}>{status}</a>
           </td>
-          <td>{duration}</td>
+          <td><a href="#" onClick={e => this.onJournalItemClick(e, block, activity)}>{duration}</a></td>
         </tr>, expanded ? this.renderBlocks(block.children) : undefined]
       );
     });
@@ -221,19 +228,13 @@ export class Journal {
     });
 
     for (const block of blocks) {
-      // For now, only get child blocks if the associated activity actually has child nodes as well.
-      // If not, it means this is a composed activity for which we did not load it child nodes.
-      // This is something we might want to reconsider in a future iteration.
-      const activityNode =  this.nodeMap[block.activityId];
-      if (activityNode?.children.length > 0)
-        block.children = this.findChildBlocks(blocks, block.activityInstanceId);
+      block.children = this.findChildBlocks(blocks, block.activityInstanceId);
     }
 
     return blocks;
   };
 
   private findChildBlocks = (blocks: Array<ActivityExecutionEventBlock>, parentActivityInstanceId?: string): Array<ActivityExecutionEventBlock> => {
-
     if (blocks.length == 0)
       return [];
 
@@ -249,8 +250,54 @@ export class Journal {
     this.expandedBlocks = existingBlock ? this.expandedBlocks.filter(x => x != existingBlock) : [...this.expandedBlocks, block];
   };
 
-  private onStatusClick = async (e: MouseEvent, block: ActivityExecutionEventBlock) => {
+  private onJournalItemClick = async (e: MouseEvent, block: ActivityExecutionEventBlock, activity: Activity) => {
     e.preventDefault();
-    this.journalItemStatusSelected.emit(block.activityId);
+    this.journalItemSelected.emit({activity: activity, activityInstanceId: block.activityInstanceId});
   };
+
+  private sortByTimestamp(blocks: ActivityExecutionEventBlock[]) {
+    return blocks.sort(function (x, y) {
+      if(x.timestamp > y.timestamp) 
+        return 1;
+      return -1;
+    });
+  }
+
+  private createActivityMapForJournal() {
+    let allActivities = new Array<Activity>();
+    allActivities.push({id: 'Workflow1', type: 'Elsa.Workflow', version: null, metadata: {}, customProperties: null});
+
+    allActivities = this.walkActivitiesRecursive(this.workflowDefinition.root as ActivityContainer, allActivities);
+
+    const map = {};
+    for (const activity of allActivities)
+      map[activity.id] = activity;
+    return map;
+  }
+  
+  private walkActivitiesRecursive(activityContainer: ActivityContainer, allActivities: Array<Activity>) {
+    allActivities.push(activityContainer as Activity);
+    if(activityContainer.activities == null || activityContainer.activities.length == 0) {
+      if(activityContainer.root != null) {
+        allActivities.push(activityContainer.root as Activity);
+        allActivities = this.walkActivitiesRecursive(activityContainer.root, allActivities);
+      }
+    }
+    else {
+      allActivities = allActivities.concat(activityContainer.activities);
+      activityContainer.activities.forEach(activity => {
+        if(activity.root != null){
+          allActivities = this.walkActivitiesRecursive(activity.root, allActivities);
+        }
+      });
+    }
+    return allActivities;
+  }
+  
+  private findActivityRootRecursive(activity: Activity) {
+    if(activity.root == null) {
+      return activity;
+    }
+    this.findActivityRootRecursive(activity.root);
+  }
 }
