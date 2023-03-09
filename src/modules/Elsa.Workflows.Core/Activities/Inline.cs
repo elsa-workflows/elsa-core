@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
@@ -15,6 +16,12 @@ public class Inline : CodeActivity
 {
     private readonly Func<ActivityExecutionContext, ValueTask> _activity;
 
+    /// <inheritdoc />
+    [JsonConstructor]
+    public Inline([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    {
+    }
+    
     /// <inheritdoc />
     public Inline(Func<ActivityExecutionContext, ValueTask> activity, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
