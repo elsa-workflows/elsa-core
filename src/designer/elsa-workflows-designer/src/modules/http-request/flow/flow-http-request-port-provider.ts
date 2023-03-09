@@ -20,7 +20,7 @@ export class FlowHttpRequestPortProvider implements PortProvider {
 
     const statusCodesJson = (expectedStatusCodes.expression as JsonExpression).value;
     const statusCodes = JSON.parse(statusCodesJson) as Array<string>;
-    const catchAllPort = {name: 'Catch all', displayName: 'Catch all', mode: PortMode.Port};
+    const catchAllPort = {name: 'Unmatched status code', displayName: 'Unmatched status code', mode: PortMode.Port};
     const outcomes = [...statusCodes.map(x => ({name: x.toString(), displayName: x.toString(), mode: PortMode.Port})), catchAllPort];
 
     return outcomes;

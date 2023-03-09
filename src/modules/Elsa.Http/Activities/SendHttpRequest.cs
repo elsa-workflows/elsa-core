@@ -33,7 +33,7 @@ public class FlowSendHttpRequest : SendHttpRequestBase
         var expectedStatusCodes = ExpectedStatusCodes.TryGet(context) ?? new List<int>(0);
         var statusCode = (int)response.StatusCode;
         var hasMatchingStatusCode = expectedStatusCodes.Contains(statusCode);
-        var outcome = hasMatchingStatusCode ? statusCode.ToString() : "Catch all";
+        var outcome = hasMatchingStatusCode ? statusCode.ToString() : "Unmatched status code";
 
         await context.CompleteActivityWithOutcomesAsync(outcome);
     }
