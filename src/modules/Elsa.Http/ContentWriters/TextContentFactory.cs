@@ -21,11 +21,11 @@ public class TextContentFactory : IHttpContentFactory
     /// <inheritdoc />
     public HttpContent CreateHttpContent(object content, string contentType)
     {
-        var text = content as string ?? "";
+        var text = content as string ?? content.ToString();
 
         if (string.IsNullOrWhiteSpace(contentType))
             contentType = MediaTypeNames.Text.Plain;
         
-        return new StringContent(text, Encoding.UTF8, contentType);
+        return new StringContent(text!, Encoding.UTF8, contentType);
     }
 }

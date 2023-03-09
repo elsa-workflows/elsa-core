@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Mime;
+using System.Text.Json.Nodes;
 using Elsa.Extensions;
 using Elsa.Http.ContentWriters;
 using Elsa.Http.Models;
@@ -94,7 +95,7 @@ public class WriteHttpResponse : CodeActivity
         if (content == null)
             return;
 
-        var contentType = ContentType.TryGet(context) ?? MediaTypeNames.Text.Plain;
+        var contentType = ContentType.TryGet(context);
 
         if (string.IsNullOrWhiteSpace(contentType))
             contentType = DetermineContentType(content);
@@ -109,5 +110,9 @@ public class WriteHttpResponse : CodeActivity
         await httpContent.CopyToAsync(response.Body);
     }
 
-    private string DetermineContentType(object? content) => content is byte[] or Stream ? "application/octet-stream" : "text/plain";
+    private string DetermineContentType(object? content) => content is byte[] or Stream
+        ? "application/octet-stream"
+        : content is string
+            ? "text/plain"
+            : "application/json";
 }
