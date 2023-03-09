@@ -84,7 +84,7 @@ public class WriteHttpResponse : CodeActivity
         response.StatusCode = (int)context.Get(StatusCode);
 
         // Add headers.
-        var headers = ResponseHeaders.TryGet(context) ?? new HttpResponseHeaders();
+        var headers = context.GetHeaders(ResponseHeaders);
         foreach (var header in headers)
             response.Headers.Add(header.Key, header.Value);
 

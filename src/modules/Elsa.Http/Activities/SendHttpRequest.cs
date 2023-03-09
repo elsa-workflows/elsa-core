@@ -216,7 +216,7 @@ public abstract class SendHttpRequestBase : Activity<HttpResponse>
         var method = Method.TryGet(context) ?? "GET";
         var url = Url.Get(context);
         var request = new HttpRequestMessage(new HttpMethod(method), url);
-        var headers = GetHeaders(context);
+        var headers = context.GetHeaders(RequestHeaders);
         var authorization = Authorization.TryGet(context);
 
         if (!string.IsNullOrWhiteSpace(authorization))
@@ -236,26 +236,6 @@ public abstract class SendHttpRequestBase : Activity<HttpResponse>
         }
 
         return request;
-    }
-
-    private IEnumerable<KeyValuePair<string, string[]>> GetHeaders(ActivityExecutionContext context)
-    {
-        var value = context.Get(RequestHeaders.MemoryBlockReference());
-
-        if (value is IDictionary<string, string[]> dictionary1)
-            return dictionary1;
-
-        if (value is IDictionary<string, string> dictionary2)
-            return dictionary2.ToDictionary(x => x.Key, x => new[] { x.Value });
-
-        if (value is IDictionary<string, object> dictionary3)
-            return dictionary3.ToDictionary(
-                pair => pair.Key,
-                pair => pair.Value is ICollection<object> collection
-                    ? collection.Select(x => x.ToString()!).ToArray()
-                    : new[] { pair.Value.ToString()! });
-
-        return Array.Empty<KeyValuePair<string, string[]>>();
     }
 
     private IHttpContentFactory SelectContentWriter(string? contentType, IEnumerable<IHttpContentFactory> requestContentWriters) =>
