@@ -22,7 +22,7 @@ public static class ForWorkflow
                 new WriteLine("Counting down from 10 to 1:"),
                 new For(10, 1)
                 {
-                    CurrentValue = new Output<MemoryBlockReference?>(currentValueVariable),
+                    CurrentValue = new Output<object?>(currentValueVariable),
                     Body = new Sequence
                     {
                         Activities =

@@ -1,9 +1,7 @@
-using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Abstractions;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Services;
 
 namespace Elsa.IntegrationTests.Activities;
 
@@ -20,7 +18,7 @@ class BreakForWorkflow : WorkflowBase
                 new WriteLine("Start"),
                 new For(0, 3)
                 {
-                    CurrentValue = new Output<MemoryBlockReference?>(currentValue),
+                    CurrentValue = new Output<object?>(currentValue),
                     Body = new Sequence
                     {
                         Activities =
