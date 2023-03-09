@@ -50,9 +50,8 @@ public class For : Activity
     /// <summary>
     /// Stores the current value for each iteration. 
     /// </summary>
-    [JsonIgnore]
     [Output]
-    public Output<MemoryBlockReference?> CurrentValue { get; set; } = new();
+    public Output<object?> CurrentValue { get; set; } = new();
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
