@@ -7,7 +7,6 @@ using Elsa.Expressions;
 using Elsa.Metadata;
 using Elsa.Services;
 using Elsa.Services.Models;
-using MediatR;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -84,6 +83,6 @@ namespace Elsa.Activities.Sql.Activities
             return Done();
         }
 
-        
+
     }
 }

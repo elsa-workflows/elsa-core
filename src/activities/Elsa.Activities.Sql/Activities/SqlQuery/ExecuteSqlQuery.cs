@@ -1,8 +1,3 @@
-using System.Collections.Generic;
-using System.Data;
-using System.Reflection;
-using System.Threading.Tasks;
-using System.Threading;
 using Elsa.Activities.Sql.Factory;
 using Elsa.Activities.Sql.Models;
 using Elsa.ActivityResults;
@@ -13,7 +8,12 @@ using Elsa.Metadata;
 using Elsa.Providers.WorkflowStorage;
 using Elsa.Services;
 using Elsa.Services.Models;
+using System.Collections.Generic;
+using System.Data;
 using System.Linq;
+using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Elsa.Activities.Sql.Activities
 {
@@ -26,7 +26,7 @@ namespace Elsa.Activities.Sql.Activities
         Description = "Execute given SQL query and returned execution result",
         Outcomes = new[] { OutcomeNames.Done }
     )]
-    public class ExecuteSqlQuery : Activity , IActivityPropertyOptionsProvider, IRuntimeSelectListProvider
+    public class ExecuteSqlQuery : Activity, IActivityPropertyOptionsProvider, IRuntimeSelectListProvider
     {
         /// <summary>
         /// Allowed databases to run SQL
@@ -77,7 +77,7 @@ namespace Elsa.Activities.Sql.Activities
 
         private readonly ISqlClientFactory _sqlClientFactory;
 
-        public ExecuteSqlQuery(ISqlClientFactory sqlClientFactory)  => _sqlClientFactory = sqlClientFactory;
+        public ExecuteSqlQuery(ISqlClientFactory sqlClientFactory) => _sqlClientFactory = sqlClientFactory;
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => ExecuteQuery();
 
