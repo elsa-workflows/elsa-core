@@ -22,6 +22,10 @@ export interface Activity {
   [name: string]: any;
 }
 
+export interface UniqueActivity extends Activity {
+  uniqueId: string;
+}
+
 export interface Trigger extends Activity {
 }
 

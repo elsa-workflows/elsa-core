@@ -321,7 +321,6 @@ export namespace Components {
         "workflowInstance": WorkflowInstance;
     }
     interface ElsaWorkflowJournal {
-        "getExecutionLogByActivityId": (activityId: string) => Promise<WorkflowExecutionLogRecord>;
         "workflowDefinition": WorkflowDefinition;
         "workflowInstance": WorkflowInstance;
     }

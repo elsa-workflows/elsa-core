@@ -100,7 +100,8 @@ export class WorkflowInstanceViewer {
       this.selectedActivity = e.detail.activity;
     }
 
-    this.selectedActivityExecutionLog = await this.workflowJournalElement.getExecutionLogByActivityId(activityId);
+    var log = e.detail.executionLog;
+    this.selectedActivityExecutionLog = log.faulted ? log.faultedRecord : log.completed ? log.completedRecord : log.startedRecord;
   }
 
   @Listen('graphUpdated')

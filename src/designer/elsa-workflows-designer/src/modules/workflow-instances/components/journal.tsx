@@ -1,5 +1,5 @@
 import {Component, h, Method, Prop, State, Watch, Event, EventEmitter} from "@stencil/core";
-import {Activity, Workflow, WorkflowExecutionLogRecord, WorkflowInstance, Container as ActivityContainer} from "../../../models";
+import {Activity, Workflow, WorkflowExecutionLogRecord, WorkflowInstance, Container as ActivityContainer, UniqueActivity} from "../../../models";
 import {Container} from "typedi";
 import {ActivityIconRegistry} from "../../../services";
 import {durationToString, formatTime, getDuration, Hash, isNullOrWhitespace} from "../../../utils";
@@ -8,6 +8,8 @@ import {ActivityIconSize} from "../../../components/icons/activities";
 import {WorkflowDefinition} from "../../workflow-definitions/models/entities";
 import {WorkflowInstancesApi} from "../services/workflow-instances-api";
 import { JournalItemSelectedArgs } from "../events";
+import { v4 as uuid } from 'uuid';
+import { block } from "@antv/x6/lib/registry/marker/classic";
 
 // TODO: Implement dynamic loading of records.
 const PAGE_SIZE: number = 10000;
@@ -29,33 +31,29 @@ export class Journal {
   @Prop() workflowInstance: WorkflowInstance;
   @Prop() workflowDefinition: WorkflowDefinition;
   @State() workflowExecutionLogRecords: Array<WorkflowExecutionLogRecord> = [];
+  @State() blocks: Array<ActivityExecutionEventBlock> = [];
   @State() rootBlocks: Array<ActivityExecutionEventBlock> = [];
   @State() expandedBlocks: Array<ActivityExecutionEventBlock> = [];
-  @State() journalActivityMap: Hash<Activity> = {};
+  @State() journalActivityMap: Hash<UniqueActivity> = {};
   @Event() journalItemSelected: EventEmitter<JournalItemSelectedArgs>;
 
   @Watch('workflowInstance')
   async onWorkflowInstanceChanged(value: string) {
-    this.createActivityMapForJournal();
     await this.loadJournalPage(0);
+    this.createActivityMapForJournal();
+    
   }
 
   @Watch('workflowDefinition')
   async onWorkflowDefinitionChanged(value: string) {
     this.rootBlocks = [];
-    this.createActivityMapForJournal();
     await this.loadJournalPage(0);
-  }
-
-  @Method()
-  public async getExecutionLogByActivityId(activityId: string): Promise<WorkflowExecutionLogRecord> {
-    const logRecords = this.workflowExecutionLogRecords.filter(r => r.activityId === activityId);
-    return logRecords.find(r => r.eventName === "Faulted" || r.eventName === "Completed") ?? logRecords.find(r => r.eventName === "Started");
+    this.createActivityMapForJournal();
   }
 
   async componentWillLoad(): Promise<void> {
-    this.createActivityMapForJournal();
     await this.loadJournalPage(0);
+    this.createActivityMapForJournal();
   }
 
   render() {
@@ -107,7 +105,7 @@ export class Journal {
     const expandedBlocks = this.expandedBlocks;
     var sortedBlocks = this.sortByTimestamp(blocks);
     return sortedBlocks.map((block, index) => {
-      const activity = journalActivityMap[block.activityId];
+      const activity = journalActivityMap[block.uniqueActivityId];
 
       if(activity.type == "Elsa.Workflow" || activity.type == "Elsa.Flowchart"){
         return this.renderBlocks(block.children);
@@ -177,6 +175,7 @@ export class Journal {
     const rootBlocks = blocks.filter(x => !x.parentActivityInstanceId);
     this.workflowExecutionLogRecords = [...this.workflowExecutionLogRecords, ...pageOfRecords.items];
     this.rootBlocks = rootBlocks;
+    this.blocks = this.sortByTimestamp(blocks);
   }
 
   private createBlocks = (records: Array<WorkflowExecutionLogRecord>): Array<ActivityExecutionEventBlock> => {
@@ -190,6 +189,7 @@ export class Journal {
       const duration = !!completedRecord ? getDuration(completedRecord.timestamp, startedRecord.timestamp) : null;
 
       return {
+        uniqueActivityId: uuid(),
         activityId: startedRecord.activityId,
         activityInstanceId: startedRecord.activityInstanceId,
         parentActivityInstanceId: startedRecord.parentActivityInstanceId,
@@ -229,7 +229,7 @@ export class Journal {
 
   private onJournalItemClick = async (e: MouseEvent, block: ActivityExecutionEventBlock, activity: Activity) => {
     e.preventDefault();
-    this.journalItemSelected.emit({activity: activity, activityInstanceId: block.activityInstanceId});
+    this.journalItemSelected.emit({activity: activity, executionLog: block});
   };
 
   private sortByTimestamp(blocks: ActivityExecutionEventBlock[]) {
@@ -241,34 +241,54 @@ export class Journal {
   }
 
   private createActivityMapForJournal() {
-    let allActivities = new Array<Activity>();
-    allActivities.push({id: 'Workflow1', type: 'Elsa.Workflow', version: null, metadata: {}, customProperties: null});
+    let blocksCopy = this.blocks.slice();
+
+    let allActivities = new Array<UniqueActivity>();
+    allActivities.push({id: 'Workflow1', type: 'Elsa.Workflow', version: null, metadata: {}, customProperties: null, uniqueId: this.findUniqueId(this.rootBlocks[0].activityId)});
+    allActivities.push({...this.workflowDefinition.root, uniqueId: this.findUniqueId(this.workflowDefinition.root.id)});
 
     allActivities = this.walkActivitiesRecursive(this.workflowDefinition.root as ActivityContainer, allActivities);
 
     const map = {};
     for (const activity of allActivities)
-      map[activity.id] = activity;
+      map[activity.uniqueId] = activity;
 
     this.journalActivityMap = map;
+    this.blocks = blocksCopy;
   }
   
-  private walkActivitiesRecursive(activityContainer: ActivityContainer, allActivities: Array<Activity>) {
-    allActivities.push(activityContainer as Activity);
+  private walkActivitiesRecursive(activityContainer: ActivityContainer, allActivities: Array<UniqueActivity>) {
     if(activityContainer.activities == null || activityContainer.activities.length == 0) {
       if(activityContainer.root != null) {
-        allActivities.push(activityContainer.root as Activity);
+        allActivities.push({...activityContainer.root, uniqueId: this.findUniqueId(activityContainer.root.id)});
         allActivities = this.walkActivitiesRecursive(activityContainer.root, allActivities);
       }
     }
     else {
-      allActivities = allActivities.concat(activityContainer.activities);
       activityContainer.activities.forEach(activity => {
+        allActivities.push({...activity, uniqueId: this.findUniqueId(activity.id)});
         if(activity.root != null){
+          allActivities.push({...activity.root, uniqueId: this.findUniqueId(activity.root.id)});
           allActivities = this.walkActivitiesRecursive(activity.root, allActivities);
         }
       });
     }
     return allActivities;
   }
+
+  private findUniqueId(activityId: string): string {
+    let uniqueActivityId: string;
+    let index: number;
+
+    for(let i = 0; i < this.blocks.length; i++) {
+      if(this.blocks[i].activityId == activityId) {
+        uniqueActivityId = this.blocks[i].uniqueActivityId;
+        index = i;
+        break;
+      }
+    }
+
+    this.blocks.splice(index, 1);
+    return uniqueActivityId;
+  }  
 }
