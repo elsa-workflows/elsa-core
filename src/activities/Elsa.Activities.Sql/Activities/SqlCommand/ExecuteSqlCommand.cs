@@ -4,8 +4,14 @@ using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Expressions;
+using Elsa.Metadata;
 using Elsa.Services;
 using Elsa.Services.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Elsa.Activities.Sql.Activities
 {
@@ -18,7 +24,7 @@ namespace Elsa.Activities.Sql.Activities
         Description = "Execute given SQL command and returned number of rows affected",
         Outcomes = new[] { OutcomeNames.Done }
     )]
-    public class ExecuteSqlCommand : Activity
+    public class ExecuteSqlCommand : Activity, IActivityPropertyOptionsProvider, IRuntimeSelectListProvider
     {
         /// <summary>
         /// Allowed databases to run SQL
@@ -26,10 +32,24 @@ namespace Elsa.Activities.Sql.Activities
         [ActivityInput(
             UIHint = ActivityInputUIHints.Dropdown,
             Hint = "Allowed databases to run SQL.",
-            Options = new[] { "", "MSSQL Server", "PostgreSql" },
-            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
+            Options = typeof(ExecuteSqlCommand),
+            DefaultSyntax = SyntaxNames.Literal,
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string? Database { get; set; }
+
+        /// <summary>
+        /// Return options to be used by the designer. The designer will pass back whatever context is provided here.
+        /// </summary>
+        public object GetOptions(PropertyInfo property) => new RuntimeSelectListProviderSettings(GetType(), this._sqlClientFactory.Databases);
+
+
+        public ValueTask<SelectList> GetSelectListAsync(object? context = null, CancellationToken cancellationToken = default)
+        {
+            var tList = (List<string>)context!;
+            var items = tList.Select(x => new SelectListItem(x)).ToList();
+            return new ValueTask<SelectList>(new SelectList(items));
+        }
 
         /// <summary>
         /// SQl script to execute
@@ -62,5 +82,7 @@ namespace Elsa.Activities.Sql.Activities
 
             return Done();
         }
+
+
     }
 }
