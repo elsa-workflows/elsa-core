@@ -9,10 +9,12 @@ using Elsa.Http.Handlers;
 using Elsa.Http.Models;
 using Elsa.Http.Options;
 using Elsa.Http.Parsers;
+using Elsa.Http.PortResolvers;
 using Elsa.Http.Providers;
 using Elsa.Http.Services;
 using Elsa.JavaScript.Features;
 using Elsa.Liquid.Features;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -110,6 +112,9 @@ public class HttpFeature : FeatureBase
 
             // Activity property options providers.
             .AddSingleton<IActivityPropertyOptionsProvider, WriteHttpResponseContentTypeOptionsProvider>()
+            
+            // Port resolvers.
+            .AddSingleton<IActivityPortResolver, SendHttpRequestActivityPortResolver>()
 
             // Add Http endpoint handlers.
             .AddSingleton(HttpEndpointWorkflowFaultHandler)
