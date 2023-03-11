@@ -127,6 +127,9 @@ export namespace Components {
     }
     interface ElsaHomePage {
     }
+    interface ElsaHttpStatusCodesEditor {
+        "inputContext": ActivityInputContext;
+    }
     interface ElsaInputControlSwitch {
         "activityType": string;
         "codeEditorHeight": string;
@@ -561,6 +564,12 @@ declare global {
         prototype: HTMLElsaHomePageElement;
         new (): HTMLElsaHomePageElement;
     };
+    interface HTMLElsaHttpStatusCodesEditorElement extends Components.ElsaHttpStatusCodesEditor, HTMLStencilElement {
+    }
+    var HTMLElsaHttpStatusCodesEditorElement: {
+        prototype: HTMLElsaHttpStatusCodesEditorElement;
+        new (): HTMLElsaHttpStatusCodesEditorElement;
+    };
     interface HTMLElsaInputControlSwitchElement extends Components.ElsaInputControlSwitch, HTMLStencilElement {
     }
     var HTMLElsaInputControlSwitchElement: {
@@ -856,6 +865,7 @@ declare global {
         "elsa-flowchart": HTMLElsaFlowchartElement;
         "elsa-form-panel": HTMLElsaFormPanelElement;
         "elsa-home-page": HTMLElsaHomePageElement;
+        "elsa-http-status-codes-editor": HTMLElsaHttpStatusCodesEditorElement;
         "elsa-input-control-switch": HTMLElsaInputControlSwitchElement;
         "elsa-input-tags": HTMLElsaInputTagsElement;
         "elsa-input-tags-dropdown": HTMLElsaInputTagsDropdownElement;
@@ -995,6 +1005,9 @@ declare namespace LocalJSX {
         "tabs"?: Array<TabDefinition>;
     }
     interface ElsaHomePage {
+    }
+    interface ElsaHttpStatusCodesEditor {
+        "inputContext"?: ActivityInputContext;
     }
     interface ElsaInputControlSwitch {
         "activityType"?: string;
@@ -1236,6 +1249,7 @@ declare namespace LocalJSX {
         "elsa-flowchart": ElsaFlowchart;
         "elsa-form-panel": ElsaFormPanel;
         "elsa-home-page": ElsaHomePage;
+        "elsa-http-status-codes-editor": ElsaHttpStatusCodesEditor;
         "elsa-input-control-switch": ElsaInputControlSwitch;
         "elsa-input-tags": ElsaInputTags;
         "elsa-input-tags-dropdown": ElsaInputTagsDropdown;
@@ -1306,6 +1320,7 @@ declare module "@stencil/core" {
             "elsa-flowchart": LocalJSX.ElsaFlowchart & JSXBase.HTMLAttributes<HTMLElsaFlowchartElement>;
             "elsa-form-panel": LocalJSX.ElsaFormPanel & JSXBase.HTMLAttributes<HTMLElsaFormPanelElement>;
             "elsa-home-page": LocalJSX.ElsaHomePage & JSXBase.HTMLAttributes<HTMLElsaHomePageElement>;
+            "elsa-http-status-codes-editor": LocalJSX.ElsaHttpStatusCodesEditor & JSXBase.HTMLAttributes<HTMLElsaHttpStatusCodesEditorElement>;
             "elsa-input-control-switch": LocalJSX.ElsaInputControlSwitch & JSXBase.HTMLAttributes<HTMLElsaInputControlSwitchElement>;
             "elsa-input-tags": LocalJSX.ElsaInputTags & JSXBase.HTMLAttributes<HTMLElsaInputTagsElement>;
             "elsa-input-tags-dropdown": LocalJSX.ElsaInputTagsDropdown & JSXBase.HTMLAttributes<HTMLElsaInputTagsDropdownElement>;

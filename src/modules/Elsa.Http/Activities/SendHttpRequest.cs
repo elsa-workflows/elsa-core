@@ -51,10 +51,7 @@ public class SendHttpRequest : SendHttpRequestBase
     /// </summary>
     [Input(
         Description = "A list of expected status codes to handle and the corresponding activity to execute when the status code matches.",
-        UIHint = InputUIHints.MultiText,
-
-        // TODO: Need to implement a custom UI hint for this.
-        IsBrowsable = false
+        UIHint = "http-status-codes"
     )]
     public ICollection<HttpStatusCodeCase> ExpectedStatusCodes { get; set; } = new List<HttpStatusCodeCase>();
 
@@ -62,8 +59,7 @@ public class SendHttpRequest : SendHttpRequestBase
     /// The activity to execute when the HTTP status code does not match any of the expected status codes.
     /// </summary>
     [Port]
-    [Browsable(false)] // TODO: Need to implement a custom UI hint for this.
-    public IActivity? CatchAll { get; set; }
+    public IActivity? UnmatchedStatusCode { get; set; }
 
     /// <inheritdoc />
     protected override async ValueTask HandleResponseAsync(ActivityExecutionContext context, HttpResponseMessage response)
@@ -71,7 +67,7 @@ public class SendHttpRequest : SendHttpRequestBase
         var expectedStatusCodes = ExpectedStatusCodes;
         var statusCode = (int)response.StatusCode;
         var matchingCase = expectedStatusCodes.FirstOrDefault(x => x.StatusCode == statusCode);
-        var activity = matchingCase?.Activity ?? CatchAll;
+        var activity = matchingCase?.Activity ?? UnmatchedStatusCode;
 
         await context.ScheduleActivityAsync(activity, OnChildActivityCompletedAsync);
     }

@@ -1,17 +1,20 @@
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Services;
 
-namespace Elsa.Workflows.Core.ActivityNodeResolvers;
+namespace Elsa.Workflows.Core.PortResolvers;
 
 /// <summary>
 /// Returns a list of outbound activities for a given <see cref="Switch"/> activity's branches.
 /// </summary>
 public class SwitchActivityPortResolver : IActivityPortResolver
 {
+    /// <inheritdoc />
     public int Priority => 0;
+
+    /// <inheritdoc />
     public bool GetSupportsActivity(IActivity activity) => activity is Switch;
 
+    /// <inheritdoc />
     public ValueTask<IEnumerable<IActivity>> GetPortsAsync(IActivity activity, CancellationToken cancellationToken = default)
     {
         var ports = GetPortsInternal(activity);
