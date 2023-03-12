@@ -1,5 +1,5 @@
 import {CellView, Graph, Node, Shape} from '@antv/x6';
-import { autoOrientConnections } from '../../utils/graph';
+import {autoOrientConnections} from '../../utils/graph';
 import './ports';
 import {Activity} from "../../models";
 import {Connection} from "./models";
@@ -66,8 +66,8 @@ export function createGraph(
       router: {
         name: 'manhattan',
         args: {
-          startDirections: ['top','right','left','bottom'],
-          endDirections: ['top','right','left','bottom'],
+          startDirections: ['top', 'right', 'left', 'bottom'],
+          endDirections: ['top', 'right', 'left', 'bottom'],
         },
       },
       // router: {
@@ -93,7 +93,7 @@ export function createGraph(
         return sourcePort.type !== 'in'
       },
       validateConnection({sourceView, targetView, sourceMagnet, targetMagnet}) {
-        if(!sourceMagnet || !targetMagnet) {
+        if (!sourceMagnet || !targetMagnet) {
           return false;
         }
 
@@ -113,7 +113,6 @@ export function createGraph(
 
         const portId = targetMagnet.getAttribute('port')!
         const node = targetView.cell as Node
-        const port = node.getPort(portId)
         return !(targetPort && targetPort.connected);
       },
       createEdge() {
@@ -199,40 +198,62 @@ export function createGraph(
   graph.bindKey(['meta+v', 'ctrl+v'], async () => {
     if (!graph.isClipboardEmpty()) {
 
-      const cells = graph.paste({offset: 32});
+      const allActivities = [...getAllActivities()];
+      const cells = graph.getCellsInClipboard();
       const activityCells = cells.filter(x => x.shape == 'activity');
       const connectionCells = cells.filter(x => x.shape == 'elsa-edge');
-      const allActivities = [...getAllActivities()];
       const idMap = {};
+      const newCells = [];
 
       for (const cell of activityCells) {
-        const activity = {...cell.data} as Activity;
+        const clonedCell = cell.clone();
+        clonedCell.isClone = true;
+        const activity = {...clonedCell.getData()} as Activity;
         const activityTypeName = activity.type;
         const activityDescriptor = descriptorsStore.activityDescriptors.find(x => x.typeName == activityTypeName);
         const currentId = activity.id;
-        const idExists = allActivities.find(x => x.id == currentId);
+        const idExists = !!allActivities.find(x => x.id == currentId);
 
-        if(idExists) {
+        if (idExists) {
           const newId = await generateUniqueActivityName(allActivities, activityDescriptor);
           idMap[currentId] = newId;
           activity.id = newId;
         }
 
-        cell.setData(activity)
+        clonedCell.replaceData(activity, {});
+        clonedCell.activity = activity;
+
+        const clonedNode = clonedCell as Node;
+        const position = clonedNode.getPosition();
+        position.x += 64;
+        position.y += 64;
+        clonedNode.setPosition(position);
+
         allActivities.push(activity);
+        newCells.push(clonedCell);
       }
 
       for (const cell of connectionCells) {
-        const connection = {...cell.data} as Connection;
+        const clonedCell = cell.clone();
+        const connection = {...clonedCell.getData()} as Connection;
         connection.source = idMap[connection.source];
         connection.target = idMap[connection.target];
-        cell.setData(connection);
+        clonedCell.replaceData(connection);
+        newCells.push(clonedCell);
       }
+
+      graph.addCell(newCells, {});
+
+      // Wait for the new cells to be rendered.
+      requestAnimationFrame(() => {
+        graph.cleanSelection();
+        graph.select(newCells);
+      });
     }
     return false
   });
 
-  //undo redo
+  // undo
   graph.bindKey(['meta+z', 'ctrl+z'], () => {
     if (graph.history.canUndo()) {
       graph.history.undo()
@@ -240,6 +261,7 @@ export function createGraph(
     return false
   });
 
+  // redo
   graph.bindKey(['meta+y', 'ctrl+y'], () => {
     if (graph.history.canRedo()) {
       graph.history.redo()
@@ -247,7 +269,7 @@ export function createGraph(
     return false
   });
 
-  // select all;
+  // select all
   graph.bindKey(['meta+a', 'ctrl+a'], () => {
     const nodes = graph.getNodes()
     if (nodes) {
@@ -255,7 +277,7 @@ export function createGraph(
     }
   });
 
-  //delete
+  // delete
   graph.bindKey('del', () => {
     const cells = graph.getSelectedCells()
     if (cells.length) {
@@ -278,7 +300,7 @@ export function createGraph(
     }
   });
 
-  graph.on("node:moving", ({ node }) => {
+  graph.on("node:moving", ({node}) => {
     autoOrientConnections(graph, node);
   });
 

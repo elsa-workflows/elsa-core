@@ -5,9 +5,9 @@ import {Edge, Graph, Model, Node, NodeView, Point} from '@antv/x6';
 import './shapes';
 import './ports';
 import {ActivityNodeShape} from './shapes';
-import {Activity, ActivityDeletedArgs, ActivityDescriptor, ActivitySelectedArgs, ChildActivitySelectedArgs, ContainerSelectedArgs, EditChildActivityArgs, GraphUpdatedArgs, Port, WorkflowUpdatedArgs} from '../../models';
+import {Activity, ActivityDeletedArgs, ActivityDescriptor, ActivitySelectedArgs, ChildActivitySelectedArgs, ContainerSelectedArgs, EditChildActivityArgs, GraphUpdatedArgs, WorkflowUpdatedArgs} from '../../models';
 import {createGraph} from './graph-factory';
-import {AddActivityArgs, Connection, Flowchart, FlowchartModel, FlowchartNavigationItem, FlowchartPathItem, LayoutDirection, RenameActivityArgs, UpdateActivityArgs} from './models';
+import {AddActivityArgs, Connection, Flowchart, FlowchartModel, FlowchartPathItem, LayoutDirection, RenameActivityArgs, UpdateActivityArgs} from './models';
 import {NodeFactory} from "./node-factory";
 import {Container} from "typedi";
 import {createActivityLookup, EventBus, flatten, PortProviderRegistry, walkActivities} from "../../services";
@@ -182,10 +182,10 @@ export class FlowchartComponent {
       },
     };
 
-    const node = this.nodeFactory.createNode(descriptor, activity, sx, sy);
-    graph.addNode(node, {merge: true});
-
-    adjustPortMarkupByNode(graph.getNodes().find(n => n.id == node.id));
+    const nodeMetadata = this.nodeFactory.createNode(descriptor, activity, sx, sy);
+    graph.addNode(nodeMetadata, {merge: true});
+    const node = graph.getNodes().find(n => n.data.id == nodeMetadata.activity.id);
+    adjustPortMarkupByNode(node);
     await this.updateModel();
     return activity;
   }
@@ -194,9 +194,8 @@ export class FlowchartComponent {
   async updateActivity(args: UpdateActivityArgs) {
     const activityId = args.id;
     const originalId = args.originalId;
-    const nodeId = originalId;
     const activity = args.activity;
-    const node = this.graph.getNodes().find(x => x.id == nodeId);
+    const node = this.graph.getNodes().find(x => x.data.id == originalId);
     const nodeShape = node as ActivityNodeShape;
 
     if (!!node) {
@@ -209,7 +208,7 @@ export class FlowchartComponent {
 
       // If the ID of the activity changed, we need to update connection references (X6 stores deep copies of data).
       if (activityId !== originalId)
-        this.syncEdgeData(nodeId, activity);
+        this.syncEdgeData(originalId, activity);
 
       // Update ports.
       if (args.updatePorts) {
@@ -227,9 +226,9 @@ export class FlowchartComponent {
 
   @Method()
   public async renameActivity(args: RenameActivityArgs) {
-    const nodeId = args.originalId;
+    const originalId = args.originalId;
     const activity = args.activity;
-    const node = this.graph.getNodes().find(x => x.id == nodeId) as ActivityNodeShape;
+    const node = this.graph.getNodes().find(x => x.data.id == originalId) as ActivityNodeShape;
 
     if (!node)
       return;
@@ -237,12 +236,12 @@ export class FlowchartComponent {
     // Update the node's data with the activity.
     node.setData(activity, {overwrite: true});
 
-    // Updating the node's activity property to trigger a rerender.
+    // Update the node's activity property to trigger a rerender.
     node.activity = activity;
 
     // If the ID of the activity changed, we need to update connection references (X6 stores deep copies of data).
-    if (activity.id !== nodeId)
-      this.syncEdgeData(nodeId, activity);
+    if (activity.id !== originalId)
+      this.syncEdgeData(originalId, activity);
   }
 
   @Method()
@@ -337,7 +336,7 @@ export class FlowchartComponent {
       this.getAllActivities);
 
     graph.on('blank:click', this.onGraphClick);
-    graph.on('node:click', this.onNodeClick);
+    graph.on('node:selected', this.onNodeSelected);
     graph.on('node:contextmenu', this.onNodeContextMenu);
     graph.on('edge:connected', this.onEdgeConnected);
     graph.on('node:moved', this.onNodeMoved);
@@ -346,7 +345,6 @@ export class FlowchartComponent {
     //graph.on('node:added', this.onGraphChanged);
     graph.on('node:added', this.onNodeAdded);
     graph.on('node:removed', this.onNodeRemoved);
-    graph.on('node:removed', this.onGraphChanged);
     graph.on('edge:added', this.onGraphChanged);
     graph.on('edge:removed', this.onGraphChanged);
     graph.on('edge:connected', this.onGraphChanged);
@@ -395,7 +393,6 @@ export class FlowchartComponent {
   private updateModel = async () => {
     const model = this.getFlowchartModel();
     const currentFlowchart = await this.getCurrentFlowchartActivity();
-
     currentFlowchart.activities = model.activities;
     currentFlowchart.connections = model.connections;
     currentFlowchart.start = model.start;
@@ -495,7 +492,8 @@ export class FlowchartComponent {
   };
 
   private updateLookups = () => {
-    const activityNodes = flatten(walkActivities(this.rootActivity));
+    const graph = walkActivities(this.rootActivity);
+    const activityNodes = flatten(graph);
     this.activities = activityNodes.map(x => x.activity);
     this.activityLookup = createActivityLookup(activityNodes);
   }
@@ -516,7 +514,7 @@ export class FlowchartComponent {
     return this.containerSelected.emit(args);
   };
 
-  private onNodeClick = async (e: PositionEventArgs<JQuery.ClickEvent>) => {
+  private onNodeSelected = async (e: PositionEventArgs<JQuery.ClickEvent>) => {
     const node = e.node as ActivityNodeShape;
     const activityCopy = node.activity;
 
@@ -614,22 +612,32 @@ export class FlowchartComponent {
     await this.updateModel();
     this.graphUpdated.emit();
   }
-  private onNodeRemoved = (e: any) => {
+
+  private onNodeRemoved = async (e: any) => {
     const activity = e.node.data as Activity;
     this.activityDeleted.emit({activity});
-  };
-  private onNodeAdded = async (e: any) => {
-    const activity = e.node.data as Activity;
-    const activityDescriptor = this.getActivityDescriptor(activity.type);
-    activity.id = await this.generateUniqueActivityName(activityDescriptor)
-    e.node.activity = {...activity};
     await this.onGraphChanged(e);
   };
+
+  private onNodeAdded = async (e: any) => {
+    const node = e.node as any;
+
+    if (!node.isClone) {
+      const activity = {...node.getData()} as Activity;
+      const activityDescriptor = this.getActivityDescriptor(activity.type);
+      activity.id = await this.generateUniqueActivityName(activityDescriptor)
+      node.activity = {...activity};
+    }
+
+    await this.onGraphChanged(e);
+  };
+
   private onToggleCanStartWorkflowClicked = (node: ActivityNodeShape) => {
     const activity = node.data as Activity;
     activity.canStartWorkflow = !activity.canStartWorkflow;
     node.activity = {...activity};
   };
+
   private onDeleteActivityClicked = (node: ActivityNodeShape) => {
     let cells = this.graph.getSelectedCells();
 
@@ -685,10 +693,10 @@ export class FlowchartComponent {
     const addedPorts = desiredPorts.filter(x => !actualPorts.some(y => getPortNameByPortId(y.id) == getPortNameByPortId(x.id)));
     const removedPorts = actualPorts.filter(x => !desiredPorts.some(y => getPortNameByPortId(y.id) == getPortNameByPortId(x.id)));
 
-    if(addedPorts.length > 0 )
+    if (addedPorts.length > 0)
       node.addPorts(addedPorts);
 
-    if(removedPorts.length > 0)
+    if (removedPorts.length > 0)
       node.removePorts(removedPorts);
 
   };
