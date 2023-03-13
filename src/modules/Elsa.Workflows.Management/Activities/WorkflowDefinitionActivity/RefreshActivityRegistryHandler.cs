@@ -2,9 +2,8 @@ using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Notifications;
-using Elsa.Workflows.Management.Providers;
 
-namespace Elsa.Workflows.Management.Handlers;
+namespace Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 
 /// <summary>
 /// Refreshes the <see cref="IActivityRegistry"/> for the <see cref="WorkflowDefinitionActivityProvider"/> provider whenever an <see cref="WorkflowDefinition"/> is published, retracted or deleted.

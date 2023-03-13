@@ -43,6 +43,11 @@ internal class CommonFunctionsDefinitionProvider : FunctionDefinitionProvider
             .ReturnType("any"));
         
         yield return CreateFunctionDefinition(builder => builder
+            .Name("getInput")
+            .Parameter("name", "string")
+            .ReturnType("any"));
+        
+        yield return CreateFunctionDefinition(builder => builder
             .Name("isNullOrWhiteSpace")
             .Parameter("value", "string")
             .ReturnType("boolean"));

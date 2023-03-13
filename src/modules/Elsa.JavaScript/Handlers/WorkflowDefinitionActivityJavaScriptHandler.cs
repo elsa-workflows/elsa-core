@@ -3,6 +3,7 @@ using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.JavaScript.Notifications;
 using Elsa.Mediator.Contracts;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Activities;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
@@ -38,27 +39,41 @@ public class WorkflowDefinitionActivityJavaScriptHandler : INotificationHandler<
         var engine = notification.Engine;
         var context = notification.Context;
 
-        // If we are already evaluating inputs, then we're in a circular evaluation loop. In this case, we should not attempt to evaluate the inputs.
-        if(context.TransientProperties.TryGetValue("EvaluatingInputs", out var evaluatingInputs) && (bool)evaluatingInputs)
-            return;
+        // Always create workflow input accessors.
+        CreateWorkflowInputAccessors(engine, context);
         
+        // If we are already evaluating inputs, then we're in a circular evaluation loop. In this case, we should not attempt to evaluate the inputs.
+        if (context.TransientProperties.TryGetValue("EvaluatingInputs", out var evaluatingInputs) && (bool)evaluatingInputs)
+            return;
+
         // To prevent a circular evaluation loop, set a flag on the context to indicate that we're currently evaluating the inputs.
         context.TransientProperties["EvaluatingInputs"] = true;
-        
+
         // Create input getters.
         await CreateInputAccessorsAsync(engine, context);
     }
 
+    private void CreateWorkflowInputAccessors(Engine engine, ExpressionExecutionContext context)
+    {
+        var input = context.GetWorkflowExecutionContext().Input;
+
+        foreach (var inputEntry in input)
+        {
+            var inputPascalName = inputEntry.Key.Pascalize();
+            var inputValue = inputEntry.Value;
+            engine.SetValue($"get{inputPascalName}", (Func<object?>)(() => inputValue));
+        }
+    }
+
     private async Task CreateInputAccessorsAsync(Engine engine, ExpressionExecutionContext context)
     {
-        var workflowDefinitionActivity = GetFirstWorkflowDefinitionActivity(context);
-
+        var workflowDefinitionActivity = context.GetActivityExecutionContext().GetFirstWorkflowDefinitionActivity();
         if (workflowDefinitionActivity == null)
             return;
 
-        var descriptor = _activityRegistry.Find(workflowDefinitionActivity.Type, workflowDefinitionActivity.Version)!;
-        var inputDefinitions = descriptor.Inputs;
-        
+        var workflowDefinitionActivityDescriptor = _activityRegistry.Find(workflowDefinitionActivity.Type, workflowDefinitionActivity.Version);
+        var inputDefinitions = workflowDefinitionActivityDescriptor?.Inputs ?? Enumerable.Empty<InputDescriptor>();
+
         foreach (var inputDefinition in inputDefinitions)
         {
             var inputPascalName = inputDefinition.Name.Pascalize();
@@ -68,7 +83,4 @@ public class WorkflowDefinitionActivityJavaScriptHandler : INotificationHandler<
             engine.SetValue($"get{inputPascalName}", (Func<object?>)(() => evaluatedExpression));
         }
     }
-
-    private static WorkflowDefinitionActivity? GetFirstWorkflowDefinitionActivity(ExpressionExecutionContext context) =>
-        context.GetActivityExecutionContext().GetFirstWorkflowDefinitionActivity();
 }
