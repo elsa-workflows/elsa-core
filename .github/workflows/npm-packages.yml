@@ -20,7 +20,7 @@ env:
 
 jobs:
   build_and_pack:
-    name: Build and Pack Elsa
+    name: Build workflow designer package
     runs-on: ubuntu-latest
     
     steps:
@@ -66,7 +66,7 @@ jobs:
         if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
       
   publish_npm_preview:
-    name: Publish npm (Preview)
+    name: Publish preview package to feedz
     needs: build_and_pack
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
@@ -86,7 +86,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.FEEDZ_IO_NPM }}
 
   publish_npm_release:
-    name: Publish to npm
+    name: Publish release package to npmjs
     needs: build_and_pack
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'release' }}
