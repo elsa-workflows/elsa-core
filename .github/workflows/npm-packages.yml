@@ -26,7 +26,7 @@ jobs:
     steps:
 
       - name: Set preview VERSION variable
-        run: echo "VERSION=$ELSA_VERSION-preview.${{ github.run_number }}" >> $GITHUB_ENV
+        run: echo "VERSION=$ELSA_VERSION-preview.${{ github.run_number + 63 }}" >> $GITHUB_ENV
         if: ${{ github.event_name != 'release' }}
 
       - name: Set release VERSION variable
@@ -64,14 +64,6 @@ jobs:
           name: designer-npm-package
           path: src/designer/elsa-workflows-designer/elsa-*.tgz
         if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
-      
-      - name: Build Bindings
-        working-directory: ./src/designer/bindings/aspnet/Elsa.Designer.Components.Web
-        run: |
-          npm install --force
-          npm install -g webpack
-          npm install -g webpack-cli
-          npm run build
       
   publish_npm_preview:
     name: Publish npm (Preview)
