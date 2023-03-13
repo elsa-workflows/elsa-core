@@ -12,6 +12,7 @@ on:
     branches:
       - v3
       - npm-update-pipeline
+      - .github/**
     paths:
       - src/designer/elsa-workflows-designer/**
 
