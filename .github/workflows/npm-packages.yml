@@ -27,7 +27,7 @@ jobs:
     steps:
 
       - name: Set preview VERSION variable
-        run: echo "VERSION=$ELSA_VERSION-preview.$((BUILD_NUMBER+64))" >> $GITHUB_ENV
+        run: echo "VERSION=$ELSA_VERSION-preview.${{ github.run_number }}" >> $GITHUB_ENV
         if: ${{ github.event_name != 'release' }}
 
       - name: Set release VERSION variable
