@@ -1,0 +1,112 @@
+name: Elsa 3 Workflow Designer 
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - v3
+    paths:
+      - src/designer/elsa-workflows-designer/**
+  pull_request:
+    branches:
+      - v3
+    paths:
+      - src/designer/elsa-workflows-designer/**
+
+env:
+  NODE_OPTIONS: --max-old-space-size=4096
+  ELSA_VERSION: 3.0.2
+
+jobs:
+  build_and_pack:
+    name: Build and Pack Elsa
+    runs-on: ubuntu-latest
+    
+    steps:
+
+      - name: Set preview VERSION variable
+        run: echo "VERSION=$ELSA_VERSION-preview.${{ github.run_number }}" >> $GITHUB_ENV
+        if: ${{ github.event_name != 'release' }}
+
+      - name: Set release VERSION variable
+        run: echo "VERSION=${{ github.ref_name }}" >> $GITHUB_ENV
+        if: ${{ github.event_name == 'release' }}
+
+      - name: Checkout
+        uses: actions/checkout@v1
+      
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.12.1
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+      
+      - run: echo $VERSION
+      - run: node --version
+      - run: npm --version
+
+      - name: Build Designer
+        working-directory: ./src/designer/elsa-workflows-designer
+        run: |
+          npm install --force
+          npm version $VERSION --allow-same-version
+          npm run build
+      - name: Pack Designer
+        working-directory: ./src/designer/elsa-workflows-designer
+        run: npm pack
+        if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
+
+      - name: Upload Designer Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: designer-npm-package
+          path: src/designer/elsa-workflows-designer/elsa-*.tgz
+        if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
+      
+      - name: Build Bindings
+        working-directory: ./src/designer/bindings/aspnet/Elsa.Designer.Components.Web
+        run: |
+          npm install --force
+          npm install -g webpack
+          npm install -g webpack-cli
+          npm run build
+      
+  publish_npm_preview:
+    name: Publish npm (Preview)
+    needs: build_and_pack
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
+    steps:
+      - name: Download NPM Package
+        uses: actions/download-artifact@v3
+        with:
+          name: designer-npm-package
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18.12.1
+          registry-url: 'https://f.feedz.io/elsa-workflows/elsa-3/npm/'
+
+      - run: npm publish *.tgz
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.FEEDZ_IO_NPM }}
+
+  publish_npm_release:
+    name: Publish to npm
+    needs: build_and_pack
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'release' }}
+    steps:
+      - name: Download NPM Package
+        uses: actions/download-artifact@v3
+        with:
+          name: designer-npm-package
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18.12.1
+          registry-url: 'https://registry.npmjs.org'
+
+      - run: npm publish *.tgz
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
