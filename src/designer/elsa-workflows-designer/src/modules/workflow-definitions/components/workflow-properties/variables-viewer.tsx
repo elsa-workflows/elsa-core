@@ -54,7 +54,7 @@ export class VariablesViewer {
   }
 
   private getVariableValue(variable: Variable, storage: StorageDriverDescriptor) : any {
-    if(storage.typeName !== 'Elsa.Workflows.Core.Implementations.WorkflowStorageDriver, Elsa.Workflows.Core')
+    if(storage?.typeName !== 'Elsa.Workflows.Core.Implementations.WorkflowStorageDriver, Elsa.Workflows.Core')
       return null;
 
     const workflowInstance = this.workflowInstance;

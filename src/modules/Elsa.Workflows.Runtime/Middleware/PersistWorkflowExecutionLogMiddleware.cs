@@ -36,6 +36,7 @@ public class PersistWorkflowExecutionLogMiddleware : WorkflowExecutionMiddleware
             Id = _identityGenerator.GenerateId(),
             ActivityInstanceId = x.ActivityInstanceId,
             ParentActivityInstanceId = x.ParentActivityInstanceId,
+            NodeId = x.NodeId,
             ActivityId = x.ActivityId,
             ActivityType = x.ActivityType,
             Message = x.Message,
