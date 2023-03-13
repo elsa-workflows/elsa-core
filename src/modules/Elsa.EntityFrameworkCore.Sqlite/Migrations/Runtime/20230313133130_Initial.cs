@@ -39,6 +39,7 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     ParentActivityInstanceId = table.Column<string>(type: "TEXT", nullable: true),
                     ActivityId = table.Column<string>(type: "TEXT", nullable: false),
                     ActivityType = table.Column<string>(type: "TEXT", nullable: false),
+                    NodeId = table.Column<string>(type: "TEXT", nullable: true),
                     Timestamp = table.Column<string>(type: "TEXT", nullable: false),
                     EventName = table.Column<string>(type: "TEXT", nullable: true),
                     Message = table.Column<string>(type: "TEXT", nullable: true),

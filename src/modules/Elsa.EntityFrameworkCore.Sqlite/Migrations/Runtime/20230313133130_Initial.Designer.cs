@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
 {
     [DbContext(typeof(RuntimeElsaDbContext))]
-    [Migration("20230307203337_Initial")]
+    [Migration("20230313133130_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -139,6 +139,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Message")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("NodeId")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ParentActivityInstanceId")

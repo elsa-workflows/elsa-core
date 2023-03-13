@@ -44,6 +44,7 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                     ParentActivityInstanceId = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     ActivityId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     ActivityType = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    NodeId = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Timestamp = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     EventName = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     Message = table.Column<string>(type: "nvarchar(max)", nullable: true),
