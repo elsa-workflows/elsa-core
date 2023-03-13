@@ -175,8 +175,12 @@ function updatePort(graph: Graph, node: Node<Node.Properties>, nodePort: PortMan
   return newNodePortId;
 }
 
+export function deriveNewPortId(portId: string) {
+  return uuid() + '_' + getPortNameByPortId(portId);
+}
+
 function createNewPort(nodePort: PortManager.PortMetadata, node: Node<Node.Properties>, newPortPosition: string) {
-  const newNodePortId = uuid() + '_' + getPortNameByPortId(nodePort.id);
+  const newNodePortId = deriveNewPortId(nodePort.id);
 
   node.addPort({
     ...nodePort,
@@ -223,7 +227,7 @@ export function adjustPortMarkupByNode(node: Node) {
   });
 }
 
-function createEdge(connection: Connection): Edge.Metadata {
+export function createEdge(connection: Connection): Edge.Metadata {
   return {
     shape: 'elsa-edge',
     zIndex: -1,

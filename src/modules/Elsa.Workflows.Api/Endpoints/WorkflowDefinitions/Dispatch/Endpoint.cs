@@ -34,11 +34,15 @@ internal class Endpoint : ElsaEndpoint<Request, Response>
             await SendNotFoundAsync(cancellationToken);
             return;
         }
+        
+        var correlationId = request.CorrelationId;
+        var input = (IDictionary<string, object>?)request.Input;
 
-        var result = await _workflowDispatcher.DispatchAsync(new DispatchWorkflowDefinitionRequest(
+        await _workflowDispatcher.DispatchAsync(new DispatchWorkflowDefinitionRequest(
                 request.DefinitionId,
                 VersionOptions.Published,
-                CorrelationId: request.CorrelationId),
+                input,
+                correlationId),
             cancellationToken);
 
         await SendOkAsync(new Response(), cancellationToken);

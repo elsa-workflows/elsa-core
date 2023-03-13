@@ -1,15 +1,21 @@
 using System.Reflection;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Services;
 
-namespace Elsa.Workflows.Core.ActivityNodeResolvers;
+namespace Elsa.Workflows.Core.PortResolvers;
 
+/// <summary>
+/// Returns a list of outbound activities for a given activity.
+/// </summary>
 public class OutboundActivityPortResolver : IActivityPortResolver
 {
+    /// <inheritdoc />
     public int Priority => -1;
+
+    /// <inheritdoc />
     public bool GetSupportsActivity(IActivity activity) => true;
 
+    /// <inheritdoc />
     public ValueTask<IEnumerable<IActivity>> GetPortsAsync(IActivity activity, CancellationToken cancellationToken = default) =>
         new(GetSinglePorts(activity)
             .Where(x => x != null)

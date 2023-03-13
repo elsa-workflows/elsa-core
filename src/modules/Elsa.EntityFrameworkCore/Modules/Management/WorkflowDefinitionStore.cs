@@ -31,7 +31,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         _workflowInstanceStore = workflowInstanceStore;
         _serializerOptionsProvider = serializerOptionsProvider;
     }
-    
+
     /// <inheritdoc />
     public async Task<WorkflowDefinition?> FindAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
@@ -130,10 +130,9 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
         var set = dbContext.WorkflowDefinitions;
         var queryable = set.AsQueryable();
-        var definitionIds = await Filter(queryable, filter).Select(x => x.DefinitionId).Distinct().ToListAsync(cancellationToken);
-        
-        await _workflowInstanceStore.DeleteWhereAsync(x => definitionIds.Contains(x.DefinitionId), cancellationToken);
-        return await _store.DeleteWhereAsync(x => definitionIds.Contains(x.DefinitionId), cancellationToken);
+        var ids = await Filter(queryable, filter).Select(x => x.Id).Distinct().ToListAsync(cancellationToken);
+        await _workflowInstanceStore.DeleteWhereAsync(x => ids.Contains(x.DefinitionVersionId), cancellationToken);
+        return await _store.DeleteWhereAsync(x => ids.Contains(x.Id), cancellationToken);
     }
 
     /// <inheritdoc />

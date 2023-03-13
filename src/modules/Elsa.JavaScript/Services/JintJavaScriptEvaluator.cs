@@ -70,6 +70,7 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         engine.SetValue("setCorrelationId", (Action<string?>)(value => context.GetActivityExecutionContext().WorkflowExecutionContext.CorrelationId = value));
         engine.SetValue("setVariable", (Action<string, object>)((name, value) => context.SetVariable(name, value)));
         engine.SetValue("getVariable", (Func<string, object?>)(name => context.GetVariable(name)));
+        engine.SetValue("getInput", (Func<string, object?>)(name => context.GetWorkflowExecutionContext().Input.GetValue(name)));
 
         // Create variable & input setters and getters for each variable.
         CreateMemoryBlockAccessors(engine, context);

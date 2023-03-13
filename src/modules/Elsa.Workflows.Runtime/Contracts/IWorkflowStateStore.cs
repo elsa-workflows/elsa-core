@@ -13,7 +13,6 @@ public interface IWorkflowStateStore
     /// </summary>
     ValueTask SaveAsync(string id, WorkflowState state, CancellationToken cancellationToken = default);
     
-    
     /// <summary>
     /// Load the <see cref="WorkflowState"/> by the specified ID. 
     /// </summary>

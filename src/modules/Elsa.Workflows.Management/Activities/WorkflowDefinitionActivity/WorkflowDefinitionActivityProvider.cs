@@ -1,12 +1,10 @@
 using Elsa.Common.Models;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Management.Activities;
-using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Humanizer;
 
-namespace Elsa.Workflows.Management.Providers;
+namespace Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 
 /// <summary>
 /// Provides activity descriptors based on <see cref="WorkflowDefinition"/>s stored in the database. 

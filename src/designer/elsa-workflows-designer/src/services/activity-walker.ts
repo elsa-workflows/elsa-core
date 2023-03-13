@@ -62,12 +62,6 @@ export function flattenList(activities: Array<ActivityNode>): Array<ActivityNode
   return list;
 }
 
-export function findActivity(root: Activity, predicate: (activity: Activity) => boolean): Activity {
-  const graph = walkActivities(root);
-  const nodes = this.nodes;
-  return nodes.find(node => predicate(node.activity))?.activity;
-}
-
 function walkRecursive(node: ActivityNode, activity: Activity, collectedActivities: Set<Activity>, collectedNodes: Set<ActivityNode>, descriptors: Array<ActivityDescriptor>) {
   const ports = getPorts(node, activity, descriptors);
 
@@ -77,14 +71,22 @@ function walkRecursive(node: ActivityNode, activity: Activity, collectedActiviti
 
     if (!childNode) {
       childNode = {activity: port.activity, children: [], parents: [], port: port.port};
-      collectedNodes.add(childNode);
+
+      if (!collectedNodes.has(childNode))
+        collectedNodes.add(childNode);
     }
 
     if (childNode !== node) {
-      if(!!childNode.activity) {
-        childNode.parents.push(node);
-        node.children.push(childNode);
-        collectedActivities.add(port.activity)
+      if (!!childNode.activity) {
+        if (!childNode.parents.includes(node))
+          childNode.parents.push(node);
+
+        if (!node.children.includes(childNode))
+          node.children.push(childNode);
+
+        if (!collectedActivities.has(port.activity))
+          collectedActivities.add(port.activity);
+
         walkRecursive(childNode, port.activity, collectedActivities, collectedNodes, descriptors);
       }
     }

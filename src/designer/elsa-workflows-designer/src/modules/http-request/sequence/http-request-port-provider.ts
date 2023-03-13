@@ -13,33 +13,38 @@ export class HttpRequestPortProvider implements PortProvider {
     if(activity == null)
       return [];
 
-    const defaultPort = {name: 'unmatchedStatusCode', displayName: 'Unmatched status code', mode: PortMode.Embedded, isBrowsable: false}; // Hide the port from the designer until the editor uI is finished.
-    const casesArray = this.getCases(activity);
-    const ports = casesArray.map(x => ({name: x.statusCode.toString(), displayName: x.statusCode.toString(), mode: PortMode.Embedded}));
+    const defaultPort = {name: 'unmatchedStatusCode', displayName: 'Unmatched status code', mode: PortMode.Embedded}; // Hide the port from the designer until the editor uI is finished.
+    const statusCodes = activity.expectedStatusCodes ?? [];
+    const ports = statusCodes.map(x => ({name: x.statusCode.toString(), displayName: x.statusCode.toString(), mode: PortMode.Embedded}));
 
     return [...ports, defaultPort];
   }
 
   resolvePort(portName: string, context: PortProviderContext): Activity | Array<Activity> {
     const activity = context.activity as SendHttpRequest;
-    const cases = this.getCases(activity);
-    const matchingStatusCode = cases.find(x => x.statusCode.toString() == portName);
-    return !matchingStatusCode ? activity.unmatchedStatusCode : matchingStatusCode.activity;
+
+    if(portName == 'unmatchedStatusCode')
+      return activity.unmatchedStatusCode;
+
+    const expectedStatusCodes: Array<HttpStatusCodeCase> = activity.expectedStatusCodes ?? [];
+    const matchingStatusCode = expectedStatusCodes.find(x => x.statusCode.toString() == portName);
+    return matchingStatusCode?.activity;
   }
 
   assignPort(portName: string, activity: Activity, context: PortProviderContext) {
     const sendHttpRequestActivity  = context.activity as SendHttpRequest;
-    const cases = this.getCases(sendHttpRequestActivity);
-    const matchingCase = cases.find(x => x.statusCode.toString() === portName);
 
-    if(!matchingCase)
+    if(portName == 'unmatchedStatusCode') {
+      sendHttpRequestActivity.unmatchedStatusCode = activity;
+      return;
+    }
+
+    const statusCodes = sendHttpRequestActivity.expectedStatusCodes ?? [];
+    const matchingStatusCode = statusCodes.find(x => x.statusCode.toString() === portName);
+
+    if(!matchingStatusCode)
       return;
 
-    matchingCase.activity = activity;
-  }
-
-  private getCases(activity: SendHttpRequest): Array<HttpStatusCodeCase> {
-    const cases = activity.expectedStatusCodes;
-    return !cases ? [] : cases;
+    matchingStatusCode.activity = activity;
   }
 }
