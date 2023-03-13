@@ -12,9 +12,9 @@ on:
     branches:
       - v3
       - npm-update-pipeline
-      - .github/**
     paths:
       - src/designer/elsa-workflows-designer/**
+      - .github/**
 
 env:
   NODE_OPTIONS: --max-old-space-size=4096
@@ -28,7 +28,7 @@ jobs:
     steps:
 
       - name: Set preview VERSION variable
-        run: echo "VERSION=$ELSA_VERSION-preview.$((BUILD_NUMBER+66))" >> $GITHUB_ENV
+        run: echo "VERSION=$ELSA_VERSION-preview.${{ github.run_number }}" >> $GITHUB_ENV
         if: ${{ github.event_name != 'release' }}
 
       - name: Set release VERSION variable
