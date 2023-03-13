@@ -4,14 +4,12 @@ on:
   push:
     branches:
       - v3
-      - npm-update-pipeline
     paths:
       - src/designer/elsa-workflows-designer/**
       - .github/**
   pull_request:
     branches:
       - v3
-      - npm-update-pipeline
     paths:
       - src/designer/elsa-workflows-designer/**
       - .github/**
