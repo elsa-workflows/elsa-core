@@ -1,5 +1,6 @@
 import {CellView, Graph, Node, Shape} from '@antv/x6';
-import {autoOrientConnections} from '../../utils/graph';
+import { v4 as uuid } from 'uuid';
+import {autoOrientConnections, createEdge, deriveNewPortId, getPortNameByPortId} from '../../utils/graph';
 import './ports';
 import {Activity} from "../../models";
 import {Connection} from "./models";
@@ -206,8 +207,7 @@ export function createGraph(
       const newCells = [];
 
       for (const cell of activityCells) {
-        const clonedCell = cell.clone();
-        clonedCell.isClone = true;
+        const clonedCell = cell.clone({keepId: false}) as any;
         const activity = {...clonedCell.getData()} as Activity;
         const activityTypeName = activity.type;
         const activityDescriptor = descriptorsStore.activityDescriptors.find(x => x.typeName == activityTypeName);
@@ -222,6 +222,9 @@ export function createGraph(
 
         clonedCell.replaceData(activity, {});
         clonedCell.activity = activity;
+        clonedCell.isClone = true;
+        clonedCell.id = activity.id;
+        clonedCell.store.data.id = activity.id;
 
         const clonedNode = clonedCell as Node;
         const position = clonedNode.getPosition();
@@ -234,12 +237,14 @@ export function createGraph(
       }
 
       for (const cell of connectionCells) {
-        const clonedCell = cell.clone();
-        const connection = {...clonedCell.getData()} as Connection;
+        const connection = {...cell.getData()} as Connection;
+        connection.sourcePort = deriveNewPortId(connection.sourcePort);
+        connection.targetPort = deriveNewPortId(connection.targetPort);
         connection.source = idMap[connection.source];
         connection.target = idMap[connection.target];
-        clonedCell.replaceData(connection);
-        newCells.push(clonedCell);
+        const newEdgeProps = createEdge(connection);
+        const edge = graph.createEdge(newEdgeProps);
+        newCells.push(edge);
       }
 
       graph.addCell(newCells, {});

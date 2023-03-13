@@ -19,6 +19,7 @@ export class DefaultNodeHandler implements ActivityNodeHandler {
     const portModels = this.createPorts(context);
 
     return {
+      id: activity.id,
       shape: 'activity',
       activity: activity,
       activityDescriptor: activityDescriptor,
