@@ -1,3 +1,6 @@
+using System.Text.Json.Serialization;
+using Elsa.Workflows.Core.Contracts;
+
 namespace Elsa.Workflows.Core.Models;
 
 /// <summary>
@@ -14,6 +17,7 @@ public class InputDescriptor : PropertyDescriptor
     public InputDescriptor(
         string name,
         Type type,
+        Func<IActivity, object?> valueAccessor,
         bool isWrapped,
         string uiHint,
         string displayName,
@@ -30,6 +34,7 @@ public class InputDescriptor : PropertyDescriptor
     {
         Name = name;
         Type = type;
+        ValueAccessor = valueAccessor;
         IsWrapped = isWrapped;
         UIHint = uiHint;
         DisplayName = displayName;
@@ -44,6 +49,12 @@ public class InputDescriptor : PropertyDescriptor
         IsSynthetic = isSynthetic;
         IsBrowsable = isBrowsable;
     }
+
+    /// <summary>
+    /// Returns the value of the input property for the specified activity.
+    /// </summary>
+    [JsonIgnore]
+    public Func<IActivity, object?> ValueAccessor { get; set; } = default!;
 
     /// <summary>
     /// True if the property is wrapped with an <see cref="Input{T}"/> type, false otherwise.

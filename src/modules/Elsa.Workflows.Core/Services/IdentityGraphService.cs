@@ -8,13 +8,15 @@ namespace Elsa.Workflows.Core.Services;
 public class IdentityGraphService : IIdentityGraphService
 {
     private readonly IActivityWalker _activityWalker;
+    private readonly IActivityRegistry _activityRegistry;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public IdentityGraphService(IActivityWalker activityWalker)
+    public IdentityGraphService(IActivityWalker activityWalker, IActivityRegistry activityRegistry)
     {
         _activityWalker = activityWalker;
+        _activityRegistry = activityRegistry;
     }
 
     /// <inheritdoc />
@@ -48,7 +50,8 @@ public class IdentityGraphService : IIdentityGraphService
     /// <inheritdoc />
     public void AssignInputOutputs(IActivity activity)
     {
-        var inputs = activity.GetInputs();
+        var activityDescriptor = _activityRegistry.Find(activity.Type, activity.Version) ?? throw new Exception("Activity descriptor not found");
+        var inputs = activityDescriptor.GetWrappedInputProperties(activity).Values.Where(x => x != null).Cast<Input>().ToList();
         var seed = 0;
 
         foreach (var input in inputs)

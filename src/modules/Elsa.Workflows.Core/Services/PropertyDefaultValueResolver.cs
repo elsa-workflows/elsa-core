@@ -1,9 +1,9 @@
 using System.Reflection;
 using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Core.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Workflows.Management.Services;
+namespace Elsa.Workflows.Core.Services;
 
 public class PropertyDefaultValueResolver : IPropertyDefaultValueResolver
 {

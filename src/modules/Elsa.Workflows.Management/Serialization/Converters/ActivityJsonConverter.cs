@@ -68,7 +68,6 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
         var activity = activityDescriptor.Constructor(context);
 
         // Reconstruct synthetic inputs.
-        
         foreach (var inputDescriptor in activityDescriptor.Inputs.Where(x => x.IsSynthetic))
         {
             var inputName = inputDescriptor.Name;

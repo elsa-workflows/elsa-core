@@ -2,6 +2,7 @@
 
 // ReSharper disable once CheckNamespace
 
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Management.Contracts;
 
 namespace Microsoft.Extensions.DependencyInjection;

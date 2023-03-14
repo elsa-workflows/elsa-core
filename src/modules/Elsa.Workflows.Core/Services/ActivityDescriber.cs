@@ -3,18 +3,14 @@ using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Elsa.Extensions;
-using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Services;
-using Elsa.Workflows.Management.Contracts;
-using Elsa.Workflows.Management.Models;
 using Humanizer;
 
-namespace Elsa.Workflows.Management.Services;
+namespace Elsa.Workflows.Core.Services;
 
 /// <inheritdoc />
 public class ActivityDescriber : IActivityDescriber
@@ -122,7 +118,8 @@ public class ActivityDescriber : IActivityDescriber
             outputAttribute?.IsBrowsable ?? true
         );
     }
-    
+
+    /// <inheritdoc />
     public InputDescriptor DescribeInputProperty(PropertyInfo propertyInfo)
     {
         var inputAttribute = propertyInfo.GetCustomAttribute<InputAttribute>();
@@ -138,6 +135,7 @@ public class ActivityDescriber : IActivityDescriber
         (
             inputAttribute?.Name ?? propertyInfo.Name,
             wrappedPropertyType,
+            propertyInfo.GetValue,
             isWrappedProperty,
             GetUIHint(wrappedPropertyType, inputAttribute),
             inputAttribute?.DisplayName ?? propertyInfo.Name.Humanize(LetterCasing.Title),
@@ -163,35 +161,7 @@ public class ActivityDescriber : IActivityDescriber
     
     public IEnumerable<InputDescriptor> DescribeInputProperties(IEnumerable<PropertyInfo> properties)
     {
-        foreach (var propertyInfo in properties)
-        {
-            var inputAttribute = propertyInfo.GetCustomAttribute<InputAttribute>();
-            var descriptionAttribute = propertyInfo.GetCustomAttribute<DescriptionAttribute>();
-            var propertyType = propertyInfo.PropertyType;
-            var isWrappedProperty = typeof(Input).IsAssignableFrom(propertyType);
-            var wrappedPropertyType = !isWrappedProperty ? propertyType : propertyInfo.PropertyType.GenericTypeArguments[0];
-
-            if (wrappedPropertyType.IsNullableType())
-                wrappedPropertyType = wrappedPropertyType.GetTypeOfNullable();
-
-            yield return new InputDescriptor
-            (
-                inputAttribute?.Name ?? propertyInfo.Name,
-                wrappedPropertyType,
-                isWrappedProperty,
-                GetUIHint(wrappedPropertyType, inputAttribute),
-                inputAttribute?.DisplayName ?? propertyInfo.Name.Humanize(LetterCasing.Title),
-                descriptionAttribute?.Description ?? inputAttribute?.Description,
-                _optionsResolver.GetOptions(propertyInfo),
-                inputAttribute?.Category,
-                inputAttribute?.Order ?? 0,
-                _defaultValueResolver.GetDefaultValue(propertyInfo),
-                inputAttribute?.DefaultSyntax,
-                //inputAttribute?.SupportedSyntaxes, TODO: Come up with a different way to specify support languages for activity inputs. By default, maybe all props should support all registered scripting languages?
-                inputAttribute?.IsReadOnly ?? false,
-                inputAttribute?.IsBrowsable ?? true
-            );
-        }
+        return properties.Select(DescribeInputProperty);
     }
 
     private IEnumerable<OutputDescriptor> DescribeOutputProperties(IEnumerable<PropertyInfo> properties) => properties.Select(DescribeOutputProperty);

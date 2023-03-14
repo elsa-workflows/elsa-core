@@ -7,15 +7,22 @@ using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Management.Providers;
 
+/// <summary>
+/// Provides expression syntax descriptors.
+/// </summary>
 public class DefaultExpressionSyntaxProvider : IExpressionSyntaxProvider
 {
     private readonly IIdentityGenerator _identityGenerator;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DefaultExpressionSyntaxProvider"/> class.
+    /// </summary>
     public DefaultExpressionSyntaxProvider(IIdentityGenerator identityGenerator)
     {
         _identityGenerator = identityGenerator;
     }
 
+    /// <inheritdoc />
     public ValueTask<IEnumerable<ExpressionSyntaxDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default)
     {
         var literal = CreateLiteralDescriptor();

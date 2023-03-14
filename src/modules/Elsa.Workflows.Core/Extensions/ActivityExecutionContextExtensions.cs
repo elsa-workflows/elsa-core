@@ -110,27 +110,32 @@ public static class ActivityExecutionContextExtensions
     public static async Task EvaluateInputPropertiesAsync(this ActivityExecutionContext context)
     {
         var activity = context.Activity;
+        var activityRegistry = context.GetRequiredService<IActivityRegistry>();
+        var activityDescriptor = activityRegistry.Find(activity.Type) ?? throw new Exception("Activity descriptor not found");
 
-        // TODO: Get inputs from activity descriptor.
-        var inputs = activity.GetNamedInputs();
-
-        var assignedInputs = inputs.Where(x => x.Value.MemoryBlockReference != null!).ToList();
+        var wrappedInputs = activityDescriptor
+            .GetWrappedInputProperties(activity)
+            .Where(x => x.Value is { MemoryBlockReference: { } })
+            .ToDictionary(x => x.Key, x => x.Value);
+        
         var evaluator = context.GetRequiredService<IExpressionEvaluator>();
         var stateSerializer = context.GetRequiredService<IActivityStateSerializer>();
         var expressionExecutionContext = context.ExpressionExecutionContext;
 
-        foreach (var input in assignedInputs)
+        foreach (var input in wrappedInputs)
         {
-            var memoryReference = input.Value.MemoryBlockReference();
+            var memoryReference = input.Value!.MemoryBlockReference();
             var value = await evaluator.EvaluateAsync(input.Value, expressionExecutionContext);
             memoryReference.Set(context, value);
 
-            // Also set the evaluated input value on the activity.
+            // Also store the evaluated input value in the activity state.
             var serializedValue = await stateSerializer.SerializeAsync(value);
             
             if(serializedValue.ValueKind != JsonValueKind.Undefined)
                 context.ActivityState[input.Key] = serializedValue;
         }
+        
+        // TODO: also store the non-synthetically assigned inputs in the activity state.
 
         context.SetHasEvaluatedProperties();
     }
@@ -151,7 +156,9 @@ public static class ActivityExecutionContextExtensions
     public static async Task<Input> EvaluateInputPropertyAsync(this ActivityExecutionContext context, string inputName)
     {
         var activity = context.Activity;
-        var input = activity.GetInput(inputName);
+        var activityRegistry = context.GetRequiredService<IActivityRegistry>();
+        var activityDescriptor = activityRegistry.Find(activity.Type) ?? throw new Exception("Activity descriptor not found");
+        var input = activityDescriptor.GetWrappedInputProperty(activity, inputName);
 
         if (input == null)
             throw new Exception($"No input with name {inputName} could be found");

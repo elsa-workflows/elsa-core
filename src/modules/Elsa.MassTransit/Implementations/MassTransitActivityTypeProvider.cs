@@ -5,6 +5,7 @@ using Elsa.MassTransit.Activities;
 using Elsa.MassTransit.Options;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Contracts;

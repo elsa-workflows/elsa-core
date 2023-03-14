@@ -1,4 +1,6 @@
 using Elsa.Common.Models;
+using Elsa.Extensions;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
@@ -84,7 +86,7 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
         };
     }
 
-    private IEnumerable<InputDescriptor> DescribeInputs(WorkflowDefinition definition)
+    private static IEnumerable<InputDescriptor> DescribeInputs(WorkflowDefinition definition)
     {
         var inputs = definition.Inputs.Select(inputDefinition =>
         {
@@ -94,6 +96,7 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
             {
                 Type = nakedType,
                 IsWrapped = true,
+                ValueAccessor = activity => ((WorkflowDefinitionActivity)activity).SyntheticProperties.GetValueOrDefault(inputDefinition.Name),
                 Name = inputDefinition.Name,
                 DisplayName = inputDefinition.DisplayName,
                 Description = inputDefinition.Description,
@@ -104,9 +107,7 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
         });
 
         foreach (var input in inputs)
-        {
             yield return input;
-        }
     }
 
     private static IEnumerable<OutputDescriptor> DescribeOutputs(WorkflowDefinition definition) =>
