@@ -1,8 +1,8 @@
 using System;
 using System.Reflection;
 using Elsa.Options;
-using MediatR;
 using MediatR.Registration;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Indexing.Extensions
 {
@@ -13,7 +13,9 @@ namespace Elsa.Indexing.Extensions
             var indexingOptions = new ElsaIndexingOptions(options.Services);
             configure.Invoke(indexingOptions);
 
-            ServiceRegistrar.AddMediatRClasses(options.Services, new[] { Assembly.GetExecutingAssembly() }, new MediatRServiceConfiguration());
+            var serviceConfiguration = new MediatRServiceConfiguration();
+            serviceConfiguration.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());
+            ServiceRegistrar.AddMediatRClasses(options.Services, serviceConfiguration);
 
             return options;
         }

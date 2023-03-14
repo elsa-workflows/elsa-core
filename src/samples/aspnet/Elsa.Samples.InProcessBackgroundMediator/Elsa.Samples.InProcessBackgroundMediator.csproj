@@ -5,9 +5,9 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
     </PropertyGroup>
-    
+
     <ItemGroup>
-        <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="10.0.1" />
+      <PackageReference Include="MediatR" Version="12.0.1" />
     </ItemGroup>
 
 </Project>

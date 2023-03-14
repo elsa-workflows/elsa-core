@@ -20,8 +20,7 @@
         <PackageReference Include="DistributedLock.Core" Version="1.0.4" />
         <PackageReference Include="DistributedLock.FileSystem" Version="1.0.1" />
         <PackageReference Include="Humanizer.Core" Version="2.13.14" />
-        <PackageReference Include="MediatR" Version="10.0.1" />
-        <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="10.0.1" />
+        <PackageReference Include="MediatR" Version="12.0.1" />
         <PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="7.0.0" />
         <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
         <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="6.0.0" />
