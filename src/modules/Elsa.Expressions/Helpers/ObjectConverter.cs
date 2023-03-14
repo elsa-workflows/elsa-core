@@ -1,5 +1,6 @@
 using System.Collections;
 using System.ComponentModel;
+using System.Dynamic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Contracts;
@@ -73,15 +74,17 @@ public static class ObjectConverter
 
             try
             {
-                if (stringValue.TrimStart().StartsWith("{"))
-                    return JsonSerializer.Deserialize(stringValue, underlyingTargetType);
+                var firstChar = stringValue.TrimStart().FirstOrDefault();
+                
+                if (firstChar is '{' or '[')
+                    return JsonSerializer.Deserialize(stringValue, underlyingTargetType, options);
             }
             catch (Exception e)
             {
                 throw new TypeConversionException($"Failed to deserialize {stringValue} to {underlyingTargetType}", value, underlyingTargetType, e);
             }
         }
-
+        
         if (targetType == typeof(object))
             return value;
 
@@ -91,6 +94,12 @@ public static class ObjectConverter
         if (underlyingSourceType == underlyingTargetType)
             return value;
 
+        if (underlyingSourceType == typeof(ExpandoObject) && underlyingTargetType.IsClass)
+        {
+            var expandoJson = JsonSerializer.Serialize(value);
+            return ConvertTo(expandoJson, underlyingTargetType, converterOptions);
+        }
+        
         var targetTypeConverter = TypeDescriptor.GetConverter(underlyingTargetType);
 
         if (targetTypeConverter.CanConvertFrom(underlyingSourceType))
