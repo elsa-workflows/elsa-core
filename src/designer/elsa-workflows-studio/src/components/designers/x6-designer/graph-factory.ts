@@ -220,53 +220,62 @@ export function addGraphEvents(graph,
       if (cellsJson) {
         disableEvents();
 
-        const cells = Model.fromJSON(JSON.parse(cellsJson)) as any;
-        if (!cells?.length) {
-          console.log("No cells to paste");
-          return;
-        }
-        cells.forEach((cell) => {
-          cell.model = null
-          cell.removeProp('zIndex')
-          cell.translate(0, 0);
-        });
-        graph.addCell(cells)
-        copyGraphCells(graph, cells); // So it would generate new cell ids to the cells in the clipboard
-
-        var activityIdsMap = cells.filter(x => !!x.activity).reduce(function(map, x) {
-          map[x.activity.activityId] = x.id;
-          return map;
-        }, {});
-
-        const nodePositions = cells.filter(x => !!x.activity).map(x => x.position({relative: false}));
-        const minX = Math.min(...nodePositions.map(x => x.x));
-        const minY = Math.min(...nodePositions.map(x => x.y));
-
-        graph.disableHistory();
-        for (const cell of cells) {
-          if (cell.activity) {
-            cell.activity.activityId = cell.id;
-
-            // Move the cells where the cursor is located
-            const cellPosition = cell.position({relative: false});
-            const point = graph.pageToLocal(_cursorX, _cursorY);
-            const newX = point.x + cellPosition.x - minX;
-            const newY = point.y + cellPosition.y - minY;
-            cell.position(newX, newY);
-
-            cell.activity.x = Math.round(newX);
-            cell.activity.y = Math.round(newY);
+        let cells = [];
+        try {
+          cells = Model.fromJSON(JSON.parse(cellsJson)) as any;
+          if (!cells?.length) {
+            console.log("No cells to paste");
+            return;
           }
-          else if (cell.data) {
-            cell.data.sourceId = activityIdsMap[cell.data.sourceId] || cell.data.sourceId;
-            cell.data.targetId = activityIdsMap[cell.data.targetId] || cell.data.targetId;
+          cells.forEach((cell) => {
+            cell.model = null
+            cell.removeProp('zIndex')
+            cell.translate(0, 0);
+          });
+          graph.addCell(cells)
+          copyGraphCells(graph, cells); // So it would generate new cell ids to the cells in the clipboard
+
+          var activityIdsMap = cells.filter(x => !!x.activity).reduce(function(map, x) {
+            map[x.activity.activityId] = x.id;
+            return map;
+          }, {});
+
+          const nodePositions = cells.filter(x => !!x.activity).map(x => x.position({relative: false}));
+          const minX = Math.min(...nodePositions.map(x => x.x));
+          const minY = Math.min(...nodePositions.map(x => x.y));
+
+          graph.disableHistory();
+          for (const cell of cells) {
+            if (cell.activity) {
+              cell.activity.activityId = cell.id;
+
+              // Move the cells where the cursor is located
+              const cellPosition = cell.position({relative: false});
+              const point = graph.pageToLocal(_cursorX, _cursorY);
+              const newX = point.x + cellPosition.x - minX;
+              const newY = point.y + cellPosition.y - minY;
+              cell.position(newX, newY);
+
+              cell.activity.x = Math.round(newX);
+              cell.activity.y = Math.round(newY);
+            }
+            else if (cell.data) {
+              cell.data.sourceId = activityIdsMap[cell.data.sourceId] || cell.data.sourceId;
+              cell.data.targetId = activityIdsMap[cell.data.targetId] || cell.data.targetId;
+            }
           }
         }
+        catch(error) {
+          console.error(error);
+        }
+
         graph.enableHistory();
 
         await enableEvents(true);
         graph.cleanSelection();
-        graph.select(cells);
+        if (cells.length) {
+          graph.select(cells);
+        }
       }
       return false
     });
