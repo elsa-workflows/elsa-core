@@ -79,7 +79,20 @@ public static class ActivityExecutionContextExtensions
             source = $"{Path.GetFileName(activity.Source)}:{activity.Line}";
 
         var activityState = includeActivityState ? context.ActivityState : default;
-        var logEntry = new WorkflowExecutionLogEntry(activityInstanceId, parentActivityInstanceId, activity.Id, activity.Type, activityState, now, eventName, message, source, payload);
+
+        var logEntry = new WorkflowExecutionLogEntry(
+            activityInstanceId,
+            parentActivityInstanceId,
+            activity.Id,
+            activity.Type,
+            context.NodeId,
+            activityState,
+            now,
+            eventName,
+            message,
+            source,
+            payload);
+
         workflowExecutionContext.ExecutionLog.Add(logEntry);
         return logEntry;
     }

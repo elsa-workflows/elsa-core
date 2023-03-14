@@ -44,6 +44,7 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                     ParentActivityInstanceId = table.Column<string>(type: "text", nullable: true),
                     ActivityId = table.Column<string>(type: "text", nullable: false),
                     ActivityType = table.Column<string>(type: "text", nullable: false),
+                    NodeId = table.Column<string>(type: "text", nullable: true),
                     Timestamp = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     EventName = table.Column<string>(type: "text", nullable: true),
                     Message = table.Column<string>(type: "text", nullable: true),

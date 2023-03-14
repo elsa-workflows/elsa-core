@@ -44,6 +44,7 @@ public record ExecutionLogRecord(
     string? ParentActivityInstanceId,
     string ActivityId,
     string ActivityType,
+    string NodeId,
     DateTimeOffset Timestamp,
     string? EventName,
     string? Message,

@@ -144,6 +144,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                     b.Property<string>("Message")
                         .HasColumnType("text");
 
+                    b.Property<string>("NodeId")
+                        .HasColumnType("text");
+
                     b.Property<string>("ParentActivityInstanceId")
                         .HasColumnType("text");
 

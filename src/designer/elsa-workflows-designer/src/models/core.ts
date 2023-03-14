@@ -22,10 +22,6 @@ export interface Activity {
   [name: string]: any;
 }
 
-export interface UniqueActivity extends Activity {
-  uniqueId: string;
-}
-
 export interface Trigger extends Activity {
 }
 
@@ -144,6 +140,7 @@ export interface ActivityExecutionContextState {
 
 export interface WorkflowExecutionLogRecord {
   id: string;
+  nodeId: string;
   activityInstanceId: string;
   parentActivityInstanceId?: string;
   activityId: string;

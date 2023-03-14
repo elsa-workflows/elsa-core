@@ -42,7 +42,12 @@ public class WorkflowExecutionLogRecord : Entity
     /// The type of the activity.
     /// </summary>
     public string ActivityType { get; set; } = default!;
-    
+
+    /// <summary>
+    /// The unique ID of the node within the workflow graph.
+    /// </summary>
+    public string NodeId { get; set; } = default!;
+
     /// <summary>
     /// The time stamp of the log entry.
     /// </summary>

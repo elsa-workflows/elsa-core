@@ -138,6 +138,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     b.Property<string>("Message")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("NodeId")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("ParentActivityInstanceId")
                         .HasColumnType("TEXT");
 
