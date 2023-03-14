@@ -1,4 +1,4 @@
-import {CellView, Graph, Node} from '@antv/x6';
+import {CellView, Edge, Graph, Node, Model} from '@antv/x6';
 import './ports';
 import {ActivityNodeShape} from './shapes';
 
@@ -191,11 +191,17 @@ export function addGraphEvents(graph,
 
     })
 
-    graph.bindKey(['meta+c', 'ctrl+c'], () => {
-      const cells = graph.getSelectedCells()
+    function copyGraphCells(graph, cells) {
       if (cells.length) {
         graph.copy(cells)
       }
+      const cellsJson = localStorage.getItem("x6.clipboard.cells");
+      navigator.clipboard.writeText(cellsJson);
+    }
+
+    graph.bindKey(['meta+c', 'ctrl+c'], () => {
+      const cells = graph.getSelectedCells();
+      copyGraphCells(graph, cells);
       return false
     });
 
@@ -204,14 +210,28 @@ export function addGraphEvents(graph,
       if (cells.length) {
         graph.cut(cells)
       }
-      return false
+      const cellsJson = localStorage.getItem("x6.clipboard.cells");
+      navigator.clipboard.writeText(cellsJson);
+      return false;
     });
 
     graph.bindKey(['meta+v', 'ctrl+v'], async () => {
-      if (!graph.isClipboardEmpty()) {
+      var cellsJson = await navigator.clipboard.readText();
+      if (cellsJson) {
         disableEvents();
 
-        const cells = graph.paste({ offset: 30});
+        const cells = Model.fromJSON(JSON.parse(cellsJson)) as any;
+        if (!cells?.length) {
+          console.log("No cells to paste");
+          return;
+        }
+        cells.forEach((cell) => {
+          cell.model = null
+          cell.removeProp('zIndex')
+          cell.translate(0, 0);
+        });
+        graph.addCell(cells)
+        copyGraphCells(graph, cells); // So it would generate new cell ids to the cells in the clipboard
 
         var activityIdsMap = cells.filter(x => !!x.activity).reduce(function(map, x) {
           map[x.activity.activityId] = x.id;
