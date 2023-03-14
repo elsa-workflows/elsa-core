@@ -8,4 +8,5 @@ export interface SwitchCase {
 
 export interface SwitchActivity extends Activity {
   cases: Array<SwitchCase>;
+  default?: Activity;
 }
