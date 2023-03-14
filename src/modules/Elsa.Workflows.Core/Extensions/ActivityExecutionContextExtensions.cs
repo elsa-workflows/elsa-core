@@ -9,7 +9,6 @@ using Elsa.Workflows.Core.Activities.Flowchart.Models;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Core.Signals;
 using Microsoft.Extensions.Logging;
 
@@ -128,7 +127,9 @@ public static class ActivityExecutionContextExtensions
 
             // Also set the evaluated input value on the activity.
             var serializedValue = await stateSerializer.SerializeAsync(value);
-            context.ActivityState[input.Key] = serializedValue;
+            
+            if(serializedValue.ValueKind != JsonValueKind.Undefined)
+                context.ActivityState[input.Key] = serializedValue;
         }
 
         context.SetHasEvaluatedProperties();
@@ -160,7 +161,6 @@ public static class ActivityExecutionContextExtensions
 
         var evaluator = context.GetRequiredService<IExpressionEvaluator>();
         var expressionExecutionContext = context.ExpressionExecutionContext;
-
         var memoryBlockReference = input.MemoryBlockReference();
         var value = await evaluator.EvaluateAsync(input, expressionExecutionContext);
         memoryBlockReference.Set(context, value);
