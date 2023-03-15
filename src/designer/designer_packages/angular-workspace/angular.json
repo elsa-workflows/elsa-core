@@ -35,6 +35,103 @@
           }
         }
       }
+    },
+    "AngularElsaDashboard": {
+      "projectType": "application",
+      "schematics": {},
+      "root": "projects/angular-elsa-dashboard",
+      "sourceRoot": "projects/angular-elsa-dashboard/src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:browser",
+          "options": {
+            "outputPath": "dist/angular-elsa-dashboard",
+            "index": "projects/angular-elsa-dashboard/src/index.html",
+            "main": "projects/angular-elsa-dashboard/src/main.ts",
+            "polyfills": [
+              "zone.js"
+            ],
+            "tsConfig": "projects/angular-elsa-dashboard/tsconfig.app.json",
+            "assets": [
+              "projects/angular-elsa-dashboard/src/favicon.ico",
+              "projects/angular-elsa-dashboard/src/assets",
+              { "glob": "**/*", "input": "../../node_modules/@elsa-workflows/elsa-workflows-designer/dist/elsa-workflows-designer/assets", "output": "./assets/" },
+              { "glob": "*.css", "input": "../../node_modules/@elsa-workflows/elsa-workflows-designer/dist/elsa-workflows-designer", "output": "./assets/" },
+           
+            ],
+            "styles": [
+              "projects/angular-elsa-dashboard/src/styles.css"
+            ],
+            "scripts": []
+          },
+          "configurations": {
+            "production": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kb",
+                  "maximumError": "1mb"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "2kb",
+                  "maximumError": "4kb"
+                }
+              ],
+              "outputHashing": "all"
+            },
+            "development": {
+              "buildOptimizer": false,
+              "optimization": false,
+              "vendorChunk": true,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "namedChunks": true
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "options": {
+            "port": 4208
+          },
+          "builder": "@angular-devkit/build-angular:dev-server",
+          "configurations": {
+            "production": {
+              "browserTarget": "AngularElsaDashboard:build:production"
+            },
+            "development": {
+              "browserTarget": "AngularElsaDashboard:build:development"
+            }
+          },
+          "defaultConfiguration": "development"
+        },
+        "extract-i18n": {
+          "builder": "@angular-devkit/build-angular:extract-i18n",
+          "options": {
+            "browserTarget": "AngularElsaDashboard:build"
+          }
+        },
+        "test": {
+          "builder": "@angular-devkit/build-angular:karma",
+          "options": {
+            "polyfills": [
+              "zone.js",
+              "zone.js/testing"
+            ],
+            "tsConfig": "projects/angular-elsa-dashboard/tsconfig.spec.json",
+            "assets": [
+              "projects/angular-elsa-dashboard/src/favicon.ico",
+              "projects/angular-elsa-dashboard/src/assets"
+            ],
+            "styles": [
+              "projects/angular-elsa-dashboard/src/styles.css"
+            ],
+            "scripts": []
+          }
+        }
+      }
     }
   }
 }
