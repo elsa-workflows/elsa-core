@@ -6,7 +6,7 @@
   "module": "./dist/index.js",
   "es2015": "./dist/esm/index.mjs",
   "es2017": "./dist/esm/index.mjs",
-  "types": "./dist/types/components.d.ts",
+  "types": "./dist/types/interfaces.d.ts",
   "collection": "./dist/collection/collection-manifest.json",
   "collection:main": "./dist/collection/index.js",
   "unpkg": "./dist/elsa-workflows-designer/elsa-workflows-designer.esm.js",
@@ -50,6 +50,7 @@
   },
   "devDependencies": {
     "@fullhuman/postcss-purgecss": "^5.0.0",
+    "@stencil/angular-output-target": "^0.5.0",
     "@stencil/postcss": "^2.1.0",
     "@stencil/sass": "^2.0.1",
     "@tailwindcss/aspect-ratio": "^0.4.2",

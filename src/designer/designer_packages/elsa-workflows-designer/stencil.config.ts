@@ -5,6 +5,8 @@ import autoprefixer from 'autoprefixer';
 import tailwindcss from 'tailwindcss';
 import purgecss from '@fullhuman/postcss-purgecss';
 
+import { angularOutputTarget } from '@stencil/angular-output-target';
+
 // @ts-ignore
 const dev: boolean = process.argv && process.argv.indexOf('--dev') > -1;
 
@@ -19,6 +21,11 @@ export const config: Config = {
     {
       type: 'dist-custom-elements',
     },
+    angularOutputTarget({
+      componentCorePackage: '@elsa-workflows/elsa-workflows-designer',
+      directivesProxyFile: '../angular-workspace/projects/component-library/src/lib/stencil-generated/components.ts',
+      directivesArrayFile: '../angular-workspace/projects/component-library/src/lib/stencil-generated/index.ts',
+    }),
     {
       type: 'www',
       serviceWorker: null, // disable service workers
