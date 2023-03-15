@@ -2,7 +2,7 @@
   "name": "root",
   "private": true,
   "workspaces": [
-    "desginer_packages/*"
+    "designer_packages/*"
   ],
   "devDependencies": {
     "@types/node": "^18.15.3",
