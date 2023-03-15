@@ -1,4 +1,3 @@
-using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Models;
@@ -24,13 +23,13 @@ public class Complete : Activity
 
     /// <inheritdoc />
     public Complete(IEnumerable<string> outcomes, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
-        : this(new Input<ICollection<string>>(outcomes.ToList()), source, line)
+        : this(new Input<object>(outcomes.ToList()), source, line)
     {
     }
 
     /// <inheritdoc />
     public Complete(Func<ExpressionExecutionContext, ICollection<string>> outcomes, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
-        : this(new Input<ICollection<string>>(outcomes), source, line)
+        : this(new Input<object>(outcomes), source, line)
     {
     }
 
@@ -41,7 +40,7 @@ public class Complete : Activity
     }
 
     /// <inheritdoc />
-    public Complete(Input<ICollection<string>> outcomes, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line)
+    public Complete(Input<object> outcomes, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line)
     {
         Outcomes = outcomes;
     }
@@ -54,14 +53,39 @@ public class Complete : Activity
         UIHint = InputUIHints.OutcomePicker,
         DefaultSyntax = "Json"
     )]
-    public Input<ICollection<string>> Outcomes { get; set; } = new(new List<string>());
+    public Input<object> Outcomes { get; set; } = default!;
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        var outcomes = Outcomes.Get(context).ToArray();
+        var outcomesValue = Outcomes.TryGet(context);
+        var outcomes = InterpretOutcomes(outcomesValue).ToArray();
+        
         await context.SendSignalAsync(new CompleteCompositeSignal(new Outcomes(outcomes)));
         
         // Don't complete this activity, as it will be completed by the composite activity.
+    }
+
+    private static IEnumerable<string> InterpretOutcomes(object? outcomesValue)
+    {
+        switch (outcomesValue)
+        {
+            case string singleOutcome:
+                yield return singleOutcome;
+                break;
+            case IEnumerable<string> outcomeStrings:
+                foreach (var outcome in outcomeStrings)
+                    yield return outcome;
+                break;
+            case IEnumerable<object> outcomeObjects:
+            {
+                foreach (var outcome in outcomeObjects)
+                    yield return outcome.ToString()!;
+                break;
+            }
+            default:
+                yield return "Done";
+                break;
+        }
     }
 }

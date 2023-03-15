@@ -1,5 +1,6 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
@@ -75,12 +76,14 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
 
         // Create variable & input setters and getters for each variable.
         CreateMemoryBlockAccessors(engine, context);
-        
 
         engine.SetValue("isNullOrWhiteSpace", (Func<string, bool>)(value => string.IsNullOrWhiteSpace(value)));
         engine.SetValue("isNullOrEmpty", (Func<string, bool>)(value => string.IsNullOrEmpty(value)));
         engine.SetValue("parseGuid", (Func<string, Guid>)(value => Guid.Parse(value)));
         engine.SetValue("toJson", (Func<object, string>)(value => Serialize(value)));
+        engine.SetValue("getShortGuid", (Func<string, string>)(value => Regex.Replace(Convert.ToBase64String(Guid.NewGuid().ToByteArray()), "[/+=]", "")));
+        engine.SetValue("getGuid", (Func<string, Guid>)(value => Guid.NewGuid()));
+        engine.SetValue("getGuidString", (Func<string, string>)(value => Guid.NewGuid().ToString()));
 
         // Add common .NET types.
         engine.RegisterType<DateTime>();

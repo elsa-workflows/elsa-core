@@ -45,7 +45,7 @@ public class Export : ElsaEndpoint<Request>
     {
         var serializerOptions = _serializerOptionsProvider.CreateApiOptions();
         var versionOptions = request.VersionOptions != null ? VersionOptions.FromString(request.VersionOptions) : VersionOptions.Latest;
-        var definition = (await _store.FindManyAsync(new WorkflowDefinitionFilter{ DefinitionId = request.DefinitionId, VersionOptions = versionOptions}, cancellationToken: cancellationToken)).FirstOrDefault();
+        var definition = (await _store.FindManyAsync(new WorkflowDefinitionFilter { DefinitionId = request.DefinitionId, VersionOptions = versionOptions }, cancellationToken: cancellationToken)).FirstOrDefault();
 
         if (definition == null)
         {
@@ -65,7 +65,10 @@ public class Export : ElsaEndpoint<Request>
             definition.Version,
             variables,
             definition.Inputs,
+            definition.Outputs,
+            definition.Outcomes,
             definition.CustomProperties,
+            definition.UsableAsActivity,
             definition.IsLatest,
             definition.IsPublished,
             workflow.Root);
