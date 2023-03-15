@@ -80,7 +80,8 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         engine.SetValue("parseGuid", (Func<string, Guid>)(value => Guid.Parse(value)));
         engine.SetValue("toJson", (Func<object, string>)(value => Serialize(value)));
         engine.SetValue("getShortGuid", (Func<string, string>)(value => Regex.Replace(Convert.ToBase64String(Guid.NewGuid().ToByteArray()), "[/+=]", "")));
-        engine.SetValue("getFullGuid", (Func<string, Guid>)(value => Guid.NewGuid()));
+        engine.SetValue("getGuid", (Func<string, Guid>)(value => Guid.NewGuid()));
+        engine.SetValue("getGuidString", (Func<string, string>)(value => Guid.NewGuid().ToString()));
 
         // Add common .NET types.
         engine.RegisterType<DateTime>();

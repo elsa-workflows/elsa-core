@@ -62,8 +62,12 @@ internal class CommonFunctionsDefinitionProvider : FunctionDefinitionProvider
             .ReturnType("string"));
 
         yield return CreateFunctionDefinition(builder => builder
-            .Name("getFullGuid")
+            .Name("getGuid")
             .ReturnType("Guid"));
+
+        yield return CreateFunctionDefinition(builder => builder
+            .Name("getGuidString")
+            .ReturnType("string"));
 
         yield return CreateFunctionDefinition(builder => builder
             .Name("toJson")
