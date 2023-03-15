@@ -57,6 +57,16 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
             IsBrowsable = true,
             Mode = PortMode.Port
         }).ToList();
+        
+        var rootPort = new Port
+        {
+            Name = nameof(WorkflowDefinitionActivity.Root),
+            DisplayName = "Root",
+            IsBrowsable = false,
+            Mode = PortMode.Embedded
+        };
+        
+        ports.Insert(0, rootPort);
 
         return new()
         {
