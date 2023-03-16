@@ -7,9 +7,9 @@ using Elsa.Workflows.Core.Attributes;
 namespace Elsa.Workflows.Core.Serialization.Converters;
 
 /// <summary>
-/// Ignores properties with the <see cref="JsonExpandableAttribute"/> attribute.
+/// Ignores properties with the <see cref="JsonIgnoreCompositeRootAttribute"/> attribute.
 /// </summary>
-public class JsonExpandableConverter<T> : JsonConverter<T>
+public class JsonIgnoreCompositeRootConverter<T> : JsonConverter<T>
 {
     /// <inheritdoc />
     public override T Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
@@ -30,7 +30,7 @@ public class JsonExpandableConverter<T> : JsonConverter<T>
             if (property.GetCustomAttribute<JsonIgnoreAttribute>() != null)
                 continue;
             
-            if (property.GetCustomAttribute<JsonExpandableAttribute>() != null)
+            if (property.GetCustomAttribute<JsonIgnoreCompositeRootAttribute>() != null)
                 continue;
 
             var propName = options.PropertyNamingPolicy?.ConvertName(property.Name) ?? property.Name;
@@ -43,9 +43,9 @@ public class JsonExpandableConverter<T> : JsonConverter<T>
 }
 
 /// <summary>
-/// A <see cref="JsonConverterFactory"/> that creates <see cref="JsonExpandableConverter{T}"/> instances.
+/// A <see cref="JsonConverterFactory"/> that creates <see cref="JsonIgnoreCompositeRootConverter{T}"/> instances.
 /// </summary>
-public class JsonExpandableConverterFactory<T> : JsonConverterFactory
+public class JsonIgnoreCompositeRootConverterFactory<T> : JsonConverterFactory
 {
     /// <inheritdoc />
     public override bool CanConvert(Type typeToConvert) => typeof(T).IsAssignableFrom(typeToConvert);
@@ -53,6 +53,6 @@ public class JsonExpandableConverterFactory<T> : JsonConverterFactory
     /// <inheritdoc />
     public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
     {
-        return new JsonExpandableConverter<T>();
+        return new JsonIgnoreCompositeRootConverter<T>();
     }
 }

@@ -7,7 +7,6 @@ using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Management.Contracts;
 using Humanizer;
 
 namespace Elsa.Workflows.Management.Serialization.Converters;

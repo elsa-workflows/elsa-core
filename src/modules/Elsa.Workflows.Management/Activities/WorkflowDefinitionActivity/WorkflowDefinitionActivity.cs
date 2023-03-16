@@ -4,7 +4,6 @@ using Elsa.Extensions;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Core.Signals;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
@@ -21,7 +20,7 @@ public class WorkflowDefinitionActivity : Activity, IInitializable
     /// <summary>
     /// The activity to schedule for execution.
     /// </summary>
-    [JsonExpandable]
+    [JsonIgnoreCompositeRoot]
     public IActivity Root { get; set; } = default!;
 
     /// <summary>

@@ -28,6 +28,7 @@ public class Flowchart : Container
     }
 
     [Port] [Browsable(false)] public IActivity? Start { get; set; }
+    
     /// <summary>
     /// A list of connections between activities.
     /// </summary>
