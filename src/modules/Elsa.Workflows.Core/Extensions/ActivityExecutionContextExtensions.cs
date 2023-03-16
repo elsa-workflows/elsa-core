@@ -128,15 +128,13 @@ public static class ActivityExecutionContextExtensions
             var value = await evaluator.EvaluateAsync(input.Value, expressionExecutionContext);
             memoryReference.Set(context, value);
 
-            // Also store the evaluated input value in the activity state.
+            // Store the evaluated input value in the activity state.
             var serializedValue = await stateSerializer.SerializeAsync(value);
             
             if(serializedValue.ValueKind != JsonValueKind.Undefined)
                 context.ActivityState[input.Key] = serializedValue;
         }
         
-        // TODO: also store the non-synthetically assigned inputs in the activity state.
-
         context.SetHasEvaluatedProperties();
     }
 

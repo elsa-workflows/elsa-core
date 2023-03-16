@@ -40,7 +40,7 @@ public class WorkflowDefinitionActivityJavaScriptHandler : INotificationHandler<
         CreateWorkflowInputAccessors(engine, context);
         
         // Create input getters.
-        CreateInputAccessors(engine, context);
+        CreateCompositeActivityInputAccessors(engine, context);
         
         return Task.CompletedTask;
     }
@@ -57,7 +57,7 @@ public class WorkflowDefinitionActivityJavaScriptHandler : INotificationHandler<
         }
     }
 
-    private void CreateInputAccessors(Engine engine, ExpressionExecutionContext context)
+    private void CreateCompositeActivityInputAccessors(Engine engine, ExpressionExecutionContext context)
     {
         var workflowDefinitionActivity = context.GetActivityExecutionContext().GetFirstWorkflowDefinitionActivity();
         
