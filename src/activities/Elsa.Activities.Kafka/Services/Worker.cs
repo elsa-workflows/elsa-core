@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -93,9 +94,13 @@ namespace Elsa.Activities.Kafka.Services
             var bookmark = new MessageReceivedBookmark(config.ConnectionString, config.Topic, config.Group, GetHeaders(ev.Message.Headers), config.AutoOffsetReset);
             var launchContext = new WorkflowsQuery(ActivityType, bookmark, TenantId: tenantId);
 
+            var messageInput = new ExpandoObject();
+            messageInput.TryAdd("message", ev.Message.Value);
+            messageInput.TryAdd("headers", ev.Message.Headers);
+            
             using var scope = _scopeFactory.CreateScope();
             var workflowLaunchpad = scope.ServiceProvider.GetRequiredService<IWorkflowLaunchpad>();
-            await workflowLaunchpad.CollectAndDispatchWorkflowsAsync(launchContext, new WorkflowInput(ev.Message.Value), cancellationToken);
+            await workflowLaunchpad.CollectAndDispatchWorkflowsAsync(launchContext, new WorkflowInput(messageInput), cancellationToken);
 
             // Launch all activities where the trigger inherits from ActivityType
             if (_kafkaCustomActivityProvider != null && _kafkaCustomActivityProvider.KafkaOverrideTriggers != null)
@@ -103,7 +108,7 @@ namespace Elsa.Activities.Kafka.Services
                 foreach (var t in _kafkaCustomActivityProvider.KafkaOverrideTriggers)
                 {
                     var customLaunchContext = new WorkflowsQuery(t ?? "", bookmark, TenantId: tenantId);
-                    await workflowLaunchpad.CollectAndDispatchWorkflowsAsync(customLaunchContext, new WorkflowInput(ev.Message.Value), cancellationToken);
+                    await workflowLaunchpad.CollectAndDispatchWorkflowsAsync(customLaunchContext, new WorkflowInput(messageInput), cancellationToken);
                 }
             }
         }
