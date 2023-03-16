@@ -5,7 +5,7 @@ using Elsa.Workflows.Core.Contracts;
 namespace Elsa.Workflows.Core.Services;
 
 /// <summary>
-/// A data drive that stores objects in the workflow state itself.
+/// A storage driver that stores objects in the workflow state itself.
 /// </summary>
 [Display(Name = "Workflow")]
 public class WorkflowStorageDriver : IStorageDriver

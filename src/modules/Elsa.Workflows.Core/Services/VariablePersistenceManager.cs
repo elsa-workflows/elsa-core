@@ -20,31 +20,33 @@ public class VariablePersistenceManager : IVariablePersistenceManager
     }
 
     /// <inheritdoc />
-    public IEnumerable<Variable> GetVariables(WorkflowExecutionContext context) => context.Workflow.Variables.Where(x => x.StorageDriverType != null).ToList();
+    public IEnumerable<Variable> GetAllVariables(WorkflowExecutionContext context)
+    {
+        var activityExecutionContexts = context.ActivityExecutionContexts;
+        var variables = activityExecutionContexts.SelectMany(GetLocalVariables).ToList();
+        return variables;
+    }
 
     /// <inheritdoc />
-    public IEnumerable<Variable> GetVariables(ActivityExecutionContext context)
+    public IEnumerable<Variable> GetLocalVariables(ActivityExecutionContext context)
     {
         // Get variables for the current activity itself, if it's a container.
-        return context.Activity is Composite composite
-            ? composite.Variables.Where(x => x.StorageDriverType != null)
+        return context.Activity is IVariableContainer container
+            ? container.Variables.Where(x => x.StorageDriverType != null)
             : Enumerable.Empty<Variable>();
     }
 
     /// <inheritdoc />
     public IEnumerable<Variable> GetVariablesInScope(ActivityExecutionContext context)
     {
-        // Get variables between the current activity and immediate composite container.
-        var ancestors = context.ActivityNode.Ancestors();
-        
+        // Get variables between the current activity and immediate parent variable containers.
+        var ancestors = new[] { context.ActivityNode }.Concat(context.ActivityNode.Ancestors()).ToList();
+
         foreach (var node in ancestors)
         {
             if (node.Activity is IVariableContainer variableContainer)
                 foreach (var variable in variableContainer.Variables)
                     yield return variable;
-
-            if (node.Activity is Composite)
-                break;
         }
     }
 
@@ -82,24 +84,26 @@ public class VariablePersistenceManager : IVariablePersistenceManager
     }
 
     /// <inheritdoc />
-    public async Task SaveVariablesAsync(WorkflowExecutionContext context)
+    public async Task SaveVariablesAsync(WorkflowExecutionContext context, IEnumerable<Variable> variables)
     {
+        var variableList = variables.ToList();
         var register = context.MemoryRegister;
 
         // Foreach variable memory block, save its value using their associated storage driver.
         var cancellationToken = context.CancellationToken;
         var storageDriverContext = new StorageDriverContext(context, cancellationToken);
-        var blocks = register.Blocks.Values.Where(x => x.Metadata is VariableBlockMetadata { StorageDriverType: not null }).ToList();
+        //var blocks = register.Blocks.Values.Where(x => x.Metadata is VariableBlockMetadata { StorageDriverType: not null }).ToList();
 
-        foreach (var block in blocks)
+        foreach (var variable in variableList)
         {
+            var block = variable.GetBlock(context.MemoryRegister);
             var metadata = (VariableBlockMetadata)block.Metadata!;
             var driver = _storageDriverManager.Get(metadata.StorageDriverType!);
 
             if (driver == null)
                 continue;
 
-            var variable = metadata.Variable;
+            //var variable = metadata.Variable;
             var id = GetStateId(context, variable);
             var value = block.Value;
 

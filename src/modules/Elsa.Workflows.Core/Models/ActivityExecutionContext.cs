@@ -8,35 +8,60 @@ using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Core.Models;
 
+/// <summary>
+/// Represents the context of an activity execution.
+/// </summary>
 public class ActivityExecutionContext
 {
     private readonly List<Bookmark> _bookmarks = new();
     private long _executionCount;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ActivityExecutionContext"/> class.
+    /// </summary>
     public ActivityExecutionContext(
         WorkflowExecutionContext workflowExecutionContext,
         ActivityExecutionContext? parentActivityExecutionContext,
         ExpressionExecutionContext expressionExecutionContext,
         IActivity activity,
+        ActivityDescriptor activityDescriptor,
         CancellationToken cancellationToken)
     {
         WorkflowExecutionContext = workflowExecutionContext;
         ParentActivityExecutionContext = parentActivityExecutionContext;
         ExpressionExecutionContext = expressionExecutionContext;
         Activity = activity;
+        ActivityDescriptor = activityDescriptor;
         CancellationToken = cancellationToken;
         Id = Guid.NewGuid().ToString();
     }
 
+    /// <summary>
+    /// The ID of the current activity execution context.
+    /// </summary>
     public string Id { get; set; }
+    
+    /// <summary>
+    /// The workflow execution context. 
+    /// </summary>
     public WorkflowExecutionContext WorkflowExecutionContext { get; }
+    
+    /// <summary>
+    /// The parent activity execution context, if any. 
+    /// </summary>
     public ActivityExecutionContext? ParentActivityExecutionContext { get; internal set; }
+    
+    /// <summary>
+    /// The expression execution context.
+    /// </summary>
     public ExpressionExecutionContext ExpressionExecutionContext { get; }
 
     /// <summary>
     /// The currently executing activity.
     /// </summary>
     public IActivity Activity { get; set; }
+
+    public ActivityDescriptor ActivityDescriptor { get; }
 
     /// <summary>
     /// A cancellation token to use when invoking asynchronous operations.
@@ -239,7 +264,7 @@ public class ActivityExecutionContext
         return value != default ? value.ConvertTo<T>() : default;
     }
 
-    public void Set(MemoryBlockReference blockReference, object? value) => ExpressionExecutionContext.Set(blockReference, value);
+    public void Set(MemoryBlockReference blockReference, object? value, Action<MemoryBlock>? configure = default) => ExpressionExecutionContext.Set(blockReference, value, configure);
     public void Set(Output? output, object? value) => ExpressionExecutionContext.Set(output, value);
     public void Set<T>(Output<T>? output, T? value) => ExpressionExecutionContext.Set(output, value);
 

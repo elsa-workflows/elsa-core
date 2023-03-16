@@ -42,16 +42,16 @@ public static class ExpressionExecutionContextExtensions
     public static Variable SetVariable<T>(this ExpressionExecutionContext context, T? value) => context.SetVariable(typeof(T).Name, value);
     public static Variable SetVariable<T>(this ExpressionExecutionContext context, string name, T? value) => context.SetVariable(name, (object?)value);
 
-    public static Variable SetVariable(this ExpressionExecutionContext context, string name, object? value)
+    public static Variable SetVariable(this ExpressionExecutionContext context, string name, object? value, Action<MemoryBlock>? configure = default)
     {
         var variable = new Variable(name, value);
-        context.Set(variable, value);
+        context.Set(variable, value, configure);
         return variable;
     }
 
-    public static void Set(this ExpressionExecutionContext context, Output? output, object? value)
+    public static void Set(this ExpressionExecutionContext context, Output? output, object? value, Action<MemoryBlock>? configure = default)
     {
-        if(output != null) context.Set(output.MemoryBlockReference(), value);
+        if(output != null) context.Set(output.MemoryBlockReference(), value, configure);
     }
     
     /// <summary>

@@ -11,6 +11,7 @@ public class DefaultWorkflowExecutionContextFactory : IWorkflowExecutionContextF
     private readonly IActivityWalker _activityWalker;
     private readonly IIdentityGraphService _identityGraphService;
     private readonly IActivitySchedulerFactory _schedulerFactory;
+    private readonly IActivityRegistry _activityRegistry;
     private readonly IWorkflowStateSerializer _workflowStateSerializer;
 
     /// <summary>
@@ -20,11 +21,13 @@ public class DefaultWorkflowExecutionContextFactory : IWorkflowExecutionContextF
         IActivityWalker activityWalker,
         IIdentityGraphService identityGraphService,
         IActivitySchedulerFactory schedulerFactory,
+        IActivityRegistry activityRegistry,
         IWorkflowStateSerializer workflowStateSerializer)
     {
         _activityWalker = activityWalker;
         _identityGraphService = identityGraphService;
         _schedulerFactory = schedulerFactory;
+        _activityRegistry = activityRegistry;
         _workflowStateSerializer = workflowStateSerializer;
     }
 
@@ -62,6 +65,7 @@ public class DefaultWorkflowExecutionContextFactory : IWorkflowExecutionContextF
             graph,
             flattenedList,
             scheduler,
+            _activityRegistry,
             input,
             executeActivityDelegate,
             triggerActivityId,

@@ -10,12 +10,12 @@ public interface IVariablePersistenceManager
     /// <summary>
     /// Returns a list of all persistable variables at the root level of the workflow. 
     /// </summary>
-    IEnumerable<Variable> GetVariables(WorkflowExecutionContext context);
+    IEnumerable<Variable> GetAllVariables(WorkflowExecutionContext context);
     
     /// <summary>
     /// Returns a list of all persistable variables directly scoped to the specified <see cref="ActivityExecutionContext"/>, if it's a <see cref="IVariableContainer"/>. 
     /// </summary>
-    IEnumerable<Variable> GetVariables(ActivityExecutionContext context);
+    IEnumerable<Variable> GetLocalVariables(ActivityExecutionContext context);
     
     /// <summary>
     /// Returns a list of all persistable variables in scope of the specified <see cref="ActivityExecutionContext"/>. 
@@ -30,7 +30,7 @@ public interface IVariablePersistenceManager
     /// <summary>
     /// Persists all persistable variables from the specified <see cref="WorkflowExecutionContext"/>. 
     /// </summary>
-    Task SaveVariablesAsync(WorkflowExecutionContext context);
+    Task SaveVariablesAsync(WorkflowExecutionContext context, IEnumerable<Variable> variables);
 
     /// <summary>
     /// Ensures that the specified variables are declared in the specified <see cref="WorkflowExecutionContext"/>.

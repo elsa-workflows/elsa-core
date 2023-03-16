@@ -5,6 +5,7 @@ using System.Text.Json;
 using Elsa.Common.Contracts;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Helpers;
+using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Activities.Flowchart.Models;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
@@ -96,7 +97,7 @@ public static class ActivityExecutionContextExtensions
         return logEntry;
     }
 
-    public static Variable SetVariable(this ActivityExecutionContext context, string name, object? value) => context.ExpressionExecutionContext.SetVariable(name, value);
+    public static Variable SetVariable(this ActivityExecutionContext context, string name, object? value, Action<MemoryBlock>? configure = default) => context.ExpressionExecutionContext.SetVariable(name, value, configure);
     public static T? GetVariable<T>(this ActivityExecutionContext context, string name) => context.ExpressionExecutionContext.GetVariable<T?>(name);
 
     /// <summary>

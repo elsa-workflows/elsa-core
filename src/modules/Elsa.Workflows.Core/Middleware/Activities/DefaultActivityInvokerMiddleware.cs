@@ -93,10 +93,13 @@ public class DefaultActivityInvokerMiddleware : IActivityExecutionMiddleware
     private async Task EvaluateInputPropertiesAsync(ActivityExecutionContext context)
     {
         // Evaluate containing composite input properties, if any.
-        var compositeContainerContext = context.GetAncestors().FirstOrDefault(x => x.Activity is Composite);
-        
-        if (compositeContainerContext != null && !compositeContainerContext.GetHasEvaluatedProperties())
-            await compositeContainerContext.EvaluateInputPropertiesAsync();
+        var compositeContainerContexts = context.GetAncestors().Where(x => x.Activity is Composite).ToList();
+
+        foreach (var activityExecutionContext in compositeContainerContexts)
+        {
+            if (!activityExecutionContext.GetHasEvaluatedProperties())
+                await activityExecutionContext.EvaluateInputPropertiesAsync();
+        }
 
         // Evaluate input properties.
         await context.EvaluateInputPropertiesAsync();
@@ -105,13 +108,14 @@ public class DefaultActivityInvokerMiddleware : IActivityExecutionMiddleware
     private async Task LoadVariablesAsync(ActivityExecutionContext context)
     {
         var manager = context.GetRequiredService<IVariablePersistenceManager>();
-        var variables = manager.GetVariablesInScope(context);
+        var variables = manager.GetVariablesInScope(context).ToList();
         await manager.LoadVariablesAsync(context.WorkflowExecutionContext, variables);
     }
     
     private async Task SaveVariablesAsync(ActivityExecutionContext context)
     {
         var manager = context.GetRequiredService<IVariablePersistenceManager>();
-        await manager.SaveVariablesAsync(context.WorkflowExecutionContext);
+        var variables = manager.GetVariablesInScope(context).ToList();
+        await manager.SaveVariablesAsync(context.WorkflowExecutionContext, variables);
     }
 }
