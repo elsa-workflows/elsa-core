@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
@@ -51,7 +52,7 @@ public class Complete : Activity
     [Input(
         Description = "The outcome or set of outcomes to complete this activity with.",
         UIHint = InputUIHints.OutcomePicker,
-        DefaultSyntax = "Json"
+        DefaultSyntax = "Object"
     )]
     public Input<object> Outcomes { get; set; } = default!;
 
@@ -81,6 +82,19 @@ public class Complete : Activity
             {
                 foreach (var outcome in outcomeObjects)
                     yield return outcome.ToString()!;
+                break;
+            }
+            case JsonElement jsonElement:
+            {
+                if (jsonElement.ValueKind == JsonValueKind.Array)
+                {
+                    var outcomeArray = jsonElement.EnumerateArray().ToList();
+                    foreach (var element in outcomeArray)
+                        yield return element.ToString();
+                }
+                else
+                    yield return jsonElement.ToString();
+
                 break;
             }
             default:

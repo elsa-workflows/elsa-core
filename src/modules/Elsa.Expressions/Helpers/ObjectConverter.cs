@@ -48,7 +48,7 @@ public static class ObjectConverter
         if (sourceType == targetType)
             return value;
 
-        var options = converterOptions?.SerializerOptions ?? new JsonSerializerOptions();
+        var options = converterOptions?.SerializerOptions != null ? new JsonSerializerOptions(converterOptions.SerializerOptions) : new JsonSerializerOptions();
         options.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
         options.ReferenceHandler = ReferenceHandler.Preserve;
         options.PropertyNameCaseInsensitive = true;

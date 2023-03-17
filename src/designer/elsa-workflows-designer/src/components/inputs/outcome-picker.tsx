@@ -1,5 +1,5 @@
 import {Component, Prop, h} from '@stencil/core';
-import {JsonExpression, LiteralExpression, SyntaxNames, Variable} from "../../models";
+import {ObjectExpression, LiteralExpression, SyntaxNames, Variable} from "../../models";
 import {ActivityInputContext} from "../../services/activity-input-driver";
 import {getInputPropertyValue, getPropertyValue} from "../../utils";
 import {FormEntry} from "../shared/forms/form-entry";
@@ -22,7 +22,7 @@ export class OutcomePicker {
     const displayName = inputDescriptor.displayName;
     const description = inputDescriptor.description;
     const input = getInputPropertyValue(inputContext);
-    const value = (input?.expression as JsonExpression)?.value;
+    const value = (input?.expression as ObjectExpression)?.value;
     const syntax = input?.expression?.type ?? inputDescriptor.defaultSyntax;
 
     return (
@@ -51,6 +51,6 @@ export class OutcomePicker {
   private onChange = (e: Event) => {
     const inputElement = e.target as HTMLSelectElement;
     const outcome = inputElement.value;
-    this.inputContext.inputChanged(outcome, SyntaxNames.Json);
+    this.inputContext.inputChanged(outcome, SyntaxNames.Object);
   }
 }
