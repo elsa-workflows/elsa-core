@@ -39,8 +39,8 @@ export class InputOutputSettings {
   @Prop() inputs?: Array<InputDefinition>;
   @Prop() outputs?: Array<OutputDefinition>;
   @Prop() outcomes?: Array<string>;
-  @Event() inputsChanged: EventEmitter<Array<InputDefinition>>;
-  @Event() outputsChanged: EventEmitter<Array<OutputDefinition>>;
+  @Event() inputsChanged: EventEmitter<InputDefinition[]>;
+  @Event() outputsChanged: EventEmitter<OutputDefinition[]>;
   @Event() outcomesChanged: EventEmitter<Array<string>>;
   @State() inputsState: Array<InputDefinition> = [];
   @State() outputsState: Array<OutputDefinition> = [];

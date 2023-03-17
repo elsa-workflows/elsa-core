@@ -27,7 +27,7 @@ export class VariablesEditor {
   }
 
   @Prop() variables?: Array<Variable>;
-  @Event() variablesChanged: EventEmitter<Array<Variable>>;
+  @Event() variablesChanged: EventEmitter<Variable[]>;
   @State() variablesState: Array<Variable> = [];
 
   @Watch('variables')

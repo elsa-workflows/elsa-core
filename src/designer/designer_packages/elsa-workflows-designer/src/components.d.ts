@@ -1038,7 +1038,7 @@ declare namespace LocalJSX {
         "dropdownValues"?: Array<SelectListItem>;
         "fieldId"?: string;
         "fieldName"?: string;
-        "onValueChanged"?: (event: ElsaInputTagsDropdownCustomEvent<Array<string | SelectListItem>>) => void;
+        "onValueChanged"?: (event: ElsaInputTagsDropdownCustomEvent<SelectListItem[]| string[]>) => void;
         "placeHolder"?: string;
         "values"?: Array<string | SelectListItem>;
     }
@@ -1136,7 +1136,7 @@ declare namespace LocalJSX {
         "inputContext"?: ActivityInputContext;
     }
     interface ElsaVariablesEditor {
-        "onVariablesChanged"?: (event: ElsaVariablesEditorCustomEvent<Array<Variable>>) => void;
+        "onVariablesChanged"?: (event: ElsaVariablesEditorCustomEvent<Variable[]>) => void;
         "variables"?: Array<Variable>;
     }
     interface ElsaVariablesViewer {
@@ -1171,9 +1171,9 @@ declare namespace LocalJSX {
     }
     interface ElsaWorkflowDefinitionInputOutputSettings {
         "inputs"?: Array<InputDefinition>;
-        "onInputsChanged"?: (event: ElsaWorkflowDefinitionInputOutputSettingsCustomEvent<Array<InputDefinition>>) => void;
+        "onInputsChanged"?: (event: ElsaWorkflowDefinitionInputOutputSettingsCustomEvent<InputDefinition[]>) => void;
         "onOutcomesChanged"?: (event: ElsaWorkflowDefinitionInputOutputSettingsCustomEvent<Array<string>>) => void;
-        "onOutputsChanged"?: (event: ElsaWorkflowDefinitionInputOutputSettingsCustomEvent<Array<OutputDefinition>>) => void;
+        "onOutputsChanged"?: (event: ElsaWorkflowDefinitionInputOutputSettingsCustomEvent<OutputDefinition[]>) => void;
         "outcomes"?: Array<string>;
         "outputs"?: Array<OutputDefinition>;
     }

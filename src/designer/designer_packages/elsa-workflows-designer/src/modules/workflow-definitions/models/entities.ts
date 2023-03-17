@@ -46,3 +46,4 @@ export interface InputDefinition extends ArgumentDefinition {
 
 export interface OutputDefinition extends ArgumentDefinition {
 }
+

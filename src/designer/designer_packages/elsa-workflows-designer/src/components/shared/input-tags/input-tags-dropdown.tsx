@@ -13,7 +13,7 @@ export class InputTagsDropdown {
   @Prop() placeHolder?: string = 'Add tag';
   @Prop() values?: Array<string | SelectListItem> = [];
   @Prop() dropdownValues?: Array<SelectListItem> = [];
-  @Event({bubbles: true}) valueChanged: EventEmitter<Array<string | SelectListItem>>;
+  @Event({bubbles: true}) valueChanged: EventEmitter<SelectListItem[]| string[]>;
   @State() currentValues?: Array<SelectListItem> = [];
 
   @Watch('values')
