@@ -160,7 +160,7 @@ public class WorkflowsFeature : FeatureBase
             .AddExpressionHandler<LiteralExpressionHandler, LiteralExpression>()
             .AddExpressionHandler<DelegateExpressionHandler, DelegateExpression>()
             .AddExpressionHandler<VariableExpressionHandler, VariableExpression>()
-            .AddExpressionHandler<JsonExpressionHandler, JsonExpression>()
+            .AddExpressionHandler<ObjectExpressionHandler, ObjectExpression>()
             .AddExpressionHandler<OutputExpressionHandler, OutputExpression>()
             .AddExpressionHandler<ElsaExpressionHandler, ElsaExpression>();
     }

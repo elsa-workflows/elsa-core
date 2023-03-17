@@ -266,8 +266,8 @@ export class WorkflowDefinitionEditor {
   private onActivityUpdated = async (e: CustomEvent<ActivityUpdatedArgs>) => {
     const args: UpdateActivityArgs = {
       activity: e.detail.activity,
-      id: e.detail.newId,
-      originalId: e.detail.originalId
+      id: e.detail.newId ?? e.detail.originalId ?? e.detail.activity.id,
+      originalId: e.detail.originalId ?? e.detail.activity.id
     };
 
     await this.updateActivityInternal(args);
@@ -278,10 +278,7 @@ export class WorkflowDefinitionEditor {
   }
 
   private async onActivitySelected(e: CustomEvent<ActivitySelectedArgs>) {
-    const selectedActivity = e.detail.activity;
-    const activityId = selectedActivity.id;
-    const freshSelectedActivity = await this.flowchart.getActivity(activityId);
-    this.selectedActivity = freshSelectedActivity;
+    this.selectedActivity = e.detail.activity;
   }
 
   private async onChildActivitySelected(e: CustomEvent<ChildActivitySelectedArgs>) {

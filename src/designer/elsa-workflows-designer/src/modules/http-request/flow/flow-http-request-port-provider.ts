@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import {Service} from "typedi";
-import {Activity, ActivityInput, InputDescriptor, JsonExpression, Port, PortMode} from "../../../models";
+import {Activity, ActivityInput, InputDescriptor, ObjectExpression, Port, PortMode} from "../../../models";
 import {PortProvider, PortProviderContext} from "../../../services";
 import {FlowSendHttpRequest} from "./models";
 
@@ -18,7 +18,7 @@ export class FlowHttpRequestPortProvider implements PortProvider {
     if(!expectedStatusCodes)
       return [];
 
-    const statusCodesJson = (expectedStatusCodes.expression as JsonExpression).value;
+    const statusCodesJson = (expectedStatusCodes.expression as ObjectExpression).value;
     const statusCodes = JSON.parse(statusCodesJson) as Array<string>;
     const catchAllPort = {name: 'Unmatched status code', displayName: 'Unmatched status code', mode: PortMode.Port};
     const outcomes = [...statusCodes.map(x => ({name: x.toString(), displayName: x.toString(), mode: PortMode.Port})), catchAllPort];

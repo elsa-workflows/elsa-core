@@ -1,6 +1,6 @@
 import {Component, h, Prop, State} from '@stencil/core';
 import {uniq} from 'lodash'
-import {JsonExpression, LiteralExpression, SelectList, SyntaxNames} from "../../models";
+import {ObjectExpression, SelectList, SyntaxNames} from "../../models";
 import {ActivityInputContext} from "../../services/activity-input-driver";
 import {getSelectListItems, getInputPropertyValue, parseJson} from "../../utils";
 import {ExpressionChangedArs} from "../shared/input-control-switch/input-control-switch";
@@ -24,6 +24,8 @@ export class CheckList {
       this.selectedValues = selectedValues;
     else if (typeof (selectedValues) == 'number')
       this.selectedValue = selectedValues;
+    else if (typeof selectedValues == 'string')
+      this.selectedValues = JSON.parse(selectedValues);
   }
 
   public render() {
@@ -34,7 +36,7 @@ export class CheckList {
     const displayName = inputDescriptor.displayName;
     const hint = inputDescriptor.description;
     const input = getInputPropertyValue(inputContext);
-    const value = (input?.expression as JsonExpression)?.value; // TODO: The "value" field is currently hardcoded, but we should be able to be more flexible and potentially have different fields for a given syntax.
+    const value = (input?.expression as ObjectExpression)?.value; // TODO: The "value" field is currently hardcoded, but we should be able to be more flexible and potentially have different fields for a given syntax.
     const syntax = input?.expression?.type ?? inputDescriptor.defaultSyntax;
     const selectList = this.selectList;
 
@@ -70,7 +72,7 @@ export class CheckList {
 
   private getSelectedValues = (selectList: SelectList): number | Array<string> => {
     const input = getInputPropertyValue(this.inputContext);
-    const json = (input?.expression as JsonExpression)?.value;
+    const json = (input?.expression as ObjectExpression)?.value;
     return selectList.isFlagsEnum ? parseInt(json) : parseJson(json) || [];
   };
 
@@ -103,7 +105,7 @@ export class CheckList {
       json = JSON.stringify(newValue);
     }
 
-    this.inputContext.inputChanged(json, SyntaxNames.Json);
+    this.inputContext.inputChanged(json, SyntaxNames.Object);
   }
 
   private onExpressionChanged = (e: CustomEvent<ExpressionChangedArs>) => {
