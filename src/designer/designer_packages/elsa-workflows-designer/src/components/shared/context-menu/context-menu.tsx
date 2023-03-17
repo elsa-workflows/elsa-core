@@ -79,7 +79,7 @@ export class ContextMenu {
   render() {
     const anchorPointClass = this.getAnchorPointClass();
     const menuItems = this.menuItems;
-    const menuItemGroups = groupBy(menuItems, x => x.group ?? 0);
+    const menuItemGroups:any = groupBy(menuItems, x => x.group ?? 0);
 
     return (
       <div class="relative flex justify-end items-center">

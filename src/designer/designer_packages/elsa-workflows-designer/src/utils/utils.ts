@@ -88,7 +88,7 @@ export const isNullOrWhitespace = (input) => !input || !input.trim();
 
 export const serializeQueryString = (queryString: object): string => {
   const filteredItems = _(queryString).omitBy(_.isUndefined).omitBy(_.isNull).value();
-  const queryStringItems = _.map(filteredItems, (v, k) => {
+  const queryStringItems = _.map(filteredItems, (v :any, k) => {
     if (Array.isArray(v)) {
       return v.map(item => `${k}=${item}`).join('&');
     }
