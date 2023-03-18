@@ -58,7 +58,6 @@ public class WorkflowManagementFeature : FeatureBase
         new(typeof(object), PrimitivesCategory, "The root class for all object in the CLR System."),
         new(typeof(string), PrimitivesCategory, "Represents a static string of characters."),
         new(typeof(bool), PrimitivesCategory, "Represents a true or false value."),
-        new(typeof(short), PrimitivesCategory, "A 16 bit integer."),
         new(typeof(int), PrimitivesCategory, "A 32 bit integer."),
         new(typeof(long), PrimitivesCategory, "A 64 bit integer."),
         new(typeof(float), PrimitivesCategory, "A real number."),
@@ -68,12 +67,9 @@ public class WorkflowManagementFeature : FeatureBase
         new(typeof(DateTime), PrimitivesCategory, "A value type that represents a date and time."),
         new(typeof(DateTimeOffset), PrimitivesCategory, "A value type that consists of a DateTime and a time zone offset."),
         new(typeof(TimeSpan), PrimitivesCategory, "Represents a duration of time."),
-        new(typeof(DateOnly), PrimitivesCategory, "Represents dates with values ranging from January 1, 0001 Anno Domini (Common Era) through December 31, 9999 A.D. (C.E.) in the Gregorian calendar."),
-        new(typeof(TimeOnly), PrimitivesCategory, "Represents a time of day, as would be read from a clock, within the range 00:00:00 to 23:59:59.9999999."),
         new(typeof(IDictionary<string, string>), LookupsCategory, "A dictionary with string key and values."),
         new(typeof(IDictionary<string, object>), LookupsCategory, "A dictionary with string key and object values."),
-        new (typeof(ExpandoObject), DynamicCategory, "A dictionary that can be typed as dynamic to access members using dot notation."),
-        new (typeof(JsonObject), DynamicCategory, "A type from System.Text.Json that provides dynamic access to the object.")
+        new (typeof(ExpandoObject), DynamicCategory, "A dictionary that can be typed as dynamic to access members using dot notation.")
     };
 
     /// <summary>
