@@ -28,27 +28,15 @@ public class VariablePersistenceManager : IVariablePersistenceManager
     }
 
     /// <inheritdoc />
-    public IEnumerable<Variable> GetLocalVariables(ActivityExecutionContext context)
-    {
-        // Get variables for the current activity itself, if it's a container.
-        return context.Activity is IVariableContainer container
-            ? container.Variables.Where(x => x.StorageDriverType != null)
-            : Enumerable.Empty<Variable>();
-    }
-
-    /// <inheritdoc />
     public IEnumerable<Variable> GetVariablesInScope(ActivityExecutionContext context)
     {
         // Get variables between the current activity and immediate parent variable containers.
-        var ancestors = new[] { context.ActivityNode }.Concat(context.ActivityNode.Ancestors()).ToList();
-
-        foreach (var node in ancestors)
-        {
-            if (node.Activity is IVariableContainer variableContainer)
-                foreach (var variable in variableContainer.Variables)
-                    yield return variable;
-        }
+        var ancestors = new[] { context }.Concat(context.GetAncestors()).ToList();
+        return ancestors.Select(GetLocalVariables).SelectMany(variables => variables);
     }
+    
+    /// <inheritdoc />
+    public IEnumerable<Variable> GetLocalVariables(ActivityExecutionContext context) => (context.Activity as IVariableContainer)?.Variables ?? Enumerable.Empty<Variable>();
 
     /// <inheritdoc />
     public async Task LoadVariablesAsync(WorkflowExecutionContext context, IEnumerable<Variable> variables)
@@ -87,7 +75,6 @@ public class VariablePersistenceManager : IVariablePersistenceManager
     public async Task SaveVariablesAsync(WorkflowExecutionContext context, IEnumerable<Variable> variables)
     {
         var variableList = variables.ToList();
-        var register = context.MemoryRegister;
 
         // Foreach variable memory block, save its value using their associated storage driver.
         var cancellationToken = context.CancellationToken;

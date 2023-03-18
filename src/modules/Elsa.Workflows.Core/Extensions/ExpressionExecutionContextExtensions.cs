@@ -39,12 +39,16 @@ public static class ExpressionExecutionContextExtensions
     public static T? GetVariable<T>(this ExpressionExecutionContext context, string name) => (T?)context.GetVariable(name);
     public static T? GetVariable<T>(this ExpressionExecutionContext context) => context.GetVariable(typeof(T).Name).ConvertTo<T>();
     public static object? GetVariable(this ExpressionExecutionContext context, string name) => new Variable(name).Get(context);
-    public static Variable SetVariable<T>(this ExpressionExecutionContext context, T? value) => context.SetVariable(typeof(T).Name, value);
-    public static Variable SetVariable<T>(this ExpressionExecutionContext context, string name, T? value) => context.SetVariable(name, (object?)value);
+    public static Variable SetVariable<T>(this ExpressionExecutionContext context, T? value, Type? storageDriverType = default) => context.SetVariable(typeof(T).Name, value, storageDriverType);
+    public static Variable SetVariable<T>(this ExpressionExecutionContext context, string name, T? value, Type? storageDriverType = default) => context.SetVariable(name, (object?)value, storageDriverType);
 
-    public static Variable SetVariable(this ExpressionExecutionContext context, string name, object? value, Action<MemoryBlock>? configure = default)
+    public static Variable SetVariable(this ExpressionExecutionContext context, string name, object? value, Type? storageDriverType, Action<MemoryBlock>? configure = default)
     {
-        var variable = new Variable(name, value);
+        var variable = new Variable(name, value)
+        {
+            StorageDriverType = storageDriverType
+        };
+        
         context.Set(variable, value, configure);
         return variable;
     }

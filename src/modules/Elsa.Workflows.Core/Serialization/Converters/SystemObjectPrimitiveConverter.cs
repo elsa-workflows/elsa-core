@@ -1,3 +1,4 @@
+using System.Dynamic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -11,27 +12,16 @@ public class SystemObjectPrimitiveConverter : JsonConverter<object>
     /// <inheritdoc />
     public override object? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        switch (reader.TokenType)
+        return reader.TokenType switch
         {
-            case JsonTokenType.True:
-                return true;
-            case JsonTokenType.False:
-                return false;
-            case JsonTokenType.Number when reader.TryGetInt64(out var l):
-                return l;
-            case JsonTokenType.Number:
-                return reader.GetDouble();
-            case JsonTokenType.String when reader.TryGetDateTimeOffset(out var datetime):
-                return datetime;
-            case JsonTokenType.String:
-                return reader.GetString();
-            default:
-            {
-                // Use JsonElement as fallback.
-                using var document = JsonDocument.ParseValue(ref reader);
-                return document.RootElement.Clone();
-            }
-        }
+            JsonTokenType.True => true,
+            JsonTokenType.False => false,
+            JsonTokenType.Number when reader.TryGetInt64(out var l) => l,
+            JsonTokenType.Number => reader.GetDouble(),
+            JsonTokenType.String when reader.TryGetDateTimeOffset(out var datetime) => datetime,
+            JsonTokenType.String => reader.GetString(),
+            _ => JsonSerializer.Deserialize(ref reader, typeof(ExpandoObject), options)
+        };
     }
 
     /// <inheritdoc />

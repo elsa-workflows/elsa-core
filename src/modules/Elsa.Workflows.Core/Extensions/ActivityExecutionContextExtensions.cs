@@ -97,7 +97,8 @@ public static class ActivityExecutionContextExtensions
         return logEntry;
     }
 
-    public static Variable SetVariable(this ActivityExecutionContext context, string name, object? value, Action<MemoryBlock>? configure = default) => context.ExpressionExecutionContext.SetVariable(name, value, configure);
+    public static Variable SetVariable(this ActivityExecutionContext context, string name, object? value, Type? storageDriverType = default, Action<MemoryBlock>? configure = default) => 
+        context.ExpressionExecutionContext.SetVariable(name, value, storageDriverType, configure);
     public static T? GetVariable<T>(this ActivityExecutionContext context, string name) => context.ExpressionExecutionContext.GetVariable<T?>(name);
 
     /// <summary>

@@ -42,7 +42,7 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
             var input = SyntheticProperties.TryGetValue(inputDescriptor.Name, out var inputValue) ? (Input?)inputValue : default;
             var evaluatedExpression = input != null ? context.Get(input.MemoryBlockReference()) : default;
             
-            context.SetVariable(inputDescriptor.Name, evaluatedExpression);
+            context.SetVariable(inputDescriptor.Name, evaluatedExpression, typeof(WorkflowStorageDriver)); // TODO: Make storage driver configurable.
         }
     }
 
@@ -88,7 +88,6 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
         // Construct the root activity stored in the activity definitions.
         var materializer = serviceProvider.GetRequiredService<IWorkflowMaterializer>();
         var root = await materializer.MaterializeAsync(workflowDefinition, cancellationToken);
-
         var typeRegistry = serviceProvider.GetRequiredService<IActivityRegistry>();
         var descriptor = typeRegistry.Find(this)!;
         DeclareInputsAsVariables(descriptor);
@@ -96,7 +95,7 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
         Root = root;
     }
     
-    // In order for the variables to participate in the persistence mechanism, we need to declare them. 
+    // In order for the variables to participate in the persistence mechanism, we need to declare them first. 
     private void DeclareInputsAsVariables(ActivityDescriptor activityDescriptor)
     {
         foreach (var inputDescriptor in activityDescriptor.Inputs)
