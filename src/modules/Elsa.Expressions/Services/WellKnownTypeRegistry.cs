@@ -30,7 +30,8 @@ public class WellKnownTypeRegistry : IWellKnownTypeRegistry
         this.RegisterType<TimeSpan>("TimeSpan");
         this.RegisterType<DateOnly>("DateOnly");
         this.RegisterType<TimeOnly>("TimeOnly");
-        this.RegisterType<ExpandoObject>("JSON");
+        this.RegisterType<ExpandoObject>("ExpandoObject");
+        this.RegisterType<ExpandoObject>("JSON"); // Alias for ExpandoObject.
         this.RegisterType<IDictionary<string, string>>("StringDictionary");
         this.RegisterType<IDictionary<string, object>>("ObjectDictionary");
     }
