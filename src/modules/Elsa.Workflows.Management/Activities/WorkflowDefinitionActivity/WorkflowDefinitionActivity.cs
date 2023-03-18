@@ -31,42 +31,18 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        // Copy the input properties into variables.
-        //CopyInputPropertiesToVariables(context);
-
-        // Schedule the activity for execution.
+        CopyInputPropertiesToVariables(context);
         await context.ScheduleActivityAsync(Root, OnChildCompletedAsync);
     }
 
-    // private void CopyInputPropertiesToVariables(ActivityExecutionContext context)
-    // {
-    //     foreach (var inputDescriptor in context.ActivityDescriptor.Inputs)
-    //     {
-    //         var input = SyntheticProperties.TryGetValue(inputDescriptor.Name, out var inputValue) ? (Input?)inputValue : default;
-    //         var evaluatedExpression = input != null ? context.Get(input.MemoryBlockReference()) : default;
-    //         
-    //         var variable = new Variable(inputDescriptor.Name, evaluatedExpression)
-    //         {
-    //             StorageDriverType = typeof(WorkflowStorageDriver)
-    //         };
-    //
-    //         Variables.Add(variable);
-    //     }
-    // }
-    
-    private void DeclareInputsAsVariables(ActivityDescriptor activityDescriptor)
+    private void CopyInputPropertiesToVariables(ActivityExecutionContext context)
     {
-        foreach (var inputDescriptor in activityDescriptor.Inputs)
+        foreach (var inputDescriptor in context.ActivityDescriptor.Inputs)
         {
-            // var input = SyntheticProperties.TryGetValue(inputDescriptor.Name, out var inputValue) ? (Input?)inputValue : default;
-            // var evaluatedExpression = input != null ? context.Get(input.MemoryBlockReference()) : default;
+            var input = SyntheticProperties.TryGetValue(inputDescriptor.Name, out var inputValue) ? (Input?)inputValue : default;
+            var evaluatedExpression = input != null ? context.Get(input.MemoryBlockReference()) : default;
             
-            var variable = new Variable(inputDescriptor.Name)
-            {
-                StorageDriverType = typeof(WorkflowStorageDriver)
-            };
-
-            Variables.Add(variable);
+            context.SetVariable(inputDescriptor.Name, evaluatedExpression);
         }
     }
 
@@ -118,5 +94,19 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
         DeclareInputsAsVariables(descriptor);
 
         Root = root;
+    }
+    
+    // In order for the variables to participate in the persistence mechanism, we need to declare them. 
+    private void DeclareInputsAsVariables(ActivityDescriptor activityDescriptor)
+    {
+        foreach (var inputDescriptor in activityDescriptor.Inputs)
+        {
+            var variable = new Variable(inputDescriptor.Name)
+            {
+                StorageDriverType = typeof(WorkflowStorageDriver) // TODO: Make this configurable on the input descriptor.
+            };
+
+            Variables.Add(variable);
+        }
     }
 }

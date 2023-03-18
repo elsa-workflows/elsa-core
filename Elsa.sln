@@ -18,6 +18,7 @@ ProjectSection(SolutionItems) = preProject
 	.github\workflows\all-in-one-web.yml = .github\workflows\all-in-one-web.yml
 	build-and-run-all-in-one-web-docker.sh = build-and-run-all-in-one-web-docker.sh
 	NuGet.Config = NuGet.Config
+	.github\workflows\npm-packages.yml = .github\workflows\npm-packages.yml
 EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{0354F050-3992-4DD4-B0EE-5FBA04AC72B6}"
