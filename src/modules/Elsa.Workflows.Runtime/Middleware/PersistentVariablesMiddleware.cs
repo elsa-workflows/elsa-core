@@ -22,19 +22,13 @@ public class PersistentVariablesMiddleware : WorkflowExecutionMiddleware
     /// <inheritdoc />
     public override async ValueTask InvokeAsync(WorkflowExecutionContext context)
     {
-        // Get all persistable variables.
-        var variables = _variablePersistenceManager.GetAllVariables(context).ToList();
-        
         // Load variables into the workflow execution context.
-        await _variablePersistenceManager.LoadVariablesAsync(context, variables);
+        await _variablePersistenceManager.LoadVariablesAsync(context);
         
         // Invoke next middleware.
         await Next(context);
         
-        // Get a fresh list of all persistable variables.
-        variables = _variablePersistenceManager.GetAllVariables(context).ToList();
-        
         // Persist variables.
-        await _variablePersistenceManager.SaveVariablesAsync(context, variables);
+        await _variablePersistenceManager.SaveVariablesAsync(context);
     }
 }

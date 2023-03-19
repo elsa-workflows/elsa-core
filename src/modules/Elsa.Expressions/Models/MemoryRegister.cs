@@ -14,7 +14,7 @@ public class MemoryRegister
         Blocks = blocks ?? new Dictionary<string, MemoryBlock>();
     }
 
-    public MemoryRegister? Parent { get; }
+    public MemoryRegister? Parent { get; set;}
     public IDictionary<string, MemoryBlock> Blocks { get; }
 
     public bool IsDeclared(MemoryBlockReference reference) => HasBlock(reference.Id);
@@ -38,7 +38,7 @@ public class MemoryRegister
 
     public MemoryBlock Declare(MemoryBlockReference blockReference)
     {
-        if (TryGetBlock(blockReference.Id, out var block))
+        if(Blocks.TryGetValue(blockReference.Id, out var block))
             return block;
 
         block = blockReference.Declare();

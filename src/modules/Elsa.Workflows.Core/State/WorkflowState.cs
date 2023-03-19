@@ -63,6 +63,5 @@ public class WorkflowState : Entity
     /// <summary>
     /// A global property bag that contains properties set by application code and/or activities.
     /// </summary>
-    [JsonConverter(typeof(PropertyBagConverter))]
     public PropertyBag Properties { get; set; } = new();
 }

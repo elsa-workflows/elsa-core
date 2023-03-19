@@ -20,98 +20,81 @@ public class VariablePersistenceManager : IVariablePersistenceManager
     }
 
     /// <inheritdoc />
-    public IEnumerable<Variable> GetAllVariables(WorkflowExecutionContext context)
+    public async Task LoadVariablesAsync(WorkflowExecutionContext workflowExecutionContext)
     {
-        var activityExecutionContexts = context.ActivityExecutionContexts;
-        var variables = activityExecutionContexts.SelectMany(GetLocalVariables).ToList();
-        return variables;
+        var cancellationToken = workflowExecutionContext.CancellationToken;
+        var contexts = workflowExecutionContext.ActivityExecutionContexts;
+
+        foreach (var context in contexts)
+        {
+            var variables = GetLocalVariables(context).ToList();
+            
+            foreach (var variable in variables)
+            {
+                context.ExpressionExecutionContext.Memory.Declare(variable);
+                var storageDriverContext = new StorageDriverContext(context, cancellationToken);
+                var register = context.ExpressionExecutionContext.Memory;
+                var block = EnsureBlock(register, variable);
+                var metadata = (VariableBlockMetadata)block.Metadata!;
+                var driver = _storageDriverManager.Get(metadata.StorageDriverType!);
+
+                block.Metadata = metadata with { IsInitialized = true };
+
+                if (driver == null)
+                    continue;
+
+                var id = GetStateId(context, variable);
+                var value = await driver.ReadAsync(id, storageDriverContext);
+                if (value == null) continue;
+
+                var parsedValue = variable.ParseValue(value);
+                register.Declare(variable);
+                variable.Set(register, parsedValue);
+            }
+        }
     }
 
     /// <inheritdoc />
-    public IEnumerable<Variable> GetVariablesInScope(ActivityExecutionContext context)
+    public async Task SaveVariablesAsync(WorkflowExecutionContext workflowExecutionContext)
     {
-        // Get variables between the current activity and immediate parent variable containers.
-        var ancestors = new[] { context }.Concat(context.GetAncestors()).ToList();
-        return ancestors.Select(GetLocalVariables).SelectMany(variables => variables);
+        var contexts = workflowExecutionContext.ActivityExecutionContexts;
+
+        foreach (var context in contexts)
+        {
+            var variables = GetLocalVariables(context);
+
+            // Foreach variable memory block, save its value using their associated storage driver.
+            var cancellationToken = context.CancellationToken;
+            var storageDriverContext = new StorageDriverContext(context, cancellationToken);
+            //var blocks = register.Blocks.Values.Where(x => x.Metadata is VariableBlockMetadata { StorageDriverType: not null }).ToList();
+
+            foreach (var variable in variables)
+            {
+                var block = variable.GetBlock(context.ExpressionExecutionContext.Memory);
+                var metadata = (VariableBlockMetadata)block.Metadata!;
+                var driver = _storageDriverManager.Get(metadata.StorageDriverType!);
+
+                if (driver == null)
+                    continue;
+
+                //var variable = metadata.Variable;
+                var id = GetStateId(context, variable);
+                var value = block.Value;
+
+                if (value == null)
+                    await driver.DeleteAsync(id, storageDriverContext);
+                else
+                    await driver.WriteAsync(id, value, storageDriverContext);
+            }   
+        }
     }
     
-    /// <inheritdoc />
-    public IEnumerable<Variable> GetLocalVariables(ActivityExecutionContext context) => (context.Activity as IVariableContainer)?.Variables ?? Enumerable.Empty<Variable>();
 
     /// <inheritdoc />
-    public async Task LoadVariablesAsync(WorkflowExecutionContext context, IEnumerable<Variable> variables)
+    public async Task DeleteVariablesAsync(ActivityExecutionContext context)
     {
-        var register = context.MemoryRegister;
-        var variableList = variables as ICollection<Variable> ?? variables.ToList();
-
-        EnsureVariables(context, variableList);
-
-        // Foreach variable memory block, load its value from their associated storage driver.
-        var cancellationToken = context.CancellationToken;
-        var storageDriverContext = new StorageDriverContext(context, cancellationToken);
-
-        foreach (var variable in variableList)
-        {
-            var block = EnsureBlock(register, variable);
-            var metadata = (VariableBlockMetadata)block.Metadata!;
-            var driver = _storageDriverManager.Get(metadata.StorageDriverType!);
-
-            block.Metadata = metadata with { IsInitialized = true };
-
-            if (driver == null)
-                continue;
-
-            var id = GetStateId(context, variable);
-            var value = await driver.ReadAsync(id, storageDriverContext);
-            if (value == null) continue;
-
-            var parsedValue = variable.ParseValue(value);
-            register.Declare(variable);
-            variable.Set(register, parsedValue);
-        }
-    }
-
-    /// <inheritdoc />
-    public async Task SaveVariablesAsync(WorkflowExecutionContext context, IEnumerable<Variable> variables)
-    {
-        var variableList = variables.ToList();
-
-        // Foreach variable memory block, save its value using their associated storage driver.
-        var cancellationToken = context.CancellationToken;
-        var storageDriverContext = new StorageDriverContext(context, cancellationToken);
-        //var blocks = register.Blocks.Values.Where(x => x.Metadata is VariableBlockMetadata { StorageDriverType: not null }).ToList();
-
-        foreach (var variable in variableList)
-        {
-            var block = variable.GetBlock(context.MemoryRegister);
-            var metadata = (VariableBlockMetadata)block.Metadata!;
-            var driver = _storageDriverManager.Get(metadata.StorageDriverType!);
-
-            if (driver == null)
-                continue;
-
-            //var variable = metadata.Variable;
-            var id = GetStateId(context, variable);
-            var value = block.Value;
-
-            if (value == null)
-                await driver.DeleteAsync(id, storageDriverContext);
-            else
-                await driver.WriteAsync(id, value, storageDriverContext);
-        }
-    }
-
-    /// <inheritdoc />
-    public void EnsureVariables(WorkflowExecutionContext context, IEnumerable<Variable> variables)
-    {
-        foreach (var variable in variables) context.MemoryRegister.Declare(variable);
-    }
-
-    /// <inheritdoc />
-    public async Task DeleteVariablesAsync(WorkflowExecutionContext context, IEnumerable<Variable> variables)
-    {
-        var register = context.MemoryRegister;
-        var variableList = variables as ICollection<Variable> ?? variables.ToList();
+        var register = context.ExpressionExecutionContext.Memory;
+        var variableList = GetLocalVariables(context);
         var cancellationToken = context.CancellationToken;
         var storageDriverContext = new StorageDriverContext(context, cancellationToken);
 
@@ -132,6 +115,8 @@ public class VariablePersistenceManager : IVariablePersistenceManager
         }
     }
 
+    private IEnumerable<Variable> GetLocalVariables(ActivityExecutionContext context) => (context.Activity as IVariableContainer)?.Variables ?? Enumerable.Empty<Variable>();
+
     private MemoryBlock EnsureBlock(MemoryRegister register, Variable variable)
     {
         if (!register.TryGetBlock(variable.Id, out var block))
@@ -139,5 +124,5 @@ public class VariablePersistenceManager : IVariablePersistenceManager
         return block;
     }
 
-    private string GetStateId(WorkflowExecutionContext context, Variable variable) => $"{context.Id}:{context.Workflow.Id}:{variable.Name}";
+    private string GetStateId(ActivityExecutionContext context, Variable variable) => $"{context.Id}:{context.WorkflowExecutionContext.Workflow.Id}:{variable.Name}";
 }

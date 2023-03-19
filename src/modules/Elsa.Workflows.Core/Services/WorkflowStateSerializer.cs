@@ -102,7 +102,7 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
                 ParentContextId = activityExecutionContext.ParentActivityExecutionContext?.Id,
                 ScheduledActivityNodeId = activityExecutionContext.NodeId,
                 OwnerActivityNodeId = activityExecutionContext.ParentActivityExecutionContext?.NodeId,
-                Properties = activityExecutionContext.Properties,
+                Properties = new PropertyBag(activityExecutionContext.Properties),
                 ActivityState = activityExecutionContext.ActivityState
             };
             return activityExecutionContextState;
@@ -119,7 +119,7 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
             var properties = activityExecutionContextState.Properties;
             var activityExecutionContext = workflowExecutionContext.CreateActivityExecutionContext(activity);
             activityExecutionContext.Id = activityExecutionContextState.Id;
-            activityExecutionContext.Properties = properties;
+            activityExecutionContext.Properties = properties.Dictionary;
             activityExecutionContext.ActivityState = activityExecutionContextState.ActivityState ?? new Dictionary<string, JsonElement>();
 
             return activityExecutionContext;
@@ -135,8 +135,15 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
             var contextId = contextState.Id;
             var context = lookup[contextId];
             context.ExpressionExecutionContext.ParentContext = parentContext.ExpressionExecutionContext;
+            context.ExpressionExecutionContext.Memory.Parent = parentContext.ExpressionExecutionContext.Memory;
             context.ParentActivityExecutionContext = parentContext;
         }
+        
+        // Assign root expression execution context.
+        var rootActivityExecutionContexts = activityExecutionContexts.Where(x => x.ExpressionExecutionContext.Memory.Parent == null);
+
+        foreach (var rootActivityExecutionContext in rootActivityExecutionContexts) 
+            rootActivityExecutionContext.ExpressionExecutionContext.Memory.Parent = workflowExecutionContext.MemoryRegister;
 
         workflowExecutionContext.ActivityExecutionContexts = activityExecutionContexts;
     }

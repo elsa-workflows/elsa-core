@@ -322,8 +322,9 @@ public class WorkflowExecutionContext
         var activityDescriptor = _activityRegistry.Find(activity) ?? throw new Exception($"Activity with type {activity.Type} not found in registry");
         var parentExpressionExecutionContext = parentContext?.ExpressionExecutionContext;
         var properties = ExpressionExecutionContextExtensions.CreateActivityExecutionContextPropertiesFrom(this, Input);
-        var parentMemory = parentContext?.ExpressionExecutionContext.Memory ?? MemoryRegister;
-        var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, parentMemory, parentExpressionExecutionContext, properties, CancellationToken);
+        var parentMemory =  parentContext?.ExpressionExecutionContext.Memory ?? MemoryRegister;
+        var memory = new MemoryRegister(parentMemory);
+        var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, memory, parentExpressionExecutionContext, properties, CancellationToken);
         var activityExecutionContext = new ActivityExecutionContext(this, parentContext, expressionExecutionContext, activity, activityDescriptor, CancellationToken);
         expressionExecutionContext.TransientProperties[ExpressionExecutionContextExtensions.ActivityExecutionContextKey] = activityExecutionContext;
         return activityExecutionContext;
@@ -347,8 +348,7 @@ public class WorkflowExecutionContext
 
         // Remove all associated variables.
         var variablePersistenceManager = context.GetRequiredService<IVariablePersistenceManager>();
-        var variables = variablePersistenceManager.GetLocalVariables(context);
-        await variablePersistenceManager.DeleteVariablesAsync(this, variables);
+        await variablePersistenceManager.DeleteVariablesAsync(context);
 
         // Remove all associated bookmarks.
         Bookmarks.RemoveWhere(x => x.ActivityInstanceId == context.Id);

@@ -61,6 +61,9 @@ public class ActivityExecutionContext
     /// </summary>
     public IActivity Activity { get; set; }
 
+    /// <summary>
+    /// The activity descriptor.
+    /// </summary>
     public ActivityDescriptor ActivityDescriptor { get; }
 
     /// <summary>
@@ -71,7 +74,7 @@ public class ActivityExecutionContext
     /// <summary>
     /// A dictionary of values that can be associated with this activity execution context.
     /// </summary>
-    public PropertyBag Properties { get; set; } = new();
+    public IDictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
 
     /// <summary>
     /// A transient dictionary of values that can be associated with this activity execution context.
@@ -211,18 +214,18 @@ public class ActivityExecutionContext
     /// <summary>
     /// Returns a property value associated with the current activity context. 
     /// </summary>
-    public T? GetProperty<T>(string key) => Properties.Dictionary.TryGetValue<T?>(key, out var value) ? value : default;
+    public T? GetProperty<T>(string key) => Properties.TryGetValue<T?>(key, out var value) ? value : default;
 
     /// <summary>
     /// Returns a property value associated with the current activity context. 
     /// </summary>
     public T GetProperty<T>(string key, Func<T> defaultValue)
     {
-        if (Properties.Dictionary.TryGetValue<T?>(key, out var value))
+        if (Properties.TryGetValue<T?>(key, out var value))
             return value!;
 
         value = defaultValue();
-        Properties.Dictionary[key] = value!;
+        Properties[key] = value!;
 
         return value!;
     }
@@ -230,7 +233,7 @@ public class ActivityExecutionContext
     /// <summary>
     /// Stores a property associated with the current activity context. 
     /// </summary>
-    public void SetProperty<T>(string key, T? value) => Properties.Dictionary[key] = value!;
+    public void SetProperty<T>(string key, T? value) => Properties[key] = value!;
 
     /// <summary>
     /// Updates a property associated with the current activity context. 
@@ -239,7 +242,7 @@ public class ActivityExecutionContext
     {
         var value = GetProperty<T?>(key);
         value = updater(value);
-        Properties.Dictionary[key] = value;
+        Properties[key] = value;
         return value;
     }
 
