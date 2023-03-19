@@ -19,7 +19,7 @@ public record ActivityCompletionCallbackEntry(ActivityExecutionContext Owner, Ac
 /// <summary>
 /// Provides context to the currently executing workflow.
 /// </summary>
-public class WorkflowExecutionContext
+public class WorkflowExecutionContext : IExecutionContext
 {
     internal static ValueTask Complete(ActivityExecutionContext context) => context.CompleteActivityAsync();
     private readonly IServiceProvider _serviceProvider;
@@ -63,6 +63,7 @@ public class WorkflowExecutionContext
         NodeIdLookup = _nodes.ToDictionary(x => x.NodeId);
         NodeActivityLookup = _nodes.ToDictionary(x => x.Activity);
         MemoryRegister = workflow.CreateRegister();
+        ExpressionExecutionContext = new ExpressionExecutionContext(serviceProvider, MemoryRegister, cancellationToken: cancellationToken);
     }
 
     /// <summary>
@@ -135,9 +136,7 @@ public class WorkflowExecutionContext
     /// </summary>
     public IDictionary<string, object> Output { get; set; } = new Dictionary<string, object>();
 
-    /// <summary>
-    /// A dictionary that can be used by application code and activities to store information. Values need to be serializable. 
-    /// </summary>
+    /// <inheritdoc />
     public IDictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
 
     /// <summary>
@@ -189,6 +188,14 @@ public class WorkflowExecutionContext
     /// A volatile collection of executed activity instance IDs. This collection is reset when workflow execution starts.
     /// </summary>
     public ICollection<WorkflowExecutionLogEntry> ExecutionLog { get; } = new List<WorkflowExecutionLogEntry>();
+
+    /// <summary>
+    /// The expression execution context for the current workflow execution.
+    /// </summary>
+    public ExpressionExecutionContext? ExpressionExecutionContext { get; } = default!;
+
+    /// <inheritdoc />
+    public IEnumerable<Variable> Variables => Workflow.Variables;
 
     /// <summary>
     /// Resolves the specified service type from the service provider.
@@ -320,10 +327,9 @@ public class WorkflowExecutionContext
     public ActivityExecutionContext CreateActivityExecutionContext(IActivity activity, ActivityExecutionContext? parentContext = default)
     {
         var activityDescriptor = _activityRegistry.Find(activity) ?? throw new Exception($"Activity with type {activity.Type} not found in registry");
-        var parentExpressionExecutionContext = parentContext?.ExpressionExecutionContext;
+        var parentExpressionExecutionContext = parentContext?.ExpressionExecutionContext ?? ExpressionExecutionContext;
         var properties = ExpressionExecutionContextExtensions.CreateActivityExecutionContextPropertiesFrom(this, Input);
-        var parentMemory =  parentContext?.ExpressionExecutionContext.Memory ?? MemoryRegister;
-        var memory = new MemoryRegister(parentMemory);
+        var memory = new MemoryRegister();
         var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, memory, parentExpressionExecutionContext, properties, CancellationToken);
         var activityExecutionContext = new ActivityExecutionContext(this, parentContext, expressionExecutionContext, activity, activityDescriptor, CancellationToken);
         expressionExecutionContext.TransientProperties[ExpressionExecutionContextExtensions.ActivityExecutionContextKey] = activityExecutionContext;

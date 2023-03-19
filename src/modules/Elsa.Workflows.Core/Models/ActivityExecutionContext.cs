@@ -11,7 +11,7 @@ namespace Elsa.Workflows.Core.Models;
 /// <summary>
 /// Represents the context of an activity execution.
 /// </summary>
-public class ActivityExecutionContext
+public class ActivityExecutionContext : IExecutionContext
 {
     private readonly List<Bookmark> _bookmarks = new();
     private long _executionCount;
@@ -56,6 +56,9 @@ public class ActivityExecutionContext
     /// </summary>
     public ExpressionExecutionContext ExpressionExecutionContext { get; }
 
+    /// <inheritdoc />
+    public IEnumerable<Variable> Variables => (Activity as IVariableContainer)?.Variables ?? Enumerable.Empty<Variable>();
+
     /// <summary>
     /// The currently executing activity.
     /// </summary>
@@ -71,9 +74,8 @@ public class ActivityExecutionContext
     /// </summary>
     public CancellationToken CancellationToken { get; }
 
-    /// <summary>
-    /// A dictionary of values that can be associated with this activity execution context.
-    /// </summary>
+
+    /// <inheritdoc />
     public IDictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
 
     /// <summary>

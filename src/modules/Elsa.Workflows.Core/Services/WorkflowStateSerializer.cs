@@ -135,15 +135,14 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
             var contextId = contextState.Id;
             var context = lookup[contextId];
             context.ExpressionExecutionContext.ParentContext = parentContext.ExpressionExecutionContext;
-            context.ExpressionExecutionContext.Memory.Parent = parentContext.ExpressionExecutionContext.Memory;
             context.ParentActivityExecutionContext = parentContext;
         }
         
         // Assign root expression execution context.
-        var rootActivityExecutionContexts = activityExecutionContexts.Where(x => x.ExpressionExecutionContext.Memory.Parent == null);
+        var rootActivityExecutionContexts = activityExecutionContexts.Where(x => x.ExpressionExecutionContext.ParentContext == null);
 
         foreach (var rootActivityExecutionContext in rootActivityExecutionContexts) 
-            rootActivityExecutionContext.ExpressionExecutionContext.Memory.Parent = workflowExecutionContext.MemoryRegister;
+            rootActivityExecutionContext.ExpressionExecutionContext.ParentContext = workflowExecutionContext.ExpressionExecutionContext;
 
         workflowExecutionContext.ActivityExecutionContexts = activityExecutionContexts;
     }

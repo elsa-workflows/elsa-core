@@ -19,7 +19,7 @@ public static class ExpressionExecutionContextExtensions
             [InputKey] = input,
             [WorkflowKey] = workflowExecutionContext.Workflow,
         };
-    
+
     public static IDictionary<object, object> CreateTriggerIndexingPropertiesFrom(Workflow workflow, IDictionary<string, object> input) =>
         new Dictionary<object, object>
         {
@@ -48,35 +48,61 @@ public static class ExpressionExecutionContextExtensions
         {
             StorageDriverType = storageDriverType
         };
-        
+
         context.Set(variable, value, configure);
         return variable;
     }
 
     public static void Set(this ExpressionExecutionContext context, Output? output, object? value, Action<MemoryBlock>? configure = default)
     {
-        if(output != null) context.Set(output.MemoryBlockReference(), value, configure);
+        if (output != null) context.Set(output.MemoryBlockReference(), value, configure);
     }
-    
+
     /// <summary>
     /// Returns a dictionary of memory block keys and values across scopes.
     /// </summary>
-    public static IDictionary<string, object> ReadAndFlattenMemoryBlocks(this ExpressionExecutionContext context)
-    {
-        var currentRegister = context.Memory;
-        var memoryBlocks = new Dictionary<string, object>();
+    public static IDictionary<string, object> ReadAndFlattenMemoryBlocks(this ExpressionExecutionContext context) =>
+        context.FlattenMemoryBlocks().ToDictionary(x => x.Key, x => x.Value.Value!);
 
-        while (currentRegister != null)
+    /// <summary>
+    /// Returns a dictionary of memory blocks across scopes.
+    /// </summary>
+    public static IDictionary<string, MemoryBlock> FlattenMemoryBlocks(this ExpressionExecutionContext context)
+    {
+        var currentContext = context;
+        var memoryBlocks = new Dictionary<string, MemoryBlock>();
+
+        while (currentContext != null)
         {
-            foreach (var l in currentRegister.Blocks)
+            var register = currentContext.Memory;
+            foreach (var entry in register.Blocks)
             {
-                if (!memoryBlocks.ContainsKey(l.Key))
-                    memoryBlocks.Add(l.Key, l.Value.Value!);
+                if (!memoryBlocks.ContainsKey(entry.Key))
+                    memoryBlocks.Add(entry.Key, entry.Value);
             }
 
-            currentRegister = currentRegister.Parent;
+            currentContext = currentContext.ParentContext;
         }
 
         return memoryBlocks;
+    }
+
+    /// <summary>
+    /// Returns a dictionary of memory blocks across scopes.
+    /// </summary>
+    public static ExpressionExecutionContext? FindContextContainingBlock(this ExpressionExecutionContext context, string blockId)
+    {
+        var currentContext = context;
+
+        while (currentContext != null)
+        {
+            var register = currentContext.Memory;
+            if (register.HasBlock(blockId))
+                return currentContext;
+
+            currentContext = currentContext.ParentContext;
+        }
+
+        return null;
     }
 }

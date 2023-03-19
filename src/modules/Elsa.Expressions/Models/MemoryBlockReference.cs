@@ -47,7 +47,7 @@ public abstract class MemoryBlockReference
     /// <summary>
     /// Returns the value of the memory block.
     /// </summary>
-    public object Get(ExpressionExecutionContext context) => context.Get(this);
+    public object? Get(ExpressionExecutionContext context) => context.Get(this);
     
     /// <summary>
     /// Returns the value of the memory block.

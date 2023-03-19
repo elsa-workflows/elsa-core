@@ -12,4 +12,4 @@ public interface IStorageDriver
     ValueTask DeleteAsync(string id, StorageDriverContext context);
 }
 
-public record StorageDriverContext(ActivityExecutionContext ActivityExecutionContext, CancellationToken CancellationToken);
+public record StorageDriverContext(IExecutionContext ExecutionContext, CancellationToken CancellationToken);
