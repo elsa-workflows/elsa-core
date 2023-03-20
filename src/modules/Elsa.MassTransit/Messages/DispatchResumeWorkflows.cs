@@ -8,5 +8,6 @@ public record DispatchResumeWorkflows(
     [property: JsonConverter(typeof(PolymorphicConverter))]
     object BookmarkPayload,
     string? CorrelationId,
+    string? WorkflowInstanceId,
     IDictionary<string, object>? Input
 );

@@ -75,7 +75,7 @@ public class Worker : IAsyncDisposable
         var messageModel = CreateMessageModel(message);
         var input = new Dictionary<string, object> { [MessageReceived.InputKey] = messageModel };
         var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<MessageReceived>();
-        var dispatchRequest = new DispatchTriggerWorkflowsRequest(activityTypeName, payload, correlationId, input);
+        var dispatchRequest = new DispatchTriggerWorkflowsRequest(activityTypeName, payload, correlationId, default, input);
         await _workflowDispatcher.DispatchAsync(dispatchRequest, cancellationToken);
     }
 

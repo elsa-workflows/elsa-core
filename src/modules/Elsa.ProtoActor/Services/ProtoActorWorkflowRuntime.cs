@@ -146,12 +146,12 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
         var request = new ResolveBookmarksRequest
         {
             ActivityTypeName = activityTypeName,
-            CorrelationId = options.CorrelationId.EmptyIfNull()
+            CorrelationId = options.CorrelationId.EmptyIfNull(),
         };
 
         var bookmarksResponse = await client.Resolve(request, cancellationToken);
         var bookmarks = bookmarksResponse!.Bookmarks;
-        return await ResumeWorkflowsAsync(bookmarks, new ResumeWorkflowRuntimeOptions(options.CorrelationId, Input: options.Input), cancellationToken);
+        return await ResumeWorkflowsAsync(bookmarks, new ResumeWorkflowRuntimeOptions(options.CorrelationId, options.WorkflowInstanceId, Input: options.Input), cancellationToken);
     }
 
     /// <inheritdoc />
@@ -174,24 +174,23 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
             var startResult = await StartWorkflowAsync(collectedStartableWorkflow.DefinitionId!, startOptions, cancellationToken);
             return new WorkflowExecutionResult(startResult.InstanceId, startResult.Bookmarks);
         }
-        else
-        {
-            var collectedResumableWorkflow = (match as ResumableWorkflowMatch)!;
-            var runtimeOptions = new ResumeWorkflowRuntimeOptions(collectedResumableWorkflow.CorrelationId, Input: input);
-            var resumeResult = await ResumeWorkflowAsync(
-                match.WorkflowInstanceId,
-                runtimeOptions with { BookmarkId = collectedResumableWorkflow.BookmarkId },
-                cancellationToken);
 
-            return new WorkflowExecutionResult(collectedResumableWorkflow.WorkflowInstanceId, resumeResult.Bookmarks);
-        }
+        var collectedResumableWorkflow = (match as ResumableWorkflowMatch)!;
+        var runtimeOptions = new ResumeWorkflowRuntimeOptions(collectedResumableWorkflow.CorrelationId, Input: input);
+        
+        var resumeResult = await ResumeWorkflowAsync(
+            match.WorkflowInstanceId,
+            runtimeOptions with { BookmarkId = collectedResumableWorkflow.BookmarkId },
+            cancellationToken);
+
+        return new WorkflowExecutionResult(collectedResumableWorkflow.WorkflowInstanceId, resumeResult.Bookmarks);
     }
 
     /// <inheritdoc />
     public async Task<IEnumerable<WorkflowMatch>> FindWorkflowsAsync(WorkflowsFilter filter, CancellationToken cancellationToken = default)
     {
-        var startableWorkflows = await CollectStartableWorkflowsAsync(filter, cancellationToken);
-        var resumableWorkflows = await CollectResumableWorkflowsAsync(filter, cancellationToken);
+        var startableWorkflows = await FindStartableWorkflowsAsync(filter, cancellationToken);
+        var resumableWorkflows = await FindResumableWorkflowsAsync(filter, cancellationToken);
         var results = startableWorkflows.Concat(resumableWorkflows).ToList();
         return results;
     }
@@ -312,7 +311,7 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
                 x.AutoBurn,
                 x.CallbackMethodName.NullIfEmpty()));
 
-    private async Task<IEnumerable<WorkflowMatch>> CollectStartableWorkflowsAsync(WorkflowsFilter workflowsFilter, CancellationToken cancellationToken)
+    private async Task<IEnumerable<WorkflowMatch>> FindStartableWorkflowsAsync(WorkflowsFilter workflowsFilter, CancellationToken cancellationToken)
     {
         var hash = _hasher.Hash(workflowsFilter.ActivityTypeName, workflowsFilter.BookmarkPayload);
         var filter = new TriggerFilter { Hash = hash };
@@ -336,7 +335,7 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
         return results;
     }
 
-    private async Task<IEnumerable<WorkflowMatch>> CollectResumableWorkflowsAsync(WorkflowsFilter workflowsFilter, CancellationToken cancellationToken)
+    private async Task<IEnumerable<WorkflowMatch>> FindResumableWorkflowsAsync(WorkflowsFilter workflowsFilter, CancellationToken cancellationToken)
     {
         var hash = _hasher.Hash(workflowsFilter.ActivityTypeName, workflowsFilter.BookmarkPayload);
         var client = _cluster.GetNamedBookmarkGrain(hash);
