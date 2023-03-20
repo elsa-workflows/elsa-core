@@ -26,7 +26,8 @@ public class Trigger : ElsaEndpoint<Request, Response>
     /// <inheritdoc />
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
-        await _eventPublisher.DispatchAsync(request.EventName, request.CorrelationId, cancellationToken: cancellationToken);
+        var input = (IDictionary<string, object>?)request.Input;
+        await _eventPublisher.DispatchAsync(request.EventName, request.CorrelationId, input, cancellationToken);
         
         if (!HttpContext.Response.HasStarted)
         {

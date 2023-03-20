@@ -32,7 +32,16 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         CopyInputPropertiesToVariables(context);
+        //AddVariablesToMemory(context);
         await context.ScheduleActivityAsync(Root, OnChildCompletedAsync);
+    }
+
+    private void AddVariablesToMemory(ActivityExecutionContext context)
+    {
+        foreach (var variable in Variables)
+        {
+            context.Set(variable, variable.Value);
+        }
     }
 
     private void CopyInputPropertiesToVariables(ActivityExecutionContext context)
