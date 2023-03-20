@@ -45,7 +45,7 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
             // Create a local scope variable for each input property.
             var variable = new Variable(inputDescriptor.Name)
             {
-                StorageDriverType = typeof(WorkflowStorageDriver) // TODO: Make storage driver configurable.
+                StorageDriverType = inputDescriptor.StorageDriverType
             };
             
             context.ExpressionExecutionContext.Memory.Declare(variable);

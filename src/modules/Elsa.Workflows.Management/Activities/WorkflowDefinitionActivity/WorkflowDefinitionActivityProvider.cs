@@ -112,6 +112,7 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
                 Description = inputDefinition.Description,
                 Category = inputDefinition.Category,
                 UIHint = inputDefinition.UIHint,
+                StorageDriverType = inputDefinition.StorageDriverType,
                 IsSynthetic = true
             };
         });

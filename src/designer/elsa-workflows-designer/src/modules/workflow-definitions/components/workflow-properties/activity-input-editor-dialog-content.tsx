@@ -4,6 +4,8 @@ import descriptorsStore from '../../../../data/descriptors-store';
 import {VariableDescriptor} from "../../../../services/api-client/variable-descriptors-api";
 import {InputDefinition} from "../../models/entities";
 import {CheckboxFormEntry, FormEntry} from "../../../../components/shared/forms/form-entry";
+import {StorageDriverDescriptor} from "../../../../models";
+import {isNullOrWhitespace} from "../../../../utils";
 
 @Component({
   tag: 'elsa-activity-input-editor-dialog-content',
@@ -24,9 +26,11 @@ export class ActivityInputEditorDialogContent {
     const input: InputDefinition = this.input ?? {name: '', type: 'Object', isArray: false};
     const inputTypeName = input.type;
     const availableTypes: Array<VariableDescriptor> = descriptorsStore.variableDescriptors;
+    const storageDrivers: Array<StorageDriverDescriptor> = descriptorsStore.storageDrivers;
     const groupedTypes = groupBy(availableTypes, x => x.category);
     const selectedUIHint = input.uiHint;
 
+    // TODO: Get this from configuration (API).
     const uiHints = [{
       name: 'Single line',
       value: 'single-line'
@@ -107,6 +111,17 @@ export class ActivityInputEditorDialogContent {
                 </select>
               </FormEntry>
 
+              <FormEntry fieldId="inputStorageDriverType" label="Storage" hint="The storage to use when persisting the input.">
+                <select id="inputStorageDriverType" name="inputStorageDriverType">
+                  {storageDrivers.map(driver => {
+                    const value = driver.typeName;
+                    const text = driver.displayName;
+                    const selected = value == input.storageDriverType;
+                    return <option value={value} selected={selected}>{text}</option>;
+                  })}
+                </select>
+              </FormEntry>
+
             </div>
           </div>
         </form>
@@ -130,6 +145,7 @@ export class ActivityInputEditorDialogContent {
     const category = formData.get('inputCategory') as string;
     const uiHint = formData.get('inputUIHint') as string;
     const isArray = formData.get('inputIsArray') as string === 'true';
+    const driverType = formData.get('inputStorageDriverType') as string;
     const input = this.input;
 
     input.name = name;
@@ -139,6 +155,7 @@ export class ActivityInputEditorDialogContent {
     input.description = description;
     input.uiHint = uiHint;
     input.isArray = isArray;
+    input.storageDriverType = isNullOrWhitespace(driverType) ? null : driverType;
 
     return input;
   };

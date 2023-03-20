@@ -30,7 +30,8 @@ public class InputDescriptor : PropertyDescriptor
         //IEnumerable<string>? supportedSyntaxes = default,
         bool isReadOnly = false,
         bool isBrowsable = true,
-        bool isSynthetic = false)
+        bool isSynthetic = false,
+        Type? storageDriverType = default)
     {
         Name = name;
         Type = type;
@@ -46,6 +47,7 @@ public class InputDescriptor : PropertyDescriptor
         DefaultSyntax = defaultSyntax;
         //SupportedSyntaxes = supportedSyntaxes?.ToList() ?? new List<string>();
         IsReadOnly = isReadOnly;
+        StorageDriverType = storageDriverType;
         IsSynthetic = isSynthetic;
         IsBrowsable = isBrowsable;
     }
@@ -90,4 +92,10 @@ public class InputDescriptor : PropertyDescriptor
     /// True if the input is readonly, false otherwise.
     /// </summary>
     public bool? IsReadOnly { get; set; }
+    
+    /// <summary>
+    /// The storage driver type to use for persistence.
+    /// If no driver is specified, the referenced memory block will remain in memory for as long as the expression execution context exists.
+    /// </summary>
+    public Type? StorageDriverType { get; set; }
 }
