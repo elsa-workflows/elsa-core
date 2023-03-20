@@ -1,3 +1,4 @@
+using Elsa.Extensions;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
@@ -7,14 +8,18 @@ namespace Elsa.Workflows.Core.Builders;
 /// <inheritdoc />
 public class WorkflowBuilder : IWorkflowBuilder
 {
+    private readonly IActivityVisitor _activityVisitor;
     private readonly IIdentityGraphService _identityGraphService;
+    private readonly IActivityRegistry _activityRegistry;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public WorkflowBuilder(IIdentityGraphService identityGraphService)
+    public WorkflowBuilder(IActivityVisitor activityVisitor, IIdentityGraphService identityGraphService, IActivityRegistry activityRegistry)
     {
+        _activityVisitor = activityVisitor;
         _identityGraphService = identityGraphService;
+        _activityRegistry = activityRegistry;
         Result = new Variable();
     }
 
@@ -108,7 +113,7 @@ public class WorkflowBuilder : IWorkflowBuilder
     }
 
     /// <inheritdoc />
-    public Workflow BuildWorkflow()
+    public async Task<Workflow> BuildWorkflowAsync(CancellationToken cancellationToken = default)
     {
         var definitionId = DefinitionId ?? Guid.NewGuid().ToString("N");
         var id = Id ?? Guid.NewGuid().ToString("N");
@@ -118,15 +123,23 @@ public class WorkflowBuilder : IWorkflowBuilder
         var workflowMetadata = new WorkflowMetadata(Name, Description);
         var workflow = new Workflow(identity, publication, workflowMetadata, WorkflowOptions, root, Variables, CustomProperties);
 
-        // IF a Result variable is defined, install it into the workflow so we can capture the output into it.
+        // If a Result variable is defined, install it into the workflow so we can capture the output into it.
         if (Result != null)
         {
             workflow.ResultVariable = Result;
             workflow.Result = new Output(Result);
         }
 
-        _identityGraphService.AssignIdentitiesAsync(workflow);
-
+        var graph = await _activityVisitor.VisitAsync(workflow, cancellationToken);
+        var nodes = graph.Flatten().ToList();
+        
+        // Register all activity types first. The identity graph service will need to know about all activity types.
+        var distinctActivityTypes = nodes.Select(x => x.Activity.GetType()).Distinct().ToList();
+        await _activityRegistry.RegisterAsync(distinctActivityTypes, cancellationToken);
+        
+        // Assign identities to all activities.
+        _identityGraphService.AssignIdentities(nodes);
+        
         return workflow;
     }
 
@@ -135,6 +148,6 @@ public class WorkflowBuilder : IWorkflowBuilder
     {
         DefinitionId = workflowDefinition.GetType().Name;
         await workflowDefinition.BuildAsync(this, cancellationToken);
-        return BuildWorkflow();
+        return await BuildWorkflowAsync(cancellationToken);
     }
 }

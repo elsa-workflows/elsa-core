@@ -7,15 +7,15 @@ namespace Elsa.Workflows.Core.Services;
 /// <inheritdoc />
 public class IdentityGraphService : IIdentityGraphService
 {
-    private readonly IActivityWalker _activityWalker;
+    private readonly IActivityVisitor _activityVisitor;
     private readonly IActivityRegistry _activityRegistry;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public IdentityGraphService(IActivityWalker activityWalker, IActivityRegistry activityRegistry)
+    public IdentityGraphService(IActivityVisitor activityVisitor, IActivityRegistry activityRegistry)
     {
-        _activityWalker = activityWalker;
+        _activityVisitor = activityVisitor;
         _activityRegistry = activityRegistry;
     }
 
@@ -25,7 +25,7 @@ public class IdentityGraphService : IIdentityGraphService
     /// <inheritdoc />
     public async Task AssignIdentitiesAsync(IActivity root, CancellationToken cancellationToken = default)
     {
-        var graph = await _activityWalker.WalkAsync(root, cancellationToken);
+        var graph = await _activityVisitor.VisitAsync(root, cancellationToken);
         AssignIdentities(graph);
     }
 

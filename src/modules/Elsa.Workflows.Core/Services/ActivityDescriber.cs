@@ -96,7 +96,7 @@ public class ActivityDescriber : IActivityDescriber
     }
     
     public IEnumerable<PropertyInfo> GetInputProperties([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type activityType) => 
-        activityType.GetProperties().Where(x => typeof(Input).IsAssignableFrom(x.PropertyType) || x.GetCustomAttribute<InputAttribute>() != null);
+        activityType.GetProperties().Where(x => typeof(Input).IsAssignableFrom(x.PropertyType) || x.GetCustomAttribute<InputAttribute>() != null).DistinctBy(x => x.Name);
     
     public IEnumerable<PropertyInfo> GetOutputProperties([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type activityType) => 
         activityType.GetProperties().Where(x => typeof(Output).IsAssignableFrom(x.PropertyType)).DistinctBy(x => x.Name).ToList();
@@ -152,14 +152,17 @@ public class ActivityDescriber : IActivityDescriber
     }
 
     /// <inheritdoc />
-    public IEnumerable<InputDescriptor> DescribeInputProperties([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]Type activityType) => 
-        DescribeInputProperties(GetInputProperties(activityType));
+    public IEnumerable<InputDescriptor> DescribeInputProperties([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]Type activityType)
+    {
+        var properties = GetInputProperties(activityType);
+        return DescribeInputProperties(properties);
+    }
 
     /// <inheritdoc />
     public IEnumerable<OutputDescriptor> DescribeOutputProperties([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]Type activityType) => 
         DescribeOutputProperties(GetOutputProperties(activityType));
-    
-    public IEnumerable<InputDescriptor> DescribeInputProperties(IEnumerable<PropertyInfo> properties)
+
+    private IEnumerable<InputDescriptor> DescribeInputProperties(IEnumerable<PropertyInfo> properties)
     {
         return properties.Select(DescribeInputProperty);
     }

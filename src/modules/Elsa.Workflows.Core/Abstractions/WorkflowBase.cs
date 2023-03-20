@@ -9,7 +9,7 @@ namespace Elsa.Workflows.Core.Abstractions;
 public abstract class WorkflowBase : IWorkflow
 {
     /// <summary>
-    /// Invokes the <see cref="IWorkflowBuilder.BuildWorkflowAsync"/> method on the specified <see cref="IWorkflowBuilder"/>.
+    /// Invokes the <see cref="IWorkflowBuilder.BuildWorkflowAsync(Elsa.Workflows.Core.Contracts.IWorkflow,System.Threading.CancellationToken)"/> method on the specified <see cref="IWorkflowBuilder"/>.
     /// </summary>
     protected virtual ValueTask BuildAsync(IWorkflowBuilder builder, CancellationToken cancellationToken = default)
     {
@@ -18,7 +18,7 @@ public abstract class WorkflowBase : IWorkflow
     }
 
     /// <summary>
-    /// Invokes the <see cref="IWorkflowBuilder.BuildWorkflowAsync"/> method on the specified <see cref="IWorkflowBuilder"/>.
+    /// Invokes the <see cref="IWorkflowBuilder.BuildWorkflowAsync(Elsa.Workflows.Core.Contracts.IWorkflow,System.Threading.CancellationToken)"/> method on the specified <see cref="IWorkflowBuilder"/>.
     /// </summary>
     /// <param name="builder"></param>
     protected virtual void Build(IWorkflowBuilder builder)

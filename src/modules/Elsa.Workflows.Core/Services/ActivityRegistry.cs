@@ -1,4 +1,5 @@
 using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Workflows.Core.Services;
@@ -6,8 +7,20 @@ namespace Elsa.Workflows.Core.Services;
 /// <inheritdoc />
 public class ActivityRegistry : IActivityRegistry
 {
+    private readonly IActivityDescriber _activityDescriber;
+    private readonly IActivityVisitor _activityVisitor;
+    private readonly ISet<ActivityDescriptor> _manualActivityDescriptors = new HashSet<ActivityDescriptor>();
     private readonly IDictionary<Type, ICollection<ActivityDescriptor>> _providedActivityDescriptors = new Dictionary<Type, ICollection<ActivityDescriptor>>();
     private readonly IDictionary<(string Type, int Version), ActivityDescriptor> _activityDescriptors = new Dictionary<(string Type, int Version), ActivityDescriptor>();
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ActivityRegistry"/> class.
+    /// </summary>
+    public ActivityRegistry(IActivityDescriber activityDescriber, IActivityVisitor activityVisitor)
+    {
+        _activityDescriber = activityDescriber;
+        _activityVisitor = activityVisitor;
+    }
 
     /// <inheritdoc />
     public void Add(Type providerType, ActivityDescriptor descriptor) => Add(descriptor, GetOrCreateDescriptors(providerType));
@@ -57,6 +70,32 @@ public class ActivityRegistry : IActivityRegistry
     /// <inheritdoc />
     public IEnumerable<ActivityDescriptor> FindMany(Func<ActivityDescriptor, bool> predicate) => _activityDescriptors.Values.Where(predicate);
 
+    /// <inheritdoc />
+    public void Register(ActivityDescriptor descriptor)
+    {
+        Add(GetType(), descriptor);
+    }
+
+    /// <inheritdoc />
+    public async Task RegisterAsync(Type activityType, CancellationToken cancellationToken)
+    {
+        var activityTypeName = ActivityTypeNameHelper.GenerateTypeName(activityType);
+
+        if (_activityDescriptors.Values.Any(x => x.TypeName == activityTypeName))
+            return;
+
+        var activityDescriptor = await _activityDescriber.DescribeActivityAsync(activityType, cancellationToken);
+        Add(GetType(), activityDescriptor);
+        _manualActivityDescriptors.Add(activityDescriptor);
+    }
+
+    /// <inheritdoc />
+    public async Task RegisterAsync(IEnumerable<Type> activityTypes, CancellationToken cancellationToken = default)
+    {
+        foreach (var activityType in activityTypes)
+            await RegisterAsync(activityType, cancellationToken);
+    }
+
     private void Add(ActivityDescriptor descriptor, ICollection<ActivityDescriptor> target)
     {
         _activityDescriptors.Add((descriptor.TypeName, descriptor.Version), descriptor);
@@ -73,4 +112,7 @@ public class ActivityRegistry : IActivityRegistry
 
         return descriptors;
     }
+
+    /// <inheritdoc />
+    public ValueTask<IEnumerable<ActivityDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default) => new(_manualActivityDescriptors);
 }

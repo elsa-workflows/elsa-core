@@ -103,7 +103,7 @@ public class WorkflowsFeature : FeatureBase
             // Core.
             .AddSingleton<IActivityInvoker, ActivityInvoker>()
             .AddSingleton<IWorkflowRunner, WorkflowRunner>()
-            .AddSingleton<IActivityWalker, ActivityWalker>()
+            .AddSingleton<IActivityVisitor, ActivityVisitor>()
             .AddSingleton<IIdentityGraphService, IdentityGraphService>()
             .AddSingleton<IWorkflowStateSerializer, WorkflowStateSerializer>()
             .AddSingleton<IActivitySchedulerFactory, ActivitySchedulerFactory>()

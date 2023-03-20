@@ -8,7 +8,7 @@ namespace Elsa.Workflows.Core.Contracts;
 public interface IWorkflow
 {
     /// <summary>
-    /// Invokes the <see cref="IWorkflowBuilder.BuildWorkflowAsync"/> method on the specified <see cref="IWorkflowBuilder"/>.
+    /// Invokes the the specified <see cref="IWorkflowBuilder"/>.
     /// </summary>
     ValueTask BuildAsync(IWorkflowBuilder builder, CancellationToken cancellationToken = default);
 }

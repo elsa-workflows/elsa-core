@@ -73,8 +73,7 @@ public class ActivityExecutionContext : IExecutionContext
     /// A cancellation token to use when invoking asynchronous operations.
     /// </summary>
     public CancellationToken CancellationToken { get; }
-
-
+    
     /// <inheritdoc />
     public IDictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
 

@@ -88,7 +88,7 @@ public static class ExpressionExecutionContextExtensions
     }
 
     /// <summary>
-    /// Returns a dictionary of memory blocks across scopes.
+    /// Returns a the first context that contains a memory block with the specified ID.
     /// </summary>
     public static ExpressionExecutionContext? FindContextContainingBlock(this ExpressionExecutionContext context, string blockId)
     {

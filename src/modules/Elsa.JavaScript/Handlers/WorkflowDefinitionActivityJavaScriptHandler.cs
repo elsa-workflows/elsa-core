@@ -18,7 +18,6 @@ public class WorkflowDefinitionActivityJavaScriptHandler : INotificationHandler<
 {
     private readonly IActivityRegistry _activityRegistry;
     
-
     /// <summary>
     /// Constructor.
     /// </summary>
@@ -36,9 +35,6 @@ public class WorkflowDefinitionActivityJavaScriptHandler : INotificationHandler<
         // Always create workflow input accessors.
         CreateWorkflowInputAccessors(engine, context);
         
-        // Create input getters.
-        //CreateCompositeActivityInputAccessors(engine, context);
-        
         return Task.CompletedTask;
     }
 
@@ -53,24 +49,4 @@ public class WorkflowDefinitionActivityJavaScriptHandler : INotificationHandler<
             engine.SetValue($"get{inputPascalName}", (Func<object?>)(() => inputValue));
         }
     }
-
-    // private void CreateCompositeActivityInputAccessors(Engine engine, ExpressionExecutionContext context)
-    // {
-    //     var workflowDefinitionActivity = context.GetActivityExecutionContext().GetFirstWorkflowDefinitionActivity();
-    //     
-    //     if (workflowDefinitionActivity == null)
-    //         return;
-    //
-    //     var workflowDefinitionActivityDescriptor = _activityRegistry.Find(workflowDefinitionActivity.Type, workflowDefinitionActivity.Version);
-    //     var inputDescriptors = workflowDefinitionActivityDescriptor?.Inputs ?? Enumerable.Empty<InputDescriptor>();
-    //
-    //     foreach (var inputDefinition in inputDescriptors)
-    //     {
-    //         var inputPascalName = inputDefinition.Name.Pascalize();
-    //         var input = workflowDefinitionActivity.SyntheticProperties.TryGetValue(inputDefinition.Name, out var inputValue) ? (Input?)inputValue : default;
-    //         var evaluatedExpression = input != null ? context.Get(input.MemoryBlockReference()) : default;
-    //
-    //         engine.SetValue($"get{inputPascalName}", (Func<object?>)(() => evaluatedExpression));
-    //     }
-    // }
 }

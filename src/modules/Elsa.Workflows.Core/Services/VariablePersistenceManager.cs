@@ -70,10 +70,7 @@ public class VariablePersistenceManager : IVariablePersistenceManager
         foreach (var context in contexts)
         {
             var variables = GetLocalVariables(context);
-
-            // Foreach variable memory block, save its value using their associated storage driver.
             var storageDriverContext = new StorageDriverContext(context, cancellationToken);
-            //var blocks = register.Blocks.Values.Where(x => x.Metadata is VariableBlockMetadata { StorageDriverType: not null }).ToList();
 
             foreach (var variable in variables)
             {
@@ -83,8 +80,7 @@ public class VariablePersistenceManager : IVariablePersistenceManager
 
                 if (driver == null)
                     continue;
-
-                //var variable = metadata.Variable;
+                
                 var id = GetStateId(workflowExecutionContext, context, variable);
                 var value = block.Value;
 

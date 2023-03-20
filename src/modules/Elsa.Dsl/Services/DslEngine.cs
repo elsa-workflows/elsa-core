@@ -8,6 +8,7 @@ using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Dsl.Services;
 
+/// <inheritdoc />
 public class DslEngine : IDslEngine
 {
     private readonly ITypeSystem _typeSystem;
@@ -15,6 +16,9 @@ public class DslEngine : IDslEngine
     private readonly IExpressionHandlerRegistry _expressionHandlerRegistry;
     private readonly IWorkflowBuilderFactory _workflowBuilderFactory;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DslEngine"/> class.
+    /// </summary>
     public DslEngine(
         ITypeSystem typeSystem,
         IFunctionActivityRegistry functionActivityRegistry,
@@ -27,7 +31,8 @@ public class DslEngine : IDslEngine
         _workflowBuilderFactory = workflowBuilderFactory;
     }
 
-    public Workflow Parse(string script)
+    /// <inheritdoc />
+    public async Task<Workflow> ParseAsync(string script, CancellationToken cancellationToken = default)
     {
         var stream = CharStreams.fromString(script);
         var lexer = new ElsaLexer(stream);
@@ -36,7 +41,7 @@ public class DslEngine : IDslEngine
         var tree = parser.program();
         var interpreter = new WorkflowDefinitionBuilderInterpreter(_typeSystem, _functionActivityRegistry, _expressionHandlerRegistry, _workflowBuilderFactory, new WorkflowDefinitionInterpreterSettings());
         var workflowBuilder = interpreter.Visit(tree);
-        var workflow = workflowBuilder.BuildWorkflow();
+        var workflow = await workflowBuilder.BuildWorkflowAsync(cancellationToken);
 
         return workflow;
     }
