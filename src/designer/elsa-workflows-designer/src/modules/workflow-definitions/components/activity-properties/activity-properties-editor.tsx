@@ -275,7 +275,6 @@ export class ActivityPropertiesEditor {
   }
 
   private onOutputPropertyEditorChanged = (outputDescriptor: OutputDescriptor, outputTargetValue: string) => {
-    debugger;
     const activity = this.activity;
     const propertyName = outputDescriptor.name;
     const camelCasePropertyName = camelCase(propertyName);
