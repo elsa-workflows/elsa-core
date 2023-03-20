@@ -7,7 +7,6 @@ using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Management.Contracts;
 using Humanizer;
 
 namespace Elsa.Workflows.Management.Serialization.Converters;
@@ -68,7 +67,6 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
         var activity = activityDescriptor.Constructor(context);
 
         // Reconstruct synthetic inputs.
-        
         foreach (var inputDescriptor in activityDescriptor.Inputs.Where(x => x.IsSynthetic))
         {
             var inputName = inputDescriptor.Name;

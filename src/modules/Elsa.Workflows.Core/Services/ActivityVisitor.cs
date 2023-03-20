@@ -4,7 +4,7 @@ using ActivityNode = Elsa.Workflows.Core.Models.ActivityNode;
 namespace Elsa.Workflows.Core.Services;
 
 /// <inheritdoc />
-public class ActivityWalker : IActivityWalker
+public class ActivityVisitor : IActivityVisitor
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly IEnumerable<IActivityPortResolver> _portResolvers;
@@ -12,23 +12,23 @@ public class ActivityWalker : IActivityWalker
     /// <summary>
     /// Constructor.
     /// </summary>
-    public ActivityWalker(IEnumerable<IActivityPortResolver> portResolvers, IServiceProvider serviceProvider)
+    public ActivityVisitor(IEnumerable<IActivityPortResolver> portResolvers, IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
         _portResolvers = portResolvers.OrderByDescending(x => x.Priority).ToList();
     }
 
     /// <inheritdoc />
-    public async Task<ActivityNode> WalkAsync(IActivity activity, CancellationToken cancellationToken = default)
+    public async Task<ActivityNode> VisitAsync(IActivity activity, CancellationToken cancellationToken = default)
     {
         var collectedActivities = new HashSet<IActivity>(new[] { activity });
         var graph = new ActivityNode(activity);
         var collectedNodes = new HashSet<ActivityNode>(new[] { graph });
-        await WalkRecursiveAsync((graph, activity), collectedActivities, collectedNodes, cancellationToken);
+        await VisitRecursiveAsync((graph, activity), collectedActivities, collectedNodes, cancellationToken);
         return graph;
     }
 
-    private async Task WalkRecursiveAsync((ActivityNode Node, IActivity Activity) pair, HashSet<IActivity> collectedActivities, HashSet<ActivityNode> collectedNodes, CancellationToken cancellationToken)
+    private async Task VisitRecursiveAsync((ActivityNode Node, IActivity Activity) pair, HashSet<IActivity> collectedActivities, HashSet<ActivityNode> collectedNodes, CancellationToken cancellationToken)
     {
         if (pair.Activity is IInitializable initializable)
         {
@@ -36,10 +36,10 @@ public class ActivityWalker : IActivityWalker
             await initializable.InitializeAsync(context);
         }
 
-        await WalkPortsRecursiveAsync(pair, collectedActivities, collectedNodes, cancellationToken);
+        await VisitPortsRecursiveAsync(pair, collectedActivities, collectedNodes, cancellationToken);
     }
 
-    private async Task WalkPortsRecursiveAsync((ActivityNode Node, IActivity Activity) pair, HashSet<IActivity> collectedActivities, HashSet<ActivityNode> collectedNodes, CancellationToken cancellationToken)
+    private async Task VisitPortsRecursiveAsync((ActivityNode Node, IActivity Activity) pair, HashSet<IActivity> collectedActivities, HashSet<ActivityNode> collectedNodes, CancellationToken cancellationToken)
     {
         var resolver = _portResolvers.FirstOrDefault(x => x.GetSupportsActivity(pair.Activity));
 
@@ -65,7 +65,7 @@ public class ActivityWalker : IActivityWalker
             childNode.Parents.Add(pair.Node);
             pair.Node.Children.Add(childNode);
             collectedActivities.Add(port);
-            await WalkRecursiveAsync((childNode, port), collectedActivities, collectedNodes, cancellationToken);
+            await VisitRecursiveAsync((childNode, port), collectedActivities, collectedNodes, cancellationToken);
         }
     }
 }

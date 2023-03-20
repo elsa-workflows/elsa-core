@@ -1,8 +1,6 @@
-using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Services;
 
-namespace Elsa.Workflows.Management.Contracts;
+namespace Elsa.Workflows.Core.Contracts;
 
 public interface IActivityFactory
 {

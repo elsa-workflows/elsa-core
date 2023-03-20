@@ -1,23 +1,27 @@
 using System.Reflection;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Management.Contracts;
-using Elsa.Workflows.Management.Models;
 using Humanizer;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Workflows.Management.Services;
+namespace Elsa.Workflows.Core.Services;
 
+/// <inheritdoc />
 public class PropertyOptionsResolver : IPropertyOptionsResolver
 {
     private readonly IServiceProvider _serviceProvider;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PropertyOptionsResolver"/> class.
+    /// </summary>
     public PropertyOptionsResolver(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
     }
 
+    /// <inheritdoc />
     public object? GetOptions(PropertyInfo propertyInfo)
     {
         var inputAttribute = propertyInfo.GetCustomAttribute<InputAttribute>();

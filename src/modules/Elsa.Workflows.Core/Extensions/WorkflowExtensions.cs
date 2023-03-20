@@ -1,5 +1,3 @@
-using Elsa.Expressions.Helpers;
-using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Models;
 
 // ReSharper disable once CheckNamespace
@@ -38,11 +36,4 @@ public static class WorkflowExtensions
         workflow.Identity = workflow.Identity with { DefinitionId = value };
         return workflow;
     }
-}
-
-public static class MemoryBlockReferenceExtensions
-{
-    public static object? Get(this MemoryBlockReference block, ActivityExecutionContext context) => block.Get(context.ExpressionExecutionContext);
-    public static T? Get<T>(this MemoryBlockReference block, ActivityExecutionContext context) => block.Get(context.ExpressionExecutionContext).ConvertTo<T>();
-    public static void Set(this MemoryBlockReference block, ActivityExecutionContext context, object? value) => block.Set(context.ExpressionExecutionContext, value);
 }

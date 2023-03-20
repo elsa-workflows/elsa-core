@@ -23,7 +23,7 @@ public class ExpressionExecutionContext
         ParentContext = parentContext;
         CancellationToken = cancellationToken;
     }
-    
+
     /// <summary>
     /// A scoped service provider.
     /// </summary>
@@ -43,7 +43,7 @@ public class ExpressionExecutionContext
     /// Provides access to the parent <see cref="ExpressionExecutionContext"/>, if there is any.
     /// </summary>
     public ExpressionExecutionContext? ParentContext { get; set; }
-    
+
     /// <summary>
     /// A cancellation token.
     /// </summary>
@@ -53,26 +53,66 @@ public class ExpressionExecutionContext
     /// Returns the <see cref="MemoryBlock"/> pointed to by the specified memory block reference.
     /// </summary>
     public MemoryBlock GetBlock(Func<MemoryBlockReference> blockReference) => GetBlock(blockReference());
-    
+
     /// <summary>
     /// Returns the <see cref="MemoryBlock"/> pointed to by the specified memory block reference.
     /// </summary>
     public MemoryBlock GetBlock(MemoryBlockReference blockReference) => GetBlockInternal(blockReference) ?? throw new Exception($"Failed to retrieve memory block with reference {blockReference.Id}");
-    
-    public object Get(Func<MemoryBlockReference> blockReference) => Get(blockReference());
-    public object Get(MemoryBlockReference blockReference) => GetBlock(blockReference).Value!;
-    public T Get<T>(Func<MemoryBlockReference> blockReference) => Get<T>(blockReference());
-    public T Get<T>(MemoryBlockReference blockReference) => (T)Get(blockReference);
-    public void Set(Func<MemoryBlockReference> blockReference, object? value) => Set(blockReference(), value);
 
-    public void Set(MemoryBlockReference blockReference, object? value)
+    /// <summary>
+    /// Returns the value of the memory block pointed to by the specified memory block reference.
+    /// </summary>
+    public object? Get(Func<MemoryBlockReference> blockReference) => Get(blockReference());
+
+    /// <summary>
+    /// Returns the value of the memory block pointed to by the specified memory block reference.
+    /// </summary>
+    public object? Get(MemoryBlockReference blockReference) => GetBlock(blockReference).Value;
+
+    /// <summary>
+    /// Returns the value of the memory block pointed to by the specified memory block reference. 
+    /// </summary>
+    public T? Get<T>(Func<MemoryBlockReference> blockReference) => Get<T>(blockReference());
+
+    /// <summary>
+    /// Returns the value of the memory block pointed to by the specified memory block reference.
+    /// </summary>
+    public T? Get<T>(MemoryBlockReference blockReference) => (T?)Get(blockReference);
+
+    /// <summary>
+    /// Sets the value of the memory block pointed to by the specified memory block reference.
+    /// </summary>
+    public void Set(Func<MemoryBlockReference> blockReference, object? value, Action<MemoryBlock>? configure = default) => Set(blockReference(), value, configure);
+
+    /// <summary>
+    /// Sets the value of the memory block pointed to by the specified memory block reference.
+    /// </summary>
+    public void Set(MemoryBlockReference blockReference, object? value, Action<MemoryBlock>? configure = default)
     {
         var block = GetBlockInternal(blockReference) ?? Memory.Declare(blockReference);
         block.Value = value;
+        configure?.Invoke(block);
     }
 
+    /// <summary>
+    /// Returns the service of the specified type.
+    /// </summary>
     public T GetRequiredService<T>() where T : notnull => ServiceProvider.GetRequiredService<T>();
 
-    //private MemoryDatum? GetMemoryDatumInternal(MemoryDatumReference locationReference) => MemoryRegister.TryGetMemoryDatum(locationReference.Id, out var location) ? location : ParentContext?.GetMemoryDatumInternal(locationReference);
-    private MemoryBlock? GetBlockInternal(MemoryBlockReference blockReference) => Memory.TryGetBlock(blockReference.Id, out var location) ? location : default;
+    private MemoryBlock? GetBlockInternal(MemoryBlockReference blockReference)
+    {
+        var currentContext = this;
+
+        while (currentContext != null)
+        {
+            var register = currentContext.Memory;
+
+            if (register.TryGetBlock(blockReference.Id, out var block))
+                return block;
+
+            currentContext = currentContext.ParentContext;
+        }
+
+        return null;
+    }
 }

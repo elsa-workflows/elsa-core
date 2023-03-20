@@ -9,7 +9,6 @@ using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Management.Models;
 using Refit;
 
 namespace Elsa.Telnyx.Activities;

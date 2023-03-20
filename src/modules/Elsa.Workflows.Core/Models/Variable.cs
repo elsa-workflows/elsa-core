@@ -1,7 +1,6 @@
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Core.Models;
 
@@ -30,8 +29,8 @@ public class Variable : MemoryBlockReference
     public object? Value { get; set; }
     
     /// <summary>
-    /// The ID of a storage driver to use for persistence.
-    /// If not driver is specified, the referenced memory block will remain in memory for as long as the expression execution context exists.
+    /// The storage driver type to use for persistence.
+    /// If no driver is specified, the referenced memory block will remain in memory for as long as the expression execution context exists.
     /// </summary>
     public Type? StorageDriverType { get; set; }
 

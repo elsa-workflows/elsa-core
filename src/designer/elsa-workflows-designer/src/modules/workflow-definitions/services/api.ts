@@ -3,8 +3,8 @@ import {InputDefinition, WorkflowDefinition, WorkflowDefinitionSummary, Workflow
 import {Activity, PagedList, Variable, VersionedEntity, VersionOptions} from "../../../models";
 import {Service} from "typedi";
 import {AxiosResponse} from "axios";
-import { removeGuidsFromPortNames, addGuidsToPortNames } from '../../../utils/graph';
-import { cloneDeep } from '@antv/x6/lib/util/object/object';
+import {removeGuidsFromPortNames, addGuidsToPortNames} from '../../../utils/graph';
+import {cloneDeep} from '@antv/x6/lib/util/object/object';
 import {ElsaClientProvider} from "../../../services";
 
 @Service()
@@ -62,6 +62,7 @@ export class WorkflowDefinitionsApi {
     const queryString = {};
 
     if (!!request.versionOptions) queryString['versionOptions'] = getVersionOptionsString(request.versionOptions);
+    if(request.includeCompositeRoot === true) queryString['includeCompositeRoot'] = true;
 
     const queryStringText = serializeQueryString(queryString);
     const httpClient = await this.getHttpClient();
@@ -230,6 +231,7 @@ export interface PublishWorkflowDefinitionRequest {
 export interface GetWorkflowRequest {
   definitionId: string;
   versionOptions?: VersionOptions;
+  includeCompositeRoot?: boolean;
 }
 
 export interface ExportWorkflowRequest {
