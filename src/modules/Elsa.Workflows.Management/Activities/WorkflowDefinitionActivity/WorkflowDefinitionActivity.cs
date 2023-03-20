@@ -32,16 +32,7 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         CopyInputPropertiesToVariables(context);
-        //AddVariablesToMemory(context);
         await context.ScheduleActivityAsync(Root, OnChildCompletedAsync);
-    }
-
-    private void AddVariablesToMemory(ActivityExecutionContext context)
-    {
-        foreach (var variable in Variables)
-        {
-            context.Set(variable, variable.Value);
-        }
     }
 
     private void CopyInputPropertiesToVariables(ActivityExecutionContext context)
@@ -50,8 +41,15 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
         {
             var input = SyntheticProperties.TryGetValue(inputDescriptor.Name, out var inputValue) ? (Input?)inputValue : default;
             var evaluatedExpression = input != null ? context.Get(input.MemoryBlockReference()) : default;
+
+            // Create a local scope variable for each input property.
+            var variable = new Variable(inputDescriptor.Name)
+            {
+                StorageDriverType = typeof(WorkflowStorageDriver) // TODO: Make storage driver configurable.
+            };
             
-            context.SetVariable(inputDescriptor.Name, evaluatedExpression, typeof(WorkflowStorageDriver)); // TODO: Make storage driver configurable.
+            context.ExpressionExecutionContext.Memory.Declare(variable);
+            variable.Set(context, evaluatedExpression);
         }
     }
 
@@ -97,24 +95,7 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
         // Construct the root activity stored in the activity definitions.
         var materializer = serviceProvider.GetRequiredService<IWorkflowMaterializer>();
         var root = await materializer.MaterializeAsync(workflowDefinition, cancellationToken);
-        var typeRegistry = serviceProvider.GetRequiredService<IActivityRegistry>();
-        var descriptor = typeRegistry.Find(this)!;
-        DeclareInputsAsVariables(descriptor);
 
         Root = root;
-    }
-    
-    // In order for the variables to participate in the persistence mechanism, we need to declare them first. 
-    private void DeclareInputsAsVariables(ActivityDescriptor activityDescriptor)
-    {
-        foreach (var inputDescriptor in activityDescriptor.Inputs)
-        {
-            var variable = new Variable(inputDescriptor.Name)
-            {
-                StorageDriverType = typeof(WorkflowStorageDriver) // TODO: Make this configurable on the input descriptor.
-            };
-
-            Variables.Add(variable);
-        }
     }
 }
