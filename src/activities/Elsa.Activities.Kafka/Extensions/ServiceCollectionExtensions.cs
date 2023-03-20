@@ -27,6 +27,7 @@ namespace Elsa.Activities.Kafka.Extensions
                 .AddHostedService<StartKafkaQueues>()
                 .AddSingleton<IKafkaTenantIdResolver, DefaultKafkaTenantIdResolver>()
                 .AddSingleton<IKafkaCustomActivityProvider, KafkaCustomActivityProvider>()
+                .AddBookmarkProvider<OverrideKafkaBookmarkProvider>()
                 .AddBookmarkProvider<QueueMessageReceivedBookmarkProvider>();
 
             options.AddPubSubConsumer<UpdateWorkers, TriggerIndexingFinished>("WorkflowManagementEvents");
