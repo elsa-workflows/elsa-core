@@ -8,8 +8,6 @@ using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Management.Contracts;
-using Elsa.Workflows.Management.Models;
 using Humanizer;
 using Microsoft.Extensions.Options;
 

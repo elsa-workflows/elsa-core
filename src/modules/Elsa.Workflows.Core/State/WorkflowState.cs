@@ -1,7 +1,5 @@
-using System.Text.Json.Serialization;
 using Elsa.Common.Entities;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Serialization.Converters;
 
 namespace Elsa.Workflows.Core.State;
 

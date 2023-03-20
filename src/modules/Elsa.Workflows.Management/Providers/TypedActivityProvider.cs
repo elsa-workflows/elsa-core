@@ -1,7 +1,6 @@
 using System.Runtime.CompilerServices;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Options;
 using Microsoft.Extensions.Options;
 

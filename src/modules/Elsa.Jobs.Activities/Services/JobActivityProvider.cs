@@ -9,7 +9,6 @@ using Elsa.Jobs.Contracts;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Management.Contracts;
 using Humanizer;
 
 namespace Elsa.Jobs.Activities.Services;

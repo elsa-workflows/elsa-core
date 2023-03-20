@@ -3,7 +3,6 @@ using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Serialization.Converters;
-using Elsa.Workflows.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Core.Serialization;

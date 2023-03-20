@@ -5,7 +5,6 @@ using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Extensions;
-using Elsa.Workflows.Management.Models;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Management.Activities.SetWorkflowOutput;

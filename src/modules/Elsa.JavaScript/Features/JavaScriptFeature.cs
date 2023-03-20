@@ -14,7 +14,6 @@ using Elsa.JavaScript.TypeDefinitions.Providers;
 using Elsa.JavaScript.TypeDefinitions.Services;
 using Elsa.Mediator.Features;
 using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Management.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.JavaScript.Features;

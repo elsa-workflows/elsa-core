@@ -6,7 +6,6 @@ using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Middleware.Activities;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Pipelines.ActivityExecution;
-using Elsa.Workflows.Management.Contracts;
 
 namespace Elsa.Jobs.Activities.Middleware.Activities;
 

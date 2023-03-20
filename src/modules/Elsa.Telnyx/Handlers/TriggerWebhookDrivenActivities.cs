@@ -7,7 +7,6 @@ using Elsa.Telnyx.Extensions;
 using Elsa.Telnyx.Payloads.Abstract;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
 
 namespace Elsa.Telnyx.Handlers;

@@ -1,7 +1,6 @@
 using System.Threading.Tasks;
 using Elsa.Http;
 using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Elsa.Samples.MyBackendApi.Controllers;

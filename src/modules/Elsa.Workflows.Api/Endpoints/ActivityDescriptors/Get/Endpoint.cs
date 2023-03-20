@@ -1,7 +1,6 @@
 using Elsa.Abstractions;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Management.Contracts;
 
 namespace Elsa.Workflows.Api.Endpoints.ActivityDescriptors.Get;
 

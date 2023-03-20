@@ -1,7 +1,6 @@
 using Elsa.Labels.Contracts;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Serialization;
-using Elsa.Workflows.Core.Services;
 using FastEndpoints;
 using JetBrains.Annotations;
 

@@ -6,7 +6,6 @@ using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Serialization;
-using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Materializers;
