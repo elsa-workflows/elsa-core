@@ -28,6 +28,9 @@ public abstract class Container : Activity, IVariableContainer
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
+        // Register variables.
+        context.ExpressionExecutionContext.Memory.Declare(Variables);
+        
         // Schedule children.
         await ScheduleChildrenAsync(context);
     }
