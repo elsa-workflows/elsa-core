@@ -3,12 +3,14 @@ using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Notifications;
+using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 
 /// <summary>
 /// Refreshes the <see cref="IActivityRegistry"/> for the <see cref="WorkflowDefinitionActivityProvider"/> provider whenever an <see cref="WorkflowDefinition"/> is published, retracted or deleted.
 /// </summary>
+[PublicAPI]
 public class RefreshActivityRegistryHandler :
     INotificationHandler<WorkflowDefinitionPublished>,
     INotificationHandler<WorkflowDefinitionRetracted>,
