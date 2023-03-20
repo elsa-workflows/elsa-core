@@ -1,7 +1,6 @@
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Core.Models;
 
@@ -9,11 +8,12 @@ public class Variable : MemoryBlockReference
 {
     public Variable()
     {
+        Id = Guid.NewGuid().ToString("N");
     }
 
-    public Variable(string name)
+    public Variable(string name) : this()
     {
-        Id = name;
+        Name = name;
     }
 
     public Variable(string name, object? value = default) : this(name)
@@ -21,11 +21,7 @@ public class Variable : MemoryBlockReference
         Value = value;
     }
 
-    public string Name
-    {
-        get => Id;
-        set => Id = value;
-    }
+    public string Name { get; set; }
     
     public object? Value { get; set; }
     

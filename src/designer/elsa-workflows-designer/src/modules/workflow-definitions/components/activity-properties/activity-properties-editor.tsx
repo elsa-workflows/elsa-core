@@ -275,6 +275,7 @@ export class ActivityPropertiesEditor {
   }
 
   private onOutputPropertyEditorChanged = (outputDescriptor: OutputDescriptor, outputTargetValue: string) => {
+    debugger;
     const activity = this.activity;
     const propertyName = outputDescriptor.name;
     const camelCasePropertyName = camelCase(propertyName);
@@ -357,7 +358,7 @@ export class ActivityPropertiesEditor {
     const outputTargetOptions: Array<any> = [null];
 
     if (variables.length > 0)
-      outputTargetOptions.push({label: 'Variables', items: [...variables.map(x => ({value: x.name, name: x.name}))], kind: 'variable'});
+      outputTargetOptions.push({label: 'Variables', items: [...variables.map(x => ({value: x.id, name: x.name}))], kind: 'variable'});
 
     if (outputDefinitions.length > 0)
       outputTargetOptions.push({label: 'Outputs', items: [...outputDefinitions.map(x => ({value: x.name, name: x.name}))], kind: 'output'});

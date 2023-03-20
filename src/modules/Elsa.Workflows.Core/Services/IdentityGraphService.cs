@@ -84,7 +84,7 @@ public class IdentityGraphService : IIdentityGraphService
         var seed = 0;
 
         foreach (var variable in variables)
-            variable.Id = variable.Name != null! ? variable.Name : $"{activity.Id}:variable-{++seed}";
+            variable.Id = variable.Id != null! ? variable.Id : $"{activity.Id}:variable-{++seed}";
     }
 
     private string CreateId(ActivityNode activityNode, IDictionary<string, int> identityCounters, ICollection<ActivityNode> allNodes)
