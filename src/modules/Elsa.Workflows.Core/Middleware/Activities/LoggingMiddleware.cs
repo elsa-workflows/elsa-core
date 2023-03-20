@@ -2,7 +2,6 @@ using System.Diagnostics;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Pipelines.ActivityExecution;
-using Elsa.Workflows.Core.Services;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Core.Middleware.Activities;

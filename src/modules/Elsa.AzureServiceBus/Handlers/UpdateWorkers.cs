@@ -5,7 +5,6 @@ using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Runtime.Notifications;
-using Elsa.Workflows.Core.Services;
 
 namespace Elsa.AzureServiceBus.Handlers;
 

@@ -193,7 +193,7 @@ export class FlowchartComponent {
   @Method()
   async updateActivity(args: UpdateActivityArgs) {
     const activityId = args.id;
-    const originalId = args.originalId;
+    const originalId = args.originalId ?? activityId;
     const activity = args.activity;
     const node = this.graph.getNodes().find(x => x.data.id == originalId);
     const nodeShape = node as ActivityNodeShape;

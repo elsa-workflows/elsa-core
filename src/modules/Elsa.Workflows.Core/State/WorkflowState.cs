@@ -1,7 +1,5 @@
-using System.Text.Json.Serialization;
 using Elsa.Common.Entities;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Serialization.Converters;
 
 namespace Elsa.Workflows.Core.State;
 
@@ -63,6 +61,5 @@ public class WorkflowState : Entity
     /// <summary>
     /// A global property bag that contains properties set by application code and/or activities.
     /// </summary>
-    [JsonConverter(typeof(PropertyBagConverter))]
     public PropertyBag Properties { get; set; } = new();
 }

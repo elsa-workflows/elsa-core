@@ -22,7 +22,7 @@ namespace Elsa.Workflows.Runtime.Services;
 /// <inheritdoc />
 public class TriggerIndexer : ITriggerIndexer
 {
-    private readonly IActivityWalker _activityWalker;
+    private readonly IActivityVisitor _activityVisitor;
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly IExpressionEvaluator _expressionEvaluator;
     private readonly IIdentityGenerator _identityGenerator;
@@ -37,7 +37,7 @@ public class TriggerIndexer : ITriggerIndexer
     /// Constructor.
     /// </summary>
     public TriggerIndexer(
-        IActivityWalker activityWalker,
+        IActivityVisitor activityVisitor,
         IWorkflowDefinitionService workflowDefinitionService,
         IExpressionEvaluator expressionEvaluator,
         IIdentityGenerator identityGenerator,
@@ -48,7 +48,7 @@ public class TriggerIndexer : ITriggerIndexer
         SerializerOptionsProvider serializerOptionsProvider,
         ILogger<TriggerIndexer> logger)
     {
-        _activityWalker = activityWalker;
+        _activityVisitor = activityVisitor;
         _expressionEvaluator = expressionEvaluator;
         _identityGenerator = identityGenerator;
         _triggerStore = triggerStore;
@@ -152,7 +152,7 @@ public class TriggerIndexer : ITriggerIndexer
     private async IAsyncEnumerable<StoredTrigger> GetTriggersAsync(Workflow workflow, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var context = new WorkflowIndexingContext(workflow, cancellationToken);
-        var nodes = await _activityWalker.WalkAsync(workflow.Root, cancellationToken);
+        var nodes = await _activityVisitor.VisitAsync(workflow.Root, cancellationToken);
 
         // Get a list of activities that are configured as "startable".
         var startableNodes = nodes

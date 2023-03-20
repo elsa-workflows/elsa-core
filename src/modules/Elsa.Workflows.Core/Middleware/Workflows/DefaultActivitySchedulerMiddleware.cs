@@ -1,24 +1,31 @@
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
-using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Core.Middleware.Workflows;
 
+/// <summary>
+/// Installs middleware that executes scheduled activities.
+/// </summary>
 public static class UseActivitySchedulerMiddlewareExtensions
 {
     /// <summary>
-    /// Installs middleware that executes scheduled work items (activities). 
+    /// Installs middleware that executes scheduled activities. 
     /// </summary>
     public static IWorkflowExecutionPipelineBuilder UseDefaultActivityScheduler(this IWorkflowExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<DefaultActivitySchedulerMiddleware>();
 }
 
+/// <summary>
+/// A workflow execution middleware component that executes scheduled activities.
+/// </summary>
 public class DefaultActivitySchedulerMiddleware : WorkflowExecutionMiddleware
 {
+    /// <inheritdoc />
     public DefaultActivitySchedulerMiddleware(WorkflowMiddlewareDelegate next) : base(next)
     {
     }
 
+    /// <inheritdoc />
     public override async ValueTask InvokeAsync(WorkflowExecutionContext context)
     {
         var scheduler = context.Scheduler;
@@ -40,16 +47,7 @@ public class DefaultActivitySchedulerMiddleware : WorkflowExecutionMiddleware
         await Next(context);
         
         // If there are no bookmarks and all activities are completed, complete the workflow.
-        if (context.Status == WorkflowStatus.Running)
-        {
-            if (!context.Bookmarks.Any())
-            {
-                context.TransitionTo(WorkflowSubStatus.Finished);
-            }
-            else
-            {
-                context.TransitionTo(WorkflowSubStatus.Suspended);
-            }
-        }
+        if (context.Status == WorkflowStatus.Running) 
+            context.TransitionTo(!context.Bookmarks.Any() ? WorkflowSubStatus.Finished : WorkflowSubStatus.Suspended);
     }
 }

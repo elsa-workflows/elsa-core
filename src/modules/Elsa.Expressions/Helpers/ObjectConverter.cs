@@ -48,7 +48,7 @@ public static class ObjectConverter
         if (sourceType == targetType)
             return value;
 
-        var options = converterOptions?.SerializerOptions ?? new JsonSerializerOptions();
+        var options = converterOptions?.SerializerOptions != null ? new JsonSerializerOptions(converterOptions.SerializerOptions) : new JsonSerializerOptions();
         options.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
         options.ReferenceHandler = ReferenceHandler.Preserve;
         options.PropertyNameCaseInsensitive = true;
@@ -96,6 +96,9 @@ public static class ObjectConverter
 
         if (underlyingSourceType == typeof(ExpandoObject) && underlyingTargetType.IsClass)
         {
+            if (value is IDictionary<string, object> dictionary && typeof(IDictionary<string, object>).IsAssignableFrom(underlyingTargetType))
+                return new Dictionary<string, object>(dictionary);
+
             var expandoJson = JsonSerializer.Serialize(value);
             return ConvertTo(expandoJson, underlyingTargetType, converterOptions);
         }

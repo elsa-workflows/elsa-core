@@ -156,7 +156,7 @@ export enum SyntaxNames {
   Literal = 'Literal',
   JavaScript = 'JavaScript',
   Liquid = 'Liquid',
-  Json = 'Json'
+  Object = 'Object'
 }
 
 export interface ActivityMetadata {

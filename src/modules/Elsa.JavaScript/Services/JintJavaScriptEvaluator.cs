@@ -1,17 +1,12 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
-using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.JavaScript.Contracts;
 using Elsa.JavaScript.Notifications;
 using Elsa.JavaScript.Options;
 using Elsa.Mediator.Contracts;
-using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Management.Activities;
-using Elsa.Workflows.Management.Contracts;
-using Elsa.Workflows.Management.Extensions;
 using Humanizer;
 using Jint;
 using Microsoft.Extensions.Options;
@@ -26,18 +21,14 @@ namespace Elsa.JavaScript.Services;
 public class JintJavaScriptEvaluator : IJavaScriptEvaluator
 {
     private readonly IEventPublisher _mediator;
-    private readonly IActivityRegistry _activityRegistry;
-    private readonly IExpressionEvaluator _expressionEvaluator;
     private readonly JintOptions _jintOptions;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public JintJavaScriptEvaluator(IEventPublisher mediator, IActivityRegistry activityRegistry, IExpressionEvaluator expressionEvaluator, IOptions<JintOptions> scriptOptions)
+    public JintJavaScriptEvaluator(IEventPublisher mediator, IOptions<JintOptions> scriptOptions)
     {
         _mediator = mediator;
-        _activityRegistry = activityRegistry;
-        _expressionEvaluator = expressionEvaluator;
         _jintOptions = scriptOptions.Value;
     }
 

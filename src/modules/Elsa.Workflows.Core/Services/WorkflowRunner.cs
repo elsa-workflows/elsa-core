@@ -13,6 +13,7 @@ namespace Elsa.Workflows.Core.Services;
 public class WorkflowRunner : IWorkflowRunner
 {
     private readonly IServiceScopeFactory _serviceScopeFactory;
+    private readonly IActivityRegistry _activityRegistry;
     private readonly IWorkflowExecutionPipeline _pipeline;
     private readonly IWorkflowStateSerializer _workflowStateSerializer;
     private readonly IWorkflowBuilderFactory _workflowBuilderFactory;
@@ -25,6 +26,7 @@ public class WorkflowRunner : IWorkflowRunner
     /// </summary>
     public WorkflowRunner(
         IServiceScopeFactory serviceScopeFactory,
+        IActivityRegistry activityRegistry,
         IWorkflowExecutionPipeline pipeline,
         IWorkflowStateSerializer workflowStateSerializer,
         IWorkflowBuilderFactory workflowBuilderFactory,
@@ -33,6 +35,7 @@ public class WorkflowRunner : IWorkflowRunner
         IEventPublisher eventPublisher)
     {
         _serviceScopeFactory = serviceScopeFactory;
+        _activityRegistry = activityRegistry;
         _pipeline = pipeline;
         _workflowStateSerializer = workflowStateSerializer;
         _workflowBuilderFactory = workflowBuilderFactory;

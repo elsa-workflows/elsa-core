@@ -1,6 +1,5 @@
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
-using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 
@@ -20,107 +19,85 @@ public class VariablePersistenceManager : IVariablePersistenceManager
     }
 
     /// <inheritdoc />
-    public IEnumerable<Variable> GetVariables(WorkflowExecutionContext context) => context.Workflow.Variables.Where(x => x.StorageDriverType != null).ToList();
-
-    /// <inheritdoc />
-    public IEnumerable<Variable> GetVariables(ActivityExecutionContext context)
+    public async Task LoadVariablesAsync(WorkflowExecutionContext workflowExecutionContext)
     {
-        // Get variables for the current activity itself, if it's a container.
-        return context.Activity is Composite composite
-            ? composite.Variables.Where(x => x.StorageDriverType != null)
-            : Enumerable.Empty<Variable>();
-    }
-
-    /// <inheritdoc />
-    public IEnumerable<Variable> GetVariablesInScope(ActivityExecutionContext context)
-    {
-        // Get variables between the current activity and immediate composite container.
-        var ancestors = context.ActivityNode.Ancestors();
+        var cancellationToken = workflowExecutionContext.CancellationToken;
         
-        foreach (var node in ancestors)
-        {
-            if (node.Activity is IVariableContainer variableContainer)
-                foreach (var variable in variableContainer.Variables)
-                    yield return variable;
+        var contexts = workflowExecutionContext.ActivityExecutionContexts
+            .Cast<IExecutionContext>()
+            .Concat(new[]{workflowExecutionContext})
+            .ToList();
 
-            if (node.Activity is Composite)
-                break;
+        foreach (var context in contexts)
+        {
+            var variables = GetLocalVariables(context).ToList();
+
+            foreach (var variable in variables)
+            {
+                context.ExpressionExecutionContext.Memory.Declare(variable);
+                var storageDriverContext = new StorageDriverContext(context, cancellationToken);
+                var register = context.ExpressionExecutionContext.Memory;
+                var block = EnsureBlock(register, variable);
+                var metadata = (VariableBlockMetadata)block.Metadata!;
+                var driver = _storageDriverManager.Get(metadata.StorageDriverType!);
+
+                block.Metadata = metadata with { IsInitialized = true };
+
+                if (driver == null)
+                    continue;
+
+                var id = GetStateId(workflowExecutionContext, context, variable);
+                var value = await driver.ReadAsync(id, storageDriverContext);
+                if (value == null) continue;
+
+                var parsedValue = variable.ParseValue(value);
+                register.Declare(variable);
+                variable.Set(register, parsedValue);
+            }
         }
     }
 
     /// <inheritdoc />
-    public async Task LoadVariablesAsync(WorkflowExecutionContext context, IEnumerable<Variable> variables)
+    public async Task SaveVariablesAsync(WorkflowExecutionContext workflowExecutionContext)
     {
-        var register = context.MemoryRegister;
-        var variableList = variables as ICollection<Variable> ?? variables.ToList();
+        var cancellationToken = workflowExecutionContext.CancellationToken;
+        
+        var contexts = workflowExecutionContext.ActivityExecutionContexts
+            .Cast<IExecutionContext>()
+            .Concat(new[]{workflowExecutionContext})
+            .ToList();
 
-        EnsureVariables(context, variableList);
-
-        // Foreach variable memory block, load its value from their associated storage driver.
-        var cancellationToken = context.CancellationToken;
-        var storageDriverContext = new StorageDriverContext(context, cancellationToken);
-
-        foreach (var variable in variableList)
+        foreach (var context in contexts)
         {
-            var block = EnsureBlock(register, variable);
-            var metadata = (VariableBlockMetadata)block.Metadata!;
-            var driver = _storageDriverManager.Get(metadata.StorageDriverType!);
+            var variables = GetLocalVariables(context);
+            var storageDriverContext = new StorageDriverContext(context, cancellationToken);
 
-            block.Metadata = metadata with { IsInitialized = true };
+            foreach (var variable in variables)
+            {
+                var block = variable.GetBlock(context.ExpressionExecutionContext);
+                var metadata = (VariableBlockMetadata)block.Metadata!;
+                var driver = _storageDriverManager.Get(metadata.StorageDriverType!);
 
-            if (driver == null)
-                continue;
+                if (driver == null)
+                    continue;
+                
+                var id = GetStateId(workflowExecutionContext, context, variable);
+                var value = block.Value;
 
-            var id = GetStateId(context, variable);
-            var value = await driver.ReadAsync(id, storageDriverContext);
-            if (value == null) continue;
-
-            var parsedValue = variable.ParseValue(value);
-            register.Declare(variable);
-            variable.Set(register, parsedValue);
+                if (value == null)
+                    await driver.DeleteAsync(id, storageDriverContext);
+                else
+                    await driver.WriteAsync(id, value, storageDriverContext);
+            }
         }
     }
 
-    /// <inheritdoc />
-    public async Task SaveVariablesAsync(WorkflowExecutionContext context)
-    {
-        var register = context.MemoryRegister;
-
-        // Foreach variable memory block, save its value using their associated storage driver.
-        var cancellationToken = context.CancellationToken;
-        var storageDriverContext = new StorageDriverContext(context, cancellationToken);
-        var blocks = register.Blocks.Values.Where(x => x.Metadata is VariableBlockMetadata { StorageDriverType: not null }).ToList();
-
-        foreach (var block in blocks)
-        {
-            var metadata = (VariableBlockMetadata)block.Metadata!;
-            var driver = _storageDriverManager.Get(metadata.StorageDriverType!);
-
-            if (driver == null)
-                continue;
-
-            var variable = metadata.Variable;
-            var id = GetStateId(context, variable);
-            var value = block.Value;
-
-            if (value == null)
-                await driver.DeleteAsync(id, storageDriverContext);
-            else
-                await driver.WriteAsync(id, value, storageDriverContext);
-        }
-    }
 
     /// <inheritdoc />
-    public void EnsureVariables(WorkflowExecutionContext context, IEnumerable<Variable> variables)
+    public async Task DeleteVariablesAsync(ActivityExecutionContext context)
     {
-        foreach (var variable in variables) context.MemoryRegister.Declare(variable);
-    }
-
-    /// <inheritdoc />
-    public async Task DeleteVariablesAsync(WorkflowExecutionContext context, IEnumerable<Variable> variables)
-    {
-        var register = context.MemoryRegister;
-        var variableList = variables as ICollection<Variable> ?? variables.ToList();
+        var register = context.ExpressionExecutionContext.Memory;
+        var variableList = GetLocalVariables(context);
         var cancellationToken = context.CancellationToken;
         var storageDriverContext = new StorageDriverContext(context, cancellationToken);
 
@@ -135,11 +112,13 @@ public class VariablePersistenceManager : IVariablePersistenceManager
             if (driver == null)
                 continue;
 
-            var id = GetStateId(context, variable);
+            var id = GetStateId(context.WorkflowExecutionContext, context, variable);
             await driver.DeleteAsync(id, storageDriverContext);
             register.Blocks.Remove(variable.Id);
         }
     }
+
+    private IEnumerable<Variable> GetLocalVariables(IExecutionContext context) => context.Variables;
 
     private MemoryBlock EnsureBlock(MemoryRegister register, Variable variable)
     {
@@ -148,5 +127,5 @@ public class VariablePersistenceManager : IVariablePersistenceManager
         return block;
     }
 
-    private string GetStateId(WorkflowExecutionContext context, Variable variable) => $"{context.Id}:{context.Workflow.Id}:{variable.Name}";
+    private string GetStateId(WorkflowExecutionContext workflowExecutionContext, IExecutionContext context, Variable variable) => $"{context.Id}:{workflowExecutionContext.Workflow.Id}:{variable.Name}";
 }

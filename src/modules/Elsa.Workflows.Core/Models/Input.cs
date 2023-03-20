@@ -74,12 +74,12 @@ public class Input<T> : Input
     }
     
     /// <inheritdoc />
-    public Input(JsonLiteral<T> literal) : base(new JsonExpression(literal.Value), literal, typeof(T))
+    public Input(ObjectLiteral<T> literal) : base(new ObjectExpression(literal.Value), literal, typeof(T))
     {
     }
 
     /// <inheritdoc />
-    public Input(JsonLiteral literal) : base(new JsonExpression(literal.Value), literal, typeof(T))
+    public Input(ObjectLiteral literal) : base(new ObjectExpression(literal.Value), literal, typeof(T))
     {
     }
 

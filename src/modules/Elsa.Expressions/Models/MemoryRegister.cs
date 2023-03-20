@@ -8,37 +8,50 @@ public class MemoryRegister
     /// <summary>
     /// Constructor.
     /// </summary>
-    public MemoryRegister(MemoryRegister? parent = default, IDictionary<string, MemoryBlock>? blocks = default)
+    public MemoryRegister(IDictionary<string, MemoryBlock>? blocks = default)
     {
-        Parent = parent;
         Blocks = blocks ?? new Dictionary<string, MemoryBlock>();
     }
-
-    public MemoryRegister? Parent { get; }
+    
+    /// <summary>
+    /// The memory blocks declared in this register.
+    /// </summary>
     public IDictionary<string, MemoryBlock> Blocks { get; }
 
+    /// <summary>
+    /// Returns true if the specified memory block is declared in this register.
+    /// </summary>
     public bool IsDeclared(MemoryBlockReference reference) => HasBlock(reference.Id);
+
+    /// <summary>
+    /// Returns true if the specified memory block is declared in this register.
+    /// </summary>
     public bool HasBlock(string id) => Blocks.ContainsKey(id);
     
+    /// <summary>
+    /// Returns the memory block with the specified ID.
+    /// </summary>
     public bool TryGetBlock(string id, out MemoryBlock block)
     {
         block = null!;
-        
-        if (Blocks.TryGetValue(id, out block!))
-            return true;
-
-        return Parent?.TryGetBlock(id, out block) == true;
+        return Blocks.TryGetValue(id, out block!);
     }
 
+    /// <summary>
+    /// Declares the memory for the specified memory block references. 
+    /// </summary>
     public void Declare(IEnumerable<MemoryBlockReference> references)
     {
         foreach (var reference in references)
             Declare(reference);
     }
 
+    /// <summary>
+    /// Declares the memory for the specified memory block reference.
+    /// </summary>
     public MemoryBlock Declare(MemoryBlockReference blockReference)
     {
-        if (TryGetBlock(blockReference.Id, out var block))
+        if(Blocks.TryGetValue(blockReference.Id, out var block))
             return block;
 
         block = blockReference.Declare();

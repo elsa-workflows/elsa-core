@@ -1,10 +1,9 @@
 using System.ComponentModel;
 using Elsa.Common.Models;
 using Elsa.Extensions;
-using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Core.Signals;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
@@ -16,14 +15,8 @@ namespace Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 /// Loads and executes an <see cref="WorkflowDefinition"/>.
 /// </summary>
 [Browsable(false)]
-public class WorkflowDefinitionActivity : Activity, IInitializable
+public class WorkflowDefinitionActivity : Composite, IInitializable
 {
-    /// <summary>
-    /// The activity to schedule for execution.
-    /// </summary>
-    [JsonExpandable]
-    public IActivity Root { get; set; } = default!;
-
     /// <summary>
     /// The definition ID of the workflow to schedule for execution.
     /// </summary>
@@ -37,8 +30,26 @@ public class WorkflowDefinitionActivity : Activity, IInitializable
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        // Schedule the activity for execution.
+        CopyInputPropertiesToVariables(context);
         await context.ScheduleActivityAsync(Root, OnChildCompletedAsync);
+    }
+
+    private void CopyInputPropertiesToVariables(ActivityExecutionContext context)
+    {
+        foreach (var inputDescriptor in context.ActivityDescriptor.Inputs)
+        {
+            var input = SyntheticProperties.TryGetValue(inputDescriptor.Name, out var inputValue) ? (Input?)inputValue : default;
+            var evaluatedExpression = input != null ? context.Get(input.MemoryBlockReference()) : default;
+
+            // Create a local scope variable for each input property.
+            var variable = new Variable(inputDescriptor.Name)
+            {
+                StorageDriverType = inputDescriptor.StorageDriverType
+            };
+            
+            context.ExpressionExecutionContext.Memory.Declare(variable);
+            variable.Set(context, evaluatedExpression);
+        }
     }
 
     private async ValueTask OnChildCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext)
