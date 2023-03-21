@@ -64,7 +64,12 @@ public class WorkflowBuilder : IWorkflowBuilder
     /// <inheritdoc />
     public Variable<T> WithVariable<T>(string name, T value)
     {
-        var variable = value != null ? new Variable<T>(name, value) : new Variable<T>(name);
+        var variable = new Variable<T>
+        {
+            Name = name,
+            Value = value
+        };
+        
         Variables.Add(variable);
         return variable;
     }

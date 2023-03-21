@@ -7,6 +7,7 @@ using Elsa.JavaScript.Contracts;
 using Elsa.JavaScript.Notifications;
 using Elsa.JavaScript.Options;
 using Elsa.Mediator.Contracts;
+using Elsa.Workflows.Core.Models;
 using Humanizer;
 using Jint;
 using Microsoft.Extensions.Options;
@@ -60,8 +61,8 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         engine.SetValue("setCorrelationId", (Action<string?>)(value => context.GetActivityExecutionContext().WorkflowExecutionContext.CorrelationId = value));
         engine.SetValue("getCorrelationId", (Func<string?>)(() => context.GetActivityExecutionContext().WorkflowExecutionContext.CorrelationId));
         engine.SetValue("setCorrelationId", (Action<string?>)(value => context.GetActivityExecutionContext().WorkflowExecutionContext.CorrelationId = value));
-        engine.SetValue("setVariable", (Action<string, object>)((name, value) => context.SetVariable(name, value)));
-        engine.SetValue("getVariable", (Func<string, object?>)(name => context.GetVariable(name)));
+        engine.SetValue("setVariable", (Action<string, object>)((id, value) => context.SetVariable(id, value)));
+        engine.SetValue("getVariable", (Func<string, object?>)(id => context.GetVariable(id)));
         engine.SetValue("getInput", (Func<string, object?>)(name => context.GetWorkflowExecutionContext().Input.GetValue(name)));
 
         // Create variable & input setters and getters for each variable.
@@ -89,13 +90,16 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
 
     private static void CreateMemoryBlockAccessors(Engine engine, ExpressionExecutionContext context)
     {
-        var variablesDictionary = context.ReadAndFlattenMemoryBlocks();
+        var memoryBlocks = context.FlattenMemoryBlocks();
 
-        foreach (var variable in variablesDictionary)
+        var variableList = memoryBlocks.Select(x => new Variable(x.Key,
+            x.Value.Metadata is VariableBlockMetadata metadata ? metadata.Variable.Name : null, x.Value.Value!));
+
+        foreach (var variable in variableList)
         {
-            var pascalName = variable.Key.Pascalize();
-            engine.SetValue($"get{pascalName}", (Func<object?>)(() => context.GetVariable(variable.Key)));
-            engine.SetValue($"set{pascalName}", (Action<object?>)(value => context.SetVariable(variable.Key, value)));
+            var pascalName = string.IsNullOrEmpty(variable.Name) ? variable.Id.Pascalize() : variable.Name.Pascalize();
+            engine.SetValue($"get{pascalName}", (Func<object?>)(() => context.GetVariable(variable.Id)));
+            engine.SetValue($"set{pascalName}", (Action<object?>)(value => context.SetVariable(variable.Id, value)));
         }
     }
     
