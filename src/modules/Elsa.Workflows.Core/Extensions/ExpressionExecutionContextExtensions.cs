@@ -38,7 +38,7 @@ public static class ExpressionExecutionContextExtensions
     public static object? Get(this ExpressionExecutionContext context, Output output) => context.GetBlock(output.MemoryBlockReference).Value;
     public static T? GetVariable<T>(this ExpressionExecutionContext context, string id) => (T?)context.GetVariable(id);
     public static object? GetVariable(this ExpressionExecutionContext context, string id) => new Variable(id).Get(context);
-    public static Variable SetVariable<T>(this ExpressionExecutionContext context, string id, T? value, Type? storageDriverType = default) => context.SetVariable(id, (object?)value, storageDriverType);
+    public static Variable SetVariable<T>(this ExpressionExecutionContext context, string id, T? value, Type? storageDriverType = default) => context.SetVariable(id, (object?)value, storageDriverType, default);
 
     public static Variable SetVariable(this ExpressionExecutionContext context, string id, object? value, Type? storageDriverType, Action<MemoryBlock>? configure = default)
     {
