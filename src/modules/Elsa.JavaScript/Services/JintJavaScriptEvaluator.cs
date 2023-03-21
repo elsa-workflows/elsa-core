@@ -91,15 +91,12 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
     private static void CreateMemoryBlockAccessors(Engine engine, ExpressionExecutionContext context)
     {
         var memoryBlocks = context.FlattenMemoryBlocks();
-
-        var variableList = memoryBlocks.Select(x => new Variable(x.Key,
-            x.Value.Metadata is VariableBlockMetadata metadata ? metadata.Variable.Name : null, x.Value.Value!));
-
-        foreach (var variable in variableList)
+        
+        foreach (var block in memoryBlocks)
         {
-            var pascalName = string.IsNullOrEmpty(variable.Name) ? variable.Id.Pascalize() : variable.Name.Pascalize();
-            engine.SetValue($"get{pascalName}", (Func<object?>)(() => context.GetVariable(variable.Id)));
-            engine.SetValue($"set{pascalName}", (Action<object?>)(value => context.SetVariable(variable.Id, value)));
+            var pascalName = block.Value.Metadata is VariableBlockMetadata metadata ? metadata.Variable.Name.Pascalize() : block.Key.Pascalize();
+            engine.SetValue($"get{pascalName}", (Func<object?>)(() => context.GetVariable(block.Key)));
+            engine.SetValue($"set{pascalName}", (Action<object?>)(value => context.SetVariable(block.Key, value)));
         }
     }
     

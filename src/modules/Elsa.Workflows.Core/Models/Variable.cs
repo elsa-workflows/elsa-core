@@ -16,9 +16,8 @@ public class Variable : MemoryBlockReference
         Id = id;
     }
 
-    public Variable(string id, string? name = default, object? value = default) : this(id)
+    public Variable(string id, object? value = default) : this(id)
     {
-        Name = name;
         Value = value;
     }
 

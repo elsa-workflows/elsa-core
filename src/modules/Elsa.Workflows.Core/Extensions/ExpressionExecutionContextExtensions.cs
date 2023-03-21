@@ -42,7 +42,7 @@ public static class ExpressionExecutionContextExtensions
 
     public static Variable SetVariable(this ExpressionExecutionContext context, string id, object? value, Type? storageDriverType, Action<MemoryBlock>? configure = default)
     {
-        var variable = new Variable(id, null, value)
+        var variable = new Variable(id, value)
         {
             StorageDriverType = storageDriverType
         };
