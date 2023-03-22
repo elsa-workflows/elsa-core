@@ -90,16 +90,42 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
 
     private static void CreateMemoryBlockAccessors(Engine engine, ExpressionExecutionContext context)
     {
-        var memoryBlocks = context.FlattenMemoryBlocks();
-        
-        foreach (var block in memoryBlocks)
+        var variables = GetVariablesInScope(context).Values;
+
+        foreach (var variable in variables)
         {
-            var pascalName = block.Value.Metadata is VariableBlockMetadata metadata ? metadata.Variable.Name.Pascalize() : block.Key.Pascalize();
-            engine.SetValue($"get{pascalName}", (Func<object?>)(() => context.GetVariable(block.Key)));
-            engine.SetValue($"set{pascalName}", (Action<object?>)(value => context.SetVariable(block.Key, value)));
+            var pascalName = variable.Name.Pascalize();
+            engine.SetValue($"get{pascalName}", (Func<object?>)(() => variable.Get(context)));
+            engine.SetValue($"set{pascalName}", (Action<object?>)(value => variable.Set(context, value)));
         }
     }
-    
+
+    private static IDictionary<string, Variable> GetVariablesInScope(ExpressionExecutionContext context)
+    {
+        var collectedVariables = new Dictionary<string, Variable>();
+        var currentScope = context;
+
+        while (currentScope != null)
+        {
+            if(!currentScope.TryGetActivityExecutionContext(out var activityExecutionContext))
+                break;
+
+            var variables = activityExecutionContext.Variables;
+
+            foreach (var variable in variables)
+            {
+                if (collectedVariables.ContainsKey(variable.Name))
+                    continue;
+
+                collectedVariables.Add(variable.Name, variable);
+            }
+
+            currentScope = currentScope.ParentContext;
+        }
+
+        return collectedVariables;
+    }
+
     private static object ExecuteExpressionAndGetResult(Engine engine, string expression)
     {
         var result = engine.Evaluate(expression);

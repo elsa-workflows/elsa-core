@@ -44,6 +44,7 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
             // Create a local scope variable for each input property.
             var variable = new Variable
             {
+                Id = inputDescriptor.Name,
                 Name = inputDescriptor.Name,
                 StorageDriverType = inputDescriptor.StorageDriverType
             };
@@ -63,6 +64,7 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
             // Create a local scope variable for each input property.
             var variable = new Variable(inputDescriptor.Name)
             {
+                Name = inputDescriptor.Name,
                 StorageDriverType = inputDescriptor.StorageDriverType
             };
 

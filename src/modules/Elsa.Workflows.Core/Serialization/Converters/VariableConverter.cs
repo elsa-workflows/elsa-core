@@ -53,7 +53,7 @@ public class VariableConverter : JsonConverter<Variable>
         var variableGenericType = typeof(Variable<>).MakeGenericType(type);
         var variable = (Variable)Activator.CreateInstance(variableGenericType)!;
 
-        variable.Id = source.Id;
+        variable.Id = source.Id ?? Guid.NewGuid().ToString("N"); // Temporarily assign a new ID if the source doesn't have one.
         variable.Name = source.Name;
 
         source.Value.TryConvertTo(type)
