@@ -60,6 +60,16 @@ public class ExpressionExecutionContext
     public MemoryBlock GetBlock(MemoryBlockReference blockReference) => GetBlockInternal(blockReference) ?? throw new Exception($"Failed to retrieve memory block with reference {blockReference.Id}");
 
     /// <summary>
+    /// Returns the <see cref="MemoryBlock"/> pointed to by the specified memory block reference.
+    /// </summary>
+    public bool TryGetBlock(MemoryBlockReference blockReference, out MemoryBlock block)
+    {
+        var b = GetBlockInternal(blockReference);
+        block = b ?? default!;
+        return b != null;
+    }
+
+    /// <summary>
     /// Returns the value of the memory block pointed to by the specified memory block reference.
     /// </summary>
     public object? Get(Func<MemoryBlockReference> blockReference) => Get(blockReference());
@@ -68,6 +78,21 @@ public class ExpressionExecutionContext
     /// Returns the value of the memory block pointed to by the specified memory block reference.
     /// </summary>
     public object? Get(MemoryBlockReference blockReference) => GetBlock(blockReference).Value;
+
+    /// <summary>
+    /// Returns the value of the memory block pointed to by the specified memory block reference.
+    /// </summary>
+    public bool TryGet(MemoryBlockReference blockReference, out object? value)
+    {
+        if (TryGetBlock(blockReference, out var block))
+        {
+            value = block.Value;
+            return true;
+        }
+
+        value = default;
+        return false;
+    }
 
     /// <summary>
     /// Returns the value of the memory block pointed to by the specified memory block reference. 

@@ -90,40 +90,56 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
 
     private static void CreateMemoryBlockAccessors(Engine engine, ExpressionExecutionContext context)
     {
-        var variables = GetVariablesInScope(context).Values;
+        var variableNames = GetVariableNamesInScope(context).ToList();
 
-        foreach (var variable in variables)
+        foreach (var variableName in variableNames)
         {
-            var pascalName = variable.Name.Pascalize();
-            engine.SetValue($"get{pascalName}", (Func<object?>)(() => variable.Get(context)));
-            engine.SetValue($"set{pascalName}", (Action<object?>)(value => variable.Set(context, value)));
+            var pascalName = variableName.Pascalize();
+            engine.SetValue($"get{pascalName}", (Func<object?>)(() => GetVariableInScope(context, variableName)));
+            engine.SetValue($"set{pascalName}", (Action<object?>)(value => SetVariableInScope(context, variableName, value)));
         }
     }
 
-    private static IDictionary<string, Variable> GetVariablesInScope(ExpressionExecutionContext context)
+    private static IEnumerable<string> GetVariableNamesInScope(ExpressionExecutionContext context) => EnumerateVariablesInScope(context).Select(x => x.Name).Distinct();
+
+    private static object GetVariableInScope(ExpressionExecutionContext context, string variableName)
     {
-        var collectedVariables = new Dictionary<string, Variable>();
+        var q = from variable in EnumerateVariablesInScope(context)
+            where variable.Name == variableName
+            where variable.TryGet(context, out _)
+            select variable.Get(context);
+
+        var value = q.FirstOrDefault();
+        return value!;
+    }
+
+    private static void SetVariableInScope(ExpressionExecutionContext context, string variableName, object? value)
+    {
+        var q = from v in EnumerateVariablesInScope(context)
+            where v.Name == variableName
+            where v.TryGet(context, out _)
+            select v;
+
+        var variable = q.FirstOrDefault();
+        variable?.Set(context, value);
+    }
+
+    private static IEnumerable<Variable> EnumerateVariablesInScope(ExpressionExecutionContext context)
+    {
         var currentScope = context;
 
         while (currentScope != null)
         {
-            if(!currentScope.TryGetActivityExecutionContext(out var activityExecutionContext))
+            if (!currentScope.TryGetActivityExecutionContext(out var activityExecutionContext))
                 break;
 
             var variables = activityExecutionContext.Variables;
 
             foreach (var variable in variables)
-            {
-                if (collectedVariables.ContainsKey(variable.Name))
-                    continue;
-
-                collectedVariables.Add(variable.Name, variable);
-            }
+                yield return variable;
 
             currentScope = currentScope.ParentContext;
         }
-
-        return collectedVariables;
     }
 
     private static object ExecuteExpressionAndGetResult(Engine engine, string expression)
