@@ -1,6 +1,6 @@
 import { Component, HTMLStencilElement, JSXBase } from "@stencil/core/internal";
-import { InputDefinition,InputDefinitionArray, OutputDefinition,OutputDefinitionArray, WorkflowDefinition, WorkflowDefinitionSummary } from "./modules/workflow-definitions/models/entities";
-import { Activity, ActivityDeletedArgs, ActivitySelectedArgs, ChildActivitySelectedArgs, ContainerSelectedArgs, EditChildActivityArgs, GraphUpdatedArgs, IntellisenseContext, SelectListItem,SelectListItemArrayOrString ,TabChangedArgs, TabDefinition, Variable,VariableArray, WorkflowExecutionLogRecord, WorkflowInstance, WorkflowInstanceSummary, WorkflowUpdatedArgs } from "./models";
+import { InputDefinition, OutputDefinition, WorkflowDefinition, WorkflowDefinitionSummary } from "./modules/workflow-definitions/models/entities";
+import { Activity, ActivityDeletedArgs, ActivitySelectedArgs, ChildActivitySelectedArgs, ContainerSelectedArgs, EditChildActivityArgs, GraphUpdatedArgs, IntellisenseContext, SelectListItem,TabChangedArgs, TabDefinition, Variable, WorkflowExecutionLogRecord, WorkflowInstance, WorkflowInstanceSummary, WorkflowUpdatedArgs } from "./models";
 import { ActivityUpdatedArgs, DeleteActivityRequestedArgs, Widget, WorkflowDefinitionPropsUpdatedArgs, WorkflowDefinitionUpdatedArgs } from "./modules/workflow-definitions/models/ui";
 import { NotificationType } from "./modules/notifications/models";
 import { Button } from "./components/shared/button-group/models";
@@ -28,8 +28,8 @@ import { PublishClickedArgs } from "./modules/workflow-definitions/components/pu
 
 
 export { Component, HTMLStencilElement, JSXBase ,
-    InputDefinition,InputDefinitionArray,  OutputDefinition,OutputDefinitionArray, WorkflowDefinition, WorkflowDefinitionSummary ,
-    Activity, ActivityDeletedArgs, ActivitySelectedArgs, ChildActivitySelectedArgs, ContainerSelectedArgs, EditChildActivityArgs, GraphUpdatedArgs, IntellisenseContext, SelectListItem,SelectListItemArrayOrString , TabChangedArgs, TabDefinition, Variable,VariableArray, WorkflowExecutionLogRecord, WorkflowInstance, WorkflowInstanceSummary, WorkflowUpdatedArgs ,
+    InputDefinition,  OutputDefinition, WorkflowDefinition, WorkflowDefinitionSummary ,
+    Activity, ActivityDeletedArgs, ActivitySelectedArgs, ChildActivitySelectedArgs, ContainerSelectedArgs, EditChildActivityArgs, GraphUpdatedArgs, IntellisenseContext, SelectListItem, TabChangedArgs, TabDefinition, Variable, WorkflowExecutionLogRecord, WorkflowInstance, WorkflowInstanceSummary, WorkflowUpdatedArgs ,
     ActivityUpdatedArgs, DeleteActivityRequestedArgs, Widget, WorkflowDefinitionPropsUpdatedArgs, WorkflowDefinitionUpdatedArgs ,
     NotificationType ,
     Button ,
