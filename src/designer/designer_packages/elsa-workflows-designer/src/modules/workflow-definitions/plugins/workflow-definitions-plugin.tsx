@@ -127,7 +127,7 @@ export class WorkflowDefinitionsPlugin implements Plugin {
     return definition;
   }
 
-  private showWorkflowDefinitionEditor = (workflowDefinition: WorkflowDefinition) => {
+  public showWorkflowDefinitionEditor = (workflowDefinition: WorkflowDefinition) => {
     toolbarComponentStore.components = [() => <elsa-workflow-publish-button onPublishClicked={this.onPublishClicked} onExportClicked={this.onExportClicked} onImportClicked={this.onImportClicked}/>];
     studioComponentStore.activeComponentFactory = () => <elsa-workflow-definition-editor workflowDefinition={workflowDefinition} onWorkflowUpdated={this.onWorkflowUpdated} ref={el => this.workflowDefinitionEditorElement = el}/>;
   };
@@ -163,7 +163,7 @@ export class WorkflowDefinitionsPlugin implements Plugin {
     this.modalDialogService.hide(this.workflowDefinitionBrowserInstance);
   };
 
-  private onWorkflowUpdated = async (e: CustomEvent<WorkflowDefinitionUpdatedArgs>) => {
+  public onWorkflowUpdated = async (e: CustomEvent<WorkflowDefinitionUpdatedArgs>) => {
     const updatedWorkflowDefinition = e.detail.workflowDefinition;
     await this.saveWorkflowDefinition(updatedWorkflowDefinition, false);
   }
@@ -183,6 +183,10 @@ export class WorkflowDefinitionsPlugin implements Plugin {
     const workflowDefinition = await this.api.get({definitionId});
     this.showWorkflowDefinitionEditor(workflowDefinition);
     this.modalDialogService.hide(this.workflowDefinitionBrowserInstance);
+  }
+
+  public publishCurrentWorkflow = async (args: PublishClickedArgs)=>{
+    return this.onPublishClicked(new CustomEvent('PublishClickedArgs',{detail:args}));
   }
 
   private onPublishClicked = async (e: CustomEvent<PublishClickedArgs>) => {
