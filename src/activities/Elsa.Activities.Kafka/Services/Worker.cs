@@ -5,11 +5,14 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Avro.Specific;
 using Confluent.Kafka;
+using Confluent.SchemaRegistry;
 using Elsa.Activities.Kafka.Activities.KafkaMessageReceived;
 using Elsa.Activities.Kafka.Bookmarks;
 using Elsa.Activities.Kafka.Configuration;
 using Elsa.Activities.Kafka.Models;
+using Elsa.Activities.Kafka.SchemaRegistry;
 using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -95,7 +98,11 @@ namespace Elsa.Activities.Kafka.Services
 
             using var scope = _scopeFactory.CreateScope();
             var workflowLaunchpad = scope.ServiceProvider.GetRequiredService<IWorkflowLaunchpad>();
+            var schemaResolver = scope.ServiceProvider.GetRequiredService<ISchemaResolver>();
+            var schema = await schemaResolver.ResolveSchemaForMessage(ev.Message);
+            
             await workflowLaunchpad.CollectAndDispatchWorkflowsAsync(launchContext, new WorkflowInput(ev.Message.Value), cancellationToken);
+
 
             // Launch all activities where the trigger inherits from ActivityType
             if (_kafkaCustomActivityProvider != null && _kafkaCustomActivityProvider.KafkaOverrideTriggers != null)
