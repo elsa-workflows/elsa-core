@@ -15,6 +15,7 @@ public class PropertyBag
     {
         Dictionary = dictionary;
     }
-    
+  
+    [JsonConverter(typeof(PolymorphicDictionaryConverterFactory))]
     public IDictionary<string, object> Dictionary { get; init; }
 }

@@ -12,13 +12,18 @@ public class PropertyBagConverter : JsonConverter<PropertyBag>
     /// <inheritdoc />
     public override PropertyBag Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        var dictionary = JsonSerializer.Deserialize<Dictionary<string, object>>(ref reader, options)!;
+        var newOptions = new JsonSerializerOptions();
+        newOptions.Converters.Add(new PolymorphicDictionaryConverterFactory());
+        var dictionary = JsonSerializer.Deserialize<Dictionary<string, object>>(ref reader, newOptions)!;
         return new PropertyBag(dictionary);
     }
 
     /// <inheritdoc />
     public override void Write(Utf8JsonWriter writer, PropertyBag value, JsonSerializerOptions options)
     {
-        JsonSerializer.Serialize(writer, value.Dictionary, options);
+        var newOptions = new JsonSerializerOptions();
+        newOptions.Converters.Add(new PolymorphicDictionaryConverterFactory());
+        
+        JsonSerializer.Serialize(writer, value.Dictionary, newOptions);
     }
 }

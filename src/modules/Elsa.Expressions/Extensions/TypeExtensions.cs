@@ -17,15 +17,33 @@ public static class TypeExtensions
     /// </summary>
     public static string GetSimpleAssemblyQualifiedName(this Type type)
     {
-        if (type == null) throw new ArgumentNullException(nameof(type));
-
-        return SimpleAssemblyQualifiedTypeNameCache.GetOrAdd(type, GetSimpleAssemblyQualifiedNameInternal);
+        if (type is null) throw new ArgumentNullException(nameof(type));
+        return SimpleAssemblyQualifiedTypeNameCache.GetOrAdd(type, BuildSimplifiedName);
     }
 
-    private static string GetSimpleAssemblyQualifiedNameInternal(Type type) => $"{type.FullName}, {Assembly.GetAssembly(type)!.GetName().Name}";
-    
     /// <summary>
     /// Returns the default value for the specified type.
     /// </summary>
     public static object? GetDefaultValue(this Type type) => type.IsClass ? null : Activator.CreateInstance(type);
+
+    private static string BuildSimplifiedName(Type type)
+    {
+        var assemblyName = type.Assembly.GetName().Name;
+
+        if (type.IsGenericType)
+        {
+            var genericTypeName = type.GetGenericTypeDefinition().FullName!;
+            var backtickIndex = genericTypeName.IndexOf('`');
+            var typeNameWithoutArity = genericTypeName[..backtickIndex];
+            var arity = genericTypeName[backtickIndex..];
+
+            var genericArguments = type.GetGenericArguments();
+            var simplifiedGenericArguments = genericArguments.Select(BuildSimplifiedName);
+
+            return $"{typeNameWithoutArity}{arity}[[{string.Join("],[", simplifiedGenericArguments)}]], {assemblyName}";
+        }
+
+        var typeName = type.FullName;
+        return $"{typeName}, {assemblyName}";
+    }
 }
