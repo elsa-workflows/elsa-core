@@ -30,11 +30,11 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        CopyInputPropertiesToVariables(context);
+        CopyInputToVariables(context);
         await context.ScheduleActivityAsync(Root, OnChildCompletedAsync);
     }
 
-    private void CopyInputPropertiesToVariables(ActivityExecutionContext context)
+    private void CopyInputToVariables(ActivityExecutionContext context)
     {
         foreach (var inputDescriptor in context.ActivityDescriptor.Inputs)
         {
@@ -46,9 +46,26 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
             {
                 StorageDriverType = inputDescriptor.StorageDriverType
             };
-            
+
             context.ExpressionExecutionContext.Memory.Declare(variable);
             variable.Set(context, evaluatedExpression);
+        }
+    }
+
+    private void DefineInputAsVariables(InitializationContext context)
+    {
+        var activityRegistry = context.ServiceProvider.GetRequiredService<IActivityRegistry>();
+        var activityDescriptor = activityRegistry.Find(Type, Version)!;
+        
+        foreach (var inputDescriptor in activityDescriptor.Inputs)
+        {
+            // Create a local scope variable for each input property.
+            var variable = new Variable(inputDescriptor.Name)
+            {
+                StorageDriverType = inputDescriptor.StorageDriverType
+            };
+
+            Variables.Declare(variable);
         }
     }
 
@@ -95,6 +112,8 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
         var materializer = serviceProvider.GetRequiredService<IWorkflowMaterializer>();
         var root = await materializer.MaterializeAsync(workflowDefinition, cancellationToken);
 
+        DefineInputAsVariables(context);
+        
         Root = root;
     }
 }
