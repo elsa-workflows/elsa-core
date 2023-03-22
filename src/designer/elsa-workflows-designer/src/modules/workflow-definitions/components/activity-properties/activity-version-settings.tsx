@@ -36,7 +36,7 @@ export class WorkflowDefinitionActivityVersionSettings {
 
     const versionDetails = {
       'Current version': this.currentVersion.toString(),
-      'Published version': latestAvailablePublishedVersion.toString(),
+      'Published version': latestAvailablePublishedVersion?.toString() ?? '-',
     };
 
     return <div key={key}>
@@ -45,7 +45,6 @@ export class WorkflowDefinitionActivityVersionSettings {
         <div>
           <button class="btn btn-default" onClick={e => this.onUpdateClick()}>Upgrade</button>
         </div>}
-
     </div>
   }
 
