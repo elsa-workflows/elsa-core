@@ -25,6 +25,7 @@ export const config: Config = {
       componentCorePackage: '@elsa-workflows/elsa-workflows-designer',
       directivesProxyFile: '../angular-workspace/projects/component-library/src/lib/stencil-generated/components.ts',
       directivesArrayFile: '../angular-workspace/projects/component-library/src/lib/stencil-generated/index.ts',
+      excludeComponents:['context-consumer']
     }),
     {
       type: 'www',
