@@ -9,13 +9,6 @@ namespace Elsa.Activities.Kafka.SchemaRegistry
 {
     public class DefaultSchemaResolver : ISchemaResolver
     {
-        ISchemaRegistryClient _schemaRegistryClient;
-
-        public DefaultSchemaResolver(ISchemaRegistryClient schemaRegistryClient)
-        {
-            _schemaRegistryClient = schemaRegistryClient;
-        }        
-
         public ValueTask<string> ResolveSchemaForMessage(Confluent.Kafka.Message<Ignore, string> message)
         {
             return new ValueTask<string>("");

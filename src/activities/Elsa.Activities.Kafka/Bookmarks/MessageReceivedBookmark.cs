@@ -13,13 +13,14 @@ namespace Elsa.Activities.Kafka.Bookmarks
         {
         }
 
-        public MessageReceivedBookmark(string connectionString, string topic, string group, Dictionary<string, string>? headers, Confluent.Kafka.AutoOffsetReset autoOffsetReset)
+        public MessageReceivedBookmark(string connectionString, string topic, string group, Dictionary<string, string>? headers, Confluent.Kafka.AutoOffsetReset autoOffsetReset, string schema)
         {
             Topic = topic;
             Group = group;
             ConnectionString = connectionString;
             Headers = headers ?? new Dictionary<string, string>();
             AutoOffsetReset = autoOffsetReset;
+            Schema = schema;
         }
 
         public string Topic { get; set; } = default!;
@@ -29,6 +30,7 @@ namespace Elsa.Activities.Kafka.Bookmarks
         public Confluent.Kafka.AutoOffsetReset AutoOffsetReset { get; set; } = Confluent.Kafka.AutoOffsetReset.Earliest;
 
         public Dictionary<string, string> Headers { get; set; } = default!;
+        public string Schema { get; set; }
     }
 
     public class QueueMessageReceivedBookmarkProvider : BookmarkProvider<MessageReceivedBookmark, KafkaMessageReceived>
@@ -42,7 +44,8 @@ namespace Elsa.Activities.Kafka.Bookmarks
                         group: (await context.ReadActivityPropertyAsync(x => x.Group, cancellationToken))!,
                         connectionString: (await context.ReadActivityPropertyAsync(x => x.ConnectionString, cancellationToken))!,
                         headers: (await context.ReadActivityPropertyAsync(x => x.Headers, cancellationToken))!,
-                        autoOffsetReset: Enum.Parse<Confluent.Kafka.AutoOffsetReset>(await context.ReadActivityPropertyAsync(x => x.AutoOffsetReset, cancellationToken) ?? ((int)Confluent.Kafka.AutoOffsetReset.Earliest).ToString())!
+                        autoOffsetReset: Enum.Parse<Confluent.Kafka.AutoOffsetReset>(await context.ReadActivityPropertyAsync(x => x.AutoOffsetReset, cancellationToken) ?? ((int)Confluent.Kafka.AutoOffsetReset.Earliest).ToString())!,
+                        schema: (await context.ReadActivityPropertyAsync(x => x.Schema, cancellationToken))!
                     ))
             };
     }

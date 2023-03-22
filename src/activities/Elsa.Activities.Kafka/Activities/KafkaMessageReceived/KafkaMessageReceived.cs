@@ -56,6 +56,12 @@ namespace Elsa.Activities.Kafka.Activities.KafkaMessageReceived
 
         public string ClientId => KafkaClientConfigurationHelper.GetClientId(Id);
 
+        [ActivityInput(
+        Hint = "Schema",
+        SupportedSyntaxes = new[] { SyntaxNames.Literal },
+        Order = 2,
+        Category = PropertyCategories.Configuration)]
+        public string Schema { get; set; } = default!;
 
         [ActivityOutput(Hint = "Received message")]
         public object? Output { get; set; }

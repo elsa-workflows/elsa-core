@@ -93,14 +93,17 @@ namespace Elsa.Activities.Kafka.Services
 
             var tenantId = await _tenantIdResolver.ResolveAsync(ev, config.Topic, config.Group, Tags, cancellationToken);
 
-            var bookmark = new MessageReceivedBookmark(config.ConnectionString, config.Topic, config.Group, GetHeaders(ev.Message.Headers), config.AutoOffsetReset);
-            var launchContext = new WorkflowsQuery(ActivityType, bookmark, TenantId: tenantId);
-
             using var scope = _scopeFactory.CreateScope();
-            var workflowLaunchpad = scope.ServiceProvider.GetRequiredService<IWorkflowLaunchpad>();
+
             var schemaResolver = scope.ServiceProvider.GetRequiredService<ISchemaResolver>();
             var schema = await schemaResolver.ResolveSchemaForMessage(ev.Message);
-            
+
+            var bookmark = new MessageReceivedBookmark(config.ConnectionString, config.Topic, config.Group, GetHeaders(ev.Message.Headers), config.AutoOffsetReset, schema);
+            var launchContext = new WorkflowsQuery(ActivityType, bookmark, TenantId: tenantId);
+
+
+            var workflowLaunchpad = scope.ServiceProvider.GetRequiredService<IWorkflowLaunchpad>();
+
             await workflowLaunchpad.CollectAndDispatchWorkflowsAsync(launchContext, new WorkflowInput(ev.Message.Value), cancellationToken);
 
 

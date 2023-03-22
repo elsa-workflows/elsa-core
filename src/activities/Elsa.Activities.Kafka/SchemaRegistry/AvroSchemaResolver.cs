@@ -3,7 +3,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Confluent.SchemaRegistry;
-using Avro.Specific;
+using Avro.Generic;
 
 namespace Elsa.Activities.Kafka.SchemaRegistry
 {
@@ -21,8 +21,8 @@ namespace Elsa.Activities.Kafka.SchemaRegistry
         {
             if (_schemaRegistryClient is not null)
             {
-                var deserializer = new Confluent.SchemaRegistry.Serdes.AvroDeserializer<ISpecificRecord>(_schemaRegistryClient);
-                var res = await deserializer.DeserializeAsync(Encoding.ASCII.GetBytes(message.Value), false, Confluent.Kafka.SerializationContext.Empty);
+                var deserializer = new Confluent.SchemaRegistry.Serdes.AvroDeserializer<GenericRecord>(_schemaRegistryClient);
+                var res = await deserializer.DeserializeAsync(Encoding.ASCII.GetBytes(message.Value), false, SerializationContext.Empty);
                 return res.Schema.Name;
             }
             return "";
