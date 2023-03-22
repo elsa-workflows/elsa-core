@@ -9,11 +9,13 @@ namespace Elsa.Activities.Kafka.SchemaRegistry
 {
     public class AvroSchemaResolver : ISchemaResolver
     {
-        ISchemaRegistryClient _schemaRegistryClient;
+        private readonly ISchemaRegistryClient _schemaRegistryClient;
+        private readonly Confluent.SchemaRegistry.Serdes.AvroDeserializer<GenericRecord> _deserializer;
 
         public AvroSchemaResolver(ISchemaRegistryClient schemaRegistryClient)
         {
             _schemaRegistryClient = schemaRegistryClient;
+            _deserializer = new Confluent.SchemaRegistry.Serdes.AvroDeserializer<GenericRecord>(_schemaRegistryClient);
         }
 
 
@@ -21,8 +23,7 @@ namespace Elsa.Activities.Kafka.SchemaRegistry
         {
             if (_schemaRegistryClient is not null)
             {
-                var deserializer = new Confluent.SchemaRegistry.Serdes.AvroDeserializer<GenericRecord>(_schemaRegistryClient);
-                var res = await deserializer.DeserializeAsync(Encoding.ASCII.GetBytes(message.Value), false, SerializationContext.Empty);
+                var res = await _deserializer.DeserializeAsync(Encoding.ASCII.GetBytes(message.Value), false, SerializationContext.Empty);
                 return res.Schema.Name;
             }
             return "";
