@@ -6,7 +6,7 @@ namespace Elsa.MassTransit.Messages;
 public record DispatchTriggerWorkflows
 (
     string ActivityTypeName,
-    [property: JsonConverter(typeof(PolymorphicConverter))]
+    [property: JsonConverter(typeof(PolymorphicObjectConverterFactory))]
     object BookmarkPayload,
     string? CorrelationId,
     string? WorkflowInstanceId,

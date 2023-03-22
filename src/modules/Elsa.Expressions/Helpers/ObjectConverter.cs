@@ -22,7 +22,7 @@ public record ObjectConverterOptions(JsonSerializerOptions? SerializerOptions = 
 public static class ObjectConverter
 {
     public static Result TryConvertTo<T>(this object? value, ObjectConverterOptions? serializerOptions = null) => value.TryConvertTo(typeof(T), serializerOptions);
-    
+
     public static Result TryConvertTo(this object? value, Type targetType, ObjectConverterOptions? serializerOptions = null)
     {
         try
@@ -64,10 +64,10 @@ public static class ObjectConverter
         {
             if (jsonObject.ValueKind == JsonValueKind.String && underlyingTargetType != typeof(string))
                 return jsonObject.GetString().ConvertTo(underlyingTargetType);
-            
+
             return jsonObject.Deserialize(targetType, options);
         }
-        
+
         if (underlyingSourceType == typeof(string) && !underlyingTargetType.IsPrimitive && underlyingTargetType != typeof(object))
         {
             var stringValue = (string)value;
@@ -75,7 +75,7 @@ public static class ObjectConverter
             try
             {
                 var firstChar = stringValue.TrimStart().FirstOrDefault();
-                
+
                 if (firstChar is '{' or '[')
                     return JsonSerializer.Deserialize(stringValue, underlyingTargetType, options);
             }
@@ -84,7 +84,7 @@ public static class ObjectConverter
                 throw new TypeConversionException($"Failed to deserialize {stringValue} to {underlyingTargetType}", value, underlyingTargetType, e);
             }
         }
-        
+
         if (targetType == typeof(object))
             return value;
 
@@ -94,15 +94,18 @@ public static class ObjectConverter
         if (underlyingSourceType == underlyingTargetType)
             return value;
 
-        if (underlyingSourceType == typeof(ExpandoObject) && underlyingTargetType.IsClass)
+        if (typeof(IDictionary<string, object>).IsAssignableFrom(underlyingSourceType) && underlyingTargetType.IsClass)
         {
-            if (value is IDictionary<string, object> dictionary && typeof(IDictionary<string, object>).IsAssignableFrom(underlyingTargetType))
-                return new Dictionary<string, object>(dictionary);
+            if (typeof(ExpandoObject) == underlyingTargetType)
+            {
+                var expandoJson = JsonSerializer.Serialize(value);
+                return ConvertTo(expandoJson, underlyingTargetType, converterOptions);
+            }
 
-            var expandoJson = JsonSerializer.Serialize(value);
-            return ConvertTo(expandoJson, underlyingTargetType, converterOptions);
+            if (typeof(IDictionary<string, object>).IsAssignableFrom(underlyingTargetType))
+                return new Dictionary<string, object>((IDictionary<string, object>)value);
         }
-        
+
         var targetTypeConverter = TypeDescriptor.GetConverter(underlyingTargetType);
 
         if (targetTypeConverter.CanConvertFrom(underlyingSourceType))
@@ -126,16 +129,16 @@ public static class ObjectConverter
             if (underlyingSourceType == typeof(double))
                 return Enum.ToObject(underlyingTargetType, Convert.ChangeType(value, typeof(int)));
         }
-        
+
         if (value is string s)
         {
-            if(string.IsNullOrWhiteSpace(s))
+            if (string.IsNullOrWhiteSpace(s))
                 return null;
-            
-            if(underlyingTargetType == typeof(Type))
+
+            if (underlyingTargetType == typeof(Type))
                 return converterOptions?.WellKnownTypeRegistry != null ? converterOptions.WellKnownTypeRegistry.GetTypeOrDefault(s) : Type.GetType(s);
         }
-        
+
         if (value is IEnumerable enumerable)
         {
             if (underlyingTargetType is { IsGenericType: true })
@@ -147,7 +150,7 @@ public static class ObjectConverter
                 {
                     var collectionType = typeof(List<>).MakeGenericType(desiredCollectionItemType);
                     var collection = (IList)Activator.CreateInstance(collectionType)!;
-                    
+
                     foreach (var item in enumerable)
                     {
                         var convertedItem = ConvertTo(item, desiredCollectionItemType);

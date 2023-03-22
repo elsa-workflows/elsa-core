@@ -27,6 +27,6 @@ public class SystemObjectPrimitiveConverter : JsonConverter<object>
     /// <inheritdoc />
     public override void Write(Utf8JsonWriter writer, object value, JsonSerializerOptions options)
     {
-        throw new InvalidOperationException("Should not get here.");
+        JsonSerializer.Serialize(writer, value, value.GetType());
     }
 }

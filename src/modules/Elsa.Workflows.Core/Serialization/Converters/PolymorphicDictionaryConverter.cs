@@ -11,7 +11,7 @@ public class PolymorphicDictionaryConverter : JsonConverter<IDictionary<string, 
     public PolymorphicDictionaryConverter(JsonSerializerOptions options)
     {
         var newOptions = new JsonSerializerOptions(options);
-        newOptions.Converters.Insert(0, new SystemObjectWithTypeHandlingConverterFactory());
+        newOptions.Converters.Insert(0, new PolymorphicObjectConverterFactory());
         _objectConverter = (JsonConverter<object>)newOptions.GetConverter(typeof(object));
     }
 

@@ -23,7 +23,6 @@ public class PropertyBagConverter : JsonConverter<PropertyBag>
     {
         var newOptions = new JsonSerializerOptions();
         newOptions.Converters.Add(new PolymorphicDictionaryConverterFactory());
-        
         JsonSerializer.Serialize(writer, value.Dictionary, newOptions);
     }
 }

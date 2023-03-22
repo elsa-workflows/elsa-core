@@ -8,13 +8,13 @@ namespace Elsa.Workflows.Core.Serialization.Converters;
 /// <summary>
 /// Used for reading objects as primitive types rather than <see cref="JsonElement"/> values while also maintaining the .NET type name for reconstructing the actual type.
 /// </summary>
-public class SystemObjectWithTypeHandlingConverter : JsonConverter<object>
+public class PolymorphicObjectConverter : JsonConverter<object>
 {
     private const string TypePropertyName = "_type";
     private const string ItemsPropertyName = "_items";
 
     /// <inheritdoc />
-    public SystemObjectWithTypeHandlingConverter()
+    public PolymorphicObjectConverter()
     {
     }
 
@@ -33,6 +33,7 @@ public class SystemObjectWithTypeHandlingConverter : JsonConverter<object>
 
         if (!jsonObject.TryGetProperty(TypePropertyName, out var typeNameElement))
         {
+            newOptions.Converters.RemoveWhere(x => x is PolymorphicObjectConverterFactory);
             return jsonObject.Deserialize(typeof(ExpandoObject), newOptions)!;
         }
 
@@ -74,9 +75,9 @@ public class SystemObjectWithTypeHandlingConverter : JsonConverter<object>
         var newOptions = new JsonSerializerOptions(options);
         var type = value.GetType();
 
-        newOptions.Converters.RemoveWhere(x => x is SystemObjectWithTypeHandlingConverterFactory);
+        newOptions.Converters.RemoveWhere(x => x is PolymorphicObjectConverterFactory);
 
-        if (type.IsPrimitive || value is string or DateTimeOffset )
+        if (type.IsPrimitive || value is string or DateTimeOffset or JsonElement)
         {
             JsonSerializer.Serialize(writer, value, newOptions);
             return;
@@ -99,7 +100,12 @@ public class SystemObjectWithTypeHandlingConverter : JsonConverter<object>
             }
         }
         
-        writer.WriteString(TypePropertyName, type.GetSimpleAssemblyQualifiedName());
+        if(type != typeof(ExpandoObject))
+        {
+            // Write the type name so that we can reconstruct the actual type when deserializing.
+            writer.WriteString(TypePropertyName, type.GetSimpleAssemblyQualifiedName());
+        }
+        
         writer.WriteEndObject();
     }
 }

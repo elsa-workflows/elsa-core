@@ -6,11 +6,11 @@ namespace Elsa.Workflows.Core.Serialization.Converters;
 /// <summary>
 /// A JSON converter for <see cref="System.Object"/> objects.
 /// </summary>
-public class SystemObjectWithTypeHandlingConverterFactory : JsonConverterFactory
+public class PolymorphicObjectConverterFactory : JsonConverterFactory
 {
     /// <inheritdoc />
     public override bool CanConvert(Type typeToConvert) => true;
 
     /// <inheritdoc />
-    public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options) => new SystemObjectWithTypeHandlingConverter();
+    public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options) => new PolymorphicObjectConverter();
 }

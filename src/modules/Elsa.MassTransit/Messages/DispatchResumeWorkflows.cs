@@ -5,7 +5,7 @@ namespace Elsa.MassTransit.Messages;
 
 public record DispatchResumeWorkflows(
     string ActivityTypeName,
-    [property: JsonConverter(typeof(PolymorphicConverter))]
+    [property: JsonConverter(typeof(PolymorphicObjectConverterFactory))]
     object BookmarkPayload,
     string? CorrelationId,
     string? WorkflowInstanceId,
