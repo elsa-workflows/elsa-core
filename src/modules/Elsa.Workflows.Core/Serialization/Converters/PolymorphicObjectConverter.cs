@@ -47,12 +47,23 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         
         if(jsonObject.TryGetProperty(ItemsPropertyName, out var items))
         {
-            var array = JsonSerializer.Deserialize(items.GetRawText(), targetType, newOptions)!;
+            var elementType = targetType.GetElementType()!;
+            var array = Array.CreateInstance(elementType, items.GetArrayLength());
+            var index = 0;
+            
+            newOptions.Converters.Add(this);
+            
+            foreach (var element in items.EnumerateArray())
+            {
+                var deserializedElement = JsonSerializer.Deserialize(element.GetRawText(), elementType, newOptions)!;
+                array.SetValue(deserializedElement, index++);
+            }
             return array;
         }
 
         var json = jsonObject.GetRawText();
-        return JsonSerializer.Deserialize(json, targetType, newOptions)!;
+        var result = JsonSerializer.Deserialize(json, targetType, newOptions)!;
+        return result;
     }
 
     private static object ReadPrimitive(ref Utf8JsonReader reader, JsonSerializerOptions options)

@@ -55,6 +55,11 @@ public abstract class MemoryBlockReference
     public T? Get<T>(ExpressionExecutionContext context) => Get(context).ConvertTo<T>();
     
     /// <summary>
+    /// Returns the value of the memory block.
+    /// </summary>
+    public bool TryGet(ExpressionExecutionContext context, out object? value) => context.TryGet(this, out value);
+    
+    /// <summary>
     /// Sets the value of the memory block.
     /// </summary>
     public void Set(MemoryRegister memoryRegister, object? value, Action<MemoryBlock>? configure = default)

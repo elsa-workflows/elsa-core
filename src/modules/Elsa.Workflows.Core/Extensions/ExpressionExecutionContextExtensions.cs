@@ -29,6 +29,8 @@ public static class ExpressionExecutionContextExtensions
 
     public static WorkflowExecutionContext GetWorkflowExecutionContext(this ExpressionExecutionContext context) => (WorkflowExecutionContext)context.TransientProperties[WorkflowExecutionContextKey];
     public static ActivityExecutionContext GetActivityExecutionContext(this ExpressionExecutionContext context) => (ActivityExecutionContext)context.TransientProperties[ActivityExecutionContextKey];
+    public static bool TryGetActivityExecutionContext(this ExpressionExecutionContext context, out ActivityExecutionContext activityExecutionContext) => context.TransientProperties.TryGetValue(ActivityExecutionContextKey, out activityExecutionContext!);
+
     public static IDictionary<string, object> GetInput(this ExpressionExecutionContext context) => (IDictionary<string, object>)context.TransientProperties[InputKey];
     public static T? GetInput<T>(this ExpressionExecutionContext context, string key) => context.GetInput(key).ConvertTo<T>();
     public static object? GetInput(this ExpressionExecutionContext context, string key) => context.GetInput().TryGetValue(key, out var value) ? value : default;
@@ -36,15 +38,13 @@ public static class ExpressionExecutionContextExtensions
     public static T? Get<T>(this ExpressionExecutionContext context, Input<T>? input) => input != null ? context.GetBlock(input.MemoryBlockReference).Value.ConvertTo<T>() : default;
     public static T? Get<T>(this ExpressionExecutionContext context, Output output) => context.GetBlock(output.MemoryBlockReference).Value.ConvertTo<T>();
     public static object? Get(this ExpressionExecutionContext context, Output output) => context.GetBlock(output.MemoryBlockReference).Value;
-    public static T? GetVariable<T>(this ExpressionExecutionContext context, string name) => (T?)context.GetVariable(name);
-    public static T? GetVariable<T>(this ExpressionExecutionContext context) => context.GetVariable(typeof(T).Name).ConvertTo<T>();
-    public static object? GetVariable(this ExpressionExecutionContext context, string name) => new Variable(name).Get(context);
-    public static Variable SetVariable<T>(this ExpressionExecutionContext context, T? value, Type? storageDriverType = default) => context.SetVariable(typeof(T).Name, value, storageDriverType);
-    public static Variable SetVariable<T>(this ExpressionExecutionContext context, string name, T? value, Type? storageDriverType = default) => context.SetVariable(name, (object?)value, storageDriverType);
+    public static T? GetVariable<T>(this ExpressionExecutionContext context, string id) => (T?)context.GetVariable(id);
+    public static object? GetVariable(this ExpressionExecutionContext context, string id) => new Variable(id).Get(context);
+    public static Variable SetVariable<T>(this ExpressionExecutionContext context, string id, T? value, Type? storageDriverType = default) => context.SetVariable(id, (object?)value, storageDriverType, default);
 
-    public static Variable SetVariable(this ExpressionExecutionContext context, string name, object? value, Type? storageDriverType, Action<MemoryBlock>? configure = default)
+    public static Variable SetVariable(this ExpressionExecutionContext context, string id, object? value, Type? storageDriverType, Action<MemoryBlock>? configure = default)
     {
-        var variable = new Variable(name, value)
+        var variable = new Variable(id, value)
         {
             StorageDriverType = storageDriverType
         };

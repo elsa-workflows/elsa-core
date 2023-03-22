@@ -10,7 +10,11 @@ public class BreakWhileForkWorkflow : WorkflowBase
 {
     protected override void Build(IWorkflowBuilder workflow)
     {
-        var currentValue = new Variable<int?>("CurrentValue", 0);
+        var currentValue = new Variable<int?>
+        {
+            Name = "CurrentValue",
+            Value = 0
+        };
 
         workflow.Root = new Sequence
         {

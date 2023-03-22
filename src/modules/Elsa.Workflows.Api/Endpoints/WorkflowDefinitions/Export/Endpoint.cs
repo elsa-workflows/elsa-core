@@ -2,7 +2,9 @@ using System.Text.Json;
 using Elsa.Abstractions;
 using Elsa.Common.Models;
 using Elsa.Workflows.Api.Models;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Serialization;
+using Elsa.Workflows.Core.Serialization.Converters;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Runtime.Contracts;
@@ -43,7 +45,6 @@ public class Export : ElsaEndpoint<Request>
     /// <inheritdoc />
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
-        var serializerOptions = _serializerOptionsProvider.CreateApiOptions();
         var versionOptions = request.VersionOptions != null ? VersionOptions.FromString(request.VersionOptions) : VersionOptions.Latest;
         var definition = (await _store.FindManyAsync(new WorkflowDefinitionFilter { DefinitionId = request.DefinitionId, VersionOptions = versionOptions }, cancellationToken: cancellationToken)).FirstOrDefault();
 
@@ -73,6 +74,11 @@ public class Export : ElsaEndpoint<Request>
             definition.IsPublished,
             workflow.Root);
 
+        var serializerOptions = _serializerOptionsProvider.CreateApiOptions();
+        
+        // Exclude composite activities from being serialized.
+        serializerOptions.Converters.Add(new JsonIgnoreCompositeRootConverterFactory());
+        
         var binaryJson = JsonSerializer.SerializeToUtf8Bytes(model, serializerOptions);
         var hasWorkflowName = !string.IsNullOrWhiteSpace(definition.Name);
         var workflowName = hasWorkflowName ? definition.Name!.Trim() : definition.DefinitionId;

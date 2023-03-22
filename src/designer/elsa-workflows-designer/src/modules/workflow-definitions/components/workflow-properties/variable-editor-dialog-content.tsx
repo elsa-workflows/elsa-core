@@ -22,7 +22,7 @@ export class VariableEditorDialogContent {
   }
 
   render() {
-    const variable: Variable = this.variable ?? {name: '', typeName: 'Object', isArray: false};
+    const variable: Variable = this.variable ?? {id: '', name: '', typeName: 'Object', isArray: false};
     const variableTypeName = variable.typeName;
     const availableTypes: Array<VariableDescriptor> = descriptorsStore.variableDescriptors;
     const groupedVariableTypes = groupBy(availableTypes, x => x.category);

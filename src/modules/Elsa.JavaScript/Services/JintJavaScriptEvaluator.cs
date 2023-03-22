@@ -7,6 +7,7 @@ using Elsa.JavaScript.Contracts;
 using Elsa.JavaScript.Notifications;
 using Elsa.JavaScript.Options;
 using Elsa.Mediator.Contracts;
+using Elsa.Workflows.Core.Models;
 using Humanizer;
 using Jint;
 using Microsoft.Extensions.Options;
@@ -60,8 +61,8 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         engine.SetValue("setCorrelationId", (Action<string?>)(value => context.GetActivityExecutionContext().WorkflowExecutionContext.CorrelationId = value));
         engine.SetValue("getCorrelationId", (Func<string?>)(() => context.GetActivityExecutionContext().WorkflowExecutionContext.CorrelationId));
         engine.SetValue("setCorrelationId", (Action<string?>)(value => context.GetActivityExecutionContext().WorkflowExecutionContext.CorrelationId = value));
-        engine.SetValue("setVariable", (Action<string, object>)((name, value) => context.SetVariable(name, value)));
-        engine.SetValue("getVariable", (Func<string, object?>)(name => context.GetVariable(name)));
+        engine.SetValue("setVariable", (Action<string, object>)((id, value) => context.SetVariable(id, value)));
+        engine.SetValue("getVariable", (Func<string, object?>)(id => context.GetVariable(id)));
         engine.SetValue("getInput", (Func<string, object?>)(name => context.GetWorkflowExecutionContext().Input.GetValue(name)));
 
         // Create variable & input setters and getters for each variable.
@@ -89,16 +90,58 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
 
     private static void CreateMemoryBlockAccessors(Engine engine, ExpressionExecutionContext context)
     {
-        var variablesDictionary = context.ReadAndFlattenMemoryBlocks();
+        var variableNames = GetVariableNamesInScope(context).ToList();
 
-        foreach (var variable in variablesDictionary)
+        foreach (var variableName in variableNames)
         {
-            var pascalName = variable.Key.Pascalize();
-            engine.SetValue($"get{pascalName}", (Func<object?>)(() => context.GetVariable(variable.Key)));
-            engine.SetValue($"set{pascalName}", (Action<object?>)(value => context.SetVariable(variable.Key, value)));
+            var pascalName = variableName.Pascalize();
+            engine.SetValue($"get{pascalName}", (Func<object?>)(() => GetVariableInScope(context, variableName)));
+            engine.SetValue($"set{pascalName}", (Action<object?>)(value => SetVariableInScope(context, variableName, value)));
         }
     }
-    
+
+    private static IEnumerable<string> GetVariableNamesInScope(ExpressionExecutionContext context) => EnumerateVariablesInScope(context).Select(x => x.Name).Distinct();
+
+    private static object GetVariableInScope(ExpressionExecutionContext context, string variableName)
+    {
+        var q = from variable in EnumerateVariablesInScope(context)
+            where variable.Name == variableName
+            where variable.TryGet(context, out _)
+            select variable.Get(context);
+
+        var value = q.FirstOrDefault();
+        return value!;
+    }
+
+    private static void SetVariableInScope(ExpressionExecutionContext context, string variableName, object? value)
+    {
+        var q = from v in EnumerateVariablesInScope(context)
+            where v.Name == variableName
+            where v.TryGet(context, out _)
+            select v;
+
+        var variable = q.FirstOrDefault();
+        variable?.Set(context, value);
+    }
+
+    private static IEnumerable<Variable> EnumerateVariablesInScope(ExpressionExecutionContext context)
+    {
+        var currentScope = context;
+
+        while (currentScope != null)
+        {
+            if (!currentScope.TryGetActivityExecutionContext(out var activityExecutionContext))
+                break;
+
+            var variables = activityExecutionContext.Variables;
+
+            foreach (var variable in variables)
+                yield return variable;
+
+            currentScope = currentScope.ParentContext;
+        }
+    }
+
     private static object ExecuteExpressionAndGetResult(Engine engine, string expression)
     {
         var result = engine.Evaluate(expression);

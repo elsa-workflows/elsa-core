@@ -23,7 +23,7 @@ public class SerializerOptionsProvider
     public JsonSerializerOptions CreatePersistenceOptions(ReferenceHandler? referenceHandler = default)
     {
         var options = CreateDefaultOptions(referenceHandler ?? ReferenceHandler.IgnoreCycles);
-        options.Converters.Add(Create<JsonIgnoreCompositeRootConverterFactory<IActivity>>());
+        options.Converters.Add(Create<JsonIgnoreCompositeRootConverterFactory>());
         return options;
     }
 

@@ -108,7 +108,12 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
             if (!memoryReferenceElement.TryGetProperty("id", out var memoryReferenceIdElement)) 
                 continue;
             
-            var variable = new Variable(memoryReferenceIdElement.GetString()!);
+            var variable = new Variable
+            {
+                Id = memoryReferenceIdElement.GetString()!
+            };
+            variable.Name = variable.Id;
+            
             var output = Activator.CreateInstance(wrappedType, variable)!;
 
             activity.SyntheticProperties[outputName] = output!;

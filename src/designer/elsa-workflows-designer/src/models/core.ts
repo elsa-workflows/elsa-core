@@ -36,6 +36,7 @@ export interface Workflow extends Activity {
 }
 
 export interface Variable {
+  id: string;
   name: string;
   typeName: string;
   isArray: boolean;

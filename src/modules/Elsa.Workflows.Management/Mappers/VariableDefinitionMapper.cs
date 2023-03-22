@@ -34,6 +34,9 @@ public class VariableDefinitionMapper
         var variableGenericType = typeof(Variable<>).MakeGenericType(valueType);
         var variable = (Variable)Activator.CreateInstance(variableGenericType)!;
 
+        if(!string.IsNullOrEmpty(source.Id))
+            variable.Id = source.Id;
+        
         variable.Name = source.Name;
         variable.Value = source.Value.ConvertTo(valueType);
         variable.StorageDriverType = !string.IsNullOrEmpty(source.StorageDriverTypeName) ? Type.GetType(source.StorageDriverTypeName) : default;
@@ -66,7 +69,7 @@ public class VariableDefinitionMapper
         var storageDriverTypeName = source.StorageDriverType?.GetSimpleAssemblyQualifiedName();
         var serializedValue = value.Format();
 
-        return new VariableDefinition(source.Name, valueTypeAlias, isArray, serializedValue, storageDriverTypeName);
+        return new VariableDefinition(source.Id, source.Name, valueTypeAlias, isArray, serializedValue, storageDriverTypeName);
     }
 
     /// <summary>
