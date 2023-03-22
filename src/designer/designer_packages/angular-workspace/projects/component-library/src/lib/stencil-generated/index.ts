@@ -1,8 +1,7 @@
 
-import * as d from './components copy';
+import * as d from './components';
 
 export const DIRECTIVES = [
-  d.ContextConsumer,
   d.ElsaActivityInputEditorDialogContent,
   d.ElsaActivityOutputEditorDialogContent,
   d.ElsaActivityProperties,
