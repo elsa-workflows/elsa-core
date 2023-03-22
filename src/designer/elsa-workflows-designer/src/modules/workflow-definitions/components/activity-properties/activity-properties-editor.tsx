@@ -278,8 +278,7 @@ export class ActivityPropertiesEditor {
     const activity = this.activity;
     const propertyName = outputDescriptor.name;
     const camelCasePropertyName = camelCase(propertyName);
-    const outputTargetValuePair = outputTargetValue.split(':');
-    const kind = outputTargetValuePair[0];
+    const outputTargetValuePair = outputTargetValue.split('::');
     const outputTargetId = outputTargetValuePair[1];
 
     const property: ActivityOutput = {
@@ -303,9 +302,7 @@ export class ActivityPropertiesEditor {
       newId: activityId,
       originalId: activityId,
       activity,
-      activityDescriptor,
-      // propertyName: propertyName,
-      // propertyDescriptor: propertyDescriptor
+      activityDescriptor
     });
   }
 
@@ -356,8 +353,9 @@ export class ActivityPropertiesEditor {
     const key = `${activityId}`;
     const outputTargetOptions: Array<any> = [null];
 
-    if (variables.length > 0)
+    if (variables.length > 0) {
       outputTargetOptions.push({label: 'Variables', items: [...variables.map(x => ({value: x.id, name: x.name}))], kind: 'variable'});
+    }
 
     if (outputDefinitions.length > 0)
       outputTargetOptions.push({label: 'Outputs', items: [...outputDefinitions.map(x => ({value: x.name, name: x.name}))], kind: 'output'});
@@ -388,7 +386,7 @@ export class ActivityPropertiesEditor {
                     <optgroup label={outputTarget.label}>
                       {items.map(item => {
                         const isSelected = propertyValue?.memoryReference?.id == item.value;
-                        return <option value={`${item.kind}:${item.value}`} selected={isSelected}>{item.name}</option>;
+                        return <option value={`${outputTarget.kind}::${item.value}`} selected={isSelected}>{item.name}</option>;
                       })}
                     </optgroup>);
                 })}
@@ -413,7 +411,6 @@ export class ActivityPropertiesEditor {
       <CheckboxFormEntry fieldId="RunAsynchronously" label="Execute asynchronously" hint="When enabled, this activity will execute asynchronously and suspend workflow execution until the activity is finished.">
         <input type="checkbox" name="RunAsynchronously" id="RunAsynchronously" value={"true"} checked={runAsynchronously} onChange={e => this.onRunAsynchronouslyChanged(e)}/>
       </CheckboxFormEntry>
-
     </div>
   };
 }

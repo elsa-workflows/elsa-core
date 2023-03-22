@@ -4,13 +4,15 @@ import {ActivityInputContext} from "../../services/activity-input-driver";
 import {getPropertyValue} from "../../utils";
 import {FormEntry} from "../shared/forms/form-entry";
 import WorkflowDefinitionTunnel from "../../modules/workflow-definitions/state";
+import {WorkflowDefinition} from "../../modules/workflow-definitions/models/entities";
 
 @Component({
   tag: 'elsa-variable-picker-input',
   shadow: false
 })
 export class VariablePickerInput {
-  @Prop() public inputContext: ActivityInputContext;
+  @Prop() inputContext: ActivityInputContext;
+  @Prop() workflowDefinition: WorkflowDefinition; // Injected by WorkflowDefinitionTunnel
 
   public render() {
     const inputContext = this.inputContext;
@@ -36,9 +38,9 @@ export class VariablePickerInput {
             <select id={fieldId} name={fieldName} onChange={e => this.onChange(e)}>
               {variables.map((variable: Variable) => {
                 const variableName = variable?.name;
+                const variableId = variable?.id;
                 const isSelected = variableName == currentValue?.name;
-                const json = variable ? JSON.stringify(variable) : '';
-                return <option value={variableName} selected={isSelected} data-variable={json}>{variableName}</option>;
+                return <option value={variableId} selected={isSelected}>{variableName}</option>;
               })}
             </select>
           </FormEntry>
@@ -49,8 +51,10 @@ export class VariablePickerInput {
 
   private onChange = (e: Event) => {
     const inputElement = e.target as HTMLSelectElement;
-    const json = inputElement.selectedOptions[0].dataset.variable;
-    const variable = inputElement.selectedIndex <= 0 ? null : JSON.parse(json);
+    const variableId = inputElement.value;
+    const variable = this.workflowDefinition.variables.find(x => x.id == variableId);
+
     this.inputContext.inputChanged(variable, SyntaxNames.Literal);
   }
 }
+WorkflowDefinitionTunnel.injectProps(VariablePickerInput, ['workflowDefinition']);
