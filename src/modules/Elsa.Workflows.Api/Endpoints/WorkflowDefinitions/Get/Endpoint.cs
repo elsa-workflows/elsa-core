@@ -30,7 +30,7 @@ internal class Get : ElsaEndpoint<Request>
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
         var versionOptions = request.VersionOptions != null ? VersionOptions.FromString(request.VersionOptions) : VersionOptions.Latest;
-        
+
         var filter = new WorkflowDefinitionFilter
         {
             DefinitionId = request.DefinitionId,
@@ -49,10 +49,10 @@ internal class Get : ElsaEndpoint<Request>
         var mapper = new WorkflowDefinitionMapper();
         var response = await mapper.FromEntityAsync(definition, cancellationToken);
         var serializerOptions = _serializerOptionsProvider.CreateApiOptions();
-        
+
         // If the root of composite activities is not requested, exclude them from being serialized.
-        if(!request.IncludeCompositeRoot)
-            serializerOptions.Converters.Add(new JsonIgnoreCompositeRootConverterFactory<IActivity>());
+        if (!request.IncludeCompositeRoot)
+            serializerOptions.Converters.Add(new JsonIgnoreCompositeRootConverterFactory());
 
         await HttpContext.Response.WriteAsJsonAsync(response, serializerOptions, cancellationToken);
     }

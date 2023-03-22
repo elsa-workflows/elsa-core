@@ -2,22 +2,23 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Contracts;
 
 namespace Elsa.Workflows.Core.Serialization.Converters;
 
 /// <summary>
 /// Ignores properties with the <see cref="JsonIgnoreCompositeRootAttribute"/> attribute.
 /// </summary>
-public class JsonIgnoreCompositeRootConverter<T> : JsonConverter<T>
+public class JsonIgnoreCompositeRootConverter : JsonConverter<IActivity>
 {
     /// <inheritdoc />
-    public override T Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    public override IActivity Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         throw new NotImplementedException();
     }
 
     /// <inheritdoc />
-    public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
+    public override void Write(Utf8JsonWriter writer, IActivity value, JsonSerializerOptions options)
     {
         writer.WriteStartObject();
 
@@ -38,20 +39,5 @@ public class JsonIgnoreCompositeRootConverter<T> : JsonConverter<T>
         }
 
         writer.WriteEndObject();
-    }
-}
-
-/// <summary>
-/// A <see cref="JsonConverterFactory"/> that creates <see cref="JsonIgnoreCompositeRootConverter{T}"/> instances.
-/// </summary>
-public class JsonIgnoreCompositeRootConverterFactory<T> : JsonConverterFactory
-{
-    /// <inheritdoc />
-    public override bool CanConvert(Type typeToConvert) => typeof(T).IsAssignableFrom(typeToConvert);
-
-    /// <inheritdoc />
-    public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
-    {
-        return new JsonIgnoreCompositeRootConverter<T>();
     }
 }
