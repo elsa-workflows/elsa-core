@@ -49,9 +49,10 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         {
             var elementType = targetType.GetElementType()!;
             var array = Array.CreateInstance(elementType, items.GetArrayLength());
+            var index = 0;
+            
             newOptions.Converters.Add(this);
             
-            var index = 0;
             foreach (var element in items.EnumerateArray())
             {
                 var deserializedElement = JsonSerializer.Deserialize(element.GetRawText(), elementType, newOptions)!;
