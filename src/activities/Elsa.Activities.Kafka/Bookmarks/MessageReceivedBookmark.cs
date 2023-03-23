@@ -23,12 +23,13 @@ namespace Elsa.Activities.Kafka.Bookmarks
                            other.Topic == this.Topic &&
                            (this.IgnoreHeaders || other.Headers == this.Headers) &&
                            other.AutoOffsetReset == this.AutoOffsetReset &&
+                           other.Schema == this.Schema &&
                            other.ConnectionString == this.ConnectionString;
             }
             return equal;
         }
 
-        public MessageReceivedBookmark(string connectionString, string topic, string group, Dictionary<string, string>? headers, Confluent.Kafka.AutoOffsetReset autoOffsetReset, bool ignoreHeaders)
+        public MessageReceivedBookmark(string connectionString, string topic, string group, Dictionary<string, string>? headers, Confluent.Kafka.AutoOffsetReset autoOffsetReset, string schema, bool ignoreHeaders)
         {
             Topic = topic;
             Group = group;
@@ -62,8 +63,7 @@ namespace Elsa.Activities.Kafka.Bookmarks
                         connectionString: (await context.ReadActivityPropertyAsync(x => x.ConnectionString, cancellationToken))!,
                         headers: (await context.ReadActivityPropertyAsync(x => x.Headers, cancellationToken))!,
                         autoOffsetReset: Enum.Parse<Confluent.Kafka.AutoOffsetReset>(await context.ReadActivityPropertyAsync(x => x.AutoOffsetReset, cancellationToken) ?? ((int)Confluent.Kafka.AutoOffsetReset.Earliest).ToString())!,
-                        ignoreHeaders: (await context.ReadActivityPropertyAsync(x => x.IgnoreHeaders, cancellationToken))!
-                        autoOffsetReset: Enum.Parse<Confluent.Kafka.AutoOffsetReset>(await context.ReadActivityPropertyAsync(x => x.AutoOffsetReset, cancellationToken) ?? ((int)Confluent.Kafka.AutoOffsetReset.Earliest).ToString())!,
+                        ignoreHeaders: (await context.ReadActivityPropertyAsync(x => x.IgnoreHeaders, cancellationToken))!,
                         schema: (await context.ReadActivityPropertyAsync(x => x.Schema, cancellationToken))!
                     ))
             };

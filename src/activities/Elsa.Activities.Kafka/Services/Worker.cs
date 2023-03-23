@@ -94,7 +94,7 @@ namespace Elsa.Activities.Kafka.Services
             var schemaResolver = scope.ServiceProvider.GetRequiredService<ISchemaResolver>();
             var schema = await schemaResolver.ResolveSchemaForMessage(ev.Message);
 
-            var bookmark = new MessageReceivedBookmark(config.ConnectionString, config.Topic, config.Group, GetHeaders(ev.Message.Headers, config.IgnoreHeaders), config.AutoOffsetReset, config.IgnoreHeaders);
+            var bookmark = new MessageReceivedBookmark(config.ConnectionString, config.Topic, config.Group, GetHeaders(ev.Message.Headers, config.IgnoreHeaders), config.AutoOffsetReset, schema, config.IgnoreHeaders);
             var launchContext = new WorkflowsQuery(ActivityType, bookmark, TenantId: tenantId);
 
             // Launch KafkaMessageReceived activity
