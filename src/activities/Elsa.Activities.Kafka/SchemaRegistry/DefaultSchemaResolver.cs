@@ -9,7 +9,7 @@ namespace Elsa.Activities.Kafka.SchemaRegistry
 {
     public class DefaultSchemaResolver : ISchemaResolver
     {
-        public ValueTask<string> ResolveSchemaForMessage(Confluent.Kafka.Message<Ignore, string> message)
+        public ValueTask<string> ResolveSchemaForMessage(Confluent.Kafka.Message<Ignore, byte[]> message)
         {
             return new ValueTask<string>("");
         }

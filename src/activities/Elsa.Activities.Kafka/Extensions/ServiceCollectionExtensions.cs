@@ -65,7 +65,7 @@ namespace Elsa.Activities.Kafka.Extensions
             ISchemaRegistryClient schemaRegistry = new CachedSchemaRegistryClient(config);
             options.Services.AddSingleton<ISchemaRegistryClient>(schemaRegistry);
 
-            // Add schema resolver
+            // Add schema resolver --> Place for future implementations (Protobuff, JSON)
             switch (type)
             {
                 case ESchemaRegistryType.AVRO:

@@ -89,23 +89,21 @@ namespace Elsa.Activities.Kafka.Services
         {
             //avoid handler being triggered earlier than workflow is suspended
             await Task.Delay(_delay, cancellationToken);
-            var config = _client.Configuration;
-
-            var tenantId = await _tenantIdResolver.ResolveAsync(ev, config.Topic, config.Group, Tags, cancellationToken);
-
             using var scope = _scopeFactory.CreateScope();
+            var config = _client.Configuration;
+            var tenantId = await _tenantIdResolver.ResolveAsync(ev, config.Topic, config.Group, Tags, cancellationToken);
+            var workflowInput = new WorkflowInput(Encoding.ASCII.GetString(ev.Message.Value));
 
+            // Schema extraction if injected
             var schemaResolver = scope.ServiceProvider.GetRequiredService<ISchemaResolver>();
             var schema = await schemaResolver.ResolveSchemaForMessage(ev.Message);
 
             var bookmark = new MessageReceivedBookmark(config.ConnectionString, config.Topic, config.Group, GetHeaders(ev.Message.Headers), config.AutoOffsetReset, schema);
             var launchContext = new WorkflowsQuery(ActivityType, bookmark, TenantId: tenantId);
 
-
+            // Launch KafkaMessageReceived activity
             var workflowLaunchpad = scope.ServiceProvider.GetRequiredService<IWorkflowLaunchpad>();
-
-            await workflowLaunchpad.CollectAndDispatchWorkflowsAsync(launchContext, new WorkflowInput(ev.Message.Value), cancellationToken);
-
+            await workflowLaunchpad.CollectAndDispatchWorkflowsAsync(launchContext, workflowInput, cancellationToken);
 
             // Launch all activities where the trigger inherits from ActivityType
             if (_kafkaCustomActivityProvider != null && _kafkaCustomActivityProvider.KafkaOverrideTriggers != null)
@@ -113,7 +111,7 @@ namespace Elsa.Activities.Kafka.Services
                 foreach (var t in _kafkaCustomActivityProvider.KafkaOverrideTriggers)
                 {
                     var customLaunchContext = new WorkflowsQuery(t ?? "", bookmark, TenantId: tenantId);
-                    await workflowLaunchpad.CollectAndDispatchWorkflowsAsync(customLaunchContext, new WorkflowInput(ev.Message.Value), cancellationToken);
+                    await workflowLaunchpad.CollectAndDispatchWorkflowsAsync(customLaunchContext, workflowInput, cancellationToken);
                 }
             }
         }

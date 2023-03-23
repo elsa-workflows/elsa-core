@@ -9,6 +9,6 @@ namespace Elsa.Activities.Kafka.SchemaRegistry
 {
     internal interface ISchemaResolver
     {
-        ValueTask<string> ResolveSchemaForMessage(Confluent.Kafka.Message<Ignore, string> message);
+        ValueTask<string> ResolveSchemaForMessage(Confluent.Kafka.Message<Ignore, byte[]> message);
     }
 }
