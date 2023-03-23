@@ -90,7 +90,7 @@ namespace Elsa.Activities.Kafka.Services
 
             var tenantId = await _tenantIdResolver.ResolveAsync(ev, config.Topic, config.Group, Tags, cancellationToken);
 
-            var bookmark = new MessageReceivedBookmark(config.ConnectionString, config.Topic, config.Group, GetHeaders(ev.Message.Headers), config.AutoOffsetReset);
+            var bookmark = new MessageReceivedBookmark(config.ConnectionString, config.Topic, config.Group, GetHeaders(ev.Message.Headers, config.IgnoreHeaders), config.AutoOffsetReset, config.IgnoreHeaders);
             var launchContext = new WorkflowsQuery(ActivityType, bookmark, TenantId: tenantId);
 
             using var scope = _scopeFactory.CreateScope();
@@ -108,9 +108,12 @@ namespace Elsa.Activities.Kafka.Services
             }
         }
 
-        private Dictionary<string, string> GetHeaders(Headers headers)
+        private Dictionary<string, string> GetHeaders(Headers headers, bool ignoreHeaders)
         {
             var result = new Dictionary<string, string>();
+            if (ignoreHeaders)
+                return result;
+
             foreach (var header in headers)
             {
                 result.Add(header.Key, Encoding.UTF8.GetString(header.GetValueBytes()));
