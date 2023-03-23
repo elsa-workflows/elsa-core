@@ -1,5 +1,7 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Elsa.Common.Models;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
@@ -7,6 +9,7 @@ using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Management.Contracts;
 using Humanizer;
 
 namespace Elsa.Workflows.Management.Serialization.Converters;
@@ -18,6 +21,7 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
 {
     private readonly IActivityRegistry _activityRegistry;
     private readonly IActivityFactory _activityFactory;
+    private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
     private readonly IExpressionSyntaxRegistry _expressionSyntaxRegistry;
     private readonly IServiceProvider _serviceProvider;
 
@@ -25,11 +29,13 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
     public ActivityJsonConverter(
         IActivityRegistry activityRegistry, 
         IActivityFactory activityFactory,
+        IWorkflowDefinitionStore workflowDefinitionStore,
         IExpressionSyntaxRegistry expressionSyntaxRegistry,
         IServiceProvider serviceProvider)
     {
         _activityRegistry = activityRegistry;
         _activityFactory = activityFactory;
+        _workflowDefinitionStore = workflowDefinitionStore;
         _expressionSyntaxRegistry = expressionSyntaxRegistry;
         _serviceProvider = serviceProvider;
     }
@@ -46,6 +52,11 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
         var activityTypeName = activityTypeNameElement.GetString()!;
         var activityTypeVersion = doc.RootElement.TryGetProperty("version", out var activityTypeVersionElement) ? activityTypeVersionElement.GetInt32() : 1;
         var activityDescriptor = _activityRegistry.Find(activityTypeName, activityTypeVersion);
+
+        if (activityDescriptor is null)
+        {
+            activityDescriptor = CheckImportedWorkflowAsActivity(activityDescriptor, doc, ref activityTypeName, ref activityTypeVersion);
+        }
 
         var newOptions = new JsonSerializerOptions(options);
         newOptions.Converters.Add(new InputJsonConverterFactory(_serviceProvider));
@@ -209,5 +220,26 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
         
         // Send the model to the writer.
         JsonSerializer.Serialize(writer, activityModel, newOptions);
+    }
+    
+    private ActivityDescriptor? CheckImportedWorkflowAsActivity(ActivityDescriptor? activityDescriptor, JsonDocument doc, [DisallowNull] ref string? activityTypeName, ref int activityTypeVersion)
+    {
+        if (!doc.RootElement.TryGetProperty("workflowDefinitionId", out var workflowDefinitionId))
+            return activityDescriptor;
+        
+        var workflowDefinition = _workflowDefinitionStore.FindAsync(new WorkflowDefinitionFilter
+        {
+            DefinitionId = workflowDefinitionId.GetString(),
+            VersionOptions = VersionOptions.LatestOrPublished
+        }).Result;
+
+        if (workflowDefinition != null)
+        {
+            activityTypeName = workflowDefinition.Name;
+            activityTypeVersion = workflowDefinition.Version;
+            activityDescriptor = _activityRegistry.Find(activityTypeName!, activityTypeVersion);
+        }
+
+        return activityDescriptor;
     }
 }
