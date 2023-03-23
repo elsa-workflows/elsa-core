@@ -1,6 +1,6 @@
 import { AfterViewInit, Component, ElementRef, OnInit, ViewChild, ViewContainerRef } from '@angular/core';
 import { WorkflowDefinition,WorkflowDefinitionsPlugin,StudioService,Container,ActivityDescriptorManager,ServerSettings,ElsaClientProvider, LoginApi, AuthContext,JSX, Components, WorkflowDefinitionsApi, WorkflowDefinitionSummary } from '@elsa-workflows/elsa-workflows-designer';
-import { ElsaStudio, ElsaWorkflowDefinitionEditor } from 'component-library';
+import { ElsaStudio, ElsaWorkflowDefinitionEditor } from '@elsa-workflows/elsa-workflows-designer-angular-wrapper';
 
 
 @Component({

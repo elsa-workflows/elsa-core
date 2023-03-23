@@ -4,7 +4,9 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build",
+    "build:library": "ng build component-library",
+    "build:sample": "ng build AngularElsaDashboard",
+    "build": "npm run build:library && npm run build:sample",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },

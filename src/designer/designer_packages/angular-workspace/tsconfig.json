@@ -4,8 +4,8 @@
   "compilerOptions": {
     "baseUrl": "./",
     "paths": {
-      "component-library": [
-        "dist/component-library"
+      "@elsa-workflows/elsa-workflows-designer-angular-wrapper": [
+        "dist/elsa-workflows-designer-angular-wrapper"
       ]
     },
     "outDir": "./dist/out-tsc",
