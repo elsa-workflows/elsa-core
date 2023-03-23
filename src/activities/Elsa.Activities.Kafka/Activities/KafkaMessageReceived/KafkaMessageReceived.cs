@@ -32,8 +32,14 @@ namespace Elsa.Activities.Kafka.Activities.KafkaMessageReceived
         public string Group { get; set; } = default!;
 
         [ActivityInput(
-            Hint = "List of headers that should be present in the message",
             Order = 3,
+            DefaultValue = false,            
+            SupportedSyntaxes = new[] { SyntaxNames.Literal })]
+        public bool IgnoreHeaders { get; set; } = default!;
+
+        [ActivityInput(
+            Hint = "List of headers that should be present in the message",
+            Order = 4,
             UIHint = ActivityInputUIHints.Dictionary,
             DefaultSyntax = SyntaxNames.Json,
             SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript })]
