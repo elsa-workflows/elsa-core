@@ -174,8 +174,8 @@ namespace Elsa.Activities.Kafka.Services
             var headers = bookmark.Headers;
             var clientId = KafkaClientConfigurationHelper.GetClientId(activityId);
             var autoOffsetReset = bookmark.AutoOffsetReset;
-
-            return new KafkaConfiguration(connectionString!, topic!, group!, headers, clientId, autoOffsetReset);
+            var ignoreHeaders = bookmark.IgnoreHeaders;
+            return new KafkaConfiguration(connectionString!, topic!, group!, headers, clientId, autoOffsetReset, ignoreHeaders);
         }
     }
 }
