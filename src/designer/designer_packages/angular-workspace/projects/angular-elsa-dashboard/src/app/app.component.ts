@@ -20,9 +20,7 @@ export class AppComponent implements OnInit{
         serverSettings.baseAddress = "https://localhost:7228/elsa/api";
         
         let loginApi = Container.get(LoginApi);
-        let loginResponse = await loginApi.login("admin","password");
-
-       
+        let loginResponse = await loginApi.login("admin","password");        
 
         const accessToken = loginResponse.accessToken;
         const refreshToken = loginResponse.refreshToken;
@@ -42,6 +40,11 @@ export class AppComponent implements OnInit{
     
             return request;
         })
+
+        //refresh availables activities
+        let activityDescriptorManager = Container.get(ActivityDescriptorManager);
+        activityDescriptorManager.refresh();
+
         this.workflowList =  await (await this.worflowApi.list({versionOptions:{isLatest:true}})).items;
 
   }
