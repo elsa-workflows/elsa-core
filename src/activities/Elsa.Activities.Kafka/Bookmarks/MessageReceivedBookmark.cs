@@ -36,6 +36,7 @@ namespace Elsa.Activities.Kafka.Bookmarks
             Headers = headers ?? new Dictionary<string, string>();
             AutoOffsetReset = autoOffsetReset;
             IgnoreHeaders = ignoreHeaders;
+            Schema = schema;
         }
 
         public string Topic { get; set; } = default!;
@@ -46,6 +47,7 @@ namespace Elsa.Activities.Kafka.Bookmarks
 
         public Dictionary<string, string> Headers { get; set; } = default!;
         public bool IgnoreHeaders { get; set; }
+        public string Schema { get; set; }
     }
 
     public class QueueMessageReceivedBookmarkProvider : BookmarkProvider<MessageReceivedBookmark, KafkaMessageReceived>
@@ -61,6 +63,8 @@ namespace Elsa.Activities.Kafka.Bookmarks
                         headers: (await context.ReadActivityPropertyAsync(x => x.Headers, cancellationToken))!,
                         autoOffsetReset: Enum.Parse<Confluent.Kafka.AutoOffsetReset>(await context.ReadActivityPropertyAsync(x => x.AutoOffsetReset, cancellationToken) ?? ((int)Confluent.Kafka.AutoOffsetReset.Earliest).ToString())!,
                         ignoreHeaders: (await context.ReadActivityPropertyAsync(x => x.IgnoreHeaders, cancellationToken))!
+                        autoOffsetReset: Enum.Parse<Confluent.Kafka.AutoOffsetReset>(await context.ReadActivityPropertyAsync(x => x.AutoOffsetReset, cancellationToken) ?? ((int)Confluent.Kafka.AutoOffsetReset.Earliest).ToString())!,
+                        schema: (await context.ReadActivityPropertyAsync(x => x.Schema, cancellationToken))!
                     ))
             };
     }

@@ -3,8 +3,6 @@ using Elsa.Activities.Kafka.Configuration;
 using Elsa.Services;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -47,6 +45,8 @@ namespace Elsa.Activities.Kafka.Bookmarks
                         headers: (await context.ReadActivityPropertyAsync(x => x.Headers, cancellationToken) ?? new Dictionary<string, string>())!,
                         autoOffsetReset: Enum.Parse<Confluent.Kafka.AutoOffsetReset>(await context.ReadActivityPropertyAsync(x => x.AutoOffsetReset, cancellationToken) ?? ((int)Confluent.Kafka.AutoOffsetReset.Earliest).ToString())!,
                         ignoreHeaders : (await context.ReadActivityPropertyAsync(x => x.IgnoreHeaders, cancellationToken))!
+                        autoOffsetReset: Enum.Parse<Confluent.Kafka.AutoOffsetReset>(await context.ReadActivityPropertyAsync(x => x.AutoOffsetReset, cancellationToken) ?? ((int)Confluent.Kafka.AutoOffsetReset.Earliest).ToString())!,
+                        schema: (await context.ReadActivityPropertyAsync(x => x.Schema, cancellationToken))!
                     ))
             };
     }

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Confluent.Kafka;
 using Elsa.Activities.Kafka.Helpers;
+using Elsa.Activities.Kafka.Models;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Design;
@@ -62,6 +63,12 @@ namespace Elsa.Activities.Kafka.Activities.KafkaMessageReceived
 
         public string ClientId => KafkaClientConfigurationHelper.GetClientId(Id);
 
+        [ActivityInput(
+        Hint = "Schema",
+        SupportedSyntaxes = new[] { SyntaxNames.Literal },
+        Order = 4,
+        Category = PropertyCategories.Configuration)]
+        public string Schema { get; set; } = default!;
 
         [ActivityOutput(Hint = "Received message")]
         public object? Output { get; set; }
@@ -72,9 +79,9 @@ namespace Elsa.Activities.Kafka.Activities.KafkaMessageReceived
 
         private IActivityExecutionResult ExecuteInternalAsync(ActivityExecutionContext context)
         {
-            var message = (string)context.Input!;
+            var message = (MessageReceivedInput)context.Input!;
 
-            Output = message;
+            Output = message.MessageString;
 
             context.LogOutputProperty(this, nameof(Output), Output);
             context.JournalData.Add("Headers", message);
