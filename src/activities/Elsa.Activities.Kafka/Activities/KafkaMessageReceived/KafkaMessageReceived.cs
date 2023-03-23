@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Confluent.Kafka;
 using Elsa.Activities.Kafka.Helpers;
+using Elsa.Activities.Kafka.Models;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Design;
@@ -72,9 +73,9 @@ namespace Elsa.Activities.Kafka.Activities.KafkaMessageReceived
 
         private IActivityExecutionResult ExecuteInternalAsync(ActivityExecutionContext context)
         {
-            var message = (string)context.Input!;
+            var message = (MessageReceivedInput)context.Input!;
 
-            Output = message;
+            Output = message.MessageString;
 
             context.LogOutputProperty(this, nameof(Output), Output);
             context.JournalData.Add("Headers", message);
