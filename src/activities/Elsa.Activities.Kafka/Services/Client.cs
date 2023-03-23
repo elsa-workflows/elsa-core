@@ -14,7 +14,7 @@ namespace Elsa.Activities.Kafka.Services
     public class Client : IClient
     {
         private CancellationToken _cancellationToken;
-        private IConsumer<Ignore, string>? _consumer;
+        private IConsumer<Ignore, byte[]>? _consumer;
         private Func<KafkaMessageEvent, Task>? _messageHandler;
         private Func<Exception, Task>? _errHandler;
 
@@ -42,7 +42,7 @@ namespace Elsa.Activities.Kafka.Services
                 AutoOffsetReset = Configuration.AutoOffsetReset,
             };
 
-            _consumer = new ConsumerBuilder<Ignore, string>(consumerConfig).Build();
+            _consumer = new ConsumerBuilder<Ignore, byte[]>(consumerConfig).Build();
 
             if (_consumer != null)
                 Consumer.Consume(topic, _consumer).Subscribe(HandleMessage, OnError, _cancellationToken);
@@ -82,7 +82,7 @@ namespace Elsa.Activities.Kafka.Services
             if (_errHandler != null) await _errHandler(error);
         }
 
-        private async void HandleMessage(Message<Ignore, string> message)
+        private async void HandleMessage(Message<Ignore, byte[]> message)
         {
             var ev = new KafkaMessageEvent(message, _cancellationToken);
 
