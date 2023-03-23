@@ -2,18 +2,23 @@ using Elsa.Abstractions;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Workflows.Api.Mappers;
-using Elsa.Workflows.Api.Models;
+using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Core.Serialization;
+using Elsa.Workflows.Core.Serialization.Converters;
 using Elsa.Workflows.Management.Contracts;
+using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Get;
 
-internal class Get : ElsaEndpoint<Request, WorkflowDefinitionResponse, WorkflowDefinitionMapper>
+internal class Get : ElsaEndpoint<Request>
 {
     private readonly IWorkflowDefinitionStore _store;
+    private readonly SerializerOptionsProvider _serializerOptionsProvider;
 
-    public Get(IWorkflowDefinitionStore store)
+    public Get(IWorkflowDefinitionStore store, SerializerOptionsProvider serializerOptionsProvider)
     {
         _store = store;
+        _serializerOptionsProvider = serializerOptionsProvider;
     }
 
     public override void Configure()
@@ -25,7 +30,7 @@ internal class Get : ElsaEndpoint<Request, WorkflowDefinitionResponse, WorkflowD
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
         var versionOptions = request.VersionOptions != null ? VersionOptions.FromString(request.VersionOptions) : VersionOptions.Latest;
-        
+
         var filter = new WorkflowDefinitionFilter
         {
             DefinitionId = request.DefinitionId,
@@ -41,7 +46,14 @@ internal class Get : ElsaEndpoint<Request, WorkflowDefinitionResponse, WorkflowD
             return;
         }
 
-        var response = await Map.FromEntityAsync(definition, cancellationToken);
-        await SendOkAsync(response, cancellationToken);
+        var mapper = new WorkflowDefinitionMapper();
+        var response = await mapper.FromEntityAsync(definition, cancellationToken);
+        var serializerOptions = _serializerOptionsProvider.CreateApiOptions();
+
+        // If the root of composite activities is not requested, exclude them from being serialized.
+        if (!request.IncludeCompositeRoot)
+            serializerOptions.Converters.Add(new JsonIgnoreCompositeRootConverterFactory());
+
+        await HttpContext.Response.WriteAsJsonAsync(response, serializerOptions, cancellationToken);
     }
 }

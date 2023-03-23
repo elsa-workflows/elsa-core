@@ -1,5 +1,5 @@
 export type ExpressionType = string;
-export type Expression = LiteralExpression | JavaScriptExpression | JsonExpression;
+export type Expression = LiteralExpression | JavaScriptExpression | ObjectExpression;
 
 export interface LiteralExpression {
   type: ExpressionType;
@@ -11,7 +11,7 @@ export interface JavaScriptExpression {
   value: string;
 }
 
-export interface JsonExpression {
+export interface ObjectExpression {
   type: ExpressionType;
   value: string;
 }

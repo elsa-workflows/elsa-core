@@ -7,5 +7,6 @@ namespace Elsa.Workflows.Runtime.Commands;
 public record DispatchTriggerWorkflowsCommand(
     string ActivityTypeName, 
     object BookmarkPayload, 
-    string? CorrelationId = default, 
+    string? CorrelationId = default,
+    string? WorkflowInstanceId = default,
     IDictionary<string, object>? Input = default) : ICommand<Unit>;

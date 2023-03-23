@@ -38,7 +38,7 @@ export interface WorkflowInstancePropertiesViewerModel {
 }
 
 export interface ActivityExecutionEventBlock {
-  uniqueActivityId: string;
+  nodeId: string;
   activityId: string;
   activityInstanceId: string;
   parentActivityInstanceId: string;

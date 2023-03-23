@@ -144,6 +144,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                     b.Property<string>("Message")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("NodeId")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("ParentActivityInstanceId")
                         .HasColumnType("nvarchar(450)");
 

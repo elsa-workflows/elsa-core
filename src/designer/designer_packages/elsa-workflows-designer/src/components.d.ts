@@ -248,6 +248,7 @@ export namespace Components {
     }
     interface ElsaVariablePickerInput {
         "inputContext": ActivityInputContext;
+        "workflowDefinition": WorkflowDefinition;
     }
     interface ElsaVariablesEditor {
         "variables"?: Array<Variable>;
@@ -1134,6 +1135,7 @@ declare namespace LocalJSX {
     }
     interface ElsaVariablePickerInput {
         "inputContext"?: ActivityInputContext;
+        "workflowDefinition"?: WorkflowDefinition;
     }
     interface ElsaVariablesEditor {
         "onVariablesChanged"?: (event: ElsaVariablesEditorCustomEvent<Variable[]>) => void;

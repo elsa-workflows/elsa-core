@@ -5,11 +5,11 @@ using System.Text.Json;
 using Elsa.Common.Contracts;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Helpers;
+using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Activities.Flowchart.Models;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Core.Signals;
 using Microsoft.Extensions.Logging;
 
@@ -79,13 +79,27 @@ public static class ActivityExecutionContextExtensions
             source = $"{Path.GetFileName(activity.Source)}:{activity.Line}";
 
         var activityState = includeActivityState ? context.ActivityState : default;
-        var logEntry = new WorkflowExecutionLogEntry(activityInstanceId, parentActivityInstanceId, activity.Id, activity.Type, activityState, now, eventName, message, source, payload);
+
+        var logEntry = new WorkflowExecutionLogEntry(
+            activityInstanceId,
+            parentActivityInstanceId,
+            activity.Id,
+            activity.Type,
+            context.NodeId,
+            activityState,
+            now,
+            eventName,
+            message,
+            source,
+            payload);
+
         workflowExecutionContext.ExecutionLog.Add(logEntry);
         return logEntry;
     }
 
-    public static Variable SetVariable(this ActivityExecutionContext context, string name, object? value) => context.ExpressionExecutionContext.SetVariable(name, value);
-    public static T? GetVariable<T>(this ActivityExecutionContext context, string name) => context.ExpressionExecutionContext.GetVariable<T?>(name);
+    public static Variable SetVariable(this ActivityExecutionContext context, string name, object? value, Type? storageDriverType = default, Action<MemoryBlock>? configure = default) => 
+        context.ExpressionExecutionContext.SetVariable(name, value, storageDriverType, configure);
+    public static T? GetVariable<T>(this ActivityExecutionContext context, string id) => context.ExpressionExecutionContext.GetVariable<T?>(id);
 
     /// <summary>
     /// Returns a dictionary of variable keys and their values across scopes.
@@ -98,26 +112,31 @@ public static class ActivityExecutionContextExtensions
     public static async Task EvaluateInputPropertiesAsync(this ActivityExecutionContext context)
     {
         var activity = context.Activity;
+        var activityRegistry = context.GetRequiredService<IActivityRegistry>();
+        var activityDescriptor = activityRegistry.Find(activity.Type) ?? throw new Exception("Activity descriptor not found");
 
-        // TODO: Get inputs from activity descriptor.
-        var inputs = activity.GetNamedInputs();
-
-        var assignedInputs = inputs.Where(x => x.Value.MemoryBlockReference != null!).ToList();
+        var wrappedInputs = activityDescriptor
+            .GetWrappedInputProperties(activity)
+            .Where(x => x.Value is { MemoryBlockReference: { } })
+            .ToDictionary(x => x.Key, x => x.Value);
+        
         var evaluator = context.GetRequiredService<IExpressionEvaluator>();
         var stateSerializer = context.GetRequiredService<IActivityStateSerializer>();
         var expressionExecutionContext = context.ExpressionExecutionContext;
 
-        foreach (var input in assignedInputs)
+        foreach (var input in wrappedInputs)
         {
-            var memoryReference = input.Value.MemoryBlockReference();
+            var memoryReference = input.Value!.MemoryBlockReference();
             var value = await evaluator.EvaluateAsync(input.Value, expressionExecutionContext);
             memoryReference.Set(context, value);
 
-            // Also set the evaluated input value on the activity.
+            // Store the evaluated input value in the activity state.
             var serializedValue = await stateSerializer.SerializeAsync(value);
-            context.ActivityState[input.Key] = serializedValue;
+            
+            if(serializedValue.ValueKind != JsonValueKind.Undefined)
+                context.ActivityState[input.Key] = serializedValue;
         }
-
+        
         context.SetHasEvaluatedProperties();
     }
 
@@ -137,7 +156,9 @@ public static class ActivityExecutionContextExtensions
     public static async Task<Input> EvaluateInputPropertyAsync(this ActivityExecutionContext context, string inputName)
     {
         var activity = context.Activity;
-        var input = activity.GetInput(inputName);
+        var activityRegistry = context.GetRequiredService<IActivityRegistry>();
+        var activityDescriptor = activityRegistry.Find(activity.Type) ?? throw new Exception("Activity descriptor not found");
+        var input = activityDescriptor.GetWrappedInputProperty(activity, inputName);
 
         if (input == null)
             throw new Exception($"No input with name {inputName} could be found");
@@ -147,7 +168,6 @@ public static class ActivityExecutionContextExtensions
 
         var evaluator = context.GetRequiredService<IExpressionEvaluator>();
         var expressionExecutionContext = context.ExpressionExecutionContext;
-
         var memoryBlockReference = input.MemoryBlockReference();
         var value = await evaluator.EvaluateAsync(input, expressionExecutionContext);
         memoryBlockReference.Set(context, value);

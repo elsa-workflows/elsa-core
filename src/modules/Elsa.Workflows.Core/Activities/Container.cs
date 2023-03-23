@@ -2,7 +2,6 @@ using System.Collections.ObjectModel;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Core.Activities;
 
@@ -29,6 +28,9 @@ public abstract class Container : Activity, IVariableContainer
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
+        // Register variables.
+        context.ExpressionExecutionContext.Memory.Declare(Variables);
+        
         // Schedule children.
         await ScheduleChildrenAsync(context);
     }

@@ -2,7 +2,6 @@ using Elsa.WorkflowContexts.Middleware;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Pipelines.ActivityExecution;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
-using Elsa.Workflows.Core.Services;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;

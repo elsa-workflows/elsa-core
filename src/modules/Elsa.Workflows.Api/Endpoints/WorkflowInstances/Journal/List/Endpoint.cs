@@ -40,6 +40,7 @@ public class Get : ElsaEndpoint<Request, Response>
                     x.ParentActivityInstanceId,
                     x.ActivityId,
                     x.ActivityType,
+                    x.NodeId,
                     x.Timestamp,
                     x.EventName,
                     x.Message,

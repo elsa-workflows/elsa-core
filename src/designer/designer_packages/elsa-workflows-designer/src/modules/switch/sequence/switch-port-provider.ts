@@ -21,6 +21,10 @@ export class SwitchPortProvider implements PortProvider {
 
   resolvePort(portName: string, context: PortProviderContext): Activity | Array<Activity> {
     const activity = context.activity as SwitchActivity;
+
+    if(portName == 'default')
+      return activity.default;
+
     const cases: Array<SwitchCase> = activity.cases ?? [];
     const caseItem = cases.find(x => x.label == portName);
 
@@ -32,6 +36,12 @@ export class SwitchPortProvider implements PortProvider {
 
   assignPort(portName: string, activity: Activity, context: PortProviderContext) {
     const switchActivity = context.activity as SwitchActivity;
+
+    if(portName == 'default') {
+      switchActivity.default = activity;
+      return;
+    }
+
     const cases: Array<SwitchCase> = switchActivity.cases ?? [];
     const caseItem = cases.find(x => x.label == portName);
 

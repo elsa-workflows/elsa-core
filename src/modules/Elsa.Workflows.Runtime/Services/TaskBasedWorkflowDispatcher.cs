@@ -24,12 +24,12 @@ public class TaskBasedWorkflowDispatcher : IWorkflowDispatcher
     public async Task<DispatchWorkflowDefinitionResponse> DispatchAsync(DispatchWorkflowDefinitionRequest request, CancellationToken cancellationToken = default)
     {
         var command = new DispatchWorkflowDefinitionCommand(
-            request.DefinitionId, 
-            request.VersionOptions, 
+            request.DefinitionId,
+            request.VersionOptions,
             request.Input,
             request.CorrelationId,
             request.InstanceId);
-        
+
         await _backgroundCommandSender.SendAsync(command, cancellationToken);
         return new DispatchWorkflowDefinitionResponse();
     }
@@ -45,7 +45,7 @@ public class TaskBasedWorkflowDispatcher : IWorkflowDispatcher
     /// <inheritdoc />
     public async Task<DispatchTriggerWorkflowsResponse> DispatchAsync(DispatchTriggerWorkflowsRequest request, CancellationToken cancellationToken = default)
     {
-        var command = new DispatchTriggerWorkflowsCommand(request.ActivityTypeName, request.BookmarkPayload, request.CorrelationId, request.Input);
+        var command = new DispatchTriggerWorkflowsCommand(request.ActivityTypeName, request.BookmarkPayload, request.CorrelationId, request.WorkflowInstanceId, request.Input);
         await _backgroundCommandSender.SendAsync(command, cancellationToken);
         return new DispatchTriggerWorkflowsResponse();
     }

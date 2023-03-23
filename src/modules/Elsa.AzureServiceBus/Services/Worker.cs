@@ -3,7 +3,6 @@ using Elsa.AzureServiceBus.Activities;
 using Elsa.AzureServiceBus.Models;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Helpers;
-using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Models;
 using Microsoft.Extensions.Logging;
@@ -76,7 +75,7 @@ public class Worker : IAsyncDisposable
         var messageModel = CreateMessageModel(message);
         var input = new Dictionary<string, object> { [MessageReceived.InputKey] = messageModel };
         var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<MessageReceived>();
-        var dispatchRequest = new DispatchTriggerWorkflowsRequest(activityTypeName, payload, correlationId, input);
+        var dispatchRequest = new DispatchTriggerWorkflowsRequest(activityTypeName, payload, correlationId, default, input);
         await _workflowDispatcher.DispatchAsync(dispatchRequest, cancellationToken);
     }
 

@@ -1,6 +1,5 @@
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Management.Activities;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 
 namespace Elsa.Workflows.Management.Extensions;

@@ -38,6 +38,6 @@ internal class TriggerBridgeCallActivities : INotificationHandler<TelnyxWebhookR
         var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<BridgeCalls>();
         var input = new Dictionary<string, object>().AddInput(callBridgedPayload);
         var callBridgedBookmarkPayload = new CallBridgedBookmarkPayload(callBridgedPayload.CallControlId);
-        await _workflowRuntime.TriggerWorkflowsAsync(activityTypeName, callBridgedBookmarkPayload, new TriggerWorkflowsRuntimeOptions(correlationId, input), cancellationToken);
+        await _workflowRuntime.TriggerWorkflowsAsync(activityTypeName, callBridgedBookmarkPayload, new TriggerWorkflowsRuntimeOptions(correlationId, default, input), cancellationToken);
     }
 }

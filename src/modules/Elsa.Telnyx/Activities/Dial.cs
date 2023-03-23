@@ -8,7 +8,6 @@ using Elsa.Telnyx.Options;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Management.Models;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Telnyx.Activities;

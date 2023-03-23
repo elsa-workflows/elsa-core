@@ -42,6 +42,7 @@ export interface ArgumentDefinition {
 
 export interface InputDefinition extends ArgumentDefinition {
   uiHint?: string;
+  storageDriverType?: Type;
 }
 
 export interface OutputDefinition extends ArgumentDefinition {

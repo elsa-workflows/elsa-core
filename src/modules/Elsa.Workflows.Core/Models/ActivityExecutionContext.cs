@@ -8,30 +8,56 @@ using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Core.Models;
 
-public class ActivityExecutionContext
+/// <summary>
+/// Represents the context of an activity execution.
+/// </summary>
+public class ActivityExecutionContext : IExecutionContext
 {
     private readonly List<Bookmark> _bookmarks = new();
     private long _executionCount;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ActivityExecutionContext"/> class.
+    /// </summary>
     public ActivityExecutionContext(
         WorkflowExecutionContext workflowExecutionContext,
         ActivityExecutionContext? parentActivityExecutionContext,
         ExpressionExecutionContext expressionExecutionContext,
         IActivity activity,
+        ActivityDescriptor activityDescriptor,
         CancellationToken cancellationToken)
     {
         WorkflowExecutionContext = workflowExecutionContext;
         ParentActivityExecutionContext = parentActivityExecutionContext;
         ExpressionExecutionContext = expressionExecutionContext;
         Activity = activity;
+        ActivityDescriptor = activityDescriptor;
         CancellationToken = cancellationToken;
         Id = Guid.NewGuid().ToString();
     }
 
+    /// <summary>
+    /// The ID of the current activity execution context.
+    /// </summary>
     public string Id { get; set; }
+    
+    /// <summary>
+    /// The workflow execution context. 
+    /// </summary>
     public WorkflowExecutionContext WorkflowExecutionContext { get; }
+    
+    /// <summary>
+    /// The parent activity execution context, if any. 
+    /// </summary>
     public ActivityExecutionContext? ParentActivityExecutionContext { get; internal set; }
+    
+    /// <summary>
+    /// The expression execution context.
+    /// </summary>
     public ExpressionExecutionContext ExpressionExecutionContext { get; }
+
+    /// <inheritdoc />
+    public IEnumerable<Variable> Variables => (Activity as IVariableContainer)?.Variables ?? Enumerable.Empty<Variable>();
 
     /// <summary>
     /// The currently executing activity.
@@ -39,14 +65,17 @@ public class ActivityExecutionContext
     public IActivity Activity { get; set; }
 
     /// <summary>
+    /// The activity descriptor.
+    /// </summary>
+    public ActivityDescriptor ActivityDescriptor { get; }
+
+    /// <summary>
     /// A cancellation token to use when invoking asynchronous operations.
     /// </summary>
     public CancellationToken CancellationToken { get; }
-
-    /// <summary>
-    /// A dictionary of values that can be associated with this activity execution context.
-    /// </summary>
-    public PropertyBag Properties { get; set; } = new();
+    
+    /// <inheritdoc />
+    public IDictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
 
     /// <summary>
     /// A transient dictionary of values that can be associated with this activity execution context.
@@ -186,18 +215,18 @@ public class ActivityExecutionContext
     /// <summary>
     /// Returns a property value associated with the current activity context. 
     /// </summary>
-    public T? GetProperty<T>(string key) => Properties.Dictionary.TryGetValue<T?>(key, out var value) ? value : default;
+    public T? GetProperty<T>(string key) => Properties.TryGetValue<T?>(key, out var value) ? value : default;
 
     /// <summary>
     /// Returns a property value associated with the current activity context. 
     /// </summary>
     public T GetProperty<T>(string key, Func<T> defaultValue)
     {
-        if (Properties.Dictionary.TryGetValue<T?>(key, out var value))
+        if (Properties.TryGetValue<T?>(key, out var value))
             return value!;
 
         value = defaultValue();
-        Properties.Dictionary[key] = value!;
+        Properties[key] = value!;
 
         return value!;
     }
@@ -205,7 +234,7 @@ public class ActivityExecutionContext
     /// <summary>
     /// Stores a property associated with the current activity context. 
     /// </summary>
-    public void SetProperty<T>(string key, T? value) => Properties.Dictionary[key] = value!;
+    public void SetProperty<T>(string key, T? value) => Properties[key] = value!;
 
     /// <summary>
     /// Updates a property associated with the current activity context. 
@@ -214,7 +243,7 @@ public class ActivityExecutionContext
     {
         var value = GetProperty<T?>(key);
         value = updater(value);
-        Properties.Dictionary[key] = value;
+        Properties[key] = value;
         return value;
     }
 
@@ -239,7 +268,7 @@ public class ActivityExecutionContext
         return value != default ? value.ConvertTo<T>() : default;
     }
 
-    public void Set(MemoryBlockReference blockReference, object? value) => ExpressionExecutionContext.Set(blockReference, value);
+    public void Set(MemoryBlockReference blockReference, object? value, Action<MemoryBlock>? configure = default) => ExpressionExecutionContext.Set(blockReference, value, configure);
     public void Set(Output? output, object? value) => ExpressionExecutionContext.Set(output, value);
     public void Set<T>(Output<T>? output, T? value) => ExpressionExecutionContext.Set(output, value);
 

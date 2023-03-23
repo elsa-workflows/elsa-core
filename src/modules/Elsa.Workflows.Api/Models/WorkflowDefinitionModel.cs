@@ -12,7 +12,10 @@ internal record WorkflowDefinitionModel(
     int Version,
     ICollection<VariableDefinition> Variables,
     ICollection<InputDefinition> Inputs,
+    ICollection<OutputDefinition> Outputs,
+    ICollection<string> Outcomes,
     IDictionary<string, object> Metadata,
+    bool? UsableAsActivity,
     bool IsLatest,
     bool IsPublished,
     IActivity Root

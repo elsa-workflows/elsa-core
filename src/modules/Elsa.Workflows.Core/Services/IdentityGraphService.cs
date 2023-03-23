@@ -7,14 +7,16 @@ namespace Elsa.Workflows.Core.Services;
 /// <inheritdoc />
 public class IdentityGraphService : IIdentityGraphService
 {
-    private readonly IActivityWalker _activityWalker;
+    private readonly IActivityVisitor _activityVisitor;
+    private readonly IActivityRegistry _activityRegistry;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public IdentityGraphService(IActivityWalker activityWalker)
+    public IdentityGraphService(IActivityVisitor activityVisitor, IActivityRegistry activityRegistry)
     {
-        _activityWalker = activityWalker;
+        _activityVisitor = activityVisitor;
+        _activityRegistry = activityRegistry;
     }
 
     /// <inheritdoc />
@@ -23,7 +25,7 @@ public class IdentityGraphService : IIdentityGraphService
     /// <inheritdoc />
     public async Task AssignIdentitiesAsync(IActivity root, CancellationToken cancellationToken = default)
     {
-        var graph = await _activityWalker.WalkAsync(root, cancellationToken);
+        var graph = await _activityVisitor.VisitAsync(root, cancellationToken);
         AssignIdentities(graph);
     }
 
@@ -48,7 +50,8 @@ public class IdentityGraphService : IIdentityGraphService
     /// <inheritdoc />
     public void AssignInputOutputs(IActivity activity)
     {
-        var inputs = activity.GetInputs();
+        var activityDescriptor = _activityRegistry.Find(activity.Type, activity.Version) ?? throw new Exception("Activity descriptor not found");
+        var inputs = activityDescriptor.GetWrappedInputProperties(activity).Values.Where(x => x != null).Cast<Input>().ToList();
         var seed = 0;
 
         foreach (var input in inputs)
@@ -84,7 +87,7 @@ public class IdentityGraphService : IIdentityGraphService
         var seed = 0;
 
         foreach (var variable in variables)
-            variable.Id = variable.Name != null! ? variable.Name : $"{activity.Id}:variable-{++seed}";
+            variable.Id = variable.Id != null! ? variable.Id : $"{activity.Id}:variable-{++seed}";
     }
 
     private string CreateId(ActivityNode activityNode, IDictionary<string, int> identityCounters, ICollection<ActivityNode> allNodes)

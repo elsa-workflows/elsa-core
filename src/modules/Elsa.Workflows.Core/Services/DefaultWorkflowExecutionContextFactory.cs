@@ -8,23 +8,26 @@ namespace Elsa.Workflows.Core.Services;
 /// <inheritdoc />
 public class DefaultWorkflowExecutionContextFactory : IWorkflowExecutionContextFactory
 {
-    private readonly IActivityWalker _activityWalker;
+    private readonly IActivityVisitor _activityVisitor;
     private readonly IIdentityGraphService _identityGraphService;
     private readonly IActivitySchedulerFactory _schedulerFactory;
+    private readonly IActivityRegistry _activityRegistry;
     private readonly IWorkflowStateSerializer _workflowStateSerializer;
 
     /// <summary>
     /// Constructor.
     /// </summary>
     public DefaultWorkflowExecutionContextFactory(
-        IActivityWalker activityWalker,
+        IActivityVisitor activityVisitor,
         IIdentityGraphService identityGraphService,
         IActivitySchedulerFactory schedulerFactory,
+        IActivityRegistry activityRegistry,
         IWorkflowStateSerializer workflowStateSerializer)
     {
-        _activityWalker = activityWalker;
+        _activityVisitor = activityVisitor;
         _identityGraphService = identityGraphService;
         _schedulerFactory = schedulerFactory;
+        _activityRegistry = activityRegistry;
         _workflowStateSerializer = workflowStateSerializer;
     }
 
@@ -43,8 +46,13 @@ public class DefaultWorkflowExecutionContextFactory : IWorkflowExecutionContextF
         var root = workflow;
 
         // Build graph.
-        var graph = await _activityWalker.WalkAsync(root, cancellationToken);
+        var graph = await _activityVisitor.VisitAsync(root, cancellationToken);
         var flattenedList = graph.Flatten().ToList();
+        
+        // Register activity types.
+        var activityTypes = flattenedList.Select(x => x.Activity.GetType()).Distinct().ToList();
+        await _activityRegistry.RegisterAsync(activityTypes, cancellationToken);
+        
         var needsIdentityAssignment = flattenedList.Any(x => string.IsNullOrEmpty(x.Activity.Id));
 
         if (needsIdentityAssignment)
@@ -62,6 +70,7 @@ public class DefaultWorkflowExecutionContextFactory : IWorkflowExecutionContextF
             graph,
             flattenedList,
             scheduler,
+            _activityRegistry,
             input,
             executeActivityDelegate,
             triggerActivityId,

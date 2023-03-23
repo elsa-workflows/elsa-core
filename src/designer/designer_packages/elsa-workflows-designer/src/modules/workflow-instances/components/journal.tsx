@@ -1,15 +1,13 @@
-import {Component, h, Method, Prop, State, Watch, Event, EventEmitter} from "@stencil/core";
-import {Activity, Workflow, WorkflowExecutionLogRecord, WorkflowInstance, Container as ActivityContainer, UniqueActivity} from "../../../models";
+import {Component, h, Prop, State, Watch, Event, EventEmitter} from "@stencil/core";
+import {Activity, Workflow, WorkflowExecutionLogRecord, WorkflowInstance} from "../../../models";
 import {Container} from "typedi";
-import {ActivityIconRegistry} from "../../../services";
+import {ActivityIconRegistry, ActivityNode, flatten, walkActivities} from "../../../services";
 import {durationToString, formatTime, getDuration, Hash, isNullOrWhitespace} from "../../../utils";
 import {ActivityExecutionEventBlock} from "../models";
 import {ActivityIconSize} from "../../../components/icons/activities";
 import {WorkflowDefinition} from "../../workflow-definitions/models/entities";
 import {WorkflowInstancesApi} from "../services/workflow-instances-api";
-import { JournalItemSelectedArgs } from "../events";
-import { v4 as uuid } from 'uuid';
-import { block } from "@antv/x6/lib/registry/marker/classic";
+import {JournalItemSelectedArgs} from "../events";
 
 // TODO: Implement dynamic loading of records.
 const PAGE_SIZE: number = 10000;
@@ -34,14 +32,14 @@ export class Journal {
   @State() blocks: Array<ActivityExecutionEventBlock> = [];
   @State() rootBlocks: Array<ActivityExecutionEventBlock> = [];
   @State() expandedBlocks: Array<ActivityExecutionEventBlock> = [];
-  @State() journalActivityMap: Hash<UniqueActivity> = {};
+  @State() journalActivityMap: Set<ActivityNode> = new Set<ActivityNode>();
   @Event() journalItemSelected: EventEmitter<JournalItemSelectedArgs>;
 
   @Watch('workflowInstance')
   async onWorkflowInstanceChanged(value: string) {
     await this.loadJournalPage(0);
     this.createActivityMapForJournal();
-    
+
   }
 
   @Watch('workflowDefinition')
@@ -103,13 +101,14 @@ export class Journal {
     const journalActivityMap = this.journalActivityMap;
     const iconRegistry = this.iconRegistry;
     const expandedBlocks = this.expandedBlocks;
-    var sortedBlocks = this.sortByTimestamp(blocks);
-    return sortedBlocks.map((block, index) => {
-      const activity = journalActivityMap[block.uniqueActivityId];
+    const sortedBlocks = this.sortByTimestamp(blocks);
 
-      if(activity.type == "Elsa.Workflow" || activity.type == "Elsa.Flowchart"){
+    return sortedBlocks.map((block) => {
+      const activityNode = journalActivityMap[block.nodeId];
+      const activity = activityNode.activity;
+
+      if (activity.type == "Elsa.Workflow" || activity.type == "Elsa.Flowchart")
         return this.renderBlocks(block.children);
-      }
 
       const activityMetadata = activity.metadata;
       const activityDisplayText = isNullOrWhitespace(activityMetadata.displayText) ? activity.id : activityMetadata.displayText;
@@ -162,7 +161,7 @@ export class Journal {
           <td><a href="#" onClick={e => this.onJournalItemClick(e, block, activity)}>{duration}</a></td>
         </tr>, expanded ? this.renderBlocks(block.children) : undefined]
       );
-    });
+    }).filter(x => !!x);
   }
 
   private loadJournalPage = async (page: number): Promise<void> => {
@@ -189,7 +188,7 @@ export class Journal {
       const duration = !!completedRecord ? getDuration(completedRecord.timestamp, startedRecord.timestamp) : null;
 
       return {
-        uniqueActivityId: uuid(),
+        nodeId: startedRecord.nodeId,
         activityId: startedRecord.activityId,
         activityInstanceId: startedRecord.activityInstanceId,
         parentActivityInstanceId: startedRecord.parentActivityInstanceId,
@@ -204,9 +203,8 @@ export class Journal {
       };
     });
 
-    for (const block of blocks) {
+    for (const block of blocks)
       block.children = this.findChildBlocks(blocks, block.activityInstanceId);
-    }
 
     return blocks;
   };
@@ -234,61 +232,32 @@ export class Journal {
 
   private sortByTimestamp(blocks: ActivityExecutionEventBlock[]) {
     return blocks.sort(function (x, y) {
-      if(x.timestamp > y.timestamp) 
+      if (x.timestamp > y.timestamp)
         return 1;
       return -1;
     });
   }
 
   private createActivityMapForJournal() {
-    let blocksCopy = this.blocks.slice();
+    // Create dummy root workflow to match structure of workflow execution log entries in order to generate the right node IDs.
+    const workflow: Workflow = {
+      type: 'Elsa.Workflow',
+      version: this.workflowDefinition.version,
+      id: "Workflow1",
+      root: this.workflowDefinition.root,
+      variables: this.workflowDefinition.variables,
+      metadata: {},
+      customProperties: {}
+    }
 
-    let allActivities = new Array<UniqueActivity>();
-    allActivities.push({id: 'Workflow1', type: 'Elsa.Workflow', version: null, metadata: {}, customProperties: null, uniqueId: this.findUniqueId(this.rootBlocks[0].activityId)});
-    allActivities.push({...this.workflowDefinition.root, uniqueId: this.findUniqueId(this.workflowDefinition.root.id)});
+    const graph = walkActivities(workflow);
+    const nodes = flatten(graph);
+    const map = new Set<ActivityNode>();
 
-    allActivities = this.walkActivitiesRecursive(this.workflowDefinition.root as ActivityContainer, allActivities);
-
-    const map = {};
-    for (const activity of allActivities)
-      map[activity.uniqueId] = activity;
+    for (const node of nodes)
+      map[node.nodeId] = node;
 
     this.journalActivityMap = map;
-    this.blocks = blocksCopy;
+    this.blocks = this.blocks.filter(x => !!map[x.nodeId]);
   }
-  
-  private walkActivitiesRecursive(activityContainer: ActivityContainer, allActivities: Array<UniqueActivity>) {
-    if(activityContainer.activities == null || activityContainer.activities.length == 0) {
-      if(activityContainer.root != null) {
-        allActivities.push({...activityContainer.root, uniqueId: this.findUniqueId(activityContainer.root.id)});
-        allActivities = this.walkActivitiesRecursive(activityContainer.root, allActivities);
-      }
-    }
-    else {
-      activityContainer.activities.forEach(activity => {
-        allActivities.push({...activity, uniqueId: this.findUniqueId(activity.id)});
-        if(activity.root != null){
-          allActivities.push({...activity.root, uniqueId: this.findUniqueId(activity.root.id)});
-          allActivities = this.walkActivitiesRecursive(activity.root, allActivities);
-        }
-      });
-    }
-    return allActivities;
-  }
-
-  private findUniqueId(activityId: string): string {
-    let uniqueActivityId: string;
-    let index: number;
-
-    for(let i = 0; i < this.blocks.length; i++) {
-      if(this.blocks[i].activityId == activityId) {
-        uniqueActivityId = this.blocks[i].uniqueActivityId;
-        index = i;
-        break;
-      }
-    }
-
-    this.blocks.splice(index, 1);
-    return uniqueActivityId;
-  }  
 }

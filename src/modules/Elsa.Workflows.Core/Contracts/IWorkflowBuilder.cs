@@ -100,7 +100,7 @@ public interface IWorkflowBuilder
     /// <summary>
     /// Build a new <see cref="Workflow"/> instance using the information collected in this pipelineBuilder.
     /// </summary>
-    Workflow BuildWorkflow();
+    Task<Workflow> BuildWorkflowAsync(CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Creates a new <see cref="Workflow"/> instance using the specified <see cref="IWorkflow"/> definition.

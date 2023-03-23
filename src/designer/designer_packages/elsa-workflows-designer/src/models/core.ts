@@ -22,10 +22,6 @@ export interface Activity {
   [name: string]: any;
 }
 
-export interface UniqueActivity extends Activity {
-  uniqueId: string;
-}
-
 export interface Trigger extends Activity {
 }
 
@@ -40,6 +36,7 @@ export interface Workflow extends Activity {
 }
 
 export interface Variable {
+  id: string;
   name: string;
   typeName: string;
   isArray: boolean;
@@ -144,6 +141,7 @@ export interface ActivityExecutionContextState {
 
 export interface WorkflowExecutionLogRecord {
   id: string;
+  nodeId: string;
   activityInstanceId: string;
   parentActivityInstanceId?: string;
   activityId: string;
@@ -158,7 +156,7 @@ export enum SyntaxNames {
   Literal = 'Literal',
   JavaScript = 'JavaScript',
   Liquid = 'Liquid',
-  Json = 'Json'
+  Object = 'Object'
 }
 
 export interface ActivityMetadata {

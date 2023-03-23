@@ -12,12 +12,93 @@ export interface ActivityNode {
   parents: Array<ActivityNode>;
   children: Array<ActivityNode>;
   port?: string;
+  nodeId: string;
+
+  descendants(): Array<ActivityNode>;
+
+  ancestors(): Array<ActivityNode>;
+
+  siblings(): Array<ActivityNode>;
+
+  siblingsAndCousins(): Array<ActivityNode>;
 }
 
 export interface ActivityPort {
   activity: Activity;
   port: string;
 }
+
+export class ActivityNodeClass implements ActivityNode {
+  private _activity: Activity;
+  private _parents: Array<ActivityNode>;
+  private _children: Array<ActivityNode>;
+
+  constructor(activity) {
+    this.activity = activity;
+    this.parents = [];
+    this.children = [];
+  }
+
+  get nodeId() {
+    const ancestorIds = [...this.ancestors()].reverse().map(x => x.activity.id);
+    return ancestorIds.length ? `${ancestorIds.join(":")}:${this.activity.id}` : this.activity.id;
+  }
+
+  get activity() {
+    return this._activity;
+  }
+
+  set activity(value) {
+    this._activity = value;
+  }
+
+  get parents() {
+    return this._parents;
+  }
+
+  set parents(value) {
+    this._parents = value;
+  }
+
+  get children() {
+    return this._children;
+  }
+
+  set children(value) {
+    this._children = value;
+  }
+
+  descendants() {
+    const list = [];
+
+    for (let child of this.children) {
+      list.push(child);
+      list.push(...child.descendants());
+    }
+
+    return list;
+  }
+
+  ancestors() {
+    const list = [];
+
+    for (let parent of this.parents) {
+      list.push(parent);
+      list.push(...parent.ancestors());
+    }
+
+    return list;
+  }
+
+  siblings() {
+    return this.parents.flatMap(parent => parent.children);
+  }
+
+  siblingsAndCousins() {
+    return this.parents.flatMap(parent => parent.descendants().flatMap(x => x.children));
+  }
+}
+
 
 export function createActivityLookup(nodes: Array<ActivityNode>): Hash<Activity> {
   const map = {};
@@ -40,7 +121,7 @@ export function createActivityNodeMap(nodes: Array<ActivityNode>): Hash<Activity
 export function walkActivities(root: Activity): ActivityNode {
   const descriptors = descriptorsStore.activityDescriptors;
   const collectedActivities = new Set<Activity>([root]);
-  const graph: ActivityNode = {activity: root, parents: [], children: []};
+  const graph: ActivityNode = new ActivityNodeClass(root);
   const collectedNodes = new Set<ActivityNode>([graph]);
 
   walkRecursive(graph, root, collectedActivities, collectedNodes, descriptors);
@@ -70,7 +151,9 @@ function walkRecursive(node: ActivityNode, activity: Activity, collectedActiviti
     let childNode = collectedNodesArray.find(x => x.activity == port.activity);
 
     if (!childNode) {
-      childNode = {activity: port.activity, children: [], parents: [], port: port.port};
+      childNode = new ActivityNodeClass(port.activity);
+      childNode.port = port.port;
+      //childNode = {activity: port.activity, children: [], parents: [], port: port.port};
 
       if (!collectedNodes.has(childNode))
         collectedNodes.add(childNode);
