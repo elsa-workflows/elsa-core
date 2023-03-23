@@ -1,0 +1,29 @@
+<!-- <elsa-workflow-toolbar></elsa-workflow-toolbar> -->
+  <div class="flex flex-row gap-2">
+    <div>
+      <button class="btn btn-primary" name="new Workflow" (click)="newWorkflow()"> New Workflow </button>
+    </div>
+    <div>
+      <button class="btn btn-primary" name="publish" (click)="publish()"> PUBLISH </button>
+    </div>
+    <!-- <div *ngIf="wf">
+      <button class="btn btn-primary" name="delete" (click)="deleteWorkflow(wf.definitionId)"> Delete {{wf.name}} </button>
+    </div> -->
+    <div class="flex flex-row">
+    <div class="self-center">
+      <label for="location" class="block text-sm font-medium leading-6 text-gray-900">Location</label>
+    </div>
+     
+      <select class="form-control mt-2 block w-full rounded-md border-0 py-1.5 pl-3 pr-10
+      text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6" 
+       name="selectedValue" id="selectedValue" (ngModelChange)="onWorkflowChange($event)" [(ngModel)]="wf">
+        <option *ngFor="let workflow of workflowList" [ngValue]="workflow">{{workflow.name}}</option>
+    </select>
+    </div>
+  </div>
+  <div class="absolute inset-0" style="top: 64px;">
+    <elsa-studio server="https://localhost:7228/elsa/api"
+      monaco-lib-path="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.31.1/min">
+    </elsa-studio>
+  </div>
+
