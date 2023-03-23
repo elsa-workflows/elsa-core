@@ -60,7 +60,7 @@ namespace Elsa.Activities.Kafka.Activities.KafkaMessageReceived
         [ActivityInput(
         Hint = "Schema",
         SupportedSyntaxes = new[] { SyntaxNames.Literal },
-        Order = 2,
+        Order = 4,
         Category = PropertyCategories.Configuration)]
         public string Schema { get; set; } = default!;
 
