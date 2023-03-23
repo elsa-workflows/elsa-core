@@ -163,6 +163,11 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
 
         await _workflowDefinitionStore.SaveAsync(draft, cancellationToken);
 
+        if (lastVersion is null)
+        {
+            await _eventPublisher.PublishAsync(new WorkflowDefinitionCreated(definition), cancellationToken);
+        }
+
         if (lastVersion is { IsPublished: true, IsLatest: true })
         {
             lastVersion.IsLatest = false;
