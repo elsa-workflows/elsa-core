@@ -46,12 +46,25 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
         if (!JsonDocument.TryParseValue(ref reader, out var doc))
             throw new JsonException("Failed to parse JsonDocument");
 
-        if (!doc.RootElement.TryGetProperty("type", out var activityTypeNameElement))
+        var activityRoot = doc.RootElement;
+
+        if (!activityRoot.TryGetProperty("type", out var activityTypeNameElement))
             throw new JsonException("Failed to extract activity type property");
 
         var activityTypeName = activityTypeNameElement.GetString()!;
-        var activityTypeVersion = doc.RootElement.TryGetProperty("version", out var activityTypeVersionElement) ? activityTypeVersionElement.GetInt32() : 1;
-        var activityDescriptor = _activityRegistry.Find(activityTypeName, activityTypeVersion) ?? CheckImportedWorkflowAsActivity(doc, ref activityTypeName, ref activityTypeVersion);
+        var activityTypeVersion = activityRoot.TryGetProperty("version", out var activityTypeVersionElement) ? activityTypeVersionElement.GetInt32() : 1;
+        var activityDescriptor = _activityRegistry.Find(activityTypeName, activityTypeVersion);
+
+        if(activityTypeName.Equals($"{nameof(Elsa)}.{nameof(NotFoundActivity)}") && activityRoot.TryGetProperty("originalActivityJson", out var originalActivityJson))
+        {
+            activityRoot = JsonDocument.Parse(originalActivityJson.GetString()!).RootElement;
+            if (!activityRoot.TryGetProperty("type", out var notFoundActivityTypeElement))
+                throw new JsonException("Failed to extract activity type property");
+            
+            activityTypeName = notFoundActivityTypeElement.GetString()!;
+            activityTypeVersion = activityRoot.TryGetProperty("version", out var notFoundActivityVersionElement) ? notFoundActivityVersionElement.GetInt32() : 1;
+            activityDescriptor = CheckImportedWorkflowAsActivity(activityRoot, ref activityTypeName, ref activityTypeVersion);
+        }
 
         var newOptions = new JsonSerializerOptions(options);
         newOptions.Converters.Add(new InputJsonConverterFactory(_serviceProvider));
@@ -220,9 +233,9 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
     /// <summary>
     /// If a referenced activity's descriptor isn't found, it could be because it is at a different version, e.g. due to importing a workflow as an activity.
     /// </summary>
-    private ActivityDescriptor? CheckImportedWorkflowAsActivity(JsonDocument doc, ref string activityTypeName, ref int activityTypeVersion)
+    private ActivityDescriptor? CheckImportedWorkflowAsActivity(JsonElement activityRoot, ref string activityTypeName, ref int activityTypeVersion)
     {
-        if (!doc.RootElement.TryGetProperty("workflowDefinitionId", out var workflowDefinitionId))
+        if (!activityRoot.TryGetProperty("workflowDefinitionId", out var workflowDefinitionId))
             return null;
 
         var workflowDefinition = _workflowDefinitionStore.FindAsync(new WorkflowDefinitionFilter

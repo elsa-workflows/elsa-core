@@ -31,4 +31,6 @@ public class NotFoundActivity : CodeActivity
     /// The version of the missing activity type.
     /// </summary>
     public int MissingTypeVersion { get; set; }
+
+    public string OriginalActivityJson { get; set; }
 }
