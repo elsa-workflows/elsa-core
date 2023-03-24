@@ -47,7 +47,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         
         if(jsonObject.TryGetProperty(ItemsPropertyName, out var items))
         {
-            var elementType = targetType.GetElementType()!;
+            var elementType = targetType.GetEnumerableElementType();
             var array = Array.CreateInstance(elementType, items.GetArrayLength());
             var index = 0;
             
