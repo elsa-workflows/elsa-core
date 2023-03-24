@@ -1,7 +1,7 @@
 import {Component, h, Prop, Event, EventEmitter, Method} from "@stencil/core";
 import {groupBy} from 'lodash';
 import {StorageDriverDescriptor, Variable} from "../../../../models";
-import {isNullOrWhitespace} from "../../../../utils";
+import {generateIdentity, isNullOrWhitespace} from "../../../../utils";
 import descriptorsStore from '../../../../data/descriptors-store';
 import {VariableDescriptor} from "../../../../services/api-client/variable-descriptors-api";
 import {CheckboxFormEntry, FormEntry} from "../../../../components/shared/forms/form-entry";
@@ -91,6 +91,9 @@ export class VariableEditorDialogContent {
     const isArray = formData.get('variableIsArray') as string == 'true';
     const driverTypeName = formData.get('variableStorageDriverTypeName') as string;
     const variable = this.variable;
+
+    if (isNullOrWhitespace(variable.id))
+      variable.id = generateIdentity();
 
     variable.name = name;
     variable.typeName = type;

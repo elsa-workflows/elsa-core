@@ -1,4 +1,5 @@
 import moment from 'moment';
+import {v4 as uuid} from 'uuid';
 import _, {camelCase} from 'lodash';
 import {ActivityInput, VersionOptions} from '../models';
 import {ActivityInputContext} from '../services/activity-input-driver';
@@ -114,4 +115,8 @@ export function htmlToElement<TElement>(html: string): TElement {
   html = html.trim(); // Never return a text node of whitespace as the result
   template.innerHTML = html;
   return template.content.firstChild as unknown as TElement;
+}
+
+export function generateIdentity() {
+  return uuid().replace(/-/g, '');
 }
