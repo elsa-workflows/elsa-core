@@ -30,11 +30,11 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        CopyInputToVariables(context);
+        CopyInputOutputToVariables(context);
         await context.ScheduleActivityAsync(Root, OnChildCompletedAsync);
     }
 
-    private void CopyInputToVariables(ActivityExecutionContext context)
+    private void CopyInputOutputToVariables(ActivityExecutionContext context)
     {
         foreach (var inputDescriptor in context.ActivityDescriptor.Inputs)
         {
@@ -52,13 +52,26 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
             context.ExpressionExecutionContext.Memory.Declare(variable);
             variable.Set(context, evaluatedExpression);
         }
+        
+        foreach (var outputDescriptor in context.ActivityDescriptor.Outputs)
+        {
+            // Create a local scope variable for each output property.
+            var variable = new Variable
+            {
+                Id = outputDescriptor.Name,
+                Name = outputDescriptor.Name
+            };
+
+            context.ExpressionExecutionContext.Memory.Declare(variable);
+        }
     }
 
-    private void DefineInputAsVariables(InitializationContext context)
+    private void DeclareInputOutputAsVariables(InitializationContext context)
     {
         var activityRegistry = context.ServiceProvider.GetRequiredService<IActivityRegistry>();
         var activityDescriptor = activityRegistry.Find(Type, Version)!;
-        
+    
+        // Declare input variables.
         foreach (var inputDescriptor in activityDescriptor.Inputs)
         {
             // Create a local scope variable for each input property.
@@ -66,6 +79,18 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
             {
                 Name = inputDescriptor.Name,
                 StorageDriverType = inputDescriptor.StorageDriverType
+            };
+
+            Variables.Declare(variable);
+        }
+        
+        // Declare output variables.
+        foreach (var outputDescriptor in activityDescriptor.Outputs)
+        {
+            // Create a local scope variable for each output property.
+            var variable = new Variable(outputDescriptor.Name)
+            {
+                Name = outputDescriptor.Name
             };
 
             Variables.Declare(variable);
@@ -115,7 +140,7 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
         var materializer = serviceProvider.GetRequiredService<IWorkflowMaterializer>();
         var root = await materializer.MaterializeAsync(workflowDefinition, cancellationToken);
 
-        DefineInputAsVariables(context);
+        DeclareInputOutputAsVariables(context);
         
         Root = root;
     }
