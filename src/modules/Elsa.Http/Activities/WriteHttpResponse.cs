@@ -92,7 +92,7 @@ public class WriteHttpResponse : CodeActivity
         if (content == null)
             return;
 
-        var contentType = ContentType.TryGet(context);
+        var contentType = ContentType.GetOrDefault(context);
 
         if (string.IsNullOrWhiteSpace(contentType))
             contentType = DetermineContentType(content);

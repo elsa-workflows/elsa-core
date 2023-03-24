@@ -85,17 +85,17 @@ public class Dial : CodeActivity<DialResponse>
         if (callControlAppId == null)
             throw new MissingCallControlAppIdException("No Call Control ID configured");
 
-        var fromNumber = From.TryGet(context);
+        var fromNumber = From.GetOrDefault(context);
         var clientState = context.CreateCorrelatingClientState();
 
         var request = new DialRequest(
             callControlAppId,
             To.Get(context),
             fromNumber,
-            FromDisplayName.TryGet(context).SanitizeCallerName(),
-            AnsweringMachineDetection.TryGet(context),
-            Record: Record.TryGet(context) == true ? "record-from-answer" : default,
-            RecordFormat: RecordFormat.TryGet(context) ?? "mp3",
+            FromDisplayName.GetOrDefault(context).SanitizeCallerName(),
+            AnsweringMachineDetection.GetOrDefault(context),
+            Record: Record.GetOrDefault(context) == true ? "record-from-answer" : default,
+            RecordFormat: RecordFormat.GetOrDefault(context) ?? "mp3",
             ClientState: clientState
         );
 

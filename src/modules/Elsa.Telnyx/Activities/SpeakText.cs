@@ -93,8 +93,8 @@ public abstract class SpeakTextBase : Activity
             Language.Get(context),
             Voice.Get(context),
             Payload.Get(context),
-            PayloadType.TryGet(context).EmptyToNull(),
-            ServiceLevel.TryGet(context).EmptyToNull(),
+            PayloadType.GetOrDefault(context).EmptyToNull(),
+            ServiceLevel.GetOrDefault(context).EmptyToNull(),
             ClientState: context.CreateCorrelatingClientState()
         );
 

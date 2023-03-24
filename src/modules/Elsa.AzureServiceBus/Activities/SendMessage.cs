@@ -73,7 +73,7 @@ public class SendMessage : CodeActivity
     {
         if (value is string s) return BinaryData.FromString(s);
 
-        var formatterType = FormatterType.TryGet(context) ?? typeof(JsonFormatter);
+        var formatterType = FormatterType.GetOrDefault(context) ?? typeof(JsonFormatter);
         var formatter = context.GetServices<IFormatter>().First(x => x.GetType() == formatterType);
         var data = await formatter.ToStringAsync(value, cancellationToken);
 

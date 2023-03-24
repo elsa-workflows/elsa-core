@@ -76,7 +76,7 @@ public class SetWorkflowOutput : CodeActivity
         if (output == null)
             return;
 
-        var outputValue = OutputValue.Get(context);
+        var outputValue = OutputValue.GetOrDefault(context);
         context.Set(output, outputValue);
     }
 }

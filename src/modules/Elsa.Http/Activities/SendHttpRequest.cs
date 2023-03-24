@@ -28,7 +28,7 @@ public class FlowSendHttpRequest : SendHttpRequestBase
     /// <inheritdoc />
     protected override async ValueTask HandleResponseAsync(ActivityExecutionContext context, HttpResponseMessage response)
     {
-        var expectedStatusCodes = ExpectedStatusCodes.TryGet(context) ?? new List<int>(0);
+        var expectedStatusCodes = ExpectedStatusCodes.GetOrDefault(context) ?? new List<int>(0);
         var statusCode = (int)response.StatusCode;
         var hasMatchingStatusCode = expectedStatusCodes.Contains(statusCode);
         var outcome = hasMatchingStatusCode ? statusCode.ToString() : "Unmatched status code";
@@ -207,11 +207,11 @@ public abstract class SendHttpRequestBase : Activity<HttpResponse>
 
     private HttpRequestMessage PrepareRequest(ActivityExecutionContext context)
     {
-        var method = Method.TryGet(context) ?? "GET";
+        var method = Method.GetOrDefault(context) ?? "GET";
         var url = Url.Get(context);
         var request = new HttpRequestMessage(new HttpMethod(method), url);
         var headers = context.GetHeaders(RequestHeaders);
-        var authorization = Authorization.TryGet(context);
+        var authorization = Authorization.GetOrDefault(context);
 
         if (!string.IsNullOrWhiteSpace(authorization))
             request.Headers.Authorization = AuthenticationHeaderValue.Parse(authorization);
@@ -219,8 +219,8 @@ public abstract class SendHttpRequestBase : Activity<HttpResponse>
         foreach (var header in headers)
             request.Headers.Add(header.Key, header.Value.AsEnumerable());
 
-        var contentType = ContentType.TryGet(context);
-        var content = Content.TryGet(context);
+        var contentType = ContentType.GetOrDefault(context);
+        var content = Content.GetOrDefault(context);
 
         if (contentType != null && content != null)
         {

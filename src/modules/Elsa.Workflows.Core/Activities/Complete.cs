@@ -59,7 +59,7 @@ public class Complete : Activity
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        var outcomesValue = Outcomes.TryGet(context);
+        var outcomesValue = Outcomes.GetOrDefault(context);
         var outcomes = InterpretOutcomes(outcomesValue).ToArray();
         
         await context.SendSignalAsync(new CompleteCompositeSignal(new Outcomes(outcomes)));
