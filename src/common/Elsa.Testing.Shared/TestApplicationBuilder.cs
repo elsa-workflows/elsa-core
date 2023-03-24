@@ -1,4 +1,5 @@
 using Elsa.Extensions;
+using Elsa.Features.Services;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,26 +12,36 @@ public class TestApplicationBuilder
 {
     private readonly ITestOutputHelper _testOutputHelper;
     private readonly ServiceCollection _services;
+    private Action<IModule> _configureElsa;
 
     public TestApplicationBuilder(ITestOutputHelper testOutputHelper)
     {
         _testOutputHelper = testOutputHelper;
         _services = new ServiceCollection();
-        
-        _services.AddElsa(elsa => elsa
-            .UseWorkflows(workflows => workflows
-                .WithStandardOutStreamProvider(_ => new StandardOutStreamProvider(new XunitConsoleTextWriter(testOutputHelper)))
-            )
-        );
 
         _services
             .AddSingleton(testOutputHelper)
             .AddLogging(logging => logging.AddProvider(new XunitLoggerProvider(testOutputHelper)).SetMinimumLevel(LogLevel.Debug));
+        
+        _configureElsa += elsa => elsa
+            .UseWorkflows(workflows => workflows
+                .WithStandardOutStreamProvider(_ => new StandardOutStreamProvider(new XunitConsoleTextWriter(_testOutputHelper)))
+            );
     }
 
-    public IServiceProvider Build() => _services.BuildServiceProvider();
+    public IServiceProvider Build()
+    {
+        _services.AddElsa(_configureElsa);
+        return _services.BuildServiceProvider();
+    }
 
-    public TestApplicationBuilder Configure(Action<IServiceCollection> configure)
+    public TestApplicationBuilder ConfigureElsa(Action<IModule> configure)
+    {
+        _configureElsa += configure;
+        return this;
+    }
+    
+    public TestApplicationBuilder ConfigureServices(Action<IServiceCollection> configure)
     {
         configure(_services);
         return this;
@@ -39,7 +50,9 @@ public class TestApplicationBuilder
     public TestApplicationBuilder WithCapturingTextWriter(CapturingTextWriter capturingTextWriter)
     {
         var combinedTextWriter = new CombinedTextWriter(capturingTextWriter, new XunitConsoleTextWriter(_testOutputHelper));
-        _services.AddSingleton<IStandardOutStreamProvider>(new StandardOutStreamProvider(combinedTextWriter));
+        var provider = new StandardOutStreamProvider(combinedTextWriter);
+
+        ConfigureElsa(elsa => elsa.UseWorkflows(workflows => workflows.WithStandardOutStreamProvider(_ => provider)));
         return this;
     }
 }

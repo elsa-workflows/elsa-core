@@ -65,8 +65,8 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         engine.SetValue("getVariable", (Func<string, object?>)(id => context.GetVariable(id)));
         engine.SetValue("getInput", (Func<string, object?>)(name => context.GetWorkflowExecutionContext().Input.GetValue(name)));
 
-        // Create variable & input setters and getters for each variable.
-        CreateMemoryBlockAccessors(engine, context);
+        // Create variable getters and setters for each variable.
+        CreateVariableAccessors(engine, context);
 
         engine.SetValue("isNullOrWhiteSpace", (Func<string, bool>)(value => string.IsNullOrWhiteSpace(value)));
         engine.SetValue("isNullOrEmpty", (Func<string, bool>)(value => string.IsNullOrEmpty(value)));
@@ -88,7 +88,7 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         return engine;
     }
 
-    private static void CreateMemoryBlockAccessors(Engine engine, ExpressionExecutionContext context)
+    private static void CreateVariableAccessors(Engine engine, ExpressionExecutionContext context)
     {
         var variableNames = GetVariableNamesInScope(context).ToList();
 
@@ -100,7 +100,11 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         }
     }
 
-    private static IEnumerable<string> GetVariableNamesInScope(ExpressionExecutionContext context) => EnumerateVariablesInScope(context).Select(x => x.Name).Distinct();
+    private static IEnumerable<string> GetVariableNamesInScope(ExpressionExecutionContext context) => 
+        EnumerateVariablesInScope(context)
+            .Select(x => x.Name)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct();
 
     private static object GetVariableInScope(ExpressionExecutionContext context, string variableName)
     {

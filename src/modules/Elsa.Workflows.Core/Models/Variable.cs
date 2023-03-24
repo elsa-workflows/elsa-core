@@ -45,6 +45,12 @@ public class Variable<T> : Variable
     {
         Value = value;
     }
+    
+    public Variable(string name, T value)
+    {
+        Name = name;
+        Value = value;
+    }
 
     public T? Get(ActivityExecutionContext context) => Get(context.ExpressionExecutionContext).ConvertTo<T?>();
     public new T? Get(ExpressionExecutionContext context) => base.Get(context).ConvertTo<T?>();
