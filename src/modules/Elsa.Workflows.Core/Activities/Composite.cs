@@ -48,6 +48,9 @@ public abstract class Composite : Activity, IVariableContainer
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
+        // Register variables.
+        context.ExpressionExecutionContext.Memory.Declare(Variables);
+        
         ConfigureActivities(context);
         await context.ScheduleActivityAsync(Root, OnRootCompletedAsync);
     }
