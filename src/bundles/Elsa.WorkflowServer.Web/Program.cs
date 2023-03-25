@@ -25,6 +25,7 @@ services
         {
             identity.IdentityOptions = identityOptions;
             identity.TokenOptions = identityTokenOptions;
+            identity.UseConfigurationBasedUserProvider();
         })
         .UseDefaultAuthentication()
         .UseWorkflowManagement(management => management.UseEntityFrameworkCore(m => m.UseSqlite(sqliteConnectionString)))

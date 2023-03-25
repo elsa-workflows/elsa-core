@@ -1,3 +1,10 @@
 # Server
 
 This project represents an Elsa application that hosts workflows and exposes API endpoints to manage & execute workflows.
+
+## Secrets
+The following are the secrets stored in hashed form in appsettings.json:
+
+**API key**: `455338616D703643-973f0951-37de-4572-b083-647b95ae0da2`
+**Admin user**: `admin`
+**Admin password**: `password`

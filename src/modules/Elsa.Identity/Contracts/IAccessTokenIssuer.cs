@@ -1,4 +1,5 @@
 using Elsa.Identity.Entities;
+using Elsa.Identity.Models;
 using Elsa.Identity.Services;
 
 namespace Elsa.Identity.Contracts;

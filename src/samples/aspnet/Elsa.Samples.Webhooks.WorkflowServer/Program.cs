@@ -16,7 +16,7 @@ builder.Services.AddElsa(elsa =>
     .UseHttp()
     .UseIdentity(identity =>
     {
-        identity.IdentityOptions.CreateDefaultAdmin = true;
+        identity.UseAdminUserProvider();
         identity.TokenOptions.SigningKey = "secret-signing-key-for-tokens";
     })
     .UseWorkflowsApi(api => api.CompleteTaskPolicy = policy => policy.RequireAssertion(_ => true)) // Allows anonymous requests. Will be replaced with an API key scheme.

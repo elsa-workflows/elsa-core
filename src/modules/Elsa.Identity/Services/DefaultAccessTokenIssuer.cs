@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Elsa.Common.Contracts;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
+using Elsa.Identity.Models;
 using Elsa.Identity.Options;
 using FastEndpoints.Security;
 using Microsoft.Extensions.Options;
@@ -9,20 +10,28 @@ using Microsoft.IdentityModel.JsonWebTokens;
 
 namespace Elsa.Identity.Services;
 
+/// <inheritdoc />
 public class DefaultAccessTokenIssuer : IAccessTokenIssuer
 {
+    private readonly IRoleStore _roleStore;
     private readonly ISystemClock _systemClock;
     private readonly IdentityTokenOptions _identityOptions;
 
-    public DefaultAccessTokenIssuer(ISystemClock systemClock, IOptions<IdentityTokenOptions> identityOptions)
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DefaultAccessTokenIssuer"/> class.
+    /// </summary>
+    public DefaultAccessTokenIssuer(IRoleStore roleStore, ISystemClock systemClock, IOptions<IdentityTokenOptions> identityOptions)
     {
+        _roleStore = roleStore;
         _systemClock = systemClock;
         _identityOptions = identityOptions.Value;
     }
 
-    public ValueTask<IssuedTokens> IssueTokensAsync(User user, CancellationToken cancellationToken = default)
+    /// <inheritdoc />
+    public async ValueTask<IssuedTokens> IssueTokensAsync(User user, CancellationToken cancellationToken = default)
     {
-        var permissions = user.Roles.SelectMany(x => x.Permissions).ToList();
+        var roles = (await GetRolesAsync(user.Roles, cancellationToken)).ToList();
+        var permissions = roles.SelectMany(x => x.Permissions).ToList();
         var (signingKey, issuer, audience, accessTokenLifetime, refreshTokenLifetime) = _identityOptions;
 
         if (string.IsNullOrWhiteSpace(signingKey)) throw new Exception("No signing key configured");
@@ -37,8 +46,16 @@ public class DefaultAccessTokenIssuer : IAccessTokenIssuer
         var accessToken = JWTBearer.CreateToken(signingKey, accessTokenExpiresAt.UtcDateTime, permissions, issuer: issuer, audience: audience, claims: claims);
         var refreshToken = JWTBearer.CreateToken(signingKey, refreshTokenExpiresAt.UtcDateTime, permissions, issuer: issuer, audience: audience, claims: claims);
 
-        return new (new IssuedTokens(accessToken, refreshToken));
+        return new IssuedTokens(accessToken, refreshToken);
+    }
+
+    private async Task<IEnumerable<Role>> GetRolesAsync(IEnumerable<string> roleIds, CancellationToken cancellationToken)
+    {
+        var filter = new RoleFilter
+        {
+            Ids = roleIds.ToList()
+        };
+        
+        return await _roleStore.FindManyAsync(filter, cancellationToken);
     }
 }
-
-public record IssuedTokens(string AccessToken, string RefreshToken);

@@ -38,7 +38,7 @@ builder.Services.AddElsa(elsa =>
     // Configure identity so that we can create a default admin user.
     elsa.UseIdentity(identity =>
     {
-        identity.IdentityOptions.CreateDefaultAdmin = builder.Environment.IsDevelopment();
+        identity.UseAdminUserProvider();
         identity.TokenOptions.SigningKey = "secret-token-signing-key";
         identity.TokenOptions.AccessTokenLifetime = TimeSpan.FromDays(1);
     });
