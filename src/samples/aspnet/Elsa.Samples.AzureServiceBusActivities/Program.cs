@@ -10,39 +10,39 @@ var configuration = builder.Configuration;
 builder.Services.AddElsa(elsa =>
 {
     // Configure management feature to use EF Core.
-    elsa.UseWorkflowManagement(management =>
-    {
-        management.UseEntityFrameworkCore(ef => ef.UseSqlite());
-    });
-    
+    elsa.UseWorkflowManagement(management => { management.UseEntityFrameworkCore(ef => ef.UseSqlite()); });
+
     // Configure runtime feature to use EF Core.
     elsa.UseWorkflowRuntime(runtime =>
     {
         runtime.UseDefaultRuntime(d => d.UseEntityFrameworkCore(ef => ef.UseSqlite()));
         runtime.UseExecutionLogRecords(d => d.UseEntityFrameworkCore(ef => ef.UseSqlite()));
     });
-    
+
     // Expose API endpoints.
     elsa.UseWorkflowsApi(api => api.AddFastEndpointsAssembly<Program>());
 
     // Add services for HTTP activities and workflow middleware.
     elsa.UseHttp();
-    
+
     // Use JavaScript and Liquid.
     elsa.UseJavaScript();
     elsa.UseLiquid();
-    
+
     // Configure identity so that we can create a default admin user.
     elsa.UseIdentity(identity =>
     {
-        identity.IdentityOptions.CreateDefaultAdmin = builder.Environment.IsDevelopment();
-        identity.TokenOptions.SigningKey = "secret-token-signing-key";
-        identity.TokenOptions.AccessTokenLifetime = TimeSpan.FromDays(1);
+        identity.UseAdminUserProvider();
+        identity.TokenOptions = options =>
+        {
+            options.SigningKey = "secret-token-signing-key";
+            options.AccessTokenLifetime = TimeSpan.FromDays(1);
+        };
     });
-    
+
     // Use default authentication (JWT).
     elsa.UseDefaultAuthentication();
-    
+
     // Configure Azure Service bus.
     elsa.UseAzureServiceBus(asb => asb.AzureServiceBusOptions += options => configuration.GetSection("AzureServiceBus").Bind(options));
 });

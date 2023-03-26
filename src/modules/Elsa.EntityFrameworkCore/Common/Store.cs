@@ -3,22 +3,74 @@ using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.EntityFrameworkCore.Extensions;
 using Microsoft.EntityFrameworkCore;
+using Open.Linq.AsyncExtensions;
 
 namespace Elsa.EntityFrameworkCore.Common;
 
+/// <summary>
+/// A generic repository class around EF Core for accessing entities.
+/// </summary>
+/// <typeparam name="TDbContext">The type of the database context.</typeparam>
+/// <typeparam name="TEntity">The type of the entity.</typeparam>
 public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEntity : class
 {
     private readonly IDbContextFactory<TDbContext> _dbContextFactory;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Store{TDbContext, TEntity}"/> class.
+    /// </summary>
     public Store(IDbContextFactory<TDbContext> dbContextFactory)
     {
         _dbContextFactory = dbContextFactory;
     }
 
+    /// <summary>
+    /// Creates a new instance of the database context.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The database context.</returns>
     public async Task<TDbContext> CreateDbContextAsync(CancellationToken cancellationToken = default) => await _dbContextFactory.CreateDbContextAsync(cancellationToken);
 
+    /// <summary>
+    /// Adds the specified entity.
+    /// </summary>
+    /// <param name="entity">The entity to add.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    public async Task AddAsync(TEntity entity, CancellationToken cancellationToken = default)
+    {
+        await AddAsync(entity, null, cancellationToken);    
+    }
+    
+    /// <summary>
+    /// Adds the specified entity.
+    /// </summary>
+    /// <param name="entity">The entity to add.</param>
+    /// <param name="onAdding">The callback to invoke before adding the entity.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    public async Task AddAsync(TEntity entity, Func<TDbContext, TEntity, TEntity>? onAdding, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await CreateDbContextAsync(cancellationToken);
+        entity = onAdding?.Invoke(dbContext, entity) ?? entity;
+        var set = dbContext.Set<TEntity>();
+        await set.AddAsync(entity, cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Saves the entity.
+    /// </summary>
+    /// <param name="entity">The entity to save.</param>
+    /// <param name="keySelector">The key selector to get the primary key property.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     public async Task SaveAsync(TEntity entity, Expression<Func<TEntity, string>> keySelector, CancellationToken cancellationToken = default) => await SaveAsync(entity, keySelector, null, cancellationToken);
 
+    /// <summary>
+    /// Saves the entity.
+    /// </summary>
+    /// <param name="entity">The entity to save.</param>
+    /// <param name="keySelector">The key selector to get the primary key property.</param>
+    /// <param name="onSaving">The callback to invoke before saving the entity.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     public async Task SaveAsync(TEntity entity, Expression<Func<TEntity, string>> keySelector, Func<TDbContext, TEntity, TEntity>? onSaving, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await CreateDbContextAsync(cancellationToken);
@@ -32,8 +84,21 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
     }
 
 
+    /// <summary>
+    /// Saves the specified entities.
+    /// </summary>
+    /// <param name="entities">The entities to save.</param>
+    /// <param name="keySelector">The key selector to get the primary key property.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     public async Task SaveManyAsync(IEnumerable<TEntity> entities, Expression<Func<TEntity, string>> keySelector, CancellationToken cancellationToken = default) => await SaveManyAsync(entities, keySelector, default, cancellationToken);
 
+    /// <summary>
+    /// Saves the specified entities.
+    /// </summary>
+    /// <param name="entities">The entities to save.</param>
+    /// <param name="keySelector">The key selector to get the primary key property.</param>
+    /// <param name="onSaving">The callback to invoke before saving the entity.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     public async Task SaveManyAsync(IEnumerable<TEntity> entities, Expression<Func<TEntity, string>> keySelector, Func<TDbContext, TEntity, TEntity>? onSaving = default, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await CreateDbContextAsync(cancellationToken);
@@ -45,8 +110,21 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
         await dbContext.BulkUpsertAsync(entityList, keySelector, cancellationToken);
     }
 
+    /// <summary>
+    /// Finds the entity matching the specified predicate.
+    /// </summary>
+    /// <param name="predicate">The predicate to use.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The entity if found, otherwise <c>null</c>.</returns>
     public async Task<TEntity?> FindAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default) => await FindAsync(predicate, default, cancellationToken);
 
+    /// <summary>
+    /// Finds the entity matching the specified predicate.
+    /// </summary>
+    /// <param name="predicate">The predicate to use.</param>
+    /// <param name="onLoading">A callback to run after the entity is loaded</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns></returns>
     public async Task<TEntity?> FindAsync(Expression<Func<TEntity, bool>> predicate, Func<TDbContext, TEntity?, TEntity?>? onLoading = default, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await CreateDbContextAsync(cancellationToken);
@@ -60,6 +138,29 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
             entity = onLoading.Invoke(dbContext, entity);
 
         return entity;
+    }
+    
+    /// <summary>
+    /// Finds a single entity using a query
+    /// </summary>
+    /// <param name="query">The query to use</param>
+    /// <param name="onLoading">A callback to run after the entity is loaded</param>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns>The entity if found, otherwise <c>null</c></returns>
+    public async Task<TEntity?> FindAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> query, Func<TDbContext, TEntity?, TEntity?>? onLoading = default, CancellationToken cancellationToken = default)
+    {
+        return await QueryAsync(query, onLoading, cancellationToken).FirstOrDefault();
+    }
+    
+    /// <summary>
+    /// Finds a single entity using a query
+    /// </summary>
+    /// <param name="query">The query to use</param>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns>The entity if found, otherwise <c>null</c></returns>
+    public async Task<TEntity?> FindAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> query, CancellationToken cancellationToken = default)
+    {
+        return await QueryAsync(query, cancellationToken).FirstOrDefault();
     }
 
     public async Task<IEnumerable<TEntity>> FindManyAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default) => await FindManyAsync(predicate, default, cancellationToken);

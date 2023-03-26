@@ -1,18 +1,24 @@
-﻿using Elsa.Identity.Contracts;
+﻿using Elsa.Extensions;
+using Elsa.Identity.Contracts;
 using Elsa.Identity.Models;
 using FastEndpoints;
+using JetBrains.Annotations;
 
 namespace Elsa.Identity.Endpoints.RefreshToken;
 
-public class RefreshToken : EndpointWithoutRequest<LoginResponse>
+/// <summary>
+/// Generates a new token for the current user.
+/// </summary>
+[PublicAPI]
+internal class RefreshToken : EndpointWithoutRequest<LoginResponse>
 {
-    private readonly IUserStore _userStore;
+    private readonly IUserProvider _userProvider;
     private readonly IAccessTokenIssuer _tokenIssuer;
 
     /// <inheritdoc />
-    public RefreshToken(IUserStore userStore, IAccessTokenIssuer tokenIssuer)
+    public RefreshToken(IUserProvider userProvider, IAccessTokenIssuer tokenIssuer)
     {
-        _userStore = userStore;
+        _userProvider = userProvider;
         _tokenIssuer = tokenIssuer;
     }
 
@@ -25,7 +31,7 @@ public class RefreshToken : EndpointWithoutRequest<LoginResponse>
     /// <inheritdoc />
     public override async Task<LoginResponse> ExecuteAsync(CancellationToken cancellationToken)
     {
-        var user = await _userStore.FindAsync(User.Identity!.Name!, cancellationToken);
+        var user = await _userProvider.FindByNameAsync(User.Identity!.Name!, cancellationToken);
 
         if (user == null)
             return new LoginResponse(false, null, null);

@@ -1,3 +1,4 @@
+using System;
 using Elsa.Extensions;
 using Elsa.Samples.Webhooks.WorkflowServer.Workflows;
 using Elsa.Webhooks.Extensions;
@@ -16,8 +17,12 @@ builder.Services.AddElsa(elsa =>
     .UseHttp()
     .UseIdentity(identity =>
     {
-        identity.IdentityOptions.CreateDefaultAdmin = true;
-        identity.TokenOptions.SigningKey = "secret-signing-key-for-tokens";
+        identity.UseAdminUserProvider();
+        identity.TokenOptions = options =>
+        {
+            options.SigningKey = "secret-token-signing-key";
+            options.AccessTokenLifetime = TimeSpan.FromDays(1);
+        };
     })
     .UseWorkflowsApi(api => api.CompleteTaskPolicy = policy => policy.RequireAssertion(_ => true)) // Allows anonymous requests. Will be replaced with an API key scheme.
     .UseDefaultAuthentication()

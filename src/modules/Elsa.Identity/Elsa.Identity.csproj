@@ -15,4 +15,8 @@
         <ProjectReference Include="..\..\common\Elsa.Api.Common\Elsa.Api.Common.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="AspNetCore.Authentication.ApiKey" Version="7.0.0" />
+    </ItemGroup>
+
 </Project>

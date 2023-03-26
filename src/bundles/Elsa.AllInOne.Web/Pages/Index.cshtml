@@ -2,7 +2,7 @@
 @inject IConfiguration Configuration;
 @{
     var serverUrl = Url.Content("~/elsa/api");
-    var basePath = Configuration["Hosting:BasePath"];
+    var basePath = Configuration["Hosting:BasePath"]!;
 }
 
 <!DOCTYPE html>
