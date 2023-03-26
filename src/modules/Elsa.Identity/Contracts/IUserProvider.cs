@@ -4,7 +4,7 @@ using Elsa.Identity.Models;
 namespace Elsa.Identity.Contracts;
 
 /// <summary>
-/// Represents a provider of users
+/// Represents a provider of users.
 /// </summary>
 public interface IUserProvider
 {

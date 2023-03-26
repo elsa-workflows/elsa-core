@@ -10,12 +10,8 @@ var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 var configuration = builder.Configuration;
 var sqliteConnectionString = configuration.GetConnectionString("Sqlite")!;
-var identityOptions = new IdentityOptions();
-var identityTokenOptions = new IdentityTokenOptions();
 var identitySection = configuration.GetSection("Identity");
 var identityTokenSection = identitySection.GetSection("Tokens");
-identitySection.Bind(identityOptions);
-identityTokenSection.Bind(identityTokenOptions);
 
 // Add Elsa services.
 services
@@ -23,9 +19,11 @@ services
         .AddActivitiesFrom<Program>()
         .UseIdentity(identity =>
         {
-            identity.IdentityOptions = identityOptions;
-            identity.TokenOptions = identityTokenOptions;
-            identity.UseConfigurationBasedUserProvider();
+            identity.IdentityOptions = options => identitySection.Bind(options);
+            identity.TokenOptions = options => identityTokenSection.Bind(options);
+            identity.UseConfigurationBasedUserProvider(options => identitySection.Bind(options));
+            identity.UseConfigurationBasedApplicationProvider(options => identitySection.Bind(options));
+            identity.UseConfigurationBasedRoleProvider(options => identitySection.Bind(options));
         })
         .UseDefaultAuthentication()
         .UseWorkflowManagement(management => management.UseEntityFrameworkCore(m => m.UseSqlite(sqliteConnectionString)))

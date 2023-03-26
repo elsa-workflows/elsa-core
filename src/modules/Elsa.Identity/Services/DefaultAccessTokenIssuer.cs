@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Elsa.Common.Contracts;
+using Elsa.Extensions;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
 using Elsa.Identity.Models;
@@ -13,16 +14,16 @@ namespace Elsa.Identity.Services;
 /// <inheritdoc />
 public class DefaultAccessTokenIssuer : IAccessTokenIssuer
 {
-    private readonly IRoleStore _roleStore;
+    private readonly IRoleProvider _roleProvider;
     private readonly ISystemClock _systemClock;
     private readonly IdentityTokenOptions _identityOptions;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DefaultAccessTokenIssuer"/> class.
     /// </summary>
-    public DefaultAccessTokenIssuer(IRoleStore roleStore, ISystemClock systemClock, IOptions<IdentityTokenOptions> identityOptions)
+    public DefaultAccessTokenIssuer(IRoleProvider roleProvider, ISystemClock systemClock, IOptions<IdentityTokenOptions> identityOptions)
     {
-        _roleStore = roleStore;
+        _roleProvider = roleProvider;
         _systemClock = systemClock;
         _identityOptions = identityOptions.Value;
     }
@@ -30,7 +31,7 @@ public class DefaultAccessTokenIssuer : IAccessTokenIssuer
     /// <inheritdoc />
     public async ValueTask<IssuedTokens> IssueTokensAsync(User user, CancellationToken cancellationToken = default)
     {
-        var roles = (await GetRolesAsync(user.Roles, cancellationToken)).ToList();
+        var roles = (await _roleProvider.FindByIdsAsync(user.Roles, cancellationToken)).ToList();
         var permissions = roles.SelectMany(x => x.Permissions).ToList();
         var (signingKey, issuer, audience, accessTokenLifetime, refreshTokenLifetime) = _identityOptions;
 
@@ -47,15 +48,5 @@ public class DefaultAccessTokenIssuer : IAccessTokenIssuer
         var refreshToken = JWTBearer.CreateToken(signingKey, refreshTokenExpiresAt.UtcDateTime, permissions, issuer: issuer, audience: audience, claims: claims);
 
         return new IssuedTokens(accessToken, refreshToken);
-    }
-
-    private async Task<IEnumerable<Role>> GetRolesAsync(IEnumerable<string> roleIds, CancellationToken cancellationToken)
-    {
-        var filter = new RoleFilter
-        {
-            Ids = roleIds.ToList()
-        };
-        
-        return await _roleStore.FindManyAsync(filter, cancellationToken);
     }
 }

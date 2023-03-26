@@ -45,7 +45,8 @@ public class IdentityTokenOptions
     /// Configures the <see cref="JwtBearerOptions"/> with the values from this instance.
     /// </summary>
     /// <param name="options">The options to configure.</param>
-    public void ConfigureJwtBearerOptions(JwtBearerOptions options) =>
+    public void ConfigureJwtBearerOptions(JwtBearerOptions options)
+    {
         options.TokenValidationParameters = new TokenValidationParameters
         {
             IssuerSigningKey = CreateSecurityKey(),
@@ -55,6 +56,7 @@ public class IdentityTokenOptions
             LifetimeValidator = ValidateLifetime,
             NameClaimType = JwtRegisteredClaimNames.Name
         };
+    }
 
     private static bool ValidateLifetime(DateTime? notBefore, DateTime? expires, SecurityToken securityToken, TokenValidationParameters validationParameters)
     {
@@ -71,14 +73,5 @@ public class IdentityTokenOptions
         audience = Audience;
         accessTokenLifetime = AccessTokenLifetime;
         refreshTokenLifetime = RefreshTokenLifetime;
-    }
-
-    internal void CopyFrom(IdentityTokenOptions identityOptions)
-    {
-        SigningKey = identityOptions.SigningKey;
-        Audience = identityOptions.Audience;
-        Issuer = identityOptions.Issuer;
-        AccessTokenLifetime = identityOptions.AccessTokenLifetime;
-        RefreshTokenLifetime = identityOptions.RefreshTokenLifetime;
     }
 }

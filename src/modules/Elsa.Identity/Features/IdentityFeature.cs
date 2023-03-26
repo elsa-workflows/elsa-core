@@ -1,4 +1,4 @@
-using Elsa.Common.Exceptions;
+using AspNetCore.Authentication.ApiKey;
 using Elsa.Common.Features;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
@@ -9,6 +9,7 @@ using Elsa.Identity.Entities;
 using Elsa.Identity.Options;
 using Elsa.Identity.Providers;
 using Elsa.Identity.Services;
+using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Identity.Features;
@@ -17,6 +18,7 @@ namespace Elsa.Identity.Features;
 /// Provides identity feature to authenticate & authorize API requests.
 /// </summary>
 [DependsOn(typeof(SystemClockFeature))]
+[PublicAPI]
 public class IdentityFeature : FeatureBase
 {
     /// <inheritdoc />
@@ -25,14 +27,38 @@ public class IdentityFeature : FeatureBase
     }
 
     /// <summary>
-    /// A delegate to configure <see cref="Options.IdentityOptions"/>.
+    /// Gets or sets the <see cref="IdentityOptions"/>.
     /// </summary>
-    public IdentityOptions IdentityOptions { get; set; } = new();
+    public Action<IdentityOptions> IdentityOptions { get; set; } = _ => { };
 
     /// <summary>
-    /// A delegate to configure <see cref="Options.IdentityTokenOptions"/>.
+    /// Gets or sets the <see cref="IdentityTokenOptions"/>.
     /// </summary>
-    public IdentityTokenOptions TokenOptions { get; set; } = new();
+    public Action<IdentityTokenOptions> TokenOptions { get; set; } = _ => { };
+
+    /// <summary>
+    /// Gets or sets the <see cref="ApiKeyOptions"/>.
+    /// </summary>
+    public Action<ApiKeyOptions> ApiKeyOptions { get; set; } = options =>
+    {
+        options.Realm = "Elsa Workflows";
+        options.KeyName = "ApiKey";
+    };
+    
+    /// <summary>
+    /// A delegate that configures the <see cref="UsersOptions"/>.
+    /// </summary>
+    public Action<UsersOptions> UsersOptions { get; set; } = _ => { };
+    
+    /// <summary>
+    /// A delegate that configures the <see cref="ApplicationsOptions"/>.
+    /// </summary>
+    public Action<ApplicationsOptions> ApplicationsOptions { get; set; } = _ => { };
+    
+    /// <summary>
+    /// A delegate that configures the <see cref="RolesOptions"/>.
+    /// </summary>
+    public Action<RolesOptions> RolesOptions { get; set; } = _ => { };
 
     /// <summary>
     /// A delegate that creates an instance of an implementation of <see cref="IUserStore"/>.
@@ -53,6 +79,16 @@ public class IdentityFeature : FeatureBase
     /// A delegate that creates an instance of an implementation of <see cref="IUserProvider"/>.
     /// </summary>
     public Func<IServiceProvider, IUserProvider> UserProvider { get; set; } = sp => sp.GetRequiredService<StoreBasedUserProvider>();
+    
+    /// <summary>
+    /// A delegate that creates an instance of an implementation of <see cref="IApplicationProvider"/>.
+    /// </summary>
+    public Func<IServiceProvider, IApplicationProvider> ApplicationProvider { get; set; } = sp => sp.GetRequiredService<StoreBasedApplicationProvider>();
+    
+    /// <summary>
+    /// A delegate that creates an instance of an implementation of <see cref="IRoleProvider"/>.
+    /// </summary>
+    public Func<IServiceProvider, IRoleProvider> RoleProvider { get; set; } = sp => sp.GetRequiredService<StoreBasedRoleProvider>();
 
     /// <summary>
     /// Configures the feature to use <see cref="ConfigurationBasedUserProvider"/>.
@@ -62,12 +98,44 @@ public class IdentityFeature : FeatureBase
     /// <summary>
     /// Configures the feature to use <see cref="ConfigurationBasedUserProvider"/>.
     /// </summary>
-    public void UseConfigurationBasedUserProvider() => UserProvider = sp => sp.GetRequiredService<ConfigurationBasedUserProvider>();
+    public void UseConfigurationBasedUserProvider(Action<UsersOptions> configure)
+    {
+        UserProvider = sp => sp.GetRequiredService<ConfigurationBasedUserProvider>();
+        UsersOptions += configure;
+    }
 
     /// <summary>
     /// Configures the feature to use <see cref="AdminUserProvider"/>.
     /// </summary>
     public void UseAdminUserProvider() => UserProvider = sp => sp.GetRequiredService<AdminUserProvider>();
+    
+    /// <summary>
+    /// Configures the feature to use <see cref="StoreBasedApplicationProvider"/>.
+    /// </summary>
+    public void UseStoreBasedApplicationProvider() => ApplicationProvider = sp => sp.GetRequiredService<StoreBasedApplicationProvider>();
+
+    /// <summary>
+    /// Configures the feature to use <see cref="ConfigurationBasedApplicationProvider"/>.
+    /// </summary>
+    public void UseConfigurationBasedApplicationProvider(Action<ApplicationsOptions> configure)
+    {
+        ApplicationProvider = sp => sp.GetRequiredService<ConfigurationBasedApplicationProvider>();
+        ApplicationsOptions += configure;
+    }
+
+    /// <summary>
+    /// Configures the feature to use <see cref="StoreBasedRoleProvider"/>.
+    /// </summary>
+    public void UseStoreBasedRoleProvider() => RoleProvider = sp => sp.GetRequiredService<StoreBasedRoleProvider>();
+
+    /// <summary>
+    /// Configures the feature to use <see cref="ConfigurationBasedRoleProvider"/>.
+    /// </summary>
+    public void UseConfigurationBasedRoleProvider(Action<RolesOptions> configure)
+    {
+        RoleProvider = sp => sp.GetRequiredService<ConfigurationBasedRoleProvider>();
+        RolesOptions += configure;
+    }
 
     /// <inheritdoc />
     public override void Configure()
@@ -78,10 +146,12 @@ public class IdentityFeature : FeatureBase
     /// <inheritdoc />
     public override void Apply()
     {
-        if (string.IsNullOrWhiteSpace(TokenOptions.SigningKey))
-            throw new MissingConfigurationException("SigningKey is a required setting for the Identity feature.");
-
-        Services.Configure<IdentityTokenOptions>(options => options.CopyFrom(TokenOptions));
+        Services.Configure(IdentityOptions);
+        Services.Configure(TokenOptions);
+        Services.Configure(ApiKeyDefaults.AuthenticationScheme, ApiKeyOptions);
+        Services.Configure(UsersOptions);
+        Services.Configure(ApplicationsOptions);
+        Services.Configure(RolesOptions);
 
         // Memory stores.
         Services
@@ -99,6 +169,14 @@ public class IdentityFeature : FeatureBase
         Services
             .AddSingleton<StoreBasedApplicationProvider>()
             .AddSingleton<ConfigurationBasedApplicationProvider>();
+        
+        // Role providers.
+        Services
+            .AddSingleton<StoreBasedRoleProvider>()
+            .AddSingleton<ConfigurationBasedRoleProvider>();
+        
+        // API Key.
+        Services.AddSingleton<IApiKeyProvider, DefaultApiKeyProvider>();
 
         // Services.
         Services
@@ -106,13 +184,16 @@ public class IdentityFeature : FeatureBase
             .AddSingleton(ApplicationStore)
             .AddSingleton(RoleStore)
             .AddSingleton(UserProvider)
+            .AddSingleton(ApplicationProvider)
+            .AddSingleton(RoleProvider)
             .AddSingleton<ISecretHasher, DefaultSecretHasher>()
             .AddSingleton<IAccessTokenIssuer, DefaultAccessTokenIssuer>()
             .AddSingleton<IUserCredentialsValidator, DefaultUserCredentialsValidator>()
-            .AddSingleton<DefaultApiKeyGeneratorAndParser>()
+            .AddSingleton<IApplicationCredentialsValidator, DefaultApplicationCredentialsValidator>()
             .AddSingleton<IApiKeyGenerator>(sp => sp.GetRequiredService<DefaultApiKeyGeneratorAndParser>())
             .AddSingleton<IApiKeyParser>(sp => sp.GetRequiredService<DefaultApiKeyGeneratorAndParser>())
             .AddSingleton<IClientIdGenerator, DefaultClientIdGenerator>()
+            .AddSingleton<DefaultApiKeyGeneratorAndParser>()
             ;
     }
 }

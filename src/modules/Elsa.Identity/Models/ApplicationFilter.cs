@@ -31,7 +31,7 @@ public class ApplicationFilter
     {
         var filter = this;
         if (filter.Id != null) queryable = queryable.Where(x => x.Id == filter.Id);
-        if (filter.ClientId != null) queryable = queryable.Where(x => x.ClientId == filter.Id);
+        if (filter.ClientId != null) queryable = queryable.Where(x => x.ClientId == filter.ClientId);
         if (filter.Name != null) queryable = queryable.Where(x => x.Name == filter.Name);
 
         return queryable;
