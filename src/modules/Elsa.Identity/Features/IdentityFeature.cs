@@ -193,6 +193,8 @@ public class IdentityFeature : FeatureBase
             .AddSingleton<IApiKeyGenerator>(sp => sp.GetRequiredService<DefaultApiKeyGeneratorAndParser>())
             .AddSingleton<IApiKeyParser>(sp => sp.GetRequiredService<DefaultApiKeyGeneratorAndParser>())
             .AddSingleton<IClientIdGenerator, DefaultClientIdGenerator>()
+            .AddSingleton<ISecretGenerator, DefaultSecretGenerator>()
+            .AddSingleton<IRandomStringGenerator, DefaultRandomStringGenerator>()
             .AddSingleton<DefaultApiKeyGeneratorAndParser>()
             ;
     }

@@ -13,6 +13,16 @@ public class Application : Entity
     public string ClientId { get; set; } = default!;
     
     /// <summary>
+    /// The hashed client secret.
+    /// </summary>
+    public string HashedClientSecret { get; set; } = default!;
+
+    /// <summary>
+    /// The hashed client secret salt.
+    /// </summary>
+    public string HashedClientSecretSalt { get; set; } = default!;
+    
+    /// <summary>
     /// Gets or sets the name.
     /// </summary>
     public string Name { get; set; } = default!;

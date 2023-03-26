@@ -15,6 +15,7 @@ internal class Create : Endpoint<Request, Response>
 {
     private readonly IIdentityGenerator _identityGenerator;
     private readonly IClientIdGenerator _clientIdGenerator;
+    private readonly ISecretGenerator _secretGenerator;
     private readonly IApiKeyGenerator _apiKeyGenerator;
     private readonly ISecretHasher _secretHasher;
     private readonly IApplicationStore _applicationStore;
@@ -23,6 +24,7 @@ internal class Create : Endpoint<Request, Response>
     public Create(
         IIdentityGenerator identityGenerator,
         IClientIdGenerator clientIdGenerator,
+        ISecretGenerator secretGenerator,
         IApiKeyGenerator apiKeyGenerator,
         ISecretHasher secretHasher,
         IApplicationStore applicationStore,
@@ -30,6 +32,7 @@ internal class Create : Endpoint<Request, Response>
     {
         _identityGenerator = identityGenerator;
         _clientIdGenerator = clientIdGenerator;
+        _secretGenerator = secretGenerator;
         _apiKeyGenerator = apiKeyGenerator;
         _secretHasher = secretHasher;
         _applicationStore = applicationStore;
@@ -47,14 +50,18 @@ internal class Create : Endpoint<Request, Response>
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
         var id = _identityGenerator.GenerateId();
-        var shortId = await GenerateShortIdAsync(cancellationToken);
-        var apiKey = _apiKeyGenerator.Generate(shortId);
+        var clientId = await _clientIdGenerator.GenerateAsync(cancellationToken);
+        var clientSecret = _secretGenerator.Generate();
+        var hashedClientSecret = _secretHasher.HashSecret(clientSecret);
+        var apiKey = _apiKeyGenerator.Generate(clientId);
         var hashedApiKey = _secretHasher.HashSecret(apiKey);
 
         var application = new Application
         {
             Id = id,
-            ClientId = shortId,
+            ClientId = clientId,
+            HashedClientSecret = hashedClientSecret.EncodeSecret(),
+            HashedClientSecretSalt = hashedClientSecret.EncodeSalt(),
             Name = request.Name,
             HashedApiKey = hashedApiKey.EncodeSecret(),
             HashedApiKeySalt = hashedApiKey.EncodeSalt(),
@@ -65,18 +72,5 @@ internal class Create : Endpoint<Request, Response>
 
         var response = new Response(apiKey);
         await SendOkAsync(response, cancellationToken);
-    }
-
-    private async Task<string> GenerateShortIdAsync(CancellationToken cancellationToken)
-    {
-        while (true)
-        {
-            var shortId = _clientIdGenerator.Generate();
-            var filter = new ApplicationFilter { ClientId = shortId };
-            var application = await _applicationStore.FindAsync(filter, cancellationToken);
-
-            if (application == null)
-                return shortId;
-        }
     }
 }

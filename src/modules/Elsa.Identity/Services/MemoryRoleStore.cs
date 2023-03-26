@@ -28,10 +28,17 @@ public class MemoryRoleStore : IRoleStore
     }
 
     /// <inheritdoc />
-    public Task RemoveAsync(RoleFilter filter, CancellationToken cancellationToken = default)
+    public Task DeleteAsync(RoleFilter filter, CancellationToken cancellationToken = default)
     {
         var ids = _store.Query(query => Filter(query, filter)).Select(x => x.Id).Distinct().ToList();
         _store.DeleteWhere(x => ids.Contains(x.Id));
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public Task SaveAsync(Role role, CancellationToken cancellationToken = default)
+    {
+        _store.Save(role, x => x.Id);
         return Task.CompletedTask;
     }
 

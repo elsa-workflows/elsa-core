@@ -1,13 +1,13 @@
 namespace Elsa.Identity.Contracts;
 
 /// <summary>
-/// Represents a generator of client identifiers.
+/// Represents a generator of random strings.
 /// </summary>
-public interface IClientIdGenerator
+public interface IRandomStringGenerator
 {
     /// <summary>
     /// Generates a short identifier.
     /// </summary>
     /// <returns>The client ID.</returns>
-    Task<string> GenerateAsync(CancellationToken cancellationToken = default);
+    string Generate(int length = 32, char[]? chars = null);
 }

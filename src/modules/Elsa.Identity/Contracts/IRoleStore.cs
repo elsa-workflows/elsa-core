@@ -17,12 +17,20 @@ public interface IRoleStore
     Task AddAsync(Role role, CancellationToken cancellationToken = default);
     
     /// <summary>
-    /// Removes the role with the specified ID.
+    /// Deletes the role with the specified ID.
     /// </summary>
     /// <param name="filter">The filter.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The task.</returns>
-    Task RemoveAsync(RoleFilter filter, CancellationToken cancellationToken = default);
+    Task DeleteAsync(RoleFilter filter, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Saves the role.
+    /// </summary>
+    /// <param name="role">The role to save.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The task.</returns>
+    Task SaveAsync(Role role, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Finds the role matching the specified filter.
