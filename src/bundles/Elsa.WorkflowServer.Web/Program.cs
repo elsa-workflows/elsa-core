@@ -1,5 +1,4 @@
 using Elsa.EntityFrameworkCore.Extensions;
-using Elsa.EntityFrameworkCore.Modules.Identity;
 using Elsa.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Labels;
 using Elsa.EntityFrameworkCore.Modules.Management;
@@ -21,7 +20,6 @@ services
         {
             identity.IdentityOptions = options => identitySection.Bind(options);
             identity.TokenOptions = options => identityTokenSection.Bind(options);
-            identity.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
             identity.UseConfigurationBasedUserProvider(options => identitySection.Bind(options));
             identity.UseConfigurationBasedApplicationProvider(options => identitySection.Bind(options));
             identity.UseConfigurationBasedRoleProvider(options => identitySection.Bind(options));
