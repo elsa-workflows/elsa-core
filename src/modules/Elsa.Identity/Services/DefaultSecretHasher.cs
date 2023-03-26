@@ -33,10 +33,10 @@ public class DefaultSecretHasher : ISecretHasher
     /// <inheritdoc />
     public bool VerifySecret(string clearTextSecret, HashedSecret hashedSecret)
     {
-        var password = hashedSecret.Password;
+        var password = hashedSecret.Secret;
         var salt = hashedSecret.Salt;
         var providedHashedPassword = HashSecret(clearTextSecret, salt); 
-        return providedHashedPassword.Password.SequenceEqual(password);
+        return providedHashedPassword.Secret.SequenceEqual(password);
     }
 
     /// <inheritdoc />

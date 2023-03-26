@@ -3,9 +3,9 @@ namespace Elsa.Identity.Models;
 /// <summary>
 /// Represents a hashed secret.
 /// </summary>
-/// <param name="Password">A base64 encoded string representing the hashed secret.</param>
+/// <param name="Secret">A base64 encoded string representing the hashed secret.</param>
 /// <param name="Salt">A base64 encoded string representing the salt.</param>
-public record HashedSecret(byte[] Password, byte[] Salt)
+public record HashedSecret(byte[] Secret, byte[] Salt)
 {
     /// <summary>
     /// Creates a new instance of <see cref="HashedSecret"/> from a byte array representing the hashed secret and the salt.
@@ -27,7 +27,7 @@ public record HashedSecret(byte[] Password, byte[] Salt)
     /// Encodes the secret using base64.
     /// </summary>
     /// <returns>The base64-encoded secret.</returns>
-    public string EncodeSecret() => Encode(Password);
+    public string EncodeSecret() => Encode(Secret);
     
     /// <summary>
     /// Encodes the salt using base64.

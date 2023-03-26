@@ -1,6 +1,5 @@
 ﻿using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
-using Elsa.Identity.Models;
 using Elsa.Workflows.Core.Contracts;
 using FastEndpoints;
 using JetBrains.Annotations;
@@ -70,7 +69,16 @@ internal class Create : Endpoint<Request, Response>
 
         await _applicationStore.SaveAsync(application, cancellationToken);
 
-        var response = new Response(apiKey);
+        var response = new Response(
+            id, 
+            application.Name, 
+            application.Roles, 
+            clientId,
+            clientSecret,
+            apiKey,
+            hashedApiKey,
+            hashedClientSecret);
+        
         await SendOkAsync(response, cancellationToken);
     }
 }
