@@ -14,7 +14,7 @@ public static partial class Extensions
     /// <param name="feature">The feature to configure.</param>
     /// <param name="connectionString">The connection string to use.</param>
     /// <returns>The configured feature.</returns>
-    public static EFCoreIdentityPersistenceFeature UsePostgreSql(this EFCoreIdentityPersistenceFeature feature, string connectionString)
+    public static EFCoreIdentityPersistenceFeature UseSqlite(this EFCoreIdentityPersistenceFeature feature, string connectionString)
     {
         feature.DbContextOptionsBuilder = (_, db) => db.UseElsaSqlite(connectionString);
         return feature;
