@@ -15,7 +15,7 @@ on:
       - .github/**
 
 env:
-  NODE_OPTIONS: --max-old-space-size=4096
+  NODE_OPTIONS: --max-old-space-size=8096
   ELSA_VERSION: 3.0.3
 
 jobs:
