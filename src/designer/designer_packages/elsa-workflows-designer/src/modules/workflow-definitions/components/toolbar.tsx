@@ -1,6 +1,7 @@
 import {Component, h, Prop, Event, EventEmitter} from '@stencil/core';
 import {DropdownButtonItem} from "../../../components/shared/dropdown-button/models";
 import {LayoutDirection} from "../../flowchart/models";
+import {PlayButtonIcon} from "../../../components/icons/buttons/play";
 
 @Component({
   tag: 'elsa-workflow-definition-editor-toolbar',
@@ -28,6 +29,10 @@ export class Toolbar {
         <button onClick={this.zoomToFit} class="btn btn-primary">
           Zoom to fit
         </button>
+        {/*Coming soon...*/}
+        {/*<button class="btn btn-action disabled" disabled={true}>*/}
+        {/*  <PlayButtonIcon/> Run*/}
+        {/*</button>*/}
       </div>
     );
   }
