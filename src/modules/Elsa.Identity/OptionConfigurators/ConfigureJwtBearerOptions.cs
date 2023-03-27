@@ -8,7 +8,7 @@ namespace Elsa.Extensions;
 /// <summary>
 /// Configures the <see cref="JwtBearerOptions"/>
 /// </summary>
-public class ConfigureJwtBearerOptions : IConfigureOptions<JwtBearerOptions>
+public class ConfigureJwtBearerOptions : IConfigureNamedOptions<JwtBearerOptions>
 {
     private readonly IOptions<IdentityTokenOptions> _identityTokenOptions;
 
@@ -21,7 +21,10 @@ public class ConfigureJwtBearerOptions : IConfigureOptions<JwtBearerOptions>
     }
 
     /// <inheritdoc />
-    public void Configure(JwtBearerOptions options)
+    public void Configure(JwtBearerOptions options) => Configure(null, options);
+
+    /// <inheritdoc />
+    public void Configure(string? name, JwtBearerOptions options)
     {
         _identityTokenOptions.Value.ConfigureJwtBearerOptions(options);
     }
