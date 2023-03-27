@@ -50,7 +50,7 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
 
         var activityTypeName = GetActivityDetails(activityRoot, out var activityTypeVersion, out var activityDescriptor);
 
-        if(activityTypeName.Equals($"{nameof(Elsa)}.{nameof(NotFoundActivity)}") && activityRoot.TryGetProperty("originalActivityJson", out var originalActivityJson))
+        if(activityTypeName.Equals(ActivityTypeNameHelper.GenerateTypeName<NotFoundActivity>()) && activityRoot.TryGetProperty("originalActivityJson", out var originalActivityJson))
         {
             activityRoot = JsonDocument.Parse(originalActivityJson.GetString()!).RootElement;
             activityTypeName = GetActivityDetails(activityRoot, out activityTypeVersion, out activityDescriptor);
