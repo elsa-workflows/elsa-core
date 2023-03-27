@@ -2,13 +2,16 @@ import {Container, Service} from "typedi";
 import {WorkflowDefinition} from "../models/entities";
 import {ExportWorkflowRequest, ImportWorkflowRequest, RetractWorkflowDefinitionRequest, SaveWorkflowDefinitionRequest, WorkflowDefinitionsApi} from "./api";
 import {downloadFromBlob} from "../../../utils";
+import {ActivityDescriptorManager} from "../../../services";
 
 @Service()
 export class WorkflowDefinitionManager {
   private readonly api: WorkflowDefinitionsApi;
+  private readonly activityDescriptorManager: ActivityDescriptorManager;
 
   constructor() {
     this.api = Container.get(WorkflowDefinitionsApi);
+    this.activityDescriptorManager = Container.get(ActivityDescriptorManager);
   }
 
   public saveWorkflow = async (definition: WorkflowDefinition, publish: boolean): Promise<WorkflowDefinition> => {
@@ -52,6 +55,9 @@ export class WorkflowDefinitionManager {
     try {
       const importRequest: ImportWorkflowRequest = {definitionId, file};
       const importResponse = await this.api.import(importRequest);
+
+      await this.activityDescriptorManager.refresh();
+
       return importResponse.workflowDefinition;
     } catch (e) {
       console.error(e);
