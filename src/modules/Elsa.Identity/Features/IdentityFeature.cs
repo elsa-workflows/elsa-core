@@ -10,6 +10,7 @@ using Elsa.Identity.Options;
 using Elsa.Identity.Providers;
 using Elsa.Identity.Services;
 using JetBrains.Annotations;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Identity.Features;
@@ -107,8 +108,12 @@ public class IdentityFeature : FeatureBase
     /// <summary>
     /// Configures the feature to use <see cref="AdminUserProvider"/>.
     /// </summary>
-    public void UseAdminUserProvider() => UserProvider = sp => sp.GetRequiredService<AdminUserProvider>();
-    
+    public void UseAdminUserProvider()
+    {
+        UserProvider = sp => sp.GetRequiredService<AdminUserProvider>();
+        RoleProvider = sp => sp.GetRequiredService<AdminRoleProvider>();
+    }
+
     /// <summary>
     /// Configures the feature to use <see cref="StoreBasedApplicationProvider"/>.
     /// </summary>
@@ -172,6 +177,7 @@ public class IdentityFeature : FeatureBase
         
         // Role providers.
         Services
+            .AddSingleton<AdminRoleProvider>()
             .AddSingleton<StoreBasedRoleProvider>()
             .AddSingleton<ConfigurationBasedRoleProvider>();
         
