@@ -46,12 +46,16 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
         if (!JsonDocument.TryParseValue(ref reader, out var doc))
             throw new JsonException("Failed to parse JsonDocument");
 
-        if (!doc.RootElement.TryGetProperty("type", out var activityTypeNameElement))
-            throw new JsonException("Failed to extract activity type property");
+        var activityRoot = doc.RootElement;
+        var activityTypeName = GetActivityDetails(activityRoot, out var activityTypeVersion, out var activityDescriptor);
+        
+        var notFoundActivityTypeName = ActivityTypeNameHelper.GenerateTypeName<NotFoundActivity>();
 
-        var activityTypeName = activityTypeNameElement.GetString()!;
-        var activityTypeVersion = doc.RootElement.TryGetProperty("version", out var activityTypeVersionElement) ? activityTypeVersionElement.GetInt32() : 1;
-        var activityDescriptor = _activityRegistry.Find(activityTypeName, activityTypeVersion) ?? CheckImportedWorkflowAsActivity(doc, ref activityTypeName, ref activityTypeVersion);
+        if(activityTypeName.Equals(notFoundActivityTypeName) && activityRoot.TryGetProperty("originalActivityJson", out var originalActivityJson))
+        {
+            activityRoot = JsonDocument.Parse(originalActivityJson.GetString()!).RootElement;
+            activityTypeName = GetActivityDetails(activityRoot, out activityTypeVersion, out activityDescriptor);
+        }
 
         var newOptions = new JsonSerializerOptions(options);
         newOptions.Converters.Add(new InputJsonConverterFactory(_serviceProvider));
@@ -59,17 +63,18 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
 
         if (activityDescriptor == null)
         {
-            var notFoundContext = new ActivityConstructorContext(doc.RootElement, newOptions);
+            var notFoundContext = new ActivityConstructorContext(activityRoot, newOptions);
             var notFoundActivity = (NotFoundActivity)_activityFactory.Create(typeof(NotFoundActivity), notFoundContext);
 
-            notFoundActivity.Type = ActivityTypeNameHelper.GenerateTypeName<NotFoundActivity>();
+            notFoundActivity.Type = notFoundActivityTypeName;
             notFoundActivity.Version = 1;
             notFoundActivity.MissingTypeName = activityTypeName;
             notFoundActivity.MissingTypeVersion = activityTypeVersion;
+            notFoundActivity.OriginalActivityJson = activityRoot.ToString();
             return notFoundActivity;
         }
 
-        var context = new ActivityConstructorContext(doc.RootElement, newOptions);
+        var context = new ActivityConstructorContext(activityRoot, newOptions);
         var activity = activityDescriptor.Constructor(context);
 
         // Reconstruct synthetic inputs.
@@ -216,26 +221,18 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
         // Send the model to the writer.
         JsonSerializer.Serialize(writer, activityModel, newOptions);
     }
-
-    /// <summary>
-    /// If a referenced activity's descriptor isn't found, it could be because it is at a different version, e.g. due to importing a workflow as an activity.
-    /// </summary>
-    private ActivityDescriptor? CheckImportedWorkflowAsActivity(JsonDocument doc, ref string activityTypeName, ref int activityTypeVersion)
+    
+    private string GetActivityDetails(JsonElement activityRoot, out int activityTypeVersion, out ActivityDescriptor? activityDescriptor)
     {
-        if (!doc.RootElement.TryGetProperty("workflowDefinitionId", out var workflowDefinitionId))
-            return null;
+        if (!activityRoot.TryGetProperty("type", out var activityTypeNameElement))
+            throw new JsonException("Failed to extract activity type property");
 
-        var workflowDefinition = _workflowDefinitionStore.FindAsync(new WorkflowDefinitionFilter
-        {
-            DefinitionId = workflowDefinitionId.GetString(),
-            VersionOptions = VersionOptions.LatestOrPublished
-        }).Result;
-
-        if (workflowDefinition == null)
-            return null;
-
-        activityTypeName = workflowDefinition.Name!;
-        activityTypeVersion = workflowDefinition.Version;
-        return _activityRegistry.Find(activityTypeName!, activityTypeVersion);
+        var activityTypeName = activityTypeNameElement.GetString()!;
+        
+        activityTypeVersion = activityRoot.TryGetProperty("version", out var activityVersionElement) ? activityVersionElement.GetInt32() : 1;
+        activityDescriptor = _activityRegistry.Find(activityTypeName, activityTypeVersion);
+        activityDescriptor ??= _activityRegistry.Find(activityTypeName);
+        
+        return activityTypeName;
     }
 }
