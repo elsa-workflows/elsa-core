@@ -62,17 +62,18 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
 
         if (activityDescriptor == null)
         {
-            var notFoundContext = new ActivityConstructorContext(doc.RootElement, newOptions);
+            var notFoundContext = new ActivityConstructorContext(activityRoot, newOptions);
             var notFoundActivity = (NotFoundActivity)_activityFactory.Create(typeof(NotFoundActivity), notFoundContext);
 
             notFoundActivity.Type = ActivityTypeNameHelper.GenerateTypeName<NotFoundActivity>();
             notFoundActivity.Version = 1;
             notFoundActivity.MissingTypeName = activityTypeName;
             notFoundActivity.MissingTypeVersion = activityTypeVersion;
+            notFoundActivity.OriginalActivityJson = activityRoot.ToString();
             return notFoundActivity;
         }
 
-        var context = new ActivityConstructorContext(doc.RootElement, newOptions);
+        var context = new ActivityConstructorContext(activityRoot, newOptions);
         var activity = activityDescriptor.Constructor(context);
 
         // Reconstruct synthetic inputs.
