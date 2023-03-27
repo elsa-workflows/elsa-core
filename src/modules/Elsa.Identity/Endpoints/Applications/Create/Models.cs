@@ -15,6 +15,8 @@ internal record Response(
     string ClientId, 
     string ClientSecret, 
     string ApiKey, 
-    HashedSecret HashedApiKey,
-    HashedSecret HashedClientSecret
+    string HashedApiKey,
+    string HashedApiKeySalt,
+    string HashedClientSecret,
+    string HashedClientSecretSalt
 );

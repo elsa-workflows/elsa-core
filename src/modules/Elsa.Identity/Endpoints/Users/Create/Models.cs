@@ -14,5 +14,6 @@ internal record Response(
     string Name, 
     string Password,
     ICollection<string> Roles,
-    HashedSecret HashedPassword
+    string HashedPassword,
+    string HashedPasswordSalt
 );

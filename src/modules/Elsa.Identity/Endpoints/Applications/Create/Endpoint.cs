@@ -76,8 +76,10 @@ internal class Create : Endpoint<Request, Response>
             clientId,
             clientSecret,
             apiKey,
-            hashedApiKey,
-            hashedClientSecret);
+            hashedApiKey.EncodeSecret(),
+            hashedApiKey.EncodeSalt(),
+            hashedClientSecret.EncodeSecret(),
+            hashedClientSecret.EncodeSalt());
         
         await SendOkAsync(response, cancellationToken);
     }
