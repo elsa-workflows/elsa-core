@@ -5,7 +5,7 @@ on:
     branches:
       - v3
     paths:
-      - src/designer/elsa-workflows-designer/**
+      - src/designer/**
       - .github/**
   pull_request:
     branches:
