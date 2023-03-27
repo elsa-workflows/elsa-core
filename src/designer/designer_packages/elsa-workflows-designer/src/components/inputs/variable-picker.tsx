@@ -1,4 +1,4 @@
-import {Component, Prop, h} from '@stencil/core';
+import {Component, h, Prop} from '@stencil/core';
 import {SyntaxNames, Variable} from "../../models";
 import {ActivityInputContext} from "../../services/activity-input-driver";
 import {getPropertyValue} from "../../utils";
@@ -21,8 +21,7 @@ export class VariablePickerInput {
     const fieldId = inputDescriptor.name;
     const displayName = inputDescriptor.displayName;
     const description = inputDescriptor.description;
-    const value = getPropertyValue(inputContext) as Variable;
-    let currentValue = value;
+    let currentValue = getPropertyValue(inputContext) as Variable;
 
     if (currentValue == undefined) {
       const defaultValue = inputDescriptor.defaultValue;
@@ -39,7 +38,7 @@ export class VariablePickerInput {
               {variables.map((variable: Variable) => {
                 const variableName = variable?.name;
                 const variableId = variable?.id;
-                const isSelected = variableName == currentValue?.name;
+                const isSelected = variableId == currentValue?.id;
                 return <option value={variableId} selected={isSelected}>{variableName}</option>;
               })}
             </select>
