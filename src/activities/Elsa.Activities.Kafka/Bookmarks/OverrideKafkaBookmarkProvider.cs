@@ -28,6 +28,10 @@ namespace Elsa.Activities.Kafka.Bookmarks
             {
                 return true;
             }
+            else if (context.ActivityExecutionContext.ActivityBlueprint.Type.Equals("KafkaMessageReceived"))
+            {
+                return false;
+            }
             else
             {
                 return base.SupportsActivity(context);
