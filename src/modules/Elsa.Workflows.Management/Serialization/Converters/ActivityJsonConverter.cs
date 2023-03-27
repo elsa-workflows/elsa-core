@@ -47,10 +47,11 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
             throw new JsonException("Failed to parse JsonDocument");
 
         var activityRoot = doc.RootElement;
-
         var activityTypeName = GetActivityDetails(activityRoot, out var activityTypeVersion, out var activityDescriptor);
+        
+        var notFoundActivityTypeName = ActivityTypeNameHelper.GenerateTypeName<NotFoundActivity>();
 
-        if(activityTypeName.Equals(ActivityTypeNameHelper.GenerateTypeName<NotFoundActivity>()) && activityRoot.TryGetProperty("originalActivityJson", out var originalActivityJson))
+        if(activityTypeName.Equals(notFoundActivityTypeName) && activityRoot.TryGetProperty("originalActivityJson", out var originalActivityJson))
         {
             activityRoot = JsonDocument.Parse(originalActivityJson.GetString()!).RootElement;
             activityTypeName = GetActivityDetails(activityRoot, out activityTypeVersion, out activityDescriptor);
@@ -65,7 +66,7 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
             var notFoundContext = new ActivityConstructorContext(activityRoot, newOptions);
             var notFoundActivity = (NotFoundActivity)_activityFactory.Create(typeof(NotFoundActivity), notFoundContext);
 
-            notFoundActivity.Type = ActivityTypeNameHelper.GenerateTypeName<NotFoundActivity>();
+            notFoundActivity.Type = notFoundActivityTypeName;
             notFoundActivity.Version = 1;
             notFoundActivity.MissingTypeName = activityTypeName;
             notFoundActivity.MissingTypeVersion = activityTypeVersion;
