@@ -104,3 +104,29 @@ jobs:
       - run: npm publish *.tgz
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  update_package_json_version:
+    name: Update Version in Elsa.Workflows.Designer backend module
+    needs: publish_npm_preview
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install jq
+        run: sudo apt-get install jq
+
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GURKAN_PAT }}
+
+      - name: Update designer version in package.json
+        run: |
+          cd src/modules/Elsa.Workflows.Designer
+          jq '.devDependencies["@elsa-workflows/elsa-workflows-designer"] = $newVersion' --arg newVersion $ELSA_VERSION-preview.${{ github.run_number }} package.json > package.json.tmp
+          mv package.json.tmp package.json
+          git fetch --all
+          git config user.name "GitHub Action"
+          git checkout v3
+          git add package.json
+          git commit -m "Updated designer version to $ELSA_VERSION-preview.${{ github.run_number }}"
+          git push origin v3
