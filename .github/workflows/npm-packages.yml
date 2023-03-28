@@ -34,7 +34,7 @@ jobs:
         if: ${{ github.event_name == 'release' }}
 
       - name: Checkout
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
       
       - name: Setup Node
         uses: actions/setup-node@v3
@@ -48,7 +48,7 @@ jobs:
       - run: npm --version
 
       - name: Build Designer
-        working-directory: ./src/designer
+        working-directory: ./src/designer/designer_packages/elsa-workflows-designer
         run: |
           npm install --force
           npm version $VERSION --allow-same-version
