@@ -48,7 +48,6 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
 
         var activityRoot = doc.RootElement;
         var activityTypeName = GetActivityDetails(activityRoot, out var activityTypeVersion, out var activityDescriptor);
-        
         var notFoundActivityTypeName = ActivityTypeNameHelper.GenerateTypeName<NotFoundActivity>();
 
         if(activityTypeName.Equals(notFoundActivityTypeName) && activityRoot.TryGetProperty("originalActivityJson", out var originalActivityJson))
@@ -85,7 +84,7 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
             var nakedType = inputDescriptor.Type;
             var wrappedType = typeof(Input<>).MakeGenericType(nakedType);
 
-            if (!doc.RootElement.TryGetProperty(propertyName, out var propertyElement) || propertyElement.ValueKind == JsonValueKind.Null || propertyElement.ValueKind == JsonValueKind.Undefined) 
+            if (!activityRoot.TryGetProperty(propertyName, out var propertyElement) || propertyElement.ValueKind == JsonValueKind.Null || propertyElement.ValueKind == JsonValueKind.Undefined) 
                 continue;
             
             var isWrapped = propertyElement.ValueKind == JsonValueKind.Object && propertyElement.GetProperty("typeName").ValueKind != JsonValueKind.Undefined;
@@ -111,7 +110,7 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
             var nakedType = outputDescriptor.Type;
             var wrappedType = typeof(Output<>).MakeGenericType(nakedType);
 
-            if (!doc.RootElement.TryGetProperty(propertyName, out var propertyElement) || propertyElement.ValueKind == JsonValueKind.Null || propertyElement.ValueKind == JsonValueKind.Undefined)
+            if (!activityRoot.TryGetProperty(propertyName, out var propertyElement) || propertyElement.ValueKind == JsonValueKind.Null || propertyElement.ValueKind == JsonValueKind.Undefined)
                 continue;
 
             var memoryReferenceElement = propertyElement.GetProperty("memoryReference");
