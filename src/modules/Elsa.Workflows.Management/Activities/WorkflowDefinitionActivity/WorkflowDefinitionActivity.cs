@@ -110,12 +110,14 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
             if (output == null)
                 return;
 
-            // If there's a block with the same name as the output property, we need to read its value and bind it against our output.
-            if (!context.ExpressionExecutionContext.Memory.HasBlock(outputDescriptor.Name))
-                continue;
-
-            var outputValue = context.ExpressionExecutionContext.Memory.Blocks[outputDescriptor.Name].Value;
-            context.Set(output, outputValue);
+            // @Herbert: this caused the variable from being overwritten with null.
+            // So to reproduce the bad behavior, uncomment these lines and run the test.
+            
+            // if (!context.ExpressionExecutionContext.Memory.HasBlock(outputDescriptor.Name))
+            //     continue;
+            //
+            // var outputValue = context.ExpressionExecutionContext.Memory.Blocks[outputDescriptor.Name].Value;
+            // context.Set(output, outputValue);
         }
 
         // Do we have a complete composite signal that triggered the completion?
