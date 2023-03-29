@@ -50,6 +50,8 @@ public class SetWorkflowOutput : CodeActivity
         var outputName = OutputName.Get(context);
         var workflowActivityContext = context.GetAncestors().Last(x => x.Activity is Workflow);
         var outputValue = OutputValue.Get(context);
+
+        // @SkyWalker make sure it reads this for in code workflows
         workflowActivityContext.WorkflowExecutionContext.Output[outputName] = outputValue!;
     }
 
