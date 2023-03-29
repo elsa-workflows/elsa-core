@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
+using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Core.Activities;
 
@@ -9,6 +10,7 @@ namespace Elsa.Workflows.Core.Activities;
 /// </summary>
 [Browsable(false)]
 [Activity("Elsa", "System", "A placeholder activity that will be used in case a workflow definition references an activity type that cannot be found.")]
+[PublicAPI]
 public class NotFoundActivity : CodeActivity
 {
     /// <inheritdoc />
@@ -32,5 +34,8 @@ public class NotFoundActivity : CodeActivity
     /// </summary>
     public int MissingTypeVersion { get; set; }
 
-    public string OriginalActivityJson { get; set; }
+    /// <summary>
+    /// The original activity JSON.
+    /// </summary>
+    public string OriginalActivityJson { get; set; } = default!;
 }
