@@ -6,6 +6,7 @@ import tailwindcss from 'tailwindcss';
 import purgecss from '@fullhuman/postcss-purgecss';
 
 import { angularOutputTarget } from '@stencil/angular-output-target';
+import { reactOutputTarget } from '@stencil/react-output-target';
 
 // @ts-ignore
 const dev: boolean = process.argv && process.argv.indexOf('--dev') > -1;
@@ -25,6 +26,11 @@ export const config: Config = {
       componentCorePackage: '@elsa-workflows/elsa-workflows-designer',
       directivesProxyFile: '../angular-workspace/projects/component-library/src/lib/stencil-generated/components.ts',
       directivesArrayFile: '../angular-workspace/projects/component-library/src/lib/stencil-generated/index.ts',
+      excludeComponents:['context-consumer']
+    }),
+    reactOutputTarget({
+      componentCorePackage: '@elsa-workflows/elsa-workflows-designer',
+      proxiesFile: '../react-wrapper/lib/components/stencil-generated/index.ts',
       excludeComponents:['context-consumer']
     }),
     {
