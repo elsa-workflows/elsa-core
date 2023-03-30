@@ -58,11 +58,35 @@ jobs:
         run: npm pack
         if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
 
+      - name: Pack Angular Wrapper
+        working-directory: ./src/designer/designer_packages/angular-workspace/projects/component-library
+        run: npm pack
+        if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
+      
+      - name: Pack React Wrapper
+        working-directory: ./src/designer/designer_packages/react-workspace/react-wrapper
+        run: npm pack
+        if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
+
       - name: Upload Designer Artifact
         uses: actions/upload-artifact@v3
         with:
           name: designer-npm-package
           path: src/designer/designer_packages/elsa-workflows-designer/elsa-*.tgz
+        if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
+      
+      - name: Upload Angular Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: designer-angular-wrapper-npm-package
+          path: src/src/designer/designer_packages/angular-workspace/projects/component-library/elsa-*.tgz
+        if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
+      
+      - name: Upload React Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: designer-react-wrapper-npm-package
+          path: src/src/designer/designer_packages/react-workspace/react-wrapper/elsa-*.tgz
         if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
       
   publish_npm_preview:
@@ -75,6 +99,16 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: designer-npm-package
+      
+      - name: Download Angular NPM Package
+        uses: actions/download-artifact@v3
+        with:
+          name: designer-angular-wrapper-npm-package
+      
+      - name: Download React NPM Package
+        uses: actions/download-artifact@v3
+        with:
+          name: designer-react-wrapper-npm-package
 
       - uses: actions/setup-node@v3
         with:
@@ -95,6 +129,16 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: designer-npm-package
+        
+      - name: Download Angular NPM Package
+        uses: actions/download-artifact@v3
+        with:
+          name: designer-angular-wrapper-npm-package
+      
+      - name: Download React NPM Package
+        uses: actions/download-artifact@v3
+        with:
+          name: designer-react-wrapper-npm-package
 
       - uses: actions/setup-node@v3
         with:
