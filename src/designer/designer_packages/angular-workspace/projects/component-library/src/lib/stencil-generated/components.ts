@@ -1094,14 +1094,14 @@ export declare interface ElsaVariableEditorDialogContent extends Components.Elsa
 
 
 @ProxyCmp({
-  inputs: ['inputContext']
+  inputs: ['inputContext', 'workflowDefinition']
 })
 @Component({
   selector: 'elsa-variable-picker-input',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: '<ng-content></ng-content>',
   // eslint-disable-next-line @angular-eslint/no-inputs-metadata-property
-  inputs: ['inputContext'],
+  inputs: ['inputContext', 'workflowDefinition'],
 })
 export class ElsaVariablePickerInput {
   protected el: HTMLElement;
