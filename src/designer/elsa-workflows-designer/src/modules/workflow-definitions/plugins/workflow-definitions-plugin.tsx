@@ -21,6 +21,7 @@ import {htmlToElement} from "../../../utils";
 import NotificationService from "../../notifications/notification-service";
 import {uuid} from "@antv/x6/es/util/string/uuid";
 import {DropdownButtonItem} from "../../../components/shared/dropdown-button/models";
+import {NotificationDisplayType} from "../../notifications/models";
 
 const FlowchartTypeName = 'Elsa.Flowchart';
 
@@ -194,7 +195,13 @@ export class WorkflowDefinitionsPlugin implements Plugin {
     }
 
     e.detail.begin();
-    const notification = NotificationService.createNotification({title: 'Publishing', id: uuid(), text: 'Workflow is being published. Please wait.'})
+
+    const notification = NotificationService.createNotification({
+      title: 'Publishing',
+      id: uuid(),
+      text: 'Workflow is being published. Please wait.',
+      type: NotificationDisplayType.InProgress
+    });
 
     await this.saveWorkflowDefinition(definition, true);
 

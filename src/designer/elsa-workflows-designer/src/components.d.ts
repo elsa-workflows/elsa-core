@@ -56,6 +56,7 @@ export namespace Components {
     }
     interface ElsaAwhileNotifications {
         "notification": NotificationType;
+        "showDuration": number;
     }
     interface ElsaButtonGroup {
         "buttons": Array<Button>;
@@ -193,6 +194,9 @@ export namespace Components {
     interface ElsaMultiTextInput {
         "inputContext": ActivityInputContext;
     }
+    interface ElsaNotificationTemplate {
+        "notification": NotificationType;
+    }
     interface ElsaNotificationsManager {
         "modalState": boolean;
     }
@@ -234,6 +238,8 @@ export namespace Components {
     }
     interface ElsaSwitchEditor {
         "inputContext": ActivityInputContext;
+    }
+    interface ElsaToastManager {
     }
     interface ElsaTooltip {
         "tooltipContent": any;
@@ -630,6 +636,12 @@ declare global {
         prototype: HTMLElsaMultiTextInputElement;
         new (): HTMLElsaMultiTextInputElement;
     };
+    interface HTMLElsaNotificationTemplateElement extends Components.ElsaNotificationTemplate, HTMLStencilElement {
+    }
+    var HTMLElsaNotificationTemplateElement: {
+        prototype: HTMLElsaNotificationTemplateElement;
+        new (): HTMLElsaNotificationTemplateElement;
+    };
     interface HTMLElsaNotificationsManagerElement extends Components.ElsaNotificationsManager, HTMLStencilElement {
     }
     var HTMLElsaNotificationsManagerElement: {
@@ -695,6 +707,12 @@ declare global {
     var HTMLElsaSwitchEditorElement: {
         prototype: HTMLElsaSwitchEditorElement;
         new (): HTMLElsaSwitchEditorElement;
+    };
+    interface HTMLElsaToastManagerElement extends Components.ElsaToastManager, HTMLStencilElement {
+    }
+    var HTMLElsaToastManagerElement: {
+        prototype: HTMLElsaToastManagerElement;
+        new (): HTMLElsaToastManagerElement;
     };
     interface HTMLElsaTooltipElement extends Components.ElsaTooltip, HTMLStencilElement {
     }
@@ -876,6 +894,7 @@ declare global {
         "elsa-monaco-editor": HTMLElsaMonacoEditorElement;
         "elsa-multi-line-input": HTMLElsaMultiLineInputElement;
         "elsa-multi-text-input": HTMLElsaMultiTextInputElement;
+        "elsa-notification-template": HTMLElsaNotificationTemplateElement;
         "elsa-notifications-manager": HTMLElsaNotificationsManagerElement;
         "elsa-outcome-picker-input": HTMLElsaOutcomePickerInputElement;
         "elsa-output-picker-input": HTMLElsaOutputPickerInputElement;
@@ -887,6 +906,7 @@ declare global {
         "elsa-slide-over-panel": HTMLElsaSlideOverPanelElement;
         "elsa-studio": HTMLElsaStudioElement;
         "elsa-switch-editor": HTMLElsaSwitchEditorElement;
+        "elsa-toast-manager": HTMLElsaToastManagerElement;
         "elsa-tooltip": HTMLElsaTooltipElement;
         "elsa-type-picker-input": HTMLElsaTypePickerInputElement;
         "elsa-variable-editor-dialog-content": HTMLElsaVariableEditorDialogContentElement;
@@ -938,6 +958,7 @@ declare namespace LocalJSX {
     }
     interface ElsaAwhileNotifications {
         "notification"?: NotificationType;
+        "showDuration"?: number;
     }
     interface ElsaButtonGroup {
         "buttons"?: Array<Button>;
@@ -1078,6 +1099,9 @@ declare namespace LocalJSX {
     interface ElsaMultiTextInput {
         "inputContext"?: ActivityInputContext;
     }
+    interface ElsaNotificationTemplate {
+        "notification"?: NotificationType;
+    }
     interface ElsaNotificationsManager {
         "modalState"?: boolean;
     }
@@ -1120,6 +1144,8 @@ declare namespace LocalJSX {
     }
     interface ElsaSwitchEditor {
         "inputContext"?: ActivityInputContext;
+    }
+    interface ElsaToastManager {
     }
     interface ElsaTooltip {
         "tooltipContent"?: any;
@@ -1260,6 +1286,7 @@ declare namespace LocalJSX {
         "elsa-monaco-editor": ElsaMonacoEditor;
         "elsa-multi-line-input": ElsaMultiLineInput;
         "elsa-multi-text-input": ElsaMultiTextInput;
+        "elsa-notification-template": ElsaNotificationTemplate;
         "elsa-notifications-manager": ElsaNotificationsManager;
         "elsa-outcome-picker-input": ElsaOutcomePickerInput;
         "elsa-output-picker-input": ElsaOutputPickerInput;
@@ -1271,6 +1298,7 @@ declare namespace LocalJSX {
         "elsa-slide-over-panel": ElsaSlideOverPanel;
         "elsa-studio": ElsaStudio;
         "elsa-switch-editor": ElsaSwitchEditor;
+        "elsa-toast-manager": ElsaToastManager;
         "elsa-tooltip": ElsaTooltip;
         "elsa-type-picker-input": ElsaTypePickerInput;
         "elsa-variable-editor-dialog-content": ElsaVariableEditorDialogContent;
@@ -1331,6 +1359,7 @@ declare module "@stencil/core" {
             "elsa-monaco-editor": LocalJSX.ElsaMonacoEditor & JSXBase.HTMLAttributes<HTMLElsaMonacoEditorElement>;
             "elsa-multi-line-input": LocalJSX.ElsaMultiLineInput & JSXBase.HTMLAttributes<HTMLElsaMultiLineInputElement>;
             "elsa-multi-text-input": LocalJSX.ElsaMultiTextInput & JSXBase.HTMLAttributes<HTMLElsaMultiTextInputElement>;
+            "elsa-notification-template": LocalJSX.ElsaNotificationTemplate & JSXBase.HTMLAttributes<HTMLElsaNotificationTemplateElement>;
             "elsa-notifications-manager": LocalJSX.ElsaNotificationsManager & JSXBase.HTMLAttributes<HTMLElsaNotificationsManagerElement>;
             "elsa-outcome-picker-input": LocalJSX.ElsaOutcomePickerInput & JSXBase.HTMLAttributes<HTMLElsaOutcomePickerInputElement>;
             "elsa-output-picker-input": LocalJSX.ElsaOutputPickerInput & JSXBase.HTMLAttributes<HTMLElsaOutputPickerInputElement>;
@@ -1342,6 +1371,7 @@ declare module "@stencil/core" {
             "elsa-slide-over-panel": LocalJSX.ElsaSlideOverPanel & JSXBase.HTMLAttributes<HTMLElsaSlideOverPanelElement>;
             "elsa-studio": LocalJSX.ElsaStudio & JSXBase.HTMLAttributes<HTMLElsaStudioElement>;
             "elsa-switch-editor": LocalJSX.ElsaSwitchEditor & JSXBase.HTMLAttributes<HTMLElsaSwitchEditorElement>;
+            "elsa-toast-manager": LocalJSX.ElsaToastManager & JSXBase.HTMLAttributes<HTMLElsaToastManagerElement>;
             "elsa-tooltip": LocalJSX.ElsaTooltip & JSXBase.HTMLAttributes<HTMLElsaTooltipElement>;
             "elsa-type-picker-input": LocalJSX.ElsaTypePickerInput & JSXBase.HTMLAttributes<HTMLElsaTypePickerInputElement>;
             "elsa-variable-editor-dialog-content": LocalJSX.ElsaVariableEditorDialogContent & JSXBase.HTMLAttributes<HTMLElsaVariableEditorDialogContentElement>;
