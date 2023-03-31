@@ -4,7 +4,6 @@ import {NotificationEventTypes} from '../../../modules/notifications/event-types
 import {EventBus} from '../../../services';
 import toolbarComponentStore from "../../../data/toolbar-component-store";
 import notificationService from '../../../modules/notifications/notification-service';
-import notificationStore from "../../../modules/notifications/notification-store";
 
 @Component({
   tag: 'elsa-workflow-toolbar',
@@ -23,12 +22,11 @@ export class WorkflowToolbar {
   onNotificationClick = async e => {
     e.stopPropagation();
     await this.eventBus.emit(NotificationEventTypes.Toggle, this);
-    WorkflowToolbar.NotificationService.toogleNotification();
+    WorkflowToolbar.NotificationService.toggleNotification();
     this.modalState = !this.modalState;
   };
 
   render() {
-    const {notifications, infoPanelBoolean} = notificationStore;
     const logoPath = getAssetPath('./assets/logo.png');
     return (
       <div>
@@ -84,9 +82,7 @@ export class WorkflowToolbar {
 
         </nav>
         <elsa-notifications-manager modalState={this.modalState}></elsa-notifications-manager>
-        {notifications && notifications.map(item => {
-          <elsa-awhile-notifications notification={item}></elsa-awhile-notifications>
-        })}
+        <elsa-toast-manager></elsa-toast-manager>
       </div>
     );
   }

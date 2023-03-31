@@ -1,7 +1,8 @@
 import { createStore } from '@stencil/store';
+import {NotificationType} from "./models";
 
 const { state, onChange } = createStore({
-  notifications: [],
+  notifications: [] as NotificationType[],
   infoPanelBoolean: false,
 });
 
