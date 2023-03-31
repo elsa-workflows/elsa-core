@@ -25,6 +25,7 @@ services
         {
             identity.IdentityOptions = options => identitySection.Bind(options);
             identity.TokenOptions = options => identityTokenSection.Bind(options);
+            identity.UseAdminUserProvider();
         })
         .UseDefaultAuthentication()
         .UseWorkflowManagement(management => management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
