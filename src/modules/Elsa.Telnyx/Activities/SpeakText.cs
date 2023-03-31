@@ -1,8 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 using Elsa.Extensions;
-using Elsa.Telnyx.Attributes;
-using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Client.Models;
 using Elsa.Telnyx.Client.Services;
 using Elsa.Telnyx.Extensions;
@@ -11,8 +9,6 @@ using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Services;
-using Elsa.Workflows.Management.Models;
 using Refit;
 
 namespace Elsa.Telnyx.Activities;
@@ -97,8 +93,8 @@ public abstract class SpeakTextBase : Activity
             Language.Get(context),
             Voice.Get(context),
             Payload.Get(context),
-            PayloadType.TryGet(context).EmptyToNull(),
-            ServiceLevel.TryGet(context).EmptyToNull(),
+            PayloadType.GetOrDefault(context).EmptyToNull(),
+            ServiceLevel.GetOrDefault(context).EmptyToNull(),
             ClientState: context.CreateCorrelatingClientState()
         );
 

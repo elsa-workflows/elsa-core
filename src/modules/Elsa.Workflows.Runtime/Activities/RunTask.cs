@@ -99,7 +99,7 @@ public class RunTask : Activity<object>, IBookmarksPersistedHandler
     async ValueTask IBookmarksPersistedHandler.BookmarksPersistedAsync(ActivityExecutionContext context)
     {
         var bookmark = (RunTaskBookmarkPayload)context.TransientProperties[BookmarkPropertyKey];
-        var taskParams = TaskParams.TryGet(context);
+        var taskParams = TaskParams.GetOrDefault(context);
         var taskName = TaskName.Get(context);
         var notification = new RunTaskRequest(bookmark.TaskId, taskName, taskParams);
         var dispatcher = context.GetRequiredService<ITaskDispatcher>();

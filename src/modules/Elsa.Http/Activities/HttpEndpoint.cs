@@ -41,7 +41,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
         Description = "The HTTP methods to accept.",
         Options = new[] { "GET", "POST", "PUT", "HEAD", "DELETE" },
         UIHint = InputUIHints.CheckList)]
-    public Input<ICollection<string>> SupportedMethods { get; set; } = new(JsonLiteral.From(new[] { HttpMethods.Get }));
+    public Input<ICollection<string>> SupportedMethods { get; set; } = new(ObjectLiteral.From(new[] { HttpMethods.Get }));
 
     /// <summary>
     /// Allow authenticated requests only.

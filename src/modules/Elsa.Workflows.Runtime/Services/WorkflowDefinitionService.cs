@@ -12,7 +12,7 @@ namespace Elsa.Workflows.Runtime.Services;
 public class WorkflowDefinitionService : IWorkflowDefinitionService
 {
     private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
-    private readonly IActivityWalker _activityWalker;
+    private readonly IActivityVisitor _activityVisitor;
     private readonly IIdentityGraphService _identityGraphService;
     private readonly IEnumerable<IWorkflowMaterializer> _materializers;
 
@@ -21,12 +21,12 @@ public class WorkflowDefinitionService : IWorkflowDefinitionService
     /// </summary>
     public WorkflowDefinitionService(
         IWorkflowDefinitionStore workflowDefinitionStore,
-        IActivityWalker activityWalker,
+        IActivityVisitor activityVisitor,
         IIdentityGraphService identityGraphService,
         IEnumerable<IWorkflowMaterializer> materializers)
     {
         _workflowDefinitionStore = workflowDefinitionStore;
-        _activityWalker = activityWalker;
+        _activityVisitor = activityVisitor;
         _identityGraphService = identityGraphService;
         _materializers = materializers;
     }
@@ -40,7 +40,7 @@ public class WorkflowDefinitionService : IWorkflowDefinitionService
             throw new Exception("Provider not found");
 
         var workflow = await provider.MaterializeAsync(definition, cancellationToken);
-        var graph = (await _activityWalker.WalkAsync(workflow, cancellationToken)).Flatten().ToList();
+        var graph = (await _activityVisitor.VisitAsync(workflow, cancellationToken)).Flatten().ToList();
 
         // Assign identities.
         _identityGraphService.AssignIdentities(graph);

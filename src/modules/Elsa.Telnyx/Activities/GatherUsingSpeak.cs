@@ -11,7 +11,6 @@ using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Runtime.Contracts;
 using Refit;
 
@@ -154,15 +153,15 @@ public class GatherUsingSpeak : Activity<CallGatherEndedPayload>, IBookmarksPers
             Language.Get(context) ?? throw new Exception("Language is required."),
             Voice.Get(context) ?? throw new Exception("Voice is required."),
             Payload.Get(context) ?? throw new Exception("Payload is required."),
-            PayloadType.TryGet(context),
-            ServiceLevel.TryGet(context),
-            InterDigitTimeoutMillis.TryGet(context),
-            MaximumDigits.TryGet(context),
-            MaximumTries.TryGet(context),
-            MinimumDigits.TryGet(context),
-            TerminatingDigit.TryGet(context).EmptyToNull(),
-            TimeoutMillis.TryGet(context),
-            ValidDigits.TryGet(context).EmptyToNull(),
+            PayloadType.GetOrDefault(context),
+            ServiceLevel.GetOrDefault(context),
+            InterDigitTimeoutMillis.GetOrDefault(context),
+            MaximumDigits.GetOrDefault(context),
+            MaximumTries.GetOrDefault(context),
+            MinimumDigits.GetOrDefault(context),
+            TerminatingDigit.GetOrDefault(context).EmptyToNull(),
+            TimeoutMillis.GetOrDefault(context),
+            ValidDigits.GetOrDefault(context).EmptyToNull(),
             context.CreateCorrelatingClientState()
         );
 

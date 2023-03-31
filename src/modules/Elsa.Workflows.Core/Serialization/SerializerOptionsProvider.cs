@@ -3,7 +3,6 @@ using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Serialization.Converters;
-using Elsa.Workflows.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Core.Serialization;
@@ -24,7 +23,7 @@ public class SerializerOptionsProvider
     public JsonSerializerOptions CreatePersistenceOptions(ReferenceHandler? referenceHandler = default)
     {
         var options = CreateDefaultOptions(referenceHandler ?? ReferenceHandler.IgnoreCycles);
-        options.Converters.Add(Create<JsonExpandableConverterFactory<IActivity>>());
+        options.Converters.Add(Create<JsonIgnoreCompositeRootConverterFactory>());
         return options;
     }
 

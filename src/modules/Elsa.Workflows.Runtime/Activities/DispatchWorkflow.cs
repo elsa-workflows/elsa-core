@@ -48,7 +48,7 @@ public class DispatchWorkflow : Activity<object>, IBookmarksPersistedHandler
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        var waitForCompletion = WaitForCompletion.TryGet(context);
+        var waitForCompletion = WaitForCompletion.GetOrDefault(context);
         var identityGenerator = context.GetRequiredService<IIdentityGenerator>();
         var instanceId = identityGenerator.GenerateId();
         context.TransientProperties["ChildInstanceId"] = instanceId;
@@ -74,11 +74,11 @@ public class DispatchWorkflow : Activity<object>, IBookmarksPersistedHandler
     public async ValueTask BookmarksPersistedAsync(ActivityExecutionContext context)
     {
         var workflowDefinitionId = WorkflowDefinitionId.Get(context);
-        var input = Input.TryGet(context) ?? new Dictionary<string, object>();
+        var input = Input.GetOrDefault(context) ?? new Dictionary<string, object>();
 
         input["ParentInstanceId"] = context.WorkflowExecutionContext.Id;
         
-        var correlationId = CorrelationId.TryGet(context);
+        var correlationId = CorrelationId.GetOrDefault(context);
         var workflowDispatcher = context.GetRequiredService<IWorkflowDispatcher>();
         var instanceId = (string)context.TransientProperties["ChildInstanceId"];
         var request = new DispatchWorkflowDefinitionRequest(workflowDefinitionId, VersionOptions.Published, input, correlationId, instanceId);

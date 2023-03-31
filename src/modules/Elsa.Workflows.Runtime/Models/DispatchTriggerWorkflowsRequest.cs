@@ -7,4 +7,4 @@ namespace Elsa.Workflows.Runtime.Models;
 /// <param name="BookmarkPayload">AnyAsync bookmark payload to use to find the workflows to trigger.</param>
 /// <param name="CorrelationId">AnyAsync correlation ID to use to find the workflows to trigger.</param>
 /// <param name="Input">AnyAsync input to send along.</param>
-public record DispatchTriggerWorkflowsRequest(string ActivityTypeName, object BookmarkPayload, string? CorrelationId = default, IDictionary<string, object>? Input = default);
+public record DispatchTriggerWorkflowsRequest(string ActivityTypeName, object BookmarkPayload, string? CorrelationId = default, string? WorkflowInstanceId = default, IDictionary<string, object>? Input = default);

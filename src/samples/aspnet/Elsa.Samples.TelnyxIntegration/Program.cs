@@ -49,8 +49,11 @@ services
         })
         .UseIdentity(identity =>
         {
-            identity.IdentityOptions = identityOptions;
-            identity.TokenOptions = identityTokenOptions;
+            identity.TokenOptions = options =>
+            {
+                options.SigningKey = "secret-token-signing-key";
+                options.AccessTokenLifetime = TimeSpan.FromDays(1);
+            };
         })
         .UseWorkflowRuntime(runtime =>
         {

@@ -12,8 +12,6 @@ using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Services;
-using Elsa.Workflows.Management.Models;
 using Refit;
 
 namespace Elsa.Telnyx.Activities;
@@ -117,9 +115,9 @@ public abstract class StartRecordingBase : Activity<CallRecordingSavedPayload>
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var request = new StartRecordingRequest(
-            Channels.TryGet(context) ?? "single",
-            Format.TryGet(context) ?? "wav",
-            PlayBeep.TryGet(context),
+            Channels.GetOrDefault(context) ?? "single",
+            Format.GetOrDefault(context) ?? "wav",
+            PlayBeep.GetOrDefault(context),
             ClientState: context.CreateCorrelatingClientState()
         );
 

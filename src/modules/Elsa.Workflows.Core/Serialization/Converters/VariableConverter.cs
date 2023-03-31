@@ -53,6 +53,7 @@ public class VariableConverter : JsonConverter<Variable>
         var variableGenericType = typeof(Variable<>).MakeGenericType(type);
         var variable = (Variable)Activator.CreateInstance(variableGenericType)!;
 
+        variable.Id = source.Id ?? Guid.NewGuid().ToString("N"); // Temporarily assign a new ID if the source doesn't have one.
         variable.Name = source.Name;
 
         source.Value.TryConvertTo(type)
@@ -73,7 +74,7 @@ public class VariableConverter : JsonConverter<Variable>
         var storageDriverTypeName = source.StorageDriverType?.GetSimpleAssemblyQualifiedName();
         var serializedValue = value.Format();
 
-        return new VariableModel(source.Name, valueTypeAlias, serializedValue, storageDriverTypeName);
+        return new VariableModel(source.Id, source.Name, valueTypeAlias, serializedValue, storageDriverTypeName);
     }
 
     private class VariableModel
@@ -83,14 +84,16 @@ public class VariableConverter : JsonConverter<Variable>
         {
         }
 
-        public VariableModel(string name, string typeName, string? value, string? storageDriverTypeName)
+        public VariableModel(string id, string name, string typeName, string? value, string? storageDriverTypeName)
         {
+            Id = id;
             Name = name;
             TypeName = typeName;
             Value = value;
             StorageDriverTypeName = storageDriverTypeName;
         }
 
+        public string Id { get; set; } = default!;
         public string Name { get; set; } = default!;
         public string TypeName { get; set; } = default!;
         public string? Value { get; set; }

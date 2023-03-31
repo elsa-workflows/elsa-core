@@ -9,8 +9,6 @@ using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Services;
-using Elsa.Workflows.Management.Models;
 using Microsoft.Extensions.Options;
 using MimeKit;
 
@@ -69,20 +67,20 @@ public class SendEmail : Activity
         var cancellationToken = context.CancellationToken;
         var message = new MimeMessage();
         var options = context.GetRequiredService<IOptions<SmtpOptions>>().Value;
-        var from = string.IsNullOrWhiteSpace(From.TryGet(context)) ? options.DefaultSender : From.Get(context)!;
+        var from = string.IsNullOrWhiteSpace(From.GetOrDefault(context)) ? options.DefaultSender : From.Get(context)!;
 
         message.Sender = MailboxAddress.Parse(from);
         message.From.Add(MailboxAddress.Parse(from));
-        message.Subject = Subject.TryGet(context);
+        message.Subject = Subject.GetOrDefault(context);
 
-        var bodyBuilder = new BodyBuilder { HtmlBody = Body.TryGet(context) };
+        var bodyBuilder = new BodyBuilder { HtmlBody = Body.GetOrDefault(context) };
         await AddAttachmentsAsync(context, bodyBuilder, cancellationToken);
 
         message.Body = bodyBuilder.ToMessageBody();
 
         SetRecipientsEmailAddresses(message.To, To.Get(context));
-        SetRecipientsEmailAddresses(message.Cc, Cc.TryGet(context));
-        SetRecipientsEmailAddresses(message.Bcc, Bcc.TryGet(context));
+        SetRecipientsEmailAddresses(message.Cc, Cc.GetOrDefault(context));
+        SetRecipientsEmailAddresses(message.Bcc, Bcc.GetOrDefault(context));
 
         var smtpService = context.GetRequiredService<ISmtpService>();
 
@@ -101,7 +99,7 @@ public class SendEmail : Activity
 
     private async Task AddAttachmentsAsync(ActivityExecutionContext context, BodyBuilder bodyBuilder, CancellationToken cancellationToken)
     {
-        var attachments = Attachments.TryGet(context);
+        var attachments = Attachments.GetOrDefault(context);
 
         if (attachments == null || attachments is string s && string.IsNullOrWhiteSpace(s))
             return;

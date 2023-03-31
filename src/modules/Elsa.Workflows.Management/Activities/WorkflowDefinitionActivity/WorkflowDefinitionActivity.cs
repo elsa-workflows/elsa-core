@@ -1,10 +1,9 @@
 using System.ComponentModel;
 using Elsa.Common.Models;
 using Elsa.Extensions;
-using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Core.Signals;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
@@ -16,14 +15,8 @@ namespace Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 /// Loads and executes an <see cref="WorkflowDefinition"/>.
 /// </summary>
 [Browsable(false)]
-public class WorkflowDefinitionActivity : Activity, IInitializable
+public class WorkflowDefinitionActivity : Composite, IInitializable
 {
-    /// <summary>
-    /// The activity to schedule for execution.
-    /// </summary>
-    [JsonExpandable]
-    public IActivity Root { get; set; } = default!;
-
     /// <summary>
     /// The definition ID of the workflow to schedule for execution.
     /// </summary>
@@ -37,8 +30,71 @@ public class WorkflowDefinitionActivity : Activity, IInitializable
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        // Schedule the activity for execution.
+        CopyInputOutputToVariables(context);
         await context.ScheduleActivityAsync(Root, OnChildCompletedAsync);
+    }
+
+    private void CopyInputOutputToVariables(ActivityExecutionContext context)
+    {
+        foreach (var inputDescriptor in context.ActivityDescriptor.Inputs)
+        {
+            var input = SyntheticProperties.TryGetValue(inputDescriptor.Name, out var inputValue) ? (Input?)inputValue : default;
+            var evaluatedExpression = input != null ? context.Get(input.MemoryBlockReference()) : default;
+
+            // Create a local scope variable for each input property.
+            var variable = new Variable
+            {
+                Id = inputDescriptor.Name,
+                Name = inputDescriptor.Name,
+                StorageDriverType = inputDescriptor.StorageDriverType
+            };
+
+            context.ExpressionExecutionContext.Memory.Declare(variable);
+            variable.Set(context, evaluatedExpression);
+        }
+        
+        foreach (var outputDescriptor in context.ActivityDescriptor.Outputs)
+        {
+            // Create a local scope variable for each output property.
+            var variable = new Variable
+            {
+                Id = outputDescriptor.Name,
+                Name = outputDescriptor.Name
+            };
+
+            context.ExpressionExecutionContext.Memory.Declare(variable);
+        }
+    }
+
+    private void DeclareInputOutputAsVariables(InitializationContext context)
+    {
+        var activityRegistry = context.ServiceProvider.GetRequiredService<IActivityRegistry>();
+        var activityDescriptor = activityRegistry.Find(Type, Version)!;
+    
+        // Declare input variables.
+        foreach (var inputDescriptor in activityDescriptor.Inputs)
+        {
+            // Create a local scope variable for each input property.
+            var variable = new Variable(inputDescriptor.Name)
+            {
+                Name = inputDescriptor.Name,
+                StorageDriverType = inputDescriptor.StorageDriverType
+            };
+
+            Variables.Declare(variable);
+        }
+        
+        // Declare output variables.
+        foreach (var outputDescriptor in activityDescriptor.Outputs)
+        {
+            // Create a local scope variable for each output property.
+            var variable = new Variable(outputDescriptor.Name)
+            {
+                Name = outputDescriptor.Name
+            };
+
+            Variables.Declare(variable);
+        }
     }
 
     private async ValueTask OnChildCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext)
@@ -54,12 +110,14 @@ public class WorkflowDefinitionActivity : Activity, IInitializable
             if (output == null)
                 return;
 
-            // If there's a block with the same name as the output property, we need to read its value and bind it against our output.
-            if (!context.ExpressionExecutionContext.Memory.HasBlock(outputDescriptor.Name))
-                continue;
-
-            var outputValue = context.ExpressionExecutionContext.Memory.Blocks[outputDescriptor.Name].Value;
-            context.Set(output, outputValue);
+            // @Herbert: this caused the variable from being overwritten with null.
+            // So to reproduce the bad behavior, uncomment these lines and run the test.
+            
+            // if (!context.ExpressionExecutionContext.Memory.HasBlock(outputDescriptor.Name))
+            //     continue;
+            //
+            // var outputValue = context.ExpressionExecutionContext.Memory.Blocks[outputDescriptor.Name].Value;
+            // context.Set(output, outputValue);
         }
 
         // Do we have a complete composite signal that triggered the completion?
@@ -84,6 +142,8 @@ public class WorkflowDefinitionActivity : Activity, IInitializable
         var materializer = serviceProvider.GetRequiredService<IWorkflowMaterializer>();
         var root = await materializer.MaterializeAsync(workflowDefinition, cancellationToken);
 
+        DeclareInputOutputAsVariables(context);
+        
         Root = root;
     }
 }

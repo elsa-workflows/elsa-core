@@ -31,7 +31,7 @@ public class WorkflowMessageConsumer<T> : IConsumer<T> where T : class
         var bookmark = new MessageReceivedBookmarkPayload(messageType);
         var correlationId = context.CorrelationId?.ToString();
         var input = new Dictionary<string, object> { [MessageReceived.InputKey] = message };
-        var request = new DispatchTriggerWorkflowsRequest(activityTypeName, bookmark, correlationId, input);
+        var request = new DispatchTriggerWorkflowsRequest(activityTypeName, bookmark, correlationId, default, input);
         await _workflowRuntime.DispatchAsync(request, cancellationToken);
     }
 }

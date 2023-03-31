@@ -23,19 +23,19 @@ public class EventPublisher : IEventPublisher
     }
     
     /// <inheritdoc />
-    public async Task PublishAsync(string eventName, string? correlationId = default, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
+    public async Task PublishAsync(string eventName, string? correlationId = default, string? workflowInstanceId = default, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
     {
         var eventBookmark = new EventBookmarkPayload(eventName);
-        var options = new TriggerWorkflowsRuntimeOptions(correlationId, input);
+        var options = new TriggerWorkflowsRuntimeOptions(correlationId, workflowInstanceId, input);
         await _workflowRuntime.TriggerWorkflowsAsync<Event>(eventBookmark, options, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task DispatchAsync(string eventName, string? correlationId = default, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
+    public async Task DispatchAsync(string eventName, string? correlationId = default, string? workflowInstanceId = default, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
     {
         var eventBookmark = new EventBookmarkPayload(eventName);
         var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<Event>();
-        var request = new DispatchTriggerWorkflowsRequest(activityTypeName, eventBookmark, correlationId, input);
+        var request = new DispatchTriggerWorkflowsRequest(activityTypeName, eventBookmark, correlationId, workflowInstanceId, input);
         await _workflowDispatcher.DispatchAsync(request, cancellationToken);
     }
 }

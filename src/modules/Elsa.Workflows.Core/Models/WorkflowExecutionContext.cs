@@ -19,10 +19,11 @@ public record ActivityCompletionCallbackEntry(ActivityExecutionContext Owner, Ac
 /// <summary>
 /// Provides context to the currently executing workflow.
 /// </summary>
-public class WorkflowExecutionContext
+public class WorkflowExecutionContext : IExecutionContext
 {
     internal static ValueTask Complete(ActivityExecutionContext context) => context.CompleteActivityAsync();
     private readonly IServiceProvider _serviceProvider;
+    private readonly IActivityRegistry _activityRegistry;
     private readonly IList<ActivityNode> _nodes;
     private readonly IList<ActivityCompletionCallbackEntry> _completionCallbackEntries = new List<ActivityCompletionCallbackEntry>();
     private IList<ActivityExecutionContext> _activityExecutionContexts;
@@ -38,6 +39,7 @@ public class WorkflowExecutionContext
         ActivityNode graph,
         ICollection<ActivityNode> nodes,
         IActivityScheduler scheduler,
+        IActivityRegistry activityRegistry,
         IDictionary<string, object>? input,
         ExecuteActivityDelegate? executeDelegate,
         string? triggerActivityId,
@@ -45,6 +47,7 @@ public class WorkflowExecutionContext
         CancellationToken cancellationToken)
     {
         _serviceProvider = serviceProvider;
+        _activityRegistry = activityRegistry;
         Workflow = workflow;
         Graph = graph;
         SubStatus = WorkflowSubStatus.Executing;
@@ -60,6 +63,7 @@ public class WorkflowExecutionContext
         NodeIdLookup = _nodes.ToDictionary(x => x.NodeId);
         NodeActivityLookup = _nodes.ToDictionary(x => x.Activity);
         MemoryRegister = workflow.CreateRegister();
+        ExpressionExecutionContext = new ExpressionExecutionContext(serviceProvider, MemoryRegister, cancellationToken: cancellationToken);
     }
 
     /// <summary>
@@ -132,9 +136,7 @@ public class WorkflowExecutionContext
     /// </summary>
     public IDictionary<string, object> Output { get; set; } = new Dictionary<string, object>();
 
-    /// <summary>
-    /// A dictionary that can be used by application code and activities to store information. Values need to be serializable. 
-    /// </summary>
+    /// <inheritdoc />
     public IDictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
 
     /// <summary>
@@ -186,6 +188,14 @@ public class WorkflowExecutionContext
     /// A volatile collection of executed activity instance IDs. This collection is reset when workflow execution starts.
     /// </summary>
     public ICollection<WorkflowExecutionLogEntry> ExecutionLog { get; } = new List<WorkflowExecutionLogEntry>();
+
+    /// <summary>
+    /// The expression execution context for the current workflow execution.
+    /// </summary>
+    public ExpressionExecutionContext? ExpressionExecutionContext { get; } = default!;
+
+    /// <inheritdoc />
+    public IEnumerable<Variable> Variables => Workflow.Variables;
 
     /// <summary>
     /// Resolves the specified service type from the service provider.
@@ -316,11 +326,12 @@ public class WorkflowExecutionContext
     /// </summary>
     public ActivityExecutionContext CreateActivityExecutionContext(IActivity activity, ActivityExecutionContext? parentContext = default)
     {
-        var parentExpressionExecutionContext = parentContext?.ExpressionExecutionContext;
+        var activityDescriptor = _activityRegistry.Find(activity) ?? throw new Exception($"Activity with type {activity.Type} not found in registry");
+        var parentExpressionExecutionContext = parentContext?.ExpressionExecutionContext ?? ExpressionExecutionContext;
         var properties = ExpressionExecutionContextExtensions.CreateActivityExecutionContextPropertiesFrom(this, Input);
-        var parentMemory = parentContext?.ExpressionExecutionContext.Memory ?? MemoryRegister;
-        var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, parentMemory, parentExpressionExecutionContext, properties, CancellationToken);
-        var activityExecutionContext = new ActivityExecutionContext(this, parentContext, expressionExecutionContext, activity, CancellationToken);
+        var memory = new MemoryRegister();
+        var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, memory, parentExpressionExecutionContext, properties, CancellationToken);
+        var activityExecutionContext = new ActivityExecutionContext(this, parentContext, expressionExecutionContext, activity, activityDescriptor, CancellationToken);
         expressionExecutionContext.TransientProperties[ExpressionExecutionContextExtensions.ActivityExecutionContextKey] = activityExecutionContext;
         return activityExecutionContext;
     }
@@ -343,8 +354,7 @@ public class WorkflowExecutionContext
 
         // Remove all associated variables.
         var variablePersistenceManager = context.GetRequiredService<IVariablePersistenceManager>();
-        var variables = variablePersistenceManager.GetVariables(context);
-        await variablePersistenceManager.DeleteVariablesAsync(this, variables);
+        await variablePersistenceManager.DeleteVariablesAsync(context);
 
         // Remove all associated bookmarks.
         Bookmarks.RemoveWhere(x => x.ActivityInstanceId == context.Id);

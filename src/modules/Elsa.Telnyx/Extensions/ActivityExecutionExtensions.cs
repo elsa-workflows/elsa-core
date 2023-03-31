@@ -13,7 +13,7 @@ public static class ActivityExecutionExtensions
     public static void SetPrimaryCallControlId(this ActivityExecutionContext context, string value) => context.WorkflowExecutionContext.SetProperty(PrimaryCallControlIdKey, value);
     public static string? GetPrimaryCallControlId(this ActivityExecutionContext context) => context.WorkflowExecutionContext.GetProperty<string>(PrimaryCallControlIdKey);
     public static string? GetPrimaryCallControlId(this ActivityExecutionContext context, string? callControlId) => string.IsNullOrWhiteSpace(callControlId) ? context.GetPrimaryCallControlId() : callControlId;
-    public static string? GetPrimaryCallControlId(this ActivityExecutionContext context, Input<string?>? callControlId) => context.GetPrimaryCallControlId(callControlId.TryGet(context));
+    public static string? GetPrimaryCallControlId(this ActivityExecutionContext context, Input<string?>? callControlId) => context.GetPrimaryCallControlId(callControlId.GetOrDefault(context));
     public static bool HasPrimaryCallControlId(this ActivityExecutionContext context) => context.WorkflowExecutionContext.HasProperty(PrimaryCallControlIdKey);
     
     public static void SetSecondaryCallControlId(this ActivityExecutionContext context, string value) => context.WorkflowExecutionContext.SetProperty(SecondaryCallControlIdKey, value);

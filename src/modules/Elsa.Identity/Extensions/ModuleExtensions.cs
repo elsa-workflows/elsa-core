@@ -1,6 +1,5 @@
 using Elsa.Features.Services;
 using Elsa.Identity.Features;
-using Elsa.Identity.Options;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
@@ -24,12 +23,12 @@ public static class ModuleExtensions
     /// </summary>
     public static IModule UseIdentity(this IModule module, string signingKey, string issuer = "http://elsa.api", string audience = "http://elsa.api", TimeSpan? tokenLifetime = default)
     {
-        module.UseIdentity(identity => identity.TokenOptions = new IdentityTokenOptions
+        module.UseIdentity(identity => identity.TokenOptions = options =>
         {
-            Audience = audience,
-            Issuer = issuer,
-            AccessTokenLifetime = tokenLifetime ?? TimeSpan.FromHours(1),
-            SigningKey = signingKey
+            options.Audience = audience;
+            options.Issuer = issuer;
+            options.AccessTokenLifetime = tokenLifetime ?? TimeSpan.FromHours(1);
+            options.SigningKey = signingKey;
         });
         return module;
     }

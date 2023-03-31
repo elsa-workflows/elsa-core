@@ -1,5 +1,3 @@
-using Elsa.Workflows.Core.Models;
-
 namespace Elsa.Workflows.Core.Contracts;
 
 /// <summary>
@@ -12,4 +10,4 @@ public interface IStorageDriver
     ValueTask DeleteAsync(string id, StorageDriverContext context);
 }
 
-public record StorageDriverContext(WorkflowExecutionContext WorkflowExecutionContext, CancellationToken CancellationToken);
+public record StorageDriverContext(IExecutionContext ExecutionContext, CancellationToken CancellationToken);

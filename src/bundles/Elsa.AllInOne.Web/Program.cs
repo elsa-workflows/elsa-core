@@ -1,7 +1,6 @@
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.Extensions;
 using Elsa.Identity;
-using Elsa.Identity.Options;
 using Elsa.EntityFrameworkCore.Modules.Labels;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
@@ -14,12 +13,8 @@ builder.WebHost.UseStaticWebAssets();
 var services = builder.Services;
 var configuration = builder.Configuration;
 var sqliteConnectionString = configuration.GetConnectionString("Sqlite")!;
-var identityOptions = new IdentityOptions();
-var identityTokenOptions = new IdentityTokenOptions();
 var identitySection = configuration.GetSection("Identity");
 var identityTokenSection = identitySection.GetSection("Tokens");
-identitySection.Bind(identityOptions);
-identityTokenSection.Bind(identityTokenOptions);
 
 // Add Elsa services.
 services
@@ -28,8 +23,8 @@ services
         .UseWorkflowsApi()
         .UseIdentity(identity =>
         {
-            identity.IdentityOptions = identityOptions;
-            identity.TokenOptions = identityTokenOptions;
+            identity.IdentityOptions = options => identitySection.Bind(options);
+            identity.TokenOptions = options => identityTokenSection.Bind(options);
         })
         .UseDefaultAuthentication()
         .UseWorkflowManagement(management => management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))

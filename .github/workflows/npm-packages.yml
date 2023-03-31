@@ -5,7 +5,7 @@ on:
     branches:
       - v3
     paths:
-      - src/designer/elsa-workflows-designer/**
+      - src/designer/**
       - .github/**
   pull_request:
     branches:
@@ -15,8 +15,8 @@ on:
       - .github/**
 
 env:
-  NODE_OPTIONS: --max-old-space-size=4096
-  ELSA_VERSION: 3.0.2
+  NODE_OPTIONS: --max-old-space-size=8096
+  ELSA_VERSION: 3.0.3
 
 jobs:
   build_and_pack:
@@ -34,7 +34,7 @@ jobs:
         if: ${{ github.event_name == 'release' }}
 
       - name: Checkout
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
       
       - name: Setup Node
         uses: actions/setup-node@v3
@@ -48,13 +48,13 @@ jobs:
       - run: npm --version
 
       - name: Build Designer
-        working-directory: ./src/designer/elsa-workflows-designer
+        working-directory: ./src/designer/designer_packages/elsa-workflows-designer
         run: |
           npm install --force
           npm version $VERSION --allow-same-version
-          npm run build
+          npx lerna run build
       - name: Pack Designer
-        working-directory: ./src/designer/elsa-workflows-designer
+        working-directory: ./src/designer/designer_packages/elsa-workflows-designer
         run: npm pack
         if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
 
@@ -62,7 +62,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: designer-npm-package
-          path: src/designer/elsa-workflows-designer/elsa-*.tgz
+          path: src/designer/designer_packages/elsa-workflows-designer/elsa-*.tgz
         if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
       
   publish_npm_preview:
@@ -104,3 +104,29 @@ jobs:
       - run: npm publish *.tgz
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  update_package_json_version:
+    name: Update Version in Elsa.Workflows.Designer backend module
+    needs: publish_npm_preview
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install jq
+        run: sudo apt-get install jq
+
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.ELSA_CORE_PAT }}
+
+      - name: Update designer version in package.json
+        run: |
+          cd src/modules/Elsa.Workflows.Designer
+          jq '.devDependencies["@elsa-workflows/elsa-workflows-designer"] = $newVersion' --arg newVersion $ELSA_VERSION-preview.${{ github.run_number }} package.json > package.json.tmp
+          mv package.json.tmp package.json
+          git fetch --all
+          git config user.name "GitHub Action"
+          git checkout v3
+          git add package.json
+          git commit -m "Updated designer version to $ELSA_VERSION-preview.${{ github.run_number }}"
+          git push origin v3

@@ -103,7 +103,7 @@ public class WorkflowsFeature : FeatureBase
             // Core.
             .AddSingleton<IActivityInvoker, ActivityInvoker>()
             .AddSingleton<IWorkflowRunner, WorkflowRunner>()
-            .AddSingleton<IActivityWalker, ActivityWalker>()
+            .AddSingleton<IActivityVisitor, ActivityVisitor>()
             .AddSingleton<IIdentityGraphService, IdentityGraphService>()
             .AddSingleton<IWorkflowStateSerializer, WorkflowStateSerializer>()
             .AddSingleton<IActivitySchedulerFactory, ActivitySchedulerFactory>()
@@ -112,6 +112,11 @@ public class WorkflowsFeature : FeatureBase
             .AddSingleton<IIdentityGenerator, GuidIdentityGenerator>()
             .AddSingleton<IWorkflowExecutionContextFactory, DefaultWorkflowExecutionContextFactory>()
             .AddSingleton<IBookmarkPayloadSerializer>(sp => ActivatorUtilities.CreateInstance<BookmarkPayloadSerializer>(sp))
+            .AddSingleton<IActivityDescriber, ActivityDescriber>()
+            .AddSingleton<IActivityRegistry, ActivityRegistry>()
+            .AddSingleton<IPropertyDefaultValueResolver, PropertyDefaultValueResolver>()
+            .AddSingleton<IPropertyOptionsResolver, PropertyOptionsResolver>()
+            .AddSingleton<IActivityFactory, ActivityFactory>()
             .AddTransient<WorkflowBuilder>()
             .AddSingleton(typeof(Func<IWorkflowBuilder>), sp => () => sp.GetRequiredService<WorkflowBuilder>())
             .AddSingleton<IWorkflowBuilderFactory, WorkflowBuilderFactory>()
@@ -155,7 +160,7 @@ public class WorkflowsFeature : FeatureBase
             .AddExpressionHandler<LiteralExpressionHandler, LiteralExpression>()
             .AddExpressionHandler<DelegateExpressionHandler, DelegateExpression>()
             .AddExpressionHandler<VariableExpressionHandler, VariableExpression>()
-            .AddExpressionHandler<JsonExpressionHandler, JsonExpression>()
+            .AddExpressionHandler<ObjectExpressionHandler, ObjectExpression>()
             .AddExpressionHandler<OutputExpressionHandler, OutputExpression>()
             .AddExpressionHandler<ElsaExpressionHandler, ElsaExpression>();
     }

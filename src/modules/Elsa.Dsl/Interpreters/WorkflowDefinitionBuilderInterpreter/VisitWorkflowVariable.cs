@@ -1,6 +1,5 @@
 ﻿using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Dsl.Interpreters;
 

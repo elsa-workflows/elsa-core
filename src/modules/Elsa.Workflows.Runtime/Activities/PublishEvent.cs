@@ -35,7 +35,7 @@ public class PublishEvent : Activity
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var eventName = EventName.Get(context);
-        var correlationId = CorrelationId.TryGet(context);
+        var correlationId = CorrelationId.GetOrDefault(context);
         var publisher = context.GetRequiredService<IEventPublisher>();
 
         await publisher.DispatchAsync(eventName, correlationId, cancellationToken: context.CancellationToken);

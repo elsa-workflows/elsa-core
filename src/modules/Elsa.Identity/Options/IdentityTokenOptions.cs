@@ -5,17 +5,48 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace Elsa.Identity.Options;
 
+/// <summary>
+/// Represents options about token validation and generation.
+/// </summary>
 public class IdentityTokenOptions
 {
-    public string SigningKey { get; set; }
+    /// <summary>
+    /// The key to use when signing tokens
+    /// </summary>
+    public string SigningKey { get; set; } = default!;
+    
+    /// <summary>
+    /// The issuer to use when creating and validating tokens
+    /// </summary>
     public string Issuer { get; set; } = "http://elsa.api";
+    
+    /// <summary>
+    /// The audience to use when creating and validating tokens
+    /// </summary>
     public string Audience { get; set; } = "http://elsa.api";
+    
+    /// <summary>
+    /// The lifetime of access tokens
+    /// </summary>
     public TimeSpan AccessTokenLifetime { get; set; } = TimeSpan.FromHours(1);
+    
+    /// <summary>
+    /// The lifetime of refresh tokens
+    /// </summary>
     public TimeSpan RefreshTokenLifetime { get; set; } = TimeSpan.FromHours(2);
     
+    /// <summary>
+    /// Creates a new <see cref="SecurityKey"/> from the <see cref="SigningKey"/>.
+    /// </summary>
+    /// <returns></returns>
     public SecurityKey CreateSecurityKey() => new SymmetricSecurityKey(Encoding.ASCII.GetBytes(SigningKey));
 
-    public void ConfigureJwtBearerOptions(JwtBearerOptions options) =>
+    /// <summary>
+    /// Configures the <see cref="JwtBearerOptions"/> with the values from this instance.
+    /// </summary>
+    /// <param name="options">The options to configure.</param>
+    public void ConfigureJwtBearerOptions(JwtBearerOptions options)
+    {
         options.TokenValidationParameters = new TokenValidationParameters
         {
             IssuerSigningKey = CreateSecurityKey(),
@@ -25,8 +56,9 @@ public class IdentityTokenOptions
             LifetimeValidator = ValidateLifetime,
             NameClaimType = JwtRegisteredClaimNames.Name
         };
+    }
 
-    private bool ValidateLifetime(DateTime? notBefore, DateTime? expires, SecurityToken securityToken, TokenValidationParameters validationParameters)
+    private static bool ValidateLifetime(DateTime? notBefore, DateTime? expires, SecurityToken securityToken, TokenValidationParameters validationParameters)
     {
         return expires != null && expires > DateTime.UtcNow;
     }
@@ -41,14 +73,5 @@ public class IdentityTokenOptions
         audience = Audience;
         accessTokenLifetime = AccessTokenLifetime;
         refreshTokenLifetime = RefreshTokenLifetime;
-    }
-
-    internal void CopyFrom(IdentityTokenOptions identityOptions)
-    {
-        SigningKey = identityOptions.SigningKey;
-        Audience = identityOptions.Audience;
-        Issuer = identityOptions.Issuer;
-        AccessTokenLifetime = identityOptions.AccessTokenLifetime;
-        RefreshTokenLifetime = identityOptions.RefreshTokenLifetime;
     }
 }

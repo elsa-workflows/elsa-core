@@ -34,7 +34,12 @@ public class OutputJsonConverter<T> : JsonConverter<Output<T>?>
         if (!memoryReferenceElement.TryGetProperty("id", out var memoryReferenceIdElement))
             return default;
 
-        var variable = new Variable(memoryReferenceIdElement.GetString()!);
+        var variable = new Variable
+        {
+            Id = memoryReferenceIdElement.GetString()!
+        };
+        variable.Name = variable.Id;
+        
         return (Output<T>)Activator.CreateInstance(typeof(Output<T>), variable)!;
     }
 

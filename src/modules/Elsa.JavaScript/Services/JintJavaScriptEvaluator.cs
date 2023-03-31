@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
-using Elsa.Expressions.Contracts;
+using System.Text.RegularExpressions;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.JavaScript.Contracts;
@@ -8,9 +8,6 @@ using Elsa.JavaScript.Notifications;
 using Elsa.JavaScript.Options;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Management.Activities;
-using Elsa.Workflows.Management.Contracts;
-using Elsa.Workflows.Management.Extensions;
 using Humanizer;
 using Jint;
 using Microsoft.Extensions.Options;
@@ -25,18 +22,14 @@ namespace Elsa.JavaScript.Services;
 public class JintJavaScriptEvaluator : IJavaScriptEvaluator
 {
     private readonly IEventPublisher _mediator;
-    private readonly IActivityRegistry _activityRegistry;
-    private readonly IExpressionEvaluator _expressionEvaluator;
     private readonly JintOptions _jintOptions;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public JintJavaScriptEvaluator(IEventPublisher mediator, IActivityRegistry activityRegistry, IExpressionEvaluator expressionEvaluator, IOptions<JintOptions> scriptOptions)
+    public JintJavaScriptEvaluator(IEventPublisher mediator, IOptions<JintOptions> scriptOptions)
     {
         _mediator = mediator;
-        _activityRegistry = activityRegistry;
-        _expressionEvaluator = expressionEvaluator;
         _jintOptions = scriptOptions.Value;
     }
 
@@ -68,18 +61,20 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         engine.SetValue("setCorrelationId", (Action<string?>)(value => context.GetActivityExecutionContext().WorkflowExecutionContext.CorrelationId = value));
         engine.SetValue("getCorrelationId", (Func<string?>)(() => context.GetActivityExecutionContext().WorkflowExecutionContext.CorrelationId));
         engine.SetValue("setCorrelationId", (Action<string?>)(value => context.GetActivityExecutionContext().WorkflowExecutionContext.CorrelationId = value));
-        engine.SetValue("setVariable", (Action<string, object>)((name, value) => context.SetVariable(name, value)));
-        engine.SetValue("getVariable", (Func<string, object?>)(name => context.GetVariable(name)));
+        engine.SetValue("setVariable", (Action<string, object>)((id, value) => context.SetVariable(id, value)));
+        engine.SetValue("getVariable", (Func<string, object?>)(id => context.GetVariable(id)));
         engine.SetValue("getInput", (Func<string, object?>)(name => context.GetWorkflowExecutionContext().Input.GetValue(name)));
 
-        // Create variable & input setters and getters for each variable.
-        CreateMemoryBlockAccessors(engine, context);
-        
+        // Create variable getters and setters for each variable.
+        CreateVariableAccessors(engine, context);
 
         engine.SetValue("isNullOrWhiteSpace", (Func<string, bool>)(value => string.IsNullOrWhiteSpace(value)));
         engine.SetValue("isNullOrEmpty", (Func<string, bool>)(value => string.IsNullOrEmpty(value)));
         engine.SetValue("parseGuid", (Func<string, Guid>)(value => Guid.Parse(value)));
         engine.SetValue("toJson", (Func<object, string>)(value => Serialize(value)));
+        engine.SetValue("getShortGuid", (Func<string, string>)(value => Regex.Replace(Convert.ToBase64String(Guid.NewGuid().ToByteArray()), "[/+=]", "")));
+        engine.SetValue("getGuid", (Func<string, Guid>)(value => Guid.NewGuid()));
+        engine.SetValue("getGuidString", (Func<string, string>)(value => Guid.NewGuid().ToString()));
 
         // Add common .NET types.
         engine.RegisterType<DateTime>();
@@ -93,18 +88,64 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         return engine;
     }
 
-    private static void CreateMemoryBlockAccessors(Engine engine, ExpressionExecutionContext context)
+    private static void CreateVariableAccessors(Engine engine, ExpressionExecutionContext context)
     {
-        var variablesDictionary = context.ReadAndFlattenMemoryBlocks();
+        var variableNames = GetVariableNamesInScope(context).ToList();
 
-        foreach (var variable in variablesDictionary)
+        foreach (var variableName in variableNames)
         {
-            var pascalName = variable.Key.Pascalize();
-            engine.SetValue($"get{pascalName}", (Func<object?>)(() => context.GetVariable(variable.Key)));
-            engine.SetValue($"set{pascalName}", (Action<object?>)(value => context.SetVariable(variable.Key, value)));
+            var pascalName = variableName.Pascalize();
+            engine.SetValue($"get{pascalName}", (Func<object?>)(() => GetVariableInScope(context, variableName)));
+            engine.SetValue($"set{pascalName}", (Action<object?>)(value => SetVariableInScope(context, variableName, value)));
         }
     }
-    
+
+    private static IEnumerable<string> GetVariableNamesInScope(ExpressionExecutionContext context) => 
+        EnumerateVariablesInScope(context)
+            .Select(x => x.Name)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct();
+
+    private static object GetVariableInScope(ExpressionExecutionContext context, string variableName)
+    {
+        var q = from variable in EnumerateVariablesInScope(context)
+            where variable.Name == variableName
+            where variable.TryGet(context, out _)
+            select variable.Get(context);
+
+        var value = q.FirstOrDefault();
+        return value!;
+    }
+
+    private static void SetVariableInScope(ExpressionExecutionContext context, string variableName, object? value)
+    {
+        var q = from v in EnumerateVariablesInScope(context)
+            where v.Name == variableName
+            where v.TryGet(context, out _)
+            select v;
+
+        var variable = q.FirstOrDefault();
+        variable?.Set(context, value);
+    }
+
+    private static IEnumerable<Variable> EnumerateVariablesInScope(ExpressionExecutionContext context)
+    {
+        var currentScope = context;
+
+        while (currentScope != null)
+        {
+            if (!currentScope.TryGetActivityExecutionContext(out var activityExecutionContext))
+                break;
+
+            var variables = activityExecutionContext.Variables;
+
+            foreach (var variable in variables)
+                yield return variable;
+
+            currentScope = currentScope.ParentContext;
+        }
+    }
+
     private static object ExecuteExpressionAndGetResult(Engine engine, string expression)
     {
         var result = engine.Evaluate(expression);

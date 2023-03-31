@@ -1,7 +1,7 @@
 namespace Elsa.Workflows.Management.Models;
 
 /// <summary>
-/// A definition of a workflow's input.
+/// Base class for workflow input and output definitions.
 /// </summary>
 public abstract class ArgumentDefinition
 {

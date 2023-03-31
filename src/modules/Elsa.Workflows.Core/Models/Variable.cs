@@ -1,7 +1,6 @@
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Core.Models;
 
@@ -9,29 +8,26 @@ public class Variable : MemoryBlockReference
 {
     public Variable()
     {
+        Id = Guid.NewGuid().ToString("N");
     }
 
-    public Variable(string name)
+    public Variable(string id)
     {
-        Id = name;
+        Id = id;
     }
 
-    public Variable(string name, object? value = default) : this(name)
+    public Variable(string id, object? value = default) : this(id)
     {
         Value = value;
     }
 
-    public string Name
-    {
-        get => Id;
-        set => Id = value;
-    }
+    public string Name { get; set; }
     
     public object? Value { get; set; }
     
     /// <summary>
-    /// The ID of a storage driver to use for persistence.
-    /// If not driver is specified, the referenced memory block will remain in memory for as long as the expression execution context exists.
+    /// The storage driver type to use for persistence.
+    /// If no driver is specified, the referenced memory block will remain in memory for as long as the expression execution context exists.
     /// </summary>
     public Type? StorageDriverType { get; set; }
 
@@ -45,16 +41,14 @@ public class Variable<T> : Variable
     {
     }
 
-    public Variable(string name) : base(name)
-    {
-    }
-
-    public Variable(string name, T value) : base(name, value ?? default)
-    {
-    }
-    
     public Variable(T value)
     {
+        Value = value;
+    }
+    
+    public Variable(string name, T value)
+    {
+        Name = name;
         Value = value;
     }
 

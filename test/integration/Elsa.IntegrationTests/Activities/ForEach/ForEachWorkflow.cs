@@ -17,7 +17,10 @@ class ForEachWorkflow : WorkflowBase
 
     protected override void Build(IWorkflowBuilder workflow)
     {
-        var currentItem = new Variable<string>("CurrentItem");
+        var currentItem = new Variable<string>
+        {
+            Name = "CurrentItem"
+        };
 
         workflow.Root = new Sequence
         {

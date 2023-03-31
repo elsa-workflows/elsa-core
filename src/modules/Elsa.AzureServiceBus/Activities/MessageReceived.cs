@@ -111,7 +111,7 @@ public class MessageReceived : Trigger
     {
         var bodyAsString = new BinaryData(receivedMessage.Body).ToString();
         var targetType = context.Get(MessageType);
-        var formatter = Formatter.TryGet(context);
+        var formatter = Formatter.GetOrDefault(context);
         var body = formatter == null ? bodyAsString : await formatter.FromStringAsync(bodyAsString, targetType, context.CancellationToken);
 
         context.Set(TransportMessage, receivedMessage);
