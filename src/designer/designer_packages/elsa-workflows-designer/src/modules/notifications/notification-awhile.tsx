@@ -11,7 +11,7 @@ import NotificationService from "./notification-service";
 export class NotificationAwhile {
   @Prop() public notification: NotificationType;
   @Prop() public showDuration = 6000;
-  private timer: number;
+  private timer;
 
   componentDidRender() {
     this.timer = setTimeout(() => {
