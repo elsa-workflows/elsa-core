@@ -34,8 +34,4 @@
         <ProjectReference Include="..\..\common\Elsa.Features\Elsa.Features.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="wwwroot" />
-    </ItemGroup>
-
 </Project>

@@ -18,12 +18,14 @@
 </head>
 <body>
 
-<elsa-workflow-toolbar></elsa-workflow-toolbar>
-<div class="absolute inset-0" style="top: 64px;">
-    <elsa-studio server="@serverUrl" monaco-lib-path="@basePath.TrimStart('/')/_content/Elsa.Workflows.Designer/monaco-editor/min"></elsa-studio>
-    <elsa-custom-activities-manager></elsa-custom-activities-manager>
-    <elsa-notifications-manager></elsa-notifications-manager>
-</div>
+<elsa-shell>
+    <elsa-workflow-toolbar></elsa-workflow-toolbar>
+    <div class="absolute inset-0" style="top: 64px;">
+        <elsa-studio server="@serverUrl" monaco-lib-path="@basePath.TrimStart('/')/_content/Elsa.Workflows.Designer/monaco-editor/min"></elsa-studio>
+        <elsa-custom-activities-manager></elsa-custom-activities-manager>
+        <elsa-notifications-manager></elsa-notifications-manager>
+    </div>
+</elsa-shell>
 
 </body>
 </html>
