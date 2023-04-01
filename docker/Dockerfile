@@ -18,6 +18,11 @@ COPY src/. ./src
 COPY *.props ./
 RUN dotnet restore "./src/bundles/Elsa.AllInOne.Web/Elsa.AllInOne.Web.csproj"
 
+# build Elsa.Workflows.Designer npm package
+WORKDIR /source/src/modules/Elsa.Workflows.Designer
+RUN npm install
+RUN npm run build
+
 # build and publish (UseAppHost=false creates platform independent binaries)
 WORKDIR /source/src/bundles/Elsa.AllInOne.Web
 RUN dotnet build "Elsa.AllInOne.Web.csproj" -c Release -o /app/build
