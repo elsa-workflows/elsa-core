@@ -7,6 +7,7 @@ const dev = process.argv && process.argv.indexOf('--dev') > -1;
 module.exports = {
   content: ['./src/**/*.tsx', './src/**/*.ts'],
   darkMode: 'media',
+  important: 'elsa-shell',
   theme: {
     extend: {
       colors: {
