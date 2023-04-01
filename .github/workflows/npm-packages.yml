@@ -100,15 +100,17 @@ jobs:
         with:
           name: designer-npm-package
       
-      - name: Download Angular NPM Package
-        uses: actions/download-artifact@v3
-        with:
-          name: designer-angular-wrapper-npm-package
+# TODO: Figure out why this doesn't work. See https://github.com/elsa-workflows/elsa-core/actions/runs/4583379624/jobs/8094210060
       
-      - name: Download React NPM Package
-        uses: actions/download-artifact@v3
-        with:
-          name: designer-react-wrapper-npm-package
+#      - name: Download Angular NPM Package
+#        uses: actions/download-artifact@v3
+#        with:
+#          name: designer-angular-wrapper-npm-package
+#      
+#      - name: Download React NPM Package
+#        uses: actions/download-artifact@v3
+#        with:
+#          name: designer-react-wrapper-npm-package
 
       - uses: actions/setup-node@v3
         with:
