@@ -9,7 +9,7 @@
     "@elsa-workflows/elsa-workflows-designer": "3.0.3-preview.84",
     "copy-webpack-plugin": "^11.0.0",
     "cross-env": "^7.0.3",
-    "monaco-editor": "^0.34.1",
+    "monaco-editor": "^0.36.1",
     "webpack": "^5.75.0",
     "webpack-cli": "^5.0.1"
   }
