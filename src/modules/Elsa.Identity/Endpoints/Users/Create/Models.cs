@@ -1,5 +1,3 @@
-using Elsa.Identity.Models;
-
 namespace Elsa.Identity.Endpoints.Users.Create;
 
 internal class Request

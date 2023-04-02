@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
-using System.Reflection;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;

@@ -1,5 +1,3 @@
-using Elsa.Workflows.Core.Serialization.Converters;
-
 namespace Elsa.Workflows.Core.Attributes;
 
 /// <summary>
