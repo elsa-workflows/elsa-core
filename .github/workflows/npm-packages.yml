@@ -118,13 +118,13 @@ jobs:
           node-version: 18.12.1
           registry-url: 'https://f.feedz.io/elsa-workflows/elsa-3/npm/'
 
-      - run: npm publish designer-package/*.tgz
+      - run: npm publish ./designer-package/*.tgz
         env:
           NODE_AUTH_TOKEN: ${{ secrets.FEEDZ_IO_NPM }}
-      - run: npm publish designer-angular-wrapper/*.tgz
+      - run: npm publish ./designer-angular-wrapper/*.tgz
         env:
           NODE_AUTH_TOKEN: ${{ secrets.FEEDZ_IO_NPM }}
-      - run: npm publish designer-react-wrapper/*.tgz
+      - run: npm publish ./designer-react-wrapper/*.tgz
         env:
           NODE_AUTH_TOKEN: ${{ secrets.FEEDZ_IO_NPM }}
 
