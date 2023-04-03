@@ -3,6 +3,7 @@ using Elsa.Workflows.Core.Abstractions;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Management.Activities.SetOutput;
 using Elsa.Workflows.Management.Activities.SetWorkflowOutput;
 
 namespace Elsa.IntegrationTests.Scenarios.CompositesPassingData;
@@ -10,17 +11,14 @@ namespace Elsa.IntegrationTests.Scenarios.CompositesPassingData;
 /// <summary>
 /// A composite activity that adds text to a string
 /// </summary>
-public class AddTextSubWorkflow : Composite<string>
+public class AddTextSubWorkflow : Composite
 {
-    private readonly SetWorkflowOutput _setOutput;
-
     public Input<string> A { get; set; } = default!;
-
     public Output<string> B { get; set; } = default!;
 
     public AddTextSubWorkflow()
     {
-        _setOutput = new SetWorkflowOutput()
+        var setOutput = new SetOutput()
         {
             OutputName = new Input<string>("B"),
             OutputValue = new Input<object?>(context => "hi there " + A.Get(context))
@@ -30,15 +28,10 @@ public class AddTextSubWorkflow : Composite<string>
         {
             Activities =
             {
-                _setOutput
+                setOutput
             }
         };
 
-    }
-
-    protected override void OnCompleted(ActivityExecutionContext context, ActivityExecutionContext childContext)
-    {
-       // context.Set(B, "hi there " + A.Get(context));
     }
 }
 
@@ -51,10 +44,10 @@ public class AddTextMainWorkflow : WorkflowBase
     {
         var outVariable = new Variable<string>("out", "test");
 
-        var subworkflow = new AddTextSubWorkflow()
+        var subWorkflow = new AddTextSubWorkflow()
         {
             A = new("obi wan"),
-            B = new Output<string>(outVariable)
+            B = new (outVariable)
         };
 
         workflow.Variables.Add(outVariable);
@@ -63,7 +56,7 @@ public class AddTextMainWorkflow : WorkflowBase
         {
             Activities =
             {
-                subworkflow,
+                subWorkflow,
                 new WriteLine(context => outVariable.Get(context))
              }
         };

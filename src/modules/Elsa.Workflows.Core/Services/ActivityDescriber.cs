@@ -116,6 +116,7 @@ public class ActivityDescriber : IActivityDescriber
             (outputAttribute?.Name ?? propertyInfo.Name).Pascalize(),
             outputAttribute?.DisplayName ?? propertyInfo.Name.Humanize(LetterCasing.Title),
             wrappedPropertyType,
+            propertyInfo.GetValue,
             descriptionAttribute?.Description ?? outputAttribute?.Description,
             outputAttribute?.IsBrowsable ?? true
         );

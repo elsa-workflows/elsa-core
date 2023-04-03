@@ -106,7 +106,7 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
             {
                 Type = nakedType,
                 IsWrapped = true,
-                ValueAccessor = activity => ((WorkflowDefinitionActivity)activity).SyntheticProperties.GetValueOrDefault(inputDefinition.Name),
+                ValueGetter = activity => ((WorkflowDefinitionActivity)activity).SyntheticProperties.GetValueOrDefault(inputDefinition.Name),
                 Name = inputDefinition.Name,
                 DisplayName = inputDefinition.DisplayName,
                 Description = inputDefinition.Description,
@@ -129,6 +129,7 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
             return new OutputDescriptor
             {
                 Type = nakedType,
+                ValueGetter = activity => ((WorkflowDefinitionActivity)activity).SyntheticProperties.GetValueOrDefault(outputDefinition.Name),
                 Name = outputDefinition.Name,
                 DisplayName = outputDefinition.DisplayName,
                 Description = outputDefinition.Description,

@@ -23,7 +23,7 @@ public static class ActivityDescriptorExtensions
     public static IDictionary<string, Input?> GetWrappedInputProperties(this ActivityDescriptor activityDescriptor, IActivity activity)
     {
         var wrappedInputDescriptors = activityDescriptor.Inputs.Where(x => x.IsWrapped).ToList();
-        var inputLookup = wrappedInputDescriptors.ToDictionary(x => x.Name, x => (Input?)x.ValueAccessor(activity));
+        var inputLookup = wrappedInputDescriptors.ToDictionary(x => x.Name, x => (Input?)x.ValueGetter(activity));
         return inputLookup;
     }
     
@@ -33,6 +33,6 @@ public static class ActivityDescriptorExtensions
     public static Input? GetWrappedInputProperty(this ActivityDescriptor activityDescriptor, IActivity activity, string name)
     {
         var inputDescriptor = activityDescriptor.Inputs.FirstOrDefault(x => x.Name == name && x.IsWrapped);
-        return inputDescriptor?.ValueAccessor(activity) as Input;
+        return inputDescriptor?.ValueGetter(activity) as Input;
     }
 }
