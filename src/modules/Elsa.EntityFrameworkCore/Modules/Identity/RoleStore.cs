@@ -1,6 +1,5 @@
 using System.Text.Json;
 using Elsa.EntityFrameworkCore.Common;
-using Elsa.Extensions;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
 using Elsa.Identity.Models;

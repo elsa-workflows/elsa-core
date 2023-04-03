@@ -8,12 +8,15 @@ public class ElsaClient : IElsaClient
     /// <summary>
     /// Initializes a new instance of the <see cref="ElsaClient"/> class.
     /// </summary>
-    /// <param name="workflowDefinitionsApi">The workflow definitions API.</param>
-    public ElsaClient(IWorkflowDefinitionsApi workflowDefinitionsApi)
+    public ElsaClient(IWorkflowDefinitionsApi workflowDefinitions, IWorkflowInstancesApi workflowInstances)
     {
-        WorkflowDefinitions = workflowDefinitionsApi;
+        WorkflowDefinitions = workflowDefinitions;
+        WorkflowInstances = workflowInstances;
     }
 
     /// <inheritdoc />
     public IWorkflowDefinitionsApi WorkflowDefinitions { get; }
+
+    /// <inheritdoc />
+    public IWorkflowInstancesApi WorkflowInstances { get; }
 }

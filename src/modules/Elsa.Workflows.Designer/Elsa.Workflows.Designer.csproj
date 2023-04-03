@@ -12,36 +12,6 @@
         <StaticWebAssetsEnabled>true</StaticWebAssetsEnabled>
         <ContentTargetFolders>staticwebassets</ContentTargetFolders>
     </PropertyGroup>
-    
-    <!--
-      1. Install npm packages
-      "Inputs" and "Outputs" are used for incremental builds. If all output items are up-to-date, MSBuild skips the target.
-      The first time the task is executed. Then, it only runs when you change the package.json file.
-      Documentation: https://learn.microsoft.com/en-us/visualstudio/msbuild/incremental-builds?WT.mc_id=DT-MVP-5003978
-   -->
-    <Target Name="NpmInstall" Inputs="package.json" Outputs="node_modules/.install-stamp">
-        <!--
-            Use npm install or npm ci depending on RestorePackagesWithLockFile value.
-            Uncomment the following lines if you want to use this feature:
-    -->
-        <PropertyGroup>
-            <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
-        </PropertyGroup>
-
-        <Exec Command="npm ci" Condition="'$(RestorePackagesWithLockFile)' == 'true'" />
-        <Exec Command="npm install" Condition="'$(RestorePackagesWithLockFile)' != 'true'" />
-
-        <!-- Write the stamp file, so incremental builds work -->
-        <Touch Files="node_modules/.install-stamp" AlwaysCreate="true" />
-    </Target>
-
-    <!--
-        2. Run npm run build before building the .NET project.
-        MSBuild runs NpmInstall before this task because of the DependsOnTargets attribute.
-     -->
-    <Target Name="NpmRunBuild" DependsOnTargets="NpmInstall" BeforeTargets="BeforeBuild">
-        <Exec Command="npm run build:release" />
-    </Target>
 
     <ItemGroup>
         <SupportedPlatform Include="browser" />
@@ -62,10 +32,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\common\Elsa.Features\Elsa.Features.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="wwwroot" />
     </ItemGroup>
 
 </Project>

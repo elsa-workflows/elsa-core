@@ -121,14 +121,14 @@ export declare interface ElsaActivityPropertiesEditor extends Components.ElsaAct
 
 
 @ProxyCmp({
-  inputs: ['notification']
+  inputs: ['notification', 'showDuration']
 })
 @Component({
   selector: 'elsa-awhile-notifications',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: '<ng-content></ng-content>',
   // eslint-disable-next-line @angular-eslint/no-inputs-metadata-property
-  inputs: ['notification'],
+  inputs: ['notification', 'showDuration'],
 })
 export class ElsaAwhileNotifications {
   protected el: HTMLElement;
@@ -763,6 +763,28 @@ export declare interface ElsaMultiTextInput extends Components.ElsaMultiTextInpu
 
 
 @ProxyCmp({
+  inputs: ['notification']
+})
+@Component({
+  selector: 'elsa-notification-template',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: '<ng-content></ng-content>',
+  // eslint-disable-next-line @angular-eslint/no-inputs-metadata-property
+  inputs: ['notification'],
+})
+export class ElsaNotificationTemplate {
+  protected el: HTMLElement;
+  constructor(c: ChangeDetectorRef, r: ElementRef, protected z: NgZone) {
+    c.detach();
+    this.el = r.nativeElement;
+  }
+}
+
+
+export declare interface ElsaNotificationTemplate extends Components.ElsaNotificationTemplate {}
+
+
+@ProxyCmp({
   inputs: ['modalState']
 })
 @Component({
@@ -1021,6 +1043,27 @@ export declare interface ElsaSwitchEditor extends Components.ElsaSwitchEditor {}
 
 
 @ProxyCmp({
+})
+@Component({
+  selector: 'elsa-toast-manager',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: '<ng-content></ng-content>',
+  // eslint-disable-next-line @angular-eslint/no-inputs-metadata-property
+  inputs: [],
+})
+export class ElsaToastManager {
+  protected el: HTMLElement;
+  constructor(c: ChangeDetectorRef, r: ElementRef, protected z: NgZone) {
+    c.detach();
+    this.el = r.nativeElement;
+  }
+}
+
+
+export declare interface ElsaToastManager extends Components.ElsaToastManager {}
+
+
+@ProxyCmp({
   inputs: ['tooltipContent', 'tooltipPosition']
 })
 @Component({
@@ -1094,14 +1137,14 @@ export declare interface ElsaVariableEditorDialogContent extends Components.Elsa
 
 
 @ProxyCmp({
-  inputs: ['inputContext']
+  inputs: ['inputContext', 'workflowDefinition']
 })
 @Component({
   selector: 'elsa-variable-picker-input',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: '<ng-content></ng-content>',
   // eslint-disable-next-line @angular-eslint/no-inputs-metadata-property
-  inputs: ['inputContext'],
+  inputs: ['inputContext', 'workflowDefinition'],
 })
 export class ElsaVariablePickerInput {
   protected el: HTMLElement;

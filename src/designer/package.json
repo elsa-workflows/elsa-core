@@ -2,7 +2,8 @@
   "name": "root",
   "private": true,
   "workspaces": [
-    "designer_packages/*"
+    "designer_packages/*",
+    "designer_packages/react-workspace/*"
   ],
   "devDependencies": {
     "@types/node": "^18.15.3",
