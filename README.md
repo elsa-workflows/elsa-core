@@ -1,5 +1,11 @@
 # Elsa Workflows
 
+<a href="https://elsa-workflows.github.io/elsa-core/tree/v3">
+  <p align="center">
+    <img src="./artwork/android-elsa-portrait.png" alt="Elsa">
+  </p>
+</a>
+
 [![Nuget](https://img.shields.io/nuget/v/elsa)](https://www.nuget.org/packages/Elsa/)
 [![Build status](https://github.com/elsa-workflows/elsa-core/actions/workflows/ci.yml/badge.svg?branch=v3)](https://github.com/elsa-workflows/elsa-core/actions/workflows/ci.yml)
 [![Discord](https://img.shields.io/discord/814605913783795763?label=chat&logo=discord)](https://discord.gg/hhChk5H472)
