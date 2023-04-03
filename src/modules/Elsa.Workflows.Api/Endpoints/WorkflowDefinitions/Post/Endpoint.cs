@@ -10,7 +10,9 @@ using JetBrains.Annotations;
 using Medallion.Threading;
 using System.Text.Json;
 using Elsa.Workflows.Api.Mappers;
+using Elsa.Workflows.Core.Serialization.Converters;
 using Elsa.Workflows.Management.Contracts;
+using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Post;
 
@@ -46,7 +48,7 @@ internal class Post : ElsaEndpoint<WorkflowDefinitionRequest, WorkflowDefinition
         var resourceName = $"{GetType().FullName}:{(!string.IsNullOrWhiteSpace(definitionId) ? definitionId : Guid.NewGuid().ToString())}";
 
         await using var handle = await _distributedLockProvider.AcquireLockAsync(resourceName, TimeSpan.FromMinutes(1), cancellationToken);
-        
+
         var draft = !string.IsNullOrWhiteSpace(definitionId)
             ? await _workflowDefinitionPublisher.GetDraftAsync(definitionId, VersionOptions.Latest, cancellationToken)
             : default;
@@ -89,6 +91,12 @@ internal class Post : ElsaEndpoint<WorkflowDefinitionRequest, WorkflowDefinition
         if (isNew)
             await SendCreatedAtAsync<Get.Get>(new { definitionId }, response, cancellation: cancellationToken);
         else
-            await SendOkAsync(response, cancellationToken);
+        {
+            // We do not want to include composite root activities in the response.
+            var apiSerializerOptions = _serializerOptionsProvider.CreateApiOptions();
+            apiSerializerOptions.Converters.Add(new JsonIgnoreCompositeRootConverterFactory());
+
+            await HttpContext.Response.WriteAsJsonAsync(response, serializerOptions, cancellationToken);
+        }
     }
 }
