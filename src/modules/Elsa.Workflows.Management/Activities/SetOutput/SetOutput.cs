@@ -1,25 +1,23 @@
-using System.ComponentModel;
 using Elsa.Extensions;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.Management.Activities.SetWorkflowOutput;
+namespace Elsa.Workflows.Management.Activities.SetOutput;
 
 /// <summary>
 /// Assigns a given value to a workflow definition's output.
 /// </summary>
-[Activity("Elsa", "Obsolete", "[OBSOLETE] Assigns a given value to a workflow definition's output.", Kind = ActivityKind.Action)]
+[Activity("Elsa", "Composition", "Assigns a given value to a the container's output.", Kind = ActivityKind.Action)]
 [PublicAPI]
-[Obsolete("Use the SetOutput activity instead.")]
-[Browsable(false)]
-public class SetWorkflowOutput : CodeActivity
+public class SetOutput : CodeActivity
 {
     /// <summary>
     /// The name of the output to assign.
     /// </summary>
     [Input(
+        DisplayName = "Output",
         Description = "The output to assign.",
         UIHint = InputUIHints.OutputPicker
     )]
@@ -32,7 +30,7 @@ public class SetWorkflowOutput : CodeActivity
     public Input<object?> OutputValue { get; set; } = default!;
 
     /// <inheritdoc />
-    protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
+    protected override void Execute(ActivityExecutionContext context)
     {
         var outputName = OutputName.Get(context);
         var ancestorContext = context.GetAncestors().FirstOrDefault(x => x.ActivityDescriptor.Outputs.Any(y => y.Name == outputName));
