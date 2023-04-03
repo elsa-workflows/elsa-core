@@ -99,23 +99,32 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: designer-npm-package
+          path: designer-package
       
       - name: Download Angular NPM Package
         uses: actions/download-artifact@v3
         with:
           name: designer-angular-wrapper-npm-package
+          path: designer-angular-wrapper
       
       - name: Download React NPM Package
         uses: actions/download-artifact@v3
         with:
           name: designer-react-wrapper-npm-package
+          path: designer-react-wrapper
 
       - uses: actions/setup-node@v3
         with:
           node-version: 18.12.1
           registry-url: 'https://f.feedz.io/elsa-workflows/elsa-3/npm/'
 
-      - run: npm publish *.tgz
+      - run: npm publish designer-package/*.tgz
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.FEEDZ_IO_NPM }}
+      - run: npm publish designer-angular-wrapper/*.tgz
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.FEEDZ_IO_NPM }}
+      - run: npm publish designer-react-wrapper/*.tgz
         env:
           NODE_AUTH_TOKEN: ${{ secrets.FEEDZ_IO_NPM }}
 
