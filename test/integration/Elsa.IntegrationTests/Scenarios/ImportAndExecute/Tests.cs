@@ -1,4 +1,5 @@
-﻿using Elsa.Common.Models;
+﻿using System;
+using Elsa.Common.Models;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Activities.Flowchart.Activities;
@@ -16,6 +17,8 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Elsa.Expressions.Contracts;
+using Elsa.Workflows.Api.Models;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -28,55 +31,65 @@ public class Tests
     private readonly SerializerOptionsProvider _serializerOptionsProvider;
     private readonly IWorkflowRuntime _workflowRuntime;
     private readonly IActivityRegistry _activityRegistry;
-    private readonly IWorkflowDefinitionService _workflowDefinitionService;
+    private readonly IExpressionSyntaxRegistry _expressionSyntaxRegistry;
+    private readonly IEnumerable<IExpressionSyntaxProvider> _expressionSyntaxProviders;
 
     public Tests(ITestOutputHelper testOutputHelper)
     {
         var services = new TestApplicationBuilder(testOutputHelper)
             .WithCapturingTextWriter(_capturingTextWriter)
+            .ConfigureElsa(elsa => elsa.UseWorkflowsApi())
             .Build();
         _workflowDefinitionPublisher = services.GetRequiredService<IWorkflowDefinitionPublisher>();
         _serializerOptionsProvider = services.GetRequiredService<SerializerOptionsProvider>();
         _workflowRuntime = services.GetRequiredService<IWorkflowRuntime>();
         _activityRegistry = services.GetRequiredService<IActivityRegistry>();
-        _workflowDefinitionService = services.GetRequiredService<IWorkflowDefinitionService>();
+        _expressionSyntaxRegistry = services.GetRequiredService<IExpressionSyntaxRegistry>();
+        _expressionSyntaxProviders = services.GetServices<IExpressionSyntaxProvider>();
     }
 
     [Fact(DisplayName = "Workflow imported from file should execute successfully.")]
     public async Task Test1()
     {
-        // Prereq
+        // Register activities.
         await _activityRegistry.RegisterAsync(typeof(Workflow));
         await _activityRegistry.RegisterAsync(typeof(Flowchart));
         await _activityRegistry.RegisterAsync(typeof(WriteLine));
+        
+        // Register expression syntaxes.
+        foreach (var syntaxProvider in _expressionSyntaxProviders)
+        {
+            var syntaxes = await syntaxProvider.GetDescriptorsAsync();
+            _expressionSyntaxRegistry.AddMany(syntaxes);    
+        }
+        
+        // Import workflow.
+        var fileName = @"Scenarios/ImportAndExecute/workflow.json";
+        await using var openStream = File.OpenRead(fileName);
+        var options = _serializerOptionsProvider.CreateApiOptions();
+        var workflowDefinitionRequest = (await JsonSerializer.DeserializeAsync<WorkflowDefinitionRequest>(openStream, options))!;
+        
+        var workflowDefinition = new WorkflowDefinition
+        {
+            MaterializerName = JsonWorkflowMaterializer.MaterializerName,
+            StringData = JsonSerializer.Serialize(workflowDefinitionRequest.Root, options),
+            IsLatest = true,
+            IsPublished = false,
+            Id = Guid.NewGuid().ToString("N"),
+            DefinitionId = workflowDefinitionRequest.DefinitionId!,
+            Version = 1
+        };
 
-        // Import
-        string fileName = @"Scenarios/ImportAndExecute/workflow.json";
-        using FileStream openStream = File.OpenRead(fileName);
+        // Publish.
+        await _workflowDefinitionPublisher.PublishAsync(workflowDefinition);
 
-        var options = _serializerOptionsProvider.CreatePersistenceOptions();
-        var workflowDefinition = await JsonSerializer.DeserializeAsync<ExportedWorkflowDefinition>(openStream, options);
-        workflowDefinition!.MaterializerName = JsonWorkflowMaterializer.MaterializerName;
-        workflowDefinition.StringData = workflowDefinition.Root.RootElement.ToString();
-
-        // Publish
-        var publishedWorkflowDefinition = await _workflowDefinitionPublisher.PublishAsync(workflowDefinition);
-
-        var materializedWorkflow =
-            await _workflowDefinitionService.MaterializeWorkflowAsync(publishedWorkflowDefinition);
-
-        // Execute
+        // Execute.
         var startWorkflowOptions = new StartWorkflowRuntimeOptions(null, new Dictionary<string, object>(), VersionOptions.Published);
-        var result = _workflowRuntime.StartWorkflowAsync(workflowDefinition.DefinitionId, startWorkflowOptions);
+        await _workflowRuntime.StartWorkflowAsync(workflowDefinition.DefinitionId, startWorkflowOptions);
 
-        // Assert
+        // Assert.
         var lines = _capturingTextWriter.Lines.ToList();
 
-        Assert.Equal(new[] { "Dummy text" }, lines);
-    }
-
-    class ExportedWorkflowDefinition : WorkflowDefinition
-    {
-        public JsonDocument Root { get; set; }
+        Assert.Equal(new[] { "Dummy Text" }, lines);
     }
 }

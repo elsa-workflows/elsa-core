@@ -23,6 +23,7 @@
     <ItemGroup>
       <ProjectReference Include="..\..\..\src\common\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj" />
       <ProjectReference Include="..\..\..\src\modules\Elsa.JavaScript\Elsa.JavaScript.csproj" />
+      <ProjectReference Include="..\..\..\src\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj" />
       <ProjectReference Include="..\..\..\src\modules\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
     </ItemGroup>
 
