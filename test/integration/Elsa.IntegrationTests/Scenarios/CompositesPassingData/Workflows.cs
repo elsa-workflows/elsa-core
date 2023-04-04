@@ -4,7 +4,6 @@ using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Activities.SetOutput;
-using Elsa.Workflows.Management.Activities.SetWorkflowOutput;
 
 namespace Elsa.IntegrationTests.Scenarios.CompositesPassingData;
 
@@ -31,7 +30,6 @@ public class AddTextSubWorkflow : Composite
                 setOutput
             }
         };
-
     }
 }
 
