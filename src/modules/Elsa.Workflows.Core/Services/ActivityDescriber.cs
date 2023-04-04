@@ -64,7 +64,7 @@ public class ActivityDescriber : IActivityDescriber
             Name = x,
             DisplayName = x
         }).ToDictionary(x => x.Name) ?? new Dictionary<string, Port>();
-
+        
         var allPorts = embeddedPorts.Concat(flowPorts.Values);
         var inputProperties = GetInputProperties(activityType).ToList();
         var outputProperties = GetOutputProperties(activityType).ToList();
@@ -94,10 +94,12 @@ public class ActivityDescriber : IActivityDescriber
         
         return ValueTask.FromResult(descriptor);
     }
-    
+
+    /// <inheritdoc />
     public IEnumerable<PropertyInfo> GetInputProperties([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type activityType) => 
         activityType.GetProperties().Where(x => typeof(Input).IsAssignableFrom(x.PropertyType) || x.GetCustomAttribute<InputAttribute>() != null).DistinctBy(x => x.Name);
-    
+
+    /// <inheritdoc />
     public IEnumerable<PropertyInfo> GetOutputProperties([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type activityType) => 
         activityType.GetProperties().Where(x => typeof(Output).IsAssignableFrom(x.PropertyType)).DistinctBy(x => x.Name).ToList();
 
@@ -114,6 +116,7 @@ public class ActivityDescriber : IActivityDescriber
             (outputAttribute?.Name ?? propertyInfo.Name).Pascalize(),
             outputAttribute?.DisplayName ?? propertyInfo.Name.Humanize(LetterCasing.Title),
             wrappedPropertyType,
+            propertyInfo.GetValue,
             descriptionAttribute?.Description ?? outputAttribute?.Description,
             outputAttribute?.IsBrowsable ?? true
         );

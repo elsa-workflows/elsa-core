@@ -58,12 +58,15 @@ export class ActivityNodeShape extends Shape.HTML {
       return;
 
     const wrapper = document.createElement('div');
-    wrapper.className = 'w-full flex items-center pl-10 pr-2 py-2 absolute';
+    wrapper.className = 'inline-block flex items-center pl-10 pr-2 py-2 absolute';
     wrapper.style.left = '-1000px';
     wrapper.style.top = '-1000px';
     wrapper.innerHTML = this.createHtml();
 
-    document.body.append(wrapper);
+    // Append the temporary element to the DOM.
+    // Important: this needs to be a child of the elsa-shell element, otherwise the tailwind CSS classes will not be applied due to the "important" rule in tailwind.config.js.
+    const elsaStudioShell = document.getElementsByTagName('elsa-shell')[0];
+    elsaStudioShell.append(wrapper);
 
     // Wait for activity element to be completely rendered.
     // When using custom elements, they are rendered after they are mounted. Before then, they have a 0 width and height.

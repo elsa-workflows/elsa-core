@@ -1,0 +1,43 @@
+{
+  "name": "@elsa-workflows/elsa-workflows-designer-react-wrapper",
+  "version": "3.0.0",
+  "description": "React wrapper for Elsa Designer",
+  "author": "Jérémie DEVILLARD <jdevillard@users.noreply.github.com>",
+  "homepage": "https://github.com/elsa-workflows/elsa-core#readme",
+  "license": "ISC",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/types/index.d.ts",
+  "directories": {
+    "lib": "lib",
+    "test": "__tests__"
+  },
+  "files": [
+    "lib",
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@elsa-workflows/elsa-workflows-designer": "*"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/elsa-workflows/elsa-core.git"
+  },
+  "scripts": {
+    "test": "node ./__tests__/react-wrapper.test.js",
+    "build": "npm run tsc",
+    "tsc": "tsc -p ."
+  },
+  "bugs": {
+    "url": "https://github.com/elsa-workflows/elsa-core/issues"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.30",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "typescript": "^5.0.2"
+  }
+}

@@ -58,11 +58,35 @@ jobs:
         run: npm pack
         if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
 
+      - name: Pack Angular Wrapper
+        working-directory: ./src/designer/designer_packages/angular-workspace/projects/component-library
+        run: npm pack
+        if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
+      
+      - name: Pack React Wrapper
+        working-directory: ./src/designer/designer_packages/react-workspace/react-wrapper
+        run: npm pack
+        if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
+
       - name: Upload Designer Artifact
         uses: actions/upload-artifact@v3
         with:
           name: designer-npm-package
           path: src/designer/designer_packages/elsa-workflows-designer/elsa-*.tgz
+        if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
+      
+      - name: Upload Angular Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: designer-angular-wrapper-npm-package
+          path: src/designer/designer_packages/angular-workspace/projects/component-library/elsa-*.tgz
+        if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
+      
+      - name: Upload React Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: designer-react-wrapper-npm-package
+          path: src/designer/designer_packages/react-workspace/react-wrapper/elsa-*.tgz
         if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
       
   publish_npm_preview:
@@ -75,13 +99,32 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: designer-npm-package
+          path: designer-package
+      
+      - name: Download Angular NPM Package
+        uses: actions/download-artifact@v3
+        with:
+          name: designer-angular-wrapper-npm-package
+          path: designer-angular-wrapper
+      
+      - name: Download React NPM Package
+        uses: actions/download-artifact@v3
+        with:
+          name: designer-react-wrapper-npm-package
+          path: designer-react-wrapper
 
       - uses: actions/setup-node@v3
         with:
           node-version: 18.12.1
           registry-url: 'https://f.feedz.io/elsa-workflows/elsa-3/npm/'
 
-      - run: npm publish *.tgz
+      - run: npm publish ./designer-package/*.tgz
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.FEEDZ_IO_NPM }}
+      - run: npm publish ./designer-angular-wrapper/*.tgz
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.FEEDZ_IO_NPM }}
+      - run: npm publish ./designer-react-wrapper/*.tgz
         env:
           NODE_AUTH_TOKEN: ${{ secrets.FEEDZ_IO_NPM }}
 
@@ -95,6 +138,16 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: designer-npm-package
+        
+      - name: Download Angular NPM Package
+        uses: actions/download-artifact@v3
+        with:
+          name: designer-angular-wrapper-npm-package
+      
+      - name: Download React NPM Package
+        uses: actions/download-artifact@v3
+        with:
+          name: designer-react-wrapper-npm-package
 
       - uses: actions/setup-node@v3
         with:
@@ -117,7 +170,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-          token: ${{ secrets.GURKAN_PAT }}
+          token: ${{ secrets.ELSA_CORE_PAT }}
 
       - name: Update designer version in package.json
         run: |
