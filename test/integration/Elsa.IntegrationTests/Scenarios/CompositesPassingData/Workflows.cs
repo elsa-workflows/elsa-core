@@ -13,7 +13,6 @@ namespace Elsa.IntegrationTests.Scenarios.CompositesPassingData;
 public class AddTextSubWorkflow : Composite
 {
     public Input<string> A { get; set; } = default!;
-
     public Output<string> B { get; set; } = default!;
 
     public AddTextSubWorkflow()
