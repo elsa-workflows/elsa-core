@@ -48,7 +48,6 @@ namespace Elsa.Activities.Kafka.Bookmarks
                         connectionString: (await context.ReadActivityPropertyAsync(x => x.ConnectionString, cancellationToken))!,
                         headers: (await context.ReadActivityPropertyAsync(x => x.Headers, cancellationToken) ?? new Dictionary<string, string>())!,
                         autoOffsetReset: Enum.Parse<Confluent.Kafka.AutoOffsetReset>(await context.ReadActivityPropertyAsync(x => x.AutoOffsetReset, cancellationToken) ?? ((int)Confluent.Kafka.AutoOffsetReset.Earliest).ToString())!,
-                        ignoreHeaders : (await context.ReadActivityPropertyAsync(x => x.IgnoreHeaders, cancellationToken))!,
                         schema: (await context.ReadActivityPropertyAsync(x => x.Schema, cancellationToken))!
                     ))
             };

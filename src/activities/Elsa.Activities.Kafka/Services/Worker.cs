@@ -94,7 +94,7 @@ namespace Elsa.Activities.Kafka.Services
             var schemaResolver = scope.ServiceProvider.GetRequiredService<ISchemaResolver>();
             var schema = await schemaResolver.ResolveSchemaForMessage(ev.Message);
 
-            var bookmark = new MessageReceivedBookmark(config.ConnectionString, config.Topic, config.Group, GetHeaders(ev.Message.Headers, config.IgnoreHeaders), config.AutoOffsetReset, schema, config.IgnoreHeaders);
+            var bookmark = new MessageReceivedBookmark(config.ConnectionString, config.Topic, config.Group, GetHeaders(ev.Message.Headers), config.AutoOffsetReset, schema);
             var launchContext = new WorkflowsQuery(ActivityType, bookmark, TenantId: tenantId);
 
             // Launch KafkaMessageReceived activity
@@ -112,12 +112,9 @@ namespace Elsa.Activities.Kafka.Services
             }
         }
 
-        private Dictionary<string, string> GetHeaders(Headers headers, bool ignoreHeaders)
+        private Dictionary<string, string> GetHeaders(Headers headers)
         {
             var result = new Dictionary<string, string>();
-            if (ignoreHeaders)
-                return result;
-
             foreach (var header in headers)
             {
                 result.Add(header.Key, Encoding.UTF8.GetString(header.GetValueBytes()));
