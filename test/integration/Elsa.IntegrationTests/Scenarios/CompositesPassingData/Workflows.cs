@@ -4,7 +4,6 @@ using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Activities.SetOutput;
-using Elsa.Workflows.Management.Activities.SetWorkflowOutput;
 
 namespace Elsa.IntegrationTests.Scenarios.CompositesPassingData;
 
@@ -13,8 +12,6 @@ namespace Elsa.IntegrationTests.Scenarios.CompositesPassingData;
 /// </summary>
 public class AddTextSubWorkflow : Composite
 {
-    private readonly SetWorkflowOutput _setOutput;
-
     public Input<string> A { get; set; } = default!;
 
     public Output<string> B { get; set; } = default!;
@@ -34,13 +31,7 @@ public class AddTextSubWorkflow : Composite
                 setOutput
             }
         };
-
     }
-
-    protected override void OnCompleted(ActivityExecutionContext context, ActivityExecutionContext childContext)
-    {
-       // context.Set(B, "hi there " + A.Get(context));
-}
 }
 
 /// <summary>
