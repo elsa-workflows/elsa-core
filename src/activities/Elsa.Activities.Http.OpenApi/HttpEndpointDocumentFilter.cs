@@ -99,7 +99,10 @@ public class HttpEndpointDocumentFilter : IDocumentFilter
             var workflowExecutionContext = await workflowExecutionContextFactory.CreateWorkflowExecutionContextAsync(workflowBlueprint, cancellationToken);
 
             foreach (var workflowTrigger in workflowTriggers)
-                yield return await GetHttpEndpointDescriptor(workflowExecutionContext, workflowTrigger, activityExecutionContextFactory);
+            {
+                if (workflowTrigger.Bookmark is HttpEndpointBookmark)
+                    yield return await GetHttpEndpointDescriptor(workflowExecutionContext, workflowTrigger, activityExecutionContextFactory);
+            }
         }
     }
 
