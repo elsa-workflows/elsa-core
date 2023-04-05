@@ -4,13 +4,13 @@ import {NotificationEventTypes} from '../../../modules/notifications/event-types
 import {EventBus} from '../../../services';
 import toolbarComponentStore from "../../../data/toolbar-component-store";
 import notificationService from '../../../modules/notifications/notification-service';
+import notificationStore from "../../../modules/notifications/notification-store";
 
 @Component({
   tag: 'elsa-workflow-toolbar',
   assetsDirs: ['assets']
 })
 export class WorkflowToolbar {
-  @State() public modalState: boolean = false;
   private readonly eventBus: EventBus;
 
   static NotificationService = notificationService;
@@ -23,11 +23,12 @@ export class WorkflowToolbar {
     e.stopPropagation();
     await this.eventBus.emit(NotificationEventTypes.Toggle, this);
     WorkflowToolbar.NotificationService.toggleNotification();
-    this.modalState = !this.modalState;
   };
 
   render() {
     const logoPath = getAssetPath('./assets/logo.png');
+    const infoPanelBoolean = notificationStore.infoPanelBoolean;
+
     return (
       <div>
         <nav class="bg-gray-800">
@@ -81,7 +82,7 @@ export class WorkflowToolbar {
           </div>
 
         </nav>
-        <elsa-notifications-manager modalState={this.modalState}></elsa-notifications-manager>
+        <elsa-notifications-manager modalState={infoPanelBoolean}></elsa-notifications-manager>
         <elsa-toast-manager></elsa-toast-manager>
       </div>
     );

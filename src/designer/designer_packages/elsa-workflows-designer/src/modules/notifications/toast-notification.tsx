@@ -4,11 +4,11 @@ import notificationStore from "./notification-store";
 import NotificationService from "./notification-service";
 
 @Component({
-  tag: 'elsa-awhile-notifications',
+  tag: 'elsa-toast-notification',
   shadow: false,
   styleUrl: '',
 })
-export class NotificationAwhile {
+export class ToastNotification {
   @Prop() public notification: NotificationType;
   @Prop() public showDuration = 6000;
   private timer;

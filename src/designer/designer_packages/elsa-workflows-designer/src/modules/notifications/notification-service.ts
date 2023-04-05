@@ -37,4 +37,18 @@ export default class NotificationService {
       notificationStore.notifications = notifications;
     }
   }
+
+  static hideAllNotifications = () => {
+    notificationStore.infoPanelBoolean = false;
+    notificationStore.notifications = notificationStore.notifications.map((notification) => {
+      if (notification.showToast !== false) {
+        return {
+          ...notification,
+          showToast: false
+        }
+      }
+
+      return notification;
+    });
+  }
 }

@@ -24,9 +24,6 @@ export class NotificationManager {
 
   static NotificationServiceLocal = NotificationService;
 
-  constructor() {
-  }
-
   deleteNotif = (id) => {
     notificationStore.notifications = notificationStore.notifications.filter(item => item.id !== id)
   }

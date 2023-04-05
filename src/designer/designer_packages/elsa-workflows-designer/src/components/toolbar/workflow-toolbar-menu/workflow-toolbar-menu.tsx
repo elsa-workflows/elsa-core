@@ -2,8 +2,9 @@ import {Component, Event, EventEmitter, Host, h, Listen, Prop, State} from '@ste
 import {leave, toggle} from 'el-transition';
 import {EventBus} from "../../../services";
 import {Container} from "typedi";
-import {ToolbarDisplayingArgs, ToolbarEventTypes, ToolbarMenu, ToolbarMenuItem} from "./models";
+import {ToolbarMenuItem} from "./models";
 import toolbarButtonMenuItemStore from "../../../data/toolbar-button-menu-item-store";
+import NotificationService from "../../../modules/notifications/notification-service";
 
 @Component({
   tag: 'elsa-workflow-toolbar-menu',
@@ -13,6 +14,7 @@ export class WorkflowToolbarMenu {
   private readonly eventBus: EventBus;
   private menu: HTMLElement;
   private element: HTMLElement;
+  private isMenuOpen = false;
 
   constructor() {
     this.eventBus = Container.get(EventBus);
@@ -20,10 +22,15 @@ export class WorkflowToolbarMenu {
 
   private closeMenu = () => {
     leave(this.menu);
+    this.isMenuOpen = false;
   };
 
   private toggleMenu = () => {
     toggle(this.menu);
+    this.isMenuOpen = !this.isMenuOpen;
+    if (this.isMenuOpen) {
+      NotificationService.hideAllNotifications();
+    }
   };
 
   render() {

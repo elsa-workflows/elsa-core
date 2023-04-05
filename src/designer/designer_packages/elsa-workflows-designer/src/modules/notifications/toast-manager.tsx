@@ -14,7 +14,7 @@ export class ToastManager {
 
     if (notification) {
       return (
-          <elsa-awhile-notifications notification={notification}></elsa-awhile-notifications>
+          <elsa-toast-notification notification={notification}></elsa-toast-notification>
       );
     } else {
       return null;

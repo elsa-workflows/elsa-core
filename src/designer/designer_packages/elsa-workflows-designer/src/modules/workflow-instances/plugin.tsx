@@ -10,6 +10,9 @@ import {WorkflowInstancesApi} from "./services/workflow-instances-api";
 import {WorkflowDefinition} from "../workflow-definitions/models/entities";
 import {h} from "@stencil/core";
 import studioComponentStore from "../../data/studio-component-store";
+import NotificationService from "../notifications/notification-service";
+import {uuid} from "@antv/x6/es/util/string/uuid";
+import {NotificationDisplayType} from "../notifications/models";
 
 @Service()
 export class WorkflowInstancesPlugin implements Plugin {
@@ -60,9 +63,30 @@ export class WorkflowInstancesPlugin implements Plugin {
     const definitionId = e.detail.definitionId;
     const instanceId = e.detail.id;
     const version = e.detail.version;
-    const workflowDefinition = await this.workflowDefinitionsApi.get({definitionId, versionOptions: {version}, includeCompositeRoot: true});
-    const workflowInstance = await this.workflowInstancesApi.get({id: instanceId});
-    this.showWorkflowInstanceViewer(workflowDefinition, workflowInstance);
-    this.modalDialogService.hide(this.workflowInstanceBrowserInstance);
+
+    await this.workflowDefinitionsApi.get({definitionId, versionOptions: {version}, includeCompositeRoot: true})
+      .then(async (workflowDefinition) => {
+        await this.workflowInstancesApi.get({id: instanceId}).then((workflowInstance) => {
+          this.showWorkflowInstanceViewer(workflowDefinition, workflowInstance);
+          this.modalDialogService.hide(this.workflowInstanceBrowserInstance);
+        }).catch(() => {
+          NotificationService.createNotification({
+            title: 'Error',
+            id: uuid(),
+            text: <div>Could not load workflow instance {instanceId} information</div>,
+            type: NotificationDisplayType.Error
+          });
+          this.modalDialogService.hide(this.workflowInstanceBrowserInstance);
+        });
+      }).catch(() => {
+        NotificationService.createNotification({
+          title: 'Error',
+          id: uuid(),
+          text: <div>Could not load workflow {definitionId} information</div>,
+          type: NotificationDisplayType.Error
+        });
+        this.modalDialogService.hide(this.workflowInstanceBrowserInstance);
+      });
+
   }
 }
