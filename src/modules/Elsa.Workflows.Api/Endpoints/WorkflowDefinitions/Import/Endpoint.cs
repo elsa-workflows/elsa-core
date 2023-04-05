@@ -9,7 +9,7 @@ namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Import;
 /// <summary>
 /// Imports a JSON file containing a workflow definition.
 /// </summary>
-internal class Import : ElsaEndpoint<WorkflowDefinitionRequest, WorkflowDefinitionResponse>
+internal class Import : ElsaEndpoint<SaveWorkflowDefinitionRequest, WorkflowDefinitionResponse>
 {
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly IWorkflowDefinitionImporter _workflowDefinitionImporter;
@@ -32,7 +32,7 @@ internal class Import : ElsaEndpoint<WorkflowDefinitionRequest, WorkflowDefiniti
     }
 
     /// <inheritdoc />
-    public override async Task HandleAsync(WorkflowDefinitionRequest request, CancellationToken cancellationToken)
+    public override async Task HandleAsync(SaveWorkflowDefinitionRequest request, CancellationToken cancellationToken)
     {
         var definitionId = request.DefinitionId;
         var isNew = string.IsNullOrWhiteSpace(definitionId);

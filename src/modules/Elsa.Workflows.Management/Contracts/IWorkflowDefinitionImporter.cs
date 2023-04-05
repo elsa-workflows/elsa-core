@@ -5,6 +5,6 @@ namespace Elsa.Workflows.Management.Contracts
 {
     public interface IWorkflowDefinitionImporter
     {
-        Task<WorkflowDefinition> ImportAsync(WorkflowDefinitionImportModel model, CancellationToken cancellationToken = default);
+        Task<WorkflowDefinition> ImportAsync(SaveWorkflowDefinitionRequest model, CancellationToken cancellationToken = default);
     }
 }

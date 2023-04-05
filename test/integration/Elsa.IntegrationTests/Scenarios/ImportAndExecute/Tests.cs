@@ -9,6 +9,7 @@ using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Runtime.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 using System.Collections.Generic;
@@ -64,7 +65,7 @@ public class Tests
         var fileName = @"Scenarios/ImportAndExecute/workflow.json";
         await using var openStream = File.OpenRead(fileName);
         var options = _serializerOptionsProvider.CreateApiOptions();
-        var workflowDefinitionRequest = (await JsonSerializer.DeserializeAsync<WorkflowDefinitionRequest>(openStream, options))!;
+        var workflowDefinitionRequest = (await JsonSerializer.DeserializeAsync<SaveWorkflowDefinitionRequest>(openStream, options))!;
 
         workflowDefinitionRequest.Publish = true;
         var workflowDefinition = await _workflowDefinitionImporter.ImportAsync(workflowDefinitionRequest);

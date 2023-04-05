@@ -3,7 +3,7 @@ using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Workflows.Management.Models
 {
-    public class WorkflowDefinitionImportModel
+    public class SaveWorkflowDefinitionRequest
     {
         public string? DefinitionId { get; set; }
         public string? Name { get; set; }

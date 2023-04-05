@@ -25,7 +25,7 @@ namespace Elsa.Workflows.Management.Services
             _variableDefinitionMapper = variableDefinitionMapper;
         }
 
-        public async Task<WorkflowDefinition> ImportAsync(WorkflowDefinitionImportModel model, CancellationToken cancellationToken = default)
+        public async Task<WorkflowDefinition> ImportAsync(SaveWorkflowDefinitionRequest model, CancellationToken cancellationToken = default)
         {
             var definitionId = model.DefinitionId;
 
