@@ -1,24 +1,21 @@
-﻿using System;
-using Elsa.Common.Models;
+﻿using Elsa.Common.Models;
+using Elsa.Expressions.Contracts;
+using Elsa.Extensions;
 using Elsa.Testing.Shared;
+using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Activities.Flowchart.Activities;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Management.Contracts;
-using Elsa.Workflows.Management.Entities;
-using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Elsa.Expressions.Contracts;
-using Elsa.Workflows.Api.Models;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -27,7 +24,7 @@ namespace Elsa.IntegrationTests.Scenarios.ImportAndExecute;
 public class Tests
 {
     private readonly CapturingTextWriter _capturingTextWriter = new();
-    private readonly IWorkflowDefinitionPublisher _workflowDefinitionPublisher;
+    private readonly IWorkflowDefinitionImporter _workflowDefinitionImporter;
     private readonly SerializerOptionsProvider _serializerOptionsProvider;
     private readonly IWorkflowRuntime _workflowRuntime;
     private readonly IActivityRegistry _activityRegistry;
@@ -40,12 +37,12 @@ public class Tests
             .WithCapturingTextWriter(_capturingTextWriter)
             .ConfigureElsa(elsa => elsa.UseWorkflowsApi())
             .Build();
-        _workflowDefinitionPublisher = services.GetRequiredService<IWorkflowDefinitionPublisher>();
         _serializerOptionsProvider = services.GetRequiredService<SerializerOptionsProvider>();
         _workflowRuntime = services.GetRequiredService<IWorkflowRuntime>();
         _activityRegistry = services.GetRequiredService<IActivityRegistry>();
         _expressionSyntaxRegistry = services.GetRequiredService<IExpressionSyntaxRegistry>();
         _expressionSyntaxProviders = services.GetServices<IExpressionSyntaxProvider>();
+        _workflowDefinitionImporter = services.GetRequiredService<IWorkflowDefinitionImporter>();
     }
 
     [Fact(DisplayName = "Workflow imported from file should execute successfully.")]
@@ -55,33 +52,22 @@ public class Tests
         await _activityRegistry.RegisterAsync(typeof(Workflow));
         await _activityRegistry.RegisterAsync(typeof(Flowchart));
         await _activityRegistry.RegisterAsync(typeof(WriteLine));
-        
+
         // Register expression syntaxes.
         foreach (var syntaxProvider in _expressionSyntaxProviders)
         {
             var syntaxes = await syntaxProvider.GetDescriptorsAsync();
-            _expressionSyntaxRegistry.AddMany(syntaxes);    
+            _expressionSyntaxRegistry.AddMany(syntaxes);
         }
-        
-        // Import workflow.
+
+        // Import and publish workflow.
         var fileName = @"Scenarios/ImportAndExecute/workflow.json";
         await using var openStream = File.OpenRead(fileName);
         var options = _serializerOptionsProvider.CreateApiOptions();
         var workflowDefinitionRequest = (await JsonSerializer.DeserializeAsync<WorkflowDefinitionRequest>(openStream, options))!;
-        
-        var workflowDefinition = new WorkflowDefinition
-        {
-            MaterializerName = JsonWorkflowMaterializer.MaterializerName,
-            StringData = JsonSerializer.Serialize(workflowDefinitionRequest.Root, options),
-            IsLatest = true,
-            IsPublished = false,
-            Id = Guid.NewGuid().ToString("N"),
-            DefinitionId = workflowDefinitionRequest.DefinitionId!,
-            Version = 1
-        };
 
-        // Publish.
-        await _workflowDefinitionPublisher.PublishAsync(workflowDefinition);
+        workflowDefinitionRequest.Publish = true;
+        var workflowDefinition = await _workflowDefinitionImporter.ImportAsync(workflowDefinitionRequest);
 
         // Execute.
         var startWorkflowOptions = new StartWorkflowRuntimeOptions(null, new Dictionary<string, object>(), VersionOptions.Published);

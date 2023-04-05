@@ -103,7 +103,7 @@ public class WorkflowManagementFeature : FeatureBase
     /// Adds the specified variable type to the system.
     /// </summary>
     public WorkflowManagementFeature AddVariableType<T>(string category) => AddVariableType(typeof(T), category);
-    
+
     /// <summary>
     /// Adds the specified variable type to the system.
     /// </summary>
@@ -138,6 +138,7 @@ public class WorkflowManagementFeature : FeatureBase
             .AddMemoryStore<WorkflowInstance, MemoryWorkflowInstanceStore>()
             .AddActivityProvider<TypedActivityProvider>()
             .AddSingleton<IWorkflowDefinitionPublisher, WorkflowDefinitionPublisher>()
+            .AddSingleton<IWorkflowDefinitionImporter, WorkflowDefinitionImporter>()
             .AddSingleton<IWorkflowDefinitionManager, WorkflowDefinitionManager>()
             .AddSingleton<IActivityRegistryPopulator, ActivityRegistryPopulator>()
             .AddSingleton<IExpressionSyntaxRegistry, ExpressionSyntaxRegistry>()
@@ -151,7 +152,7 @@ public class WorkflowManagementFeature : FeatureBase
             .AddSingleton<SerializerOptionsProvider>()
             .AddSingleton<VariableDefinitionMapper>()
             ;
-        
+
         Services.AddNotificationHandlersFrom(GetType());
 
         Services.Configure<ManagementOptions>(options =>
