@@ -1,0 +1,55 @@
+{
+  "id": "3a793167cf6948c899d2f40c3c05cf0b",
+  "definitionId": "11e2b350dae8485498c16d1ce3843829",
+  "name": "Dummy workflow",
+  "createdAt": "2023-04-04T08:35:22.841043+00:00",
+  "version": 1,
+  "variables": [],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [],
+  "metadata": {},
+  "isLatest": true,
+  "isPublished": true,
+  "root": {
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "id": "Flowchart1",
+    "metadata": {},
+    "applicationProperties": {
+      "NotFoundConnectionsKey": []
+    },
+    "start": "WriteLine1",
+    "activities": [
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Dummy Text"
+          },
+          "memoryReference": {
+            "id": "WriteLine1:input-1"
+          }
+        },
+        "id": "WriteLine1",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "canStartWorkflow": false,
+        "runAsynchronously": false,
+        "customProperties": {},
+        "source": null,
+        "line": null,
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 2256,
+              "y": 2462
+            }
+          }
+        }
+      }
+    ],
+    "connections": []
+  }
+}
