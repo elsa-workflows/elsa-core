@@ -220,7 +220,6 @@ public class WorkflowGrain : WorkflowGrainBase
     private void ApplySnapshot(Snapshot snapshot) => (_definitionId, _instanceId, _version, _workflowState, _input) = (WorkflowSnapshot)snapshot.State;
     private async Task SaveSnapshotAsync()
     {
-        
         if (_workflowState.Status == WorkflowStatus.Finished)
             // If the workflow has finished, delete all snapshots.
             await _persistence.DeleteSnapshotsAsync(_persistence.Index);

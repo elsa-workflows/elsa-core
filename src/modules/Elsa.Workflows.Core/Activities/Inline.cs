@@ -14,7 +14,7 @@ namespace Elsa.Workflows.Core.Activities;
 [Activity("Elsa", "Primitives", "Evaluate a Boolean condition to determine which path to execute next.")]
 public class Inline : CodeActivity
 {
-    private readonly Func<ActivityExecutionContext, ValueTask> _activity;
+    private readonly Func<ActivityExecutionContext, ValueTask> _activity = default!;
 
     /// <inheritdoc />
     [JsonConstructor]
