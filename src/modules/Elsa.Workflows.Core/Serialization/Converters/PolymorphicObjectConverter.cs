@@ -88,7 +88,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
 
         newOptions.Converters.RemoveWhere(x => x is PolymorphicObjectConverterFactory);
 
-        if (type.IsPrimitive || value is string or DateTimeOffset or JsonElement)
+        if (type.IsPrimitive || value is string or DateTimeOffset or DateTime or DateOnly or TimeOnly or JsonElement or Guid)
         {
             JsonSerializer.Serialize(writer, value, newOptions);
             return;
