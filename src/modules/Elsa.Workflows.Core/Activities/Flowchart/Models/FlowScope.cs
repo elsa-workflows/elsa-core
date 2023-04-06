@@ -72,4 +72,6 @@ internal class FlowScope
     }
 
     public long GetExecutionCount(IActivity activity) => Activities.ContainsKey(activity.Id) ? Activities[activity.Id].ExecutionCount : 0;
+
+    public void Clear() => Activities.Clear();
 }

@@ -38,7 +38,7 @@ public class Flowchart : Container
     {
         var triggerActivityId = context.WorkflowExecutionContext.TriggerActivityId;
         var triggerActivity = triggerActivityId != null ? Activities.FirstOrDefault(x => x.Id == triggerActivityId) : default;
-        var startActivity = triggerActivity ?? Start;
+        var startActivity = triggerActivity ?? Start ?? Activities.FirstOrDefault();
         
         if (startActivity == null!)
         {
@@ -101,7 +101,7 @@ public class Flowchart : Container
                     var executionCount = scope.GetExecutionCount(activity);
                     var haveInboundActivitiesExecuted = inboundActivities.All(x => scope.GetExecutionCount(x) > executionCount);
 
-                    if (haveInboundActivitiesExecuted)
+                    if (haveInboundActivitiesExecuted) 
                         await flowchartActivityExecutionContext.ScheduleActivityAsync(activity);
                 }
                 else
@@ -114,7 +114,7 @@ public class Flowchart : Container
         if (!children.Any())
         {
             // If there are no more pending activities, mark this activity as completed.
-            var hasPendingChildren = scope.HasPendingActivities();
+            var hasPendingChildren = !HaveAllLeafsExecuted(scope);
 
             if (!hasPendingChildren)
                 await flowchartActivityExecutionContext.CompleteActivityAsync();
@@ -122,5 +122,12 @@ public class Flowchart : Container
 
         flowchartActivityExecutionContext.SetProperty(ScopeProperty, scope);
         context.StopPropagation();
+    }
+    
+    private bool HaveAllLeafsExecuted(FlowScope scope)
+    {
+        var leafs = Activities.Where(x => Connections.All(y => y.Source != x)).ToList();
+        var leafsExecuted = leafs.All(x => scope.GetExecutionCount(x) > 0);
+        return leafsExecuted;
     }
 }

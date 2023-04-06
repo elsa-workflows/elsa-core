@@ -105,4 +105,10 @@ public static class WorkflowExecutionContextExtensions
         workflowExecutionContext.Scheduler.Schedule(workItem);
         workflowExecutionContext.AddCompletionCallback(owner, activityNode, completionCallback);
     }
+
+    /// <summary>
+    /// Returns true if all activities have completed.
+    /// </summary>
+    /// <returns>True if all activities have completed, otherwise false.</returns>
+    public static bool AllActivitiesCompleted(this WorkflowExecutionContext workflowExecutionContext) => !workflowExecutionContext.ActivityExecutionContexts.Any();
 }

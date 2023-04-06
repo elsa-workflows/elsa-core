@@ -246,6 +246,12 @@ public class ActivityExecutionContext : IExecutionContext
         Properties[key] = value;
         return value;
     }
+    
+    /// <summary>
+    /// Removes a property associated with the current activity context.
+    /// </summary>
+    /// <param name="key">The property key.</param>
+    public void RemoveProperty(string key) => Properties.Remove(key);
 
     public T GetRequiredService<T>() where T : notnull => WorkflowExecutionContext.GetRequiredService<T>();
     public object GetRequiredService(Type serviceType) => WorkflowExecutionContext.GetRequiredService(serviceType);

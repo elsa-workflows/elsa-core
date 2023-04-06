@@ -1,3 +1,4 @@
+using Elsa.Extensions;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
@@ -46,8 +47,8 @@ public class DefaultActivitySchedulerMiddleware : WorkflowExecutionMiddleware
         // Invoke next middleware.
         await Next(context);
         
-        // If there are no bookmarks and all activities are completed, complete the workflow.
+        // If all activities are completed, complete the workflow.
         if (context.Status == WorkflowStatus.Running) 
-            context.TransitionTo(!context.Bookmarks.Any() ? WorkflowSubStatus.Finished : WorkflowSubStatus.Suspended);
+            context.TransitionTo(context.AllActivitiesCompleted() ? WorkflowSubStatus.Finished : WorkflowSubStatus.Suspended);
     }
 }
