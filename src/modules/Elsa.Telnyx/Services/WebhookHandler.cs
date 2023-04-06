@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using System.Text.Json;
 using Elsa.Mediator.Contracts;
 using Elsa.Telnyx.Contracts;
