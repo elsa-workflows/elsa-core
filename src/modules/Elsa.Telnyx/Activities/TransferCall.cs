@@ -18,7 +18,7 @@ namespace Elsa.Telnyx.Activities;
 /// </summary>
 [Activity(Constants.Namespace, "Transfer a call to a new destination.", Kind = ActivityKind.Task)]
 [FlowNode("Transferred", "Hangup", "Disconnected")]
-public class TransferCall : CodeActivity
+public class TransferCall : Activity
 {
     /// <inheritdoc />
     [JsonConstructor]

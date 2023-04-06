@@ -11,7 +11,7 @@ namespace Elsa.Telnyx.Activities;
 /// <inheritdoc />
 [FlowNode("Alive", "Dead", "Done")]
 [Activity(Constants.Namespace, "Get the status of a call.", Kind = ActivityKind.Task)]
-public class GetCallStatus : CodeActivity<bool>
+public class GetCallStatus : Activity<bool>
 {
     /// <inheritdoc />
     [JsonConstructor]
