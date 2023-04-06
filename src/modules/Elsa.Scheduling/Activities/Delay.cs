@@ -1,4 +1,4 @@
-﻿using System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 using Elsa.Common.Contracts;
 using Elsa.Expressions.Models;
@@ -13,7 +13,7 @@ namespace Elsa.Scheduling.Activities;
 /// Delay execution for the specified amount of time.
 /// </summary>
 [Activity( "Elsa", "Scheduling", "Delay execution for the specified amount of time.")]
-public class Delay : CodeActivity
+public class Delay : Activity
 {
     /// <inheritdoc />
     [JsonConstructor]
@@ -75,41 +75,47 @@ public class Delay : CodeActivity
     /// <summary>
     /// A value controlling whether the delay should happen in-process (synchronously or out of process (asynchronously).
     /// </summary>
-    [Input(Description = "")] 
-    public Input<DelayBlockingStrategy> Strategy { get; set; } = new(DelayBlockingStrategy.Blocking);
+    [Input(Description = "The strategy to use when delaying execution. Defaults to NonBlocking, which means that the workflow will be suspended and resumed at a later time. Blocking, on the other hand, will internally use Task.Delay and keep the workflow instance in memory.")] 
+    public Input<DelayBlockingStrategy> Strategy { get; set; } = new(DelayBlockingStrategy.NonBlocking);
     
     /// <summary>
     /// The threshold used by the <see cref="DelayBlockingStrategy.Auto"/>
     /// </summary>
-    [Input] public Input<TimeSpan> AutoBlockingThreshold { get; set; } = new(System.TimeSpan.FromSeconds(5));
+    [Input(Description = "The threshold used by the Auto strategy. If the time span is set to a value less than the threshold, the Blocking strategy will be used. Defaults to 5 seconds.")] 
+    public Input<TimeSpan> AutoBlockingThreshold { get; set; } = new(System.TimeSpan.FromSeconds(5));
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        var timeSpan = context.ExpressionExecutionContext.Get(TimeSpan);
         var blockingMode = Strategy.Get(context);
 
         switch (blockingMode)
         {
             case DelayBlockingStrategy.Blocking:
-                await BlockingStrategy(timeSpan);
+                await BlockingStrategy(context);
                 break;
                 case DelayBlockingStrategy.NonBlocking:
-                    await NonBlockingStrategy(timeSpan, context);
+                    await NonBlockingStrategy(context);
                     break;
             case DelayBlockingStrategy.Auto:
-                await AutoBlockingStrategy(timeSpan, context);
+                await AutoBlockingStrategy(context);
                 break;
             default:
                 throw new ArgumentOutOfRangeException();
         }
     }
 
-    private async ValueTask BlockingStrategy(TimeSpan timeSpan) => await Task.Delay(timeSpan);
+    private async ValueTask BlockingStrategy(ActivityExecutionContext context)
+    {
+        var timeSpan = context.ExpressionExecutionContext.Get(TimeSpan);
+        await Task.Delay(timeSpan);
+        await context.CompleteActivityAsync();
+    }
 
-    private ValueTask NonBlockingStrategy(TimeSpan timeSpan, ActivityExecutionContext context)
+    private ValueTask NonBlockingStrategy(ActivityExecutionContext context)
     {
         var clock = context.ExpressionExecutionContext.GetRequiredService<ISystemClock>();
+        var timeSpan = context.ExpressionExecutionContext.Get(TimeSpan);
         var resumeAt = clock.UtcNow.Add(timeSpan);
         var payload = new DelayPayload(resumeAt);
 
@@ -119,14 +125,15 @@ public class Delay : CodeActivity
         return ValueTask.CompletedTask;
     }
 
-    private async ValueTask AutoBlockingStrategy(TimeSpan timeSpan, ActivityExecutionContext context)
+    private async ValueTask AutoBlockingStrategy(ActivityExecutionContext context)
     {
         var threshold = context.Get(AutoBlockingThreshold);
+        var timeSpan = context.ExpressionExecutionContext.Get(TimeSpan);
 
         if (timeSpan <= threshold)
-            await BlockingStrategy(timeSpan);
+            await BlockingStrategy(context);
         else
-            await NonBlockingStrategy(timeSpan, context);
+            await NonBlockingStrategy(context);
     }
 
     /// <summary>
