@@ -15,21 +15,22 @@ public static class ModuleExtensions
     /// <summary>
     /// Registers the specified assembly for FastEndpoint assembly discovery.
     /// </summary>
-    public static void AddFastEndpointsAssembly(this IModule module, Assembly assembly)
+    public static IModule AddFastEndpointsAssembly(this IModule module, Assembly assembly)
     {
         var assemblies = module.Properties.GetOrAdd(FastEndpointsAssembliesKey, () => new HashSet<Assembly>());
         assemblies.Add(assembly);
+        return module;
     }
 
     /// <summary>
     /// Registers the assembly for FastEndpoint assembly discovery using the specified marker type.
     /// </summary>
-    public static void AddFastEndpointsAssembly<T>(this IModule module) => module.AddFastEndpointsAssembly(typeof(T));
+    public static IModule AddFastEndpointsAssembly<T>(this IModule module) => module.AddFastEndpointsAssembly(typeof(T));
     
     /// <summary>
     /// Registers the assembly for FastEndpoint assembly discovery using the specified marker type.
     /// </summary>
-    public static void AddFastEndpointsAssembly(this IModule module, Type markerType) => module.AddFastEndpointsAssembly(markerType.Assembly);
+    public static IModule AddFastEndpointsAssembly(this IModule module, Type markerType) => module.AddFastEndpointsAssembly(markerType.Assembly);
 
     /// <summary>
     /// Returns all collected assemblies for discovery of endpoints.
