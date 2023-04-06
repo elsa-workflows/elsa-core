@@ -23,6 +23,7 @@ public class WorkflowExecutionContext : IExecutionContext
 {
     internal static ValueTask Complete(ActivityExecutionContext context) => context.CompleteActivityAsync();
     private readonly IServiceProvider _serviceProvider;
+    private readonly IHasher _hasher;
     private readonly IActivityRegistry _activityRegistry;
     private readonly IList<ActivityNode> _nodes;
     private readonly IList<ActivityCompletionCallbackEntry> _completionCallbackEntries = new List<ActivityCompletionCallbackEntry>();
@@ -33,6 +34,7 @@ public class WorkflowExecutionContext : IExecutionContext
     /// </summary>
     public WorkflowExecutionContext(
         IServiceProvider serviceProvider,
+        IHasher hasher,
         string id,
         string? correlationId,
         Workflow workflow,
@@ -47,6 +49,7 @@ public class WorkflowExecutionContext : IExecutionContext
         CancellationToken cancellationToken)
     {
         _serviceProvider = serviceProvider;
+        _hasher = hasher;
         _activityRegistry = activityRegistry;
         Workflow = workflow;
         Graph = graph;
@@ -61,6 +64,7 @@ public class WorkflowExecutionContext : IExecutionContext
         TriggerActivityId = triggerActivityId;
         CancellationToken = cancellationToken;
         NodeIdLookup = _nodes.ToDictionary(x => x.NodeId);
+        NodeHashLookup = _nodes.ToDictionary(x => Hash(x.NodeId));
         NodeActivityLookup = _nodes.ToDictionary(x => x.Activity);
         MemoryRegister = workflow.CreateRegister();
         ExpressionExecutionContext = new ExpressionExecutionContext(serviceProvider, MemoryRegister, cancellationToken: cancellationToken);
@@ -110,6 +114,11 @@ public class WorkflowExecutionContext : IExecutionContext
     /// A map between activity IDs and <see cref="ActivityNode"/>s in the workflow graph.
     /// </summary>
     public IDictionary<string, ActivityNode> NodeIdLookup { get; }
+    
+    /// <summary>
+    /// A map between hashed activity node IDs and <see cref="ActivityNode"/>s in the workflow graph.
+    /// </summary>
+    public IDictionary<string, ActivityNode> NodeHashLookup { get; }
 
     /// <summary>
     /// A map between <see cref="IActivity"/>s and <see cref="ActivityNode"/>s in the workflow graph.
@@ -267,6 +276,13 @@ public class WorkflowExecutionContext : IExecutionContext
     /// Returns the <see cref="ActivityNode"/> with the specified activity ID from the workflow graph.
     /// </summary>
     public ActivityNode FindNodeById(string nodeId) => NodeIdLookup[nodeId];
+    
+    /// <summary>
+    /// Returns the <see cref="ActivityNode"/> with the specified hash of the activity node ID from the workflow graph.
+    /// </summary>
+    /// <param name="hash">The hash of the activity node ID.</param>
+    /// <returns>The <see cref="ActivityNode"/> with the specified hash of the activity node ID.</returns>
+    public ActivityNode FindNodeByHash(string hash) => NodeHashLookup[hash];
 
     /// <summary>
     /// Returns the <see cref="ActivityNode"/> containing the specified activity from the workflow graph.
@@ -279,11 +295,16 @@ public class WorkflowExecutionContext : IExecutionContext
     public IActivity FindActivityByNodeId(string nodeId) => FindNodeById(nodeId).Activity;
 
     /// <summary>
-    /// 
+    /// Returns the <see cref="IActivity"/> with the specified ID from the workflow graph.
     /// </summary>
-    /// <param name="activityId"></param>
-    /// <returns></returns>
     public IActivity FindActivityByActivityId(string activityId) => FindNodeById(NodeIdLookup.Single(n => n.Key.Contains(activityId)).Value.NodeId).Activity;
+    
+    /// <summary>
+    /// Returns the <see cref="IActivity"/> with the specified hash of the activity node ID from the workflow graph.
+    /// </summary>
+    /// <param name="hash">The hash of the activity node ID.</param>
+    /// <returns>The <see cref="IActivity"/> with the specified hash of the activity node ID.</returns>
+    public IActivity FindActivityByHash(string hash) => FindNodeByHash(hash).Activity;
 
     /// <summary>
     /// Returns a custom property with the specified key from the <see cref="Properties"/> dictionary.
@@ -311,12 +332,12 @@ public class WorkflowExecutionContext : IExecutionContext
     /// </summary>
     public bool HasProperty(string name) => Properties.ContainsKey(name);
 
+    internal bool CanTransitionTo(WorkflowSubStatus targetSubStatus) => ValidateStatusTransition(targetSubStatus);
+
     internal void TransitionTo(WorkflowSubStatus subStatus)
     {
-        var targetStatus = GetMainStatus(subStatus);
-
-        if (!ValidateStatusTransition(SubStatus, subStatus))
-            throw new Exception($"Cannot transition from {Status} to {targetStatus}");
+        if (!ValidateStatusTransition(SubStatus))
+            throw new Exception($"Cannot transition from {SubStatus} to {subStatus}");
 
         SubStatus = subStatus;
     }
@@ -390,11 +411,11 @@ public class WorkflowExecutionContext : IExecutionContext
             _ => throw new ArgumentOutOfRangeException(nameof(subStatus), subStatus, null)
         };
 
-    private bool ValidateStatusTransition(WorkflowSubStatus currentSubStatus, WorkflowSubStatus target)
+    private bool ValidateStatusTransition(WorkflowSubStatus targetSubStatus)
     {
-        var currentMainStatus = GetMainStatus(currentSubStatus);
+        var currentMainStatus = GetMainStatus(SubStatus);
         return currentMainStatus != WorkflowStatus.Finished;
     }
 
-    private IEnumerable<MemoryRegister> GetMergedRegistersView() => new[] { MemoryRegister }.Concat(ActivityExecutionContexts.Select(x => x.ExpressionExecutionContext.Memory)).ToList();
+    private string Hash(string nodeId) => _hasher.Hash(nodeId);
 }

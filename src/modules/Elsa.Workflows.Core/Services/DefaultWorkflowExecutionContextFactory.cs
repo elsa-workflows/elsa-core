@@ -13,6 +13,7 @@ public class DefaultWorkflowExecutionContextFactory : IWorkflowExecutionContextF
     private readonly IActivitySchedulerFactory _schedulerFactory;
     private readonly IActivityRegistry _activityRegistry;
     private readonly IWorkflowStateSerializer _workflowStateSerializer;
+    private readonly IHasher _hasher;
 
     /// <summary>
     /// Constructor.
@@ -22,13 +23,15 @@ public class DefaultWorkflowExecutionContextFactory : IWorkflowExecutionContextF
         IIdentityGraphService identityGraphService,
         IActivitySchedulerFactory schedulerFactory,
         IActivityRegistry activityRegistry,
-        IWorkflowStateSerializer workflowStateSerializer)
+        IWorkflowStateSerializer workflowStateSerializer,
+        IHasher hasher)
     {
         _activityVisitor = activityVisitor;
         _identityGraphService = identityGraphService;
         _schedulerFactory = schedulerFactory;
         _activityRegistry = activityRegistry;
         _workflowStateSerializer = workflowStateSerializer;
+        _hasher = hasher;
     }
 
     /// <inheritdoc />
@@ -64,6 +67,7 @@ public class DefaultWorkflowExecutionContextFactory : IWorkflowExecutionContextF
         // Setup a workflow execution context.
         var workflowExecutionContext = new WorkflowExecutionContext(
             serviceProvider,
+            _hasher,
             instanceId,
             correlationId,
             workflow,

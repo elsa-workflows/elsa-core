@@ -7,9 +7,9 @@ namespace Elsa.MassTransit.Consumers;
 /// <summary>
 /// A consumer of various dispatch message types to asynchronously execute workflows.
 /// </summary>
-public class DispatchWorkflowRequestConsumer : 
-    IConsumer<DispatchWorkflowDefinition>, 
-    IConsumer<DispatchWorkflowInstance>, 
+public class DispatchWorkflowRequestConsumer :
+    IConsumer<DispatchWorkflowDefinition>,
+    IConsumer<DispatchWorkflowInstance>,
     IConsumer<DispatchTriggerWorkflows>,
     IConsumer<DispatchResumeWorkflows>
 {
@@ -28,7 +28,7 @@ public class DispatchWorkflowRequestConsumer :
     {
         var message = context.Message;
         var options = new StartWorkflowRuntimeOptions(message.CorrelationId, message.Input, message.VersionOptions, InstanceId: message.InstanceId);
-            
+
         await _workflowRuntime.StartWorkflowAsync(message.DefinitionId, options, context.CancellationToken);
     }
 
@@ -36,7 +36,17 @@ public class DispatchWorkflowRequestConsumer :
     public async Task Consume(ConsumeContext<DispatchWorkflowInstance> context)
     {
         var message = context.Message;
-        var options = new ResumeWorkflowRuntimeOptions(message.CorrelationId, message.InstanceId, message.BookmarkId, message.ActivityId, message.Input);
+
+        var options = new ResumeWorkflowRuntimeOptions(
+            message.CorrelationId,
+            message.InstanceId,
+            message.BookmarkId,
+            message.ActivityId,
+            message.ActivityNodeId,
+            message.ActivityInstanceId,
+            message.ActivityHash,
+            message.Input);
+
         await _workflowRuntime.ResumeWorkflowAsync(message.InstanceId, options, context.CancellationToken);
     }
 

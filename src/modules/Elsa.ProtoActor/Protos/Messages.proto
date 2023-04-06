@@ -37,7 +37,10 @@ message ResumeWorkflowRequest {
   optional string CorrelationId = 2;
   optional string BookmarkId = 3;
   optional string ActivityId = 4;
-  optional Input input = 5;
+  optional string ActivityNodeId = 5;
+  optional string ActivityInstanceId = 6;
+  optional string ActivityHash = 7;
+  optional Input input = 8;
 }
 
 message ResumeWorkflowResponse {

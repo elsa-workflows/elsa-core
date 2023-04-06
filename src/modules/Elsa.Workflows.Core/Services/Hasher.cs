@@ -10,7 +10,7 @@ public class Hasher : IHasher
     /// <inheritdoc />
     public string Hash(string value)
     {
-        using var sha = HashAlgorithm.Create(HashAlgorithmName.SHA256.ToString())!;
+        using var sha = SHA256.Create();
         return Hash(sha, value);
     }
     

@@ -38,7 +38,16 @@ internal class DispatchWorkflowRequestHandler :
 
     public async Task<Unit> HandleAsync(DispatchWorkflowInstanceCommand command, CancellationToken cancellationToken)
     {
-        var options = new ResumeWorkflowRuntimeOptions(command.CorrelationId, command.InstanceId, command.BookmarkId, command.ActivityId, command.Input);
+        var options = new ResumeWorkflowRuntimeOptions(
+            command.CorrelationId,
+            command.InstanceId,
+            command.BookmarkId,
+            command.ActivityId,
+            command.ActivityNodeId,
+            command.ActivityInstanceId,
+            command.ActivityHash,
+            command.Input);
+
         await _workflowRuntime.ResumeWorkflowAsync(command.InstanceId, options, cancellationToken);
 
         return Unit.Instance;

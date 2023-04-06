@@ -40,6 +40,9 @@ public class MassTransitWorkflowDispatcher : IWorkflowDispatcher
             request.InstanceId,
             request.BookmarkId,
             request.ActivityId,
+            request.ActivityNodeId,
+            request.ActivityInstanceId,
+            request.ActivityHash,
             request.Input,
             request.CorrelationId
         ), cancellationToken);

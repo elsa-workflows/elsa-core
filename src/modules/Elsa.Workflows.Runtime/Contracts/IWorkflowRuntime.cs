@@ -92,7 +92,15 @@ public interface IWorkflowRuntime
 
 public record StartWorkflowRuntimeOptions(string? CorrelationId = default, IDictionary<string, object>? Input = default, VersionOptions VersionOptions = default, string? TriggerActivityId = default, string? InstanceId = default);
 
-public record ResumeWorkflowRuntimeOptions(string? CorrelationId = default, string? WorkflowInstanceId = default, string? BookmarkId = default, string? ActivityId = default, IDictionary<string, object>? Input = default);
+public record ResumeWorkflowRuntimeOptions(
+    string? CorrelationId = default, 
+    string? WorkflowInstanceId = default, 
+    string? BookmarkId = default, 
+    string? ActivityId = default,
+    string? ActivityNodeId = default,
+    string? ActivityInstanceId = default,
+    string? ActivityHash = default,
+    IDictionary<string, object>? Input = default);
 
 public record CanStartWorkflowResult(string? InstanceId, bool CanStart);
 

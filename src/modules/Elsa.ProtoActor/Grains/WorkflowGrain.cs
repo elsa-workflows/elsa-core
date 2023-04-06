@@ -146,8 +146,20 @@ public class WorkflowGrain : WorkflowGrainBase
         var correlationId = request.CorrelationId;
         var bookmarkId = request.BookmarkId.NullIfEmpty();
         var activityId = request.ActivityId.NullIfEmpty();
+        var activityNodeId = request.ActivityNodeId.NullIfEmpty();
+        var activityInstanceId = request.ActivityInstanceId.NullIfEmpty();
+        var activityHash = request.ActivityHash.NullIfEmpty();
         var cancellationToken = Context.CancellationToken;
-        var resumeWorkflowHostOptions = new ResumeWorkflowHostOptions(correlationId, bookmarkId, activityId, _input);
+        
+        var resumeWorkflowHostOptions = new ResumeWorkflowHostOptions(
+            correlationId, 
+            bookmarkId, 
+            activityId, 
+            activityNodeId,
+            activityInstanceId,
+            activityHash,
+            _input);
+        
         var definitionId = _definitionId;
         var versionOptions = VersionOptions.SpecificVersion(_version);
         

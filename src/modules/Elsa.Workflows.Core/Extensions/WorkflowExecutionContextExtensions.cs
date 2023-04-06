@@ -54,6 +54,16 @@ public static class WorkflowExecutionContextExtensions
         var workItem = new ActivityWorkItem(activity.Id, async () => await activityInvoker.InvokeAsync(workflowExecutionContext, activity));
         workflowExecutionContext.Scheduler.Schedule(workItem);
     }
+    
+    /// <summary>
+    /// Schedules the specified activity execution context of the workflow.
+    /// </summary>
+    public static void ScheduleActivityExecutionContext(this WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext)
+    {
+        var activityInvoker = workflowExecutionContext.GetRequiredService<IActivityInvoker>();
+        var workItem = new ActivityWorkItem(activityExecutionContext.Activity.Id, async () => await activityInvoker.InvokeAsync(activityExecutionContext));
+        workflowExecutionContext.Scheduler.Schedule(workItem);
+    }
 
     /// <summary>
     /// Schedules the activity of the specified bookmark.

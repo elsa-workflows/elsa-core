@@ -38,7 +38,7 @@ public class WorkflowHost : IWorkflowHost
 
     /// <inheritdoc />
     public Workflow Workflow { get; set; }
-    
+
     /// <inheritdoc />
     public WorkflowState WorkflowState { get; set; }
 
@@ -84,7 +84,7 @@ public class WorkflowHost : IWorkflowHost
     public async Task<ResumeWorkflowHostResult> ResumeWorkflowAsync(ResumeWorkflowHostOptions? options = default, CancellationToken cancellationToken = default)
     {
         var originalBookmarks = WorkflowState.Bookmarks.ToList();
-        
+
         if (WorkflowState.Status != WorkflowStatus.Running)
         {
             _logger.LogWarning("Attempt to resume workflow {WorkflowInstanceId} that is not in the Running state. The actual state is {ActualWorkflowStatus}", WorkflowState.Id, WorkflowState.Status);
@@ -93,11 +93,22 @@ public class WorkflowHost : IWorkflowHost
 
         var instanceId = WorkflowState.Id;
         var input = options?.Input;
-        var runOptions = new RunWorkflowOptions(instanceId, options?.CorrelationId, options?.BookmarkId, options?.ActivityId, input);
+
+        var runOptions = new RunWorkflowOptions(
+            instanceId,
+            options?.CorrelationId,
+            options?.BookmarkId,
+            options?.ActivityId,
+            options?.ActivityNodeId,
+            options?.ActivityInstanceId,
+            options?.ActivityHash,
+            input
+        );
+
         var workflowResult = await _workflowRunner.RunAsync(Workflow, WorkflowState, runOptions, cancellationToken);
 
         WorkflowState = workflowResult.WorkflowState;
-        
+
         var updatedBookmarks = WorkflowState.Bookmarks;
         return new ResumeWorkflowHostResult(Diff.For(originalBookmarks, updatedBookmarks));
     }

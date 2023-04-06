@@ -23,6 +23,9 @@ public record RunWorkflowOptions(
     string? InstanceId = default, 
     string? CorrelationId = default, 
     string? BookmarkId = default, 
-    string? ActivityNodeId = default, 
+    string? ActivityId = default,
+    string? ActivityNodeId = default,
+    string? ActivityInstanceId = default,
+    string? ActivityHash = default, 
     IDictionary<string, object>? Input = default, 
     string? TriggerActivityId = default);

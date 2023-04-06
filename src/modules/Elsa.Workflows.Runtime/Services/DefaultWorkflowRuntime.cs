@@ -129,7 +129,15 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
 
             var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
             var workflowHost = await _workflowHostFactory.CreateAsync(workflow, workflowState, cancellationToken);
-            var resumeWorkflowOptions = new ResumeWorkflowHostOptions(options.CorrelationId, options.BookmarkId, options.ActivityId, options.Input);
+
+            var resumeWorkflowOptions = new ResumeWorkflowHostOptions(
+                options.CorrelationId,
+                options.BookmarkId,
+                options.ActivityId,
+                options.ActivityNodeId,
+                options.ActivityInstanceId,
+                options.ActivityHash,
+                options.Input);
 
             await workflowHost.ResumeWorkflowAsync(resumeWorkflowOptions, cancellationToken);
 
@@ -296,7 +304,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         var hash = _hasher.Hash(workflowsFilter.ActivityTypeName, workflowsFilter.BookmarkPayload);
         var correlationId = workflowsFilter.Options.CorrelationId;
         var workflowInstanceId = workflowsFilter.Options.WorkflowInstanceId;
-        var filter = new BookmarkFilter { Hash = hash, CorrelationId = correlationId, WorkflowInstanceId = workflowInstanceId};
+        var filter = new BookmarkFilter { Hash = hash, CorrelationId = correlationId, WorkflowInstanceId = workflowInstanceId };
         var bookmarks = await _bookmarkStore.FindManyAsync(filter, cancellationToken);
         var collectedWorkflows = bookmarks.Select(b => new ResumableWorkflowMatch(b.WorkflowInstanceId, default, correlationId, b.BookmarkId)).ToList();
         return collectedWorkflows;
