@@ -17,7 +17,7 @@ using Microsoft.AspNetCore.Http;
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Post;
 
 [PublicAPI]
-internal class Post : ElsaEndpoint<WorkflowDefinitionRequest, WorkflowDefinitionResponse, WorkflowDefinitionMapper>
+internal class Post : ElsaEndpoint<SaveWorkflowDefinitionRequest, WorkflowDefinitionResponse, WorkflowDefinitionMapper>
 {
     private readonly SerializerOptionsProvider _serializerOptionsProvider;
     private readonly IWorkflowDefinitionPublisher _workflowDefinitionPublisher;
@@ -42,7 +42,7 @@ internal class Post : ElsaEndpoint<WorkflowDefinitionRequest, WorkflowDefinition
         ConfigurePermissions("write:workflow-definitions");
     }
 
-    public override async Task HandleAsync(WorkflowDefinitionRequest request, CancellationToken cancellationToken)
+    public override async Task HandleAsync(SaveWorkflowDefinitionRequest request, CancellationToken cancellationToken)
     {
         var definitionId = request.DefinitionId;
         var resourceName = $"{GetType().FullName}:{(!string.IsNullOrWhiteSpace(definitionId) ? definitionId : Guid.NewGuid().ToString())}";
