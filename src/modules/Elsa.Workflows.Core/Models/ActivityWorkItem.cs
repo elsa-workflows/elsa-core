@@ -2,14 +2,14 @@ namespace Elsa.Workflows.Core.Models;
 
 public class ActivityWorkItem
 {
-    public ActivityWorkItem(string activityNodeId, Func<ValueTask> execute, object? tag = default)
+    public ActivityWorkItem(string activityId, Func<ValueTask> execute, object? tag = default)
     {
-        ActivityNodeId = activityNodeId;
+        ActivityId = activityId;
         Execute = execute;
         Tag = tag;
     }
 
-    public string ActivityNodeId { get; }
+    public string ActivityId { get; }
     public Func<ValueTask> Execute { get; }
     public object? Tag { get; set; }
 }
