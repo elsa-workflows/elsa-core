@@ -554,8 +554,9 @@ export class FlowchartComponent {
 
     this.activityContextMenu.menuItems = menuItems;
     const localPos = this.graph.localToClient(e.x, e.y);
+    const scroll = this.graph.getScrollbarPosition();
     this.activityContextMenu.style.top = `${localPos.y}px`;
-    this.activityContextMenu.style.left = `${localPos.x}px`;
+    this.activityContextMenu.style.left = `${e.x - scroll.left}px`;
 
     await this.activityContextMenu.open();
   }

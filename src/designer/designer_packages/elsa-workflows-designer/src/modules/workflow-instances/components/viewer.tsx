@@ -191,7 +191,7 @@ export class WorkflowInstanceViewer {
 
       <div class="absolute inset-0" ref={el => this.container = el}>
         <elsa-panel
-          class="elsa-activity-picker-container"
+          class="elsa-activity-picker-container z-30"
           position={PanelPosition.Left}
           onExpandedStateChanged={e => this.onActivityPickerPanelStateChanged(e.detail)}>
           <elsa-workflow-journal
@@ -205,7 +205,7 @@ export class WorkflowInstanceViewer {
           rootActivity={workflowDefinition.root}
           interactiveMode={false}/>
         <elsa-panel
-          class="elsa-workflow-editor-container"
+          class="elsa-workflow-editor-container z-30"
           position={PanelPosition.Right}
           onExpandedStateChanged={e => this.onActivityEditorPanelStateChanged(e.detail)}>
           <div class="object-editor-container">
