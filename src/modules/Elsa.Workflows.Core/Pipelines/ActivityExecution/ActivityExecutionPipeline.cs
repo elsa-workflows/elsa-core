@@ -13,9 +13,10 @@ public class ActivityExecutionPipeline : IActivityExecutionPipeline
     /// <summary>
     /// Constructor.
     /// </summary>
-    public ActivityExecutionPipeline(IServiceProvider serviceProvider)
+    public ActivityExecutionPipeline(IServiceProvider serviceProvider, Action<IActivityExecutionPipelineBuilder> pipelineBuilder)
     {
         _serviceProvider = serviceProvider;
+        Setup(pipelineBuilder);
     }
 
     /// <inheritdoc />

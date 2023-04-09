@@ -6,7 +6,7 @@ using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Notifications;
 using IEventPublisher = Elsa.Mediator.Contracts.IEventPublisher;
 
-namespace Elsa.Workflows.Runtime.Middleware;
+namespace Elsa.Workflows.Runtime.Middleware.Workflow;
 
 /// <summary>
 /// Takes care of loading and persisting bookmarks.

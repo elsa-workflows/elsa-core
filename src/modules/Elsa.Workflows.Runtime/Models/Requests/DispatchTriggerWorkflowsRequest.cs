@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Runtime.Models;
+namespace Elsa.Workflows.Runtime.Models.Requests;
 
 /// <summary>
 /// Represents a dispatch request to trigger all workflows using the provided information.

@@ -54,22 +54,30 @@ public static class DependencyInjectionExtensions
                 .CreateChannel<INotification>()
             ;
     }
-
+    
     /// <summary>
-    /// Registers a <see cref="IConsumer{T}"/> with the service container.
+    /// Adds a <see cref="Channel{T}"/> to the <see cref="IServiceCollection"/> and a hosted service that continuously reads from the channel and executes each received message.
     /// </summary>
-    public static IServiceCollection AddConsumer<T, TConsumer>(this IServiceCollection services, int workers = 1) where TConsumer : class, IConsumer<T>
+    public static IServiceCollection AddMessageChannel<T>(this IServiceCollection services, int workerCount = 1) where T : notnull
     {
-        services.AddSingleton<IConsumer<T>, TConsumer>();
-
+        services.AddSingleton<Channel<T>>(_ => CreateChannel<T>());
+        
         services.AddHostedService(sp =>
         {
-            var channel = Channel.CreateUnbounded<T>();
-            var consumer = sp.GetRequiredService<IConsumer<T>>();
+            var channel = sp.GetRequiredService<Channel<T>>();
+            var consumers = sp.GetServices<IConsumer<T>>();
             var logger = sp.GetRequiredService<ILogger<MessageProcessorHostedService<T>>>();
-            return new MessageProcessorHostedService<T>(workers, channel, consumer, logger);
+            return new MessageProcessorHostedService<T>(workerCount, channel, consumers, logger);
         });
         return services;
+    }
+    
+    /// <summary>
+    /// Adds a channel consumer.
+    /// </summary>
+    public static IServiceCollection AddMessageConsumer<T, TConsumer>(this IServiceCollection services) where TConsumer : class, IConsumer<T> where T : notnull
+    {
+        return services.AddSingleton<IConsumer<T>, TConsumer>();
     }
 
     /// <summary>

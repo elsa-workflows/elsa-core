@@ -1,10 +1,7 @@
 using System.Text.Json;
 using Elsa.Extensions;
-using Elsa.Jobs.Contracts;
-using Elsa.Jobs.Schedules;
 using Elsa.Scheduling.Activities;
 using Elsa.Scheduling.Contracts;
-using Elsa.Scheduling.Jobs;
 using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Scheduling.Services;
@@ -12,12 +9,12 @@ namespace Elsa.Scheduling.Services;
 public class WorkflowBookmarkScheduler : IWorkflowBookmarkScheduler
 {
     private const string RootGroupKey = "WorkflowInstance";
-    private readonly IJobScheduler _jobScheduler;
-
-    public WorkflowBookmarkScheduler(IJobScheduler jobScheduler)
-    {
-        _jobScheduler = jobScheduler;
-    }
+    // private readonly IJobScheduler _jobScheduler;
+    //
+    // public WorkflowBookmarkScheduler(IJobScheduler jobScheduler)
+    // {
+    //     _jobScheduler = jobScheduler;
+    // }
 
     public async Task ScheduleBookmarksAsync(string workflowInstanceId, IEnumerable<Bookmark> bookmarks, CancellationToken cancellationToken = default)
     {
@@ -36,9 +33,9 @@ public class WorkflowBookmarkScheduler : IWorkflowBookmarkScheduler
         {
             var payload = JsonSerializer.Deserialize<DelayPayload>(bookmark.Data!)!;
             var resumeAt = payload.ResumeAt;
-            var job = new ResumeWorkflowJob(workflowInstanceId, bookmark.Id);
-            var schedule = new SpecificInstantSchedule(resumeAt);
-            await _jobScheduler.ScheduleAsync(job, bookmark.Id, schedule, groupKeys, cancellationToken);
+            // var job = new ResumeWorkflowJob(workflowInstanceId, bookmark.Id);
+            // var schedule = new SpecificInstantSchedule(resumeAt);
+            //await _jobScheduler.ScheduleAsync(job, bookmark.Id, schedule, groupKeys, cancellationToken);
         }
         
         // Schedule a trigger for each StartAt bookmark.
@@ -46,9 +43,9 @@ public class WorkflowBookmarkScheduler : IWorkflowBookmarkScheduler
         {
             var payload = JsonSerializer.Deserialize<StartAtPayload>(bookmark.Data!)!;
             var executeAt = payload.ExecuteAt;
-            var job = new ResumeWorkflowJob(workflowInstanceId, bookmark.Id);
-            var schedule = new SpecificInstantSchedule(executeAt);
-            await _jobScheduler.ScheduleAsync(job, bookmark.Id, schedule, groupKeys, cancellationToken);
+            // var job = new ResumeWorkflowJob(workflowInstanceId, bookmark.Id);
+            // var schedule = new SpecificInstantSchedule(executeAt);
+            //await _jobScheduler.ScheduleAsync(job, bookmark.Id, schedule, groupKeys, cancellationToken);
         }
     }
 
@@ -59,7 +56,7 @@ public class WorkflowBookmarkScheduler : IWorkflowBookmarkScheduler
         var startAtBookmarks = bookmarkList.Filter<StartAt>().ToList();
         var bookmarksToUnSchedule = delayBookmarks.Concat(startAtBookmarks).ToList();
 
-        foreach (var bookmark in bookmarksToUnSchedule) 
-            await _jobScheduler.UnscheduleAsync(bookmark.Id, cancellationToken);
+        //foreach (var bookmark in bookmarksToUnSchedule) 
+            //await _jobScheduler.UnscheduleAsync(bookmark.Id, cancellationToken);
     }
 }

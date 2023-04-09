@@ -36,7 +36,7 @@ services
             runtime.UseAsyncWorkflowStateExporter();
         })
         .UseLabels(labels => labels.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
-        .UseJobs()
+        //.UseJobs()
         .UseScheduling()
         .UseJavaScript()
         .UseLiquid()

@@ -4,6 +4,7 @@ using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Runtime.Activities;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Models;
+using Elsa.Workflows.Runtime.Models.Requests;
 
 namespace Elsa.Workflows.Runtime.Services;
 

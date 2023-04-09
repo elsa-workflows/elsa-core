@@ -1,6 +1,8 @@
+using System.Text.Json;
 using Elsa.Expressions.Helpers;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Serialization.Converters;
 using Elsa.Workflows.Core.Services;
 
 // ReSharper disable once CheckNamespace
@@ -51,7 +53,9 @@ public static class VariableExtensions
     public static object ParseValue(this Variable variable, object value)
     {
         var genericType = variable.GetType().GenericTypeArguments.FirstOrDefault();
-        return genericType == null ? value : value.ConvertTo(genericType)!;
+        var jsonSerializerOptions = new JsonSerializerOptions().WithConverters(new ExpandoObjectConverter());
+        var converterOptions = new ObjectConverterOptions(jsonSerializerOptions);
+        return genericType == null ? value : value.ConvertTo(genericType, converterOptions)!;
     }
 
     /// <summary>

@@ -8,7 +8,7 @@ public static class SchedulingFeatureExtensions
 {
     public static SchedulingFeature UseQuartzScheduling(this SchedulingFeature scheduling)
     {
-        scheduling.Module.Use<QuartzSchedulerFeature>();
+        //scheduling.Module.Use<QuartzSchedulerFeature>();
         return scheduling;
     }
 }

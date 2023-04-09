@@ -9,6 +9,7 @@ using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Management.Notifications;
 using Elsa.Workflows.Runtime.ActivationValidators;
 using Elsa.Workflows.Runtime.Commands;
+using Elsa.Workflows.Runtime.Consumers;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Handlers;
@@ -37,7 +38,7 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// A list of workflow builders configured during application startup.
     /// </summary>
     public IDictionary<string, Func<IServiceProvider, ValueTask<IWorkflow>>> Workflows { get; set; } = new Dictionary<string, Func<IServiceProvider, ValueTask<IWorkflow>>>();
-    
+
     /// <summary>
     /// A factory that instantiates a concrete <see cref="IWorkflowRuntime"/>.
     /// </summary>
@@ -62,17 +63,17 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// A factory that instantiates an <see cref="ITriggerStore"/>.
     /// </summary>
     public Func<IServiceProvider, ITriggerStore> WorkflowTriggerStore { get; set; } = sp => sp.GetRequiredService<MemoryTriggerStore>();
-    
+
     /// <summary>
     /// A factory that instantiates an <see cref="IWorkflowExecutionLogStore"/>.
     /// </summary>
     public Func<IServiceProvider, IWorkflowExecutionLogStore> WorkflowExecutionLogStore { get; set; } = sp => sp.GetRequiredService<MemoryWorkflowExecutionLogStore>();
-    
+
     /// <summary>
     /// A factory that instantiates an <see cref="IDistributedLockProvider"/>.
     /// </summary>
-    public Func<IServiceProvider, IDistributedLockProvider> DistributedLockProvider { get; set; } = _ => new FileDistributedSynchronizationProvider(new DirectoryInfo( Path.Combine(Environment.CurrentDirectory, "App_Data/locks")));
-    
+    public Func<IServiceProvider, IDistributedLockProvider> DistributedLockProvider { get; set; } = _ => new FileDistributedSynchronizationProvider(new DirectoryInfo(Path.Combine(Environment.CurrentDirectory, "App_Data/locks")));
+
     /// <summary>
     /// A factory that instantiates an <see cref="IWorkflowStateExporter"/>.
     /// </summary>
@@ -82,6 +83,11 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// A factory that instantiates an <see cref="ITaskDispatcher"/>.
     /// </summary>
     public Func<IServiceProvider, ITaskDispatcher> RunTaskDispatcher { get; set; } = sp => sp.GetRequiredService<AsynchronousTaskDispatcher>();
+
+    /// <summary>
+    /// A factory that instantiates an <see cref="IBackgroundActivityScheduler"/>.
+    /// </summary>
+    public Func<IServiceProvider, IBackgroundActivityScheduler> BackgroundActivityInvoker { get; set; } = sp => ActivatorUtilities.CreateInstance<LocalBackgroundActivityScheduler>(sp);
 
     /// <summary>
     /// A delegate to configure the <see cref="DistributedLockingOptions"/>.
@@ -118,13 +124,14 @@ public class WorkflowRuntimeFeature : FeatureBase
         // Options.
         Services.Configure(DistributedLockingOptions);
         Services.Configure<RuntimeOptions>(options => { options.Workflows = Workflows; });
-        
+
         Services
             // Core.
             .AddSingleton<ITriggerIndexer, TriggerIndexer>()
             .AddSingleton<IWorkflowInstanceFactory, WorkflowInstanceFactory>()
             .AddSingleton<IWorkflowDefinitionService, WorkflowDefinitionService>()
             .AddSingleton<IWorkflowHostFactory, WorkflowHostFactory>()
+            .AddSingleton<IBackgroundActivityInvoker, DefaultBackgroundActivityInvoker>()
             .AddSingleton(WorkflowRuntime)
             .AddSingleton(WorkflowDispatcher)
             .AddSingleton(WorkflowStateStore)
@@ -132,6 +139,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddSingleton(WorkflowTriggerStore)
             .AddSingleton(WorkflowExecutionLogStore)
             .AddSingleton(RunTaskDispatcher)
+            .AddSingleton(BackgroundActivityInvoker)
             .AddSingleton<ITaskReporter, TaskReporter>()
             .AddSingleton<SynchronousTaskDispatcher>()
             .AddSingleton<AsynchronousTaskDispatcher>()
@@ -142,13 +150,13 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddMemoryStore<StoredBookmark, MemoryBookmarkStore>()
             .AddMemoryStore<StoredTrigger, MemoryTriggerStore>()
             .AddMemoryStore<WorkflowExecutionLogRecord, MemoryWorkflowExecutionLogStore>()
-            
+
             // Distributed locking.
             .AddSingleton(DistributedLockProvider)
 
             // Workflow definition providers.
             .AddWorkflowDefinitionProvider<ClrWorkflowDefinitionProvider>()
-            
+
             // Workflow state exporter.
             .AddSingleton(WorkflowStateExporter)
 
@@ -168,5 +176,8 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddSingleton<IWorkflowActivationStrategy, CorrelationStrategy>()
             ;
 
+        // If the local background activity invoker is used, register the consumer too.
+        Services.AddMessageChannel<ScheduledBackgroundActivity>();
+        Services.AddMessageConsumer<ScheduledBackgroundActivity, ExecuteBackgroundActivityConsumer>();
     }
 }
