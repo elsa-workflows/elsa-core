@@ -20,7 +20,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\common\Elsa.Api.Common\Elsa.Api.Common.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.Jobs.Activities\Elsa.Jobs.Activities.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Mediator\Elsa.Mediator.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj" />

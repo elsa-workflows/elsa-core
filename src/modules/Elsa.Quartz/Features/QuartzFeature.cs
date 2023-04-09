@@ -1,4 +1,3 @@
-using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Microsoft.Extensions.DependencyInjection;

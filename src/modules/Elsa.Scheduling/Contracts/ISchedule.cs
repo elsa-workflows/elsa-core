@@ -7,5 +7,10 @@ namespace Elsa.Scheduling.Contracts;
 /// </summary>
 public interface ISchedule
 {
+    /// <summary>
+    /// Create a scheduled task.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    /// <returns>The scheduled task.</returns>
     IScheduledTask Schedule(ScheduleContext context);
 }
