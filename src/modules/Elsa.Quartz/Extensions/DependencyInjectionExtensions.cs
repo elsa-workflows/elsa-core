@@ -13,7 +13,7 @@
 // {
 //     public static IServiceCollectionQuartzConfigurator AddElsaJobs(this IServiceCollectionQuartzConfigurator quartz)
 //     {
-//         quartz.AddJob<RunWorkflowJob>();
+//         quartz.AddJob<RunWorkflowTask>();
 //         quartz.AddJob<ResumeWorkflowJob>();
 //
 //         return quartz;

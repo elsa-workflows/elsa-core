@@ -9,7 +9,7 @@ using Elsa.Workflows.Runtime.Notifications;
 namespace Elsa.AzureServiceBus.Handlers;
 
 /// <summary>
-/// Creates workers for each trigger & bookmark in response to updated workflow trigger indexes and bookmarks.
+/// Creates workers for each trigger &amp; bookmark in response to updated workflow trigger indexes and bookmarks.
 /// </summary>
 public class UpdateWorkers : INotificationHandler<WorkflowTriggersIndexed>, INotificationHandler<WorkflowBookmarksIndexed>
 {

@@ -23,6 +23,9 @@ public class Worker : IAsyncDisposable
     private readonly ILogger _logger;
     private int _refCount = 1;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Worker"/> class.
+    /// </summary>
     public Worker(string queueOrTopic, string? subscription, IWorkflowDispatcher workflowDispatcher, ServiceBusClient client, IHasher hasher, ILogger<Worker> logger)
     {
         QueueOrTopic = queueOrTopic;
@@ -39,7 +42,14 @@ public class Worker : IAsyncDisposable
         _processor = processor;
     }
 
+    /// <summary>
+    /// The name of the queue or topic that this worker is processing.
+    /// </summary>
     public string QueueOrTopic { get; }
+    
+    /// <summary>
+    /// The name of the subscription that this worker is processing. Only valid if the worker is processing a topic.
+    /// </summary>
     public string? Subscription { get; }
 
     /// <summary>

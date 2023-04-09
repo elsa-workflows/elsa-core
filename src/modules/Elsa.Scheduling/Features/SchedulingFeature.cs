@@ -26,8 +26,8 @@ public class SchedulingFeature : FeatureBase
     public override void Apply()
     {
         Services
-            .AddSingleton<IWorkflowTriggerScheduler, WorkflowTriggerScheduler>()
-            .AddSingleton<IWorkflowBookmarkScheduler, WorkflowBookmarkScheduler>()
+            .AddSingleton<ITriggerScheduler, TriggerScheduler>()
+            .AddSingleton<IBookmarkScheduler, BookmarkScheduler>()
             .AddNotificationHandlersFrom<ScheduleWorkflows>();
 
         Module.Configure<WorkflowManagementFeature>(management => management.AddActivitiesFrom<SchedulingFeature>());

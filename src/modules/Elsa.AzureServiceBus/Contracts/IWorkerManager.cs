@@ -13,8 +13,11 @@ public interface IWorkerManager
     IEnumerable<Worker> Workers { get; }
 
     /// <summary>
-    /// Returns a value indicating whether a worker exists for the specified trigger.
+    /// Finds a worker for the specified queue or topic and subscription.
     /// </summary>
+    /// <param name="queueOrTopic">The name of the queue or topic.</param>
+    /// <param name="subscription">The name of the subscription.</param>
+    /// <returns>The worker, or null if no worker was found.</returns>
     Worker? FindWorkerFor(string queueOrTopic, string? subscription);
     
     /// <summary>

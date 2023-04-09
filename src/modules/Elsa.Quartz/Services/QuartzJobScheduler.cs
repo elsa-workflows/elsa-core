@@ -82,7 +82,7 @@
 //             }
 //             case SpecificInstantSchedule specificInstantSchedule:
 //             {
-//                 builder.StartAt(specificInstantSchedule.DateTime);
+//                 builder.StartAt(specificInstantSchedule.StartAt);
 //                 break;
 //             }
 //

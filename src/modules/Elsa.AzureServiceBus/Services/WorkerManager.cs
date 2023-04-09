@@ -3,19 +3,31 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.AzureServiceBus.Services;
 
+/// <summary>
+/// Manages message workers.
+/// </summary>
 public class WorkerManager : IWorkerManager, IAsyncDisposable
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ICollection<Worker> _workers = new List<Worker>();
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="WorkerManager"/> class.
+    /// </summary>
     public WorkerManager(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
     }
 
+    /// <summary>
+    /// A list of workers under management.
+    /// </summary>
     public IEnumerable<Worker> Workers => _workers.ToList();
+    
+    /// <inheritdoc />
     public Worker? FindWorkerFor(string queueOrTopic, string? subscription) => _workers.FirstOrDefault(x => x.QueueOrTopic == queueOrTopic && x.Subscription == subscription);
 
+    /// <inheritdoc />
     public async Task StartWorkerAsync(string queueOrTopic, string? subscription, CancellationToken cancellationToken = default)
     {
         var worker = FindWorkerFor(queueOrTopic, subscription);
@@ -29,6 +41,7 @@ public class WorkerManager : IWorkerManager, IAsyncDisposable
         await CreateAndAddWorkerAsync(queueOrTopic, subscription, cancellationToken);
     }
 
+    /// <inheritdoc />
     public async Task StopWorkerAsync(string queueOrTopic, string? subscription, CancellationToken cancellationToken = default)
     {
         var worker = FindWorkerFor(queueOrTopic, subscription);
@@ -40,7 +53,8 @@ public class WorkerManager : IWorkerManager, IAsyncDisposable
 
         if (worker.RefCount == 0) await RemoveWorkerAsync(worker);
     }
-    
+
+    /// <inheritdoc />
     public async Task EnsureWorkerAsync(string queueOrTopic, string? subscription, CancellationToken cancellationToken = default)
     {
         var worker = FindWorkerFor(queueOrTopic, subscription);
@@ -48,12 +62,14 @@ public class WorkerManager : IWorkerManager, IAsyncDisposable
         await CreateAndAddWorkerAsync(queueOrTopic, subscription, cancellationToken);
     }
 
+    /// <inheritdoc />
     public async Task RemoveWorkerAsync(Worker worker)
     {
         _workers.Remove(worker);
         await worker.DisposeAsync();
     }
 
+    /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
         foreach (var worker in Workers) await worker.DisposeAsync();

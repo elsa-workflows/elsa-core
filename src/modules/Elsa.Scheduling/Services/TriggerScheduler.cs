@@ -2,22 +2,29 @@ using System.Text.Json;
 using Elsa.Extensions;
 using Elsa.Scheduling.Activities;
 using Elsa.Scheduling.Contracts;
+using Elsa.Scheduling.Schedules;
+using Elsa.Scheduling.Tasks;
 using Elsa.Workflows.Runtime.Entities;
 
 namespace Elsa.Scheduling.Services;
 
-public class WorkflowTriggerScheduler : IWorkflowTriggerScheduler
+/// <inheritdoc />
+public class TriggerScheduler : ITriggerScheduler
 {
     private const string RootGroupKey = "WorkflowDefinition";
 
-    // private readonly IJobScheduler _jobScheduler;
-    //
-    // public WorkflowTriggerScheduler(IJobScheduler jobScheduler)
-    // {
-    //     _jobScheduler = jobScheduler;
-    // }
+    private readonly IScheduler _scheduler;
 
-    public async Task ScheduleTriggersAsync(IEnumerable<StoredTrigger> triggers, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TriggerScheduler"/> class.
+    /// </summary>
+    public TriggerScheduler(IScheduler scheduler)
+    {
+        _scheduler = scheduler;
+    }
+
+    /// <inheritdoc />
+    public async Task ScheduleAsync(IEnumerable<StoredTrigger> triggers, CancellationToken cancellationToken = default)
     {
         var triggerList = triggers.ToList();
 
@@ -28,9 +35,9 @@ public class WorkflowTriggerScheduler : IWorkflowTriggerScheduler
         // Schedule each Timer trigger.
         foreach (var trigger in timerTriggers)
         {
-            var (dateTime, timeSpan) = JsonSerializer.Deserialize<TimerPayload>(trigger.Data!)!;
+            var (startAt, interval) = JsonSerializer.Deserialize<TimerPayload>(trigger.Data!)!;
             var groupKeys = new[] { RootGroupKey, trigger.WorkflowDefinitionId };
-            //await _jobScheduler.ScheduleAsync(new RunWorkflowJob(trigger.WorkflowDefinitionId), trigger.WorkflowDefinitionId, new RecurringSchedule(dateTime, timeSpan), groupKeys, cancellationToken);
+            await _scheduler.ScheduleAsync(trigger.Id, new RunWorkflowTask(trigger.WorkflowDefinitionId), new RecurringSchedule(startAt, interval), groupKeys, cancellationToken);
         }
 
         // Schedule each StartAt trigger.
@@ -39,11 +46,12 @@ public class WorkflowTriggerScheduler : IWorkflowTriggerScheduler
             var executeAt = JsonSerializer.Deserialize<StartAtPayload>(trigger.Data!)!.ExecuteAt;
             var groupKeys = new[] { RootGroupKey, trigger.WorkflowDefinitionId };
             var input = new { ExecuteAt = executeAt }.ToDictionary();
-            //await _jobScheduler.ScheduleAsync(new RunWorkflowJob(trigger.WorkflowDefinitionId, input), trigger.WorkflowDefinitionId, new SpecificInstantSchedule(executeAt), groupKeys, cancellationToken);
+            await _scheduler.ScheduleAsync(trigger.WorkflowDefinitionId, new RunWorkflowTask(trigger.WorkflowDefinitionId, input), new SpecificInstantSchedule(executeAt), groupKeys, cancellationToken);
         }
     }
 
-    public async Task UnscheduleTriggersAsync(IEnumerable<StoredTrigger> triggers, CancellationToken cancellationToken = default)
+    /// <inheritdoc />
+    public async Task UnscheduleAsync(IEnumerable<StoredTrigger> triggers, CancellationToken cancellationToken = default)
     {
         var triggerList = triggers.ToList();
 
@@ -63,7 +71,7 @@ public class WorkflowTriggerScheduler : IWorkflowTriggerScheduler
         foreach (var workflowDefinitionId in workflowDefinitionIds)
         {
             var groupKeys = new[] { RootGroupKey, workflowDefinitionId };
-            //await _jobScheduler.ClearAsync(groupKeys, cancellationToken);
+            await _scheduler.UnscheduleAsync(groupKeys, cancellationToken);
         }
     }
 }
