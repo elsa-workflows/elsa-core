@@ -2,11 +2,11 @@ using Elsa.Extensions;
 using Elsa.Workflows.Core.Middleware.Activities;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Pipelines.ActivityExecution;
-using Elsa.Workflows.Runtime.Middleware.Workflow;
+using Elsa.Workflows.Runtime.Middleware.Workflows;
 using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Models.Bookmarks;
 
-namespace Elsa.Workflows.Runtime.Middleware.Activity;
+namespace Elsa.Workflows.Runtime.Middleware.Activities;
 
 /// <summary>
 /// Executes the current activity from a background job if the activity is of kind <see cref="ActivityKind.Job"/> or <see cref="ActivityKind.Task"/>.

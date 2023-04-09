@@ -2,10 +2,10 @@ using Elsa.Extensions;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Middleware.Activity;
+using Elsa.Workflows.Runtime.Middleware.Activities;
 using Elsa.Workflows.Runtime.Models;
 
-namespace Elsa.Workflows.Runtime.Middleware.Workflow;
+namespace Elsa.Workflows.Runtime.Middleware.Workflows;
 
 /// <summary>
 /// Schedules background activities for execution. This component works in tandem with <see cref="BackgroundActivityInvokerMiddleware"/>.

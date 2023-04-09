@@ -2,7 +2,7 @@ using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
 
-namespace Elsa.Workflows.Runtime.Middleware.Workflow;
+namespace Elsa.Workflows.Runtime.Middleware.Workflows;
 
 /// <summary>
 /// Takes care of loading and persisting workflow variables.

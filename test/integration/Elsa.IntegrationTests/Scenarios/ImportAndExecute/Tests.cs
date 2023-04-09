@@ -2,7 +2,6 @@
 using Elsa.Expressions.Contracts;
 using Elsa.Extensions;
 using Elsa.Testing.Shared;
-using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Activities.Flowchart.Activities;
 using Elsa.Workflows.Core.Contracts;

@@ -4,7 +4,6 @@ using Elsa.AzureServiceBus.Models;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Models.Requests;
 using Microsoft.Extensions.Logging;
 

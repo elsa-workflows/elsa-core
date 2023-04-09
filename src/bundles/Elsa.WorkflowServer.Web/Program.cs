@@ -34,8 +34,6 @@ services
             runtime.UseMassTransitDispatcher();
         })
         .UseLabels(labels => labels.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
-        //.UseJobs(jobs => jobs.ConfigureOptions = options => options.WorkerCount = 10)
-        //.UseJobActivities()
         .UseScheduling()
         .UseWorkflowsApi(api => api.AddFastEndpointsAssembly<Program>())
         .UseJavaScript()

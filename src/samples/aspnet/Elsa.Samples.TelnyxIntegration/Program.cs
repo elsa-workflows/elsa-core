@@ -66,8 +66,6 @@ services
             runtime.UseExecutionLogRecords(e => e.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)));
             runtime.UseAsyncWorkflowStateExporter();
         })
-        //.UseJobs(jobs => jobs.ConfigureOptions = options => options.WorkerCount = 10)
-        //.UseJobActivities()
         .UseScheduling()
         .UseWorkflowsApi()
         .UseJavaScript()

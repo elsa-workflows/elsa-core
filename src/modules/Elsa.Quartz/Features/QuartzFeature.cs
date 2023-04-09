@@ -24,7 +24,6 @@ public class QuartzFeature : FeatureBase
             .AddQuartz(configure =>
             {
                 ConfigureQuartzInternal(configure, ConfigureQuartz);
-                //configure.AddElsaJobs();
             });
     }
 

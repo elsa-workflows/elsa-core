@@ -52,8 +52,7 @@ public class EFCoreWorkflowStateStore : IWorkflowStateStore
         var json = entry.Property<string>("Data").CurrentValue;
 
         // For reading string:object dictionaries where the objects would otherwise be read as JsonElement values.
-        //options.Converters.Add(new SystemObjectPrimitiveConverter());
-        options.Converters.Add(new ExpandoObjectConverter());
+        options.Converters.Add(new SystemObjectPrimitiveConverter());
         var state = JsonSerializer.Deserialize<WorkflowState>(json, options);
 
         return state;
@@ -77,9 +76,8 @@ public class EFCoreWorkflowStateStore : IWorkflowStateStore
         var options = _serializerOptionsProvider.CreatePersistenceOptions(ReferenceHandler.Preserve);
         
         // For writing string:object dictionaries where the objects would otherwise be read as JsonElement values.
-        //options.Converters.Add(new SystemObjectPrimitiveConverter());
-        options.Converters.Add(new ExpandoObjectConverter());
-        
+        options.Converters.Add(new SystemObjectPrimitiveConverter());
+
         var json = JsonSerializer.Serialize(entity, options);
         var now = _systemClock.UtcNow;
         var entry = dbContext.Entry(entity);

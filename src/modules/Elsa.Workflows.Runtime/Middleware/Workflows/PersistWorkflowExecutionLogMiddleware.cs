@@ -4,7 +4,7 @@ using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 
-namespace Elsa.Workflows.Runtime.Middleware.Workflow;
+namespace Elsa.Workflows.Runtime.Middleware.Workflows;
 
 /// <summary>
 /// Takes care of persisting workflow execution log entries.
