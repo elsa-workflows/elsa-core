@@ -1,7 +1,7 @@
 using Elsa.Common.Contracts;
 using Elsa.Mediator.Contracts;
+using Elsa.Scheduling.Commands;
 using Elsa.Scheduling.Contracts;
-using Elsa.Scheduling.Handlers;
 using Timer = System.Timers.Timer;
 
 namespace Elsa.Scheduling.ScheduledTasks;

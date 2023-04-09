@@ -12,18 +12,27 @@ public class ScheduleWorkflows : INotificationHandler<WorkflowTriggersIndexed>, 
     private readonly ITriggerScheduler _triggerScheduler;
     private readonly IBookmarkScheduler _bookmarkScheduler;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ScheduleWorkflows"/> class.
+    /// </summary>
     public ScheduleWorkflows(ITriggerScheduler triggerScheduler, IBookmarkScheduler bookmarkScheduler)
     {
         _triggerScheduler = triggerScheduler;
         _bookmarkScheduler = bookmarkScheduler;
     }
 
+    /// <summary>
+    /// Updates scheduled jobs based on updated triggers.
+    /// </summary>
     public async Task HandleAsync(WorkflowTriggersIndexed notification, CancellationToken cancellationToken)
     {
         await _triggerScheduler.UnscheduleAsync(notification.IndexedWorkflowTriggers.RemovedTriggers, cancellationToken);
         await _triggerScheduler.ScheduleAsync(notification.IndexedWorkflowTriggers.AddedTriggers, cancellationToken);
     }
 
+    /// <summary>
+    /// Updates scheduled jobs based on updated bookmarks.
+    /// </summary>
     public async Task HandleAsync(WorkflowBookmarksIndexed notification, CancellationToken cancellationToken)
     {
         var workflowInstanceId = notification.IndexedWorkflowBookmarks.InstanceId;

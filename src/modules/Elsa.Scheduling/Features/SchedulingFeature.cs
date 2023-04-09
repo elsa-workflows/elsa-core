@@ -14,7 +14,6 @@ namespace Elsa.Scheduling.Features;
 /// Provides scheduling features to the system.
 /// </summary>
 [DependsOn(typeof(SystemClockFeature))]
-// [DependsOn(typeof(JobsFeature))]
 public class SchedulingFeature : FeatureBase
 {
     /// <inheritdoc />
@@ -28,7 +27,8 @@ public class SchedulingFeature : FeatureBase
         Services
             .AddSingleton<ITriggerScheduler, TriggerScheduler>()
             .AddSingleton<IBookmarkScheduler, BookmarkScheduler>()
-            .AddNotificationHandlersFrom<ScheduleWorkflows>();
+            .AddSingleton<IScheduler, LocalScheduler>()
+            .AddHandlersFrom<ScheduleWorkflows>();
 
         Module.Configure<WorkflowManagementFeature>(management => management.AddActivitiesFrom<SchedulingFeature>());
     }

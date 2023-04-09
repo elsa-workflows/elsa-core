@@ -1,6 +1,7 @@
 using Elsa.Scheduling.Contracts;
 using Elsa.Scheduling.Models;
 using Elsa.Scheduling.ScheduledTasks;
+using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Scheduling.Schedules;
@@ -8,6 +9,7 @@ namespace Elsa.Scheduling.Schedules;
 /// <summary>
 /// A recurring schedule.
 /// </summary>
+[PublicAPI]
 public class RecurringSchedule : ISchedule
 {
     /// <summary>

@@ -1,7 +1,7 @@
 using Elsa.Mediator.Contracts;
 using Elsa.Scheduling.Contracts;
 
-namespace Elsa.Scheduling.Handlers;
+namespace Elsa.Scheduling.Commands;
 
 /// <summary>
 /// A command to run a scheduled task.

@@ -1,6 +1,4 @@
-using Elsa.Common.Contracts;
 using Elsa.Extensions;
-using Elsa.Jobs.ScheduledJobs;
 using Elsa.Scheduling.Contracts;
 using Elsa.Scheduling.Models;
 

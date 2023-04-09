@@ -67,10 +67,27 @@ public class Worker : IAsyncDisposable
         }
     }
 
+    /// <summary>
+    /// Starts the worker.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
     public async Task StartAsync(CancellationToken cancellationToken = default) => await _processor.StartProcessingAsync(cancellationToken);
+    
+    /// <summary>
+    /// Increments the ref count.
+    /// </summary>
     public void IncrementRefCount() => RefCount++;
+    
+    /// <summary>
+    /// Decrements the ref count.
+    /// </summary>
     public void DecrementRefCount() => RefCount--;
+    
+    /// <summary>
+    /// Disposes the worker.
+    /// </summary>
     public async ValueTask DisposeAsync() => await _processor.DisposeAsync();
+    
     private async Task OnMessageReceivedAsync(ProcessMessageEventArgs args) => await InvokeWorkflowsAsync(args.Message, args.CancellationToken);
 
     private Task OnErrorAsync(ProcessErrorEventArgs args)
