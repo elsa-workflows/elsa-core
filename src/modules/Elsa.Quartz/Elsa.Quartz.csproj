@@ -18,7 +18,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Elsa.Jobs\Elsa.Jobs.csproj" />
       <ProjectReference Include="..\Elsa.Scheduling\Elsa.Scheduling.csproj" />
     </ItemGroup>
 

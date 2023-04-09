@@ -4,7 +4,7 @@ using Elsa.AzureServiceBus.Models;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Models;
+using Elsa.Workflows.Runtime.Models.Requests;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.AzureServiceBus.Services;
@@ -22,6 +22,9 @@ public class Worker : IAsyncDisposable
     private readonly ILogger _logger;
     private int _refCount = 1;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Worker"/> class.
+    /// </summary>
     public Worker(string queueOrTopic, string? subscription, IWorkflowDispatcher workflowDispatcher, ServiceBusClient client, IHasher hasher, ILogger<Worker> logger)
     {
         QueueOrTopic = queueOrTopic;
@@ -38,7 +41,14 @@ public class Worker : IAsyncDisposable
         _processor = processor;
     }
 
+    /// <summary>
+    /// The name of the queue or topic that this worker is processing.
+    /// </summary>
     public string QueueOrTopic { get; }
+    
+    /// <summary>
+    /// The name of the subscription that this worker is processing. Only valid if the worker is processing a topic.
+    /// </summary>
     public string? Subscription { get; }
 
     /// <summary>
@@ -56,10 +66,27 @@ public class Worker : IAsyncDisposable
         }
     }
 
+    /// <summary>
+    /// Starts the worker.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
     public async Task StartAsync(CancellationToken cancellationToken = default) => await _processor.StartProcessingAsync(cancellationToken);
+    
+    /// <summary>
+    /// Increments the ref count.
+    /// </summary>
     public void IncrementRefCount() => RefCount++;
+    
+    /// <summary>
+    /// Decrements the ref count.
+    /// </summary>
     public void DecrementRefCount() => RefCount--;
+    
+    /// <summary>
+    /// Disposes the worker.
+    /// </summary>
     public async ValueTask DisposeAsync() => await _processor.DisposeAsync();
+    
     private async Task OnMessageReceivedAsync(ProcessMessageEventArgs args) => await InvokeWorkflowsAsync(args.Message, args.CancellationToken);
 
     private Task OnErrorAsync(ProcessErrorEventArgs args)

@@ -66,8 +66,6 @@ services
             runtime.UseExecutionLogRecords(e => e.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)));
             runtime.UseAsyncWorkflowStateExporter();
         })
-        .UseJobs(jobs => jobs.ConfigureOptions = options => options.WorkerCount = 10)
-        .UseJobActivities()
         .UseScheduling()
         .UseWorkflowsApi()
         .UseJavaScript()
@@ -95,7 +93,7 @@ var app = builder.Build();
 var serviceProvider = app.Services;
 
 // Configure activity execution pipeline to use the job-based activity invoker.
-serviceProvider.ConfigureDefaultActivityExecutionPipeline(pipeline => pipeline.UseJobBasedActivityInvoker());
+serviceProvider.ConfigureDefaultActivityExecutionPipeline(pipeline => pipeline.UseBackgroundActivityInvoker());
 
 if (app.Environment.IsDevelopment())
     app.UseDeveloperExceptionPage();

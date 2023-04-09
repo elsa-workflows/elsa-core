@@ -53,7 +53,9 @@ public class EFCoreWorkflowStateStore : IWorkflowStateStore
 
         // For reading string:object dictionaries where the objects would otherwise be read as JsonElement values.
         options.Converters.Add(new SystemObjectPrimitiveConverter());
-        return JsonSerializer.Deserialize<WorkflowState>(json, options);
+        var state = JsonSerializer.Deserialize<WorkflowState>(json, options);
+
+        return state;
     }
 
     /// <inheritdoc />
@@ -72,6 +74,10 @@ public class EFCoreWorkflowStateStore : IWorkflowStateStore
     private WorkflowState Save(RuntimeElsaDbContext dbContext, WorkflowState entity)
     {
         var options = _serializerOptionsProvider.CreatePersistenceOptions(ReferenceHandler.Preserve);
+        
+        // For writing string:object dictionaries where the objects would otherwise be read as JsonElement values.
+        options.Converters.Add(new SystemObjectPrimitiveConverter());
+
         var json = JsonSerializer.Serialize(entity, options);
         var now = _systemClock.UtcNow;
         var entry = dbContext.Entry(entity);
@@ -81,8 +87,6 @@ public class EFCoreWorkflowStateStore : IWorkflowStateStore
 
         entry.Property<string>("Data").CurrentValue = json;
         entry.Property<DateTimeOffset>("UpdatedAt").CurrentValue = now;
-
-        dbContext.Entry(entity).Property("Data").CurrentValue = json;
         return entity;
     }
 }

@@ -1,4 +1,3 @@
-using System.Text.Json.Serialization;
 using Elsa.Workflows.Core.Contracts;
 
 namespace Elsa.Workflows.Core.Models;

@@ -123,7 +123,7 @@ public class WorkflowsFeature : FeatureBase
             .AddSingleton<IVariablePersistenceManager, VariablePersistenceManager>()
 
             // Pipelines.
-            .AddSingleton<IActivityExecutionPipeline, ActivityExecutionPipeline>()
+            .AddSingleton<IActivityExecutionPipeline>(sp => new ActivityExecutionPipeline(sp, ActivityExecutionPipeline))
             .AddSingleton<IWorkflowExecutionPipeline>(sp => new WorkflowExecutionPipeline(sp, WorkflowExecutionPipeline))
 
             // Built-in activity services.

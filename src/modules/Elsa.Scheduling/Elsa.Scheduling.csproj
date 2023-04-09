@@ -13,8 +13,11 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Elsa.Elasticsearch\Elsa.Elasticsearch.csproj" />
-      <ProjectReference Include="..\Elsa.Jobs\Elsa.Jobs.csproj" />
       <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Cronos" Version="0.7.1" />
     </ItemGroup>
 
 </Project>

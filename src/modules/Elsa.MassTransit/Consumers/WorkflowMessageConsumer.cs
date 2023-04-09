@@ -1,7 +1,7 @@
 using Elsa.MassTransit.Activities;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Models;
+using Elsa.Workflows.Runtime.Models.Requests;
 using MassTransit;
 
 namespace Elsa.MassTransit.Consumers;

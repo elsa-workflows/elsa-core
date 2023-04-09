@@ -1,4 +1,3 @@
-using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,7 +24,6 @@ public class QuartzFeature : FeatureBase
             .AddQuartz(configure =>
             {
                 ConfigureQuartzInternal(configure, ConfigureQuartz);
-                configure.AddElsaJobs();
             });
     }
 

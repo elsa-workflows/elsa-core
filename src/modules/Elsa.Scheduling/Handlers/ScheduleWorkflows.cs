@@ -9,25 +9,34 @@ namespace Elsa.Scheduling.Handlers;
 /// </summary>
 public class ScheduleWorkflows : INotificationHandler<WorkflowTriggersIndexed>, INotificationHandler<WorkflowBookmarksIndexed>
 {
-    private readonly IWorkflowTriggerScheduler _workflowTriggerScheduler;
-    private readonly IWorkflowBookmarkScheduler _workflowBookmarkScheduler;
+    private readonly ITriggerScheduler _triggerScheduler;
+    private readonly IBookmarkScheduler _bookmarkScheduler;
 
-    public ScheduleWorkflows(IWorkflowTriggerScheduler workflowTriggerScheduler, IWorkflowBookmarkScheduler workflowBookmarkScheduler)
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ScheduleWorkflows"/> class.
+    /// </summary>
+    public ScheduleWorkflows(ITriggerScheduler triggerScheduler, IBookmarkScheduler bookmarkScheduler)
     {
-        _workflowTriggerScheduler = workflowTriggerScheduler;
-        _workflowBookmarkScheduler = workflowBookmarkScheduler;
+        _triggerScheduler = triggerScheduler;
+        _bookmarkScheduler = bookmarkScheduler;
     }
 
+    /// <summary>
+    /// Updates scheduled jobs based on updated triggers.
+    /// </summary>
     public async Task HandleAsync(WorkflowTriggersIndexed notification, CancellationToken cancellationToken)
     {
-        await _workflowTriggerScheduler.UnscheduleTriggersAsync(notification.IndexedWorkflowTriggers.RemovedTriggers, cancellationToken);
-        await _workflowTriggerScheduler.ScheduleTriggersAsync(notification.IndexedWorkflowTriggers.AddedTriggers, cancellationToken);
+        await _triggerScheduler.UnscheduleAsync(notification.IndexedWorkflowTriggers.RemovedTriggers, cancellationToken);
+        await _triggerScheduler.ScheduleAsync(notification.IndexedWorkflowTriggers.AddedTriggers, cancellationToken);
     }
 
+    /// <summary>
+    /// Updates scheduled jobs based on updated bookmarks.
+    /// </summary>
     public async Task HandleAsync(WorkflowBookmarksIndexed notification, CancellationToken cancellationToken)
     {
         var workflowInstanceId = notification.IndexedWorkflowBookmarks.InstanceId;
-        await _workflowBookmarkScheduler.UnscheduleBookmarksAsync(workflowInstanceId, notification.IndexedWorkflowBookmarks.RemovedBookmarks, cancellationToken);
-        await _workflowBookmarkScheduler.ScheduleBookmarksAsync(workflowInstanceId, notification.IndexedWorkflowBookmarks.AddedBookmarks, cancellationToken);
+        await _bookmarkScheduler.UnscheduleAsync(workflowInstanceId, notification.IndexedWorkflowBookmarks.RemovedBookmarks, cancellationToken);
+        await _bookmarkScheduler.ScheduleAsync(workflowInstanceId, notification.IndexedWorkflowBookmarks.AddedBookmarks, cancellationToken);
     }
 }
