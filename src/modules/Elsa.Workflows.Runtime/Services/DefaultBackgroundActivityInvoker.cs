@@ -1,6 +1,7 @@
 using Elsa.Common.Models;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Middleware.Activities;
 using Elsa.Workflows.Runtime.Models;
@@ -73,19 +74,38 @@ public class DefaultBackgroundActivityInvoker : IBackgroundActivityInvoker
         // Invoke the activity.
         await _activityInvoker.InvokeAsync(activityExecutionContext);
 
-        // Capture any activity output produced by the activity.
+        // Capture any activity output produced by the activity (but only if the associated memory block is stored in the workflow itself).
         var outputDescriptors = activityExecutionContext.ActivityDescriptor.Outputs;
         var outputValues = new Dictionary<string, object>();
 
         foreach (var outputDescriptor in outputDescriptors)
         {
             var output = (Output?)outputDescriptor.ValueGetter(activityExecutionContext.Activity);
-            var outputValue = output != null ? activityExecutionContext.Get(output.MemoryBlockReference()) : default!;
+            
+            if(output == null)
+                continue;
+
+            var memoryBlockReference = output.MemoryBlockReference();
+            
+            if(!activityExecutionContext.ExpressionExecutionContext.TryGetBlock(memoryBlockReference, out var memoryBlock))
+                continue;
+            
+            var variableMetadata = memoryBlock.Metadata as VariableBlockMetadata;
+            var driver = variableMetadata?.StorageDriverType;
+            
+            // We only capture output written to the workflow itself. Other drivers like blob storage, etc. will be ignored since the foreground context will be loading those.
+            if(driver != typeof(WorkflowStorageDriver))
+                continue;
+            
+            var outputValue = activityExecutionContext.Get(memoryBlockReference);
 
             if (outputValue != null)
                 outputValues[outputDescriptor.Name] = outputValue;
         }
 
+        // Persist any variables that were written to by the activity.
+        await _variablePersistenceManager.SaveVariablesAsync(workflowExecutionContext);
+        
         // Resume the workflow, passing along the activity output.
         // TODO: This approach will fail if the output is non-serializable. We need to find a way to pass the output to the workflow without serializing it.
         var bookmarkId = scheduledBackgroundActivity.BookmarkId;

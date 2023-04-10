@@ -69,6 +69,7 @@ public class HttpFeature : FeatureBase
                 typeof(RouteData),
                 typeof(HttpRequest),
                 typeof(HttpResponse),
+                typeof(HttpResponseMessage),
                 typeof(HttpRequestHeaders)
             }, "HTTP");
 

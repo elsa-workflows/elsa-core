@@ -112,7 +112,7 @@ public class HttpStatusCodeCase
 /// <summary>
 /// Base class for activities that send HTTP requests.
 /// </summary>
-public abstract class SendHttpRequestBase : Activity<HttpResponse>
+public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
 {
     /// <summary>
     /// The URL to send the request to.
