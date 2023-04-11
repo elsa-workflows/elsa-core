@@ -29,7 +29,7 @@ internal class DispatchWorkflowRequestHandler :
 
     public async Task<Unit> HandleAsync(DispatchWorkflowDefinitionCommand command, CancellationToken cancellationToken)
     {
-        var options = new StartWorkflowRuntimeOptions(command.CorrelationId, command.Input, command.VersionOptions, InstanceId: command.InstanceId);
+        var options = new StartWorkflowRuntimeOptions(command.CorrelationId, command.Input, command.VersionOptions, InstanceId: command.InstanceId, TriggerActivityId: command.TriggerActivityId);
 
         await _workflowRuntime.StartWorkflowAsync(command.DefinitionId, options, cancellationToken);
 

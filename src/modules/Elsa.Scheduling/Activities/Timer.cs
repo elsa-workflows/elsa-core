@@ -10,7 +10,7 @@ namespace Elsa.Scheduling.Activities;
 /// <summary>
 /// Represents a timer to periodically trigger the workflow.
 /// </summary>
-[Activity( "Elsa", "Scheduling", "Trigger workflow execution at a specific interval.")] 
+[Activity("Elsa", "Scheduling", "Trigger workflow execution at a specific interval.")]
 public class Timer : EventGenerator
 {
     /// <inheritdoc />
@@ -29,11 +29,29 @@ public class Timer : EventGenerator
     {
         Interval = interval;
     }
-    
+
     /// <summary>
-    /// Th interval at which the timer should execute.
+    /// The interval at which the timer should execute.
     /// </summary>
-    [Input] public Input<TimeSpan> Interval { get; set; } = default!;
+    [Input(Description = "The interval at which the timer should execute.")]
+    public Input<TimeSpan> Interval { get; set; } = default!;
+
+    /// <inheritdoc />
+    protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
+    {
+        if(context.IsTriggerOfWorkflow())
+        {
+            await context.CompleteActivityAsync();
+            return;
+        }
+        
+        var clock = context.ExpressionExecutionContext.GetRequiredService<ISystemClock>();
+        var timeSpan = context.ExpressionExecutionContext.Get(Interval);
+        var resumeAt = clock.UtcNow.Add(timeSpan);
+        
+        context.JournalData.Add("ResumeAt", resumeAt);
+        context.CreateBookmark(new TimerBookmarkPayload(resumeAt));
+    }
 
     /// <inheritdoc />
     protected override object GetTriggerPayload(TriggerIndexingContext context)
@@ -41,18 +59,19 @@ public class Timer : EventGenerator
         var interval = context.ExpressionExecutionContext.Get(Interval);
         var clock = context.ExpressionExecutionContext.GetRequiredService<ISystemClock>();
         var executeAt = clock.UtcNow.Add(interval);
-        return new TimerPayload(executeAt, interval);
+        return new TimerTriggerPayload(executeAt, interval);
     }
 
     /// <summary>
     /// Creates a new <see cref="Timer"/> activity set to trigger at the specified interval.
     /// </summary>
     public static Timer FromTimeSpan(TimeSpan value) => new(value);
-    
+
     /// <summary>
     /// Creates a new <see cref="Timer"/> activity set to trigger at the specified interval in seconds.
     /// </summary>
     public static Timer FromSeconds(double value) => FromTimeSpan(TimeSpan.FromSeconds(value));
 }
 
-internal record TimerPayload(DateTimeOffset StartAt, TimeSpan Interval);
+internal record TimerTriggerPayload(DateTimeOffset StartAt, TimeSpan Interval);
+internal record TimerBookmarkPayload(DateTimeOffset ResumeAt);

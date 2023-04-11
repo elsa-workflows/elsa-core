@@ -27,23 +27,25 @@ internal class Endpoint : ElsaEndpoint<Request, Response>
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
-        var exists = await _store.AnyAsync(new WorkflowDefinitionFilter{ DefinitionId = request.DefinitionId, VersionOptions = VersionOptions.Published}, cancellationToken);
+        var exists = await _store.AnyAsync(new WorkflowDefinitionFilter { DefinitionId = request.DefinitionId, VersionOptions = VersionOptions.Published }, cancellationToken);
 
         if (!exists)
         {
             await SendNotFoundAsync(cancellationToken);
             return;
         }
-        
+
         var correlationId = request.CorrelationId;
         var input = (IDictionary<string, object>?)request.Input;
+        var dispatchRequest = new DispatchWorkflowDefinitionRequest
+        {
+            DefinitionId = request.DefinitionId,
+            VersionOptions = VersionOptions.Published,
+            Input = input,
+            CorrelationId = correlationId
+        };
 
-        await _workflowDispatcher.DispatchAsync(new DispatchWorkflowDefinitionRequest(
-                request.DefinitionId,
-                VersionOptions.Published,
-                input,
-                correlationId),
-            cancellationToken);
+        await _workflowDispatcher.DispatchAsync(dispatchRequest, cancellationToken);
 
         await SendOkAsync(new Response(), cancellationToken);
     }

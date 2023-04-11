@@ -22,7 +22,13 @@ public class LocalScheduler : IScheduler
     }
 
     /// <inheritdoc />
-    public ValueTask ScheduleAsync(string name, ITask task, ISchedule schedule, IEnumerable<string> keys, CancellationToken cancellationToken = default)
+    public ValueTask ScheduleAsync(string name, ITask task, ISchedule schedule, CancellationToken cancellationToken = default)
+    {
+        return ScheduleAsync(name, task, schedule, default, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public ValueTask ScheduleAsync(string name, ITask task, ISchedule schedule, IEnumerable<string>? keys = default, CancellationToken cancellationToken = default)
     {
         var scheduleContext = new ScheduleContext(_serviceProvider, task);
         var scheduledTask = schedule.Schedule(scheduleContext);
@@ -32,21 +38,21 @@ public class LocalScheduler : IScheduler
     }
 
     /// <inheritdoc />
-    public ValueTask UnscheduleAsync(string name, CancellationToken cancellationToken = default)
+    public ValueTask ClearScheduleAsync(string name, CancellationToken cancellationToken = default)
     {
         RemoveScheduledTask(name);
         return ValueTask.CompletedTask;
     }
 
     /// <inheritdoc />
-    public ValueTask UnscheduleAsync(IEnumerable<string> keys, CancellationToken cancellationToken = default)
+    public ValueTask ClearScheduleAsync(IEnumerable<string> keys, CancellationToken cancellationToken = default)
     {
-        RemoveScheduledTasks(keys, cancellationToken);
+        RemoveScheduledTasks(keys);
 
         return ValueTask.CompletedTask;
     }
 
-    private void RegisterScheduledTask(string name, IScheduledTask scheduledTask, IEnumerable<string> keys)
+    private void RegisterScheduledTask(string name, IScheduledTask scheduledTask, IEnumerable<string>? keys = default)
     {
         if (_scheduledTasks.TryGetValue(name, out var existingScheduledTask))
         {
@@ -55,7 +61,9 @@ public class LocalScheduler : IScheduler
         }
 
         _scheduledTasks[name] = scheduledTask;
-        _scheduledTaskKeys[scheduledTask] = keys.ToList();
+
+        if (keys != default)
+            _scheduledTaskKeys[scheduledTask] = keys.ToList();
     }
 
     private void RemoveScheduledTask(string name)
@@ -67,7 +75,7 @@ public class LocalScheduler : IScheduler
         _scheduledTaskKeys.Remove(existingScheduledTask);
     }
 
-    private void RemoveScheduledTasks(IEnumerable<string> keys, CancellationToken cancellationToken = default)
+    private void RemoveScheduledTasks(IEnumerable<string> keys)
     {
         foreach (var key in keys)
         {

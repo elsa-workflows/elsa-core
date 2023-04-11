@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Elsa.Workflows.Runtime.Models.Requests;
 
 /// <summary>
@@ -8,6 +10,7 @@ public class DispatchWorkflowInstanceRequest
     /// <summary>
     /// Initializes a new instance of the <see cref="DispatchWorkflowInstanceRequest"/> class.
     /// </summary>
+    [JsonConstructor]
     public DispatchWorkflowInstanceRequest()
     {
     }
