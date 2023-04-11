@@ -67,7 +67,8 @@ export class WorkflowDefinitionsPlugin implements Plugin {
   }
 
   async initialize(): Promise<void> {
-    this.inputControlRegistry.add("workflow-definition-picker", c => <elsa-workflow-definition-picker-input inputContext={c}/>);
+    this.inputControlRegistry.add("workflow-definition-picker", c => <elsa-workflow-definition-picker-input
+      inputContext={c}/>);
   }
 
   newWorkflow = async () => {
@@ -106,7 +107,7 @@ export class WorkflowDefinitionsPlugin implements Plugin {
 
   private saveWorkflowDefinition = async (definition: WorkflowDefinition, publish: boolean): Promise<WorkflowDefinition> => {
 
-    if(!definition.isLatest) {
+    if (!definition.isLatest) {
       console.debug('Workflow definition is not latest. Skipping save.');
       return;
     }
@@ -129,8 +130,12 @@ export class WorkflowDefinitionsPlugin implements Plugin {
   }
 
   public showWorkflowDefinitionEditor = (workflowDefinition: WorkflowDefinition) => {
-    toolbarComponentStore.components = [() => <elsa-workflow-publish-button onPublishClicked={this.onPublishClicked} onExportClicked={this.onExportClicked} onImportClicked={this.onImportClicked}/>];
-    studioComponentStore.activeComponentFactory = () => <elsa-workflow-definition-editor workflowDefinition={workflowDefinition} onWorkflowUpdated={this.onWorkflowUpdated} ref={el => this.workflowDefinitionEditorElement = el}/>;
+    toolbarComponentStore.components = [() => <elsa-workflow-publish-button onPublishClicked={this.onPublishClicked}
+                                                                            onExportClicked={this.onExportClicked}
+                                                                            onImportClicked={this.onImportClicked}/>];
+    studioComponentStore.activeComponentFactory = () => <elsa-workflow-definition-editor
+      workflowDefinition={workflowDefinition} onWorkflowUpdated={this.onWorkflowUpdated}
+      ref={el => this.workflowDefinitionEditorElement = el}/>;
   };
 
   private import = async () => {
@@ -166,7 +171,15 @@ export class WorkflowDefinitionsPlugin implements Plugin {
 
   public onWorkflowUpdated = async (e: CustomEvent<WorkflowDefinitionUpdatedArgs>) => {
     const updatedWorkflowDefinition = e.detail.workflowDefinition;
-    await this.saveWorkflowDefinition(updatedWorkflowDefinition, false);
+    await this.saveWorkflowDefinition(updatedWorkflowDefinition, false)
+      .catch(() => {
+        NotificationService.createNotification({
+          title: 'Error while saving',
+          id: uuid(),
+          text: <span>Workflow {e.detail.workflowDefinition.definitionId} could not be saved. </span>,
+          type: NotificationDisplayType.Error
+        });
+      });
   }
 
   private onBrowseWorkflowDefinitions = async () => {
@@ -175,7 +188,8 @@ export class WorkflowDefinitionsPlugin implements Plugin {
     const actions = [closeAction, newAction];
 
     this.workflowDefinitionBrowserInstance = this.modalDialogService.show(() =>
-        <elsa-workflow-definition-browser onWorkflowDefinitionSelected={this.onWorkflowDefinitionSelected} onNewWorkflowDefinitionSelected={this.onNewWorkflowDefinitionSelected}/>,
+        <elsa-workflow-definition-browser onWorkflowDefinitionSelected={this.onWorkflowDefinitionSelected}
+                                          onNewWorkflowDefinitionSelected={this.onNewWorkflowDefinitionSelected}/>,
       {actions})
   }
 
@@ -186,14 +200,14 @@ export class WorkflowDefinitionsPlugin implements Plugin {
     this.modalDialogService.hide(this.workflowDefinitionBrowserInstance);
   }
 
-  public publishCurrentWorkflow = async (args: PublishClickedArgs)=>{
-    return this.onPublishClicked(new CustomEvent('PublishClickedArgs',{detail:args}));
+  public publishCurrentWorkflow = async (args: PublishClickedArgs) => {
+    return this.onPublishClicked(new CustomEvent('PublishClickedArgs', {detail: args}));
   }
 
   private onPublishClicked = async (e: CustomEvent<PublishClickedArgs>) => {
     const definition = await this.workflowDefinitionEditorElement.getWorkflowDefinition();
 
-    if(!definition.isLatest) {
+    if (!definition.isLatest) {
       console.debug('Workflow definition is not latest. Skipping publish.');
       return;
     }
@@ -207,13 +221,21 @@ export class WorkflowDefinitionsPlugin implements Plugin {
       type: NotificationDisplayType.InProgress
     });
 
-    await this.saveWorkflowDefinition(definition, true);
+    await this.saveWorkflowDefinition(definition, true)
+      .then(async () => {
+        NotificationService.updateNotification(notification, {title: 'Workflow published', text: 'Published!'})
+        e.detail.complete();
 
-    NotificationService.updateNotification(notification, {title: 'Workflow published', text: 'Published!'})
-    e.detail.complete();
-
-    // Reload activity descriptors.
-    await this.activityDescriptorManager.refresh();
+        // Reload activity descriptors.
+        await this.activityDescriptorManager.refresh();
+      }).catch(() => {
+        NotificationService.updateNotification(notification, {
+          title: 'Error while publishing',
+          text: <span>Workflow {definition.definitionId} could not be published.</span>,
+          type: NotificationDisplayType.Error
+        });
+        e.detail.complete();
+      });
   }
 
   private onExportClicked = async (e: CustomEvent) => {
