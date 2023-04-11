@@ -53,7 +53,7 @@ public class DefaultBookmarkScheduler : IBookmarkScheduler
     }
 
     /// <inheritdoc />
-    public async Task ClearScheduleAsync(string workflowInstanceId, IEnumerable<Bookmark> bookmarks, CancellationToken cancellationToken = default)
+    public async Task UnscheduleAsync(string workflowInstanceId, IEnumerable<Bookmark> bookmarks, CancellationToken cancellationToken = default)
     {
         var bookmarkList = bookmarks.ToList();
         

@@ -5,7 +5,7 @@ using Quartz;
 namespace Elsa.Quartz.Jobs;
 
 /// <summary>
-/// A task that resumes a workflow.
+/// A job that resumes a workflow.
 /// </summary>
 public class ResumeWorkflowJob : IJob
 {

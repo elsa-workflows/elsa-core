@@ -36,7 +36,7 @@ public class ScheduleWorkflows : INotificationHandler<WorkflowTriggersIndexed>, 
     public async Task HandleAsync(WorkflowBookmarksIndexed notification, CancellationToken cancellationToken)
     {
         var workflowInstanceId = notification.IndexedWorkflowBookmarks.InstanceId;
-        await _bookmarkScheduler.ClearScheduleAsync(workflowInstanceId, notification.IndexedWorkflowBookmarks.RemovedBookmarks, cancellationToken);
+        await _bookmarkScheduler.UnscheduleAsync(workflowInstanceId, notification.IndexedWorkflowBookmarks.RemovedBookmarks, cancellationToken);
         await _bookmarkScheduler.ScheduleAsync(workflowInstanceId, notification.IndexedWorkflowBookmarks.AddedBookmarks, cancellationToken);
     }
 }

@@ -6,7 +6,7 @@ using Quartz;
 namespace Elsa.Quartz.Jobs;
 
 /// <summary>
-/// A task that runs a workflow.
+/// A job that runs a workflow.
 /// </summary>
 public class RunWorkflowJob : IJob
 {

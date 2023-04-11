@@ -21,5 +21,5 @@ public interface IBookmarkScheduler
     /// <param name="workflowInstanceId">The ID of the workflow instance to which the bookmarks belong.</param>
     /// <param name="bookmarks">The bookmarks to unschedule.</param>
     /// <param name="cancellationToken"></param>
-    Task ClearScheduleAsync(string workflowInstanceId, IEnumerable<Bookmark> bookmarks, CancellationToken cancellationToken = default);
+    Task UnscheduleAsync(string workflowInstanceId, IEnumerable<Bookmark> bookmarks, CancellationToken cancellationToken = default);
 }
