@@ -4,8 +4,9 @@
   --activity-editor-height: 200px;
 }
 elsa-flowchart {
+  position: absolute;
   left: var(--activity-picker-width);
-  top: 54px;
+  top: 0;
   right: var(--workflow-editor-width);
   bottom: var(--activity-editor-height);
 }
