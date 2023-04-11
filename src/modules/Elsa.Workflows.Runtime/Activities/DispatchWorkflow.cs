@@ -81,7 +81,14 @@ public class DispatchWorkflow : Activity<object>, IBookmarksPersistedHandler
         var correlationId = CorrelationId.GetOrDefault(context);
         var workflowDispatcher = context.GetRequiredService<IWorkflowDispatcher>();
         var instanceId = (string)context.TransientProperties["ChildInstanceId"];
-        var request = new DispatchWorkflowDefinitionRequest(workflowDefinitionId, VersionOptions.Published, input, correlationId, instanceId);
+        var request = new DispatchWorkflowDefinitionRequest
+        {
+            DefinitionId = workflowDefinitionId,
+            VersionOptions = VersionOptions.Published,
+            Input = input,
+            CorrelationId = correlationId,
+            InstanceId = instanceId
+        };
         
         // Dispatch the child workflow.
         await workflowDispatcher.DispatchAsync(request, context.CancellationToken);

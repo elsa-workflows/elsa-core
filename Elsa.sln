@@ -168,6 +168,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "clients", "clients", "{8960
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Api.Client", "src\clients\Elsa.Api.Client\Elsa.Api.Client.csproj", "{1FCB2200-28B8-4703-8E89-73241AAED047}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.QuartzIntegration", "src\samples\aspnet\Elsa.Samples.QuartzIntegration\Elsa.Samples.QuartzIntegration.csproj", "{B0312D9E-FA30-43E9-B666-40A8782D6E1C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -414,6 +416,10 @@ Global
 		{1FCB2200-28B8-4703-8E89-73241AAED047}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1FCB2200-28B8-4703-8E89-73241AAED047}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1FCB2200-28B8-4703-8E89-73241AAED047}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B0312D9E-FA30-43E9-B666-40A8782D6E1C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B0312D9E-FA30-43E9-B666-40A8782D6E1C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B0312D9E-FA30-43E9-B666-40A8782D6E1C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B0312D9E-FA30-43E9-B666-40A8782D6E1C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{155227F0-A33B-40AA-A4B4-06F813EB921B} = {61017E64-6D00-49CB-9E81-5002DC8F7D5F}
@@ -487,5 +493,6 @@ Global
 		{E9652738-2B3D-4357-B84B-54F0EA161382} = {1B8D5897-902E-4632-8698-E89CAF3DDF54}
 		{89608AA5-5ADE-4832-AC7B-871C4AE64210} = {61017E64-6D00-49CB-9E81-5002DC8F7D5F}
 		{1FCB2200-28B8-4703-8E89-73241AAED047} = {89608AA5-5ADE-4832-AC7B-871C4AE64210}
+		{B0312D9E-FA30-43E9-B666-40A8782D6E1C} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 	EndGlobalSection
 EndGlobal

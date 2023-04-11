@@ -1,26 +1,26 @@
 using System.Text.Json;
+using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Scheduling.Activities;
 using Elsa.Scheduling.Contracts;
-using Elsa.Scheduling.Schedules;
-using Elsa.Scheduling.Tasks;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Models.Requests;
 
 namespace Elsa.Scheduling.Services;
 
-/// <inheritdoc />
-public class TriggerScheduler : ITriggerScheduler
+/// <summary>
+/// A default implementation of <see cref="ITriggerScheduler"/> that schedules triggers using <see cref="IWorkflowScheduler"/>.
+/// </summary>
+public class DefaultTriggerScheduler : ITriggerScheduler
 {
-    private const string RootGroupKey = "WorkflowDefinition";
-
-    private readonly IScheduler _scheduler;
+    private readonly IWorkflowScheduler _workflowScheduler;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="TriggerScheduler"/> class.
+    /// Initializes a new instance of the <see cref="DefaultTriggerScheduler"/> class.
     /// </summary>
-    public TriggerScheduler(IScheduler scheduler)
+    public DefaultTriggerScheduler(IWorkflowScheduler workflowScheduler)
     {
-        _scheduler = scheduler;
+        _workflowScheduler = workflowScheduler;
     }
 
     /// <inheritdoc />
@@ -36,17 +36,23 @@ public class TriggerScheduler : ITriggerScheduler
         foreach (var trigger in timerTriggers)
         {
             var (startAt, interval) = JsonSerializer.Deserialize<TimerPayload>(trigger.Data!)!;
-            var groupKeys = new[] { RootGroupKey, trigger.WorkflowDefinitionId };
-            await _scheduler.ScheduleAsync(trigger.Id, new RunWorkflowTask(trigger.WorkflowDefinitionId), new RecurringSchedule(startAt, interval), groupKeys, cancellationToken);
+            var request = new DispatchWorkflowDefinitionRequest(trigger.WorkflowDefinitionId, VersionOptions.Published);
+            await _workflowScheduler.ScheduleRecurringAsync(trigger.Id, request,  startAt, interval, cancellationToken);
         }
 
         // Schedule each StartAt trigger.
         foreach (var trigger in startAtTriggers)
         {
             var executeAt = JsonSerializer.Deserialize<StartAtPayload>(trigger.Data!)!.ExecuteAt;
-            var groupKeys = new[] { RootGroupKey, trigger.WorkflowDefinitionId };
             var input = new { ExecuteAt = executeAt }.ToDictionary();
-            await _scheduler.ScheduleAsync(trigger.WorkflowDefinitionId, new RunWorkflowTask(trigger.WorkflowDefinitionId, input), new SpecificInstantSchedule(executeAt), groupKeys, cancellationToken);
+            var request = new DispatchWorkflowDefinitionRequest
+            {
+                DefinitionId = trigger.WorkflowDefinitionId,
+                VersionOptions = VersionOptions.Published,
+                Input = input
+            };
+            
+            await _workflowScheduler.ScheduleAtAsync(trigger.Id, request, executeAt, cancellationToken);
         }
     }
 
@@ -60,18 +66,12 @@ public class TriggerScheduler : ITriggerScheduler
 
         // Select all StartAt triggers.
         var startAtTriggers = triggerList.Filter<Activities.Timer>().ToList();
+        
+        // Concatenate the filtered triggers.
+        var filteredTriggers = timerTriggers.Concat(startAtTriggers).ToList();
 
-        // Unschedule all triggers for the distinct set of affected workflows.
-        var workflowDefinitionIds = timerTriggers
-            .Select(x => x.WorkflowDefinitionId)
-            .Concat(startAtTriggers.Select(x => x.WorkflowDefinitionId))
-            .Distinct()
-            .ToList();
-
-        foreach (var workflowDefinitionId in workflowDefinitionIds)
-        {
-            var groupKeys = new[] { RootGroupKey, workflowDefinitionId };
-            await _scheduler.UnscheduleAsync(groupKeys, cancellationToken);
-        }
+        // Unschedule each trigger.
+        foreach (var trigger in filteredTriggers)
+            await _workflowScheduler.UnscheduleAsync(trigger.Id, cancellationToken);
     }
 }

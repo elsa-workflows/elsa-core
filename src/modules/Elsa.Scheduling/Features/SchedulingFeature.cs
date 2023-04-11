@@ -20,14 +20,20 @@ public class SchedulingFeature : FeatureBase
     public SchedulingFeature(IModule module) : base(module)
     {
     }
+    
+    /// <summary>
+    /// Gets or sets the trigger scheduler.
+    /// </summary>
+    public Func<IServiceProvider, IWorkflowScheduler> WorkflowScheduler { get; set; } = sp => sp.GetRequiredService<DefaultWorkflowScheduler>();
 
     /// <inheritdoc />
     public override void Apply()
     {
         Services
-            .AddSingleton<ITriggerScheduler, TriggerScheduler>()
-            .AddSingleton<IBookmarkScheduler, BookmarkScheduler>()
+            .AddSingleton<ITriggerScheduler, DefaultTriggerScheduler>()
+            .AddSingleton<IBookmarkScheduler, DefaultBookmarkScheduler>()
             .AddSingleton<IScheduler, LocalScheduler>()
+            .AddSingleton(WorkflowScheduler)
             .AddHandlersFrom<ScheduleWorkflows>();
 
         Module.Configure<WorkflowManagementFeature>(management => management.AddActivitiesFrom<SchedulingFeature>());
