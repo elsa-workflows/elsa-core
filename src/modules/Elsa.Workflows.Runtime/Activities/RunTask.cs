@@ -12,7 +12,7 @@ using Elsa.Workflows.Runtime.Notifications;
 namespace Elsa.Workflows.Runtime.Activities;
 
 /// <summary>
-/// Notifies the application that a task with a given name i requested to start.
+/// Notifies the application that a task with a given name is requested to start.
 /// When the application fulfilled the task, it is expected to report back to the workflow engine in order to resume the workflow. 
 /// </summary>
 [Activity("Elsa", "Primitives", "Requests a given task to be run. ", Kind = ActivityKind.Action)]
