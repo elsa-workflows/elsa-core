@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Quartz;
 
 // ReSharper disable once CheckNamespace
@@ -15,6 +16,20 @@ public static class JobDataMapExtensions
     {
         if (!string.IsNullOrWhiteSpace(value))
             map[key] = value;
+        
+        return map;
+    }
+    
+    /// <summary>
+    /// Adds a key/value pair to the map if the value is not null or empty.
+    /// </summary>
+    public static JobDataMap AddIfNotEmpty(this JobDataMap map, string key, IDictionary<string, object>? dictionary)
+    {
+        if (dictionary == null || !dictionary.Any())
+            return map;
+        
+        var json = JsonSerializer.Serialize(dictionary);
+        map[key] = json;
         
         return map;
     }

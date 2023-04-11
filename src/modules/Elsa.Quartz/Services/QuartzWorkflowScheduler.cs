@@ -109,12 +109,16 @@ public class QuartzWorkflowScheduler : IWorkflowScheduler
             .AddIfNotEmpty(nameof(DispatchWorkflowDefinitionRequest.InstanceId), request.InstanceId)
             .AddIfNotEmpty(nameof(DispatchWorkflowDefinitionRequest.CorrelationId), request.CorrelationId)
             .AddIfNotEmpty(nameof(DispatchWorkflowDefinitionRequest.DefinitionId), request.DefinitionId)
-            .AddIfNotEmpty(nameof(DispatchWorkflowDefinitionRequest.VersionOptions), request.VersionOptions.ToString());
+            .AddIfNotEmpty(nameof(DispatchWorkflowDefinitionRequest.VersionOptions), request.VersionOptions.ToString())
+            .AddIfNotEmpty(nameof(DispatchWorkflowDefinitionRequest.TriggerActivityId), request.TriggerActivityId)
+            .AddIfNotEmpty(nameof(DispatchWorkflowDefinitionRequest.Input), request.Input)
+        ;
 
     private static JobDataMap CreateJobDataMap(DispatchWorkflowInstanceRequest request) =>
         new JobDataMap()
             .AddIfNotEmpty(nameof(DispatchWorkflowInstanceRequest.InstanceId), request.InstanceId)
             .AddIfNotEmpty(nameof(DispatchWorkflowInstanceRequest.CorrelationId), request.CorrelationId)
+            .AddIfNotEmpty(nameof(DispatchWorkflowInstanceRequest.Input), request.Input)
             .AddIfNotEmpty(nameof(DispatchWorkflowInstanceRequest.ActivityInstanceId), request.ActivityInstanceId)
             .AddIfNotEmpty(nameof(DispatchWorkflowInstanceRequest.ActivityId), request.ActivityId)
             .AddIfNotEmpty(nameof(DispatchWorkflowInstanceRequest.ActivityHash), request.ActivityHash)

@@ -3,6 +3,8 @@ using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Scheduling.Activities;
 using Elsa.Scheduling.Contracts;
+using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Models.Requests;
 
@@ -14,13 +16,15 @@ namespace Elsa.Scheduling.Services;
 public class DefaultTriggerScheduler : ITriggerScheduler
 {
     private readonly IWorkflowScheduler _workflowScheduler;
+    private readonly IBookmarkPayloadSerializer _bookmarkPayloadSerializer;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DefaultTriggerScheduler"/> class.
     /// </summary>
-    public DefaultTriggerScheduler(IWorkflowScheduler workflowScheduler)
+    public DefaultTriggerScheduler(IWorkflowScheduler workflowScheduler, IBookmarkPayloadSerializer bookmarkPayloadSerializer)
     {
         _workflowScheduler = workflowScheduler;
+        _bookmarkPayloadSerializer = bookmarkPayloadSerializer;
     }
 
     /// <inheritdoc />
@@ -35,20 +39,28 @@ public class DefaultTriggerScheduler : ITriggerScheduler
         // Schedule each Timer trigger.
         foreach (var trigger in timerTriggers)
         {
-            var (startAt, interval) = JsonSerializer.Deserialize<TimerPayload>(trigger.Data!)!;
-            var request = new DispatchWorkflowDefinitionRequest(trigger.WorkflowDefinitionId, VersionOptions.Published);
+            var (startAt, interval) = _bookmarkPayloadSerializer.Deserialize<TimerTriggerPayload>(trigger.Data!);
+            var input = new { StartAt = startAt, Interval = interval }.ToDictionary();
+            var request = new DispatchWorkflowDefinitionRequest
+            {
+                DefinitionId = trigger.WorkflowDefinitionId,
+                VersionOptions = VersionOptions.Published,
+                TriggerActivityId = trigger.ActivityId,
+                Input = input
+            };
             await _workflowScheduler.ScheduleRecurringAsync(trigger.Id, request,  startAt, interval, cancellationToken);
         }
 
         // Schedule each StartAt trigger.
         foreach (var trigger in startAtTriggers)
         {
-            var executeAt = JsonSerializer.Deserialize<StartAtPayload>(trigger.Data!)!.ExecuteAt;
+            var executeAt = _bookmarkPayloadSerializer.Deserialize<StartAtPayload>(trigger.Data!).ExecuteAt;
             var input = new { ExecuteAt = executeAt }.ToDictionary();
             var request = new DispatchWorkflowDefinitionRequest
             {
                 DefinitionId = trigger.WorkflowDefinitionId,
                 VersionOptions = VersionOptions.Published,
+                TriggerActivityId = trigger.ActivityId,
                 Input = input
             };
             
