@@ -14,10 +14,12 @@
     <ItemGroup>
       <PackageReference Include="Hangfire" Version="1.7.33" />
       <PackageReference Include="Hangfire.MemoryStorage" Version="1.7.0" />
+      <PackageReference Include="Hangfire.Storage.SQLite" Version="0.3.3" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\..\common\Elsa.Features\Elsa.Features.csproj" />
+      <ProjectReference Include="..\Elsa.Scheduling\Elsa.Scheduling.csproj" />
     </ItemGroup>
 
 </Project>

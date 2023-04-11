@@ -33,4 +33,13 @@ public static class JobDataMapExtensions
         
         return map;
     }
+    
+    /// <summary>
+    /// Gets a dictionary from the map.
+    /// </summary>
+    public static IDictionary<string, object>? GetDictionary(this JobDataMap map, string key)
+    {
+        var json = (string?)map.Get(key);
+        return json == null ? null : JsonSerializer.Deserialize<Dictionary<string, object>>(json);
+    }
 }

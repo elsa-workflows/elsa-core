@@ -1,3 +1,4 @@
+using Elsa.Extensions;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Models.Requests;
 using Quartz;
@@ -35,7 +36,8 @@ public class ResumeWorkflowJob : IJob
             ActivityId = (string?)map.Get(nameof(DispatchWorkflowInstanceRequest.ActivityId)),
             ActivityNodeId = (string?)map.Get(nameof(DispatchWorkflowInstanceRequest.ActivityNodeId)),
             ActivityInstanceId = (string?)map.Get(nameof(DispatchWorkflowInstanceRequest.ActivityInstanceId)),
-            CorrelationId = (string?)map.Get(nameof(DispatchWorkflowInstanceRequest.CorrelationId))
+            CorrelationId = (string?)map.Get(nameof(DispatchWorkflowInstanceRequest.CorrelationId)),
+            Input = map.GetDictionary(nameof(DispatchWorkflowInstanceRequest.Input))
         };
         await _workflowDispatcher.DispatchAsync(request, context.CancellationToken);
     }
