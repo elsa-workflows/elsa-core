@@ -32,9 +32,10 @@ public class DefaultTriggerScheduler : ITriggerScheduler
     {
         var triggerList = triggers.ToList();
 
-        // Select all Timer triggers.
+        // Select Timer, StartAt and Cron triggers.
         var timerTriggers = triggerList.Filter<Activities.Timer>().ToList();
         var startAtTriggers = triggerList.Filter<StartAt>().ToList();
+        var cronTriggers = triggerList.Filter<Cron>().ToList();
 
         // Schedule each Timer trigger.
         foreach (var trigger in timerTriggers)
@@ -65,6 +66,22 @@ public class DefaultTriggerScheduler : ITriggerScheduler
             };
             
             await _workflowScheduler.ScheduleAtAsync(trigger.Id, request, executeAt, cancellationToken);
+        }
+        
+        // Schedule each Cron trigger.
+        foreach (var trigger in cronTriggers)
+        {
+            var (executeAt, cronExpression) = _bookmarkPayloadSerializer.Deserialize<CronBookmarkPayload>(trigger.Data!);
+            var input = new { ExecuteAt = executeAt, CronExpression = cronExpression }.ToDictionary();
+            var request = new DispatchWorkflowDefinitionRequest
+            {
+                DefinitionId = trigger.WorkflowDefinitionId,
+                VersionOptions = VersionOptions.Published,
+                TriggerActivityId = trigger.ActivityId,
+                Input = input
+            };
+            
+            await _workflowScheduler.ScheduleCronAsync(trigger.Id, request, cronExpression, cancellationToken);
         }
     }
 

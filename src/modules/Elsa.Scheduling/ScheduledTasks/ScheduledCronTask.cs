@@ -13,7 +13,6 @@ namespace Elsa.Scheduling.ScheduledTasks;
 public class ScheduledCronTask : IScheduledTask
 {
     private readonly ISystemClock _systemClock;
- 
     private readonly CronExpression _parsedCronExpression;
     private Timer? _timer;
     private readonly ITask _task;

@@ -99,7 +99,7 @@ public class StartAt : Trigger
     /// <summary>
     /// Creates a new <see cref="StartAt"/> activity set to trigger at the specified timestamp.
     /// </summary>
-    public static StartAt From(DateTimeOffset value) => new(value);
+    public static StartAt From(DateTimeOffset value, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(value, source, line);
 }
 
 internal record StartAtPayload(DateTimeOffset ExecuteAt);

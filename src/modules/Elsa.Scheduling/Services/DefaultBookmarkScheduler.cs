@@ -37,6 +37,9 @@ public class DefaultBookmarkScheduler : IBookmarkScheduler
         
         // Select all Timer bookmarks.
         var timerBookmarks = bookmarkList.Filter<Activities.Timer>().ToList();
+        
+        // Select all Cron bookmarks.
+        var cronBookmarks = bookmarkList.Filter<Cron>().ToList();
 
         // Schedule each Delay bookmark.
         foreach (var bookmark in delayBookmarks)
@@ -63,6 +66,15 @@ public class DefaultBookmarkScheduler : IBookmarkScheduler
             var resumeAt = payload.ResumeAt;
             var request = new DispatchWorkflowInstanceRequest(workflowInstanceId) { BookmarkId = bookmark.Id };
             await _workflowScheduler.ScheduleAtAsync(bookmark.Id, request, resumeAt, cancellationToken);
+        }
+        
+        // Schedule a trigger for each Cron bookmark.
+        foreach (var bookmark in cronBookmarks)
+        {
+            var payload = _bookmarkPayloadSerializer.Deserialize<CronBookmarkPayload>(bookmark.Data!)!;
+            var cronExpression = payload.CronExpression;
+            var request = new DispatchWorkflowInstanceRequest(workflowInstanceId) { BookmarkId = bookmark.Id };
+            await _workflowScheduler.ScheduleCronAsync(bookmark.Id, request, cronExpression, cancellationToken);
         }
     }
 

@@ -21,16 +21,17 @@ public class QuartzSchedulerFeature : FeatureBase
     {
     }
 
-    /// <summary>
-    /// A delegate that creates a <see cref="QuartzWorkflowScheduler"/> instance.
-    /// </summary>
-    public Func<IServiceProvider, IWorkflowScheduler> WorkflowScheduler { get; set; } = sp => sp.GetRequiredService<QuartzWorkflowScheduler>();
-
     /// <inheritdoc />
     public override void Configure()
     {
-        // Configure the scheduling feature to use the Quartz workflow scheduler.
-        Module.Configure<SchedulingFeature>(scheduling => scheduling.WorkflowScheduler = WorkflowScheduler);
+        Module.Configure<SchedulingFeature>(scheduling =>
+        {
+            // Configure the scheduling feature to use the Quartz workflow scheduler.
+            scheduling.WorkflowScheduler = sp => sp.GetRequiredService<QuartzWorkflowScheduler>();
+            
+            // Configure the cron parser to use the Quartz cron parser.
+            scheduling.CronParser = sp => sp.GetRequiredService<QuartzCronParser>();
+        });
     }
 
     /// <inheritdoc />

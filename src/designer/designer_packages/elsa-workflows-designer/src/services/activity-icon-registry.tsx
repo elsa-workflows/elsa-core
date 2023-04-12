@@ -25,6 +25,7 @@ import {ForkIcon} from "../components/icons/activities/fork";
 import {CompleteIcon} from "../components/icons/activities/complete";
 import {PublishEventIcon} from "../components/icons/activities/publish-event";
 import {RunTaskIcon} from "../components/icons/activities/run-task";
+import {CronIcon} from "../components/icons/activities/cron";
 
 export type ActivityType = string;
 export type ActivityIconProducer = (ActivityIconSettings?) => any;
@@ -48,6 +49,7 @@ export class ActivityIconRegistry {
     this.add('Elsa.Break', settings => <BreakIcon size={settings?.size}/>);
     this.add('Elsa.Delay', settings => <DelayIcon size={settings?.size}/>);
     this.add('Elsa.Timer', settings => <TimerIcon size={settings?.size}/>);
+    this.add('Elsa.Cron', settings => <CronIcon size={settings?.size}/>);
     this.add('Elsa.StartAt', settings => <StartAtIcon size={settings?.size}/>);
     this.add('Elsa.FlowDecision', settings => <FlowDecisionIcon size={settings?.size}/>);
     this.add('Elsa.Event', settings => <EventIcon size={settings?.size}/>);

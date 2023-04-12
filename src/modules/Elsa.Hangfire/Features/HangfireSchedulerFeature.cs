@@ -22,12 +22,17 @@ public class HangfireSchedulerFeature : FeatureBase
     /// <inheritdoc />
     public override void Configure()
     {
-        Module.Configure<SchedulingFeature>(schedulingFeature => { schedulingFeature.WorkflowScheduler = sp => sp.GetRequiredService<HangfireWorkflowScheduler>(); });
+        Module.Configure<SchedulingFeature>(schedulingFeature =>
+        {
+            schedulingFeature.WorkflowScheduler = sp => sp.GetRequiredService<HangfireWorkflowScheduler>();
+            schedulingFeature.CronParser = sp => sp.GetRequiredService<HangfireCronParser>();
+        });
     }
 
     /// <inheritdoc />
     public override void Apply()
     {
         Services.AddSingleton<HangfireWorkflowScheduler>();
+        Services.AddSingleton<HangfireCronParser>();
     }
 }

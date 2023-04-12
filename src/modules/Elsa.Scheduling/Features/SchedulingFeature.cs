@@ -25,6 +25,11 @@ public class SchedulingFeature : FeatureBase
     /// Gets or sets the trigger scheduler.
     /// </summary>
     public Func<IServiceProvider, IWorkflowScheduler> WorkflowScheduler { get; set; } = sp => sp.GetRequiredService<DefaultWorkflowScheduler>();
+    
+    /// <summary>
+    /// Gets or sets the CRON parser.
+    /// </summary>
+    public Func<IServiceProvider, ICronParser> CronParser { get; set; } = sp => sp.GetRequiredService<CronosCronParser>();
 
     /// <inheritdoc />
     public override void Apply()
@@ -34,6 +39,8 @@ public class SchedulingFeature : FeatureBase
             .AddSingleton<IBookmarkScheduler, DefaultBookmarkScheduler>()
             .AddSingleton<IScheduler, LocalScheduler>()
             .AddSingleton<DefaultWorkflowScheduler>()
+            .AddSingleton<CronosCronParser>()
+            .AddSingleton(CronParser)
             .AddSingleton(WorkflowScheduler)
             .AddHandlersFrom<ScheduleWorkflows>();
 
