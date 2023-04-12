@@ -17,8 +17,5 @@ public class CronActivityDescriptorModifier : IActivityDescriptorModifier
             return;
         
         descriptor.Description = "Schedules the execution of the activity using a cron expression using Hangfire.";
-                
-        var cronExpressionInput = descriptor.Inputs.First(x => x.Name == nameof(Cron.CronExpression));
-        cronExpressionInput.Description = "The Hangfire cron expression to use for scheduling the activity.";
     }
 }
