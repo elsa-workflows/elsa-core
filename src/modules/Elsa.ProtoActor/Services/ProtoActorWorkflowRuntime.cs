@@ -22,6 +22,7 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
     private readonly ITriggerStore _triggerStore;
     private readonly IIdentityGenerator _identityGenerator;
     private readonly IBookmarkHasher _hasher;
+    private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly IWorkflowInstanceFactory _workflowInstanceFactory;
 
     /// <summary>
@@ -33,6 +34,7 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
         ITriggerStore triggerStore,
         IIdentityGenerator identityGenerator,
         IBookmarkHasher hasher,
+        IWorkflowDefinitionService workflowDefinitionService,
         IWorkflowInstanceFactory workflowInstanceFactory)
     {
         _cluster = cluster;
@@ -40,6 +42,7 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
         _triggerStore = triggerStore;
         _identityGenerator = identityGenerator;
         _hasher = hasher;
+        _workflowDefinitionService = workflowDefinitionService;
         _workflowInstanceFactory = workflowInstanceFactory;
     }
 
@@ -65,6 +68,18 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
         var response = await client.CanStart(request, cancellationToken);
 
         return new CanStartWorkflowResult(workflowInstanceId, response!.CanStart);
+    }
+
+    /// <inheritdoc />
+    public async Task<WorkflowExecutionResult?> TryStartWorkflowAsync(string definitionId, StartWorkflowRuntimeOptions options, CancellationToken cancellationToken = default)
+    {
+        // Load the workflow definition.
+        var workflowDefinition = await _workflowDefinitionService.FindAsync(definitionId, options.VersionOptions, cancellationToken);
+
+        if (workflowDefinition == null)
+            return null;
+
+        return await StartWorkflowAsync(definitionId, options, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -177,7 +192,7 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
 
         var collectedResumableWorkflow = (match as ResumableWorkflowMatch)!;
         var runtimeOptions = new ResumeWorkflowRuntimeOptions(collectedResumableWorkflow.CorrelationId, Input: input);
-        
+
         var resumeResult = await ResumeWorkflowAsync(
             match.WorkflowInstanceId,
             runtimeOptions with { BookmarkId = collectedResumableWorkflow.BookmarkId },

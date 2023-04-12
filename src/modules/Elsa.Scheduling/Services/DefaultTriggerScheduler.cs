@@ -77,7 +77,7 @@ public class DefaultTriggerScheduler : ITriggerScheduler
         var timerTriggers = triggerList.Filter<Activities.Timer>().ToList();
 
         // Select all StartAt triggers.
-        var startAtTriggers = triggerList.Filter<Activities.Timer>().ToList();
+        var startAtTriggers = triggerList.Filter<StartAt>().ToList();
         
         // Concatenate the filtered triggers.
         var filteredTriggers = timerTriggers.Concat(startAtTriggers).ToList();

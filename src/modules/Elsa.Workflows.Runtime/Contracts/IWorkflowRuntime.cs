@@ -35,6 +35,11 @@ public interface IWorkflowRuntime
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Tries to start a workflow and returns the result if successful.
+    /// </summary>
+    Task<WorkflowExecutionResult?> TryStartWorkflowAsync(string definitionId, StartWorkflowRuntimeOptions options, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Resumes an existing workflow instance.
     /// </summary>
     /// <param name="workflowInstanceId">The ID of the workflow instance to resume.</param>

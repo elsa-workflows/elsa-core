@@ -21,6 +21,8 @@ public class RunWorkflowJob
     /// <summary>
     /// Executes the job.
     /// </summary>
+    /// <param name="name">The name of the job.</param>
     /// <param name="request">The workflow request.</param>
-    public async Task ExecuteAsync(DispatchWorkflowDefinitionRequest request) => await _workflowDispatcher.DispatchAsync(request);
+    /// <param name="cancellationToken">The cancellation token.</param>
+    public async Task ExecuteAsync(string name, DispatchWorkflowDefinitionRequest request, CancellationToken cancellationToken) => await _workflowDispatcher.DispatchAsync(request, cancellationToken);
 }

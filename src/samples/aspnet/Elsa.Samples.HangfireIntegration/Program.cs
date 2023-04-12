@@ -1,7 +1,6 @@
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
-using Elsa.EntityFrameworkCore.Sqlite;
 using Elsa.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,6 +18,9 @@ builder.Services.AddElsa(elsa =>
     {
         runtime.UseDefaultRuntime(dr => dr.UseEntityFrameworkCore(ef => ef.UseSqlite()));
         
+        // Use Hangfire to schedule background activities.
+        runtime.UseHangfireBackgroundActivityScheduler();
+        
         // Capture execution log records.
         runtime.UseExecutionLogRecords(e => e.UseEntityFrameworkCore(ef => ef.UseSqlite()));
         
@@ -29,8 +31,10 @@ builder.Services.AddElsa(elsa =>
     // Expose API endpoints.
     elsa.UseWorkflowsApi();
 
-    // Use timers.
+    // Use Hangfire.
     elsa.UseHangfire(hangfire => hangfire.UseSqliteStorage(sqlite => sqlite.NameOrConnectionString = "elsa.sqlite.db"));
+    
+    // Use hangfire for scheduling timer events.
     elsa.UseScheduling(scheduling => scheduling.UseHangfireScheduler());
     
     // Configure identity.
