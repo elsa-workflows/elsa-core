@@ -31,7 +31,7 @@ internal class DispatchWorkflowRequestHandler :
     {
         var options = new StartWorkflowRuntimeOptions(command.CorrelationId, command.Input, command.VersionOptions, InstanceId: command.InstanceId, TriggerActivityId: command.TriggerActivityId);
 
-        await _workflowRuntime.StartWorkflowAsync(command.DefinitionId, options, cancellationToken);
+        await _workflowRuntime.TryStartWorkflowAsync(command.DefinitionId, options, cancellationToken);
 
         return Unit.Instance;
     }

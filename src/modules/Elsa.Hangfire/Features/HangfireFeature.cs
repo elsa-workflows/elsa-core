@@ -2,13 +2,12 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Hangfire;
 using Hangfire.MemoryStorage;
-using Hangfire.SqlServer;
 using Newtonsoft.Json;
 
 namespace Elsa.Hangfire.Features;
 
 /// <summary>
-/// Sets up Hangfire.
+/// Sets up Hangfire. If you're setting up Hangfire yourself, then you should not enable this feature.
 /// </summary>
 public class HangfireFeature : FeatureBase
 {
@@ -18,47 +17,39 @@ public class HangfireFeature : FeatureBase
     }
 
     /// <summary>
-    /// Whether to use SQL Server storage.
+    /// A delegate that configures Hangfire.
     /// </summary>
-    public bool UseSqlServerStorage { get; set; }
+    public Action<IServiceProvider, IGlobalConfiguration> ConfigureHangfire { get; set; } = (_, cfg) => cfg.UseMemoryStorage();
+
+    /// <summary>
+    /// A delegate that configures Hangfire's background job server options.
+    /// </summary>
+    public Action<IServiceProvider, BackgroundJobServerOptions> ConfigureBackgroundServerOptions { get; set; } = (_, _) => { };
     
     /// <summary>
-    /// The SQL Server storage options.
+    /// A delegate that creates a job storage instance.
     /// </summary>
-    public SqlServerStorageOptions? SqlServerStorageOptions { get; set; }
-    
-    /// <summary>
-    /// The SQL Server connection string.
-    /// </summary>
-    public string? SqlServerConnectionString { get; set; }
-    
-    /// <summary>
-    /// The Hangfire background server options.
-    /// </summary>
-    public Action<BackgroundJobServerOptions>? ConfigureBackgroundServerOptions { get; set; }
+    public Func<JobStorage> CreateJobStorage { get; set; } = () => new MemoryStorage();
 
     /// <inheritdoc />
-    public override void Configure()
+    public override void Apply()
     {
-        Services.AddHangfire(configuration =>
+        Action<IServiceProvider, IGlobalConfiguration> configAction = (sp, cfg) =>
         {
-            configuration.UseSimpleAssemblyNameTypeSerializer();
-            configuration.UseRecommendedSerializerSettings(json => json.TypeNameHandling = TypeNameHandling.Objects);
-
-            if (UseSqlServerStorage)
-            {
-                var storageOptions = SqlServerStorageOptions ?? new SqlServerStorageOptions();
-                configuration.UseSqlServerStorage(SqlServerConnectionString, storageOptions);
-            }
-            else
-            {
-                configuration.UseMemoryStorage();
-            }
-        });
-
-        if (UseSqlServerStorage)
-            Services.AddHangfireServer((_, options) => ConfigureBackgroundServerOptions?.Invoke(options), new SqlServerStorage(SqlServerConnectionString));
-        else
-            Services.AddHangfireServer(options => { ConfigureBackgroundServerOptions?.Invoke(options); });
+            cfg.UseSimpleAssemblyNameTypeSerializer();
+            cfg.UseRecommendedSerializerSettings(json => json.TypeNameHandling = TypeNameHandling.Objects);
+        };
+        
+        Action<IServiceProvider, BackgroundJobServerOptions> serverOptionsAction = (sp, options) =>
+        {
+            options.WorkerCount = 1;
+            options.SchedulePollingInterval = TimeSpan.FromSeconds(1);
+        };
+        
+        configAction += ConfigureHangfire;
+        serverOptionsAction += ConfigureBackgroundServerOptions;
+        
+        Services.AddHangfire(configAction);
+        Services.AddHangfireServer(serverOptionsAction, CreateJobStorage());
     }
 }

@@ -1,4 +1,5 @@
 using Elsa.Common.Models;
+using Elsa.Extensions;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Models.Requests;
 using Quartz;
@@ -40,7 +41,8 @@ public class RunWorkflowJob : IJob
             VersionOptions = VersionOptions.FromString((string)map.Get(nameof(DispatchWorkflowDefinitionRequest.VersionOptions))),
             TriggerActivityId = (string?)map.Get(nameof(DispatchWorkflowDefinitionRequest.TriggerActivityId)),
             InstanceId = (string?)map.Get(nameof(DispatchWorkflowDefinitionRequest.InstanceId)),
-            CorrelationId = (string?)map.Get(nameof(DispatchWorkflowDefinitionRequest.CorrelationId))
+            CorrelationId = (string?)map.Get(nameof(DispatchWorkflowDefinitionRequest.CorrelationId)),
+            Input = map.GetDictionary(nameof(DispatchWorkflowDefinitionRequest.Input))
         };
         await _workflowDispatcher.DispatchAsync(request, context.CancellationToken);
     }

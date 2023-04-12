@@ -7,7 +7,7 @@ using Elsa.Scheduling.Features;
 namespace Elsa.Extensions;
 
 /// <summary>
-/// Provides extension methods for <see cref="SchedulingFeature"/>.
+/// Provides extension methods for the <see cref="SchedulingFeature"/>.
 /// </summary>
 public static class ModuleExtensions
 {
