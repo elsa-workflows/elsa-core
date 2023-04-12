@@ -33,6 +33,7 @@ public class SchedulingFeature : FeatureBase
             .AddSingleton<ITriggerScheduler, DefaultTriggerScheduler>()
             .AddSingleton<IBookmarkScheduler, DefaultBookmarkScheduler>()
             .AddSingleton<IScheduler, LocalScheduler>()
+            .AddSingleton<DefaultWorkflowScheduler>()
             .AddSingleton(WorkflowScheduler)
             .AddHandlersFrom<ScheduleWorkflows>();
 
