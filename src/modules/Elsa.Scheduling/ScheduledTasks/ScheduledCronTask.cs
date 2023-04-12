@@ -13,22 +13,23 @@ namespace Elsa.Scheduling.ScheduledTasks;
 public class ScheduledCronTask : IScheduledTask
 {
     private readonly ISystemClock _systemClock;
- 
-    private readonly CronExpression _parsedCronExpression;
     private Timer? _timer;
     private readonly ITask _task;
+    private readonly string _cronExpression;
+    private readonly ICronParser _cronParser;
     private readonly IBackgroundCommandSender _commandSender;
     private readonly CancellationTokenSource _cancellationTokenSource;
 
     /// <summary>
     /// Initializes a new instance of <see cref="ScheduledCronTask"/>.
     /// </summary>
-    public ScheduledCronTask(ITask task, string cronExpression, IBackgroundCommandSender commandSender, ISystemClock systemClock)
+    public ScheduledCronTask(ITask task, string cronExpression, ICronParser cronParser, IBackgroundCommandSender commandSender, ISystemClock systemClock)
     {
         _task = task;
+        _cronExpression = cronExpression;
+        _cronParser = cronParser;
         _commandSender = commandSender;
         _systemClock = systemClock;
-        _parsedCronExpression = CronExpression.Parse(cronExpression);
         _cancellationTokenSource = new CancellationTokenSource();
 
         Schedule();
@@ -43,14 +44,19 @@ public class ScheduledCronTask : IScheduledTask
 
     private void Schedule()
     {
+        var adjusted = false;
+        
         while (true)
         {
             var now = _systemClock.UtcNow;
-            var nextOccurence = _parsedCronExpression.GetNextOccurrence(now.UtcDateTime)!;
-            var delay = nextOccurence.Value - now;
+            var nextOccurence = _cronParser.GetNextOccurrence(_cronExpression);
+            var delay = nextOccurence - now;
 
-            if (delay.Milliseconds <= 0)
+            if (!adjusted && delay.Milliseconds <= 0)
+            {
+                adjusted = true;
                 continue;
+            }
 
             SetupTimer(delay);
             break;

@@ -65,12 +65,12 @@ public class Timer : EventGenerator
     /// <summary>
     /// Creates a new <see cref="Timer"/> activity set to trigger at the specified interval.
     /// </summary>
-    public static Timer FromTimeSpan(TimeSpan value) => new(value);
+    public static Timer FromTimeSpan(TimeSpan value, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(value, source, line);
 
     /// <summary>
     /// Creates a new <see cref="Timer"/> activity set to trigger at the specified interval in seconds.
     /// </summary>
-    public static Timer FromSeconds(double value) => FromTimeSpan(TimeSpan.FromSeconds(value));
+    public static Timer FromSeconds(double value, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => FromTimeSpan(TimeSpan.FromSeconds(value), source, line);
 }
 
 internal record TimerTriggerPayload(DateTimeOffset StartAt, TimeSpan Interval);

@@ -12,6 +12,7 @@ using Elsa.Mediator.Contracts;
 using Elsa.Mediator.HostedServices;
 using Elsa.Mediator.Options;
 using Elsa.Mediator.Services;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -19,8 +20,9 @@ using Microsoft.Extensions.Options;
 namespace Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
-/// Adds extension methods to <see cref="IModule"/> that enable & configure mediator specific features.
+/// Adds extension methods to <see cref="IModule"/> that enable &amp; configure mediator specific features.
 /// </summary>
+[PublicAPI]
 public static class DependencyInjectionExtensions
 {
     /// <summary>

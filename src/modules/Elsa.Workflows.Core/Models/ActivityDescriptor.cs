@@ -11,11 +11,11 @@ namespace Elsa.Workflows.Core.Models;
 [DebuggerDisplay("{TypeName}")]
 public class ActivityDescriptor
 {
-    public string TypeName { get; init; } = default!;
-    public int Version { get; init; }
-    public string Category { get; init; } = default!;
-    public string? DisplayName { get; init; }
-    public string? Description { get; init; }
+    public string TypeName { get; set; } = default!;
+    public int Version { get; set; }
+    public string Category { get; set; } = default!;
+    public string? DisplayName { get; set; }
+    public string? Description { get; set; }
     public ICollection<InputDescriptor> Inputs { get; init; } = new List<InputDescriptor>();
     public ICollection<OutputDescriptor> Outputs { get; init; } = new List<OutputDescriptor>();
     [JsonIgnore] public ICollection<Attribute> Attributes { get; set; } = new List<Attribute>();

@@ -8,6 +8,7 @@ namespace Elsa.Workflows.Core.Services;
 public class ActivityRegistry : IActivityRegistry
 {
     private readonly IActivityDescriber _activityDescriber;
+    private readonly IEnumerable<IActivityDescriptorModifier> _modifiers;
     private readonly ISet<ActivityDescriptor> _manualActivityDescriptors = new HashSet<ActivityDescriptor>();
     private readonly IDictionary<Type, ICollection<ActivityDescriptor>> _providedActivityDescriptors = new Dictionary<Type, ICollection<ActivityDescriptor>>();
     private readonly IDictionary<(string Type, int Version), ActivityDescriptor> _activityDescriptors = new Dictionary<(string Type, int Version), ActivityDescriptor>();
@@ -15,9 +16,10 @@ public class ActivityRegistry : IActivityRegistry
     /// <summary>
     /// Initializes a new instance of the <see cref="ActivityRegistry"/> class.
     /// </summary>
-    public ActivityRegistry(IActivityDescriber activityDescriber)
+    public ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<IActivityDescriptorModifier> modifiers)
     {
         _activityDescriber = activityDescriber;
+        _modifiers = modifiers;
     }
 
     /// <inheritdoc />
@@ -96,6 +98,9 @@ public class ActivityRegistry : IActivityRegistry
 
     private void Add(ActivityDescriptor descriptor, ICollection<ActivityDescriptor> target)
     {
+        foreach (var modifier in _modifiers) 
+            modifier.Modify(descriptor);
+        
         _activityDescriptors.Add((descriptor.TypeName, descriptor.Version), descriptor);
         target.Add(descriptor);
     }

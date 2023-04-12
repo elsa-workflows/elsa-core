@@ -139,27 +139,42 @@ public class Delay : Activity
     /// <summary>
     /// Creates a new <see cref="Delay"/> from the specified number of milliseconds.
     /// </summary>
-    public static Delay FromMilliseconds(double value, DelayBlockingStrategy blockingStrategy = DelayBlockingStrategy.NonBlocking) => new(System.TimeSpan.FromMilliseconds(value), blockingStrategy);
+    public static Delay FromMilliseconds(
+        double value, 
+        DelayBlockingStrategy blockingStrategy = DelayBlockingStrategy.NonBlocking,
+        [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(System.TimeSpan.FromMilliseconds(value), blockingStrategy, source, line);
     
     /// <summary>
     /// Creates a new <see cref="Delay"/> from the specified number of seconds.
     /// </summary>
-    public static Delay FromSeconds(double value, DelayBlockingStrategy blockingStrategy = DelayBlockingStrategy.NonBlocking) => new(System.TimeSpan.FromSeconds(value), blockingStrategy);
+    public static Delay FromSeconds(
+        double value, 
+        DelayBlockingStrategy blockingStrategy = DelayBlockingStrategy.NonBlocking,
+        [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(System.TimeSpan.FromSeconds(value), blockingStrategy, source, line);
     
     /// <summary>
     /// Creates a new <see cref="Delay"/> from the specified number of minutes.
     /// </summary>
-    public static Delay FromMinutes(double value, DelayBlockingStrategy blockingStrategy = DelayBlockingStrategy.NonBlocking) => new(System.TimeSpan.FromMinutes(value), blockingStrategy);
+    public static Delay FromMinutes(
+        double value, 
+        DelayBlockingStrategy blockingStrategy = DelayBlockingStrategy.NonBlocking,
+        [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(System.TimeSpan.FromMinutes(value), blockingStrategy, source, line);
     
     /// <summary>
     /// Creates a new <see cref="Delay"/> from the specified number of hours.
     /// </summary>
-    public static Delay FromHours(double value, DelayBlockingStrategy blockingStrategy = DelayBlockingStrategy.NonBlocking) => new(System.TimeSpan.FromHours(value), blockingStrategy);
+    public static Delay FromHours(
+        double value, 
+        DelayBlockingStrategy blockingStrategy = DelayBlockingStrategy.NonBlocking,
+        [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(System.TimeSpan.FromHours(value), blockingStrategy, source, line);
     
     /// <summary>
     /// Creates a new <see cref="Delay"/> from the specified number of days.
     /// </summary>
-    public static Delay FromDays(double value, DelayBlockingStrategy blockingStrategy = DelayBlockingStrategy.NonBlocking) => new(System.TimeSpan.FromDays(value), blockingStrategy);
+    public static Delay FromDays(
+        double value, 
+        DelayBlockingStrategy blockingStrategy = DelayBlockingStrategy.NonBlocking,
+        [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(System.TimeSpan.FromDays(value), blockingStrategy, source, line);
 }
 
 /// <summary>

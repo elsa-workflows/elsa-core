@@ -57,7 +57,7 @@ public class BackgroundCommandSenderHostedService : BackgroundService
         {
             try
             {
-                await _commandSender.ExecuteAsync(command, cancellationToken);
+                await _commandSender.SendAsync(command, cancellationToken);
             }
             catch (Exception e)
             {

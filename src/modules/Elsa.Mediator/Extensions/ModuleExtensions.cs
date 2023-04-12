@@ -1,12 +1,14 @@
 using Elsa.Features.Services;
 using Elsa.Mediator.Features;
+using JetBrains.Annotations;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
 
 /// <summary>
-/// Adds extension methods to <see cref="IModule"/> that enable & configure mediator specific features.
+/// Adds extension methods to <see cref="IModule"/> that enable &amp; configure mediator specific features.
 /// </summary>
+[PublicAPI]
 public static class ModuleExtensions
 {
     /// <summary>

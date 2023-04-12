@@ -65,13 +65,7 @@ public class DefaultWorkflowScheduler : IWorkflowScheduler
         var schedule = new CronSchedule(cronExpression);
         await _scheduler.ScheduleAsync(taskName, task, schedule, cancellationToken);
     }
-
-    /// <inheritdoc />
-    public async ValueTask UnscheduleWorkflowDefinitionAsync(string workflowDefinitionId, CancellationToken cancellationToken = default)
-    {
-        await _scheduler.ClearScheduleAsync(workflowDefinitionId, cancellationToken);
-    }
-
+    
     /// <inheritdoc />
     public async ValueTask UnscheduleAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
     {

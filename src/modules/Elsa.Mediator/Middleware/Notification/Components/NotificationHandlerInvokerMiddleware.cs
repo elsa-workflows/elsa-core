@@ -3,17 +3,22 @@ using Elsa.Mediator.Middleware.Notification.Contracts;
 
 namespace Elsa.Mediator.Middleware.Notification.Components;
 
+/// <inheritdoc />
 public class NotificationHandlerInvokerMiddleware : INotificationMiddleware
 {
     private readonly NotificationMiddlewareDelegate _next;
     private readonly IEnumerable<INotificationHandler> _notificationHandlers;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="NotificationHandlerInvokerMiddleware"/> class.
+    /// </summary>
     public NotificationHandlerInvokerMiddleware(NotificationMiddlewareDelegate next, IEnumerable<INotificationHandler> notificationHandlers)
     {
         _next = next;
         _notificationHandlers = notificationHandlers;
     }
 
+    /// <inheritdoc />
     public async ValueTask InvokeAsync(NotificationContext context)
     {
         // Find all handlers for the specified notification.
