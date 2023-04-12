@@ -1,3 +1,4 @@
+using Cronos;
 using Elsa.Common.Contracts;
 using Elsa.Scheduling.Contracts;
 
@@ -21,7 +22,7 @@ public class CronosCronParser : ICronParser
     /// <inheritdoc />
     public DateTimeOffset GetNextOccurrence(string expression)
     {
-        var parsedExpression = Cronos.CronExpression.Parse(expression);
+        var parsedExpression = CronExpression.Parse(expression, CronFormat.IncludeSeconds);
         var now = _systemClock.UtcNow;
         return parsedExpression.GetNextOccurrence(now, TimeZoneInfo.Utc).GetValueOrDefault();
     }
