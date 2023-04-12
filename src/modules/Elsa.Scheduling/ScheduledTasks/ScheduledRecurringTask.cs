@@ -48,28 +48,36 @@ public class ScheduledRecurringTask : IScheduledTask
 
     private void Schedule()
     {
+        var startAt = _startAt;
+        var adjusted = false;
+
         while (true)
         {
             var now = _systemClock.UtcNow;
-            var delay = _startAt - now;
+            var delay = startAt - now;
 
-            if (delay.Milliseconds <= 0)
+            if (!adjusted && delay.Milliseconds <= 0)
+            {
+                adjusted = true;
                 continue;
+            }
 
-            SetupTimer(delay, now);
+            SetupTimer(delay);
             break;
         }
     }
 
-    private void SetupTimer(TimeSpan delay, DateTimeOffset now)
+    private void SetupTimer(TimeSpan delay)
     {
+        if(delay < TimeSpan.Zero) delay = TimeSpan.FromSeconds(1);
+        
         _timer = new Timer(delay.TotalMilliseconds) { Enabled = true };
 
         _timer.Elapsed += async (_, _) =>
         {
             _timer.Dispose();
             _timer = null;
-            _startAt = now + _interval;
+            _startAt = _systemClock.UtcNow + _interval;
 
             var cancellationToken = _cancellationTokenSource.Token;
             if (!cancellationToken.IsCancellationRequested) await _commandSender.SendAsync(new RunScheduledTask(_task), cancellationToken);

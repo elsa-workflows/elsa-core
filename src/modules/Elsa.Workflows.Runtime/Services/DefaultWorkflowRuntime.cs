@@ -6,6 +6,7 @@ using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Models;
 using Medallion.Threading;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Runtime.Services;
 
@@ -22,6 +23,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
     private readonly IBookmarkHasher _hasher;
     private readonly IDistributedLockProvider _distributedLockProvider;
     private readonly IWorkflowInstanceFactory _workflowInstanceFactory;
+    private readonly ILogger _logger;
 
     /// <summary>
     /// Constructor.
@@ -34,7 +36,8 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         IBookmarkStore bookmarkStore,
         IBookmarkHasher hasher,
         IDistributedLockProvider distributedLockProvider,
-        IWorkflowInstanceFactory workflowInstanceFactory)
+        IWorkflowInstanceFactory workflowInstanceFactory,
+        ILogger<DefaultWorkflowRuntime> logger)
     {
         _workflowHostFactory = workflowHostFactory;
         _workflowDefinitionService = workflowDefinitionService;
@@ -44,6 +47,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         _hasher = hasher;
         _distributedLockProvider = distributedLockProvider;
         _workflowInstanceFactory = workflowInstanceFactory;
+        _logger = logger;
     }
 
     /// <inheritdoc />
@@ -129,7 +133,10 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
                 cancellationToken);
 
             if (workflowDefinition == null)
-                throw new Exception("Specified workflow definition and version does not exist");
+            {
+                _logger.LogInformation("The workflow definition {DefinitionId} version {Version} was not found", definitionId, version);
+                return new ResumeWorkflowResult(Array.Empty<Bookmark>());
+            }
 
             var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
             var workflowHost = await _workflowHostFactory.CreateAsync(workflow, workflowState, cancellationToken);
