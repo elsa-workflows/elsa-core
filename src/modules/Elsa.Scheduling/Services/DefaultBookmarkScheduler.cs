@@ -92,8 +92,11 @@ public class DefaultBookmarkScheduler : IBookmarkScheduler
         // Select all Timer bookmarks.
         var timerBookmarks = bookmarkList.Filter<Activities.Timer>().ToList();
         
+        // Select all Cron bookmarks.
+        var cronBookmarks = bookmarkList.Filter<Cron>().ToList();
+        
         // Concatenate the filtered bookmarks.
-        var bookmarksToUnSchedule = delayBookmarks.Concat(startAtBookmarks).Concat(timerBookmarks).ToList();
+        var bookmarksToUnSchedule = delayBookmarks.Concat(startAtBookmarks).Concat(timerBookmarks).Concat(cronBookmarks).ToList();
 
         // Unschedule each bookmark.
         foreach (var bookmark in bookmarksToUnSchedule) 

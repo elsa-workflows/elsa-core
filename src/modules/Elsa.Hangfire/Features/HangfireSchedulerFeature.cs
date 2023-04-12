@@ -1,9 +1,11 @@
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
+using Elsa.Hangfire.Handlers;
 using Elsa.Hangfire.Services;
 using Elsa.Scheduling.Contracts;
 using Elsa.Scheduling.Features;
+using Elsa.Workflows.Core.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Hangfire.Features;
@@ -25,7 +27,6 @@ public class HangfireSchedulerFeature : FeatureBase
         Module.Configure<SchedulingFeature>(schedulingFeature =>
         {
             schedulingFeature.WorkflowScheduler = sp => sp.GetRequiredService<HangfireWorkflowScheduler>();
-            schedulingFeature.CronParser = sp => sp.GetRequiredService<HangfireCronParser>();
         });
     }
 
@@ -33,6 +34,6 @@ public class HangfireSchedulerFeature : FeatureBase
     public override void Apply()
     {
         Services.AddSingleton<HangfireWorkflowScheduler>();
-        Services.AddSingleton<HangfireCronParser>();
+        Services.AddSingleton<IActivityDescriptorModifier, CronActivityDescriptorModifier>();
     }
 }

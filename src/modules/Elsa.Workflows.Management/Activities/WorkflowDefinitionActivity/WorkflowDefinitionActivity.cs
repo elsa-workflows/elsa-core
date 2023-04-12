@@ -66,10 +66,10 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
         }
     }
 
-    private async Task DeclareInputOutputAsVariablesAsync(InitializationContext context, CancellationToken cancellationToken)
+    private void DeclareInputOutputAsVariables(InitializationContext context)
     {
         var activityRegistry = context.ServiceProvider.GetRequiredService<IActivityRegistry>();
-        var activityDescriptor = (await activityRegistry.FindAsync(Type, Version, cancellationToken))!;
+        var activityDescriptor = activityRegistry.Find(Type, Version)!;
     
         // Declare input variables.
         foreach (var inputDescriptor in activityDescriptor.Inputs)
@@ -100,7 +100,7 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
     private async ValueTask OnChildCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext)
     {
         var activityRegistry = context.GetRequiredService<IActivityRegistry>();
-        var activityDescriptor = (await activityRegistry.FindAsync(Type, Version))!;
+        var activityDescriptor = activityRegistry.Find(Type, Version)!;
         var outputDescriptors = activityDescriptor.Outputs;
 
         foreach (var outputDescriptor in outputDescriptors)
@@ -133,7 +133,7 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
         var materializer = serviceProvider.GetRequiredService<IWorkflowMaterializer>();
         var root = await materializer.MaterializeAsync(workflowDefinition, cancellationToken);
 
-        await DeclareInputOutputAsVariablesAsync(context, cancellationToken);
+        DeclareInputOutputAsVariables(context);
         
         Root = root;
     }
