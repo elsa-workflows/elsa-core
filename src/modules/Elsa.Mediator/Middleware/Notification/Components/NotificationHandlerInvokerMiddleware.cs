@@ -20,7 +20,7 @@ public class NotificationHandlerInvokerMiddleware : INotificationMiddleware
         var notification = context.Notification;
         var notificationType = notification.GetType();
         var handlerType = typeof(INotificationHandler<>).MakeGenericType(notificationType);
-        var handlers = _notificationHandlers.Where(x => handlerType.IsInstanceOfType(x)).ToArray();
+        var handlers = _notificationHandlers.Where(x => handlerType.IsInstanceOfType(x)).DistinctBy(x => x.GetType()).ToArray();
         var handleMethod = handlerType.GetMethod("HandleAsync")!;
         var cancellationToken = context.CancellationToken;
 
