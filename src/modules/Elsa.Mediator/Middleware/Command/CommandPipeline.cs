@@ -26,7 +26,7 @@ public class CommandPipeline : ICommandPipeline
     }
 
     /// <inheritdoc />
-    public async Task ExecuteAsync(CommandContext context) => await Pipeline(context);
+    public async Task InvokeAsync(CommandContext context) => await Pipeline(context);
 
     private CommandMiddlewareDelegate CreateDefaultPipeline() => Setup(x => x.UseCommandInvoker().UseCommandLogging());
 }

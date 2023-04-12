@@ -34,18 +34,18 @@ public class DefaultMediator : IMediator
         return (T)context.Response!;
     }
 
-    public async Task ExecuteAsync(ICommand command, CancellationToken cancellationToken = default)
+    public async Task SendAsync(ICommand command, CancellationToken cancellationToken = default)
     {
         var resultType = typeof(Unit);
         var context = new CommandContext(command, resultType, cancellationToken);
-        await _commandPipeline.ExecuteAsync(context);
+        await _commandPipeline.InvokeAsync(context);
     }
 
-    public async Task<T> ExecuteAsync<T>(ICommand<T> command, CancellationToken cancellationToken = default)
+    public async Task<T> SendAsync<T>(ICommand<T> command, CancellationToken cancellationToken = default)
     {
         var resultType = typeof(T);
         var context = new CommandContext(command, resultType, cancellationToken);
-        await _commandPipeline.ExecuteAsync(context);
+        await _commandPipeline.InvokeAsync(context);
 
         return (T)context.Result!;
     }

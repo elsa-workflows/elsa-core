@@ -19,7 +19,6 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
 {
     private readonly IActivityRegistry _activityRegistry;
     private readonly IActivityFactory _activityFactory;
-    private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
     private readonly IExpressionSyntaxRegistry _expressionSyntaxRegistry;
     private readonly IServiceProvider _serviceProvider;
 
@@ -27,13 +26,11 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
     public ActivityJsonConverter(
         IActivityRegistry activityRegistry,
         IActivityFactory activityFactory,
-        IWorkflowDefinitionStore workflowDefinitionStore,
         IExpressionSyntaxRegistry expressionSyntaxRegistry,
         IServiceProvider serviceProvider)
     {
         _activityRegistry = activityRegistry;
         _activityFactory = activityFactory;
-        _workflowDefinitionStore = workflowDefinitionStore;
         _expressionSyntaxRegistry = expressionSyntaxRegistry;
         _serviceProvider = serviceProvider;
     }
