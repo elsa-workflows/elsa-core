@@ -14,7 +14,7 @@ public static class MiddlewareExtensions
     /// <param name="builder">The pipeline builder.</param>
     /// <param name="args">Any arguments to pass to the middleware constructor.</param>
     /// <typeparam name="TMiddleware">The middleware type.</typeparam>
-    /// <returns></returns>
+    /// <returns>The pipeline builder.</returns>
     public static ICommandPipelineBuilder UseMiddleware<TMiddleware>(this ICommandPipelineBuilder builder, params object[] args) where TMiddleware : ICommandMiddleware
     {
         var middleware = typeof(TMiddleware);
