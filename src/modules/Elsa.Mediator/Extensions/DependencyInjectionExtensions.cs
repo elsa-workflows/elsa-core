@@ -42,6 +42,9 @@ public static class DependencyInjectionExtensions
                 .AddSingleton<IRequestPipeline, RequestPipeline>()
                 .AddSingleton<ICommandPipeline, CommandPipeline>()
                 .AddSingleton<INotificationPipeline, NotificationPipeline>()
+                .AddSingleton<IJobChannel, JobChannel>()
+                .AddSingleton<IJobQueue, JobQueue>()
+                .AddHostedService<JobRunnerHostedService>()
                 .AddHostedService(sp =>
                 {
                     var options = sp.GetRequiredService<IOptions<MediatorOptions>>().Value;
