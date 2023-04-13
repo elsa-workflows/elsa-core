@@ -67,8 +67,11 @@ namespace Elsa.Activities.Kafka.Services
             {
                 try
                 {
-                    _consumer.Unsubscribe();
-                    _consumer.Close();
+                    using (_consumer)
+                    {
+                        _consumer.Unsubscribe();
+                        _consumer.Close();
+                    }                  
                 }
                 catch (Exception e)
                 {

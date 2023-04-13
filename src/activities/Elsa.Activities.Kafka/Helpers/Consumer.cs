@@ -22,7 +22,8 @@ namespace Elsa.Activities.Kafka.Helpers
                                 consumer.Subscribe(topic);
                                 while (!cancellationToken.IsCancellationRequested)
                                 {
-                                    var consumeResult = consumer.Consume(cancellationToken);
+                                    // This code gets executed sometimes, even though the consumer has been disposed. This results in an "handle is destroyed" exepction
+                                    var consumeResult = consumer.Consume(cancellationToken); 
                                     if (consumeResult.IsPartitionEOF) continue;
                                     consumer.Commit(consumeResult);
                                     observer.OnNext(consumeResult.Message);
