@@ -9,12 +9,12 @@ using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Management.Notifications;
 using Elsa.Workflows.Runtime.ActivationValidators;
 using Elsa.Workflows.Runtime.Commands;
-using Elsa.Workflows.Runtime.Consumers;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Handlers;
 using Elsa.Workflows.Runtime.HostedServices;
 using Elsa.Workflows.Runtime.Models;
+using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Services;
 using Medallion.Threading;
@@ -169,15 +169,13 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddNotificationHandler<ResumeDispatchWorkflowActivityHandler, WorkflowExecuted>()
             .AddNotificationHandler<IndexWorkflowTriggersHandler, WorkflowDefinitionPublished>()
             .AddNotificationHandler<IndexWorkflowTriggersHandler, WorkflowDefinitionRetracted>()
+            .AddNotificationHandler<ScheduleBackgroundActivities, WorkflowBookmarksIndexed>()
+            .AddNotificationHandler<CancelBackgroundActivities, WorkflowBookmarksIndexed>()
 
             // Workflow activation strategies.
             .AddSingleton<IWorkflowActivationStrategy, SingletonStrategy>()
             .AddSingleton<IWorkflowActivationStrategy, CorrelatedSingletonStrategy>()
             .AddSingleton<IWorkflowActivationStrategy, CorrelationStrategy>()
             ;
-
-        // If the local background activity invoker is used, register the consumer too.
-        Services.AddMessageChannel<ScheduledBackgroundActivity>();
-        Services.AddMessageConsumer<ScheduledBackgroundActivity, ExecuteBackgroundActivityConsumer>();
     }
 }

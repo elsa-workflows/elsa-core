@@ -47,18 +47,22 @@ public class FlowJoin : Activity, IJoinNode
                 if (!alreadyExecuted)
                 {
                     await context.CompleteActivityAsync();
-                    ClearBookmarks(flowchart, context);
+                    await ClearBookmarksAsync(flowchart, context);
                 }
                 break;
         }
     }
 
-    private void ClearBookmarks(Flowchart flowchart, ActivityExecutionContext context)
+    private async Task ClearBookmarksAsync(Flowchart flowchart, ActivityExecutionContext context)
     {
         // Clear any bookmarks created between this join and its most recent fork.
         var connections = flowchart.Connections;
         var workflowExecutionContext = context.WorkflowExecutionContext;
-        var inboundActivities = connections.LeftAncestorActivities(this).Select(x => workflowExecutionContext.FindNodeByActivity(x)).Select(x => x.NodeId).ToList();
-        context.WorkflowExecutionContext.Bookmarks.RemoveWhere(x => inboundActivities.Contains(x.ActivityNodeId));
+        var inboundActivities = connections.LeftAncestorActivities(this).Select(x => workflowExecutionContext.FindNodeByActivity(x)).Select(x => x.Activity).ToList();
+        var inboundActivityExecutionContexts = workflowExecutionContext.ActivityExecutionContexts.Where(x => inboundActivities.Contains(x.Activity)).ToList();
+
+        // Cancel each inbound activity.
+        foreach (var activityExecutionContext in inboundActivityExecutionContexts) 
+            await activityExecutionContext.CancelActivityAsync();
     }
 }

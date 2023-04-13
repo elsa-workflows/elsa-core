@@ -18,7 +18,6 @@ public class DefaultBackgroundActivityInvoker : IBackgroundActivityInvoker
     private readonly IWorkflowDispatcher _workflowDispatcher;
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly IWorkflowExecutionContextFactory _workflowExecutionContextFactory;
-    private readonly IWorkflowStateSerializer _workflowStateSerializer;
     private readonly IVariablePersistenceManager _variablePersistenceManager;
     private readonly IActivityInvoker _activityInvoker;
     private readonly IServiceProvider _serviceProvider;
@@ -31,7 +30,6 @@ public class DefaultBackgroundActivityInvoker : IBackgroundActivityInvoker
         IWorkflowDispatcher workflowDispatcher,
         IWorkflowDefinitionService workflowDefinitionService,
         IWorkflowExecutionContextFactory workflowExecutionContextFactory,
-        IWorkflowStateSerializer workflowStateSerializer,
         IVariablePersistenceManager variablePersistenceManager,
         IActivityInvoker activityInvoker,
         IServiceProvider serviceProvider)
@@ -40,7 +38,6 @@ public class DefaultBackgroundActivityInvoker : IBackgroundActivityInvoker
         _workflowDispatcher = workflowDispatcher;
         _workflowDefinitionService = workflowDefinitionService;
         _workflowExecutionContextFactory = workflowExecutionContextFactory;
-        _workflowStateSerializer = workflowStateSerializer;
         _variablePersistenceManager = variablePersistenceManager;
         _activityInvoker = activityInvoker;
         _serviceProvider = serviceProvider;
@@ -62,8 +59,8 @@ public class DefaultBackgroundActivityInvoker : IBackgroundActivityInvoker
 
         var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
         var workflowExecutionContext = await _workflowExecutionContextFactory.CreateAsync(_serviceProvider, workflow, workflowState.Id, workflowState, cancellationToken: cancellationToken);
-        var activityId = scheduledBackgroundActivity.ActivityId;
-        var activityExecutionContext = workflowExecutionContext.ActivityExecutionContexts.First(x => x.Activity.Id == activityId);
+        var activityNodeId = scheduledBackgroundActivity.ActivityNodeId;
+        var activityExecutionContext = workflowExecutionContext.ActivityExecutionContexts.First(x => x.NodeId == activityNodeId);
 
         // Load persistent variables for the activity to use.
         await _variablePersistenceManager.LoadVariablesAsync(workflowExecutionContext);
@@ -109,7 +106,7 @@ public class DefaultBackgroundActivityInvoker : IBackgroundActivityInvoker
         // Resume the workflow, passing along the activity output.
         // TODO: This approach will fail if the output is non-serializable. We need to find a way to pass the output to the workflow without serializing it.
         var bookmarkId = scheduledBackgroundActivity.BookmarkId;
-        var inputKey = BackgroundActivityInvokerMiddleware.GetBackgroundActivityOutputKey(activityId);
+        var inputKey = BackgroundActivityInvokerMiddleware.GetBackgroundActivityOutputKey(activityNodeId);
 
         var dispatchRequest = new DispatchWorkflowInstanceRequest
         {

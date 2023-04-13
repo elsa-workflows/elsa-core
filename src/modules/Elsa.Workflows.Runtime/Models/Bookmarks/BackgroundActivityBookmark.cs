@@ -1,5 +1,3 @@
-using System.Text.Json.Serialization;
-
 namespace Elsa.Workflows.Runtime.Models.Bookmarks;
 
 /// <summary>
@@ -8,10 +6,7 @@ namespace Elsa.Workflows.Runtime.Models.Bookmarks;
 public class BackgroundActivityBookmark
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="BackgroundActivityBookmark"/> class.
+    /// Set retroactively after the job has been scheduled. It is used to cancel te job when the bookmark is deleted.
     /// </summary>
-    [JsonConstructor]
-    public BackgroundActivityBookmark()
-    {
-    }
+    public string? JobId { get; set; }
 }

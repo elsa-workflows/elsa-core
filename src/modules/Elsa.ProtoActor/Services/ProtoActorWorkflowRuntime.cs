@@ -247,6 +247,21 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
     }
 
     /// <inheritdoc />
+    public async Task UpdateBookmarkAsync(Workflows.Runtime.Models.StoredBookmark bookmark, CancellationToken cancellationToken = default)
+    {
+        var bookmarkClient = _cluster.GetNamedBookmarkGrain(bookmark.Hash);
+
+        var storeBookmarkRequest = new StoreBookmarksRequest
+        {
+            WorkflowInstanceId = bookmark.WorkflowInstanceId,
+            CorrelationId = bookmark.CorrelationId.EmptyIfNull()
+        };
+
+        storeBookmarkRequest.BookmarkIds.Add(bookmark.BookmarkId);
+        await bookmarkClient.Store(storeBookmarkRequest, cancellationToken);
+    }
+
+    /// <inheritdoc />
     public async Task<int> CountRunningWorkflowsAsync(CountRunningWorkflowsArgs args, CancellationToken cancellationToken = default)
     {
         var client = _cluster.GetNamedRunningWorkflowsGrain();

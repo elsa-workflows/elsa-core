@@ -3,6 +3,7 @@ using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Runtime.Models;
 
 namespace Elsa.Workflows.Runtime.Contracts;
 
@@ -88,6 +89,13 @@ public interface IWorkflowRuntime
     /// Adds and removes bookmarks based on the provided bookmarks diff.
     /// </summary>
     Task UpdateBookmarksAsync(UpdateBookmarksContext context, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Updates the specified bookmark.
+    /// </summary>
+    /// <param name="bookmark">The bookmark to update.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    Task UpdateBookmarkAsync(StoredBookmark bookmark, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Counts the number of workflow instances based on the provided query args.

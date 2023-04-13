@@ -168,34 +168,34 @@ public class ActivityExecutionContext : IExecutionContext
     public void CreateBookmarks(IEnumerable<object> payloads, ExecuteActivityDelegate? callback = default)
     {
         foreach (var payload in payloads)
-            CreateBookmark(new CreateBookmarkOptions(payload, callback));
+            CreateBookmark(new BookmarkOptions(payload, callback));
     }
 
     public void AddBookmarks(IEnumerable<Bookmark> bookmarks) => _bookmarks.AddRange(bookmarks);
     public void AddBookmark(Bookmark bookmark) => _bookmarks.Add(bookmark);
 
-    public Bookmark CreateBookmark(ExecuteActivityDelegate callback) => CreateBookmark(new CreateBookmarkOptions(default, callback));
-    public Bookmark CreateBookmark(object payload, ExecuteActivityDelegate callback) => CreateBookmark(new CreateBookmarkOptions(payload, callback));
-    public Bookmark CreateBookmark(object payload) => CreateBookmark(new CreateBookmarkOptions(payload));
+    public Bookmark CreateBookmark(ExecuteActivityDelegate callback) => CreateBookmark(new BookmarkOptions(default, callback));
+    public Bookmark CreateBookmark(object payload, ExecuteActivityDelegate callback) => CreateBookmark(new BookmarkOptions(payload, callback));
+    public Bookmark CreateBookmark(object payload) => CreateBookmark(new BookmarkOptions(payload));
 
     /// <summary>
     /// Creates a bookmark so that this activity can be resumed at a later time.
     /// Creating a bookmark will automatically suspend the workflow after all pending activities have executed.
     /// </summary>
-    public Bookmark CreateBookmark(CreateBookmarkOptions? options = default)
+    public Bookmark CreateBookmark(BookmarkOptions? options = default)
     {
         var payload = options?.Payload;
         var callback = options?.Callback;
-        var activityTypeName = options?.ActivityTypeName ?? Activity.Type;
+        var bookmarkName = options?.BookmarkName ?? Activity.Type;
         var bookmarkHasher = GetRequiredService<IBookmarkHasher>();
         var identityGenerator = GetRequiredService<IIdentityGenerator>();
         var payloadSerializer = GetRequiredService<IBookmarkPayloadSerializer>();
         var payloadJson = payload != null ? payloadSerializer.Serialize(payload) : default;
-        var hash = bookmarkHasher.Hash(activityTypeName, payload);
+        var hash = bookmarkHasher.Hash(bookmarkName, payload);
 
         var bookmark = new Bookmark(
             identityGenerator.GenerateId(),
-            activityTypeName,
+            bookmarkName,
             hash,
             payloadJson,
             ActivityNode.NodeId,

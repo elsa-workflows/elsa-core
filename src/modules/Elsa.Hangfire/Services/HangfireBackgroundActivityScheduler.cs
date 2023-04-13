@@ -2,6 +2,7 @@ using Elsa.Hangfire.Jobs;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Models;
 using Hangfire;
+using Hangfire.States;
 
 namespace Elsa.Hangfire.Services;
 
@@ -25,5 +26,12 @@ public class HangfireBackgroundActivityScheduler : IBackgroundActivityScheduler
     {
         var jobId = _backgroundJobClient.Enqueue<ExecuteBackgroundActivityJob>(x => x.ExecuteAsync(scheduledBackgroundActivity, CancellationToken.None));
         return Task.FromResult(jobId);
+    }
+
+    /// <inheritdoc />
+    public Task CancelAsync(string jobId, CancellationToken cancellationToken = default)
+    {
+        _backgroundJobClient.Delete(jobId);
+        return Task.CompletedTask;
     }
 }

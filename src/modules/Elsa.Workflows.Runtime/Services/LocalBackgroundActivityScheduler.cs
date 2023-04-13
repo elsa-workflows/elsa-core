@@ -1,4 +1,4 @@
-using System.Threading.Channels;
+using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Models;
 
@@ -9,21 +9,34 @@ namespace Elsa.Workflows.Runtime.Services;
 /// </summary>
 public class LocalBackgroundActivityScheduler : IBackgroundActivityScheduler
 {
-    private readonly Channel<ScheduledBackgroundActivity> _channel;
+    private readonly IJobQueue _jobQueue;
+    private readonly IBackgroundActivityInvoker _backgroundActivityInvoker;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="LocalBackgroundActivityScheduler"/> class.
     /// </summary>
-    /// <param name="channel">The channel to write to.</param>
-    public LocalBackgroundActivityScheduler(Channel<ScheduledBackgroundActivity> channel)
+    public LocalBackgroundActivityScheduler(IJobQueue jobQueue, IBackgroundActivityInvoker backgroundActivityInvoker)
     {
-        _channel = channel;
+        _jobQueue = jobQueue;
+        _backgroundActivityInvoker = backgroundActivityInvoker;
+    }
+
+    /// <inheritdoc />
+    public Task<string> ScheduleAsync(ScheduledBackgroundActivity scheduledBackgroundActivity, CancellationToken cancellationToken = default)
+    {
+        var jobId = _jobQueue.Enqueue(async ct => await InvokeBackgroundActivity(scheduledBackgroundActivity, ct));
+        return Task.FromResult(jobId);
+    }
+
+    /// <inheritdoc />
+    public Task CancelAsync(string jobId, CancellationToken cancellationToken = default)
+    {
+        _jobQueue.Cancel(jobId);
+        return Task.CompletedTask;
     }
     
-    /// <inheritdoc />
-    public async Task<string> ScheduleAsync(ScheduledBackgroundActivity scheduledBackgroundActivity, CancellationToken cancellationToken = default)
+    private async Task InvokeBackgroundActivity(ScheduledBackgroundActivity scheduledBackgroundActivity, CancellationToken cancellationToken)
     {
-        await _channel.Writer.WriteAsync(scheduledBackgroundActivity, cancellationToken);
-        return "";
+        await _backgroundActivityInvoker.ExecuteAsync(scheduledBackgroundActivity, cancellationToken);
     }
 }

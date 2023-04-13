@@ -6,10 +6,12 @@ using Elsa.Common.Contracts;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
+using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Core.Activities.Flowchart.Models;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Notifications;
 using Elsa.Workflows.Core.Signals;
 using Microsoft.Extensions.Logging;
 
@@ -97,8 +99,9 @@ public static class ActivityExecutionContextExtensions
         return logEntry;
     }
 
-    public static Variable SetVariable(this ActivityExecutionContext context, string name, object? value, Type? storageDriverType = default, Action<MemoryBlock>? configure = default) => 
+    public static Variable SetVariable(this ActivityExecutionContext context, string name, object? value, Type? storageDriverType = default, Action<MemoryBlock>? configure = default) =>
         context.ExpressionExecutionContext.SetVariable(name, value, storageDriverType, configure);
+
     public static T? GetVariable<T>(this ActivityExecutionContext context, string id) => context.ExpressionExecutionContext.GetVariable<T?>(id);
 
     /// <summary>
@@ -119,7 +122,7 @@ public static class ActivityExecutionContextExtensions
             .GetWrappedInputProperties(activity)
             .Where(x => x.Value is { MemoryBlockReference: { } })
             .ToDictionary(x => x.Key, x => x.Value);
-        
+
         var evaluator = context.GetRequiredService<IExpressionEvaluator>();
         var stateSerializer = context.GetRequiredService<IActivityStateSerializer>();
         var expressionExecutionContext = context.ExpressionExecutionContext;
@@ -132,11 +135,11 @@ public static class ActivityExecutionContextExtensions
 
             // Store the evaluated input value in the activity state.
             var serializedValue = await stateSerializer.SerializeAsync(value);
-            
-            if(serializedValue.ValueKind != JsonValueKind.Undefined)
+
+            if (serializedValue.ValueKind != JsonValueKind.Undefined)
                 context.ActivityState[input.Key] = serializedValue;
         }
-        
+
         context.SetHasEvaluatedProperties();
     }
 
@@ -293,8 +296,11 @@ public static class ActivityExecutionContextExtensions
     /// </summary>
     public static async Task CancelActivityAsync(this ActivityExecutionContext context)
     {
+        var publisher = context.GetRequiredService<IEventPublisher>();
         context.ClearBookmarks();
+        context.WorkflowExecutionContext.Bookmarks.RemoveWhere(x => x.ActivityNodeId == context.NodeId);
         await context.SendSignalAsync(new CancelSignal());
+        await publisher.PublishAsync(new ActivityCancelled(context));
     }
 
     public static ILogger GetLogger(this ActivityExecutionContext context) => (ILogger)context.GetRequiredService(typeof(ILogger<>).MakeGenericType(context.Activity.GetType()));
