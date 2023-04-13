@@ -6,6 +6,7 @@ using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Middleware.Activities;
 using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Models.Requests;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Runtime.Services;
 
@@ -21,6 +22,7 @@ public class DefaultBackgroundActivityInvoker : IBackgroundActivityInvoker
     private readonly IVariablePersistenceManager _variablePersistenceManager;
     private readonly IActivityInvoker _activityInvoker;
     private readonly IServiceProvider _serviceProvider;
+    private readonly ILogger _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DefaultBackgroundActivityInvoker"/> class.
@@ -32,7 +34,8 @@ public class DefaultBackgroundActivityInvoker : IBackgroundActivityInvoker
         IWorkflowExecutionContextFactory workflowExecutionContextFactory,
         IVariablePersistenceManager variablePersistenceManager,
         IActivityInvoker activityInvoker,
-        IServiceProvider serviceProvider)
+        IServiceProvider serviceProvider,
+        ILogger<DefaultBackgroundActivityInvoker> logger)
     {
         _workflowRuntime = workflowRuntime;
         _workflowDispatcher = workflowDispatcher;
@@ -41,6 +44,7 @@ public class DefaultBackgroundActivityInvoker : IBackgroundActivityInvoker
         _variablePersistenceManager = variablePersistenceManager;
         _activityInvoker = activityInvoker;
         _serviceProvider = serviceProvider;
+        _logger = logger;
     }
 
     /// <inheritdoc />
@@ -118,6 +122,12 @@ public class DefaultBackgroundActivityInvoker : IBackgroundActivityInvoker
             }
         };
 
+        if(cancellationToken.IsCancellationRequested)
+        {
+            _logger.LogInformation("Background execution for activity {ActivityNodeId} was canceled", activityNodeId);
+            return;
+        }
+        
         await _workflowDispatcher.DispatchAsync(dispatchRequest, cancellationToken);
     }
 }

@@ -172,23 +172,35 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        var request = PrepareRequest(context);
-        var httpClientFactory = context.GetRequiredService<IHttpClientFactory>();
-        var httpClient = httpClientFactory.CreateClient(nameof(SendHttpRequestBase));
-        var cancellationToken = context.CancellationToken;
-        var response = await httpClient.SendAsync(request, cancellationToken);
-        var parsedContent = await ParseContentAsync(context, response.Content);
-
-        context.Set(Result, response);
-        context.Set(ParsedContent, parsedContent);
-
-        await HandleResponseAsync(context, response);
+        await TrySendAsync(context);
     }
 
     /// <summary>
     /// Handles the response.
     /// </summary>
     protected abstract ValueTask HandleResponseAsync(ActivityExecutionContext context, HttpResponseMessage response);
+
+    private async Task TrySendAsync(ActivityExecutionContext context)
+    {
+        var request = PrepareRequest(context);
+        var httpClientFactory = context.GetRequiredService<IHttpClientFactory>();
+        var httpClient = httpClientFactory.CreateClient(nameof(SendHttpRequestBase));
+        var cancellationToken = context.CancellationToken;
+
+        try
+        {
+            var response = await httpClient.SendAsync(request, cancellationToken);
+            var parsedContent = await ParseContentAsync(context, response.Content);
+            context.Set(Result, response);
+            context.Set(ParsedContent, parsedContent);
+
+            await HandleResponseAsync(context, response);
+        }
+        catch (TaskCanceledException e)
+        {
+            context.JournalData.Add("Cancelled", true);
+        }
+    }
 
     private async Task<object?> ParseContentAsync(ActivityExecutionContext context, HttpContent httpContent)
     {

@@ -5,13 +5,21 @@ using Elsa.Workflows.Runtime.Notifications;
 
 namespace Elsa.Http.Handlers;
 
+/// <summary>
+/// A handler that updates the route table.
+/// </summary>
 public class UpdateRouteTable :
     INotificationHandler<WorkflowTriggersIndexed>,
     INotificationHandler<WorkflowBookmarksIndexed>
 {
     private readonly IRouteTable _routeTable;
+    
+    /// <summary>
+    /// Initializes a new instance of the <see cref="UpdateRouteTable"/> class.
+    /// </summary>
     public UpdateRouteTable(IRouteTable routeTable) => _routeTable = routeTable;
 
+    /// <inheritdoc />
     public Task HandleAsync(WorkflowTriggersIndexed notification, CancellationToken cancellationToken)
     {
         _routeTable.RemoveRoutes(notification.IndexedWorkflowTriggers.RemovedTriggers);
@@ -20,6 +28,7 @@ public class UpdateRouteTable :
         return Task.CompletedTask;
     }
 
+    /// <inheritdoc />
     public Task HandleAsync(WorkflowBookmarksIndexed notification, CancellationToken cancellationToken)
     {
         _routeTable.RemoveRoutes(notification.IndexedWorkflowBookmarks.RemovedBookmarks);
