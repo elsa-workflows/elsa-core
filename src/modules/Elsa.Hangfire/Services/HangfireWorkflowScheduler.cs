@@ -75,16 +75,27 @@ public class HangfireWorkflowScheduler : IWorkflowScheduler
 
     private void DeleteJobByTaskName(string taskName)
     {
-        var scheduledJobIds = GetScheduledJobIds<RunWorkflowJob>(taskName);
+        var scheduledJobIds = GetScheduledJobIds(taskName);
         foreach (var jobId in scheduledJobIds) _backgroundJobClient.Delete(jobId);
+        
+        var queuedJobsIds = GetQueuedJobIds(taskName);
+        foreach (var jobId in queuedJobsIds) _backgroundJobClient.Delete(jobId);
         
         var recurringJobIds = GetRecurringJobIds<RunWorkflowJob>(taskName);
         foreach (var jobId in recurringJobIds) _recurringJobManager.RemoveIfExists(jobId);
     }
     
-    private IEnumerable<string> GetScheduledJobIds<TJob>(string taskName)
+    private IEnumerable<string> GetScheduledJobIds(string taskName)
     {
-        return _jobStorage.EnumerateScheduledJobs<TJob>(taskName)
+        return _jobStorage.EnumerateScheduledJobs(taskName)
+            .Select(x => x.Key)
+            .Distinct()
+            .ToList();
+    }
+    
+    private IEnumerable<string> GetQueuedJobIds(string taskName)
+    {
+        return _jobStorage.EnumerateQueuedJobs("default", taskName)
             .Select(x => x.Key)
             .Distinct()
             .ToList();
