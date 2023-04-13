@@ -393,11 +393,8 @@ public class WorkflowExecutionContext : IExecutionContext
     {
         var activityExecutionContext = ActivityExecutionContexts.FirstOrDefault(x => x.Activity == activity);
 
-        if (activityExecutionContext != null)
-        {
+        if (activityExecutionContext != null) 
             await activityExecutionContext.CancelActivityAsync();
-            Bookmarks.RemoveWhere(x => x.ActivityNodeId == activityExecutionContext.ActivityNode.NodeId);
-        }
     }
 
     private WorkflowStatus GetMainStatus(WorkflowSubStatus subStatus) =>
