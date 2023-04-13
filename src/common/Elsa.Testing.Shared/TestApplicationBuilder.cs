@@ -1,6 +1,7 @@
 using Elsa.Extensions;
 using Elsa.Features.Services;
 using Elsa.Workflows.Core.Services;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
@@ -20,6 +21,7 @@ public class TestApplicationBuilder
 
         _services
             .AddSingleton(testOutputHelper)
+            .AddSingleton<IConfiguration, ConfigurationManager>()
             .AddLogging(logging => logging.AddProvider(new XunitLoggerProvider(testOutputHelper)).SetMinimumLevel(LogLevel.Debug));
         
         _configureElsa += elsa => elsa
