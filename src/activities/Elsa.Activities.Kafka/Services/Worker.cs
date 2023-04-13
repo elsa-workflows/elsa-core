@@ -77,8 +77,11 @@ namespace Elsa.Activities.Kafka.Services
 
         private async Task OnErrorAsync(Exception e)
         {
-            _logger.LogError("Error on consuming");
-            await _disposeReceiverAction(this, _client);
+            _logger.LogError($"Error on consuming: {e.Message}");
+            if (!(e.GetType() == typeof(ObjectDisposedException))) // This line prevents an infinite loop when unpublishing a KafkaMessageReceived Trigger. Probably a SemaphoreSlim problem.
+            {
+                await _disposeReceiverAction(this, _client);
+            }
         }
 
         private async Task TriggerWorkflowsAsync(KafkaMessageEvent ev, CancellationToken cancellationToken)
