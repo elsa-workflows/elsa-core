@@ -150,8 +150,8 @@ namespace Elsa.Activities.Kafka.Services
         private async Task RemoveWorkerAsync(Worker worker)
         {
             _logger.LogDebug("Disposing worker for {QueueOrTopic}", worker.Topic);
-            await worker.DisposeAsync();
             _workers.Remove(worker);
+            await worker.DisposeAsync();
         }
 
         private IEnumerable<Bookmark> Filter(IEnumerable<Bookmark> triggers)
