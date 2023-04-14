@@ -3,9 +3,11 @@ using Elsa.Common.Models;
 using Elsa.Workflows.Api.Mappers;
 using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Management.Contracts;
+using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Retract;
 
+[PublicAPI]
 internal class Retract : ElsaEndpoint<Request, WorkflowDefinitionResponse, WorkflowDefinitionMapper>
 {
     private readonly IWorkflowDefinitionStore _store;

@@ -131,6 +131,7 @@ export class WorkflowDefinitionsPlugin implements Plugin {
 
   public showWorkflowDefinitionEditor = (workflowDefinition: WorkflowDefinition) => {
     toolbarComponentStore.components = [() => <elsa-workflow-publish-button onPublishClicked={this.onPublishClicked}
+                                                                            onUnPublishClicked={this.onUnPublishClicked}
                                                                             onExportClicked={this.onExportClicked}
                                                                             onImportClicked={this.onImportClicked}/>];
     studioComponentStore.activeComponentFactory = () => <elsa-workflow-definition-editor
@@ -235,6 +236,29 @@ export class WorkflowDefinitionsPlugin implements Plugin {
           type: NotificationDisplayType.Error
         });
         e.detail.complete();
+      });
+  }
+
+  private onUnPublishClicked = async (e: CustomEvent) => {
+    const definition = await this.workflowDefinitionEditorElement.getWorkflowDefinition();
+
+    const notification = NotificationService.createNotification({
+      title: 'Unpublishing',
+      id: uuid(),
+      text: 'Unpublishing the workflow. Please wait.',
+      type: NotificationDisplayType.InProgress
+    });
+
+    await this.workflowDefinitionManager.retractWorkflow(definition)
+      .then(async () => {
+        NotificationService.updateNotification(notification, {title: 'Workflow unpublished', text: 'Unpublished!'})
+        await this.activityDescriptorManager.refresh();
+      }).catch(() => {
+        NotificationService.updateNotification(notification, {
+          title: 'Error while unpublishing',
+          text: <span>Workflow {definition.definitionId} could not be unpublished.</span>,
+          type: NotificationDisplayType.Error
+        });
       });
   }
 

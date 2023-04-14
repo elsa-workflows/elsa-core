@@ -9,7 +9,7 @@ import {
   WorkflowExecutionLogRecord,
   Workflow
 } from '../../../models';
-import {PluginRegistry, ActivityNameFormatter, ActivityDriverRegistry, EventBus, ActivityNode} from '../../../services';
+import {ActivityDriverRegistry, EventBus, ActivityNode} from '../../../services';
 import {MonacoEditorSettings} from "../../../services/monaco-editor-settings";
 import {WorkflowDefinition} from "../../workflow-definitions/models/entities";
 import {WorkflowEditorEventTypes} from "../../workflow-definitions/models/ui";

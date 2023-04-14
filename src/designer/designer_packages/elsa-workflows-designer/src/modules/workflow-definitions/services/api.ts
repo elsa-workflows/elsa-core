@@ -23,7 +23,7 @@ export class WorkflowDefinitionsApi {
 
   async retract(request: RetractWorkflowDefinitionRequest): Promise<WorkflowDefinition> {
     const httpClient = await this.getHttpClient();
-    const response = await httpClient.post<WorkflowDefinition>(`workflow-definitions/${request.definitionId}/retract`);
+    const response = await httpClient.post<WorkflowDefinition>(`workflow-definitions/${request.definitionId}/retract`, request);
     return response.data;
   }
 
