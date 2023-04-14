@@ -5,7 +5,6 @@ import {
   Activity,
   ActivitySelectedArgs,
   ContainerSelectedArgs,
-  GraphUpdatedArgs,
   WorkflowInstance,
   WorkflowExecutionLogRecord,
   Workflow
@@ -16,32 +15,21 @@ import {WorkflowDefinition} from "../../workflow-definitions/models/entities";
 import {WorkflowEditorEventTypes} from "../../workflow-definitions/models/ui";
 import { JournalItemSelectedArgs } from '../events';
 import {JournalApi} from "../services/journal-api";
-import {WorkflowDefinitionsApi} from "../../workflow-definitions/services/api"
 import { Flowchart } from '../../flowchart/models';
-import { WorkflowDefinitionActivity } from '../../workflow-definitions/components/models';
 
 @Component({
   tag: 'elsa-workflow-instance-viewer',
   styleUrl: 'viewer.scss',
 })
 export class WorkflowInstanceViewer {
-  private readonly pluginRegistry: PluginRegistry;
   private readonly eventBus: EventBus;
-  private readonly activityNameFormatter: ActivityNameFormatter;
   private readonly journalApi: JournalApi;
   private flowchartElement: HTMLElsaFlowchartElement;
   private container: HTMLDivElement;
-  private workflowJournalElement: HTMLElsaWorkflowJournalElement;
-  private readonly workflowDefinitionApi: WorkflowDefinitionsApi;
-  private readonly workflowDefinitionList: WorkflowDefinition[];
 
   constructor() {
     this.eventBus = Container.get(EventBus);
-    this.pluginRegistry = Container.get(PluginRegistry);
-    this.activityNameFormatter = Container.get(ActivityNameFormatter);
     this.journalApi = Container.get(JournalApi);
-    this.workflowDefinitionApi = Container.get(WorkflowDefinitionsApi);
-    this.workflowDefinitionList = [];
   }
 
   @Element() private el: HTMLElsaWorkflowDefinitionEditorElement;
@@ -248,7 +236,6 @@ export class WorkflowInstanceViewer {
           <elsa-workflow-journal
             workflowDefinition={workflowDefinition}
             workflowInstance={workflowInstance}
-            ref={el => this.workflowJournalElement = el}
           />
         </elsa-panel>
         <elsa-flowchart
