@@ -53,6 +53,7 @@ export class WorkflowInstanceViewer {
   @State() private workflowInstanceState: WorkflowInstance;
   @State() private selectedActivity?: Activity;
   @State() private selectedActivityExecutionLog?: WorkflowExecutionLogRecord;
+  @State() private flowchartRootActivity: Activity;
 
   @Watch('monacoLibPath')
   private handleMonacoLibPath(value: string) {
@@ -119,7 +120,7 @@ export class WorkflowInstanceViewer {
   private async importSelectedItemsWorkflow(activityNode: ActivityNode) {
     const consumingWorkflowNode = this.findConsumingWorkflowRecursive(activityNode);
 
-    this.targetWorkflowDefinitionState = await this.getWorkflowDefinition(consumingWorkflowNode);
+    this.flowchartRootActivity = await this.getFlowchartByActivityNode(consumingWorkflowNode);
 
     window.requestAnimationFrame(async () => {
       await this.flowchartElement.updateGraph();
@@ -142,12 +143,18 @@ export class WorkflowInstanceViewer {
     }
   }
 
-  private async getWorkflowDefinition(consumingWorkflowNode: ActivityNode) {
+  private async getFlowchartByActivityNode(consumingWorkflowNode: ActivityNode) : Promise<Flowchart> {
     const isConsumingWorkflowSameAsMain = consumingWorkflowNode.parents[0] == null;
-    const activity = consumingWorkflowNode.activity as WorkflowDefinitionActivity;
+    return isConsumingWorkflowSameAsMain ? this.workflowDefinition.root as Flowchart : this.findFlowchartOfActivityRecursive(consumingWorkflowNode.activity);
+  }
 
-    return isConsumingWorkflowSameAsMain ? this.workflowDefinition :
-      this.workflowDefinitionList.find(w => w.definitionId == activity.workflowDefinitionId) ?? await this.workflowDefinitionApi.get({ definitionId: activity.workflowDefinitionId, versionOptions: { version: activity.version } });
+  private findFlowchartOfActivityRecursive(activity: Activity): Flowchart {
+    if(activity.type == "Elsa.Flowchart"){
+      return activity as Flowchart;
+    }
+    else{
+      return this.findFlowchartOfActivityRecursive((activity as Workflow).root);
+    }
   }
 
   @Method()
@@ -229,6 +236,8 @@ export class WorkflowInstanceViewer {
   public render() {
     const workflowDefinition = this.mainWorkflowDefinitionState;
     const workflowInstance = this.workflowInstanceState;
+    this.flowchartRootActivity = this.flowchartRootActivity ?? this.mainWorkflowDefinitionState.root;
+    
     return (
 
       <div class="absolute inset-0" ref={el => this.container = el}>
@@ -244,7 +253,7 @@ export class WorkflowInstanceViewer {
         </elsa-panel>
         <elsa-flowchart
           ref={el => this.flowchartElement = el}
-          rootActivity={(this.targetWorkflowDefinitionState ?? this.mainWorkflowDefinitionState).root}
+          rootActivity={this.flowchartRootActivity}
           interactiveMode={false}/>
         <elsa-panel
           class="elsa-workflow-editor-container z-30"
