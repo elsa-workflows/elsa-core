@@ -153,7 +153,7 @@ jobs:
           name: elsa-nuget-package
       
       - name: Publish Nuget Packages to MyGet
-        run: dotnet nuget push *nupkg -k ${{ secrets.FEEDZ_API_KEY }} -s https://f.feedz.io/elsa-workflows/elsa-2/nuget/index.json
+        run: dotnet nuget push *nupkg -k ${{ secrets.FEEDZ_API_KEY }} -s https://f.feedz.io/elsa-workflows/elsa-2/nuget/index.json --skip-duplicate
 
   publish_nuget_release:
     name: Publish to Nuget
@@ -167,4 +167,4 @@ jobs:
           name: elsa-nuget-package
       
       - name: Publish Nuget Packages to MyGet
-        run: dotnet nuget push *nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
+        run: dotnet nuget push *nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json --skip-duplicate
