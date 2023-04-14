@@ -227,7 +227,7 @@ export class Journal {
 
   private onJournalItemClick = async (e: MouseEvent, block: ActivityExecutionEventBlock, activity: Activity) => {
     e.preventDefault();
-    this.journalItemSelected.emit({activity: activity, executionLog: block});
+    this.journalItemSelected.emit({activity: activity, executionLog: block, activityNode: this.journalActivityMap[block.nodeId]});
   };
 
   private sortByTimestamp(blocks: ActivityExecutionEventBlock[]) {
