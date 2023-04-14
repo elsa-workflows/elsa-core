@@ -60,12 +60,16 @@ jobs:
 
       - name: Pack Angular Wrapper
         working-directory: ./src/designer/designer_packages/angular-workspace/projects/component-library
-        run: npm pack
+        run: |
+          npm version $VERSION --allow-same-version
+          npm pack
         if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
       
       - name: Pack React Wrapper
         working-directory: ./src/designer/designer_packages/react-workspace/react-wrapper
-        run: npm pack
+        run: |
+          npm version $VERSION --allow-same-version
+          npm pack
         if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
 
       - name: Upload Designer Artifact
