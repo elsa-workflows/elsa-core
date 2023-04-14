@@ -51,7 +51,6 @@ jobs:
         working-directory: ./src/designer/designer_packages/elsa-workflows-designer
         run: |
           npm install --force
-#          npm version $VERSION --allow-same-version
           npx lerna version $VERSION
           npx lerna run build
       - name: Pack Designer
