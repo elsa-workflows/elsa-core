@@ -52,4 +52,4 @@ jobs:
           name: elsa-nuget-packages
 
       - name: Publish to feedz.io
-        run: dotnet nuget push *nupkg -k ${{ secrets.FEEDZ_API_KEY }} -s ${{ env.nuget_feed_source }}
+        run: dotnet nuget push *.nupkg -k ${{ secrets.FEEDZ_API_KEY }} -s ${{ env.nuget_feed_source }} --skip-duplicate
