@@ -124,7 +124,7 @@ public static class ActivityExecutionContextExtensions
             .ToDictionary(x => x.Key, x => x.Value);
 
         var evaluator = context.GetRequiredService<IExpressionEvaluator>();
-        var stateSerializer = context.GetRequiredService<IActivityStateSerializer>();
+        //var stateSerializer = context.GetRequiredService<IActivityStateSerializer>();
         var expressionExecutionContext = context.ExpressionExecutionContext;
 
         foreach (var input in wrappedInputs)
@@ -134,10 +134,11 @@ public static class ActivityExecutionContextExtensions
             memoryReference.Set(context, value);
 
             // Store the evaluated input value in the activity state.
-            var serializedValue = await stateSerializer.SerializeAsync(value);
+            //var serializedValue = await stateSerializer.SerializeAsync(value);
 
-            if (serializedValue.ValueKind != JsonValueKind.Undefined)
-                context.ActivityState[input.Key] = serializedValue;
+            //if (serializedValue.ValueKind != JsonValueKind.Undefined)
+            //    context.ActivityState[input.Key] = serializedValue;
+            context.ActivityState[input.Key] = value!;
         }
 
         context.SetHasEvaluatedProperties();

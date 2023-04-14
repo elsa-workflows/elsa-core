@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -23,7 +24,7 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                     Hash = table.Column<string>(type: "text", nullable: false),
                     WorkflowInstanceId = table.Column<string>(type: "text", nullable: false),
                     CorrelationId = table.Column<string>(type: "text", nullable: true),
-                    Data = table.Column<string>(type: "text", nullable: true)
+                    PayloadData = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -43,7 +44,7 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                     ParentActivityInstanceId = table.Column<string>(type: "text", nullable: true),
                     ActivityId = table.Column<string>(type: "text", nullable: false),
                     ActivityType = table.Column<string>(type: "text", nullable: false),
-                    NodeId = table.Column<string>(type: "text", nullable: true),
+                    NodeId = table.Column<string>(type: "text", nullable: false),
                     Timestamp = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     EventName = table.Column<string>(type: "text", nullable: true),
                     Message = table.Column<string>(type: "text", nullable: true),
@@ -86,7 +87,7 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                     Name = table.Column<string>(type: "text", nullable: false),
                     ActivityId = table.Column<string>(type: "text", nullable: false),
                     Hash = table.Column<string>(type: "text", nullable: true),
-                    Data = table.Column<string>(type: "text", nullable: true)
+                    PayloadData = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {

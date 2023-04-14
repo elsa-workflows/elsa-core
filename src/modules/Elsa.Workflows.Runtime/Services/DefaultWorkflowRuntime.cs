@@ -4,6 +4,7 @@ using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Models;
 using Medallion.Threading;
 using Microsoft.Extensions.Logging;
@@ -299,7 +300,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
     {
         foreach (var bookmark in bookmarks)
         {
-            var storedBookmark = new StoredBookmark(bookmark.Name, bookmark.Hash, workflowInstanceId, bookmark.Id, correlationId, bookmark.Data);
+            var storedBookmark = new StoredBookmark(bookmark.Name, bookmark.Hash, workflowInstanceId, bookmark.Id, correlationId, bookmark.Payload);
             await _bookmarkStore.SaveAsync(storedBookmark, cancellationToken);
         }
     }

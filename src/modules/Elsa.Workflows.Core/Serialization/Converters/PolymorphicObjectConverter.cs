@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Dynamic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -87,8 +88,8 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         var type = value.GetType();
 
         newOptions.Converters.RemoveWhere(x => x is PolymorphicObjectConverterFactory);
-
-        if (type.IsPrimitive || value is string or DateTimeOffset or DateTime or DateOnly or TimeOnly or JsonElement or Guid)
+        
+        if (type.IsPrimitive || value is string or DateTimeOffset or DateTime or DateOnly or TimeOnly or JsonElement or Guid or TimeSpan or Uri or Version or Enum)
         {
             JsonSerializer.Serialize(writer, value, newOptions);
             return;

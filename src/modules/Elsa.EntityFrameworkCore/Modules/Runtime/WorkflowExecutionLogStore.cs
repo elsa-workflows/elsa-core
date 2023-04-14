@@ -33,7 +33,7 @@ public class EFCoreWorkflowExecutionLogStore : IWorkflowExecutionLogStore
     /// <inheritdoc />
     public async Task SaveManyAsync(IEnumerable<WorkflowExecutionLogRecord> records, CancellationToken cancellationToken = default)
     {
-        await _store.SaveManyAsync(records, Save, cancellationToken);
+        await _store.SaveManyAsync(records, SaveAsync, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -64,12 +64,12 @@ public class EFCoreWorkflowExecutionLogStore : IWorkflowExecutionLogStore
         return new(results, count);
     }
 
-    private WorkflowExecutionLogRecord Save(RuntimeElsaDbContext dbContext, WorkflowExecutionLogRecord entity)
+    private ValueTask<WorkflowExecutionLogRecord> SaveAsync(RuntimeElsaDbContext dbContext, WorkflowExecutionLogRecord entity, CancellationToken cancellationToken)
     {
         var options = _serializerOptionsProvider.CreatePersistenceOptions(ReferenceHandler.Preserve);
         dbContext.Entry(entity).Property("ActivityData").CurrentValue = JsonSerializer.Serialize(entity.ActivityState);
         dbContext.Entry(entity).Property("PayloadData").CurrentValue = JsonSerializer.Serialize(entity.Payload, options);
-        return entity;
+        return new ValueTask<WorkflowExecutionLogRecord>(entity);
     }
     
     private WorkflowExecutionLogRecord? Load(RuntimeElsaDbContext dbContext, WorkflowExecutionLogRecord? entity)
@@ -89,10 +89,10 @@ public class EFCoreWorkflowExecutionLogStore : IWorkflowExecutionLogStore
         return !string.IsNullOrEmpty(json) ? JsonSerializer.Deserialize<object>(json) : null;
     }
     
-    private IDictionary<string, JsonElement>? LoadActivityState(RuntimeElsaDbContext dbContext, WorkflowExecutionLogRecord entity)
+    private IDictionary<string, object>? LoadActivityState(RuntimeElsaDbContext dbContext, WorkflowExecutionLogRecord entity)
     {
         var json = dbContext.Entry(entity).Property<string>("ActivityData").CurrentValue;
-        return !string.IsNullOrEmpty(json) ? JsonSerializer.Deserialize<IDictionary<string, JsonElement>>(json) : null;
+        return !string.IsNullOrEmpty(json) ? JsonSerializer.Deserialize<IDictionary<string, object>>(json) : null;
     }
     
     private IQueryable<WorkflowExecutionLogRecord> Filter(IQueryable<WorkflowExecutionLogRecord> queryable, WorkflowExecutionLogRecordFilter filter) => filter.Apply(queryable);

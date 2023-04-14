@@ -44,7 +44,8 @@ public class DefaultBookmarkScheduler : IBookmarkScheduler
         // Schedule each Delay bookmark.
         foreach (var bookmark in delayBookmarks)
         {
-            var payload = _bookmarkPayloadSerializer.Deserialize<DelayPayload>(bookmark.Data!)!;
+            //var payload = _bookmarkPayloadSerializer.Deserialize<DelayPayload>(bookmark.Data!)!;
+            var payload = bookmark.GetPayload<DelayPayload>();
             var resumeAt = payload.ResumeAt;
             var request = new DispatchWorkflowInstanceRequest(workflowInstanceId) { BookmarkId = bookmark.Id };
             await _workflowScheduler.ScheduleAtAsync(bookmark.Id, request, resumeAt, cancellationToken);
@@ -53,7 +54,8 @@ public class DefaultBookmarkScheduler : IBookmarkScheduler
         // Schedule a trigger for each StartAt bookmark.
         foreach (var bookmark in startAtBookmarks)
         {
-            var payload = _bookmarkPayloadSerializer.Deserialize<StartAtPayload>(bookmark.Data!)!;
+            //var payload = _bookmarkPayloadSerializer.Deserialize<StartAtPayload>(bookmark.Data!)!;
+            var payload = bookmark.GetPayload<StartAtPayload>();
             var executeAt = payload.ExecuteAt;
             var request = new DispatchWorkflowInstanceRequest(workflowInstanceId) { BookmarkId = bookmark.Id };
             await _workflowScheduler.ScheduleAtAsync(bookmark.Id, request, executeAt, cancellationToken);
@@ -62,7 +64,8 @@ public class DefaultBookmarkScheduler : IBookmarkScheduler
         // Schedule a trigger for each Timer bookmark.
         foreach (var bookmark in timerBookmarks)
         {
-            var payload = _bookmarkPayloadSerializer.Deserialize<TimerBookmarkPayload>(bookmark.Data!)!;
+            //var payload = _bookmarkPayloadSerializer.Deserialize<TimerBookmarkPayload>(bookmark.Data!)!;
+            var payload = bookmark.GetPayload<TimerBookmarkPayload>();
             var resumeAt = payload.ResumeAt;
             var request = new DispatchWorkflowInstanceRequest(workflowInstanceId) { BookmarkId = bookmark.Id };
             await _workflowScheduler.ScheduleAtAsync(bookmark.Id, request, resumeAt, cancellationToken);
@@ -71,7 +74,8 @@ public class DefaultBookmarkScheduler : IBookmarkScheduler
         // Schedule a trigger for each Cron bookmark.
         foreach (var bookmark in cronBookmarks)
         {
-            var payload = _bookmarkPayloadSerializer.Deserialize<CronBookmarkPayload>(bookmark.Data!)!;
+            //var payload = _bookmarkPayloadSerializer.Deserialize<CronBookmarkPayload>(bookmark.Data!)!;
+            var payload = bookmark.GetPayload<CronBookmarkPayload>();
             var cronExpression = payload.CronExpression;
             var request = new DispatchWorkflowInstanceRequest(workflowInstanceId) { BookmarkId = bookmark.Id };
             await _workflowScheduler.ScheduleCronAsync(bookmark.Id, request, cronExpression, cancellationToken);

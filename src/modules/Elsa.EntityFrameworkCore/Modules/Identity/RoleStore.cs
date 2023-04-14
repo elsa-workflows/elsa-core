@@ -25,13 +25,13 @@ public class EFCoreRoleStore : IRoleStore
     /// <inheritdoc />
     public async Task SaveAsync(Role application, CancellationToken cancellationToken = default)
     {
-        await _applicationStore.SaveAsync(application, Save, cancellationToken);
+        await _applicationStore.SaveAsync(application, SaveAsync, cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task AddAsync(Role role, CancellationToken cancellationToken = default)
     {
-        await _applicationStore.AddAsync(role, Save, cancellationToken);
+        await _applicationStore.AddAsync(role, SaveAsync, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -52,11 +52,11 @@ public class EFCoreRoleStore : IRoleStore
         return await _applicationStore.QueryAsync(queryable => Filter(queryable, filter), Load, cancellationToken).ToList();
     }
 
-    private static Role Save(IdentityElsaDbContext dbContext, Role role)
+    private static ValueTask<Role> SaveAsync(IdentityElsaDbContext dbContext, Role role, CancellationToken cancellationToken)
     {
         var permissionsJson = JsonSerializer.Serialize(role.Permissions);
         dbContext.Entry(role).Property("Permissions").CurrentValue = permissionsJson;
-        return role;
+        return new ValueTask<Role>(role);
     }
 
     private static Role? Load(IdentityElsaDbContext dbContext, Role? role)

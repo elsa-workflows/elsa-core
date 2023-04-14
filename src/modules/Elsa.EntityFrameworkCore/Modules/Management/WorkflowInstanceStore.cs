@@ -97,20 +97,20 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     
     /// <inheritdoc />
     public async Task SaveAsync(WorkflowInstance record, CancellationToken cancellationToken = default) =>
-        await _store.SaveAsync(record, Save, cancellationToken);
+        await _store.SaveAsync(record, SaveAsync, cancellationToken);
 
     /// <inheritdoc />
     public async Task SaveManyAsync(IEnumerable<WorkflowInstance> records, CancellationToken cancellationToken = default) =>
-        await _store.SaveManyAsync(records, Save, cancellationToken);
+        await _store.SaveManyAsync(records, SaveAsync, cancellationToken);
 
-    private WorkflowInstance Save(ManagementElsaDbContext managementElsaDbContext, WorkflowInstance entity)
+    private ValueTask<WorkflowInstance> SaveAsync(ManagementElsaDbContext managementElsaDbContext, WorkflowInstance entity, CancellationToken cancellationToken)
     {
         var data = entity.WorkflowState;
         var options = _serializerOptionsProvider.CreatePersistenceOptions(ReferenceHandler.Preserve);
         var json = JsonSerializer.Serialize(data, options);
 
         managementElsaDbContext.Entry(entity).Property("Data").CurrentValue = json;
-        return entity;
+        return new ValueTask<WorkflowInstance>(entity);
     }
 
     private WorkflowInstance? Load(ManagementElsaDbContext managementElsaDbContext, WorkflowInstance? entity)

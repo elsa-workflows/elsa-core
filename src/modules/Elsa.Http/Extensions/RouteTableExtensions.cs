@@ -29,7 +29,7 @@ public static class RouteTableExtensions
     /// </summary>
     public static void AddRoutes(this IRouteTable routeTable, IEnumerable<StoredTrigger> triggers)
     {
-        var paths = Filter(triggers).Select(Deserialize).Select(x => x.Path).Where(x => !string.IsNullOrWhiteSpace(x)).ToList();
+        var paths = Filter(triggers).Select(x => x.GetData<HttpEndpointBookmarkPayload>().Path).Where(x => !string.IsNullOrWhiteSpace(x)).ToList();
         routeTable.AddRange(paths);
     }
 
@@ -38,7 +38,7 @@ public static class RouteTableExtensions
     /// </summary>
     public static void AddRoutes(this IRouteTable routeTable, IEnumerable<Bookmark> bookmarks)
     {
-        var paths = Filter(bookmarks).Select(Deserialize).Select(x => x.Path).ToList();
+        var paths = Filter(bookmarks).Select(x => x.GetPayload<HttpEndpointBookmarkPayload>().Path).ToList();
         routeTable.AddRange(paths);
     }
 
@@ -47,7 +47,7 @@ public static class RouteTableExtensions
     /// </summary>
     public static void RemoveRoutes(this IRouteTable routeTable, IEnumerable<StoredTrigger> triggers)
     {
-        var paths = Filter(triggers).Select(Deserialize).Select(x => x.Path).ToList();
+        var paths = Filter(triggers).Select(x => x.GetData<HttpEndpointBookmarkPayload>().Path).ToList();
         routeTable.RemoveRange(paths);
     }
 
@@ -56,13 +56,13 @@ public static class RouteTableExtensions
     /// </summary>
     public static void RemoveRoutes(this IRouteTable routeTable, IEnumerable<Bookmark> bookmarks)
     {
-        var paths = Filter(bookmarks).Select(Deserialize).Select(x => x.Path).ToList();
+        var paths = Filter(bookmarks).Select(x => x.GetPayload<HttpEndpointBookmarkPayload>().Path).ToList();
         routeTable.RemoveRange(paths);
     }
 
-    private static IEnumerable<StoredTrigger> Filter(IEnumerable<StoredTrigger> triggers) => triggers.Where(x => x.Name == ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>() && x.Data != null);
-    private static IEnumerable<Bookmark> Filter(IEnumerable<Bookmark> triggers) => triggers.Where(x => x.Name == ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>() && x.Data != null);
-    private static HttpEndpointBookmarkPayload Deserialize(StoredTrigger trigger) => Deserialize(trigger.Data!);
-    private static HttpEndpointBookmarkPayload Deserialize(Bookmark bookmark) => Deserialize(bookmark.Data!);
-    private static HttpEndpointBookmarkPayload Deserialize(string model) => JsonSerializer.Deserialize<HttpEndpointBookmarkPayload>(model, SerializerOptions)!;
+    private static IEnumerable<StoredTrigger> Filter(IEnumerable<StoredTrigger> triggers) => triggers.Where(x => x.Name == ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>() && x.Payload != null);
+    private static IEnumerable<Bookmark> Filter(IEnumerable<Bookmark> triggers) => triggers.Where(x => x.Name == ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>() && x.Payload != null);
+    // private static HttpEndpointBookmarkPayload Deserialize(StoredTrigger trigger) => Deserialize(trigger.Data!);
+    // private static HttpEndpointBookmarkPayload Deserialize(Bookmark bookmark) => Deserialize(bookmark.Data!);
+    // private static HttpEndpointBookmarkPayload Deserialize(string model) => JsonSerializer.Deserialize<HttpEndpointBookmarkPayload>(model, SerializerOptions)!;
 }

@@ -7,10 +7,10 @@ using Elsa.Workflows.Core.State;
 namespace Elsa.Workflows.Core.Services;
 
 /// <inheritdoc />
-public class WorkflowStateSerializer : IWorkflowStateSerializer
+public class WorkflowExecutionContextMapper : IWorkflowExecutionContextMapper
 {
     /// <inheritdoc />
-    public WorkflowState SerializeState(WorkflowExecutionContext workflowExecutionContext)
+    public WorkflowState Extract(WorkflowExecutionContext workflowExecutionContext)
     {
         var state = new WorkflowState
         {
@@ -33,7 +33,7 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
     }
 
     /// <inheritdoc />
-    public void DeserializeState(WorkflowExecutionContext workflowExecutionContext, WorkflowState state)
+    public WorkflowExecutionContext Apply(WorkflowExecutionContext workflowExecutionContext, WorkflowState state)
     {
         workflowExecutionContext.Id = state.Id;
         workflowExecutionContext.CorrelationId = state.CorrelationId;
@@ -43,6 +43,7 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
         DeserializeProperties(state, workflowExecutionContext);
         DeserializeActivityExecutionContexts(state, workflowExecutionContext);
         DeserializeCompletionCallbacks(state, workflowExecutionContext);
+        return workflowExecutionContext;
     }
 
     private void SerializeProperties(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
@@ -102,7 +103,7 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
                 ParentContextId = activityExecutionContext.ParentActivityExecutionContext?.Id,
                 ScheduledActivityNodeId = activityExecutionContext.NodeId,
                 OwnerActivityNodeId = activityExecutionContext.ParentActivityExecutionContext?.NodeId,
-                Properties = new PropertyBag(activityExecutionContext.Properties),
+                Properties = activityExecutionContext.Properties,
                 ActivityState = activityExecutionContext.ActivityState
             };
             return activityExecutionContextState;
@@ -119,8 +120,8 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
             var properties = activityExecutionContextState.Properties;
             var activityExecutionContext = workflowExecutionContext.CreateActivityExecutionContext(activity);
             activityExecutionContext.Id = activityExecutionContextState.Id;
-            activityExecutionContext.Properties = properties.Dictionary;
-            activityExecutionContext.ActivityState = activityExecutionContextState.ActivityState ?? new Dictionary<string, JsonElement>();
+            activityExecutionContext.Properties = properties;
+            activityExecutionContext.ActivityState = activityExecutionContextState.ActivityState ?? new Dictionary<string, object>();
 
             return activityExecutionContext;
         }

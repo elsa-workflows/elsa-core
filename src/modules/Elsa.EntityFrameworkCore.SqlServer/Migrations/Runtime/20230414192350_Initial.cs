@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -23,7 +24,7 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                     Hash = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     WorkflowInstanceId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     CorrelationId = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Data = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    PayloadData = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -43,7 +44,7 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                     ParentActivityInstanceId = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     ActivityId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     ActivityType = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    NodeId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    NodeId = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Timestamp = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     EventName = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     Message = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -86,7 +87,7 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                     Name = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     ActivityId = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Hash = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    Data = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    PayloadData = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {

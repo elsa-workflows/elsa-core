@@ -2,6 +2,7 @@ using System.Text.Json;
 using Elsa.Common.Models;
 using Elsa.ProtoActor.Extensions;
 using Elsa.ProtoActor.Protos;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.State;
@@ -20,6 +21,7 @@ public class WorkflowGrain : WorkflowGrainBase
     private const int MaxSnapshotsToKeep = 5;
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly IWorkflowHostFactory _workflowHostFactory;
+    private readonly IBookmarkPayloadSerializer _bookmarkPayloadSerializer;
     private readonly SerializerOptionsProvider _serializerOptionsProvider;
     private readonly Persistence _persistence;
 
@@ -34,12 +36,14 @@ public class WorkflowGrain : WorkflowGrainBase
     public WorkflowGrain(
         IWorkflowDefinitionService workflowDefinitionService,
         IWorkflowHostFactory workflowHostFactory,
+        IBookmarkPayloadSerializer bookmarkPayloadSerializer,
         SerializerOptionsProvider serializerOptionsProvider,
         IProvider provider,
         IContext context) : base(context)
     {
         _workflowDefinitionService = workflowDefinitionService;
         _workflowHostFactory = workflowHostFactory;
+        _bookmarkPayloadSerializer = bookmarkPayloadSerializer;
         _serializerOptionsProvider = serializerOptionsProvider;
         _persistence = Persistence.WithSnapshotting(provider, Context.ClusterIdentity()!.Identity, ApplySnapshot);
     }
@@ -241,16 +245,22 @@ public class WorkflowGrain : WorkflowGrainBase
         return await _workflowHostFactory.CreateAsync(workflow, cancellationToken);
     }
 
-    private static IEnumerable<BookmarkDto> Map(IEnumerable<Bookmark> bookmarks) =>
-        bookmarks.Select(x => new BookmarkDto
+    private IEnumerable<BookmarkDto> Map(IEnumerable<Bookmark> bookmarks)
+    {
+        return bookmarks.Select(x =>
         {
-            Id = x.Id,
-            Name = x.Name,
-            ActivityNodeId = x.ActivityNodeId,
-            ActivityInstanceId = x.ActivityInstanceId,
-            Hash = x.Hash,
-            Data = x.Data.EmptyIfNull(),
-            AutoBurn = x.AutoBurn,
-            CallbackMethodName = x.CallbackMethodName.EmptyIfNull()
+            var payloadJson = x.Payload != null ? _bookmarkPayloadSerializer.Serialize(x.Payload) : "";
+            return new BookmarkDto
+            {
+                Id = x.Id,
+                Name = x.Name,
+                ActivityNodeId = x.ActivityNodeId,
+                ActivityInstanceId = x.ActivityInstanceId,
+                Hash = x.Hash,
+                Data = payloadJson,
+                AutoBurn = x.AutoBurn,
+                CallbackMethodName = x.CallbackMethodName.EmptyIfNull()
+            };
         });
+    }
 }

@@ -11,13 +11,13 @@ namespace Elsa.Workflows.Runtime.Middleware.Workflows;
 public class PersistWorkflowStateMiddleware : WorkflowExecutionMiddleware
 {
     private readonly IWorkflowStateStore _workflowStateStore;
-    private readonly IWorkflowStateSerializer _workflowStateSerializer;
+    private readonly IWorkflowExecutionContextMapper _workflowExecutionContextMapper;
 
     /// <inheritdoc />
-    public PersistWorkflowStateMiddleware(WorkflowMiddlewareDelegate next, IWorkflowStateStore workflowStateStore, IWorkflowStateSerializer workflowStateSerializer) : base(next)
+    public PersistWorkflowStateMiddleware(WorkflowMiddlewareDelegate next, IWorkflowStateStore workflowStateStore, IWorkflowExecutionContextMapper workflowExecutionContextMapper) : base(next)
     {
         _workflowStateStore = workflowStateStore;
-        _workflowStateSerializer = workflowStateSerializer;
+        _workflowExecutionContextMapper = workflowExecutionContextMapper;
     }
 
     /// <inheritdoc />
@@ -27,7 +27,7 @@ public class PersistWorkflowStateMiddleware : WorkflowExecutionMiddleware
         await Next(context);
 
         // Extract workflow state.
-        var workflowState = _workflowStateSerializer.SerializeState(context);
+        var workflowState = _workflowExecutionContextMapper.Extract(context);
 
         // Store the serializable state in context for the pipeline caller.
         context.TransientProperties[context] = workflowState;

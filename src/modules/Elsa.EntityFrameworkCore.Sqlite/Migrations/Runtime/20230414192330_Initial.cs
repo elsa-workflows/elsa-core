@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -19,7 +20,7 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     Hash = table.Column<string>(type: "TEXT", nullable: false),
                     WorkflowInstanceId = table.Column<string>(type: "TEXT", nullable: false),
                     CorrelationId = table.Column<string>(type: "TEXT", nullable: true),
-                    Data = table.Column<string>(type: "TEXT", nullable: true)
+                    PayloadData = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -38,7 +39,7 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     ParentActivityInstanceId = table.Column<string>(type: "TEXT", nullable: true),
                     ActivityId = table.Column<string>(type: "TEXT", nullable: false),
                     ActivityType = table.Column<string>(type: "TEXT", nullable: false),
-                    NodeId = table.Column<string>(type: "TEXT", nullable: true),
+                    NodeId = table.Column<string>(type: "TEXT", nullable: false),
                     Timestamp = table.Column<string>(type: "TEXT", nullable: false),
                     EventName = table.Column<string>(type: "TEXT", nullable: true),
                     Message = table.Column<string>(type: "TEXT", nullable: true),
@@ -79,7 +80,7 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     Name = table.Column<string>(type: "TEXT", nullable: false),
                     ActivityId = table.Column<string>(type: "TEXT", nullable: false),
                     Hash = table.Column<string>(type: "TEXT", nullable: true),
-                    Data = table.Column<string>(type: "TEXT", nullable: true)
+                    PayloadData = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {

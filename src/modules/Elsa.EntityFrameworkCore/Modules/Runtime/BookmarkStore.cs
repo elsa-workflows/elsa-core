@@ -1,5 +1,6 @@
 using Elsa.EntityFrameworkCore.Common;
 using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Models;
 
 namespace Elsa.EntityFrameworkCore.Modules.Runtime;

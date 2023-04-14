@@ -21,7 +21,7 @@ using Proto.Remote.GrpcNet;
 namespace Elsa.ProtoActor.Features;
 
 /// <summary>
-/// Installs the Proto Actor feature to host & execute workflow instances.
+/// Installs the Proto Actor feature to host &amp; execute workflow instances.
 /// </summary>
 [DependsOn(typeof(WorkflowRuntimeFeature))]
 public class ProtoActorFeature : FeatureBase

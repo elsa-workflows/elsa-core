@@ -1,5 +1,7 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Serialization.Converters;
 
 namespace Elsa.Workflows.Core.State;
 
@@ -40,12 +42,14 @@ public class ActivityExecutionContextState
     /// <summary>
     /// A bag of properties.
     /// </summary>
-    public PropertyBag Properties { get; set; } = new();
+    [JsonConverter(typeof(PolymorphicDictionaryConverterFactory))]
+    public IDictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
 
     /// <summary>
     /// The evaluated values of the activity's properties.
     /// </summary>
-    public IDictionary<string, JsonElement>? ActivityState { get; set; }
+    [JsonConverter(typeof(PolymorphicDictionaryConverterFactory))]
+    public IDictionary<string, object>? ActivityState { get; set; }
     
     //public RegisterState Register { get; set; } = default!;
 }

@@ -1,3 +1,4 @@
+using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
@@ -34,7 +35,8 @@ public class CancelBackgroundActivities : INotificationHandler<WorkflowBookmarks
 
         foreach (var removedBookmark in removedBookmarks)
         {
-            var payload = _bookmarkPayloadSerializer.Deserialize<BackgroundActivityBookmark>(removedBookmark.Data!);
+            //var payload = _bookmarkPayloadSerializer.Deserialize<BackgroundActivityBookmark>(removedBookmark.Data!);
+            var payload = removedBookmark.GetPayload<BackgroundActivityBookmark>();
             if (payload.JobId != null)
             {
                 await _backgroundActivityScheduler.CancelAsync(payload.JobId, cancellationToken);

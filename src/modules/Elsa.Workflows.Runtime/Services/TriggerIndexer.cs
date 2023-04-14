@@ -212,7 +212,7 @@ public class TriggerIndexer : ITriggerIndexer
             Name = triggerTypeName,
             ActivityId = trigger.Id,
             Hash = _hasher.Hash(triggerTypeName, x),
-            Data = JsonSerializer.Serialize(x, _serializerOptions)
+            Payload = JsonSerializer.Serialize(x, _serializerOptions)
         });
 
         return triggers.ToList();

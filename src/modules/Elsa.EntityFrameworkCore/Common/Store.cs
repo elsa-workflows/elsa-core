@@ -38,19 +38,19 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
     /// <param name="cancellationToken">The cancellation token.</param>
     public async Task AddAsync(TEntity entity, CancellationToken cancellationToken = default)
     {
-        await AddAsync(entity, null, cancellationToken);    
+        await AddAsync(entity, null, cancellationToken);
     }
-    
+
     /// <summary>
     /// Adds the specified entity.
     /// </summary>
     /// <param name="entity">The entity to add.</param>
     /// <param name="onAdding">The callback to invoke before adding the entity.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    public async Task AddAsync(TEntity entity, Func<TDbContext, TEntity, TEntity>? onAdding, CancellationToken cancellationToken = default)
+    public async Task AddAsync(TEntity entity, Func<TDbContext, TEntity, CancellationToken, ValueTask<TEntity>>? onAdding, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await CreateDbContextAsync(cancellationToken);
-        entity = onAdding?.Invoke(dbContext, entity) ?? entity;
+        entity = onAdding != null ? await onAdding(dbContext, entity, cancellationToken) : entity;
         var set = dbContext.Set<TEntity>();
         await set.AddAsync(entity, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -71,10 +71,10 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
     /// <param name="keySelector">The key selector to get the primary key property.</param>
     /// <param name="onSaving">The callback to invoke before saving the entity.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    public async Task SaveAsync(TEntity entity, Expression<Func<TEntity, string>> keySelector, Func<TDbContext, TEntity, TEntity>? onSaving, CancellationToken cancellationToken = default)
+    public async Task SaveAsync(TEntity entity, Expression<Func<TEntity, string>> keySelector, Func<TDbContext, TEntity, CancellationToken, ValueTask<TEntity>>? onSaving, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await CreateDbContextAsync(cancellationToken);
-        entity = onSaving?.Invoke(dbContext, entity) ?? entity;
+        entity = onSaving != null ? await onSaving(dbContext, entity, cancellationToken) : entity;
         var set = dbContext.Set<TEntity>();
         var lambda = keySelector.BuildEqualsExpresion(entity);
         var exists = await set.AnyAsync(lambda, cancellationToken);
@@ -99,13 +99,13 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
     /// <param name="keySelector">The key selector to get the primary key property.</param>
     /// <param name="onSaving">The callback to invoke before saving the entity.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    public async Task SaveManyAsync(IEnumerable<TEntity> entities, Expression<Func<TEntity, string>> keySelector, Func<TDbContext, TEntity, TEntity>? onSaving = default, CancellationToken cancellationToken = default)
+    public async Task SaveManyAsync(IEnumerable<TEntity> entities, Expression<Func<TEntity, string>> keySelector, Func<TDbContext, TEntity, CancellationToken, ValueTask<TEntity>>? onSaving = default, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await CreateDbContextAsync(cancellationToken);
         var entityList = entities.ToList();
 
         if (onSaving != null)
-            entityList = entityList.Select(x => onSaving(dbContext, x)).ToList();
+            entityList = (await Task.WhenAll(entityList.Select(async x => await onSaving(dbContext, x, cancellationToken)))).ToList();
 
         await dbContext.BulkUpsertAsync(entityList, keySelector, cancellationToken);
     }
@@ -139,7 +139,7 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
 
         return entity;
     }
-    
+
     /// <summary>
     /// Finds a single entity using a query
     /// </summary>
@@ -151,7 +151,7 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
     {
         return await QueryAsync(query, onLoading, cancellationToken).FirstOrDefault();
     }
-    
+
     /// <summary>
     /// Finds a single entity using a query
     /// </summary>

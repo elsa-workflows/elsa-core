@@ -12,6 +12,7 @@ using Microsoft.Extensions.Options;
 using System.Net;
 using System.Net.Mime;
 using System.Text.Json;
+using Elsa.Extensions;
 
 namespace Elsa.Http.Middleware;
 
@@ -242,11 +243,13 @@ public class WorkflowsMiddleware
         {
             var triggerFilter = new TriggerFilter { Hash = hash };
             var trigger = (await _triggerStore.FindManyAsync(triggerFilter, cancellationToken)).First();
-            return _serializer.Deserialize<HttpEndpointBookmarkPayload>(trigger.Data!);
+            return trigger.GetData<HttpEndpointBookmarkPayload>();
+            //return _serializer.Deserialize<HttpEndpointBookmarkPayload>(trigger.Data!);
         }
 
         var bookmarkFilter = new BookmarkFilter { Hash = hash };
         var bookmark = (await _bookmarkStore.FindManyAsync(bookmarkFilter, cancellationToken)).First();
-        return _serializer.Deserialize<HttpEndpointBookmarkPayload>(bookmark.Data!);
+        return bookmark.GetData<HttpEndpointBookmarkPayload>();
+        //return _serializer.Deserialize<HttpEndpointBookmarkPayload>(bookmark.Data!);
     }
 }

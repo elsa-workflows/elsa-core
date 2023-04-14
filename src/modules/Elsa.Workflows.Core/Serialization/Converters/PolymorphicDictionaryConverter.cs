@@ -10,9 +10,11 @@ public class PolymorphicDictionaryConverter : JsonConverter<IDictionary<string, 
     /// <inheritdoc />
     public PolymorphicDictionaryConverter(JsonSerializerOptions options)
     {
-        var newOptions = new JsonSerializerOptions(options);
-        newOptions.Converters.Insert(0, new PolymorphicObjectConverterFactory());
-        _objectConverter = (JsonConverter<object>)newOptions.GetConverter(typeof(object));
+        //var newOptions = new JsonSerializerOptions(options);
+        //newOptions.Converters.Insert(0, new PolymorphicObjectConverterFactory());
+        //_objectConverter = (JsonConverter<object>)newOptions.GetConverter(typeof(object));
+        //_objectConverter = (JsonConverter<object>)options.GetConverter(typeof(object)) ?? throw new InvalidOperationException("Could not find converter for type 'object'.");
+        _objectConverter = (JsonConverter<object>)new PolymorphicObjectConverterFactory().CreateConverter(typeof(object), options);
     }
 
     /// <inheritdoc />

@@ -1,5 +1,3 @@
-using System.Text.Json;
-
 namespace Elsa.Workflows.Core.Models;
 
 /// <summary>
@@ -11,7 +9,7 @@ public record WorkflowExecutionLogEntry(
     string ActivityId,
     string ActivityType,
     string NodeId,
-    IDictionary<string, JsonElement>? ActivityState,
+    IDictionary<string, object>? ActivityState,
     DateTimeOffset Timestamp,
     string? EventName,
     string? Message,

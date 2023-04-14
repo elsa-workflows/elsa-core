@@ -40,7 +40,8 @@ public class DefaultTriggerScheduler : ITriggerScheduler
         // Schedule each Timer trigger.
         foreach (var trigger in timerTriggers)
         {
-            var (startAt, interval) = _bookmarkPayloadSerializer.Deserialize<TimerTriggerPayload>(trigger.Data!);
+            //var (startAt, interval) = _bookmarkPayloadSerializer.Deserialize<TimerTriggerPayload>(trigger.Data!);
+            var (startAt, interval) = trigger.GetData<TimerTriggerPayload>();
             var input = new { StartAt = startAt, Interval = interval }.ToDictionary();
             var request = new DispatchWorkflowDefinitionRequest
             {
@@ -55,7 +56,8 @@ public class DefaultTriggerScheduler : ITriggerScheduler
         // Schedule each StartAt trigger.
         foreach (var trigger in startAtTriggers)
         {
-            var executeAt = _bookmarkPayloadSerializer.Deserialize<StartAtPayload>(trigger.Data!).ExecuteAt;
+            //var executeAt = _bookmarkPayloadSerializer.Deserialize<StartAtPayload>(trigger.Data!).ExecuteAt;
+            var executeAt = trigger.GetData<StartAtPayload>().ExecuteAt;
             var input = new { ExecuteAt = executeAt }.ToDictionary();
             var request = new DispatchWorkflowDefinitionRequest
             {
@@ -71,7 +73,8 @@ public class DefaultTriggerScheduler : ITriggerScheduler
         // Schedule each Cron trigger.
         foreach (var trigger in cronTriggers)
         {
-            var (executeAt, cronExpression) = _bookmarkPayloadSerializer.Deserialize<CronBookmarkPayload>(trigger.Data!);
+            //var (executeAt, cronExpression) = _bookmarkPayloadSerializer.Deserialize<CronBookmarkPayload>(trigger.Data!);
+            var (executeAt, cronExpression) = trigger.GetData<CronBookmarkPayload>();
             var input = new { ExecuteAt = executeAt, CronExpression = cronExpression }.ToDictionary();
             var request = new DispatchWorkflowDefinitionRequest
             {

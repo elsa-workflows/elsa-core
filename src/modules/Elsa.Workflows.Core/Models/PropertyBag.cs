@@ -3,7 +3,7 @@ using Elsa.Workflows.Core.Serialization.Converters;
 
 namespace Elsa.Workflows.Core.Models;
 
-[JsonConverter(typeof(PropertyBagConverter))]
+//[JsonConverter(typeof(PropertyBagConverter))]
 public class PropertyBag
 {
     [JsonConstructor]
@@ -16,6 +16,6 @@ public class PropertyBag
         Dictionary = dictionary;
     }
   
-    [JsonConverter(typeof(PolymorphicDictionaryConverterFactory))]
+    //[JsonConverter(typeof(PolymorphicDictionaryConverterFactory))]
     public IDictionary<string, object> Dictionary { get; init; }
 }

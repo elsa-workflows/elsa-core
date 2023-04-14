@@ -49,5 +49,5 @@ public record ExecutionLogRecord(
     string? EventName,
     string? Message,
     string? Source,
-    IDictionary<string, JsonElement>? ActivityState,
+    IDictionary<string, object>? ActivityState,
     object? Payload);

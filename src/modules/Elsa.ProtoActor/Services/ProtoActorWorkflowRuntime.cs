@@ -247,7 +247,7 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
     }
 
     /// <inheritdoc />
-    public async Task UpdateBookmarkAsync(Workflows.Runtime.Models.StoredBookmark bookmark, CancellationToken cancellationToken = default)
+    public async Task UpdateBookmarkAsync(Workflows.Runtime.Entities.StoredBookmark bookmark, CancellationToken cancellationToken = default)
     {
         var bookmarkClient = _cluster.GetNamedBookmarkGrain(bookmark.Hash);
 

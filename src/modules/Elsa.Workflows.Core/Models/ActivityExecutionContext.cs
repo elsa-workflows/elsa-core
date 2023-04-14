@@ -124,7 +124,7 @@ public class ActivityExecutionContext : IExecutionContext
     /// <summary>
     /// Stores the evaluated inputs for the current activity.
     /// </summary>
-    public IDictionary<string, JsonElement> ActivityState { get; set; } = new Dictionary<string, JsonElement>();
+    public IDictionary<string, object> ActivityState { get; set; } = new Dictionary<string, object>();
 
     public async ValueTask ScheduleActivityAsync(IActivity? activity, ActivityCompletionCallback? completionCallback = default, object? tag = default)
     {
@@ -190,14 +190,14 @@ public class ActivityExecutionContext : IExecutionContext
         var bookmarkHasher = GetRequiredService<IBookmarkHasher>();
         var identityGenerator = GetRequiredService<IIdentityGenerator>();
         var payloadSerializer = GetRequiredService<IBookmarkPayloadSerializer>();
-        var payloadJson = payload != null ? payloadSerializer.Serialize(payload) : default;
+        //var payloadJson = payload != null ? payloadSerializer.Serialize(payload) : default;
         var hash = bookmarkHasher.Hash(bookmarkName, payload);
 
         var bookmark = new Bookmark(
             identityGenerator.GenerateId(),
             bookmarkName,
             hash,
-            payloadJson,
+            payload,
             ActivityNode.NodeId,
             Id,
             options?.AutoBurn ?? true,

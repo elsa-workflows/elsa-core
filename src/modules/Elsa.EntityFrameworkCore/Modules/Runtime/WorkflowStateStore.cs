@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Common.Contracts;
 using Elsa.EntityFrameworkCore.Common;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.Serialization.Converters;
@@ -17,6 +18,7 @@ public class EFCoreWorkflowStateStore : IWorkflowStateStore
     private readonly SerializerOptionsProvider _serializerOptionsProvider;
     private readonly ISystemClock _systemClock;
     private readonly IDbContextFactory<RuntimeElsaDbContext> _dbContextFactory;
+    private readonly IWorkflowStateSerializer _workflowStateSerializer;
     private readonly EntityStore<RuntimeElsaDbContext, WorkflowState> _store;
 
     /// <summary>
@@ -25,18 +27,20 @@ public class EFCoreWorkflowStateStore : IWorkflowStateStore
     public EFCoreWorkflowStateStore(
         EntityStore<RuntimeElsaDbContext, WorkflowState> store,
         IDbContextFactory<RuntimeElsaDbContext> dbContextFactory,
+        IWorkflowStateSerializer workflowStateSerializer,
         SerializerOptionsProvider serializerOptionsProvider,
         ISystemClock systemClock)
     {
         _serializerOptionsProvider = serializerOptionsProvider;
         _systemClock = systemClock;
         _dbContextFactory = dbContextFactory;
+        _workflowStateSerializer = workflowStateSerializer;
         _store = store;
     }
 
     /// <inheritdoc />
     public async ValueTask SaveAsync(string id, WorkflowState state, CancellationToken cancellationToken = default) => 
-        await _store.SaveAsync(state, Save, cancellationToken: cancellationToken);
+        await _store.SaveAsync(state, SaveAsync, cancellationToken: cancellationToken);
 
     /// <inheritdoc />
     public async ValueTask<WorkflowState?> LoadAsync(string id, CancellationToken cancellationToken = default)
@@ -71,14 +75,14 @@ public class EFCoreWorkflowStateStore : IWorkflowStateStore
         return await query.CountAsync(cancellationToken);
     }
     
-    private WorkflowState Save(RuntimeElsaDbContext dbContext, WorkflowState entity)
+    private async ValueTask<WorkflowState> SaveAsync(RuntimeElsaDbContext dbContext, WorkflowState entity, CancellationToken cancellationToken)
     {
-        var options = _serializerOptionsProvider.CreatePersistenceOptions(ReferenceHandler.Preserve);
-        
+        //var options = _serializerOptionsProvider.CreatePersistenceOptions(ReferenceHandler.Preserve);
         // For writing string:object dictionaries where the objects would otherwise be read as JsonElement values.
-        options.Converters.Add(new SystemObjectPrimitiveConverter());
-
-        var json = JsonSerializer.Serialize(entity, options);
+        //options.Converters.Add(new SystemObjectPrimitiveConverter());
+        //var json = JsonSerializer.Serialize(entity, options);
+        
+        var json = await _workflowStateSerializer.SerializeAsync(entity, cancellationToken);
         var now = _systemClock.UtcNow;
         var entry = dbContext.Entry(entity);
 
