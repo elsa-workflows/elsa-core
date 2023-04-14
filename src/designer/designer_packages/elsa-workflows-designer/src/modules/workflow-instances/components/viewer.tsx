@@ -88,8 +88,8 @@ export class WorkflowInstanceViewer {
     const activityId = e.detail.activity.id;
     const activityNode = e.detail.activityNode;
 
-    let graph = await this.flowchartElement.getGraph();
-    let graphNode = graph.getNodes().find(n => n.id == activityId)
+    const graph = await this.flowchartElement.getGraph();
+    const graphNode = graph.getNodes().find(n => n.id == activityId)
 
     if(graphNode == null) {
       await this.importSelectedItemsWorkflow(activityNode);
@@ -101,7 +101,7 @@ export class WorkflowInstanceViewer {
       this.selectedActivity = graphNode.data;
     }
 
-    var log = e.detail.executionLog;
+    const log = e.detail.executionLog;
     this.selectedActivityExecutionLog = log.faulted ? log.faultedRecord : log.completed ? log.completedRecord : log.startedRecord;
   }
   
@@ -116,12 +116,12 @@ export class WorkflowInstanceViewer {
   }
 
   private findConsumingWorkflowRecursive(activityNode: ActivityNode) : ActivityNode {
-    let parent = activityNode.parents[0];
+    const parent = activityNode.parents[0];
     if(parent == null) {
       return activityNode;
     }
     else{
-      var type = parent.activity.type;
+      const type = parent.activity.type;
       if(type == "Elsa.Workflow" || type == "Elsa.Flowchart") {
         return this.findConsumingWorkflowRecursive(parent);
       }

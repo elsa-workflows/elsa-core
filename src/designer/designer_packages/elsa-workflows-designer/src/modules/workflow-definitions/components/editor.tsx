@@ -19,6 +19,7 @@ import {LayoutDirection, UpdateActivityArgs} from "../../flowchart/models";
 import {cloneDeep} from '@antv/x6/lib/util/object/object';
 import {removeGuidsFromPortNames} from '../../../utils/graph';
 import {constrainTimeouts} from "@stencil/core/mock-doc";
+import { WorkflowPropertiesEditorTabs } from '../models/props-editor-tabs';
 
 @Component({
   tag: 'elsa-workflow-definition-editor',
@@ -275,6 +276,16 @@ export class WorkflowDefinitionEditor {
 
   private onWorkflowPropsUpdated = (e: CustomEvent<WorkflowDefinitionPropsUpdatedArgs>) => {
     this.saveChangesDebounced();
+
+    if(e.detail.updatedTab == WorkflowPropertiesEditorTabs.Variables){
+      rerenderActivityEditor();
+    }
+
+    function rerenderActivityEditor() {
+      const currentSelectedActivity = this.selectedActivity;
+      this.selectedActivity = null;
+      this.selectedActivity = currentSelectedActivity;
+    }
   }
 
   private async onActivitySelected(e: CustomEvent<ActivitySelectedArgs>) {

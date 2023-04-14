@@ -1,5 +1,6 @@
 import {Activity, ActivityDescriptor, InputDescriptor, PropertyDescriptor, TabDefinition} from "../../../models";
 import {WorkflowDefinition} from "./entities";
+import { WorkflowPropertiesEditorTabs } from "./props-editor-tabs";
 
 export const WorkflowEditorEventTypes = {
   WorkflowDefinition: {
@@ -36,6 +37,7 @@ export interface WorkflowDefinitionUpdatedArgs {
 
 export interface WorkflowDefinitionPropsUpdatedArgs {
   workflowDefinition: WorkflowDefinition;
+  updatedTab?: WorkflowPropertiesEditorTabs;
 }
 
 export interface WorkflowPropertiesEditorDisplayingArgs {
@@ -74,8 +76,6 @@ export interface ActivityUpdatedArgs {
   newId?: string;
   activity: Activity;
   activityDescriptor: ActivityDescriptor;
-  // propertyName?: string;
-  // propertyDescriptor?: PropertyDescriptor;
 }
 
 export interface ActivityIdUpdatedArgs {

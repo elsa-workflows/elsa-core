@@ -9,6 +9,7 @@ import {InfoList} from "../../../../components/shared/forms/info-list";
 import {TabChangedArgs, Variable} from "../../../../models";
 import {WorkflowDefinitionsApi} from "../../services/api";
 import descriptorsStore from "../../../../data/descriptors-store";
+import {WorkflowPropertiesEditorTabs} from "../../models/props-editor-tabs";
 
 @Component({
   tag: 'elsa-workflow-definition-properties-editor',
@@ -258,7 +259,7 @@ export class WorkflowDefinitionPropertiesEditor {
   private onPropertyEditorChanged = (apply: (w: WorkflowDefinition) => void) => {
     const workflowDefinition = this.workflowDefinition;
     apply(workflowDefinition);
-    this.workflowPropsUpdated.emit({workflowDefinition});
+    this.workflowPropsUpdated.emit({workflowDefinition: workflowDefinition});
   }
 
   private onVariablesUpdated = async (e: CustomEvent<Array<Variable>>) => this.onPropsUpdated('variables', e.detail)
@@ -280,7 +281,17 @@ export class WorkflowDefinitionPropertiesEditor {
     }
 
     workflowDefinition[propName] = propValue;
-    this.workflowPropsUpdated.emit({workflowDefinition});
+    const updatedTab = this.getPropEditorSectionByPropName(propName);
+    this.workflowPropsUpdated.emit({workflowDefinition,updatedTab});
     await this.createModel();
+  }
+
+  private getPropEditorSectionByPropName(propName: string) : WorkflowPropertiesEditorTabs {
+    const enumKey = Object.keys(WorkflowPropertiesEditorTabs).find(key => WorkflowPropertiesEditorTabs[key as keyof typeof WorkflowPropertiesEditorTabs] === propName);
+
+    if (enumKey) {
+      return WorkflowPropertiesEditorTabs[enumKey as keyof typeof WorkflowPropertiesEditorTabs];
+    }
+    return null;
   }
 }
