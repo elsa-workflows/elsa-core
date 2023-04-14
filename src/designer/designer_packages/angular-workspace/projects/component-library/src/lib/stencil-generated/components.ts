@@ -121,28 +121,6 @@ export declare interface ElsaActivityPropertiesEditor extends Components.ElsaAct
 
 
 @ProxyCmp({
-  inputs: ['notification', 'showDuration']
-})
-@Component({
-  selector: 'elsa-awhile-notifications',
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  template: '<ng-content></ng-content>',
-  // eslint-disable-next-line @angular-eslint/no-inputs-metadata-property
-  inputs: ['notification', 'showDuration'],
-})
-export class ElsaAwhileNotifications {
-  protected el: HTMLElement;
-  constructor(c: ChangeDetectorRef, r: ElementRef, protected z: NgZone) {
-    c.detach();
-    this.el = r.nativeElement;
-  }
-}
-
-
-export declare interface ElsaAwhileNotifications extends Components.ElsaAwhileNotifications {}
-
-
-@ProxyCmp({
   inputs: ['buttons']
 })
 @Component({
@@ -1061,6 +1039,28 @@ export class ElsaToastManager {
 
 
 export declare interface ElsaToastManager extends Components.ElsaToastManager {}
+
+
+@ProxyCmp({
+  inputs: ['notification', 'showDuration']
+})
+@Component({
+  selector: 'elsa-toast-notification',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: '<ng-content></ng-content>',
+  // eslint-disable-next-line @angular-eslint/no-inputs-metadata-property
+  inputs: ['notification', 'showDuration'],
+})
+export class ElsaToastNotification {
+  protected el: HTMLElement;
+  constructor(c: ChangeDetectorRef, r: ElementRef, protected z: NgZone) {
+    c.detach();
+    this.el = r.nativeElement;
+  }
+}
+
+
+export declare interface ElsaToastNotification extends Components.ElsaToastNotification {}
 
 
 @ProxyCmp({
