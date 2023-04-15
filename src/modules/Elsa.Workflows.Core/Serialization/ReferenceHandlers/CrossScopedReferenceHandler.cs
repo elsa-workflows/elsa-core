@@ -18,4 +18,10 @@ public class CrossScopedReferenceHandler : ReferenceHandler
     /// Resets the reference resolver.
     /// </summary>
     public void Reset() => _rootedResolver = new CustomPreserveReferenceResolver();
+    
+    /// <summary>
+    /// Gets the reference resolver.
+    /// </summary>
+    /// <returns>The reference resolver.</returns>
+    public ReferenceResolver GetResolver() => _rootedResolver!;
 }

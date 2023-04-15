@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using Elsa.Expressions.Contracts;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Serialization.Converters;
@@ -22,7 +23,7 @@ public class JsonWorkflowStateSerializer : IWorkflowStateSerializer
     {
         _wellKnownTypeRegistry = wellKnownTypeRegistry;
     }
-    
+
     /// <inheritdoc />
     public Task<string> SerializeAsync(WorkflowState workflowState, CancellationToken cancellationToken = default)
     {
@@ -42,17 +43,18 @@ public class JsonWorkflowStateSerializer : IWorkflowStateSerializer
     private JsonSerializerOptions GetSerializerOptions()
     {
         var referenceHandler = new CrossScopedReferenceHandler();
-        
+
         var options = new JsonSerializerOptions
         {
-            ReferenceHandler = referenceHandler
+            ReferenceHandler = referenceHandler,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            PropertyNameCaseInsensitive = true,
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
 
         options.Converters.Add(new JsonStringEnumConverter());
         options.Converters.Add(new TypeJsonConverter(_wellKnownTypeRegistry));
-        
-        // options.Converters.Add(new PolymorphicObjectConverterFactory());
-        // options.Converters.Add(new PolymorphicDictionaryConverterFactory());
+        options.Converters.Add(JsonMetadataServices.TimeSpanConverter);
         return options;
     }
 }

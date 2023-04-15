@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using System.Text.Json;
 using Elsa.EntityFrameworkCore.Common;
 using Elsa.Identity.Contracts;
@@ -43,13 +44,13 @@ public class EFCoreRoleStore : IRoleStore
     /// <inheritdoc />
     public async Task<Role?> FindAsync(RoleFilter filter, CancellationToken cancellationToken = default)
     {
-        return await _applicationStore.FindAsync(query => Filter(query, filter), Load, cancellationToken);
+        return await _applicationStore.FindAsync(query => Filter(query, filter), LoadAsync, cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task<IEnumerable<Role>> FindManyAsync(RoleFilter filter, CancellationToken cancellationToken = default)
     {
-        return await _applicationStore.QueryAsync(queryable => Filter(queryable, filter), Load, cancellationToken).ToList();
+        return await _applicationStore.QueryAsync(queryable => Filter(queryable, filter), LoadAsync, cancellationToken).ToList();
     }
 
     private static ValueTask<Role> SaveAsync(IdentityElsaDbContext dbContext, Role role, CancellationToken cancellationToken)
@@ -59,18 +60,18 @@ public class EFCoreRoleStore : IRoleStore
         return new ValueTask<Role>(role);
     }
 
-    private static Role? Load(IdentityElsaDbContext dbContext, Role? role)
+    private static ValueTask<Role?> LoadAsync(IdentityElsaDbContext dbContext, Role? role, CancellationToken cancellationToken)
     {
         if (role == null)
-            return null;
+            return new(default(Role));
 
         var permissionsJson = (string?)dbContext.Entry(role).Property("Permissions").CurrentValue;
 
         if (string.IsNullOrWhiteSpace(permissionsJson)) 
-            return role;
+            return new ValueTask<Role?>(role);
         
         role.Permissions = JsonSerializer.Deserialize<ICollection<string>>(permissionsJson)!;
-        return role;
+        return new ValueTask<Role?>(role);
     }
 
     private static IQueryable<Role> Filter(IQueryable<Role> query, RoleFilter filter) => filter.Apply(query);

@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using Elsa.Common.Models;
 using Elsa.EntityFrameworkCore.Common;
 using Elsa.Extensions;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Management.Contracts;
@@ -18,26 +19,26 @@ namespace Elsa.EntityFrameworkCore.Modules.Management;
 public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
 {
     private readonly EntityStore<ManagementElsaDbContext, WorkflowInstance> _store;
-    private readonly SerializerOptionsProvider _serializerOptionsProvider;
+    private readonly IWorkflowStateSerializer _workflowStateSerializer;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public EFCoreWorkflowInstanceStore(EntityStore<ManagementElsaDbContext, WorkflowInstance> store, SerializerOptionsProvider serializerOptionsProvider)
+    public EFCoreWorkflowInstanceStore(EntityStore<ManagementElsaDbContext, WorkflowInstance> store, IWorkflowStateSerializer workflowStateSerializer)
     {
         _store = store;
-        _serializerOptionsProvider = serializerOptionsProvider;
+        _workflowStateSerializer = workflowStateSerializer;
     }
 
     /// <inheritdoc />
-    public async Task<WorkflowInstance?> FindAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default) => 
-        await _store.QueryAsync(query => Filter(query, filter), Load, cancellationToken).FirstOrDefault();
+    public async Task<WorkflowInstance?> FindAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default) =>
+        await _store.QueryAsync(query => Filter(query, filter), LoadAsync, cancellationToken).FirstOrDefault();
 
     /// <inheritdoc />
     public async Task<Page<WorkflowInstance>> FindManyAsync(WorkflowInstanceFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
         var count = await _store.QueryAsync(query => Filter(query, filter), x => x.Id, cancellationToken).LongCount();
-        var entities = await _store.QueryAsync(query => Filter(query, filter).Paginate(pageArgs), Load, cancellationToken).ToList();
+        var entities = await _store.QueryAsync(query => Filter(query, filter).Paginate(pageArgs), LoadAsync, cancellationToken).ToList();
         return Page.Of(entities, count);
     }
 
@@ -45,22 +46,22 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     public async Task<Page<WorkflowInstance>> FindManyAsync<TOrderBy>(WorkflowInstanceFilter filter, PageArgs pageArgs, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
         var count = await _store.QueryAsync(query => Filter(query, filter), x => x.Id, cancellationToken).LongCount();
-        var entities = await _store.QueryAsync(query => Filter(query, filter).OrderBy(order).Paginate(pageArgs), Load, cancellationToken).ToList();
+        var entities = await _store.QueryAsync(query => Filter(query, filter).OrderBy(order).Paginate(pageArgs), LoadAsync, cancellationToken).ToList();
         return Page.Of(entities, count);
     }
 
     /// <inheritdoc />
-    public async Task<IEnumerable<WorkflowInstance>> FindManyAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default) => 
+    public async Task<IEnumerable<WorkflowInstance>> FindManyAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default) =>
         await _store.QueryAsync(query => Filter(query, filter), cancellationToken).ToList().AsEnumerable();
 
     /// <inheritdoc />
-    public async Task<IEnumerable<WorkflowInstance>> FindManyAsync<TOrderBy>(WorkflowInstanceFilter filter, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default) => 
-        await _store.QueryAsync(query => Filter(query, filter).OrderBy(order), Load, cancellationToken).ToList().AsEnumerable();
+    public async Task<IEnumerable<WorkflowInstance>> FindManyAsync<TOrderBy>(WorkflowInstanceFilter filter, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default) =>
+        await _store.QueryAsync(query => Filter(query, filter).OrderBy(order), LoadAsync, cancellationToken).ToList().AsEnumerable();
 
     /// <inheritdoc />
     public async Task<Page<WorkflowInstanceSummary>> SummarizeManyAsync(WorkflowInstanceFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
-        var count = await _store.QueryAsync(query => Filter(query, filter),x => x.Id, cancellationToken).LongCount();
+        var count = await _store.QueryAsync(query => Filter(query, filter), x => x.Id, cancellationToken).LongCount();
         var entities = await _store.QueryAsync<WorkflowInstanceSummary>(query => Filter(query, filter).Paginate(pageArgs), x => WorkflowInstanceSummary.FromInstance(x), cancellationToken).ToList();
         return Page.Of(entities, count);
     }
@@ -74,11 +75,11 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     }
 
     /// <inheritdoc />
-    public async Task<IEnumerable<WorkflowInstanceSummary>> SummarizeManyAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default) => 
+    public async Task<IEnumerable<WorkflowInstanceSummary>> SummarizeManyAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default) =>
         await _store.QueryAsync(query => Filter(query, filter), x => WorkflowInstanceSummary.FromInstance(x), cancellationToken).ToList().AsEnumerable();
 
     /// <inheritdoc />
-    public async Task<IEnumerable<WorkflowInstanceSummary>> SummarizeManyAsync<TOrderBy>(WorkflowInstanceFilter filter, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default) => 
+    public async Task<IEnumerable<WorkflowInstanceSummary>> SummarizeManyAsync<TOrderBy>(WorkflowInstanceFilter filter, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default) =>
         await _store.QueryAsync(query => Filter(query, filter).OrderBy(order), x => WorkflowInstanceSummary.FromInstance(x), cancellationToken).ToList().AsEnumerable();
 
     /// <inheritdoc />
@@ -94,7 +95,7 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
         var count = await _store.DeleteWhereAsync(query => Filter(query, filter), cancellationToken);
         return count;
     }
-    
+
     /// <inheritdoc />
     public async Task SaveAsync(WorkflowInstance record, CancellationToken cancellationToken = default) =>
         await _store.SaveAsync(record, SaveAsync, cancellationToken);
@@ -103,17 +104,16 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     public async Task SaveManyAsync(IEnumerable<WorkflowInstance> records, CancellationToken cancellationToken = default) =>
         await _store.SaveManyAsync(records, SaveAsync, cancellationToken);
 
-    private ValueTask<WorkflowInstance> SaveAsync(ManagementElsaDbContext managementElsaDbContext, WorkflowInstance entity, CancellationToken cancellationToken)
+    private async ValueTask<WorkflowInstance> SaveAsync(ManagementElsaDbContext managementElsaDbContext, WorkflowInstance entity, CancellationToken cancellationToken)
     {
         var data = entity.WorkflowState;
-        var options = _serializerOptionsProvider.CreatePersistenceOptions(ReferenceHandler.Preserve);
-        var json = JsonSerializer.Serialize(data, options);
+        var json = await _workflowStateSerializer.SerializeAsync(data, cancellationToken);
 
         managementElsaDbContext.Entry(entity).Property("Data").CurrentValue = json;
-        return new ValueTask<WorkflowInstance>(entity);
+        return entity;
     }
 
-    private WorkflowInstance? Load(ManagementElsaDbContext managementElsaDbContext, WorkflowInstance? entity)
+    private async ValueTask<WorkflowInstance?> LoadAsync(ManagementElsaDbContext managementElsaDbContext, WorkflowInstance? entity, CancellationToken cancellationToken)
     {
         if (entity == null)
             return null;
@@ -121,11 +121,8 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
         var data = entity.WorkflowState;
         var json = (string?)managementElsaDbContext.Entry(entity).Property("Data").CurrentValue;
 
-        if (!string.IsNullOrWhiteSpace(json))
-        {
-            var options = _serializerOptionsProvider.CreatePersistenceOptions(ReferenceHandler.Preserve);
-            data = JsonSerializer.Deserialize<WorkflowState>(json, options)!;
-        }
+        if (!string.IsNullOrWhiteSpace(json)) 
+            data = await _workflowStateSerializer.DeserializeAsync(json, cancellationToken);
 
         entity.WorkflowState = data;
 

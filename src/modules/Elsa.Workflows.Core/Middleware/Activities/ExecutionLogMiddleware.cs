@@ -1,5 +1,3 @@
-using System.Text.Json;
-using System.Text.Json.Nodes;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
@@ -41,15 +39,8 @@ public class ExecutionLogMiddleware : IActivityExecutionMiddleware
         try
         {
             await _next(context);
-            
-            var payload = new JsonObject();
 
-            foreach (var entry in context.JournalData)
-            {
-                payload[entry.Key] = entry.Value != null ? JsonSerializer.Deserialize<JsonNode>(JsonSerializer.Serialize(entry.Value)) : JsonNode.Parse("null");
-            }
-
-            context.AddExecutionLogEntry("Completed", payload: payload, includeActivityState: true);
+            context.AddExecutionLogEntry("Completed", payload: context.JournalData, includeActivityState: true);
         }
         catch (Exception exception)
         {

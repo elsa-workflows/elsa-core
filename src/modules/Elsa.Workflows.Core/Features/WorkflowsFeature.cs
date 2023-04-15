@@ -145,6 +145,7 @@ public class WorkflowsFeature : FeatureBase
             
             // Serialization.
             .AddSingleton<IWorkflowStateSerializer, JsonWorkflowStateSerializer>()
+            .AddSingleton<IWorkflowExecutionLogStateSerializer, JsonWorkflowExecutionLogStateSerializer>()
             .AddSingleton<IActivityStateSerializer, ActivityStateSerializer>()
             .AddSingleton<ISerializationProvider, BasicSerializationProvider>()
             
