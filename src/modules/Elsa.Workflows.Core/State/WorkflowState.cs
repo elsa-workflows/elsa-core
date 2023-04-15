@@ -1,5 +1,7 @@
+using System.Text.Json.Serialization;
 using Elsa.Common.Entities;
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Serialization.Converters;
 
 namespace Elsa.Workflows.Core.State;
 
@@ -56,10 +58,12 @@ public class WorkflowState : Entity
     /// <summary>
     /// A dictionary of outputs produced by the workflow.
     /// </summary>
+    [JsonConverter(typeof(PolymorphicDictionaryConverterFactory))]
     public IDictionary<string, object> Output { get; set; } = new Dictionary<string, object>();
 
     /// <summary>
     /// A global property bag that contains properties set by application code and/or activities.
     /// </summary>
-    public PropertyBag Properties { get; set; } = new();
+    [JsonConverter(typeof(PolymorphicDictionaryConverterFactory))]
+    public IDictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
 }

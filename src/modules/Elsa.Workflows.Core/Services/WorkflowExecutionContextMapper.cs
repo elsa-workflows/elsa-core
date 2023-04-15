@@ -22,12 +22,12 @@ public class WorkflowExecutionContextMapper : IWorkflowExecutionContextMapper
             SubStatus = workflowExecutionContext.SubStatus,
             Bookmarks = workflowExecutionContext.Bookmarks,
             Output = workflowExecutionContext.Output,
-            Fault = SerializeFault(workflowExecutionContext.Fault)
+            Fault = MapFault(workflowExecutionContext.Fault)
         };
 
-        SerializeProperties(state, workflowExecutionContext);
-        SerializeCompletionCallbacks(state, workflowExecutionContext);
-        SerializeActivityExecutionContexts(state, workflowExecutionContext);
+        ExportProperties(state, workflowExecutionContext);
+        ExtractCompletionCallbacks(state, workflowExecutionContext);
+        ExtractActivityExecutionContexts(state, workflowExecutionContext);
 
         return state;
     }
@@ -40,23 +40,23 @@ public class WorkflowExecutionContextMapper : IWorkflowExecutionContextMapper
         workflowExecutionContext.SubStatus = state.SubStatus;
         workflowExecutionContext.Bookmarks = state.Bookmarks;
         workflowExecutionContext.Output = state.Output;
-        DeserializeProperties(state, workflowExecutionContext);
-        DeserializeActivityExecutionContexts(state, workflowExecutionContext);
-        DeserializeCompletionCallbacks(state, workflowExecutionContext);
+        ApplyProperties(state, workflowExecutionContext);
+        ApplyActivityExecutionContexts(state, workflowExecutionContext);
+        ApplyCompletionCallbacks(state, workflowExecutionContext);
         return workflowExecutionContext;
     }
 
-    private void SerializeProperties(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
+    private void ExportProperties(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
     {
-        state.Properties = new PropertyBag(workflowExecutionContext.Properties);
+        state.Properties = workflowExecutionContext.Properties;
     }
 
-    private void DeserializeProperties(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
+    private void ApplyProperties(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
     {
-        workflowExecutionContext.Properties = state.Properties.Dictionary;
+        workflowExecutionContext.Properties = state.Properties;
     }
 
-    private static void DeserializeCompletionCallbacks(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
+    private static void ApplyCompletionCallbacks(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
     {
         foreach (var completionCallbackEntry in state.CompletionCallbacks)
         {
@@ -68,7 +68,7 @@ public class WorkflowExecutionContextMapper : IWorkflowExecutionContextMapper
         }
     }
 
-    private static void SerializeCompletionCallbacks(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
+    private static void ExtractCompletionCallbacks(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
     {
         // Assert all referenced owner contexts exist.
         foreach (var completionCallback in workflowExecutionContext.CompletionCallbacks)
@@ -83,7 +83,7 @@ public class WorkflowExecutionContextMapper : IWorkflowExecutionContextMapper
         state.CompletionCallbacks = completionCallbacks.ToList();
     }
 
-    private static void SerializeActivityExecutionContexts(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
+    private static void ExtractActivityExecutionContexts(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
     {
         ActivityExecutionContextState CreateActivityExecutionContextState(ActivityExecutionContext activityExecutionContext)
         {
@@ -112,7 +112,7 @@ public class WorkflowExecutionContextMapper : IWorkflowExecutionContextMapper
         state.ActivityExecutionContexts = workflowExecutionContext.ActivityExecutionContexts.Reverse().Select(CreateActivityExecutionContextState).ToList();
     }
 
-    private static void DeserializeActivityExecutionContexts(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
+    private static void ApplyActivityExecutionContexts(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
     {
         ActivityExecutionContext CreateActivityExecutionContext(ActivityExecutionContextState activityExecutionContextState)
         {
@@ -148,7 +148,7 @@ public class WorkflowExecutionContextMapper : IWorkflowExecutionContextMapper
         workflowExecutionContext.ActivityExecutionContexts = activityExecutionContexts;
     }
     
-    private static WorkflowFaultState? SerializeFault(WorkflowFault? fault)
+    private static WorkflowFaultState? MapFault(WorkflowFault? fault)
     {
         if (fault == null)
             return null;

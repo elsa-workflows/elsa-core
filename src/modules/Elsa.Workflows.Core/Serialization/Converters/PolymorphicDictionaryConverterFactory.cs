@@ -3,6 +3,9 @@ using System.Text.Json.Serialization;
 
 namespace Elsa.Workflows.Core.Serialization.Converters;
 
+/// <summary>
+/// A JSON converter factory that creates <see cref="PolymorphicDictionaryConverter"/> instances.
+/// </summary>
 public class PolymorphicDictionaryConverterFactory : JsonConverterFactory
 {
     /// <inheritdoc />

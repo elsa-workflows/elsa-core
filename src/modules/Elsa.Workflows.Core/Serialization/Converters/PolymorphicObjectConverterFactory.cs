@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 namespace Elsa.Workflows.Core.Serialization.Converters;
 
 /// <summary>
-/// A JSON converter for <see cref="System.Object"/> objects.
+/// A JSON converter factory that creates <see cref="PolymorphicObjectConverter"/> instances.
 /// </summary>
 public class PolymorphicObjectConverterFactory : JsonConverterFactory
 {

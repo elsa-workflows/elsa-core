@@ -1,10 +1,12 @@
 using Elsa.Abstractions;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
+using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.ActivityDescriptors.Get;
 
-public class Get : ElsaEndpoint<Request, ActivityDescriptor>
+[PublicAPI]
+internal class Get : ElsaEndpoint<Request, ActivityDescriptor>
 {
     private readonly IActivityRegistry _registry;
 

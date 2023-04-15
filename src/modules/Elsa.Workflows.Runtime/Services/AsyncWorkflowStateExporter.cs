@@ -76,7 +76,7 @@ public class AsyncWorkflowStateExporter : IWorkflowStateExporter, ICommandHandle
         workflowInstance.LastExecutedAt = now;
         workflowInstance.WorkflowState = workflowState;
 
-        if (workflowState.Properties.Dictionary.TryGetValue<string>(SetName.WorkflowInstanceNameKey, out var name))
+        if (workflowState.Properties.TryGetValue<string>(SetName.WorkflowInstanceNameKey, out var name))
             workflowInstance.Name = name;
 
         // TODO: Store timestamps such as CancelledAt, FaultedAt, etc.

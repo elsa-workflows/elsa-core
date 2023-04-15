@@ -1,8 +1,10 @@
 using Elsa.Workflows.Core.Models;
+using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.ActivityDescriptors.List;
 
-public class Response
+[PublicAPI]
+internal class Response
 {
     public Response(ICollection<ActivityDescriptor> items)
     {
