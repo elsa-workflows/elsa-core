@@ -11,7 +11,6 @@ using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Runtime.Comparers;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
-using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Models.Notifications;
 using Elsa.Workflows.Runtime.Notifications;
 using Microsoft.Extensions.Logging;
@@ -205,14 +204,14 @@ public class TriggerIndexer : ITriggerIndexer
         var triggerData = await TryGetTriggerDataAsync(trigger, triggerIndexingContext);
         var triggerTypeName = trigger.Type;
 
-        var triggers = triggerData.Select(x => new StoredTrigger
+        var triggers = triggerData.Select(payload => new StoredTrigger
         {
             Id = _identityGenerator.GenerateId(),
             WorkflowDefinitionId = workflow.Identity.DefinitionId,
             Name = triggerTypeName,
             ActivityId = trigger.Id,
-            Hash = _hasher.Hash(triggerTypeName, x),
-            Payload = JsonSerializer.Serialize(x, _serializerOptions)
+            Hash = _hasher.Hash(triggerTypeName, payload),
+            Payload = payload
         });
 
         return triggers.ToList();
