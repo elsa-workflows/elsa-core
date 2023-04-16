@@ -61,5 +61,5 @@ public class WorkflowState : Entity
     /// <summary>
     /// A global property bag that contains properties set by application code and/or activities.
     /// </summary>
-    public PropertyBag Properties { get; set; } = new();
+    public IDictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
 }

@@ -4,6 +4,7 @@ using Elsa.EntityFrameworkCore.Modules.Labels;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.JavaScript.Options;
+using Elsa.WorkflowServer.Web;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -16,6 +17,7 @@ var identityTokenSection = identitySection.GetSection("Tokens");
 services
     .AddElsa(elsa => elsa
         .AddActivitiesFrom<Program>()
+        .AddTypeAlias<ApiResponse<User>>("ApiResponse[User]")
         .UseIdentity(identity =>
         {
             identity.IdentityOptions = options => identitySection.Bind(options);
@@ -25,7 +27,13 @@ services
             identity.UseConfigurationBasedRoleProvider(options => identitySection.Bind(options));
         })
         .UseDefaultAuthentication()
-        .UseWorkflowManagement(management => management.UseEntityFrameworkCore(m => m.UseSqlite(sqliteConnectionString)))
+        .UseWorkflowManagement(management =>
+        {
+            management.UseEntityFrameworkCore(m => m.UseSqlite(sqliteConnectionString));
+            management.AddVariableType<ApiResponse<User>>("Api");
+            management.AddVariableType<User>("Api");
+            management.AddVariableType<Support>("Api");
+        })
         .UseWorkflowRuntime(runtime =>
         {
             runtime.UseDefaultRuntime(dr => dr.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)));

@@ -1,7 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Workflows.Core.Services;
 
@@ -12,7 +11,7 @@ namespace Elsa.Workflows.Core.Services;
 public class WorkflowStorageDriver : IStorageDriver
 {
     /// <summary>
-    /// The key used to store the variables propertyBag in the workflow state.
+    /// The key used to store the variables in the workflow state.
     /// </summary>
     public const string VariablesDictionaryStateKey = "PersistentVariablesDictionary";
 
@@ -27,7 +26,7 @@ public class WorkflowStorageDriver : IStorageDriver
     public ValueTask<object?> ReadAsync(string id, StorageDriverContext context)
     {
         var dictionary = GetVariablesDictionary(context);
-        var value = dictionary.Dictionary.TryGetValue(id, out var v) ? v : default;
+        var value = dictionary.TryGetValue(id, out var v) ? v : default;
         return new(value);
     }
 
@@ -38,13 +37,13 @@ public class WorkflowStorageDriver : IStorageDriver
         return ValueTask.CompletedTask;
     }
 
-    private PropertyBag GetVariablesDictionary(StorageDriverContext context) => context.ExecutionContext.Properties.GetOrAdd(VariablesDictionaryStateKey, () => new PropertyBag());
-    private void SetVariablesDictionary(StorageDriverContext context, PropertyBag propertyBag) => context.ExecutionContext.Properties[VariablesDictionaryStateKey] = propertyBag;
+    private IDictionary<string, object> GetVariablesDictionary(StorageDriverContext context) => context.ExecutionContext.Properties.GetOrAdd(VariablesDictionaryStateKey, () => new Dictionary<string, object>());
+    private void SetVariablesDictionary(StorageDriverContext context, IDictionary<string, object> dictionary) => context.ExecutionContext.Properties[VariablesDictionaryStateKey] = dictionary;
 
     private void UpdateVariablesDictionary(StorageDriverContext context, Action<IDictionary<string, object>> update)
     {
         var dictionary = GetVariablesDictionary(context);
-        update(dictionary.Dictionary);
+        update(dictionary);
         SetVariablesDictionary(context, dictionary);
     }
 }

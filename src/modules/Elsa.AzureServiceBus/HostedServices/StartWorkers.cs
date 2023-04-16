@@ -1,7 +1,7 @@
 using Elsa.AzureServiceBus.Activities;
 using Elsa.AzureServiceBus.Contracts;
 using Elsa.AzureServiceBus.Models;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Extensions;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Runtime.Contracts;
 using Microsoft.Extensions.Hosting;
@@ -15,17 +15,15 @@ public class StartWorkers : IHostedService
 {
     private readonly ITriggerStore _triggerStore;
     private readonly IBookmarkStore _bookmarkStore;
-    private readonly IBookmarkPayloadSerializer _serializer;
     private readonly IWorkerManager _workerManager;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public StartWorkers(ITriggerStore triggerStore, IBookmarkStore bookmarkStore, IBookmarkPayloadSerializer serializer, IWorkerManager workerManager)
+    public StartWorkers(ITriggerStore triggerStore, IBookmarkStore bookmarkStore, IWorkerManager workerManager)
     {
         _triggerStore = triggerStore;
         _bookmarkStore = bookmarkStore;
-        _serializer = serializer;
         _workerManager = workerManager;
     }
 
@@ -34,9 +32,9 @@ public class StartWorkers : IHostedService
     {
         var activityType = ActivityTypeNameHelper.GenerateTypeName<MessageReceived>();
         var triggerFilter = new TriggerFilter { Name = activityType};
-        var triggers = (await _triggerStore.FindManyAsync(triggerFilter, cancellationToken)).Select(x => DeserializePayload(x.Data!)).ToList();
+        var triggers = (await _triggerStore.FindManyAsync(triggerFilter, cancellationToken)).Select(x => x.GetPayload<MessageReceivedTriggerPayload>()).ToList();
         var bookmarkFilter = new BookmarkFilter { ActivityTypeName = activityType };
-        var bookmarks = (await _bookmarkStore.FindManyAsync(bookmarkFilter, cancellationToken)).Select(x => DeserializePayload(x.Data!)).ToList();
+        var bookmarks = (await _bookmarkStore.FindManyAsync(bookmarkFilter, cancellationToken)).Select(x => x.GetPayload<MessageReceivedTriggerPayload>()).ToList();
         var payloads = triggers.Concat(bookmarks).ToList();
 
         await EnsureWorkersAsync(payloads, cancellationToken);
@@ -44,8 +42,6 @@ public class StartWorkers : IHostedService
 
     /// <inheritdoc />
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
-
-    private MessageReceivedTriggerPayload DeserializePayload(string payload) => _serializer.Deserialize<MessageReceivedTriggerPayload>(payload);
 
     private async Task EnsureWorkersAsync(IEnumerable<MessageReceivedTriggerPayload> payloads, CancellationToken cancellationToken)
     {

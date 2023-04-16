@@ -81,6 +81,44 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                     b.ToTable("WorkflowStates", "Elsa");
                 });
 
+            modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.StoredBookmark", b =>
+                {
+                    b.Property<string>("BookmarkId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ActivityTypeName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("CorrelationId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Data")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Hash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("WorkflowInstanceId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("BookmarkId");
+
+                    b.HasIndex(new[] { "ActivityTypeName" }, "IX_StoredBookmark_ActivityTypeName");
+
+                    b.HasIndex(new[] { "ActivityTypeName", "Hash" }, "IX_StoredBookmark_ActivityTypeName_Hash");
+
+                    b.HasIndex(new[] { "ActivityTypeName", "Hash", "WorkflowInstanceId" }, "IX_StoredBookmark_ActivityTypeName_Hash_WorkflowInstanceId");
+
+                    b.HasIndex(new[] { "Hash" }, "IX_StoredBookmark_Hash");
+
+                    b.HasIndex(new[] { "WorkflowInstanceId" }, "IX_StoredBookmark_WorkflowInstanceId");
+
+                    b.ToTable("Bookmarks", "Elsa");
+                });
+
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.StoredTrigger", b =>
                 {
                     b.Property<string>("Id")
@@ -145,6 +183,7 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                         .HasColumnType("text");
 
                     b.Property<string>("NodeId")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("ParentActivityInstanceId")
@@ -200,44 +239,6 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_WorkflowVersion");
 
                     b.ToTable("WorkflowExecutionLogRecords", "Elsa");
-                });
-
-            modelBuilder.Entity("Elsa.Workflows.Runtime.Models.StoredBookmark", b =>
-                {
-                    b.Property<string>("BookmarkId")
-                        .HasColumnType("text");
-
-                    b.Property<string>("ActivityTypeName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("CorrelationId")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Data")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Hash")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("WorkflowInstanceId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("BookmarkId");
-
-                    b.HasIndex(new[] { "ActivityTypeName" }, "IX_StoredBookmark_ActivityTypeName");
-
-                    b.HasIndex(new[] { "ActivityTypeName", "Hash" }, "IX_StoredBookmark_ActivityTypeName_Hash");
-
-                    b.HasIndex(new[] { "ActivityTypeName", "Hash", "WorkflowInstanceId" }, "IX_StoredBookmark_ActivityTypeName_Hash_WorkflowInstanceId");
-
-                    b.HasIndex(new[] { "Hash" }, "IX_StoredBookmark_Hash");
-
-                    b.HasIndex(new[] { "WorkflowInstanceId" }, "IX_StoredBookmark_WorkflowInstanceId");
-
-                    b.ToTable("Bookmarks", "Elsa");
                 });
 #pragma warning restore 612, 618
         }

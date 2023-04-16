@@ -3,6 +3,9 @@ using System.Text.Json.Serialization;
 
 namespace Elsa.Workflows.Core.Serialization.Converters;
 
+/// <summary>
+/// A converter that can convert a dictionary of string keys and object values while preserving the object type.
+/// </summary>
 public class PolymorphicDictionaryConverter : JsonConverter<IDictionary<string, object>>
 {
     private readonly JsonConverter<object> _objectConverter;
@@ -10,9 +13,8 @@ public class PolymorphicDictionaryConverter : JsonConverter<IDictionary<string, 
     /// <inheritdoc />
     public PolymorphicDictionaryConverter(JsonSerializerOptions options)
     {
-        var newOptions = new JsonSerializerOptions(options);
-        newOptions.Converters.Insert(0, new PolymorphicObjectConverterFactory());
-        _objectConverter = (JsonConverter<object>)newOptions.GetConverter(typeof(object));
+        var factory = (JsonConverterFactory)(options.Converters.FirstOrDefault(x => x is PolymorphicObjectConverterFactory) ?? new PolymorphicObjectConverterFactory());
+        _objectConverter = (JsonConverter<object>)factory.CreateConverter(typeof(object), options)!;
     }
 
     /// <inheritdoc />

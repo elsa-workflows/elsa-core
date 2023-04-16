@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Workflows.Core.State;
@@ -40,12 +39,12 @@ public class ActivityExecutionContextState
     /// <summary>
     /// A bag of properties.
     /// </summary>
-    public PropertyBag Properties { get; set; } = new();
+    public IDictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
 
     /// <summary>
     /// The evaluated values of the activity's properties.
     /// </summary>
-    public IDictionary<string, JsonElement>? ActivityState { get; set; }
+    public IDictionary<string, object>? ActivityState { get; set; }
     
     //public RegisterState Register { get; set; } = default!;
 }

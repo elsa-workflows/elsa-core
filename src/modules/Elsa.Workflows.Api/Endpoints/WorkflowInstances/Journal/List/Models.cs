@@ -1,4 +1,3 @@
-using System.Text.Json;
 using FastEndpoints;
 
 // ReSharper disable NotAccessedPositionalProperty.Global
@@ -49,5 +48,5 @@ public record ExecutionLogRecord(
     string? EventName,
     string? Message,
     string? Source,
-    IDictionary<string, JsonElement>? ActivityState,
+    IDictionary<string, object>? ActivityState,
     object? Payload);

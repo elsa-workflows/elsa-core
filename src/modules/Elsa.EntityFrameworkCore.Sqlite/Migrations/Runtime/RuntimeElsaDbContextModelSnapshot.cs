@@ -75,6 +75,44 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     b.ToTable("WorkflowStates");
                 });
 
+            modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.StoredBookmark", b =>
+                {
+                    b.Property<string>("BookmarkId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ActivityTypeName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CorrelationId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Data")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Hash")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("WorkflowInstanceId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("BookmarkId");
+
+                    b.HasIndex(new[] { "ActivityTypeName" }, "IX_StoredBookmark_ActivityTypeName");
+
+                    b.HasIndex(new[] { "ActivityTypeName", "Hash" }, "IX_StoredBookmark_ActivityTypeName_Hash");
+
+                    b.HasIndex(new[] { "ActivityTypeName", "Hash", "WorkflowInstanceId" }, "IX_StoredBookmark_ActivityTypeName_Hash_WorkflowInstanceId");
+
+                    b.HasIndex(new[] { "Hash" }, "IX_StoredBookmark_Hash");
+
+                    b.HasIndex(new[] { "WorkflowInstanceId" }, "IX_StoredBookmark_WorkflowInstanceId");
+
+                    b.ToTable("Bookmarks");
+                });
+
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.StoredTrigger", b =>
                 {
                     b.Property<string>("Id")
@@ -139,6 +177,7 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                         .HasColumnType("TEXT");
 
                     b.Property<string>("NodeId")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ParentActivityInstanceId")
@@ -195,44 +234,6 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_WorkflowVersion");
 
                     b.ToTable("WorkflowExecutionLogRecords");
-                });
-
-            modelBuilder.Entity("Elsa.Workflows.Runtime.Models.StoredBookmark", b =>
-                {
-                    b.Property<string>("BookmarkId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ActivityTypeName")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("CorrelationId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Data")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Hash")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("WorkflowInstanceId")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("BookmarkId");
-
-                    b.HasIndex(new[] { "ActivityTypeName" }, "IX_StoredBookmark_ActivityTypeName");
-
-                    b.HasIndex(new[] { "ActivityTypeName", "Hash" }, "IX_StoredBookmark_ActivityTypeName_Hash");
-
-                    b.HasIndex(new[] { "ActivityTypeName", "Hash", "WorkflowInstanceId" }, "IX_StoredBookmark_ActivityTypeName_Hash_WorkflowInstanceId");
-
-                    b.HasIndex(new[] { "Hash" }, "IX_StoredBookmark_Hash");
-
-                    b.HasIndex(new[] { "WorkflowInstanceId" }, "IX_StoredBookmark_WorkflowInstanceId");
-
-                    b.ToTable("Bookmarks");
                 });
 #pragma warning restore 612, 618
         }

@@ -1,6 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Elsa.Workflows.Core.Serialization;
+using Elsa.Workflows.Core.Contracts;
 using FastEndpoints;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Builder;
@@ -47,8 +47,8 @@ public static class WebApplicationExtensions
 
     private static ValueTask<object?> DeserializeRequestAsync(HttpRequest httpRequest, Type modelType, JsonSerializerContext? serializerContext, CancellationToken cancellationToken)
     {
-        var serializerOptionsProvider = httpRequest.HttpContext.RequestServices.GetRequiredService<SerializerOptionsProvider>();
-        var options = serializerOptionsProvider.CreateApiOptions();
+        var serializer = httpRequest.HttpContext.RequestServices.GetRequiredService<IApiSerializer>();
+        var options = serializer.CreateOptions();
 
         return serializerContext == null
             ? JsonSerializer.DeserializeAsync(httpRequest.Body, modelType, options, cancellationToken)
@@ -57,14 +57,13 @@ public static class WebApplicationExtensions
 
     private static Task SerializeRequestAsync(HttpResponse httpResponse, object? dto, string contentType, JsonSerializerContext? serializerContext, CancellationToken cancellationToken)
     {
-        var services = httpResponse.HttpContext.RequestServices;
-        var serializerOptionsProvider = services.GetRequiredService<SerializerOptionsProvider>();
-        var options = serializerOptionsProvider.CreateApiOptions();
+        var serializer = httpResponse.HttpContext.RequestServices.GetRequiredService<IApiSerializer>();
+        var options = serializer.CreateOptions();
 
         httpResponse.ContentType = contentType;
         return serializerContext == null
-            ? JsonSerializer.SerializeAsync(httpResponse.Body, dto, dto.GetType(), options, cancellationToken)
-            : JsonSerializer.SerializeAsync(httpResponse.Body, dto, dto.GetType(), serializerContext, cancellationToken);
+            ? JsonSerializer.SerializeAsync(httpResponse.Body, dto, dto?.GetType() ?? typeof(object), options, cancellationToken)
+            : JsonSerializer.SerializeAsync(httpResponse.Body, dto, dto?.GetType() ?? typeof(object), serializerContext, cancellationToken);
     }
 
 }

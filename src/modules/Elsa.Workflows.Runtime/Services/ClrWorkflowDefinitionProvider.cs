@@ -1,7 +1,5 @@
-using System.Text.Json;
 using Elsa.Common.Contracts;
 using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Runtime.Contracts;
@@ -17,7 +15,8 @@ namespace Elsa.Workflows.Runtime.Services;
 public class ClrWorkflowDefinitionProvider : IWorkflowDefinitionProvider
 {
     private readonly IWorkflowBuilderFactory _workflowBuilderFactory;
-    private readonly SerializerOptionsProvider _serializerOptionsProvider;
+    private readonly IActivitySerializer _activitySerializer;
+    private readonly IPayloadSerializer _payloadSerializer;
     private readonly ISystemClock _systemClock;
     private readonly IServiceProvider _serviceProvider;
     private readonly RuntimeOptions _options;
@@ -28,13 +27,15 @@ public class ClrWorkflowDefinitionProvider : IWorkflowDefinitionProvider
     public ClrWorkflowDefinitionProvider(
         IOptions<RuntimeOptions> options,
         IWorkflowBuilderFactory workflowBuilderFactory,
-        SerializerOptionsProvider serializerOptionsProvider,
+        IActivitySerializer activitySerializer,
+        IPayloadSerializer payloadSerializer,
         ISystemClock systemClock,
         IServiceProvider serviceProvider
     )
     {
         _workflowBuilderFactory = workflowBuilderFactory;
-        _serializerOptionsProvider = serializerOptionsProvider;
+        _activitySerializer = activitySerializer;
+        _payloadSerializer = payloadSerializer;
         _systemClock = systemClock;
         _serviceProvider = serviceProvider;
         _options = options.Value;
@@ -61,9 +62,9 @@ public class ClrWorkflowDefinitionProvider : IWorkflowDefinitionProvider
         await workflowBuilder.BuildAsync(builder, cancellationToken);
 
         var workflow = await builder.BuildWorkflowAsync(cancellationToken);
-        var workflowJson = JsonSerializer.Serialize(workflow.Root, _serializerOptionsProvider.CreatePersistenceOptions());
+        var workflowJson = _activitySerializer.Serialize(workflow.Root);
         var materializerContext = new ClrWorkflowMaterializerContext(workflowBuilder.GetType());
-        var materializerContextJson = JsonSerializer.Serialize(materializerContext, _serializerOptionsProvider.CreatePersistenceOptions());
+        var materializerContextJson = _payloadSerializer.Serialize(materializerContext);
         var name = string.IsNullOrWhiteSpace(workflow.WorkflowMetadata.Name) ? workflowBuilderType.Name : workflow.WorkflowMetadata.Name.Trim();
 
         var definition = new WorkflowDefinition

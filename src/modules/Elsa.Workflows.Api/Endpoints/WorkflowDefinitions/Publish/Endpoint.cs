@@ -2,7 +2,7 @@ using Elsa.Abstractions;
 using Elsa.Common.Models;
 using Elsa.Workflows.Api.Mappers;
 using Elsa.Workflows.Api.Models;
-using Elsa.Workflows.Core.Serialization;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Serialization.Converters;
 using Elsa.Workflows.Management.Contracts;
 using JetBrains.Annotations;
@@ -15,13 +15,13 @@ internal class Publish : ElsaEndpoint<Request, WorkflowDefinitionResponse, Workf
 {
     private readonly IWorkflowDefinitionStore _store;
     private readonly IWorkflowDefinitionPublisher _workflowDefinitionPublisher;
-    private readonly SerializerOptionsProvider _serializerOptionsProvider;
+    private readonly IApiSerializer _serializer;
 
-    public Publish(IWorkflowDefinitionStore store, IWorkflowDefinitionPublisher workflowDefinitionPublisher, SerializerOptionsProvider serializerOptionsProvider)
+    public Publish(IWorkflowDefinitionStore store, IWorkflowDefinitionPublisher workflowDefinitionPublisher, IApiSerializer serializer)
     {
         _store = store;
         _workflowDefinitionPublisher = workflowDefinitionPublisher;
-        _serializerOptionsProvider = serializerOptionsProvider;
+        _serializer = serializer;
     }
 
     public override void Configure()
@@ -58,7 +58,7 @@ internal class Publish : ElsaEndpoint<Request, WorkflowDefinitionResponse, Workf
         var response = await Map.FromEntityAsync(definition, cancellationToken);
 
         // We do not want to include composite root activities in the response.
-        var serializerOptions = _serializerOptionsProvider.CreateApiOptions();
+        var serializerOptions = _serializer.CreateOptions();
         serializerOptions.Converters.Add(new JsonIgnoreCompositeRootConverterFactory());
 
         await HttpContext.Response.WriteAsJsonAsync(response, serializerOptions, cancellationToken);

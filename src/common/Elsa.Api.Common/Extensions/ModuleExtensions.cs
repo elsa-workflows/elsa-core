@@ -26,7 +26,7 @@ public static class ModuleExtensions
     /// Registers the assembly for FastEndpoint assembly discovery using the specified marker type.
     /// </summary>
     public static IModule AddFastEndpointsAssembly<T>(this IModule module) => module.AddFastEndpointsAssembly(typeof(T));
-    
+
     /// <summary>
     /// Registers the assembly for FastEndpoint assembly discovery using the specified marker type.
     /// </summary>
@@ -43,7 +43,7 @@ public static class ModuleExtensions
     public static IModule AddFastEndpointsFromModule(this IModule module)
     {
         var assemblies = module.GetFastEndpointsAssembliesFromModule().ToList();
-        
+
         module.Services.AddFastEndpoints(options =>
         {
             options.DisableAutoDiscovery = true;

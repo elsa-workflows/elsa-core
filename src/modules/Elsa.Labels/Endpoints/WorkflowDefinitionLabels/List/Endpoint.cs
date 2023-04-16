@@ -1,5 +1,4 @@
 using Elsa.Labels.Contracts;
-using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Management.Contracts;
 using FastEndpoints;
 using JetBrains.Annotations;
@@ -15,8 +14,7 @@ internal class List : Endpoint<Request, Response>
 
     public List(
         IWorkflowDefinitionStore workflowDefinitionStore,
-        IWorkflowDefinitionLabelStore workflowDefinitionLabelStore,
-        SerializerOptionsProvider serializerOptionsProvider)
+        IWorkflowDefinitionLabelStore workflowDefinitionLabelStore)
     {
         _workflowDefinitionStore = workflowDefinitionStore;
         _workflowDefinitionLabelStore = workflowDefinitionLabelStore;

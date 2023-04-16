@@ -1,5 +1,4 @@
 using Elsa.Labels.Contracts;
-using Elsa.Workflows.Core.Serialization;
 using FastEndpoints;
 using JetBrains.Annotations;
 
@@ -10,7 +9,7 @@ internal class Update : Endpoint<Request, Response, LabelMapper>
 {
     private readonly ILabelStore _store;
 
-    public Update(ILabelStore store, SerializerOptionsProvider serializerOptionsProvider)
+    public Update(ILabelStore store)
     {
         _store = store;
     }

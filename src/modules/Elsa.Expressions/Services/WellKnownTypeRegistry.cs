@@ -1,6 +1,8 @@
 using System.Dynamic;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Extensions;
+using Elsa.Expressions.Options;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Expressions.Services;
 
@@ -11,29 +13,44 @@ public class WellKnownTypeRegistry : IWellKnownTypeRegistry
     private readonly IDictionary<Type, string> _typeAliasDictionary = new Dictionary<Type, string>();
 
     /// <summary>
-    /// Constructor.
+    /// Creates a new instance of the <see cref="WellKnownTypeRegistry"/> class.
     /// </summary>
-    public WellKnownTypeRegistry()
+    /// <returns>The new instance.</returns>
+    public static IWellKnownTypeRegistry CreateDefault()
     {
-        this.RegisterType<object>("Object");
-        this.RegisterType<string>("String");
-        this.RegisterType<bool>("Boolean");
-        this.RegisterType<short>("Int16");
-        this.RegisterType<int>("Int32");
-        this.RegisterType<long>("Int64");
-        this.RegisterType<decimal>("Decimal");
-        this.RegisterType<float>("Single");
-        this.RegisterType<double>("Double");
-        this.RegisterType<Guid>("Guid");
-        this.RegisterType<DateTime>("DateTime");
-        this.RegisterType<DateTimeOffset>("DateTimeOffset");
-        this.RegisterType<TimeSpan>("TimeSpan");
-        this.RegisterType<DateOnly>("DateOnly");
-        this.RegisterType<TimeOnly>("TimeOnly");
-        this.RegisterType<ExpandoObject>("ExpandoObject");
-        this.RegisterType<ExpandoObject>("JSON"); // Alias for ExpandoObject.
-        this.RegisterType<IDictionary<string, string>>("StringDictionary");
-        this.RegisterType<IDictionary<string, object>>("ObjectDictionary");
+        var registry = new WellKnownTypeRegistry();
+        registry.RegisterType<object>("Object");
+        registry.RegisterType<string>("String");
+        registry.RegisterType<bool>("Boolean");
+        registry.RegisterType<short>("Int16");
+        registry.RegisterType<int>("Int32");
+        registry.RegisterType<long>("Int64");
+        registry.RegisterType<decimal>("Decimal");
+        registry.RegisterType<float>("Single");
+        registry.RegisterType<double>("Double");
+        registry.RegisterType<Guid>("Guid");
+        registry.RegisterType<DateTime>("DateTime");
+        registry.RegisterType<DateTimeOffset>("DateTimeOffset");
+        registry.RegisterType<TimeSpan>("TimeSpan");
+        registry.RegisterType<DateOnly>("DateOnly");
+        registry.RegisterType<TimeOnly>("TimeOnly");
+        registry.RegisterType<ExpandoObject>("JSON");
+        registry.RegisterType<IDictionary<string, string>>("StringDictionary");
+        registry.RegisterType<IDictionary<string, object>>("ObjectDictionary");
+        return registry;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="WellKnownTypeRegistry"/> class.
+    /// </summary>
+    public WellKnownTypeRegistry(IOptions<ExpressionOptions> expressionOptions)
+    {
+        foreach (var entry in expressionOptions.Value.AliasTypeDictionary)
+            RegisterType(entry.Value, entry.Key);
+    }
+
+    private WellKnownTypeRegistry()
+    {
     }
 
     /// <inheritdoc />
@@ -49,7 +66,6 @@ public class WellKnownTypeRegistry : IWellKnownTypeRegistry
             _typeAliasDictionary[nullableType] = nullableAlias;
             _aliasTypeDictionary[nullableAlias] = nullableType;
         }
-            
     }
 
     /// <inheritdoc />

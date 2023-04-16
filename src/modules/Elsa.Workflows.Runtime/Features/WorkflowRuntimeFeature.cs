@@ -13,7 +13,6 @@ using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Handlers;
 using Elsa.Workflows.Runtime.HostedServices;
-using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Services;

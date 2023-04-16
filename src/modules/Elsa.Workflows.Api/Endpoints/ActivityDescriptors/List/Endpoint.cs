@@ -1,9 +1,11 @@
 using Elsa.Abstractions;
 using Elsa.Workflows.Core.Contracts;
+using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.ActivityDescriptors.List;
 
-public class List : ElsaEndpointWithoutRequest<Response>
+[PublicAPI]
+internal class List : ElsaEndpointWithoutRequest<Response>
 {
     private readonly IActivityRegistry _registry;
 

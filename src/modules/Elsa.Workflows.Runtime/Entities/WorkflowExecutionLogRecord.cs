@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Elsa.Common.Entities;
 
 namespace Elsa.Workflows.Runtime.Entities;
@@ -71,7 +70,7 @@ public class WorkflowExecutionLogRecord : Entity
     /// <summary>
     /// The state of the activity at the time of the log entry.
     /// </summary>
-    public IDictionary<string, JsonElement>? ActivityState { get; set; }
+    public IDictionary<string, object>? ActivityState { get; set; }
     
     /// <summary>
     /// Any additional payload associated with the log entry.

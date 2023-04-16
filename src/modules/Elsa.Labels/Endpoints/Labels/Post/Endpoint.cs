@@ -1,6 +1,5 @@
 using Elsa.Labels.Contracts;
 using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Serialization;
 using FastEndpoints;
 using JetBrains.Annotations;
 
@@ -11,7 +10,7 @@ internal class Create : Endpoint<Request, Response, LabelMapper>
 {
     private readonly ILabelStore _store;
 
-    public Create(ILabelStore store, IIdentityGenerator identityGenerator, SerializerOptionsProvider serializerOptionsProvider)
+    public Create(ILabelStore store, IIdentityGenerator identityGenerator)
     {
         _store = store;
     }

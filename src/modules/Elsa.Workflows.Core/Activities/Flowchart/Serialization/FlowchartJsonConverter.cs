@@ -59,6 +59,37 @@ public class FlowchartJsonConverter : JsonConverter<Activities.Flowchart>
         return flowChart;
     }
 
+    /// <inheritdoc />
+    public override void Write(Utf8JsonWriter writer, Activities.Flowchart value, JsonSerializerOptions options)
+    {
+        var activities = value.Activities;
+        var connectionSerializerOptions = new JsonSerializerOptions(options);
+        var activityDictionary = activities.ToDictionary(x => x.Id);
+
+        connectionSerializerOptions.Converters.Add(new ConnectionJsonConverter(activityDictionary));
+
+        var allActivities = value.CustomProperties.TryGetValue(AllActivitiesKey, out var a) ? a : activities;
+        var allConnections = (ICollection<Connection>)(value.CustomProperties.TryGetValue(AllConnectionsKey, out var c) ? c : value.Connections);
+        var applicationProperties = new Dictionary<string, object>(value.CustomProperties);
+
+        applicationProperties.Remove(AllActivitiesKey);
+        applicationProperties.Remove(AllConnectionsKey);
+
+        var model = new
+        {
+            value.Type,
+            value.Version,
+            value.Id,
+            value.Metadata,
+            ApplicationProperties = applicationProperties,
+            Start = value.Start?.Id,
+            Activities = allActivities,
+            Connections = allConnections
+        };
+
+        JsonSerializer.Serialize(writer, model, connectionSerializerOptions);
+    }
+    
     private static List<Connection> GetNotFoundConnections(JsonElement rootElement, JsonSerializerOptions connectionSerializerOptions, IEnumerable<IActivity> activities, IEnumerable<Connection> connections)
     {
         var applicationPropertiesElement = rootElement.TryGetProperty("applicationProperties", out var applicationPropertiesEl) ? applicationPropertiesEl : default;
@@ -101,36 +132,5 @@ public class FlowchartJsonConverter : JsonConverter<Activities.Flowchart>
         }
 
         return connectionsThatCanBeRestored;
-    }
-
-    /// <inheritdoc />
-    public override void Write(Utf8JsonWriter writer, Activities.Flowchart value, JsonSerializerOptions options)
-    {
-        var activities = value.Activities;
-        var connectionSerializerOptions = new JsonSerializerOptions(options);
-        var activityDictionary = activities.ToDictionary(x => x.Id);
-
-        connectionSerializerOptions.Converters.Add(new ConnectionJsonConverter(activityDictionary));
-
-        var allActivities = value.CustomProperties.TryGetValue(AllActivitiesKey, out var a) ? a : activities;
-        var allConnections = (ICollection<Connection>)(value.CustomProperties.TryGetValue(AllConnectionsKey, out var c) ? c : value.Connections);
-        var applicationProperties = new Dictionary<string, object>(value.CustomProperties);
-
-        applicationProperties.Remove(AllActivitiesKey);
-        applicationProperties.Remove(AllConnectionsKey);
-
-        var model = new
-        {
-            value.Type,
-            value.Version,
-            value.Id,
-            value.Metadata,
-            ApplicationProperties = applicationProperties,
-            Start = value.Start?.Id,
-            Activities = allActivities,
-            Connections = allConnections
-        };
-
-        JsonSerializer.Serialize(writer, model, connectionSerializerOptions);
     }
 }

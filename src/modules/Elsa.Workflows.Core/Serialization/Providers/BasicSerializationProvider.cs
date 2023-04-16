@@ -5,7 +5,7 @@ namespace Elsa.Workflows.Core.Serialization.Providers;
 
 /// <summary>
 /// Provides basic serialization for a given value.
-/// This provider cannot serialize streams or other complex, non-serializable types. If such an attempt is made, only the typ name will be serialized.
+/// This provider cannot serialize streams or other complex, non-serializable types. If such an attempt is made, only the type name will be serialized.
 /// To serialize such types, implement <see cref="ISerializationProvider"/> and register it with the service container.
 /// </summary>
 public class BasicSerializationProvider : ISerializationProvider

@@ -1,14 +1,15 @@
 using Elsa.Abstractions;
-using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Management.Contracts;
+using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.BulkDelete;
 
-public class BulkDelete : ElsaEndpoint<Request, Response>
+[PublicAPI]
+internal class BulkDelete : ElsaEndpoint<Request, Response>
 {
     private readonly IWorkflowDefinitionManager _workflowDefinitionManager;
 
-    public BulkDelete(IWorkflowDefinitionManager workflowDefinitionManager, SerializerOptionsProvider serializerOptionsProvider)
+    public BulkDelete(IWorkflowDefinitionManager workflowDefinitionManager)
     {
         _workflowDefinitionManager = workflowDefinitionManager;
     }

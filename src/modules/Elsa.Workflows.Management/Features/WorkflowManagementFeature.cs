@@ -10,7 +10,6 @@ using Elsa.Features.Services;
 using Elsa.Mediator.Features;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Features;
-using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
@@ -149,7 +148,6 @@ public class WorkflowManagementFeature : FeatureBase
             .AddSingleton<IWorkflowMaterializer, JsonWorkflowMaterializer>()
             .AddSingleton<IActivityPortResolver, WorkflowDefinitionActivityPortResolver>()
             .AddActivityProvider<WorkflowDefinitionActivityProvider>()
-            .AddSingleton<SerializerOptionsProvider>()
             .AddSingleton<VariableDefinitionMapper>()
             ;
 

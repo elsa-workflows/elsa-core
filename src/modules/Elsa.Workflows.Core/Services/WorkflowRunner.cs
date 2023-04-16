@@ -15,7 +15,7 @@ public class WorkflowRunner : IWorkflowRunner
     private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly IActivityRegistry _activityRegistry;
     private readonly IWorkflowExecutionPipeline _pipeline;
-    private readonly IWorkflowStateSerializer _workflowStateSerializer;
+    private readonly IWorkflowExecutionContextMapper _workflowExecutionContextMapper;
     private readonly IWorkflowBuilderFactory _workflowBuilderFactory;
     private readonly IIdentityGenerator _identityGenerator;
     private readonly IWorkflowExecutionContextFactory _workflowExecutionContextFactory;
@@ -28,7 +28,7 @@ public class WorkflowRunner : IWorkflowRunner
         IServiceScopeFactory serviceScopeFactory,
         IActivityRegistry activityRegistry,
         IWorkflowExecutionPipeline pipeline,
-        IWorkflowStateSerializer workflowStateSerializer,
+        IWorkflowExecutionContextMapper workflowExecutionContextMapper,
         IWorkflowBuilderFactory workflowBuilderFactory,
         IIdentityGenerator identityGenerator,
         IWorkflowExecutionContextFactory workflowExecutionContextFactory,
@@ -37,7 +37,7 @@ public class WorkflowRunner : IWorkflowRunner
         _serviceScopeFactory = serviceScopeFactory;
         _activityRegistry = activityRegistry;
         _pipeline = pipeline;
-        _workflowStateSerializer = workflowStateSerializer;
+        _workflowExecutionContextMapper = workflowExecutionContextMapper;
         _workflowBuilderFactory = workflowBuilderFactory;
         _identityGenerator = identityGenerator;
         _workflowExecutionContextFactory = workflowExecutionContextFactory;
@@ -179,7 +179,7 @@ public class WorkflowRunner : IWorkflowRunner
         // Extract workflow state.
         var workflowState = workflowExecutionContext.TransientProperties.TryGetValue(workflowExecutionContext, out var state)
             ? (WorkflowState)state
-            : _workflowStateSerializer.SerializeState(workflowExecutionContext);
+            : _workflowExecutionContextMapper.Extract(workflowExecutionContext);
 
         // Read captured output, if any.
         var result = workflow.ResultVariable?.Get(workflowExecutionContext.MemoryRegister);

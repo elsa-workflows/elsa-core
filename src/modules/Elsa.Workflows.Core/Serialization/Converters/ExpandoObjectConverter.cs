@@ -7,12 +7,23 @@ namespace Elsa.Workflows.Core.Serialization.Converters;
 /// <summary>
 /// Parses a JON string into a dynamic <see cref="ExpandoObject"/>.
 /// </summary>
-public class ExpandoObjectConverter : JsonConverter<object>
+public sealed class ExpandoObjectConverter : JsonConverter<object>
 {
+    private readonly JsonConverter<object> _objectConverter;
+    private const string IdPropertyName = "$id";
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ExpandoObjectConverter"/> class.
+    /// </summary>
+    public ExpandoObjectConverter()
+    {
+        _objectConverter = (JsonConverter<object>)new PolymorphicObjectConverterFactory().CreateConverter(typeof(object), new JsonSerializerOptions());
+    }
+    
     /// <inheritdoc />
     public override void Write(Utf8JsonWriter writer, object value, JsonSerializerOptions options)
     {
-        throw new NotImplementedException();
+        JsonSerializer.Serialize(writer, value, typeof(ExpandoObject), options);
     }
 
     /// <inheritdoc />
@@ -69,7 +80,11 @@ public class ExpandoObjectConverter : JsonConverter<object>
                         case JsonTokenType.PropertyName:
                             var key = reader.GetString()!;
                             reader.Read();
-                            dict.Add(key, Read(ref reader, typeof(object), options));
+                            if (key != IdPropertyName)
+                            {
+                                var value = _objectConverter.Read(ref reader, typeof(object), options)!;
+                                dict.Add(key, value);
+                            }
                             break;
                         default:
                             throw new JsonException();
@@ -82,5 +97,5 @@ public class ExpandoObjectConverter : JsonConverter<object>
         }
     }
 
-    protected virtual IDictionary<string, object> CreateDictionary() => new ExpandoObject()!;
+    private IDictionary<string, object> CreateDictionary() => new ExpandoObject()!;
 }

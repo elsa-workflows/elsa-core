@@ -3,7 +3,7 @@ using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Management.Entities;
-using Elsa.Workflows.Runtime.Models;
+using Elsa.Workflows.Runtime.Entities;
 
 namespace Elsa.Workflows.Runtime.Contracts;
 

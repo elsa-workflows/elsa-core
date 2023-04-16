@@ -11,5 +11,5 @@ public class StoredTrigger : Entity
     public string Name { get; set; } = default!;
     public string ActivityId { get; set; } = default!;
     public string? Hash { get; set; }
-    public string? Data { get; set; }
+    public object? Payload { get; set; }
 }

@@ -27,6 +27,7 @@ public class JsonHttpContentParser : IHttpContentParser
         };
         
         options.Converters.Add(new JsonStringEnumConverter());
+        options.Converters.Add(new PolymorphicObjectConverterFactory());
 
         using var reader = new StreamReader(content, leaveOpen: true);
         var json = await reader.ReadToEndAsync();
@@ -37,7 +38,6 @@ public class JsonHttpContentParser : IHttpContentParser
         if (returnType != typeof(ExpandoObject)) 
             return JsonSerializer.Deserialize(json, returnType, options)!;
         
-        options.Converters.Add(new ExpandoObjectConverter());
         return JsonSerializer.Deserialize<object>(json, options)!;
     }
 }

@@ -68,7 +68,7 @@ public class MassTransitFeature : FeatureBase
         });
         
         // Configure message serializer.
-        SystemTextJsonMessageSerializer.Options.Converters.Add(new TypeJsonConverter(new WellKnownTypeRegistry()));
+        SystemTextJsonMessageSerializer.Options.Converters.Add(new TypeJsonConverter(WellKnownTypeRegistry.CreateDefault()));
     }
     
     /// <summary>

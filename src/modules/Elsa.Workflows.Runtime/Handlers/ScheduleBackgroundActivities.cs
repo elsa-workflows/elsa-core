@@ -2,8 +2,8 @@ using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Middleware.Activities;
-using Elsa.Workflows.Runtime.Middleware.Workflows;
 using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Models.Bookmarks;
 using Elsa.Workflows.Runtime.Notifications;
@@ -21,7 +21,7 @@ public class ScheduleBackgroundActivities : INotificationHandler<WorkflowBookmar
     private readonly IBookmarkPayloadSerializer _bookmarkPayloadSerializer;
     private readonly IBookmarkHasher _bookmarkHasher;
     private readonly IWorkflowRuntime _workflowRuntime;
-    private IWorkflowStateSerializer _workflowStateSerializer;
+    private IWorkflowExecutionContextMapper _workflowExecutionContextMapper;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ScheduledBackgroundActivity"/> class.
@@ -31,13 +31,13 @@ public class ScheduleBackgroundActivities : INotificationHandler<WorkflowBookmar
         IBookmarkPayloadSerializer bookmarkPayloadSerializer,
         IBookmarkHasher bookmarkHasher,
         IWorkflowRuntime workflowRuntime, 
-        IWorkflowStateSerializer workflowStateSerializer)
+        IWorkflowExecutionContextMapper workflowExecutionContextMapper)
     {
         _backgroundActivityScheduler = backgroundActivityScheduler;
         _bookmarkPayloadSerializer = bookmarkPayloadSerializer;
         _bookmarkHasher = bookmarkHasher;
         _workflowRuntime = workflowRuntime;
-        _workflowStateSerializer = workflowStateSerializer;
+        _workflowExecutionContextMapper = workflowExecutionContextMapper;
     }
 
     /// <inheritdoc />
@@ -58,14 +58,14 @@ public class ScheduleBackgroundActivities : INotificationHandler<WorkflowBookmar
 
             // Select the bookmark associated with the background activity.
             var bookmark = workflowExecutionContext.Bookmarks.First(x => x.Id == scheduledBackgroundActivity.BookmarkId);
-            var payload = _bookmarkPayloadSerializer.Deserialize<BackgroundActivityBookmark>(bookmark.Data!);
+            var payload = bookmark.GetPayload<BackgroundActivityBookmark>();
 
             // Store the created job ID.
             workflowExecutionContext.Bookmarks.Remove(bookmark);
             payload.JobId = jobId;
             bookmark = bookmark with
             {
-                Data = _bookmarkPayloadSerializer.Serialize(payload),
+                Payload = bookmark.Payload,
                 Hash = _bookmarkHasher.Hash(bookmark.Name, payload)
             };
             workflowExecutionContext.Bookmarks.Add(bookmark);
@@ -77,7 +77,7 @@ public class ScheduleBackgroundActivities : INotificationHandler<WorkflowBookmar
                 workflowExecutionContext.Id,
                 bookmark.Id,
                 workflowExecutionContext.CorrelationId,
-                bookmark.Data
+                bookmark.Payload
             );
             
             await _workflowRuntime.UpdateBookmarkAsync(storedBookmark, cancellationToken);
@@ -86,7 +86,7 @@ public class ScheduleBackgroundActivities : INotificationHandler<WorkflowBookmar
         if (scheduledBackgroundActivities.Any())
         {
             // Bookmarks got updated, so we need to update the workflow state.
-            var workflowState = _workflowStateSerializer.SerializeState(workflowExecutionContext);
+            var workflowState = _workflowExecutionContextMapper.Extract(workflowExecutionContext);
             await _workflowRuntime.ImportWorkflowStateAsync(workflowState, cancellationToken);
         }
     }

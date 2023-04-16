@@ -105,7 +105,7 @@ public class WorkflowsFeature : FeatureBase
             .AddSingleton<IWorkflowRunner, WorkflowRunner>()
             .AddSingleton<IActivityVisitor, ActivityVisitor>()
             .AddSingleton<IIdentityGraphService, IdentityGraphService>()
-            .AddSingleton<IWorkflowStateSerializer, WorkflowStateSerializer>()
+            .AddSingleton<IWorkflowExecutionContextMapper, WorkflowExecutionContextMapper>()
             .AddSingleton<IActivitySchedulerFactory, ActivitySchedulerFactory>()
             .AddSingleton<IHasher, Hasher>()
             .AddSingleton<IBookmarkHasher, BookmarkHasher>()
@@ -143,7 +143,11 @@ public class WorkflowsFeature : FeatureBase
             .AddStorageDriver<WorkflowStorageDriver>()
             .AddStorageDriver<MemoryStorageDriver>()
             
-            // Activity state serialization.
+            // Serialization.
+            .AddSingleton<IWorkflowStateSerializer, JsonWorkflowStateSerializer>()
+            .AddSingleton<IPayloadSerializer, JsonPayloadSerializer>()
+            .AddSingleton<IActivitySerializer, JsonActivitySerializer>()
+            .AddSingleton<IApiSerializer, ApiSerializer>()
             .AddSingleton<IActivityStateSerializer, ActivityStateSerializer>()
             .AddSingleton<ISerializationProvider, BasicSerializationProvider>()
             

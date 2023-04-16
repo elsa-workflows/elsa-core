@@ -1,4 +1,4 @@
-using Elsa.Workflows.Runtime.Models;
+using Elsa.Workflows.Runtime.Entities;
 
 namespace Elsa.Workflows.Runtime.Contracts;
 
