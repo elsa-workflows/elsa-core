@@ -33,7 +33,7 @@ public class EFCoreBookmarkStore : IBookmarkStore
     
     private ValueTask<StoredBookmark> SaveAsync(RuntimeElsaDbContext dbContext, StoredBookmark entity, CancellationToken cancellationToken)
     {
-        dbContext.Entry(entity).Property("PayloadData").CurrentValue = entity.Payload != null ? _serializer.Serialize(entity.Payload) : default;
+        dbContext.Entry(entity).Property("Data").CurrentValue = entity.Payload != null ? _serializer.Serialize(entity.Payload) : default;
         return new(entity);
     }
 
@@ -42,7 +42,7 @@ public class EFCoreBookmarkStore : IBookmarkStore
         if (entity is null)
             return ValueTask.FromResult(entity);
 
-        var json = dbContext.Entry(entity).Property<string>("PayloadData").CurrentValue;
+        var json = dbContext.Entry(entity).Property<string>("Data").CurrentValue;
         entity.Payload = !string.IsNullOrEmpty(json) ? _serializer.Deserialize(json) : null;
 
         return new(entity);

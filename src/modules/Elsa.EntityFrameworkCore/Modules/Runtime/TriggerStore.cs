@@ -43,7 +43,7 @@ public class EFCoreTriggerStore : ITriggerStore
     
     private ValueTask<StoredTrigger> SaveAsync(RuntimeElsaDbContext dbContext, StoredTrigger entity, CancellationToken cancellationToken)
     {
-        dbContext.Entry(entity).Property("PayloadData").CurrentValue = entity.Payload != null ? _serializer.Serialize(entity.Payload) : default;
+        dbContext.Entry(entity).Property("Data").CurrentValue = entity.Payload != null ? _serializer.Serialize(entity.Payload) : default;
         return ValueTask.FromResult(entity);
     }
 
@@ -52,7 +52,7 @@ public class EFCoreTriggerStore : ITriggerStore
         if (entity is null)
             return ValueTask.FromResult(entity);
 
-        var json = dbContext.Entry(entity).Property<string>("PayloadData").CurrentValue;
+        var json = dbContext.Entry(entity).Property<string>("Data").CurrentValue;
         entity.Payload = !string.IsNullOrEmpty(json) ? _serializer.Deserialize(json) : null;
 
         return new(entity);

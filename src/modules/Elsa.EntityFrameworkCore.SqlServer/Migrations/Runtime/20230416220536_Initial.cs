@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -23,7 +24,7 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                     Hash = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     WorkflowInstanceId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     CorrelationId = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    PayloadData = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Data = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -86,7 +87,7 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                     Name = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     ActivityId = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Hash = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    PayloadData = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Data = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {

@@ -87,11 +87,11 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     b.Property<string>("CorrelationId")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Hash")
-                        .IsRequired()
+                    b.Property<string>("Data")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("PayloadData")
+                    b.Property<string>("Hash")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("WorkflowInstanceId")
@@ -122,14 +122,14 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Data")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Hash")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("PayloadData")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("WorkflowDefinitionId")

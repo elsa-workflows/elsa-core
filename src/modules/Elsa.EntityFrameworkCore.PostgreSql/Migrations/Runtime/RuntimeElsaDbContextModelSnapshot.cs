@@ -93,11 +93,11 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                     b.Property<string>("CorrelationId")
                         .HasColumnType("text");
 
-                    b.Property<string>("Hash")
-                        .IsRequired()
+                    b.Property<string>("Data")
                         .HasColumnType("text");
 
-                    b.Property<string>("PayloadData")
+                    b.Property<string>("Hash")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("WorkflowInstanceId")
@@ -128,14 +128,14 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("Data")
+                        .HasColumnType("text");
+
                     b.Property<string>("Hash")
                         .HasColumnType("text");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("PayloadData")
                         .HasColumnType("text");
 
                     b.Property<string>("WorkflowDefinitionId")

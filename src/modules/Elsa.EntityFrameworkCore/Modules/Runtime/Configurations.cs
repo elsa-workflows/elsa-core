@@ -44,7 +44,7 @@ public class Configurations :
     public void Configure(EntityTypeBuilder<StoredTrigger> builder)
     {
         builder.Ignore(x => x.Payload);
-        builder.Property<string>("PayloadData");
+        builder.Property<string>("Data");
         builder.HasIndex(x => x.WorkflowDefinitionId).HasDatabaseName($"IX_{nameof(StoredTrigger)}_{nameof(StoredTrigger.WorkflowDefinitionId)}");
         builder.HasIndex(x => x.Name).HasDatabaseName($"IX_{nameof(StoredTrigger)}_{nameof(StoredTrigger.Name)}");
         builder.HasIndex(x => x.Hash).HasDatabaseName($"IX_{nameof(StoredTrigger)}_{nameof(StoredTrigger.Hash)}");
@@ -73,7 +73,7 @@ public class Configurations :
     public void Configure(EntityTypeBuilder<StoredBookmark> builder)
     {
         builder.Ignore(x => x.Payload);
-        builder.Property<string>("PayloadData");
+        builder.Property<string>("Data");
         builder.HasKey(x => x.BookmarkId);
         builder.HasIndex(x => x.ActivityTypeName, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.ActivityTypeName)}");
         builder.HasIndex(x => x.Hash, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.Hash)}");
