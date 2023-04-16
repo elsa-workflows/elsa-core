@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Dynamic;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Serialization.ReferenceHandlers;
@@ -35,17 +36,28 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         if (targetType == null)
             return ReadObject(ref reader, newOptions);
 
-        // If the target type is not an IEnumerable, deserialize the object directly.
-        if (!typeof(IEnumerable).IsAssignableFrom(targetType))
+        // If the target type is not an IEnumerable, or is a dictionary, deserialize the object directly.
+        var isEnumerable = typeof(IEnumerable).IsAssignableFrom(targetType);
+
+        if (!isEnumerable)
             return JsonSerializer.Deserialize(ref reader, targetType, newOptions)!;
 
+        var isDictionary = typeof(IDictionary).IsAssignableFrom(targetType);
+        if (isDictionary)
+        {
+            // Remove the _type property name from the JSON, if any.
+            var parsedModel = (JsonObject)JsonNode.Parse(ref reader)!;
+            parsedModel.Remove(TypePropertyName);
+            return parsedModel.Deserialize(targetType, newOptions)!;
+        }
+
         // Otherwise, deserialize the object as an array.
-        var elementType = targetType.IsArray ? targetType.GetElementType() : targetType.GenericTypeArguments[0];
+        var elementType = targetType.IsArray ? targetType.GetElementType() : targetType.GenericTypeArguments.FirstOrDefault() ?? typeof(object);
         if (elementType == null)
             throw new InvalidOperationException($"Cannot determine the element type of array '{targetType}'.");
 
         var model = JsonElement.ParseValue(ref reader);
-        var referenceResolver = (options.ReferenceHandler as CrossScopedReferenceHandler)?.GetResolver()!;
+        var referenceResolver = (options.ReferenceHandler as CrossScopedReferenceHandler)?.GetResolver();
 
         if (model.TryGetProperty(RefPropertyName, out var refProperty))
         {
@@ -53,12 +65,13 @@ public class PolymorphicObjectConverter : JsonConverter<object>
             return referenceResolver?.ResolveReference(refId)!;
         }
 
-        var values = model.GetProperty(ValuesPropertyName).EnumerateArray().ToList();
-        var id = model.GetProperty(IdPropertyName).GetString()!;
+        var values = model.TryGetProperty(ItemsPropertyName, out var itemsProp) ? itemsProp.EnumerateArray().ToList() : model.GetProperty(ValuesPropertyName).EnumerateArray().ToList();
+        var id = model.TryGetProperty(IdPropertyName, out var idProp) ? idProp.GetString() : default;
         var collection = targetType.IsArray ? Array.CreateInstance(elementType, values.Count) : (IList)Activator.CreateInstance(targetType)!;
         var index = 0;
 
-        referenceResolver.AddReference(id, collection);
+        if (id != null)
+            referenceResolver?.AddReference(id, collection);
 
         foreach (var element in values)
         {

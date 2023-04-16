@@ -1,7 +1,5 @@
 using Elsa.Expressions.Options;
-using Elsa.Features.Services;
 using JetBrains.Annotations;
-using Microsoft.Extensions.DependencyInjection;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;

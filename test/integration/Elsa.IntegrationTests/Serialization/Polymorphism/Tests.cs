@@ -20,7 +20,7 @@ public class Tests
         var actualJson = JsonSerializer.Serialize(model, GetSerializerOptions());
         Assert.Equal(expectedJson, actualJson);
     }
-    
+
     [Fact(DisplayName = "Objects mixed with primitive, complex, expando objects and arrays of these can be round-tripped")]
     public void Test2()
     {
@@ -35,24 +35,25 @@ public class Tests
     {
         // Create a model with various nested properties
         var metadata = new ExpandoObject() as IDictionary<string, object>;
-        
+
         // Initialize metadata with test data.
         metadata["Foo"] = "Bar";
         metadata["Number"] = 123;
         metadata["Flag"] = true;
         metadata["Items"] = new List<Model>
         {
-            new(Text : "Hello", Number : 1, Flag : true, Metadata : metadata),
-            new(Text : "World", Number : 2)
+            new(Text: "Hello", Number: 1, Flag: true, Metadata: metadata),
+            new(Text: "World", Number: 2)
         };
-        
+        metadata["CustomDictionary"] = new CustomDictionary { ["content-type"] = new[] { "application/json" } };
+
         return new Model(
             "Hello World",
             123,
             true,
             new List<Model>
             {
-                new("Hello", 1, true, new List<Model>(){ new(Metadata: metadata) }),
+                new("Hello", 1, true, new List<Model>() { new(Metadata: metadata) }),
                 new("World", 2)
             },
             metadata,
@@ -64,7 +65,7 @@ public class Tests
             }
         );
     }
-    
+
     private JsonSerializerOptions GetSerializerOptions()
     {
         var referenceHandler = new CrossScopedReferenceHandler();

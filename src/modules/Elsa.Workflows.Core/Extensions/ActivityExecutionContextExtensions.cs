@@ -14,7 +14,6 @@ using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Notifications;
 using Elsa.Workflows.Core.Signals;
 using JetBrains.Annotations;
-using Microsoft.Extensions.Logging;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Elsa.Extensions;
 
 namespace Elsa.IntegrationTests.Serialization.Polymorphism;
 
@@ -18,4 +19,9 @@ public record Model(
     public Model() : this(null, default, default, null, default, default, default)
     {
     }
+}
+
+public class CustomDictionary : Dictionary<string, string[]>
+{
+    public string? ContentType => this.GetValue("content-type")?[0];
 }
