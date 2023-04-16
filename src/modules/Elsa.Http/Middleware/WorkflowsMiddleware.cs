@@ -243,13 +243,11 @@ public class WorkflowsMiddleware
         {
             var triggerFilter = new TriggerFilter { Hash = hash };
             var trigger = (await _triggerStore.FindManyAsync(triggerFilter, cancellationToken)).First();
-            return trigger.GetData<HttpEndpointBookmarkPayload>();
-            //return _serializer.Deserialize<HttpEndpointBookmarkPayload>(trigger.Data!);
+            return trigger.GetPayload<HttpEndpointBookmarkPayload>();
         }
 
         var bookmarkFilter = new BookmarkFilter { Hash = hash };
         var bookmark = (await _bookmarkStore.FindManyAsync(bookmarkFilter, cancellationToken)).First();
-        return bookmark.GetData<HttpEndpointBookmarkPayload>();
-        //return _serializer.Deserialize<HttpEndpointBookmarkPayload>(bookmark.Data!);
+        return bookmark.GetPayload<HttpEndpointBookmarkPayload>();
     }
 }

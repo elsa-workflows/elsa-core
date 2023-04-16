@@ -1,4 +1,3 @@
-using System.Text.Json;
 using FastEndpoints;
 
 // ReSharper disable NotAccessedPositionalProperty.Global

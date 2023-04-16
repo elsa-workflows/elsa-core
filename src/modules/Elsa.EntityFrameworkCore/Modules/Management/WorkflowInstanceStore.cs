@@ -1,11 +1,7 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using Elsa.Common.Models;
 using Elsa.EntityFrameworkCore.Common;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Serialization;
-using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Models;

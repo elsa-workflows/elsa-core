@@ -5,7 +5,6 @@ using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
-using Elsa.Workflows.Runtime.Models;
 using Medallion.Threading;
 using Microsoft.Extensions.Logging;
 

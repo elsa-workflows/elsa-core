@@ -4,7 +4,6 @@ using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Runtime.Entities;
-using Elsa.Workflows.Runtime.Models;
 
 namespace Elsa.Workflows.Runtime.Contracts;
 

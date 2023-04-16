@@ -4,7 +4,6 @@ using Elsa.Features.Services;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Features;
-using Elsa.Workflows.Runtime.Models;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.EntityFrameworkCore.Modules.Runtime;

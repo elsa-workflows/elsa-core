@@ -1,13 +1,15 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
+using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Core.Serialization.Converters;
 
-namespace Elsa.Workflows.Core.Contracts;
+namespace Elsa.Workflows.Core.Services;
 
 /// <summary>
 /// Serializes and execution log record payloads from and to JSON.
 /// </summary>
-public class JsonWorkflowExecutionLogStateSerializer : IWorkflowExecutionLogStateSerializer
+public class JsonPayloadSerializer : IPayloadSerializer
 {
     /// <inheritdoc />
     public Task<string> SerializeAsync(object payload, CancellationToken cancellationToken = default)
@@ -18,26 +20,16 @@ public class JsonWorkflowExecutionLogStateSerializer : IWorkflowExecutionLogStat
     }
 
     /// <inheritdoc />
-    public Task<string> SerializeAsync(IDictionary<string, object> payload, CancellationToken cancellationToken = default)
-    {
-        var options = GetDictionarySerializerOptions();
-        var json = JsonSerializer.Serialize(payload, options);
-        return Task.FromResult(json);
-    }
-
-    /// <inheritdoc />
     public Task<object> DeserializeAsync(string payload, CancellationToken cancellationToken = default)
     {
-        var options = GetPayloadSerializerOptions();
-        var workflowState = JsonSerializer.Deserialize<object>(payload, options)!;
-        return Task.FromResult(workflowState);
+        return DeserializeAsync<object>(payload, cancellationToken);
     }
-
+    
     /// <inheritdoc />
-    public Task<IDictionary<string, object>> DeserializeDictionaryAsync(string payload, CancellationToken cancellationToken = default)
+    public Task<T> DeserializeAsync<T>(string payload, CancellationToken cancellationToken = default)
     {
-        var options = GetDictionarySerializerOptions();
-        var workflowState = JsonSerializer.Deserialize<IDictionary<string, object>>(payload, options)!;
+        var options = GetPayloadSerializerOptions();
+        var workflowState = JsonSerializer.Deserialize<T>(payload, options)!;
         return Task.FromResult(workflowState);
     }
     
@@ -52,12 +44,7 @@ public class JsonWorkflowExecutionLogStateSerializer : IWorkflowExecutionLogStat
 
         options.Converters.Add(new JsonStringEnumConverter());
         options.Converters.Add(JsonMetadataServices.TimeSpanConverter);
-        return options;
-    }
-    
-    private JsonSerializerOptions GetDictionarySerializerOptions()
-    {
-        var options = GetPayloadSerializerOptions();
+        options.Converters.Add(new PolymorphicObjectConverterFactory());
         return options;
     }
 }

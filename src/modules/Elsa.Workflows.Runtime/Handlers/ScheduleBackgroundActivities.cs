@@ -4,7 +4,6 @@ using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Middleware.Activities;
-using Elsa.Workflows.Runtime.Middleware.Workflows;
 using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Models.Bookmarks;
 using Elsa.Workflows.Runtime.Notifications;

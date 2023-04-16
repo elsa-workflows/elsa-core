@@ -1,10 +1,7 @@
-using System.Text.Json;
 using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Scheduling.Activities;
 using Elsa.Scheduling.Contracts;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Models.Requests;
 
@@ -16,15 +13,13 @@ namespace Elsa.Scheduling.Services;
 public class DefaultTriggerScheduler : ITriggerScheduler
 {
     private readonly IWorkflowScheduler _workflowScheduler;
-    private readonly IBookmarkPayloadSerializer _bookmarkPayloadSerializer;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DefaultTriggerScheduler"/> class.
     /// </summary>
-    public DefaultTriggerScheduler(IWorkflowScheduler workflowScheduler, IBookmarkPayloadSerializer bookmarkPayloadSerializer)
+    public DefaultTriggerScheduler(IWorkflowScheduler workflowScheduler)
     {
         _workflowScheduler = workflowScheduler;
-        _bookmarkPayloadSerializer = bookmarkPayloadSerializer;
     }
 
     /// <inheritdoc />
@@ -40,8 +35,7 @@ public class DefaultTriggerScheduler : ITriggerScheduler
         // Schedule each Timer trigger.
         foreach (var trigger in timerTriggers)
         {
-            //var (startAt, interval) = _bookmarkPayloadSerializer.Deserialize<TimerTriggerPayload>(trigger.Data!);
-            var (startAt, interval) = trigger.GetData<TimerTriggerPayload>();
+            var (startAt, interval) = trigger.GetPayload<TimerTriggerPayload>();
             var input = new { StartAt = startAt, Interval = interval }.ToDictionary();
             var request = new DispatchWorkflowDefinitionRequest
             {
@@ -50,14 +44,13 @@ public class DefaultTriggerScheduler : ITriggerScheduler
                 TriggerActivityId = trigger.ActivityId,
                 Input = input
             };
-            await _workflowScheduler.ScheduleRecurringAsync(trigger.Id, request,  startAt, interval, cancellationToken);
+            await _workflowScheduler.ScheduleRecurringAsync(trigger.Id, request, startAt, interval, cancellationToken);
         }
 
         // Schedule each StartAt trigger.
         foreach (var trigger in startAtTriggers)
         {
-            //var executeAt = _bookmarkPayloadSerializer.Deserialize<StartAtPayload>(trigger.Data!).ExecuteAt;
-            var executeAt = trigger.GetData<StartAtPayload>().ExecuteAt;
+            var executeAt = trigger.GetPayload<StartAtPayload>().ExecuteAt;
             var input = new { ExecuteAt = executeAt }.ToDictionary();
             var request = new DispatchWorkflowDefinitionRequest
             {
@@ -66,15 +59,14 @@ public class DefaultTriggerScheduler : ITriggerScheduler
                 TriggerActivityId = trigger.ActivityId,
                 Input = input
             };
-            
+
             await _workflowScheduler.ScheduleAtAsync(trigger.Id, request, executeAt, cancellationToken);
         }
-        
+
         // Schedule each Cron trigger.
         foreach (var trigger in cronTriggers)
         {
-            //var (executeAt, cronExpression) = _bookmarkPayloadSerializer.Deserialize<CronBookmarkPayload>(trigger.Data!);
-            var (executeAt, cronExpression) = trigger.GetData<CronBookmarkPayload>();
+            var (executeAt, cronExpression) = trigger.GetPayload<CronBookmarkPayload>();
             var input = new { ExecuteAt = executeAt, CronExpression = cronExpression }.ToDictionary();
             var request = new DispatchWorkflowDefinitionRequest
             {
@@ -83,7 +75,7 @@ public class DefaultTriggerScheduler : ITriggerScheduler
                 TriggerActivityId = trigger.ActivityId,
                 Input = input
             };
-            
+
             await _workflowScheduler.ScheduleCronAsync(trigger.Id, request, cronExpression, cancellationToken);
         }
     }
@@ -98,7 +90,7 @@ public class DefaultTriggerScheduler : ITriggerScheduler
 
         // Select all StartAt triggers.
         var startAtTriggers = triggerList.Filter<StartAt>().ToList();
-        
+
         // Concatenate the filtered triggers.
         var filteredTriggers = timerTriggers.Concat(startAtTriggers).ToList();
 

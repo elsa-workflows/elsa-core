@@ -7,7 +7,6 @@ using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using JetBrains.Annotations;
-using Microsoft.AspNetCore.Http;
 using HttpRequestHeaders = Elsa.Http.Models.HttpRequestHeaders;
 
 namespace Elsa.Http;

@@ -2,8 +2,6 @@ using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
-using Hangfire;
-using Hangfire.SqlServer;
 using Hangfire.Storage.SQLite;
 
 namespace Elsa.Hangfire.Features;

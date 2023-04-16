@@ -2,8 +2,6 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Hangfire.Services;
-using Elsa.Scheduling.Contracts;
-using Elsa.Scheduling.Features;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Features;
 using Microsoft.Extensions.DependencyInjection;

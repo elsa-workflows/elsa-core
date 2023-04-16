@@ -7,11 +7,14 @@ namespace Elsa.Workflows.Core.Serialization.Converters;
 /// <summary>
 /// Parses a JON string into a dynamic <see cref="ExpandoObject"/>.
 /// </summary>
-public class ExpandoObjectConverter : JsonConverter<object>
+public sealed class ExpandoObjectConverter : JsonConverter<object>
 {
     private readonly JsonConverter<object> _objectConverter;
     private const string IdPropertyName = "$id";
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ExpandoObjectConverter"/> class.
+    /// </summary>
     public ExpandoObjectConverter()
     {
         _objectConverter = (JsonConverter<object>)new PolymorphicObjectConverterFactory().CreateConverter(typeof(object), new JsonSerializerOptions());
@@ -94,5 +97,5 @@ public class ExpandoObjectConverter : JsonConverter<object>
         }
     }
 
-    protected virtual IDictionary<string, object> CreateDictionary() => new ExpandoObject()!;
+    private IDictionary<string, object> CreateDictionary() => new ExpandoObject()!;
 }

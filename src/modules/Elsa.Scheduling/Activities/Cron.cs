@@ -1,6 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
-using Elsa.Common.Contracts;
 using Elsa.Extensions;
 using Elsa.Scheduling.Contracts;
 using Elsa.Workflows.Core.Attributes;

@@ -12,12 +12,12 @@ namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 public class EFCoreWorkflowExecutionLogStore : IWorkflowExecutionLogStore
 {
     private readonly EntityStore<RuntimeElsaDbContext, WorkflowExecutionLogRecord> _store;
-    private readonly IWorkflowExecutionLogStateSerializer _serializer;
+    private readonly IPayloadSerializer _serializer;
 
     /// <summary>
     /// Constructor
     /// </summary>
-    public EFCoreWorkflowExecutionLogStore(EntityStore<RuntimeElsaDbContext, WorkflowExecutionLogRecord> store, IWorkflowExecutionLogStateSerializer serializer)
+    public EFCoreWorkflowExecutionLogStore(EntityStore<RuntimeElsaDbContext, WorkflowExecutionLogRecord> store, IPayloadSerializer serializer)
     {
         _store = store;
         _serializer = serializer;
@@ -87,7 +87,7 @@ public class EFCoreWorkflowExecutionLogStore : IWorkflowExecutionLogStore
     private async ValueTask<IDictionary<string, object>?> LoadActivityState(RuntimeElsaDbContext dbContext, WorkflowExecutionLogRecord entity, CancellationToken cancellationToken)
     {
         var json = dbContext.Entry(entity).Property<string>("ActivityData").CurrentValue;
-        return !string.IsNullOrEmpty(json) ? await _serializer.DeserializeDictionaryAsync(json, cancellationToken) : null;
+        return !string.IsNullOrEmpty(json) ? await _serializer.DeserializeAsync<IDictionary<string, object>>(json, cancellationToken) : null;
     }
 
     private IQueryable<WorkflowExecutionLogRecord> Filter(IQueryable<WorkflowExecutionLogRecord> queryable, WorkflowExecutionLogRecordFilter filter) => filter.Apply(queryable);

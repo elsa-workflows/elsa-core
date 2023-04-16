@@ -1,4 +1,3 @@
-using System.Xml;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Middleware.Activities;
 using Elsa.Workflows.Core.Models;

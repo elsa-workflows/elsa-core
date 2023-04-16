@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;

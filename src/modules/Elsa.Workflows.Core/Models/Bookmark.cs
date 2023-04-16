@@ -1,5 +1,4 @@
 using System.Text.Json.Serialization;
-using Elsa.Workflows.Core.Serialization.Converters;
 
 namespace Elsa.Workflows.Core.Models;
 
