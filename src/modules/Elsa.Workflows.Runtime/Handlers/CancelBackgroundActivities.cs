@@ -35,12 +35,9 @@ public class CancelBackgroundActivities : INotificationHandler<WorkflowBookmarks
 
         foreach (var removedBookmark in removedBookmarks)
         {
-            //var payload = _bookmarkPayloadSerializer.Deserialize<BackgroundActivityBookmark>(removedBookmark.Data!);
             var payload = removedBookmark.GetPayload<BackgroundActivityBookmark>();
-            if (payload.JobId != null)
-            {
+            if (payload.JobId != null) 
                 await _backgroundActivityScheduler.CancelAsync(payload.JobId, cancellationToken);
-            }
         }
     }
 }

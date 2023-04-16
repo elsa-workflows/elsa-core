@@ -7,7 +7,7 @@ using Elsa.Workflows.Core.Serialization.Converters;
 namespace Elsa.Workflows.Core.Services;
 
 /// <summary>
-/// Serializes and execution log record payloads from and to JSON.
+/// Serializes simple DTOs from and to JSON.
 /// </summary>
 public class JsonPayloadSerializer : IPayloadSerializer
 {

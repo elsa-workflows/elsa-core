@@ -58,7 +58,6 @@ public class ScheduleBackgroundActivities : INotificationHandler<WorkflowBookmar
 
             // Select the bookmark associated with the background activity.
             var bookmark = workflowExecutionContext.Bookmarks.First(x => x.Id == scheduledBackgroundActivity.BookmarkId);
-            //var payload = _bookmarkPayloadSerializer.Deserialize<BackgroundActivityBookmark>(bookmark.Data!);
             var payload = bookmark.GetPayload<BackgroundActivityBookmark>();
 
             // Store the created job ID.
