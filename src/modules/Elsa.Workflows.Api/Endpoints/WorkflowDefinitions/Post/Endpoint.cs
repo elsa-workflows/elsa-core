@@ -67,6 +67,10 @@ internal class Post : ElsaEndpoint<SaveWorkflowDefinitionRequest, WorkflowDefini
         // Update the draft with the received model.
         var root = request.Root ?? new Sequence();
         var serializerOptions = _serializer.CreateOptions();
+        
+        // Ignore the root activity when serializing the workflow definition.
+        serializerOptions.Converters.Add(new JsonIgnoreCompositeRootConverterFactory());
+        
         var stringData = JsonSerializer.Serialize(root, serializerOptions);
         var variables = _variableDefinitionMapper.Map(request.Variables).ToList();
         var inputs = request.Inputs ?? new List<InputDefinition>();
@@ -92,8 +96,6 @@ internal class Post : ElsaEndpoint<SaveWorkflowDefinitionRequest, WorkflowDefini
             await SendCreatedAtAsync<Get.Get>(new { definitionId }, response, cancellation: cancellationToken);
         else
         {
-            // We do not want to include composite root activities in the response.
-            serializerOptions.Converters.Add(new JsonIgnoreCompositeRootConverterFactory());
             await HttpContext.Response.WriteAsJsonAsync(response, serializerOptions, cancellationToken);
         }
     }

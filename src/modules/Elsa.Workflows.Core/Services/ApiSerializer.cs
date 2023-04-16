@@ -10,14 +10,16 @@ namespace Elsa.Workflows.Core.Services;
 /// <inheritdoc />
 public class ApiSerializer : IApiSerializer
 {
+    private readonly IEnumerable<ISerializationOptionsConfigurator> _configurators;
     private readonly IServiceProvider _serviceProvider;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ApiSerializer"/> class.
     /// </summary>
-    public ApiSerializer(IServiceProvider serviceProvider)
+    public ApiSerializer(IServiceProvider serviceProvider, IEnumerable<ISerializationOptionsConfigurator> configurators)
     {
         _serviceProvider = serviceProvider;
+        _configurators = configurators;
     }
 
     /// <inheritdoc />
@@ -49,6 +51,10 @@ public class ApiSerializer : IApiSerializer
         options.Converters.Add(Create<JsonStringEnumConverter>());
         options.Converters.Add(Create<TypeJsonConverter>());
         options.Converters.Add(JsonMetadataServices.TimeSpanConverter);
+        
+        // Give external packages a chance to further configure the serializer options.
+        foreach (var configurator in _configurators)
+            configurator.Configure(options);
 
         return options;
     }
