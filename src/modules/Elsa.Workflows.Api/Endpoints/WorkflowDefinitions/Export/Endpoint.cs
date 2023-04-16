@@ -2,7 +2,7 @@ using System.Text.Json;
 using Elsa.Abstractions;
 using Elsa.Common.Models;
 using Elsa.Workflows.Api.Models;
-using Elsa.Workflows.Core.Serialization;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Serialization.Converters;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Mappers;
@@ -18,19 +18,19 @@ public class Export : ElsaEndpoint<Request>
 {
     private readonly IWorkflowDefinitionStore _store;
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
-    private readonly SerializerOptionsProvider _serializerOptionsProvider;
+    private readonly IApiSerializer _serializer;
     private readonly VariableDefinitionMapper _variableDefinitionMapper;
 
     /// <inheritdoc />
     public Export(
         IWorkflowDefinitionStore store,
         IWorkflowDefinitionService workflowDefinitionService,
-        SerializerOptionsProvider serializerOptionsProvider,
+        IApiSerializer serializer,
         VariableDefinitionMapper variableDefinitionMapper)
     {
         _store = store;
         _workflowDefinitionService = workflowDefinitionService;
-        _serializerOptionsProvider = serializerOptionsProvider;
+        _serializer = serializer;
         _variableDefinitionMapper = variableDefinitionMapper;
     }
 
@@ -73,7 +73,7 @@ public class Export : ElsaEndpoint<Request>
             definition.IsPublished,
             workflow.Root);
 
-        var serializerOptions = _serializerOptionsProvider.CreateApiOptions();
+        var serializerOptions = _serializer.CreateOptions();
         
         // Exclude composite activities from being serialized.
         serializerOptions.Converters.Add(new JsonIgnoreCompositeRootConverterFactory());

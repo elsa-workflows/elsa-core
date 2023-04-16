@@ -6,7 +6,6 @@ using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Activities.Flowchart.Activities;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Runtime.Contracts;
@@ -25,7 +24,7 @@ public class Tests
 {
     private readonly CapturingTextWriter _capturingTextWriter = new();
     private readonly IWorkflowDefinitionImporter _workflowDefinitionImporter;
-    private readonly SerializerOptionsProvider _serializerOptionsProvider;
+    private readonly IApiSerializer _serializer;
     private readonly IWorkflowRuntime _workflowRuntime;
     private readonly IActivityRegistry _activityRegistry;
     private readonly IExpressionSyntaxRegistry _expressionSyntaxRegistry;
@@ -37,7 +36,7 @@ public class Tests
             .WithCapturingTextWriter(_capturingTextWriter)
             .ConfigureElsa(elsa => elsa.UseWorkflowsApi())
             .Build();
-        _serializerOptionsProvider = services.GetRequiredService<SerializerOptionsProvider>();
+        _serializer = services.GetRequiredService<IApiSerializer>();
         _workflowRuntime = services.GetRequiredService<IWorkflowRuntime>();
         _activityRegistry = services.GetRequiredService<IActivityRegistry>();
         _expressionSyntaxRegistry = services.GetRequiredService<IExpressionSyntaxRegistry>();
@@ -63,7 +62,7 @@ public class Tests
         // Import and publish workflow.
         var fileName = @"Scenarios/ImportAndExecute/workflow.json";
         await using var openStream = File.OpenRead(fileName);
-        var options = _serializerOptionsProvider.CreateApiOptions();
+        var options = _serializer.CreateOptions();
         var workflowDefinitionRequest = (await JsonSerializer.DeserializeAsync<SaveWorkflowDefinitionRequest>(openStream, options))!;
 
         workflowDefinitionRequest.Publish = true;

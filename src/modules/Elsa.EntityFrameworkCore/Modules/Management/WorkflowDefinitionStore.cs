@@ -1,9 +1,8 @@
-using System.Text.Json;
 using Elsa.Common.Models;
 using Elsa.EntityFrameworkCore.Common;
 using Elsa.Extensions;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Models;
@@ -17,7 +16,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
 {
     private readonly EntityStore<ManagementElsaDbContext, WorkflowDefinition> _store;
     private readonly EntityStore<ManagementElsaDbContext, WorkflowInstance> _workflowInstanceStore;
-    private readonly SerializerOptionsProvider _serializerOptionsProvider;
+    private readonly IPayloadSerializer _payloadSerializer;
 
     /// <summary>
     /// Constructor.
@@ -25,11 +24,11 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
     public EFCoreWorkflowDefinitionStore(
         EntityStore<ManagementElsaDbContext, WorkflowDefinition> store,
         EntityStore<ManagementElsaDbContext, WorkflowInstance> workflowInstanceStore,
-        SerializerOptionsProvider serializerOptionsProvider)
+        IPayloadSerializer payloadSerializer)
     {
         _store = store;
         _workflowInstanceStore = workflowInstanceStore;
-        _serializerOptionsProvider = serializerOptionsProvider;
+        _payloadSerializer = payloadSerializer;
     }
 
     /// <inheritdoc />
@@ -141,8 +140,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
     private ValueTask<WorkflowDefinition> SaveAsync(ManagementElsaDbContext managementElsaDbContext, WorkflowDefinition entity, CancellationToken cancellationToken)
     {
         var data = new WorkflowDefinitionState(entity.Options, entity.Variables, entity.Inputs, entity.Outputs, entity.Outcomes, entity.CustomProperties);
-        var options = _serializerOptionsProvider.CreatePersistenceOptions();
-        var json = JsonSerializer.Serialize(data, options);
+        var json = _payloadSerializer.Serialize(data);
 
         managementElsaDbContext.Entry(entity).Property("Data").CurrentValue = json;
         return new ValueTask<WorkflowDefinition>(entity);
@@ -156,11 +154,8 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         var data = new WorkflowDefinitionState(entity.Options, entity.Variables, entity.Inputs, entity.Outputs, entity.Outcomes, entity.CustomProperties);
         var json = (string?)managementElsaDbContext.Entry(entity).Property("Data").CurrentValue;
 
-        if (!string.IsNullOrWhiteSpace(json))
-        {
-            var options = _serializerOptionsProvider.CreatePersistenceOptions();
-            data = JsonSerializer.Deserialize<WorkflowDefinitionState>(json, options)!;
-        }
+        if (!string.IsNullOrWhiteSpace(json)) 
+            data = _payloadSerializer.Deserialize<WorkflowDefinitionState>(json);
 
         entity.Options = data.Options;
         entity.Variables = data.Variables;

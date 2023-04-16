@@ -4,11 +4,9 @@ using Elsa.ProtoActor.Extensions;
 using Elsa.ProtoActor.Protos;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Runtime.Contracts;
 using Proto.Cluster;
-using System.Text.Json;
 
 namespace Elsa.ProtoActor.Services;
 
@@ -18,7 +16,7 @@ namespace Elsa.ProtoActor.Services;
 public class ProtoActorWorkflowRuntime : IWorkflowRuntime
 {
     private readonly Cluster _cluster;
-    private readonly SerializerOptionsProvider _serializerOptionsProvider;
+    private readonly IWorkflowStateSerializer _workflowStateSerializer;
     private readonly ITriggerStore _triggerStore;
     private readonly IIdentityGenerator _identityGenerator;
     private readonly IBookmarkHasher _hasher;
@@ -30,7 +28,7 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
     /// </summary>
     public ProtoActorWorkflowRuntime(
         Cluster cluster,
-        SerializerOptionsProvider serializerOptionsProvider,
+        IWorkflowStateSerializer workflowStateSerializer,
         ITriggerStore triggerStore,
         IIdentityGenerator identityGenerator,
         IBookmarkHasher hasher,
@@ -38,7 +36,7 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
         IWorkflowInstanceFactory workflowInstanceFactory)
     {
         _cluster = cluster;
-        _serializerOptionsProvider = serializerOptionsProvider;
+        _workflowStateSerializer = workflowStateSerializer;
         _triggerStore = triggerStore;
         _identityGenerator = identityGenerator;
         _hasher = hasher;
@@ -216,17 +214,15 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
         var client = _cluster.GetNamedWorkflowGrain(workflowInstanceId);
         var response = await client.ExportState(new ExportWorkflowStateRequest(), cancellationToken);
         var json = response!.SerializedWorkflowState.Text;
-        var options = _serializerOptionsProvider.CreatePersistenceOptions();
-        var workflowState = JsonSerializer.Deserialize<WorkflowState>(json, options);
+        var workflowState = await _workflowStateSerializer.DeserializeAsync(json, cancellationToken);
         return workflowState;
     }
 
     /// <inheritdoc />
     public async Task ImportWorkflowStateAsync(WorkflowState workflowState, CancellationToken cancellationToken = default)
     {
-        var options = _serializerOptionsProvider.CreatePersistenceOptions();
         var client = _cluster.GetNamedWorkflowGrain(workflowState.Id);
-        var json = JsonSerializer.Serialize(workflowState, options);
+        var json = await _workflowStateSerializer.SerializeAsync(workflowState, cancellationToken);
 
         var request = new ImportWorkflowStateRequest
         {

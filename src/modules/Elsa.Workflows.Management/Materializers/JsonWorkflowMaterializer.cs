@@ -1,7 +1,5 @@
-using System.Text.Json;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 
@@ -12,18 +10,22 @@ namespace Elsa.Workflows.Management.Materializers;
 /// </summary>
 public class JsonWorkflowMaterializer : IWorkflowMaterializer
 {
-    private readonly SerializerOptionsProvider _serializerOptionsProvider;
+    private readonly IActivitySerializer _activitySerializer;
+
+    /// <summary>
+    /// The name of the materializer.
+    /// </summary>
     public const string MaterializerName = "Json";
 
     /// <inheritdoc />
     public string Name => MaterializerName;
 
     /// <summary>
-    /// Constructor.
+    /// Initializes a new instance of the <see cref="JsonWorkflowMaterializer"/> class.
     /// </summary>
-    public JsonWorkflowMaterializer(SerializerOptionsProvider serializerOptionsProvider)
+    public JsonWorkflowMaterializer(IActivitySerializer activitySerializer)
     {
-        _serializerOptionsProvider = serializerOptionsProvider;
+        _activitySerializer = activitySerializer;
     }
 
     /// <inheritdoc />
@@ -35,7 +37,7 @@ public class JsonWorkflowMaterializer : IWorkflowMaterializer
 
     private Workflow ToWorkflow(WorkflowDefinition definition)
     {
-        var root = JsonSerializer.Deserialize<IActivity>(definition.StringData!, _serializerOptionsProvider.CreateDefaultOptions())!;
+        var root = _activitySerializer.Deserialize(definition.StringData!);
         
         return new(
             new WorkflowIdentity(definition.DefinitionId, definition.Version, definition.Id),

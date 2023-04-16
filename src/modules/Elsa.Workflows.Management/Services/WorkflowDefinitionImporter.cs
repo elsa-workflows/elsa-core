@@ -1,30 +1,35 @@
 ﻿using Elsa.Common.Models;
-using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Models;
 using System.Text.Json;
+using Elsa.Workflows.Core.Contracts;
 
 namespace Elsa.Workflows.Management.Services
 {
+    /// <inheritdoc />
     public class WorkflowDefinitionImporter : IWorkflowDefinitionImporter
     {
-        private readonly SerializerOptionsProvider _serializerOptionsProvider;
+        private readonly IApiSerializer _serializer;
         private readonly IWorkflowDefinitionPublisher _workflowDefinitionPublisher;
         private readonly VariableDefinitionMapper _variableDefinitionMapper;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="WorkflowDefinitionImporter"/> class.
+        /// </summary>
         public WorkflowDefinitionImporter(
-            SerializerOptionsProvider serializerOptionsProvider,
+            IApiSerializer serializer,
             IWorkflowDefinitionPublisher workflowDefinitionPublisher,
             VariableDefinitionMapper variableDefinitionMapper)
         {
-            _serializerOptionsProvider = serializerOptionsProvider;
+            _serializer = serializer;
             _workflowDefinitionPublisher = workflowDefinitionPublisher;
             _variableDefinitionMapper = variableDefinitionMapper;
         }
 
+        /// <inheritdoc />
         public async Task<WorkflowDefinition> ImportAsync(SaveWorkflowDefinitionRequest request, CancellationToken cancellationToken = default)
         {
             var definitionId = request.DefinitionId;
@@ -47,7 +52,7 @@ namespace Elsa.Workflows.Management.Services
 
             // Update the draft with the received model.
             var root = request.Root;
-            var serializerOptions = _serializerOptionsProvider.CreateApiOptions();
+            var serializerOptions = _serializer.CreateOptions();
             var stringData = JsonSerializer.Serialize(root, serializerOptions);
             var variables = _variableDefinitionMapper.Map(request.Variables).ToList();
 

@@ -1,6 +1,9 @@
 using System.Reflection;
 using Elsa.Features.Services;
+using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Core.Services;
 using FastEndpoints;
+using Microsoft.Extensions.DependencyInjection;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
@@ -12,6 +15,17 @@ public static class ModuleExtensions
 {
     private static readonly object FastEndpointsAssembliesKey = new();
 
+    /// <summary>
+    /// Adds API services to the service container.
+    /// </summary>
+    /// <param name="module">The module.</param>
+    /// <returns>The module.</returns>
+    public static IModule AddApiServices(this IModule module)
+    {
+        module.Services.AddSingleton<IApiSerializer, ApiSerializer>();
+        return module;
+    }
+    
     /// <summary>
     /// Registers the specified assembly for FastEndpoint assembly discovery.
     /// </summary>

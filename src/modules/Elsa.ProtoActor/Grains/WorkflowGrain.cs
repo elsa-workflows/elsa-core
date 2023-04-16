@@ -1,10 +1,8 @@
-using System.Text.Json;
 using Elsa.Common.Models;
 using Elsa.ProtoActor.Extensions;
 using Elsa.ProtoActor.Protos;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Runtime.Contracts;
 using Proto;
@@ -22,7 +20,7 @@ public class WorkflowGrain : WorkflowGrainBase
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly IWorkflowHostFactory _workflowHostFactory;
     private readonly IBookmarkPayloadSerializer _bookmarkPayloadSerializer;
-    private readonly SerializerOptionsProvider _serializerOptionsProvider;
+    private readonly IWorkflowStateSerializer _workflowStateSerializer;
     private readonly Persistence _persistence;
 
     private string _definitionId = default!;
@@ -37,14 +35,14 @@ public class WorkflowGrain : WorkflowGrainBase
         IWorkflowDefinitionService workflowDefinitionService,
         IWorkflowHostFactory workflowHostFactory,
         IBookmarkPayloadSerializer bookmarkPayloadSerializer,
-        SerializerOptionsProvider serializerOptionsProvider,
+        IWorkflowStateSerializer workflowStateSerializer,
         IProvider provider,
         IContext context) : base(context)
     {
         _workflowDefinitionService = workflowDefinitionService;
         _workflowHostFactory = workflowHostFactory;
         _bookmarkPayloadSerializer = bookmarkPayloadSerializer;
-        _serializerOptionsProvider = serializerOptionsProvider;
+        _workflowStateSerializer = workflowStateSerializer;
         _persistence = Persistence.WithSnapshotting(provider, Context.ClusterIdentity()!.Identity, ApplySnapshot);
     }
 
@@ -189,10 +187,9 @@ public class WorkflowGrain : WorkflowGrainBase
     }
 
     /// <inheritdoc />
-    public override Task<ExportWorkflowStateResponse> ExportState(ExportWorkflowStateRequest request)
+    public override async Task<ExportWorkflowStateResponse> ExportState(ExportWorkflowStateRequest request)
     {
-        var options = _serializerOptionsProvider.CreatePersistenceOptions();
-        var json = JsonSerializer.Serialize(_workflowHost.WorkflowState, options);
+        var json = await _workflowStateSerializer.SerializeAsync(_workflowHost.WorkflowState);
 
         var response = new ExportWorkflowStateResponse
         {
@@ -202,14 +199,13 @@ public class WorkflowGrain : WorkflowGrainBase
             }
         };
 
-        return Task.FromResult(response);
+        return response;
     }
 
     /// <inheritdoc />
     public override async Task<ImportWorkflowStateResponse> ImportState(ImportWorkflowStateRequest request)
     {
-        var options = _serializerOptionsProvider.CreatePersistenceOptions();
-        var workflowState = JsonSerializer.Deserialize<WorkflowState>(request.SerializedWorkflowState.Text, options)!;
+        var workflowState = await _workflowStateSerializer.DeserializeAsync(request.SerializedWorkflowState.Text);
 
         _workflowState = workflowState;
         _workflowHost.WorkflowState = workflowState;

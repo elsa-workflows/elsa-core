@@ -41,20 +41,20 @@ public class EFCoreTriggerStore : ITriggerStore
     public async ValueTask<long> DeleteManyAsync(TriggerFilter filter, CancellationToken cancellationToken = default) =>
         await _store.DeleteWhereAsync(filter.Apply, cancellationToken);
     
-    private async ValueTask<StoredTrigger> SaveAsync(RuntimeElsaDbContext dbContext, StoredTrigger entity, CancellationToken cancellationToken)
+    private ValueTask<StoredTrigger> SaveAsync(RuntimeElsaDbContext dbContext, StoredTrigger entity, CancellationToken cancellationToken)
     {
-        dbContext.Entry(entity).Property("PayloadData").CurrentValue = entity.Payload != null ? await _serializer.SerializeAsync(entity.Payload, cancellationToken) : default;
-        return entity;
+        dbContext.Entry(entity).Property("PayloadData").CurrentValue = entity.Payload != null ? _serializer.Serialize(entity.Payload) : default;
+        return ValueTask.FromResult(entity);
     }
 
-    private async ValueTask<StoredTrigger?> LoadAsync(RuntimeElsaDbContext dbContext, StoredTrigger? entity, CancellationToken cancellationToken)
+    private ValueTask<StoredTrigger?> LoadAsync(RuntimeElsaDbContext dbContext, StoredTrigger? entity, CancellationToken cancellationToken)
     {
         if (entity is null)
-            return entity;
+            return ValueTask.FromResult(entity);
 
         var json = dbContext.Entry(entity).Property<string>("PayloadData").CurrentValue;
-        entity.Payload = !string.IsNullOrEmpty(json) ? await _serializer.DeserializeAsync(json, cancellationToken) : null;
+        entity.Payload = !string.IsNullOrEmpty(json) ? _serializer.Deserialize(json) : null;
 
-        return entity;
+        return new(entity);
     }
 }

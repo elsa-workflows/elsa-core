@@ -1,12 +1,10 @@
 using System.Runtime.CompilerServices;
-using System.Text.Json;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Runtime.Comparers;
 using Elsa.Workflows.Runtime.Contracts;
@@ -31,7 +29,6 @@ public class TriggerIndexer : ITriggerIndexer
     private readonly IServiceProvider _serviceProvider;
     private readonly IBookmarkHasher _hasher;
     private readonly ILogger _logger;
-    private readonly JsonSerializerOptions _serializerOptions;
 
     /// <summary>
     /// Constructor.
@@ -45,7 +42,6 @@ public class TriggerIndexer : ITriggerIndexer
         IEventPublisher eventPublisher,
         IServiceProvider serviceProvider,
         IBookmarkHasher hasher,
-        SerializerOptionsProvider serializerOptionsProvider,
         ILogger<TriggerIndexer> logger)
     {
         _activityVisitor = activityVisitor;
@@ -57,7 +53,6 @@ public class TriggerIndexer : ITriggerIndexer
         _hasher = hasher;
         _logger = logger;
         _workflowDefinitionService = workflowDefinitionService;
-        _serializerOptions = serializerOptionsProvider.CreateDefaultOptions();
     }
 
     /// <inheritdoc />

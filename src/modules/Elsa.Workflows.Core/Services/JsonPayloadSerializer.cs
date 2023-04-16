@@ -12,25 +12,23 @@ namespace Elsa.Workflows.Core.Services;
 public class JsonPayloadSerializer : IPayloadSerializer
 {
     /// <inheritdoc />
-    public Task<string> SerializeAsync(object payload, CancellationToken cancellationToken = default)
+    public string Serialize(object payload)
     {
         var options = GetPayloadSerializerOptions();
-        var json = JsonSerializer.Serialize(payload, options);
-        return Task.FromResult(json);
+        return JsonSerializer.Serialize(payload, options);
     }
 
     /// <inheritdoc />
-    public Task<object> DeserializeAsync(string payload, CancellationToken cancellationToken = default)
+    public object Deserialize(string payload)
     {
-        return DeserializeAsync<object>(payload, cancellationToken);
+        return Deserialize<object>(payload);
     }
     
     /// <inheritdoc />
-    public Task<T> DeserializeAsync<T>(string payload, CancellationToken cancellationToken = default)
+    public T Deserialize<T>(string payload)
     {
         var options = GetPayloadSerializerOptions();
-        var workflowState = JsonSerializer.Deserialize<T>(payload, options)!;
-        return Task.FromResult(workflowState);
+        return JsonSerializer.Deserialize<T>(payload, options)!;
     }
     
     private JsonSerializerOptions GetPayloadSerializerOptions()

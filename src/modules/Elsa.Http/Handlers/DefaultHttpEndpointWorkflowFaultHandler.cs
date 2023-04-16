@@ -1,9 +1,8 @@
 using Elsa.Http.Models;
-using Elsa.Workflows.Core.Serialization;
 using Microsoft.AspNetCore.Http;
 using System.Net.Mime;
-using System.Text.Json;
 using Elsa.Http.Contracts;
+using Elsa.Workflows.Core.Contracts;
 
 namespace Elsa.Http.Handlers;
 
@@ -13,14 +12,14 @@ namespace Elsa.Http.Handlers;
 /// </summary>
 public class DefaultHttpEndpointWorkflowFaultHandler : IHttpEndpointWorkflowFaultHandler
 {
-    private readonly SerializerOptionsProvider _serializerOptionsProvider;
+    private readonly IApiSerializer _apiSerializer;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DefaultHttpEndpointWorkflowFaultHandler"/> class.
     /// </summary>
-    public DefaultHttpEndpointWorkflowFaultHandler(SerializerOptionsProvider serializerOptionsProvider)
+    public DefaultHttpEndpointWorkflowFaultHandler(IApiSerializer apiSerializer)
     {
-        _serializerOptionsProvider = serializerOptionsProvider;
+        _apiSerializer = apiSerializer;
     }
 
     /// <inheritdoc />
@@ -33,7 +32,7 @@ public class DefaultHttpEndpointWorkflowFaultHandler : IHttpEndpointWorkflowFaul
         httpContext.Response.ContentType = MediaTypeNames.Application.Json;
         httpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
 
-        var faultedResponse = JsonSerializer.Serialize(new
+        var faultedResponse = _apiSerializer.Serialize(new
         {
             errorMessage = $"Workflow faulted at {workflowInstance.FaultedAt!} with error: {fault.Message}",
             exception = fault?.Exception,
@@ -43,7 +42,7 @@ public class DefaultHttpEndpointWorkflowFaultHandler : IHttpEndpointWorkflowFaul
                 version = workflowInstance.Version,
                 instanceId = workflowInstance.Id
             }
-        }, _serializerOptionsProvider.CreatePersistenceOptions());
+        });
 
         await httpContext.Response.WriteAsync(faultedResponse, context.CancellationToken);
     }

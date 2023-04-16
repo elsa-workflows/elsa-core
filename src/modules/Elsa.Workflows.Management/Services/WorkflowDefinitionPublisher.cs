@@ -1,11 +1,9 @@
-using System.Text.Json;
 using Elsa.Common.Contracts;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Materializers;
@@ -19,7 +17,7 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
     private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
     private readonly IEventPublisher _eventPublisher;
     private readonly IIdentityGenerator _identityGenerator;
-    private readonly SerializerOptionsProvider _serializerOptionsProvider;
+    private readonly IActivitySerializer _activitySerializer;
     private readonly ISystemClock _systemClock;
 
     /// <summary>
@@ -29,13 +27,13 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
         IWorkflowDefinitionStore workflowDefinitionStore,
         IEventPublisher eventPublisher,
         IIdentityGenerator identityGenerator,
-        SerializerOptionsProvider serializerOptionsProvider,
+        IActivitySerializer activitySerializer,
         ISystemClock systemClock)
     {
         _workflowDefinitionStore = workflowDefinitionStore;
         _eventPublisher = eventPublisher;
         _identityGenerator = identityGenerator;
-        _serializerOptionsProvider = serializerOptionsProvider;
+        _activitySerializer = activitySerializer;
         _systemClock = systemClock;
     }
 
@@ -54,7 +52,7 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
             IsLatest = true,
             IsPublished = false,
             CreatedAt = _systemClock.UtcNow,
-            StringData = JsonSerializer.Serialize(new Sequence(), _serializerOptionsProvider.CreateDefaultOptions()),
+            StringData = _activitySerializer.Serialize(new Sequence()),
             MaterializerName = JsonWorkflowMaterializer.MaterializerName
         };
     }

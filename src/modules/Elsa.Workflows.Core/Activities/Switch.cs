@@ -77,11 +77,20 @@ public class Switch : Activity
 /// </summary>
 public class SwitchCase
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SwitchCase"/> class.
+    /// </summary>
     [JsonConstructor]
     public SwitchCase()
     {
     }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SwitchCase"/> class.
+    /// </summary>
+    /// <param name="label">The label of the case.</param>
+    /// <param name="condition">The condition to evaluate.</param>
+    /// <param name="activity">The activity to schedule when the condition evaluates to true.</param>
     public SwitchCase(string label, IExpression condition, IActivity activity)
     {
         Label = label;
@@ -89,27 +98,43 @@ public class SwitchCase
         Activity = activity;
     }
 
+    /// <inheritdoc />
     public SwitchCase(string label, DelegateBlockReference<bool> condition, IActivity activity) : this(label, new DelegateExpression(condition), activity)
     {
     }
 
+    /// <inheritdoc />
     public SwitchCase(string label, Func<ExpressionExecutionContext, ValueTask<bool>> condition, IActivity activity) : this(label, new DelegateBlockReference<bool>(condition), activity)
     {
     }
 
+    /// <inheritdoc />
     public SwitchCase(string label, Func<ValueTask<bool>> condition, IActivity activity) : this(label, new DelegateBlockReference<bool>(condition), activity)
     {
     }
 
+    /// <inheritdoc />
     public SwitchCase(string label, Func<ExpressionExecutionContext, bool> condition, IActivity activity) : this(label, new DelegateBlockReference<bool>(condition), activity)
     {
     }
 
+    /// <inheritdoc />
     public SwitchCase(string label, Func<bool> condition, IActivity activity) : this(label, new DelegateBlockReference<bool>(condition), activity)
     {
     }
 
+    /// <summary>
+    /// The label of the case.
+    /// </summary>
     public string Label { get; set; } = default!;
+    
+    /// <summary>
+    /// The condition to evaluate.
+    /// </summary>
     public IExpression Condition { get; set; } = new LiteralExpression(false);
+    
+    /// <summary>
+    /// The activity to schedule when the condition evaluates to true.
+    /// </summary>
     public IActivity? Activity { get; set; }
 }

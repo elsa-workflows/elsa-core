@@ -2,7 +2,6 @@ using Elsa.Labels.Contracts;
 using Elsa.Labels.Entities;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Helpers;
-using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Management.Contracts;
 using FastEndpoints;
 using JetBrains.Annotations;
@@ -31,8 +30,7 @@ internal class Update : Endpoint<Request, Response>
         ILabelStore labelStore, 
         IWorkflowDefinitionStore workflowDefinitionStore, 
         IWorkflowDefinitionLabelStore workflowDefinitionLabelStore, 
-        IIdentityGenerator identityGenerator,
-        SerializerOptionsProvider serializerOptionsProvider)
+        IIdentityGenerator identityGenerator)
     {
         _labelStore = labelStore;
         _workflowDefinitionStore = workflowDefinitionStore;
