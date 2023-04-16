@@ -34,7 +34,6 @@ public class WorkflowsApiFeature : FeatureBase
     /// <inheritdoc />
     public override void Configure()
     {
-        Module.AddApiServices();
         Module.AddFastEndpointsAssembly(GetType());
     }
 

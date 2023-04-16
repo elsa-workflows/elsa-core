@@ -13,7 +13,6 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.Json;
 using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
