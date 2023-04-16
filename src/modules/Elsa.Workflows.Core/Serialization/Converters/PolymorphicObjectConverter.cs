@@ -1,18 +1,22 @@
+using System.Collections;
 using System.Dynamic;
-using System.Linq.Expressions;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Extensions;
+using Elsa.Workflows.Core.Serialization.ReferenceHandlers;
 
 namespace Elsa.Workflows.Core.Serialization.Converters;
 
 /// <summary>
-/// Used for reading objects as primitive types rather than <see cref="JsonElement"/> values while also maintaining the .NET type name for reconstructing the actual type.
+/// Reads objects as primitive types rather than <see cref="JsonElement"/> values while also maintaining the .NET type name for reconstructing the actual type.
 /// </summary>
 public class PolymorphicObjectConverter : JsonConverter<object>
 {
     private const string TypePropertyName = "_type";
     private const string ItemsPropertyName = "_items";
+    private const string IdPropertyName = "$id";
+    private const string RefPropertyName = "$ref";
+    private const string ValuesPropertyName = "$values";
 
     /// <inheritdoc />
     public PolymorphicObjectConverter()
@@ -25,84 +29,92 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         var newOptions = new JsonSerializerOptions(options);
 
         if (reader.TokenType != JsonTokenType.StartObject)
-        {
             return ReadPrimitive(ref reader, newOptions);
+
+        var targetType = ReadType(reader);
+        if (targetType == null)
+            return ReadObject(ref reader, newOptions);
+
+        // If the target type is not an IEnumerable, deserialize the object directly.
+        if (!typeof(IEnumerable).IsAssignableFrom(targetType))
+            return JsonSerializer.Deserialize(ref reader, targetType, newOptions)!;
+
+        // Otherwise, deserialize the object as an array.
+        var elementType = targetType.IsArray ? targetType.GetElementType() : targetType.GenericTypeArguments[0];
+        if (elementType == null)
+            throw new InvalidOperationException($"Cannot determine the element type of array '{targetType}'.");
+
+        var model = JsonElement.ParseValue(ref reader);
+        var referenceResolver = (options.ReferenceHandler as CrossScopedReferenceHandler)?.GetResolver()!;
+
+        if (model.TryGetProperty(RefPropertyName, out var refProperty))
+        {
+            var refId = refProperty.GetString()!;
+            return referenceResolver?.ResolveReference(refId)!;
         }
 
-        var tmpReader = reader;
-        using var jsonDocument = JsonDocument.ParseValue(ref tmpReader);
-        var jsonObject = jsonDocument.RootElement;
+        var values = model.GetProperty(ValuesPropertyName).EnumerateArray().ToList();
+        var id = model.GetProperty(IdPropertyName).GetString()!;
+        var collection = targetType.IsArray ? Array.CreateInstance(elementType, values.Count) : (IList)Activator.CreateInstance(targetType)!;
+        var index = 0;
 
-        
-        var copyReader = reader; // Create a copy of the reader
-        copyReader.Read(); // Move to the first token inside the object
+        referenceResolver.AddReference(id, collection);
 
+        foreach (var element in values)
+        {
+            var deserializedElement = JsonSerializer.Deserialize(JsonSerializer.Serialize(element), elementType, newOptions)!;
+            if (collection is Array array)
+            {
+                array.SetValue(deserializedElement, index++);
+            }
+            else
+            {
+                collection.Add(deserializedElement);
+            }
+        }
+
+        return collection;
+    }
+
+    private static Type? ReadType(Utf8JsonReader reader)
+    {
+        reader.Read(); // Move to the first token inside the object
         string? typeName = null;
 
-        while (copyReader.TokenType != JsonTokenType.EndObject)
+        while (reader.TokenType != JsonTokenType.EndObject)
         {
-            if (copyReader.TokenType == JsonTokenType.PropertyName && copyReader.ValueTextEquals(TypePropertyName))
+            if (reader.TokenType == JsonTokenType.PropertyName && reader.ValueTextEquals(TypePropertyName))
             {
-                copyReader.Read(); // Move to the value of the _type property
-                typeName = copyReader.GetString();
+                reader.Read(); // Move to the value of the _type property
+                typeName = reader.GetString();
                 break;
             }
 
-            if (copyReader.TokenType == JsonTokenType.StartObject || copyReader.TokenType == JsonTokenType.StartArray)
+            if (reader.TokenType is JsonTokenType.StartObject or JsonTokenType.StartArray)
             {
-                int depth = 1;
+                var depth = 1;
 
-                while (depth > 0 && copyReader.Read())
+                while (depth > 0 && reader.Read())
                 {
-                    if (copyReader.TokenType == JsonTokenType.StartObject || copyReader.TokenType == JsonTokenType.StartArray)
+                    switch (reader.TokenType)
                     {
-                        depth++;
-                    }
-                    else if (copyReader.TokenType == JsonTokenType.EndObject || copyReader.TokenType == JsonTokenType.EndArray)
-                    {
-                        depth--;
+                        case JsonTokenType.StartObject:
+                        case JsonTokenType.StartArray:
+                            depth++;
+                            break;
+                        case JsonTokenType.EndObject:
+                        case JsonTokenType.EndArray:
+                            depth--;
+                            break;
                     }
                 }
             }
 
-            copyReader.Read(); // Move to the next token
+            reader.Read(); // Move to the next token
         }
 
         var targetType = typeName != null ? Type.GetType(typeName) : default;
-        
-        if (targetType == null)
-        {
-            //newOptions.Converters.RemoveWhere(x => x is PolymorphicObjectConverterFactory);
-            //var value = JsonSerializer.Deserialize(ref reader, typeof(ExpandoObject), newOptions)!;
-            newOptions.Converters.Add(new ExpandoObjectConverter());
-            var value = JsonSerializer.Deserialize(ref reader, typeof(object), newOptions)!;
-            return value;
-        }
-
-        if (!targetType.IsArray) 
-            return JsonSerializer.Deserialize(ref reader, targetType, newOptions)!;
-        
-        var elementType = targetType.GetElementType();
-        if (elementType == null)
-        {
-            throw new InvalidOperationException($"Cannot determine the element type of array '{targetType}'.");
-        }
-
-        var jsonArray = JsonSerializer.Deserialize(ref reader, typeof(List<object>), newOptions)! as List<object>;
-        var array = Array.CreateInstance(elementType, jsonArray!.Count);
-        var index = 0;
-
-        newOptions.Converters.Add(this);
-
-        foreach (var element in jsonArray)
-        {
-            //var deserializedElement = JsonSerializer.Deserialize(JsonSerializer.Serialize(element), elementType, newOptions)!;
-            //array.SetValue(deserializedElement, index++);
-            array.SetValue(element, index++);
-        }
-
-        return array;
-
+        return targetType;
     }
 
     private static object ReadPrimitive(ref Utf8JsonReader reader, JsonSerializerOptions options)
@@ -119,16 +131,68 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         })!;
     }
 
+    private object ReadObject(ref Utf8JsonReader reader, JsonSerializerOptions options)
+    {
+        switch (reader.TokenType)
+        {
+            case JsonTokenType.StartArray:
+            {
+                var list = new List<object>();
+                while (reader.Read())
+                {
+                    switch (reader.TokenType)
+                    {
+                        default:
+                            list.Add(Read(ref reader, typeof(object), options));
+                            break;
+                        case JsonTokenType.EndArray:
+                            return list;
+                    }
+                }
+
+                throw new JsonException();
+            }
+            case JsonTokenType.StartObject:
+                var dict = new ExpandoObject() as IDictionary<string, object>;
+                while (reader.Read())
+                {
+                    switch (reader.TokenType)
+                    {
+                        case JsonTokenType.EndObject:
+                            return dict;
+                        case JsonTokenType.PropertyName:
+                            var key = reader.GetString()!;
+                            reader.Read();
+                            if (key != IdPropertyName)
+                            {
+                                var value = Read(ref reader, typeof(object), options);
+                                dict.Add(key, value);
+                            }
+
+                            break;
+                        default:
+                            throw new JsonException();
+                    }
+                }
+
+                throw new JsonException();
+            default:
+                throw new JsonException($"Unknown token {reader.TokenType}");
+        }
+    }
+
     /// <inheritdoc />
     public override void Write(Utf8JsonWriter writer, object value, JsonSerializerOptions options)
     {
         var newOptions = new JsonSerializerOptions(options);
         var type = value.GetType();
 
-        newOptions.Converters.RemoveWhere(x => x is PolymorphicObjectConverterFactory);
-
         if (type.IsPrimitive || value is string or DateTimeOffset or DateTime or DateOnly or TimeOnly or JsonElement or Guid or TimeSpan or Uri or Version or Enum)
         {
+            // Remove the converter so that we don't end up in an infinite loop.
+            newOptions.Converters.RemoveWhere(x => x is PolymorphicObjectConverterFactory);
+
+            // Serialize the value directly.
             JsonSerializer.Serialize(writer, value, newOptions);
             return;
         }
@@ -145,20 +209,15 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         else
         {
             foreach (var property in jsonElement.EnumerateObject().Where(property => !property.NameEquals(TypePropertyName)))
-            {
                 property.WriteTo(writer);
-            }
         }
-        
+
         if (type != typeof(ExpandoObject))
         {
             // Write the type name so that we can reconstruct the actual type when deserializing.
             writer.WriteString(TypePropertyName, type.GetSimpleAssemblyQualifiedName());
         }
-        
-        // // Write the type name so that we can reconstruct the actual type when deserializing.
-        // writer.WriteString(TypePropertyName, type.GetSimpleAssemblyQualifiedName());
-        
+
         writer.WriteEndObject();
     }
 }

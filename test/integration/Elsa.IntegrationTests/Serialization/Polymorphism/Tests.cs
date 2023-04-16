@@ -1,5 +1,7 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Dynamic;
+using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
@@ -11,42 +13,57 @@ namespace Elsa.IntegrationTests.Serialization.Polymorphism;
 
 public class Tests
 {
-    [Fact(DisplayName = "Subsequent activity does not get scheduled when previous activity created a bookmark")]
+    [Fact(DisplayName = "Objects mixed with primitive, complex, expando objects and arrays of these can be serialized")]
     public void Test1()
     {
-        var countryMetadata = new ExpandoObject() as IDictionary<string, object>;
-        countryMetadata["Population"] = 17000000;
+        var model = CreateModel();
+        var expectedJson = File.ReadAllText("Serialization/Polymorphism/data.json");
+        var actualJson = JsonSerializer.Serialize(model, GetSerializerOptions());
+        Assert.Equal(expectedJson, actualJson);
+    }
+    
+    [Fact(DisplayName = "Objects mixed with primitive, complex, expando objects and arrays of these can be round-tripped")]
+    public void Test2()
+    {
+        var model = CreateModel();
+        var json = JsonSerializer.Serialize(model, GetSerializerOptions());
+        var deserializedModel = JsonSerializer.Deserialize<Model>(json, GetSerializerOptions());
+        var roundTrippedJson = JsonSerializer.Serialize(deserializedModel, GetSerializerOptions());
+        Assert.Equal(json, roundTrippedJson);
+    }
 
-        var address = new ExpandoObject() as IDictionary<string, object>;
-        address["AddressLine1"] = "1 Street";
-        address["Country"] = new Country
+    private Model CreateModel()
+    {
+        // Create a model with various nested properties
+        var metadata = new ExpandoObject() as IDictionary<string, object>;
+        
+        // Initialize metadata with test data.
+        metadata["Foo"] = "Bar";
+        metadata["Number"] = 123;
+        metadata["Flag"] = true;
+        metadata["Items"] = new List<Model>
         {
-            Code = "NL",
-            Name = "The Netherlands",
-            Metadata = countryMetadata
+            new(Text : "Hello", Number : 1, Flag : true, Metadata : metadata),
+            new(Text : "World", Number : 2)
         };
         
-        var customer = new ExpandoObject() as IDictionary<string, object>;
-        customer["Id"] = "alice-1";
-        customer["FirstName"] = "Alice";
-        customer["LastName"] = "Smith";
-        customer["Email"] = "alice.smith@example.com";
-        customer["Address"] = address;
-        customer["Order"] = new Order
-        {
-            Id = "order-1",
-            CustomerId = "customer-1",
-            Number = 1
-        };
-
-        var state = new SomeState
-        {
-            Payload = customer
-        };
-        
-        var json = JsonSerializer.Serialize(state, GetSerializerOptions());
-        var deserializedState = JsonSerializer.Deserialize<SomeState>(json, GetSerializerOptions());
-        Assert.Equal(json, json);
+        return new Model(
+            "Hello World",
+            123,
+            true,
+            new List<Model>
+            {
+                new("Hello", 1, true, new List<Model>(){ new(Metadata: metadata) }),
+                new("World", 2)
+            },
+            metadata,
+            new Model("Payload"),
+            new Dictionary<string, Model>
+            {
+                ["Hello"] = new("Hello", 1, true),
+                ["World"] = new("World", 2)
+            }
+        );
     }
     
     private JsonSerializerOptions GetSerializerOptions()
@@ -62,31 +79,8 @@ public class Tests
         };
 
         options.Converters.Add(new JsonStringEnumConverter());
-        //options.Converters.Add(new PolymorphicJsonConverter());
-        //options.Converters.Add(new ComplexObjectWithExpandoPropertiesJsonConverter());
         options.Converters.Add(JsonMetadataServices.TimeSpanConverter);
+        options.Converters.Add(new PolymorphicObjectConverterFactory());
         return options;
-    }
-
-    public class SomeState
-    {
-        [JsonConverter(typeof(PolymorphicJsonConverter))]
-        public object Payload { get; set; }
-    }
-
-    public class Order
-    {
-        public string Id { get; set; }
-        public long Number { get; set; }
-        public string CustomerId { get; set; }
-    }
-    
-    public class Country
-    {
-        public string Code { get; set; }
-        public string Name { get; set; }
-        
-        [JsonConverter(typeof(PolymorphicJsonConverter))]
-        public object Metadata { get; set; }
     }
 }

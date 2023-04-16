@@ -80,7 +80,6 @@ public class ExpandoObjectConverter : JsonConverter<object>
                             if (key != IdPropertyName)
                             {
                                 var value = _objectConverter.Read(ref reader, typeof(object), options)!;
-                                //dict.Add(key, Read(ref reader, typeof(object), options));
                                 dict.Add(key, value);
                             }
                             break;

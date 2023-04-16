@@ -18,7 +18,7 @@ public record Bookmark(
     string Id,
     string Name,
     string Hash,
-    [property: JsonConverter(typeof(PolymorphicObjectConverterFactory))]object? Payload,
+    object? Payload,
     string ActivityNodeId,
     string ActivityInstanceId,
     bool AutoBurn = true,

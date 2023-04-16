@@ -31,6 +31,9 @@
       <None Update="Scenarios\ImportAndExecute\workflow.json">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
+      <None Update="Serialization\Polymorphism\data.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
 </Project>

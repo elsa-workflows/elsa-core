@@ -42,13 +42,11 @@ public class ActivityExecutionContextState
     /// <summary>
     /// A bag of properties.
     /// </summary>
-    [JsonConverter(typeof(PolymorphicDictionaryConverterFactory))]
     public IDictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
 
     /// <summary>
     /// The evaluated values of the activity's properties.
     /// </summary>
-    [JsonConverter(typeof(PolymorphicDictionaryConverterFactory))]
     public IDictionary<string, object>? ActivityState { get; set; }
     
     //public RegisterState Register { get; set; } = default!;

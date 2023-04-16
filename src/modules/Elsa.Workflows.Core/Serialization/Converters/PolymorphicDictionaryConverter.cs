@@ -13,7 +13,8 @@ public class PolymorphicDictionaryConverter : JsonConverter<IDictionary<string, 
     /// <inheritdoc />
     public PolymorphicDictionaryConverter(JsonSerializerOptions options)
     {
-        _objectConverter = (JsonConverter<object>)new PolymorphicObjectConverterFactory().CreateConverter(typeof(object), options);
+        var factory = (JsonConverterFactory)(options.Converters.FirstOrDefault(x => x is PolymorphicObjectConverterFactory) ?? new PolymorphicObjectConverterFactory());
+        _objectConverter = (JsonConverter<object>)factory.CreateConverter(typeof(object), options)!;
     }
 
     /// <inheritdoc />
