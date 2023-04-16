@@ -78,11 +78,13 @@ public class PolymorphicObjectConverter : JsonConverter<object>
 
     private static Type? ReadType(Utf8JsonReader reader)
     {
-        reader.Read(); // Move to the first token inside the object
+        reader.Read(); // Move to the first token inside the object.
         string? typeName = null;
 
+        // Read while we haven't reached the end of the object.
         while (reader.TokenType != JsonTokenType.EndObject)
         {
+            // If we find the _type property, read its value and break out of the loop.
             if (reader.TokenType == JsonTokenType.PropertyName && reader.ValueTextEquals(TypePropertyName))
             {
                 reader.Read(); // Move to the value of the _type property
@@ -90,6 +92,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
                 break;
             }
 
+            // Skip through nested objects and arrays.
             if (reader.TokenType is JsonTokenType.StartObject or JsonTokenType.StartArray)
             {
                 var depth = 1;
@@ -113,6 +116,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
             reader.Read(); // Move to the next token
         }
 
+        // If we found the _type property, attempt to resolve the type.
         var targetType = typeName != null ? Type.GetType(typeName) : default;
         return targetType;
     }
@@ -127,7 +131,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
             JsonTokenType.Number => reader.GetDouble(),
             JsonTokenType.String when reader.TryGetDateTimeOffset(out var datetime) => datetime,
             JsonTokenType.String => reader.GetString(),
-            _ => JsonSerializer.Deserialize(ref reader, typeof(ExpandoObject), options)
+            _ => throw new JsonException("Not a primitive type.")
         })!;
     }
 
