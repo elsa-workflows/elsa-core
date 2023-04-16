@@ -29,11 +29,25 @@ public class JsonActivitySerializer : IActivitySerializer
     {
         var options = CreateOptions();
         options.Converters.Add(Create<JsonIgnoreCompositeRootConverterFactory>());
-        return JsonSerializer.Serialize(activity, options);
+        return JsonSerializer.Serialize(activity, activity.GetType(), options);
+    }
+
+    /// <inheritdoc />
+    public string Serialize(object value)
+    {
+        var options = CreateOptions();
+        options.Converters.Add(Create<JsonIgnoreCompositeRootConverterFactory>());
+        return JsonSerializer.Serialize(value, options);
     }
 
     /// <inheritdoc />
     public IActivity Deserialize(string serializedActivity) => JsonSerializer.Deserialize<IActivity>(serializedActivity, CreateOptions())!;
+
+    /// <inheritdoc />
+    public object Deserialize(string serializedValue, Type type) => JsonSerializer.Deserialize(serializedValue, type, CreateOptions())!;
+
+    /// <inheritdoc />
+    public T Deserialize<T>(string serializedValue) => JsonSerializer.Deserialize<T>(serializedValue, CreateOptions())!;
 
     private JsonSerializerOptions CreateOptions()
     {

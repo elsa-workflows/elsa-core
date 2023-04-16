@@ -12,7 +12,7 @@ namespace Elsa.Workflows.Management.Services
     /// <inheritdoc />
     public class WorkflowDefinitionImporter : IWorkflowDefinitionImporter
     {
-        private readonly IApiSerializer _serializer;
+        private readonly IActivitySerializer _serializer;
         private readonly IWorkflowDefinitionPublisher _workflowDefinitionPublisher;
         private readonly VariableDefinitionMapper _variableDefinitionMapper;
 
@@ -20,7 +20,7 @@ namespace Elsa.Workflows.Management.Services
         /// Initializes a new instance of the <see cref="WorkflowDefinitionImporter"/> class.
         /// </summary>
         public WorkflowDefinitionImporter(
-            IApiSerializer serializer,
+            IActivitySerializer serializer,
             IWorkflowDefinitionPublisher workflowDefinitionPublisher,
             VariableDefinitionMapper variableDefinitionMapper)
         {
@@ -51,9 +51,8 @@ namespace Elsa.Workflows.Management.Services
             }
 
             // Update the draft with the received model.
-            var root = request.Root;
-            var serializerOptions = _serializer.CreateOptions();
-            var stringData = JsonSerializer.Serialize(root, serializerOptions);
+            var root = request.Root!;
+            var stringData = _serializer.Serialize(root);
             var variables = _variableDefinitionMapper.Map(request.Variables).ToList();
 
             draft!.StringData = stringData;
