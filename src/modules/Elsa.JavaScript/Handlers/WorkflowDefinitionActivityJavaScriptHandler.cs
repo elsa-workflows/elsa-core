@@ -4,6 +4,7 @@ using Elsa.Extensions;
 using Elsa.JavaScript.Notifications;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Core.Models;
 using Humanizer;
 using JetBrains.Annotations;
 using Jint;
@@ -32,7 +33,7 @@ public class WorkflowDefinitionActivityJavaScriptHandler : INotificationHandler<
         var engine = notification.Engine;
         var context = notification.Context;
 
-        // Always create workflow input accessors.
+        // Create workflow input accessors.
         CreateWorkflowInputAccessors(engine, context);
         
         return Task.CompletedTask;
@@ -40,13 +41,30 @@ public class WorkflowDefinitionActivityJavaScriptHandler : INotificationHandler<
 
     private void CreateWorkflowInputAccessors(Engine engine, ExpressionExecutionContext context)
     {
-        var input = context.GetWorkflowExecutionContext().Input;
-
-        foreach (var inputEntry in input)
+        if(context.TryGetWorkflowExecutionContext(out var workflowExecutionContext))
         {
-            var inputPascalName = inputEntry.Key.Pascalize();
-            var inputValue = inputEntry.Value;
-            engine.SetValue($"get{inputPascalName}", (Func<object?>)(() => inputValue));
+            var input = workflowExecutionContext.Input;
+            
+            foreach (var inputEntry in input)
+            {
+                var inputPascalName = inputEntry.Key.Pascalize();
+                var inputValue = inputEntry.Value;
+                engine.SetValue($"get{inputPascalName}", (Func<object?>)(() => inputValue));
+            }
+        }
+        else
+        {
+            // We end up here when we are evaluating an expression during trigger indexing.
+            // Typically, a workflow definition might have variables declared, that we want to be able to access from JavaScript expressions.
+            foreach(var block in context.Memory.Blocks.Values)
+            {
+                if(block.Metadata is not VariableBlockMetadata variableBlockMetadata)
+                    continue;
+                
+                var variable = variableBlockMetadata.Variable;
+                var variablePascaleName = variable.Name.Pascalize();
+                engine.SetValue($"get{variablePascaleName}", (Func<object?>)(() => block.Value));
+            }
         }
     }
 }
