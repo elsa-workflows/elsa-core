@@ -21,10 +21,7 @@ public class EFCoreWorkflowInstancePersistenceFeature : PersistenceFeatureBase<M
     /// <inheritdoc />
     public override void Configure()
     {
-        Module.Configure<WorkflowInstancesFeature>(feature =>
-        {
-            feature.WorkflowInstanceStore = sp => sp.GetRequiredService<EFCoreWorkflowInstanceStore>();
-        });
+        Module.Configure<WorkflowInstancesFeature>(feature => feature.WorkflowInstanceStore = sp => sp.GetRequiredService<EFCoreWorkflowInstanceStore>());
     }
 
     /// <inheritdoc />

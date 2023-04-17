@@ -8,9 +8,18 @@ namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 public static class Extensions
 {
     /// <summary>
-    /// Configures the <see cref="DefaultRuntimeFeature"/> to use the <see cref="EFCoreDefaultRuntimePersistenceFeature"/>.
+    /// Configures the <see cref="WorkflowRuntimeFeature"/> to use the <see cref="EFCoreWorkflowRuntimePersistenceFeature"/>.
     /// </summary>
-    public static DefaultRuntimeFeature UseEntityFrameworkCore(this DefaultRuntimeFeature feature, Action<EFCoreDefaultRuntimePersistenceFeature>? configure = default)
+    public static WorkflowRuntimeFeature UseEntityFrameworkCore(this WorkflowRuntimeFeature feature, Action<EFCoreWorkflowRuntimePersistenceFeature>? configure = default)
+    {
+        feature.Module.Configure(configure);
+        return feature;
+    }
+    
+    /// <summary>
+    /// Configures the <see cref="DefaultWorkflowRuntimeFeature"/> to use the <see cref="EFCoreDefaultWorkflowRuntimePersistenceFeature"/>.
+    /// </summary>
+    public static DefaultWorkflowRuntimeFeature UseEntityFrameworkCore(this DefaultWorkflowRuntimeFeature feature, Action<EFCoreDefaultWorkflowRuntimePersistenceFeature>? configure = default)
     {
         feature.Module.Configure(configure);
         return feature;
