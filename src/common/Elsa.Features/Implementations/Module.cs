@@ -14,6 +14,7 @@ public class Module : IModule
     private record HostedServiceDescriptor(int Order, Type HostedServiceType);
 
     private ISet<IFeature> _features = new HashSet<IFeature>();
+    private ISet<IFeature> _configuredFeatures = new HashSet<IFeature>();
     private readonly ICollection<HostedServiceDescriptor> _hostedServiceDescriptors = new List<HostedServiceDescriptor>();
 
     /// <summary>
@@ -26,7 +27,7 @@ public class Module : IModule
 
     /// <inheritdoc />
     public IServiceCollection Services { get; }
-    
+
     /// <inheritdoc />
     public IDictionary<object, object> Properties { get; } = new Dictionary<object, object>();
 
@@ -44,6 +45,15 @@ public class Module : IModule
         }
 
         configure?.Invoke(feature);
+
+        if (!_isApplying) 
+            return feature;
+        
+        var dependencies = GetDependencyTypes(feature.GetType()).ToHashSet();
+        foreach (var dependency in dependencies.Select(GetOrCreateFeature)) 
+            ConfigureFeature(dependency);
+
+        ConfigureFeature(feature);
         return feature;
     }
 
@@ -54,25 +64,58 @@ public class Module : IModule
         return this;
     }
 
+    private bool _isApplying;
+
     /// <inheritdoc />
     public void Apply()
     {
-        var featureTypes = _features.Select(x => x.GetType()).TSort(x => x.GetCustomAttributes<DependsOn>().Select(dependsOn => dependsOn.Type)).ToList();
-        var features = featureTypes.Select(featureType => _features.FirstOrDefault(x => x.GetType() == featureType) ?? (IFeature)Activator.CreateInstance(featureType, this)!).ToList();
+        _isApplying = true;
+        //var featureTypes = _features.Select(x => x.GetType()).TSort(x => x.GetCustomAttributes<DependsOn>().Select(dependsOn => dependsOn.Type)).ToList();
+        var featureTypes = GetFeatureTypes();
+        _features = featureTypes.Select(featureType => _features.FirstOrDefault(x => x.GetType() == featureType) ?? (IFeature)Activator.CreateInstance(featureType, this)!).ToHashSet();
 
-        // Update list with complete list of features. This is important because during the Configure phase, dependent features might configure other features, which should not be created as new instances.
-        _features = features.ToHashSet();
-
-        foreach (var feature in features)
+        // Iterate over a copy of the features to avoid concurrent modification exceptions.
+        foreach (var feature in _features.ToList())
         {
-            feature.Configure();
+            // This will cause additional features to be added to _features.
+            ConfigureFeature(feature);
             feature.ConfigureHostedServices();
         }
 
         foreach (var hostedServiceDescriptor in _hostedServiceDescriptors.OrderBy(x => x.Order))
             Services.TryAddEnumerable(ServiceDescriptor.Singleton(typeof(IHostedService), hostedServiceDescriptor.HostedServiceType));
 
-        foreach (var feature in features)
+        // Make sure to use the complete list of features when applying them.
+        foreach (var feature in _features)
             feature.Apply();
+    }
+
+    private void ConfigureFeature(IFeature feature)
+    {
+        if(_configuredFeatures.Contains(feature))
+            return;
+
+        feature.Configure();
+        _features.Add(feature);
+        _configuredFeatures.Add(feature);
+    }
+
+    private IFeature GetOrCreateFeature(Type featureType)
+    {
+        return _features.FirstOrDefault(x => x.GetType() == featureType) ?? (IFeature)Activator.CreateInstance(featureType, this)!;
+    }
+
+    private ISet<Type> GetFeatureTypes()
+    {
+        var featureTypes =  _features.Select(x => x.GetType()).ToHashSet();
+        var featureTypesWithDependencies =  featureTypes.Concat(featureTypes.SelectMany(GetDependencyTypes)).ToHashSet();
+        return featureTypesWithDependencies.TSort(x => x.GetCustomAttributes<DependsOn>().Select(dependsOn => dependsOn.Type)).ToHashSet();
+    }
+
+    // Recursively get dependency types.
+    private IEnumerable<Type> GetDependencyTypes(Type type)
+    {
+        var dependencies = type.GetCustomAttributes<DependsOn>().Select(dependsOn => dependsOn.Type).ToList();
+        return dependencies.Concat(dependencies.SelectMany(GetDependencyTypes));
     }
 }
