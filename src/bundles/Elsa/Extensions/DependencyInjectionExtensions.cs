@@ -15,8 +15,7 @@ public static class ModuleExtensions
     public static IModule AddElsa(this IServiceCollection services, Action<IModule>? configure = default)
     {
         var module = services.CreateModule();
-        module.Configure<ElsaFeature>();
-        configure?.Invoke(module);
+        module.Configure<AppFeature>(app => app.Configurator = configure);
         module.Apply();
         return module;
     }
