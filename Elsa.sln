@@ -174,6 +174,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.HangfireIntegr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.ProtoActorRuntime", "src\samples\aspnet\Elsa.Samples.ProtoActorRuntime\Elsa.Samples.ProtoActorRuntime.csproj", "{A41E24C6-B16D-4C6A-A9A9-2C5AF424F20F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.WorkflowContexts", "src\samples\aspnet\Elsa.Samples.WorkflowContexts\Elsa.Samples.WorkflowContexts.csproj", "{F88AB1C2-100E-459F-B2BE-5F2ACF050A0A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -432,6 +434,10 @@ Global
 		{A41E24C6-B16D-4C6A-A9A9-2C5AF424F20F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A41E24C6-B16D-4C6A-A9A9-2C5AF424F20F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A41E24C6-B16D-4C6A-A9A9-2C5AF424F20F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F88AB1C2-100E-459F-B2BE-5F2ACF050A0A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F88AB1C2-100E-459F-B2BE-5F2ACF050A0A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F88AB1C2-100E-459F-B2BE-5F2ACF050A0A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F88AB1C2-100E-459F-B2BE-5F2ACF050A0A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{155227F0-A33B-40AA-A4B4-06F813EB921B} = {61017E64-6D00-49CB-9E81-5002DC8F7D5F}
@@ -508,5 +514,6 @@ Global
 		{B0312D9E-FA30-43E9-B666-40A8782D6E1C} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 		{D2614FC7-102F-4F78-BB06-7C87304A10BA} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 		{A41E24C6-B16D-4C6A-A9A9-2C5AF424F20F} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
+		{F88AB1C2-100E-459F-B2BE-5F2ACF050A0A} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 	EndGlobalSection
 EndGlobal
