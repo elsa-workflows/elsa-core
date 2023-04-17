@@ -78,7 +78,6 @@ public class Module : IModule
         {
             // This will cause additional features to be added to _features.
             ConfigureFeature(feature);
-            feature.ConfigureHostedServices();
         }
 
         foreach (var hostedServiceDescriptor in _hostedServiceDescriptors.OrderBy(x => x.Order))
@@ -95,6 +94,7 @@ public class Module : IModule
             return;
 
         feature.Configure();
+        feature.ConfigureHostedServices();
         _features[feature.GetType()] = feature;
         _configuredFeatures.Add(feature);
     }
