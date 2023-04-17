@@ -6,7 +6,13 @@ namespace Elsa.EntityFrameworkCore.Extensions;
 
 public static partial class Extensions
 {
-    public static EFCoreDefaultRuntimePersistenceFeature UseSqlite(this EFCoreDefaultRuntimePersistenceFeature feature, string connectionString = Constants.DefaultConnectionString)
+    public static EFCoreWorkflowRuntimePersistenceFeature UseSqlite(this EFCoreWorkflowRuntimePersistenceFeature feature, string connectionString = Constants.DefaultConnectionString)
+    {
+        feature.DbContextOptionsBuilder = (_, db) => db.UseElsaSqlite(connectionString);
+        return feature;
+        
+    }
+    public static EFCoreDefaultWorkflowRuntimePersistenceFeature UseSqlite(this EFCoreDefaultWorkflowRuntimePersistenceFeature feature, string connectionString = Constants.DefaultConnectionString)
     {
         feature.DbContextOptionsBuilder = (_, db) => db.UseElsaSqlite(connectionString);
         return feature;

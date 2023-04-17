@@ -118,9 +118,15 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
 
     private static QueryDescriptor<WorkflowInstance> Filter(QueryDescriptor<WorkflowInstance> descriptor, WorkflowInstanceFilter filter)
     {
-        // TODO: Implement remaining filters.
-
+        if (!string.IsNullOrWhiteSpace(filter.Id)) descriptor = descriptor.Match(m => m.Field(f => f.Id).Query(filter.Id));
         if (!string.IsNullOrWhiteSpace(filter.DefinitionId)) descriptor = descriptor.Match(m => m.Field(f => f.DefinitionId).Query(filter.DefinitionId));
+        if (!string.IsNullOrWhiteSpace(filter.DefinitionVersionId)) descriptor = descriptor.Match(m => m.Field(f => f.DefinitionVersionId).Query(filter.DefinitionVersionId));
+        
+        // TODO: filter by IDs
+        // TODO: filter by DefinitionIDs
+        // TODO: filter by DefinitionVersionIDs
+        // TODO: filter by CorrelationIDs
+        
         if (filter.Version != null) descriptor = descriptor.Match(m => m.Field(f => f.Version).Query(filter.Version.ToString()!));
         if (!string.IsNullOrWhiteSpace(filter.CorrelationId)) descriptor = descriptor.Match(m => m.Field(f => f.CorrelationId).Query(filter.CorrelationId));
         if (filter.WorkflowStatus != null) descriptor = descriptor.Match(m => m.Field(f => f.Status).Query(filter.WorkflowStatus.ToString()!));

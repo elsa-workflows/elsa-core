@@ -62,27 +62,6 @@ public class TriggerIndexer : ITriggerIndexer
         return await IndexTriggersAsync(workflow, cancellationToken);
     }
 
-
-    /// <inheritdoc />
-    public async Task<IndexedWorkflowTriggers> IndexAllTriggersAsync(CancellationToken cancellationToken = default)
-    {
-        var emptyTriggerList = new List<StoredTrigger>(0);
-
-        // Get current triggers
-        var filter = new TriggerFilter();
-        var allTriggersTriggers = await  _triggerStore.FindManyAsync(filter, cancellationToken);
-
-
-        //workflow definition already deleted so you do not have one
-        var workflow = new Workflow();
-
-        var indexedWorkflow = new IndexedWorkflowTriggers(workflow, allTriggersTriggers.ToList(), emptyTriggerList, emptyTriggerList);
-
-        // Publish event.
-        await _eventPublisher.PublishAsync(new WorkflowTriggersIndexed(indexedWorkflow), cancellationToken);
-        return indexedWorkflow;
-    }
-
     /// <inheritdoc />
     public async Task<IndexedWorkflowTriggers> IndexTriggersAsync(Workflow workflow, CancellationToken cancellationToken = default)
     {

@@ -15,7 +15,7 @@ namespace Elsa.EntityFrameworkCore.Modules.Management;
 public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
 {
     private readonly EntityStore<ManagementElsaDbContext, WorkflowDefinition> _store;
-    private readonly EntityStore<ManagementElsaDbContext, WorkflowInstance> _workflowInstanceStore;
+    private readonly IWorkflowInstanceStore _workflowInstanceStore;
     private readonly IActivitySerializer _serializer;
 
     /// <summary>
@@ -23,7 +23,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
     /// </summary>
     public EFCoreWorkflowDefinitionStore(
         EntityStore<ManagementElsaDbContext, WorkflowDefinition> store,
-        EntityStore<ManagementElsaDbContext, WorkflowInstance> workflowInstanceStore,
+        IWorkflowInstanceStore workflowInstanceStore,
         IActivitySerializer serializer)
     {
         _store = store;
@@ -130,7 +130,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         var set = dbContext.WorkflowDefinitions;
         var queryable = set.AsQueryable();
         var ids = await Filter(queryable, filter).Select(x => x.Id).Distinct().ToListAsync(cancellationToken);
-        await _workflowInstanceStore.DeleteWhereAsync(x => ids.Contains(x.DefinitionVersionId), cancellationToken);
+        await _workflowInstanceStore.DeleteManyAsync(new WorkflowInstanceFilter { DefinitionVersionIds = ids }, cancellationToken);
         return await _store.DeleteWhereAsync(x => ids.Contains(x.Id), cancellationToken);
     }
 

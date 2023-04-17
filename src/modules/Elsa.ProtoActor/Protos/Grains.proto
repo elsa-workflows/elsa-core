@@ -13,12 +13,6 @@ service WorkflowGrain {
   rpc ImportState(ImportWorkflowStateRequest) returns (ImportWorkflowStateResponse);
 }
 
-service BookmarkGrain {
-  rpc Store(StoreBookmarksRequest) returns (google.protobuf.Empty);
-  rpc RemoveByWorkflow(RemoveBookmarksByWorkflowRequest) returns (google.protobuf.Empty);
-  rpc Resolve (ResolveBookmarksRequest) returns (ResolveBookmarksResponse);
-}
-
 service RunningWorkflowsGrain {
   rpc Register(RegisterRunningWorkflowRequest) returns (google.protobuf.Empty);
   rpc Unregister(UnregisterRunningWorkflowRequest) returns (google.protobuf.Empty);

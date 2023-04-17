@@ -6,7 +6,7 @@ using Elsa.Workflows.Runtime.Notifications;
 namespace Elsa.Http.Handlers;
 
 /// <summary>
-/// A handler that updates the route table.
+/// A handler that updates the route table when workflow triggers and bookmarks are indexed.
 /// </summary>
 public class UpdateRouteTable :
     INotificationHandler<WorkflowTriggersIndexed>,

@@ -25,6 +25,15 @@ public static class RouteTableExtensions
     /// <summary>
     /// Adds routes from the specified set of bookmarks.
     /// </summary>
+    public static void AddRoutes(this IRouteTable routeTable, IEnumerable<StoredBookmark> bookmarks)
+    {
+        var paths = Filter(bookmarks).Select(x => x.GetPayload<HttpEndpointBookmarkPayload>().Path).ToList();
+        routeTable.AddRange(paths);
+    }
+    
+    /// <summary>
+    /// Adds routes from the specified set of bookmarks.
+    /// </summary>
     public static void AddRoutes(this IRouteTable routeTable, IEnumerable<Bookmark> bookmarks)
     {
         var paths = Filter(bookmarks).Select(x => x.GetPayload<HttpEndpointBookmarkPayload>().Path).ToList();
@@ -49,6 +58,21 @@ public static class RouteTableExtensions
         routeTable.RemoveRange(paths);
     }
 
-    private static IEnumerable<StoredTrigger> Filter(IEnumerable<StoredTrigger> triggers) => triggers.Where(x => x.Name == ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>() && x.Payload != null);
-    private static IEnumerable<Bookmark> Filter(IEnumerable<Bookmark> triggers) => triggers.Where(x => x.Name == ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>() && x.Payload != null);
+    private static IEnumerable<StoredTrigger> Filter(IEnumerable<StoredTrigger> triggers)
+    {
+        var triggerName = ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>();
+        return triggers.Where(x => x.Name == triggerName && x.Payload != null);
+    }
+
+    private static IEnumerable<StoredBookmark> Filter(IEnumerable<StoredBookmark> bookmarks)
+    {
+        var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>();
+        return bookmarks.Where(x => x.ActivityTypeName == activityTypeName && x.Payload != null);
+    }
+    
+    private static IEnumerable<Bookmark> Filter(IEnumerable<Bookmark> bookmarks)
+    {
+        var bookmarkName = ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>();
+        return bookmarks.Where(x => x.Name == bookmarkName && x.Payload != null);
+    }
 }

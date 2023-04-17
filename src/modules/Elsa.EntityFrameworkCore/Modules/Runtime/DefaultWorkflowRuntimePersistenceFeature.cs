@@ -8,23 +8,31 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 
+/// <summary>
+/// Configures the default workflow runtime to use EF Core persistence providers.
+/// </summary>
 [DependsOn(typeof(WorkflowRuntimeFeature))]
-public class EFCoreDefaultRuntimePersistenceFeature : PersistenceFeatureBase<RuntimeElsaDbContext>
+[DependsOn(typeof(DefaultWorkflowRuntimeFeature))]
+public class EFCoreDefaultWorkflowRuntimePersistenceFeature : PersistenceFeatureBase<RuntimeElsaDbContext>
 {
-    public EFCoreDefaultRuntimePersistenceFeature(IModule module) : base(module)
+    /// <inheritdoc />
+    public EFCoreDefaultWorkflowRuntimePersistenceFeature(IModule module) : base(module)
     {
     }
 
+    /// <inheritdoc />
     public override void Configure()
     {
         Module.Configure<WorkflowRuntimeFeature>(feature =>
         {
-            feature.WorkflowStateStore = sp => sp.GetRequiredService<EFCoreWorkflowStateStore>();
             feature.WorkflowTriggerStore = sp => sp.GetRequiredService<EFCoreTriggerStore>();
             feature.BookmarkStore = sp => sp.GetRequiredService<EFCoreBookmarkStore>();
         });
+        
+        Module.Configure<DefaultWorkflowRuntimeFeature>(feature => { feature.WorkflowStateStore = sp => sp.GetRequiredService<EFCoreWorkflowStateStore>(); });
     }
 
+    /// <inheritdoc />
     public override void Apply()
     {
         base.Apply();

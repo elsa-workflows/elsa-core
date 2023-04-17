@@ -47,12 +47,7 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// A factory that instantiates an <see cref="IWorkflowDispatcher"/>.
     /// </summary>
     public Func<IServiceProvider, IWorkflowDispatcher> WorkflowDispatcher { get; set; } = sp => ActivatorUtilities.CreateInstance<TaskBasedWorkflowDispatcher>(sp);
-
-    /// <summary>
-    /// A factory that instantiates an <see cref="IWorkflowStateStore"/>.
-    /// </summary>
-    public Func<IServiceProvider, IWorkflowStateStore> WorkflowStateStore { get; set; } = sp => ActivatorUtilities.CreateInstance<MemoryWorkflowStateStore>(sp);
-
+    
     /// <summary>
     /// A factory that instantiates an <see cref="IBookmarkStore"/>.
     /// </summary>
@@ -114,8 +109,7 @@ public class WorkflowRuntimeFeature : FeatureBase
         Module
             .ConfigureHostedService<RegisterDescriptors>()
             .ConfigureHostedService<RegisterExpressionSyntaxDescriptors>()
-            .ConfigureHostedService<PopulateWorkflowDefinitionStore>()
-            .ConfigureHostedService<PopulateRouteTable>();
+            .ConfigureHostedService<PopulateWorkflowDefinitionStore>();
 
     /// <inheritdoc />
     public override void Apply()
@@ -133,7 +127,6 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddSingleton<IBackgroundActivityInvoker, DefaultBackgroundActivityInvoker>()
             .AddSingleton(WorkflowRuntime)
             .AddSingleton(WorkflowDispatcher)
-            .AddSingleton(WorkflowStateStore)
             .AddSingleton(BookmarkStore)
             .AddSingleton(WorkflowTriggerStore)
             .AddSingleton(WorkflowExecutionLogStore)

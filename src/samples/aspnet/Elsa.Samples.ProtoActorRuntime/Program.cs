@@ -1,10 +1,11 @@
 using Elsa.EntityFrameworkCore.Extensions;
-using Elsa.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Labels;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
+using Elsa.Extensions;
 using Elsa.JavaScript.Options;
-using Elsa.WorkflowServer.Web;
+using Microsoft.Data.Sqlite;
+using Proto.Persistence.Sqlite;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -17,7 +18,6 @@ var identityTokenSection = identitySection.GetSection("Tokens");
 services
     .AddElsa(elsa => elsa
         .AddActivitiesFrom<Program>()
-        .AddTypeAlias<ApiResponse<User>>("ApiResponse[User]")
         .UseIdentity(identity =>
         {
             identity.IdentityOptions = options => identitySection.Bind(options);
@@ -29,17 +29,25 @@ services
         .UseDefaultAuthentication()
         .UseWorkflowManagement(management =>
         {
+            // Use EF core for workflow definitions and instances.
             management.UseEntityFrameworkCore(m => m.UseSqlite(sqliteConnectionString));
-            management.AddVariableType<ApiResponse<User>>("Api");
-            management.AddVariableType<User>("Api");
-            management.AddVariableType<Support>("Api");
         })
         .UseWorkflowRuntime(runtime =>
         {
-            runtime.UseDefaultRuntime(dr => dr.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)));
-            runtime.UseExecutionLogRecords(e => e.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)));
+            // Use EF core for triggers and bookmarks.
+            runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
+            
+            // Use EF core for execution log records.
+            runtime.UseExecutionLogRecords(log => log.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)));
+            
+            // Install a workflow state exporter to capture workflow states and store them in IWorkflowInstanceStore.
             runtime.UseAsyncWorkflowStateExporter();
-            runtime.UseMassTransitDispatcher();
+            
+            // Use Proto.Actor for workflow execution.
+            runtime.UseProtoActor(protoActor =>
+            {
+                protoActor.PersistenceProvider = _ => new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString));
+            });
         })
         .UseLabels(labels => labels.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
         .UseScheduling()

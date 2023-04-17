@@ -5,7 +5,7 @@ namespace Elsa.EntityFrameworkCore.Extensions;
 
 public static partial class Extensions
 {
-    public static EFCoreDefaultRuntimePersistenceFeature UsePostgreSql(this EFCoreDefaultRuntimePersistenceFeature feature, string connectionString)
+    public static EFCoreDefaultWorkflowRuntimePersistenceFeature UsePostgreSql(this EFCoreDefaultWorkflowRuntimePersistenceFeature feature, string connectionString)
     {
         feature.DbContextOptionsBuilder = (_, db) => db.UseElsaPostgreSql(connectionString);
         return feature;
