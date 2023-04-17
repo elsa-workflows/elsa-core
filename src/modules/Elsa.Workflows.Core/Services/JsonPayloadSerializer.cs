@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Serialization.Converters;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Core.Services;
 
@@ -11,6 +12,16 @@ namespace Elsa.Workflows.Core.Services;
 /// </summary>
 public class JsonPayloadSerializer : IPayloadSerializer
 {
+    private readonly IServiceProvider _serviceProvider;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="JsonPayloadSerializer"/> class.
+    /// </summary>
+    public JsonPayloadSerializer(IServiceProvider serviceProvider)
+    {
+        _serviceProvider = serviceProvider;
+    }
+    
     /// <inheritdoc />
     public string Serialize(object payload)
     {
@@ -43,6 +54,9 @@ public class JsonPayloadSerializer : IPayloadSerializer
         options.Converters.Add(new JsonStringEnumConverter());
         options.Converters.Add(JsonMetadataServices.TimeSpanConverter);
         options.Converters.Add(new PolymorphicObjectConverterFactory());
+        options.Converters.Add(GetService<TypeJsonConverter>());
         return options;
     }
+    
+    private T GetService<T>() where T : notnull => ActivatorUtilities.GetServiceOrCreateInstance<T>(_serviceProvider);
 }
