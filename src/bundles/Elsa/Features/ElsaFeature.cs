@@ -16,7 +16,7 @@ namespace Elsa.Features;
 [DependsOn(typeof(MediatorFeature))]
 [DependsOn(typeof(WorkflowsFeature))]
 [DependsOn(typeof(FlowchartFeature))]
-[DependsOn(typeof(WorkflowRuntimeFeature))]
+[DependsOn(typeof(DefaultWorkflowRuntimeFeature))]
 [DependsOn(typeof(WorkflowManagementFeature))]
 public class ElsaFeature : FeatureBase
 {
