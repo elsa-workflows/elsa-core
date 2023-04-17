@@ -23,7 +23,7 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
     public string WorkflowDefinitionId { get; set; } = default!;
 
     /// <summary>
-    /// the latest published version number set by the provider. This is used by tooling to let the user know that a newer version is available.
+    /// The latest published version number set by the provider. This is used by tooling to let the user know that a newer version is available.
     /// </summary>
     public int LatestAvailablePublishedVersion { get; set; }
 
