@@ -71,9 +71,8 @@ public class TriggerIndexer : ITriggerIndexer
         // Get current triggers
         var filter = new TriggerFilter();
         var allTriggersTriggers = await  _triggerStore.FindManyAsync(filter, cancellationToken);
-
-
-        //workflow definition already deleted so you do not have one
+        
+        // Workflow definition already deleted so you do not have one
         var workflow = new Workflow();
 
         var indexedWorkflow = new IndexedWorkflowTriggers(workflow, allTriggersTriggers.ToList(), emptyTriggerList, emptyTriggerList);

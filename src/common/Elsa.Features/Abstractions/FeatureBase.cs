@@ -1,5 +1,6 @@
 using Elsa.Features.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace Elsa.Features.Abstractions;
 
@@ -45,5 +46,15 @@ public abstract class FeatureBase : IFeature
     /// </summary>
     public virtual void Apply()
     {
+    }
+
+    /// <summary>
+    /// Configures the specified hosted service using an optional priority to control in which order it will be registered with the service container.
+    /// </summary>
+    /// <param name="priority">The priority.</param>
+    /// <typeparam name="T">The type of hosted service to configure.</typeparam>
+    protected void ConfigureHostedService<T>(int priority = 0) where T : class, IHostedService
+    {
+        Module.ConfigureHostedService<T>(priority);
     }
 }

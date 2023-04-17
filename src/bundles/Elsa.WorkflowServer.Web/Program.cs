@@ -70,9 +70,13 @@ app.MapHealthChecks("/");
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Register Elsa middleware.
+// Elsa API endpoints for designer.
 app.UseWorkflowsApi();
+
+// Captures unhandled exceptions and returns a JSON response.
 app.UseJsonSerializationErrorHandler();
+
+// Elsa HTTP Endpoint activities
 app.UseWorkflows();
 
 // Run.
