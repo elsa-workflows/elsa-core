@@ -3,18 +3,17 @@
 namespace Elsa.WorkflowContexts.Contracts;
 
 /// <summary>
-/// Implement this interface to implement a workflow context provider that loads application-specific objects into the workflow.
-/// These providers can then be configured on a given workflow.
+/// Represents a workflow context provider that loads application-specific data and makes it available to the workflow.
 /// </summary>
 public interface IWorkflowContextProvider
 {
     /// <summary>
-    /// Implement this method to load an object into memory that is accessible throughout the lifetime of the workflow's current execution. 
+    /// Load data that will be available to the workflow. 
     /// </summary>
     ValueTask<object?> LoadAsync(WorkflowExecutionContext workflowExecutionContext);
 
     /// <summary>
-    /// Implement this method to save an object that was loaded previously 
+    /// Save data. 
     /// </summary>
     ValueTask SaveAsync(WorkflowExecutionContext workflowExecutionContext, object? context);
 }

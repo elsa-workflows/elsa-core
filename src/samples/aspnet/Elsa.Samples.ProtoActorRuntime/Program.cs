@@ -3,7 +3,6 @@ using Elsa.EntityFrameworkCore.Modules.Labels;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
-using Elsa.JavaScript.Options;
 using Microsoft.Data.Sqlite;
 using Proto.Persistence.Sqlite;
 
@@ -57,11 +56,8 @@ services
         .UseHttp()
     );
 
-services.Configure<JintOptions>(options => options.AllowClrAccess = true);
-services.AddHandlersFrom<Program>();
 services.AddHealthChecks();
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()));
-services.AddHttpContextAccessor();
 
 // Configure middleware pipeline.
 var app = builder.Build();

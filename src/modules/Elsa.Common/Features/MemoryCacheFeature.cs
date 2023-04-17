@@ -4,11 +4,19 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Common.Features;
 
+/// <summary>
+/// Configures the MemoryCache.
+/// </summary>
 public class MemoryCacheFeature : FeatureBase
 {
+    /// <inheritdoc />
     public MemoryCacheFeature(IModule module) : base(module)
     {
     }
 
-    public override void Configure() => Services.AddMemoryCache();
+    /// <inheritdoc />
+    public override void Apply()
+    {
+        Services.AddMemoryCache();
+    }
 }

@@ -1,5 +1,7 @@
+using Elsa.WorkflowContexts;
 using Elsa.WorkflowContexts.Contracts;
 using Elsa.Workflows.Core.Contracts;
+using JetBrains.Annotations;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
@@ -7,7 +9,8 @@ namespace Elsa.Extensions;
 /// <summary>
 /// Adds extension methods to <see cref="IWorkflowBuilder"/>.
 /// </summary>
-public static class WorkflowExtensions
+[PublicAPI]
+public static class WorkflowBuilderExtensions
 {
     /// <summary>
     /// Installs the specified workflow context provider type into the specified workflow.
@@ -26,7 +29,7 @@ public static class WorkflowExtensions
     /// <param name="providerType">The type of the provider to add.</param>
     public static IWorkflowBuilder AddWorkflowContextProvider(this IWorkflowBuilder workflow, Type providerType)
     {
-        var providerTypes = workflow.CustomProperties.GetOrAdd("Elsa:WorkflowContexts", () => new List<Type>())!;
+        var providerTypes = workflow.CustomProperties.GetOrAdd(Constants.WorkflowContextProviderTypesKey, () => new List<Type>())!;
         providerTypes.Add(providerType);
         return workflow;
     }

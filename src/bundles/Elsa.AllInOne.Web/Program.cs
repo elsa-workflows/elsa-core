@@ -43,7 +43,6 @@ services
     );
 
 services.AddHealthChecks();
-services.AddHttpContextAccessor();
 services.AddSingleton<IAuthorizationHandler, LocalHostRequirementHandler>();
 services.AddAuthorization(options => options.AddPolicy(IdentityPolicyNames.SecurityRoot, policy => policy.AddRequirements(new LocalHostRequirement())));
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()));

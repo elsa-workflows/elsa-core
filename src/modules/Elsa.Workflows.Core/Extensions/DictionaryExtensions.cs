@@ -5,10 +5,10 @@ namespace Elsa.Extensions;
 
 public static class DictionaryExtensions
 {
-    public static bool TryGetValue<T>(this IDictionary<string, object> dictionary, string key, out T? value) => dictionary.TryGetValue<string, T>(key, out value);
-    public static bool TryGetValue<T>(this IDictionary<object, object> dictionary, string key, out T? value) => dictionary.TryGetValue<object, T>(key, out value);
+    public static bool TryGetValue<T>(this IDictionary<string, object> dictionary, string key, out T value) => dictionary.TryGetValue<string, T>(key, out value);
+    public static bool TryGetValue<T>(this IDictionary<object, object> dictionary, string key, out T value) => dictionary.TryGetValue<object, T>(key, out value);
 
-    public static bool TryGetValue<TKey, T>(this IDictionary<TKey, object> dictionary, TKey key, out T? value)
+    public static bool TryGetValue<TKey, T>(this IDictionary<TKey, object> dictionary, TKey key, out T value)
     {
         if (!dictionary.TryGetValue(key, out var item))
         {

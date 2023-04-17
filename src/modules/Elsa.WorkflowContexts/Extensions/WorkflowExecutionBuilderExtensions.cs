@@ -6,6 +6,9 @@ using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
 
+/// <summary>
+/// Extension methods for <see cref="IWorkflowExecutionPipelineBuilder"/>.
+/// </summary>
 public static class WorkflowExecutionBuilderExtensions
 {
     /// <summary>

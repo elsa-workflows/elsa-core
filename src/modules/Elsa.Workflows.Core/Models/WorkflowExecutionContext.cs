@@ -59,7 +59,7 @@ public class WorkflowExecutionContext : IExecutionContext
         _nodes = nodes.ToList();
         _activityExecutionContexts = activityExecutionContexts?.ToList() ?? new List<ActivityExecutionContext>();
         Scheduler = scheduler;
-        Input = input ?? new Dictionary<string, object>();
+        Input = input != null ? new Dictionary<string, object>(input, StringComparer.OrdinalIgnoreCase) : new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
         ExecuteDelegate = executeDelegate;
         TriggerActivityId = triggerActivityId;
         CancellationToken = cancellationToken;
@@ -114,7 +114,7 @@ public class WorkflowExecutionContext : IExecutionContext
     /// A map between activity IDs and <see cref="ActivityNode"/>s in the workflow graph.
     /// </summary>
     public IDictionary<string, ActivityNode> NodeIdLookup { get; }
-    
+
     /// <summary>
     /// A map between hashed activity node IDs and <see cref="ActivityNode"/>s in the workflow graph.
     /// </summary>
@@ -276,7 +276,7 @@ public class WorkflowExecutionContext : IExecutionContext
     /// Returns the <see cref="ActivityNode"/> with the specified activity ID from the workflow graph.
     /// </summary>
     public ActivityNode FindNodeById(string nodeId) => NodeIdLookup[nodeId];
-    
+
     /// <summary>
     /// Returns the <see cref="ActivityNode"/> with the specified hash of the activity node ID from the workflow graph.
     /// </summary>
@@ -298,7 +298,7 @@ public class WorkflowExecutionContext : IExecutionContext
     /// Returns the <see cref="IActivity"/> with the specified ID from the workflow graph.
     /// </summary>
     public IActivity FindActivityByActivityId(string activityId) => FindNodeById(NodeIdLookup.Single(n => n.Key.Contains(activityId)).Value.NodeId).Activity;
-    
+
     /// <summary>
     /// Returns the <see cref="IActivity"/> with the specified hash of the activity node ID from the workflow graph.
     /// </summary>
@@ -393,7 +393,7 @@ public class WorkflowExecutionContext : IExecutionContext
     {
         var activityExecutionContext = ActivityExecutionContexts.FirstOrDefault(x => x.Activity == activity);
 
-        if (activityExecutionContext != null) 
+        if (activityExecutionContext != null)
             await activityExecutionContext.CancelActivityAsync();
     }
 

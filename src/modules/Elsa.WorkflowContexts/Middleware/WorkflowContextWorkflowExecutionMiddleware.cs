@@ -23,38 +23,38 @@ public class WorkflowContextWorkflowExecutionMiddleware : WorkflowExecutionMiddl
     /// <inheritdoc />
     public override async ValueTask InvokeAsync(WorkflowExecutionContext context)
     {
-        // Check if the workflow contains any workflow contexts.
-        if (!context.Workflow.CustomProperties!.TryGetValue<ICollection<WorkflowContext>>("Elsa:WorkflowContexts", out var workflowContexts))
+        // Check if the workflow contains any workflow context providers.
+        if (!context.Workflow.CustomProperties!.TryGetValue<ICollection<Type>>(Constants.WorkflowContextProviderTypesKey, out var providerTypes))
         {
             await Next(context);
             return;
         }
 
-        // For each workflow context, invoke its provider.
+        // Invoke each workflow context provider.
         using (var scope = _serviceScopeFactory.CreateScope())
         {
-            foreach (var workflowContext in workflowContexts!)
+            foreach (var providerType in providerTypes)
             {
-                var provider = (IWorkflowContextProvider)ActivatorUtilities.GetServiceOrCreateInstance(scope.ServiceProvider, workflowContext.ProviderType);
+                var provider = (IWorkflowContextProvider)ActivatorUtilities.GetServiceOrCreateInstance(scope.ServiceProvider, providerType);
                 var value = await provider.LoadAsync(context);
 
                 // Store the loaded value into the workflow execution context.
-                context.SetWorkflowContext(workflowContext, value!);
+                context.SetWorkflowContext(providerType, value!);
             }
         }
 
         // Invoke the next middleware.
         await Next(context);
 
-        // For each workflow context, invoke its provider to update the context.
+        // Invoke each workflow context provider to persists the context.
         using (var scope = _serviceScopeFactory.CreateScope())
         {
-            foreach (var workflowContext in workflowContexts!)
+            foreach (var providerType in providerTypes)
             {
                 // Get the loaded value from the workflow execution context.
-                var value = context.GetWorkflowContext(workflowContext);
+                var value = context.GetWorkflowContext(providerType);
 
-                var provider = (IWorkflowContextProvider)ActivatorUtilities.GetServiceOrCreateInstance(scope.ServiceProvider, workflowContext.ProviderType);
+                var provider = (IWorkflowContextProvider)ActivatorUtilities.GetServiceOrCreateInstance(scope.ServiceProvider, providerType);
                 await provider.SaveAsync(context, value);
             }
         }
