@@ -44,6 +44,7 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
         var activityTypeName = GetActivityDetails(activityRoot, out var activityTypeVersion, out var activityDescriptor);
         var notFoundActivityTypeName = ActivityTypeNameHelper.GenerateTypeName<NotFoundActivity>();
 
+        // If the activity type is a NotFoundActivity, try to extract the original activity type name and version.
         if(activityTypeName.Equals(notFoundActivityTypeName) && activityRoot.TryGetProperty("originalActivityJson", out var originalActivityJson))
         {
             activityRoot = JsonDocument.Parse(originalActivityJson.GetString()!).RootElement;
@@ -54,6 +55,7 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
         newOptions.Converters.Add(new InputJsonConverterFactory(_serviceProvider));
         newOptions.Converters.Add(new OutputJsonConverterFactory(_serviceProvider));
 
+        // If the activity type is not found, create a NotFoundActivity instead.
         if (activityDescriptor == null)
         {
             var notFoundContext = new ActivityConstructorContext(activityRoot, newOptions);
@@ -221,10 +223,17 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
             throw new JsonException("Failed to extract activity type property");
 
         var activityTypeName = activityTypeNameElement.GetString()!;
-        
-        activityTypeVersion = activityRoot.TryGetProperty("version", out var activityVersionElement) ? activityVersionElement.GetInt32() : 1;
-        activityDescriptor = _activityRegistry.Find(activityTypeName, activityTypeVersion);
-        activityDescriptor ??= _activityRegistry.Find(activityTypeName);
+
+        if (activityRoot.TryGetProperty("version", out var activityVersionElement))
+        {
+            activityTypeVersion = activityVersionElement.GetInt32();
+            activityDescriptor = _activityRegistry.Find(activityTypeName, activityTypeVersion);
+        }
+        else
+        {
+            activityDescriptor = _activityRegistry.Find(activityTypeName);
+            activityTypeVersion = activityDescriptor?.Version ?? 0;
+        }
         
         return activityTypeName;
     }
