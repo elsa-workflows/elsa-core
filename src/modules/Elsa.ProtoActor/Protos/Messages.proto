@@ -76,32 +76,6 @@ message BookmarkDto {
   optional string CallbackMethodName = 8;
 }
 
-// BookmarkGrain.
-message StoreBookmarksRequest {
-  string WorkflowInstanceId = 1;
-  string CorrelationId = 2;
-  repeated string BookmarkIds = 3;
-}
-
-message RemoveBookmarksByWorkflowRequest {
-  string WorkflowInstanceId = 1;
-}
-
-message ResolveBookmarksRequest {
-  string ActivityTypeName = 1;
-  string CorrelationId = 2;
-}
-
-message ResolveBookmarksResponse {
-  repeated StoredBookmark Bookmarks = 1;
-}
-
-message StoredBookmark {
-  string WorkflowInstanceId = 1;
-  string CorrelationId = 2;
-  string BookmarkId = 3;
-}
-
 // RunningWorkflowsGrain.
 message RegisterRunningWorkflowRequest {
   string DefinitionId = 1;

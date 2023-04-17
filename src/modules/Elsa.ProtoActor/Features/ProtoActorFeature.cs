@@ -95,7 +95,6 @@ public class ProtoActorFeature : FeatureBase
             var clusterProvider = ClusterProvider(sp);
             var system = new ActorSystem(systemConfig).WithServiceProvider(sp);
             var workflowGrainProps = system.DI().PropsFor<WorkflowGrainActor>();
-            var bookmarkGrainProps = system.DI().PropsFor<BookmarkGrainActor>();
             var workflowRegistryGrainProps = system.DI().PropsFor<RunningWorkflowsGrainActor>();
             
             var clusterConfig = ClusterConfig
@@ -105,7 +104,6 @@ public class ProtoActorFeature : FeatureBase
                     .WithActorActivationTimeout(TimeSpan.FromHours(1))
                     .WithActorSpawnVerificationTimeout(TimeSpan.FromHours(1))
                     .WithClusterKind(WorkflowGrainActor.Kind, workflowGrainProps)
-                    .WithClusterKind(BookmarkGrainActor.Kind, bookmarkGrainProps)
                     .WithClusterKind(RunningWorkflowsGrainActor.Kind, workflowRegistryGrainProps)
                 ;
 
@@ -136,7 +134,6 @@ public class ProtoActorFeature : FeatureBase
         // Actors.
         services
             .AddTransient(sp => new WorkflowGrainActor((context, _) => ActivatorUtilities.CreateInstance<WorkflowGrain>(sp, context)))
-            .AddTransient(sp => new BookmarkGrainActor((context, _) => ActivatorUtilities.CreateInstance<BookmarkGrain>(sp, context)))
             .AddTransient(sp => new RunningWorkflowsGrainActor((context, _) => ActivatorUtilities.CreateInstance<RunningWorkflowsGrain>(sp, context)))
             ;
     }
