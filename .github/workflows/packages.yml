@@ -27,11 +27,11 @@ jobs:
           npm install --force
           npm run build
       - name: Build
-        run: dotnet build --configuration Release /p:Version=${VERSION}
+        run: dotnet build --configuration Release /p:InformationalVersion=${VERSION}
       - name: Test
-        run: dotnet test --configuration Release /p:Version=${VERSION} --no-build
+        run: dotnet test --configuration Release /p:InformationalVersion=${VERSION} --no-build
       - name: Pack
-        run: dotnet pack --configuration Release /p:Version=${VERSION} /p:PackageOutputPath=$(pwd)/packages
+        run: dotnet pack --configuration Release /p:InformationalVersion=${VERSION} /p:PackageOutputPath=$(pwd)/packages
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
