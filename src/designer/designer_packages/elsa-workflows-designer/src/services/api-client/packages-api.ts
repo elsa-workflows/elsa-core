@@ -1,5 +1,6 @@
 import {Service} from "typedi";
 import {ElsaClientProvider} from "./elsa-client";
+import { PackageVersion } from "../../models";
 
 @Service()
 export class PackagesApi {
@@ -9,9 +10,9 @@ export class PackagesApi {
     this.provider = provider;
   }
 
-  async getVersion(): Promise<string> {
+  async getVersion(): Promise<PackageVersion> {
     const httpClient = await this.getHttpClient();
-    const response = await httpClient.get<string>(`package/version`);
+    const response = await httpClient.get<PackageVersion>(`package/version`);
     return response.data;
   }
 
