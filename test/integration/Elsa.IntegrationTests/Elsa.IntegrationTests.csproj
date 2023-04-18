@@ -29,9 +29,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="Scenarios\ImportAndExecute\workflow.json">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
       <None Update="Serialization\Polymorphism\data.json">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
@@ -45,6 +42,12 @@
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
       <None Update="Scenarios\FlowchartCompletion\Workflows\workflow4.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Scenarios\ImportAndExecute\Workflows\implicit-loop.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Scenarios\ImportAndExecute\Workflows\writeline.json">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
     </ItemGroup>

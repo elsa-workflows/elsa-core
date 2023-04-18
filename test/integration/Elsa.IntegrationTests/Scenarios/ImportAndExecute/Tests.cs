@@ -19,14 +19,15 @@ public class Tests
             .Build();
     }
 
-    [Fact(DisplayName = "Workflow imported from file should execute successfully.")]
-    public async Task Test1()
+    [Theory(DisplayName = "Workflow imported from file should execute successfully.")]
+    [MemberData(nameof(GetSpecimen))]
+    public async Task Test1(string workflowFileName, string[] expectedOutput)
     {
         // Populate registries.
         await _services.PopulateRegistriesAsync();
 
         // Import workflow.
-        var workflowDefinition = await _services.ImportWorkflowDefinitionAsync(@"Scenarios/ImportAndExecute/workflow.json");
+        var workflowDefinition = await _services.ImportWorkflowDefinitionAsync($"Scenarios/ImportAndExecute/Workflows/{workflowFileName}");
 
         // Execute.
         await _services.RunWorkflowUntilEndAsync(workflowDefinition.DefinitionId);
@@ -34,6 +35,15 @@ public class Tests
         // Assert.
         var lines = _capturingTextWriter.Lines.ToList();
 
-        Assert.Equal(new[] { "Dummy Text" }, lines);
+        Assert.Equal(expectedOutput, lines);
+    }
+    
+    public static TheoryData GetSpecimen()
+    {
+        return new TheoryData<string, string[]>
+        {
+            { "writeline.json", new[] { "Dummy Text" } },
+            { "implicit-loop.json", new[] { "Do something", "Retry", "Do something", "Done" } }
+        };
     }
 }

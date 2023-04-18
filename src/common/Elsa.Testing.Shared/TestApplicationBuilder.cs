@@ -35,7 +35,8 @@ public class TestApplicationBuilder
         _configureElsa += elsa => elsa
             .AddActivitiesFrom<WriteLine>()
             .UseScheduling()
-            .UseExpressions()
+            .UseJavaScript()
+            .UseLiquid()
             .UseWorkflows(workflows => workflows
                 .WithStandardOutStreamProvider(_ => new StandardOutStreamProvider(new XunitConsoleTextWriter(_testOutputHelper)))
             );
