@@ -55,6 +55,7 @@ public class JsonWorkflowStateSerializer : IWorkflowStateSerializer
         options.Converters.Add(new JsonStringEnumConverter());
         options.Converters.Add(new TypeJsonConverter(_wellKnownTypeRegistry));
         options.Converters.Add(JsonMetadataServices.TimeSpanConverter);
+        options.Converters.Add(new PolymorphicObjectConverterFactory());
         return options;
     }
 }

@@ -17,6 +17,9 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\bundles\Elsa\Elsa.csproj" />
+      <ProjectReference Include="..\..\modules\Elsa.JavaScript\Elsa.JavaScript.csproj" />
+      <ProjectReference Include="..\..\modules\Elsa.Liquid\Elsa.Liquid.csproj" />
+      <ProjectReference Include="..\..\modules\Elsa.Scheduling\Elsa.Scheduling.csproj" />
     </ItemGroup>
 
 </Project>

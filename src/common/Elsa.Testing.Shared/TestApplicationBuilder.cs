@@ -1,5 +1,6 @@
 using Elsa.Extensions;
 using Elsa.Features.Services;
+using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -32,6 +33,10 @@ public class TestApplicationBuilder
             .AddLogging(logging => logging.AddProvider(new XunitLoggerProvider(testOutputHelper)).SetMinimumLevel(LogLevel.Debug));
         
         _configureElsa += elsa => elsa
+            .AddActivitiesFrom<WriteLine>()
+            .UseScheduling()
+            .UseJavaScript()
+            .UseLiquid()
             .UseWorkflows(workflows => workflows
                 .WithStandardOutStreamProvider(_ => new StandardOutStreamProvider(new XunitConsoleTextWriter(_testOutputHelper)))
             );
