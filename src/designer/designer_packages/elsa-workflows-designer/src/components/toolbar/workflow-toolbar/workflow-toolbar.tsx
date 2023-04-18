@@ -5,6 +5,7 @@ import {EventBus} from '../../../services';
 import toolbarComponentStore from "../../../data/toolbar-component-store";
 import notificationService from '../../../modules/notifications/notification-service';
 import notificationStore from "../../../modules/notifications/notification-store";
+import {PackagesApi} from "../../../services/api-client/packages-api";
 
 @Component({
   tag: 'elsa-workflow-toolbar',
@@ -12,11 +13,19 @@ import notificationStore from "../../../modules/notifications/notification-store
 })
 export class WorkflowToolbar {
   private readonly eventBus: EventBus;
+  private readonly packagesApi: PackagesApi;
+
+  private currentElsaVersion: string;
 
   static NotificationService = notificationService;
 
   constructor() {
     this.eventBus = Container.get(EventBus);
+    this.packagesApi = Container.get(PackagesApi);
+  }
+
+  async componentWillLoad() {
+    return this.currentElsaVersion = await this.packagesApi.getVersion();
   }
 
   onNotificationClick = async e => {
@@ -28,7 +37,7 @@ export class WorkflowToolbar {
   render() {
     const logoPath = getAssetPath('./assets/logo.png');
     const infoPanelBoolean = notificationStore.infoPanelBoolean;
-
+    
     return (
       <div>
         <nav class="bg-gray-800">
@@ -41,7 +50,7 @@ export class WorkflowToolbar {
                     <a href="#"><img class="h-6 w-6" src={logoPath} alt="Workflow"/></a>
                   </div>
                   <div>
-                    <span class="text-gray-300 text-sm">elsa 3.0.0</span>
+                    <span class="text-gray-300 text-sm">{this.currentElsaVersion}</span>
                   </div>
                 </div>
               </div>
