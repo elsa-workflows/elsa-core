@@ -1,21 +1,22 @@
 using System.Reflection;
-using Elsa.Abstractions;
 using FastEndpoints;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.Package;
 
-/// <inheritdoc />
-public class GetVersion : Endpoint<Request, Response>
+/// <summary>
+/// Returns the package informational version.
+/// </summary>
+[PublicAPI]
+internal class Version : EndpointWithoutRequest<Response>
 {
-    /// <inheritdoc />
     public override void Configure()
     {
         Get("/package/version");
+        AllowAnonymous();
     }
-
-    /// <inheritdoc />
-    public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
+    
+    public override async Task HandleAsync(CancellationToken cancellationToken)
     {
         var assembly = Assembly.GetExecutingAssembly();
         var versionAttribute = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
