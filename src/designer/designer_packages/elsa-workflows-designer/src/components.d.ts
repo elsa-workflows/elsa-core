@@ -243,7 +243,10 @@ export namespace Components {
     }
     interface ElsaTooltip {
         "tooltipContent": any;
-        "tooltipPosition"?: string;
+        /**
+          * Specifying `auto` will default to `bottom`, but will reposition to `top` if the tooltip height runs offscreen
+         */
+        "tooltipPosition"?: 'right' | 'left' | 'top' | 'bottom' | 'auto';
     }
     interface ElsaTypePickerInput {
         "inputContext": ActivityInputContext;
@@ -1150,7 +1153,10 @@ declare namespace LocalJSX {
     }
     interface ElsaTooltip {
         "tooltipContent"?: any;
-        "tooltipPosition"?: string;
+        /**
+          * Specifying `auto` will default to `bottom`, but will reposition to `top` if the tooltip height runs offscreen
+         */
+        "tooltipPosition"?: 'right' | 'left' | 'top' | 'bottom' | 'auto';
     }
     interface ElsaTypePickerInput {
         "inputContext"?: ActivityInputContext;
