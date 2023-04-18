@@ -79,3 +79,7 @@ export interface WorkflowActivationStrategyDescriptor {
   description: string;
   typeName: string;
 }
+
+export interface PackageVersion {
+  packageVersion: string;
+}

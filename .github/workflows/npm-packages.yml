@@ -166,6 +166,7 @@ jobs:
     name: Update Version in Elsa.Workflows.Designer backend module
     needs: publish_npm_preview
     runs-on: ubuntu-latest
+    if: ${{ github.ref == 'refs/heads/v3' }}
     steps:
       - name: Install jq
         run: sudo apt-get install jq
