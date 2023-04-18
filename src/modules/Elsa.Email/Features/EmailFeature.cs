@@ -1,6 +1,7 @@
 using Elsa.Email.Contracts;
 using Elsa.Email.Options;
 using Elsa.Email.Services;
+using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,10 +29,17 @@ public class EmailFeature : FeatureBase
     public Action<IServiceProvider, HttpClient> ConfigureDownloaderHttpClient { get; set; } = (_, _) => { };
 
     /// <inheritdoc />
+    public override void Configure()
+    {
+        Module.AddActivitiesFrom<EmailFeature>();
+    }
+
+    /// <inheritdoc />
     public override void Apply()
     {
-        Services.Configure(ConfigureOptions);
-        Services.AddSingleton<ISmtpService, MailKitSmtpService>();
-        Services.AddHttpClient<IDownloader, DefaultDownloader>(ConfigureDownloaderHttpClient);
+        Services
+            .Configure(ConfigureOptions)
+            .AddSingleton<ISmtpService, MailKitSmtpService>()
+            .AddHttpClient<IDownloader, DefaultDownloader>(ConfigureDownloaderHttpClient);
     }
 }

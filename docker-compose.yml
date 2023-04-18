@@ -85,6 +85,12 @@ services:
       - "5601:5601"
     depends_on:
       - elasticsearch
+        
+  smtp4dev:
+    image: rnwood/smtp4dev:3.1.3-ci20211206101
+    ports:
+      - "3000:80"
+      - "2525:25"
 
 networks:
   consul:

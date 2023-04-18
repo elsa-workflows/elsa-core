@@ -10,6 +10,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\bundles\Elsa\Elsa.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.Email\Elsa.Email.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Hangfire\Elsa.Hangfire.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Http\Elsa.Http.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Identity\Elsa.Identity.csproj" />
