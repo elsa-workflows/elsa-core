@@ -32,7 +32,7 @@ namespace Elsa.Activities.Sql.Activities
         [ActivityInput(
             UIHint = ActivityInputUIHints.Dropdown,
             Hint = "Allowed databases to run SQL.",
-            Options = typeof(ExecuteSqlCommand),
+            OptionsProvider = typeof(ExecuteSqlCommand),
             DefaultSyntax = SyntaxNames.Literal,
             SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
