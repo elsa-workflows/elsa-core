@@ -8,7 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 
 services
-    .AddMediatR(typeof(DependencyInjectionExtensions))
+    .AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(DependencyInjectionExtensions).Assembly))
     .AddSingleton<IBackgroundEventPublisher, BackgroundEventPublisher>()
     .AddHostedService<BackgroundEventPublisherHostedService>()
     .CreateChannel<INotification>();

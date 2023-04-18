@@ -24,6 +24,15 @@ namespace Elsa.Activities.Workflows
                     var workflow = (await workflowRegistry.GetWorkflowAsync<T>())!;
                     return workflow.Id;
                 });
+
+        public static ISetupActivity<RunWorkflow> WithNamedWorkflow(this ISetupActivity<RunWorkflow> activity, string name) =>
+            activity.WithWorkflow(
+                async context => 
+                {
+                    var workflowRegistry = context.GetService<IWorkflowRegistry>();
+                    return (await workflowRegistry.FindByNameAsync(name, VersionOptions.Published).ConfigureAwait(continueOnCapturedContext: false))?.Id
+                        ?? throw new ArgumentOutOfRangeException(nameof(name));
+                });
         
         public static ISetupActivity<RunWorkflow> WithInput(this ISetupActivity<RunWorkflow> activity, Func<ActivityExecutionContext, ValueTask<object?>> value) => activity.Set(x => x.Input, value);
         public static ISetupActivity<RunWorkflow> WithInput(this ISetupActivity<RunWorkflow> activity, Func<ActivityExecutionContext, object?> value) => activity.Set(x => x.Input, value);

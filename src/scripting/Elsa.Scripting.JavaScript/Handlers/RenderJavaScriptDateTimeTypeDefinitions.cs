@@ -41,7 +41,7 @@ namespace Elsa.Scripting.JavaScript.Handlers
             output.AppendLine("declare function jsonDecode(value: string): any;");
             output.AppendLine("declare function base64Encode(value: string): string;");
             output.AppendLine("declare function base64Decode(value: string): string;");
-            
+            output.AppendLine("declare function addJournal(name: string, value?: any): void;");
             return Task.CompletedTask;
         }
     }

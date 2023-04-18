@@ -14,7 +14,9 @@ namespace Elsa.Activities.Kafka.Configuration
 
         public Dictionary<string, string> Headers { get; }
 
-        public KafkaConfiguration(string connectionString, string topic, string group, Dictionary<string, string> headers, string clientId, Confluent.Kafka.AutoOffsetReset autoOffsetReset = AutoOffsetReset.Earliest)
+        public bool IgnoreHeaders { get; }
+
+        public KafkaConfiguration(string connectionString, string topic, string group, Dictionary<string, string> headers, string clientId, Confluent.Kafka.AutoOffsetReset autoOffsetReset = AutoOffsetReset.Earliest, bool ignoreHeaders = false)
         {
             ConnectionString = connectionString;
             Topic = topic;
@@ -22,6 +24,7 @@ namespace Elsa.Activities.Kafka.Configuration
             Headers = headers;
             ClientId = clientId;
             AutoOffsetReset = autoOffsetReset;
+            IgnoreHeaders = ignoreHeaders;
         }
 
         public override int GetHashCode()
