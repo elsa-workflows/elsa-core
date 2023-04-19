@@ -215,9 +215,17 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         }
 
         var jsonElement = JsonDocument.Parse(JsonSerializer.Serialize(value, type, newOptions)).RootElement;
+        
+        // If the value is a string, serialize it directly.
+        if (jsonElement.ValueKind == JsonValueKind.String)
+        {
+            // Serialize the value directly.
+            JsonSerializer.Serialize(writer, jsonElement, newOptions);
+            return;
+        }
 
         writer.WriteStartObject();
-
+        
         if (jsonElement.ValueKind == JsonValueKind.Array)
         {
             writer.WritePropertyName(ItemsPropertyName);
