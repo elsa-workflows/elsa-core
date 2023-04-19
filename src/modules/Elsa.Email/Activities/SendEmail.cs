@@ -39,35 +39,53 @@ public class SendEmail : Activity
     [Input(Description = "The sender's email address.")]
     public Input<string?> From { get; set; } = default!;
 
+    /// <summary>
+    /// The recipients email addresses.
+    /// </summary>
     [Input(Description = "The recipients email addresses.", UIHint = InputUIHints.MultiText)]
-    public Input<ICollection<string>> To { get; set; } = default!;
+    public Input<object> To { get; set; } = default!;
 
+    /// <summary>
+    /// The CC recipient email addresses.
+    /// </summary>
     [Input(
-        Description = "The cc recipient email addresses.",
+        Description = "The CC recipient email addresses.",
         UIHint = InputUIHints.MultiText,
         Category = "More")]
-    public Input<ICollection<string>> Cc { get; set; } = default!;
+    public Input<object> Cc { get; set; } = default!;
 
+    /// <summary>
+    /// The BCC recipients email addresses.
+    /// </summary>
     [Input(
-        Description = "The Bcc recipients email addresses.",
+        Description = "The BCC recipients email addresses.",
         UIHint = InputUIHints.MultiText,
         Category = "More")]
-    public Input<ICollection<string>> Bcc { get; set; } = default!;
+    public Input<object> Bcc { get; set; } = default!;
 
+    /// <summary>
+    /// The subject of the email message.
+    /// </summary>
     [Input(Description = "The subject of the email message.")]
     public Input<string?> Subject { get; set; } = default!;
 
+    /// <summary>
+    /// The attachments to send with the email message.
+    /// </summary>
     [Input(
         Description = "The attachments to send with the email message. Can be (an array of) a fully-qualified file path, URL, stream, byte array or instances of EmailAttachment.",
         UIHint = InputUIHints.MultiLine
     )]
     public Input<object?> Attachments { get; set; } = default!;
 
+    /// <summary>
+    /// The body of the email message.
+    /// </summary>
     [Input(
         Description = "The body of the email message.",
         UIHint = InputUIHints.MultiLine
     )]
-    public Input<string?> Body { get; set; } = default!;
+    public Input<string> Body { get; set; } = default!;
 
     /// <summary>
     /// The activity to execute when an error occurs while trying to send the email.
@@ -75,6 +93,7 @@ public class SendEmail : Activity
     [Port]
     public IActivity? Error { get; set; }
 
+    /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var cancellationToken = context.CancellationToken;
@@ -91,9 +110,9 @@ public class SendEmail : Activity
 
         message.Body = bodyBuilder.ToMessageBody();
 
-        SetRecipientsEmailAddresses(message.To, To.Get(context));
-        SetRecipientsEmailAddresses(message.Cc, Cc.GetOrDefault(context));
-        SetRecipientsEmailAddresses(message.Bcc, Bcc.GetOrDefault(context));
+        SetRecipientsEmailAddresses(message.To, GetAddresses(context, To));
+        SetRecipientsEmailAddresses(message.Cc, GetAddresses(context, Cc));
+        SetRecipientsEmailAddresses(message.Bcc, GetAddresses(context, Bcc));
 
         var smtpService = context.GetRequiredService<ISmtpService>();
 
@@ -109,6 +128,21 @@ public class SendEmail : Activity
     }
 
     private async ValueTask OnErrorCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext) => await context.CompleteActivityAsync();
+
+    private static ICollection<string> GetAddresses(ActivityExecutionContext context, Input<object> input)
+    {
+        var addresses = input.GetOrDefault(context);
+
+        if (addresses == null)
+            return new List<string>(0);
+
+        return addresses switch
+        {
+            string s => new[] { s },
+            IEnumerable<string> e => e.ToList(),
+            _ => new[] { addresses.ToString()! }
+        };
+    }
 
     private async Task AddAttachmentsAsync(ActivityExecutionContext context, BodyBuilder bodyBuilder, CancellationToken cancellationToken)
     {
