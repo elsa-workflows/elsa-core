@@ -7,6 +7,7 @@ using Elsa.Features.Services;
 using Elsa.JavaScript.Activities;
 using Elsa.JavaScript.Contracts;
 using Elsa.JavaScript.Expressions;
+using Elsa.JavaScript.Extensions;
 using Elsa.JavaScript.Providers;
 using Elsa.JavaScript.Services;
 using Elsa.JavaScript.TypeDefinitions.Contracts;
@@ -54,9 +55,9 @@ public class JavaScriptFeature : FeatureBase
             .AddSingleton<ITypeDescriber, TypeDescriber>()
             .AddSingleton<ITypeDefinitionDocumentRenderer, TypeDefinitionDocumentRenderer>()
             .AddSingleton<ITypeAliasRegistry, TypeAliasRegistry>()
-            .AddSingleton<IFunctionDefinitionProvider, CommonFunctionsDefinitionProvider>()
-            .AddSingleton<ITypeDefinitionProvider, CommonTypeDefinitionProvider>()
-            .AddSingleton<ITypeDefinitionProvider, VariableTypeDefinitionProvider>()
+            .AddFunctionDefinitionProvider<CommonFunctionsDefinitionProvider>()
+            .AddTypeDefinitionProvider<CommonTypeDefinitionProvider>()
+            .AddTypeDefinitionProvider<VariableTypeDefinitionProvider>()
             ;
         
         // Handlers.

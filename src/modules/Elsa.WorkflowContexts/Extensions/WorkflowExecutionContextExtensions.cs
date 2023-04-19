@@ -1,6 +1,5 @@
 using Elsa.Expressions.Models;
 using Elsa.WorkflowContexts.Contracts;
-using Elsa.WorkflowContexts.Models;
 using Elsa.Workflows.Core.Models;
 using JetBrains.Annotations;
 

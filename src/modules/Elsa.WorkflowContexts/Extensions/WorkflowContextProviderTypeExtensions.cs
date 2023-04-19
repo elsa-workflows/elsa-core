@@ -17,8 +17,25 @@ public static class WorkflowContextProviderTypeExtensions
     /// <returns>The scoped parameter name.</returns>
     public static string GetScopedParameterName(this Type providerType, string? parameterName = default)
     {
-        var providerName = providerType.Name.Replace("WorkflowContextProvider", "");
+        var providerName = GetProviderName(providerType);
         var scopedParameterName = $"{providerName}{(string.IsNullOrEmpty(parameterName) ? string.Empty : $":{parameterName}")}";
         return scopedParameterName;
     }
+    
+    /// <summary>
+    /// Gets the provider name for the specified provider type.
+    /// </summary>
+    /// <param name="providerType">The provider type.</param>
+    /// <returns>The provider name.</returns>
+    public static string GetProviderName(this Type providerType)
+    {
+        return providerType.Name.Replace("WorkflowContextProvider", "");
+    }
+
+    /// <summary>
+    /// Gets the workflow context type for the specified provider type.
+    /// </summary>
+    /// <param name="providerType">The provider type.</param>
+    /// <returns>The workflow context type.</returns>
+    public static Type GetWorkflowContextType(this Type providerType) => providerType.BaseType!.GenericTypeArguments[0];
 }

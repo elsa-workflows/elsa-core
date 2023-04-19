@@ -16,6 +16,6 @@ public static class TypeAliasRegistryExtensions
     /// <summary>
     /// Returns the alias for the specified type. If no alias was found, the assembly qualified type name is returned instead.  
     /// </summary>
-    public static string GetAliasOrDefault(this ITypeAliasRegistry registry, Type type) =>
-        registry.TryGetAlias(type, out var alias) ? alias : type.GetSimpleAssemblyQualifiedName();
+    public static string GetAliasOrDefault(this ITypeAliasRegistry registry, Type type, string? defaultName = default) =>
+        registry.TryGetAlias(type, out var alias) ? alias : defaultName ?? type.GetSimpleAssemblyQualifiedName();
 }
