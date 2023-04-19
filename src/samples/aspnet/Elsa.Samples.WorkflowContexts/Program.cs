@@ -58,6 +58,7 @@ services
             // Install a workflow state exporter to capture workflow states and store them in IWorkflowInstanceStore.
             runtime.UseAsyncWorkflowStateExporter();
         })
+        .UseWorkflowContexts()
         .UseScheduling()
         .UseWorkflowsApi(api => api.AddFastEndpointsAssembly<Program>())
         .UseJavaScript()

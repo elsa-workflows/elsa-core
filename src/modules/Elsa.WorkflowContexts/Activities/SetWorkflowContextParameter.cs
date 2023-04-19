@@ -9,6 +9,7 @@ namespace Elsa.WorkflowContexts.Activities;
 /// <summary>
 /// Sets a workflow context parameter for a given workflow context provider.
 /// </summary>
+[Activity("Elsa", "Primitives", "Sets a workflow context parameter for a given workflow context provider.")]
 public class SetWorkflowContextParameter : CodeActivity
 {
     /// <inheritdoc />
@@ -29,7 +30,7 @@ public class SetWorkflowContextParameter : CodeActivity
     /// <summary>
     /// The name of the parameter to set. If not specified, the parameter name will be inferred from the workflow context provider.
     /// </summary>
-    [Input(Description = "The name of the parameter to set. If not specified, the parameter name will be inferred from the workflow context provider.")]
+    [Input(Description = "Optional. The name of the parameter to set. If not specified, the parameter name will be inferred from the workflow context provider.")]
     public Input<string?> ParameterName { get; set; } = default!;
 
     /// <summary>
@@ -42,9 +43,10 @@ public class SetWorkflowContextParameter : CodeActivity
     protected override void Execute(ActivityExecutionContext context)
     {
         var providerType = ProviderType.Get(context);
-        var parameterName = ParameterName.GetOrDefault(context) ?? providerType.Name.Replace("WorkflowContextProvider", "");
+        var parameterName = ParameterName.GetOrDefault(context);
+        var scopedParameterName = providerType.GetScopedParameterName(parameterName);
         var parameterValue = ParameterValue.Get(context);
 
-        context.WorkflowExecutionContext.SetProperty(parameterName, parameterValue);
+        context.WorkflowExecutionContext.SetProperty(scopedParameterName, parameterValue);
     }
 }
