@@ -41,8 +41,6 @@ export class WorkflowContextsPlugin implements Plugin {
     // Need to do this post-sign in, this is a secure API call.
     const installedFeatures = descriptorsStore.installedFeatures;
 
-    debugger;
-
     if(!installedFeatures.find(x => x.name == 'WorkflowContextsFeature'))
       return;
 
