@@ -157,7 +157,7 @@ export class ActivityPropertiesEditor {
       // propertyDescriptor: inputDescriptor
     });
 
-    const renderInputPropertyContexts: Array<RenderActivityInputContext> = activityDescriptor.inputs.map(inputDescriptor => {
+    return activityDescriptor.inputs.map(inputDescriptor => {
       const renderInputContext: ActivityInputContext = {
         activity: activity,
         activityDescriptor: activityDescriptor,
@@ -181,8 +181,6 @@ export class ActivityPropertiesEditor {
         inputControl: control,
       }
     });
-
-    return renderInputPropertyContexts;
   };
 
   private findActivityDescriptor = (): ActivityDescriptor => !!this.activity ? descriptorsStore.activityDescriptors.find(x => x.typeName == this.activity.type && x.version == this.activity.version) : null;

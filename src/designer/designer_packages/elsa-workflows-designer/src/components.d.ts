@@ -284,6 +284,7 @@ export namespace Components {
     interface ElsaWorkflowContextProviderTypePickerInput {
         "descriptors": Array<WorkflowContextProviderDescriptor>;
         "inputContext": ActivityInputContext;
+        "workflowDefinition": WorkflowDefinition;
     }
     interface ElsaWorkflowDefinitionActivityVersionSettings {
         "renderContext": RenderActivityPropsContext;
@@ -1240,6 +1241,7 @@ declare namespace LocalJSX {
     interface ElsaWorkflowContextProviderTypePickerInput {
         "descriptors"?: Array<WorkflowContextProviderDescriptor>;
         "inputContext"?: ActivityInputContext;
+        "workflowDefinition"?: WorkflowDefinition;
     }
     interface ElsaWorkflowDefinitionActivityVersionSettings {
         "renderContext"?: RenderActivityPropsContext;

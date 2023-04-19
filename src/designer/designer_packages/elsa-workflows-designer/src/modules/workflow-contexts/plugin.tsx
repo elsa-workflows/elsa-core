@@ -14,7 +14,6 @@ export class WorkflowContextsPlugin implements Plugin {
 
   constructor() {
     this.apiClient = Container.get(WorkflowContextsApi);
-    this.setupCustomInputControls();
     this.setupCustomPropertyEditors();
     this.setupSignIn();
   }
@@ -41,6 +40,7 @@ export class WorkflowContextsPlugin implements Plugin {
   private onSignedIn = async () => {
     // Need to do this post-sign in, this is a secure API call.
     this.providerDescriptors = await this.apiClient.list();
+    this.setupCustomInputControls();
   };
 
   private setupCustomPropertyEditors() {

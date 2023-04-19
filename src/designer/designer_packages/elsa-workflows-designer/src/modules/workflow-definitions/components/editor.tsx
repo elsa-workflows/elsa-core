@@ -11,14 +11,13 @@ import {
 } from '../../../models';
 import {ActivityDriverRegistry, ActivityNameFormatter, EventBus, PluginRegistry, PortProviderRegistry} from '../../../services';
 import {MonacoEditorSettings} from "../../../services/monaco-editor-settings";
-import {ActivityPropertyChangedEventArgs, WorkflowDefinitionPropsUpdatedArgs, WorkflowDefinitionUpdatedArgs, ActivityUpdatedArgs, WorkflowEditorEventTypes} from "../models/ui";
+import {WorkflowDefinitionPropsUpdatedArgs, WorkflowDefinitionUpdatedArgs, ActivityUpdatedArgs, WorkflowEditorEventTypes} from "../models/ui";
 import {WorkflowDefinition} from "../models/entities";
 import {WorkflowDefinitionsApi} from "../services/api"
 import WorkflowDefinitionTunnel, {WorkflowDefinitionState} from "../state";
 import {LayoutDirection, UpdateActivityArgs} from "../../flowchart/models";
 import {cloneDeep} from '@antv/x6/lib/util/object/object';
 import {removeGuidsFromPortNames} from '../../../utils/graph';
-import {constrainTimeouts} from "@stencil/core/mock-doc";
 import { WorkflowPropertiesEditorTabs } from '../models/props-editor-tabs';
 
 @Component({

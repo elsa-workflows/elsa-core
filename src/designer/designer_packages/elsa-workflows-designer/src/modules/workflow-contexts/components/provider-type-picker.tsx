@@ -4,6 +4,9 @@ import {ActivityInputContext} from "../../../services/activity-input-driver";
 import {getInputPropertyValue} from "../../../utils";
 import {ExpressionChangedArs} from "../../../components/shared/input-control-switch/input-control-switch";
 import {WorkflowContextProviderDescriptor} from "../services/api";
+import WorkflowDefinitionTunnel, {WorkflowDefinitionState} from "../../workflow-definitions/state";
+import {WorkflowDefinition} from "../../workflow-definitions/models/entities";
+import {WorkflowContextProviderTypesKey} from "../constants";
 
 @Component({
   tag: 'elsa-workflow-context-provider-type-picker-input',
@@ -12,6 +15,7 @@ import {WorkflowContextProviderDescriptor} from "../services/api";
 export class ProviderTypePicker {
   @Prop() public inputContext: ActivityInputContext;
   @Prop() descriptors: Array<WorkflowContextProviderDescriptor> = [];
+  @Prop() workflowDefinition: WorkflowDefinition;
 
   public render() {
     const inputContext = this.inputContext;
@@ -20,7 +24,9 @@ export class ProviderTypePicker {
     const fieldId = inputDescriptor.name;
     const displayName = inputDescriptor.displayName;
     const description = inputDescriptor.description;
-    const availableProviders: Array<WorkflowContextProviderDescriptor> = this.descriptors;
+    const allProviders: Array<WorkflowContextProviderDescriptor> = this.descriptors;
+    const activatedProviders: Array<string> = this.workflowDefinition?.customProperties[WorkflowContextProviderTypesKey] ?? [];
+    const availableProviders = allProviders.filter(x => activatedProviders.includes(x.type));
     const input = getInputPropertyValue(inputContext);
     const syntax = input?.expression?.type ?? inputDescriptor.defaultSyntax;
     const value = (input?.expression as LiteralExpression)?.value;
@@ -50,3 +56,4 @@ export class ProviderTypePicker {
     this.inputContext.inputChanged(e.detail.expression, e.detail.syntax);
   }
 }
+WorkflowDefinitionTunnel.injectProps(ProviderTypePicker, ['workflowDefinition']);

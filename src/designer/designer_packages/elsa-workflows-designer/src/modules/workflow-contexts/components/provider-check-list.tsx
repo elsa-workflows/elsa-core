@@ -3,8 +3,7 @@ import {FormEntry} from "../../../components/shared/forms/form-entry";
 import {SelectList, Type} from "../../../models";
 import {WorkflowContextProviderDescriptor} from "../services/api";
 import {WorkflowDefinition} from "../../workflow-definitions/models/entities";
-
-const WorkflowContextProviderTypesKey = 'Elsa:WorkflowContextProviderTypes';
+import {WorkflowContextProviderTypesKey} from "../constants";
 
 @Component({
   tag: 'elsa-workflow-context-provider-check-list',
