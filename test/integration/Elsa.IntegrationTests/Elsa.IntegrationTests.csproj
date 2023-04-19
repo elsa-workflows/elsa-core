@@ -23,15 +23,31 @@
     <ItemGroup>
       <ProjectReference Include="..\..\..\src\common\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj" />
       <ProjectReference Include="..\..\..\src\modules\Elsa.JavaScript\Elsa.JavaScript.csproj" />
+      <ProjectReference Include="..\..\..\src\modules\Elsa.Scheduling\Elsa.Scheduling.csproj" />
       <ProjectReference Include="..\..\..\src\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj" />
       <ProjectReference Include="..\..\..\src\modules\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="Scenarios\ImportAndExecute\workflow.json">
+      <None Update="Serialization\Polymorphism\data.json">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
-      <None Update="Serialization\Polymorphism\data.json">
+      <None Update="Scenarios\FlowchartCompletion\Workflows\workflow1.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Scenarios\FlowchartCompletion\Workflows\workflow2.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Scenarios\FlowchartCompletion\Workflows\workflow3.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Scenarios\FlowchartCompletion\Workflows\workflow4.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Scenarios\ImportAndExecute\Workflows\implicit-loop.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Scenarios\ImportAndExecute\Workflows\writeline.json">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
     </ItemGroup>

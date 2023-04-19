@@ -40,6 +40,7 @@ services
         .UseJavaScript()
         .UseLiquid()
         .UseHttp()
+        .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options))
     );
 
 services.AddHealthChecks();

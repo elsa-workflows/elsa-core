@@ -113,10 +113,13 @@ public class Flowchart : Container
 
         if (!children.Any())
         {
-            // If there are no more pending activities, mark this activity as completed.
-            var hasPendingChildren = !HaveAllLeafsExecuted(scope);
+            var workflowExecutionContext = context.ReceiverActivityExecutionContext.WorkflowExecutionContext;
+            var scheduler = workflowExecutionContext.Scheduler;
+            
+            // If there is no pending work, complete the flowchart activity.
+            var hasPendingWork = scheduler.HasAny;
 
-            if (!hasPendingChildren)
+            if (!hasPendingWork)
                 await flowchartActivityExecutionContext.CompleteActivityAsync();
         }
 

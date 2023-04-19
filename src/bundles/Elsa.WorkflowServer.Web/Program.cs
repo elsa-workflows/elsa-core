@@ -47,6 +47,7 @@ services
         .UseJavaScript()
         .UseLiquid()
         .UseHttp()
+        .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options))
     );
 
 services.Configure<JintOptions>(options => options.AllowClrAccess = true);

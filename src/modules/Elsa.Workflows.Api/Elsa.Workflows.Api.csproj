@@ -5,6 +5,7 @@
 
     <PropertyGroup>
         <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
+        <Version>3.0.0</Version>
         <Description>
             Provides API endpoints for client applications such as the Elsa Designer web component.
         </Description>
