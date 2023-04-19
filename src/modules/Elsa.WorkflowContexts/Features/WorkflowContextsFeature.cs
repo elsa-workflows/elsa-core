@@ -23,5 +23,6 @@ public class WorkflowContextsFeature : FeatureBase
     public override void Configure()
     {
         Module.AddActivitiesFrom<WorkflowContextsFeature>();
+        Module.AddFastEndpointsAssembly(GetType());
     }
 }
