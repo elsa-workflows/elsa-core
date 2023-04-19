@@ -191,6 +191,7 @@ export interface SaveWorkflowDefinitionRequest {
   outcomes?: Array<string>;
   options?: WorkflowOptions;
   usableAsActivity?: boolean;
+  customProperties?: Map<string, any>;
 }
 
 export interface BaseManyWorkflowDefinitionRequest {

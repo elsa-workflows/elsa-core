@@ -211,7 +211,7 @@ export class WorkflowDefinitionEditor {
   // To prevent redundant post requests to server, save changes only if there is a difference
   // between existing workflow definition on server side and updated workflow definition on client side.
   private hasWorkflowDefinitionAnyUpdatedData = async (updatedWorkflowDefinition: WorkflowDefinition): Promise<boolean> => {
-    const existingWorkflowDefinition = await this.workflowDefinitionApi.get({definitionId: updatedWorkflowDefinition.definitionId, versionOptions: {version: updatedWorkflowDefinition.version}});
+        const existingWorkflowDefinition = await this.workflowDefinitionApi.get({definitionId: updatedWorkflowDefinition.definitionId, versionOptions: {version: updatedWorkflowDefinition.version}});
     const updatedWorkflowDefinitionClone = cloneDeep(updatedWorkflowDefinition);
 
     removeGuidsFromPortNames(updatedWorkflowDefinitionClone.root);
@@ -278,10 +278,6 @@ export class WorkflowDefinitionEditor {
     this.saveChangesDebounced();
 
     if(e.detail.updatedTab == WorkflowPropertiesEditorTabs.Variables){
-      rerenderActivityEditor();
-    }
-
-    function rerenderActivityEditor() {
       const currentSelectedActivity = this.selectedActivity;
       this.selectedActivity = null;
       this.selectedActivity = currentSelectedActivity;

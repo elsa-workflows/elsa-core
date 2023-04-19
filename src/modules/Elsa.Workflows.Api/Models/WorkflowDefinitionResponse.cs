@@ -17,7 +17,7 @@ internal class WorkflowDefinitionResponse
         ICollection<InputDefinition> inputs,
         ICollection<OutputDefinition> outputs,
         ICollection<string> outcomes,
-        IDictionary<string, object> metadata,
+        IDictionary<string, object> customProperties,
         bool isLatest,
         bool isPublished,
         bool? usableAsActivity,
@@ -34,7 +34,7 @@ internal class WorkflowDefinitionResponse
         Inputs = inputs;
         Outputs = outputs;
         Outcomes = outcomes;
-        Metadata = metadata;
+        CustomProperties = customProperties;
         IsLatest = isLatest;
         IsPublished = isPublished;
         UsableAsActivity = usableAsActivity;
@@ -52,7 +52,7 @@ internal class WorkflowDefinitionResponse
     public ICollection<InputDefinition> Inputs { get; }
     public ICollection<OutputDefinition> Outputs { get; }
     public ICollection<string> Outcomes { get; }
-    public IDictionary<string, object> Metadata { get; }
+    public IDictionary<string, object> CustomProperties { get; }
     public bool IsLatest { get; }
     public bool IsPublished { get; }
     public bool? UsableAsActivity { get; }

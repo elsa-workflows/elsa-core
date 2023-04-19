@@ -23,6 +23,7 @@ export class WorkflowDefinitionManager {
       publish: publish,
       root: definition.root,
       variables: definition.variables,
+      customProperties: definition.customProperties,
       inputs: definition.inputs,
       outputs: definition.outputs,
       outcomes: definition.outcomes,

@@ -12,6 +12,7 @@ import { SwitchPlugin } from '../modules/switch/sequence/switch-plugin';
 import {FlowSwitchPlugin} from "../modules/switch/flow/flow-switch-plugin";
 import {FlowHttpRequestPlugin} from "../modules/http-request/flow/flow-http-request-plugin";
 import {HttpRequestPlugin} from "../modules/http-request/sequence/http-request-plugin";
+import {WorkflowContextsPlugin} from "../modules/workflow-contexts/plugin";
 
 // A registry of plugins.
 @Service()
@@ -30,6 +31,7 @@ export class PluginRegistry {
     this.add(Container.get(FlowSwitchPlugin));
     this.add(Container.get(FlowHttpRequestPlugin));
     this.add(Container.get(HttpRequestPlugin));
+    this.add(Container.get(WorkflowContextsPlugin));
   }
 
   add(plugin: Plugin) {
