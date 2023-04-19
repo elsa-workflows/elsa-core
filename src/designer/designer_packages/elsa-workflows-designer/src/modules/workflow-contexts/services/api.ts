@@ -1,5 +1,6 @@
 import {Service} from "typedi";
 import {ElsaClientProvider} from "../../../services";
+
 @Service()
 export class WorkflowContextsApi {
   private provider: ElsaClientProvider;
@@ -7,7 +8,6 @@ export class WorkflowContextsApi {
   constructor(provider: ElsaClientProvider) {
     this.provider = provider;
   }
-
 
   async list(): Promise<Array<WorkflowContextProviderDescriptor>> {
     const httpClient = await this.getHttpClient();
