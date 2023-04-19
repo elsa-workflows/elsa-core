@@ -5,6 +5,7 @@ import {h} from "@stencil/core";
 import {TabModel, WorkflowPropertiesEditorDisplayingArgs, WorkflowPropertiesEditorEventTypes} from "../workflow-definitions/models/ui";
 import {Widget} from "../workflow-instances/models";
 import {WorkflowContextProviderDescriptor, WorkflowContextsApi} from "./services/api";
+import descriptorsStore from "../../data/descriptors-store";
 
 @Service()
 export class WorkflowContextsPlugin implements Plugin {
@@ -14,7 +15,6 @@ export class WorkflowContextsPlugin implements Plugin {
 
   constructor() {
     this.apiClient = Container.get(WorkflowContextsApi);
-    this.setupCustomPropertyEditors();
     this.setupSignIn();
   }
 
@@ -34,17 +34,26 @@ export class WorkflowContextsPlugin implements Plugin {
 
   private setupSignIn() {
     const eventBus = Container.get(EventBus);
-    eventBus.on(EventTypes.Auth.SignedIn, this.onSignedIn);
+    eventBus.on(EventTypes.Descriptors.Updated, this.onSignedIn);
   }
 
   private onSignedIn = async () => {
     // Need to do this post-sign in, this is a secure API call.
+    const installedFeatures = descriptorsStore.installedFeatures;
+
+    debugger;
+
+    if(!installedFeatures.find(x => x.name == 'WorkflowContextsFeature'))
+      return;
+
     this.providerDescriptors = await this.apiClient.list();
     this.setupCustomInputControls();
+    this.setupCustomPropertyEditors();
   };
 
   private setupCustomPropertyEditors() {
     const eventBus = Container.get(EventBus);
+    eventBus.detach(WorkflowPropertiesEditorEventTypes.Displaying, this.onPropertyPanelRendering)
     eventBus.on(WorkflowPropertiesEditorEventTypes.Displaying, this.onPropertyPanelRendering);
   }
 

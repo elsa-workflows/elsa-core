@@ -4,6 +4,7 @@ import {StorageDriversApi} from "./storage-drivers-api";
 import {VariableDescriptorsApi} from "./variable-descriptors-api";
 import {WorkflowActivationStrategyDescriptor} from "../../models";
 import {WorkflowActivationStrategiesApi} from "./workflow-activation-strategies-api";
+import {FeaturesApi} from "./features-api";
 
 export class DescriptorsApi {
   httpClient: AxiosInstance;
@@ -11,6 +12,7 @@ export class DescriptorsApi {
   storageDrivers: StorageDriversApi;
   variables: VariableDescriptorsApi;
   workflowActivationStrategies: WorkflowActivationStrategiesApi;
+  features: FeaturesApi;
 
   constructor(httpClient: AxiosInstance) {
     this.httpClient = httpClient;
@@ -18,6 +20,7 @@ export class DescriptorsApi {
     this.storageDrivers = new StorageDriversApi(httpClient);
     this.variables = new VariableDescriptorsApi(httpClient);
     this.workflowActivationStrategies = new WorkflowActivationStrategiesApi(httpClient);
+    this.features = new FeaturesApi(httpClient);
   }
 
 }

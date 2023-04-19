@@ -8,6 +8,7 @@ import {DescriptorsApi} from "./descriptors-api";
 import {DesignerApi} from "./designer-api";
 import {EventTypes} from "../../models";
 import {ScriptingApi} from "./scripting-api";
+import {FeaturesApi} from "./features-api";
 
 export class ElsaClient {
   descriptors: DescriptorsApi;
