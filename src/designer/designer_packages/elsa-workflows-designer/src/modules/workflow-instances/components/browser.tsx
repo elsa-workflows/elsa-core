@@ -3,6 +3,7 @@ import _ from 'lodash';
 import {Search} from "./search";
 import {Filter, FilterProps} from "./filter";
 import {ListWorkflowInstancesRequest, WorkflowInstancesApi} from "../services/workflow-instances-api";
+import {getRequest, persistRequest} from '../services/lookup-persistence';
 import {WorkflowDefinitionSummary} from "../../workflow-definitions/models/entities";
 import {OrderBy, OrderDirection, PagedList, VersionOptions, WorkflowInstanceSummary, WorkflowStatus, WorkflowSubStatus} from "../../../models";
 import {Container} from "typedi";
@@ -48,6 +49,19 @@ export class WorkflowInstanceBrowser {
   @State() private orderBy?: OrderBy;
 
   async componentWillLoad() {
+    var persistedRequest = getRequest()
+
+    if (persistedRequest) {
+      // TODO: Persist search term, need to bind the value to the input
+      // this.searchTerm = persistedRequest.searchTerm
+      this.currentPage = persistedRequest.page
+      this.currentPageSize = persistedRequest.pageSize
+      this.orderBy = persistedRequest.orderBy
+      this.selectedWorkflowDefinitionId = persistedRequest.definitionId
+      this.selectedStatus = persistedRequest.status
+      this.selectedSubStatus = persistedRequest.subStatus
+    }
+
     await this.loadWorkflowDefinitions();
     await this.loadWorkflowInstances();
   }
@@ -78,6 +92,16 @@ export class WorkflowInstanceBrowser {
         workflows: publishedOrLatestWorkflows,
         selectedWorkflowDefinitionId: this.selectedWorkflowDefinitionId,
         onChange: this.onWorkflowChanged
+      },
+      resetFilter: async () => {
+        this.resetPagination();
+        this.currentPageSize = WorkflowInstanceBrowser.DEFAULT_PAGE_SIZE;
+        this.selectedStatus = undefined
+        this.selectedSubStatus = undefined
+        this.orderBy = undefined
+        this.selectedWorkflowDefinitionId = undefined
+        
+        await this.loadWorkflowInstances();
       }
     };
 
@@ -176,6 +200,7 @@ export class WorkflowInstanceBrowser {
       pageSize: this.currentPageSize
     };
 
+    persistRequest(request)
     this.workflowInstances = await this.workflowInstancesApi.list(request);
   }
 

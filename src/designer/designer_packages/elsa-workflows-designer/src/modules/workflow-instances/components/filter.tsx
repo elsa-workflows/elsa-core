@@ -10,6 +10,7 @@ export interface FilterProps {
   statusFilter: StatusFilterProps;
   subStatusFilter: SubStatusFilterProps;
   orderByFilter: OrderByFilterProps;
+  resetFilter: () => void;
 }
 
 export interface PageSizeFilterProps {
@@ -38,7 +39,7 @@ export interface OrderByFilterProps {
   onChange: (orderBy: OrderBy) => void;
 }
 
-export const Filter: FunctionalComponent<FilterProps> = ({pageSizeFilter, workflowFilter, statusFilter, subStatusFilter, orderByFilter}) => {
+export const Filter: FunctionalComponent<FilterProps> = ({pageSizeFilter, workflowFilter, statusFilter, subStatusFilter, orderByFilter, resetFilter}) => {
 
   return <div class="p-8 flex content-end justify-right bg-white space-x-4">
     <div class="flex-shrink-0">
@@ -47,6 +48,9 @@ export const Filter: FunctionalComponent<FilterProps> = ({pageSizeFilter, workfl
     <div class="flex-1">
       &nbsp;
     </div>
+    <button onClick={resetFilter} type="button" class="text-sm text-blue-600 active:text-blue-700 px-3 active:ring ring-blue-500 rounded">
+      Reset
+    </button>
     <PageSizeFilter {...pageSizeFilter}/>
     <WorkflowFilter {...workflowFilter}/>
     <StatusFilter {...statusFilter}/>
