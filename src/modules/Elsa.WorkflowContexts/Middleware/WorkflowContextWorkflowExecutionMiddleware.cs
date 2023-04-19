@@ -23,7 +23,7 @@ public class WorkflowContextWorkflowExecutionMiddleware : WorkflowExecutionMiddl
     public override async ValueTask InvokeAsync(WorkflowExecutionContext context)
     {
         // Check if the workflow contains any workflow context providers.
-        if (!context.Workflow.CustomProperties!.TryGetValue<ICollection<Type>>(Constants.WorkflowContextProviderTypesKey, out var providerTypes))
+        if (!context.Workflow.CustomProperties.TryGetValue<ICollection<Type>>(Constants.WorkflowContextProviderTypesKey, out var providerTypes))
         {
             await Next(context);
             return;

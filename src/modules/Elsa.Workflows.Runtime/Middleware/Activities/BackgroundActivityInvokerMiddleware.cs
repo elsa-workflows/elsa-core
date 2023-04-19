@@ -12,7 +12,11 @@ namespace Elsa.Workflows.Runtime.Middleware.Activities;
 /// </summary>
 public class BackgroundActivityInvokerMiddleware : DefaultActivityInvokerMiddleware
 {
-    internal static readonly object IsBackgroundExecution = new();
+    /// <summary>
+    /// A key into the activity execution context's transient properties that indicates whether the current activity is being executed in the background.
+    /// </summary>
+    public static readonly object IsBackgroundExecution = new();
+    
     internal static string GetBackgroundActivityOutputKey(string activityId) => $"__BackgroundActivityOutput:{activityId}";
     internal static readonly object BackgroundActivitySchedulesKey = new();
     internal const string BackgroundActivityBookmarkName = "BackgroundActivity";
