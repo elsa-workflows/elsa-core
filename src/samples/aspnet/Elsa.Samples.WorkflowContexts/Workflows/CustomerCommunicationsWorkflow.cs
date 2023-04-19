@@ -3,6 +3,7 @@ using Elsa.Extensions;
 using Elsa.Samples.WorkflowContexts.Extensions;
 using Elsa.Samples.WorkflowContexts.Providers;
 using Elsa.Scheduling.Activities;
+using Elsa.WorkflowContexts.Activities;
 using Elsa.Workflows.Core.Abstractions;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
@@ -22,7 +23,7 @@ public class CustomerCommunicationsWorkflow : WorkflowBase
         {
             Activities =
             {
-                Inline.From(context => context.WorkflowExecutionContext.SetCustomerId(context.GetInput<string>("CustomerId"))),
+                SetWorkflowContextParameter.For<CustomerWorkflowContextProvider>(context => context.GetInput<string>("CustomerId")!),
                 Delay.FromSeconds(5),
                 new SendEmail
                 {
