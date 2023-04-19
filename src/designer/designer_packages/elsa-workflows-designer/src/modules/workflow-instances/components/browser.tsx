@@ -92,6 +92,16 @@ export class WorkflowInstanceBrowser {
         workflows: publishedOrLatestWorkflows,
         selectedWorkflowDefinitionId: this.selectedWorkflowDefinitionId,
         onChange: this.onWorkflowChanged
+      },
+      resetFilter: async () => {
+        this.resetPagination();
+        this.currentPageSize = WorkflowInstanceBrowser.DEFAULT_PAGE_SIZE;
+        this.selectedStatus = undefined
+        this.selectedSubStatus = undefined
+        this.orderBy = undefined
+        this.selectedWorkflowDefinitionId = undefined
+        
+        await this.loadWorkflowInstances();
       }
     };
 

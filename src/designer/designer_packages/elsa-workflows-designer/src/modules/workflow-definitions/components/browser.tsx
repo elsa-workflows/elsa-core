@@ -6,9 +6,10 @@ import {Filter, FilterProps} from './filter';
 import {PagerData} from '../../../components/shared/pager/pager';
 import {updateSelectedWorkflowDefinitions} from '../services/utils';
 import {WorkflowDefinitionSummary} from "../models/entities";
-import {WorkflowDefinitionsApi, WorkflowDefinitionsOrderBy} from "../services/api";
+import {ListWorkflowDefinitionsRequest, WorkflowDefinitionsApi, WorkflowDefinitionsOrderBy} from "../services/api";
 import {ModalDialogService, DefaultModalActions, DefaultContents, ModalType} from "../../../components/shared/modal-dialog";
 import {ActivityDescriptorManager} from "../../../services";
+import { getRequest, persistRequest } from '../services/lookup-persistence';
 
 @Component({
   tag: 'elsa-workflow-definition-browser',
@@ -43,6 +44,14 @@ export class WorkflowDefinitionBrowser {
   @State() private selectAllChecked: boolean;
 
   async componentWillLoad() {
+    var persistedRequest = getRequest()
+
+    if (persistedRequest) {
+      this.currentPage = persistedRequest.page
+      this.currentPageSize = persistedRequest.pageSize
+      this.orderBy = persistedRequest.orderBy
+    }
+
     await this.loadWorkflowDefinitions();
   }
 
@@ -120,15 +129,18 @@ export class WorkflowDefinitionBrowser {
     // TODO: Load only json-based workflow definitions for now.
     // Later, also allow CLR-based workflows to be "edited" (publish / unpublish / position activities / set variables, etc.)
     const materializerName = 'Json';
-
-    const latestWorkflowDefinitions = await this.api.list({
+    
+    var request: ListWorkflowDefinitionsRequest = {
       materializerName,
       page: this.currentPage,
       pageSize: this.currentPageSize,
       versionOptions: {isLatest: true},
       orderBy: this.orderBy,
       label: this.labels,
-    });
+    }
+    persistRequest(request)
+
+    const latestWorkflowDefinitions = await this.api.list(request);
     const unpublishedWorkflowDefinitionIds = latestWorkflowDefinitions.items.filter(x => !x.isPublished).map(x => x.definitionId);
 
     this.publishedWorkflowDefinitions = await this.api.list({
@@ -218,7 +230,7 @@ export class WorkflowDefinitionBrowser {
       },
       onBulkDelete: this.onDeleteManyClick,
       onBulkPublish: this.onPublishManyClick,
-      onBulkUnpublish: this.onUnpublishManyClick,
+      onBulkUnpublish: this.onUnpublishManyClick
     };
 
     return (
