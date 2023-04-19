@@ -16,7 +16,8 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
 {
     private readonly EntityStore<ManagementElsaDbContext, WorkflowDefinition> _store;
     private readonly IWorkflowInstanceStore _workflowInstanceStore;
-    private readonly IActivitySerializer _serializer;
+    private readonly IActivitySerializer _activitySerializer;
+    private readonly IPayloadSerializer _payloadSerializer;
 
     /// <summary>
     /// Constructor.
@@ -24,11 +25,13 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
     public EFCoreWorkflowDefinitionStore(
         EntityStore<ManagementElsaDbContext, WorkflowDefinition> store,
         IWorkflowInstanceStore workflowInstanceStore,
-        IActivitySerializer serializer)
+        IActivitySerializer activitySerializer,
+        IPayloadSerializer payloadSerializer)
     {
         _store = store;
         _workflowInstanceStore = workflowInstanceStore;
-        _serializer = serializer;
+        _activitySerializer = activitySerializer;
+        _payloadSerializer = payloadSerializer;
     }
 
     /// <inheritdoc />
@@ -141,7 +144,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
     private ValueTask<WorkflowDefinition> SaveAsync(ManagementElsaDbContext managementElsaDbContext, WorkflowDefinition entity, CancellationToken cancellationToken)
     {
         var data = new WorkflowDefinitionState(entity.Options, entity.Variables, entity.Inputs, entity.Outputs, entity.Outcomes, entity.CustomProperties);
-        var json = _serializer.Serialize(data);
+        var json = _payloadSerializer.Serialize(data);
 
         managementElsaDbContext.Entry(entity).Property("Data").CurrentValue = json;
         return new ValueTask<WorkflowDefinition>(entity);
@@ -156,7 +159,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         var json = (string?)managementElsaDbContext.Entry(entity).Property("Data").CurrentValue;
 
         if (!string.IsNullOrWhiteSpace(json)) 
-            data = _serializer.Deserialize<WorkflowDefinitionState>(json);
+            data = _payloadSerializer.Deserialize<WorkflowDefinitionState>(json);
 
         entity.Options = data.Options;
         entity.Variables = data.Variables;

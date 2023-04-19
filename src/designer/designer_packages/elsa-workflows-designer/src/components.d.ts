@@ -6,7 +6,7 @@
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
 import { InputDefinition, OutputDefinition, WorkflowDefinition, WorkflowDefinitionSummary } from "./modules/workflow-definitions/models/entities";
-import { Activity, ActivityDeletedArgs, ActivitySelectedArgs, ChildActivitySelectedArgs, ContainerSelectedArgs, EditChildActivityArgs, GraphUpdatedArgs, IntellisenseContext, SelectListItem, TabChangedArgs, TabDefinition, Variable, WorkflowExecutionLogRecord, WorkflowInstance, WorkflowInstanceSummary, WorkflowUpdatedArgs } from "./models";
+import { Activity, ActivityDeletedArgs, ActivitySelectedArgs, ChildActivitySelectedArgs, ContainerSelectedArgs, EditChildActivityArgs, GraphUpdatedArgs, IntellisenseContext, SelectList, SelectListItem, TabChangedArgs, TabDefinition, Variable, WorkflowExecutionLogRecord, WorkflowInstance, WorkflowInstanceSummary, WorkflowUpdatedArgs } from "./models";
 import { ActivityUpdatedArgs, DeleteActivityRequestedArgs, Widget, WorkflowDefinitionPropsUpdatedArgs, WorkflowDefinitionUpdatedArgs } from "./modules/workflow-definitions/models/ui";
 import { Button } from "./components/shared/button-group/models";
 import { ActivityInputContext } from "./services/activity-input-driver";
@@ -25,6 +25,7 @@ import { MonacoValueChangedArgs } from "./components/shared/monaco-editor/monaco
 import { NotificationType } from "./modules/notifications/models";
 import { PagerData } from "./components/shared/pager/pager";
 import { PanelPosition, PanelStateChangedArgs } from "./components/panel/models";
+import { WorkflowContextProviderDescriptor } from "./modules/workflow-contexts/services/api";
 import { RenderActivityPropsContext } from "./modules/workflow-definitions/components/models";
 import { ActivityDriverRegistry } from "./services";
 import { JournalItemSelectedArgs } from "./modules/workflow-instances/events";
@@ -56,6 +57,12 @@ export namespace Components {
     }
     interface ElsaButtonGroup {
         "buttons": Array<Button>;
+    }
+    interface ElsaCheckList {
+        "fieldName": string;
+        "selectList": SelectList;
+        "selectedValue"?: number;
+        "selectedValues"?: Array<string>;
     }
     interface ElsaCheckListInput {
         "inputContext": ActivityInputContext;
@@ -270,6 +277,15 @@ export namespace Components {
     interface ElsaWidgets {
         "widgets": Array<Widget>;
     }
+    interface ElsaWorkflowContextProviderCheckList {
+        "descriptors": Array<WorkflowContextProviderDescriptor>;
+        "workflowDefinition": WorkflowDefinition;
+    }
+    interface ElsaWorkflowContextProviderTypePickerInput {
+        "descriptors": Array<WorkflowContextProviderDescriptor>;
+        "inputContext": ActivityInputContext;
+        "workflowDefinition": WorkflowDefinition;
+    }
     interface ElsaWorkflowDefinitionActivityVersionSettings {
         "renderContext": RenderActivityPropsContext;
     }
@@ -361,6 +377,10 @@ export interface ElsaActivityPropertiesEditorCustomEvent<T> extends CustomEvent<
     detail: T;
     target: HTMLElsaActivityPropertiesEditorElement;
 }
+export interface ElsaCheckListCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLElsaCheckListElement;
+}
 export interface ElsaDefaultActivityTemplateCustomEvent<T> extends CustomEvent<T> {
     detail: T;
     target: HTMLElsaDefaultActivityTemplateElement;
@@ -424,6 +444,10 @@ export interface ElsaVariableEditorDialogContentCustomEvent<T> extends CustomEve
 export interface ElsaVariablesEditorCustomEvent<T> extends CustomEvent<T> {
     detail: T;
     target: HTMLElsaVariablesEditorElement;
+}
+export interface ElsaWorkflowContextProviderCheckListCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLElsaWorkflowContextProviderCheckListElement;
 }
 export interface ElsaWorkflowDefinitionBrowserCustomEvent<T> extends CustomEvent<T> {
     detail: T;
@@ -495,6 +519,12 @@ declare global {
     var HTMLElsaButtonGroupElement: {
         prototype: HTMLElsaButtonGroupElement;
         new (): HTMLElsaButtonGroupElement;
+    };
+    interface HTMLElsaCheckListElement extends Components.ElsaCheckList, HTMLStencilElement {
+    }
+    var HTMLElsaCheckListElement: {
+        prototype: HTMLElsaCheckListElement;
+        new (): HTMLElsaCheckListElement;
     };
     interface HTMLElsaCheckListInputElement extends Components.ElsaCheckListInput, HTMLStencilElement {
     }
@@ -760,6 +790,18 @@ declare global {
         prototype: HTMLElsaWidgetsElement;
         new (): HTMLElsaWidgetsElement;
     };
+    interface HTMLElsaWorkflowContextProviderCheckListElement extends Components.ElsaWorkflowContextProviderCheckList, HTMLStencilElement {
+    }
+    var HTMLElsaWorkflowContextProviderCheckListElement: {
+        prototype: HTMLElsaWorkflowContextProviderCheckListElement;
+        new (): HTMLElsaWorkflowContextProviderCheckListElement;
+    };
+    interface HTMLElsaWorkflowContextProviderTypePickerInputElement extends Components.ElsaWorkflowContextProviderTypePickerInput, HTMLStencilElement {
+    }
+    var HTMLElsaWorkflowContextProviderTypePickerInputElement: {
+        prototype: HTMLElsaWorkflowContextProviderTypePickerInputElement;
+        new (): HTMLElsaWorkflowContextProviderTypePickerInputElement;
+    };
     interface HTMLElsaWorkflowDefinitionActivityVersionSettingsElement extends Components.ElsaWorkflowDefinitionActivityVersionSettings, HTMLStencilElement {
     }
     var HTMLElsaWorkflowDefinitionActivityVersionSettingsElement: {
@@ -874,6 +916,7 @@ declare global {
         "elsa-activity-properties": HTMLElsaActivityPropertiesElement;
         "elsa-activity-properties-editor": HTMLElsaActivityPropertiesEditorElement;
         "elsa-button-group": HTMLElsaButtonGroupElement;
+        "elsa-check-list": HTMLElsaCheckListElement;
         "elsa-check-list-input": HTMLElsaCheckListInputElement;
         "elsa-checkbox-input": HTMLElsaCheckboxInputElement;
         "elsa-code-editor-input": HTMLElsaCodeEditorInputElement;
@@ -918,6 +961,8 @@ declare global {
         "elsa-variables-editor": HTMLElsaVariablesEditorElement;
         "elsa-variables-viewer": HTMLElsaVariablesViewerElement;
         "elsa-widgets": HTMLElsaWidgetsElement;
+        "elsa-workflow-context-provider-check-list": HTMLElsaWorkflowContextProviderCheckListElement;
+        "elsa-workflow-context-provider-type-picker-input": HTMLElsaWorkflowContextProviderTypePickerInputElement;
         "elsa-workflow-definition-activity-version-settings": HTMLElsaWorkflowDefinitionActivityVersionSettingsElement;
         "elsa-workflow-definition-browser": HTMLElsaWorkflowDefinitionBrowserElement;
         "elsa-workflow-definition-editor": HTMLElsaWorkflowDefinitionEditorElement;
@@ -962,6 +1007,13 @@ declare namespace LocalJSX {
     }
     interface ElsaButtonGroup {
         "buttons"?: Array<Button>;
+    }
+    interface ElsaCheckList {
+        "fieldName"?: string;
+        "onSelectedValuesChanged"?: (event: ElsaCheckListCustomEvent<Array<string> | number>) => void;
+        "selectList"?: SelectList;
+        "selectedValue"?: number;
+        "selectedValues"?: Array<string>;
     }
     interface ElsaCheckListInput {
         "inputContext"?: ActivityInputContext;
@@ -1181,6 +1233,16 @@ declare namespace LocalJSX {
     interface ElsaWidgets {
         "widgets"?: Array<Widget>;
     }
+    interface ElsaWorkflowContextProviderCheckList {
+        "descriptors"?: Array<WorkflowContextProviderDescriptor>;
+        "onWorkflowDefinitionChanged"?: (event: ElsaWorkflowContextProviderCheckListCustomEvent<WorkflowDefinition>) => void;
+        "workflowDefinition"?: WorkflowDefinition;
+    }
+    interface ElsaWorkflowContextProviderTypePickerInput {
+        "descriptors"?: Array<WorkflowContextProviderDescriptor>;
+        "inputContext"?: ActivityInputContext;
+        "workflowDefinition"?: WorkflowDefinition;
+    }
     interface ElsaWorkflowDefinitionActivityVersionSettings {
         "renderContext"?: RenderActivityPropsContext;
     }
@@ -1270,6 +1332,7 @@ declare namespace LocalJSX {
         "elsa-activity-properties": ElsaActivityProperties;
         "elsa-activity-properties-editor": ElsaActivityPropertiesEditor;
         "elsa-button-group": ElsaButtonGroup;
+        "elsa-check-list": ElsaCheckList;
         "elsa-check-list-input": ElsaCheckListInput;
         "elsa-checkbox-input": ElsaCheckboxInput;
         "elsa-code-editor-input": ElsaCodeEditorInput;
@@ -1314,6 +1377,8 @@ declare namespace LocalJSX {
         "elsa-variables-editor": ElsaVariablesEditor;
         "elsa-variables-viewer": ElsaVariablesViewer;
         "elsa-widgets": ElsaWidgets;
+        "elsa-workflow-context-provider-check-list": ElsaWorkflowContextProviderCheckList;
+        "elsa-workflow-context-provider-type-picker-input": ElsaWorkflowContextProviderTypePickerInput;
         "elsa-workflow-definition-activity-version-settings": ElsaWorkflowDefinitionActivityVersionSettings;
         "elsa-workflow-definition-browser": ElsaWorkflowDefinitionBrowser;
         "elsa-workflow-definition-editor": ElsaWorkflowDefinitionEditor;
@@ -1343,6 +1408,7 @@ declare module "@stencil/core" {
             "elsa-activity-properties": LocalJSX.ElsaActivityProperties & JSXBase.HTMLAttributes<HTMLElsaActivityPropertiesElement>;
             "elsa-activity-properties-editor": LocalJSX.ElsaActivityPropertiesEditor & JSXBase.HTMLAttributes<HTMLElsaActivityPropertiesEditorElement>;
             "elsa-button-group": LocalJSX.ElsaButtonGroup & JSXBase.HTMLAttributes<HTMLElsaButtonGroupElement>;
+            "elsa-check-list": LocalJSX.ElsaCheckList & JSXBase.HTMLAttributes<HTMLElsaCheckListElement>;
             "elsa-check-list-input": LocalJSX.ElsaCheckListInput & JSXBase.HTMLAttributes<HTMLElsaCheckListInputElement>;
             "elsa-checkbox-input": LocalJSX.ElsaCheckboxInput & JSXBase.HTMLAttributes<HTMLElsaCheckboxInputElement>;
             "elsa-code-editor-input": LocalJSX.ElsaCodeEditorInput & JSXBase.HTMLAttributes<HTMLElsaCodeEditorInputElement>;
@@ -1387,6 +1453,8 @@ declare module "@stencil/core" {
             "elsa-variables-editor": LocalJSX.ElsaVariablesEditor & JSXBase.HTMLAttributes<HTMLElsaVariablesEditorElement>;
             "elsa-variables-viewer": LocalJSX.ElsaVariablesViewer & JSXBase.HTMLAttributes<HTMLElsaVariablesViewerElement>;
             "elsa-widgets": LocalJSX.ElsaWidgets & JSXBase.HTMLAttributes<HTMLElsaWidgetsElement>;
+            "elsa-workflow-context-provider-check-list": LocalJSX.ElsaWorkflowContextProviderCheckList & JSXBase.HTMLAttributes<HTMLElsaWorkflowContextProviderCheckListElement>;
+            "elsa-workflow-context-provider-type-picker-input": LocalJSX.ElsaWorkflowContextProviderTypePickerInput & JSXBase.HTMLAttributes<HTMLElsaWorkflowContextProviderTypePickerInputElement>;
             "elsa-workflow-definition-activity-version-settings": LocalJSX.ElsaWorkflowDefinitionActivityVersionSettings & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionActivityVersionSettingsElement>;
             "elsa-workflow-definition-browser": LocalJSX.ElsaWorkflowDefinitionBrowser & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionBrowserElement>;
             "elsa-workflow-definition-editor": LocalJSX.ElsaWorkflowDefinitionEditor & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionEditorElement>;

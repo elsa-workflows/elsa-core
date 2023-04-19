@@ -1,6 +1,7 @@
 using Elsa.Expressions.Models;
-using Elsa.WorkflowContexts.Models;
+using Elsa.WorkflowContexts.Contracts;
 using Elsa.Workflows.Core.Models;
+using JetBrains.Annotations;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
@@ -8,10 +9,74 @@ namespace Elsa.Extensions;
 /// <summary>
 /// Adds extension methods to <see cref="WorkflowExecutionContext"/>.
 /// </summary>
+[PublicAPI]
 public static class WorkflowExecutionContextExtensions
 {
     private static readonly object WorkflowContextsKey = new();
-    
+
+    /// <summary>
+    /// Sets a workflow context provider parameter.
+    /// </summary>
+    /// <param name="context">The workflow execution context.</param>
+    /// <param name="providerType">The type of the workflow context provider.</param>
+    /// <param name="value">The value to set.</param>
+    public static void SetWorkflowContextParameter(this WorkflowExecutionContext context, Type providerType, object? value) => SetWorkflowContextParameter(context, providerType, null, value);
+
+    /// <summary>
+    /// Sets a workflow context provider parameter.
+    /// </summary>
+    /// <param name="context">The workflow execution context.</param>
+    /// <param name="value">The value to set.</param>
+    /// <typeparam name="T">The type of the workflow context provider.</typeparam>
+    public static void SetWorkflowContextParameter<T>(this WorkflowExecutionContext context, object? value) where T : IWorkflowContextProvider => SetWorkflowContextParameter(context, typeof(T), null, value);
+
+    /// <summary>
+    /// Sets a workflow context provider parameter.
+    /// </summary>
+    /// <param name="context">The workflow execution context.</param>
+    /// <param name="providerType">The type of the workflow context provider.</param>
+    /// <param name="parameterName">The name of the parameter.</param>
+    /// <param name="value">The value to set.</param>
+    public static void SetWorkflowContextParameter(this WorkflowExecutionContext context, Type providerType, string? parameterName, object? value)
+    {
+        var scopedParameterName = providerType.GetScopedParameterName(parameterName);
+        context.SetProperty(scopedParameterName, value);
+    }
+
+    /// <summary>
+    /// Sets a workflow context provider parameter.
+    /// </summary>
+    /// <param name="context">The workflow execution context.</param>
+    /// <param name="parameterName">The name of the parameter.</param>
+    /// <param name="value">The value to set.</param>
+    /// <typeparam name="T">The type of the workflow context provider.</typeparam>
+    public static void SetWorkflowContextParameter<T>(this WorkflowExecutionContext context, string? parameterName, object? value) => SetWorkflowContextParameter(context, typeof(T), parameterName, value);
+
+    /// <summary>
+    /// Gets a workflow context provider parameter.
+    /// </summary>
+    /// <param name="context">The workflow execution context.</param>
+    /// <param name="providerType">The type of the workflow context provider.</param>
+    /// <param name="parameterName">The name of the parameter.</param>
+    /// <typeparam name="T">The type of the parameter.</typeparam>
+    /// <returns>The parameter value.</returns>
+    public static T? GetWorkflowContextParameter<T>(this WorkflowExecutionContext context, Type providerType, string? parameterName = default)
+    {
+        var scopedParameterName = providerType.GetScopedParameterName(parameterName);
+        return context.GetProperty<T>(scopedParameterName);
+    }
+
+    /// <summary>
+    /// Gets a workflow context provider parameter.
+    /// </summary>
+    /// <param name="context">The workflow execution context.</param>
+    /// <param name="parameterName">The name of the parameter.</param>
+    /// <typeparam name="TProvider">The type of the workflow context provider.</typeparam>
+    /// <typeparam name="TParameter">The type of the parameter.</typeparam>
+    /// <returns>The parameter value.</returns>
+    public static TParameter? GetWorkflowContextParameter<TProvider, TParameter>(this WorkflowExecutionContext context, string? parameterName = default) where TProvider : IWorkflowContextProvider
+        => GetWorkflowContextParameter<TParameter>(context, typeof(TProvider), parameterName);
+
     /// <summary>
     /// Sets the specified workflow context value.
     /// </summary>

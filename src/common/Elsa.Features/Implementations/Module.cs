@@ -1,6 +1,9 @@
+using System.ComponentModel;
 using System.Reflection;
 using Elsa.Extensions;
 using Elsa.Features.Attributes;
+using Elsa.Features.Contracts;
+using Elsa.Features.Models;
 using Elsa.Features.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -86,6 +89,19 @@ public class Module : IModule
         // Make sure to use the complete list of features when applying them.
         foreach (var feature in _features.Values)
             feature.Apply();
+        
+        // Add a registry of enabled features to the service collection for client applications to reflect on what features are installed.
+        var registry = new InstalledFeatureRegistry();
+        foreach (var feature in _features.Values)
+        {
+            var type = feature.GetType();
+            var name = type.Name;
+            var displayName = name.Replace("Feature", string.Empty);
+            var description = type.GetCustomAttribute<DescriptionAttribute>()?.Description;
+            registry.Add(new FeatureDescriptor(name, displayName, description));
+        }
+
+        Services.AddSingleton<IInstalledFeatureRegistry>(registry);
     }
 
     private void ConfigureFeature(IFeature feature)

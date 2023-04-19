@@ -38,11 +38,15 @@ export class LoginPlugin implements Plugin {
     const storageDrivers = await this.elsaClient.descriptors.storageDrivers.list();
     const variableDescriptors = await this.elsaClient.descriptors.variables.list();
     const workflowInstantiationStrategyDescriptors = await this.elsaClient.descriptors.workflowActivationStrategies.list();
+    const installedFeatures = await this.elsaClient.descriptors.features.getInstalledFeatures();
 
     descriptorsStore.activityDescriptors = activityDescriptors;
     descriptorsStore.storageDrivers = storageDrivers;
     descriptorsStore.variableDescriptors = variableDescriptors;
     descriptorsStore.workflowActivationStrategyDescriptors = workflowInstantiationStrategyDescriptors;
+    descriptorsStore.installedFeatures = installedFeatures;
+
+    await this.eventBus.emit(EventTypes.Descriptors.Updated, this);
   };
 
   private onSignedIn = async (e: CustomEvent<SignedInArgs>) => await this.loadDescriptors();

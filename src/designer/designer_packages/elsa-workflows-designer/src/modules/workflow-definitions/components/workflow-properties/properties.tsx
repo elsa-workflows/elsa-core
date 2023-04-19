@@ -211,7 +211,11 @@ export class WorkflowDefinitionPropertiesEditor {
 
     model.tabModels = [propertiesTabModel, variablesTabModel, settingsTabModel, versionHistoryTabModel, inputOutputTabModel];
 
-    const args: WorkflowPropertiesEditorDisplayingArgs = {model};
+    const args: WorkflowPropertiesEditorDisplayingArgs = {
+      workflowDefinition,
+      model,
+      notifyWorkflowDefinitionChanged: () => this.onWorkflowDefinitionUpdated()
+    };
 
     await this.eventBus.emit(WorkflowPropertiesEditorEventTypes.Displaying, this, args);
 
@@ -282,11 +286,16 @@ export class WorkflowDefinitionPropertiesEditor {
 
     workflowDefinition[propName] = propValue;
     const updatedTab = this.getPropEditorSectionByPropName(propName);
-    this.workflowPropsUpdated.emit({workflowDefinition,updatedTab});
+    this.workflowPropsUpdated.emit({workflowDefinition, updatedTab});
     await this.createModel();
-  }
+  };
 
-  private getPropEditorSectionByPropName(propName: string) : WorkflowPropertiesEditorTabs {
+  private onWorkflowDefinitionUpdated = () => {
+    const workflowDefinition = this.workflowDefinition;
+    this.workflowPropsUpdated.emit({workflowDefinition});
+  };
+
+  private getPropEditorSectionByPropName(propName: string): WorkflowPropertiesEditorTabs {
     const enumKey = Object.keys(WorkflowPropertiesEditorTabs).find(key => WorkflowPropertiesEditorTabs[key as keyof typeof WorkflowPropertiesEditorTabs] === propName);
 
     if (enumKey) {

@@ -109,6 +109,14 @@ public static class DependencyInjectionExtensions
         where THandler : class, INotificationHandler<TNotification>
         where TNotification : INotification =>
         services.AddSingleton<INotificationHandler, THandler>();
+    
+    /// <summary>
+    /// Registers a <see cref="INotificationHandler{T}"/> with the service container.
+    /// </summary>
+    public static IServiceCollection AddNotificationHandler<THandler, TNotification>(this IServiceCollection services, Func<IServiceProvider, THandler> factory)
+        where THandler : class, INotificationHandler<TNotification>
+        where TNotification : INotification =>
+        services.AddSingleton<INotificationHandler, THandler>(factory);
 
     /// <summary>
     /// Registers a <see cref="IRequestHandler{TRequest,TResponse}"/> with the service container.

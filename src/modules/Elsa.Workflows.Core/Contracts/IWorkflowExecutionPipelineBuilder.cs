@@ -3,7 +3,7 @@ using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
 namespace Elsa.Workflows.Core.Contracts;
 
 /// <summary>
-/// Used to build a workflow execution pipeline.
+/// Builds a workflow execution pipeline.
 /// </summary>
 public interface IWorkflowExecutionPipelineBuilder
 {

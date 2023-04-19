@@ -11,6 +11,9 @@
     SignedIn: 'auth:signed-in',
     SignedOut: 'auth:signed-out',
   },
+  Descriptors: {
+    Updated: 'descriptors:updated',
+  },
   Labels: {
     Updated: 'labels:updated'
   }

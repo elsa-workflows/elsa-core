@@ -41,7 +41,9 @@ export interface WorkflowDefinitionPropsUpdatedArgs {
 }
 
 export interface WorkflowPropertiesEditorDisplayingArgs {
+  workflowDefinition: WorkflowDefinition;
   model: WorkflowPropertiesEditorModel;
+  notifyWorkflowDefinitionChanged: () => void;
 }
 
 export interface TabModel {

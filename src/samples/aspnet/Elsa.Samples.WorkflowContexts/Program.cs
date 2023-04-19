@@ -29,15 +29,26 @@ services
             identity.UseConfigurationBasedRoleProvider(options => identitySection.Bind(options));
         })
         .UseDefaultAuthentication()
-        .UseWorkflows(workflows => workflows.WithWorkflowExecutionPipeline(pipeline => pipeline
-            .Reset()
-            .UsePersistentVariables()
-            .UseBookmarkPersistence()
-            .UseWorkflowExecutionLogPersistence()
-            .UseWorkflowStatePersistence()
-            .UseWorkflowContexts()
-            .UseDefaultActivityScheduler()
-        ))
+        .UseWorkflows(workflows =>
+        {
+            // Configure workflow execution pipeline to handle workflow contexts.
+            workflows.WithWorkflowExecutionPipeline(pipeline => pipeline
+                .Reset()
+                .UsePersistentVariables()
+                .UseBookmarkPersistence()
+                .UseWorkflowExecutionLogPersistence()
+                .UseWorkflowStatePersistence()
+                .UseWorkflowContexts()
+                .UseDefaultActivityScheduler()
+            );
+            
+            // Configure activity execution pipeline to handle workflow contexts.
+            workflows.WithActivityExecutionPipeline(pipeline => pipeline
+                .Reset()
+                .UseWorkflowContexts()
+                .UseBackgroundActivityInvoker()
+            );
+        })
         .UseWorkflowManagement(management =>
         {
             // Use EF core for workflow definitions and instances.
@@ -58,6 +69,7 @@ services
             // Install a workflow state exporter to capture workflow states and store them in IWorkflowInstanceStore.
             runtime.UseAsyncWorkflowStateExporter();
         })
+        .UseWorkflowContexts()
         .UseScheduling()
         .UseWorkflowsApi(api => api.AddFastEndpointsAssembly<Program>())
         .UseJavaScript()

@@ -10,7 +10,7 @@ export interface TabChangedArgs {
 
 export interface SelectList {
   items: Array<SelectListItem> | Array<string>;
-  isFlagsEnum: boolean;
+  isFlagsEnum?: boolean;
 }
 
 export interface SelectListItem {
