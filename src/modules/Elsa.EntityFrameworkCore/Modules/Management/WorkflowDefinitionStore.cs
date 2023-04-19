@@ -78,9 +78,10 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         var set = dbContext.WorkflowDefinitions;
         var queryable = Filter(set.AsQueryable(), filter);
         var count = await queryable.LongCountAsync(cancellationToken);
+        queryable = Paginate(queryable, pageArgs);
         var results = await queryable.Select(x => WorkflowDefinitionSummary.FromDefinition(x)).ToListAsync(cancellationToken);
 
-        return new(results, count);
+        return Page.Of(results, count);
     }
 
     /// <inheritdoc />
@@ -92,7 +93,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         var count = await queryable.LongCountAsync(cancellationToken);
         var results = await queryable.Select(x => WorkflowDefinitionSummary.FromDefinition(x)).ToListAsync(cancellationToken);
 
-        return new(results, count);
+        return Page.Of(results, count);
     }
 
     /// <inheritdoc />

@@ -5,6 +5,7 @@ using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Models;
+using Microsoft.EntityFrameworkCore;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.EntityFrameworkCore.Modules.Management;
@@ -65,8 +66,13 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     /// <inheritdoc />
     public async Task<Page<WorkflowInstanceSummary>> SummarizeManyAsync<TOrderBy>(WorkflowInstanceFilter filter, PageArgs pageArgs, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
-        var count = await _store.QueryAsync(query => Filter(query, filter), x => x.Id, cancellationToken).LongCount();
-        var entities = await _store.QueryAsync(query => Filter(query, filter).OrderBy(order).Paginate(pageArgs), x => WorkflowInstanceSummary.FromInstance(x), cancellationToken).ToList();
+        await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
+        var set = dbContext.WorkflowInstances;
+        var queryable = Filter(set.AsQueryable(), filter).OrderBy(order);
+        var count = await queryable.LongCountAsync(cancellationToken);
+        queryable = queryable.Paginate(pageArgs);
+        var entities = await queryable.Select(x => WorkflowInstanceSummary.FromInstance(x)).ToListAsync(cancellationToken);
+
         return Page.Of(entities, count);
     }
 
