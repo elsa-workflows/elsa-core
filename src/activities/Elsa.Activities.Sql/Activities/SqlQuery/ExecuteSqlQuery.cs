@@ -34,7 +34,7 @@ namespace Elsa.Activities.Sql.Activities
         [ActivityInput(
             UIHint = ActivityInputUIHints.Dropdown,
             Hint = "Allowed databases to run SQL.",
-            Options = typeof(ExecuteSqlQuery),
+            OptionsProvider = typeof(ExecuteSqlQuery),
             DefaultSyntax = SyntaxNames.Literal,
             SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
