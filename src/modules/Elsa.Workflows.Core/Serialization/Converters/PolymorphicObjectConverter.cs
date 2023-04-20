@@ -4,7 +4,9 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Elsa.Extensions;
+using Elsa.Mediator.Services;
 using Elsa.Workflows.Core.Serialization.ReferenceHandlers;
+using Newtonsoft.Json.Linq;
 
 namespace Elsa.Workflows.Core.Serialization.Converters;
 
@@ -15,6 +17,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
 {
     private const string TypePropertyName = "_type";
     private const string ItemsPropertyName = "_items";
+    private const string IslandPropertyName = "_island";
     private const string IdPropertyName = "$id";
     private const string RefPropertyName = "$ref";
     private const string ValuesPropertyName = "$values";
@@ -41,6 +44,16 @@ public class PolymorphicObjectConverter : JsonConverter<object>
 
         if (!isEnumerable)
             return JsonSerializer.Deserialize(ref reader, targetType, newOptions)!;
+
+        // If the target type is a Newtonsoft.JObject, parse the JSON island.
+        var isNewtonsoftObject = targetType == typeof(JObject);
+
+        if (isNewtonsoftObject)
+        {
+            var parsedModel = JsonElement.ParseValue(ref reader)!;
+            var newtonsoftJson = parsedModel.GetProperty(IslandPropertyName).GetString();
+            return !string.IsNullOrWhiteSpace(newtonsoftJson) ? JObject.Parse(newtonsoftJson) : new JObject();
+        }
 
         var isDictionary = typeof(IDictionary).IsAssignableFrom(targetType);
         if (isDictionary)
@@ -89,6 +102,66 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         return collection;
     }
 
+    /// <inheritdoc />
+    public override void Write(Utf8JsonWriter writer, object value, JsonSerializerOptions options)
+    {
+        var newOptions = new JsonSerializerOptions(options);
+        var type = value.GetType();
+
+        if (type.IsPrimitive || value is string or DateTimeOffset or DateTime or DateOnly or TimeOnly or JsonElement or Guid or TimeSpan or Uri or Version or Enum)
+        {
+            // Remove the converter so that we don't end up in an infinite loop.
+            newOptions.Converters.RemoveWhere(x => x is PolymorphicObjectConverterFactory);
+
+            // Serialize the value directly.
+            JsonSerializer.Serialize(writer, value, newOptions);
+            return;
+        }
+
+        // Special case for Newtonsoft.Json types.
+        // Newtonsoft.Json types are not supported by the System.Text.Json serializer and should be written as a string instead.
+        // We include metadata about the type so that we can deserialize it later. 
+        if (type == typeof(JObject))
+        {
+            writer.WriteStartObject();
+            writer.WriteString(IslandPropertyName, value.ToString());
+            writer.WriteString(TypePropertyName, type.GetSimpleAssemblyQualifiedName());
+            writer.WriteEndObject();
+            return;
+        }
+
+        var jsonElement = JsonDocument.Parse(JsonSerializer.Serialize(value, type, newOptions)).RootElement;
+
+        // If the value is a string, serialize it directly.
+        if (jsonElement.ValueKind == JsonValueKind.String)
+        {
+            // Serialize the value directly.
+            JsonSerializer.Serialize(writer, jsonElement, newOptions);
+            return;
+        }
+
+        writer.WriteStartObject();
+
+        if (jsonElement.ValueKind == JsonValueKind.Array)
+        {
+            writer.WritePropertyName(ItemsPropertyName);
+            jsonElement.WriteTo(writer);
+        }
+        else
+        {
+            foreach (var property in jsonElement.EnumerateObject().Where(property => !property.NameEquals(TypePropertyName)))
+                property.WriteTo(writer);
+        }
+
+        if (type != typeof(ExpandoObject))
+        {
+            // Write the type name so that we can reconstruct the actual type when deserializing.
+            writer.WriteString(TypePropertyName, type.GetSimpleAssemblyQualifiedName());
+        }
+
+        writer.WriteEndObject();
+    }
+    
     private static Type? ReadType(Utf8JsonReader reader)
     {
         reader.Read(); // Move to the first token inside the object.
@@ -196,53 +269,5 @@ public class PolymorphicObjectConverter : JsonConverter<object>
             default:
                 throw new JsonException($"Unknown token {reader.TokenType}");
         }
-    }
-
-    /// <inheritdoc />
-    public override void Write(Utf8JsonWriter writer, object value, JsonSerializerOptions options)
-    {
-        var newOptions = new JsonSerializerOptions(options);
-        var type = value.GetType();
-
-        if (type.IsPrimitive || value is string or DateTimeOffset or DateTime or DateOnly or TimeOnly or JsonElement or Guid or TimeSpan or Uri or Version or Enum)
-        {
-            // Remove the converter so that we don't end up in an infinite loop.
-            newOptions.Converters.RemoveWhere(x => x is PolymorphicObjectConverterFactory);
-
-            // Serialize the value directly.
-            JsonSerializer.Serialize(writer, value, newOptions);
-            return;
-        }
-
-        var jsonElement = JsonDocument.Parse(JsonSerializer.Serialize(value, type, newOptions)).RootElement;
-        
-        // If the value is a string, serialize it directly.
-        if (jsonElement.ValueKind == JsonValueKind.String)
-        {
-            // Serialize the value directly.
-            JsonSerializer.Serialize(writer, jsonElement, newOptions);
-            return;
-        }
-
-        writer.WriteStartObject();
-        
-        if (jsonElement.ValueKind == JsonValueKind.Array)
-        {
-            writer.WritePropertyName(ItemsPropertyName);
-            jsonElement.WriteTo(writer);
-        }
-        else
-        {
-            foreach (var property in jsonElement.EnumerateObject().Where(property => !property.NameEquals(TypePropertyName)))
-                property.WriteTo(writer);
-        }
-
-        if (type != typeof(ExpandoObject))
-        {
-            // Write the type name so that we can reconstruct the actual type when deserializing.
-            writer.WriteString(TypePropertyName, type.GetSimpleAssemblyQualifiedName());
-        }
-
-        writer.WriteEndObject();
     }
 }

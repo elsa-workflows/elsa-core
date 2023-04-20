@@ -21,18 +21,14 @@ public class PolymorphicDictionaryConverter : JsonConverter<IDictionary<string, 
     public override IDictionary<string, object> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         if (reader.TokenType != JsonTokenType.StartObject)
-        {
             throw new JsonException("Expected start of object.");
-        }
 
         var dictionary = new Dictionary<string, object>();
 
         while (reader.Read())
         {
             if (reader.TokenType == JsonTokenType.EndObject)
-            {
                 return dictionary;
-            }
 
             var key = reader.GetString()!;
             reader.Read();
