@@ -26,22 +26,16 @@ public class DefaultHttpEndpointWorkflowFaultHandler : IHttpEndpointWorkflowFaul
     public virtual async ValueTask HandleAsync(HttpEndpointFaultedWorkflowContext context)
     {
         var httpContext = context.HttpContext;
-        var workflowInstance = context.WorkflowInstance;
-        var fault = workflowInstance.WorkflowState.Fault!;
+        var workflowState = context.WorkflowState;
+        var fault = workflowState.Fault!;
 
         httpContext.Response.ContentType = MediaTypeNames.Application.Json;
         httpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
 
         var faultedResponse = _apiSerializer.Serialize(new
         {
-            errorMessage = $"Workflow faulted at {workflowInstance.FaultedAt!} with error: {fault.Message}",
-            exception = fault?.Exception,
-            workflow = new
-            {
-                name = workflowInstance.Name,
-                version = workflowInstance.Version,
-                instanceId = workflowInstance.Id
-            }
+            errorMessage = $"Workflow faulted with error: {fault.Message}",
+            workflowState = workflowState
         });
 
         await httpContext.Response.WriteAsync(faultedResponse, context.CancellationToken);

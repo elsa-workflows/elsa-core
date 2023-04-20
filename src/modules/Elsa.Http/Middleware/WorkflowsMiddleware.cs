@@ -13,6 +13,7 @@ using System.Net;
 using System.Net.Mime;
 using System.Text.Json;
 using Elsa.Extensions;
+using Elsa.Workflows.Core.State;
 
 namespace Elsa.Http.Middleware;
 
@@ -125,7 +126,13 @@ public class WorkflowsMiddleware
             return;
 
         // Process the trigger result by resuming each HTTP bookmark, if any.
-        await _httpBookmarkProcessor.ProcessBookmarks(new List<WorkflowExecutionResult> { executionResult }, correlationId, input, cancellationToken);
+        var affectedWorkflowStates = await _httpBookmarkProcessor.ProcessBookmarks(new List<WorkflowExecutionResult> { executionResult }, correlationId, input, cancellationToken);
+
+        // Check if there were any errors.
+        var faultedWorkflowState = affectedWorkflowStates.FirstOrDefault(x => x.SubStatus == WorkflowSubStatus.Faulted);
+
+        if (faultedWorkflowState != null)
+            await HandleWorkflowFaultAsync(httpContext, faultedWorkflowState, cancellationToken);
     }
 
     private string GetMatchingRoute(string path)
@@ -202,18 +209,19 @@ public class WorkflowsMiddleware
 
     private async Task<bool> HandleWorkflowFaultAsync(HttpContext httpContext, WorkflowExecutionResult workflowExecutionResult, CancellationToken cancellationToken)
     {
-        var instanceFilter = new WorkflowInstanceFilter { Id = workflowExecutionResult.InstanceId };
-        var workflowInstance = await _workflowInstanceStore.FindAsync(instanceFilter, cancellationToken);
+        var subStatus = workflowExecutionResult.SubStatus;
 
-        if (workflowInstance is not null
-            && workflowInstance.SubStatus == WorkflowSubStatus.Faulted
-            && !httpContext.Response.HasStarted)
-        {
-            await _httpEndpointWorkflowFaultHandler.HandleAsync(new HttpEndpointFaultedWorkflowContext(httpContext, workflowInstance, null, cancellationToken));
-            return true;
-        }
+        if (subStatus != WorkflowSubStatus.Faulted || httpContext.Response.HasStarted)
+            return false;
 
-        return false;
+        var workflowState = (await _workflowRuntime.ExportWorkflowStateAsync(workflowExecutionResult.WorkflowInstanceId, cancellationToken))!;
+        return await HandleWorkflowFaultAsync(httpContext, workflowState, cancellationToken);
+    }
+
+    private async Task<bool> HandleWorkflowFaultAsync(HttpContext httpContext, WorkflowState workflowState, CancellationToken cancellationToken)
+    {
+        await _httpEndpointWorkflowFaultHandler.HandleAsync(new HttpEndpointFaultedWorkflowContext(httpContext, workflowState, cancellationToken));
+        return true;
     }
 
     private async Task<bool> AuthorizeAsync(

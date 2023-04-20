@@ -1,13 +1,16 @@
 using Elsa.Common.Models;
 using Elsa.ProtoActor.Extensions;
+using Elsa.ProtoActor.Mappers;
 using Elsa.ProtoActor.Protos;
 using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Runtime.Contracts;
 using Proto;
 using Proto.Cluster;
 using Proto.Persistence;
+using Exception = System.Exception;
+using WorkflowStatus = Elsa.Workflows.Core.Models.WorkflowStatus;
+using ProtoBookmark = Elsa.ProtoActor.Protos.Bookmark;
 
 namespace Elsa.ProtoActor.Grains;
 
@@ -19,8 +22,11 @@ public class WorkflowGrain : WorkflowGrainBase
     private const int MaxSnapshotsToKeep = 5;
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly IWorkflowHostFactory _workflowHostFactory;
-    private readonly IBookmarkPayloadSerializer _bookmarkPayloadSerializer;
     private readonly IWorkflowStateSerializer _workflowStateSerializer;
+    private readonly BookmarkMapper _bookmarkMapper;
+    private readonly WorkflowStatusMapper _workflowStatusMapper;
+    private readonly WorkflowSubStatusMapper _workflowSubStatusMapper;
+    private readonly WorkflowFaultStateMapper _workflowFaultStateMapper;
     private readonly Persistence _persistence;
 
     private string _definitionId = default!;
@@ -34,15 +40,21 @@ public class WorkflowGrain : WorkflowGrainBase
     public WorkflowGrain(
         IWorkflowDefinitionService workflowDefinitionService,
         IWorkflowHostFactory workflowHostFactory,
-        IBookmarkPayloadSerializer bookmarkPayloadSerializer,
         IWorkflowStateSerializer workflowStateSerializer,
         IProvider provider,
-        IContext context) : base(context)
+        IContext context,
+        BookmarkMapper bookmarkMapper,
+        WorkflowStatusMapper workflowStatusMapper,
+        WorkflowSubStatusMapper workflowSubStatusMapper,
+        WorkflowFaultStateMapper workflowFaultStateMapper) : base(context)
     {
         _workflowDefinitionService = workflowDefinitionService;
         _workflowHostFactory = workflowHostFactory;
-        _bookmarkPayloadSerializer = bookmarkPayloadSerializer;
         _workflowStateSerializer = workflowStateSerializer;
+        _bookmarkMapper = bookmarkMapper;
+        _workflowStatusMapper = workflowStatusMapper;
+        _workflowSubStatusMapper = workflowSubStatusMapper;
+        _workflowFaultStateMapper = workflowFaultStateMapper;
         _persistence = Persistence.WithSnapshotting(provider, Context.ClusterIdentity()!.Identity, ApplySnapshot);
     }
 
@@ -72,7 +84,6 @@ public class WorkflowGrain : WorkflowGrainBase
             {
                 DefinitionId = workflow.Identity.DefinitionId,
                 DefinitionVersion = workflow.Identity.Version,
-                //Bookmarks = _bookmarks
             };
         }
 
@@ -90,15 +101,15 @@ public class WorkflowGrain : WorkflowGrainBase
         var versionOptions = VersionOptions.FromString(request.VersionOptions);
         var cancellationToken = Context.CancellationToken;
         var startWorkflowOptions = new StartWorkflowHostOptions(instanceId, correlationId, input, request.TriggerActivityId);
-        
+
         _workflowHost = await CreateWorkflowHostAsync(definitionId, versionOptions, cancellationToken);
         _version = _workflowHost.Workflow.Identity.Version;
         _definitionId = definitionId;
         _instanceId = instanceId;
         _input = input;
-        
+
         var canStart = await _workflowHost.CanStartWorkflowAsync(startWorkflowOptions, cancellationToken);
-        
+
         return new CanStartWorkflowResponse
         {
             CanStart = canStart
@@ -106,7 +117,7 @@ public class WorkflowGrain : WorkflowGrainBase
     }
 
     /// <inheritdoc />
-    public override async Task<StartWorkflowResponse> Start(StartWorkflowRequest request)
+    public override async Task<WorkflowExecutionResponse> Start(StartWorkflowRequest request)
     {
         var definitionId = request.DefinitionId;
         var instanceId = request.InstanceId;
@@ -134,15 +145,20 @@ public class WorkflowGrain : WorkflowGrainBase
 
         await SaveSnapshotAsync();
 
-        return new StartWorkflowResponse
+        return new WorkflowExecutionResponse
         {
             Result = result,
-            Bookmarks = { Map(workflowState.Bookmarks) }
+            Bookmarks = { _bookmarkMapper.Map(workflowState.Bookmarks).ToList() },
+            Status = _workflowStatusMapper.Map(workflowState.Status),
+            SubStatus = _workflowSubStatusMapper.Map(workflowState.SubStatus),
+            Fault = workflowState.Fault != null ? _workflowFaultStateMapper.Map(workflowState.Fault) : default,
+            TriggeredActivityId = string.Empty,
+            WorkflowInstanceId = instanceId
         };
     }
 
     /// <inheritdoc />
-    public override async Task<ResumeWorkflowResponse> Resume(ResumeWorkflowRequest request)
+    public override async Task<WorkflowExecutionResponse> Resume(ResumeWorkflowRequest request)
     {
         _input = request.Input?.Deserialize();
         var correlationId = request.CorrelationId;
@@ -152,26 +168,26 @@ public class WorkflowGrain : WorkflowGrainBase
         var activityInstanceId = request.ActivityInstanceId.NullIfEmpty();
         var activityHash = request.ActivityHash.NullIfEmpty();
         var cancellationToken = Context.CancellationToken;
-        
+
         var resumeWorkflowHostOptions = new ResumeWorkflowHostOptions(
-            correlationId, 
-            bookmarkId, 
-            activityId, 
+            correlationId,
+            bookmarkId,
+            activityId,
             activityNodeId,
             activityInstanceId,
             activityHash,
             _input);
-        
+
         var definitionId = _definitionId;
         var versionOptions = VersionOptions.SpecificVersion(_version);
-        
+
         // Only need to reconstruct a workflow host if not already done so during CanStart.
         if (_workflowHost == null!)
         {
             _workflowHost = await CreateWorkflowHostAsync(definitionId, versionOptions, cancellationToken);
             _version = _workflowHost.Workflow.Identity.Version;
         }
-        
+
         await _workflowHost.ResumeWorkflowAsync(resumeWorkflowHostOptions, cancellationToken);
         var finished = _workflowHost.WorkflowState.Status == WorkflowStatus.Finished;
 
@@ -179,10 +195,15 @@ public class WorkflowGrain : WorkflowGrainBase
 
         await SaveSnapshotAsync();
 
-        return new ResumeWorkflowResponse
+        return new WorkflowExecutionResponse
         {
-            Result = finished ? Protos.RunWorkflowResult.Finished : Protos.RunWorkflowResult.Suspended,
-            Bookmarks = { Map(_workflowHost.WorkflowState.Bookmarks) }
+            Result = finished ? RunWorkflowResult.Finished : RunWorkflowResult.Suspended,
+            Bookmarks = { _bookmarkMapper.Map(_workflowHost.WorkflowState.Bookmarks).ToList() },
+            Fault = _workflowState.Fault != null ? _workflowFaultStateMapper.Map(_workflowState.Fault) : default,
+            TriggeredActivityId = string.Empty,
+            WorkflowInstanceId = _workflowState.Id,
+            Status = _workflowStatusMapper.Map(_workflowState.Status),
+            SubStatus = _workflowSubStatusMapper.Map(_workflowState.SubStatus)
         };
     }
 
@@ -218,6 +239,7 @@ public class WorkflowGrain : WorkflowGrainBase
     }
 
     private void ApplySnapshot(Snapshot snapshot) => (_definitionId, _instanceId, _version, _workflowState, _input) = (WorkflowSnapshot)snapshot.State;
+
     private async Task SaveSnapshotAsync()
     {
         if (_workflowState.Status == WorkflowStatus.Finished)
@@ -239,24 +261,5 @@ public class WorkflowGrain : WorkflowGrainBase
 
         var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
         return await _workflowHostFactory.CreateAsync(workflow, cancellationToken);
-    }
-
-    private IEnumerable<BookmarkDto> Map(IEnumerable<Bookmark> bookmarks)
-    {
-        return bookmarks.Select(x =>
-        {
-            var payloadJson = x.Payload != null ? _bookmarkPayloadSerializer.Serialize(x.Payload) : "";
-            return new BookmarkDto
-            {
-                Id = x.Id,
-                Name = x.Name,
-                ActivityNodeId = x.ActivityNodeId,
-                ActivityInstanceId = x.ActivityInstanceId,
-                Hash = x.Hash,
-                Data = payloadJson,
-                AutoBurn = x.AutoBurn,
-                CallbackMethodName = x.CallbackMethodName.EmptyIfNull()
-            };
-        });
     }
 }

@@ -4,6 +4,7 @@ using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.ProtoActor.Grains;
 using Elsa.ProtoActor.HostedServices;
+using Elsa.ProtoActor.Mappers;
 using Elsa.ProtoActor.Protos;
 using Elsa.ProtoActor.Services;
 using Elsa.Workflows.Core.Features;
@@ -39,7 +40,7 @@ public class ProtoActorFeature : FeatureBase
     {
         // Configure default workflow execution pipeline suitable for Proto Actor.
         Module.UseWorkflows(workflows => workflows.WithProtoActorRuntimeWorkflowExecutionPipeline());
-            
+
         // Configure runtime with ProtoActor workflow runtime.
         Module.Configure<WorkflowRuntimeFeature>().WorkflowRuntime = sp => ActivatorUtilities.CreateInstance<ProtoActorWorkflowRuntime>(sp);
     }
@@ -48,22 +49,22 @@ public class ProtoActorFeature : FeatureBase
     /// The name of the cluster to configure.
     /// </summary>
     public string ClusterName { get; set; } = "elsa-cluster";
-    
+
     /// <summary>
     /// A delegate that returns an instance of a concrete implementation of <see cref="IClusterProvider"/>. 
     /// </summary>
     public Func<IServiceProvider, IClusterProvider> ClusterProvider { get; set; } = _ => new TestProvider(new TestProviderOptions(), new InMemAgent());
-    
+
     /// <summary>
     /// A delegate that configures an instance of <see cref="ActorSystemConfig"/>. 
     /// </summary>
     public Action<IServiceProvider, ActorSystemConfig> ActorSystemConfig { get; set; } = SetupDefaultConfig;
-    
+
     /// <summary>
     /// A delegate that configures an instance of an <see cref="ActorSystem"/>. 
     /// </summary>
     public Action<IServiceProvider, ActorSystem> ActorSystem { get; set; } = (_, _) => { };
-    
+
     /// <summary>
     /// A delegate that returns an instance of <see cref="GrpcNetRemoteConfig"/> to be used by the actor system. 
     /// </summary>
@@ -84,19 +85,19 @@ public class ProtoActorFeature : FeatureBase
     public override void Apply()
     {
         var services = Services;
-        
+
         // Register ActorSystem.
         services.AddSingleton(sp =>
         {
             var systemConfig = Proto.ActorSystemConfig
                 .Setup()
                 .WithMetrics();
-            
+
             var clusterProvider = ClusterProvider(sp);
             var system = new ActorSystem(systemConfig).WithServiceProvider(sp);
             var workflowGrainProps = system.DI().PropsFor<WorkflowGrainActor>();
             var workflowRegistryGrainProps = system.DI().PropsFor<RunningWorkflowsGrainActor>();
-            
+
             var clusterConfig = ClusterConfig
                     .Setup(ClusterName, clusterProvider, new PartitionIdentityLookup())
                     .WithHeartbeatExpiration(TimeSpan.FromDays(1))
@@ -114,17 +115,26 @@ public class ProtoActorFeature : FeatureBase
             system
                 .WithRemote(remoteConfig)
                 .WithCluster(clusterConfig);
-            
-            ActorSystem(sp, system); 
+
+            ActorSystem(sp, system);
             return system;
         });
 
         // Logging.
         Log.SetLoggerFactory(LoggerFactory.Create(l => l.AddConsole().SetMinimumLevel(LogLevel.Warning)));
-        
+
         // Persistence.
         services.AddSingleton(PersistenceProvider);
-        
+
+        // Mappers.
+        services
+            .AddSingleton<BookmarkMapper>()
+            .AddSingleton<ExceptionMapper>()
+            .AddSingleton<WorkflowExecutionResultMapper>()
+            .AddSingleton<WorkflowFaultStateMapper>()
+            .AddSingleton<WorkflowStatusMapper>()
+            .AddSingleton<WorkflowSubStatusMapper>();
+
         // Mediator handlers.
         services.AddHandlersFrom<ProtoActorFeature>();
 
@@ -137,11 +147,11 @@ public class ProtoActorFeature : FeatureBase
             .AddTransient(sp => new RunningWorkflowsGrainActor((context, _) => ActivatorUtilities.CreateInstance<RunningWorkflowsGrain>(sp, context)))
             ;
     }
-    
+
     private static void SetupDefaultConfig(IServiceProvider serviceProvider, ActorSystemConfig config)
     {
     }
-    
+
     private static GrpcNetRemoteConfig CreateDefaultRemoteConfig(IServiceProvider serviceProvider) =>
         GrpcNetRemoteConfig.BindToLocalhost()
             .WithProtoMessages(MessagesReflection.Descriptor)
