@@ -31,25 +31,26 @@ internal class BulkRetract : ElsaEndpoint<Request, Response>
 
         foreach (var definitionId in request.DefinitionIds)
         {
-            var definition = (await _store.FindManyAsync(new WorkflowDefinitionFilter
+            var definitions = (await _store.FindManyAsync(new WorkflowDefinitionFilter
             {
                 DefinitionId = definitionId,
-                VersionOptions = VersionOptions.Latest
-            }, cancellationToken: cancellationToken)).FirstOrDefault();
+                VersionOptions = VersionOptions.LatestOrPublished
+            }, cancellationToken: cancellationToken)).ToList();
 
-            if (definition == null)
+            if (!definitions.Any())
             {
                 notFound.Add(definitionId);
                 continue;
             }
 
-            if (!definition.IsPublished)
+            var published = definitions.FirstOrDefault(d => d.IsPublished);
+            if (published is null)
             {
                 notPublished.Add(definitionId);
                 continue;
             }
 
-            await _workflowDefinitionPublisher.RetractAsync(definition, cancellationToken);
+            await _workflowDefinitionPublisher.RetractAsync(published, cancellationToken);
             retracted.Add(definitionId);
         }
 

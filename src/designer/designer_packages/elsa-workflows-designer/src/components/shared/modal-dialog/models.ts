@@ -92,4 +92,12 @@ export class DefaultModalActions {
     isPrimary: true,
     onClick: handler
   });
+
+  public static Yes = (handler?: (args: ModalActionClickArgs) => void): ModalActionDefinition => ({
+    text: 'Yes',
+    name: 'Yes',
+    type: ModalActionType.Button,
+    isDangerous: true,
+    onClick: handler
+  });
 }

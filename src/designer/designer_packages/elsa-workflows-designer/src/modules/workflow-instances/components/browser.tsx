@@ -12,6 +12,7 @@ import {getSubStatusColor, updateSelectedWorkflowInstances} from "../services/ut
 import {formatTimestamp} from "../../../utils";
 import {DeleteIcon, EditIcon} from "../../../components/icons/tooling";
 import {PagerData} from "../../../components/shared/pager/pager";
+import {DefaultContents, DefaultModalActions, ModalDialogService, ModalType} from '../../../components/shared/modal-dialog';
 
 @Component({
   tag: 'elsa-workflow-instance-browser',
@@ -25,6 +26,7 @@ export class WorkflowInstanceBrowser {
 
   private readonly workflowInstancesApi: WorkflowInstancesApi;
   private readonly workflowDefinitionsApi: WorkflowDefinitionsApi;
+  private readonly modalDialogService: ModalDialogService;
 
   private selectAllCheckbox: HTMLInputElement;
   private publishedOrLatestWorkflows: Array<WorkflowDefinitionSummary> = [];
@@ -33,6 +35,7 @@ export class WorkflowInstanceBrowser {
   constructor() {
     this.workflowInstancesApi = Container.get(WorkflowInstancesApi);
     this.workflowDefinitionsApi = Container.get(WorkflowDefinitionsApi);
+    this.modalDialogService = Container.get(ModalDialogService);
   }
 
   @Event() public workflowInstanceSelected: EventEmitter<WorkflowInstanceSummary>;
@@ -102,7 +105,9 @@ export class WorkflowInstanceBrowser {
         this.selectedWorkflowDefinitionId = undefined
         
         await this.loadWorkflowInstances();
-      }
+      },
+      onBulkDelete: this.onDeleteManyClick,
+      onBulkCancel: this.onCancelManyClick
     };
 
     return (
@@ -181,6 +186,36 @@ export class WorkflowInstanceBrowser {
       </Host>
     );
   }
+
+  private onDeleteManyClick = async () => {
+    if(this.selectedWorkflowInstanceIds.length == 0) 
+      return;
+
+    this.modalDialogService.show(
+      () => DefaultContents.Warning("Are you sure you want to delete selected workflow instances?"),
+      {
+        actions: [DefaultModalActions.Delete(async () => {
+          await this.workflowInstancesApi.deleteMany({workflowInstanceIds: this.selectedWorkflowInstanceIds});
+          await this.loadWorkflowInstances();
+        }), DefaultModalActions.Cancel()],
+        modalType: ModalType.Confirmation
+      });
+  };
+
+  private onCancelManyClick = async () => {
+    if(this.selectedWorkflowInstanceIds.length == 0) 
+      return;
+
+    this.modalDialogService.show(
+      () => DefaultContents.Warning("Are you sure you want to cancel selected workflow instances?"),
+      {
+        actions: [DefaultModalActions.Yes(async () => {
+          await this.workflowInstancesApi.cancelMany({workflowInstanceIds: this.selectedWorkflowInstanceIds});
+          await this.loadWorkflowInstances();
+        }), DefaultModalActions.Cancel()],
+        modalType: ModalType.Confirmation
+      });
+  };
 
   private resetPagination = () => {
     this.currentPage = 0;

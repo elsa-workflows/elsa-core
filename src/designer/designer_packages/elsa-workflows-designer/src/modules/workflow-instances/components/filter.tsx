@@ -4,13 +4,18 @@ import {OrderBy, WorkflowStatus, WorkflowSubStatus} from "../../../models";
 import {DropdownButtonItem, DropdownButtonOrigin} from "../../../components/shared/dropdown-button/models";
 import {BulkActionsIcon, OrderByIcon, PageSizeIcon, WorkflowIcon, WorkflowStatusIcon} from "../../../components/icons/tooling";
 
-export interface FilterProps {
+export interface FilterProps extends BulkActionsProps {
   pageSizeFilter: PageSizeFilterProps;
   workflowFilter: WorkflowFilterProps;
   statusFilter: StatusFilterProps;
   subStatusFilter: SubStatusFilterProps;
   orderByFilter: OrderByFilterProps;
   resetFilter: () => void;
+}
+
+export interface BulkActionsProps {
+  onBulkDelete: () => void;
+  onBulkCancel: () => void;
 }
 
 export interface PageSizeFilterProps {
@@ -39,11 +44,11 @@ export interface OrderByFilterProps {
   onChange: (orderBy: OrderBy) => void;
 }
 
-export const Filter: FunctionalComponent<FilterProps> = ({pageSizeFilter, workflowFilter, statusFilter, subStatusFilter, orderByFilter, resetFilter}) => {
+export const Filter: FunctionalComponent<FilterProps> = ({pageSizeFilter, workflowFilter, statusFilter, subStatusFilter, orderByFilter, resetFilter, onBulkDelete, onBulkCancel}) => {
 
   return <div class="p-8 flex content-end justify-right bg-white space-x-4">
     <div class="flex-shrink-0">
-      <BulkActions/>
+      <BulkActions onBulkDelete={onBulkDelete} onBulkCancel={onBulkCancel} />
     </div>
     <div class="flex-1">
       &nbsp;
@@ -59,24 +64,29 @@ export const Filter: FunctionalComponent<FilterProps> = ({pageSizeFilter, workfl
   </div>;
 }
 
-const BulkActions: FunctionalComponent = () => {
+const BulkActions: FunctionalComponent<BulkActionsProps> = ({ onBulkDelete, onBulkCancel }) => {
   const bulkActions = [{
-    text: 'Cancel',
-    name: 'Cancel',
-  }, {
     text: 'Delete',
     name: 'Delete',
+  }, {
+    text: 'Cancel',
+    name: 'Cancel',
   }];
 
   const onBulkActionSelected = (e: CustomEvent<DropdownButtonItem>) => {
     const action = e.detail;
-    switch (action.name){
-      case 'Delete' :
+    switch (action.name) {
+      case 'Delete':
+        onBulkDelete();
         break;
+      case 'Cancel':
+        onBulkCancel();
+        break;
+
       default:
         action.handler();
     }
-  }
+  };
 
   return <elsa-dropdown-button
     text="Bulk Actions" items={bulkActions} icon={<BulkActionsIcon/>}

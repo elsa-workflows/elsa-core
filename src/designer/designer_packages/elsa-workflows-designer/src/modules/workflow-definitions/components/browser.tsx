@@ -83,6 +83,9 @@ export class WorkflowDefinitionBrowser {
   }
 
   private onDeleteManyClick = async () => {
+    if(this.selectedWorkflowDefinitionIds.length == 0) 
+      return;
+
     this.modalDialogService.show(
       () => DefaultContents.Warning("Are you sure you want to delete selected workflow definitions?"),
       {
@@ -96,6 +99,9 @@ export class WorkflowDefinitionBrowser {
   };
 
   private onPublishManyClick = async () => {
+    if(this.selectedWorkflowDefinitionIds.length == 0) 
+      return;
+
     this.modalDialogService.show(
       () => DefaultContents.Warning("Are you sure you want to publish selected workflow definitions?"),
       {
@@ -108,6 +114,9 @@ export class WorkflowDefinitionBrowser {
   };
 
   private onUnpublishManyClick = async () => {
+    if(this.selectedWorkflowDefinitionIds.length == 0) 
+      return;
+      
     this.modalDialogService.show(
       () => DefaultContents.Warning("Are you sure you want to unpublish selected workflow definitions?"),
       {

@@ -5,7 +5,6 @@ import {ElsaClientProvider} from "../../../services";
 
 @Service()
 export class WorkflowInstancesApi {
-
   private provider: ElsaClientProvider;
 
   constructor(provider: ElsaClientProvider) {
@@ -49,9 +48,19 @@ export class WorkflowInstancesApi {
     return response.data;
   }
 
-  async deleteMany(request: BulkDeleteWorkflowInstancesRequest): Promise<PagedList<WorkflowInstanceSummary>> {
+  async deleteMany(request: BulkDeleteWorkflowInstancesRequest): Promise<number> {
     const httpClient = await this.getHttpClient();
-    const response = await httpClient.delete<PagedList<WorkflowInstanceSummary>>(`workflow-instances/bulk`);
+    const response = await httpClient.post<number>(`bulk-actions/delete/workflow-instances/by-id`, {
+      Ids: request.workflowInstanceIds,
+    });
+    return response.data;
+  }
+
+  async cancelMany(request: BulkCancelWorkflowInstancesRequest): Promise<number> {
+    const httpClient = await this.getHttpClient();
+    const response = await httpClient.post<number>(`bulk-actions/cancel/workflow-instances/by-id`, {
+      Ids: request.workflowInstanceIds,
+    });
     return response.data;
   }
 
@@ -97,8 +106,20 @@ export interface BulkDeleteWorkflowInstancesRequest {
   workflowInstanceIds: Array<string>;
 }
 
+export interface BulkCancelWorkflowInstancesRequest {
+  workflowInstanceIds: Array<string>;
+}
+
 export interface GetWorkflowJournalRequest {
   workflowInstanceId: string;
   page?: number;
   pageSize?: number;
+}
+
+export interface DeleteManyWorkflowInstancesResponse {
+
+}
+
+export interface DeleteManyWorkflowInstancesResponse {
+  
 }
