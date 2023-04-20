@@ -1,3 +1,4 @@
+using Elsa.ProtoActor.Extensions;
 using Elsa.Workflows.Runtime.Contracts;
 using ProtoWorkflowExecutionResponse = Elsa.ProtoActor.Protos.WorkflowExecutionResponse;
 
@@ -38,8 +39,8 @@ public class WorkflowExecutionResultMapper
          _workflowStatusMapper.Map(source.Status),
         _workflowSubStatusMapper.Map(source.SubStatus),
         _bookmarkMapper.Map(source.Bookmarks).ToList(),
-        source.TriggeredActivityId,
-        _workflowFaultStateMapper.Map(source.Fault));
+        source.TriggeredActivityId.NullIfEmpty(),
+        source.Fault != null ? _workflowFaultStateMapper.Map(source.Fault) : default);
     
     /// <summary>
     /// Maps a <see cref="WorkflowExecutionResult"/> to a <see cref="ProtoWorkflowExecutionResponse"/>.
