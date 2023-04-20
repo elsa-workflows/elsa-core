@@ -5,10 +5,16 @@ using ProtoBookmark = Elsa.ProtoActor.Protos.Bookmark;
 
 namespace Elsa.ProtoActor.Mappers;
 
+/// <summary>
+/// Maps between <see cref="Bookmark"/> and <see cref="ProtoBookmark"/>.
+/// </summary>
 public class BookmarkMapper
 {
     private readonly IBookmarkPayloadSerializer _bookmarkPayloadSerializer;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="BookmarkMapper"/>.
+    /// </summary>
     public BookmarkMapper(IBookmarkPayloadSerializer bookmarkPayloadSerializer)
     {
         _bookmarkPayloadSerializer = bookmarkPayloadSerializer;
@@ -25,7 +31,7 @@ public class BookmarkMapper
                 Id = x.Id,
                 Name = x.Name,
                 Hash = x.Hash,
-                Payload = x.Payload != null ? _bookmarkPayloadSerializer.Serialize(x.Payload) : default,
+                Payload = x.Payload != null ? _bookmarkPayloadSerializer.Serialize(x.Payload) : string.Empty,
                 ActivityNodeId = x.ActivityNodeId,
                 ActivityInstanceId = x.ActivityInstanceId,
                 AutoBurn = x.AutoBurn,
