@@ -27,9 +27,40 @@ message StartWorkflowRequest {
   optional string TriggerActivityId = 6;
 }
 
-message StartWorkflowResponse {
-  RunWorkflowResult Result = 1;
-  repeated BookmarkDto Bookmarks = 2;
+message WorkflowExecutionResponse {
+  string WorkflowInstanceId = 1;
+  RunWorkflowResult Result = 2;
+  WorkflowStatus Status = 3;
+  WorkflowSubStatus SubStatus = 4;
+  repeated Bookmark Bookmarks = 5;
+  optional WorkflowFault Fault = 6;
+  optional string TriggeredActivityId = 7;
+}
+
+message WorkflowFault {
+  optional ExceptionState Exception = 1;
+  string Message = 2;
+  optional string FaultedActivityId = 3;
+}
+
+message ExceptionState {
+  string Type = 1;
+  string Message = 2;
+  optional string StackTrace = 3;
+  optional ExceptionState InnerException = 4;
+}
+
+enum WorkflowStatus {
+  WorkflowStatusRunning = 0;
+  WorkflowStatusFinished = 1;
+}
+
+enum WorkflowSubStatus {
+  WorkflowSubStatusExecuting = 0;
+  WorkflowSubStatusSuspended = 1;
+  WorkflowSubStatusFinished = 2;
+  WorkflowSubStatusCancelled = 3;
+  WorkflowSubStatusFaulted = 4;
 }
 
 message ResumeWorkflowRequest {
@@ -41,11 +72,6 @@ message ResumeWorkflowRequest {
   optional string ActivityInstanceId = 6;
   optional string ActivityHash = 7;
   optional Input input = 8;
-}
-
-message ResumeWorkflowResponse {
-  RunWorkflowResult Result = 1;
-  repeated BookmarkDto Bookmarks = 2;
 }
 
 message ExportWorkflowStateRequest {}
@@ -65,11 +91,11 @@ enum RunWorkflowResult {
   RunWorkflowResultSuspended = 1;
 }
 
-message BookmarkDto {
+message Bookmark {
   string Id = 1;
   string Name = 2;
   string Hash = 3;
-  optional string Data = 4;
+  optional string Payload = 4;
   string ActivityNodeId = 5;
   string ActivityInstanceId = 6;
   optional bool AutoBurn = 7;

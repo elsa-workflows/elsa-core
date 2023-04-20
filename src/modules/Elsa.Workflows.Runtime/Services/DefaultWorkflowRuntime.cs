@@ -75,7 +75,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
 
         if (workflowDefinition == null)
             return null;
-        
+
         return await StartWorkflowAsync(workflowDefinition, options, cancellationToken);
     }
 
@@ -107,7 +107,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
                     continue;
 
                 var startResult = await StartWorkflowAsync(definitionId, startOptions, cancellationToken);
-                results.Add(startResult with { ActivityId = trigger.ActivityId });
+                results.Add(startResult with { TriggeredActivityId = trigger.ActivityId });
             }
         }
 
@@ -115,7 +115,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
     }
 
     /// <inheritdoc />
-    public async Task<ResumeWorkflowResult> ResumeWorkflowAsync(string workflowInstanceId, ResumeWorkflowRuntimeOptions options, CancellationToken cancellationToken = default)
+    public async Task<WorkflowExecutionResult> ResumeWorkflowAsync(string workflowInstanceId, ResumeWorkflowRuntimeOptions options, CancellationToken cancellationToken = default)
     {
         await using (await _distributedLockProvider.AcquireLockAsync(workflowInstanceId, TimeSpan.FromMinutes(1), cancellationToken))
         {
@@ -134,8 +134,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
 
             if (workflowDefinition == null)
             {
-                _logger.LogInformation("The workflow definition {DefinitionId} version {Version} was not found", definitionId, version);
-                return new ResumeWorkflowResult(Array.Empty<Bookmark>());
+                throw new Exception($"The workflow definition {definitionId} version {version} was not found");
             }
 
             var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
@@ -156,7 +155,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
 
             await SaveWorkflowStateAsync(workflowState, cancellationToken);
 
-            return new ResumeWorkflowResult(workflowState.Bookmarks);
+            return new WorkflowExecutionResult(workflowState.Id, workflowState.Status, workflowState.SubStatus, workflowState.Bookmarks);
         }
     }
 
@@ -188,17 +187,16 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
             var startOptions = new StartWorkflowRuntimeOptions(collectedStartableWorkflow.CorrelationId, input, VersionOptions.Published,
                 collectedStartableWorkflow.ActivityId, collectedStartableWorkflow.WorkflowInstanceId);
             var startResult = await StartWorkflowAsync(collectedStartableWorkflow.DefinitionId!, startOptions, cancellationToken);
-            return startResult with { ActivityId = collectedStartableWorkflow.ActivityId };
+            return startResult with { TriggeredActivityId = collectedStartableWorkflow.ActivityId };
         }
 
         var collectedResumableWorkflow = (match as ResumableWorkflowMatch)!;
         var runtimeOptions = new ResumeWorkflowRuntimeOptions(collectedResumableWorkflow.CorrelationId, Input: input);
-        var resumeResult = await ResumeWorkflowAsync(
+
+        return await ResumeWorkflowAsync(
             match.WorkflowInstanceId,
             runtimeOptions with { BookmarkId = collectedResumableWorkflow.BookmarkId },
             cancellationToken);
-
-        return new WorkflowExecutionResult(collectedResumableWorkflow.WorkflowInstanceId, resumeResult.Bookmarks);
     }
 
     /// <inheritdoc />
@@ -248,14 +246,20 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
 
         await SaveWorkflowStateAsync(workflowState, cancellationToken);
 
-        return new WorkflowExecutionResult(workflowState.Id, workflowState.Bookmarks);
+        return new WorkflowExecutionResult(
+            workflowState.Id,
+            workflowState.Status,
+            workflowState.SubStatus,
+            workflowState.Bookmarks,
+            default,
+            workflowState.Fault);
     }
-    
+
     private async Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken)
     {
         return await _workflowDefinitionService.FindAsync(definitionId, versionOptions, cancellationToken);
     }
-    
+
     private async Task<IWorkflowHost> CreateWorkflowHostAsync(string definitionId, StartWorkflowRuntimeOptions options, CancellationToken cancellationToken)
     {
         var versionOptions = options.VersionOptions;
@@ -263,10 +267,10 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
 
         if (workflowDefinition == null)
             throw new Exception("Specified workflow definition and version does not exist");
-        
+
         return await CreateWorkflowHostAsync(workflowDefinition, cancellationToken);
     }
-    
+
     private async Task<IWorkflowHost> CreateWorkflowHostAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken)
     {
         var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
@@ -286,7 +290,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
                 runtimeOptions with { BookmarkId = bookmark.BookmarkId },
                 cancellationToken);
 
-            resumedWorkflows.Add(new WorkflowExecutionResult(workflowInstanceId, resumeResult.Bookmarks));
+            resumedWorkflows.Add(new WorkflowExecutionResult(workflowInstanceId, resumeResult.Status, resumeResult.SubStatus, resumeResult.Bookmarks));
         }
 
         return resumedWorkflows;

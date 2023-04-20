@@ -51,7 +51,7 @@ public class HttpBookmarkProcessor : IHttpBookmarkProcessor
             from executionResult in executionResults
             from bookmark in executionResult.Bookmarks
             where bookmark.Name == writeHttpResponseTypeName || bookmark.Name == httpEndpointTypeName
-            select (executionResult.InstanceId, bookmark.Id);
+            select (InstanceId: executionResult.WorkflowInstanceId, bookmark.Id);
 
         var workflowExecutionResults = new Stack<(string InstanceId, string BookmarkId)>(query);
 

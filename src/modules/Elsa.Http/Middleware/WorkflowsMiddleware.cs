@@ -202,18 +202,14 @@ public class WorkflowsMiddleware
 
     private async Task<bool> HandleWorkflowFaultAsync(HttpContext httpContext, WorkflowExecutionResult workflowExecutionResult, CancellationToken cancellationToken)
     {
-        var instanceFilter = new WorkflowInstanceFilter { Id = workflowExecutionResult.InstanceId };
-        var workflowInstance = await _workflowInstanceStore.FindAsync(instanceFilter, cancellationToken);
+        var subStatus = workflowExecutionResult.SubStatus;
 
-        if (workflowInstance is not null
-            && workflowInstance.SubStatus == WorkflowSubStatus.Faulted
-            && !httpContext.Response.HasStarted)
-        {
-            await _httpEndpointWorkflowFaultHandler.HandleAsync(new HttpEndpointFaultedWorkflowContext(httpContext, workflowInstance, null, cancellationToken));
-            return true;
-        }
+        if (subStatus != WorkflowSubStatus.Faulted || httpContext.Response.HasStarted)
+            return false;
 
-        return false;
+        var workflowState = (await _workflowRuntime.ExportWorkflowStateAsync(workflowExecutionResult.WorkflowInstanceId, cancellationToken))!;
+        await _httpEndpointWorkflowFaultHandler.HandleAsync(new HttpEndpointFaultedWorkflowContext(httpContext, workflowState, cancellationToken));
+        return true;
     }
 
     private async Task<bool> AuthorizeAsync(

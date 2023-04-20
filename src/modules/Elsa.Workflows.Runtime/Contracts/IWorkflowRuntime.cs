@@ -1,4 +1,5 @@
 using Elsa.Common.Models;
+using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.State;
@@ -46,7 +47,7 @@ public interface IWorkflowRuntime
     /// <param name="workflowInstanceId">The ID of the workflow instance to resume.</param>
     /// <param name="options"></param>
     /// <param name="cancellationToken"></param>
-    Task<ResumeWorkflowResult> ResumeWorkflowAsync(string workflowInstanceId, ResumeWorkflowRuntimeOptions options, CancellationToken cancellationToken = default);
+    Task<WorkflowExecutionResult> ResumeWorkflowAsync(string workflowInstanceId, ResumeWorkflowRuntimeOptions options, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Resumes all workflows that are bookmarked on the specified activity type. 
@@ -117,13 +118,11 @@ public record ResumeWorkflowRuntimeOptions(
 
 public record CanStartWorkflowResult(string? InstanceId, bool CanStart);
 
-public record ResumeWorkflowResult(ICollection<Bookmark> Bookmarks);
-
 public record TriggerWorkflowsRuntimeOptions(string? CorrelationId = default, string? WorkflowInstanceId = default, IDictionary<string, object>? Input = default);
 
 public record TriggerWorkflowsResult(ICollection<WorkflowExecutionResult> TriggeredWorkflows);
 
-public record WorkflowExecutionResult(string InstanceId, ICollection<Bookmark> Bookmarks, string? ActivityId = null);
+public record WorkflowExecutionResult(string WorkflowInstanceId, WorkflowStatus Status, WorkflowSubStatus SubStatus, ICollection<Bookmark> Bookmarks, string? TriggeredActivityId = null, WorkflowFaultState? Fault = default);
 
 public record UpdateBookmarksContext(string InstanceId, Diff<Bookmark> Diff, string? CorrelationId);
 

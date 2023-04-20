@@ -1,9 +1,13 @@
+using System.Net.Mime;
 using Elsa.Abstractions;
 using Elsa.Common.Models;
 using Elsa.Http.Contracts;
+using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
 using JetBrains.Annotations;
+using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Execute;
 
@@ -16,13 +20,15 @@ public class Execute : ElsaEndpoint<Request, Response>
     private readonly IWorkflowDefinitionStore _store;
     private readonly IWorkflowRuntime _workflowRuntime;
     private readonly IHttpBookmarkProcessor _httpBookmarkProcessor;
+    private IApiSerializer _apiSerializer;
 
     /// <inheritdoc />
-    public Execute(IWorkflowDefinitionStore store, IWorkflowRuntime workflowRuntime, IHttpBookmarkProcessor httpBookmarkProcessor)
+    public Execute(IWorkflowDefinitionStore store, IWorkflowRuntime workflowRuntime, IHttpBookmarkProcessor httpBookmarkProcessor, IApiSerializer apiSerializer)
     {
         _store = store;
         _workflowRuntime = workflowRuntime;
         _httpBookmarkProcessor = httpBookmarkProcessor;
+        _apiSerializer = apiSerializer;
     }
 
     /// <inheritdoc />
@@ -49,10 +55,25 @@ public class Execute : ElsaEndpoint<Request, Response>
         var startWorkflowOptions = new StartWorkflowRuntimeOptions(correlationId, input, VersionOptions.Published);
         var result = await _workflowRuntime.StartWorkflowAsync(definitionId, startWorkflowOptions, cancellationToken);
 
+        // If a workflow fault occurred, respond appropriately with a 500 internal server error.
+        if (result.SubStatus == WorkflowSubStatus.Faulted)
+        {
+            var faultedResponse = _apiSerializer.Serialize(new
+            {
+                errorMessage = $"Workflow faulted with error: {result.Fault!.Message}",
+                workflowState = result
+            });
+
+            HttpContext.Response.ContentType = MediaTypeNames.Application.Json;
+            HttpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
+            await HttpContext.Response.WriteAsync(faultedResponse, cancellationToken);
+            return;
+        }
+
         // Resume any HTTP bookmarks.
         await _httpBookmarkProcessor.ProcessBookmarks(new[] { result }, correlationId, default, cancellationToken);
 
         if (!HttpContext.Response.HasStarted)
-            await SendOkAsync(new Response(result.InstanceId), cancellationToken);
+            await SendOkAsync(new Response(result.WorkflowInstanceId), cancellationToken);
     }
 }
