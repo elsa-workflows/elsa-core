@@ -92,7 +92,7 @@ public class WorkflowGrain : WorkflowGrainBase
         var startWorkflowOptions = new StartWorkflowHostOptions(instanceId, correlationId, input, request.TriggerActivityId);
         
         _workflowHost = await CreateWorkflowHostAsync(definitionId, versionOptions, cancellationToken);
-        _version = _workflowHost.Workflow.Version;
+        _version = _workflowHost.Workflow.Identity.Version;
         _definitionId = definitionId;
         _instanceId = instanceId;
         _input = input;
@@ -119,7 +119,7 @@ public class WorkflowGrain : WorkflowGrainBase
         if (_workflowHost == null!)
         {
             _workflowHost = await CreateWorkflowHostAsync(definitionId, versionOptions, cancellationToken);
-            _version = _workflowHost.Workflow.Version;
+            _version = _workflowHost.Workflow.Identity.Version;
             _definitionId = definitionId;
             _instanceId = instanceId;
             _input = input;
@@ -169,7 +169,7 @@ public class WorkflowGrain : WorkflowGrainBase
         if (_workflowHost == null!)
         {
             _workflowHost = await CreateWorkflowHostAsync(definitionId, versionOptions, cancellationToken);
-            _version = _workflowHost.Workflow.Version;
+            _version = _workflowHost.Workflow.Identity.Version;
         }
         
         await _workflowHost.ResumeWorkflowAsync(resumeWorkflowHostOptions, cancellationToken);
