@@ -115,11 +115,3 @@ export interface GetWorkflowJournalRequest {
   page?: number;
   pageSize?: number;
 }
-
-export interface DeleteManyWorkflowInstancesResponse {
-
-}
-
-export interface DeleteManyWorkflowInstancesResponse {
-  
-}
