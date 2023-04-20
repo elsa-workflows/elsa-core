@@ -35,7 +35,7 @@ public class DefaultHttpEndpointWorkflowFaultHandler : IHttpEndpointWorkflowFaul
         var faultedResponse = _apiSerializer.Serialize(new
         {
             errorMessage = $"Workflow faulted with error: {fault.Message}",
-            workflow = workflowState
+            workflowState = workflowState
         });
 
         await httpContext.Response.WriteAsync(faultedResponse, context.CancellationToken);

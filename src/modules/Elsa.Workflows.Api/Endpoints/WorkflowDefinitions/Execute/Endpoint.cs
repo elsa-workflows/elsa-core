@@ -4,6 +4,7 @@ using Elsa.Common.Models;
 using Elsa.Http.Contracts;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
 using JetBrains.Annotations;
@@ -58,22 +59,36 @@ public class Execute : ElsaEndpoint<Request, Response>
         // If a workflow fault occurred, respond appropriately with a 500 internal server error.
         if (result.SubStatus == WorkflowSubStatus.Faulted)
         {
-            var faultedResponse = _apiSerializer.Serialize(new
-            {
-                errorMessage = $"Workflow faulted with error: {result.Fault!.Message}",
-                workflowState = result
-            });
-
-            HttpContext.Response.ContentType = MediaTypeNames.Application.Json;
-            HttpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
-            await HttpContext.Response.WriteAsync(faultedResponse, cancellationToken);
+            var workflowState = await _workflowRuntime.ExportWorkflowStateAsync(result.WorkflowInstanceId, cancellationToken);
+            await HandleFaultAsync(workflowState!, cancellationToken);
             return;
         }
 
         // Resume any HTTP bookmarks.
         await _httpBookmarkProcessor.ProcessBookmarks(new[] { result }, correlationId, default, cancellationToken);
+        
+        var workflowState2 = await _workflowRuntime.ExportWorkflowStateAsync(result.WorkflowInstanceId, cancellationToken);
+        
+        if (workflowState2!.SubStatus == WorkflowSubStatus.Faulted)
+        {
+            await HandleFaultAsync(workflowState2, cancellationToken);
+            return;
+        }
 
         if (!HttpContext.Response.HasStarted)
             await SendOkAsync(new Response(result.WorkflowInstanceId), cancellationToken);
+    }
+
+    private async Task HandleFaultAsync(WorkflowState workflowState, CancellationToken cancellationToken)
+    {
+        var faultedResponse = _apiSerializer.Serialize(new
+        {
+            errorMessage = $"Workflow faulted with error: {workflowState.Fault!.Message}",
+            workflowState = workflowState
+        });
+
+        HttpContext.Response.ContentType = MediaTypeNames.Application.Json;
+        HttpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
+        await HttpContext.Response.WriteAsync(faultedResponse, cancellationToken);
     }
 }
