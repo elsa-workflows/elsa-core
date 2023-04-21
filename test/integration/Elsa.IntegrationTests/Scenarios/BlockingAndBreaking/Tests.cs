@@ -32,7 +32,7 @@ public class Tests
 
         // Resume one of the branches.
         var bookmark = result1.WorkflowState.Bookmarks.FirstOrDefault(x => x.ActivityNodeId == "Workflow1:While1:Sequence1:Fork1:Sequence2:Branch 1");
-        var runOptions = new RunWorkflowOptions(BookmarkId: bookmark!.Id);
+        var runOptions = new RunWorkflowOptions(bookmarkId: bookmark!.Id);
         var result2 = await _workflowRunner.RunAsync(workflow, result1.WorkflowState, runOptions);
         
         // Assert that all bookmarks have been cleared.

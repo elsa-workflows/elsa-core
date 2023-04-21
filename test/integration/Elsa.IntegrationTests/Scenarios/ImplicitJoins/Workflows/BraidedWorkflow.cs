@@ -37,14 +37,14 @@ public class BraidedWorkflow : WorkflowBase
             {
                 new Connection(writeLine1, writeLine2),
                 new Connection(writeLine1, writeLine3),
-                new Connection(writeLine1, writeLine4),
 
+                new Connection(writeLine2, writeLine4),
                 new Connection(writeLine2, writeLine5),
+
                 new Connection(writeLine3, writeLine5),
-
                 new Connection(writeLine3, writeLine6),
-                new Connection(writeLine4, writeLine6),
 
+                new Connection(writeLine4, writeLine7),
                 new Connection(writeLine5, writeLine7),
                 new Connection(writeLine6, writeLine7),
             }
