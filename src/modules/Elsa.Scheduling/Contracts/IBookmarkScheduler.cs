@@ -1,4 +1,5 @@
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Runtime.Entities;
 
 namespace Elsa.Scheduling.Contracts;
 
@@ -7,6 +8,13 @@ namespace Elsa.Scheduling.Contracts;
 /// </summary>
 public interface IBookmarkScheduler
 {
+    /// <summary>
+    /// Schedules the specified list of bookmarks.
+    /// </summary>
+    /// <param name="bookmarks">The bookmarks to schedule.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    Task ScheduleAsync(IEnumerable<StoredBookmark> bookmarks, CancellationToken cancellationToken = default);
+    
     /// <summary>
     /// Schedules the specified list of bookmarks.
     /// </summary>

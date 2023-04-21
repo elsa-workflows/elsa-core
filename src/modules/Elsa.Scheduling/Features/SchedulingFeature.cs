@@ -4,6 +4,7 @@ using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Scheduling.Contracts;
 using Elsa.Scheduling.Handlers;
+using Elsa.Scheduling.HostedServices;
 using Elsa.Scheduling.Services;
 using Elsa.Workflows.Management.Features;
 using Microsoft.Extensions.DependencyInjection;
@@ -30,6 +31,12 @@ public class SchedulingFeature : FeatureBase
     /// Gets or sets the CRON parser.
     /// </summary>
     public Func<IServiceProvider, ICronParser> CronParser { get; set; } = sp => sp.GetRequiredService<CronosCronParser>();
+
+    /// <inheritdoc />
+    public override void ConfigureHostedServices()
+    {
+        Module.ConfigureHostedService<CreateSchedulesHostedService>();
+    }
 
     /// <inheritdoc />
     public override void Apply()

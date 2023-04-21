@@ -89,6 +89,7 @@ services.AddSingleton<ICustomerStore, MemoryCustomerStore>();
 
 // Add workflow context providers.
 services.AddWorkflowContextProvider<CustomerWorkflowContextProvider>();
+services.AddWorkflowContextProvider<OrderWorkflowContextProvider>();
 
 // Configure middleware pipeline.
 var app = builder.Build();

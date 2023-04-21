@@ -57,9 +57,7 @@ public class Cron : EventGenerator
     protected override object GetTriggerPayload(TriggerIndexingContext context)
     {
         var cronExpression = context.ExpressionExecutionContext.Get(CronExpression)!;
-        var cronParser = context.ExpressionExecutionContext.GetRequiredService<ICronParser>();
-        var executeAt = cronParser.GetNextOccurrence(cronExpression);
-        return new CronBookmarkPayload(executeAt, cronExpression);
+        return new CronTriggerPayload(cronExpression);
     }
 
     /// <summary>
@@ -68,4 +66,5 @@ public class Cron : EventGenerator
     public static Cron FromCronExpression(string value, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(value, source, line);
 }
 
+internal record CronTriggerPayload(string CronExpression);
 internal record CronBookmarkPayload(DateTimeOffset ExecuteAt, string CronExpression);

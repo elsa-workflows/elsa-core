@@ -28,7 +28,8 @@ public class MassTransitWorkflowDispatcher : IWorkflowDispatcher
             request.VersionOptions,
             request.Input,
             request.CorrelationId,
-            request.InstanceId
+            request.InstanceId,
+            request.TriggerActivityId
         ), cancellationToken);
         return new();
     }

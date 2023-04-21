@@ -9,6 +9,7 @@ public class TriggerFilter
     public string? WorkflowDefinitionId { get; set; }
     public ICollection<string>? WorkflowDefinitionIds { get; set; }
     public string? Name { get; set; }
+    public ICollection<string>? Names { get; set; }
     public string? Hash { get; set; }
 
     public IQueryable<StoredTrigger> Apply(IQueryable<StoredTrigger> queryable)
@@ -18,6 +19,7 @@ public class TriggerFilter
         if (WorkflowDefinitionId != null) queryable = queryable.Where(x => x.WorkflowDefinitionId == WorkflowDefinitionId);
         if (WorkflowDefinitionIds != null) queryable = queryable.Where(x => WorkflowDefinitionIds.Contains(x.WorkflowDefinitionId));
         if (Name != null) queryable = queryable.Where(x => x.Name == Name);
+        if (Names != null) queryable = queryable.Where(x => Names.Contains(x.Name));
         if (Hash != null) queryable = queryable.Where(x => x.Hash == Hash);
         return queryable;
     }
