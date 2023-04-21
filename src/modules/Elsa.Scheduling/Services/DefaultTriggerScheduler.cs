@@ -66,8 +66,9 @@ public class DefaultTriggerScheduler : ITriggerScheduler
         // Schedule each Cron trigger.
         foreach (var trigger in cronTriggers)
         {
-            var (executeAt, cronExpression) = trigger.GetPayload<CronBookmarkPayload>();
-            var input = new { ExecuteAt = executeAt, CronExpression = cronExpression }.ToDictionary();
+            var payload = trigger.GetPayload<CronTriggerPayload>();
+            var cronExpression = payload.CronExpression;
+            var input = new { CronExpression = cronExpression }.ToDictionary();
             var request = new DispatchWorkflowDefinitionRequest
             {
                 DefinitionId = trigger.WorkflowDefinitionId,

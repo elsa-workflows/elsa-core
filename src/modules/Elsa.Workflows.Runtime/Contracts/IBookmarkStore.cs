@@ -8,6 +8,7 @@ public class BookmarkFilter
     public string? Hash { get; set; }
     public string? CorrelationId { get; set; }
     public string? ActivityTypeName { get; set; }
+    public ICollection<string>? ActivityTypeNames { get; set; }
 
     public IQueryable<StoredBookmark> Apply(IQueryable<StoredBookmark> query)
     {
@@ -16,6 +17,7 @@ public class BookmarkFilter
         if (filter.Hash != null) query = query.Where(x => x.Hash == filter.Hash);
         if (filter.WorkflowInstanceId != null) query = query.Where(x => x.WorkflowInstanceId == filter.WorkflowInstanceId);
         if (filter.ActivityTypeName != null) query = query.Where(x => x.ActivityTypeName == filter.ActivityTypeName);
+        if (filter.ActivityTypeNames != null) query = query.Where(x => filter.ActivityTypeNames.Contains(x.ActivityTypeName));
 
         return query;
     }

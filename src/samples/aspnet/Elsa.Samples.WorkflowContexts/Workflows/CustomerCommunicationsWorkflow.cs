@@ -23,7 +23,8 @@ public class CustomerCommunicationsWorkflow : WorkflowBase
         {
             Activities =
             {
-                SetWorkflowContextParameter.For<CustomerWorkflowContextProvider>(context => context.GetInput<string>("CustomerId")!),
+                SetWorkflowContextParameter.For<CustomerWorkflowContextProvider>(
+                    context => context.GetInput<string>("CustomerId")!),
                 Delay.FromSeconds(5),
                 new SendEmail
                 {
