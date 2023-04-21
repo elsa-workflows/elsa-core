@@ -15,11 +15,14 @@ var serviceProvider = services.BuildServiceProvider();
 // Resolve a workflow runner to run the workflow.
 var workflowRunner = serviceProvider.GetRequiredService<IWorkflowRunner>();
 
+// Run the Hello workflow.
+await workflowRunner.RunUntilEndAsync(HelloWorkflow.Create());
+
 // Run the For workflow.
-await workflowRunner.RunAsync(ForWorkflow.Create());
+await workflowRunner.RunUntilEndAsync(ForWorkflow.Create());
 
 // Run the For Each workflow.
-await workflowRunner.RunAsync(ForEachWorkflow.Create());
+await workflowRunner.RunUntilEndAsync(ForEachWorkflow.Create());
 
 // Run the While workflow.
-await workflowRunner.RunAsync(WhileWorkflow.Create());
+await workflowRunner.RunUntilEndAsync(WhileWorkflow.Create());

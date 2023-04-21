@@ -30,7 +30,7 @@ var workflow = new Sequence
         new If
         {
             // If aged 18 or up, beer is provided, soda otherwise.
-            Condition = new Input<bool>(context => ageVariable.Get<int>(context) < 18),
+            Condition = new (context => ageVariable.Get<int>(context) < 18),
             Then = new WriteLine("Enjoy your soda!"),
             Else = new WriteLine("Enjoy your beer!")
         },

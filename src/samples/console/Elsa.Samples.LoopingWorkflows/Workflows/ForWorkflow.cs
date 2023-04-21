@@ -26,13 +26,7 @@ public static class ForWorkflow
                         Activities =
                         {
                             new WriteLine(context => $"Current value: {currentValueVariable.Get(context)}"),
-                            new Delay
-                            {
-                                // The strategy determines whether the workflow should suspend or wait synchronously.
-                                // For console applications without a host, long-running workflows aren't supported, so we use the Blocking strategy. 
-                                Strategy = new(DelayBlockingStrategy.Blocking),
-                                TimeSpan = new Input<TimeSpan>(TimeSpan.FromSeconds(1))
-                            }
+                            new Delay(TimeSpan.FromSeconds(1))
                         }
                     }
                 },
