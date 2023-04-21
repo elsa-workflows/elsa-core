@@ -33,13 +33,16 @@ public class SetOutput : CodeActivity
     protected override void Execute(ActivityExecutionContext context)
     {
         var outputName = OutputName.Get(context);
+        var outputValue = OutputValue.GetOrDefault(context);
         var ancestorContext = context.GetAncestors().FirstOrDefault(x => x.ActivityDescriptor.Outputs.Any(y => y.Name == outputName));
 
         if (ancestorContext != null)
-            SetAncestorActivityOutput(context, ancestorContext);
+            SetAncestorActivityOutput(context, ancestorContext, outputValue);
+        else
+            context.WorkflowExecutionContext.Output[outputName] = outputValue!;
     }
 
-    private void SetAncestorActivityOutput(ActivityExecutionContext context, ActivityExecutionContext ancestorContext)
+    private void SetAncestorActivityOutput(ActivityExecutionContext context, ActivityExecutionContext ancestorContext, object? outputValue)
     {
         var ancestorActivity = ancestorContext.Activity;
         var ancestorActivityDescriptor = ancestorContext.ActivityDescriptor;
@@ -48,8 +51,7 @@ public class SetOutput : CodeActivity
 
         if (ancestorOutputDescriptor == null)
             return;
-
-        var outputValue = OutputValue.GetOrDefault(context);
+        
         var ancestorOutput = (Output)ancestorOutputDescriptor.ValueGetter(ancestorActivity)!;
         ancestorContext.Set(ancestorOutput, outputValue);
 
