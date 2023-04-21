@@ -53,10 +53,10 @@ public class If : Activity<bool>
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var result = context.Get(Condition);
-        var nextNode = result ? Then : Else;
+        var nextActivity = result ? Then : Else;
 
         context.Set(Result, result);
-        await context.ScheduleActivityAsync(nextNode, OnChildCompleted);
+        await context.ScheduleActivityAsync(nextActivity, OnChildCompleted);
     }
 
     private async ValueTask OnChildCompleted(ActivityExecutionContext context, ActivityExecutionContext childContext)
