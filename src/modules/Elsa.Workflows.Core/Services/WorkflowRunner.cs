@@ -13,7 +13,6 @@ namespace Elsa.Workflows.Core.Services;
 public class WorkflowRunner : IWorkflowRunner
 {
     private readonly IServiceScopeFactory _serviceScopeFactory;
-    private readonly IActivityRegistry _activityRegistry;
     private readonly IWorkflowExecutionPipeline _pipeline;
     private readonly IWorkflowExecutionContextMapper _workflowExecutionContextMapper;
     private readonly IWorkflowBuilderFactory _workflowBuilderFactory;
@@ -26,7 +25,6 @@ public class WorkflowRunner : IWorkflowRunner
     /// </summary>
     public WorkflowRunner(
         IServiceScopeFactory serviceScopeFactory,
-        IActivityRegistry activityRegistry,
         IWorkflowExecutionPipeline pipeline,
         IWorkflowExecutionContextMapper workflowExecutionContextMapper,
         IWorkflowBuilderFactory workflowBuilderFactory,
@@ -35,7 +33,6 @@ public class WorkflowRunner : IWorkflowRunner
         IEventPublisher eventPublisher)
     {
         _serviceScopeFactory = serviceScopeFactory;
-        _activityRegistry = activityRegistry;
         _pipeline = pipeline;
         _workflowExecutionContextMapper = workflowExecutionContextMapper;
         _workflowBuilderFactory = workflowBuilderFactory;
@@ -90,7 +87,7 @@ public class WorkflowRunner : IWorkflowRunner
         using var scope = _serviceScopeFactory.CreateScope();
 
         // Setup a workflow execution context.
-        var instanceId = options?.InstanceId ?? _identityGenerator.GenerateId();
+        var instanceId = options?.WorkflowInstanceId ?? _identityGenerator.GenerateId();
         var input = options?.Input;
         var correlationId = options?.CorrelationId;
         var triggerActivityId = options?.TriggerActivityId;
