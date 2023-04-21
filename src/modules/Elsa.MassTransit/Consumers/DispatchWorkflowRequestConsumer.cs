@@ -27,7 +27,7 @@ public class DispatchWorkflowRequestConsumer :
     public async Task Consume(ConsumeContext<DispatchWorkflowDefinition> context)
     {
         var message = context.Message;
-        var options = new StartWorkflowRuntimeOptions(message.CorrelationId, message.Input, message.VersionOptions, InstanceId: message.InstanceId);
+        var options = new StartWorkflowRuntimeOptions(message.CorrelationId, message.Input, message.VersionOptions, message.TriggerActivityId, message.InstanceId);
 
         await _workflowRuntime.TryStartWorkflowAsync(message.DefinitionId, options, context.CancellationToken);
     }
