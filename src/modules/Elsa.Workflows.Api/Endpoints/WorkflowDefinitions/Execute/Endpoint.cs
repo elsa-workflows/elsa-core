@@ -61,22 +61,23 @@ public class Execute : ElsaEndpoint<Request, Response>
         {
             var workflowState = await _workflowRuntime.ExportWorkflowStateAsync(result.WorkflowInstanceId, cancellationToken);
             await HandleFaultAsync(workflowState!, cancellationToken);
-            return;
         }
-
-        // Resume any HTTP bookmarks.
-        await _httpBookmarkProcessor.ProcessBookmarks(new[] { result }, correlationId, default, cancellationToken);
-        
-        var workflowState2 = await _workflowRuntime.ExportWorkflowStateAsync(result.WorkflowInstanceId, cancellationToken);
-        
-        if (workflowState2!.SubStatus == WorkflowSubStatus.Faulted)
+        else
         {
-            await HandleFaultAsync(workflowState2, cancellationToken);
-            return;
-        }
+            // Resume any HTTP bookmarks.
+            await _httpBookmarkProcessor.ProcessBookmarks(new[] { result }, correlationId, default, cancellationToken);
 
-        if (!HttpContext.Response.HasStarted)
-            await SendOkAsync(new Response(result.WorkflowInstanceId), cancellationToken);
+            var workflowState = await _workflowRuntime.ExportWorkflowStateAsync(result.WorkflowInstanceId, cancellationToken);
+
+            if (workflowState!.SubStatus == WorkflowSubStatus.Faulted)
+            {
+                await HandleFaultAsync(workflowState, cancellationToken);
+                return;
+            }
+
+            if (!HttpContext.Response.HasStarted)
+                await SendOkAsync(new Response(workflowState), cancellationToken);
+        }
     }
 
     private async Task HandleFaultAsync(WorkflowState workflowState, CancellationToken cancellationToken)

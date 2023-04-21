@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Elsa.Workflows.Core.Serialization.Converters;
+using Elsa.Workflows.Core.State;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Execute;
 
@@ -14,10 +15,10 @@ public class Request
 
 public class Response
 {
-    public Response(string instanceId)
+    public Response(WorkflowState workflowState)
     {
-        InstanceId = instanceId;
+        WorkflowState = workflowState;
     }
     
-    public string InstanceId { get; }
+    public WorkflowState WorkflowState { get; }
 }
