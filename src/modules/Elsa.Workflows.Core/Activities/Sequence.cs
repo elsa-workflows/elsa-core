@@ -25,6 +25,12 @@ public class Sequence : Container
     {
         OnSignalReceived<BreakSignal>(OnBreak);
     }
+    
+    /// <inheritdoc />
+    public Sequence(params IActivity[] activities) : this()
+    {
+        Activities = activities;
+    }
 
     /// <inheritdoc />
     protected override async ValueTask ScheduleChildrenAsync(ActivityExecutionContext context)
