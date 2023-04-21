@@ -19,13 +19,37 @@ public interface IWorkflowRunner
     Task<RunWorkflowResult> RunAsync(WorkflowExecutionContext workflowExecutionContext);
 }
 
-public record RunWorkflowOptions(
-    string? InstanceId = default, 
-    string? CorrelationId = default, 
-    string? BookmarkId = default, 
-    string? ActivityId = default,
-    string? ActivityNodeId = default,
-    string? ActivityInstanceId = default,
-    string? ActivityHash = default, 
-    IDictionary<string, object>? Input = default, 
-    string? TriggerActivityId = default);
+public class RunWorkflowOptions
+{
+    public RunWorkflowOptions(
+        string? workflowInstanceId = default, 
+        string? correlationId = default, 
+        string? bookmarkId = default, 
+        string? activityId = default,
+        string? activityNodeId = default,
+        string? activityInstanceId = default,
+        string? activityHash = default, 
+        IDictionary<string, object>? input = default, 
+        string? triggerActivityId = default)
+    {
+        WorkflowInstanceId = workflowInstanceId;
+        CorrelationId = correlationId;
+        BookmarkId = bookmarkId;
+        ActivityId = activityId;
+        ActivityNodeId = activityNodeId;
+        ActivityInstanceId = activityInstanceId;
+        ActivityHash = activityHash;
+        Input = input;
+        TriggerActivityId = triggerActivityId;
+    }
+
+    public string? WorkflowInstanceId { get; set; }
+    public string? CorrelationId { get; set; }
+    public string? BookmarkId { get; set; }
+    public string? ActivityId { get; set; }
+    public string? ActivityNodeId { get; set; }
+    public string? ActivityInstanceId { get; set; }
+    public string? ActivityHash { get; set; }
+    public IDictionary<string, object>? Input { get; set; }
+    public string? TriggerActivityId { get; set; }
+}
