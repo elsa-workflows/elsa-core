@@ -54,6 +54,18 @@ public static class ActivityExecutionContextExtensions
         var wellKnownTypeRegistry = context.GetRequiredService<IWellKnownTypeRegistry>();
         return context.Input[key].ConvertTo<T>(new ObjectConverterOptions(serializerOptions, wellKnownTypeRegistry))!;
     }
+    
+    /// <summary>
+    /// Sets the Result property of the specified activity.
+    /// </summary>
+    /// <param name="context">The <see cref="ActivityExecutionContext"/></param> being extended.
+    /// <param name="value">The value to set.</param>
+    /// <exception cref="Exception">Thrown when the specified activity does not implement <see cref="IActivityWithResult"/>.</exception>
+    public static void SetResult(this ActivityExecutionContext context, object? value)
+    {
+        var activity = context.Activity as IActivityWithResult ?? throw new Exception($"Cannot set result on activity {context.Activity.Id} because it does not implement {nameof(IActivityWithResult)}.");
+        context.Set(activity.Result, value);
+    }
 
     /// <summary>
     /// Returns true if this activity is triggered for the first time and not being resumed.

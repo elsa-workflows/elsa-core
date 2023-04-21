@@ -67,7 +67,7 @@ public class WorkflowHost : IWorkflowHost
         var instanceId = options?.InstanceId ?? _identityGenerator.GenerateId();
         var originalBookmarks = WorkflowState.Bookmarks.ToList();
         var input = options?.Input;
-        var runOptions = new RunWorkflowOptions(instanceId, correlationId, Input: input, TriggerActivityId: options?.TriggerActivityId);
+        var runOptions = new RunWorkflowOptions(instanceId, correlationId, input: input, triggerActivityId: options?.TriggerActivityId);
         var workflowResult = await _workflowRunner.RunAsync(Workflow, runOptions, cancellationToken);
 
         WorkflowState = workflowResult.WorkflowState;
