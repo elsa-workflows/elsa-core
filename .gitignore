@@ -32,7 +32,6 @@ _ReSharper*/
 # VS Code/Omnisharp crash dumps
 mono_crash.mem*.blob
 
-
 #Nuget packages folder
 packages/
 
@@ -58,6 +57,7 @@ node_modules/
 #volatile
 App_Data/
 *.db
+*.db-journal
 *.db-shm
 *.db-wal
 .DS_Store

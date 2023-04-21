@@ -176,6 +176,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.ProtoActorRunt
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.WorkflowContexts", "src\samples\aspnet\Elsa.Samples.WorkflowContexts\Elsa.Samples.WorkflowContexts.csproj", "{F88AB1C2-100E-459F-B2BE-5F2ACF050A0A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.Bookmarks", "src\samples\console\Elsa.Samples.Bookmarks\Elsa.Samples.Bookmarks.csproj", "{A527B8B0-7214-4C4F-B62F-8A244B8416C8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.CustomActivities", "src\samples\console\Elsa.Samples.CustomActivities\Elsa.Samples.CustomActivities.csproj", "{6DB4423B-0C99-46C9-8960-6BD54D42113A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.FlowchartWorkflows", "src\samples\console\Elsa.Samples.FlowchartWorkflows\Elsa.Samples.FlowchartWorkflows.csproj", "{A1A8A2C2-7F5C-4859-8F59-F60F867CE19C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.WorkflowInputOutput", "src\samples\console\Elsa.Samples.WorkflowInputOutput\Elsa.Samples.WorkflowInputOutput.csproj", "{FAF438E1-B771-418B-83DD-A0F959C82D97}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -438,6 +446,22 @@ Global
 		{F88AB1C2-100E-459F-B2BE-5F2ACF050A0A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F88AB1C2-100E-459F-B2BE-5F2ACF050A0A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F88AB1C2-100E-459F-B2BE-5F2ACF050A0A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A527B8B0-7214-4C4F-B62F-8A244B8416C8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A527B8B0-7214-4C4F-B62F-8A244B8416C8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A527B8B0-7214-4C4F-B62F-8A244B8416C8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A527B8B0-7214-4C4F-B62F-8A244B8416C8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6DB4423B-0C99-46C9-8960-6BD54D42113A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6DB4423B-0C99-46C9-8960-6BD54D42113A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6DB4423B-0C99-46C9-8960-6BD54D42113A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6DB4423B-0C99-46C9-8960-6BD54D42113A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1A8A2C2-7F5C-4859-8F59-F60F867CE19C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1A8A2C2-7F5C-4859-8F59-F60F867CE19C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1A8A2C2-7F5C-4859-8F59-F60F867CE19C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1A8A2C2-7F5C-4859-8F59-F60F867CE19C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FAF438E1-B771-418B-83DD-A0F959C82D97}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FAF438E1-B771-418B-83DD-A0F959C82D97}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FAF438E1-B771-418B-83DD-A0F959C82D97}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FAF438E1-B771-418B-83DD-A0F959C82D97}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{155227F0-A33B-40AA-A4B4-06F813EB921B} = {61017E64-6D00-49CB-9E81-5002DC8F7D5F}
@@ -515,5 +539,9 @@ Global
 		{D2614FC7-102F-4F78-BB06-7C87304A10BA} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 		{A41E24C6-B16D-4C6A-A9A9-2C5AF424F20F} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 		{F88AB1C2-100E-459F-B2BE-5F2ACF050A0A} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
+		{A527B8B0-7214-4C4F-B62F-8A244B8416C8} = {873BFC3E-63C2-4495-A503-5EC05DCD84E4}
+		{6DB4423B-0C99-46C9-8960-6BD54D42113A} = {873BFC3E-63C2-4495-A503-5EC05DCD84E4}
+		{A1A8A2C2-7F5C-4859-8F59-F60F867CE19C} = {873BFC3E-63C2-4495-A503-5EC05DCD84E4}
+		{FAF438E1-B771-418B-83DD-A0F959C82D97} = {873BFC3E-63C2-4495-A503-5EC05DCD84E4}
 	EndGlobalSection
 EndGlobal
