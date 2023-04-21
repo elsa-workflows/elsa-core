@@ -1,6 +1,7 @@
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Behaviors;
+using Elsa.Workflows.Core.Contracts;
 
 namespace Elsa.Workflows.Core.Models;
 
@@ -88,7 +89,7 @@ public abstract class ActivityBaseWithResult : Activity
 /// <summary>
 /// Base class for custom activities with auto-complete behavior that return a result.
 /// </summary>
-public abstract class CodeActivity<T> : CodeActivity
+public abstract class CodeActivity<T> : CodeActivity, IActivityWithResult<T>
 {
     /// <inheritdoc />
     protected CodeActivity(string? source = default, int? line = default) : base(source, line)
@@ -116,6 +117,12 @@ public abstract class CodeActivity<T> : CodeActivity
     /// The result of the activity.
     /// </summary>
     public Output<T>? Result { get; set; }
+
+    Output? IActivityWithResult.Result
+    {
+        get => Result;
+        set => Result = (Output<T>?)value;
+    }
 }
 
 /// <summary>
