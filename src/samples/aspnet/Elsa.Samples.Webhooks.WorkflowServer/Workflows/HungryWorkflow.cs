@@ -12,7 +12,7 @@ public class HungryWorkflow : WorkflowBase
 {
     protected override void Build(IWorkflowBuilder builder)
     {
-        var deliveredFood = new Variable<string>();
+        var deliveredFood = builder.WithVariable<string>();
         
         builder.Root = new Sequence
         {
