@@ -36,7 +36,7 @@ public class RunTask : Activity<object>, IBookmarksPersistedHandler
     /// The name of the task being requested.
     /// </summary>
     [Input(Description = "AnyAsync additional parameters to send to the task.")]
-    public Input<object?> TaskParams { get; set; } = default!;
+    public Input<IDictionary<string, object>?> Payload { get; set; } = default!;
     
     /// <inheritdoc />
     [JsonConstructor]
@@ -84,7 +84,7 @@ public class RunTask : Activity<object>, IBookmarksPersistedHandler
         var taskName = TaskName.Get(context);
         var identityGenerator = context.GetRequiredService<IIdentityGenerator>();
         var taskId = identityGenerator.GenerateId();
-        var payload = new RunTaskBookmarkPayload(taskId);
+        var payload = new RunTaskBookmarkPayload(taskId, taskName);
         context.CreateBookmark(payload, ResumeAsync);
         context.TransientProperties[BookmarkPropertyKey] = payload;
     }
@@ -99,9 +99,9 @@ public class RunTask : Activity<object>, IBookmarksPersistedHandler
     async ValueTask IBookmarksPersistedHandler.BookmarksPersistedAsync(ActivityExecutionContext context)
     {
         var bookmark = (RunTaskBookmarkPayload)context.TransientProperties[BookmarkPropertyKey];
-        var taskParams = TaskParams.GetOrDefault(context);
+        var taskParams = Payload.GetOrDefault(context);
         var taskName = TaskName.Get(context);
-        var notification = new RunTaskRequest(bookmark.TaskId, taskName, taskParams);
+        var notification = new RunTaskRequest(context, bookmark.TaskId, taskName, taskParams);
         var dispatcher = context.GetRequiredService<ITaskDispatcher>();
 
         await dispatcher.DispatchAsync(notification, context.CancellationToken);

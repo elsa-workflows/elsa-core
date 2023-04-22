@@ -26,7 +26,24 @@ public class RunTaskHandler : INotificationHandler<RunTaskRequest>
     /// <inheritdoc />
     public async Task HandleAsync(RunTaskRequest notification, CancellationToken cancellationToken)
     {
-        var payload = new RunTaskWebhook(notification.TaskId, notification.TaskName, notification.TaskParams);
+        var activityExecutionContext = notification.ActivityExecutionContext;
+        var workflowExecutionContext = activityExecutionContext.WorkflowExecutionContext;
+        var workflowInstanceId = workflowExecutionContext.Id;
+        var correlationId = workflowExecutionContext.CorrelationId;
+        var workflow = workflowExecutionContext.Workflow;
+        var workflowDefinitionId = workflow.Identity.DefinitionId;
+        var workflowName = workflow.WorkflowMetadata.Name;
+        
+        var payload = new RunTaskWebhook(
+            workflowInstanceId,
+            workflowDefinitionId,
+            workflowName,
+            correlationId,
+            notification.TaskId, 
+            notification.TaskName, 
+            notification.TaskPayload
+        );
+        
         var now = _systemClock.UtcNow;
         var webhookEvent = new WebhookEvent("RunTask", payload, now);
         await _webhookDispatcher.DispatchAsync(webhookEvent, cancellationToken);

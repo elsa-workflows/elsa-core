@@ -22,7 +22,7 @@ public class TaskReporter : ITaskReporter
     /// <inheritdoc />
     public async Task ReportCompletionAsync(string taskId, object? result = default, CancellationToken cancellationToken = default)
     {
-        var bookmarkPayload = new RunTaskBookmarkPayload(taskId);
+        var bookmarkPayload = new RunTaskBookmarkPayload(taskId, default!);
 
         var input = new Dictionary<string, object>
         {
