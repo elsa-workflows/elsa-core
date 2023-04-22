@@ -21,7 +21,7 @@ public class OrderFoodTaskHandler : INotificationHandler<RunTaskRequest>
         if (notification.TaskName != "OrderFood")
             return;
 
-        var args = (dynamic)notification.TaskParams!;
+        var args = (dynamic)notification.TaskPayload!;
         var foodName = args.Food;
         
         Console.WriteLine("Preparing {0}...", foodName);
