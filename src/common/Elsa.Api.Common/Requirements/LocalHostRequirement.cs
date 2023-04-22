@@ -1,4 +1,5 @@
-using System.Net;
+using Elsa.Extensions;
+using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 
@@ -12,6 +13,7 @@ public class LocalHostRequirement : IAuthorizationRequirement
 }
 
 /// <inheritdoc />
+[PublicAPI]
 public class LocalHostRequirementHandler : AuthorizationHandler<LocalHostRequirement>
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
@@ -25,20 +27,10 @@ public class LocalHostRequirementHandler : AuthorizationHandler<LocalHostRequire
     /// <inheritdoc />
     protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, LocalHostRequirement requirement)
     {
-        if(!IsLocal(_httpContextAccessor.HttpContext!.Request))
+        if (_httpContextAccessor.HttpContext?.Request.IsLocal() == false)
             context.Fail(new AuthorizationFailureReason(this, "Only requests from localhost are allowed"));
-        
+
         context.Succeed(requirement);
         return Task.CompletedTask;
-    }
-
-    private static bool IsLocal(HttpRequest request)
-    {
-        var connection = request.HttpContext.Connection;
-        return connection.RemoteIpAddress != null
-            ? connection.LocalIpAddress != null
-                ? connection.RemoteIpAddress.Equals(connection.LocalIpAddress)
-                : IPAddress.IsLoopback(connection.RemoteIpAddress)
-            : connection.RemoteIpAddress == null && connection.LocalIpAddress == null;
     }
 }

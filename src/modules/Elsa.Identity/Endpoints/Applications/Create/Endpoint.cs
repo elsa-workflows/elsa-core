@@ -1,4 +1,5 @@
-﻿using Elsa.Identity.Contracts;
+﻿using Elsa.Abstractions;
+using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
 using Elsa.Workflows.Core.Contracts;
 using FastEndpoints;
@@ -10,7 +11,7 @@ namespace Elsa.Identity.Endpoints.Applications.Create;
 /// An endpoint that creates a new application. Requires the <code>SecurityRoot</code> policy.
 /// </summary>
 [PublicAPI]
-internal class Create : Endpoint<Request, Response>
+internal class Create : ElsaEndpoint<Request, Response>
 {
     private readonly IIdentityGenerator _identityGenerator;
     private readonly IClientIdGenerator _clientIdGenerator;
@@ -42,6 +43,7 @@ internal class Create : Endpoint<Request, Response>
     public override void Configure()
     {
         Post("/identity/applications");
+        Permissions("create:application");
         Policies(IdentityPolicyNames.SecurityRoot);
     }
 

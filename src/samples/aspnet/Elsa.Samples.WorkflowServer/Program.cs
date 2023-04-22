@@ -40,7 +40,7 @@ builder.Services.AddElsa(elsa =>
     });
     
     // Use default authentication (JWT).
-    elsa.UseDefaultAuthentication(auth => auth.UseAdminApiKeyAuthorization());
+    elsa.UseDefaultAuthentication(auth => auth.UseAdminApiKey());
     
     // Register custom activities.
     elsa.AddActivity<ConsoleGreeter>();

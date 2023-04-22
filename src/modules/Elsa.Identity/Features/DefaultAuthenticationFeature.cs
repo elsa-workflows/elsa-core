@@ -46,7 +46,7 @@ public class DefaultAuthenticationFeature : FeatureBase
     /// Configures the API key provider type to <see cref="AdminApiKeyProvider"/>.
     /// </summary>
     /// <returns>The current <see cref="DefaultAuthenticationFeature"/>.</returns>
-    public DefaultAuthenticationFeature UseAdminApiKeyAuthorization() => UseApiKeyAuthorization<AdminApiKeyProvider>();
+    public DefaultAuthenticationFeature UseAdminApiKey() => UseApiKeyAuthorization<AdminApiKeyProvider>();
 
     /// <inheritdoc />
     public override void Apply()
@@ -70,8 +70,9 @@ public class DefaultAuthenticationFeature : FeatureBase
         _configureApiKeyAuthorization(authBuilder);
 
         Services.AddSingleton<IAuthorizationHandler, LocalHostRequirementHandler>();
+        Services.AddSingleton<IAuthorizationHandler, LocalHostPermissionRequirementHandler>();
         Services.AddSingleton(ApiKeyProviderType);
         Services.AddSingleton<IApiKeyProvider>(sp => (IApiKeyProvider)sp.GetRequiredService(ApiKeyProviderType));
-        Services.AddAuthorization(options => options.AddPolicy(IdentityPolicyNames.SecurityRoot, policy => policy.AddRequirements(new LocalHostRequirement())));
+        Services.AddAuthorization(options => options.AddPolicy(IdentityPolicyNames.SecurityRoot, policy => policy.AddRequirements(new LocalHostPermissionRequirement())));
     }
 }
