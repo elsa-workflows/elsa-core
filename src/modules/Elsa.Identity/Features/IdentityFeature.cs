@@ -179,9 +179,6 @@ public class IdentityFeature : FeatureBase
             .AddSingleton<AdminRoleProvider>()
             .AddSingleton<StoreBasedRoleProvider>()
             .AddSingleton<ConfigurationBasedRoleProvider>();
-        
-        // API Key.
-        Services.AddSingleton<IApiKeyProvider, DefaultApiKeyProvider>();
 
         // Services.
         Services
