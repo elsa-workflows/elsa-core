@@ -105,6 +105,12 @@ public class PolymorphicObjectConverter : JsonConverter<object>
     /// <inheritdoc />
     public override void Write(Utf8JsonWriter writer, object value, JsonSerializerOptions options)
     {
+        if (value == null!)
+        {
+            writer.WriteNullValue();
+            return;
+        }
+
         var newOptions = new JsonSerializerOptions(options);
         var type = value.GetType();
 
@@ -161,7 +167,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
 
         writer.WriteEndObject();
     }
-    
+
     private static Type? ReadType(Utf8JsonReader reader)
     {
         reader.Read(); // Move to the first token inside the object.
