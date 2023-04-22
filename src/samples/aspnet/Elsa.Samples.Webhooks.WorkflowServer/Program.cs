@@ -24,8 +24,8 @@ builder.Services.AddElsa(elsa =>
             options.AccessTokenLifetime = TimeSpan.FromDays(1);
         };
     })
-    .UseWorkflowsApi(api => api.CompleteTaskPolicy = policy => policy.RequireAssertion(_ => true)) // Allows anonymous requests. Will be replaced with an API key scheme.
-    .UseDefaultAuthentication()
+    .UseWorkflowsApi()
+    .UseDefaultAuthentication(auth => auth.UseAdminApiKey())
     .UseWebhooks(webhooks => webhooks.WebhookOptions = options => builder.Configuration.GetSection("Webhooks").Bind(options));
 });
 

@@ -21,7 +21,7 @@ public class Complete : ElsaEndpoint<Request, Response>
     public override void Configure()
     {
         Post("/tasks/{taskId}/complete");
-        Policies("CompleteTask");
+        ConfigurePermissions("tasks:complete");
     }
 
     /// <inheritdoc />

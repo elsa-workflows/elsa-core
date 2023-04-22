@@ -26,11 +26,6 @@ public class WorkflowsApiFeature : FeatureBase
     {
     }
 
-    /// <summary>
-    /// A delegate that configures the policy requirements for the /tasks/{taskId}/complete API endpoint. 
-    /// </summary>
-    public Action<AuthorizationPolicyBuilder> CompleteTaskPolicy { get; set; } = policy => policy.RequireAuthenticatedUser();
-
     /// <inheritdoc />
     public override void Configure()
     {
@@ -40,7 +35,6 @@ public class WorkflowsApiFeature : FeatureBase
     /// <inheritdoc />
     public override void Apply()
     {
-        Services.AddAuthorization(auth => auth.AddPolicy("CompleteTask", CompleteTaskPolicy));
         Services.AddSingleton<ISerializationOptionsConfigurator, SerializationConfigurator>();
         Module.AddFastEndpointsFromModule();
     }
