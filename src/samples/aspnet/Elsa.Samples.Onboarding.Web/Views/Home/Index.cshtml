@@ -20,9 +20,10 @@
         </tr>
         </thead>
         <tbody>
-        <tr>
-            @foreach (var task in Model.Tasks)
-            {
+        @foreach (var task in Model.Tasks)
+        {
+            <tr>
+
                 <th scope="row">@task.Id</th>
                 <td>@task.Name</td>
                 <td>@task.Description</td>
@@ -33,8 +34,8 @@
                         <button type="submit" class="btn btn-primary">Complete</button>
                     </form>
                 </td>
-            }
-        </tr>
+            </tr>
+        }
         </tbody>
     </table>
 </div>
