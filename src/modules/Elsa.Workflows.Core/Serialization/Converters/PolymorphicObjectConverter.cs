@@ -162,7 +162,17 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         if (type != typeof(ExpandoObject))
         {
             // Write the type name so that we can reconstruct the actual type when deserializing.
-            writer.WriteString(TypePropertyName, type.GetSimpleAssemblyQualifiedName());
+            var shouldWriteTypeField = true;
+            var referenceResolver = (options.ReferenceHandler as CrossScopedReferenceHandler)?.GetResolver();
+
+            if (referenceResolver != null)
+            {
+                referenceResolver.GetReference(value, out var alreadyExists);
+                shouldWriteTypeField = !alreadyExists;
+            }
+
+            if (shouldWriteTypeField)
+                writer.WriteString(TypePropertyName, type.GetSimpleAssemblyQualifiedName());
         }
 
         writer.WriteEndObject();
@@ -251,21 +261,35 @@ public class PolymorphicObjectConverter : JsonConverter<object>
             }
             case JsonTokenType.StartObject:
                 var dict = new ExpandoObject() as IDictionary<string, object>;
+                var referenceResolver = (options.ReferenceHandler as CrossScopedReferenceHandler)?.GetResolver();
                 while (reader.Read())
                 {
                     switch (reader.TokenType)
                     {
                         case JsonTokenType.EndObject:
+                            // If the object contains a single entry with a key of $ref, return the referenced object.
+                            if (dict.Count == 1 && dict.TryGetValue(RefPropertyName, out var referencedObject))
+                                return referencedObject;
                             return dict;
                         case JsonTokenType.PropertyName:
                             var key = reader.GetString()!;
                             reader.Read();
-                            if (key != IdPropertyName)
+                            if (key == RefPropertyName)
+                            {
+                                var referenceId = reader.GetString();
+                                var reference = referenceResolver!.ResolveReference(referenceId!);
+                                dict.Add(key, reference);
+                            }
+                            else if (key != IdPropertyName)
                             {
                                 var value = Read(ref reader, typeof(object), options);
                                 dict.Add(key, value);
                             }
-
+                            else
+                            {
+                                var referenceId = reader.GetString()!;
+                                referenceResolver!.AddReference(referenceId, dict);
+                            }
                             break;
                         default:
                             throw new JsonException();
