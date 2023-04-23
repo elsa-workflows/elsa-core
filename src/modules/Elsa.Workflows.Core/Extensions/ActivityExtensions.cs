@@ -64,18 +64,19 @@ public static class ActivityExtensions
     public static TDelegate GetDelegate<TDelegate>(this IActivity activity, string methodName) where TDelegate : Delegate
     {
         var activityType = activity.GetType();
-        var resumeMethodInfo = activityType.GetMethod(methodName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
+        var bindingFlags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy;
+        var resumeMethodInfo = activityType.GetMethod(methodName, bindingFlags);
 
         if (resumeMethodInfo == null)
         {
             if (activityType.BaseType != null)
-                resumeMethodInfo = activityType.BaseType.GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Instance);
+                resumeMethodInfo = activityType.BaseType.GetMethod(methodName, bindingFlags);
 
             if (resumeMethodInfo == null)
                 throw new Exception($"Can't find method name {methodName} on type {activityType} or its base type {activityType.BaseType}");
         }
 
-        return (TDelegate)Delegate.CreateDelegate(typeof(TDelegate), activity, resumeMethodInfo);
+        return resumeMethodInfo.IsStatic ? (TDelegate)Delegate.CreateDelegate(typeof(TDelegate), resumeMethodInfo) : (TDelegate)Delegate.CreateDelegate(typeof(TDelegate), activity, resumeMethodInfo);
     }
 
     /// <summary>
