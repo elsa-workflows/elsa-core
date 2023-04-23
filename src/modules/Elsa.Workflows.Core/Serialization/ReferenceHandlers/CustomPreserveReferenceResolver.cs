@@ -6,7 +6,7 @@ namespace Elsa.Workflows.Core.Serialization.ReferenceHandlers;
 /// <summary>
 /// A custom reference resolver that uses a <see cref="ReferenceEqualityComparer"/> to compare objects.
 /// </summary>
-/// <remarks>We only need this class because the built-in <see cref="PreserveReferenceResolver"/> is internal</remarks>
+/// <remarks>We only need this class because the built-in <c>PreserveReferenceResolver"</c> is internal</remarks>
 public class CustomPreserveReferenceResolver : ReferenceResolver
 {
     private uint _referenceCount;
