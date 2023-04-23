@@ -1,0 +1,44 @@
+### John Doe
+
+POST https://localhost:5001/elsa/api/workflow-definitions/OnboardingWorkflow/execute
+Content-Type: application/json
+Authorization: ApiKey 00000000-0000-0000-0000-000000000000
+
+{
+  "input": {
+    "employee": {
+      "name": "John Doe",
+      "email": "john.doe@acme.com"
+    }
+  }
+}
+
+### Alice Smith
+
+POST https://localhost:5001/elsa/api/workflow-definitions/OnboardingWorkflow/execute
+Content-Type: application/json
+Authorization: ApiKey 00000000-0000-0000-0000-000000000000
+
+{
+  "input": {
+    "employee": {
+      "name": "Alice Smith",
+      "email": "alice.smith@acme.com"
+    }
+  }
+}
+
+### Bob Brown
+
+POST https://localhost:5001/elsa/api/workflow-definitions/OnboardingWorkflow/execute
+Content-Type: application/json
+Authorization: ApiKey 00000000-0000-0000-0000-000000000000
+
+{
+  "input": {
+    "employee": {
+      "name": "Bob Brown",
+      "email": "bob.brown@acme.com"
+    }
+  }
+}

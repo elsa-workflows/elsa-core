@@ -104,6 +104,14 @@ public static class ObjectConverter
 
             if (typeof(IDictionary<string, object>).IsAssignableFrom(underlyingTargetType))
                 return new Dictionary<string, object>((IDictionary<string, object>)value);
+
+            if (typeof(ExpandoObject) == underlyingSourceType)
+            {
+                // Parse ExpandoObject into target type.
+                var expandoObject = (IDictionary<string, object>)value;
+                var json = JsonSerializer.Serialize(expandoObject);
+                return ConvertTo(json, underlyingTargetType, converterOptions);
+            }
         }
 
         var targetTypeConverter = TypeDescriptor.GetConverter(underlyingTargetType);

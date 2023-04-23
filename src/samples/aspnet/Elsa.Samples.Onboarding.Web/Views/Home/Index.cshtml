@@ -1,0 +1,41 @@
+﻿@model Elsa.Samples.Onboarding.Web.Views.Home.IndexViewModel
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Tasks</h1>
+    <p>Please complete the following tasks.</p>
+</div>
+
+<div class="container">
+    <table class="table table-bordered table-hover">
+        <thead class="table-light">
+        <tr>
+            <th scope="col">Task ID</th>
+            <th scope="col">Name</th>
+            <th scope="col">Description</th>
+            <th scope="col">Employee</th>
+            <th scope="col"></th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var task in Model.Tasks)
+        {
+            <tr>
+
+                <th scope="row">@task.Id</th>
+                <td>@task.Name</td>
+                <td>@task.Description</td>
+                <td>@($"{task.EmployeeName} <{task.EmployeeEmail}>")</td>
+                <td>
+                    <form asp-action="CompleteTask">
+                        <input type="hidden" name="TaskId" value="@task.Id"/>
+                        <button type="submit" class="btn btn-primary">Complete</button>
+                    </form>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Elsa.Http;
 using Elsa.Workflows.Core.Abstractions;
 using Elsa.Workflows.Core.Activities;
@@ -27,7 +28,7 @@ public class HungryWorkflow : WorkflowBase
                 new WriteLine("Hunger detected!"),
                 new RunTask("OrderFood")
                 {
-                    TaskParams = new(new { Food = "Pizza" }),
+                    Payload = new(new Dictionary<string, object>() { ["Food"] = "Pizza" }),
                     Result = new Output<object>(deliveredFood)
                 },
                 new WriteLine(context => $"Eating the {deliveredFood.Get(context)}"),
