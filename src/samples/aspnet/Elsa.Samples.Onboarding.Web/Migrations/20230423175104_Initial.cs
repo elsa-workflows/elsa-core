@@ -21,6 +21,8 @@ namespace Elsa.Samples.Onboarding.Web.Migrations
                     ProcessId = table.Column<string>(type: "TEXT", nullable: false),
                     Name = table.Column<string>(type: "TEXT", nullable: false),
                     Description = table.Column<string>(type: "TEXT", nullable: false),
+                    EmployeeName = table.Column<string>(type: "TEXT", nullable: false),
+                    EmployeeEmail = table.Column<string>(type: "TEXT", nullable: false),
                     IsCompleted = table.Column<bool>(type: "INTEGER", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: false),
                     CompletedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: true)

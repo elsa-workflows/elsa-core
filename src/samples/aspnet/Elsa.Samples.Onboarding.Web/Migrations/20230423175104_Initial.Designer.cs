@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elsa.Samples.Onboarding.Web.Migrations
 {
     [DbContext(typeof(OnboardingDbContext))]
-    [Migration("20230422200818_Initial")]
+    [Migration("20230423175104_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -33,6 +33,14 @@ namespace Elsa.Samples.Onboarding.Web.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("EmployeeEmail")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("EmployeeName")
                         .IsRequired()
                         .HasColumnType("TEXT");
 

@@ -33,6 +33,14 @@ namespace Elsa.Samples.Onboarding.Web.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("EmployeeEmail")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("EmployeeName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("ExternalId")
                         .IsRequired()
                         .HasColumnType("TEXT");

@@ -15,7 +15,7 @@
             <th scope="col">Task ID</th>
             <th scope="col">Name</th>
             <th scope="col">Description</th>
-            <th scope="col">Process ID</th>
+            <th scope="col">Employee</th>
             <th scope="col"></th>
         </tr>
         </thead>
@@ -27,7 +27,7 @@
                 <th scope="row">@task.Id</th>
                 <td>@task.Name</td>
                 <td>@task.Description</td>
-                <td>@task.ProcessId</td>
+                <td>@($"{task.EmployeeName} <{task.EmployeeEmail}>")</td>
                 <td>
                     <form asp-action="CompleteTask">
                         <input type="hidden" name="TaskId" value="@task.Id"/>

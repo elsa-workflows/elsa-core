@@ -22,8 +22,8 @@ Authorization: ApiKey 00000000-0000-0000-0000-000000000000
 {
   "input": {
     "employee": {
-      "name": "John Doe",
-      "email": "john.doe@acme.com"
+      "name": "Alice Smith",
+      "email": "alice.smith@acme.com"
     }
   }
 }
@@ -37,8 +37,8 @@ Authorization: ApiKey 00000000-0000-0000-0000-000000000000
 {
   "input": {
     "employee": {
-      "name": "John Doe",
-      "email": "john.doe@acme.com"
+      "name": "Bob Brown",
+      "email": "bob.brown@acme.com"
     }
   }
 }

@@ -31,6 +31,16 @@ public class OnboardingTask
     public string Description { get; set; } = default!;
 
     /// <summary>
+    /// The name of the employee being onboarded.
+    /// </summary>
+    public string EmployeeName { get; set; } = default!;
+
+    /// <summary>
+    /// The email address of the employee being onboarded.
+    /// </summary>
+    public string EmployeeEmail { get; set; } = default!;
+
+    /// <summary>
     /// Whether the task has been completed.
     /// </summary>
     public bool IsCompleted { get; set; }

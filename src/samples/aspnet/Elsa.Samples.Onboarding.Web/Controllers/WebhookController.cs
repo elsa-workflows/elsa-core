@@ -21,6 +21,7 @@ public class WebhookController : Controller
     {
         var payload = webhookEvent.Payload;
         var taskPayload = payload.TaskPayload;
+        var employee = taskPayload.Employee;
         
         var task = new OnboardingTask
         {
@@ -28,6 +29,8 @@ public class WebhookController : Controller
             ExternalId = payload.TaskId,
             Name = payload.TaskName,
             Description = taskPayload.Description,
+            EmployeeEmail = employee.Email,
+            EmployeeName = employee.Name,
             CreatedAt = DateTimeOffset.Now
         };
 
