@@ -40,7 +40,7 @@ public class Tests
         metadata["Foo"] = "Bar";
         metadata["Number"] = 123;
         metadata["Flag"] = true;
-        metadata["Items"] = new List<Model>
+        metadata["Models"] = new List<Model>
         {
             new(Text: "Hello", Number: 1, Flag: true, Metadata: metadata),
             new(Text: "World", Number: 2)
@@ -63,6 +63,26 @@ public class Tests
                 ["Hello"] = new("Hello", 1, true),
                 ["World"] = new("World", 2)
             }
+        );
+    }
+    
+    private Model CreateModel2()
+    {
+        // Create a model with various nested properties
+        var metadata = new ExpandoObject() as IDictionary<string, object>;
+
+        // Initialize metadata with test data.
+        metadata["Models"] = new List<Model>
+        {
+            new(Text: "Hello World")
+        };
+
+        return new Model(
+            Metadata: metadata
+            // Items : new List<Model>
+            // {
+            //     new(Items: new List<Model> { new(Metadata: metadata) }),
+            // }
         );
     }
 

@@ -4,7 +4,6 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Elsa.Extensions;
-using Elsa.Mediator.Services;
 using Elsa.Workflows.Core.Serialization.ReferenceHandlers;
 using Newtonsoft.Json.Linq;
 
@@ -135,6 +134,17 @@ public class PolymorphicObjectConverter : JsonConverter<object>
             writer.WriteEndObject();
             return;
         }
+        
+        // Determine if the value is going to be serialized for the first time.
+        // Later on, we need to know this information to determine if we need to write the type name or not, so that we can reconstruct the actual type when deserializing.
+        var shouldWriteTypeField = true;
+        var referenceResolver = (CustomPreserveReferenceResolver?)(options.ReferenceHandler as CrossScopedReferenceHandler)?.GetResolver();
+
+        if (referenceResolver != null)
+        {
+            var exists = referenceResolver.HasReference(value);
+            shouldWriteTypeField = !exists;
+        }
 
         var jsonElement = JsonDocument.Parse(JsonSerializer.Serialize(value, type, newOptions)).RootElement;
 
@@ -161,15 +171,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
 
         if (type != typeof(ExpandoObject))
         {
-            // Write the type name so that we can reconstruct the actual type when deserializing.
-            var shouldWriteTypeField = true;
-            var referenceResolver = (options.ReferenceHandler as CrossScopedReferenceHandler)?.GetResolver();
-
-            if (referenceResolver != null)
-            {
-                referenceResolver.GetReference(value, out var alreadyExists);
-                shouldWriteTypeField = !alreadyExists;
-            }
+            
 
             if (shouldWriteTypeField)
                 writer.WriteString(TypePropertyName, type.GetSimpleAssemblyQualifiedName());
