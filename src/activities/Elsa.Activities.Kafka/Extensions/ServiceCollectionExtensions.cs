@@ -19,10 +19,13 @@ namespace Elsa.Activities.Kafka.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static ElsaOptionsBuilder AddKafkaActivities(this ElsaOptionsBuilder options)
+        public static ElsaOptionsBuilder AddKafkaActivities(this ElsaOptionsBuilder options, KafkaOptions? kafkaOptions = null)
         {
+            kafkaOptions = kafkaOptions ?? new KafkaOptions();
+
             options.Services
                 .AddSingleton<BusClientFactory>()
+                .AddSingleton(kafkaOptions)
                 .AddSingleton<IMessageReceiverClientFactory>(sp => sp.GetRequiredService<BusClientFactory>())
                 .AddSingleton<IMessageSenderClientFactory>(sp => sp.GetRequiredService<BusClientFactory>())
                 .AddSingleton<IWorkerManager, WorkerManager>()

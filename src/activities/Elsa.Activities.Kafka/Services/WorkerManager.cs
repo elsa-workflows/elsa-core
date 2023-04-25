@@ -22,16 +22,19 @@ namespace Elsa.Activities.Kafka.Services
         private readonly ICollection<Worker> _workers;
         private readonly ILogger _logger;
         private readonly IBookmarkSerializer _bookmarkSerializer;
-
+        private readonly KafkaOptions _kafkaOptions;
+        
         public WorkerManager(
             IServiceProvider serviceProvider,
             ILogger<WorkerManager> logger,
-            IBookmarkSerializer bookmarkSerializer)
+            IBookmarkSerializer bookmarkSerializer,
+            KafkaOptions? kafkaOptions)
         {
             _serviceProvider = serviceProvider;
             _logger = logger;
             _bookmarkSerializer = bookmarkSerializer;
             _workers = new List<Worker>();
+            _kafkaOptions = kafkaOptions ?? new KafkaOptions();
         }
 
         public async Task CreateWorkersAsync(IReadOnlyCollection<Trigger> triggers, CancellationToken cancellationToken = default)
@@ -116,7 +119,7 @@ namespace Elsa.Activities.Kafka.Services
                         _serviceProvider,
                         configuration.Topic,
                         configuration.Group ?? "",
-                        new Client(configuration),
+                        new Client(configuration, _kafkaOptions),
                         (Func<Worker, IClient, Task>)(async (w, c) => await RemoveAndRespawnWorkerAsync(w, c, tag, configuration)));
 
                     _logger.LogDebug("Created worker for {QueueOrTopic}", worker.Topic);
