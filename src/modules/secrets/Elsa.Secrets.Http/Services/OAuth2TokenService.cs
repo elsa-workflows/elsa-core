@@ -48,23 +48,25 @@ public class OAuth2TokenService : IOAuth2TokenService
 			{ "grant_type", secret.GetProperty("GrantType") },
 			{ "client_id", clientId },
 			{ "client_secret", clientSecret },
-			{ "scope", secret.GetProperty("Scope") }
+			{ "offline_access ", "true" }
 		};
 
 		if (authCode != null)
 		{
 			content.Add("code", authCode);
 		}
+		else
+		{
+			content.Add("scope", secret.GetProperty("Scope"));
+		}
 		if (redirectUri != null)
 		{
 			content.Add("redirect_uri", redirectUri);
 		}
-
 		try
 		{
 			var httpClient = _httpClientFactory.CreateClient(nameof(OAuth2TokenService));
 			httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-			httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Base64Encode(clientId + ":" + clientSecret));
 			
 			var response = await httpClient.PostAsync(secret.GetProperty("AccessTokenUrl"), new FormUrlEncodedContent(content));
 			var json = await response.Content.ReadAsStringAsync();
@@ -105,7 +107,7 @@ public class OAuth2TokenService : IOAuth2TokenService
 			var json = await response.Content.ReadAsStringAsync();
 			var result = JsonConvert.DeserializeObject<TokenResponse>(json);
 			
-			if (response.StatusCode == HttpStatusCode.Unauthorized || result?.Error == "access_denied")
+			if (response.StatusCode == HttpStatusCode.Unauthorized || !string.IsNullOrEmpty(result?.Error))
 			{
 				secret.RemoveProperty("Token");
 				await _secretsStore.UpdateAsync(secret);
