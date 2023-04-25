@@ -60,7 +60,11 @@ namespace Elsa.Activities.Kafka.Services
         {
             var producerConfig = new ProducerConfig()
             {
-                BootstrapServers = Configuration.ConnectionString
+                BootstrapServers = Configuration.ConnectionString,
+                SaslMechanism = _kafkaOptions.SaslMechanism,
+                SaslPassword = _kafkaOptions.SaslPassword,
+                SaslUsername = _kafkaOptions.SaslUsername,
+                SecurityProtocol = _kafkaOptions.SecurityProtocol,
             };
 
             using var producer = new ProducerBuilder<Null, string>(producerConfig).Build();
