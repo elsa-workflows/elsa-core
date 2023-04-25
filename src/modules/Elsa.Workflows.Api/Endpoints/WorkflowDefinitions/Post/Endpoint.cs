@@ -12,6 +12,7 @@ using Elsa.Workflows.Api.Mappers;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Serialization.Converters;
 using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management.Entities;
 using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Post;
@@ -23,17 +24,20 @@ internal class Post : ElsaEndpoint<SaveWorkflowDefinitionRequest, WorkflowDefini
     private readonly IWorkflowDefinitionPublisher _workflowDefinitionPublisher;
     private readonly VariableDefinitionMapper _variableDefinitionMapper;
     private readonly IDistributedLockProvider _distributedLockProvider;
+    private readonly IConsumingWorkflowProvider _consumingWorkflowProvider;
 
     public Post(
         IApiSerializer serializer,
         IWorkflowDefinitionPublisher workflowDefinitionPublisher,
         VariableDefinitionMapper variableDefinitionMapper,
-        IDistributedLockProvider distributedLockProvider)
+        IDistributedLockProvider distributedLockProvider,
+        IConsumingWorkflowProvider consumingWorkflowProvider)
     {
         _serializer = serializer;
         _workflowDefinitionPublisher = workflowDefinitionPublisher;
         _variableDefinitionMapper = variableDefinitionMapper;
         _distributedLockProvider = distributedLockProvider;
+        _consumingWorkflowProvider = consumingWorkflowProvider;
     }
 
     public override void Configure()
@@ -89,14 +93,24 @@ internal class Post : ElsaEndpoint<SaveWorkflowDefinitionRequest, WorkflowDefini
         draft.Options = request.Options;
         draft.UsableAsActivity = request.UsableAsActivity;
         draft = request.Publish ? await _workflowDefinitionPublisher.PublishAsync(draft, cancellationToken) : await _workflowDefinitionPublisher.SaveDraftAsync(draft, cancellationToken);
-
+        
         var response = await Map.FromEntityAsync(draft, cancellationToken);
-
+        
+        if (!isNew && request is {Publish: true, Options.AutoUpdateConsumingWorkflows: true, UsableAsActivity: true})
+            await MapConsumingWorkflows(response, draft, cancellationToken);
+        
         if (isNew)
             await SendCreatedAtAsync<Get.Get>(new { definitionId }, response, cancellation: cancellationToken);
         else
         {
             await HttpContext.Response.WriteAsJsonAsync(response, serializerOptions, cancellationToken);
         }
+    }
+
+    private async Task MapConsumingWorkflows(WorkflowDefinitionResponse response, WorkflowDefinition draft, CancellationToken cancellationToken)
+    {
+        var consumingWorkflows = await _consumingWorkflowProvider.FindWorkflowsWithOutdatedCompositeActivitiesAsync(draft, cancellationToken);
+            
+        response.ConsumingWorkflowsBeingUpdated = consumingWorkflows.Select(x => x.Name ?? x.Id).ToList();
     }
 }
