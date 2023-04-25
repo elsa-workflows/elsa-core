@@ -18,8 +18,14 @@ namespace Elsa.Activities.Kafka.Configuration
         /// </summary>
         public string? SaslPassword { get; set; }
 
+        /// <summary>
+        /// Mechanism to be used for SASL authentication
+        /// </summary>
         public Confluent.Kafka.SaslMechanism SaslMechanism { get; set; }
 
+        /// <summary>
+        /// Security protocol to be used for communication with brokers
+        /// </summary>
         public Confluent.Kafka.SecurityProtocol SecurityProtocol { get; set; }
     }
 }
