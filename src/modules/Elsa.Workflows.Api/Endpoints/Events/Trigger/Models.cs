@@ -9,7 +9,7 @@ internal class Request
     public string EventName { get; set; } = default!;
     public string? CorrelationId { get; set; }
     
-    [JsonConverter(typeof(ExpandoObjectConverter))]
+    [JsonConverter(typeof(ExpandoObjectConverterFactory))]
     public object? Input { get; set; }
 
     public WorkflowExecutionMode WorkflowExecutionMode { get; set; } = WorkflowExecutionMode.Asynchronous;

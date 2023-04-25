@@ -340,6 +340,35 @@ public static class ActivityExecutionContextExtensions
         await context.SendSignalAsync(new CancelSignal());
         await publisher.PublishAsync(new ActivityCancelled(context));
     }
+    
+    /// <summary>
+    /// Returns a the first context that is associated with a <see cref="IVariableContainer"/>.
+    /// </summary>
+    public static ActivityExecutionContext? FindParentWithVariableContainer(this ActivityExecutionContext context)
+    {
+        return context.FindParent(x => x.Activity is IVariableContainer);
+    }
+    
+    /// <summary>
+    /// Returns the first context in the hierarchy that matches the specified predicate.
+    /// </summary>
+    /// <param name="context">The context to start searching from.</param>
+    /// <param name="predicate">The predicate to match.</param>
+    /// <returns>The first context that matches the predicate or <c>null</c> if no match was found.</returns>
+    public static ActivityExecutionContext? FindParent(this ActivityExecutionContext context, Func<ActivityExecutionContext, bool> predicate)
+    {
+        var currentContext = context;
+
+        while (currentContext != null)
+        {
+            if (predicate(currentContext))
+                return currentContext;
+
+            currentContext = currentContext.ParentActivityExecutionContext;
+        }
+
+        return null;
+    }
 
     internal static bool GetHasEvaluatedProperties(this ActivityExecutionContext context) => context.TransientProperties.TryGetValue<bool>("HasEvaluatedProperties", out var value) && value;
     internal static void SetHasEvaluatedProperties(this ActivityExecutionContext context) => context.TransientProperties["HasEvaluatedProperties"] = true;

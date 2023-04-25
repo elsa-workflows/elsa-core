@@ -9,7 +9,7 @@ public class Request
     public string DefinitionId { get; set; } = default!;
     public string? CorrelationId { get; set; }
     
-    [JsonConverter(typeof(ExpandoObjectConverter))]
+    [JsonConverter(typeof(ExpandoObjectConverterFactory))]
     public object? Input { get; set; }
 }
 
