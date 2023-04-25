@@ -1,8 +1,7 @@
 using Elsa.Abstractions;
-using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Models;
-using Elsa.Workflows.Runtime.Contracts;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Import;
@@ -11,18 +10,21 @@ namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Import;
 /// Imports a JSON file containing a workflow definition.
 /// </summary>
 [PublicAPI]
-internal class Import : ElsaEndpoint<WorkflowDefinitionModel, WorkflowDefinitionResponse>
+internal class Import : ElsaEndpoint<WorkflowDefinitionModel, WorkflowDefinitionModel>
 {
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly IWorkflowDefinitionImporter _workflowDefinitionImporter;
+    private readonly WorkflowDefinitionMapper _workflowDefinitionMapper;
 
     /// <inheritdoc />
     public Import(
         IWorkflowDefinitionService workflowDefinitionService,
-        IWorkflowDefinitionImporter workflowDefinitionImporter)
+        IWorkflowDefinitionImporter workflowDefinitionImporter,
+        WorkflowDefinitionMapper workflowDefinitionMapper)
     {
         _workflowDefinitionService = workflowDefinitionService;
         _workflowDefinitionImporter = workflowDefinitionImporter;
+        _workflowDefinitionMapper = workflowDefinitionMapper;
     }
 
     /// <inheritdoc />
@@ -47,30 +49,12 @@ internal class Import : ElsaEndpoint<WorkflowDefinitionModel, WorkflowDefinition
         };
         var draft = await _workflowDefinitionImporter.ImportAsync(saveWorkflowRequest, cancellationToken);
 
-        // Materialize the workflow definition for serialization.
-        var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(draft, cancellationToken);
-
-        var response = new WorkflowDefinitionResponse(
-            draft.Id,
-            draft.DefinitionId,
-            draft.Name,
-            draft.Description,
-            draft.CreatedAt,
-            draft.Version,
-            model.Variables ?? new List<VariableDefinition>(),
-            draft.Inputs,
-            draft.Outputs,
-            draft.Outcomes,
-            draft.CustomProperties,
-            draft.IsLatest,
-            draft.IsPublished,
-            draft.UsableAsActivity,
-            workflow.Root,
-            draft.Options);
+        // Map the workflow definition for serialization.
+        var updatedModel = await _workflowDefinitionMapper.MapAsync(draft, cancellationToken);
 
         if (isNew)
-            await SendCreatedAtAsync<Get.Get>(new { DefinitionId = definitionId }, response, cancellation: cancellationToken);
+            await SendCreatedAtAsync<Get.Get>(new { DefinitionId = definitionId }, updatedModel, cancellation: cancellationToken);
         else
-            await SendOkAsync(response, cancellationToken);
+            await SendOkAsync(updatedModel, cancellationToken);
     }
 }

@@ -13,7 +13,7 @@ namespace Elsa.Workflows.Runtime.HostedServices;
 /// </summary>
 public class PopulateWorkflowDefinitionStore : IHostedService
 {
-    private readonly IEnumerable<IWorkflowDefinitionProvider> _workflowDefinitionProviders;
+    private readonly Func<IEnumerable<IWorkflowDefinitionProvider>> _workflowDefinitionProviders;
     private readonly ITriggerIndexer _triggerIndexer;
     private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
 
@@ -21,7 +21,7 @@ public class PopulateWorkflowDefinitionStore : IHostedService
     /// Constructor.
     /// </summary>
     public PopulateWorkflowDefinitionStore(
-        IEnumerable<IWorkflowDefinitionProvider> workflowDefinitionProviders,
+        Func<IEnumerable<IWorkflowDefinitionProvider>> workflowDefinitionProviders,
         ITriggerIndexer triggerIndexer,
         IWorkflowDefinitionStore workflowDefinitionStore)
     {
@@ -33,7 +33,8 @@ public class PopulateWorkflowDefinitionStore : IHostedService
     /// <inheritdoc />
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        foreach (var provider in _workflowDefinitionProviders)
+        var providers = _workflowDefinitionProviders();
+        foreach (var provider in providers)
         {
             var results = await provider.GetWorkflowDefinitionsAsync(cancellationToken).AsTask().ToList();
 

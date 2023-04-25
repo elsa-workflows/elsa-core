@@ -1,6 +1,5 @@
 using Elsa.Abstractions;
 using Elsa.Common.Models;
-using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Materializers;
@@ -8,7 +7,6 @@ using Elsa.Workflows.Management.Models;
 using JetBrains.Annotations;
 using Medallion.Threading;
 using System.Text.Json;
-using Elsa.Workflows.Api.Mappers;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Serialization.Converters;
 using Elsa.Workflows.Management.Contracts;
@@ -17,22 +15,25 @@ using Microsoft.AspNetCore.Http;
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Post;
 
 [PublicAPI]
-internal class Post : ElsaEndpoint<SaveWorkflowDefinitionRequest, WorkflowDefinitionResponse, WorkflowDefinitionMapper>
+internal class Post : ElsaEndpoint<SaveWorkflowDefinitionRequest, WorkflowDefinitionModel>
 {
     private readonly IApiSerializer _serializer;
     private readonly IWorkflowDefinitionPublisher _workflowDefinitionPublisher;
     private readonly VariableDefinitionMapper _variableDefinitionMapper;
+    private readonly WorkflowDefinitionMapper _workflowDefinitionMapper;
     private readonly IDistributedLockProvider _distributedLockProvider;
 
     public Post(
         IApiSerializer serializer,
         IWorkflowDefinitionPublisher workflowDefinitionPublisher,
         VariableDefinitionMapper variableDefinitionMapper,
+        WorkflowDefinitionMapper workflowDefinitionMapper,
         IDistributedLockProvider distributedLockProvider)
     {
         _serializer = serializer;
         _workflowDefinitionPublisher = workflowDefinitionPublisher;
         _variableDefinitionMapper = variableDefinitionMapper;
+        _workflowDefinitionMapper = workflowDefinitionMapper;
         _distributedLockProvider = distributedLockProvider;
     }
 
@@ -91,7 +92,7 @@ internal class Post : ElsaEndpoint<SaveWorkflowDefinitionRequest, WorkflowDefini
         draft.UsableAsActivity = model.UsableAsActivity;
         draft = request.Publish ? await _workflowDefinitionPublisher.PublishAsync(draft, cancellationToken) : await _workflowDefinitionPublisher.SaveDraftAsync(draft, cancellationToken);
 
-        var response = await Map.FromEntityAsync(draft, cancellationToken);
+        var response = await _workflowDefinitionMapper.MapAsync(draft, cancellationToken);
 
         if (isNew)
             await SendCreatedAtAsync<Get.Get>(new { definitionId }, response, cancellation: cancellationToken);
