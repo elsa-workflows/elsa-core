@@ -1,10 +1,10 @@
 using Elsa.Abstractions;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
-using Elsa.Workflows.Api.Mappers;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Serialization.Converters;
 using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management.Mappers;
 using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Get;
@@ -13,11 +13,13 @@ internal class Get : ElsaEndpoint<Request>
 {
     private readonly IWorkflowDefinitionStore _store;
     private readonly IApiSerializer _apiSerializer;
+    private readonly WorkflowDefinitionMapper _mapper;
 
-    public Get(IWorkflowDefinitionStore store, IApiSerializer apiSerializer)
+    public Get(IWorkflowDefinitionStore store, IApiSerializer apiSerializer, WorkflowDefinitionMapper mapper)
     {
         _store = store;
         _apiSerializer = apiSerializer;
+        _mapper = mapper;
     }
 
     public override void Configure()
@@ -44,15 +46,14 @@ internal class Get : ElsaEndpoint<Request>
             await SendNotFoundAsync(cancellationToken);
             return;
         }
-
-        var mapper = new WorkflowDefinitionMapper();
-        var response = await mapper.FromEntityAsync(definition, cancellationToken);
+        
+        var model = await _mapper.MapAsync(definition, cancellationToken);
         var serializerOptions = _apiSerializer.CreateOptions();
 
         // If the root of composite activities is not requested, exclude them from being serialized.
         if (!request.IncludeCompositeRoot)
             serializerOptions.Converters.Add(new JsonIgnoreCompositeRootConverterFactory());
 
-        await HttpContext.Response.WriteAsJsonAsync(response, serializerOptions, cancellationToken);
+        await HttpContext.Response.WriteAsJsonAsync(model, serializerOptions, cancellationToken);
     }
 }

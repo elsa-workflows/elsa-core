@@ -1,26 +1,30 @@
 using Elsa.Abstractions;
-using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Models;
-using Elsa.Workflows.Runtime.Contracts;
+using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Import;
 
 /// <summary>
 /// Imports a JSON file containing a workflow definition.
 /// </summary>
-internal class Import : ElsaEndpoint<SaveWorkflowDefinitionRequest, WorkflowDefinitionResponse>
+[PublicAPI]
+internal class Import : ElsaEndpoint<WorkflowDefinitionModel, WorkflowDefinitionModel>
 {
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly IWorkflowDefinitionImporter _workflowDefinitionImporter;
+    private readonly WorkflowDefinitionMapper _workflowDefinitionMapper;
 
     /// <inheritdoc />
     public Import(
         IWorkflowDefinitionService workflowDefinitionService,
-        IWorkflowDefinitionImporter workflowDefinitionImporter)
+        IWorkflowDefinitionImporter workflowDefinitionImporter,
+        WorkflowDefinitionMapper workflowDefinitionMapper)
     {
         _workflowDefinitionService = workflowDefinitionService;
         _workflowDefinitionImporter = workflowDefinitionImporter;
+        _workflowDefinitionMapper = workflowDefinitionMapper;
     }
 
     /// <inheritdoc />
@@ -32,38 +36,25 @@ internal class Import : ElsaEndpoint<SaveWorkflowDefinitionRequest, WorkflowDefi
     }
 
     /// <inheritdoc />
-    public override async Task HandleAsync(SaveWorkflowDefinitionRequest request, CancellationToken cancellationToken)
+    public override async Task HandleAsync(WorkflowDefinitionModel model, CancellationToken cancellationToken)
     {
-        var definitionId = request.DefinitionId;
+        var definitionId = model.DefinitionId;
         var isNew = string.IsNullOrWhiteSpace(definitionId);
 
         // Import workflow
-        var draft = await _workflowDefinitionImporter.ImportAsync(request, cancellationToken);
+        var saveWorkflowRequest = new SaveWorkflowDefinitionRequest
+        {
+            Model = model,
+            Publish = false,
+        };
+        var draft = await _workflowDefinitionImporter.ImportAsync(saveWorkflowRequest, cancellationToken);
 
-        // Materialize the workflow definition for serialization.
-        var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(draft, cancellationToken);
-
-        var response = new WorkflowDefinitionResponse(
-            draft.Id,
-            draft.DefinitionId,
-            draft.Name,
-            draft.Description,
-            draft.CreatedAt,
-            draft.Version,
-            request.Variables ?? new List<VariableDefinition>(),
-            draft.Inputs,
-            draft.Outputs,
-            draft.Outcomes,
-            draft.CustomProperties,
-            draft.IsLatest,
-            draft.IsPublished,
-            draft.UsableAsActivity,
-            workflow.Root,
-            draft.Options);
+        // Map the workflow definition for serialization.
+        var updatedModel = await _workflowDefinitionMapper.MapAsync(draft, cancellationToken);
 
         if (isNew)
-            await SendCreatedAtAsync<Get.Get>(new { DefinitionId = definitionId }, response, cancellation: cancellationToken);
+            await SendCreatedAtAsync<Get.Get>(new { DefinitionId = definitionId }, updatedModel, cancellation: cancellationToken);
         else
-            await SendOkAsync(response, cancellationToken);
+            await SendOkAsync(updatedModel, cancellationToken);
     }
 }

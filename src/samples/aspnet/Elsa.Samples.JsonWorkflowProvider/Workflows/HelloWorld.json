@@ -1,0 +1,28 @@
+{
+  "id": "hello-world-v1",
+  "definitionId": "hello-world",
+  "name": "Hello World",
+  "isLatest": true,
+  "isPublished": true,
+  "version": 1,
+  "root": {
+    "id": "Flowchart1",
+    "type": "Elsa.Flowchart",
+    "activities": [
+      {
+        "id": "WriteLine1",
+        "type": "Elsa.WriteLine",
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Hello World!"
+          },
+          "memoryReference": {
+            "id": "WriteLine1:input-1"
+          }
+        }
+      }
+    ]
+  }
+}

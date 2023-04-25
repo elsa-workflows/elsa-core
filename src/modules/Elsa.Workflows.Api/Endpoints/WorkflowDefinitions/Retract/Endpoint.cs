@@ -1,22 +1,24 @@
 using Elsa.Abstractions;
 using Elsa.Common.Models;
-using Elsa.Workflows.Api.Mappers;
-using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management.Mappers;
+using Elsa.Workflows.Management.Models;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Retract;
 
 [PublicAPI]
-internal class Retract : ElsaEndpoint<Request, WorkflowDefinitionResponse, WorkflowDefinitionMapper>
+internal class Retract : ElsaEndpoint<Request, WorkflowDefinitionModel>
 {
     private readonly IWorkflowDefinitionStore _store;
     private readonly IWorkflowDefinitionPublisher _workflowDefinitionPublisher;
+    private readonly WorkflowDefinitionMapper _workflowDefinitionMapper;
 
-    public Retract(IWorkflowDefinitionStore store, IWorkflowDefinitionPublisher workflowDefinitionPublisher)
+    public Retract(IWorkflowDefinitionStore store, IWorkflowDefinitionPublisher workflowDefinitionPublisher, WorkflowDefinitionMapper workflowDefinitionMapper)
     {
         _store = store;
         _workflowDefinitionPublisher = workflowDefinitionPublisher;
+        _workflowDefinitionMapper = workflowDefinitionMapper;
     }
 
     public override void Configure()
@@ -49,7 +51,7 @@ internal class Retract : ElsaEndpoint<Request, WorkflowDefinitionResponse, Workf
         }
 
         await _workflowDefinitionPublisher.RetractAsync(definition, cancellationToken);
-        var response = await Map.FromEntityAsync(definition, cancellationToken);
+        var response = await _workflowDefinitionMapper.MapAsync(definition, cancellationToken);
         await SendOkAsync(response, cancellationToken);
     }
 }
