@@ -1,5 +1,6 @@
 import {Component, Host, h, Prop, State} from '@stencil/core';
 import {NotificationDisplayType, NotificationType} from "./models";
+import { formatTextWithLineBreaks } from '../../utils';
 
 @Component({
   tag: 'elsa-notification-template',
@@ -65,7 +66,7 @@ export class NotificationTemplate {
         </div>
         <div class="ml-3 w-0 flex-1 pt-0.5 z-30">
           <p class="text-sm font-medium text-gray-900">{notification.title}</p>
-          <p class="mt-1 text-sm text-gray-500">{notification.text}</p>
+          <p class="mt-1 text-sm text-gray-500" innerHTML={formatTextWithLineBreaks(notification.text)}></p>
           <p class="mt-1 text-sm text-gray-700 text-right">{this.time}</p>
         </div>
         <div class="ml-4 flex flex-shrink-0 z-30">

@@ -3,7 +3,7 @@ import {Container} from "typedi";
 import {EventBus} from "../../../../services";
 import {InputDefinition, OutputDefinition, WorkflowDefinition, WorkflowOptions} from "../../models/entities";
 import {PropertiesTabModel, TabModel, Widget, WorkflowDefinitionPropsUpdatedArgs, WorkflowPropertiesEditorDisplayingArgs, WorkflowPropertiesEditorEventTypes, WorkflowPropertiesEditorModel} from "../../models/ui";
-import {FormEntry} from "../../../../components/shared/forms/form-entry";
+import {CheckboxFormEntry, FormEntry} from "../../../../components/shared/forms/form-entry";
 import {isNullOrWhitespace} from "../../../../utils";
 import {InfoList} from "../../../../components/shared/forms/info-list";
 import {TabChangedArgs, Variable} from "../../../../models";
@@ -84,6 +84,7 @@ export class WorkflowDefinitionPropertiesEditor {
 
     const workflowDefinition = this.workflowDefinition;
     const options: WorkflowOptions = workflowDefinition.options || {};
+    const autoUpdateConsumingWorkflows = options.autoUpdateConsumingWorkflows ?? false;
 
     if (!workflowDefinition) {
       this.model = model;
@@ -179,6 +180,18 @@ export class WorkflowDefinitionPropertiesEditor {
             <option value="true" selected={this.workflowDefinition.usableAsActivity}>Yes</option>
           </select>
         </FormEntry>
+      },
+      {
+        name: 'autoUpdateConsumingWorkflows',
+        order: 0,
+        content: () => 
+          <CheckboxFormEntry fieldId="UpdateConsumingWorkflows" label="Auto-update consuming workflows" hint="When you publish new version, all the consuming workflows will be updated to point the new version of this workflow.">
+            <input type="checkbox" name="UpdateConsumingWorkflows" id="UpdateConsumingWorkflows" value={"true"} checked={autoUpdateConsumingWorkflows} onChange={e => this.onPropertyEditorChanged(wf => {
+              const inputElement = e.target as HTMLInputElement;
+              options.autoUpdateConsumingWorkflows = inputElement.checked;
+              wf.options = options;
+          })}/>
+          </CheckboxFormEntry>
       }
     ];
 

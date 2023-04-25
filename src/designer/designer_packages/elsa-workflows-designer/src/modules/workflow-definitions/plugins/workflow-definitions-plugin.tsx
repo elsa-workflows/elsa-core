@@ -15,7 +15,7 @@ import {WorkflowDefinitionManager} from "../services/manager";
 import {WorkflowDefinition, WorkflowDefinitionSummary} from "../models/entities";
 import {WorkflowDefinitionUpdatedArgs} from "../models/ui";
 import {PublishClickedArgs} from "../components/publish-button";
-import {WorkflowDefinitionsApi} from "../services/api";
+import {SaveWorkflowDefinitionRequest, SaveWorkflowDefinitionResponse, WorkflowDefinitionsApi} from "../services/api";
 import {DefaultModalActions, ModalDialogInstance, ModalDialogService} from "../../../components/shared/modal-dialog";
 import {htmlToElement} from "../../../utils";
 import NotificationService from "../../notifications/notification-service";
@@ -105,7 +105,7 @@ export class WorkflowDefinitionsPlugin implements Plugin {
   private getActivityDescriptor = (typeName: string): ActivityDescriptor => descriptorsStore.activityDescriptors.find(x => x.typeName == typeName)
   private generateUniqueActivityName = async (activityDescriptor: ActivityDescriptor): Promise<string> => await generateUniqueActivityName([], activityDescriptor);
 
-  private saveWorkflowDefinition = async (definition: WorkflowDefinition, publish: boolean): Promise<WorkflowDefinition> => {
+  private saveWorkflowDefinition = async (definition: WorkflowDefinition, publish: boolean): Promise<SaveWorkflowDefinitionResponse> => {
 
     if (!definition.isLatest) {
       console.debug('Workflow definition is not latest. Skipping save.');
@@ -126,7 +126,7 @@ export class WorkflowDefinitionsPlugin implements Plugin {
       await this.workflowDefinitionEditorElement.loadWorkflowVersions();
     }
 
-    return definition;
+    return {...definition, consumingWorkflowsBeingUpdated: updatedWorkflow.consumingWorkflowsBeingUpdated};
   }
 
   public showWorkflowDefinitionEditor = (workflowDefinition: WorkflowDefinition) => {
@@ -223,8 +223,19 @@ export class WorkflowDefinitionsPlugin implements Plugin {
     });
 
     await this.saveWorkflowDefinition(definition, true)
-      .then(async () => {
+      .then(async (response) => {
         NotificationService.updateNotification(notification, {title: 'Workflow published', text: 'Published!'})
+
+        setTimeout(function() {
+          if(response.consumingWorkflowsBeingUpdated.length > 0)
+          NotificationService.createNotification({
+            title: 'Consuming Workflows',
+            id: uuid(),
+            text: 'Following consuming workflows are being published to update the references of this composite activity:\n\n' + response.consumingWorkflowsBeingUpdated.join('\n'),
+            type: NotificationDisplayType.InProgress,
+          });
+        }, 2000);
+
         e.detail.complete();
 
         // Reload activity descriptors.

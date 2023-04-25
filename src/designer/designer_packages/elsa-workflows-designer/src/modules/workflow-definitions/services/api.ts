@@ -45,14 +45,14 @@ export class WorkflowDefinitionsApi {
     return response.data;
   }
 
-  async post(request: SaveWorkflowDefinitionRequest): Promise<WorkflowDefinition> {
+  async post(request: SaveWorkflowDefinitionRequest): Promise<SaveWorkflowDefinitionResponse> {
     //TODO: Written as a workaround for different server and client models.
     //To be deleted after the port model on backend is updated.
     const requestClone = cloneDeep(request);
     removeGuidsFromPortNames(requestClone.root);
 
     const httpClient = await this.getHttpClient();
-    const response = await httpClient.post<WorkflowDefinition>('workflow-definitions', requestClone);
+    const response = await httpClient.post<SaveWorkflowDefinitionResponse>('workflow-definitions', requestClone);
 
     addGuidsToPortNames(response.data.root);
     return response.data;
@@ -283,4 +283,8 @@ export interface UnpublishManyWorkflowDefinitionResponse {
   retracted: string[];
   notPublished: string[];
   notFound: string[];
+}
+
+export interface SaveWorkflowDefinitionResponse extends WorkflowDefinition {
+  consumingWorkflowsBeingUpdated: string[];
 }

@@ -120,3 +120,7 @@ export function htmlToElement<TElement>(html: string): TElement {
 export function generateIdentity() {
   return uuid().replace(/-/g, '');
 }
+
+export function formatTextWithLineBreaks(text: string) {
+  return text.replace(/\n/g, '<br />');
+}
