@@ -32,7 +32,7 @@ namespace Elsa.Workflows.Management.Services
         /// <inheritdoc />
         public async Task<WorkflowDefinition> ImportAsync(SaveWorkflowDefinitionRequest request, CancellationToken cancellationToken = default)
         {
-            var model = request.WorkflowDefinitionModel;
+            var model = request.Model;
             var definitionId = model.DefinitionId;
 
             // Get a workflow draft version.
@@ -65,7 +65,7 @@ namespace Elsa.Workflows.Management.Services
             draft.Inputs = model.Inputs ?? new List<InputDefinition>();
             draft.Outputs = model.Outputs ?? new List<OutputDefinition>();
             draft.Outcomes = model.Outcomes ?? new List<string>();
-            draft.Options = request.Options;
+            draft.Options = model.Options;
             draft.UsableAsActivity = model.UsableAsActivity;
             draft = request.Publish ? await _workflowDefinitionPublisher.PublishAsync(draft, cancellationToken) : await _workflowDefinitionPublisher.SaveDraftAsync(draft, cancellationToken);
 

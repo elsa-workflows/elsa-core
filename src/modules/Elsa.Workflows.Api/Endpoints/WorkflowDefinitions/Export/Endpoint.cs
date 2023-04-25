@@ -71,6 +71,7 @@ public class Export : ElsaEndpoint<Request>
             definition.UsableAsActivity,
             definition.IsLatest,
             definition.IsPublished,
+            definition.Options,
             workflow.Root);
 
         var serializerOptions = _serializer.CreateOptions();

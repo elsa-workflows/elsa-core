@@ -44,7 +44,7 @@ internal class Post : ElsaEndpoint<SaveWorkflowDefinitionRequest, WorkflowDefini
 
     public override async Task HandleAsync(SaveWorkflowDefinitionRequest request, CancellationToken cancellationToken)
     {
-        var model = request.WorkflowDefinitionModel;
+        var model = request.Model;
         var definitionId = model.DefinitionId;
         var resourceName = $"{GetType().FullName}:{(!string.IsNullOrWhiteSpace(definitionId) ? definitionId : Guid.NewGuid().ToString())}";
 
@@ -87,7 +87,7 @@ internal class Post : ElsaEndpoint<SaveWorkflowDefinitionRequest, WorkflowDefini
         draft.Inputs = inputs;
         draft.Outputs = outputs;
         draft.Outcomes = outcomes;
-        draft.Options = request.Options;
+        draft.Options = model.Options;
         draft.UsableAsActivity = model.UsableAsActivity;
         draft = request.Publish ? await _workflowDefinitionPublisher.PublishAsync(draft, cancellationToken) : await _workflowDefinitionPublisher.SaveDraftAsync(draft, cancellationToken);
 

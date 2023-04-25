@@ -1,4 +1,6 @@
 using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Core.Models;
+using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Management.Models;
 
@@ -19,7 +21,9 @@ namespace Elsa.Workflows.Management.Models;
 /// <param name="UsableAsActivity"></param>
 /// <param name="IsLatest"></param>
 /// <param name="IsPublished"></param>
+/// <param name="Options">The type of <see cref="IWorkflowActivationStrategy"/> to apply when new instances are requested to be created.</param>
 /// <param name="Root"></param>
+[PublicAPI]
 public record WorkflowDefinitionModel(
     string Id,
     string DefinitionId,
@@ -35,5 +39,28 @@ public record WorkflowDefinitionModel(
     bool? UsableAsActivity,
     bool IsLatest,
     bool IsPublished,
+    WorkflowOptions? Options,
     IActivity? Root
-);
+)
+{
+    /// <inheritdoc />
+    public WorkflowDefinitionModel() : this(
+        default!,
+        default!,
+        default!,
+        default!,
+        default!,
+        default!,
+        default!,
+        default!,
+        default!,
+        default!,
+        default!,
+        default!,
+        default!,
+        default!,
+        default!,
+        default!)
+    {
+    }
+}
