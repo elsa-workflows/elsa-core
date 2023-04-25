@@ -185,7 +185,7 @@ export class WorkflowDefinitionPropertiesEditor {
         name: 'autoUpdateConsumingWorkflows',
         order: 0,
         content: () => 
-          <CheckboxFormEntry fieldId="UpdateConsumingWorkflows" label="Auto-update consuming workflows" hint="When you publish new version, all the consuming workflows will be updated to point the new version of this workflow.">
+          <CheckboxFormEntry fieldId="UpdateConsumingWorkflows" label="Auto-update consuming workflows" hint="When you publish a new version, all of the consuming workflows will be updated to point to the new version of this workflow.">
             <input type="checkbox" name="UpdateConsumingWorkflows" id="UpdateConsumingWorkflows" value={"true"} checked={autoUpdateConsumingWorkflows} onChange={e => this.onPropertyEditorChanged(wf => {
               const inputElement = e.target as HTMLInputElement;
               options.autoUpdateConsumingWorkflows = inputElement.checked;

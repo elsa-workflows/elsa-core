@@ -126,7 +126,7 @@ export class WorkflowDefinitionsPlugin implements Plugin {
       await this.workflowDefinitionEditorElement.loadWorkflowVersions();
     }
 
-    return {...definition, consumingWorkflowsBeingUpdated: updatedWorkflow.consumingWorkflowsBeingUpdated};
+    return {...definition, affectedWorkflows: updatedWorkflow.affectedWorkflows};
   }
 
   public showWorkflowDefinitionEditor = (workflowDefinition: WorkflowDefinition) => {
@@ -227,11 +227,11 @@ export class WorkflowDefinitionsPlugin implements Plugin {
         NotificationService.updateNotification(notification, {title: 'Workflow published', text: 'Published!'})
 
         setTimeout(function() {
-          if(response.consumingWorkflowsBeingUpdated.length > 0)
+          if(response.affectedWorkflows.length > 0)
           NotificationService.createNotification({
             title: 'Consuming Workflows',
             id: uuid(),
-            text: 'Following consuming workflows are being published to update the references of this composite activity:\n\n' + response.consumingWorkflowsBeingUpdated.join('\n'),
+            text: 'The following consuming workflows are being published to update the references of this composite activity:\n\n' + response.affectedWorkflows.join('\n'),
             type: NotificationDisplayType.InProgress,
           });
         }, 2000);

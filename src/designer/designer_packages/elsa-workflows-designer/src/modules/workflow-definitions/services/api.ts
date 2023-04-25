@@ -286,5 +286,5 @@ export interface UnpublishManyWorkflowDefinitionResponse {
 }
 
 export interface SaveWorkflowDefinitionResponse extends WorkflowDefinition {
-  consumingWorkflowsBeingUpdated: string[];
+  affectedWorkflows: string[];
 }

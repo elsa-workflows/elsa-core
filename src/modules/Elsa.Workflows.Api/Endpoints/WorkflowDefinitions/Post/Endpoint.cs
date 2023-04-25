@@ -111,6 +111,6 @@ internal class Post : ElsaEndpoint<SaveWorkflowDefinitionRequest, WorkflowDefini
     {
         var consumingWorkflows = await _consumingWorkflowProvider.FindWorkflowsWithOutdatedCompositeActivitiesAsync(draft, cancellationToken);
             
-        response.ConsumingWorkflowsBeingUpdated = consumingWorkflows.Select(x => x.Name ?? x.Id).ToList();
+        response.AffectedWorkflows = consumingWorkflows.Select(x => x.Name ?? x.Id).ToList();
     }
 }
