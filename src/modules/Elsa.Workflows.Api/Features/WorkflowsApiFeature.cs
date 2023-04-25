@@ -7,7 +7,6 @@ using Elsa.JavaScript.Features;
 using Elsa.Workflows.Api.Serialization;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Management.Features;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Api.Features;

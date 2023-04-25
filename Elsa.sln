@@ -188,6 +188,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.Onboarding.Web
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.Onboarding.WorkflowServer", "src\samples\aspnet\Elsa.Samples.Onboarding.WorkflowServer\Elsa.Samples.Onboarding.WorkflowServer.csproj", "{199FC97A-682B-4C7B-A560-1032B16AEAC4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.JsonWorkflows", "src\samples\console\Elsa.Samples.JsonWorkflows\Elsa.Samples.JsonWorkflows.csproj", "{4FA6955C-6860-493F-ABD4-CE327A33EEA3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -474,6 +476,10 @@ Global
 		{199FC97A-682B-4C7B-A560-1032B16AEAC4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{199FC97A-682B-4C7B-A560-1032B16AEAC4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{199FC97A-682B-4C7B-A560-1032B16AEAC4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4FA6955C-6860-493F-ABD4-CE327A33EEA3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4FA6955C-6860-493F-ABD4-CE327A33EEA3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4FA6955C-6860-493F-ABD4-CE327A33EEA3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4FA6955C-6860-493F-ABD4-CE327A33EEA3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{155227F0-A33B-40AA-A4B4-06F813EB921B} = {61017E64-6D00-49CB-9E81-5002DC8F7D5F}
@@ -557,5 +563,6 @@ Global
 		{FAF438E1-B771-418B-83DD-A0F959C82D97} = {873BFC3E-63C2-4495-A503-5EC05DCD84E4}
 		{D64F1240-0110-42E1-AE59-E95AEC8A2900} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 		{199FC97A-682B-4C7B-A560-1032B16AEAC4} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
+		{4FA6955C-6860-493F-ABD4-CE327A33EEA3} = {873BFC3E-63C2-4495-A503-5EC05DCD84E4}
 	EndGlobalSection
 EndGlobal

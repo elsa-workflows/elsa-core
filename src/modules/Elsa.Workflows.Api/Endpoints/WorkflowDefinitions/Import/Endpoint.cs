@@ -34,7 +34,7 @@ internal class Import : ElsaEndpoint<SaveWorkflowDefinitionRequest, WorkflowDefi
     /// <inheritdoc />
     public override async Task HandleAsync(SaveWorkflowDefinitionRequest request, CancellationToken cancellationToken)
     {
-        var definitionId = request.DefinitionId;
+        var definitionId = request.WorkflowDefinitionModel.DefinitionId;
         var isNew = string.IsNullOrWhiteSpace(definitionId);
 
         // Import workflow
@@ -50,7 +50,7 @@ internal class Import : ElsaEndpoint<SaveWorkflowDefinitionRequest, WorkflowDefi
             draft.Description,
             draft.CreatedAt,
             draft.Version,
-            request.Variables ?? new List<VariableDefinition>(),
+            request.WorkflowDefinitionModel.Variables ?? new List<VariableDefinition>(),
             draft.Inputs,
             draft.Outputs,
             draft.Outcomes,
