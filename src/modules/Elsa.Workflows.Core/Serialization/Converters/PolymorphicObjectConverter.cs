@@ -54,6 +54,17 @@ public class PolymorphicObjectConverter : JsonConverter<object>
             return !string.IsNullOrWhiteSpace(newtonsoftJson) ? JObject.Parse(newtonsoftJson) : new JObject();
         }
 
+
+        //// If the target type is a System.Text.JsonObject, parse the JSON island.
+        //var isJsonObject = targetType == typeof(JsonObject);
+
+        //if (isJsonObject)
+        //{
+        //    var parsedModel = JsonElement.ParseValue(ref reader)!;
+        //    var systemTextJson = parsedModel.ToString();
+        //    return !string.IsNullOrWhiteSpace(systemTextJson) ? JsonObject.Parse(systemTextJson) : new JsonObject();
+        //}
+
         var isDictionary = typeof(IDictionary).IsAssignableFrom(targetType);
         if (isDictionary)
         {
@@ -134,7 +145,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
             writer.WriteEndObject();
             return;
         }
-        
+
         // Determine if the value is going to be serialized for the first time.
         // Later on, we need to know this information to determine if we need to write the type name or not, so that we can reconstruct the actual type when deserializing.
         var shouldWriteTypeField = true;
@@ -171,7 +182,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
 
         if (type != typeof(ExpandoObject))
         {
-            
+
 
             if (shouldWriteTypeField)
                 writer.WriteString(TypePropertyName, type.GetSimpleAssemblyQualifiedName());
@@ -245,22 +256,22 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         switch (reader.TokenType)
         {
             case JsonTokenType.StartArray:
-            {
-                var list = new List<object>();
-                while (reader.Read())
                 {
-                    switch (reader.TokenType)
+                    var list = new List<object>();
+                    while (reader.Read())
                     {
-                        default:
-                            list.Add(Read(ref reader, typeof(object), options));
-                            break;
-                        case JsonTokenType.EndArray:
-                            return list;
+                        switch (reader.TokenType)
+                        {
+                            default:
+                                list.Add(Read(ref reader, typeof(object), options));
+                                break;
+                            case JsonTokenType.EndArray:
+                                return list;
+                        }
                     }
-                }
 
-                throw new JsonException();
-            }
+                    throw new JsonException();
+                }
             case JsonTokenType.StartObject:
                 var dict = new ExpandoObject() as IDictionary<string, object>;
                 var referenceResolver = (options.ReferenceHandler as CrossScopedReferenceHandler)?.GetResolver();

@@ -29,6 +29,9 @@
     </ItemGroup>
 
     <ItemGroup>
+      <None Update="Serialization\JsonObjectSerialization\data.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
       <None Update="Serialization\Polymorphism\data.json">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
