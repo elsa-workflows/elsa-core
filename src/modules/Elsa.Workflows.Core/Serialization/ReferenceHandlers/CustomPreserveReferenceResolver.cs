@@ -41,4 +41,11 @@ public class CustomPreserveReferenceResolver : ReferenceResolver
     /// <inheritdoc />
     public override object ResolveReference(string referenceId) =>
         !_referenceIdToObjectMap.TryGetValue(referenceId, out var value) ? throw new JsonException() : value;
+    
+    /// <summary>
+    /// Determines whether the specified value has a reference.
+    /// </summary>
+    /// <param name="value">The value.</param>
+    /// <returns><c>true</c> if the specified value has a reference; otherwise, <c>false</c>.</returns>
+    public bool HasReference(object value) => _objectToReferenceIdMap.ContainsKey(value);
 }

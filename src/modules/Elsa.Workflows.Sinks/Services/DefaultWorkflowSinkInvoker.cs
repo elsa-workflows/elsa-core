@@ -1,5 +1,6 @@
 using Elsa.Common.Models;
 using Elsa.Workflows.Core.State;
+using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Sinks.Contracts;
 using Elsa.Workflows.Sinks.Models;

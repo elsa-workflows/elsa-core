@@ -15,11 +15,12 @@ public sealed class ExpandoObjectConverter : JsonConverter<object>
     /// <summary>
     /// Initializes a new instance of the <see cref="ExpandoObjectConverter"/> class.
     /// </summary>
-    public ExpandoObjectConverter()
+    public ExpandoObjectConverter(JsonSerializerOptions options)
     {
-        _objectConverter = (JsonConverter<object>)new PolymorphicObjectConverterFactory().CreateConverter(typeof(object), new JsonSerializerOptions());
+        var factory = (JsonConverterFactory)(options.Converters.FirstOrDefault(x => x is PolymorphicObjectConverterFactory) ?? new PolymorphicObjectConverterFactory());
+        _objectConverter = (JsonConverter<object>)factory.CreateConverter(typeof(object), options)!;
     }
-    
+
     /// <inheritdoc />
     public override void Write(Utf8JsonWriter writer, object value, JsonSerializerOptions options)
     {
@@ -85,6 +86,7 @@ public sealed class ExpandoObjectConverter : JsonConverter<object>
                                 var value = _objectConverter.Read(ref reader, typeof(object), options)!;
                                 dict.Add(key, value);
                             }
+
                             break;
                         default:
                             throw new JsonException();

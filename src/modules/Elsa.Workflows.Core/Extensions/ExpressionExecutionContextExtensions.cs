@@ -1,5 +1,6 @@
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 
 // ReSharper disable once CheckNamespace
@@ -27,7 +28,7 @@ public static class ExpressionExecutionContextExtensions
             [InputKey] = input
         };
 
-    public static bool TryGetWorkflowExecutionContext(this ExpressionExecutionContext context, out WorkflowExecutionContext workflowExecutionContext) => 
+    public static bool TryGetWorkflowExecutionContext(this ExpressionExecutionContext context, out WorkflowExecutionContext workflowExecutionContext) =>
         context.TransientProperties.TryGetValue(WorkflowExecutionContextKey, out workflowExecutionContext!);
 
     public static WorkflowExecutionContext GetWorkflowExecutionContext(this ExpressionExecutionContext context) => (WorkflowExecutionContext)context.TransientProperties[WorkflowExecutionContextKey];
@@ -95,12 +96,22 @@ public static class ExpressionExecutionContextExtensions
     /// </summary>
     public static ExpressionExecutionContext? FindContextContainingBlock(this ExpressionExecutionContext context, string blockId)
     {
+        return context.FindParent(x => x.Memory.HasBlock(blockId));
+    }
+
+    /// <summary>
+    /// Returns the first context in the hierarchy that matches the specified predicate.
+    /// </summary>
+    /// <param name="context">The context to start searching from.</param>
+    /// <param name="predicate">The predicate to match.</param>
+    /// <returns>The first context that matches the predicate or <c>null</c> if no match was found.</returns>
+    public static ExpressionExecutionContext? FindParent(this ExpressionExecutionContext context, Func<ExpressionExecutionContext, bool> predicate)
+    {
         var currentContext = context;
 
         while (currentContext != null)
         {
-            var register = currentContext.Memory;
-            if (register.HasBlock(blockId))
+            if (predicate(currentContext))
                 return currentContext;
 
             currentContext = currentContext.ParentContext;

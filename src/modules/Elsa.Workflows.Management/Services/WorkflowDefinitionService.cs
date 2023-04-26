@@ -4,9 +4,8 @@ using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
-using Elsa.Workflows.Runtime.Contracts;
 
-namespace Elsa.Workflows.Runtime.Services;
+namespace Elsa.Workflows.Management.Services;
 
 /// <inheritdoc />
 public class WorkflowDefinitionService : IWorkflowDefinitionService
@@ -14,7 +13,7 @@ public class WorkflowDefinitionService : IWorkflowDefinitionService
     private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
     private readonly IActivityVisitor _activityVisitor;
     private readonly IIdentityGraphService _identityGraphService;
-    private readonly IEnumerable<IWorkflowMaterializer> _materializers;
+    private readonly Func<IEnumerable<IWorkflowMaterializer>> _materializers;
 
     /// <summary>
     /// Constructor.
@@ -23,7 +22,7 @@ public class WorkflowDefinitionService : IWorkflowDefinitionService
         IWorkflowDefinitionStore workflowDefinitionStore,
         IActivityVisitor activityVisitor,
         IIdentityGraphService identityGraphService,
-        IEnumerable<IWorkflowMaterializer> materializers)
+        Func<IEnumerable<IWorkflowMaterializer>> materializers)
     {
         _workflowDefinitionStore = workflowDefinitionStore;
         _activityVisitor = activityVisitor;
@@ -34,7 +33,8 @@ public class WorkflowDefinitionService : IWorkflowDefinitionService
     /// <inheritdoc />
     public async Task<Workflow> MaterializeWorkflowAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
     {
-        var provider = _materializers.FirstOrDefault(x => x.Name == definition.MaterializerName);
+        var materializers = _materializers();
+        var provider = materializers.FirstOrDefault(x => x.Name == definition.MaterializerName);
 
         if (provider == null)
             throw new Exception("Provider not found");

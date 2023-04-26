@@ -2,6 +2,7 @@ using Elsa.Common.Models;
 using Elsa.Http.Contracts;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.State;
+using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
 using Microsoft.AspNetCore.Http;
 

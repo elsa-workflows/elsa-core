@@ -18,6 +18,7 @@
         <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.Sqlite\Elsa.EntityFrameworkCore.Sqlite.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore\Elsa.EntityFrameworkCore.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Quartz\Elsa.Quartz.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.Webhooks\Elsa.Webhooks.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Workflows.Designer\Elsa.Workflows.Designer.csproj" />
     </ItemGroup>

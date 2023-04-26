@@ -5,6 +5,7 @@ using Elsa.EntityFrameworkCore.Modules.Labels;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Requirements;
+using Elsa.Webhooks.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -25,7 +26,9 @@ services
         {
             identity.IdentityOptions = options => identitySection.Bind(options);
             identity.TokenOptions = options => identityTokenSection.Bind(options);
-            identity.UseAdminUserProvider();
+            identity.UseConfigurationBasedUserProvider(options => identitySection.Bind(options));
+            identity.UseConfigurationBasedApplicationProvider(options => identitySection.Bind(options));
+            identity.UseConfigurationBasedRoleProvider(options => identitySection.Bind(options));
         })
         .UseDefaultAuthentication()
         .UseWorkflowManagement(management => management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
@@ -41,6 +44,7 @@ services
         .UseLiquid()
         .UseHttp()
         .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options))
+        .UseWebhooks(webhooks => webhooks.WebhookOptions = options => builder.Configuration.GetSection("Webhooks").Bind(options))
     );
 
 services.AddHealthChecks();

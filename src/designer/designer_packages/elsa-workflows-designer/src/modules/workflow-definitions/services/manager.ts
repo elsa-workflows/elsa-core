@@ -16,19 +16,8 @@ export class WorkflowDefinitionManager {
 
   public saveWorkflow = async (definition: WorkflowDefinition, publish: boolean): Promise<WorkflowDefinition> => {
     const request: SaveWorkflowDefinitionRequest = {
-      definitionId: definition.definitionId,
-      version: definition.version,
-      name: definition.name,
-      description: definition.description,
-      publish: publish,
-      root: definition.root,
-      variables: definition.variables,
-      customProperties: definition.customProperties,
-      inputs: definition.inputs,
-      outputs: definition.outputs,
-      outcomes: definition.outcomes,
-      options: definition.options,
-      usableAsActivity: definition.usableAsActivity
+      model: definition,
+      publish: publish
     };
 
     return await this.api.post(request);

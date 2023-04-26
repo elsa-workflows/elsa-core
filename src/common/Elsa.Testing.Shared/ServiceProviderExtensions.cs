@@ -38,9 +38,14 @@ public static class ServiceProviderExtensions
     {
         var json = await File.ReadAllTextAsync(fileName);
         var serializer = services.GetRequiredService<IActivitySerializer>();
-        var workflowDefinitionRequest = serializer.Deserialize<SaveWorkflowDefinitionRequest>(json);
+        var model = serializer.Deserialize<WorkflowDefinitionModel>(json);
 
-        workflowDefinitionRequest.Publish = true;
+        var workflowDefinitionRequest = new SaveWorkflowDefinitionRequest
+        {
+            Model = model,
+            Publish = true
+        };
+        
         var workflowDefinitionImporter = services.GetRequiredService<IWorkflowDefinitionImporter>();
         return await workflowDefinitionImporter.ImportAsync(workflowDefinitionRequest);
     }
