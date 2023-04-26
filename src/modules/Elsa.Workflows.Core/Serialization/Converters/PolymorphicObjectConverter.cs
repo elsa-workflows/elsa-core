@@ -1,11 +1,11 @@
+using Elsa.Extensions;
+using Elsa.Workflows.Core.Serialization.ReferenceHandlers;
+using Newtonsoft.Json.Linq;
 using System.Collections;
 using System.Dynamic;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
-using Elsa.Extensions;
-using Elsa.Workflows.Core.Serialization.ReferenceHandlers;
-using Newtonsoft.Json.Linq;
 
 namespace Elsa.Workflows.Core.Serialization.Converters;
 
@@ -55,21 +55,23 @@ public class PolymorphicObjectConverter : JsonConverter<object>
             return !string.IsNullOrWhiteSpace(newtonsoftJson) ? JObject.Parse(newtonsoftJson) : new JObject();
         }
 
-
         // If the target type is a System.Text.JsonObject, parse the JSON island.
         var isJsonObject = targetType == typeof(JsonObject);
 
         if (isJsonObject)
         {
-           var parsedModel = JsonElement.ParseValue(ref reader)!;
-
-           // var island = parsedModel.GetProperty(IslandPropertyName);
-
-
-            var systemTextJson = parsedModel.ToString();
-
-
+            var parsedModel = JsonElement.ParseValue(ref reader)!;
+            var systemTextJson = parsedModel.GetProperty(IslandPropertyName).GetString();
             return !string.IsNullOrWhiteSpace(systemTextJson) ? JsonObject.Parse(systemTextJson) : new JsonObject();
+        }
+
+        var isJsonArray = targetType == typeof(JsonArray);
+
+        if (isJsonArray)
+        {
+            var parsedModel = JsonElement.ParseValue(ref reader)!;
+            var systemTextJson = parsedModel.GetProperty(IslandPropertyName).GetString();
+            return !string.IsNullOrWhiteSpace(systemTextJson) ? JsonArray.Parse(systemTextJson) : new JsonArray();
         }
 
         var isDictionary = typeof(IDictionary).IsAssignableFrom(targetType);
@@ -141,10 +143,10 @@ public class PolymorphicObjectConverter : JsonConverter<object>
             return;
         }
 
-        // Special case for Newtonsoft.Json types.
+        // Special case for Newtonsoft.Json and System.Text.Json types.
         // Newtonsoft.Json types are not supported by the System.Text.Json serializer and should be written as a string instead.
         // We include metadata about the type so that we can deserialize it later. 
-        if (type == typeof(JObject))
+        if (type == typeof(JObject) || type == typeof(JsonObject) || type == typeof(JsonArray))
         {
             writer.WriteStartObject();
             writer.WriteString(IslandPropertyName, value.ToString());
@@ -152,19 +154,6 @@ public class PolymorphicObjectConverter : JsonConverter<object>
             writer.WriteEndObject();
             return;
         }
-
-
-        // Special case for System.text.Json types.
-        // System.Json types are not supported by the System.Text.Json serializer and should be written as a string instead.
-        // We include metadata about the type so that we can deserialize it later. 
-        //if (type == typeof(JsonObject))
-        //{
-        //    writer.WriteStartObject();
-        //    writer.WriteString(IslandPropertyName, value.ToString());
-        //    writer.WriteString(TypePropertyName, type.GetSimpleAssemblyQualifiedName());
-        //    writer.WriteEndObject();
-        //    return;
-        //}
 
         // Determine if the value is going to be serialized for the first time.
         // Later on, we need to know this information to determine if we need to write the type name or not, so that we can reconstruct the actual type when deserializing.
