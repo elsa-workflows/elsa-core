@@ -17,6 +17,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
     private const string TypePropertyName = "_type";
     private const string ItemsPropertyName = "_items";
     private const string IslandPropertyName = "_island";
+    private const string JsonIslandPropertyName = "_jsonIsland";
     private const string IdPropertyName = "$id";
     private const string RefPropertyName = "$ref";
     private const string ValuesPropertyName = "$values";
@@ -55,15 +56,21 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         }
 
 
-        //// If the target type is a System.Text.JsonObject, parse the JSON island.
-        //var isJsonObject = targetType == typeof(JsonObject);
+        // If the target type is a System.Text.JsonObject, parse the JSON island.
+        var isJsonObject = targetType == typeof(JsonObject);
 
-        //if (isJsonObject)
-        //{
-        //    var parsedModel = JsonElement.ParseValue(ref reader)!;
-        //    var systemTextJson = parsedModel.ToString();
-        //    return !string.IsNullOrWhiteSpace(systemTextJson) ? JsonObject.Parse(systemTextJson) : new JsonObject();
-        //}
+        if (isJsonObject)
+        {
+           var parsedModel = JsonElement.ParseValue(ref reader)!;
+
+           // var island = parsedModel.GetProperty(IslandPropertyName);
+
+
+            var systemTextJson = parsedModel.ToString();
+
+
+            return !string.IsNullOrWhiteSpace(systemTextJson) ? JsonObject.Parse(systemTextJson) : new JsonObject();
+        }
 
         var isDictionary = typeof(IDictionary).IsAssignableFrom(targetType);
         if (isDictionary)
@@ -145,6 +152,19 @@ public class PolymorphicObjectConverter : JsonConverter<object>
             writer.WriteEndObject();
             return;
         }
+
+
+        // Special case for System.text.Json types.
+        // System.Json types are not supported by the System.Text.Json serializer and should be written as a string instead.
+        // We include metadata about the type so that we can deserialize it later. 
+        //if (type == typeof(JsonObject))
+        //{
+        //    writer.WriteStartObject();
+        //    writer.WriteString(IslandPropertyName, value.ToString());
+        //    writer.WriteString(TypePropertyName, type.GetSimpleAssemblyQualifiedName());
+        //    writer.WriteEndObject();
+        //    return;
+        //}
 
         // Determine if the value is going to be serialized for the first time.
         // Later on, we need to know this information to determine if we need to write the type name or not, so that we can reconstruct the actual type when deserializing.
