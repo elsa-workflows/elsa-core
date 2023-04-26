@@ -49,6 +49,9 @@ namespace Elsa.Workflows.Management.Services
 
                 if (!string.IsNullOrWhiteSpace(definitionId))
                     draft.DefinitionId = definitionId;
+                
+                if (!string.IsNullOrWhiteSpace(model.Id))
+                    draft.Id = model.Id;
             }
 
             // Update the draft with the received model.
@@ -67,7 +70,7 @@ namespace Elsa.Workflows.Management.Services
             draft.Outcomes = model.Outcomes ?? new List<string>();
             draft.Options = model.Options;
             draft.UsableAsActivity = model.UsableAsActivity;
-            draft = request.Publish ? await _workflowDefinitionPublisher.PublishAsync(draft, cancellationToken) : await _workflowDefinitionPublisher.SaveDraftAsync(draft, cancellationToken);
+            draft = request.Publish ?? model.IsPublished ? await _workflowDefinitionPublisher.PublishAsync(draft, cancellationToken) : await _workflowDefinitionPublisher.SaveDraftAsync(draft, cancellationToken);
 
             return draft;
         }
