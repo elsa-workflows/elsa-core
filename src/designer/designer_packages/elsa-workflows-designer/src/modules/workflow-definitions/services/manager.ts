@@ -1,6 +1,6 @@
 import {Container, Service} from "typedi";
 import {WorkflowDefinition} from "../models/entities";
-import {ExportWorkflowRequest, ImportWorkflowRequest, RetractWorkflowDefinitionRequest, SaveWorkflowDefinitionRequest, SaveWorkflowDefinitionResponse, WorkflowDefinitionsApi} from "./api";
+import {ExportWorkflowRequest, ImportWorkflowRequest, RetractWorkflowDefinitionRequest, SaveWorkflowDefinitionRequest, WorkflowDefinitionsApi} from "./api";
 import {downloadFromBlob} from "../../../utils";
 import {ActivityDescriptorManager} from "../../../services";
 
@@ -14,7 +14,7 @@ export class WorkflowDefinitionManager {
     this.activityDescriptorManager = Container.get(ActivityDescriptorManager);
   }
 
-  public saveWorkflow = async (definition: WorkflowDefinition, publish: boolean): Promise<SaveWorkflowDefinitionResponse> => {
+  public saveWorkflow = async (definition: WorkflowDefinition, publish: boolean): Promise<WorkflowDefinition> => {
     const request: SaveWorkflowDefinitionRequest = {
       definitionId: definition.definitionId,
       version: definition.version,

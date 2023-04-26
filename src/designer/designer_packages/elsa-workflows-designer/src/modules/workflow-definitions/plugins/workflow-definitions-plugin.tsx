@@ -15,7 +15,7 @@ import {WorkflowDefinitionManager} from "../services/manager";
 import {WorkflowDefinition, WorkflowDefinitionSummary} from "../models/entities";
 import {WorkflowDefinitionUpdatedArgs} from "../models/ui";
 import {PublishClickedArgs} from "../components/publish-button";
-import {SaveWorkflowDefinitionRequest, SaveWorkflowDefinitionResponse, WorkflowDefinitionsApi} from "../services/api";
+import {WorkflowDefinitionsApi} from "../services/api";
 import {DefaultModalActions, ModalDialogInstance, ModalDialogService} from "../../../components/shared/modal-dialog";
 import {htmlToElement} from "../../../utils";
 import NotificationService from "../../notifications/notification-service";
@@ -105,7 +105,7 @@ export class WorkflowDefinitionsPlugin implements Plugin {
   private getActivityDescriptor = (typeName: string): ActivityDescriptor => descriptorsStore.activityDescriptors.find(x => x.typeName == typeName)
   private generateUniqueActivityName = async (activityDescriptor: ActivityDescriptor): Promise<string> => await generateUniqueActivityName([], activityDescriptor);
 
-  private saveWorkflowDefinition = async (definition: WorkflowDefinition, publish: boolean): Promise<SaveWorkflowDefinitionResponse> => {
+  private saveWorkflowDefinition = async (definition: WorkflowDefinition, publish: boolean): Promise<WorkflowDefinition> => {
 
     if (!definition.isLatest) {
       console.debug('Workflow definition is not latest. Skipping save.');
@@ -126,7 +126,7 @@ export class WorkflowDefinitionsPlugin implements Plugin {
       await this.workflowDefinitionEditorElement.loadWorkflowVersions();
     }
 
-    return {...definition, affectedWorkflows: updatedWorkflow.affectedWorkflows};
+    return definition;
   }
 
   public showWorkflowDefinitionEditor = (workflowDefinition: WorkflowDefinition) => {
@@ -223,21 +223,13 @@ export class WorkflowDefinitionsPlugin implements Plugin {
     });
 
     await this.saveWorkflowDefinition(definition, true)
-      .then(async (response) => {
+      .then(async () => {
         NotificationService.updateNotification(notification, {title: 'Workflow published', text: 'Published!'})
-
-        setTimeout(function() {
-          if(response.affectedWorkflows.length > 0)
-          NotificationService.createNotification({
-            title: 'Consuming Workflows',
-            id: uuid(),
-            text: 'The following consuming workflows are being published to update the references of this composite activity:\n\n' + response.affectedWorkflows.join('\n'),
-            type: NotificationDisplayType.InProgress,
-          });
-        }, 2000);
-
         e.detail.complete();
 
+        if(definition.options?.autoUpdateConsumingWorkflows)
+          await this.updateCompositeActivityReferences(definition);
+          
         // Reload activity descriptors.
         await this.activityDescriptorManager.refresh();
       }).catch(() => {
@@ -280,5 +272,31 @@ export class WorkflowDefinitionsPlugin implements Plugin {
 
   private onImportClicked = async (e: CustomEvent) => {
     await this.import();
+  }
+
+  private updateCompositeActivityReferences = async (definition: WorkflowDefinition) => {
+    const notification = NotificationService.createNotification({
+      title: 'Consuming Workflows',
+      id: uuid(),
+      text: 'Consuming workflows are being updated.',
+      type: NotificationDisplayType.InProgress
+    });
+
+    await this.api.updateWorkflowReferences({definitionId: definition.definitionId})
+      .then(async (response) => {
+        debugger;
+        NotificationService.updateNotification(notification, {
+          title: 'Consuming Workflows', 
+          text: 'The following consuming workflows have been successfully updated:\n\n' + response.affectedWorkflows.join('\n'),
+          type: NotificationDisplayType.Success
+        })
+      }).catch(() => {
+        debugger;
+        NotificationService.updateNotification(notification, {
+          title: 'Error while updating consuming workflows',
+          text: 'Consuming workflows could not be updated',
+          type: NotificationDisplayType.Error
+        });
+      });
   }
 }

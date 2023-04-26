@@ -58,5 +58,4 @@ internal class WorkflowDefinitionResponse
     public bool? UsableAsActivity { get; }
     public IActivity Root { get; }
     public WorkflowOptions? Options { get; set; }
-    public ICollection<string> AffectedWorkflows { get; set; }
 }
