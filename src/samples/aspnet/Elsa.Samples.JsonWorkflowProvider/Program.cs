@@ -5,7 +5,7 @@ var services = builder.Services;
 
 // Add Elsa services.
 services.AddElsa(elsa => elsa
-    // Configure the workflow runtime.
+    // Add the Fluent Storage workflow definition provider.
     .UseFluentStorageProvider()
 
     // Expose API endpoints.
