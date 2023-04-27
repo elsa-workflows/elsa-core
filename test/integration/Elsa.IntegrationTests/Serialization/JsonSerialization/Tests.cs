@@ -10,7 +10,7 @@ using Newtonsoft.Json.Linq;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Elsa.IntegrationTests.Serialization.JsonObjectSerialization;
+namespace Elsa.IntegrationTests.Serialization.JsonSerialization;
 
 public class Tests
 {
@@ -36,7 +36,7 @@ public class Tests
 
         var result = payloadSerializer.Serialize(dict);
 
-        var expected = File.ReadAllText("Serialization/JsonObjectSerialization/JsonObjectIsland.json");
+        var expected = File.ReadAllText(@"Serialization/JsonSerialization/JsonObjectIsland.json");
       
         var jsonResult = JsonObject.Parse(result).ToString();
         var jsonExpected = JsonObject.Parse(expected).ToString();
@@ -49,13 +49,13 @@ public class Tests
     {
         var payloadSerializer = _services.GetRequiredService<IPayloadSerializer>();
 
-        var jsonContent = File.ReadAllText("Serialization/JsonObjectSerialization/JsonObjectIsland.json");
+        var jsonContent = File.ReadAllText(@"Serialization/JsonSerialization/JsonObjectIsland.json");
 
         var transformationModel = payloadSerializer.Deserialize<IDictionary<string, object>>(jsonContent);
 
         var result = JsonObject.Create(JsonSerializer.SerializeToElement(transformationModel));
 
-        var expected = File.ReadAllText("Serialization/JsonObjectSerialization/JsonObjectWithoutType.json");
+        var expected = File.ReadAllText(@"Serialization/JsonSerialization/JsonObjectWithoutType.json");
 
         var jsonResult = result.ToString();
         var jsonExpected = JsonObject.Parse(expected).ToString();
@@ -105,7 +105,7 @@ public class Tests
 
         var result = payloadSerializer.Serialize(dict);
 
-        var expected = File.ReadAllText("Serialization/JsonObjectSerialization/JObjectIsland.json");
+        var expected = File.ReadAllText(@"Serialization/JsonSerialization/JObjectIsland.json");
 
         var jsonResult = JsonObject.Parse(result).ToString();
         var jsonExpected = JsonObject.Parse(expected).ToString();
@@ -118,13 +118,13 @@ public class Tests
     {
         var payloadSerializer = _services.GetRequiredService<IPayloadSerializer>();
 
-        var jsonContent = File.ReadAllText("Serialization/JsonObjectSerialization/JObjectIsland.json");
+        var jsonContent = File.ReadAllText(@"Serialization/JsonSerialization/JObjectIsland.json");
 
         var transformationModel = payloadSerializer.Deserialize<IDictionary<string, object>>(jsonContent);
 
         var result =  Newtonsoft.Json.JsonConvert.SerializeObject(transformationModel);
 
-        var expected = File.ReadAllText("Serialization/JsonObjectSerialization/JObjectWithoutType.json");
+        var expected = File.ReadAllText(@"Serialization/JsonSerialization/JObjectWithoutType.json");
 
         var jsonResult = JObject.Parse(result).ToString();
         var jsonExpected = JObject.Parse(expected).ToString();
@@ -174,7 +174,7 @@ public class Tests
 
         var result = payloadSerializer.Serialize(dict);
 
-        var expected = File.ReadAllText("Serialization/JsonObjectSerialization/JArrayIsland.json");
+        var expected = File.ReadAllText(@"Serialization/JsonSerialization/JArrayIsland.json");
 
         var jsonResult = JsonObject.Parse(result).ToString();
         var jsonExpected = JsonObject.Parse(expected).ToString();
@@ -187,13 +187,13 @@ public class Tests
     {
         var payloadSerializer = _services.GetRequiredService<IPayloadSerializer>();
 
-        var jsonContent = File.ReadAllText("Serialization/JsonObjectSerialization/JArrayIsland.json");
+        var jsonContent = File.ReadAllText(@"Serialization/JsonSerialization/JArrayIsland.json");
 
         var transformationModel = payloadSerializer.Deserialize<IDictionary<string, object>>(jsonContent);
 
         var result = Newtonsoft.Json.JsonConvert.SerializeObject(transformationModel);
 
-        var expected = File.ReadAllText("Serialization/JsonObjectSerialization/JArrayWithoutType.json");
+        var expected = File.ReadAllText(@"Serialization/JsonSerialization/JArrayWithoutType.json");
 
         var jsonResult = JObject.Parse(result).ToString();
         var jsonExpected = JObject.Parse(expected).ToString();
@@ -243,7 +243,7 @@ public class Tests
 
         var result = payloadSerializer.Serialize(dict);
 
-        var expected = File.ReadAllText("Serialization/JsonObjectSerialization/JsonArrayIsland.json");
+        var expected = File.ReadAllText(@"Serialization/JsonSerialization/JsonArrayIsland.json");
 
         var jsonResult = JsonObject.Parse(result).ToString();
         var jsonExpected = JsonObject.Parse(expected).ToString();
@@ -256,13 +256,13 @@ public class Tests
     {
         var payloadSerializer = _services.GetRequiredService<IPayloadSerializer>();
 
-        var jsonContent = File.ReadAllText("Serialization/JsonObjectSerialization/JsonArrayIsland.json");
+        var jsonContent = File.ReadAllText(@"Serialization/JsonSerialization/JsonArrayIsland.json");
 
         var transformationModel = payloadSerializer.Deserialize<IDictionary<string, object>>(jsonContent);
 
         var result = JsonArray.Create(JsonSerializer.SerializeToElement(transformationModel["Array"])).ToString();
 
-        var expected = File.ReadAllText("Serialization/JsonObjectSerialization/JsonArrayWithoutType.json");
+        var expected = File.ReadAllText(@"Serialization/JsonSerialization/JsonArrayWithoutType.json");
 
         var jsonResult = JsonArray.Parse(result).ToString();
         var jsonExpected = JsonArray.Parse(expected).ToString();
