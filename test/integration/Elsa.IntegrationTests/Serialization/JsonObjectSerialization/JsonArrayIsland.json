@@ -1,16 +1,15 @@
 {
   "StatusCode": "Created",
-  "Content": {
-    "premiumCalculationAfdToIipEngine": {
-      "script": [
-        {
-          "path": "$.INPUT_CALCS.newCalculation",
-          "command": "add"
-        }
-      ]
-    },
-    "_type": "System.Text.Json.Nodes.JsonObject, System.Text.Json"
+  "Array": {
+    "_items": [
+      {
+        "path": "$.INPUT_CALCS.newCalculation",
+        "command": "add"
+      }
+    ],
+    "_type": "System.Text.Json.Nodes.JsonArray, System.Text.Json"
   },
+
   "ResponseHeaders": { "_type": "Elsa.Http.Models.HttpResponseHeaders, Elsa.Http" },
   "_type": "System.Collections.Generic.Dictionary\u00602[[System.String, System.Private.CoreLib],[System.Object, System.Private.CoreLib]], System.Private.CoreLib"
 }

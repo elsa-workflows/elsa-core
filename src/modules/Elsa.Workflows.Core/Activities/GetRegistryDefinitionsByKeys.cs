@@ -174,7 +174,6 @@ public class GetRegistryDefinitionsByKeys : Activity
 
 }
 
-
 public class ActivityResult
 {
     public bool IsSuccessful { get; set; } = true;
@@ -214,7 +213,6 @@ public enum RegistryDefinitionType
     HttpConnector,
     GraphQLQuery
 }
-
 
 public static class ActivityOutcomes
 {

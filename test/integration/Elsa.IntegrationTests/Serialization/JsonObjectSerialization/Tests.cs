@@ -86,9 +86,6 @@ public class Tests
     }
 
 
-
-
-
     [Fact(DisplayName = "Serialize and deserialize JObject create island")]
     public void Test_JObject_Serialization_create_Island()
     {
@@ -129,7 +126,6 @@ public class Tests
         Assert.Equal(jsonExpected, jsonResult);
     }
 
-
     [Fact(DisplayName = "Serialize and deserialize JObject")]
     public void Test_JObject_Serialization_roundtrip()
     {
@@ -155,8 +151,26 @@ public class Tests
     }
 
 
+    [Fact(DisplayName = "Serialize and deserialize JArray create island")]
+    public void Test_JArray_Serialization_create_Island()
+    {
+        var payloadSerializer = _services.GetRequiredService<IPayloadSerializer>();
 
+        var jsonContent = "[{\"path\":\"$.INPUT_CALCS.newCalculation\",\"command\":\"add\"}]";
 
+        var dict = new Dictionary<string, object>();
+        dict.Add("StatusCode", "Created");
+        dict.Add("Array", JArray.Parse(jsonContent));
+
+        var result = payloadSerializer.Serialize(dict);
+
+        var expected = File.ReadAllText("Serialization/JsonObjectSerialization/JArrayIsland.json");
+
+        var jsonResult = JsonObject.Parse(result).ToString();
+        var jsonExpected = JsonObject.Parse(expected).ToString();
+
+        Assert.Equal(jsonExpected, jsonResult);
+    }
 
 
 
