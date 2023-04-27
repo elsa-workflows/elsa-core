@@ -10,4 +10,10 @@ public static partial class Extensions
         feature.DbContextOptionsBuilder = (_, db) => db.UseElsaSqlServer(connectionString);
         return feature;
     }
+
+    public static EFCoreExecutionLogRecordPersistenceFeature UseSqlServer(this EFCoreExecutionLogRecordPersistenceFeature feature, string connectionString)
+    {
+        feature.DbContextOptionsBuilder = (_, db) => db.UseElsaSqlServer(connectionString);
+        return feature;
+    }
 }
