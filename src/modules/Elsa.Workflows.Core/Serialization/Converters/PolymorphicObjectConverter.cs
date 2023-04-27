@@ -175,6 +175,23 @@ public class PolymorphicObjectConverter : JsonConverter<object>
             shouldWriteTypeField = !exists;
         }
 
+        // Before we serialize the value, check to see if it's an ExpandoObject.
+        // If it is, we need to sanitize its property names, because they can contain invalid characters.
+        if (value is ExpandoObject)
+        {
+            var sanitized = new ExpandoObject();
+            var dictionary = (IDictionary<string, object?>)sanitized;
+            var expando = (IDictionary<string, object?>)value;
+
+            foreach (var kvp in expando)
+            {
+                var key = EscapeKey(kvp.Key);
+                dictionary[key] = kvp.Value;
+            }
+
+            value = sanitized;
+        }
+        
         var jsonElement = JsonDocument.Parse(JsonSerializer.Serialize(value, type, newOptions)).RootElement;
 
         // If the value is a string, serialize it directly.
@@ -196,7 +213,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         {
             foreach (var property in jsonElement.EnumerateObject().Where(property => !property.NameEquals(TypePropertyName)))
             {
-                writer.WritePropertyName(EscapeKey(property.Name));
+                writer.WritePropertyName(property.Name);
                 property.Value.WriteTo(writer);
             }
         }
