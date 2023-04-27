@@ -1,6 +1,6 @@
 {
   "StatusCode": "Created",
-  "Array": [
+  "Content": [
     {
       "path": "$.INPUT_CALCS.newCalculation",
       "command": "add"

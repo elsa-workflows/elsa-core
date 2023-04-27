@@ -12,290 +12,137 @@ using Xunit.Abstractions;
 
 namespace Elsa.IntegrationTests.Serialization.JsonSerialization;
 
-public class Tests
+public class SerializationTests
 {
     private readonly IServiceProvider _services;
 
-    public Tests(ITestOutputHelper testOutputHelper)
+    public SerializationTests(ITestOutputHelper testOutputHelper)
     {
         _services = new TestApplicationBuilder(testOutputHelper).Build();
     }
 
-    [Fact(DisplayName = "Serialize and deserialize JsonObject create island")]
-    public void Test_JsonObject_Serialization_create_Island()
+    [Theory(DisplayName = "write")]
+    [InlineData(typeof(JsonObject), "JsonObjectIsland")]
+    [InlineData(typeof(JObject), "JObjectIsland")]
+    [InlineData(typeof(JsonArray), "JsonArrayIsland")]
+    [InlineData(typeof(JArray), "JArrayIsland")]
+    public void Test_Serialization_create_Island(Type type, string filename)
+    {
+        CreateIsland(type, filename);
+    }
+
+    [Theory(DisplayName = "roundtrip")]
+    [InlineData(typeof(JsonObject))]
+    [InlineData(typeof(JObject))]
+    [InlineData(typeof(JsonArray))]
+    [InlineData(typeof(JArray))]
+    public void Test_Serialization_roundtrip(Type type)
+    {
+        TestRoundTrip(type);
+    }
+
+    [Theory(DisplayName = "read")]
+    [InlineData(typeof(JsonObject), "JsonObjectIsland", "JsonObjectWithoutType")]
+    [InlineData(typeof(JObject), "JObjectIsland", "JObjectWithoutType")]
+    [InlineData(typeof(JsonArray), "JsonArrayIsland", "JsonArrayWithoutType")]
+    [InlineData(typeof(JArray), "JArrayIsland", "JArrayWithoutType")]
+    public void Test_Serialization_read(Type type, string filename, string compareFileName)
+    {
+        ReadIsland(type, filename, compareFileName);
+    }
+
+    private string SerializeUsingPayloadSerializer(object obj)
     {
         var payloadSerializer = _services.GetRequiredService<IPayloadSerializer>();
+        return payloadSerializer.Serialize(obj);
+    }
 
+    private IDictionary<string, object> DeSerializeDictionaryUsingPayloadSerializer(string jsonString)
+    {
+        var payloadSerializer = _services.GetRequiredService<IPayloadSerializer>();
+        return payloadSerializer.Deserialize<IDictionary<string, object>>(jsonString);
+    }
+
+    private void CompareJsonsObjects(string expected, string actual)
+    {
+        var jsonActual = JsonObject.Parse(actual).ToString();
+        var jsonExpected = JsonObject.Parse(expected).ToString();
+
+        Assert.Equal(jsonExpected, jsonActual);
+    }
+
+    private IDictionary<string, object> GetArrayContent(bool isJArray)
+    {
+        var jsonContent = "[{\"path\":\"$.INPUT_CALCS.newCalculation\",\"command\":\"add\"}]";
+
+        var dict = new Dictionary<string, object>
+        {
+            { "StatusCode", "Created" },
+            { "Content",isJArray? JArray.Parse(jsonContent):JsonArray.Parse(jsonContent)  }
+        };
+        return dict;
+    }
+
+    private IDictionary<string, object> GetObjectContent(bool isJObject)
+    {
         var jsonContent = "{\"premiumCalculationAfdToIipEngine\":{\"script\":[{\"path\":\"$.INPUT_CALCS.newCalculation\",\"command\":\"add\"}]} }";
 
         var dict = new Dictionary<string, object>
         {
             { "StatusCode", "Created" },
-            { "Content", JsonObject.Parse(jsonContent) }
+            { "Content",isJObject? JObject.Parse(jsonContent):JsonObject.Parse(jsonContent)  }
         };
-
-        var result = payloadSerializer.Serialize(dict);
-
-        var expected = File.ReadAllText(@"Serialization/JsonSerialization/JsonObjectIsland.json");
-      
-        var jsonResult = JsonObject.Parse(result).ToString();
-        var jsonExpected = JsonObject.Parse(expected).ToString();
-
-        Assert.Equal(jsonExpected, jsonResult);
+        return dict;
     }
 
-    [Fact(DisplayName = "Serialize and deserialize JsonObject read island")]
-    public void Test_JsonObject_Serialization_read_Island()
+    private string GetExpectedObject()
     {
-        var payloadSerializer = _services.GetRequiredService<IPayloadSerializer>();
-
-        var jsonContent = File.ReadAllText(@"Serialization/JsonSerialization/JsonObjectIsland.json");
-
-        var transformationModel = payloadSerializer.Deserialize<IDictionary<string, object>>(jsonContent);
-
-        var result = JsonObject.Create(JsonSerializer.SerializeToElement(transformationModel));
-
-        var expected = File.ReadAllText(@"Serialization/JsonSerialization/JsonObjectWithoutType.json");
-
-        var jsonResult = result.ToString();
-        var jsonExpected = JsonObject.Parse(expected).ToString();
-
-        Assert.Equal(jsonExpected, jsonResult);
+        return "{\"premiumCalculationAfdToIipEngine\":{\"script\":[{\"path\":\"$.INPUT_CALCS.newCalculation\",\"command\":\"add\"}]} }";
     }
 
-    [Fact(DisplayName = "Serialize and deserialize JsonObject")]
-    public void Test_JsonObject_Serialization_roundtrip()
+    private string GetExpectedArray()
     {
-        var payloadSerializer = _services.GetRequiredService<IPayloadSerializer>();
+        return "[{\"path\":\"$.INPUT_CALCS.newCalculation\",\"command\":\"add\"}]";
+    }
 
-        var jsonContent = "{\"premiumCalculationAfdToIipEngine\":{\"script\":[{\"path\":\"$.INPUT_CALCS.newCalculation\",\"command\":\"add\"}]} }";
-
-        var dict = new Dictionary<string, object>
-        {
-            { "StatusCode", "Created" },
-            { "Content", JsonObject.Parse(jsonContent) }
-        };
-
-        var jsonSerialized = payloadSerializer.Serialize(dict);
-
-        var transformationModel = payloadSerializer.Deserialize<IDictionary<string, object>>(jsonSerialized);
-
+    private void TestRoundTrip(Type type)
+    {
+        var dict = type == typeof(JsonArray) || type == typeof(JArray) ? GetArrayContent(type == typeof(JArray)) : GetObjectContent(type == typeof(JObject));
+        var jsonSerialized = SerializeUsingPayloadSerializer(dict);
+        var transformationModel = DeSerializeDictionaryUsingPayloadSerializer(jsonSerialized);
         var result = transformationModel["Content"].ToString();
-        var expected = "{\"premiumCalculationAfdToIipEngine\":{\"script\":[{\"path\":\"$.INPUT_CALCS.newCalculation\",\"command\":\"add\"}]} }";
+        var expected = type == typeof(JsonArray) || type == typeof(JArray) ? GetExpectedArray():  GetExpectedObject();
 
-        var jsonResult = JsonObject.Parse(result).ToString();
-        var jsonExpected = JsonObject.Parse(expected).ToString();
-
-        Assert.Equal(jsonExpected, jsonResult);
+        CompareJsonsObjects(expected, result);
     }
 
-
-    [Fact(DisplayName = "Serialize and deserialize JObject create island")]
-    public void Test_JObject_Serialization_create_Island()
+    private void CreateIsland(Type type, string fileName)
     {
-        var payloadSerializer = _services.GetRequiredService<IPayloadSerializer>();
+        var dict = type == typeof(JsonArray) || type == typeof(JArray) ? GetArrayContent(type == typeof(JArray)) : GetObjectContent(type == typeof(JObject));
 
-        var jsonContent = "{\"premiumCalculationAfdToIipEngine\":{\"script\":[{\"path\":\"$.INPUT_CALCS.newCalculation\",\"command\":\"add\"}]} }";
+        var result = SerializeUsingPayloadSerializer(dict);
 
-        Dictionary<string, object> dict = new Dictionary<string, object>
+        var expected = File.ReadAllText($@"Serialization/JsonSerialization/{fileName}.json");
+
+        CompareJsonsObjects(expected, result);
+    }
+
+    private void ReadIsland(Type type, string fileName,string compareFileName) {
+        var jsonContent = File.ReadAllText(@$"Serialization/JsonSerialization/{fileName}.json");
+
+        var transformationModel = DeSerializeDictionaryUsingPayloadSerializer(jsonContent);
+
+        var result = "";
+        if (type == typeof(JObject) || type == typeof(JArray))
         {
-            { "StatusCode", "Created" },
-            { "Content", JObject.Parse(jsonContent) }
-        };
-
-        var result = payloadSerializer.Serialize(dict);
-
-        var expected = File.ReadAllText(@"Serialization/JsonSerialization/JObjectIsland.json");
-
-        var jsonResult = JsonObject.Parse(result).ToString();
-        var jsonExpected = JsonObject.Parse(expected).ToString();
-
-        Assert.Equal(jsonExpected, jsonResult);
-    }
-
-    [Fact(DisplayName = "Serialize and deserialize JObject read island")]
-    public void Test_JObject_Serialization_read_Island()
-    {
-        var payloadSerializer = _services.GetRequiredService<IPayloadSerializer>();
-
-        var jsonContent = File.ReadAllText(@"Serialization/JsonSerialization/JObjectIsland.json");
-
-        var transformationModel = payloadSerializer.Deserialize<IDictionary<string, object>>(jsonContent);
-
-        var result =  Newtonsoft.Json.JsonConvert.SerializeObject(transformationModel);
-
-        var expected = File.ReadAllText(@"Serialization/JsonSerialization/JObjectWithoutType.json");
-
-        var jsonResult = JObject.Parse(result).ToString();
-        var jsonExpected = JObject.Parse(expected).ToString();
-
-        Assert.Equal(jsonExpected, jsonResult);
-    }
-
-    [Fact(DisplayName = "Serialize and deserialize JObject")]
-    public void Test_JObject_Serialization_roundtrip()
-    {
-        var payloadSerializer = _services.GetRequiredService<IPayloadSerializer>();
-
-        var jsonContent = "{\"premiumCalculationAfdToIipEngine\":{\"script\":[{\"path\":\"$.INPUT_CALCS.newCalculation\",\"command\":\"add\"}]} }";
-
-        var dict = new Dictionary<string, object>
-        {
-            { "StatusCode", "Created" },
-            { "Content", JObject.Parse(jsonContent) }
-        };
-
-        var jsonSerialized = payloadSerializer.Serialize(dict);
-
-        var transformationModel = payloadSerializer.Deserialize<IDictionary<string, object>>(jsonSerialized);
-
-        var result = transformationModel["Content"].ToString();
-        var expected = "{\"premiumCalculationAfdToIipEngine\":{\"script\":[{\"path\":\"$.INPUT_CALCS.newCalculation\",\"command\":\"add\"}]} }";
-
-        var jsonResult = JObject.Parse(result).ToString();
-        var jsonExpected = JObject.Parse(expected).ToString();
-
-        Assert.Equal(jsonExpected, jsonResult);
-    }
-
-
-    [Fact(DisplayName = "Serialize and deserialize JArray create island")]
-    public void Test_JArray_Serialization_create_Island()
-    {
-        var payloadSerializer = _services.GetRequiredService<IPayloadSerializer>();
-
-        var jsonContent = "[{\"path\":\"$.INPUT_CALCS.newCalculation\",\"command\":\"add\"}]";
-
-        var dict = new Dictionary<string, object>
-        {
-            { "StatusCode", "Created" },
-            { "Array", JArray.Parse(jsonContent) }
-        };
-
-        var result = payloadSerializer.Serialize(dict);
-
-        var expected = File.ReadAllText(@"Serialization/JsonSerialization/JArrayIsland.json");
-
-        var jsonResult = JsonObject.Parse(result).ToString();
-        var jsonExpected = JsonObject.Parse(expected).ToString();
-
-        Assert.Equal(jsonExpected, jsonResult);
-    }
-
-    [Fact(DisplayName = "Serialize and deserialize JArray read island")]
-    public void Test_JArray_Serialization_read_Island()
-    {
-        var payloadSerializer = _services.GetRequiredService<IPayloadSerializer>();
-
-        var jsonContent = File.ReadAllText(@"Serialization/JsonSerialization/JArrayIsland.json");
-
-        var transformationModel = payloadSerializer.Deserialize<IDictionary<string, object>>(jsonContent);
-
-        var result = Newtonsoft.Json.JsonConvert.SerializeObject(transformationModel);
-
-        var expected = File.ReadAllText(@"Serialization/JsonSerialization/JArrayWithoutType.json");
-
-        var jsonResult = JObject.Parse(result).ToString();
-        var jsonExpected = JObject.Parse(expected).ToString();
-
-        Assert.Equal(jsonExpected, jsonResult);
-    }
-
-    [Fact(DisplayName = "Serialize and deserialize JArray")]
-    public void Test_JArray_Serialization_roundtrip()
-    {
-        var payloadSerializer = _services.GetRequiredService<IPayloadSerializer>();
-
-        var jsonContent = "[{\"path\":\"$.INPUT_CALCS.newCalculation\",\"command\":\"add\"}]";
-
-        var dict = new Dictionary<string, object>
-        {
-            { "StatusCode", "Created" },
-            { "Array", JArray.Parse(jsonContent) }
-        };
-
-        var jsonSerialized = payloadSerializer.Serialize(dict);
-
-        var transformationModel = payloadSerializer.Deserialize<IDictionary<string, object>>(jsonSerialized);
-
-        var result = transformationModel["Array"].ToString();
-        var expected = "[{\"path\":\"$.INPUT_CALCS.newCalculation\",\"command\":\"add\"}]";
-
-        var jsonResult = JArray.Parse(result).ToString();
-        var jsonExpected = JArray.Parse(expected).ToString();
-
-        Assert.Equal(jsonExpected, jsonResult);
-    }
-
-
-    [Fact(DisplayName = "Serialize and deserialize JsonArray create island")]
-    public void Test_JsonArray_Serialization_create_Island()
-    {
-        var payloadSerializer = _services.GetRequiredService<IPayloadSerializer>();
-
-        var jsonContent = "[{\"path\":\"$.INPUT_CALCS.newCalculation\",\"command\":\"add\"}]";
-
-        var dict = new Dictionary<string, object>
-        {
-            { "StatusCode", "Created" },
-            { "Array", JsonArray.Parse(jsonContent) }
-        };
-
-        var result = payloadSerializer.Serialize(dict);
-
-        var expected = File.ReadAllText(@"Serialization/JsonSerialization/JsonArrayIsland.json");
-
-        var jsonResult = JsonObject.Parse(result).ToString();
-        var jsonExpected = JsonObject.Parse(expected).ToString();
-
-        Assert.Equal(jsonExpected, jsonResult);
-    }
-
-    [Fact(DisplayName = "Serialize and deserialize JsonArray read island")]
-    public void Test_JsonArray_Serialization_read_Island()
-    {
-        var payloadSerializer = _services.GetRequiredService<IPayloadSerializer>();
-
-        var jsonContent = File.ReadAllText(@"Serialization/JsonSerialization/JsonArrayIsland.json");
-
-        var transformationModel = payloadSerializer.Deserialize<IDictionary<string, object>>(jsonContent);
-
-        var result = JsonArray.Create(JsonSerializer.SerializeToElement(transformationModel["Array"])).ToString();
-
-        var expected = File.ReadAllText(@"Serialization/JsonSerialization/JsonArrayWithoutType.json");
-
-        var jsonResult = JsonArray.Parse(result).ToString();
-        var jsonExpected = JsonArray.Parse(expected).ToString();
-
-        Assert.Equal(jsonExpected, jsonResult);
-    }
-
-    [Fact(DisplayName = "Serialize and deserialize JsonArray")]
-    public void Test_JsonArray_Serialization_roundtrip()
-    {
-        var payloadSerializer = _services.GetRequiredService<IPayloadSerializer>();
-
-        var jsonContent = "[{\"path\":\"$.INPUT_CALCS.newCalculation\",\"command\":\"add\"}]";
-
-        var dict = new Dictionary<string, object>
-        {
-            { "StatusCode", "Created" },
-            { "Array", JsonArray.Parse(jsonContent) }
-        };
-
-        var jsonSerialized = payloadSerializer.Serialize(dict);
-
-        var transformationModel = payloadSerializer.Deserialize<IDictionary<string, object>>(jsonSerialized);
-
-        var result = transformationModel["Array"].ToString();
-        var expected = "[{\"path\":\"$.INPUT_CALCS.newCalculation\",\"command\":\"add\"}]";
-
-        var jsonResult = JsonArray.Parse(result).ToString();
-        var jsonExpected = JsonArray.Parse(expected).ToString();
-
-        Assert.Equal(jsonExpected, jsonResult);
+            result = Newtonsoft.Json.JsonConvert.SerializeObject(transformationModel);
+        }
+        else {
+            result = type == typeof(JsonObject) ? JsonObject.Create(JsonSerializer.SerializeToElement(transformationModel)).ToString() : JsonArray.Create(JsonSerializer.SerializeToElement(transformationModel["Content"])).ToString();
+        }
+
+        var expected = File.ReadAllText(@$"Serialization/JsonSerialization/{compareFileName}.json");
+
+        CompareJsonsObjects(expected, result);
     }
 }
-
-
-
