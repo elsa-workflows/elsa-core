@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text.Json;
 using System.Text.Json.Nodes;
-using Elastic.Transport;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Core.Contracts;
 using Microsoft.Extensions.DependencyInjection;
@@ -35,7 +33,13 @@ public class Tests
 
         var transformationModel = payloadSerializer.Deserialize<IDictionary<string,object>>(jsonString);
 
-        Assert.Equal("Created", transformationModel["Content"]);
+        var result = transformationModel["Content"].ToString();
+        var expected = "{\"premiumCalculationAfdToIipEngine\":{\"script\":[{\"path\":\"$.INPUT_CALCS.newCalculation\",\"command\":\"add\"}]},\"_type\":\"System.Text.Json.Nodes.JsonObject, System.Text.Json\"  }";
+
+        var jsonResult = JsonArray.Parse(result).ToString();
+        var jsonExpected = JsonArray.Parse(expected).ToString();
+
+        Assert.Equal(jsonExpected, jsonResult);
     }
 
     [Fact(DisplayName = "Serialize and deserialize JObject")]
@@ -45,9 +49,9 @@ public class Tests
 
         var transformationJson = File.ReadAllText("Serialization/JsonObjectSerialization/JObject.json");
 
-        var jsonObject = JObject.Parse(transformationJson);
+        var Jobject = JObject.Parse(transformationJson);
 
-        var jsonString = payloadSerializer.Serialize(transformationJson);
+        var jsonString = payloadSerializer.Serialize(Jobject);
 
         var transformationModel = payloadSerializer.Deserialize<IDictionary<string, object>>(jsonString);
 
@@ -61,13 +65,19 @@ public class Tests
 
         var transformationJson = File.ReadAllText("Serialization/JsonObjectSerialization/JArray.json");
 
-        var jsonObject = JArray.Parse(transformationJson);
+        var jArray = JArray.Parse(transformationJson);
 
-        var jsonString = payloadSerializer.Serialize(jsonObject);
+        var jsonString = payloadSerializer.Serialize(jArray);
 
         var transformationModel = payloadSerializer.Deserialize<IDictionary<string, object>>(jsonString);
 
-        Assert.Equal("Created", transformationModel["Content"]);
+        var result = transformationModel["Array"].ToString();
+        var expected = "{\"_items\":[{\"path\":\"$.INPUT_CALCS.newCalculation\",\"command\":\"add\"}],\"_type\":\"System.Text.Json.Nodes.JsonArray, System.Text.Json\"  }";
+
+        var jsonResult = JsonArray.Parse(result).ToString();
+        var jsonExpected = JsonArray.Parse(expected).ToString();
+
+        Assert.Equal(jsonExpected, jsonResult);
     }
 
 
@@ -78,17 +88,19 @@ public class Tests
 
         var transformationJson = File.ReadAllText("Serialization/JsonObjectSerialization/JsonArray.json");
 
-        var jsonObject = JsonArray.Parse(transformationJson);
+        var jsonArray = JsonArray.Parse(transformationJson);
 
-        var jsonString = payloadSerializer.Serialize(jsonObject);
+        var jsonString = payloadSerializer.Serialize(jsonArray);
 
         var transformationModel = payloadSerializer.Deserialize<IDictionary<string, object>>(jsonString);
 
         var result = transformationModel["Array"].ToString();
-        var expected = "{\r\n    \"_items\": [\r\n      {\r\n        \"path\": \"$.INPUT_CALCS.newCalculation\",\r\n        \"description\": \"default empty values when CALC_NEW \",\r\n        \"value\": {\r\n          \"MP_COVERAGE_LAYER_ID\": \"101001\",\r\n          \"MP_MAIN_YN\": \"TRUE\",\r\n          \"MP_STATUS_KEY\": \"STATUS_prm\",\r\n          \"MP_PREMIUM_END_DT\": \"9999-12-31\",\r\n          \"MP_AGE_CORR_FISCAL_1_YRS\": 0,\r\n          \"MP_AGE_CORR_FISCAL_2_YRS\": null,\r\n          \"MP_BENEFITS\": 7000\r\n        },\r\n        \"command\": \"add\"\r\n      }\r\n    ],\r\n    \"_type\": \"System.Text.Json.Nodes.JsonArray, System.Text.Json\"\r\n  }";
+        var expected = "{\"_items\":[{\"path\":\"$.INPUT_CALCS.newCalculation\",\"command\":\"add\"}],\"_type\":\"System.Text.Json.Nodes.JsonArray, System.Text.Json\"  }";
 
+        var jsonResult = JsonArray.Parse(result).ToString();
+        var jsonExpected = JsonArray.Parse(expected).ToString();
 
-        Assert.Equal(expected, result);
+        Assert.Equal(jsonExpected, jsonResult);
     }
 
 }

@@ -5,16 +5,6 @@
       "script": [
         {
           "path": "$.INPUT_CALCS.newCalculation",
-          "description": "default empty values when CALC_NEW ",
-          "value": {
-            "MP_COVERAGE_LAYER_ID": "101001",
-            "MP_MAIN_YN": "TRUE",
-            "MP_STATUS_KEY": "STATUS_prm",
-            "MP_PREMIUM_END_DT": "9999-12-31",
-            "MP_AGE_CORR_FISCAL_1_YRS": 0,
-            "MP_AGE_CORR_FISCAL_2_YRS": null,
-            "MP_BENEFITS": 7000
-          },
           "command": "add"
         }
       ]
