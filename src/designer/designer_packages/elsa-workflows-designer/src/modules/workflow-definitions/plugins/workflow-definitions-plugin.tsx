@@ -275,25 +275,22 @@ export class WorkflowDefinitionsPlugin implements Plugin {
   }
 
   private updateCompositeActivityReferences = async (definition: WorkflowDefinition) => {
-    const notification = NotificationService.createNotification({
-      title: 'Consuming Workflows',
-      id: uuid(),
-      text: 'Consuming workflows are being updated.',
-      type: NotificationDisplayType.InProgress
-    });
 
     await this.api.updateWorkflowReferences({definitionId: definition.definitionId})
       .then(async (response) => {
-        debugger;
-        NotificationService.updateNotification(notification, {
-          title: 'Consuming Workflows', 
-          text: 'The following consuming workflows have been successfully updated:\n\n' + response.affectedWorkflows.join('\n'),
-          type: NotificationDisplayType.Success
-        })
+        var message = 'The following consuming workflows have been successfully updated:\n\n' + response.affectedWorkflows.join('\n');
+        if (response.affectedWorkflows.length > 0){
+          NotificationService.createNotification({
+            title: 'Consuming Workflows',
+            id: uuid(),
+            text: message,
+            type: NotificationDisplayType.Success
+          });
+        }
       }).catch(() => {
-        debugger;
-        NotificationService.updateNotification(notification, {
+        NotificationService.createNotification({
           title: 'Error while updating consuming workflows',
+          id: uuid(),
           text: 'Consuming workflows could not be updated',
           type: NotificationDisplayType.Error
         });

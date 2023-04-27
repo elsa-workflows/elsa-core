@@ -177,7 +177,6 @@ export class WorkflowDefinitionsApi {
   async updateWorkflowReferences(request: UpdateWorkflowReferencesRequest): Promise<UpdateWorkflowReferencesResponse> {
     const httpClient = await this.getHttpClient();
     const response = await httpClient.post<UpdateWorkflowReferencesResponse>(`workflow-definitions/${request.definitionId}/update-references`, request);
-    debugger;
     return response.data;
   }
 
