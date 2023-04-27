@@ -135,19 +135,21 @@ public class Tests
     {
         var payloadSerializer = _services.GetRequiredService<IPayloadSerializer>();
 
-        var transformationJson = File.ReadAllText("Serialization/JsonObjectSerialization/JObject.json");
+        var jsonContent = "{\"premiumCalculationAfdToIipEngine\":{\"script\":[{\"path\":\"$.INPUT_CALCS.newCalculation\",\"command\":\"add\"}]} }";
 
-        var jsonObject = payloadSerializer.Deserialize<IDictionary<string, object>>(transformationJson);
+        var dict = new Dictionary<string, object>();
+        dict.Add("StatusCode", "Created");
+        dict.Add("Content", JObject.Parse(jsonContent));
 
-        var jsonString = payloadSerializer.Serialize(jsonObject);
+        var jsonSerialized = payloadSerializer.Serialize(dict);
 
-        var transformationModel = payloadSerializer.Deserialize<IDictionary<string, object>>(jsonString);
+        var transformationModel = payloadSerializer.Deserialize<IDictionary<string, object>>(jsonSerialized);
 
         var result = transformationModel["Content"].ToString();
-        var expected = "{\"premiumCalculationAfdToIipEngine\":{\"script\":[{\"path\":\"$.INPUT_CALCS.newCalculation\",\"command\":\"add\"}]},\"_type\":\"System.Text.Json.Nodes.JsonObject, System.Text.Json\"  }";
+        var expected = "{\"premiumCalculationAfdToIipEngine\":{\"script\":[{\"path\":\"$.INPUT_CALCS.newCalculation\",\"command\":\"add\"}]} }";
 
-        var jsonResult = JsonArray.Parse(result).ToString();
-        var jsonExpected = JsonArray.Parse(expected).ToString();
+        var jsonResult = JObject.Parse(result).ToString();
+        var jsonExpected = JObject.Parse(expected).ToString();
 
         Assert.Equal(jsonExpected, jsonResult);
     }
