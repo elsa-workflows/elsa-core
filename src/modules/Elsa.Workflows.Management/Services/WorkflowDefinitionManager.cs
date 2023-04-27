@@ -2,6 +2,7 @@ using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Notifications;
@@ -15,6 +16,8 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
     private readonly IEventPublisher _eventPublisher;
     private readonly IWorkflowDefinitionPublisher _workflowPublisher;
     private readonly IIdentityGenerator _identityGenerator;
+    private readonly IActivitySerializer _activitySerializer;
+    private readonly IActivityVisitor _activityVisitor;
 
     /// <summary>
     /// Constructor.
@@ -23,12 +26,16 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
         IWorkflowDefinitionStore store,
         IEventPublisher eventPublisher,
         IWorkflowDefinitionPublisher workflowPublisher,
-        IIdentityGenerator identityGenerator)
+        IIdentityGenerator identityGenerator,
+        IActivitySerializer activitySerializer,
+        IActivityVisitor activityVisitor)
     {
         _store = store;
         _eventPublisher = eventPublisher;
         _workflowPublisher = workflowPublisher;
         _identityGenerator = identityGenerator;
+        _activitySerializer = activitySerializer;
+        _activityVisitor = activityVisitor;
     }
 
     /// <inheritdoc />
@@ -106,5 +113,44 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
 
         await _store.SaveAsync(draft, cancellationToken);
         return draft;
+    }
+
+    /// <inheritdoc />
+    public async Task<IEnumerable<WorkflowDefinition>> UpdateReferencesInConsumingWorkflows(string definitionId, int version, CancellationToken cancellationToken = default)
+    {
+        var updatedWorkflowDefinitions = new List<WorkflowDefinition>();
+        
+        var publishedWorkflowDefinitions = (await _store.FindManyAsync(new WorkflowDefinitionFilter
+        {
+            VersionOptions = VersionOptions.Published
+        }, cancellationToken)).ToList();
+
+        foreach (var definition in publishedWorkflowDefinitions)
+        {
+            var root = _activitySerializer.Deserialize(definition.StringData!);
+            var graph = await _activityVisitor.VisitAsync(root, cancellationToken);
+            var flattenedList = graph.Flatten().ToList();
+            
+            var consumingWorkflowActivities = flattenedList.Where(x => x.Activity is WorkflowDefinitionActivity workflowDefinitionActivity && workflowDefinitionActivity.WorkflowDefinitionId == definitionId).ToList();
+
+            foreach (var activity in consumingWorkflowActivities.Where(activity => activity.Activity.Version < version))
+            {
+                activity.Activity.Version = version;
+
+                if (!updatedWorkflowDefinitions.Contains(definition))
+                    updatedWorkflowDefinitions.Add(definition);
+            }
+
+            if (updatedWorkflowDefinitions.Contains(definition))
+            {
+                var serializedData = _activitySerializer.Serialize(root);
+                definition.StringData = serializedData;
+            }
+        }
+        
+        if(updatedWorkflowDefinitions.Any())
+            await _store.SaveManyAsync(updatedWorkflowDefinitions, cancellationToken);
+
+        return updatedWorkflowDefinitions;
     }
 }

@@ -174,6 +174,12 @@ export class WorkflowDefinitionsApi {
     return response.data;
   }
 
+  async updateWorkflowReferences(request: UpdateWorkflowReferencesRequest): Promise<UpdateWorkflowReferencesResponse> {
+    const httpClient = await this.getHttpClient();
+    const response = await httpClient.post<UpdateWorkflowReferencesResponse>(`workflow-definitions/${request.definitionId}/update-references`, request);
+    return response.data;
+  }
+
   private getHttpClient = async () => await this.provider.getHttpClient();
 }
 
@@ -272,4 +278,13 @@ export interface UnpublishManyWorkflowDefinitionResponse {
   retracted: string[];
   notPublished: string[];
   notFound: string[];
+}
+
+export interface UpdateWorkflowReferencesRequest {
+  definitionId: string;
+  consumingWorkflowIds?: Array<string>;
+}
+
+export interface UpdateWorkflowReferencesResponse {
+  affectedWorkflows: Array<string>;
 }

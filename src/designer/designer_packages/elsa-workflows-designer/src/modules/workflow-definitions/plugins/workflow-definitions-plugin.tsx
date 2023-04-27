@@ -227,6 +227,9 @@ export class WorkflowDefinitionsPlugin implements Plugin {
         NotificationService.updateNotification(notification, {title: 'Workflow published', text: 'Published!'})
         e.detail.complete();
 
+        if(definition.options?.autoUpdateConsumingWorkflows)
+          await this.updateCompositeActivityReferences(definition);
+          
         // Reload activity descriptors.
         await this.activityDescriptorManager.refresh();
       }).catch(() => {
@@ -269,5 +272,28 @@ export class WorkflowDefinitionsPlugin implements Plugin {
 
   private onImportClicked = async (e: CustomEvent) => {
     await this.import();
+  }
+
+  private updateCompositeActivityReferences = async (definition: WorkflowDefinition) => {
+
+    await this.api.updateWorkflowReferences({definitionId: definition.definitionId})
+      .then(async (response) => {
+        var message = 'The following consuming workflows have been successfully updated:\n\n' + response.affectedWorkflows.join('\n');
+        if (response.affectedWorkflows.length > 0){
+          NotificationService.createNotification({
+            title: 'Consuming Workflows',
+            id: uuid(),
+            text: message,
+            type: NotificationDisplayType.Success
+          });
+        }
+      }).catch(() => {
+        NotificationService.createNotification({
+          title: 'Error while updating consuming workflows',
+          id: uuid(),
+          text: 'Consuming workflows could not be updated',
+          type: NotificationDisplayType.Error
+        });
+      });
   }
 }

@@ -28,6 +28,7 @@ export interface WorkflowDefinitionSummary {
 }
 
 export interface WorkflowOptions {
+  autoUpdateConsumingWorkflows?: boolean;
   activationStrategyType?: string;
 }
 
