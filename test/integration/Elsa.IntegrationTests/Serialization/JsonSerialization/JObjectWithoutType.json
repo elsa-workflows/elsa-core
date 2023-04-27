@@ -1,10 +1,10 @@
 {
   "StatusCode": "Created",
   "Content": {
-    "premiumCalculationAfdToIipEngine": {
+    "file1": {
       "script": [
         {
-          "path": "$.INPUT_CALCS.newCalculation",
+          "path": "folder1",
           "command": "add"
         }
       ]
