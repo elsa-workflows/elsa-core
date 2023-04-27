@@ -32,10 +32,22 @@
       <None Update="Serialization\JsonObjectSerialization\JArray.json">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
+      <None Update="Serialization\JsonObjectSerialization\JObjectWithoutType.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Serialization\JsonObjectSerialization\JObjectIsland.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
       <None Update="Serialization\JsonObjectSerialization\JsonArray.json">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
       <None Update="Serialization\JsonObjectSerialization\JObject.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Serialization\JsonObjectSerialization\JsonObjectWithoutType.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Serialization\JsonObjectSerialization\JsonObjectIsland.json">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
       <None Update="Serialization\JsonObjectSerialization\JsonObject.json">
