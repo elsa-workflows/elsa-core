@@ -2,7 +2,7 @@ using Elsa.Common.Models;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Entities;
 
-namespace Elsa.Workflows.Runtime.Contracts;
+namespace Elsa.Workflows.Management.Contracts;
 
 /// <summary>
 /// Manages materialization of <see cref="WorkflowDefinition"/> to <see cref="Workflow"/> objects. 

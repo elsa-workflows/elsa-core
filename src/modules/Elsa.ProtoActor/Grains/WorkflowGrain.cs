@@ -4,6 +4,7 @@ using Elsa.ProtoActor.Mappers;
 using Elsa.ProtoActor.Protos;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.State;
+using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
 using Proto;
 using Proto.Cluster;

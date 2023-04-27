@@ -43,7 +43,7 @@ public class SendEmail : Activity
     /// The recipients email addresses.
     /// </summary>
     [Input(Description = "The recipients email addresses.", UIHint = InputUIHints.MultiText)]
-    public Input<object> To { get; set; } = default!;
+    public Input<ICollection<string>> To { get; set; } = default!;
 
     /// <summary>
     /// The CC recipient email addresses.
@@ -52,7 +52,7 @@ public class SendEmail : Activity
         Description = "The CC recipient email addresses.",
         UIHint = InputUIHints.MultiText,
         Category = "More")]
-    public Input<object> Cc { get; set; } = default!;
+    public Input<ICollection<string>> Cc { get; set; } = default!;
 
     /// <summary>
     /// The BCC recipients email addresses.
@@ -61,7 +61,7 @@ public class SendEmail : Activity
         Description = "The BCC recipients email addresses.",
         UIHint = InputUIHints.MultiText,
         Category = "More")]
-    public Input<object> Bcc { get; set; } = default!;
+    public Input<ICollection<string>> Bcc { get; set; } = default!;
 
     /// <summary>
     /// The subject of the email message.
@@ -103,7 +103,7 @@ public class SendEmail : Activity
 
         message.Sender = MailboxAddress.Parse(from);
         message.From.Add(MailboxAddress.Parse(from));
-        message.Subject = Subject.GetOrDefault(context);
+        message.Subject = Subject.GetOrDefault(context) ?? "";
 
         var bodyBuilder = new BodyBuilder { HtmlBody = Body.GetOrDefault(context) };
         await AddAttachmentsAsync(context, bodyBuilder, cancellationToken);
@@ -129,19 +129,9 @@ public class SendEmail : Activity
 
     private async ValueTask OnErrorCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext) => await context.CompleteActivityAsync();
 
-    private static ICollection<string> GetAddresses(ActivityExecutionContext context, Input<object> input)
+    private static ICollection<string> GetAddresses(ActivityExecutionContext context, Input<ICollection<string>> input)
     {
-        var addresses = input.GetOrDefault(context);
-
-        if (addresses == null)
-            return new List<string>(0);
-
-        return addresses switch
-        {
-            string s => new[] { s },
-            IEnumerable<string> e => e.ToList(),
-            _ => new[] { addresses.ToString()! }
-        };
+        return input.GetOrDefault(context) ?? new List<string>(0);
     }
 
     private async Task AddAttachmentsAsync(ActivityExecutionContext context, BodyBuilder bodyBuilder, CancellationToken cancellationToken)

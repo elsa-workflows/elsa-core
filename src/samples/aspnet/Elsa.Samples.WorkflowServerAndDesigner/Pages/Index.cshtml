@@ -1,8 +1,8 @@
-﻿@page
-@using Elsa.Workflows.Designer
-@using Microsoft.AspNetCore.Mvc.TagHelpers
+﻿@page "/"
+@inject IConfiguration Configuration;
 @{
-    var serverUrl = Url.Content("elsa/api");
+    var serverUrl = Url.Content("~/elsa/api");
+    var basePath = Configuration["Hosting:BasePath"]!;
 }
 
 <!DOCTYPE html>
@@ -12,13 +12,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Elsa Workflows 3.0</title>
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
-    <link rel="stylesheet" href="_content/Elsa.Workflows.Designer/elsa-workflows-designer/elsa-workflows-designer.css">
-    <script src="_content/Elsa.Workflows.Designer/monaco-editor/min/vs/loader.js"></script>
-    <script type="module" src="_content/Elsa.Workflows.Designer/elsa-workflows-designer/elsa-workflows-designer.esm.js"></script>
+    <link rel="stylesheet" href="@basePath/_content/Elsa.Workflows.Designer/elsa-workflows-designer/elsa-workflows-designer.css">
+    <script src="@basePath/_content/Elsa.Workflows.Designer/monaco-editor/min/vs/loader.js"></script>
+    <script type="module" src="@basePath/_content/Elsa.Workflows.Designer/elsa-workflows-designer/elsa-workflows-designer.esm.js"></script>
 </head>
 <body>
 
-<component type="typeof(ElsaStudio)" render-mode="ServerPrerendered" param-ServerUrl="@serverUrl"/>
+<elsa-shell>
+    <elsa-workflow-toolbar></elsa-workflow-toolbar>
+    <div class="absolute inset-0" style="top: 64px;">
+        <elsa-studio server="@serverUrl" monaco-lib-path="@basePath.TrimStart('/')/_content/Elsa.Workflows.Designer/monaco-editor/min"></elsa-studio>
+        <elsa-custom-activities-manager></elsa-custom-activities-manager>
+        <elsa-notifications-manager></elsa-notifications-manager>
+    </div>
+</elsa-shell>
 
 </body>
 </html>

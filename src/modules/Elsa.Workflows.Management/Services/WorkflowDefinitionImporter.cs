@@ -1,4 +1,5 @@
 ﻿using Elsa.Common.Models;
+using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Mappers;
@@ -31,7 +32,8 @@ namespace Elsa.Workflows.Management.Services
         /// <inheritdoc />
         public async Task<WorkflowDefinition> ImportAsync(SaveWorkflowDefinitionRequest request, CancellationToken cancellationToken = default)
         {
-            var definitionId = request.DefinitionId;
+            var model = request.Model;
+            var definitionId = model.DefinitionId;
 
             // Get a workflow draft version.
             var draft = !string.IsNullOrWhiteSpace(definitionId)
@@ -47,25 +49,28 @@ namespace Elsa.Workflows.Management.Services
 
                 if (!string.IsNullOrWhiteSpace(definitionId))
                     draft.DefinitionId = definitionId;
+                
+                if (!string.IsNullOrWhiteSpace(model.Id))
+                    draft.Id = model.Id;
             }
 
             // Update the draft with the received model.
-            var root = request.Root!;
+            var root = model.Root ?? new Sequence();
             var stringData = _serializer.Serialize(root);
-            var variables = _variableDefinitionMapper.Map(request.Variables).ToList();
+            var variables = _variableDefinitionMapper.Map(model.Variables).ToList();
 
             draft!.StringData = stringData;
             draft.MaterializerName = JsonWorkflowMaterializer.MaterializerName;
-            draft.Name = request.Name?.Trim();
-            draft.Description = request.Description?.Trim();
-            draft.CustomProperties = request.CustomProperties ?? new Dictionary<string, object>();
+            draft.Name = model.Name?.Trim();
+            draft.Description = model.Description?.Trim();
+            draft.CustomProperties = model.CustomProperties ?? new Dictionary<string, object>();
             draft.Variables = variables;
-            draft.Inputs = request.Inputs ?? new List<InputDefinition>();
-            draft.Outputs = request.Outputs ?? new List<OutputDefinition>();
-            draft.Outcomes = request.Outcomes ?? new List<string>();
-            draft.Options = request.Options;
-            draft.UsableAsActivity = request.UsableAsActivity;
-            draft = request.Publish ? await _workflowDefinitionPublisher.PublishAsync(draft, cancellationToken) : await _workflowDefinitionPublisher.SaveDraftAsync(draft, cancellationToken);
+            draft.Inputs = model.Inputs ?? new List<InputDefinition>();
+            draft.Outputs = model.Outputs ?? new List<OutputDefinition>();
+            draft.Outcomes = model.Outcomes ?? new List<string>();
+            draft.Options = model.Options;
+            draft.UsableAsActivity = model.UsableAsActivity;
+            draft = request.Publish ?? model.IsPublished ? await _workflowDefinitionPublisher.PublishAsync(draft, cancellationToken) : await _workflowDefinitionPublisher.SaveDraftAsync(draft, cancellationToken);
 
             return draft;
         }

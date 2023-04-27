@@ -1,11 +1,11 @@
 using System.Text.Json;
 using Elsa.Abstractions;
 using Elsa.Common.Models;
-using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Serialization.Converters;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Mappers;
+using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Runtime.Contracts;
 using Humanizer;
 
@@ -71,6 +71,7 @@ public class Export : ElsaEndpoint<Request>
             definition.UsableAsActivity,
             definition.IsLatest,
             definition.IsPublished,
+            definition.Options,
             workflow.Root);
 
         var serializerOptions = _serializer.CreateOptions();

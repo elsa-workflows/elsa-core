@@ -1,7 +1,7 @@
-using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Mappers;
 
 namespace Elsa.Workflows.Management.Materializers;
 
@@ -10,7 +10,7 @@ namespace Elsa.Workflows.Management.Materializers;
 /// </summary>
 public class JsonWorkflowMaterializer : IWorkflowMaterializer
 {
-    private readonly IActivitySerializer _activitySerializer;
+    private readonly WorkflowDefinitionMapper _workflowDefinitionMapper;
 
     /// <summary>
     /// The name of the materializer.
@@ -23,9 +23,9 @@ public class JsonWorkflowMaterializer : IWorkflowMaterializer
     /// <summary>
     /// Initializes a new instance of the <see cref="JsonWorkflowMaterializer"/> class.
     /// </summary>
-    public JsonWorkflowMaterializer(IActivitySerializer activitySerializer)
+    public JsonWorkflowMaterializer(WorkflowDefinitionMapper workflowDefinitionMapper)
     {
-        _activitySerializer = activitySerializer;
+        _workflowDefinitionMapper = workflowDefinitionMapper;
     }
 
     /// <inheritdoc />
@@ -35,17 +35,5 @@ public class JsonWorkflowMaterializer : IWorkflowMaterializer
         return new ValueTask<Workflow>(workflow);
     }
 
-    private Workflow ToWorkflow(WorkflowDefinition definition)
-    {
-        var root = _activitySerializer.Deserialize(definition.StringData!);
-        
-        return new(
-            new WorkflowIdentity(definition.DefinitionId, definition.Version, definition.Id),
-            new WorkflowPublication(definition.IsLatest, definition.IsPublished),
-            new WorkflowMetadata(definition.Name, definition.Description, definition.CreatedAt),
-            definition.Options,
-            root,
-            definition.Variables,
-            definition.CustomProperties);
-    }
+    private Workflow ToWorkflow(WorkflowDefinition definition) => _workflowDefinitionMapper.Map(definition);
 }

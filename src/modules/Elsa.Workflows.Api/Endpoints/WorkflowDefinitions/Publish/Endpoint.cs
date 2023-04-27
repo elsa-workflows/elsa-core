@@ -1,27 +1,29 @@
 using Elsa.Abstractions;
 using Elsa.Common.Models;
-using Elsa.Workflows.Api.Mappers;
-using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Serialization.Converters;
 using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management.Mappers;
+using Elsa.Workflows.Management.Models;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Publish;
 
 [PublicAPI]
-internal class Publish : ElsaEndpoint<Request, WorkflowDefinitionResponse, WorkflowDefinitionMapper>
+internal class Publish : ElsaEndpoint<Request, WorkflowDefinitionModel>
 {
     private readonly IWorkflowDefinitionStore _store;
     private readonly IWorkflowDefinitionPublisher _workflowDefinitionPublisher;
     private readonly IApiSerializer _serializer;
+    private readonly WorkflowDefinitionMapper _workflowDefinitionMapper;
 
-    public Publish(IWorkflowDefinitionStore store, IWorkflowDefinitionPublisher workflowDefinitionPublisher, IApiSerializer serializer)
+    public Publish(IWorkflowDefinitionStore store, IWorkflowDefinitionPublisher workflowDefinitionPublisher, IApiSerializer serializer, WorkflowDefinitionMapper workflowDefinitionMapper)
     {
         _store = store;
         _workflowDefinitionPublisher = workflowDefinitionPublisher;
         _serializer = serializer;
+        _workflowDefinitionMapper = workflowDefinitionMapper;
     }
 
     public override void Configure()
@@ -55,7 +57,7 @@ internal class Publish : ElsaEndpoint<Request, WorkflowDefinitionResponse, Workf
 
         await _workflowDefinitionPublisher.PublishAsync(definition, cancellationToken);
 
-        var response = await Map.FromEntityAsync(definition, cancellationToken);
+        var response = await _workflowDefinitionMapper.MapAsync(definition, cancellationToken);
 
         // We do not want to include composite root activities in the response.
         var serializerOptions = _serializer.CreateOptions();

@@ -2,6 +2,7 @@ using System.Text;
 using Elsa.Common.Models;
 using Elsa.JavaScript.TypeDefinitions.Contracts;
 using Elsa.JavaScript.TypeDefinitions.Models;
+using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Runtime.Contracts;
 using FastEndpoints;

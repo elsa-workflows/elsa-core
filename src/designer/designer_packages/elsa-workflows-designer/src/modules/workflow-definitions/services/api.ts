@@ -49,7 +49,7 @@ export class WorkflowDefinitionsApi {
     //TODO: Written as a workaround for different server and client models.
     //To be deleted after the port model on backend is updated.
     const requestClone = cloneDeep(request);
-    removeGuidsFromPortNames(requestClone.root);
+    removeGuidsFromPortNames(requestClone.model.root);
 
     const httpClient = await this.getHttpClient();
     const response = await httpClient.post<WorkflowDefinition>('workflow-definitions', requestClone);
@@ -185,19 +185,8 @@ export class WorkflowDefinitionsApi {
 
 
 export interface SaveWorkflowDefinitionRequest {
-  definitionId: string;
-  version?: number;
-  name?: string;
-  description?: string;
+  model: WorkflowDefinition;
   publish: boolean;
-  root?: Activity;
-  variables?: Array<Variable>;
-  inputs?: Array<InputDefinition>;
-  outputs?: Array<InputDefinition>;
-  outcomes?: Array<string>;
-  options?: WorkflowOptions;
-  usableAsActivity?: boolean;
-  customProperties?: Map<string, any>;
 }
 
 export interface BaseManyWorkflowDefinitionRequest {

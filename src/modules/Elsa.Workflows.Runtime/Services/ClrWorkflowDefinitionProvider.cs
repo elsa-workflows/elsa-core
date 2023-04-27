@@ -4,6 +4,7 @@ using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Features;
+using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Options;
 using Microsoft.Extensions.Options;
 

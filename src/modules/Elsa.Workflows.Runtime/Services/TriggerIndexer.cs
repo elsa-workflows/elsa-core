@@ -5,6 +5,7 @@ using Elsa.Extensions;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Runtime.Comparers;
 using Elsa.Workflows.Runtime.Contracts;

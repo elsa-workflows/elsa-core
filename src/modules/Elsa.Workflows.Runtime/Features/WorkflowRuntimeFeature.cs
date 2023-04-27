@@ -6,7 +6,9 @@ using Elsa.Features.Services;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Notifications;
 using Elsa.Workflows.Core.State;
+using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Notifications;
+using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Runtime.ActivationValidators;
 using Elsa.Workflows.Runtime.Commands;
 using Elsa.Workflows.Runtime.Contracts;
@@ -136,6 +138,10 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddSingleton<SynchronousTaskDispatcher>()
             .AddSingleton<AsynchronousTaskDispatcher>()
             .AddSingleton<IEventPublisher, EventPublisher>()
+            
+            // Lazy services.
+            .AddSingleton<Func<IEnumerable<IWorkflowDefinitionProvider>>>(sp => sp.GetServices<IWorkflowDefinitionProvider>)
+            .AddSingleton<Func<IEnumerable<IWorkflowMaterializer>>>(sp => sp.GetServices<IWorkflowMaterializer>)
 
             // Memory stores.
             .AddMemoryStore<WorkflowState, MemoryWorkflowStateStore>()

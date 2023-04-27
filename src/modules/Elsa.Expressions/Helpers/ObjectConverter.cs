@@ -145,6 +145,10 @@ public static class ObjectConverter
 
             if (underlyingTargetType == typeof(Type))
                 return converterOptions?.WellKnownTypeRegistry != null ? converterOptions.WellKnownTypeRegistry.GetTypeOrDefault(s) : Type.GetType(s);
+
+            // Perhaps it's a bit of a leap, but if the input is a string and the target type is IEnumerable<string>, then let's assume the string is a comma-separated list of strings.
+            if (typeof(IEnumerable<string>).IsAssignableFrom(underlyingTargetType))
+                return new[] { s };
         }
 
         if (value is IEnumerable enumerable)
