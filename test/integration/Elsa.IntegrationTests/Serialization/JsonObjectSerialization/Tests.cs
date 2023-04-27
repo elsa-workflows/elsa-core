@@ -28,9 +28,11 @@ public class Tests
 
         var jsonContent = "{\"premiumCalculationAfdToIipEngine\":{\"script\":[{\"path\":\"$.INPUT_CALCS.newCalculation\",\"command\":\"add\"}]} }";
 
-        var dict = new Dictionary<string, object>();
-        dict.Add("StatusCode", "Created");
-        dict.Add("Content", JsonObject.Parse(jsonContent));
+        var dict = new Dictionary<string, object>
+        {
+            { "StatusCode", "Created" },
+            { "Content", JsonObject.Parse(jsonContent) }
+        };
 
         var result = payloadSerializer.Serialize(dict);
 
@@ -68,9 +70,11 @@ public class Tests
 
         var jsonContent = "{\"premiumCalculationAfdToIipEngine\":{\"script\":[{\"path\":\"$.INPUT_CALCS.newCalculation\",\"command\":\"add\"}]} }";
 
-        var dict = new Dictionary<string, object>();
-        dict.Add("StatusCode", "Created");
-        dict.Add("Content", JsonObject.Parse(jsonContent));
+        var dict = new Dictionary<string, object>
+        {
+            { "StatusCode", "Created" },
+            { "Content", JsonObject.Parse(jsonContent) }
+        };
 
         var jsonSerialized = payloadSerializer.Serialize(dict);
 
@@ -93,9 +97,11 @@ public class Tests
 
         var jsonContent = "{\"premiumCalculationAfdToIipEngine\":{\"script\":[{\"path\":\"$.INPUT_CALCS.newCalculation\",\"command\":\"add\"}]} }";
 
-        var dict = new Dictionary<string, object>();
-        dict.Add("StatusCode", "Created");
-        dict.Add("Content", JObject.Parse(jsonContent));
+        Dictionary<string, object> dict = new Dictionary<string, object>
+        {
+            { "StatusCode", "Created" },
+            { "Content", JObject.Parse(jsonContent) }
+        };
 
         var result = payloadSerializer.Serialize(dict);
 
@@ -133,9 +139,11 @@ public class Tests
 
         var jsonContent = "{\"premiumCalculationAfdToIipEngine\":{\"script\":[{\"path\":\"$.INPUT_CALCS.newCalculation\",\"command\":\"add\"}]} }";
 
-        var dict = new Dictionary<string, object>();
-        dict.Add("StatusCode", "Created");
-        dict.Add("Content", JObject.Parse(jsonContent));
+        var dict = new Dictionary<string, object>
+        {
+            { "StatusCode", "Created" },
+            { "Content", JObject.Parse(jsonContent) }
+        };
 
         var jsonSerialized = payloadSerializer.Serialize(dict);
 
@@ -158,9 +166,11 @@ public class Tests
 
         var jsonContent = "[{\"path\":\"$.INPUT_CALCS.newCalculation\",\"command\":\"add\"}]";
 
-        var dict = new Dictionary<string, object>();
-        dict.Add("StatusCode", "Created");
-        dict.Add("Array", JArray.Parse(jsonContent));
+        var dict = new Dictionary<string, object>
+        {
+            { "StatusCode", "Created" },
+            { "Array", JArray.Parse(jsonContent) }
+        };
 
         var result = payloadSerializer.Serialize(dict);
 
@@ -172,24 +182,87 @@ public class Tests
         Assert.Equal(jsonExpected, jsonResult);
     }
 
-
-
-
-    [Fact(DisplayName = "Serialize and deserialize JArray")]
-    public void Test_JArray_Serialization()
+    [Fact(DisplayName = "Serialize and deserialize JArray read island")]
+    public void Test_JArray_Serialization_read_Island()
     {
         var payloadSerializer = _services.GetRequiredService<IPayloadSerializer>();
 
-        var transformationJson = File.ReadAllText("Serialization/JsonObjectSerialization/JArray.json");
+        var jsonContent = File.ReadAllText("Serialization/JsonObjectSerialization/JArrayIsland.json");
 
-        var jArray = JArray.Parse(transformationJson);
+        var transformationModel = payloadSerializer.Deserialize<IDictionary<string, object>>(jsonContent);
 
-        var jsonString = payloadSerializer.Serialize(jArray);
+        var result = Newtonsoft.Json.JsonConvert.SerializeObject(transformationModel);
 
-        var transformationModel = payloadSerializer.Deserialize<IDictionary<string, object>>(jsonString);
+        var expected = File.ReadAllText("Serialization/JsonObjectSerialization/JArrayWithoutType.json");
+
+        var jsonResult = JObject.Parse(result).ToString();
+        var jsonExpected = JObject.Parse(expected).ToString();
+
+        Assert.Equal(jsonExpected, jsonResult);
+    }
+
+    [Fact(DisplayName = "Serialize and deserialize JArray")]
+    public void Test_JArray_Serialization_roundtrip()
+    {
+        var payloadSerializer = _services.GetRequiredService<IPayloadSerializer>();
+
+        var jsonContent = "[{\"path\":\"$.INPUT_CALCS.newCalculation\",\"command\":\"add\"}]";
+
+        var dict = new Dictionary<string, object>
+        {
+            { "StatusCode", "Created" },
+            { "Array", JArray.Parse(jsonContent) }
+        };
+
+        var jsonSerialized = payloadSerializer.Serialize(dict);
+
+        var transformationModel = payloadSerializer.Deserialize<IDictionary<string, object>>(jsonSerialized);
 
         var result = transformationModel["Array"].ToString();
-        var expected = "{\"_items\":[{\"path\":\"$.INPUT_CALCS.newCalculation\",\"command\":\"add\"}],\"_type\":\"System.Text.Json.Nodes.JsonArray, System.Text.Json\"  }";
+        var expected = "[{\"path\":\"$.INPUT_CALCS.newCalculation\",\"command\":\"add\"}]";
+
+        var jsonResult = JArray.Parse(result).ToString();
+        var jsonExpected = JArray.Parse(expected).ToString();
+
+        Assert.Equal(jsonExpected, jsonResult);
+    }
+
+
+    [Fact(DisplayName = "Serialize and deserialize JsonArray create island")]
+    public void Test_JsonArray_Serialization_create_Island()
+    {
+        var payloadSerializer = _services.GetRequiredService<IPayloadSerializer>();
+
+        var jsonContent = "[{\"path\":\"$.INPUT_CALCS.newCalculation\",\"command\":\"add\"}]";
+
+        var dict = new Dictionary<string, object>
+        {
+            { "StatusCode", "Created" },
+            { "Array", JsonArray.Parse(jsonContent) }
+        };
+
+        var result = payloadSerializer.Serialize(dict);
+
+        var expected = File.ReadAllText("Serialization/JsonObjectSerialization/JsonArrayIsland.json");
+
+        var jsonResult = JsonObject.Parse(result).ToString();
+        var jsonExpected = JsonObject.Parse(expected).ToString();
+
+        Assert.Equal(jsonExpected, jsonResult);
+    }
+
+    [Fact(DisplayName = "Serialize and deserialize JsonArray read island")]
+    public void Test_JsonArray_Serialization_read_Island()
+    {
+        var payloadSerializer = _services.GetRequiredService<IPayloadSerializer>();
+
+        var jsonContent = File.ReadAllText("Serialization/JsonObjectSerialization/JsonArrayIsland.json");
+
+        var transformationModel = payloadSerializer.Deserialize<IDictionary<string, object>>(jsonContent);
+
+        var result = JsonArray.Create(JsonSerializer.SerializeToElement(transformationModel["Array"])).ToString();
+
+        var expected = File.ReadAllText("Serialization/JsonObjectSerialization/JsonArrayWithoutType.json");
 
         var jsonResult = JsonArray.Parse(result).ToString();
         var jsonExpected = JsonArray.Parse(expected).ToString();
@@ -197,22 +270,25 @@ public class Tests
         Assert.Equal(jsonExpected, jsonResult);
     }
 
-
     [Fact(DisplayName = "Serialize and deserialize JsonArray")]
-    public void Test_JsonArray_Serialization()
+    public void Test_JsonArray_Serialization_roundtrip()
     {
         var payloadSerializer = _services.GetRequiredService<IPayloadSerializer>();
 
-        var transformationJson = File.ReadAllText("Serialization/JsonObjectSerialization/JsonArray.json");
+        var jsonContent = "[{\"path\":\"$.INPUT_CALCS.newCalculation\",\"command\":\"add\"}]";
 
-        var jsonArray = JsonArray.Parse(transformationJson);
+        var dict = new Dictionary<string, object>
+        {
+            { "StatusCode", "Created" },
+            { "Array", JsonArray.Parse(jsonContent) }
+        };
 
-        var jsonString = payloadSerializer.Serialize(jsonArray);
+        var jsonSerialized = payloadSerializer.Serialize(dict);
 
-        var transformationModel = payloadSerializer.Deserialize<IDictionary<string, object>>(jsonString);
+        var transformationModel = payloadSerializer.Deserialize<IDictionary<string, object>>(jsonSerialized);
 
         var result = transformationModel["Array"].ToString();
-        var expected = "{\"_items\":[{\"path\":\"$.INPUT_CALCS.newCalculation\",\"command\":\"add\"}],\"_type\":\"System.Text.Json.Nodes.JsonArray, System.Text.Json\"  }";
+        var expected = "[{\"path\":\"$.INPUT_CALCS.newCalculation\",\"command\":\"add\"}]";
 
         var jsonResult = JsonArray.Parse(result).ToString();
         var jsonExpected = JsonArray.Parse(expected).ToString();

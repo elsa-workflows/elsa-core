@@ -82,7 +82,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         if (isJsonArray)
         {
             var parsedModel = JsonElement.ParseValue(ref reader)!;
-            var systemTextJson = parsedModel.ToString();// parsedModel.GetProperty(IslandPropertyName).GetString();
+            var systemTextJson = parsedModel.GetProperty(IslandPropertyName).GetString();
             return !string.IsNullOrWhiteSpace(systemTextJson) ? JsonArray.Parse(systemTextJson) : new JsonArray();
         }
 
@@ -158,7 +158,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         // Special case for Newtonsoft.Json and System.Text.Json types.
         // Newtonsoft.Json types are not supported by the System.Text.Json serializer and should be written as a string instead.
         // We include metadata about the type so that we can deserialize it later. 
-        if (type == typeof(JObject) || type == typeof(JArray) || type == typeof(JsonObject))// || type == typeof(JsonObject) || type == typeof(JsonArray))
+        if (type == typeof(JObject) || type == typeof(JArray) || type == typeof(JsonObject) || type == typeof(JsonArray))
         {
             writer.WriteStartObject();
             writer.WriteString(IslandPropertyName, value.ToString());
