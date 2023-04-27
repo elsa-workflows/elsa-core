@@ -73,7 +73,7 @@ public class SerializationTests
 
     private IDictionary<string, object> GetArrayContent(bool isJArray)
     {
-        var jsonContent = "[{\"path\":\"$.INPUT_CALCS.newCalculation\",\"command\":\"add\"}]";
+        var jsonContent = "[{\"path\":\"folder1\",\"command\":\"add\"}]";
 
         var dict = new Dictionary<string, object>
         {
@@ -85,7 +85,7 @@ public class SerializationTests
 
     private IDictionary<string, object> GetObjectContent(bool isJObject)
     {
-        var jsonContent = "{\"premiumCalculationAfdToIipEngine\":{\"script\":[{\"path\":\"$.INPUT_CALCS.newCalculation\",\"command\":\"add\"}]} }";
+        var jsonContent = "{\"file1\":{\"script\":[{\"path\":\"folder1\",\"command\":\"add\"}]} }";
 
         var dict = new Dictionary<string, object>
         {
@@ -97,12 +97,12 @@ public class SerializationTests
 
     private string GetExpectedObject()
     {
-        return "{\"premiumCalculationAfdToIipEngine\":{\"script\":[{\"path\":\"$.INPUT_CALCS.newCalculation\",\"command\":\"add\"}]} }";
+        return "{\"file1\":{\"script\":[{\"path\":\"folder1\",\"command\":\"add\"}]} }";
     }
 
     private string GetExpectedArray()
     {
-        return "[{\"path\":\"$.INPUT_CALCS.newCalculation\",\"command\":\"add\"}]";
+        return "[{\"path\":\"folder1\",\"command\":\"add\"}]";
     }
 
     private void TestRoundTrip(Type type)

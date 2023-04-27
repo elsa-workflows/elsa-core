@@ -2,7 +2,7 @@
   "StatusCode": "Created",
   "Content": [
     {
-      "path": "$.INPUT_CALCS.newCalculation",
+      "path": "folder1",
       "command": "add"
     }
   ],
