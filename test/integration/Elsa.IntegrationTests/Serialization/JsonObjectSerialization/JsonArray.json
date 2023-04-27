@@ -1,0 +1,26 @@
+
+{
+  "StatusCode": "Created",
+  "Array": {
+    "_items": [
+      {
+        "path": "$.INPUT_CALCS.newCalculation",
+        "description": "default empty values when CALC_NEW ",
+        "value": {
+          "MP_COVERAGE_LAYER_ID": "101001",
+          "MP_MAIN_YN": "TRUE",
+          "MP_STATUS_KEY": "STATUS_prm",
+          "MP_PREMIUM_END_DT": "9999-12-31",
+          "MP_AGE_CORR_FISCAL_1_YRS": 0,
+          "MP_AGE_CORR_FISCAL_2_YRS": null,
+          "MP_BENEFITS": 7000
+        },
+        "command": "add"
+      }
+    ],
+    "_type": "System.Text.Json.Nodes.JsonArray, System.Text.Json"
+  },
+
+  "ResponseHeaders": { "_type": "Elsa.Http.Models.HttpResponseHeaders, Elsa.Http" },
+  "_type": "System.Collections.Generic.Dictionary\u00602[[System.String, System.Private.CoreLib],[System.Object, System.Private.CoreLib]], System.Private.CoreLib"
+}

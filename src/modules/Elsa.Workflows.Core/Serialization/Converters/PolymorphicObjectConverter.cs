@@ -55,6 +55,16 @@ public class PolymorphicObjectConverter : JsonConverter<object>
             return !string.IsNullOrWhiteSpace(newtonsoftJson) ? JObject.Parse(newtonsoftJson) : new JObject();
         }
 
+        // If the target type is a Newtonsoft.JObject, parse the JSON island.
+        var isNewtonsoftArray = targetType == typeof(JArray);
+
+        if (isNewtonsoftArray)
+        {
+            var parsedModel = JsonElement.ParseValue(ref reader)!;
+            var newtonsoftJson = parsedModel.GetProperty(IslandPropertyName).GetString();
+            return !string.IsNullOrWhiteSpace(newtonsoftJson) ? JArray.Parse(newtonsoftJson) : new JArray();
+        }
+
         // If the target type is a System.Text.JsonObject, parse the JSON island.
         var isJsonObject = targetType == typeof(JsonObject);
 
@@ -146,7 +156,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         // Special case for Newtonsoft.Json and System.Text.Json types.
         // Newtonsoft.Json types are not supported by the System.Text.Json serializer and should be written as a string instead.
         // We include metadata about the type so that we can deserialize it later. 
-        if (type == typeof(JObject))// || type == typeof(JsonObject) || type == typeof(JsonArray))
+        if (type == typeof(JObject) || type == typeof(JArray))// || type == typeof(JsonObject) || type == typeof(JsonArray))
         {
             writer.WriteStartObject();
             writer.WriteString(IslandPropertyName, value.ToString());

@@ -29,7 +29,16 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="Serialization\JsonObjectSerialization\data.json">
+      <None Update="Serialization\JsonObjectSerialization\JArray.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Serialization\JsonObjectSerialization\JsonArray.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Serialization\JsonObjectSerialization\JObject.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Serialization\JsonObjectSerialization\JsonObject.json">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
       <None Update="Serialization\Polymorphism\data.json">
