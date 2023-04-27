@@ -13,6 +13,6 @@
         /// <summary>
         /// Whether the workflow definition should be published.
         /// </summary>
-        public bool Publish { get; set; }
+        public bool? Publish { get; set; }
     }
 }
