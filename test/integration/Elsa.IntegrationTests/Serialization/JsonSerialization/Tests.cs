@@ -51,6 +51,69 @@ public class SerializationTests
         ReadIsland(type, filename, compareFileName);
     }
 
+    private IDictionary<string, object> GetArrayContent(bool isJArray)
+    {
+        const string jsonContent = "[{\"path\":\"folder1\",\"command\":\"add\"}]";
+
+        var dict = new Dictionary<string, object>
+        {
+            { "StatusCode", "Created" },
+            { "Content", (isJArray ? JArray.Parse(jsonContent) : JsonNode.Parse(jsonContent))! }
+        };
+        return dict;
+    }
+
+    private static IDictionary<string, object> GetObjectContent(bool isJObject)
+    {
+        const string jsonContent = "{\"file1\":{\"script\":[{\"path\":\"folder1\",\"command\":\"add\"}]} }";
+
+        var dict = new Dictionary<string, object>
+        {
+            { "StatusCode", "Created" },
+            { "Content", (isJObject ? JObject.Parse(jsonContent) : JsonNode.Parse(jsonContent))! }
+        };
+        return dict;
+    }
+
+    private static string GetExpectedObject() => "{\"file1\":{\"script\":[{\"path\":\"folder1\",\"command\":\"add\"}]} }";
+    private static string GetExpectedArray() => "[{\"path\":\"folder1\",\"command\":\"add\"}]";
+
+    private void TestRoundTrip(Type type)
+    {
+        var dict = type == typeof(JsonArray) || type == typeof(JArray) ? GetArrayContent(type == typeof(JArray)) : GetObjectContent(type == typeof(JObject));
+        var jsonSerialized = SerializeUsingPayloadSerializer(dict);
+        var transformationModel = DeSerializeDictionaryUsingPayloadSerializer(jsonSerialized);
+        var result = transformationModel["Content"].ToString();
+        var expected = type == typeof(JsonArray) || type == typeof(JArray) ? GetExpectedArray() : GetExpectedObject();
+
+        CompareJsonsObjects(expected, result);
+    }
+
+    private void CreateIsland(Type type, string fileName)
+    {
+        var dict = type == typeof(JsonArray) || type == typeof(JArray) ? GetArrayContent(type == typeof(JArray)) : GetObjectContent(type == typeof(JObject));
+        var result = SerializeUsingPayloadSerializer(dict);
+        var expected = File.ReadAllText($@"Serialization/JsonSerialization/{fileName}.json");
+
+        CompareJsonsObjects(expected, result);
+    }
+
+    private void ReadIsland(Type type, string fileName, string compareFileName)
+    {
+        var jsonContent = File.ReadAllText(@$"Serialization/JsonSerialization/{fileName}.json");
+        var transformationModel = DeSerializeDictionaryUsingPayloadSerializer(jsonContent);
+        string? result;
+
+        if (type == typeof(JObject) || type == typeof(JArray))
+            result = Newtonsoft.Json.JsonConvert.SerializeObject(transformationModel);
+        else
+            result = type == typeof(JsonObject) ? JsonObject.Create(JsonSerializer.SerializeToElement(transformationModel))?.ToString() : JsonArray.Create(JsonSerializer.SerializeToElement(transformationModel["Content"]))?.ToString();
+
+        var expected = File.ReadAllText(@$"Serialization/JsonSerialization/{compareFileName}.json");
+
+        CompareJsonsObjects(expected, result);
+    }
+    
     private string SerializeUsingPayloadSerializer(object obj)
     {
         var payloadSerializer = _services.GetRequiredService<IPayloadSerializer>();
@@ -63,91 +126,13 @@ public class SerializationTests
         return payloadSerializer.Deserialize<IDictionary<string, object>>(jsonString);
     }
 
-    private void CompareJsonsObjects(string expected, string actual)
+    private static void CompareJsonsObjects(string? expected, string? actual)
     {
-        var jsonActual = NormalizeNewlines(JsonObject.Parse(actual).ToString());
-        var jsonExpected = NormalizeNewlines(JsonObject.Parse(expected).ToString());
+        var jsonActual = NormalizeNewlines(JsonNode.Parse(actual!)?.ToString());
+        var jsonExpected = NormalizeNewlines(JsonNode.Parse(expected!)?.ToString());
 
         Assert.Equal(jsonExpected, jsonActual);
     }
-    
-    private string NormalizeNewlines(string input)
-    {
-        return input.Replace("\r\n", "\n").Replace("\\r\\n", "\\n");
-    }
 
-    private IDictionary<string, object> GetArrayContent(bool isJArray)
-    {
-        var jsonContent = "[{\"path\":\"folder1\",\"command\":\"add\"}]";
-
-        var dict = new Dictionary<string, object>
-        {
-            { "StatusCode", "Created" },
-            { "Content",isJArray? JArray.Parse(jsonContent):JsonArray.Parse(jsonContent)  }
-        };
-        return dict;
-    }
-
-    private IDictionary<string, object> GetObjectContent(bool isJObject)
-    {
-        var jsonContent = "{\"file1\":{\"script\":[{\"path\":\"folder1\",\"command\":\"add\"}]} }";
-
-        var dict = new Dictionary<string, object>
-        {
-            { "StatusCode", "Created" },
-            { "Content",isJObject? JObject.Parse(jsonContent):JsonObject.Parse(jsonContent)  }
-        };
-        return dict;
-    }
-
-    private string GetExpectedObject()
-    {
-        return "{\"file1\":{\"script\":[{\"path\":\"folder1\",\"command\":\"add\"}]} }";
-    }
-
-    private string GetExpectedArray()
-    {
-        return "[{\"path\":\"folder1\",\"command\":\"add\"}]";
-    }
-
-    private void TestRoundTrip(Type type)
-    {
-        var dict = type == typeof(JsonArray) || type == typeof(JArray) ? GetArrayContent(type == typeof(JArray)) : GetObjectContent(type == typeof(JObject));
-        var jsonSerialized = SerializeUsingPayloadSerializer(dict);
-        var transformationModel = DeSerializeDictionaryUsingPayloadSerializer(jsonSerialized);
-        var result = transformationModel["Content"].ToString();
-        var expected = type == typeof(JsonArray) || type == typeof(JArray) ? GetExpectedArray():  GetExpectedObject();
-
-        CompareJsonsObjects(expected, result);
-    }
-
-    private void CreateIsland(Type type, string fileName)
-    {
-        var dict = type == typeof(JsonArray) || type == typeof(JArray) ? GetArrayContent(type == typeof(JArray)) : GetObjectContent(type == typeof(JObject));
-
-        var result = SerializeUsingPayloadSerializer(dict);
-
-        var expected = File.ReadAllText($@"Serialization/JsonSerialization/{fileName}.json");
-
-        CompareJsonsObjects(expected, result);
-    }
-
-    private void ReadIsland(Type type, string fileName,string compareFileName) {
-        var jsonContent = File.ReadAllText(@$"Serialization/JsonSerialization/{fileName}.json");
-
-        var transformationModel = DeSerializeDictionaryUsingPayloadSerializer(jsonContent);
-
-        var result = "";
-        if (type == typeof(JObject) || type == typeof(JArray))
-        {
-            result = Newtonsoft.Json.JsonConvert.SerializeObject(transformationModel);
-        }
-        else {
-            result = type == typeof(JsonObject) ? JsonObject.Create(JsonSerializer.SerializeToElement(transformationModel)).ToString() : JsonArray.Create(JsonSerializer.SerializeToElement(transformationModel["Content"])).ToString();
-        }
-
-        var expected = File.ReadAllText(@$"Serialization/JsonSerialization/{compareFileName}.json");
-
-        CompareJsonsObjects(expected, result);
-    }
+    private static string? NormalizeNewlines(string? input) => input?.Replace("\r\n", "\n").Replace("\\r\\n", "\\n");
 }
