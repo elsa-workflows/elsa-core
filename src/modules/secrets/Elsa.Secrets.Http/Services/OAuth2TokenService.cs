@@ -43,14 +43,17 @@ public class OAuth2TokenService : IOAuth2TokenService
 	{
 		var clientId = secret.GetProperty("ClientId");
 		var clientSecret = secret.GetProperty("ClientSecret");
+		var credentialsLocation = secret.GetProperty("CredentialsLocation") ?? "header";
 		var content = new Dictionary<string, string>
 		{
-			{ "grant_type", secret.GetProperty("GrantType") },
-			{ "client_id", clientId },
-			{ "client_secret", clientSecret },
-			{ "offline_access ", "true" }
+			{ "grant_type", secret.GetProperty("GrantType") }
 		};
 
+		if (credentialsLocation == "form")
+		{
+			content.Add("client_id", clientId);
+			content.Add("client_secret", clientSecret);
+		}
 		if (authCode != null)
 		{
 			content.Add("code", authCode);
@@ -67,6 +70,10 @@ public class OAuth2TokenService : IOAuth2TokenService
 		{
 			var httpClient = _httpClientFactory.CreateClient(nameof(OAuth2TokenService));
 			httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+			if (credentialsLocation == "header")
+			{
+				httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Base64Encode(clientId + ":" + clientSecret));
+			}
 			
 			var response = await httpClient.PostAsync(secret.GetProperty("AccessTokenUrl"), new FormUrlEncodedContent(content));
 			var json = await response.Content.ReadAsStringAsync();
@@ -92,17 +99,28 @@ public class OAuth2TokenService : IOAuth2TokenService
 
 	public async Task<TokenResponse> GetTokenByRefreshToken(Secret secret, string refreshToken)
 	{
+		var clientId = secret.GetProperty("ClientId");
+		var clientSecret = secret.GetProperty("ClientSecret");
+		var credentialsLocation = secret.GetProperty("CredentialsLocation") ?? "header";
 		var content = new Dictionary<string, string>
 		{
 			{ "grant_type", "refresh_token" },
-			{ "client_id", secret.GetProperty("ClientId") },
-			{ "client_secret", secret.GetProperty("ClientSecret") },
 			{ "refresh_token", refreshToken }
 		};
+		
+		if (credentialsLocation == "form")
+		{
+			content.Add("client_id", clientId);
+			content.Add("client_secret", clientSecret);
+		}
 
 		try
 		{
 			var httpClient = _httpClientFactory.CreateClient(nameof(OAuth2TokenService));
+			if (credentialsLocation == "header")
+			{
+				httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Base64Encode(clientId + ":" + clientSecret));
+			}
 			var response = await httpClient.PostAsync(secret.GetProperty("AccessTokenUrl"), new FormUrlEncodedContent(content));
 			var json = await response.Content.ReadAsStringAsync();
 			var result = JsonConvert.DeserializeObject<TokenResponse>(json);
