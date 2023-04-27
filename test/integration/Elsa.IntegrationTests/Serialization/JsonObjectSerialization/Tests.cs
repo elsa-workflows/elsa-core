@@ -295,7 +295,6 @@ public class Tests
 
         Assert.Equal(jsonExpected, jsonResult);
     }
-
 }
 
 
