@@ -17,7 +17,6 @@ public class PolymorphicObjectConverter : JsonConverter<object>
     private const string TypePropertyName = "_type";
     private const string ItemsPropertyName = "_items";
     private const string IslandPropertyName = "_island";
-    private const string JsonIslandPropertyName = "_jsonIsland";
     private const string IdPropertyName = "$id";
     private const string RefPropertyName = "$ref";
     private const string ValuesPropertyName = "$values";
@@ -52,6 +51,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         {
             var parsedModel = JsonElement.ParseValue(ref reader)!;
             var newtonsoftJson = parsedModel.GetProperty(IslandPropertyName).GetString();
+            //var newtonsoftJson = parsedModel.ToString();
             return !string.IsNullOrWhiteSpace(newtonsoftJson) ? JObject.Parse(newtonsoftJson) : new JObject();
         }
 
@@ -62,6 +62,8 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         {
             var parsedModel = JsonElement.ParseValue(ref reader)!;
             var newtonsoftJson = parsedModel.GetProperty(IslandPropertyName).GetString();
+            //var newtonsoftJson = parsedModel.ToString();
+
             return !string.IsNullOrWhiteSpace(newtonsoftJson) ? JArray.Parse(newtonsoftJson) : new JArray();
         }
 
