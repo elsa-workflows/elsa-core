@@ -24,5 +24,6 @@ public static class WorkflowsFeatureExtensions
               pipeline
                   .UseExceptionHandling()
                   .UseExecutionLogging()
+                  .UseNotifications()
                   .UseBackgroundActivityInvoker());
 }
