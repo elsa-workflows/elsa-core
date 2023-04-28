@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Elsa.EntityFrameworkCore.Common;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
@@ -25,13 +24,13 @@ public class EFCoreRoleStore : IRoleStore
     /// <inheritdoc />
     public async Task SaveAsync(Role application, CancellationToken cancellationToken = default)
     {
-        await _applicationStore.SaveAsync(application, SaveAsync, cancellationToken);
+        await _applicationStore.SaveAsync(application, cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task AddAsync(Role role, CancellationToken cancellationToken = default)
     {
-        await _applicationStore.AddAsync(role, SaveAsync, cancellationToken);
+        await _applicationStore.AddAsync(role, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -43,34 +42,13 @@ public class EFCoreRoleStore : IRoleStore
     /// <inheritdoc />
     public async Task<Role?> FindAsync(RoleFilter filter, CancellationToken cancellationToken = default)
     {
-        return await _applicationStore.FindAsync(query => Filter(query, filter), LoadAsync, cancellationToken);
+        return await _applicationStore.FindAsync(query => Filter(query, filter), cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task<IEnumerable<Role>> FindManyAsync(RoleFilter filter, CancellationToken cancellationToken = default)
     {
-        return await _applicationStore.QueryAsync(queryable => Filter(queryable, filter), LoadAsync, cancellationToken).ToList();
-    }
-
-    private static ValueTask<Role> SaveAsync(IdentityElsaDbContext dbContext, Role role, CancellationToken cancellationToken)
-    {
-        var permissionsJson = JsonSerializer.Serialize(role.Permissions);
-        dbContext.Entry(role).Property("Permissions").CurrentValue = permissionsJson;
-        return new ValueTask<Role>(role);
-    }
-
-    private static ValueTask<Role?> LoadAsync(IdentityElsaDbContext dbContext, Role? role, CancellationToken cancellationToken)
-    {
-        if (role == null)
-            return new(default(Role));
-
-        var permissionsJson = (string?)dbContext.Entry(role).Property("Permissions").CurrentValue;
-
-        if (string.IsNullOrWhiteSpace(permissionsJson)) 
-            return new ValueTask<Role?>(role);
-        
-        role.Permissions = JsonSerializer.Deserialize<ICollection<string>>(permissionsJson)!;
-        return new ValueTask<Role?>(role);
+        return await _applicationStore.QueryAsync(queryable => Filter(queryable, filter), cancellationToken).ToList();
     }
 
     private static IQueryable<Role> Filter(IQueryable<Role> query, RoleFilter filter) => filter.Apply(query);
