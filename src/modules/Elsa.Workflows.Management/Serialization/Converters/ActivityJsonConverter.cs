@@ -223,13 +223,26 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
             throw new JsonException("Failed to extract activity type property");
 
         var activityTypeName = activityTypeNameElement.GetString()!;
+        activityDescriptor = null;
+        activityTypeVersion = 0;
 
-        if (activityRoot.TryGetProperty("version", out var activityVersionElement))
+        // First try and find the activity by its workflow definition version id. This is a special case when working with the WorkflowDefinitionActivity.
+        if (activityRoot.TryGetProperty("workflowDefinitionVersionId", out var workflowDefinitionVersionIdElement))
+        {
+            var workflowDefinitionVersionId = workflowDefinitionVersionIdElement.GetString();
+            activityDescriptor = _activityRegistry.Find(x => x.CustomProperties.TryGetValue("WorkflowDefinitionVersionId", out var value) && (string?)value == workflowDefinitionVersionId);
+            activityTypeVersion = activityDescriptor?.Version ?? 0;
+        }
+        
+        // If the activity type version is specified, use that to find the activity descriptor.
+        if (activityDescriptor == null && activityRoot.TryGetProperty("version", out var activityVersionElement))
         {
             activityTypeVersion = activityVersionElement.GetInt32();
             activityDescriptor = _activityRegistry.Find(activityTypeName, activityTypeVersion);
         }
-        else
+        
+        // If the activity type version is not specified, use the latest version of the activity descriptor.
+        if(activityDescriptor == null)
         {
             activityDescriptor = _activityRegistry.Find(activityTypeName);
             activityTypeVersion = activityDescriptor?.Version ?? 0;
