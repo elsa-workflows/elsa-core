@@ -1,0 +1,14 @@
+{
+  "StatusCode": "Created",
+  "Content": {
+    "file1": {
+      "script": [
+        {
+          "path": "folder1",
+          "command": "add"
+        }
+      ]
+    }
+  },
+  "_type": "System.Collections.Generic.Dictionary\u00602[[System.String, System.Private.CoreLib],[System.Object, System.Private.CoreLib]], System.Private.CoreLib"
+}
