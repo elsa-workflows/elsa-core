@@ -1,11 +1,11 @@
+using Elsa.Extensions;
+using Elsa.Workflows.Core.Serialization.ReferenceHandlers;
+using Newtonsoft.Json.Linq;
 using System.Collections;
 using System.Dynamic;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
-using Elsa.Extensions;
-using Elsa.Workflows.Core.Serialization.ReferenceHandlers;
-using Newtonsoft.Json.Linq;
 
 namespace Elsa.Workflows.Core.Serialization.Converters;
 
@@ -52,6 +52,35 @@ public class PolymorphicObjectConverter : JsonConverter<object>
             var parsedModel = JsonElement.ParseValue(ref reader)!;
             var newtonsoftJson = parsedModel.GetProperty(IslandPropertyName).GetString();
             return !string.IsNullOrWhiteSpace(newtonsoftJson) ? JObject.Parse(newtonsoftJson) : new JObject();
+        }
+
+        // If the target type is a Newtonsoft.JObject, parse the JSON island.
+        var isNewtonsoftArray = targetType == typeof(JArray);
+
+        if (isNewtonsoftArray)
+        {
+            var parsedModel = JsonElement.ParseValue(ref reader)!;
+            var newtonsoftJson = parsedModel.GetProperty(IslandPropertyName).GetString();
+            return !string.IsNullOrWhiteSpace(newtonsoftJson) ? JArray.Parse(newtonsoftJson) : new JArray();
+        }
+
+        // If the target type is a System.Text.JsonObject, parse the JSON island.
+        var isJsonObject = targetType == typeof(JsonObject);
+
+        if (isJsonObject)
+        {
+            var parsedModel = JsonElement.ParseValue(ref reader)!;
+            var systemTextJson = parsedModel.GetProperty(IslandPropertyName).GetString();
+            return !string.IsNullOrWhiteSpace(systemTextJson) ? JsonObject.Parse(systemTextJson) : new JsonObject();
+        }
+
+        var isJsonArray = targetType == typeof(JsonArray);
+
+        if (isJsonArray)
+        {
+            var parsedModel = JsonElement.ParseValue(ref reader)!;
+            var systemTextJson = parsedModel.GetProperty(IslandPropertyName).GetString();
+            return !string.IsNullOrWhiteSpace(systemTextJson) ? JsonArray.Parse(systemTextJson) : new JsonArray();
         }
 
         var isDictionary = typeof(IDictionary).IsAssignableFrom(targetType);
@@ -123,10 +152,10 @@ public class PolymorphicObjectConverter : JsonConverter<object>
             return;
         }
 
-        // Special case for Newtonsoft.Json types.
+        // Special case for Newtonsoft.Json and System.Text.Json types.
         // Newtonsoft.Json types are not supported by the System.Text.Json serializer and should be written as a string instead.
         // We include metadata about the type so that we can deserialize it later. 
-        if (type == typeof(JObject))
+        if (type == typeof(JObject) || type == typeof(JArray) || type == typeof(JsonObject) || type == typeof(JsonArray))
         {
             writer.WriteStartObject();
             writer.WriteString(IslandPropertyName, value.ToString());
@@ -134,7 +163,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
             writer.WriteEndObject();
             return;
         }
-        
+
         // Determine if the value is going to be serialized for the first time.
         // Later on, we need to know this information to determine if we need to write the type name or not, so that we can reconstruct the actual type when deserializing.
         var shouldWriteTypeField = true;
@@ -146,6 +175,23 @@ public class PolymorphicObjectConverter : JsonConverter<object>
             shouldWriteTypeField = !exists;
         }
 
+        // Before we serialize the value, check to see if it's an ExpandoObject.
+        // If it is, we need to sanitize its property names, because they can contain invalid characters.
+        if (value is ExpandoObject)
+        {
+            var sanitized = new ExpandoObject();
+            var dictionary = (IDictionary<string, object?>)sanitized;
+            var expando = (IDictionary<string, object?>)value;
+
+            foreach (var kvp in expando)
+            {
+                var key = EscapeKey(kvp.Key);
+                dictionary[key] = kvp.Value;
+            }
+
+            value = sanitized;
+        }
+        
         var jsonElement = JsonDocument.Parse(JsonSerializer.Serialize(value, type, newOptions)).RootElement;
 
         // If the value is a string, serialize it directly.
@@ -166,13 +212,14 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         else
         {
             foreach (var property in jsonElement.EnumerateObject().Where(property => !property.NameEquals(TypePropertyName)))
-                property.WriteTo(writer);
+            {
+                writer.WritePropertyName(property.Name);
+                property.Value.WriteTo(writer);
+            }
         }
 
         if (type != typeof(ExpandoObject))
         {
-            
-
             if (shouldWriteTypeField)
                 writer.WriteString(TypePropertyName, type.GetSimpleAssemblyQualifiedName());
         }
@@ -282,16 +329,18 @@ public class PolymorphicObjectConverter : JsonConverter<object>
                                 var reference = referenceResolver!.ResolveReference(referenceId!);
                                 dict.Add(key, reference);
                             }
-                            else if (key != IdPropertyName)
-                            {
-                                var value = Read(ref reader, typeof(object), options);
-                                dict.Add(key, value);
-                            }
-                            else
+                            else if (key == IdPropertyName)
                             {
                                 var referenceId = reader.GetString()!;
                                 referenceResolver!.AddReference(referenceId, dict);
                             }
+                            else
+                            {
+                                var value = Read(ref reader, typeof(object), options);
+                                var unescapedKey = UnescapeKey(key);
+                                dict.Add(unescapedKey, value);
+                            }
+
                             break;
                         default:
                             throw new JsonException();
@@ -302,5 +351,15 @@ public class PolymorphicObjectConverter : JsonConverter<object>
             default:
                 throw new JsonException($"Unknown token {reader.TokenType}");
         }
+    }
+
+    private string EscapeKey(string key)
+    {
+        return key.Replace("$", @"\\$");
+    }
+
+    private string UnescapeKey(string key)
+    {
+        return key.Replace(@"\\$", "$");
     }
 }

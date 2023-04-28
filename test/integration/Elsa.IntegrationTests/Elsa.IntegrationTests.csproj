@@ -29,6 +29,30 @@
     </ItemGroup>
 
     <ItemGroup>
+      <None Update="Serialization\JsonSerialization\JArrayWithoutType.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Serialization\JsonSerialization\JArrayIsland.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Serialization\JsonSerialization\JObjectWithoutType.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Serialization\JsonSerialization\JObjectIsland.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Serialization\JsonSerialization\JsonArrayWithoutType.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Serialization\JsonSerialization\JsonArrayIsland.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Serialization\JsonSerialization\JsonObjectWithoutType.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Serialization\JsonSerialization\JsonObjectIsland.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
       <None Update="Serialization\Polymorphism\data.json">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
