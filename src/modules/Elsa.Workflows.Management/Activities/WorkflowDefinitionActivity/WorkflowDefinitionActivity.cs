@@ -23,6 +23,11 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
     public string WorkflowDefinitionId { get; set; } = default!;
 
     /// <summary>
+    /// The specific version ID of the workflow to schedule for execution. If not set, the <see cref="Version"/> number will be considered.
+    /// </summary>
+    public string? WorkflowDefinitionVersionId { get; set; }
+
+    /// <summary>
     /// The latest published version number set by the provider. This is used by tooling to let the user know that a newer version is available.
     /// </summary>
     public int LatestAvailablePublishedVersion { get; set; }
@@ -52,7 +57,7 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
             context.ExpressionExecutionContext.Memory.Declare(variable);
             variable.Set(context, evaluatedExpression);
         }
-        
+
         foreach (var outputDescriptor in context.ActivityDescriptor.Outputs)
         {
             // Create a local scope variable for each output property.
@@ -70,7 +75,7 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
     {
         var activityRegistry = context.ServiceProvider.GetRequiredService<IActivityRegistry>();
         var activityDescriptor = activityRegistry.Find(Type, Version)!;
-    
+
         // Declare input variables.
         foreach (var inputDescriptor in activityDescriptor.Inputs)
         {
@@ -83,7 +88,7 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
 
             Variables.Declare(variable);
         }
-        
+
         // Declare output variables.
         foreach (var outputDescriptor in activityDescriptor.Outputs)
         {
@@ -122,8 +127,13 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
         var serviceProvider = context.ServiceProvider;
         var cancellationToken = context.CancellationToken;
         var workflowDefinitionStore = serviceProvider.GetRequiredService<IWorkflowDefinitionStore>();
-        var versionOptions = VersionOptions.SpecificVersion(Version);
-        var filter = new WorkflowDefinitionFilter { DefinitionId = WorkflowDefinitionId, VersionOptions = versionOptions };
+        var filter = new WorkflowDefinitionFilter { DefinitionId = WorkflowDefinitionId };
+
+        if (!string.IsNullOrWhiteSpace(WorkflowDefinitionVersionId))
+            filter.Id = WorkflowDefinitionVersionId;
+        else
+            filter.VersionOptions = VersionOptions.SpecificVersion(Version);
+
         var workflowDefinition = await workflowDefinitionStore.FindAsync(filter, cancellationToken);
 
         if (workflowDefinition == null)
@@ -134,7 +144,7 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
         var root = await materializer.MaterializeAsync(workflowDefinition, cancellationToken);
 
         DeclareInputOutputAsVariables(context);
-        
+
         Root = root;
     }
 }

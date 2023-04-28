@@ -1,5 +1,6 @@
 using Elsa.Common.Models;
 using Elsa.Extensions;
+using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Contracts;
@@ -82,12 +83,17 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
             Inputs = DescribeInputs(definition).ToList(),
             Outputs = DescribeOutputs(definition).ToList(),
             Ports = ports,
-            CustomProperties = { ["RootType"] = nameof(WorkflowDefinitionActivity) },
+            CustomProperties =
+            {
+                ["RootType"] = nameof(WorkflowDefinitionActivity),
+                ["WorkflowDefinitionVersionId"] = definition.Id
+            },
             Constructor = context =>
             {
                 var activity = (WorkflowDefinitionActivity)_activityFactory.Create(typeof(WorkflowDefinitionActivity), context);
                 activity.Type = typeName;
                 activity.WorkflowDefinitionId = definition.DefinitionId;
+                activity.WorkflowDefinitionVersionId = definition.Id;
                 activity.Version = definition.Version;
                 activity.LatestAvailablePublishedVersion = latestPublishedVersion;
 
