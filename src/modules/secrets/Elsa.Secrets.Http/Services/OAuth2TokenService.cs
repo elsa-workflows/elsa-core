@@ -43,13 +43,13 @@ public class OAuth2TokenService : IOAuth2TokenService
 	{
 		var clientId = secret.GetProperty("ClientId");
 		var clientSecret = secret.GetProperty("ClientSecret");
-		var credentialsLocation = secret.GetProperty("CredentialsLocation") ?? "header";
+		var clientAuthMethod = secret.GetProperty("ClientAuthMethod") ?? "client_secret_basic";
 		var content = new Dictionary<string, string>
 		{
 			{ "grant_type", secret.GetProperty("GrantType") }
 		};
 
-		if (credentialsLocation == "form")
+		if (clientAuthMethod == "client_secret_post")
 		{
 			content.Add("client_id", clientId);
 			content.Add("client_secret", clientSecret);
@@ -70,9 +70,9 @@ public class OAuth2TokenService : IOAuth2TokenService
 		{
 			var httpClient = _httpClientFactory.CreateClient(nameof(OAuth2TokenService));
 			httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-			if (credentialsLocation == "header")
+			if (clientAuthMethod == "client_secret_basic")
 			{
-				httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Base64Encode(clientId + ":" + clientSecret));
+				httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", GenerateAuthorizationValue(clientId, clientSecret));
 			}
 			
 			var response = await httpClient.PostAsync(secret.GetProperty("AccessTokenUrl"), new FormUrlEncodedContent(content));
@@ -101,14 +101,14 @@ public class OAuth2TokenService : IOAuth2TokenService
 	{
 		var clientId = secret.GetProperty("ClientId");
 		var clientSecret = secret.GetProperty("ClientSecret");
-		var credentialsLocation = secret.GetProperty("CredentialsLocation") ?? "header";
+		var clientAuthMethod = secret.GetProperty("ClientAuthMethod") ?? "client_secret_basic";
 		var content = new Dictionary<string, string>
 		{
 			{ "grant_type", "refresh_token" },
 			{ "refresh_token", refreshToken }
 		};
 		
-		if (credentialsLocation == "form")
+		if (clientAuthMethod == "client_secret_post")
 		{
 			content.Add("client_id", clientId);
 			content.Add("client_secret", clientSecret);
@@ -117,9 +117,9 @@ public class OAuth2TokenService : IOAuth2TokenService
 		try
 		{
 			var httpClient = _httpClientFactory.CreateClient(nameof(OAuth2TokenService));
-			if (credentialsLocation == "header")
+			if (clientAuthMethod == "client_secret_basic")
 			{
-				httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Base64Encode(clientId + ":" + clientSecret));
+				httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", GenerateAuthorizationValue(clientId, clientSecret));
 			}
 			var response = await httpClient.PostAsync(secret.GetProperty("AccessTokenUrl"), new FormUrlEncodedContent(content));
 			var json = await response.Content.ReadAsStringAsync();
@@ -152,5 +152,12 @@ public class OAuth2TokenService : IOAuth2TokenService
 			_logger.LogError(e, $"Failed to use refresh token to obtain OAuth2 token for secret {secret.Name}/{secret.Id}");
 			throw;
 		}
+	}
+
+	private static string GenerateAuthorizationValue(string clientId, string clientSecret)
+	{
+		var encodedClientId = Uri.EscapeDataString(clientId).Replace("%20", "+");
+		var encodedClientSecret = Uri.EscapeDataString(clientSecret).Replace("%20", "+");
+		return Base64Encode(encodedClientId + ":" + encodedClientSecret);
 	}
 }

@@ -78,8 +78,8 @@ export const OAuth2: Secret = {
       disableWorkflowProviderSelection: false,
       isBrowsable: true,
       isReadOnly: false,
-      label: 'Credentials location',
-      name: 'CredentialsLocation',
+      label: 'Token endpoint client authentication method',
+      name: 'ClientAuthMethod',
       order: 4,
       supportedSyntaxes: ['Literal'],
       type: 'System.String',
@@ -88,12 +88,12 @@ export const OAuth2: Secret = {
         isFlagsEnum: false,
         items: [
           {
-            text: 'Authorization header',
-            value: 'header',
+            text: 'Client secret: Basic',
+            value: 'client_secret_basic',
           },
           {
-            text: 'Form data',
-            value: 'form',
+            text: 'Client secret: Post',
+            value: 'client_secret_post',
           }
         ]
       }
