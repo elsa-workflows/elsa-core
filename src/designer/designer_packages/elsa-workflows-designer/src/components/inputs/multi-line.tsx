@@ -21,7 +21,8 @@ export class MultiLineInput {
     const input = getInputPropertyValue(inputContext);
     const options = inputDescriptor.options || {};
     const editorHeight = this.getEditorHeight(options);
-    const value = (input?.expression as LiteralExpression)?.value;
+    const defaultValue = inputDescriptor.defaultValue;
+    const value = this.getValueOrDefault((input?.expression as LiteralExpression)?.value, defaultValue);
     const syntax = input?.expression?.type ?? inputDescriptor.defaultSyntax;
     return (
       <elsa-input-control-switch label={displayName} hint={hint} syntax={syntax} expression={value} onExpressionChanged={this.onExpressionChanged}>
@@ -40,6 +41,10 @@ export class MultiLineInput {
         return {propertyEditor: '15em', textArea: 6}
     }
   };
+
+  private getValueOrDefault(value: string | undefined, defaultValue: string | undefined) {
+    return value ?? defaultValue ?? '';
+  }
 
   private onPropertyEditorChanged = (e: Event) => {
     const inputElement = e.target as HTMLTextAreaElement;

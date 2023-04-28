@@ -17,6 +17,7 @@ public class InputDescriptor : PropertyDescriptor
         string name,
         Type type,
         Func<IActivity, object?> valueGetter,
+        Action<IActivity, object?> valueSetter,
         bool isWrapped,
         string uiHint,
         string displayName,
@@ -35,6 +36,7 @@ public class InputDescriptor : PropertyDescriptor
         Name = name;
         Type = type;
         ValueGetter = valueGetter;
+        ValueSetter = valueSetter;
         IsWrapped = isWrapped;
         UIHint = uiHint;
         DisplayName = displayName;

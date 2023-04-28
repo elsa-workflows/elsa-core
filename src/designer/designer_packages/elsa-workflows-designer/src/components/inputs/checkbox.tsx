@@ -17,8 +17,11 @@ export class Checkbox {
   }
 
   private getSelectedValue = (): boolean => {
-    const input = getInputPropertyValue(this.inputContext);
-    const value = (input?.expression as LiteralExpression)?.value;
+    const inputContext = this.inputContext;
+    const inputDescriptor = inputContext.inputDescriptor;
+    const defaultValue = inputDescriptor.defaultValue;
+    const input = getInputPropertyValue(inputContext);
+    const value = ((input?.expression as LiteralExpression)?.value) ?? defaultValue;
     return typeof value == "boolean" ? value : typeof value == "string" ? value?.toLowerCase() === 'true' : false;
   };
 
@@ -29,15 +32,16 @@ export class Checkbox {
     const fieldId = inputDescriptor.name;
     const displayName = inputDescriptor.displayName;
     const hint = inputDescriptor.description;
+    const defaultValue = inputDescriptor.defaultValue;
     const input = getInputPropertyValue(inputContext);
-    const value = (input?.expression as LiteralExpression)?.value;
+    const value = ((input?.expression as LiteralExpression)?.value) ?? defaultValue;
     const syntax = input?.expression?.type ?? inputDescriptor.defaultSyntax;
     const isChecked = this.isChecked;
 
     return (
       <elsa-input-control-switch label={displayName} hideLabel={true} hint={hint} syntax={syntax} expression={value} onExpressionChanged={this.onExpressionChanged}>
         <div class="flex space-x-1">
-          <input type="checkbox" name={fieldName} id={fieldId} value={value} checked={isChecked} onChange={this.onPropertyEditorChanged}/>
+          <input type="checkbox" name={fieldName} id={fieldId} checked={isChecked} onChange={this.onPropertyEditorChanged}/>
           <label htmlFor={fieldId}>{displayName}</label>
         </div>
       </elsa-input-control-switch>

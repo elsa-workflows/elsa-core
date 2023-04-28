@@ -146,24 +146,10 @@ public static class ActivityExecutionContextExtensions
         var activity = context.Activity;
         var activityRegistry = context.GetRequiredService<IActivityRegistry>();
         var activityDescriptor = activityRegistry.Find(activity.Type) ?? throw new Exception("Activity descriptor not found");
+        var wrappedInputs = activityDescriptor.GetWrappedInputPropertyDescriptors(activity);
 
-        var wrappedInputs = activityDescriptor
-            .GetWrappedInputProperties(activity)
-            .Where(x => x.Value is { MemoryBlockReference: { } })
-            .ToDictionary(x => x.Key, x => x.Value);
-
-        var evaluator = context.GetRequiredService<IExpressionEvaluator>();
-        var expressionExecutionContext = context.ExpressionExecutionContext;
-
-        foreach (var input in wrappedInputs)
-        {
-            var memoryReference = input.Value!.MemoryBlockReference();
-            var value = await evaluator.EvaluateAsync(input.Value, expressionExecutionContext);
-            memoryReference.Set(context, value);
-
-            // Store the evaluated input value in the activity state.
-            context.ActivityState[input.Key] = value!;
-        }
+        foreach (var inputDescriptor in wrappedInputs) 
+            await EvaluateInputPropertyAsync(context, activityDescriptor, inputDescriptor);
 
         context.SetHasEvaluatedProperties();
     }
@@ -175,31 +161,54 @@ public static class ActivityExecutionContextExtensions
     {
         var inputName = propertyExpression.GetProperty()!.Name;
         var input = await EvaluateInputPropertyAsync(context, inputName);
-        return context.Get((Input<T>)input);
+        return input != null ? context.Get((Input<T>)input) : default;
     }
 
     /// <summary>
     /// Evaluates a specific input property of the activity.
     /// </summary>
-    public static async Task<Input> EvaluateInputPropertyAsync(this ActivityExecutionContext context, string inputName)
+    public static async Task<Input?> EvaluateInputPropertyAsync(this ActivityExecutionContext context, string inputName)
     {
         var activity = context.Activity;
         var activityRegistry = context.GetRequiredService<IActivityRegistry>();
         var activityDescriptor = activityRegistry.Find(activity.Type) ?? throw new Exception("Activity descriptor not found");
-        var input = activityDescriptor.GetWrappedInputProperty(activity, inputName);
+        var inputDescriptor = activityDescriptor.GetWrappedInputPropertyDescriptor(activity, inputName);
 
-        if (input == null)
+        if (inputDescriptor == null)
             throw new Exception($"No input with name {inputName} could be found");
 
-        if (input.MemoryBlockReference == null!)
-            throw new Exception("Input not initialized");
+        return await EvaluateInputPropertyAsync(context, activityDescriptor, inputDescriptor);
+    }
+    
+    private static async Task<Input?> EvaluateInputPropertyAsync(this ActivityExecutionContext context, ActivityDescriptor activityDescriptor, InputDescriptor inputDescriptor)
+    {
+        var activity = context.Activity;
+        var defaultValue = inputDescriptor.DefaultValue;
+        var value = defaultValue;
+        var input = inputDescriptor.ValueGetter(activity) as Input;
 
-        var evaluator = context.GetRequiredService<IExpressionEvaluator>();
-        var expressionExecutionContext = context.ExpressionExecutionContext;
-        var memoryBlockReference = input.MemoryBlockReference();
-        var value = await evaluator.EvaluateAsync(input, expressionExecutionContext);
-        memoryBlockReference.Set(context, value);
+        if (defaultValue != null && input == null)
+        {
+            var typedInput = typeof(Input<>).MakeGenericType(inputDescriptor.Type);
+            var valueExpression = new Literal(defaultValue)
+            {
+                Id = Guid.NewGuid().ToString()
+            };
+            input = (Input)Activator.CreateInstance(typedInput, valueExpression)!;
+            inputDescriptor.ValueSetter(activity, input);
+        }
+        else
+        {
+            var evaluator = context.GetRequiredService<IExpressionEvaluator>();
+            var expressionExecutionContext = context.ExpressionExecutionContext;
+            value = input != null ? await evaluator.EvaluateAsync(input, expressionExecutionContext) : defaultValue;
+        }
+            
+        var memoryReference = input?.MemoryBlockReference();
+        memoryReference?.Set(context, value);
 
+        // Store the evaluated input value in the activity state.
+        context.ActivityState[inputDescriptor.Name] = value!;
         return input;
     }
 

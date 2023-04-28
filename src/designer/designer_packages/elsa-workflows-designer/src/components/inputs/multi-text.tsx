@@ -1,7 +1,7 @@
 import {Component, Prop, h} from '@stencil/core';
 import {ObjectExpression, LiteralExpression, SyntaxNames} from "../../models";
 import {ActivityInputContext} from "../../services/activity-input-driver";
-import {getInputPropertyValue, parseJson} from "../../utils";
+import {getInputPropertyValue, getObjectOrParseJson, parseJson} from "../../utils";
 import {ExpressionChangedArs} from "../shared/input-control-switch/input-control-switch";
 
 @Component({
@@ -20,7 +20,11 @@ export class MultiTextInput {
     const input = getInputPropertyValue(inputContext);
     const syntax = input?.expression?.type ?? inputDescriptor.defaultSyntax;
     const json = (input?.expression as ObjectExpression)?.value;
-    const values = parseJson(json);
+    const defaultValue = inputDescriptor.defaultValue;
+    let values = getObjectOrParseJson(json);
+
+    if (!values || values.length == 0)
+      values = getObjectOrParseJson(defaultValue) || [];
 
     return (
       <elsa-input-control-switch label={displayName} hint={hint} syntax={syntax} expression={json} onExpressionChanged={this.onExpressionChanged}>

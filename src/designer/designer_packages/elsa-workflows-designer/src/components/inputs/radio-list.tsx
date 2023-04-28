@@ -27,7 +27,7 @@ export class RadioList {
     const displayName = inputDescriptor.displayName;
     const hint = inputDescriptor.description;
     const input = getInputPropertyValue(inputContext);
-    const value = (input?.expression as LiteralExpression)?.value; // TODO: The "value" field is currently hardcoded, but we should be able to be more flexible and potentially have different fields for a given syntax.
+    const value = this.getSelectedValue();
     const syntax = input?.expression?.type ?? inputDescriptor.defaultSyntax;
     const selectList = this.selectList;
 
@@ -60,8 +60,11 @@ export class RadioList {
   }
 
   private getSelectedValue = (): string => {
-    const input = getInputPropertyValue(this.inputContext);
-    return (input?.expression as LiteralExpression)?.value;
+    const inputContext = this.inputContext;
+    const inputDescriptor = inputContext.inputDescriptor;
+    const defaultValue = inputDescriptor.defaultValue;
+    const input = getInputPropertyValue(inputContext);
+    return ((input?.expression as LiteralExpression)?.value) ?? defaultValue;
   };
 
   private onCheckChanged = (e: Event) => {

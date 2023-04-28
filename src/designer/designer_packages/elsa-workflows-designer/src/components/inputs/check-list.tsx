@@ -2,7 +2,7 @@ import {Component, h, Prop, State} from '@stencil/core';
 import {uniq} from 'lodash'
 import {ObjectExpression, SelectList, SyntaxNames} from "../../models";
 import {ActivityInputContext} from "../../services/activity-input-driver";
-import {getSelectListItems, getInputPropertyValue, parseJson} from "../../utils";
+import {getSelectListItems, getInputPropertyValue, parseJson, getObjectOrParseJson} from "../../utils";
 import {ExpressionChangedArs} from "../shared/input-control-switch/input-control-switch";
 
 @Component({
@@ -71,10 +71,22 @@ export class CheckList {
   }
 
   private getSelectedValues = (selectList: SelectList): number | Array<string> => {
+    const inputContext = this.inputContext;
+    const inputDescriptor = inputContext.inputDescriptor;
     const input = getInputPropertyValue(this.inputContext);
-    const json = (input?.expression as ObjectExpression)?.value;
-    return selectList.isFlagsEnum ? parseInt(json) : parseJson(json) || [];
+    const defaultValue = inputDescriptor.defaultValue;
+    const json = this.getValueOrDefault(input?.expression?.value, defaultValue);
+    let parsedValue = selectList.isFlagsEnum ? parseInt(json) : getObjectOrParseJson(json) || [];
+
+    if (parsedValue.length == 0)
+      parsedValue = getObjectOrParseJson(defaultValue) || [];
+
+    return parsedValue;
   };
+
+  private getValueOrDefault(value: string | undefined, defaultValue: string | undefined) {
+    return value ?? defaultValue ?? '';
+  }
 
   private onCheckChanged = (e: Event) => {
     const checkbox = (e.target as HTMLInputElement);

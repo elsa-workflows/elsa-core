@@ -21,8 +21,15 @@ export function getDuration(a: Date, b: Date): moment.Duration {
   return moment.duration(diff);
 }
 
+export function getObjectOrParseJson(value: string | object) {
+  return typeof value === 'string' ? parseJson(value) : value;
+}
+
 export function parseJson(json: string): any {
   if (!json)
+    return null;
+
+  if (json.trim().length === 0)
     return null;
 
   try {
@@ -89,7 +96,7 @@ export const isNullOrWhitespace = (input) => !input || !input.trim();
 
 export const serializeQueryString = (queryString: object): string => {
   const filteredItems = _(queryString).omitBy(_.isUndefined).omitBy(_.isNull).value();
-  const queryStringItems = _.map(filteredItems, (v :any, k) => {
+  const queryStringItems = _.map(filteredItems, (v: any, k) => {
     if (Array.isArray(v)) {
       return v.map(item => `${k}=${item}`).join('&');
     }

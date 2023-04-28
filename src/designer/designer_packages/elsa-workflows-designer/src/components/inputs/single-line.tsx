@@ -20,11 +20,9 @@ export class SingleLineInput {
     const displayName = inputDescriptor.displayName;
     const hint = inputDescriptor.description;
     const input = getInputPropertyValue(inputContext);
-    const value = (input?.expression as LiteralExpression)?.value; // TODO: The "value" field is currently hardcoded, but we should be able to be more flexible and potentially have different fields for a given syntax.
+    const defaultValue = inputDescriptor.defaultValue;
+    const value = this.getValueOrDefault((input?.expression as LiteralExpression)?.value, defaultValue); // TODO: The "value" field is currently hardcoded, but we should be able to be more flexible and potentially have different fields for a given syntax.
     const syntax = input?.expression?.type ?? inputDescriptor.defaultSyntax;
-    const propertyType = inputDescriptor.typeName;
-    const typeDescriptor = descriptorsStore.variableDescriptors.find(x => x.typeName == propertyType);
-    const propertyTypeName = typeDescriptor?.displayName ?? propertyType;
 
     return (
       <elsa-input-control-switch label={displayName} hint={hint} syntax={syntax} expression={value} onExpressionChanged={this.onExpressionChanged}>
@@ -40,5 +38,9 @@ export class SingleLineInput {
 
   private onExpressionChanged = (e: CustomEvent<ExpressionChangedArs>) => {
     this.inputContext.inputChanged(e.detail.expression, e.detail.syntax);
+  }
+
+  private getValueOrDefault(value: string | undefined, defaultValue: string | undefined) {
+    return value ?? defaultValue ?? '';
   }
 }

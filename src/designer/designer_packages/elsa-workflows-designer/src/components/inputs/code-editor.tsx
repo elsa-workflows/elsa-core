@@ -26,8 +26,9 @@ export class CodeEditorInput {
     const displayName = inputDescriptor.displayName;
     const hint = inputDescriptor.description;
     const options: CodeEditorOptions = inputDescriptor.options || {};
+    const defaultValue = inputDescriptor.defaultValue;
     const input = getInputPropertyValue(inputContext);
-    let value = (input?.expression as LiteralExpression)?.value;
+    let value = this.getValueOrDefault((input?.expression as LiteralExpression)?.value, defaultValue);
 
     if (value == undefined)
       value = inputDescriptor.defaultValue;
@@ -44,4 +45,7 @@ export class CodeEditorInput {
     this.inputContext.inputChanged(value, SyntaxNames.Literal);
   }
 
+  private getValueOrDefault(value: string | undefined, defaultValue: string | undefined) {
+    return value ?? defaultValue ?? '';
+  }
 }

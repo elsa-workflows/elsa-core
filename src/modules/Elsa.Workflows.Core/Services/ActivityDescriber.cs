@@ -139,6 +139,7 @@ public class ActivityDescriber : IActivityDescriber
             inputAttribute?.Name ?? propertyInfo.Name,
             wrappedPropertyType,
             propertyInfo.GetValue,
+            propertyInfo.SetValue,
             isWrappedProperty,
             GetUIHint(wrappedPropertyType, inputAttribute),
             inputAttribute?.DisplayName ?? propertyInfo.Name.Humanize(LetterCasing.Title),

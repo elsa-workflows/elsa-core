@@ -43,7 +43,7 @@ builder.Services.AddElsa(elsa =>
     elsa.UseDefaultAuthentication(auth => auth.UseAdminApiKey());
     
     // Register custom activities.
-    elsa.AddActivity<ConsoleGreeter>();
+    elsa.AddActivitiesFrom<Program>();
 });
 
 // Configure CORS to allow designer app hosted on a different origin to invoke the APIs.

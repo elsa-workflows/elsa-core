@@ -49,4 +49,10 @@ public abstract class PropertyDescriptor
     /// </summary>
     [JsonIgnore]
     public Func<IActivity, object?> ValueGetter { get; set; } = default!;
+    
+    /// <summary>
+    /// Sets the value of the input property for the specified activity.
+    /// </summary>
+    [JsonIgnore]
+    public Action<IActivity, object?> ValueSetter { get; set; } = default!;
 }

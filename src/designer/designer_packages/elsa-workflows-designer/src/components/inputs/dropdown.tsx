@@ -26,7 +26,8 @@ export class DropdownInput {
     const hint = inputDescriptor.description;
     const input = getInputPropertyValue(inputContext);
     const syntax = input?.expression?.type ?? inputDescriptor.defaultSyntax;
-    const value = (input?.expression as LiteralExpression)?.value;
+    const defaultValue = inputDescriptor.defaultValue;
+    const value = this.getValueOrDefault((input?.expression as LiteralExpression)?.value, defaultValue);
     const {items} = this.selectList;
     let currentValue = value;
 
@@ -56,5 +57,9 @@ export class DropdownInput {
 
   private onExpressionChanged = (e: CustomEvent<ExpressionChangedArs>) => {
     this.inputContext.inputChanged(e.detail.expression, e.detail.syntax);
+  }
+
+  private getValueOrDefault(value: string | undefined, defaultValue: string | undefined) {
+    return value ?? defaultValue ?? '';
   }
 }
