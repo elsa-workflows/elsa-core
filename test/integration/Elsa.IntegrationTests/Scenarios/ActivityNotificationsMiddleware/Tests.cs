@@ -12,7 +12,6 @@ public class Tests
 {
     private readonly IWorkflowRunner _workflowRunner;
     private readonly CapturingTextWriter _capturingTextWriter = new();
-    private readonly IWorkflowBuilderFactory _workflowBuilderFactory;
     private readonly Spy _spy;
 
     public Tests(ITestOutputHelper testOutputHelper)
@@ -28,7 +27,6 @@ public class Tests
             
             .Build();
         
-        _workflowBuilderFactory = services.GetRequiredService<IWorkflowBuilderFactory>();
         _workflowRunner = services.GetRequiredService<IWorkflowRunner>();
         _spy = services.GetRequiredService<Spy>();
     }
