@@ -175,6 +175,23 @@ public class PolymorphicObjectConverter : JsonConverter<object>
             shouldWriteTypeField = !exists;
         }
 
+        // Before we serialize the value, check to see if it's an ExpandoObject.
+        // If it is, we need to sanitize its property names, because they can contain invalid characters.
+        if (value is ExpandoObject)
+        {
+            var sanitized = new ExpandoObject();
+            var dictionary = (IDictionary<string, object?>)sanitized;
+            var expando = (IDictionary<string, object?>)value;
+
+            foreach (var kvp in expando)
+            {
+                var key = EscapeKey(kvp.Key);
+                dictionary[key] = kvp.Value;
+            }
+
+            value = sanitized;
+        }
+        
         var jsonElement = JsonDocument.Parse(JsonSerializer.Serialize(value, type, newOptions)).RootElement;
 
         // If the value is a string, serialize it directly.
@@ -195,13 +212,14 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         else
         {
             foreach (var property in jsonElement.EnumerateObject().Where(property => !property.NameEquals(TypePropertyName)))
-                property.WriteTo(writer);
+            {
+                writer.WritePropertyName(property.Name);
+                property.Value.WriteTo(writer);
+            }
         }
 
         if (type != typeof(ExpandoObject))
         {
-
-
             if (shouldWriteTypeField)
                 writer.WriteString(TypePropertyName, type.GetSimpleAssemblyQualifiedName());
         }
@@ -274,22 +292,22 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         switch (reader.TokenType)
         {
             case JsonTokenType.StartArray:
+            {
+                var list = new List<object>();
+                while (reader.Read())
                 {
-                    var list = new List<object>();
-                    while (reader.Read())
+                    switch (reader.TokenType)
                     {
-                        switch (reader.TokenType)
-                        {
-                            default:
-                                list.Add(Read(ref reader, typeof(object), options));
-                                break;
-                            case JsonTokenType.EndArray:
-                                return list;
-                        }
+                        default:
+                            list.Add(Read(ref reader, typeof(object), options));
+                            break;
+                        case JsonTokenType.EndArray:
+                            return list;
                     }
-
-                    throw new JsonException();
                 }
+
+                throw new JsonException();
+            }
             case JsonTokenType.StartObject:
                 var dict = new ExpandoObject() as IDictionary<string, object>;
                 var referenceResolver = (options.ReferenceHandler as CrossScopedReferenceHandler)?.GetResolver();
@@ -311,16 +329,18 @@ public class PolymorphicObjectConverter : JsonConverter<object>
                                 var reference = referenceResolver!.ResolveReference(referenceId!);
                                 dict.Add(key, reference);
                             }
-                            else if (key != IdPropertyName)
-                            {
-                                var value = Read(ref reader, typeof(object), options);
-                                dict.Add(key, value);
-                            }
-                            else
+                            else if (key == IdPropertyName)
                             {
                                 var referenceId = reader.GetString()!;
                                 referenceResolver!.AddReference(referenceId, dict);
                             }
+                            else
+                            {
+                                var value = Read(ref reader, typeof(object), options);
+                                var unescapedKey = UnescapeKey(key);
+                                dict.Add(unescapedKey, value);
+                            }
+
                             break;
                         default:
                             throw new JsonException();
@@ -331,5 +351,15 @@ public class PolymorphicObjectConverter : JsonConverter<object>
             default:
                 throw new JsonException($"Unknown token {reader.TokenType}");
         }
+    }
+
+    private string EscapeKey(string key)
+    {
+        return key.Replace("$", @"\\$");
+    }
+
+    private string UnescapeKey(string key)
+    {
+        return key.Replace(@"\\$", "$");
     }
 }

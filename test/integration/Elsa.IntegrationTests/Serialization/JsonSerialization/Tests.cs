@@ -93,8 +93,8 @@ public class SerializationTests
 
     private void CompareJsonsObjects(string expected, string actual)
     {
-        var jsonActual = JsonObject.Parse(actual).ToString();
-        var jsonExpected = JsonObject.Parse(expected).ToString();
+        var jsonActual = NormalizeNewlines(JsonNode.Parse(actual!)?.ToString());
+        var jsonExpected = NormalizeNewlines(JsonNode.Parse(expected!)?.ToString());
 
         Assert.Equal(jsonExpected, jsonActual);
     }
@@ -126,4 +126,6 @@ public class SerializationTests
             return "{\"file1\":{\"script\":[{\"path\":\"folder1\",\"command\":\"add\"}]} }";
         }
     }
+
+    private static string? NormalizeNewlines(string? input) => input?.Replace("\r\n", "\n").Replace("\\r\\n", "\\n");
 }

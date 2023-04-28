@@ -22,23 +22,19 @@ namespace Elsa.IntegrationTests.Serialization.SpecialPropertySerialization
         public void Test_Special_Properties_Serialization_roundtrip()
         {
             var payloadSerializer = _services.GetRequiredService<IPayloadSerializer>();
-
             var jsonContent = "{\"prop1\":{\"script\":[{\"$id\":\"someid\"}]} }";
 
             var dict = new Dictionary<string, object>
             {
-                { "Content", JsonObject.Parse(jsonContent) }
+                { "Content", JsonNode.Parse(jsonContent)! }
             };
 
             var jsonSerialized = payloadSerializer.Serialize(dict);
-
             var transformationModel = payloadSerializer.Deserialize<IDictionary<string, object>>(jsonSerialized);
-
-            var result = transformationModel["Content"].ToString();
+            var result = transformationModel["Content"].ToString()!;
             var expected = "{\"prop1\":{\"script\":[{\"$id\":\"someid\"}]} }";
-
-            var jsonResult = JsonObject.Parse(result).ToString();
-            var jsonExpected = JsonObject.Parse(expected).ToString();
+            var jsonResult = JsonNode.Parse(result)?.ToString();
+            var jsonExpected = JsonNode.Parse(expected)?.ToString();
 
             Assert.Equal(jsonExpected, jsonResult);
         }
