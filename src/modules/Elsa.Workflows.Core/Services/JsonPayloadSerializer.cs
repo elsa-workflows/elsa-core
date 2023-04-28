@@ -53,8 +53,9 @@ public class JsonPayloadSerializer : IPayloadSerializer
 
         options.Converters.Add(new JsonStringEnumConverter());
         options.Converters.Add(JsonMetadataServices.TimeSpanConverter);
-        options.Converters.Add(new PolymorphicObjectConverterFactory());
+        options.Converters.Add(GetService<PolymorphicObjectConverterFactory>());
         options.Converters.Add(GetService<TypeJsonConverter>());
+        options.Converters.Add(GetService<VariableConverterFactory>());
         return options;
     }
     

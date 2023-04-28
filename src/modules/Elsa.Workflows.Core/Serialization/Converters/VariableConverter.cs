@@ -25,7 +25,7 @@ public class VariableConverter : JsonConverter<Variable>
     }
 
     /// <inheritdoc />
-    public override Variable? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    public override Variable Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         var newOptions = new JsonSerializerOptions(options);
         newOptions.Converters.Add(new JsonPrimitiveToStringConverter());
@@ -42,17 +42,20 @@ public class VariableConverter : JsonConverter<Variable>
         JsonSerializer.Serialize(writer, model, options);
     }
 
-    private Variable? Map(VariableModel source)
+    private Variable Map(VariableModel source)
     {
+        var typeName = source.TypeName;
+        
         if (string.IsNullOrWhiteSpace(source.TypeName))
-            return null;
+            typeName = _wellKnownTypeRegistry.GetAliasOrDefault(typeof(object));
 
-        if (!_wellKnownTypeRegistry.TryGetTypeOrDefault(source.TypeName, out var type))
-            return null;
+        if (!_wellKnownTypeRegistry.TryGetTypeOrDefault(typeName, out var type))
+            type = typeof(object);
 
         var variableGenericType = typeof(Variable<>).MakeGenericType(type);
         var variable = (Variable)Activator.CreateInstance(variableGenericType)!;
 
+        // ReSharper disable once NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
         variable.Id = source.Id ?? Guid.NewGuid().ToString("N"); // Temporarily assign a new ID if the source doesn't have one.
         variable.Name = source.Name;
 
