@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 using Elsa.Extensions;
@@ -11,6 +12,7 @@ namespace Elsa.Workflows.Core.Activities;
 /// Execute a set of activities in parallel.
 /// </summary>
 [Activity("Elsa", "Workflows", "Execute a set of activities in parallel.")]
+[Browsable(false)]
 public class Parallel : Container
 {
     private const string ScheduledChildrenProperty = "ScheduledChildren";
