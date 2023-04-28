@@ -37,6 +37,7 @@ internal class Create : ElsaEndpoint<Request, Response>
     {
         Post("/identity/users");
         ConfigurePermissions("create:user");
+        Policies(IdentityPolicyNames.SecurityRoot);
     }
 
     /// <inheritdoc />
