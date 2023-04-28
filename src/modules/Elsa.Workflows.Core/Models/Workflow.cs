@@ -51,6 +51,11 @@ public class Workflow : Composite, ICloneable
     {
     }
 
+    public WorkflowIdentity Identity { get; set; } = WorkflowIdentity.VersionOne;
+    public WorkflowPublication Publication { get; set; } = WorkflowPublication.LatestAndPublished;
+    public WorkflowMetadata WorkflowMetadata { get; set; } = new();
+    public WorkflowOptions? Options { get; set; }
+    
     /// <summary>
     /// Constructs a new <see cref="Workflow"/> from the specified <see cref="IActivity"/>.
     /// </summary>
@@ -66,10 +71,14 @@ public class Workflow : Composite, ICloneable
         return register;
     }
 
-    public WorkflowIdentity Identity { get; set; } = WorkflowIdentity.VersionOne;
-    public WorkflowPublication Publication { get; set; } = WorkflowPublication.LatestAndPublished;
-    public WorkflowMetadata WorkflowMetadata { get; set; } = new();
-    public WorkflowOptions? Options { get; set; }
+    /// <inheritdoc />
+    protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
+    {
+        if(ResultVariable != null)
+            context.WorkflowExecutionContext.MemoryRegister.Declare(ResultVariable);
+
+        await base.ExecuteAsync(context);
+    }
 
     /// <summary>
     /// Create a shallow copy of this workflow.
