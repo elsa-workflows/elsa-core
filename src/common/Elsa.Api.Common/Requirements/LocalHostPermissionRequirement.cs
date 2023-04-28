@@ -38,6 +38,8 @@ public class LocalHostPermissionRequirementHandler : AuthorizationHandler<LocalH
         {
             var identity = new ClaimsIdentity(JwtBearerDefaults.AuthenticationScheme);
             identity.AddClaim(new Claim("permissions", "create:application"));
+            identity.AddClaim(new Claim("permissions", "create:user"));
+            identity.AddClaim(new Claim("permissions", "create:role"));
             context.User.AddIdentity(identity);
         }
 
