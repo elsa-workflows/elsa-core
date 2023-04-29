@@ -3,16 +3,13 @@ import {h} from "@stencil/core";
 import {Service as MiddlewareService} from 'axios-middleware';
 import {EventTypes, Plugin} from "../../models";
 import {Container, Service} from "typedi";
-import {StudioService, AuthContext, EventBus, ElsaClient, ElsaClientProvider} from "../../services";
-import descriptorsStore from '../../data/descriptors-store';
-import {SignedInArgs} from "./models";
+import {StudioService, AuthContext, EventBus} from "../../services";
 import {LoginApi} from "./services";
 
 @Service()
 export class LoginPlugin implements Plugin {
   private readonly eventBus: EventBus;
   private readonly studioService: StudioService;
-  private elsaClient: ElsaClient;
 
   constructor() {
     this.eventBus = Container.get(EventBus);
@@ -23,33 +20,11 @@ export class LoginPlugin implements Plugin {
   async initialize(): Promise<void> {
     const authContext = Container.get(AuthContext);
 
-    if (!authContext.getIsSignedIn()) {
-      this.studioService.show(() => <elsa-login-page onSignedIn={this.onSignedIn}/>);
-    } else {
-      await this.loadDescriptors();
-    }
+    if (authContext.getIsSignedIn())
+      return;
+
+    this.studioService.show(() => <elsa-login-page/>);
   }
-
-  private loadDescriptors = async (): Promise<void> => {
-    const elsaClientProvider = Container.get(ElsaClientProvider);
-    this.elsaClient = await elsaClientProvider.getElsaClient();
-
-    const activityDescriptors = await this.elsaClient.descriptors.activities.list();
-    const storageDrivers = await this.elsaClient.descriptors.storageDrivers.list();
-    const variableDescriptors = await this.elsaClient.descriptors.variables.list();
-    const workflowInstantiationStrategyDescriptors = await this.elsaClient.descriptors.workflowActivationStrategies.list();
-    const installedFeatures = await this.elsaClient.descriptors.features.getInstalledFeatures();
-
-    descriptorsStore.activityDescriptors = activityDescriptors;
-    descriptorsStore.storageDrivers = storageDrivers;
-    descriptorsStore.variableDescriptors = variableDescriptors;
-    descriptorsStore.workflowActivationStrategyDescriptors = workflowInstantiationStrategyDescriptors;
-    descriptorsStore.installedFeatures = installedFeatures;
-
-    await this.eventBus.emit(EventTypes.Descriptors.Updated, this);
-  };
-
-  private onSignedIn = async (e: CustomEvent<SignedInArgs>) => await this.loadDescriptors();
 
   private onHttpClientCreated = async (e) => {
     const service: MiddlewareService = e.service;
@@ -78,7 +53,7 @@ export class LoginPlugin implements Plugin {
 
           await authContext.updateTokens(loginResponse.accessToken, loginResponse.refreshToken, true);
 
-          const t = await service.http({
+          return await service.http({
             ...error.config,
             hasRetriedRequest: true,
             headers: {
@@ -86,10 +61,7 @@ export class LoginPlugin implements Plugin {
               Authorization: `Bearer ${loginResponse.accessToken}`
             }
           });
-
-          return t;
-        }
-        else {
+        } else {
           await authContext.signOut();
         }
       }

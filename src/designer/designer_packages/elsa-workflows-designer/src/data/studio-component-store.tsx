@@ -2,7 +2,7 @@
 import {createStore} from '@stencil/store';
 
 const {state, onChange} = createStore({
-  activeComponentFactory: () => <elsa-home-page />,
+  activeComponentFactory: () => <elsa-blank />,
   modalComponents: []
 });
 

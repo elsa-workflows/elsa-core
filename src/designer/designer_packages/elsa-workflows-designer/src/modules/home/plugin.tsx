@@ -2,26 +2,24 @@ import 'reflect-metadata';
 import {h} from "@stencil/core";
 import {EventTypes, Plugin} from "../../models";
 import {Container, Service} from "typedi";
-import {EventBus, StudioService} from "../../services";
-
+import {AuthContext, EventBus, StudioService} from "../../services";
 
 @Service()
 export class HomePagePlugin implements Plugin {
-  private studioService: StudioService;
 
-  constructor(studioService: StudioService) {
-    this.studioService = studioService;
-
+  constructor(private studioService: StudioService, private authContext: AuthContext) {
     const eventBus = Container.get(EventBus);
     eventBus.on(EventTypes.Auth.SignedIn, this.onSignedIn);
   }
 
   async initialize(): Promise<void> {
+    if (this.authContext.getIsSignedIn())
+      this.showHomePage();
   }
 
-  private onSignedIn = () => {
-    const studioService = Container.get(StudioService);
-    studioService.show(() => <elsa-home-page/>);
+  private showHomePage = () => {
+    this.studioService.show(() => <elsa-home-page/>);
   }
 
+  private onSignedIn = () => this.showHomePage()
 }

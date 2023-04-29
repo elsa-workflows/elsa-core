@@ -16,7 +16,6 @@
   <elsa-workflow-toolbar></elsa-workflow-toolbar>
   <div class="absolute inset-0" style="top: 64px;">
     <elsa-studio server="https://localhost:5001/elsa/api" monaco-lib-path="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.31.1/min"></elsa-studio>
-    <elsa-custom-activities-manager></elsa-custom-activities-manager>
   </div>
 </elsa-shell>
 
@@ -24,16 +23,28 @@
   // Integration demos.
 
   // Import publicly exposed plugins, services and models to use in vanilla JavaScript.
-  import {Container, ActivityNameFormatter, stripActivityNameSpace} from "/build/index.esm.js";
+  import {Container, ActivityNameFormatter, StudioService} from "/build/index.esm.js";
 
-  // Get a reference to the ActivityNameFormatter.
-  const activityNameFormatter = Container.get(ActivityNameFormatter);
+  // Install custom plugins.
 
-  // Install your preferred naming strategy:
-  activityNameFormatter.strategy = ActivityNameFormatter.PascalCaseStrategy;
+  class NameFormatterPlugin {
+    async initialize() {
+      // Get a reference to the ActivityNameFormatter.
+      const activityNameFormatter = Container.get(ActivityNameFormatter);
 
-  // Or install a custom name formatter strategy.
-  //activityNameFormatter.strategy = context => `${stripActivityNameSpace(context.activityDescriptor.type)}_${context.count}`;
+      // Install your preferred naming strategy:
+      activityNameFormatter.strategy = ActivityNameFormatter.PascalCaseStrategy;
+    }
+  }
+
+  const shell = document.querySelector('elsa-shell');
+  shell.addEventListener('initializing', e => {
+    const pluginRegistry = e.detail.pluginRegistry;
+    pluginRegistry.add('name-formatter', NameFormatterPlugin);
+
+    // Replace plugins with different ones, e.g. Auth0.
+    //pluginRegistry.replace('login', Auth0Plugin);
+  });
 
 </script>
 </body>

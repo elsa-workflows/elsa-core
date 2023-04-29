@@ -8,39 +8,58 @@ import {WorkflowInstancesPlugin} from "../modules/workflow-instances/plugin";
 import {LoginPlugin} from "../modules/login/plugin";
 import {HomePagePlugin} from "../modules/home/plugin";
 import {FlowchartPlugin} from "../modules/flowchart/plugin";
-import { SwitchPlugin } from '../modules/switch/sequence/switch-plugin';
+import {SwitchPlugin} from '../modules/switch/sequence/switch-plugin';
 import {FlowSwitchPlugin} from "../modules/switch/flow/flow-switch-plugin";
 import {FlowHttpRequestPlugin} from "../modules/http-request/flow/flow-http-request-plugin";
 import {HttpRequestPlugin} from "../modules/http-request/sequence/http-request-plugin";
 import {WorkflowContextsPlugin} from "../modules/workflow-contexts/plugin";
+import {DescriptorsPlugin} from "../modules/descriptors/plugin";
 
 // A registry of plugins.
 @Service()
 export class PluginRegistry {
-  private readonly plugins: Array<Plugin> = [];
+  private readonly pluginTypes: Map<string, any> = new Map<string, any>();
 
   constructor() {
-    this.add(Container.get(FlowchartPlugin))
-    this.add(Container.get(LoginPlugin));
-    this.add(Container.get(HomePagePlugin));
-    this.add(Container.get(WorkflowDefinitionsPlugin));
-    this.add(Container.get(WorkflowInstancesPlugin));
-    this.add(Container.get(CompositeActivityVersionPlugin));
-    this.add(Container.get(SequencePlugin));
-    this.add(Container.get(SwitchPlugin));
-    this.add(Container.get(FlowSwitchPlugin));
-    this.add(Container.get(FlowHttpRequestPlugin));
-    this.add(Container.get(HttpRequestPlugin));
-    this.add(Container.get(WorkflowContextsPlugin));
+    const add = this.add;
+
+    add('descriptors', DescriptorsPlugin);
+    add('flowchart', FlowchartPlugin);
+    add('login', LoginPlugin);
+    add('home', HomePagePlugin);
+    add('workflow-definitions', WorkflowDefinitionsPlugin);
+    add('workflow-instances', WorkflowInstancesPlugin);
+    add('composite-activity-version', CompositeActivityVersionPlugin);
+    add('sequence', SequencePlugin);
+    add('switch', SwitchPlugin);
+    add('flow-switch', FlowSwitchPlugin);
+    add('flow-http-request', FlowHttpRequestPlugin);
+    add('http-request', HttpRequestPlugin);
+    add('workflow-contexts', WorkflowContextsPlugin);
   }
 
-  add(plugin: Plugin) {
-    this.plugins.push(plugin);
-  }
+  add = (name: string, plugin: any) => {
+    this.pluginTypes.set(name, plugin);
+  };
 
-  async initialize(): Promise<void> {
-    for (const plugin of this.plugins) {
-      await plugin.initialize();
+  replace = (name: string, plugin: any) => {
+    this.pluginTypes.set(name, plugin);
+  };
+
+  remove = (name: string) => {
+    this.pluginTypes.delete(name);
+  };
+
+  initialize = async (): Promise<void> => {
+    for (const pluginType of this.pluginTypes.values()) {
+
+      if (!Container.has(pluginType))
+        Container.set(pluginType, new pluginType());
+
+      const plugin = Container.get(pluginType) as Plugin;
+
+      if (!!plugin.initialize)
+        await plugin.initialize();
     }
-  }
+  };
 }

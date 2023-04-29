@@ -25,6 +25,7 @@ import { MonacoValueChangedArgs } from "./components/shared/monaco-editor/monaco
 import { NotificationType } from "./modules/notifications/models";
 import { PagerData } from "./components/shared/pager/pager";
 import { PanelPosition, PanelStateChangedArgs } from "./components/panel/models";
+import { ShellInitializingContext } from "./models/shell";
 import { WorkflowContextProviderDescriptor } from "./modules/workflow-contexts/services/api";
 import { RenderActivityPropsContext } from "./modules/workflow-definitions/components/models";
 import { ActivityDriverRegistry } from "./services";
@@ -54,6 +55,8 @@ export namespace Components {
         "show": () => Promise<void>;
         "variables": Array<Variable>;
         "workflowDefinitionId": string;
+    }
+    interface ElsaBlank {
     }
     interface ElsaButtonGroup {
         "buttons": Array<Button>;
@@ -433,6 +436,10 @@ export interface ElsaPanelCustomEvent<T> extends CustomEvent<T> {
     detail: T;
     target: HTMLElsaPanelElement;
 }
+export interface ElsaShellCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLElsaShellElement;
+}
 export interface ElsaSlideOverPanelCustomEvent<T> extends CustomEvent<T> {
     detail: T;
     target: HTMLElsaSlideOverPanelElement;
@@ -513,6 +520,12 @@ declare global {
     var HTMLElsaActivityPropertiesEditorElement: {
         prototype: HTMLElsaActivityPropertiesEditorElement;
         new (): HTMLElsaActivityPropertiesEditorElement;
+    };
+    interface HTMLElsaBlankElement extends Components.ElsaBlank, HTMLStencilElement {
+    }
+    var HTMLElsaBlankElement: {
+        prototype: HTMLElsaBlankElement;
+        new (): HTMLElsaBlankElement;
     };
     interface HTMLElsaButtonGroupElement extends Components.ElsaButtonGroup, HTMLStencilElement {
     }
@@ -915,6 +928,7 @@ declare global {
         "elsa-activity-output-editor-dialog-content": HTMLElsaActivityOutputEditorDialogContentElement;
         "elsa-activity-properties": HTMLElsaActivityPropertiesElement;
         "elsa-activity-properties-editor": HTMLElsaActivityPropertiesEditorElement;
+        "elsa-blank": HTMLElsaBlankElement;
         "elsa-button-group": HTMLElsaButtonGroupElement;
         "elsa-check-list": HTMLElsaCheckListElement;
         "elsa-check-list-input": HTMLElsaCheckListInputElement;
@@ -1004,6 +1018,8 @@ declare namespace LocalJSX {
         "outputs"?: Array<OutputDefinition>;
         "variables"?: Array<Variable>;
         "workflowDefinitionId"?: string;
+    }
+    interface ElsaBlank {
     }
     interface ElsaButtonGroup {
         "buttons"?: Array<Button>;
@@ -1177,6 +1193,7 @@ declare namespace LocalJSX {
         "inputContext"?: ActivityInputContext;
     }
     interface ElsaShell {
+        "onInitializing"?: (event: ElsaShellCustomEvent<ShellInitializingContext>) => void;
     }
     interface ElsaSingleLineInput {
         "inputContext"?: ActivityInputContext;
@@ -1331,6 +1348,7 @@ declare namespace LocalJSX {
         "elsa-activity-output-editor-dialog-content": ElsaActivityOutputEditorDialogContent;
         "elsa-activity-properties": ElsaActivityProperties;
         "elsa-activity-properties-editor": ElsaActivityPropertiesEditor;
+        "elsa-blank": ElsaBlank;
         "elsa-button-group": ElsaButtonGroup;
         "elsa-check-list": ElsaCheckList;
         "elsa-check-list-input": ElsaCheckListInput;
@@ -1407,6 +1425,7 @@ declare module "@stencil/core" {
             "elsa-activity-output-editor-dialog-content": LocalJSX.ElsaActivityOutputEditorDialogContent & JSXBase.HTMLAttributes<HTMLElsaActivityOutputEditorDialogContentElement>;
             "elsa-activity-properties": LocalJSX.ElsaActivityProperties & JSXBase.HTMLAttributes<HTMLElsaActivityPropertiesElement>;
             "elsa-activity-properties-editor": LocalJSX.ElsaActivityPropertiesEditor & JSXBase.HTMLAttributes<HTMLElsaActivityPropertiesEditorElement>;
+            "elsa-blank": LocalJSX.ElsaBlank & JSXBase.HTMLAttributes<HTMLElsaBlankElement>;
             "elsa-button-group": LocalJSX.ElsaButtonGroup & JSXBase.HTMLAttributes<HTMLElsaButtonGroupElement>;
             "elsa-check-list": LocalJSX.ElsaCheckList & JSXBase.HTMLAttributes<HTMLElsaCheckListElement>;
             "elsa-check-list-input": LocalJSX.ElsaCheckListInput & JSXBase.HTMLAttributes<HTMLElsaCheckListInputElement>;
