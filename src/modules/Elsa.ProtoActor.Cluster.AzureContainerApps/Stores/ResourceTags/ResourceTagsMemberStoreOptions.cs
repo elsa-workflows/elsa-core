@@ -1,7 +1,7 @@
 namespace Proto.Cluster.AzureContainerApps.Stores.ResourceTags;
 
 /// <summary>
-/// Options for the <see cref="ResourceTagsMemberStore"/>.
+/// Options for the <see cref="ResourceTagsClusterMemberStore"/>.
 /// </summary>
 public class ResourceTagsMemberStoreOptions
 {

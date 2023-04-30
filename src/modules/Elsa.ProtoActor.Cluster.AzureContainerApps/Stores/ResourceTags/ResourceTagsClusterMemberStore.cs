@@ -12,7 +12,7 @@ namespace Proto.Cluster.AzureContainerApps.Stores.ResourceTags;
 /// Stores members in the form of resource tags of the Azure Container Application resource.
 /// </summary>
 [PublicAPI]
-public class ResourceTagsMemberStore : IMemberStore
+public class ResourceTagsClusterMemberStore : IClusterMemberStore
 {
     private readonly IArmClientProvider _armClientProvider;
     private readonly ILogger _logger;
@@ -23,28 +23,28 @@ public class ResourceTagsMemberStore : IMemberStore
     private ArmClient? _armClient;
     
     /// <summary>
-    /// Initializes a new instance of the <see cref="ResourceTagsMemberStore"/> class.
+    /// Initializes a new instance of the <see cref="ResourceTagsClusterMemberStore"/> class.
     /// </summary>
     /// <param name="armArmClientProvider">The <see cref="IArmClientProvider"/> to use.</param>
     /// <param name="options">The options for this store.</param>
     /// <param name="logger">The logger to use.</param>
-    public ResourceTagsMemberStore(
+    public ResourceTagsClusterMemberStore(
         IArmClientProvider armArmClientProvider,
         IOptions<ResourceTagsMemberStoreOptions> options,
-        ILogger<ResourceTagsMemberStore> logger) : this(armArmClientProvider, logger, options.Value.ResourceGroupName, options.Value.SubscriptionId)
+        ILogger<ResourceTagsClusterMemberStore> logger) : this(armArmClientProvider, logger, options.Value.ResourceGroupName, options.Value.SubscriptionId)
     {
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ResourceTagsMemberStore"/> class.
+    /// Initializes a new instance of the <see cref="ResourceTagsClusterMemberStore"/> class.
     /// </summary>
     /// <param name="armArmClientProvider">The <see cref="IArmClientProvider"/> to use.</param>
     /// <param name="logger">The logger to use.</param>
     /// <param name="resourceGroupName">The name of the resource group.</param>
     /// <param name="subscriptionId">The subscription ID.</param>
-    internal ResourceTagsMemberStore(
+    internal ResourceTagsClusterMemberStore(
         IArmClientProvider armArmClientProvider,
-        ILogger<ResourceTagsMemberStore> logger,
+        ILogger<ResourceTagsClusterMemberStore> logger,
         string resourceGroupName, 
         string? subscriptionId = default)
     {

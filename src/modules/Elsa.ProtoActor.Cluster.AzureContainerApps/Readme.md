@@ -37,3 +37,23 @@ You can then bind the options using the following code:
 ```csharp
 services.AddAzureContainerAppsProvider(ArmClientProviders.DefaultAzureCredential, options => configuration.Bind("AzureContainerApps", options));
 ```
+
+## Custom member store
+
+By default, the provider will store cluster member information using Azure Resource Tags on the container application.
+If you want to use a custom storage mechanism, you can do so by implementing the `IClusterMemberStore` interface and registering it with the service collection.
+
+For example, consider the following implementation:
+
+```csharp
+public class RedisClusterMemberStorage : IClusterMemberStore
+{
+  ...
+}
+```
+
+You can then register the implementation with the service collection:
+
+```csharp
+services.AddSingleton<IClusterMemberStore, RedisClusterMemberStore>();
+```

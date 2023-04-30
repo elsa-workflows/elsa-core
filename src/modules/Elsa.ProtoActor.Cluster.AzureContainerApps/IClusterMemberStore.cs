@@ -7,7 +7,7 @@ namespace Proto.Cluster.AzureContainerApps;
 /// <summary>
 /// Represents a repository of members in a cluster.
 /// </summary>
-public interface IMemberStore
+public interface IClusterMemberStore
 {
     /// <summary>
     /// Returns a list of all members in the cluster.

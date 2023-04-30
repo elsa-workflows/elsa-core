@@ -11,7 +11,7 @@ namespace Proto.Cluster.AzureContainerApps.Stores.ResourceTags;
 public static class ServiceCollectionExtensions
 {
     /// <summary>
-    /// Adds the <see cref="ResourceTagsMemberStore"/> to the service collection.
+    /// Adds the <see cref="ResourceTagsClusterMemberStore"/> to the service collection.
     /// </summary>
     /// <param name="services">The service collection to add the provider to.</param>
     /// <param name="configure">An optional action to configure the provider options.</param>
@@ -20,7 +20,7 @@ public static class ServiceCollectionExtensions
     {
         var configureOptions = configure ?? (_ => { });
         services.Configure(configureOptions);
-        services.Replace(new ServiceDescriptor(typeof(IMemberStore), typeof(ResourceTagsMemberStore), ServiceLifetime.Singleton));
+        services.Replace(new ServiceDescriptor(typeof(IClusterMemberStore), typeof(ResourceTagsClusterMemberStore), ServiceLifetime.Singleton));
 
         return services;
     }

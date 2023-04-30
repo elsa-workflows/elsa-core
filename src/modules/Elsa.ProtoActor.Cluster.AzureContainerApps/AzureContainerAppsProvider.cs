@@ -18,7 +18,7 @@ namespace Proto.Cluster.AzureContainerApps;
 public class AzureContainerAppsProvider : IClusterProvider
 {
     private readonly IArmClientProvider _armClientProvider;
-    private readonly IMemberStore _memberStore;
+    private readonly IClusterMemberStore _clusterMemberStore;
     private readonly IOptions<AzureContainerAppsProviderOptions> _options;
     private readonly ILogger _logger;
     private readonly string? _containerAppName;
@@ -38,17 +38,17 @@ public class AzureContainerAppsProvider : IClusterProvider
     /// Use this constructor to create a new instance.
     /// </summary>
     /// <param name="armClientProvider">An <see cref="IArmClientProvider"/> to create <see cref="ArmClient"/> instances.</param>
-    /// <param name="memberStore">The store to use for storing member information.</param>
+    /// <param name="clusterMemberStore">The store to use for storing member information.</param>
     /// <param name="options">The options for this provider.</param>
     /// <param name="logger">The logger to use.</param>
     public AzureContainerAppsProvider(
         IArmClientProvider armClientProvider,
-        IMemberStore memberStore,
+        IClusterMemberStore clusterMemberStore,
         IOptions<AzureContainerAppsProviderOptions> options,
         ILogger<AzureContainerAppsProvider> logger)
     {
         _armClientProvider = armClientProvider;
-        _memberStore = memberStore;
+        _clusterMemberStore = clusterMemberStore;
         _options = options;
         _logger = logger;
         _containerAppName = Environment.GetEnvironmentVariable("CONTAINER_APP_NAME") ?? throw new Exception("No app name provided");
@@ -96,7 +96,7 @@ public class AzureContainerAppsProvider : IClusterProvider
     
     private async Task CleanupStoreAsync(Cluster cluster)
     {
-        await _memberStore.ClearAsync(cluster.Config.ClusterName);
+        await _clusterMemberStore.ClearAsync(cluster.Config.ClusterName);
     }
 
     private async Task RegisterMemberAsync()
@@ -131,13 +131,13 @@ public class AzureContainerAppsProvider : IClusterProvider
             _address);
 
         member.Kinds.AddRange(_kinds);
-        await _memberStore.RegisterAsync(_clusterName, member).ConfigureAwait(false);
+        await _clusterMemberStore.RegisterAsync(_clusterName, member).ConfigureAwait(false);
     }
 
     private void StartClusterMonitor()
     {
         var pollInterval = _options.Value.PollInterval;
-        var storeName = _memberStore.GetType().Name;
+        var storeName = _clusterMemberStore.GetType().Name;
 
         _ = SafeTask.Run(async () =>
             {
@@ -147,7 +147,7 @@ public class AzureContainerAppsProvider : IClusterProvider
 
                     try
                     {
-                        var members = (await _memberStore.ListAsync().ConfigureAwait(false)).ToArray();
+                        var members = (await _clusterMemberStore.ListAsync().ConfigureAwait(false)).ToArray();
 
                         if (members.Any())
                         {
@@ -180,6 +180,6 @@ public class AzureContainerAppsProvider : IClusterProvider
     private async Task DeregisterMemberInner()
     {
         _logger.LogInformation("[Cluster][AzureContainerAppsProvider] Unregistering member {ReplicaName} on {IpAddress}", _replicaName, _address);
-        await _memberStore.UnregisterAsync(_memberId).ConfigureAwait(false);
+        await _clusterMemberStore.UnregisterAsync(_memberId).ConfigureAwait(false);
     }
 }

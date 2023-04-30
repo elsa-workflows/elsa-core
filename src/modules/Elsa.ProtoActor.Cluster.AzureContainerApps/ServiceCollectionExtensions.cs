@@ -32,12 +32,12 @@ public static class ServiceCollectionExtensions
             services.AddSingleton(armClientProvider);
 
         // Register the default member store.
-        services.AddSingleton<IMemberStore, ResourceTagsMemberStore>(sp =>
+        services.AddSingleton<IClusterMemberStore, ResourceTagsClusterMemberStore>(sp =>
         {
             var clientProvider = sp.GetRequiredService<IArmClientProvider>();
-            var logger = sp.GetRequiredService<ILogger<ResourceTagsMemberStore>>();
+            var logger = sp.GetRequiredService<ILogger<ResourceTagsClusterMemberStore>>();
             var options = sp.GetRequiredService<IOptions<AzureContainerAppsProviderOptions>>().Value;
-            return new ResourceTagsMemberStore(clientProvider, logger, options.ResourceGroupName, options.SubscriptionId);
+            return new ResourceTagsClusterMemberStore(clientProvider, logger, options.ResourceGroupName, options.SubscriptionId);
         });
 
         return services;
