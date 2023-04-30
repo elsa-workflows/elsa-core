@@ -21,7 +21,11 @@ public class AzureContainerAppsProvider : IClusterProvider
     private readonly IMemberStore _memberStore;
     private readonly IOptions<AzureContainerAppsProviderOptions> _options;
     private readonly ILogger _logger;
-
+    private readonly string? _containerAppName;
+    private readonly string _revisionName;
+    private readonly string _replicaName;
+    private readonly string _advertisedHost;
+    
     private string _memberId = null!;
     private string _address = null!;
     private Cluster _cluster = null!;
@@ -47,6 +51,10 @@ public class AzureContainerAppsProvider : IClusterProvider
         _memberStore = memberStore;
         _options = options;
         _logger = logger;
+        _containerAppName = Environment.GetEnvironmentVariable("CONTAINER_APP_NAME") ?? throw new Exception("No app name provided");
+        _revisionName = Environment.GetEnvironmentVariable("CONTAINER_APP_REVISION") ?? throw new Exception("No app revision provided");
+        _replicaName = Environment.GetEnvironmentVariable("HOSTNAME") ?? throw new Exception("No replica name provided");
+        _advertisedHost = ConfigUtils.FindSmallestIpAddress().ToString(); 
     }
 
     /// <inheritdoc />
@@ -63,6 +71,7 @@ public class AzureContainerAppsProvider : IClusterProvider
         _address = $"{host}:{port}";
         _client = await _armClientProvider.CreateClientAsync();
 
+        //await CleanupStoreAsync(cluster);
         await RegisterMemberAsync().ConfigureAwait(false);
         StartClusterMonitor();
     }
@@ -84,41 +93,41 @@ public class AzureContainerAppsProvider : IClusterProvider
 
     /// <inheritdoc />
     public async Task ShutdownAsync(bool graceful) => await DeregisterMemberAsync().ConfigureAwait(false);
+    
+    private async Task CleanupStoreAsync(Cluster cluster)
+    {
+        await _memberStore.ClearAsync(cluster.Config.ClusterName);
+    }
 
     private async Task RegisterMemberAsync()
     {
-        await Retry.Try(RegisterMemberInner, retryCount: Retry.Forever, onError: OnError, onFailed: OnFailed).ConfigureAwait(false);
+        await Retry.Try(RegisterMemberInternal, retryCount: Retry.Forever, onError: OnError, onFailed: OnFailed).ConfigureAwait(false);
 
         void OnError(int attempt, Exception exception) => _logger.LogWarning(exception, "Failed to register service");
         void OnFailed(Exception exception) => _logger.LogError(exception, "Failed to register service");
     }
 
-    private async Task RegisterMemberInner()
+    private async Task RegisterMemberInternal()
     {
         var subscriptionId = _options.Value.SubscriptionId;
         var resourceGroupName = _options.Value.ResourceGroupName;
-        var containerAppName = _options.Value.ContainerAppName;
-        var revisionName = _options.Value.RevisionName;
         var resourceGroup = await _client.GetResourceGroupByNameAsync(resourceGroupName, subscriptionId).ConfigureAwait(false);
-        var containerApp = await resourceGroup.Value.GetContainerAppAsync(containerAppName).ConfigureAwait(false);
-        var revision = await containerApp.Value.GetContainerAppRevisionAsync(revisionName).ConfigureAwait(false);
+        var containerApp = await resourceGroup.GetContainerAppAsync(_containerAppName).ConfigureAwait(false);
+        var revision = await containerApp.Value.GetContainerAppRevisionAsync(_revisionName).ConfigureAwait(false);
 
         if ((revision.Value.Data.TrafficWeight ?? 0) == 0)
             return;
 
-        var replicaName = _options.Value.ReplicaName;
-        var advertisedHost = _options.Value.AdvertisedHost;
-
         var member = new Member
         {
             Id = _memberId,
-            Host = advertisedHost,
+            Host = _advertisedHost,
             Port = _port,
         };
 
         _logger.LogInformation(
             "[Cluster][AzureContainerAppsProvider] Registering service {ReplicaName} on {IpAddress}",
-            replicaName,
+            _replicaName,
             _address);
 
         member.Kinds.AddRange(_kinds);
@@ -170,13 +179,7 @@ public class AzureContainerAppsProvider : IClusterProvider
 
     private async Task DeregisterMemberInner()
     {
-        var replicaName = _options.Value.ReplicaName;
-
-        _logger.LogInformation(
-            "[Cluster][AzureContainerAppsProvider] Unregistering member {ReplicaName} on {IpAddress}",
-            replicaName,
-            _address);
-
+        _logger.LogInformation("[Cluster][AzureContainerAppsProvider] Unregistering member {ReplicaName} on {IpAddress}", _replicaName, _address);
         await _memberStore.UnregisterAsync(_memberId).ConfigureAwait(false);
     }
 }

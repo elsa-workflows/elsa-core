@@ -30,4 +30,11 @@ public interface IMemberStore
     /// <param name="memberId">The ID of the member to unregister.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     ValueTask UnregisterAsync(string memberId, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Clears all members from the cluster.
+    /// </summary>
+    /// <param name="clusterName">The name of the cluster.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    ValueTask ClearAsync(string clusterName, CancellationToken cancellationToken = default);
 }

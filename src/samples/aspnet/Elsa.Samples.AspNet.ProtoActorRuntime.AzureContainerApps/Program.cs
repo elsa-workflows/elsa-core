@@ -1,5 +1,3 @@
-using Azure.Identity;
-using Azure.ResourceManager;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Labels;
 using Elsa.EntityFrameworkCore.Modules.Management;
@@ -9,7 +7,6 @@ using Elsa.ProtoActor.Protos;
 using Google.Protobuf.WellKnownTypes;
 using Microsoft.Data.Sqlite;
 using Proto.Cluster.AzureContainerApps;
-using Proto.Cluster.AzureContainerApps.Stores.ResourceTags;
 using Proto.Persistence.Sqlite;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
@@ -25,7 +22,6 @@ var protoActorClusterSection = protoActorSection.GetSection("Cluster");
 
 // Configure Proto Actor cluster provider services.
 services.AddAzureContainerAppsProvider(ArmClientProviders.DefaultAzureCredential, options => protoActorClusterSection.GetSection("AzureContainerApps").Bind(options));
-services.AddResourceTagsMemberStore(options => protoActorClusterSection.GetSection("MemberStorage:ResourceTagsMemberStore").Bind(options));
 
 // Add Elsa services.
 services

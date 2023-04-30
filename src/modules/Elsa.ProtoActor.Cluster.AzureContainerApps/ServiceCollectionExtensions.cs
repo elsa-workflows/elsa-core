@@ -3,6 +3,8 @@ using System.Diagnostics.CodeAnalysis;
 using Azure.ResourceManager;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Proto.Cluster.AzureContainerApps.Stores.ResourceTags;
 
 namespace Proto.Cluster.AzureContainerApps;
@@ -20,7 +22,7 @@ public static class ServiceCollectionExtensions
     /// <param name="armClientProvider">An <see cref="IArmClientProvider"/> to create <see cref="ArmClient"/> instances.</param>
     /// <param name="configure">An optional action to configure the provider options.</param>
     /// <returns>The service collection.</returns>
-    public static IServiceCollection AddAzureContainerAppsProvider(this IServiceCollection services, IArmClientProvider? armClientProvider = default, [AllowNull]Action<AzureContainerAppsProviderOptions> configure = null)
+    public static IServiceCollection AddAzureContainerAppsProvider(this IServiceCollection services, IArmClientProvider? armClientProvider = default, [AllowNull] Action<AzureContainerAppsProviderOptions> configure = null)
     {
         var configureOptions = configure ?? (_ => { });
         services.Configure(configureOptions);
@@ -28,7 +30,16 @@ public static class ServiceCollectionExtensions
 
         if (armClientProvider != null)
             services.AddSingleton(armClientProvider);
-        
+
+        // Register the default member store.
+        services.AddSingleton<IMemberStore, ResourceTagsMemberStore>(sp =>
+        {
+            var clientProvider = sp.GetRequiredService<IArmClientProvider>();
+            var logger = sp.GetRequiredService<ILogger<ResourceTagsMemberStore>>();
+            var options = sp.GetRequiredService<IOptions<AzureContainerAppsProviderOptions>>().Value;
+            return new ResourceTagsMemberStore(clientProvider, logger, options.ResourceGroupName, options.SubscriptionId);
+        });
+
         return services;
     }
 }

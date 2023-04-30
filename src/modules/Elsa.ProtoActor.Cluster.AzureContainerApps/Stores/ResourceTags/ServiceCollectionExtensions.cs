@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Proto.Cluster.AzureContainerApps.Stores.ResourceTags;
 
@@ -19,7 +20,7 @@ public static class ServiceCollectionExtensions
     {
         var configureOptions = configure ?? (_ => { });
         services.Configure(configureOptions);
-        services.AddSingleton<IMemberStore, ResourceTagsMemberStore>();
+        services.Replace(new ServiceDescriptor(typeof(IMemberStore), typeof(ResourceTagsMemberStore), ServiceLifetime.Singleton));
 
         return services;
     }

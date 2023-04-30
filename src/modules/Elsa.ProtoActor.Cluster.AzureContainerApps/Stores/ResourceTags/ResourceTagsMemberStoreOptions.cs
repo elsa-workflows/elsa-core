@@ -14,9 +14,4 @@ public class ResourceTagsMemberStoreOptions
     /// The name of the resource group to use.
     /// </summary>
     public string ResourceGroupName { get; set; } = default!;
-    
-    /// <summary>
-    /// The name of the resource to use for storing tags.
-    /// </summary>
-    public string ResourceName { get; set; } = default!;
 }
