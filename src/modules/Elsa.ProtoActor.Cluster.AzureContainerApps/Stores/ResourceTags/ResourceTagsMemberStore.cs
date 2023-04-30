@@ -1,3 +1,5 @@
+using System.Text;
+using System.Text.Json;
 using Azure;
 using Azure.ResourceManager;
 using Azure.ResourceManager.AppContainers;
@@ -21,6 +23,12 @@ public class ResourceTagsMemberStore : IMemberStore
 
     private ArmClient? _armClient;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ResourceTagsMemberStore"/> class.
+    /// </summary>
+    /// <param name="armArmClientProvider">The <see cref="IArmClientProvider"/> to use.</param>
+    /// <param name="options">The options for this store.</param>
+    /// <param name="logger">The logger to use.</param>
     public ResourceTagsMemberStore(
         IArmClientProvider armArmClientProvider,
         IOptions<ResourceTagsMemberStoreOptions> options,
@@ -31,6 +39,7 @@ public class ResourceTagsMemberStore : IMemberStore
         _logger = logger;
     }
 
+    /// <inheritdoc />
     public async ValueTask<ICollection<Member>> ListAsync(CancellationToken cancellationToken = default)
     {
         var members = new List<Member>();
@@ -45,41 +54,47 @@ public class ResourceTagsMemberStore : IMemberStore
         }
 
         var allTags = resource.Data.Tags;
-        var memberId = allTags.FirstOrDefault(kvp => kvp.Key.Contains(ResourceTagLabels.LabelMemberIdWithoutPrefix)).Value;
 
-        var kinds = allTags
-            .Where(kvp => kvp.Key.StartsWith(ResourceTagLabels.LabelKind(memberId)))
-            .Select(kvp => kvp.Key[(ResourceTagLabels.LabelKind(memberId).Length + 1)..])
-            .ToArray();
+        var taggedMemberTags = allTags
+            .Where(kvp => kvp.Key.StartsWith(ResourceTagNames.NamePrefix) && !kvp.Key.Contains(ResourceTagNames.KindPrefix))
+            .Select(x => x);
 
-        var member = new Member
+        foreach (var serializedTaggedMember in taggedMemberTags)
         {
-            Id = allTags[ResourceTagLabels.LabelMemberId(memberId)],
-            Port = int.Parse(allTags[ResourceTagLabels.LabelPort(memberId)]),
-            Host = allTags[ResourceTagLabels.LabelHost(memberId)],
-            Kinds = { kinds }
-        };
+            var taggedMember = Deserialize(serializedTaggedMember.Value);
+            var memberId = serializedTaggedMember.Key[ResourceTagNames.NamePrefix.Length..];
+            var member = new Member
+            {
+                Id = memberId,
+                Host = taggedMember.Host,
+                Port = taggedMember.Port,
+            };
 
-        members.Add(member);
+            var kinds = allTags
+                .Where(x => x.Key.StartsWith(ResourceTagNames.Prefix(member.Id, ResourceTagNames.KindPrefix)))
+                .Select(x => x.Value);
+
+            member.Kinds.AddRange(kinds);
+            members.Add(member);
+        }
+
 
         return members.ToArray();
     }
 
+    /// <inheritdoc />
     public async ValueTask RegisterAsync(string clusterName, Member member, CancellationToken cancellationToken = default)
     {
+        var taggedMember = new TaggedMember(member.Host, member.Port, clusterName);
+        var serializedTaggedMember = Serialize(taggedMember);
+
         var tags = new Dictionary<string, string>
         {
-            [ResourceTagLabels.LabelCluster(member.Id)] = clusterName,
-            [ResourceTagLabels.LabelHost(member.Id)] = member.Host,
-            [ResourceTagLabels.LabelPort(member.Id)] = member.Port.ToString(),
-            [ResourceTagLabels.LabelMemberId(member.Id)] = member.Id,
+            [ResourceTagNames.Prefix(member.Id)] = serializedTaggedMember
         };
 
         foreach (var kind in member.Kinds)
-        {
-            var labelKey = $"{ResourceTagLabels.LabelKind(member.Id)}-{kind}";
-            tags.TryAdd(labelKey, "true");
-        }
+            tags[ResourceTagNames.PrefixKind(member.Id, kind)] = kind;
 
         try
         {
@@ -93,54 +108,65 @@ public class ResourceTagsMemberStore : IMemberStore
         }
     }
 
+    /// <inheritdoc />
     public async ValueTask UnregisterAsync(string memberId, CancellationToken cancellationToken = default)
     {
         var resourceGroupName = _options.Value.ResourceGroupName;
         var resourceName = _options.Value.ResourceName;
-        var resource = await GetResourceAsync(resourceGroupName, resourceName, cancellationToken).ConfigureAwait(false);
+        var resource = await GetContainerAppManagedEnvironmentResourceAsync(resourceGroupName, resourceName, cancellationToken).ConfigureAwait(false);
         var tagResource = resource!.GetTagResource();
         var resourceTag = new Tag();
         var existingTags = (await tagResource.GetAsync(cancellationToken).ConfigureAwait(false)).Value.Data.TagValues;
+        var prefixedName = ResourceTagNames.Prefix(memberId);
 
         foreach (var tag in existingTags)
-        {
-            if (!tag.Key.StartsWith(ResourceTagLabels.LabelPrefix(memberId)))
-            {
+            if (!tag.Key.StartsWith(prefixedName))
                 resourceTag.TagValues.Add(tag);
-            }
-        }
 
         await tagResource.CreateOrUpdateAsync(WaitUntil.Completed, new TagResourceData(resourceTag), cancellationToken).ConfigureAwait(false);
     }
 
     private async Task AddMemberTags(string resourceGroupName, string resourceName, Dictionary<string, string> newTags, CancellationToken cancellationToken)
     {
-        var resourceTag = new Tag();
+        //var resourceTag = new Tag();
+
+        // foreach (var tag in newTags)
+        //     resourceTag.TagValues.Add(tag);
+
+        var resource = await GetContainerAppManagedEnvironmentResourceAsync(resourceGroupName, resourceName, cancellationToken).ConfigureAwait(false);
+        //var tagResource = resource!.GetTagResource();
+        //var existingTags = (await tagResource.GetAsync(cancellationToken).ConfigureAwait(false)).Value.Data.TagValues;
+        var tags = resource.Data.Tags;
+
         foreach (var tag in newTags)
-        {
-            resourceTag.TagValues.Add(tag);
-        }
+            tags[tag.Key] = tag.Value;
+        
+        // foreach (var tag in existingTags)
+        //     resourceTag.TagValues.Add(tag);
 
-        var resource = await GetResourceAsync(resourceGroupName, resourceName, cancellationToken).ConfigureAwait(false);
-        var tagResource = resource!.GetTagResource();
-        var existingTags = (await tagResource.GetAsync(cancellationToken).ConfigureAwait(false)).Value.Data.TagValues;
-
-        foreach (var tag in existingTags)
-        {
-            resourceTag.TagValues.Add(tag);
-        }
-
-        await tagResource.CreateOrUpdateAsync(WaitUntil.Completed, new TagResourceData(resourceTag), cancellationToken).ConfigureAwait(false);
+        await resource.SetTagsAsync(tags, cancellationToken);
+        //await tagResource.CreateOrUpdateAsync(WaitUntil.Completed, new TagResourceData(resourceTag), cancellationToken).ConfigureAwait(false);
     }
 
     private async Task<GenericResource?> GetResourceAsync(string resourceGroupName, string resourceName, CancellationToken cancellationToken)
     {
         var armClient = await GetArmClientAsync().ConfigureAwait(false);
         var subscriptionId = _options.Value.SubscriptionId;
-        var resourceGroup = await armClient.GetResourceGroupByNameAsync( resourceGroupName, subscriptionId, cancellationToken).ConfigureAwait(false);
+        var resourceGroup = await armClient.GetResourceGroupByNameAsync(resourceGroupName, subscriptionId, cancellationToken).ConfigureAwait(false);
         var resource = resourceGroup.Value.GetGenericResources($"name eq '{resourceName}'", cancellationToken: cancellationToken).FirstOrDefault();
         return resource;
     }
     
+    private async Task<ContainerAppManagedEnvironmentResource> GetContainerAppManagedEnvironmentResourceAsync(string resourceGroupName, string resourceName, CancellationToken cancellationToken)
+    {
+        var armClient = await GetArmClientAsync().ConfigureAwait(false);
+        var subscriptionId = _options.Value.SubscriptionId;
+        var resourceGroup = await armClient.GetResourceGroupByNameAsync(resourceGroupName, subscriptionId, cancellationToken).ConfigureAwait(false);
+        var response = await resourceGroup.Value.GetContainerAppManagedEnvironmentAsync(resourceName, cancellationToken);
+        return response.Value;
+    }
+
+    private static string Serialize(TaggedMember taggedMember) => JsonSerializer.Serialize(taggedMember);
+    private static TaggedMember Deserialize(string json) => JsonSerializer.Deserialize<TaggedMember>(json)!;
     private async Task<ArmClient> GetArmClientAsync() => _armClient ??= await _armClientProvider.CreateClientAsync().ConfigureAwait(false);
 }

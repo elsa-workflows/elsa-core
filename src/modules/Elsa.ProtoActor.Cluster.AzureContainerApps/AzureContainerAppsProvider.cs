@@ -107,7 +107,7 @@ public class AzureContainerAppsProvider : IClusterProvider
             return;
 
         var replicaName = _options.Value.ReplicaName;
-        var advertisedHost = _options.Value.AdvertisedHost ?? _address;
+        var advertisedHost = _options.Value.AdvertisedHost;
 
         var member = new Member
         {
