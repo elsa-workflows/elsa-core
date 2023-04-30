@@ -194,6 +194,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.JsonWorkflowPr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.WorkflowProviders.FluentStorage", "src\modules\Elsa.WorkflowProviders.FluentStorage\Elsa.WorkflowProviders.FluentStorage.csproj", "{044C3108-FE79-460A-9C31-A03C30228836}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.AspNet.ProtoActorRuntime.AzureContainerApps", "src\samples\aspnet\Elsa.Samples.AspNet.ProtoActorRuntime.AzureContainerApps\Elsa.Samples.AspNet.ProtoActorRuntime.AzureContainerApps.csproj", "{3212A999-4AC4-4911-9AA4-92AB906BCB5E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -492,6 +494,10 @@ Global
 		{044C3108-FE79-460A-9C31-A03C30228836}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{044C3108-FE79-460A-9C31-A03C30228836}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{044C3108-FE79-460A-9C31-A03C30228836}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3212A999-4AC4-4911-9AA4-92AB906BCB5E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3212A999-4AC4-4911-9AA4-92AB906BCB5E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3212A999-4AC4-4911-9AA4-92AB906BCB5E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3212A999-4AC4-4911-9AA4-92AB906BCB5E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{155227F0-A33B-40AA-A4B4-06F813EB921B} = {61017E64-6D00-49CB-9E81-5002DC8F7D5F}
@@ -578,5 +584,6 @@ Global
 		{4FA6955C-6860-493F-ABD4-CE327A33EEA3} = {873BFC3E-63C2-4495-A503-5EC05DCD84E4}
 		{C5043453-5FB8-4796-9A80-C4C766F2CB62} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 		{044C3108-FE79-460A-9C31-A03C30228836} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
+		{3212A999-4AC4-4911-9AA4-92AB906BCB5E} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 	EndGlobalSection
 EndGlobal

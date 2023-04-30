@@ -1,59 +1,64 @@
-﻿using Azure.ResourceManager;
+﻿using System;
+using System.Linq;
+using System.Threading.Tasks;
+using Azure.ResourceManager;
 using Azure.ResourceManager.AppContainers;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
-using Proto;
-using Proto.Cluster;
+using Microsoft.Extensions.Options;
+using Proto.Cluster.AzureContainerApps.Stores.ResourceTags;
 using Proto.Utils;
 
-namespace Elsa.ProtoActor.Cluster.AzureContainerApps;
+namespace Proto.Cluster.AzureContainerApps;
 
+/// <summary>
+/// A cluster provider that uses Azure Container Apps to host the cluster.
+/// </summary>
 [PublicAPI]
 public class AzureContainerAppsProvider : IClusterProvider
 {
-    private readonly ArmClient _client;
-    private readonly string _resourceGroup;
-    private readonly string _containerAppName;
+    private readonly IArmClientProvider _armClientProvider;
+    private readonly IClusterMemberStore _clusterMemberStore;
+    private readonly IOptions<AzureContainerAppsProviderOptions> _options;
+    private readonly ILogger _logger;
+    private readonly string? _containerAppName;
     private readonly string _revisionName;
     private readonly string _replicaName;
     private readonly string _advertisedHost;
-
+    
     private string _memberId = null!;
     private string _address = null!;
-    private global::Proto.Cluster.Cluster _cluster = null!;
+    private Cluster _cluster = null!;
     private string _clusterName = null!;
     private string[] _kinds = null!;
     private int _port;
-
-    private static readonly ILogger Logger = Log.CreateLogger<AzureContainerAppsProvider>();
-    private static readonly TimeSpan PollIntervalInSeconds = TimeSpan.FromSeconds(5);
+    private ArmClient _client = null!;
 
     /// <summary>
     /// Use this constructor to create a new instance.
     /// </summary>
-    /// <param name="client">An existing <see cref="ArmClient"/></param> instance that you need to bring yourself.
-    /// <param name="resourceGroup">The resource group name containing your Azure Container App.</param>
-    /// <param name="containerAppName">The name of the container app. If not specified, the CONTAINER_APP_NAME environment variable is used.</param>
-    /// <param name="revision">The revision of the container app. If not specified, the CONTAINER_APP_REVISION environment variable is used.</param>
-    /// <param name="replicaName">The replica name of the container app. If not specified, the HOSTNAME environment variable is used.</param>
-    /// <param name="advertisedHost">The host or IP address of the container app. If not specified, will take the smallest local IP address (e.g. 127.0.0.1).</param>
+    /// <param name="armClientProvider">An <see cref="IArmClientProvider"/> to create <see cref="ArmClient"/> instances.</param>
+    /// <param name="clusterMemberStore">The store to use for storing member information.</param>
+    /// <param name="options">The options for this provider.</param>
+    /// <param name="logger">The logger to use.</param>
     public AzureContainerAppsProvider(
-        ArmClient client,
-        string resourceGroup,
-        string? containerAppName = default,
-        string? revision = default,
-        string? replicaName = default,
-        string? advertisedHost = default)
+        IArmClientProvider armClientProvider,
+        IClusterMemberStore clusterMemberStore,
+        IOptions<AzureContainerAppsProviderOptions> options,
+        ILogger<AzureContainerAppsProvider> logger)
     {
-        _client = client;
-        _resourceGroup = resourceGroup;
-        _containerAppName = containerAppName ?? Environment.GetEnvironmentVariable("CONTAINER_APP_NAME") ?? throw new Exception("No app name provided");
-        _revisionName = revision ?? Environment.GetEnvironmentVariable("CONTAINER_APP_REVISION") ?? throw new Exception("No app revision provided");
-        _replicaName = replicaName ?? Environment.GetEnvironmentVariable("HOSTNAME")  ?? throw new Exception("No replica name provided");
-        _advertisedHost = !string.IsNullOrEmpty(advertisedHost) ? advertisedHost : ConfigUtils.FindSmallestIpAddress().ToString();
+        _armClientProvider = armClientProvider;
+        _clusterMemberStore = clusterMemberStore;
+        _options = options;
+        _logger = logger;
+        _containerAppName = Environment.GetEnvironmentVariable("CONTAINER_APP_NAME") ?? throw new Exception("No app name provided");
+        _revisionName = Environment.GetEnvironmentVariable("CONTAINER_APP_REVISION") ?? throw new Exception("No app revision provided");
+        _replicaName = Environment.GetEnvironmentVariable("HOSTNAME") ?? throw new Exception("No replica name provided");
+        _advertisedHost = ConfigUtils.FindSmallestIpAddress().ToString(); 
     }
 
-    public async Task StartMemberAsync(global::Proto.Cluster.Cluster cluster)
+    /// <inheritdoc />
+    public async Task StartMemberAsync(Cluster cluster)
     {
         var clusterName = cluster.Config.ClusterName;
         var (host, port) = cluster.System.GetAddress();
@@ -64,12 +69,15 @@ public class AzureContainerAppsProvider : IClusterProvider
         _port = port;
         _kinds = kinds;
         _address = $"{host}:{port}";
+        _client = await _armClientProvider.CreateClientAsync();
 
-        await RegisterMemberAsync();
+        //await CleanupStoreAsync(cluster);
+        await RegisterMemberAsync().ConfigureAwait(false);
         StartClusterMonitor();
     }
 
-    public Task StartClientAsync(global::Proto.Cluster.Cluster cluster)
+    /// <inheritdoc />
+    public Task StartClientAsync(Cluster cluster)
     {
         var clusterName = cluster.Config.ClusterName;
         var (_, port) = cluster.System.GetAddress();
@@ -83,103 +91,95 @@ public class AzureContainerAppsProvider : IClusterProvider
         return Task.CompletedTask;
     }
 
-    public async Task ShutdownAsync(bool graceful) => await DeregisterMemberAsync();
+    /// <inheritdoc />
+    public async Task ShutdownAsync(bool graceful) => await DeregisterMemberAsync().ConfigureAwait(false);
+    
+    private async Task CleanupStoreAsync(Cluster cluster)
+    {
+        await _clusterMemberStore.ClearAsync(cluster.Config.ClusterName);
+    }
 
     private async Task RegisterMemberAsync()
     {
-        await Retry.Try(RegisterMemberInner, retryCount: Retry.Forever, onError: OnError, onFailed: OnFailed);
+        await Retry.Try(RegisterMemberInternal, retryCount: Retry.Forever, onError: OnError, onFailed: OnFailed).ConfigureAwait(false);
 
-        static void OnError(int attempt, Exception exception) => Logger.LogWarning(exception, "Failed to register service");
-        static void OnFailed(Exception exception) => Logger.LogError(exception, "Failed to register service");
+        void OnError(int attempt, Exception exception) => _logger.LogWarning(exception, "Failed to register service");
+        void OnFailed(Exception exception) => _logger.LogError(exception, "Failed to register service");
     }
 
-    private async Task RegisterMemberInner()
+    private async Task RegisterMemberInternal()
     {
-        var resourceGroup = await _client.GetResourceGroupByName(_resourceGroup);
-        var containerApp = await resourceGroup.Value.GetContainerAppAsync(_containerAppName);
-        var revision = await containerApp.Value.GetContainerAppRevisionAsync(_revisionName);
+        var subscriptionId = _options.Value.SubscriptionId;
+        var resourceGroupName = _options.Value.ResourceGroupName;
+        var resourceGroup = await _client.GetResourceGroupByNameAsync(resourceGroupName, subscriptionId).ConfigureAwait(false);
+        var containerApp = await resourceGroup.GetContainerAppAsync(_containerAppName).ConfigureAwait(false);
+        var revision = await containerApp.Value.GetContainerAppRevisionAsync(_revisionName).ConfigureAwait(false);
 
-        if (revision.Value.Data.TrafficWeight.GetValueOrDefault(0) == 0)
+        if ((revision.Value.Data.TrafficWeight ?? 0) == 0)
             return;
 
-        Logger.LogInformation(
+        var member = new Member
+        {
+            Id = _memberId,
+            Host = _advertisedHost,
+            Port = _port,
+        };
+
+        _logger.LogInformation(
             "[Cluster][AzureContainerAppsProvider] Registering service {ReplicaName} on {IpAddress}",
             _replicaName,
             _address);
 
-        var tags = new Dictionary<string, string>
-        {
-            [ResourceTagLabels.LabelCluster(_memberId)] = _clusterName,
-            [ResourceTagLabels.LabelHost(_memberId)] = _advertisedHost,
-            [ResourceTagLabels.LabelPort(_memberId)] = _port.ToString(),
-            [ResourceTagLabels.LabelMemberId(_memberId)] = _memberId,
-            [ResourceTagLabels.LabelReplicaName(_memberId)] = _replicaName
-        };
-
-        foreach (var kind in _kinds)
-        {
-            var labelKey = $"{ResourceTagLabels.LabelKind(_memberId)}-{kind}";
-            tags.TryAdd(labelKey, "true");
-        }
-
-        try
-        {
-            await _client.AddMemberTags(_resourceGroup, _containerAppName, tags);
-        }
-        catch (Exception x)
-        {
-            Logger.LogError(x, "Failed to update metadata");
-        }
+        member.Kinds.AddRange(_kinds);
+        await _clusterMemberStore.RegisterAsync(_clusterName, member).ConfigureAwait(false);
     }
 
-    private void StartClusterMonitor() =>
+    private void StartClusterMonitor()
+    {
+        var pollInterval = _options.Value.PollInterval;
+        var storeName = _clusterMemberStore.GetType().Name;
+
         _ = SafeTask.Run(async () =>
             {
                 while (!_cluster.System.Shutdown.IsCancellationRequested)
                 {
-                    Logger.LogInformation("Calling ACS API");
+                    _logger.LogInformation("Looking for members in {Store}", storeName);
 
                     try
                     {
-                        var members = await _client.GetClusterMembers(_resourceGroup, _containerAppName);
+                        var members = (await _clusterMemberStore.ListAsync().ConfigureAwait(false)).ToArray();
 
                         if (members.Any())
                         {
-                            Logger.LogInformation("Got members {Members}", members.Length);
+                            _logger.LogInformation("Got members {Members}", members.Length);
                             _cluster.MemberList.UpdateClusterTopology(members);
                         }
                         else
                         {
-                            Logger.LogWarning("Failed to get members from Azure Container Apps");
+                            _logger.LogWarning("Failed to get members from {Store}", storeName);
                         }
                     }
                     catch (Exception x)
                     {
-                        Logger.LogError(x, "Failed to get members from Azure Container Apps");
+                        _logger.LogError(x, "Failed to get members from {Store}", storeName);
                     }
 
-                    await Task.Delay(PollIntervalInSeconds);
+                    await Task.Delay(pollInterval).ConfigureAwait(false);
                 }
             }
         );
+    }
 
     private async Task DeregisterMemberAsync()
     {
-        await Retry.Try(DeregisterMemberInner, onError: OnError, onFailed: OnFailed);
-
-        static void OnError(int attempt, Exception exception) =>
-            Logger.LogWarning(exception, "Failed to deregister service");
-
-        static void OnFailed(Exception exception) => Logger.LogError(exception, "Failed to deregister service");
+        await Retry.Try(DeregisterMemberInner, onError: OnError, onFailed: OnFailed).ConfigureAwait(false);
+        void OnError(int attempt, Exception exception) => _logger.LogWarning(exception, "Failed to deregister service");
+        void OnFailed(Exception exception) => _logger.LogError(exception, "Failed to deregister service");
     }
 
     private async Task DeregisterMemberInner()
     {
-        Logger.LogInformation(
-            "[Cluster][AzureContainerAppsProvider] Unregistering member {ReplicaName} on {IpAddress}",
-            _replicaName,
-            _address);
-
-        await _client.ClearMemberTags(_resourceGroup, _containerAppName, _memberId);
+        _logger.LogInformation("[Cluster][AzureContainerAppsProvider] Unregistering member {ReplicaName} on {IpAddress}", _replicaName, _address);
+        await _clusterMemberStore.UnregisterAsync(_memberId).ConfigureAwait(false);
     }
 }

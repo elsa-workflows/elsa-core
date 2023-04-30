@@ -10,9 +10,11 @@
             This is a temporary stand-in until Proto.Actor provides an updated version of Proto.Cluster.AzureContainerApps.
         </Description>
         <PackageTags>elsa module runtime protoactor cluster azure container apps</PackageTags>
+        <RootNamespace>Proto.Cluster.AzureContainerApps</RootNamespace>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Azure.ResourceManager.AppContainers" Version="1.0.2" />
+        <PackageReference Include="Azure.Identity" Version="1.8.2" />
+        <PackageReference Include="Azure.ResourceManager.AppContainers" Version="1.0.3" />
         <PackageReference Include="Azure.ResourceManager.Resources" Version="1.4.0" />
         <PackageReference Include="Proto.Cluster" Version="1.1.0" />
     </ItemGroup>
