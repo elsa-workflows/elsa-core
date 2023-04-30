@@ -20,6 +20,7 @@ public static class ServiceCollectionExtensions
     {
         var configureOptions = configure ?? (_ => { });
         services.Configure(configureOptions);
+        services.ConfigureOptions<ResourceTagsMemberStoreOptionsValidator>();
         services.Replace(new ServiceDescriptor(typeof(IClusterMemberStore), typeof(ResourceTagsClusterMemberStore), ServiceLifetime.Singleton));
 
         return services;

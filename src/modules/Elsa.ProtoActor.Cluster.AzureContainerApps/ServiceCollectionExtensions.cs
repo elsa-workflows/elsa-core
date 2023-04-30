@@ -26,6 +26,7 @@ public static class ServiceCollectionExtensions
     {
         var configureOptions = configure ?? (_ => { });
         services.Configure(configureOptions);
+        services.ConfigureOptions<AzureContainerAppsProviderOptionsValidator>();
         services.AddSingleton<AzureContainerAppsProvider>();
 
         if (armClientProvider != null)
