@@ -251,6 +251,7 @@ export class FlowchartComponent {
 
   @Watch('rootActivity')
   private onActivityChanged(value: Activity) {
+    this.path = [];
     this.updateLookups();
   }
 

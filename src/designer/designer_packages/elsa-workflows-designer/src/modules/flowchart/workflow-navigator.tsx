@@ -65,17 +65,8 @@ export class WorkflowNavigator {
 
   private renderPathItem = (item: FlowchartPathItem, index: number, nodes: Array<ActivityNode>) => {
     const activityId = item.activityId;
-    let activity: Activity;
-    let activityDescriptor: ActivityDescriptor;
-
-    try {
-      activity = nodes.find(x => x.activity.id == activityId).activity;
-      activityDescriptor = descriptorsStore.activityDescriptors.find(x => x.typeName == activity.type);
-    } catch (e) {
-      alert('Debug this');
-      return;
-    }
-
+    const activity = nodes.find(x => x.activity.id == activityId).activity;
+    const activityDescriptor = descriptorsStore.activityDescriptors.find(x => x.typeName == activity.type);
     const icon = this.iconRegistry.getOrDefault(activity.type)();
     const listElements = [];
     const isLastItem = index == this.items.length - 1;
