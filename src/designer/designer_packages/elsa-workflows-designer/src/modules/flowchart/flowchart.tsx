@@ -22,6 +22,10 @@ import {generateUniqueActivityName} from "../../utils/generate-activity-name";
 import {DagreLayout, OutNode} from '@antv/layout';
 import {adjustPortMarkupByNode, getPortNameByPortId, rebuildGraph} from '../../utils/graph';
 import FlowchartTunnel, {FlowchartState} from "./state";
+import { WorkflowDefinitionsApi } from '../workflow-definitions/services/api';
+import studioComponentStore from '../../data/studio-component-store';
+import { WorkflowDefinition } from '../../interfaces';
+import workflowStore from '../../data/workflow-store';
 
 const FlowchartTypeName = 'Elsa.Flowchart';
 
@@ -34,11 +38,13 @@ export class FlowchartComponent {
   private readonly nodeFactory: NodeFactory;
   private readonly portProviderRegistry: PortProviderRegistry;
   private activityContextMenu: HTMLElsaContextMenuElement;
+  private workflowDefinitionsApi: WorkflowDefinitionsApi;
 
   constructor() {
     this.eventBus = Container.get(EventBus);
     this.nodeFactory = Container.get(NodeFactory);
     this.portProviderRegistry = Container.get(PortProviderRegistry);
+    this.workflowDefinitionsApi = Container.get(WorkflowDefinitionsApi);
   }
 
   @Prop() rootActivity: Activity;
@@ -551,7 +557,15 @@ export class FlowchartComponent {
       }, {
         text: 'Delete',
         handler: () => this.onDeleteActivityClicked(node)
-      }];
+      }
+    ];
+
+    if (activity.workflowDefinitionId) {
+      menuItems.unshift({
+        text: 'Open Activity',
+        handler: () => this.onOpenActivity(node),
+      });
+    }
 
     this.activityContextMenu.menuItems = menuItems;
     const localPos = this.graph.localToClient(e.x, e.y);
@@ -701,6 +715,20 @@ export class FlowchartComponent {
     if (removedPorts.length > 0)
       node.removePorts(removedPorts);
 
+  };
+
+
+  private onOpenActivity = async (node: ActivityNodeShape) => {
+    const activity = node.data as Activity;
+    const data = await this.workflowDefinitionsApi.get({
+      definitionId: activity.workflowDefinitionId,
+    });
+    workflowStore.childWorkflowDefinitionId = activity.workflowDefinitionId;
+    this.showSubProcessWorkflow(data);
+  };
+
+  public showSubProcessWorkflow = (workflowDefinition: WorkflowDefinition) => {
+    studioComponentStore.activeComponentFactory = () => <elsa-workflow-definition-editor workflowDefinition={workflowDefinition} />;
   };
 
   render() {

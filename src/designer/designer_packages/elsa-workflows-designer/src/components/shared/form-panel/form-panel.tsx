@@ -2,11 +2,18 @@ import {Component, Event, EventEmitter, h, Prop} from '@stencil/core';
 import {TabChangedArgs, TabDefinition} from '../../../models';
 import {isNullOrWhitespace} from "../../../utils";
 import {PanelActionClickArgs, PanelActionDefinition, PanelActionType} from "./models";
+import {WorkflowDefinitionsApi} from '../../../modules/workflow-definitions/services/api';
+import Container from 'typedi';
+import studioComponentStore from '../../../data/studio-component-store';
+import {WorkflowDefinition} from '../../../interfaces';
+import workflowStore from '../../../data/workflow-store';
 
 @Component({
   tag: 'elsa-form-panel'
 })
 export class FormPanel {
+  private workflowDefinitionsApi: WorkflowDefinitionsApi;
+
   @Prop() public mainTitle: string;
   @Prop() public subTitle: string;
   @Prop() public orientation: 'Landscape' | 'Portrait' = 'Portrait';
@@ -18,9 +25,25 @@ export class FormPanel {
   @Event() public selectedTabIndexChanged: EventEmitter<TabChangedArgs>;
   @Event() public actionInvoked: EventEmitter<PanelActionClickArgs>;
 
+  constructor() {
+    this.workflowDefinitionsApi = Container.get(WorkflowDefinitionsApi);
+  }
+
   public render() {
     return this.renderPanel();
   }
+
+  private async backToParentWorkflow() {
+    const data = await this.workflowDefinitionsApi.get({
+      definitionId: workflowStore.parentWorkflowDefinitionId,
+    });
+    workflowStore.childWorkflowDefinitionId = workflowStore.parentWorkflowDefinitionId;
+    this.showSubProcessWorkflow(data);
+  }
+
+  public showSubProcessWorkflow = (workflowDefinition: WorkflowDefinition) => {
+    studioComponentStore.activeComponentFactory = () => <elsa-workflow-definition-editor workflowDefinition={workflowDefinition} />;
+  };
 
   private onTabClick(e: Event, tab: TabDefinition) {
     e.preventDefault();
@@ -56,6 +79,13 @@ export class FormPanel {
                       {mainTitle}
                     </h2>
                     {!isNullOrWhitespace(subTitle) ? <h3 class="text-sm text-gray-700">{subTitle}</h3> : undefined}
+                    
+                  </div>
+                  <div>
+                    {workflowStore.childWorkflowDefinitionId && workflowStore.parentWorkflowDefinitionId != workflowStore.childWorkflowDefinitionId ?
+                        <button class="btn btn-primary" onClick={() => this.backToParentWorkflow()}>
+                          Back to Parent
+                        </button> : undefined}
                   </div>
                 </div>
               </div>)}
