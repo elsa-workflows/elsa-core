@@ -1,7 +1,7 @@
 import {Component, Element, h, Host, Prop, Watch} from '@stencil/core';
 import 'reflect-metadata';
 import {Container} from 'typedi';
-import {EventBus, PluginRegistry, ServerSettings} from '../../services';
+import {AuthContext, EventBus, PluginRegistry, ServerSettings} from '../../services';
 import {MonacoEditorSettings} from "../../services/monaco-editor-settings";
 import {WorkflowDefinitionManager} from "../../modules/workflow-definitions/services/manager";
 import {EventTypes} from "../../models";
@@ -45,6 +45,14 @@ export class Studio {
     optionsStore.enableFlexiblePorts = this.enableFlexiblePorts;
     await this.eventBus.emit(EventTypes.Studio.Initializing, this);
     await this.pluginRegistry.initialize();
+
+    // If we have a valid session, emit the signed in event so that descriptors will be loaded.
+    const authContext = Container.get(AuthContext);
+
+    if (authContext.getIsSignedIn()) {
+      const eventBus = Container.get(EventBus);
+      await eventBus.emit(EventTypes.Auth.SignedIn)
+    }
   }
 
   render() {

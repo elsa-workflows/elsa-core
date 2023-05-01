@@ -12,9 +12,6 @@ export class DescriptorsPlugin implements Plugin {
 
   async initialize(): Promise<void> {
     this.eventBus.on(EventTypes.Auth.SignedIn, async () => await this.loadDescriptors());
-
-    if (this.authContext.getIsSignedIn())
-      await this.loadDescriptors();
   }
 
   private loadDescriptors = async (): Promise<void> => {
