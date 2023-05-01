@@ -60,7 +60,7 @@ public class WebhookEventActivityProvider : IActivityProvider
             DisplayName = displayName,
             Description = description,
             Category = category,
-            Kind = ActivityKind.Job,
+            Kind = ActivityKind.Trigger,
             IsBrowsable = true,
             Attributes = { webhookAttribute! },
             Outputs = { outputPropertyDescriptor },
