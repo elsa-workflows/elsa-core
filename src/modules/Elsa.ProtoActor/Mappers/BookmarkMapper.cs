@@ -35,7 +35,7 @@ public class BookmarkMapper
                 ActivityNodeId = x.ActivityNodeId,
                 ActivityInstanceId = x.ActivityInstanceId,
                 AutoBurn = x.AutoBurn,
-                CallbackMethodName = x.CallbackMethodName.NullIfEmpty()
+                CallbackMethodName = x.CallbackMethodName.EmptyIfNull()
             });
     
     public IEnumerable<Bookmark> Map(IEnumerable<ProtoBookmark> source) =>
