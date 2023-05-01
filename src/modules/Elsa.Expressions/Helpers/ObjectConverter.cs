@@ -94,6 +94,9 @@ public static class ObjectConverter
         if (underlyingSourceType == underlyingTargetType)
             return value;
 
+        if (IsDateType(underlyingSourceType) && IsDateType(underlyingTargetType))
+            return ConvertAnyDateType(value, underlyingTargetType);
+
         if (typeof(IDictionary<string, object>).IsAssignableFrom(underlyingSourceType) && underlyingTargetType.IsClass)
         {
             if (typeof(ExpandoObject) == underlyingTargetType)
@@ -182,5 +185,56 @@ public static class ObjectConverter
         {
             throw new TypeConversionException($"Failed to convert an object of type {sourceType} to {underlyingTargetType}", value, underlyingTargetType, e);
         }
+    }
+
+    /// <summary>
+    /// Returns true if the specified type is date-like type, false otherwise.
+    /// </summary>
+    private static bool IsDateType(Type type)
+    {
+        var dateTypes = new[]
+        {
+            typeof(DateTime),
+            typeof(DateTimeOffset),
+            typeof(DateOnly)
+        };
+
+        return dateTypes.Contains(type);
+    }
+
+    /// <summary>
+    /// Converts any date type to the specified target type.
+    /// </summary>
+    /// <param name="value">Any of <see cref="DateTime"/>, <see cref="DateTimeOffset"/> or <see cref="DateOnly"/>.</param>
+    /// <param name="targetType">Any of <see cref="DateTime"/>, <see cref="DateTimeOffset"/> or <see cref="DateOnly"/>.</param>
+    /// <returns>The converted value.</returns>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="value"/> is not of type <see cref="DateTime"/>, <see cref="DateTimeOffset"/> or <see cref="DateOnly"/>.</exception>
+    private static object ConvertAnyDateType(object value, Type targetType)
+    {
+        return targetType switch
+        {
+            { } t when t == typeof(DateTime) => value switch
+            {
+                DateTime dateTime => dateTime,
+                DateTimeOffset dateTimeOffset => dateTimeOffset.DateTime,
+                DateOnly date => new DateTime(date.Year, date.Month, date.Day),
+                _ => throw new ArgumentException("Invalid value type.")
+            },
+            { } t when t == typeof(DateTimeOffset) => value switch
+            {
+                DateTime dateTime => new DateTimeOffset(dateTime),
+                DateTimeOffset dateTimeOffset => dateTimeOffset,
+                DateOnly date => new DateTimeOffset(date.Year, date.Month, date.Day, 0, 0, 0, TimeSpan.Zero),
+                _ => throw new ArgumentException("Invalid value type.")
+            },
+            { } t when t == typeof(DateOnly) => value switch
+            {
+                DateTime dateTime => new DateOnly(dateTime.Year, dateTime.Month, dateTime.Day),
+                DateTimeOffset dateTimeOffset => new DateOnly(dateTimeOffset.Year, dateTimeOffset.Month, dateTimeOffset.Day),
+                DateOnly date => date,
+                _ => throw new ArgumentException("Invalid value type.")
+            },
+            _ => throw new ArgumentException("Invalid target type.")
+        };
     }
 }
