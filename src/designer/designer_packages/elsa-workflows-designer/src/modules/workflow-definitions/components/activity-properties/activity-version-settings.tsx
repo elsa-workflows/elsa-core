@@ -51,6 +51,7 @@ export class WorkflowDefinitionActivityVersionSettings {
   private onUpdateClick = () => {
     const activity = this.renderContext.activity as WorkflowDefinitionActivity;
     activity.version = activity.latestAvailablePublishedVersion;
+    activity.workflowDefinitionVersionId = activity.latestAvailablePublishedVersionId;
     this.currentVersion = activity.version;
     this.renderContext.notifyActivityChanged();
   };

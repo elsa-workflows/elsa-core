@@ -31,6 +31,11 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
     /// The latest published version number set by the provider. This is used by tooling to let the user know that a newer version is available.
     /// </summary>
     public int LatestAvailablePublishedVersion { get; set; }
+    
+    /// <summary>
+    /// The latest published version ID set by the provider. This is used by tooling to let the user know that a newer version is available.
+    /// </summary>
+    public string? LatestAvailablePublishedVersionId { get; set; }
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)

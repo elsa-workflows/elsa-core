@@ -50,9 +50,7 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
         
         var latestPublishedVersion = allDefinitions
             .Where(x => x.DefinitionId == definition.DefinitionId && x.IsPublished)
-            .Select(x => x.Version)
-            .OrderByDescending(x => x)
-            .FirstOrDefault();
+            .MaxBy(x => x.Version);
 
         var ports = definition.Outcomes.Select(outcome => new Port
         {
@@ -96,7 +94,8 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
                 activity.WorkflowDefinitionId = definition.DefinitionId;
                 activity.WorkflowDefinitionVersionId = definition.Id;
                 activity.Version = definition.Version;
-                activity.LatestAvailablePublishedVersion = latestPublishedVersion;
+                activity.LatestAvailablePublishedVersion = latestPublishedVersion?.Version ?? 0;
+                activity.LatestAvailablePublishedVersionId = latestPublishedVersion?.Id;
 
                 return activity;
             }

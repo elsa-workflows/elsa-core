@@ -17,5 +17,8 @@ export interface RenderActivityInputContext {
 
 export interface WorkflowDefinitionActivity extends Activity {
   workflowDefinitionId: string;
+  workflowDefinitionVersionId: string;
   latestAvailablePublishedVersion: number;
+
+  latestAvailablePublishedVersionId: string;
 }
