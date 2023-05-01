@@ -1,5 +1,6 @@
 import {Component, Event, EventEmitter, h, Prop} from '@stencil/core';
 import {DropdownButtonItem} from "../../../components/shared/dropdown-button/models";
+import NotificationService from "../../notifications/notification-service";
 
 export interface PublishClickedArgs {
   begin: () => void;
@@ -73,6 +74,6 @@ export class PublishButton {
       handler: publishing ? () => {} : () => this.onPublishClick()
     }
 
-    return <elsa-dropdown-button text={mainItem.text} handler={mainItem.handler} items={items} icon={this.publishingIcon()} />
+    return <elsa-dropdown-button text={mainItem.text} handler={mainItem.handler} items={items} icon={this.publishingIcon()} onMenuOpened={() => NotificationService.hideAllNotifications()} />
   }
 }

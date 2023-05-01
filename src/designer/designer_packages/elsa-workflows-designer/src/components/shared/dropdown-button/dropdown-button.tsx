@@ -15,6 +15,7 @@ export class DropdownButton {
   @Prop() public items: Array<DropdownButtonItem> = [];
   @Prop() public theme: ('Primary' | 'Secondary') = 'Primary';
   @Event() public itemSelected: EventEmitter<DropdownButtonItem>
+  @Event() public menuOpened: EventEmitter<void>
 
   private contextMenu: HTMLElement;
   private element: HTMLElement;
@@ -102,8 +103,10 @@ export class DropdownButton {
   }
 
   private toggleMenu() {
-    if (!!this.contextMenu)
+    if (!!this.contextMenu) {
       toggle(this.contextMenu);
+      this.menuOpened.emit();
+    }
   }
 
   private getOriginClass(): string {

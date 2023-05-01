@@ -1061,6 +1061,7 @@ declare namespace LocalJSX {
         "icon"?: any;
         "items"?: Array<DropdownButtonItem>;
         "onItemSelected"?: (event: ElsaDropdownButtonCustomEvent<DropdownButtonItem>) => void;
+        "onMenuOpened"?: (event: ElsaDropdownButtonCustomEvent<void>) => void;
         "origin"?: DropdownButtonOrigin;
         "text"?: string;
         "theme"?: ('Primary' | 'Secondary');
