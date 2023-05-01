@@ -3,6 +3,7 @@ using Elsa.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Labels;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
+using Elsa.Http.Handlers;
 using Elsa.JavaScript.Options;
 using Elsa.WorkflowServer.Web;
 
@@ -46,7 +47,7 @@ services
         .UseWorkflowsApi(api => api.AddFastEndpointsAssembly<Program>())
         .UseJavaScript()
         .UseLiquid()
-        .UseHttp()
+        .UseHttp(http => http.HttpEndpointAuthorizationHandler = sp => sp.GetRequiredService<AllowAnonymousHttpEndpointAuthorizationHandler>())
         .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options))
     );
 

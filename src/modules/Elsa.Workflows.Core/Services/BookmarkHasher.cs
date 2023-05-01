@@ -39,5 +39,5 @@ public class BookmarkHasher : IBookmarkHasher
         return hash;
     }
 
-    private string? Serialize(object payload) => JsonSerializer.Serialize(payload, payload.GetType(), _settings);
+    private string Serialize(object payload) => JsonSerializer.Serialize(payload, payload.GetType(), _settings);
 }

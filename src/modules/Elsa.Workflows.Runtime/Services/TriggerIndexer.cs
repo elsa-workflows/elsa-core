@@ -75,7 +75,7 @@ public class TriggerIndexer : ITriggerIndexer
             : new List<StoredTrigger>(0);
 
         // Diff triggers.
-        var diff = Diff.For(currentTriggers, newTriggers, new WorkflowTriggerHashEqualityComparer());
+        var diff = Diff.For(currentTriggers, newTriggers, new WorkflowTriggerEqualityComparer());
 
         // Replace triggers for the specified workflow.
         await _triggerStore.ReplaceAsync(diff.Removed, diff.Added, cancellationToken);
@@ -96,7 +96,7 @@ public class TriggerIndexer : ITriggerIndexer
         var currentTriggers = await GetCurrentTriggersAsync(workflowDefinitionIds, cancellationToken).ToList();
 
         // Diff triggers.
-        var diff = Diff.For(currentTriggers, emptyTriggerList, new WorkflowTriggerHashEqualityComparer());
+        var diff = Diff.For(currentTriggers, emptyTriggerList, new WorkflowTriggerEqualityComparer());
 
         // Replace triggers for the specified workflow.
         await _triggerStore.ReplaceAsync(diff.Removed, diff.Added, cancellationToken);

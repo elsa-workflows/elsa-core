@@ -43,12 +43,12 @@ public class HttpFeature : FeatureBase
     /// <summary>
     /// A delegate that is invoked when authorizing an inbound HTTP request.
     /// </summary>
-    public Func<IServiceProvider, IHttpEndpointAuthorizationHandler> HttpEndpointAuthorizationHandler { get; set; } = ActivatorUtilities.GetServiceOrCreateInstance<AllowAnonymousHttpEndpointAuthorizationHandler>;
+    public Func<IServiceProvider, IHttpEndpointAuthorizationHandler> HttpEndpointAuthorizationHandler { get; set; } = sp => sp.GetRequiredService<AllowAnonymousHttpEndpointAuthorizationHandler>();
 
     /// <summary>
     /// A delegate that is invoked when an HTTP workflow faults. 
     /// </summary>
-    public Func<IServiceProvider, IHttpEndpointWorkflowFaultHandler> HttpEndpointWorkflowFaultHandler { get; set; } = ActivatorUtilities.GetServiceOrCreateInstance<DefaultHttpEndpointWorkflowFaultHandler>;
+    public Func<IServiceProvider, IHttpEndpointWorkflowFaultHandler> HttpEndpointWorkflowFaultHandler { get; set; } = sp => sp.GetRequiredService<DefaultHttpEndpointWorkflowFaultHandler>();
 
     /// <summary>
     /// A delegate to configure the <see cref="HttpClient"/> used when by the <see cref="FlowSendHttpRequest"/> activity.
@@ -123,7 +123,10 @@ public class HttpFeature : FeatureBase
             // Port resolvers.
             .AddSingleton<IActivityPortResolver, SendHttpRequestActivityPortResolver>()
 
-            // Add Http endpoint handlers.
+            // Add HTTP endpoint handlers.
+            .AddSingleton<AuthenticationBasedHttpEndpointAuthorizationHandler>()
+            .AddSingleton<AllowAnonymousHttpEndpointAuthorizationHandler>()
+            .AddSingleton<DefaultHttpEndpointWorkflowFaultHandler>()
             .AddSingleton(HttpEndpointWorkflowFaultHandler)
             .AddSingleton(HttpEndpointAuthorizationHandler)
             
