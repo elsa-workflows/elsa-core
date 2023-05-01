@@ -1,9 +1,8 @@
 import 'reflect-metadata';
 import {Component, Event, EventEmitter, h, Host, Prop} from '@stencil/core';
 import {Container} from "typedi";
-import {AuthContext, EventBus, PluginRegistry} from "../../services";
+import {PluginRegistry} from "../../services";
 import {ShellInitializingContext} from "../../models/shell";
-import {EventTypes} from "../../models";
 
 @Component({
   tag: 'elsa-shell'

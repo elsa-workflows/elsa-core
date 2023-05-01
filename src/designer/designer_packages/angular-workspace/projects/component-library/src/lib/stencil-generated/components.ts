@@ -121,6 +121,27 @@ export declare interface ElsaActivityPropertiesEditor extends Components.ElsaAct
 
 
 @ProxyCmp({
+})
+@Component({
+  selector: 'elsa-blank',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: '<ng-content></ng-content>',
+  // eslint-disable-next-line @angular-eslint/no-inputs-metadata-property
+  inputs: [],
+})
+export class ElsaBlank {
+  protected el: HTMLElement;
+  constructor(c: ChangeDetectorRef, r: ElementRef, protected z: NgZone) {
+    c.detach();
+    this.el = r.nativeElement;
+  }
+}
+
+
+export declare interface ElsaBlank extends Components.ElsaBlank {}
+
+
+@ProxyCmp({
   inputs: ['buttons']
 })
 @Component({
@@ -140,6 +161,32 @@ export class ElsaButtonGroup {
 
 
 export declare interface ElsaButtonGroup extends Components.ElsaButtonGroup {}
+
+
+@ProxyCmp({
+  inputs: ['fieldName', 'selectList', 'selectedValue', 'selectedValues']
+})
+@Component({
+  selector: 'elsa-check-list',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: '<ng-content></ng-content>',
+  // eslint-disable-next-line @angular-eslint/no-inputs-metadata-property
+  inputs: ['fieldName', 'selectList', 'selectedValue', 'selectedValues'],
+})
+export class ElsaCheckList {
+  protected el: HTMLElement;
+  constructor(c: ChangeDetectorRef, r: ElementRef, protected z: NgZone) {
+    c.detach();
+    this.el = r.nativeElement;
+    proxyOutputs(this, this.el, ['selectedValuesChanged']);
+  }
+}
+
+
+export declare interface ElsaCheckList extends Components.ElsaCheckList {
+
+  selectedValuesChanged: EventEmitter<CustomEvent<Array<string> | number>>;
+}
 
 
 @ProxyCmp({
@@ -920,11 +967,17 @@ export class ElsaShell {
   constructor(c: ChangeDetectorRef, r: ElementRef, protected z: NgZone) {
     c.detach();
     this.el = r.nativeElement;
+    proxyOutputs(this, this.el, ['initializing']);
   }
 }
 
 
-export declare interface ElsaShell extends Components.ElsaShell {}
+import type { ShellInitializingContext as IElsaShellShellInitializingContext } from '@elsa-workflows/elsa-workflows-designer';
+
+export declare interface ElsaShell extends Components.ElsaShell {
+
+  initializing: EventEmitter<CustomEvent<IElsaShellShellInitializingContext>>;
+}
 
 
 @ProxyCmp({
@@ -1228,6 +1281,56 @@ export class ElsaWidgets {
 
 
 export declare interface ElsaWidgets extends Components.ElsaWidgets {}
+
+
+@ProxyCmp({
+  inputs: ['descriptors', 'workflowDefinition']
+})
+@Component({
+  selector: 'elsa-workflow-context-provider-check-list',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: '<ng-content></ng-content>',
+  // eslint-disable-next-line @angular-eslint/no-inputs-metadata-property
+  inputs: ['descriptors', 'workflowDefinition'],
+})
+export class ElsaWorkflowContextProviderCheckList {
+  protected el: HTMLElement;
+  constructor(c: ChangeDetectorRef, r: ElementRef, protected z: NgZone) {
+    c.detach();
+    this.el = r.nativeElement;
+    proxyOutputs(this, this.el, ['workflowDefinitionChanged']);
+  }
+}
+
+
+import type { WorkflowDefinition as IElsaWorkflowContextProviderCheckListWorkflowDefinition } from '@elsa-workflows/elsa-workflows-designer';
+
+export declare interface ElsaWorkflowContextProviderCheckList extends Components.ElsaWorkflowContextProviderCheckList {
+
+  workflowDefinitionChanged: EventEmitter<CustomEvent<IElsaWorkflowContextProviderCheckListWorkflowDefinition>>;
+}
+
+
+@ProxyCmp({
+  inputs: ['descriptors', 'inputContext', 'workflowDefinition']
+})
+@Component({
+  selector: 'elsa-workflow-context-provider-type-picker-input',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: '<ng-content></ng-content>',
+  // eslint-disable-next-line @angular-eslint/no-inputs-metadata-property
+  inputs: ['descriptors', 'inputContext', 'workflowDefinition'],
+})
+export class ElsaWorkflowContextProviderTypePickerInput {
+  protected el: HTMLElement;
+  constructor(c: ChangeDetectorRef, r: ElementRef, protected z: NgZone) {
+    c.detach();
+    this.el = r.nativeElement;
+  }
+}
+
+
+export declare interface ElsaWorkflowContextProviderTypePickerInput extends Components.ElsaWorkflowContextProviderTypePickerInput {}
 
 
 @ProxyCmp({
