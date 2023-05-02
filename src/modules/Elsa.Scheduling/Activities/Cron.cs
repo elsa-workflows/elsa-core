@@ -15,12 +15,6 @@ public class Cron : EventGenerator
 {
     /// <inheritdoc />
     [JsonConstructor]
-    public Cron()
-    {
-        
-    }
-    
-    /// <inheritdoc />
     public Cron([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }

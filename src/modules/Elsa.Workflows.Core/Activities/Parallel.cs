@@ -5,7 +5,6 @@ using Elsa.Extensions;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
-using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Core.Activities;
 
@@ -13,19 +12,13 @@ namespace Elsa.Workflows.Core.Activities;
 /// Execute a set of activities in parallel.
 /// </summary>
 [Activity("Elsa", "Workflows", "Execute a set of activities in parallel.")]
-[PublicAPI]
 [Browsable(false)]
 public class Parallel : Container
 {
     private const string ScheduledChildrenProperty = "ScheduledChildren";
-
-    /// <inheritdoc />
-    [JsonConstructor]
-    public Parallel()
-    {
-    }
     
     /// <inheritdoc />
+    [JsonConstructor]
     public Parallel([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }

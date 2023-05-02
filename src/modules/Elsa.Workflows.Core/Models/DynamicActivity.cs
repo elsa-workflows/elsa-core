@@ -4,7 +4,7 @@ using Elsa.Workflows.Core.Services;
 namespace Elsa.Workflows.Core.Models;
 
 /// <summary>
-/// A dynamically provided activity with custom properties. This is experimental and may be removed.
+/// A dynamically provided activity with custom properties.
 /// </summary>
 [Browsable(false)]
 public class DynamicActivity : CodeActivity

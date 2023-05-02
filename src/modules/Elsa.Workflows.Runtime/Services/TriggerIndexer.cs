@@ -132,7 +132,7 @@ public class TriggerIndexer : ITriggerIndexer
         // Get a list of activities that are configured as "startable".
         var startableNodes = nodes
             .Flatten()
-            .Where(x => x.Activity.GetCanStartWorkflow())
+            .Where(x => x.Activity.CanStartWorkflow)
             .ToList();
 
         // For each startable node, create triggers.

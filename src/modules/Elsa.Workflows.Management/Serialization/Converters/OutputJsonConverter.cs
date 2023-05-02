@@ -19,16 +19,14 @@ public class OutputJsonConverter<T> : JsonConverter<Output<T>?>
         _wellKnownTypeRegistry = wellKnownTypeRegistry;
     }
 
-    /// <inheritdoc />
     public override bool CanConvert(Type typeToConvert) => typeof(Output).IsAssignableFrom(typeToConvert);
 
-    /// <inheritdoc />
     public override Output<T>? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         if (!JsonDocument.TryParseValue(ref reader, out var doc))
             return null;
 
-        if (!doc.RootElement.TryGetProperty("typeName", out _))
+        if (!doc.RootElement.TryGetProperty("typeName", out var outputTargetTypeElement))
             return null;
 
         var memoryReferenceElement = doc.RootElement.GetProperty("memoryReference");
@@ -45,7 +43,6 @@ public class OutputJsonConverter<T> : JsonConverter<Output<T>?>
         return (Output<T>)Activator.CreateInstance(typeof(Output<T>), variable)!;
     }
 
-    /// <inheritdoc />
     public override void Write(Utf8JsonWriter writer, Output<T>? value, JsonSerializerOptions options)
     {
         var valueType = typeof(T);

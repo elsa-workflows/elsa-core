@@ -51,7 +51,7 @@ public class BackgroundActivityInvokerMiddleware : DefaultActivityInvokerMiddlew
 
         return !context.TransientProperties.ContainsKey(IsBackgroundExecution)
                && context.WorkflowExecutionContext.ExecuteDelegate == null
-               && (kind is ActivityKind.Job || (kind == ActivityKind.Task && activity.GetRunAsynchronously()));
+               && (kind is ActivityKind.Job || (kind == ActivityKind.Task && activity.RunAsynchronously));
     }
 
     /// <summary>

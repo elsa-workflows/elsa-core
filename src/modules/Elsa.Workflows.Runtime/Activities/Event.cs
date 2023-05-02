@@ -4,7 +4,6 @@ using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
-using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Runtime.Activities;
 
@@ -12,7 +11,6 @@ namespace Elsa.Workflows.Runtime.Activities;
 /// Wait for an event to be triggered.
 /// </summary>
 [Activity("Elsa", "Primitives", "Wait for an event to be published.")]
-[PublicAPI]
 public class Event : Trigger<object?>
 {
     /// <inheritdoc />

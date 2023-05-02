@@ -5,7 +5,6 @@ using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
-using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Core.Activities;
 
@@ -13,16 +12,10 @@ namespace Elsa.Workflows.Core.Activities;
 /// Read a line of text from the console.
 /// </summary>
 [Activity("Elsa", "Console", "Read a line of text from the console.")]
-[PublicAPI]
 public class ReadLine : CodeActivity<string>
 {
     /// <inheritdoc />
     [JsonConstructor]
-    public ReadLine()
-    {
-    }
-
-    /// <inheritdoc />
     public ReadLine([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }

@@ -5,7 +5,6 @@ using Elsa.Extensions;
 using Elsa.WorkflowContexts.Contracts;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
-using JetBrains.Annotations;
 
 namespace Elsa.WorkflowContexts.Activities;
 
@@ -13,16 +12,10 @@ namespace Elsa.WorkflowContexts.Activities;
 /// Sets a workflow context parameter for a given workflow context provider.
 /// </summary>
 [Activity("Elsa", "Primitives", "Sets a workflow context parameter for a given workflow context provider.")]
-[PublicAPI]
 public class SetWorkflowContextParameter : CodeActivity
 {
     /// <inheritdoc />
     [JsonConstructor]
-    public SetWorkflowContextParameter()
-    {
-    }
-    
-    /// <inheritdoc />
     public SetWorkflowContextParameter([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }

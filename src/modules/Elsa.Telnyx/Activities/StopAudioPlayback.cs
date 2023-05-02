@@ -8,23 +8,16 @@ using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
-using JetBrains.Annotations;
 using Refit;
 
 namespace Elsa.Telnyx.Activities;
 
 /// <inheritdoc />
 [FlowNode("Done", "Disconnected")]
-[PublicAPI]
 public class FlowStopAudioPlayback : StopAudioPlaybackBase
 {
     /// <inheritdoc />
     [JsonConstructor]
-    public FlowStopAudioPlayback()
-    {
-    }
-    
-    /// <inheritdoc />
     public FlowStopAudioPlayback([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
@@ -37,16 +30,10 @@ public class FlowStopAudioPlayback : StopAudioPlaybackBase
 }
 
 /// <inheritdoc />
-[PublicAPI]
 public class StopAudioPlayback : StopAudioPlaybackBase
 {
     /// <inheritdoc />
     [JsonConstructor]
-    public StopAudioPlayback()
-    {
-    }
-    
-    /// <inheritdoc />
     public StopAudioPlayback([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
@@ -69,7 +56,6 @@ public class StopAudioPlayback : StopAudioPlaybackBase
 /// Stop audio playback.
 /// </summary>
 [Activity(Constants.Namespace, Description = "Stop audio playback.", Kind = ActivityKind.Task)]
-[PublicAPI]
 public abstract class StopAudioPlaybackBase : Activity
 {
     /// <inheritdoc />

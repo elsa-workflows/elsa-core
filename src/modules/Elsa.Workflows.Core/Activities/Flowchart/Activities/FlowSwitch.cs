@@ -8,7 +8,6 @@ using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Core.Activities.Flowchart.Models;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
-using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Core.Activities.Flowchart.Activities;
 
@@ -17,20 +16,13 @@ namespace Elsa.Workflows.Core.Activities.Flowchart.Activities;
 /// </summary>
 [FlowNode("Default")]
 [Activity("Elsa", "Flow", "Evaluate a set of case conditions and schedule the activity for a matching case.")]
-[PublicAPI]
 public class FlowSwitch : Activity
 {
-    /// <inheritdoc />
-    [JsonConstructor]
-    public FlowSwitch()
-    {
-    }
-
     /// <inheritdoc />
     public FlowSwitch([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
-
+    
     [Input(UIHint = "flow-switch-editor")] public ICollection<FlowSwitchCase> Cases { get; set; } = new List<FlowSwitchCase>();
 
     /// <inheritdoc />

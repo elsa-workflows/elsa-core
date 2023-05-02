@@ -3,7 +3,6 @@ using Elsa.Common.Models;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Serialization.Converters;
 using Elsa.Workflows.Management.Contracts;
-using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Models;
 using JetBrains.Annotations;

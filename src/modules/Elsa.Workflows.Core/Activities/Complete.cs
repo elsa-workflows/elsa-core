@@ -7,7 +7,6 @@ using Elsa.Workflows.Core.Activities.Flowchart.Models;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Signals;
-using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Core.Activities;
 
@@ -15,16 +14,10 @@ namespace Elsa.Workflows.Core.Activities;
 /// Signals the current composite activity to complete itself as a whole.
 /// </summary>
 [Activity("Elsa", "Composition", "Signals the current composite activity to complete itself as a whole.")]
-[PublicAPI]
 public class Complete : Activity
 {
     /// <inheritdoc />
     [JsonConstructor]
-    public Complete()
-    {
-    }
-    
-    /// <inheritdoc />
     public Complete([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }

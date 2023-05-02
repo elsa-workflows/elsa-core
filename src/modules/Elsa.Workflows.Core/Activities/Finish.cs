@@ -2,7 +2,6 @@ using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
-using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Core.Activities;
 
@@ -10,16 +9,10 @@ namespace Elsa.Workflows.Core.Activities;
 /// Mark the workflow as finished.
 /// </summary>
 [Activity("Elsa", "Primitives", "Mark the workflow as finished.")]
-[PublicAPI]
 public class Finish : Activity
 {
     /// <inheritdoc />
     [JsonConstructor]
-    public Finish()
-    {
-    }
-    
-    /// <inheritdoc />
     public Finish([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }

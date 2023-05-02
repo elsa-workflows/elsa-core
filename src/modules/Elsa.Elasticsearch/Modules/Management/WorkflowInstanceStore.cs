@@ -6,7 +6,6 @@ using Elsa.Elasticsearch.Common;
 using Elsa.Extensions;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
-using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 
 namespace Elsa.Elasticsearch.Modules.Management;
@@ -82,15 +81,22 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
     }
 
     /// <inheritdoc />
-    public async Task SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default) =>
-        await _store.SaveAsync(instance, cancellationToken);
+    public async Task SaveAsync(WorkflowInstance record, CancellationToken cancellationToken = default) =>
+        await _store.SaveAsync(record, cancellationToken);
 
     /// <inheritdoc />
-    public async Task SaveManyAsync(IEnumerable<WorkflowInstance> instances, CancellationToken cancellationToken = default) =>
-        await _store.SaveManyAsync(instances, cancellationToken);
+    public async Task SaveManyAsync(IEnumerable<WorkflowInstance> records, CancellationToken cancellationToken = default) =>
+        await _store.SaveManyAsync(records, cancellationToken);
 
     /// <inheritdoc />
-    public async Task<int> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
+    public async Task<bool> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
+    {
+        var result = await _store.DeleteByQueryAsync(d => Filter(d, filter), cancellationToken);
+        return result > 0;
+    }
+
+    /// <inheritdoc />
+    public async Task<int> DeleteManyAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
         var result = await _store.DeleteByQueryAsync(d => Filter(d, filter), cancellationToken);
         return (int)result;

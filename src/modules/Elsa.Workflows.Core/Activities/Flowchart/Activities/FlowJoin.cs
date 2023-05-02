@@ -5,8 +5,6 @@ using Elsa.Workflows.Core.Activities.Flowchart.Extensions;
 using Elsa.Workflows.Core.Activities.Flowchart.Models;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
-using JetBrains.Annotations;
-using Newtonsoft.Json;
 
 namespace Elsa.Workflows.Core.Activities.Flowchart.Activities;
 
@@ -14,25 +12,14 @@ namespace Elsa.Workflows.Core.Activities.Flowchart.Activities;
 /// Merge multiple branches into a single branch of execution.
 /// </summary>
 [Activity("Elsa", "Flow", "Merge multiple branches into a single branch of execution.")]
-[PublicAPI]
 public class FlowJoin : Activity, IJoinNode
 {
-    /// <inheritdoc />
-    [JsonConstructor]
-    public FlowJoin()
-    {
-    }
-    
     /// <inheritdoc />
     public FlowJoin([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
     
-    /// <summary>
-    /// The join mode determines whether this activity should continue as soon as one inbound path comes in (Wait Any), or once all inbound paths have executed (Wait All).
-    /// </summary>
-    [Input(Description = "The join mode determines whether this activity should continue as soon as one inbound path comes in (Wait Any), or once all inbound paths have executed (Wait All).")] 
-    public Input<FlowJoinMode> Mode { get; set; } = new(FlowJoinMode.WaitAll);
+    [Input] public Input<FlowJoinMode> Mode { get; set; } = new(FlowJoinMode.WaitAll);
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)

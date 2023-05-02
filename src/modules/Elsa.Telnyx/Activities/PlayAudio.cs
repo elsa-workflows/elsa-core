@@ -12,23 +12,16 @@ using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Runtime.Contracts;
-using JetBrains.Annotations;
 using Refit;
 
 namespace Elsa.Telnyx.Activities;
 
 /// <inheritdoc />
 [FlowNode("Playback started", "Disconnected")]
-[PublicAPI]
 public class FlowPlayAudio : PlayAudioBase
 {
     /// <inheritdoc />
     [JsonConstructor]
-    public FlowPlayAudio()
-    {
-    }
-    
-    /// <inheritdoc />
     public FlowPlayAudio([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
@@ -41,16 +34,10 @@ public class FlowPlayAudio : PlayAudioBase
 }
 
 /// <inheritdoc />
-[PublicAPI]
 public class PlayAudio : PlayAudioBase
 {
     /// <inheritdoc />
     [JsonConstructor]
-    public PlayAudio()
-    {
-    }
-    
-    /// <inheritdoc />
     public PlayAudio([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
@@ -76,7 +63,6 @@ public class PlayAudio : PlayAudioBase
 [Activity(Constants.Namespace, "Play an audio file on the call.", Kind = ActivityKind.Task)]
 [FlowNode("Playback started", "Disconnected")]
 [WebhookDriven(WebhookEventTypes.CallPlaybackStarted)]
-[PublicAPI]
 public abstract class PlayAudioBase : Activity, IBookmarksPersistedHandler
 {
     /// <inheritdoc />

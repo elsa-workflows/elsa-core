@@ -5,7 +5,6 @@ using Elsa.Extensions;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
-using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Core.Activities;
 
@@ -13,37 +12,24 @@ namespace Elsa.Workflows.Core.Activities;
 /// Evaluate a Boolean condition to determine which activity to execute next.
 /// </summary>
 [Activity("Elsa", "Branching", "Evaluate a Boolean condition to determine which activity to execute next.")]
-[PublicAPI]
 public class If : Activity<bool>
 {
     /// <inheritdoc />
     [JsonConstructor]
-    public If()
-    {
-    }
-    
-    /// <inheritdoc />
     public If([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
 
     /// <inheritdoc />
-    public If(Input<bool> condition, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line)
-    {
+    public If(Input<bool> condition, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line) =>
         Condition = condition;
-    }
 
     /// <inheritdoc />
-    public If(Func<ExpressionExecutionContext, bool> condition, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line)
-    {
+    public If(Func<ExpressionExecutionContext, bool> condition, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line) =>
         Condition = new Input<bool>(condition);
-    }
 
     /// <inheritdoc />
-    public If(Func<bool> condition, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line)
-    {
-        Condition = new Input<bool>(condition);
-    }
+    public If(Func<bool> condition, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line) => Condition = new Input<bool>(condition);
 
     /// <summary>
     /// The condition to evaluate.

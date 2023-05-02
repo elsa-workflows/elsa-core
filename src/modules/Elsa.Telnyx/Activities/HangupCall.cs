@@ -8,23 +8,16 @@ using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
-using JetBrains.Annotations;
 using Refit;
 
 namespace Elsa.Telnyx.Activities;
 
 /// <inheritdoc />
 [FlowNode("Done", "Disconnected")]
-[PublicAPI]
 public class FlowHangupCall : HangupCallBase
 {
     /// <inheritdoc />
     [JsonConstructor]
-    public FlowHangupCall()
-    {
-    }
-    
-    /// <inheritdoc />
     public FlowHangupCall([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
@@ -37,16 +30,10 @@ public class FlowHangupCall : HangupCallBase
 }
 
 /// <inheritdoc />
-[PublicAPI]
 public class HangupCall : HangupCallBase
 {
     /// <inheritdoc />
     [JsonConstructor]
-    public HangupCall()
-    {
-    }
-    
-    /// <inheritdoc />
     public HangupCall([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
@@ -72,7 +59,6 @@ public class HangupCall : HangupCallBase
 /// Hang up the call.
 /// </summary>
 [Activity(Constants.Namespace, "Hang up the call.", Kind = ActivityKind.Task)]
-[PublicAPI]
 public abstract class HangupCallBase : Activity
 {
     /// <inheritdoc />

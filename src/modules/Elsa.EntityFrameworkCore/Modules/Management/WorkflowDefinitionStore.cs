@@ -5,7 +5,6 @@ using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
-using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 using Microsoft.EntityFrameworkCore;
 using Open.Linq.AsyncExtensions;
@@ -123,10 +122,10 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         await _store.QueryAsync(queryable => Filter(queryable, filter).OrderByDescending(x => x.Version), LoadAsync, cancellationToken).FirstOrDefault();
 
     /// <inheritdoc />
-    public async Task SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default) => await _store.SaveAsync(definition, SaveAsync, cancellationToken);
+    public async Task SaveAsync(WorkflowDefinition record, CancellationToken cancellationToken = default) => await _store.SaveAsync(record, SaveAsync, cancellationToken);
 
     /// <inheritdoc />
-    public async Task SaveManyAsync(IEnumerable<WorkflowDefinition> definitions, CancellationToken cancellationToken = default) => await _store.SaveManyAsync(definitions, SaveAsync, cancellationToken);
+    public async Task SaveManyAsync(IEnumerable<WorkflowDefinition> records, CancellationToken cancellationToken = default) => await _store.SaveManyAsync(records, SaveAsync, cancellationToken);
 
     /// <inheritdoc />
     public async Task<int> DeleteAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
@@ -135,7 +134,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         var set = dbContext.WorkflowDefinitions;
         var queryable = set.AsQueryable();
         var ids = await Filter(queryable, filter).Select(x => x.Id).Distinct().ToListAsync(cancellationToken);
-        await _workflowInstanceStore.DeleteAsync(new WorkflowInstanceFilter { DefinitionVersionIds = ids }, cancellationToken);
+        await _workflowInstanceStore.DeleteManyAsync(new WorkflowInstanceFilter { DefinitionVersionIds = ids }, cancellationToken);
         return await _store.DeleteWhereAsync(x => ids.Contains(x.Id), cancellationToken);
     }
 

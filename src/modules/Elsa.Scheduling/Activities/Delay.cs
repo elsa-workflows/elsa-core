@@ -17,11 +17,6 @@ public class Delay : Activity
 {
     /// <inheritdoc />
     [JsonConstructor]
-    public Delay()
-    {
-    }
-    
-    /// <inheritdoc />
     public Delay([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }

@@ -20,11 +20,6 @@ public class WebhookEvent : Activity<Payload>
 {
     /// <inheritdoc />
     [JsonConstructor]
-    public WebhookEvent()
-    {
-    }
-    
-    /// <inheritdoc />
     public WebhookEvent([CallerFilePath]string? source = default, [CallerLineNumber]int? line = default) : base(source, line)
     {
     }

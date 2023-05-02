@@ -6,15 +6,10 @@ using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Behaviors;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
-using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Core.Activities;
 
-/// <summary>
-/// Execute an activity while a given condition evaluates to true.
-/// </summary>
 [Activity("Elsa", "Looping", "Execute an activity while a given condition evaluates to true.")]
-[PublicAPI]
 public class While : Activity
 {
     /// <summary>
@@ -27,14 +22,9 @@ public class While : Activity
 
     /// <inheritdoc />
     [JsonConstructor]
-    public While() : this(default, default, default)
-    {
-    }
-
-    /// <inheritdoc />
     public While(IActivity? body = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
-        Body = body;
+        Body = body!;
         Behaviors.Add<BreakBehavior>(this);
         Behaviors.Remove<AutoCompleteBehavior>();
     }
@@ -46,25 +36,25 @@ public class While : Activity
     }
 
     /// <inheritdoc />
-    public While(Func<ExpressionExecutionContext, ValueTask<bool>> condition, IActivity? body = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
+    public While(Func<ExpressionExecutionContext, ValueTask<bool>> condition, IActivity? body = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) 
         : this(new Input<bool>(condition), body, source, line)
     {
     }
 
     /// <inheritdoc />
-    public While(Func<ExpressionExecutionContext, bool> condition, IActivity? body = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
+    public While(Func<ExpressionExecutionContext, bool> condition, IActivity? body = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) 
         : this(new Input<bool>(condition), body, source, line)
     {
     }
 
     /// <inheritdoc />
-    public While(Func<ValueTask<bool>> condition, IActivity? body = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
+    public While(Func<ValueTask<bool>> condition, IActivity? body = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) 
         : this(new Input<bool>(condition), body, source, line)
     {
     }
 
     /// <inheritdoc />
-    public While(Func<bool> condition, IActivity? body = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
+    public While(Func<bool> condition, IActivity? body = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) 
         : this(new Input<bool>(condition), body, source, line)
     {
     }
@@ -72,14 +62,12 @@ public class While : Activity
     /// <summary>
     /// The condition to evaluate.
     /// </summary>
-    [Input(AutoEvaluate = false)]
-    public Input<bool> Condition { get; set; } = new(false);
-
+    [Input(AutoEvaluate = false)] public Input<bool> Condition { get; set; } = new(false);
+    
     /// <summary>
     /// The <see cref="IActivity"/> to execute on every iteration.
     /// </summary>
-    [Port]
-    public IActivity? Body { get; set; }
+    [Port] public IActivity Body { get; set; }
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context) => await HandleIterationAsync(context);

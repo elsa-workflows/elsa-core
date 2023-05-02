@@ -6,7 +6,6 @@ using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Management.Contracts;
-using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Runtime.Contracts;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
