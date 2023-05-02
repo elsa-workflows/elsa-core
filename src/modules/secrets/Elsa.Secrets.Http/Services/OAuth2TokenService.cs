@@ -52,7 +52,10 @@ public class OAuth2TokenService : IOAuth2TokenService
 		if (clientAuthMethod == "client_secret_post")
 		{
 			content.Add("client_id", clientId);
-			content.Add("client_secret", clientSecret);
+			if (!string.IsNullOrEmpty(clientSecret))
+			{
+				content.Add("client_secret", clientSecret);
+			}
 		}
 		if (authCode != null)
 		{
@@ -156,8 +159,11 @@ public class OAuth2TokenService : IOAuth2TokenService
 
 	private static string GenerateAuthorizationValue(string clientId, string clientSecret)
 	{
-		var encodedClientId = Uri.EscapeDataString(clientId).Replace("%20", "+");
-		var encodedClientSecret = Uri.EscapeDataString(clientSecret).Replace("%20", "+");
-		return Base64Encode(encodedClientId + ":" + encodedClientSecret);
+		var auth = Uri.EscapeDataString(clientId).Replace("%20", "+");
+		if (!string.IsNullOrEmpty(clientSecret))
+		{
+			auth += $":{Uri.EscapeDataString(clientSecret).Replace("%20", "+")}";
+		}
+		return Base64Encode(auth);
 	}
 }
