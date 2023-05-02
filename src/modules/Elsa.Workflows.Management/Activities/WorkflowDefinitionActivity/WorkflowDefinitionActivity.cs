@@ -7,6 +7,7 @@ using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Signals;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Filters;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;

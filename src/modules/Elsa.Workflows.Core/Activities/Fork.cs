@@ -6,6 +6,7 @@ using Elsa.Extensions;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
+using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Core.Activities;
 
@@ -13,11 +14,17 @@ namespace Elsa.Workflows.Core.Activities;
 /// Branch execution into multiple branches.
 /// </summary>
 [Activity("Elsa", "Control Flow", "Branch execution into multiple branches.")]
+[PublicAPI]
 [Browsable(false)]
 public class Fork : Activity
 {
     /// <inheritdoc />
     [JsonConstructor]
+    public Fork()
+    {
+    }
+    
+    /// <inheritdoc />
     public Fork([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
@@ -25,7 +32,7 @@ public class Fork : Activity
     /// <summary>
     /// Controls when this activity yields control back to its parent activity.
     /// </summary>
-    [Input]
+    [Input(Description = "Controls when this activity yields control back to its parent activity.")]
     public ForkJoinMode JoinMode { get; set; } = ForkJoinMode.WaitAll;
 
     /// <summary>

@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Activities.Flowchart.Contracts;
 using Elsa.Workflows.Core.Activities.Flowchart.Extensions;
@@ -8,6 +9,7 @@ using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Signals;
+using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Core.Activities.Flowchart.Activities;
 
@@ -15,10 +17,17 @@ namespace Elsa.Workflows.Core.Activities.Flowchart.Activities;
 /// A flowchart consists of a collection of activities and connections between them.
 /// </summary>
 [Activity("Elsa", "Flow", "A flowchart is a collection of activities and connections between them.")]
+[PublicAPI]
 [Browsable(false)]
 public class Flowchart : Container
 {
     internal const string ScopeProperty = "Scope";
+
+    /// <inheritdoc />
+    [JsonConstructor]
+    public Flowchart() : this(default, default)
+    {
+    }
 
     /// <inheritdoc />
     public Flowchart([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
@@ -26,8 +35,13 @@ public class Flowchart : Container
         OnSignalReceived<ActivityCompleted>(OnDescendantCompletedAsync);
     }
 
-    [Port] [Browsable(false)] public IActivity? Start { get; set; }
-    
+    /// <summary>
+    /// The activity to execute when the workflow starts.
+    /// </summary>
+    [Port]
+    [Browsable(false)]
+    public IActivity? Start { get; set; }
+
     /// <summary>
     /// A list of connections between activities.
     /// </summary>
@@ -39,7 +53,7 @@ public class Flowchart : Container
         var triggerActivityId = context.WorkflowExecutionContext.TriggerActivityId;
         var triggerActivity = triggerActivityId != null ? Activities.FirstOrDefault(x => x.Id == triggerActivityId) : default;
         var startActivity = triggerActivity ?? Start ?? Activities.FirstOrDefault();
-        
+
         if (startActivity == null!)
         {
             await context.CompleteActivityAsync();
@@ -101,7 +115,7 @@ public class Flowchart : Container
                     var executionCount = scope.GetExecutionCount(activity);
                     var haveInboundActivitiesExecuted = inboundActivities.All(x => scope.GetExecutionCount(x) > executionCount);
 
-                    if (haveInboundActivitiesExecuted) 
+                    if (haveInboundActivitiesExecuted)
                         await flowchartActivityExecutionContext.ScheduleActivityAsync(activity);
                 }
                 else
@@ -115,7 +129,7 @@ public class Flowchart : Container
         {
             var workflowExecutionContext = context.ReceiverActivityExecutionContext.WorkflowExecutionContext;
             var scheduler = workflowExecutionContext.Scheduler;
-            
+
             // If there is no pending work, complete the flowchart activity.
             var hasPendingWork = scheduler.HasAny;
 
@@ -126,7 +140,7 @@ public class Flowchart : Container
         flowchartActivityExecutionContext.SetProperty(ScopeProperty, scope);
         context.StopPropagation();
     }
-    
+
     private bool HaveAllLeafsExecuted(FlowScope scope)
     {
         var leafs = Activities.Where(x => Connections.All(y => y.Source != x)).ToList();

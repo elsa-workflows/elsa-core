@@ -11,42 +11,60 @@ using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Runtime.Contracts;
+using JetBrains.Annotations;
 using Refit;
 
 namespace Elsa.Telnyx.Activities;
 
 /// <inheritdoc />
 [FlowNode("Bridged", "Disconnected")]
+[PublicAPI]
 public class FlowBridgeCalls : BridgeCallsBase
 {
     /// <inheritdoc />
     [JsonConstructor]
+    public FlowBridgeCalls()
+    {
+    }
+
+    /// <inheritdoc />
     public FlowBridgeCalls([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
-    
+
+    /// <inheritdoc />
     protected override ValueTask HandleDisconnectedAsync(ActivityExecutionContext context) => context.CompleteActivityAsync("Disconnected");
+
+    /// <inheritdoc />
     protected override ValueTask HandleBridgedAsync(ActivityExecutionContext context) => context.CompleteActivityAsync("Bridged");
 }
 
 /// <inheritdoc />
+[PublicAPI]
 public class BridgeCalls : BridgeCallsBase
 {
     /// <inheritdoc />
     [JsonConstructor]
+    public BridgeCalls()
+    {
+    }
+
+    /// <inheritdoc />
     public BridgeCalls([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
-    
+
     /// <summary>
     /// The <see cref="IActivity"/> to execute when the source leg call is no longer active.
     /// </summary>
-    [Port]public IActivity? Disconnected { get; set; }
-    
+    [Port]
+    public IActivity? Disconnected { get; set; }
+
     /// <summary>
     /// The <see cref="IActivity"/> to execute when the two calls are bridged.
     /// </summary>
-    [Port]public IActivity? Bridged { get; set; }
+    [Port]
+    public IActivity? Bridged { get; set; }
 
     /// <inheritdoc />
     protected override async ValueTask HandleDisconnectedAsync(ActivityExecutionContext context) => await context.ScheduleActivityAsync(Disconnected, OnCompleted);
@@ -59,13 +77,14 @@ public class BridgeCalls : BridgeCallsBase
 /// Bridge two calls.
 /// </summary>
 [Activity(Constants.Namespace, "Bridge two calls.", Kind = ActivityKind.Task)]
+[PublicAPI]
 public abstract class BridgeCallsBase : Activity<BridgedCallsOutput>, IBookmarksPersistedHandler
 {
     /// <inheritdoc />
     protected BridgeCallsBase(string? source = default, int? line = default) : base(source, line)
     {
     }
-    
+
     /// <summary>
     /// The source call control ID of one of the call to bridge with. Leave empty to use the ambient inbound call control Id, if there is one.
     /// </summary>
@@ -105,7 +124,7 @@ public abstract class BridgeCallsBase : Activity<BridgedCallsOutput>, IBookmarks
         var callControlIdB = context.GetSecondaryCallControlId(CallControlIdB) ?? throw new Exception("CallControlB is required");
         var bookmarkA = new CallBridgedBookmarkPayload(callControlIdA);
         var bookmarkB = new CallBridgedBookmarkPayload(callControlIdB);
-        context.CreateBookmarks(new[]{ bookmarkA, bookmarkB }, ResumeAsync);
+        context.CreateBookmarks(new[] { bookmarkA, bookmarkB }, ResumeAsync);
     }
 
     protected abstract ValueTask HandleDisconnectedAsync(ActivityExecutionContext context);
@@ -123,7 +142,7 @@ public abstract class BridgeCallsBase : Activity<BridgedCallsOutput>, IBookmarks
 
         var callBridgedPayloadA = context.GetProperty<CallBridgedPayload>("CallBridgedPayloadA");
         var callBridgedPayloadB = context.GetProperty<CallBridgedPayload>("CallBridgedPayloadB");
-            
+
         if (callBridgedPayloadA != null && callBridgedPayloadB != null)
         {
             context.Set(Result, new BridgedCallsOutput(callBridgedPayloadA, callBridgedPayloadB));

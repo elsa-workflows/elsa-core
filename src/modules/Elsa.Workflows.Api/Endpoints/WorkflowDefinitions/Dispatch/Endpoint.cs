@@ -1,6 +1,7 @@
 using Elsa.Abstractions;
 using Elsa.Common.Models;
 using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Models.Requests;
 using JetBrains.Annotations;

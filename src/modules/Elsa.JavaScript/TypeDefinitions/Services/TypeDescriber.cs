@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Elsa.Extensions;
 using Elsa.JavaScript.Contracts;
@@ -35,7 +36,9 @@ public class TypeDescriber : ITypeDescriber
 
     private IEnumerable<FunctionDefinition> GetMethodDefinitions(Type type)
     {
+#pragma warning disable IL2070
         var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static).Where(x => !x.IsSpecialName).ToList();
+#pragma warning restore IL2070
 
         foreach (var method in methods)
         {
@@ -63,7 +66,7 @@ public class TypeDescriber : ITypeDescriber
         }
     }
 
-    private IEnumerable<PropertyDefinition> GetPropertyDefinitions(Type type)
+    private IEnumerable<PropertyDefinition> GetPropertyDefinitions([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type type)
     {
         var properties = type.GetProperties();
 

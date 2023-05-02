@@ -19,6 +19,11 @@ public class StartAt : Trigger
 
     /// <inheritdoc />
     [JsonConstructor]
+    public StartAt()
+    {
+    }
+    
+    /// <inheritdoc />
     public StartAt([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
