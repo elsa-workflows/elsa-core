@@ -43,7 +43,7 @@ internal class Create : ElsaEndpoint<Request, Response>
     public override void Configure()
     {
         Post("/identity/applications");
-        Permissions("create:application");
+        ConfigurePermissions("create:application");
         Policies(IdentityPolicyNames.SecurityRoot);
     }
 
