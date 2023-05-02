@@ -78,13 +78,37 @@ export const OAuth2: Secret = {
       disableWorkflowProviderSelection: false,
       isBrowsable: true,
       isReadOnly: false,
-      label: 'Scope',
-      name: 'Scope',
+      label: 'Token endpoint client authentication method',
+      name: 'ClientAuthMethod',
       order: 4,
       supportedSyntaxes: ['Literal'],
       type: 'System.String',
-      uiHint: 'single-line',
+      uiHint: 'dropdown',
+      options: {
+        isFlagsEnum: false,
+        items: [
+          {
+            text: 'Client secret: Basic',
+            value: 'client_secret_basic',
+          },
+          {
+            text: 'Client secret: Post',
+            value: 'client_secret_post',
+          }
+        ]
+      }
     },
+    {
+      disableWorkflowProviderSelection: false,
+      isBrowsable: true,
+      isReadOnly: false,
+      label: 'Scope',
+      name: 'Scope',
+      order: 5,
+      supportedSyntaxes: ['Literal'],
+      type: 'System.String',
+      uiHint: 'single-line',
+    }
   ],
   type: 'OAuth2',
 };
