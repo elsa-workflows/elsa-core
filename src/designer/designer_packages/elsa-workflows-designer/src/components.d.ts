@@ -129,6 +129,7 @@ export namespace Components {
         "mainTitle": string;
         "orientation": 'Landscape' | 'Portrait';
         "selectedTabIndex"?: number;
+        "showParentBtn": boolean;
         "subTitle": string;
         "tabs": Array<TabDefinition>;
     }
@@ -326,6 +327,7 @@ export namespace Components {
     interface ElsaWorkflowDefinitionPropertiesEditor {
         "hide": () => Promise<void>;
         "show": () => Promise<void>;
+        "showParentBtn": boolean;
         "workflowDefinition"?: WorkflowDefinition;
         "workflowVersions": Array<WorkflowDefinition>;
     }
@@ -1087,10 +1089,12 @@ declare namespace LocalJSX {
         "actions"?: Array<PanelActionDefinition>;
         "mainTitle"?: string;
         "onActionInvoked"?: (event: ElsaFormPanelCustomEvent<PanelActionClickArgs>) => void;
+        "onParentBtnClicked"?: (event: ElsaFormPanelCustomEvent<any>) => void;
         "onSelectedTabIndexChanged"?: (event: ElsaFormPanelCustomEvent<TabChangedArgs>) => void;
         "onSubmitted"?: (event: ElsaFormPanelCustomEvent<FormData>) => void;
         "orientation"?: 'Landscape' | 'Portrait';
         "selectedTabIndex"?: number;
+        "showParentBtn"?: boolean;
         "subTitle"?: string;
         "tabs"?: Array<TabDefinition>;
     }
@@ -1296,9 +1300,11 @@ declare namespace LocalJSX {
     }
     interface ElsaWorkflowDefinitionPropertiesEditor {
         "onDeleteVersionClicked"?: (event: ElsaWorkflowDefinitionPropertiesEditorCustomEvent<WorkflowDefinition>) => void;
+        "onParentBtnClicked"?: (event: ElsaWorkflowDefinitionPropertiesEditorCustomEvent<any>) => void;
         "onRevertVersionClicked"?: (event: ElsaWorkflowDefinitionPropertiesEditorCustomEvent<WorkflowDefinition>) => void;
         "onVersionSelected"?: (event: ElsaWorkflowDefinitionPropertiesEditorCustomEvent<WorkflowDefinition>) => void;
         "onWorkflowPropsUpdated"?: (event: ElsaWorkflowDefinitionPropertiesEditorCustomEvent<WorkflowDefinitionPropsUpdatedArgs>) => void;
+        "showParentBtn"?: boolean;
         "workflowDefinition"?: WorkflowDefinition;
         "workflowVersions"?: Array<WorkflowDefinition>;
     }

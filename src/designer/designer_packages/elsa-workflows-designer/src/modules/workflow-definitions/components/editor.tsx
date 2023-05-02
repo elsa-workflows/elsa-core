@@ -19,6 +19,8 @@ import {LayoutDirection, UpdateActivityArgs} from "../../flowchart/models";
 import {cloneDeep} from '@antv/x6/lib/util/object/object';
 import {removeGuidsFromPortNames} from '../../../utils/graph';
 import { WorkflowPropertiesEditorTabs } from '../models/props-editor-tabs';
+import workflowStore from '../../../data/workflow-store';
+import studioComponentStore from '../../../data/studio-component-store';
 
 @Component({
   tag: 'elsa-workflow-definition-editor',
@@ -44,6 +46,10 @@ export class WorkflowDefinitionEditor {
     this.portProviderRegistry = Container.get(PortProviderRegistry);
     this.saveChangesDebounced = debounce(this.saveChanges, 1000);
     this.workflowDefinitionApi = Container.get(WorkflowDefinitionsApi);
+
+    workflowStore.onChange("childWorkflowDefinitionId", () => {
+      this.showParentBtn = !!workflowStore.state.childWorkflowDefinitionId && workflowStore.state.parentWorkflowDefinitionId != workflowStore.state.childWorkflowDefinitionId
+    });
   }
 
   @Prop() workflowDefinition?: WorkflowDefinition;
@@ -52,6 +58,7 @@ export class WorkflowDefinitionEditor {
   @State() private workflowDefinitionState: WorkflowDefinition;
   @State() private selectedActivity?: Activity;
   @State() private workflowVersions: Array<WorkflowDefinition> = [];
+  @State() private showParentBtn: boolean = false;
 
   @Watch('monacoLibPath')
   private handleMonacoLibPath(value: string) {
@@ -324,6 +331,18 @@ export class WorkflowDefinitionEditor {
     await this.importWorkflow(workflowDefinition);
   };
 
+  private async backToParentWorkflow() {
+    const data = await this.workflowDefinitionApi.get({
+      definitionId: workflowStore.state.parentWorkflowDefinitionId,
+    });
+    workflowStore.state.childWorkflowDefinitionId = workflowStore.state.parentWorkflowDefinitionId;
+    this.showParentWorkflow(data);
+  }
+
+  public showParentWorkflow = (workflowDefinition: WorkflowDefinition) => {
+    studioComponentStore.activeComponentFactory = () => <elsa-workflow-definition-editor workflowDefinition={workflowDefinition} />;
+  };
+
   render() {
     const workflowDefinition = this.workflowDefinitionState;
 
@@ -362,6 +381,8 @@ export class WorkflowDefinitionEditor {
                 onVersionSelected={e => this.onVersionSelected(e)}
                 onDeleteVersionClicked={e => this.onDeleteVersionClicked(e)}
                 onRevertVersionClicked={e => this.onRevertVersionClicked(e)}
+                showParentBtn={this.showParentBtn}
+                onParentBtnClicked={e => this.backToParentWorkflow()}
               />
             </div>
           </elsa-panel>

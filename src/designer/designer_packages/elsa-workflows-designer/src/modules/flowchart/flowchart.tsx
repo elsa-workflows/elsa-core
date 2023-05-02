@@ -723,11 +723,11 @@ export class FlowchartComponent {
     const data = await this.workflowDefinitionsApi.get({
       definitionId: activity.workflowDefinitionId,
     });
-    workflowStore.childWorkflowDefinitionId = activity.workflowDefinitionId;
-    this.showSubProcessWorkflow(data);
+    workflowStore.state.childWorkflowDefinitionId = activity.workflowDefinitionId;
+    this.showParentWorkflow(data);
   };
 
-  public showSubProcessWorkflow = (workflowDefinition: WorkflowDefinition) => {
+  public showParentWorkflow = (workflowDefinition: WorkflowDefinition) => {
     studioComponentStore.activeComponentFactory = () => <elsa-workflow-definition-editor workflowDefinition={workflowDefinition} />;
   };
 

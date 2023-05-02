@@ -199,8 +199,8 @@ export class WorkflowDefinitionsPlugin implements Plugin {
     const definitionId = e.detail.definitionId;
     const workflowDefinition = await this.api.get({definitionId});
 
-    workflowStore.parentWorkflowDefinitionId = definitionId;
-    workflowStore.childWorkflowDefinitionId = '';
+    workflowStore.state.parentWorkflowDefinitionId = definitionId;
+    workflowStore.state.childWorkflowDefinitionId = '';
 
     this.showWorkflowDefinitionEditor(workflowDefinition);
     this.modalDialogService.hide(this.workflowDefinitionBrowserInstance);

@@ -2,48 +2,27 @@ import {Component, Event, EventEmitter, h, Prop} from '@stencil/core';
 import {TabChangedArgs, TabDefinition} from '../../../models';
 import {isNullOrWhitespace} from "../../../utils";
 import {PanelActionClickArgs, PanelActionDefinition, PanelActionType} from "./models";
-import {WorkflowDefinitionsApi} from '../../../modules/workflow-definitions/services/api';
-import Container from 'typedi';
-import studioComponentStore from '../../../data/studio-component-store';
-import {WorkflowDefinition} from '../../../interfaces';
-import workflowStore from '../../../data/workflow-store';
 
 @Component({
   tag: 'elsa-form-panel'
 })
 export class FormPanel {
-  private workflowDefinitionsApi: WorkflowDefinitionsApi;
-
   @Prop() public mainTitle: string;
   @Prop() public subTitle: string;
   @Prop() public orientation: 'Landscape' | 'Portrait' = 'Portrait';
   @Prop() public tabs: Array<TabDefinition> = [];
   @Prop({mutable: true}) public selectedTabIndex?: number;
   @Prop() public actions: Array<PanelActionDefinition> = [];
+  @Prop() public showParentBtn: boolean;
 
   @Event() public submitted: EventEmitter<FormData>;
   @Event() public selectedTabIndexChanged: EventEmitter<TabChangedArgs>;
   @Event() public actionInvoked: EventEmitter<PanelActionClickArgs>;
-
-  constructor() {
-    this.workflowDefinitionsApi = Container.get(WorkflowDefinitionsApi);
-  }
+  @Event() public parentBtnClicked: EventEmitter;
 
   public render() {
     return this.renderPanel();
   }
-
-  private async backToParentWorkflow() {
-    const data = await this.workflowDefinitionsApi.get({
-      definitionId: workflowStore.parentWorkflowDefinitionId,
-    });
-    workflowStore.childWorkflowDefinitionId = workflowStore.parentWorkflowDefinitionId;
-    this.showSubProcessWorkflow(data);
-  }
-
-  public showSubProcessWorkflow = (workflowDefinition: WorkflowDefinition) => {
-    studioComponentStore.activeComponentFactory = () => <elsa-workflow-definition-editor workflowDefinition={workflowDefinition} />;
-  };
 
   private onTabClick(e: Event, tab: TabDefinition) {
     e.preventDefault();
@@ -82,8 +61,8 @@ export class FormPanel {
                     
                   </div>
                   <div>
-                    {workflowStore.childWorkflowDefinitionId && workflowStore.parentWorkflowDefinitionId != workflowStore.childWorkflowDefinitionId ?
-                        <button class="btn btn-primary" onClick={() => this.backToParentWorkflow()}>
+                    {this.showParentBtn ?
+                        <button class="btn btn-primary" onClick={() => this.parentBtnClicked.emit()}>
                           Back to Parent
                         </button> : undefined}
                   </div>

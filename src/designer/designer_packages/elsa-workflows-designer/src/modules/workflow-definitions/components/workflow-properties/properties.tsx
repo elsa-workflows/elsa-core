@@ -30,10 +30,12 @@ export class WorkflowDefinitionPropertiesEditor {
 
   @Prop() workflowDefinition?: WorkflowDefinition;
   @Prop() workflowVersions: Array<WorkflowDefinition>;
+  @Prop() showParentBtn: boolean;
   @Event() workflowPropsUpdated: EventEmitter<WorkflowDefinitionPropsUpdatedArgs>;
   @Event() versionSelected: EventEmitter<WorkflowDefinition>;
   @Event() deleteVersionClicked: EventEmitter<WorkflowDefinition>;
   @Event() revertVersionClicked: EventEmitter<WorkflowDefinition>;
+  @Event() parentBtnClicked: EventEmitter;
   @State() private model: WorkflowPropertiesEditorModel;
   @State() private selectedTabIndex: number = 0;
 
@@ -73,7 +75,10 @@ export class WorkflowDefinitionPropertiesEditor {
         subTitle={subTitle}
         tabs={tabs}
         selectedTabIndex={this.selectedTabIndex}
-        onSelectedTabIndexChanged={e => this.onSelectedTabIndexChanged(e)}/>
+        onSelectedTabIndexChanged={e => this.onSelectedTabIndexChanged(e)}
+        showParentBtn={this.showParentBtn}
+        onParentBtnClicked={e => this.parentBtnClicked.emit()}
+         />
     );
   }
 

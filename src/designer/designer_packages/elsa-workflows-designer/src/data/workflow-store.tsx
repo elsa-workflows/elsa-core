@@ -1,8 +1,8 @@
 import {createStore} from '@stencil/store';
 
-const {state, onChange} = createStore({
+const store = createStore({
   parentWorkflowDefinitionId: '',
   childWorkflowDefinitionId: ''
 });
 
-export default state;
+export default store;
