@@ -20,17 +20,19 @@ using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Management.Providers;
 using Elsa.Workflows.Management.Serialization;
 using Elsa.Workflows.Management.Services;
+using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Management.Features;
 
 /// <summary>
-/// Installs & configures the workflow management feature.
+/// Installs and configures the workflow management feature.
 /// </summary>
 [DependsOn(typeof(MediatorFeature))]
 [DependsOn(typeof(SystemClockFeature))]
 [DependsOn(typeof(WorkflowsFeature))]
 [DependsOn(typeof(WorkflowDefinitionsFeature))]
+[PublicAPI]
 public class WorkflowManagementFeature : FeatureBase
 {
     private const string PrimitivesCategory = "Primitives";

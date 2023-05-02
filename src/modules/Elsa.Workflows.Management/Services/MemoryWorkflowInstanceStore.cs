@@ -3,6 +3,7 @@ using Elsa.Common.Services;
 using Elsa.Extensions;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 
 namespace Elsa.Workflows.Management.Services;
@@ -90,28 +91,21 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
     }
 
     /// <inheritdoc />
-    public Task SaveAsync(WorkflowInstance record, CancellationToken cancellationToken = default)
+    public Task SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
     {
-        _store.Save(record, x => x.Id);
+        _store.Save(instance, x => x.Id);
         return Task.CompletedTask;
     }
 
     /// <inheritdoc />
-    public Task SaveManyAsync(IEnumerable<WorkflowInstance> records, CancellationToken cancellationToken = default)
+    public Task SaveManyAsync(IEnumerable<WorkflowInstance> instances, CancellationToken cancellationToken = default)
     {
-        _store.SaveMany(records, GetId);
+        _store.SaveMany(instances, GetId);
         return Task.CompletedTask;
     }
-
+    
     /// <inheritdoc />
-    public async Task<bool> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
-    {
-        var count = await DeleteManyAsync(filter, cancellationToken);
-        return count > 0;
-    }
-
-    /// <inheritdoc />
-    public Task<int> DeleteManyAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
+    public Task<int> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
         var query = Filter(_store.List().AsQueryable(), filter);
         var count = _store.DeleteMany(query, x => x.Id);
