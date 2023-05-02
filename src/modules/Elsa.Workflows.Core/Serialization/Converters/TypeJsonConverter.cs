@@ -1,11 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Contracts;
-using Elsa.Expressions.Options;
-using Elsa.Expressions.Services;
 using Elsa.Extensions;
 using JetBrains.Annotations;
-using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Core.Serialization.Converters;
 

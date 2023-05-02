@@ -6,6 +6,7 @@ using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Behaviors;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
+using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Core.Activities;
 
@@ -13,12 +14,18 @@ namespace Elsa.Workflows.Core.Activities;
 /// Iterate over a set of values.
 /// </summary>
 [Activity("Elsa", "Looping", "Iterate over a set of values.")]
+[PublicAPI]
 public class ForEach : Activity
 {
     private const string CurrentIndexProperty = "CurrentIndex";
 
     /// <inheritdoc />
     [JsonConstructor]
+    public ForEach() : this(default, default)
+    {
+    }
+
+    /// <inheritdoc />
     public ForEach([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
     {
         Behaviors.Add<BreakBehavior>(this);
@@ -33,7 +40,7 @@ public class ForEach : Activity
     /// <summary>
     /// The set of values to iterate.
     /// </summary>
-    [Input]
+    [Input(Description = "The set of values to iterate.")]
     public Input<ICollection<object>> Items { get; set; } = new(Array.Empty<object>());
 
     /// <summary>
@@ -48,6 +55,7 @@ public class ForEach : Activity
     [Output(Description = "Assign the current value to the specified variable.")]
     public Output<object>? CurrentValue { get; set; }
 
+    /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         // Execute first iteration.
@@ -86,6 +94,7 @@ public class ForEach : Activity
 /// <summary>
 /// A strongly-typed for-each construct where <see cref="T"/> is the item type.
 /// </summary>
+[PublicAPI]
 public class ForEach<T> : ForEach
 {
     /// <inheritdoc />

@@ -1,5 +1,6 @@
 using Elsa.Labels.Contracts;
 using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management.Filters;
 using FastEndpoints;
 using JetBrains.Annotations;
 using Open.Linq.AsyncExtensions;

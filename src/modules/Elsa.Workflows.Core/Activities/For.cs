@@ -5,6 +5,7 @@ using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Behaviors;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
+using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Core.Activities;
 
@@ -12,12 +13,18 @@ namespace Elsa.Workflows.Core.Activities;
 /// Iterate over a sequence of steps between a start and an end number.
 /// </summary>
 [Activity("Elsa", "Looping", "Iterate over a sequence of steps between a start and an end number.")]
+[PublicAPI]
 public class For : Activity
 {
     private const string CurrentStepProperty = "CurrentStep";
 
     /// <inheritdoc />
     [JsonConstructor]
+    public For() : this(default, default)
+    {
+    }
+
+    /// <inheritdoc />
     public For([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
         Behaviors.Add<BreakBehavior>(this);
@@ -30,13 +37,28 @@ public class For : Activity
         End = new Input<int>(end);
     }
 
+    /// <summary>
+    /// The start step.
+    /// </summary>
+    [Input(Description = "The start step.")]
     public Input<int> Start { get; set; } = new(0);
+
+    /// <summary>
+    /// The end step.
+    /// </summary>
+    [Input(Description = "The end step.")]
     public Input<int> End { get; set; } = new(0);
+    
+    /// <summary>
+    /// The step size.
+    /// </summary>
+    [Input(Description = "The step size.")]
     public Input<int> Step { get; set; } = new(1);
 
     /// <summary>
     /// Controls whether the end step is upper/lowerbound inclusive or exclusive. True (inclusive) by default.
     /// </summary>
+    [Input(Description = "Controls whether the end step is upper/lowerbound inclusive or exclusive. True (inclusive) by default.")]
     public Input<bool> OuterBoundInclusive { get; set; } = new(true);
 
     /// <summary>

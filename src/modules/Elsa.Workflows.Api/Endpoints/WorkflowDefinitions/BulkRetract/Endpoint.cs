@@ -1,6 +1,7 @@
 using Elsa.Abstractions;
 using Elsa.Common.Models;
 using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management.Filters;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.BulkRetract;

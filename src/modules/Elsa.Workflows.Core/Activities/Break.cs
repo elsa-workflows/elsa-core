@@ -4,6 +4,7 @@ using Elsa.Extensions;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Signals;
+using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Core.Activities;
 
@@ -11,6 +12,7 @@ namespace Elsa.Workflows.Core.Activities;
 /// Break out of a loop.
 /// </summary>
 [Activity("Elsa", "Looping", "Break out of a loop.")]
+[PublicAPI]
 public class Break : CodeActivity
 {
     /// <inheritdoc />

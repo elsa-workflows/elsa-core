@@ -1,5 +1,6 @@
 using Elsa.Abstractions;
 using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management.Filters;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.Get;

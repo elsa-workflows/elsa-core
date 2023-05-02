@@ -2,6 +2,7 @@
 using System.Text.Json.Serialization;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
+using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Core.Activities;
 
@@ -9,6 +10,7 @@ namespace Elsa.Workflows.Core.Activities;
 /// Sets a property on the workflow execution context with the specified name value.
 /// </summary>
 [Activity("Elsa", "Primitives", "Set the name of the workflow instance to a specified value.")]
+[PublicAPI]
 public class SetName : CodeActivity
 {
     /// <summary>
@@ -18,6 +20,11 @@ public class SetName : CodeActivity
 
     /// <inheritdoc />
     [JsonConstructor]
+    public SetName()
+    {
+    }
+    
+    /// <inheritdoc />
     public SetName([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
