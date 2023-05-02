@@ -116,7 +116,7 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
     }
 
     /// <inheritdoc />
-    public async Task<IEnumerable<WorkflowDefinition>> UpdateReferencesInConsumingWorkflows(string definitionId, int version, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<WorkflowDefinition>> UpdateReferencesInConsumingWorkflows(WorkflowDefinition dependency, CancellationToken cancellationToken = default)
     {
         var updatedWorkflowDefinitions = new List<WorkflowDefinition>();
         
@@ -130,12 +130,17 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
             var root = _activitySerializer.Deserialize(definition.StringData!);
             var graph = await _activityVisitor.VisitAsync(root, cancellationToken);
             var flattenedList = graph.Flatten().ToList();
-            
-            var consumingWorkflowActivities = flattenedList.Where(x => x.Activity is WorkflowDefinitionActivity workflowDefinitionActivity && workflowDefinitionActivity.WorkflowDefinitionId == definitionId).ToList();
+            var definitionId = dependency.DefinitionId;
+            var version = dependency.Version;
+            var nodes = flattenedList
+                .Where(x => x.Activity is WorkflowDefinitionActivity workflowDefinitionActivity && workflowDefinitionActivity.WorkflowDefinitionId == definitionId)
+                .ToList();
 
-            foreach (var activity in consumingWorkflowActivities.Where(activity => activity.Activity.Version < version))
+            foreach (var node in nodes.Where(activity => activity.Activity.Version < version))
             {
-                activity.Activity.Version = version;
+                var activity = (WorkflowDefinitionActivity) node.Activity;
+                activity.Version = version;
+                activity.WorkflowDefinitionVersionId = dependency.Id;
 
                 if (!updatedWorkflowDefinitions.Contains(definition))
                     updatedWorkflowDefinitions.Add(definition);
