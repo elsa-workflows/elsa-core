@@ -22,7 +22,7 @@ public class WriteLine : CodeActivity
 
     /// <inheritdoc />
     [JsonConstructor]
-    public WriteLine()
+    public WriteLine() : this(default, default)
     {
     }
 

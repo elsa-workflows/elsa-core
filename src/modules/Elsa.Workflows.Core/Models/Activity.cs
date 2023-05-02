@@ -20,8 +20,7 @@ public abstract class Activity : IActivity, ISignalHandler
     /// </summary>
     protected Activity(string? source = default, int? line = default)
     {
-        Source = source;
-        Line = line;
+        this.SetSource(source, line);
         Type = ActivityTypeNameHelper.GenerateTypeName(GetType());
         Version = 1;
         Behaviors.Add<ScheduledChildCallbackBehavior>(this);
@@ -43,29 +42,35 @@ public abstract class Activity : IActivity, ISignalHandler
     /// <inheritdoc />
     public int Version { get; set; }
 
-    /// <inheritdoc />
-    public bool CanStartWorkflow { get; set; }
+    /// <summary>
+    /// A flag indicating whether this activity can be used for starting a workflow.
+    /// Usually used for triggers, but also used to disambiguate between two or more starting activities and no starting activity was specified.
+    /// </summary>
+    [JsonIgnore]
+    public bool CanStartWorkflow
+    {
+        get => this.GetCanStartWorkflow();
+        set => this.SetCanStartWorkflow(value);
+    }
 
-    /// <inheritdoc />
-    public bool RunAsynchronously { get; set; }
+    /// <summary>
+    /// A flag indicating if this activity should execute synchronously or asynchronously.
+    /// By default, activities with an <see cref="Workflows.Core.Models.ActivityKind"/> of <see cref="Workflows.Core.Models.ActivityKind.Action"/>, <see cref="Workflows.Core.Models.ActivityKind.Task"/> or <see cref="Workflows.Core.Models.ActivityKind.Trigger"/>
+    /// will execute synchronously, while activities of the <see cref="Workflows.Core.Models.ActivityKind.Job"/> kind will execute asynchronously.
+    /// </summary>
+    [JsonIgnore]
+    public bool RunAsynchronously
+    {
+        get => this.GetRunAsynchronously();
+        set => this.SetRunAsynchronously(value);
+    }
 
     /// <inheritdoc />
     public IDictionary<string, object> CustomProperties { get; set; } = new Dictionary<string, object>();
-
-
+    
     /// <inheritdoc />
     [JsonIgnore]
     public IDictionary<string, object> SyntheticProperties { get; set; } = new Dictionary<string, object>();
-
-    /// <summary>
-    /// Automatically set to the current source file name when instantiating this activity inside of a workflow class or composite activity class.
-    /// </summary>
-    public string? Source { get; set; }
-
-    /// <summary>
-    /// Automatically set to the current line of code when instantiating this activity inside of a workflow class or composite activity class.
-    /// </summary>
-    public int? Line { get; set; }
 
     /// <summary>
     /// Stores metadata such as x and y coordinates when created via the designer.

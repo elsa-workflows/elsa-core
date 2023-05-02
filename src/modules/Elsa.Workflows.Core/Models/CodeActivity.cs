@@ -2,12 +2,14 @@ using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Behaviors;
 using Elsa.Workflows.Core.Contracts;
+using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Core.Models;
 
 /// <summary>
 /// Base class for custom activities with auto-complete behavior.
 /// </summary>
+[PublicAPI]
 public abstract class CodeActivity : Activity
 {
     /// <inheritdoc />
@@ -26,6 +28,7 @@ public abstract class CodeActivity : Activity
 /// <summary>
 /// Base class for custom activities with auto-complete behavior that return a result.
 /// </summary>
+[PublicAPI]
 public abstract class CodeActivityWithResult : CodeActivity
 {
     /// <inheritdoc />
@@ -53,36 +56,6 @@ public abstract class CodeActivityWithResult : CodeActivity
     /// <summary>
     /// The result of the activity.
     /// </summary>
-    public Output? Result { get; set; }
-}
-
-/// <summary>
-/// Base class for custom activities that return a result.
-/// </summary>
-public abstract class ActivityBaseWithResult : Activity
-{
-    /// <inheritdoc />
-    protected ActivityBaseWithResult(string? source = default, int? line = default) : base(source, line)
-    {
-    }
-
-    /// <inheritdoc />
-    protected ActivityBaseWithResult(string activityType, int version = 1, string? source = default, int? line = default) : base(activityType, version, source, line)
-    {
-    }
-
-    /// <inheritdoc />
-    protected ActivityBaseWithResult(MemoryBlockReference? output, string? source = default, int? line = default) : this(source, line)
-    {
-        if (output != null) Result = new Output(output);
-    }
-
-    /// <inheritdoc />
-    protected ActivityBaseWithResult(Output? output, string? source = default, int? line = default) : this(source, line)
-    {
-        Result = output;
-    }
-
     public Output? Result { get; set; }
 }
 

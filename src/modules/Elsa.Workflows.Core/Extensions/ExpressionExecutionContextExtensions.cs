@@ -1,6 +1,5 @@
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
-using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 
 // ReSharper disable once CheckNamespace

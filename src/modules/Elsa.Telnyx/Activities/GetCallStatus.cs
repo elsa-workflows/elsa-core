@@ -5,16 +5,23 @@ using Elsa.Telnyx.Client.Services;
 using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
+using JetBrains.Annotations;
 
 namespace Elsa.Telnyx.Activities;
 
 /// <inheritdoc />
 [FlowNode("Alive", "Dead", "Done")]
 [Activity(Constants.Namespace, "Get the status of a call.", Kind = ActivityKind.Task)]
+[PublicAPI]
 public class GetCallStatus : Activity<bool>
 {
     /// <inheritdoc />
     [JsonConstructor]
+    public GetCallStatus()
+    {
+    }
+    
+    /// <inheritdoc />
     public GetCallStatus([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }

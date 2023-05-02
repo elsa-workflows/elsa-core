@@ -8,6 +8,7 @@ using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Runtime.Bookmarks;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Notifications;
+using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Runtime.Activities;
 
@@ -16,6 +17,7 @@ namespace Elsa.Workflows.Runtime.Activities;
 /// When the application fulfilled the task, it is expected to report back to the workflow engine in order to resume the workflow. 
 /// </summary>
 [Activity("Elsa", "Primitives", "Requests a given task to be run. ", Kind = ActivityKind.Action)]
+[PublicAPI]
 public class RunTask : Activity<object>, IBookmarksPersistedHandler
 {
     private static readonly object BookmarkPropertyKey = new();
@@ -24,7 +26,6 @@ public class RunTask : Activity<object>, IBookmarksPersistedHandler
     /// The key that is used for sending and receiving activity input.
     /// </summary>
     public const string InputKey = "RunTaskInput";
-
 
     /// <summary>
     /// The name of the task being requested.

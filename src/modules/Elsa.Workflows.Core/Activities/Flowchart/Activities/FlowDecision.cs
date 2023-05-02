@@ -20,6 +20,11 @@ public class FlowDecision : Activity
 {
     /// <inheritdoc />
     [JsonConstructor]
+    public FlowDecision()
+    {
+    }
+    
+    /// <inheritdoc />
     public FlowDecision([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }

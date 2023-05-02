@@ -13,16 +13,23 @@ using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Runtime.Contracts;
+using JetBrains.Annotations;
 using Refit;
 
 namespace Elsa.Telnyx.Activities;
 
 /// <inheritdoc />
 [FlowNode("Connected", "Disconnected")]
+[PublicAPI]
 public class FlowAnswerCall : AnswerCallBase
 {
     /// <inheritdoc />
     [JsonConstructor]
+    public FlowAnswerCall()
+    {
+    }
+    
+    /// <inheritdoc />
     public FlowAnswerCall([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
@@ -35,6 +42,7 @@ public class FlowAnswerCall : AnswerCallBase
 }
 
 /// <inheritdoc />
+[PublicAPI]
 public class AnswerCall : AnswerCallBase
 {
     /// <inheritdoc />
@@ -54,7 +62,10 @@ public class AnswerCall : AnswerCallBase
     [Port]
     public IActivity? Disconnected { get; set; }
 
+    /// <inheritdoc />
     protected override async ValueTask HandleConnectedAsync(ActivityExecutionContext context) => await context.ScheduleActivityAsync(Connected);
+
+    /// <inheritdoc />
     protected override async ValueTask HandleDisconnectedAsync(ActivityExecutionContext context) => await context.ScheduleActivityAsync(Disconnected);
 }
 
@@ -63,6 +74,7 @@ public class AnswerCall : AnswerCallBase
 /// </summary>
 [Activity(Constants.Namespace, "Answer an incoming call. You must issue this command before executing subsequent commands on an incoming call.", Kind = ActivityKind.Task)]
 [WebhookDriven(WebhookEventTypes.CallAnswered)]
+[PublicAPI]
 public abstract class AnswerCallBase : Activity<CallAnsweredPayload>, IBookmarksPersistedHandler
 {
     /// <inheritdoc />
@@ -88,7 +100,14 @@ public abstract class AnswerCallBase : Activity<CallAnsweredPayload>, IBookmarks
     /// </summary>
     public async ValueTask BookmarksPersistedAsync(ActivityExecutionContext context) => await InvokeTelnyxAsync(context);
 
+    /// <summary>
+    /// Invoked when the call was successfully answered.
+    /// </summary>
     protected abstract ValueTask HandleConnectedAsync(ActivityExecutionContext context);
+    
+    /// <summary>
+    /// Invoked when the call was no longer active.
+    /// </summary>
     protected abstract ValueTask HandleDisconnectedAsync(ActivityExecutionContext context);
 
     private async ValueTask ResumeAsync(ActivityExecutionContext context)

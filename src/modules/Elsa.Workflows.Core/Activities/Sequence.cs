@@ -6,6 +6,7 @@ using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Signals;
+using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Core.Activities;
 
@@ -13,23 +14,29 @@ namespace Elsa.Workflows.Core.Activities;
 /// Execute a set of activities in sequence.
 /// </summary>
 [Category("Workflows")]
-[Browsable(false)]
 [Activity("Elsa", "Workflows", "Execute a set of activities in sequence.")]
+[PublicAPI]
+[Browsable(false)]
 public class Sequence : Container
 {
     private const string CurrentIndexProperty = "CurrentIndex";
 
     /// <inheritdoc />
     [JsonConstructor]
-    public Sequence([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public Sequence()  : this(default(string?), default)
     {
-        OnSignalReceived<BreakSignal>(OnBreak);
+    }
+
+    /// <inheritdoc />
+    public Sequence(params IActivity[] activities) : this(default(string?), default)
+    {
+        Activities = activities;
     }
     
     /// <inheritdoc />
-    public Sequence(params IActivity[] activities) : this()
+    public Sequence([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
-        Activities = activities;
+        OnSignalReceived<BreakSignal>(OnBreak);
     }
 
     /// <inheritdoc />

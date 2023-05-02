@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
+using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Core.Activities;
 
@@ -10,10 +11,16 @@ namespace Elsa.Workflows.Core.Activities;
 /// Faults the workflow.
 /// </summary>
 [Activity("Elsa", "Primitives", "Faults the workflow.")]
+[PublicAPI]
 public class Fault : Activity
 {
     /// <inheritdoc />
     [JsonConstructor]
+    public Fault()
+    {
+    }
+    
+    /// <inheritdoc />
     public Fault([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }

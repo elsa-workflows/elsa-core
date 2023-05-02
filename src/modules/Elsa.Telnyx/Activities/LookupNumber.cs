@@ -6,6 +6,7 @@ using Elsa.Telnyx.Client.Services;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
+using JetBrains.Annotations;
 
 namespace Elsa.Telnyx.Activities;
 
@@ -13,10 +14,16 @@ namespace Elsa.Telnyx.Activities;
 /// Returns information about the provided phone number.
 /// </summary>
 [Activity(Constants.Namespace, "Returns information about the provided phone number.", Kind = ActivityKind.Task)]
+[PublicAPI]
 public class LookupNumber : CodeActivity<NumberLookupResponse>
 {
     /// <inheritdoc />
     [JsonConstructor]
+    public LookupNumber()
+    {
+    }
+    
+    /// <inheritdoc />
     public LookupNumber([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
