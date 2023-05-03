@@ -280,7 +280,6 @@ public class PolymorphicObjectConverter : JsonConverter<object>
             JsonTokenType.False => false,
             JsonTokenType.Number when reader.TryGetInt64(out var l) => l,
             JsonTokenType.Number => reader.GetDouble(),
-            JsonTokenType.String when reader.TryGetDateTimeOffset(out var datetime) => datetime,
             JsonTokenType.String => reader.GetString(),
             JsonTokenType.Null => null,
             _ => throw new JsonException("Not a primitive type.")
