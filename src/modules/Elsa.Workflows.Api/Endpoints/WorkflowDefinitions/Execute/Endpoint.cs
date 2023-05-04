@@ -17,7 +17,7 @@ namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Execute;
 /// An API endpoint that executes a given workflow definition.
 /// </summary>
 [PublicAPI]
-public class Execute : ElsaEndpoint<Request, Response>
+internal class Execute : ElsaEndpoint<Request, Response>
 {
     private readonly IWorkflowDefinitionStore _store;
     private readonly IWorkflowRuntime _workflowRuntime;
