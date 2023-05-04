@@ -52,7 +52,7 @@ internal class ConfigureLiquidEngine : INotificationHandler<RenderingLiquidTempl
         }
             
         // Register all variable types.
-        foreach (var variableDescriptor in _managementOptions.VariableDescriptors.Where(x => x.Type.IsClass && !x.Type.ContainsGenericParameters)) 
+        foreach (var variableDescriptor in _managementOptions.VariableDescriptors.Where(x => x.Type is { IsClass: true, ContainsGenericParameters: false })) 
             memberAccessStrategy.Register(variableDescriptor.Type);
 
         return Task.CompletedTask;
