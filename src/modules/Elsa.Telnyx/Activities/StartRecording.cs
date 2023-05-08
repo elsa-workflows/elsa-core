@@ -12,14 +12,22 @@ using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
+using JetBrains.Annotations;
 using Refit;
 
 namespace Elsa.Telnyx.Activities;
 
 /// <inheritdoc />
 [FlowNode("Recording finished", "Disconnected")]
+[PublicAPI]
 public class FlowStartRecording : StartRecordingBase
 {
+    /// <inheritdoc />
+    [JsonConstructor]
+    public FlowStartRecording()
+    {
+    }
+    
     /// <inheritdoc />
     [JsonConstructor]
     public FlowStartRecording([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
@@ -34,10 +42,16 @@ public class FlowStartRecording : StartRecordingBase
 }
 
 /// <inheritdoc />
+[PublicAPI]
 public class StartRecording : StartRecordingBase
 {
     /// <inheritdoc />
     [JsonConstructor]
+    public StartRecording()
+    {
+    }
+    
+    /// <inheritdoc />
     public StartRecording([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
@@ -66,6 +80,7 @@ public class StartRecording : StartRecordingBase
 /// </summary>
 [Activity(Constants.Namespace, "Start recording the call.", Kind = ActivityKind.Task)]
 [WebhookDriven(WebhookEventTypes.CallRecordingSaved)]
+[PublicAPI]
 public abstract class StartRecordingBase : Activity<CallRecordingSavedPayload>
 {
     /// <inheritdoc />

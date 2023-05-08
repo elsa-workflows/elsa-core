@@ -32,7 +32,7 @@ public class WriteHttpResponse : CodeActivity
     /// The content type to use when returning the response.
     /// </summary>
     [Input(
-        Description = "The content type to use when returning the response.",
+        Description = "The content type to write when sending the response.",
         OptionsProvider = typeof(WriteHttpResponseContentTypeOptionsProvider),
         UIHint = InputUIHints.Dropdown
     )]
@@ -41,7 +41,7 @@ public class WriteHttpResponse : CodeActivity
     /// <summary>
     /// The headers to return along with the response.
     /// </summary>
-    [Input(Description = "The headers to return along with the response.", Category = "Advanced")]
+    [Input(Description = "The headers to send along with the response.", Category = "Advanced")]
     public Input<HttpResponseHeaders?> ResponseHeaders { get; set; } = new(new HttpResponseHeaders());
 
     /// <inheritdoc />

@@ -5,7 +5,7 @@ EXPOSE 443
 
 FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
 WORKDIR /src
-COPY ["src/samples/aspnet/Elsa.Samples.AspNet.ProtoActorRuntime.AzureContainerApps/Elsa.Samples.AspNet.ProtoActorRuntime.AzureContainerApps.csproj", "src/samples/aspnet/Elsa.Samples.AspNet.ProtoActorRuntime.AzureContainerApps/"]
+COPY ["Elsa.Samples.AspNet.ProtoActorRuntime.AzureContainerApps.csproj", "src/samples/aspnet/Elsa.Samples.AspNet.ProtoActorRuntime.AzureContainerApps/"]
 RUN dotnet restore "src/samples/aspnet/Elsa.Samples.AspNet.ProtoActorRuntime.AzureContainerApps/Elsa.Samples.AspNet.ProtoActorRuntime.AzureContainerApps.csproj"
 COPY . .
 WORKDIR "/src/src/samples/aspnet/Elsa.Samples.AspNet.ProtoActorRuntime.AzureContainerApps"

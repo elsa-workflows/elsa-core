@@ -14,7 +14,7 @@ namespace Elsa.Http;
 /// <summary>
 /// Send an HTTP request.
 /// </summary>
-[Activity("Elsa", "HTTP", "Send an HTTP request.", DisplayName = "Flow HTTP Request", Kind = ActivityKind.Task)]
+[Activity("Elsa", "HTTP", "Send an HTTP request.", DisplayName = "HTTP Request (flow)", Kind = ActivityKind.Task)]
 [PublicAPI]
 public class FlowSendHttpRequest : SendHttpRequestBase
 {

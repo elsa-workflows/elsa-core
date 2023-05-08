@@ -16,7 +16,7 @@ namespace Elsa.Http;
 /// <summary>
 /// Wait for an inbound HTTP request that matches the specified path and methods.
 /// </summary>
-[Activity("Elsa", "HTTP", "Wait for an inbound HTTP request that matches the specified path and methods.")]
+[Activity("Elsa", "HTTP", "Wait for an inbound HTTP request that matches the specified path and methods.", DisplayName = "HTTP Endpoint")]
 public class HttpEndpoint : Trigger<HttpRequest>
 {
     internal const string HttpContextInputKey = "HttpContext";

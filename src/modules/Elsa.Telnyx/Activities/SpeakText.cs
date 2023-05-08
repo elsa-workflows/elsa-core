@@ -9,6 +9,7 @@ using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
+using JetBrains.Annotations;
 using Refit;
 
 namespace Elsa.Telnyx.Activities;
@@ -17,6 +18,7 @@ namespace Elsa.Telnyx.Activities;
 /// Convert text to speech and play it back on the call.
 /// </summary>
 [Activity(Constants.Namespace, "Convert text to speech and play it back on the call.", Kind = ActivityKind.Task)]
+[PublicAPI]
 public abstract class SpeakTextBase : Activity
 {
     /// <inheritdoc />
@@ -128,10 +130,16 @@ public abstract class SpeakTextBase : Activity
 
 /// <inheritdoc />
 [FlowNode("Done", "Finished speaking", "Disconnected")]
+[PublicAPI]
 public class FlowSpeakText : SpeakTextBase
 {
     /// <inheritdoc />
     [JsonConstructor]
+    public FlowSpeakText()
+    {
+    }
+    
+    /// <inheritdoc />
     public FlowSpeakText([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
@@ -144,10 +152,16 @@ public class FlowSpeakText : SpeakTextBase
 }
 
 /// <inheritdoc />
+[PublicAPI]
 public class SpeakText : SpeakTextBase
 {
     /// <inheritdoc />
     [JsonConstructor]
+    public SpeakText()
+    {
+    }
+    
+    /// <inheritdoc />
     public SpeakText([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }

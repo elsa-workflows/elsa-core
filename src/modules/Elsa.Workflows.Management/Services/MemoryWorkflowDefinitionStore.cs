@@ -3,6 +3,7 @@ using Elsa.Common.Services;
 using Elsa.Extensions;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 
 namespace Elsa.Workflows.Management.Services;
@@ -108,16 +109,16 @@ public class MemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
     }
 
     /// <inheritdoc />
-    public Task SaveAsync(WorkflowDefinition record, CancellationToken cancellationToken = default)
+    public Task SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
     {
-        _store.Save(record, GetId);
+        _store.Save(definition, GetId);
         return Task.CompletedTask;
     }
 
     /// <inheritdoc />
-    public Task SaveManyAsync(IEnumerable<WorkflowDefinition> records, CancellationToken cancellationToken = default)
+    public Task SaveManyAsync(IEnumerable<WorkflowDefinition> definitions, CancellationToken cancellationToken = default)
     {
-        _store.SaveMany(records, GetId);
+        _store.SaveMany(definitions, GetId);
         return Task.CompletedTask;
     }
 

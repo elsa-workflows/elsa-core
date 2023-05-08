@@ -15,6 +15,11 @@ public class Timer : EventGenerator
 {
     /// <inheritdoc />
     [JsonConstructor]
+    public Timer()
+    {
+    }
+    
+    /// <inheritdoc />
     public Timer([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }

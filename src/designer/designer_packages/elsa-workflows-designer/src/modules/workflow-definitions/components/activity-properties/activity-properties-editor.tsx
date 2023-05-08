@@ -193,21 +193,13 @@ export class ActivityPropertiesEditor {
     const newId = inputElement.value;
     const activityDescriptor = this.findActivityDescriptor();
 
-    const inputDescriptor: InputDescriptor = {
-      name: 'Id',
-      displayName: 'Id',
-      typeName: 'String'
-    };
-
     activity.id = newId;
 
     this.activityUpdated.emit({
       newId: newId,
       originalId: originalId,
       activity,
-      activityDescriptor,
-      // propertyName: 'id',
-      // propertyDescriptor: inputDescriptor
+      activityDescriptor
     });
   }
 
@@ -227,7 +219,7 @@ export class ActivityPropertiesEditor {
     const activity: Activity = this.activity;
     const inputElement = e.target as HTMLInputElement;
 
-    activity.canStartWorkflow = inputElement.checked;
+    activity.customProperties.CanStartWorkflow = inputElement.checked;
 
     this.updateActivity();
   }
@@ -236,7 +228,7 @@ export class ActivityPropertiesEditor {
     const activity: Activity = this.activity;
     const inputElement = e.target as HTMLInputElement;
 
-    activity.runAsynchronously = inputElement.checked;
+    activity.customProperties.RunAsynchronously = inputElement.checked;
 
     this.updateActivity();
   }
@@ -308,7 +300,7 @@ export class ActivityPropertiesEditor {
     const {activity} = this.renderContext;
     const activityId = activity.id;
     const displayText: string = activity.metadata?.displayText ?? '';
-    const canStartWorkflow: boolean = activity.canStartWorkflow;
+    const canStartWorkflow: boolean = activity.customProperties?.CanStartWorkflow ?? activity.canStartWorkflow ?? false;
     const key = `${activityId}`;
 
     return <div key={key}>
@@ -402,7 +394,7 @@ export class ActivityPropertiesEditor {
   private renderTaskTab = () => {
     const {activity} = this.renderContext;
     const activityId = activity.id;
-    const runAsynchronously: boolean = activity.runAsynchronously;
+    const runAsynchronously: boolean = activity.customProperties?.RunAsynchronously ?? activity.runAsynchronously ?? false;
     const key = `${activityId}:task`;
 
     return <div key={key}>

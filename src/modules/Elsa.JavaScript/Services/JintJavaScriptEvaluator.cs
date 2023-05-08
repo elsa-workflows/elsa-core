@@ -60,7 +60,6 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         engine.SetValue("getWorkflowInstanceId", (Func<string>)(() => context.GetActivityExecutionContext().WorkflowExecutionContext.Id));
         engine.SetValue("setCorrelationId", (Action<string?>)(value => context.GetActivityExecutionContext().WorkflowExecutionContext.CorrelationId = value));
         engine.SetValue("getCorrelationId", (Func<string?>)(() => context.GetActivityExecutionContext().WorkflowExecutionContext.CorrelationId));
-        engine.SetValue("setCorrelationId", (Action<string?>)(value => context.GetActivityExecutionContext().WorkflowExecutionContext.CorrelationId = value));
         engine.SetValue("setVariable", (Action<string, object>)((id, value) => context.SetVariable(id, value)));
         engine.SetValue("getVariable", (Func<string, object?>)(id => context.GetVariable(id)));
         engine.SetValue("getInput", (Func<string, object?>)(name => context.GetWorkflowExecutionContext().Input.GetValue(name)));
@@ -70,11 +69,11 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
 
         engine.SetValue("isNullOrWhiteSpace", (Func<string, bool>)(value => string.IsNullOrWhiteSpace(value)));
         engine.SetValue("isNullOrEmpty", (Func<string, bool>)(value => string.IsNullOrEmpty(value)));
-        engine.SetValue("parseGuid", (Func<string, Guid>)(value => Guid.Parse(value)));
         engine.SetValue("toJson", (Func<object, string>)(value => Serialize(value)));
-        engine.SetValue("getShortGuid", (Func<string, string>)(value => Regex.Replace(Convert.ToBase64String(Guid.NewGuid().ToByteArray()), "[/+=]", "")));
-        engine.SetValue("getGuid", (Func<string, Guid>)(value => Guid.NewGuid()));
-        engine.SetValue("getGuidString", (Func<string, string>)(value => Guid.NewGuid().ToString()));
+        engine.SetValue("parseGuid", (Func<string, Guid>)(value => Guid.Parse(value)));
+        engine.SetValue("newGuid", (Func<Guid>)(() => Guid.NewGuid()));
+        engine.SetValue("newGuidString", (Func<string>)(() => Guid.NewGuid().ToString()));
+        engine.SetValue("newShortGuid", (Func<string>)(() => Regex.Replace(Convert.ToBase64String(Guid.NewGuid().ToByteArray()), "[/+=]", "")));
 
         // Add common .NET types.
         engine.RegisterType<DateTime>();

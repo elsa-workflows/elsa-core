@@ -4,6 +4,7 @@ using Elsa.Extensions;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 using Microsoft.EntityFrameworkCore;
 using Open.Linq.AsyncExtensions;
@@ -85,26 +86,19 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
         await _store.QueryAsync(query => Filter(query, filter).OrderBy(order), x => WorkflowInstanceSummary.FromInstance(x), cancellationToken).ToList().AsEnumerable();
 
     /// <inheritdoc />
-    public async Task<bool> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
-    {
-        var count = await DeleteManyAsync(filter, cancellationToken);
-        return count > 0;
-    }
-
-    /// <inheritdoc />
-    public async Task<int> DeleteManyAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
+    public async Task<int> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
         var count = await _store.DeleteWhereAsync(query => Filter(query, filter), cancellationToken);
         return count;
     }
 
     /// <inheritdoc />
-    public async Task SaveAsync(WorkflowInstance record, CancellationToken cancellationToken = default) =>
-        await _store.SaveAsync(record, SaveAsync, cancellationToken);
+    public async Task SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default) =>
+        await _store.SaveAsync(instance, SaveAsync, cancellationToken);
 
     /// <inheritdoc />
-    public async Task SaveManyAsync(IEnumerable<WorkflowInstance> records, CancellationToken cancellationToken = default) =>
-        await _store.SaveManyAsync(records, SaveAsync, cancellationToken);
+    public async Task SaveManyAsync(IEnumerable<WorkflowInstance> instances, CancellationToken cancellationToken = default) =>
+        await _store.SaveManyAsync(instances, SaveAsync, cancellationToken);
 
     private async ValueTask<WorkflowInstance> SaveAsync(ManagementElsaDbContext managementElsaDbContext, WorkflowInstance entity, CancellationToken cancellationToken)
     {
