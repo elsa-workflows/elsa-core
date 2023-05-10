@@ -110,18 +110,6 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
 
     private async ValueTask OnChildCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext)
     {
-        var activityRegistry = context.GetRequiredService<IActivityRegistry>();
-        var activityDescriptor = activityRegistry.Find(Type, Version)!;
-        var outputDescriptors = activityDescriptor.Outputs;
-
-        foreach (var outputDescriptor in outputDescriptors)
-        {
-            var output = SyntheticProperties.TryGetValue(outputDescriptor.Name, out var outputProp) ? (Output)outputProp : default;
-
-            if (output == null)
-                return;
-        }
-
         // Do we have a complete composite signal that triggered the completion?
         var completeCompositeSignal = context.WorkflowExecutionContext.TransientProperties.TryGetValue(nameof(CompleteCompositeSignal), out var signal) ? (CompleteCompositeSignal)signal : default;
 
