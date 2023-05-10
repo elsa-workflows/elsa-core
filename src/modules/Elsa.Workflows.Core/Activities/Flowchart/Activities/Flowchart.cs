@@ -128,10 +128,9 @@ public class Flowchart : Container
         if (!children.Any())
         {
             var workflowExecutionContext = context.ReceiverActivityExecutionContext.WorkflowExecutionContext;
-            var scheduler = workflowExecutionContext.Scheduler;
 
             // If there is no pending work, complete the flowchart activity.
-            var hasPendingWork = scheduler.HasAny;
+            var hasPendingWork = HasPendingWork(workflowExecutionContext);
 
             if (!hasPendingWork)
                 await flowchartActivityExecutionContext.CompleteActivityAsync();
@@ -139,6 +138,19 @@ public class Flowchart : Container
 
         flowchartActivityExecutionContext.SetProperty(ScopeProperty, scope);
         context.StopPropagation();
+    }
+
+    /// <summary>
+    /// Checks if there is any pending work for the flowchart.
+    /// </summary>
+    private bool HasPendingWork(WorkflowExecutionContext workflowExecutionContext)
+    {
+        var scheduler = workflowExecutionContext.Scheduler;
+        var workItems = scheduler.List();
+        var activityNodeIds = workItems.Select(x => x.ActivityId).ToList();
+        var flowchartChildNodeIds = Activities.Select(workflowExecutionContext.FindNodeByActivity).Select(x => x.NodeId).ToList();
+        var hasPendingWork = activityNodeIds.Intersect(flowchartChildNodeIds).Any();
+        return hasPendingWork;
     }
 
     private bool HaveAllLeafsExecuted(FlowScope scope)
