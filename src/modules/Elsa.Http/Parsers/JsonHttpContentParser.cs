@@ -34,7 +34,7 @@ public class JsonHttpContentParser : IHttpContentParser
         if (returnType == null || returnType.IsPrimitive)
             return json.ConvertTo(returnType ?? typeof(string))!;
 
-        if (returnType != typeof(ExpandoObject)) 
+        if (returnType != typeof(ExpandoObject) && returnType != typeof(object)) 
             return JsonSerializer.Deserialize(json, returnType, options)!;
         
         options.Converters.Add(new ExpandoObjectConverterFactory());
