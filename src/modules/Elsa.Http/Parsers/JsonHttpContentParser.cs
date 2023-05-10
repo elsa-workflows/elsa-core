@@ -27,7 +27,6 @@ public class JsonHttpContentParser : IHttpContentParser
         };
         
         options.Converters.Add(new JsonStringEnumConverter());
-        options.Converters.Add(new PolymorphicObjectConverterFactory());
 
         using var reader = new StreamReader(content, leaveOpen: true);
         var json = await reader.ReadToEndAsync();
