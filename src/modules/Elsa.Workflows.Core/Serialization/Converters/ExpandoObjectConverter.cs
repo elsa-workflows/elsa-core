@@ -9,17 +9,7 @@ namespace Elsa.Workflows.Core.Serialization.Converters;
 /// </summary>
 public sealed class ExpandoObjectConverter : JsonConverter<object>
 {
-    private readonly JsonConverter<object> _objectConverter;
     private const string IdPropertyName = "$id";
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ExpandoObjectConverter"/> class.
-    /// </summary>
-    public ExpandoObjectConverter(JsonSerializerOptions options)
-    {
-        var factory = (JsonConverterFactory)(options.Converters.FirstOrDefault(x => x is PolymorphicObjectConverterFactory) ?? new PolymorphicObjectConverterFactory());
-        _objectConverter = (JsonConverter<object>)factory.CreateConverter(typeof(object), options)!;
-    }
 
     /// <inheritdoc />
     public override void Write(Utf8JsonWriter writer, object value, JsonSerializerOptions options)
@@ -64,7 +54,7 @@ public sealed class ExpandoObjectConverter : JsonConverter<object>
                             list.Add(Read(ref reader, typeof(object), options));
                             break;
                         case JsonTokenType.EndArray:
-                            return list;
+                            return list.ToArray();
                     }
                 }
 
@@ -83,7 +73,7 @@ public sealed class ExpandoObjectConverter : JsonConverter<object>
                             reader.Read();
                             if (key != IdPropertyName)
                             {
-                                var value = _objectConverter.Read(ref reader, typeof(object), options)!;
+                                var value = Read(ref reader, typeof(object), options)!;
                                 dict.Add(key, value);
                             }
 

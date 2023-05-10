@@ -19,6 +19,6 @@ public class ExpandoObjectConverterFactory : JsonConverterFactory
     /// <inheritdoc />
     public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
     {
-        return new ExpandoObjectConverter(options);
+        return new ExpandoObjectConverter();
     }
 }

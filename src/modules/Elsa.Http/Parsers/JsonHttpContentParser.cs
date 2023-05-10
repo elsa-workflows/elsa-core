@@ -37,6 +37,7 @@ public class JsonHttpContentParser : IHttpContentParser
         if (returnType != typeof(ExpandoObject)) 
             return JsonSerializer.Deserialize(json, returnType, options)!;
         
+        options.Converters.Add(new ExpandoObjectConverterFactory());
         return JsonSerializer.Deserialize<object>(json, options)!;
     }
 }

@@ -54,7 +54,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
             return !string.IsNullOrWhiteSpace(newtonsoftJson) ? JObject.Parse(newtonsoftJson) : new JObject();
         }
 
-        // If the target type is a Newtonsoft.JObject, parse the JSON island.
+        // If the target type is a Newtonsoft.JArray, parse the JSON island.
         var isNewtonsoftArray = targetType == typeof(JArray);
 
         if (isNewtonsoftArray)
