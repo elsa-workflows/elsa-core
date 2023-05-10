@@ -231,25 +231,27 @@ namespace Elsa.Activities.ControlFlow
                 where targetActivity.Type == nameof(Join)
                 select connection;
 
-            var inboundConnections = inboundTransitionsQuery.ToList();
-            var joinBlueprint = inboundConnections.FirstOrDefault()?.Target.Activity;
-            var joinActivityData = joinBlueprint != null ? workflowExecutionContext.WorkflowInstance.ActivityData.GetItem(joinBlueprint.Id, () => new Dictionary<string, object?>()) : default;
-
-            if (joinActivityData == null)
-                return;
-
-            var inboundTransitions = joinActivityData.GetState<IReadOnlyCollection<string>?>(nameof(InboundTransitions)) ?? new List<string>();
-
-            // For each inbound connection, record the transition.
-            foreach (var inboundConnection in inboundConnections)
+            foreach (var inboundConnections in inboundTransitionsQuery.GroupBy(conn => conn.Target.Activity.Id))
             {
-                inboundTransitions = inboundTransitions
-                    .Union(new[] { GetTransitionKey(inboundConnection) })
-                    .Distinct()
-                    .ToList();
-            }
+                var joinBlueprint = inboundConnections.First().Target.Activity;
+                var joinActivityData = joinBlueprint != null ? workflowExecutionContext.WorkflowInstance.ActivityData.GetItem(joinBlueprint.Id, () => new Dictionary<string, object?>()) : default;
 
-            joinActivityData.SetState(nameof(InboundTransitions), inboundTransitions);
+                if (joinActivityData != null)
+                {
+                    var inboundTransitions = joinActivityData.GetState<IReadOnlyCollection<string>?>(nameof(InboundTransitions)) ?? new List<string>();
+
+                    // For each inbound connection, record the transition.
+                    foreach (var inboundConnection in inboundConnections)
+                    {
+                        inboundTransitions = inboundTransitions
+                            .Union(new[] { GetTransitionKey(inboundConnection) })
+                            .Distinct()
+                            .ToList();
+                    }
+
+                    joinActivityData.SetState(nameof(InboundTransitions), inboundTransitions);
+                }
+            }
         }
 
         private string GetTransitionKey(IConnection connection)

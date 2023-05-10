@@ -17,10 +17,12 @@ namespace Elsa.Activities.Kafka.Services
         private IConsumer<Ignore, byte[]>? _consumer;
         private Func<KafkaMessageEvent, Task>? _messageHandler;
         private Func<Exception, Task>? _errHandler;
+        private readonly KafkaOptions _kafkaOptions;
 
-        public Client(KafkaConfiguration configuration)
+        public Client(KafkaConfiguration configuration, KafkaOptions options)
         {
             Configuration = configuration;
+            _kafkaOptions = options;
         }
 
         public KafkaConfiguration Configuration { get; }
@@ -40,6 +42,10 @@ namespace Elsa.Activities.Kafka.Services
                 BootstrapServers = Configuration.ConnectionString,
                 GroupId = group,
                 AutoOffsetReset = Configuration.AutoOffsetReset,
+                SaslMechanism = _kafkaOptions.SaslMechanism,
+                SaslUsername = _kafkaOptions.SaslUsername,
+                SecurityProtocol = _kafkaOptions.SecurityProtocol,
+                SaslPassword = _kafkaOptions.SaslPassword,
             };
 
             _consumer = new ConsumerBuilder<Ignore, byte[]>(consumerConfig).Build();
@@ -54,7 +60,11 @@ namespace Elsa.Activities.Kafka.Services
         {
             var producerConfig = new ProducerConfig()
             {
-                BootstrapServers = Configuration.ConnectionString
+                BootstrapServers = Configuration.ConnectionString,
+                SaslMechanism = _kafkaOptions.SaslMechanism,
+                SaslPassword = _kafkaOptions.SaslPassword,
+                SaslUsername = _kafkaOptions.SaslUsername,
+                SecurityProtocol = _kafkaOptions.SecurityProtocol,
             };
 
             using var producer = new ProducerBuilder<Null, string>(producerConfig).Build();
@@ -71,7 +81,7 @@ namespace Elsa.Activities.Kafka.Services
                     {
                         _consumer.Unsubscribe();
                         _consumer.Close();
-                    }                  
+                    }
                 }
                 catch (Exception e)
                 {

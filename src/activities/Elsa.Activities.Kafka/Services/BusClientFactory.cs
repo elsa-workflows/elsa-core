@@ -11,7 +11,13 @@ namespace Elsa.Activities.Kafka.Services
         private readonly IDictionary<int, IClient> _senders = new Dictionary<int, IClient>();
 
         private readonly SemaphoreSlim _semaphore = new(1);
-        
+
+        private readonly KafkaOptions _options;
+        public BusClientFactory(KafkaOptions options)
+        {
+            _options = options;
+        }
+
         public async Task<IClient> GetReceiverAsync(KafkaConfiguration configuration, CancellationToken cancellationToken)
         {
             await _semaphore.WaitAsync(cancellationToken);
@@ -21,7 +27,7 @@ namespace Elsa.Activities.Kafka.Services
                 if (_receivers.TryGetValue(configuration.GetHashCode(), out var messageReceiver))
                     return messageReceiver;
 
-                var newMessageReceiver = new Client(configuration);
+                var newMessageReceiver = new Client(configuration, _options);
                 _receivers.Add(configuration.GetHashCode(), newMessageReceiver);
                 return newMessageReceiver;
             }
@@ -57,7 +63,7 @@ namespace Elsa.Activities.Kafka.Services
                 if (_senders.TryGetValue(configuration.GetHashCode(), out var messageSender))
                     return messageSender;
 
-                var newMessageSender = new Client(configuration);
+                var newMessageSender = new Client(configuration, _options);
                 _senders.Add(configuration.GetHashCode(), newMessageSender);
                 return newMessageSender;
             }
