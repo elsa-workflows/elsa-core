@@ -140,8 +140,7 @@ public static class ActivityExecutionContextExtensions
     public static async Task EvaluateInputPropertiesAsync(this ActivityExecutionContext context)
     {
         var activity = context.Activity;
-        var activityRegistry = context.GetRequiredService<IActivityRegistry>();
-        var activityDescriptor = activityRegistry.Find(activity.Type) ?? throw new Exception("Activity descriptor not found");
+        var activityDescriptor = context.ActivityDescriptor;
         var wrappedInputs = activityDescriptor.GetWrappedInputPropertyDescriptors(activity);
 
         foreach (var inputDescriptor in wrappedInputs) 
