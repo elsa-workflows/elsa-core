@@ -9,8 +9,6 @@ namespace Elsa.Workflows.Core.Serialization.Converters;
 /// </summary>
 public sealed class ExpandoObjectConverter : JsonConverter<object>
 {
-    private const string IdPropertyName = "$id";
-
     /// <inheritdoc />
     public override void Write(Utf8JsonWriter writer, object value, JsonSerializerOptions options)
     {
@@ -71,12 +69,8 @@ public sealed class ExpandoObjectConverter : JsonConverter<object>
                         case JsonTokenType.PropertyName:
                             var key = reader.GetString()!;
                             reader.Read();
-                            if (key != IdPropertyName)
-                            {
-                                var value = Read(ref reader, typeof(object), options)!;
-                                dict.Add(key, value);
-                            }
-
+                            var value = Read(ref reader, typeof(object), options)!;
+                            dict.Add(key, value);
                             break;
                         default:
                             throw new JsonException();
