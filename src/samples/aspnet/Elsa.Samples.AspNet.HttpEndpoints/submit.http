@@ -1,0 +1,9 @@
+### John Doe
+
+POST https://localhost:5001/workflows/submit
+Content-Type: application/json
+
+{
+  "name": "John Doe",
+  "email": "john.doe@acme.com"
+}
