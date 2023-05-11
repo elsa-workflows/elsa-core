@@ -27,7 +27,6 @@ public class WorkflowsMiddleware
     private readonly IWorkflowRuntime _workflowRuntime;
     private readonly IRouteMatcher _routeMatcher;
     private readonly IRouteTable _routeTable;
-    private readonly IWorkflowInstanceStore _workflowInstanceStore;
     private readonly IHttpBookmarkProcessor _httpBookmarkProcessor;
     private readonly IHttpEndpointWorkflowFaultHandler _httpEndpointWorkflowFaultHandler;
     private readonly IHttpEndpointAuthorizationHandler _httpEndpointAuthorizationHandler;
@@ -44,7 +43,6 @@ public class WorkflowsMiddleware
     public WorkflowsMiddleware(
         RequestDelegate next,
         IWorkflowRuntime workflowRuntime,
-        IWorkflowInstanceStore workflowInstanceStore,
         IOptions<HttpActivityOptions> options,
         IHttpBookmarkProcessor httpBookmarkProcessor,
         IHttpEndpointWorkflowFaultHandler httpEndpointWorkflowFaultHandler,
@@ -58,7 +56,6 @@ public class WorkflowsMiddleware
     {
         _next = next;
         _workflowRuntime = workflowRuntime;
-        _workflowInstanceStore = workflowInstanceStore;
         _options = options.Value;
         _httpBookmarkProcessor = httpBookmarkProcessor;
         _httpEndpointWorkflowFaultHandler = httpEndpointWorkflowFaultHandler;
