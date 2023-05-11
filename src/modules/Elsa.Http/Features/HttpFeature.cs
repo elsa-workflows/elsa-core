@@ -119,7 +119,7 @@ public class HttpFeature : FeatureBase
 
             // Activity property options providers.
             .AddSingleton<IActivityPropertyOptionsProvider, WriteHttpResponseContentTypeOptionsProvider>()
-            
+
             // Port resolvers.
             .AddSingleton<IActivityPortResolver, SendHttpRequestActivityPortResolver>()
 
@@ -129,8 +129,12 @@ public class HttpFeature : FeatureBase
             .AddSingleton<DefaultHttpEndpointWorkflowFaultHandler>()
             .AddSingleton(HttpEndpointWorkflowFaultHandler)
             .AddSingleton(HttpEndpointAuthorizationHandler)
-            
+
             // Add mediator handlers.
-            .AddNotificationHandlersFrom<HttpFeature>();
+            .AddNotificationHandlersFrom<HttpFeature>()
+
+            // AuthenticationBasedHttpEndpointAuthorizationHandler requires Authorization services.
+            // We could consider creating a separate module for installing authorization services.
+            .AddAuthorization();
     }
 }
