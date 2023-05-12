@@ -1,3 +1,4 @@
+using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.EntityFrameworkCore.Common;
 using Elsa.Extensions;
@@ -9,6 +10,8 @@ using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 using Microsoft.EntityFrameworkCore;
 using Open.Linq.AsyncExtensions;
+using System.ComponentModel;
+using System.Linq.Expressions;
 
 namespace Elsa.EntityFrameworkCore.Modules.Management;
 
@@ -93,10 +96,12 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
     {
         await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
         var set = dbContext.WorkflowDefinitions;
-        var queryable = Filter(set.AsQueryable(), filter).OrderBy(order);
-        var count = await queryable.LongCountAsync(cancellationToken);
-        var results = await queryable.Select(x => WorkflowDefinitionSummary.FromDefinition(x)).ToListAsync(cancellationToken);
 
+        var queryable = Filter(set.AsQueryable(), filter).OrderBy(order);
+
+        var count = await queryable.LongCountAsync(cancellationToken);
+        queryable = Paginate(queryable, pageArgs);
+        var results = await queryable.Select(x => WorkflowDefinitionSummary.FromDefinition(x)).ToListAsync(cancellationToken);
         return Page.Of(results, count);
     }
 
@@ -181,6 +186,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         return queryable;
     }
 
+
     private class WorkflowDefinitionState
     {
         public WorkflowDefinitionState()
@@ -211,4 +217,6 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         public ICollection<string> Outcomes { get; set; } = new List<string>();
         public IDictionary<string, object> CustomProperties { get; set; } = new Dictionary<string, object>();
     }
+
+   
 }

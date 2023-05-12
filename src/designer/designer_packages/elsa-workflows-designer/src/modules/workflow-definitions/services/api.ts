@@ -251,7 +251,7 @@ export interface ImportWorkflowResponse {
 
 export enum WorkflowDefinitionsOrderBy {
   Name = 'Name',
-  CreatedAt = 'CreatedAt',
+  Created = 'Created',
 }
 
 export interface ListWorkflowDefinitionsRequest {

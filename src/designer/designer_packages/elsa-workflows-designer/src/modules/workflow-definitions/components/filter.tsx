@@ -107,7 +107,7 @@ const PageSizeFilter: FunctionalComponent<PageSizeFilterProps> = ({ selectedPage
 
 const OrderByFilter: FunctionalComponent<OrderByFilterProps> = ({ selectedOrderBy, onChange }) => {
   const selectedOrderByText = !!selectedOrderBy ? `Ordered by: ${selectedOrderBy}` : 'Order by';
-  const orderByValues: Array<WorkflowDefinitionsOrderBy> = [WorkflowDefinitionsOrderBy.Name, WorkflowDefinitionsOrderBy.CreatedAt];
+  const orderByValues: Array<WorkflowDefinitionsOrderBy> = [WorkflowDefinitionsOrderBy.Name, WorkflowDefinitionsOrderBy.Created];
   const items: Array<DropdownButtonItem> = orderByValues.map(x => ({ text: x, value: x, isSelected: x == selectedOrderBy }));
   const onOrderByChanged = (e: CustomEvent<DropdownButtonItem>) => onChange(e.detail.value);
 
