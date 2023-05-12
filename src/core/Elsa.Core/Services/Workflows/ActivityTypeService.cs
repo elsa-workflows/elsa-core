@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -11,6 +12,7 @@ using Elsa.Providers.Activities;
 using Elsa.Services.Models;
 using MediatR;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Services.Workflows
 {
@@ -22,12 +24,15 @@ namespace Elsa.Services.Workflows
         private readonly IMediator _mediator;
         private readonly ICacheSignal _cacheSignal;
 
-        public ActivityTypeService(IEnumerable<IActivityTypeProvider> providers, IMemoryCache memoryCache, IMediator mediator, ICacheSignal cacheSignal)
+        private readonly ILogger _logger;
+
+        public ActivityTypeService(IEnumerable<IActivityTypeProvider> providers, IMemoryCache memoryCache, IMediator mediator, ICacheSignal cacheSignal, ILogger<ActivityTypeService> logger)
         {
             _providers = providers;
             _memoryCache = memoryCache;
             _mediator = mediator;
             _cacheSignal = cacheSignal;
+            _logger = logger;
         }
 
         public async ValueTask<IEnumerable<ActivityType>> GetActivityTypesAsync(CancellationToken cancellationToken) => (await GetDictionaryAsync(cancellationToken)).Values;
@@ -77,10 +82,20 @@ namespace Elsa.Services.Workflows
         {
             foreach (var provider in _providers)
             {
-                var types = await provider.GetActivityTypesAsync(cancellationToken);
+                IEnumerable<ActivityType> types = Enumerable.Empty<ActivityType>();
+                
+                try
+                {
+                    types = await provider.GetActivityTypesAsync(cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "An error occured while generating activities from provider {provider}", provider.GetType());
+                }
 
                 foreach (var type in types)
                     yield return type;
+
             }
         }
     }
