@@ -1,8 +1,9 @@
 namespace Elsa.Common.Entities;
 
-public enum OrderBy
+public enum OrderByWfInstance
 {
     Created,
     LastExecuted,
-    Finished
+    Finished,
+    Name
 }

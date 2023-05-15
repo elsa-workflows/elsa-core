@@ -1,7 +1,9 @@
 using Elsa.Abstractions;
+using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
+using Elsa.Workflows.Management.Models;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.List;
@@ -26,7 +28,8 @@ internal class List : ElsaEndpoint<Request, Response>
     {
         var pageArgs = new PageArgs(request.Page, request.PageSize);
         var filter = CreateFilter(request);
-        var summaries = await _store.FindSummariesAsync(filter, pageArgs, cancellationToken);
+
+        var summaries = await FindAsync(request, filter, pageArgs, cancellationToken);
         return new Response(summaries.Items, summaries.TotalCount);
     }
 
@@ -38,5 +41,37 @@ internal class List : ElsaEndpoint<Request, Response>
         return splitIds.Any()
             ? new WorkflowDefinitionFilter { DefinitionIds = splitIds, VersionOptions = versionOptions }
             : new WorkflowDefinitionFilter { MaterializerName = request.MaterializerName, VersionOptions = versionOptions };
+    }
+
+    private async Task<Page<WorkflowDefinitionSummary>> FindAsync(Request request, WorkflowDefinitionFilter filter, PageArgs pageArgs, CancellationToken cancellationToken)
+    {
+        request.OrderBy = request.OrderBy ?? OrderByWfDefinition.Created;
+
+        var direction = request.OrderBy == OrderByWfDefinition.Name ? (request.OrderDirection ?? OrderDirection.Ascending) : (request.OrderDirection ?? OrderDirection.Descending);
+
+        switch (request.OrderBy)
+        {
+            default:
+            case OrderByWfDefinition.Created:
+                {
+                    var order = new WorkflowDefinitionOrder<DateTimeOffset>
+                    {
+                        KeySelector = p => p.CreatedAt,
+                        Direction = direction
+                    };
+
+                    return await _store.FindSummariesAsync(filter, order, pageArgs, cancellationToken);
+                }
+            case OrderByWfDefinition.Name:
+                {
+                    var order = new WorkflowDefinitionOrder<string>
+                    {
+                        KeySelector = p => p.Name,
+                        Direction = direction
+                    };
+
+                    return await _store.FindSummariesAsync<string>(filter, order, pageArgs, cancellationToken);
+                }
+        }
     }
 }

@@ -14,7 +14,7 @@ public class Request
     public int? Version { get; set; }
     public WorkflowStatus? Status { get; set; }
     public WorkflowSubStatus? SubStatus { get; set; }
-    public OrderBy? OrderBy { get; set; }
+    public OrderByWfInstance? OrderBy { get; set; }
     public OrderDirection? OrderDirection { get; set; }
 }
 

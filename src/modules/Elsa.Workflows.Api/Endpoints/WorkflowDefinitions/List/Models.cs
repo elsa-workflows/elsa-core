@@ -1,3 +1,4 @@
+using Elsa.Common.Entities;
 using Elsa.Workflows.Management.Models;
 using FastEndpoints;
 
@@ -11,6 +12,8 @@ public class Request
     [BindFrom("label")] public string[]? Labels { get; set; }
     public int? Page { get; set; }
     public int? PageSize { get; set; }
+    public OrderByWfDefinition? OrderBy { get; set; }
+    public OrderDirection? OrderDirection { get; set; }
 }
 
 public class Response
