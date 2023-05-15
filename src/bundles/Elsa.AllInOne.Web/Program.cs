@@ -4,6 +4,7 @@ using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Webhooks.Extensions;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Cors.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.UseStaticWebAssets();
@@ -42,7 +43,32 @@ services
     );
 
 services.AddHealthChecks();
-services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()));
+
+static bool AllowAny(IList<string> Values) => Values.Count == 0 || Values[0] == "*";
+services.AddCors(cors => {
+    IConfigurationSection corsPolicyConfiguration = configuration.GetSection("CorsPolicy");
+    CorsPolicy corsPolicy = corsPolicyConfiguration.Get<CorsPolicy>() ?? new CorsPolicy();
+    cors.AddDefaultPolicy(policy => {
+        var headers = corsPolicy.Headers;
+        var origins = corsPolicy.Origins;
+        var methods = corsPolicy.Methods;
+
+        if (AllowAny(headers))
+            policy.AllowAnyHeader();
+        else
+            policy.WithHeaders(headers.ToArray());
+
+        if (AllowAny(origins))
+            policy.AllowAnyOrigin();
+        else
+            policy.WithOrigins(origins.ToArray());
+
+        if (AllowAny(methods))
+            policy.AllowAnyMethod();
+        else
+            policy.WithMethods(methods.ToArray());
+    });
+});
 
 // Razor Pages.
 services.AddRazorPages(options => options.Conventions.ConfigureFilter(new IgnoreAntiforgeryTokenAttribute()));
