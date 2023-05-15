@@ -45,7 +45,7 @@ internal class List : ElsaEndpoint<Request, Response>
 
     private async Task<Page<WorkflowDefinitionSummary>> FindAsync(Request request, WorkflowDefinitionFilter filter, PageArgs pageArgs, CancellationToken cancellationToken)
     {
-        request.OrderBy = request.OrderBy ?? OrderByWfDefinition.Name;
+        request.OrderBy = request.OrderBy ?? OrderByWfDefinition.Created;
 
         var direction = request.OrderBy == OrderByWfDefinition.Name ? (request.OrderDirection ?? OrderDirection.Ascending) : (request.OrderDirection ?? OrderDirection.Descending);
 
@@ -53,7 +53,6 @@ internal class List : ElsaEndpoint<Request, Response>
         {
             default:
             case OrderByWfDefinition.Created:
-
                 {
                     var order = new WorkflowDefinitionOrder<DateTimeOffset>
                     {
@@ -71,10 +70,8 @@ internal class List : ElsaEndpoint<Request, Response>
                         Direction = direction
                     };
 
-                    return await _store.FindSummariesAsync<string>(filter, order,pageArgs,  cancellationToken);
+                    return await _store.FindSummariesAsync<string>(filter, order, pageArgs, cancellationToken);
                 }
-
         }
     }
-
 }
