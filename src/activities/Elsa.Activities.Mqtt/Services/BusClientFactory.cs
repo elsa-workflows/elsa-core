@@ -12,7 +12,7 @@ namespace Elsa.Activities.Mqtt.Services
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly IDictionary<int, IMqttClientWrapper> _senders = new Dictionary<int, IMqttClientWrapper>();
-        private readonly IDictionary<int, (DateTime,IMqttClientWrapper)> _receivers = new Dictionary<int, (DateTime,IMqttClientWrapper)>();
+        private readonly IDictionary<int, IMqttClientWrapper> _receivers = new Dictionary<int, IMqttClientWrapper>();
         private readonly SemaphoreSlim _semaphore = new(1);
 
         public BusClientFactory(IServiceProvider serviceProvider)
@@ -51,8 +51,7 @@ namespace Elsa.Activities.Mqtt.Services
             {
                 if (_receivers.TryGetValue(options.GetHashCode(), out var messageReceiverDateTime))
                 {
-                    messageReceiverDateTime.Item1 = DateTime.Now; //Timeout.
-                    return messageReceiverDateTime.Item2;
+                    return messageReceiverDateTime;
                 }
                     
 
@@ -60,7 +59,7 @@ namespace Elsa.Activities.Mqtt.Services
                 var newClient = mqttFactory.CreateMqttClient();
                 var newMessageReceiver = ActivatorUtilities.CreateInstance<MqttClientWrapper>(_serviceProvider, newClient, options);
 
-                _receivers.Add(options.GetHashCode(), new ( DateTime.Now, newMessageReceiver ));
+                _receivers.Add(options.GetHashCode(), newMessageReceiver );
                 return newMessageReceiver;
             }
             finally
