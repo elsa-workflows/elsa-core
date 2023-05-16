@@ -44,7 +44,7 @@ export class WorkflowDefinitionBrowser {
   @State() private selectAllChecked: boolean;
 
   async componentWillLoad() {
-    var persistedRequest = getRequest()
+    const persistedRequest = getRequest();
 
     if (persistedRequest) {
       this.currentPage = persistedRequest.page
@@ -83,7 +83,7 @@ export class WorkflowDefinitionBrowser {
   }
 
   private onDeleteManyClick = async () => {
-    if(this.selectedWorkflowDefinitionIds.length == 0) 
+    if(this.selectedWorkflowDefinitionIds.length == 0)
       return;
 
     this.modalDialogService.show(
@@ -99,7 +99,7 @@ export class WorkflowDefinitionBrowser {
   };
 
   private onPublishManyClick = async () => {
-    if(this.selectedWorkflowDefinitionIds.length == 0) 
+    if(this.selectedWorkflowDefinitionIds.length == 0)
       return;
 
     this.modalDialogService.show(
@@ -114,9 +114,9 @@ export class WorkflowDefinitionBrowser {
   };
 
   private onUnpublishManyClick = async () => {
-    if(this.selectedWorkflowDefinitionIds.length == 0) 
+    if(this.selectedWorkflowDefinitionIds.length == 0)
       return;
-      
+
     this.modalDialogService.show(
       () => DefaultContents.Warning("Are you sure you want to unpublish selected workflow definitions?"),
       {
@@ -138,7 +138,7 @@ export class WorkflowDefinitionBrowser {
     // TODO: Load only json-based workflow definitions for now.
     // Later, also allow CLR-based workflows to be "edited" (publish / unpublish / position activities / set variables, etc.)
     const materializerName = 'Json';
-    
+
     var request: ListWorkflowDefinitionsRequest = {
       materializerName,
       page: this.currentPage,
