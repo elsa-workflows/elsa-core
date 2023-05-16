@@ -346,7 +346,7 @@ export class ElsaDropdownButton {
   constructor(c: ChangeDetectorRef, r: ElementRef, protected z: NgZone) {
     c.detach();
     this.el = r.nativeElement;
-    proxyOutputs(this, this.el, ['itemSelected']);
+    proxyOutputs(this, this.el, ['itemSelected', 'menuOpened']);
   }
 }
 
@@ -356,6 +356,8 @@ import type { DropdownButtonItem as IElsaDropdownButtonDropdownButtonItem } from
 export declare interface ElsaDropdownButton extends Components.ElsaDropdownButton {
 
   itemSelected: EventEmitter<CustomEvent<IElsaDropdownButtonDropdownButtonItem>>;
+
+  menuOpened: EventEmitter<CustomEvent<void>>;
 }
 
 
