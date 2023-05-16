@@ -1,6 +1,7 @@
 using Elsa.Abstractions;
 using Elsa.Environments.Contracts;
 using Elsa.Environments.Models;
+using Elsa.Identity;
 using JetBrains.Annotations;
 
 namespace Elsa.Environments.Endpoints.Environments.List;
@@ -19,14 +20,16 @@ internal class Endpoint : ElsaEndpointWithoutRequest<Response>
     {
         Get("/environments");
         ConfigurePermissions("read:environments");
+        Policies(IdentityPolicyNames.SecurityRoot);
     }
 
     public override async Task<Response> ExecuteAsync(CancellationToken cancellationToken)
     {
         var environments = await _environmentsManager.ListEnvironmentsAsync(cancellationToken);
-        return new(environments.ToList());
+        var defaultEnvironmentName = await _environmentsManager.GetDefaultEnvironmentNameAsync(cancellationToken);
+        return new(environments.ToList(), defaultEnvironmentName);
     }
 }
 
 [PublicAPI]
-internal record Response(ICollection<WorkflowsEnvironment> Environments);
+internal record Response(ICollection<ServerEnvironment> Environments, string? DefaultEnvironmentName = default);

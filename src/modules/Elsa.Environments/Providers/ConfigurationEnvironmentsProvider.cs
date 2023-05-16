@@ -21,7 +21,7 @@ public class ConfigurationEnvironmentsProvider : IEnvironmentsProvider
     }
     
     /// <inheritdoc />
-    public ValueTask<IEnumerable<WorkflowsEnvironment>> GetEnvironmentsAsync(CancellationToken cancellationToken = default)
+    public ValueTask<IEnumerable<ServerEnvironment>> GetEnvironmentsAsync(CancellationToken cancellationToken = default)
     {
         return new (_options.Value.Environments);
     }

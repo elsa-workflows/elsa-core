@@ -3,7 +3,7 @@
 /// <summary>
 /// Represents the environment in which the workflow engine is running.
 /// </summary>
-public class WorkflowsEnvironment
+public class ServerEnvironment
 {
     /// <summary>
     /// The name of the environment.

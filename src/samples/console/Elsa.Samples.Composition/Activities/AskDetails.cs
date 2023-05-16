@@ -1,7 +1,6 @@
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Management.Activities.SetOutput;
 
 public class AskDetails : Composite<Person>
 {

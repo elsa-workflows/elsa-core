@@ -12,5 +12,5 @@ public interface IEnvironmentsProvider
     /// </summary>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A list of workflow environments.</returns>
-    ValueTask<IEnumerable<WorkflowsEnvironment>> GetEnvironmentsAsync(CancellationToken cancellationToken = default);
+    ValueTask<IEnumerable<ServerEnvironment>> GetEnvironmentsAsync(CancellationToken cancellationToken = default);
 }

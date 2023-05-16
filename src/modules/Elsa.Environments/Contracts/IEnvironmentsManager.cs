@@ -12,5 +12,12 @@ public interface IEnvironmentsManager
     /// </summary>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>All environments.</returns>
-    Task<IEnumerable<WorkflowsEnvironment>> ListEnvironmentsAsync(CancellationToken cancellationToken = default);
+    ValueTask<IEnumerable<ServerEnvironment>> ListEnvironmentsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returns the name of the default environment.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The name of the default environment.</returns>
+    ValueTask<string?> GetDefaultEnvironmentNameAsync(CancellationToken cancellationToken = default);
 }
