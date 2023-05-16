@@ -11,9 +11,9 @@ public class AskName : Composite<string>
 
     public AskName()
     {
+        Variables = new List<Variable> { _name };
         Root = new Sequence
         {
-            Variables = new List<Variable> { _name },
             Activities = new List<IActivity>
             {
                 new WriteLine(context => Prompt.Get(context)),

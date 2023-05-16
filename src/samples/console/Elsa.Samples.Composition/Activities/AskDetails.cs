@@ -1,6 +1,7 @@
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Management.Activities.SetOutput;
 
 public class AskDetails : Composite<Person>
 {
@@ -12,9 +13,9 @@ public class AskDetails : Composite<Person>
 
     public AskDetails()
     {
+        Variables = new List<Variable> { _name, _age };
         Root = new Sequence
         {
-            Variables = { _name, _age },
             Activities =
             {
                 new AskName
