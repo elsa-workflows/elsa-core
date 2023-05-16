@@ -42,7 +42,7 @@ services
             runtime.UseAsyncWorkflowStateExporter();
             runtime.UseMassTransitDispatcher();
         })
-        .UseLabels(labels => labels.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
+        .UseEnvironments(environments => environments.EnvironmentsOptions = options => configuration.GetSection("Environments").Bind(options))
         .UseScheduling()
         .UseWorkflowsApi(api => api.AddFastEndpointsAssembly<Program>())
         .UseJavaScript()

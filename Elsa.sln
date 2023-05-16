@@ -198,6 +198,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.AspNet.ProtoAc
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.AspNet.HttpEndpoints", "src\samples\aspnet\Elsa.Samples.AspNet.HttpEndpoints\Elsa.Samples.AspNet.HttpEndpoints.csproj", "{165ACC9D-B67C-4B49-A818-ECFD247C899C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Environments", "src\modules\Elsa.Environments\Elsa.Environments.csproj", "{B5CDF747-8066-40D5-9BAE-CBE397BC9B51}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -504,6 +506,10 @@ Global
 		{165ACC9D-B67C-4B49-A818-ECFD247C899C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{165ACC9D-B67C-4B49-A818-ECFD247C899C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{165ACC9D-B67C-4B49-A818-ECFD247C899C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B5CDF747-8066-40D5-9BAE-CBE397BC9B51}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B5CDF747-8066-40D5-9BAE-CBE397BC9B51}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B5CDF747-8066-40D5-9BAE-CBE397BC9B51}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B5CDF747-8066-40D5-9BAE-CBE397BC9B51}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{155227F0-A33B-40AA-A4B4-06F813EB921B} = {61017E64-6D00-49CB-9E81-5002DC8F7D5F}
@@ -592,5 +598,6 @@ Global
 		{044C3108-FE79-460A-9C31-A03C30228836} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 		{3212A999-4AC4-4911-9AA4-92AB906BCB5E} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 		{165ACC9D-B67C-4B49-A818-ECFD247C899C} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
+		{B5CDF747-8066-40D5-9BAE-CBE397BC9B51} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 	EndGlobalSection
 EndGlobal
