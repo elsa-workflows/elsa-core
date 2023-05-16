@@ -10,9 +10,9 @@ public class AskAge : Composite<int>
 
     public AskAge()
     {
+        Variables = new List<Variable> { _age };
         Root = new Sequence
         {
-            Variables = { _age },
             Activities =
             {
                 new WriteLine(context => Prompt.Get(context)),

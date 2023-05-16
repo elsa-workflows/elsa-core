@@ -31,6 +31,32 @@ import { RenderActivityPropsContext } from "./modules/workflow-definitions/compo
 import { ActivityDriverRegistry } from "./services";
 import { JournalItemSelectedArgs } from "./modules/workflow-instances/events";
 import { PublishClickedArgs } from "./modules/workflow-definitions/components/publish-button";
+export { InputDefinition, OutputDefinition, WorkflowDefinition, WorkflowDefinitionSummary } from "./modules/workflow-definitions/models/entities";
+export { Activity, ActivityDeletedArgs, ActivitySelectedArgs, ChildActivitySelectedArgs, ContainerSelectedArgs, EditChildActivityArgs, GraphUpdatedArgs, IntellisenseContext, SelectList, SelectListItem, TabChangedArgs, TabDefinition, Variable, WorkflowExecutionLogRecord, WorkflowInstance, WorkflowInstanceSummary, WorkflowUpdatedArgs } from "./models";
+export { ActivityUpdatedArgs, DeleteActivityRequestedArgs, Widget, WorkflowDefinitionPropsUpdatedArgs, WorkflowDefinitionUpdatedArgs } from "./modules/workflow-definitions/models/ui";
+export { Button } from "./components/shared/button-group/models";
+export { ActivityInputContext } from "./services/activity-input-driver";
+export { ContextMenuAnchorPoint, ContextMenuItem } from "./components/shared/context-menu/models";
+export { DropdownButtonItem, DropdownButtonOrigin } from "./components/shared/dropdown-button/models";
+export { Graph } from "@antv/x6";
+export { AddActivityArgs, FlowchartPathItem, LayoutDirection, RenameActivityArgs, UpdateActivityArgs } from "./modules/flowchart/models";
+export { OutNode } from "@antv/layout";
+export { ActivityNodeShape } from "./modules/flowchart/shapes";
+export { PanelActionClickArgs, PanelActionDefinition } from "./components/shared/form-panel/models";
+export { ExpressionChangedArs } from "./components/shared/input-control-switch/input-control-switch";
+export { SignedInArgs } from "./modules/login/models";
+export { ModalActionClickArgs, ModalActionDefinition, ModalDialogInstance } from "./components/shared/modal-dialog/models";
+export { ModalType } from "./components/shared/modal-dialog/modal-type";
+export { MonacoValueChangedArgs } from "./components/shared/monaco-editor/monaco-editor";
+export { NotificationType } from "./modules/notifications/models";
+export { PagerData } from "./components/shared/pager/pager";
+export { PanelPosition, PanelStateChangedArgs } from "./components/panel/models";
+export { ShellInitializingContext } from "./models/shell";
+export { WorkflowContextProviderDescriptor } from "./modules/workflow-contexts/services/api";
+export { RenderActivityPropsContext } from "./modules/workflow-definitions/components/models";
+export { ActivityDriverRegistry } from "./services";
+export { JournalItemSelectedArgs } from "./modules/workflow-instances/events";
+export { PublishClickedArgs } from "./modules/workflow-definitions/components/publish-button";
 export namespace Components {
     interface ElsaActivityInputEditorDialogContent {
         "getInput": () => Promise<InputDefinition>;
