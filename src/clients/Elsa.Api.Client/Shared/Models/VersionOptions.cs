@@ -1,6 +1,6 @@
 using JetBrains.Annotations;
 
-namespace Elsa.Api.Client.Models;
+namespace Elsa.Api.Client.Shared.Models;
 
 /// <summary>
 /// Represents the version to get.

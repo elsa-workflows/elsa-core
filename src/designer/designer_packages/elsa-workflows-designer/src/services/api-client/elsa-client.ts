@@ -54,8 +54,7 @@ async function createHttpClient(baseAddress: string): Promise<AxiosInstance> {
   const eventBus = Container.get(EventBus);
   await eventBus.emit(EventTypes.HttpClient.ConfigCreated, this, {config});
   const httpClient = axios.create(config);
-  const middlewareService = new MiddlewareService(httpClient);
-  await eventBus.emit(EventTypes.HttpClient.ClientCreated, this, {service: middlewareService, httpClient});
+  await eventBus.emit(EventTypes.HttpClient.ClientCreated, this, {httpClient});
 
   return httpClient;
 }

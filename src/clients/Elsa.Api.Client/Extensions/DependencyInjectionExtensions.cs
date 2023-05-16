@@ -1,5 +1,6 @@
 using Elsa.Api.Client.Contracts;
 using Elsa.Api.Client.Options;
+using Elsa.Api.Client.Resources.WorkflowDefinitions.Contracts;
 using Elsa.Api.Client.Services;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;

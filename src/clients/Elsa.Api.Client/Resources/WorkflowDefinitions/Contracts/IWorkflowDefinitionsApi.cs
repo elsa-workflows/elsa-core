@@ -1,6 +1,7 @@
-using Elsa.Api.Client.Models;
+using Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
+using Refit;
 
-namespace Elsa.Api.Client.Contracts;
+namespace Elsa.Api.Client.Resources.WorkflowDefinitions.Contracts;
 
 /// <summary>
 /// Represents a client for the workflow definitions API.
@@ -13,13 +14,15 @@ public interface IWorkflowDefinitionsApi
     /// <param name="request">The request containing options for listing workflow definitions.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The response containing the workflow definitions.</returns>
+    [Get("/workflow-definitions")]
     Task<ListWorkflowDefinitionsResponse> ListAsync(ListWorkflowDefinitionsRequest request, CancellationToken cancellationToken = default);
-    
+
     /// <summary>
     /// Deletes a workflow definition.
     /// </summary>
-    /// <param name="request">The request containing the ID of the workflow definition to delete.</param>
+    /// <param name="definitionId">The ID of the workflow definition to delete.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The response.</returns>
-    Task<DeleteWorkflowDefinitionResponse> DeleteAsync(DeleteWorkflowDefinitionRequest request, CancellationToken cancellationToken = default);
+    [Delete("/workflow-definitions/{definitionId}")]
+    Task<DeleteWorkflowDefinitionResponse> DeleteAsync(string definitionId, CancellationToken cancellationToken = default);
 }

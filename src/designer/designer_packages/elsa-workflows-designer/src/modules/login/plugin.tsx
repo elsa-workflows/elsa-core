@@ -1,6 +1,5 @@
 import 'reflect-metadata';
 import {h} from "@stencil/core";
-import {Service as MiddlewareService} from 'axios-middleware';
 import {EventTypes, Plugin} from "../../models";
 import {Container, Service} from "typedi";
 import {StudioService, AuthContext, EventBus} from "../../services";
@@ -27,43 +26,42 @@ export class LoginPlugin implements Plugin {
   }
 
   private onHttpClientCreated = async (e) => {
-    const service: MiddlewareService = e.service;
+    const axios = e.httpClient;
     const loginApi = Container.get(LoginApi);
 
-    service.register({
-      async onRequest(request) {
-        const authContext = Container.get(AuthContext);
-        const token = authContext.getAccessToken();
+    axios.interceptors.request.use(async config => {
+      const authContext = Container.get(AuthContext);
+      const token = authContext.getAccessToken();
 
-        if (!!token)
-          request.headers = {...request.headers, Authorization: `Bearer ${token}`};
+      if (!!token)
+        config.headers = {...config.headers, Authorization: `Bearer ${token}`};
 
-        return request;
-      },
+      return config;
+    });
 
-      async onResponseError(error) {
+    axios.interceptors.response.use(async response => {
+      return response;
+    }, async error => {
 
-        if (error.response.status !== 401 || error.response.config.hasRetriedRequest)
-          return;
+      if (error.response.status !== 401 || error.response.config.hasRetriedRequest)
+        return;
 
-        const authContext = Container.get(AuthContext);
-        const loginResponse = await loginApi.refreshAccessToken(authContext.getRefreshToken());
+      const authContext = Container.get(AuthContext);
+      const loginResponse = await loginApi.refreshAccessToken(authContext.getRefreshToken());
 
-        if (loginResponse.isAuthenticated) {
+      if (loginResponse.isAuthenticated) {
+        await authContext.updateTokens(loginResponse.accessToken, loginResponse.refreshToken, true);
 
-          await authContext.updateTokens(loginResponse.accessToken, loginResponse.refreshToken, true);
-
-          return await service.http({
-            ...error.config,
-            hasRetriedRequest: true,
-            headers: {
-              ...error.config.headers,
-              Authorization: `Bearer ${loginResponse.accessToken}`
-            }
-          });
-        } else {
-          await authContext.signOut();
-        }
+        return await axios.request({
+          ...error.config,
+          hasRetriedRequest: true,
+          headers: {
+            ...error.config.headers,
+            Authorization: `Bearer ${loginResponse.accessToken}`
+          }
+        });
+      } else {
+        await authContext.signOut();
       }
     });
   };

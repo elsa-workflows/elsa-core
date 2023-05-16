@@ -14,7 +14,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\common\Elsa.Api.Common\Elsa.Api.Common.csproj" />
-        <ProjectReference Include="..\Elsa.Identity\Elsa.Identity.csproj" />
     </ItemGroup>
 
 </Project>

@@ -1,4 +1,7 @@
-﻿namespace Elsa.Api.Client.Contracts;
+﻿using Elsa.Api.Client.Resources.WorkflowDefinitions.Contracts;
+using Elsa.Api.Client.Resources.WorkflowInstances.Contracts;
+
+namespace Elsa.Api.Client.Contracts;
 
 /// <summary>
 /// Represents a client for the Elsa API. Each API is exposed as a property.

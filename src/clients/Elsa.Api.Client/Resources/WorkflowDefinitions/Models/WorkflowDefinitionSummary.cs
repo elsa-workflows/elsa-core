@@ -1,6 +1,6 @@
 using JetBrains.Annotations;
 
-namespace Elsa.Api.Client.Models;
+namespace Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 
 /// <summary>
 /// A summary of a workflow definition.

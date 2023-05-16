@@ -1,11 +1,13 @@
+using Elsa;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.Extensions;
-using Elsa.EntityFrameworkCore.Modules.Labels;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Http.Handlers;
 using Elsa.JavaScript.Options;
 using Elsa.WorkflowServer.Web;
+
+EndpointSecurityOptions.DisableSecurity();
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
