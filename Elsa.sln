@@ -1,5 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
+# 
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{61017E64-6D00-49CB-9E81-5002DC8F7D5F}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{155227F0-A33B-40AA-A4B4-06F813EB921B}"
@@ -7,19 +8,19 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "common", "common", "{C6658DE0-2B2F-47F0-BB61-2CA66D435C09}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "solution", "solution", "{7D21EB5E-D6B4-48A5-A9BC-A26387A65F0B}"
-ProjectSection(SolutionItems) = preProject
-	README.md = README.md
-	docker-compose.yml = docker-compose.yml
-	common.props = common.props
-	configureawait.props = configureawait.props
-	.gitignore = .gitignore
-	icon.png = icon.png
-	.github\workflows\packages.yml = .github\workflows\packages.yml
-	.github\workflows\all-in-one-web.yml = .github\workflows\all-in-one-web.yml
-	build-and-run-all-in-one-web-docker.sh = build-and-run-all-in-one-web-docker.sh
-	NuGet.Config = NuGet.Config
-	.github\workflows\npm-packages.yml = .github\workflows\npm-packages.yml
-EndProjectSection
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+		docker-compose.yml = docker-compose.yml
+		common.props = common.props
+		configureawait.props = configureawait.props
+		.gitignore = .gitignore
+		icon.png = icon.png
+		.github\workflows\packages.yml = .github\workflows\packages.yml
+		.github\workflows\all-in-one-web.yml = .github\workflows\all-in-one-web.yml
+		build-and-run-all-in-one-web-docker.sh = build-and-run-all-in-one-web-docker.sh
+		NuGet.Config = NuGet.Config
+		.github\workflows\npm-packages.yml = .github\workflows\npm-packages.yml
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{0354F050-3992-4DD4-B0EE-5FBA04AC72B6}"
 EndProject
@@ -199,6 +200,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.AspNet.HttpEndpoints", "src\samples\aspnet\Elsa.Samples.AspNet.HttpEndpoints\Elsa.Samples.AspNet.HttpEndpoints.csproj", "{165ACC9D-B67C-4B49-A818-ECFD247C899C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Environments", "src\modules\Elsa.Environments\Elsa.Environments.csproj", "{B5CDF747-8066-40D5-9BAE-CBE397BC9B51}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.EntityFrameworkCore.MySql", "src\modules\Elsa.EntityFrameworkCore.MySql\Elsa.EntityFrameworkCore.MySql.csproj", "{8DC74562-1F06-4AFA-8308-8A779E8812A3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -510,6 +513,10 @@ Global
 		{B5CDF747-8066-40D5-9BAE-CBE397BC9B51}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B5CDF747-8066-40D5-9BAE-CBE397BC9B51}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B5CDF747-8066-40D5-9BAE-CBE397BC9B51}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8DC74562-1F06-4AFA-8308-8A779E8812A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8DC74562-1F06-4AFA-8308-8A779E8812A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8DC74562-1F06-4AFA-8308-8A779E8812A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8DC74562-1F06-4AFA-8308-8A779E8812A3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{155227F0-A33B-40AA-A4B4-06F813EB921B} = {61017E64-6D00-49CB-9E81-5002DC8F7D5F}
@@ -599,5 +606,6 @@ Global
 		{3212A999-4AC4-4911-9AA4-92AB906BCB5E} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 		{165ACC9D-B67C-4B49-A818-ECFD247C899C} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 		{B5CDF747-8066-40D5-9BAE-CBE397BC9B51} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
+		{8DC74562-1F06-4AFA-8308-8A779E8812A3} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 	EndGlobalSection
 EndGlobal
