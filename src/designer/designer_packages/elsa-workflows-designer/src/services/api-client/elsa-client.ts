@@ -1,5 +1,4 @@
 ﻿import axios, {AxiosInstance, AxiosRequestConfig} from "axios";
-import {Service as MiddlewareService} from 'axios-middleware';
 import {Container, Service} from 'typedi';
 import {EventBus} from '../event-bus';
 import 'reflect-metadata';
@@ -8,8 +7,6 @@ import {DescriptorsApi} from "./descriptors-api";
 import {DesignerApi} from "./designer-api";
 import {EventTypes} from "../../models";
 import {ScriptingApi} from "./scripting-api";
-import {FeaturesApi} from "./features-api";
-
 export class ElsaClient {
   descriptors: DescriptorsApi;
   designer: DesignerApi;
