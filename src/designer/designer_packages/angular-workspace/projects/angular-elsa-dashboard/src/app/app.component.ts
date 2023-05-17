@@ -12,15 +12,15 @@ export class AppComponent implements OnInit{
     elsaContainer! : StudioService;
     workflowDefinitionsPlugin:WorkflowDefinitionsPlugin  = Container.get(WorkflowDefinitionsPlugin);
     worflowApi: WorkflowDefinitionsApi=Container.get(WorkflowDefinitionsApi);
-    workflowList!: WorkflowDefinitionSummary[]; 
+    workflowList!: WorkflowDefinitionSummary[];
     wf!:WorkflowDefinitionSummary;
 
     async ngOnInit(): Promise<void> {
         let serverSettings = Container.get(ServerSettings);
         serverSettings.baseAddress = "https://localhost:7228/elsa/api";
-        
+
         let loginApi = Container.get(LoginApi);
-        let loginResponse = await loginApi.login("admin","password");        
+        let loginResponse = await loginApi.login("admin","password");
 
         const accessToken = loginResponse.accessToken;
         const refreshToken = loginResponse.refreshToken;
@@ -34,10 +34,10 @@ export class AppComponent implements OnInit{
         http.interceptors.request.use(request=>{
             const authContext = Container.get(AuthContext);
             const token = authContext.getAccessToken();
-    
+
             if (!!token)
-              request.headers = {...request.headers, Authorization: `Bearer ${token}`};
-    
+              request.headers = {...request.headers, Authorization: `Bearer ${token}`} as any;
+
             return request;
         })
 
@@ -53,7 +53,7 @@ export class AppComponent implements OnInit{
     let workflow = await this.worflowApi.get({
         definitionId : definitionId
     });
-    
+
     this.workflowDefinitionsPlugin.showWorkflowDefinitionEditor(workflow);
   }
 
@@ -75,8 +75,8 @@ export class AppComponent implements OnInit{
         console.log(event.definitionId);
         await this.loadWorkflow(event.definitionId);
   }
- 
-        
+
+
   title = 'AngularElsaDashboard';
 
 }

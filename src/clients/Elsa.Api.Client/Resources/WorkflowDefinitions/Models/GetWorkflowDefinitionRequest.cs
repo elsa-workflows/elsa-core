@@ -1,4 +1,4 @@
-namespace Elsa.Api.Client.Contracts;
+namespace Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 
 public class GetWorkflowDefinitionRequest
 {

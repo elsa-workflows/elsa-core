@@ -45,15 +45,14 @@ internal class List : ElsaEndpoint<Request, Response>
 
     private async Task<Page<WorkflowDefinitionSummary>> FindAsync(Request request, WorkflowDefinitionFilter filter, PageArgs pageArgs, CancellationToken cancellationToken)
     {
-        request.OrderBy = request.OrderBy ?? OrderByWfDefinition.Created;
+        request.OrderBy ??= OrderByWfDefinition.Created;
 
         var direction = request.OrderBy == OrderByWfDefinition.Name ? (request.OrderDirection ?? OrderDirection.Ascending) : (request.OrderDirection ?? OrderDirection.Descending);
 
         switch (request.OrderBy)
         {
             default:
-            case OrderByWfDefinition.Created:
-                {
+            {
                     var order = new WorkflowDefinitionOrder<DateTimeOffset>
                     {
                         KeySelector = p => p.CreatedAt,
@@ -66,7 +65,7 @@ internal class List : ElsaEndpoint<Request, Response>
                 {
                     var order = new WorkflowDefinitionOrder<string>
                     {
-                        KeySelector = p => p.Name,
+                        KeySelector = p => p.Name ?? string.Empty,
                         Direction = direction
                     };
 

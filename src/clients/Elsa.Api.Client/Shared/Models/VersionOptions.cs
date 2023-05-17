@@ -1,11 +1,16 @@
+using System.ComponentModel;
+using System.Text.Json.Serialization;
+using Elsa.Api.Client.Converters;
 using JetBrains.Annotations;
 
-namespace Elsa.Api.Client.Models;
+namespace Elsa.Api.Client.Shared.Models;
 
 /// <summary>
 /// Represents the version to get.
 /// </summary>
 [PublicAPI]
+[TypeConverter(typeof(VersionOptionsTypeConverter))]
+[JsonConverter(typeof(VersionOptionsJsonConverter))]
 public struct VersionOptions
 {
     /// <summary>
@@ -58,6 +63,12 @@ public struct VersionOptions
             _ => SpecificVersion(int.Parse(value))
         };
 
+    /// <summary>
+    /// Tries to parse a string into a <see cref="VersionOptions"/>.
+    /// </summary>
+    /// <param name="value">The value to parse.</param>
+    /// <param name="versionOptions">The parsed value.</param>
+    /// <returns><c>true</c> if the value was parsed successfully, otherwise <c>false</c>.</returns>
     public static bool TryParse(string value, out VersionOptions versionOptions)
     {
         versionOptions = FromString(value);

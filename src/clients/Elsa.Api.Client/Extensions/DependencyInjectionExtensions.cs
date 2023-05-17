@@ -1,5 +1,6 @@
 using Elsa.Api.Client.Contracts;
 using Elsa.Api.Client.Options;
+using Elsa.Api.Client.Resources.WorkflowDefinitions.Contracts;
 using Elsa.Api.Client.Services;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
@@ -35,7 +36,8 @@ public static class DependencyInjectionExtensions
     /// <typeparam name="T">The API type.</typeparam>
     public static void AddElsaApiClient<T>(this IServiceCollection services, RefitSettings settings) where T : class
     {
-        services.AddRefitClient<T>(settings).ConfigureHttpClient(ConfigureElsaApiHttpClient);
+        services.AddRefitClient<T>(settings)
+            .ConfigureHttpClient(ConfigureElsaApiHttpClient);
     }
 
     private static void ConfigureElsaApiHttpClient(IServiceProvider serviceProvider, HttpClient httpClient)

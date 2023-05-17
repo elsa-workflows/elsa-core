@@ -1,4 +1,4 @@
-namespace Elsa.Api.Client.Models;
+namespace Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 
 /// <summary>
 /// Represents a response from listing workflow definitions.

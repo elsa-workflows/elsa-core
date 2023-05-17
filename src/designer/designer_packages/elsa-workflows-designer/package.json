@@ -34,7 +34,6 @@
     "@stencil/store": "^2.0.6",
     "async-mutex": "^0.4.0",
     "axios": "^1.4.0",
-    "axios-middleware": "^0.3.1",
     "el-transition": "^0.0.7",
     "js-cookie": "^3.0.5",
     "jwt-decode": "^3.1.2",
