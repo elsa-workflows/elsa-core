@@ -26,6 +26,7 @@ export class Studio {
   @Prop({attribute: 'server'}) serverUrl: string;
   @Prop({attribute: 'monaco-lib-path'}) monacoLibPath: string;
   @Prop({attribute: 'enable-flexible-ports'}) enableFlexiblePorts: boolean;
+  @Prop({attribute: 'disable-auth'}) disableAuth: boolean;
 
   @Watch('serverUrl')
   private handleServerUrl(value: string) {
@@ -49,7 +50,7 @@ export class Studio {
     // If we have a valid session, emit the signed in event so that descriptors will be loaded.
     const authContext = Container.get(AuthContext);
 
-    if (authContext.getIsSignedIn()) {
+    if (this.disableAuth || authContext.getIsSignedIn()) {
       const eventBus = Container.get(EventBus);
       await eventBus.emit(EventTypes.Auth.SignedIn)
     }
