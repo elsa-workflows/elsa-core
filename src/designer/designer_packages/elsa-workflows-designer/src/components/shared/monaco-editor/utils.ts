@@ -1,4 +1,6 @@
-﻿import { Mutex } from "async-mutex";
+﻿import {Mutex} from "async-mutex";
+import {isNullOrWhitespace} from "../../../utils";
+
 const win = window as any;
 const require = win.require;
 
@@ -28,18 +30,50 @@ export async function initializeMonacoWorker(libPath?: string): Promise<Monaco> 
       return win.monaco;
     }
 
+    if (isNullOrWhitespace(libPath)) {
+      // The lib path is not set, which means external code will be responsible for loading the Monaco editor.
+      // In this case, spin while we wait for the editor to be loaded.
+
+      // Create a promise that will resolve after the win.monaco variable exists. Do this in a tight loop, checking for win.monaco to exist on each iteration. Within the same iteration, request the next animation frame as to not block the UI.
+      // If we don't get win.monaco after 3 seconds, reject the promise.
+
+      return new Promise<Monaco>((resolve, reject) => {
+        const startTime = Date.now();
+        const timeout = 3000;
+
+        debugger;
+
+        const checkForMonaco = () => {
+          if (win.monaco) {
+            resolve(win.monaco);
+            return;
+          }
+
+          if (Date.now() - startTime > timeout) {
+            reject('Monaco editor not loaded.');
+            return;
+          }
+
+          requestAnimationFrame(checkForMonaco);
+        };
+
+        checkForMonaco();
+      });
+
+    }
+
     const origin = document.location.origin;
     const baseUrl = libPath.startsWith('http') ? libPath : `${origin}/${libPath}`;
 
-    require.config({ paths: { 'vs': `${baseUrl}/vs` } });
-    win.MonacoEnvironment = { getWorkerUrl: () => proxy };
+    require.config({paths: {'vs': `${baseUrl}/vs`}});
+    win.MonacoEnvironment = {getWorkerUrl: () => proxy};
 
     let proxy = URL.createObjectURL(new Blob([`
 	self.MonacoEnvironment = {
 		baseUrl: '${baseUrl}'
 	};
 	importScripts('${baseUrl}/vs/base/worker/workerMain.js');
-`], { type: 'text/javascript' }));
+`], {type: 'text/javascript'}));
 
     return new Promise(resolve => {
       require(["vs/editor/editor.main"], () => {
@@ -53,7 +87,7 @@ export async function initializeMonacoWorker(libPath?: string): Promise<Monaco> 
 }
 
 function registerLiquid(monaco: any) {
-  monaco.languages.register({ id: 'liquid' });
+  monaco.languages.register({id: 'liquid'});
 
   monaco.languages.registerCompletionItemProvider('liquid', {
     provideCompletionItems: () => {
@@ -77,10 +111,10 @@ function registerLiquid(monaco: any) {
         'uniq', 'upcase', 'url_decode', 'url_encode'];
 
       for (let i = 0; i < keywords.length; i++) {
-        autocompleteProviderItems.push({ 'label': keywords[i], kind: monaco.languages.CompletionItemKind.Keyword });
+        autocompleteProviderItems.push({'label': keywords[i], kind: monaco.languages.CompletionItemKind.Keyword});
       }
 
-      return { suggestions: autocompleteProviderItems };
+      return {suggestions: autocompleteProviderItems};
     }
   });
 }
@@ -102,7 +136,7 @@ function registerSql(monaco: any) {
         });
       }
 
-      return { suggestions: autocompleteProviderItems };
+      return {suggestions: autocompleteProviderItems};
     }
   });
 
