@@ -25,7 +25,7 @@ public class Login : Endpoint<Request, LoginResponse>
     /// <inheritdoc />
     public override async Task<LoginResponse> ExecuteAsync(Request request, CancellationToken cancellationToken)
     {
-        var user = await _userCredentialsValidator.ValidateAsync(request.Username.Trim(), request.Password.Trim(), cancellationToken);
+        var user = await _userCredentialsValidator.ValidateAsync(request.Username?.Trim(), request.Password?.Trim(), cancellationToken);
 
         if (user == null)
             return new LoginResponse(false, null, null);
