@@ -1,5 +1,6 @@
 using Elsa.Api.Client.Contracts;
 using Elsa.Api.Client.Options;
+using Elsa.Api.Client.Resources.Identity.Contracts;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Contracts;
 using Elsa.Api.Client.Services;
 using JetBrains.Annotations;
@@ -25,6 +26,7 @@ public static class DependencyInjectionExtensions
         
         var settings = new RefitSettings();
         services.AddElsaApiClient<IWorkflowDefinitionsApi>(settings);
+        services.AddElsaApiClient<ILoginApi>(settings);
         return services;
     }
 
