@@ -17,26 +17,28 @@ public static class ActivityDescriberExtensions
     /// </summary>
     /// <param name="activityDescriber">The activity describer.</param>
     /// <param name="expression">The property expression.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <typeparam name="TActivity">The type of the activity.</typeparam>
     /// <typeparam name="TProperty">The type of the property.</typeparam>
     /// <returns>The output descriptor.</returns>
-    public static OutputDescriptor DescribeOutputProperty<TActivity, TProperty>(this IActivityDescriber activityDescriber, Expression<Func<TActivity, TProperty>> expression)
+    public static async Task<OutputDescriptor> DescribeOutputProperty<TActivity, TProperty>(this IActivityDescriber activityDescriber, Expression<Func<TActivity, TProperty>> expression, CancellationToken cancellationToken = default)
     {
         var propertyInfo = expression.GetProperty()!;
-        return activityDescriber.DescribeOutputProperty(propertyInfo);
+        return await activityDescriber.DescribeOutputPropertyAsync(propertyInfo, cancellationToken);
     }
-    
+
     /// <summary>
     /// Describes an input property.
     /// </summary>
     /// <param name="activityDescriber">The activity describer.</param>
     /// <param name="expression">The property expression.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <typeparam name="TActivity">The type of the activity.</typeparam>
     /// <typeparam name="TProperty">The type of the property.</typeparam>
     /// <returns>The input descriptor.</returns>
-    public static InputDescriptor DescribeInputProperty<TActivity, TProperty>(this IActivityDescriber activityDescriber, Expression<Func<TActivity, TProperty>> expression)
+    public static async Task<InputDescriptor> DescribeInputPropertyAsync<TActivity, TProperty>(this IActivityDescriber activityDescriber, Expression<Func<TActivity, TProperty>> expression, CancellationToken cancellationToken = default)
     {
         var propertyInfo = expression.GetProperty()!;
-        return activityDescriber.DescribeInputProperty(propertyInfo);
+        return await activityDescriber.DescribeInputPropertyAsync(propertyInfo, cancellationToken);
     }
 }

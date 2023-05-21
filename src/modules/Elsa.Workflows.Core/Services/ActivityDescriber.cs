@@ -30,7 +30,7 @@ public class ActivityDescriber : IActivityDescriber
     }
 
     /// <inheritdoc />
-    public ValueTask<ActivityDescriptor> DescribeActivityAsync([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type activityType, CancellationToken cancellationToken = default)
+    public async Task<ActivityDescriptor> DescribeActivityAsync([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type activityType, CancellationToken cancellationToken = default)
     {
         var activityAttr = activityType.GetCustomAttribute<ActivityAttribute>();
         var ns = activityAttr?.Namespace ?? ActivityTypeNameHelper.GenerateNamespace(activityType);
@@ -80,8 +80,8 @@ public class ActivityDescriber : IActivityDescriber
             DisplayName = displayName,
             Kind = isTrigger ? ActivityKind.Trigger : activityAttr?.Kind ?? ActivityKind.Action,
             Ports = allPorts.ToList(),
-            Inputs = DescribeInputProperties(inputProperties).ToList(),
-            Outputs = DescribeOutputProperties(outputProperties).ToList(),
+            Inputs = (await DescribeInputPropertiesAsync(inputProperties, cancellationToken)).ToList(),
+            Outputs = (await DescribeOutputPropertiesAsync(outputProperties, cancellationToken)).ToList(),
             IsContainer = typeof(IContainer).IsAssignableFrom(activityType),
             IsBrowsable = browsableAttr == null || browsableAttr.Browsable,
             Constructor = context =>
@@ -92,7 +92,7 @@ public class ActivityDescriber : IActivityDescriber
             }
         };
         
-        return ValueTask.FromResult(descriptor);
+        return descriptor;
     }
 
     /// <inheritdoc />
@@ -104,14 +104,14 @@ public class ActivityDescriber : IActivityDescriber
         activityType.GetProperties().Where(x => typeof(Output).IsAssignableFrom(x.PropertyType)).DistinctBy(x => x.Name).ToList();
 
     /// <inheritdoc />
-    public OutputDescriptor DescribeOutputProperty(PropertyInfo propertyInfo)
+    public Task<OutputDescriptor> DescribeOutputPropertyAsync(PropertyInfo propertyInfo, CancellationToken cancellationToken = default)
     {
         var outputAttribute = propertyInfo.GetCustomAttribute<OutputAttribute>();
         var descriptionAttribute = propertyInfo.GetCustomAttribute<DescriptionAttribute>();
         var typeArgs = propertyInfo.PropertyType.GenericTypeArguments;
         var wrappedPropertyType = typeArgs.Any() ? typeArgs[0] : typeof(object);
 
-        return new OutputDescriptor
+        return Task.FromResult(new OutputDescriptor
         (
             (outputAttribute?.Name ?? propertyInfo.Name).Pascalize(),
             outputAttribute?.DisplayName ?? propertyInfo.Name.Humanize(LetterCasing.Title),
@@ -119,11 +119,11 @@ public class ActivityDescriber : IActivityDescriber
             propertyInfo.GetValue,
             descriptionAttribute?.Description ?? outputAttribute?.Description,
             outputAttribute?.IsBrowsable ?? true
-        );
+        ));
     }
 
     /// <inheritdoc />
-    public InputDescriptor DescribeInputProperty(PropertyInfo propertyInfo)
+    public async Task<InputDescriptor> DescribeInputPropertyAsync(PropertyInfo propertyInfo, CancellationToken cancellationToken = default)
     {
         var inputAttribute = propertyInfo.GetCustomAttribute<InputAttribute>();
         var descriptionAttribute = propertyInfo.GetCustomAttribute<DescriptionAttribute>();
@@ -134,6 +134,8 @@ public class ActivityDescriber : IActivityDescriber
         if (wrappedPropertyType.IsNullableType())
             wrappedPropertyType = wrappedPropertyType.GetTypeOfNullable();
 
+        var inputOptions = await _optionsResolver.GetOptionsAsync(propertyInfo, cancellationToken);
+        
         return new InputDescriptor
         (
             inputAttribute?.Name ?? propertyInfo.Name,
@@ -144,7 +146,7 @@ public class ActivityDescriber : IActivityDescriber
             GetUIHint(wrappedPropertyType, inputAttribute),
             inputAttribute?.DisplayName ?? propertyInfo.Name.Humanize(LetterCasing.Title),
             descriptionAttribute?.Description ?? inputAttribute?.Description,
-            _optionsResolver.GetOptions(propertyInfo),
+            inputOptions,
             inputAttribute?.Category,
             inputAttribute?.Order ?? 0,
             _defaultValueResolver.GetDefaultValue(propertyInfo),
@@ -156,22 +158,25 @@ public class ActivityDescriber : IActivityDescriber
     }
 
     /// <inheritdoc />
-    public IEnumerable<InputDescriptor> DescribeInputProperties([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]Type activityType)
+    public async Task<IEnumerable<InputDescriptor>> DescribeInputPropertiesAsync([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]Type activityType, CancellationToken cancellationToken = default)
     {
         var properties = GetInputProperties(activityType);
-        return DescribeInputProperties(properties);
+        return await DescribeInputPropertiesAsync(properties, cancellationToken);
     }
 
     /// <inheritdoc />
-    public IEnumerable<OutputDescriptor> DescribeOutputProperties([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]Type activityType) => 
-        DescribeOutputProperties(GetOutputProperties(activityType));
+    public async Task<IEnumerable<OutputDescriptor>> DescribeOutputPropertiesAsync([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]Type activityType, CancellationToken cancellationToken = default) => 
+        await DescribeOutputPropertiesAsync(GetOutputProperties(activityType), cancellationToken);
 
-    private IEnumerable<InputDescriptor> DescribeInputProperties(IEnumerable<PropertyInfo> properties)
+    private async Task<IEnumerable<InputDescriptor>> DescribeInputPropertiesAsync(IEnumerable<PropertyInfo> properties, CancellationToken cancellationToken = default)
     {
-        return properties.Select(DescribeInputProperty);
+        return await Task.WhenAll(properties.Select(async x => await DescribeInputPropertyAsync(x, cancellationToken)));
     }
 
-    private IEnumerable<OutputDescriptor> DescribeOutputProperties(IEnumerable<PropertyInfo> properties) => properties.Select(DescribeOutputProperty);
+    private async Task<IEnumerable<OutputDescriptor>> DescribeOutputPropertiesAsync(IEnumerable<PropertyInfo> properties, CancellationToken cancellationToken = default)
+    {
+        return await Task.WhenAll(properties.Select(async x => await DescribeOutputPropertyAsync(x, cancellationToken)));
+    }
 
     private static string GetUIHint(Type wrappedPropertyType, InputAttribute? inputAttribute)
     {

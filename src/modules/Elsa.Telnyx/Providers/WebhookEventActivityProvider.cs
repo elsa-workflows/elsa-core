@@ -30,16 +30,18 @@ public class WebhookEventActivityProvider : IActivityProvider
 
 
     /// <inheritdoc />
-    public ValueTask<IEnumerable<ActivityDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default)
+    public async ValueTask<IEnumerable<ActivityDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default)
     {
         var payloadTypes = WebhookPayloadTypes.PayloadTypes;
-        var descriptors = CreateDescriptors(payloadTypes).ToList();
-        return new(descriptors);
+        return await CreateDescriptorsAsync(payloadTypes, cancellationToken);
     }
 
-    private IEnumerable<ActivityDescriptor> CreateDescriptors(IEnumerable<Type> jobTypes) => jobTypes.Select(CreateDescriptor);
+    private async Task<IEnumerable<ActivityDescriptor>> CreateDescriptorsAsync(IEnumerable<Type> jobTypes, CancellationToken cancellationToken = default)
+    {
+        return await Task.WhenAll(jobTypes.Select(async x => await CreateDescriptorAsync(x, cancellationToken)));
+    }
 
-    private ActivityDescriptor CreateDescriptor(Type payloadType)
+    private async Task<ActivityDescriptor> CreateDescriptorAsync(Type payloadType, CancellationToken cancellationToken = default)
     {
         var webhookAttribute = payloadType.GetCustomAttribute<WebhookAttribute>() ?? throw new Exception($"No WebhookAttribute found on payload type {payloadType}");
         var typeName = webhookAttribute.ActivityType;
@@ -49,7 +51,7 @@ public class WebhookEventActivityProvider : IActivityProvider
         var category = categoryAttr?.Category ?? Constants.Category;
         var descriptionAttr = payloadType.GetCustomAttribute<DescriptionAttribute>();
         var description = descriptionAttr?.Description ?? webhookAttribute?.Description;
-        var outputPropertyDescriptor = _activityDescriber.DescribeOutputProperty<WebhookEvent, Output<Payload>>(x => x.Result!);
+        var outputPropertyDescriptor = await _activityDescriber.DescribeOutputProperty<WebhookEvent, Output<Payload>>(x => x.Result!, cancellationToken);
 
         outputPropertyDescriptor.Type = payloadType;
 

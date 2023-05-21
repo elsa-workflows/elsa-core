@@ -22,7 +22,7 @@ public class PropertyOptionsResolver : IPropertyOptionsResolver
     }
 
     /// <inheritdoc />
-    public object? GetOptions(PropertyInfo propertyInfo)
+    public async ValueTask<object?> GetOptionsAsync(PropertyInfo propertyInfo, CancellationToken cancellationToken = default)
     {
         var inputAttribute = propertyInfo.GetCustomAttribute<InputAttribute>();
         
@@ -33,7 +33,7 @@ public class PropertyOptionsResolver : IPropertyOptionsResolver
 
         using var scope = _serviceProvider.CreateScope();
         var provider = (IActivityPropertyOptionsProvider) ActivatorUtilities.GetServiceOrCreateInstance(scope.ServiceProvider, providerType);
-        return provider.GetOptions(propertyInfo);
+        return await provider.GetOptionsAsync(propertyInfo, cancellationToken);
     }
 
     private bool TryGetEnumOptions(PropertyInfo activityPropertyInfo, out IList<SelectListItem>? items)

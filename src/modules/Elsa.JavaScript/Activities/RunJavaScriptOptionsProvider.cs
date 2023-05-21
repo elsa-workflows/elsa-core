@@ -6,11 +6,11 @@ namespace Elsa.JavaScript.Activities;
 
 internal class RunJavaScriptOptionsProvider : IActivityPropertyOptionsProvider
 {
-    public object GetOptions(PropertyInfo property)
+    public ValueTask<object> GetOptionsAsync(PropertyInfo property, CancellationToken cancellationToken = default)
     {
-        return new CodeEditorOptions
+        return new(new CodeEditorOptions
         {
             Language = "javascript"
-        };
+        });
     }
 }

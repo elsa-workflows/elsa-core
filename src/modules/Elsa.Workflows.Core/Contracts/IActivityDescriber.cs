@@ -15,35 +15,39 @@ public interface IActivityDescriber
     /// <param name="activityType">The activity type to describe.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The activity descriptor.</returns>
-    ValueTask<ActivityDescriptor> DescribeActivityAsync([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type activityType, CancellationToken cancellationToken = default);
-    
+    Task<ActivityDescriptor> DescribeActivityAsync([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type activityType, CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Creates an instance of <see cref="OutputDescriptor"/> for the specified property. 
     /// </summary>
     /// <param name="propertyInfo">The property to describe.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The output descriptor.</returns>
-    OutputDescriptor DescribeOutputProperty(PropertyInfo propertyInfo);
-    
+    Task<OutputDescriptor> DescribeOutputPropertyAsync(PropertyInfo propertyInfo, CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Creates an instance of <see cref="InputDescriptor"/> for the specified property.
     /// </summary>
     /// <param name="propertyInfo">The property to describe.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The input descriptor.</returns>
-    InputDescriptor DescribeInputProperty(PropertyInfo propertyInfo);
-    
+    Task<InputDescriptor> DescribeInputPropertyAsync(PropertyInfo propertyInfo, CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Describes the input properties of the specified activity type.
     /// </summary>
     /// <param name="activityType">The activity type to describe.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The input descriptors.</returns>
-    IEnumerable<InputDescriptor> DescribeInputProperties([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type activityType);
-    
+    Task<IEnumerable<InputDescriptor>> DescribeInputPropertiesAsync([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type activityType, CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Describes the output properties of the specified activity type.
     /// </summary>
     /// <param name="activityType">The activity type to describe.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The output descriptors.</returns>
-    IEnumerable<OutputDescriptor> DescribeOutputProperties([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type activityType);
+    Task<IEnumerable<OutputDescriptor>> DescribeOutputPropertiesAsync([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type activityType, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets the input properties of the specified activity type.
