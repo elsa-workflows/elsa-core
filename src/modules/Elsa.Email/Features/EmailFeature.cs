@@ -24,7 +24,12 @@ public class EmailFeature : FeatureBase
     public Action<SmtpOptions> ConfigureOptions { get; set; } = _ => { };
 
     /// <summary>
-    /// Set a callback for configuring the HTTP client use by the default implementation of <see cref="IDownloader"/>.
+    /// Gets or sets a callback for configuring the <see cref="ISmtpService"/> implementation.
+    /// </summary>
+    public Func<IServiceProvider, ISmtpService> SmtpService { get; set; } = sp => sp.GetRequiredService<MailKitSmtpService>();  
+
+    /// <summary>
+    /// Gets or sets a callback for configuring the HTTP client use by the default implementation of <see cref="IDownloader"/>.
     /// </summary>
     public Action<IServiceProvider, HttpClient> ConfigureDownloaderHttpClient { get; set; } = (_, _) => { };
 
@@ -39,7 +44,8 @@ public class EmailFeature : FeatureBase
     {
         Services
             .Configure(ConfigureOptions)
-            .AddSingleton<ISmtpService, MailKitSmtpService>()
+            .AddSingleton<MailKitSmtpService>()
+            .AddSingleton(SmtpService)
             .AddHttpClient<IDownloader, DefaultDownloader>(ConfigureDownloaderHttpClient);
     }
 }
