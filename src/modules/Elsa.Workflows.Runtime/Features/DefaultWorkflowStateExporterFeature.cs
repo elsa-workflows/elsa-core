@@ -5,6 +5,7 @@ using Elsa.Workflows.Management.Features;
 using Elsa.Workflows.Runtime.Commands;
 using Elsa.Workflows.Runtime.Handlers;
 using Elsa.Workflows.Runtime.Services;
+using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Runtime.Features;
@@ -13,17 +14,18 @@ namespace Elsa.Workflows.Runtime.Features;
 /// Configures and enables <see cref="AsyncWorkflowStateExporter"/>.
 /// </summary>
 [DependsOn(typeof(WorkflowInstancesFeature))]
-public class AsyncWorkflowStateExporterFeature : FeatureBase
+[PublicAPI]
+public class DefaultWorkflowStateExporterFeature : FeatureBase
 {
     /// <inheritdoc />
-    public AsyncWorkflowStateExporterFeature(IModule module) : base(module)
+    public DefaultWorkflowStateExporterFeature(IModule module) : base(module)
     {
     }
 
     /// <inheritdoc />
     public override void Configure()
     {
-        Module.Configure<WorkflowRuntimeFeature>(workflowRuntime => workflowRuntime.WorkflowStateExporter = sp => ActivatorUtilities.CreateInstance<AsyncWorkflowStateExporter>(sp));
+        Module.Configure<WorkflowRuntimeFeature>(workflowRuntime => workflowRuntime.WorkflowStateExporter = sp => ActivatorUtilities.CreateInstance<DefaultWorkflowStateExporter>(sp));
         Services.AddCommandHandler<ExportWorkflowStateToDbCommandHandler, ExportWorkflowStateToDbCommand>();
     }
 }

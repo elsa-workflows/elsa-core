@@ -73,4 +73,16 @@ public static class ModuleExtensions
         feature.Module.Configure(configure);
         return feature;
     }
+    
+    /// <summary>
+    /// Configures the workflow state exporter feature.
+    /// </summary>
+    /// <param name="feature">The workflow runtime feature.</param>
+    /// <param name="configure">A callback that configures the workflow state exporter feature.</param>
+    /// <returns>The workflow runtime feature.</returns>
+    public static WorkflowRuntimeFeature UseDefaultWorkflowStateExporter(this WorkflowRuntimeFeature feature, Action<DefaultWorkflowStateExporterFeature>? configure = default)
+    {
+        feature.Module.Configure(configure);
+        return feature;
+    }
 }
