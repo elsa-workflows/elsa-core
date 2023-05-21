@@ -11,13 +11,8 @@
   <script nomodule src="/build/elsa-workflows-designer.js"></script>
 </head>
 <body>
-<!--Use the studio shell component to handle automatic interaction with the Elsa Server API-->
-<elsa-shell>
-  <elsa-workflow-toolbar></elsa-workflow-toolbar>
-  <div class="absolute inset-0" style="top: 64px;">
-    <elsa-studio server="https://localhost:5001/elsa/api" monaco-lib-path="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.31.1/min"></elsa-studio>
-  </div>
-</elsa-shell>
+
+<elsa-studio disable-auth="false" server="https://localhost:5001/elsa/api" monaco-lib-path="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min"></elsa-studio>
 
 <script type="module">
   // Integration demos.
@@ -37,7 +32,7 @@
     }
   }
 
-  const shell = document.querySelector('elsa-shell');
+  const shell = document.querySelector('elsa-studio');
   shell.addEventListener('initializing', e => {
     const pluginRegistry = e.detail.pluginRegistry;
     pluginRegistry.add('name-formatter', NameFormatterPlugin);

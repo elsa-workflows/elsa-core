@@ -8,4 +8,6 @@ export {PluginRegistry, ActivityNameFormatter, StudioService, ActivityDescriptor
 export {LoginApi} from './modules/login/services';
 export {WorkflowDefinitionsPlugin} from './modules/workflow-definitions/plugins/workflow-definitions-plugin';
 export {WorkflowDefinitionsApi} from './modules/workflow-definitions/services/api';
-export {ShellInitializingContext} from './models/shell';
+export {WorkflowDefinitionEditorService} from './modules/workflow-definitions/services/editor-service';
+export {WorkflowDefinitionManager} from './modules/workflow-definitions/services/manager';
+export {StudioInitializingContext} from './models/studio';

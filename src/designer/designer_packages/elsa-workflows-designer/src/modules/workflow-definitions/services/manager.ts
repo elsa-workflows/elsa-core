@@ -3,6 +3,7 @@ import {WorkflowDefinition} from "../models/entities";
 import {ExportWorkflowRequest, ImportWorkflowRequest, RetractWorkflowDefinitionRequest, SaveWorkflowDefinitionRequest, WorkflowDefinitionsApi} from "./api";
 import {downloadFromBlob} from "../../../utils";
 import {ActivityDescriptorManager} from "../../../services";
+import {VersionOptions} from "../../../models";
 
 @Service()
 export class WorkflowDefinitionManager {
@@ -12,6 +13,10 @@ export class WorkflowDefinitionManager {
   constructor() {
     this.api = Container.get(WorkflowDefinitionsApi);
     this.activityDescriptorManager = Container.get(ActivityDescriptorManager);
+  }
+
+  public getWorkflow = async (definitionId: string, versionOptions: VersionOptions): Promise<WorkflowDefinition> => {
+    return await this.api.get({definitionId, versionOptions});
   }
 
   public saveWorkflow = async (definition: WorkflowDefinition, publish: boolean): Promise<WorkflowDefinition> => {

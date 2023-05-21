@@ -25,7 +25,7 @@ import { MonacoValueChangedArgs } from "./components/shared/monaco-editor/monaco
 import { NotificationType } from "./modules/notifications/models";
 import { PagerData } from "./components/shared/pager/pager";
 import { PanelPosition, PanelStateChangedArgs } from "./components/panel/models";
-import { ShellInitializingContext } from "./models/shell";
+import { StudioInitializingContext } from "./models/studio";
 import { WorkflowContextProviderDescriptor } from "./modules/workflow-contexts/services/api";
 import { RenderActivityPropsContext } from "./modules/workflow-definitions/components/models";
 import { ActivityDriverRegistry } from "./services";
@@ -51,7 +51,7 @@ export { MonacoValueChangedArgs } from "./components/shared/monaco-editor/monaco
 export { NotificationType } from "./modules/notifications/models";
 export { PagerData } from "./components/shared/pager/pager";
 export { PanelPosition, PanelStateChangedArgs } from "./components/panel/models";
-export { ShellInitializingContext } from "./models/shell";
+export { StudioInitializingContext } from "./models/studio";
 export { WorkflowContextProviderDescriptor } from "./modules/workflow-contexts/services/api";
 export { RenderActivityPropsContext } from "./modules/workflow-definitions/components/models";
 export { ActivityDriverRegistry } from "./services";
@@ -248,8 +248,6 @@ export namespace Components {
     }
     interface ElsaRadioListInput {
         "inputContext": ActivityInputContext;
-    }
-    interface ElsaShell {
     }
     interface ElsaSingleLineInput {
         "inputContext": ActivityInputContext;
@@ -463,13 +461,13 @@ export interface ElsaPanelCustomEvent<T> extends CustomEvent<T> {
     detail: T;
     target: HTMLElsaPanelElement;
 }
-export interface ElsaShellCustomEvent<T> extends CustomEvent<T> {
-    detail: T;
-    target: HTMLElsaShellElement;
-}
 export interface ElsaSlideOverPanelCustomEvent<T> extends CustomEvent<T> {
     detail: T;
     target: HTMLElsaSlideOverPanelElement;
+}
+export interface ElsaStudioCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLElsaStudioElement;
 }
 export interface ElsaVariableEditorDialogContentCustomEvent<T> extends CustomEvent<T> {
     detail: T;
@@ -746,12 +744,6 @@ declare global {
         prototype: HTMLElsaRadioListInputElement;
         new (): HTMLElsaRadioListInputElement;
     };
-    interface HTMLElsaShellElement extends Components.ElsaShell, HTMLStencilElement {
-    }
-    var HTMLElsaShellElement: {
-        prototype: HTMLElsaShellElement;
-        new (): HTMLElsaShellElement;
-    };
     interface HTMLElsaSingleLineInputElement extends Components.ElsaSingleLineInput, HTMLStencilElement {
     }
     var HTMLElsaSingleLineInputElement: {
@@ -988,7 +980,6 @@ declare global {
         "elsa-pager": HTMLElsaPagerElement;
         "elsa-panel": HTMLElsaPanelElement;
         "elsa-radio-list-input": HTMLElsaRadioListInputElement;
-        "elsa-shell": HTMLElsaShellElement;
         "elsa-single-line-input": HTMLElsaSingleLineInputElement;
         "elsa-slide-over-panel": HTMLElsaSlideOverPanelElement;
         "elsa-studio": HTMLElsaStudioElement;
@@ -1220,9 +1211,6 @@ declare namespace LocalJSX {
     interface ElsaRadioListInput {
         "inputContext"?: ActivityInputContext;
     }
-    interface ElsaShell {
-        "onInitializing"?: (event: ElsaShellCustomEvent<ShellInitializingContext>) => void;
-    }
     interface ElsaSingleLineInput {
         "inputContext"?: ActivityInputContext;
     }
@@ -1238,6 +1226,7 @@ declare namespace LocalJSX {
         "disableAuth"?: boolean;
         "enableFlexiblePorts"?: boolean;
         "monacoLibPath"?: string;
+        "onInitializing"?: (event: ElsaStudioCustomEvent<StudioInitializingContext>) => void;
         "serverUrl"?: string;
     }
     interface ElsaSwitchEditor {
@@ -1410,7 +1399,6 @@ declare namespace LocalJSX {
         "elsa-pager": ElsaPager;
         "elsa-panel": ElsaPanel;
         "elsa-radio-list-input": ElsaRadioListInput;
-        "elsa-shell": ElsaShell;
         "elsa-single-line-input": ElsaSingleLineInput;
         "elsa-slide-over-panel": ElsaSlideOverPanel;
         "elsa-studio": ElsaStudio;
@@ -1487,7 +1475,6 @@ declare module "@stencil/core" {
             "elsa-pager": LocalJSX.ElsaPager & JSXBase.HTMLAttributes<HTMLElsaPagerElement>;
             "elsa-panel": LocalJSX.ElsaPanel & JSXBase.HTMLAttributes<HTMLElsaPanelElement>;
             "elsa-radio-list-input": LocalJSX.ElsaRadioListInput & JSXBase.HTMLAttributes<HTMLElsaRadioListInputElement>;
-            "elsa-shell": LocalJSX.ElsaShell & JSXBase.HTMLAttributes<HTMLElsaShellElement>;
             "elsa-single-line-input": LocalJSX.ElsaSingleLineInput & JSXBase.HTMLAttributes<HTMLElsaSingleLineInputElement>;
             "elsa-slide-over-panel": LocalJSX.ElsaSlideOverPanel & JSXBase.HTMLAttributes<HTMLElsaSlideOverPanelElement>;
             "elsa-studio": LocalJSX.ElsaStudio & JSXBase.HTMLAttributes<HTMLElsaStudioElement>;

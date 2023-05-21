@@ -1,4 +1,4 @@
-import {Component, Element, h, Host, Prop, Watch} from '@stencil/core';
+import {Component, Element, EventEmitter, h, Host, Prop, Watch, Event} from '@stencil/core';
 import 'reflect-metadata';
 import {Container} from 'typedi';
 import {AuthContext, EventBus, PluginRegistry, ServerSettings} from '../../services';
@@ -7,9 +7,11 @@ import {WorkflowDefinitionManager} from "../../modules/workflow-definitions/serv
 import {EventTypes} from "../../models";
 import studioComponentStore from "../../data/studio-component-store";
 import optionsStore from '../../data/designer-options-store';
+import {StudioInitializingContext} from "../../models/studio";
 
 @Component({
-  tag: 'elsa-studio'
+  tag: 'elsa-studio',
+  styleUrl: 'studio.css',
 })
 export class Studio {
   private readonly eventBus: EventBus;
@@ -27,6 +29,7 @@ export class Studio {
   @Prop({attribute: 'monaco-lib-path'}) monacoLibPath: string;
   @Prop({attribute: 'enable-flexible-ports'}) enableFlexiblePorts: boolean;
   @Prop({attribute: 'disable-auth'}) disableAuth: boolean;
+  @Event() initializing: EventEmitter<StudioInitializingContext>;
 
   @Watch('serverUrl')
   private handleServerUrl(value: string) {
@@ -41,6 +44,10 @@ export class Studio {
   }
 
   async componentWillLoad() {
+    const pluginRegistry = Container.get(PluginRegistry);
+    const context: StudioInitializingContext = {container: Container, pluginRegistry};
+    this.initializing.emit(context);
+
     this.handleMonacoLibPath(this.monacoLibPath);
     this.handleServerUrl(this.serverUrl);
     optionsStore.enableFlexiblePorts = this.enableFlexiblePorts;
@@ -58,7 +65,10 @@ export class Studio {
 
   render() {
     return <Host>
-      {studioComponentStore.activeComponentFactory()}
+      <elsa-workflow-toolbar/>
+      <div class="elsa-studio-content">
+        {studioComponentStore.activeComponentFactory()}
+      </div>
       {studioComponentStore.modalComponents.map(modal => modal())}
       <elsa-modal-dialog-container/>
     </Host>;

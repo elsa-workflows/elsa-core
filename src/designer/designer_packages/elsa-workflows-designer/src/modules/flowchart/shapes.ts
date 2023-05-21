@@ -64,9 +64,9 @@ export class ActivityNodeShape extends Shape.HTML {
     wrapper.innerHTML = this.createHtml();
 
     // Append the temporary element to the DOM.
-    // Important: this needs to be a child of the elsa-shell element, otherwise the tailwind CSS classes will not be applied due to the "important" rule in tailwind.config.js.
-    const elsaStudioShell = document.getElementsByTagName('elsa-shell')[0];
-    elsaStudioShell.append(wrapper);
+    // Important: this needs to be a child of the elsa-studio element, otherwise the tailwind CSS classes will not be applied due to the "important" rule in tailwind.config.js.
+    const elsaStudioElement = document.getElementsByTagName('elsa-studio')[0];
+    elsaStudioElement.append(wrapper);
 
     // Wait for activity element to be completely rendered.
     // When using custom elements, they are rendered after they are mounted. Before then, they have a 0 width and height.
