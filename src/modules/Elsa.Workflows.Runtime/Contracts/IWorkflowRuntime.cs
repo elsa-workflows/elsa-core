@@ -118,7 +118,19 @@ public record ResumeWorkflowRuntimeOptions(
 
 public record CanStartWorkflowResult(string? InstanceId, bool CanStart);
 
-public record TriggerWorkflowsRuntimeOptions(string? CorrelationId = default, string? WorkflowInstanceId = default, IDictionary<string, object>? Input = default);
+public class TriggerWorkflowsRuntimeOptions
+{
+    public TriggerWorkflowsRuntimeOptions(string? CorrelationId = default, string? WorkflowInstanceId = default, IDictionary<string, object>? Input = default)
+    {
+        this.CorrelationId = CorrelationId;
+        this.WorkflowInstanceId = WorkflowInstanceId;
+        this.Input = Input;
+    }
+
+    public string? CorrelationId { get; set; }
+    public string? WorkflowInstanceId { get; set; }
+    public IDictionary<string, object>? Input { get; set; }
+}
 
 public record TriggerWorkflowsResult(ICollection<WorkflowExecutionResult> TriggeredWorkflows);
 
