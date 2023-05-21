@@ -1,14 +1,14 @@
+using Elsa.Activities.Mqtt.Activities.MqttMessageReceived;
 using Elsa.Activities.Mqtt.Bookmarks;
 using Elsa.Activities.Mqtt.Options;
 using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
+using Microsoft.Extensions.DependencyInjection;
+using MQTTnet;
 using System;
-using System.Net.Mqtt;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Activities.Mqtt.Activities.MqttMessageReceived;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Activities.Mqtt.Services
 {

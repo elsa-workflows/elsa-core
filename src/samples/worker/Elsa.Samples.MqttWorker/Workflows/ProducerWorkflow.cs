@@ -4,8 +4,9 @@ using Elsa.Builders;
 using Microsoft.Extensions.Configuration;
 using NodaTime;
 using System;
-using System.Net.Mqtt;
+
 using Elsa.Activities.Mqtt.Activities.SendMqttMessage;
+using MQTTnet.Protocol;
 
 namespace Elsa.Samples.MqttWorker.Workflows
 {
@@ -15,7 +16,7 @@ namespace Elsa.Samples.MqttWorker.Workflows
         private readonly int _port;
         private readonly string _username;
         private readonly string _password;
-        private readonly MqttQualityOfService _qos;
+        private readonly MqttQualityOfServiceLevel _qos;
         private readonly Random _random;
         public ProducerWorkflow(IConfiguration configuration)
         {
@@ -25,7 +26,7 @@ namespace Elsa.Samples.MqttWorker.Workflows
             _port = section.GetValue<int>("Port");
             _username = section.GetValue<string>("Username");
             _password = section.GetValue<string>("Password");
-            _qos = section.GetValue<MqttQualityOfService>("QualityOfService");
+            _qos = section.GetValue<MqttQualityOfServiceLevel>("QualityOfService");
             _random = new();
         }
 

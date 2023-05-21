@@ -1,6 +1,6 @@
 using Elsa.Services;
 using System.Collections.Generic;
-using System.Net.Mqtt;
+using MQTTnet.Protocol;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Mqtt.Activities.MqttMessageReceived;
@@ -14,7 +14,7 @@ namespace Elsa.Activities.Mqtt.Bookmarks
         {
         }
 
-        public MessageReceivedBookmark(string topic, string host, int port, string username, string password, MqttQualityOfService qos)
+        public MessageReceivedBookmark(string topic, string host, int port, string username, string password, MqttQualityOfServiceLevel qos)
         {
             Topic = topic;
             Host = host;
@@ -29,7 +29,7 @@ namespace Elsa.Activities.Mqtt.Bookmarks
         public int Port { get; set; }
         public string Username { get; set; } = default!;
         public string Password { get; set; } = default!;
-        [ExcludeFromHash] public MqttQualityOfService Qos { get; set; }
+        [ExcludeFromHash] public MqttQualityOfServiceLevel Qos { get; set; }
     }
 
     public class MessageReceivedBookmarkProvider : BookmarkProvider<MessageReceivedBookmark, MqttMessageReceived>

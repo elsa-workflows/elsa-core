@@ -1,8 +1,8 @@
-using Elsa.Activities.Mqtt.Options;
 using Microsoft.Extensions.DependencyInjection;
+using MQTTnet;
+using MQTTnet.Client;
 using System;
 using System.Collections.Generic;
-using System.Net.Mqtt;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -20,7 +20,7 @@ namespace Elsa.Activities.Mqtt.Services
             _serviceProvider = serviceProvider;
         }
 
-        public async Task<IMqttClientWrapper> GetSenderAsync(MqttClientOptions options, CancellationToken cancellationToken)
+        public async Task<IMqttClientWrapper> GetSenderAsync(Options.MqttClientOptions options, CancellationToken cancellationToken)
         {
             await _semaphore.WaitAsync(cancellationToken);
 
@@ -29,7 +29,9 @@ namespace Elsa.Activities.Mqtt.Services
                 if (_senders.TryGetValue(options.GetHashCode(), out var messageSender))
                     return messageSender;
 
-                var newClient = await MqttClient.CreateAsync(options.Host, options.Port);
+
+                var mqttFactory = new MqttFactory();
+                var newClient = mqttFactory.CreateMqttClient();
                 var newMessageSender = ActivatorUtilities.CreateInstance<MqttClientWrapper>(_serviceProvider, newClient, options);
 
                 _senders.Add(newMessageSender.Options.GetHashCode(), newMessageSender);
@@ -41,19 +43,23 @@ namespace Elsa.Activities.Mqtt.Services
             }
         }
 
-        public async Task<IMqttClientWrapper> GetReceiverAsync(MqttClientOptions options, CancellationToken cancellationToken)
+        public async Task<IMqttClientWrapper> GetReceiverAsync(Options.MqttClientOptions options, CancellationToken cancellationToken)
         {
             await _semaphore.WaitAsync(cancellationToken);
 
             try
             {
-                if (_receivers.TryGetValue(options.GetHashCode(), out var messageReceiver))
-                    return messageReceiver;
+                if (_receivers.TryGetValue(options.GetHashCode(), out var messageReceiverDateTime))
+                {
+                    return messageReceiverDateTime;
+                }
+                    
 
-                var newClient = await MqttClient.CreateAsync(options.Host, options.Port);
+                var mqttFactory = new MqttFactory();
+                var newClient = mqttFactory.CreateMqttClient();
                 var newMessageReceiver = ActivatorUtilities.CreateInstance<MqttClientWrapper>(_serviceProvider, newClient, options);
 
-                _receivers.Add(options.GetHashCode(), newMessageReceiver);
+                _receivers.Add(options.GetHashCode(), newMessageReceiver );
                 return newMessageReceiver;
             }
             finally
