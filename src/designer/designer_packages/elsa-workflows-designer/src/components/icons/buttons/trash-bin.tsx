@@ -2,7 +2,7 @@ import {FunctionalComponent, h} from "@stencil/core";
 
 export const TrashBinButtonIcon: FunctionalComponent = () =>
   <svg
-    class="h-5 w-5 text-gray-500"
+    class="tw-h-5 tw-w-5 tw-text-gray-500"
     width="24" height="24" viewBox="0 0 24 24"
     stroke-width="2" stroke="currentColor" fill="transparent" stroke-linecap="round"
     stroke-linejoin="round">

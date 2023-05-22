@@ -24,7 +24,7 @@ export class ModalDialogContainer {
           const options = instance.options;
           const actions = options?.actions ?? [];
           const modalType = options?.modalType ?? ModalType.Default;
-          const size = options?.size ?? 'sm:max-w-6xl';
+          const size = options?.size ?? 'sm:tw-max-w-6xl';
 
           return (<elsa-modal-dialog
             ref={el => instance.modalDialogRef = el}

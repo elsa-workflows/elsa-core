@@ -136,63 +136,63 @@ export class ActivityProperties {
     if(log == null) return;
 
     const exception = log.payload?.exception;
-    const statusColor = log.eventName == "Completed" ? "bg-blue-100" : log.eventName == "Faulted" ? "bg-red-100" : "bg-green-100";
+    const statusColor = log.eventName == "Completed" ? "tw-bg-blue-100" : log.eventName == "Faulted" ? "tw-bg-red-100" : "tw-bg-green-100";
     const icon = this.iconRegistry.getOrDefault(log.activityType)({size: ActivityIconSize.Small});
     return (
-      <div class="border-2 cursor-pointer p-4 rounded">
-        <div class="relative pb-10">
-          <div class="relative flex space-x-3">
+      <div class="tw-border-2 tw-cursor-pointer tw-p-4 tw-rounded">
+        <div class="tw-relative tw-pb-10">
+          <div class="tw-relative tw-flex tw-space-x-3">
             <div>
-              <span class={`h-8 w-8 rounded p-1 bg-blue-500 flex items-center justify-center ring-8 ring-white mr-1`}>
+              <span class={`tw-h-8 tw-w-8 tw-rounded tw-p-1 tw-bg-blue-500 tw-flex tw-items-center tw-justify-center tw-ring-8 tw-ring-white tw-mr-1`}>
                 {icon}
               </span>
             </div>
-            <div class="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
+            <div class="tw-min-w-0 tw-flex-1 tw-pt-1.5 tw-flex tw-justify-between tw-space-x-4">
               <div>
-                <h3 class="text-lg leading-6 font-medium text-gray-900">
+                <h3 class="tw-text-lg tw-leading-6 tw-font-medium tw-text-gray-900">
                   {log.activityType}
                 </h3>
               </div>
               <div>
                 <span
-                  class={`relative inline-flex items-center rounded-full ${statusColor} border border-gray-300 px-3 py-0.5 text-sm`}>
-                  <span class="absolute flex-shrink-0 flex items-center justify-center">
-                    <span class={`h-1.5 w-1.5 rounded-full`} aria-hidden="true"/>
+                  class={`tw-relative tw-inline-flex tw-items-center tw-rounded-full ${statusColor} tw-border tw-border-gray-300 tw-px-3 tw-tw-py-0.5 tw-text-sm`}>
+                  <span class="tw-absolute tw-flex-shrink-0 tw-flex tw-items-center tw-justify-center">
+                    <span class={`tw-h-1.5 tw-w-1.5 tw-rounded-full`} aria-hidden="true"/>
                   </span>
-                  <span class="font-medium text-gray-900">{log.eventName}</span>
+                  <span class="tw-font-medium tw-text-gray-900">{log.eventName}</span>
                 </span>
               </div>
-              <div class="text-right text-sm whitespace-nowrap text-gray-500">
+              <div class="tw-text-right tw-text-sm tw-whitespace-nowrap tw-text-gray-500">
                 <span>{moment(log.timestamp).format('DD-MM-YYYY HH:mm:ss')}</span>
               </div>
             </div>
           </div>
-          <div class="ml-12 mt-2">
-            <dl class="sm:divide-y sm:divide-gray-200">
-              <div class="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-2">
-                <div class="sm:col-span-2">
-                  <dt class="text-sm font-medium text-gray-500">
+          <div class="tw-ml-12 tw-mt-2">
+            <dl class="sm:tw-divide-y sm:tw-divide-gray-200">
+              <div class="tw-grid tw-grid-cols-2 tw-gap-x-4 tw-gap-y-8 sm:tw-grid-cols-2">
+                <div class="sm:tw-col-span-2">
+                  <dt class="tw-text-sm tw-font-medium tw-text-gray-500">
                     <span>Activity ID</span>
                     <copy-button value={log.activityId}/>
                   </dt>
-                  <dd class="mt-1 text-sm text-gray-900 mb-2">{log.activityId}</dd>
+                  <dd class="tw-mt-1 tw-text-sm tw-text-gray-900 tw-mb-2">{log.activityId}</dd>
                 </div>
                 {!!exception ? (
-                  [<div class="sm:col-span-2">
-                    <dt class="text-sm font-medium text-gray-500">
+                  [<div class="sm:tw-col-span-2">
+                    <dt class="tw-text-sm tw-font-medium tw-text-gray-500">
                       <span>Exception</span>
                       <copy-button value={exception.Type + '\n' + exception.Message}/>
                     </dt>
-                    <dd class="mt-1 text-sm text-gray-900">
+                    <dd class="tw-mt-1 tw-text-sm tw-text-gray-900">
                       {exception.message}
                     </dd>
                   </div>,
-                    <div class="sm:col-span-2">
-                      <dt class="text-sm font-medium text-gray-500">
+                    <div class="sm:tw-col-span-2">
+                      <dt class="tw-text-sm tw-font-medium tw-text-gray-500">
                         <span>Exception Details</span>
                         <copy-button value={JSON.stringify(exception, null, 1)}/>
                       </dt>
-                      <dd class="mt-1 text-sm text-gray-900 overflow-x-auto">
+                      <dd class="tw-mt-1 tw-text-sm tw-text-gray-900 tw-overflow-x-auto">
                         <pre>{JSON.stringify(exception, null, 1)}</pre>
                       </dd>
                     </div>]

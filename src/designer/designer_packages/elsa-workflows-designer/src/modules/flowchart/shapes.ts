@@ -58,7 +58,7 @@ export class ActivityNodeShape extends Shape.HTML {
       return;
 
     const wrapper = document.createElement('div');
-    wrapper.className = 'inline-block flex items-center pl-10 pr-2 py-2 absolute';
+    wrapper.className = 'tw-inline-block tw-flex tw-items-center tw-pl-10 tw-pr-2 tw-py-2 tw-absolute';
     wrapper.style.left = '-1000px';
     wrapper.style.top = '-1000px';
     wrapper.innerHTML = this.createHtml();

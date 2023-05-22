@@ -13,7 +13,7 @@ export class ModalDialog {
 
   @Prop() modalDialogInstance: ModalDialogInstance;
   @Prop() actions: Array<ModalActionDefinition> = [];
-  @Prop() size: string = 'max-w-6xl';
+  @Prop() size: string = 'tw-max-w-6xl';
   @Prop() type: ModalType = ModalType.Default;
   @Prop() autoHide: boolean = true;
   @Prop() content: () => any = () => <div/>;
@@ -82,33 +82,33 @@ export class ModalDialog {
     const content = this.content();
 
     return (
-      <Host class={{'hidden': !this.isVisible, 'block': true}}>
-        <div class="fixed z-50 inset-0 overflow-y-auto">
-          <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+      <Host class={{'hidden': !this.isVisible, 'tw-block': true}}>
+        <div class="tw-fixed tw-z-50 tw-inset-0 tw-overflow-y-auto">
+          <div class="tw-flex tw-items-end tw-justify-center tw-min-tw-h-screen tw-pt-4 tw-px-4 tw-pb-20 tw-text-center sm:tw-block sm:tw-p-0">
             <div ref={el => this.overlay = el}
                  onClick={() => this.hide(true)}
-                 data-transition-enter="ease-out duration-300" data-transition-enter-start="opacity-0"
-                 data-transition-enter-end="opacity-0" data-transition-leave="ease-in duration-200"
-                 data-transition-leave-start="opacity-0" data-transition-leave-end="opacity-0"
-                 class="hidden fixed inset-0 transition-opacity" aria-hidden="true">
-              <div class="absolute inset-0 bg-gray-500 opacity-75"/>
+                 data-transition-enter="tw-ease-out tw-duration-300" data-transition-enter-start="tw-opacity-0"
+                 data-transition-enter-end="tw-opacity-0" data-transition-leave="tw-ease-in tw-duration-200"
+                 data-transition-leave-start="tw-opacity-0" data-transition-leave-end="tw-opacity-0"
+                 class="hidden tw-fixed tw-inset-0 tw-transition-opacity" aria-hidden="true">
+              <div class="tw-absolute tw-inset-0 tw-bg-gray-500 tw-opacity-75"/>
             </div>
 
-            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true"/>
+            <span class="hidden sm:tw-inline-block sm:tw-align-middle sm:tw-h-screen" aria-hidden="true"/>
             <div ref={el => this.modal = el}
-                 data-transition-enter="ease-out duration-300"
-                 data-transition-enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                 data-transition-enter-end="opacity-0 translate-y-0 sm:scale-100"
-                 data-transition-leave="ease-in duration-200"
-                 data-transition-leave-start="opacity-0 translate-y-0 sm:scale-100"
-                 data-transition-leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                 class={`hidden inline-block sm:align-top bg-white rounded-lg text-left overflow-visible shadow-xl transform transition-all sm:my-8 sm:align-top ${this.size}`}
+                 data-transition-enter="tw-ease-out tw-duration-300"
+                 data-transition-enter-start="tw-opacity-0 tw-translate-y-4 sm:tw-translate-y-0 sm:tw-scale-95"
+                 data-transition-enter-end="tw-opacity-0 tw-translate-y-0 sm:tw-scale-100"
+                 data-transition-leave="tw-ease-in tw-duration-200"
+                 data-transition-leave-start="tw-opacity-0 tw-translate-y-0 sm:tw-scale-100"
+                 data-transition-leave-end="tw-opacity-0 tw-translate-y-4 sm:tw-translate-y-0 sm:tw-scale-95"
+                 class={`hidden tw-inline-block sm:tw-align-top tw-bg-white tw-rounded-lg tw-text-left tw-overflow-visible tw-shadow-xl tw-transform tw-transition-all sm:tw-my-8 sm:tw-align-top ${this.size}`}
                  role="dialog" aria-modal="true" aria-labelledby="modal-headline">
               <div class="modal-content">
                 {content}
               </div>
 
-              <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+              <div class="tw-bg-gray-50 tw-px-4 tw-py-3 sm:tw-px-6 sm:tw-flex sm:tw-flex-row-reverse">
 
                 {actions.map(action => {
 
@@ -116,9 +116,9 @@ export class ModalDialog {
                     return action.display(action);
 
                   const cssClass = action.isPrimary
-                    ? 'text-white bg-blue-600 hover:bg-blue-700 border-transparent focus:ring-blue-500'
-                    : action.isDangerous ? 'text-white bg-red-600 hover:bg-red-700 border-transparent focus:ring-red-500'
-                      : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-blue-500';
+                    ? 'tw-text-white tw-bg-blue-600 hover:tw-bg-blue-700 tw-border-transparent focus:tw-ring-blue-500'
+                    : action.isDangerous ? 'tw-text-white tw-bg-red-600 hover:tw-bg-red-700 tw-border-transparent focus:tw-ring-red-500'
+                      : 'tw-bg-white tw-border-gray-300 tw-text-gray-700 hover:tw-bg-gray-50 focus:tw-ring-blue-500';
 
                   const buttonType = action.type == ModalActionType.Submit ? 'submit' : 'button';
                   const cancelHandler = () => this.hideInternal(true);
@@ -131,7 +131,7 @@ export class ModalDialog {
                                    if (this.autoHide)
                                      this.hideInternal(true);
                                  }}
-                                 class={`${cssClass} mt-3 w-full inline-flex justify-center rounded-md border shadow-sm px-4 py-2 text-base font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm`}>
+                                 class={`${cssClass} tw-mt-3 tw-w-full tw-inline-flex tw-justify-center tw-rounded-md tw-border tw-shadow-sm tw-px-4 tw-py-2 tw-text-base tw-font-medium focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-offset-2 sm:tw-mt-0 sm:tw-ml-3 sm:tw-w-auto sm:tw-text-sm`}>
                     {action.text}
                   </button>
                 })}

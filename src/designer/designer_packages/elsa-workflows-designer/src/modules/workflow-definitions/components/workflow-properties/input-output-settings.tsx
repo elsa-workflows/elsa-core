@@ -75,10 +75,10 @@ export class InputOutputSettings {
     const inputs = this.inputsState;
 
     return <div>
-      <div class="p-4">
-        <h3 class="text-md leading-6 font-medium text-gray-900">Inputs</h3>
+      <div class="tw-p-4">
+        <h3 class="tw-text-md tw-leading-6 tw-font-medium tw-text-gray-900">Inputs</h3>
       </div>
-      <div class="align-middle inline-block min-w-full border-b border-gray-200">
+      <div class="tw-align-middle tw-inline-block tw-min-w-full tw-border-b tw-border-gray-200">
         <table class="default-table">
           <thead>
           <tr>
@@ -95,9 +95,9 @@ export class InputOutputSettings {
 
               return (
                 <tr>
-                  <td class="whitespace-nowrap">{input.name}</td>
-                  <td class="whitespace-nowrap">{typeDisplayName}</td>
-                  <td class="pr-6">
+                  <td class="tw-whitespace-nowrap">{input.name}</td>
+                  <td class="tw-whitespace-nowrap">{typeDisplayName}</td>
+                  <td class="tw-pr-6">
                     <elsa-context-menu
                       menuItems={[
                         {text: 'Edit', handler: e => this.onEditInputClick(e, input), icon: <EditIcon/>},
@@ -111,8 +111,8 @@ export class InputOutputSettings {
           </tbody>
         </table>
       </div>
-      <div class="flex justify-end m-4">
-        <button class="btn btn-primary" onClick={e => this.onAddInputClick()}>Add input parameter</button>
+      <div class="tw-flex tw-justify-end tw-m-4">
+        <button class="elsa-btn elsa-btn-primary" onClick={e => this.onAddInputClick()}>Add input parameter</button>
       </div>
     </div>
   };
@@ -121,10 +121,10 @@ export class InputOutputSettings {
     const outputs = this.outputsState;
 
     return <div>
-      <div class="p-4">
-        <h3 class="text-md leading-6 font-medium text-gray-900">Outputs</h3>
+      <div class="tw-p-4">
+        <h3 class="tw-text-md tw-leading-6 tw-font-medium tw-text-gray-900">Outputs</h3>
       </div>
-      <div class="align-middle inline-block min-w-full border-b border-gray-200">
+      <div class="tw-align-middle tw-inline-block tw-min-w-full tw-border-b tw-border-gray-200">
         <table class="default-table">
           <thead>
           <tr>
@@ -141,9 +141,9 @@ export class InputOutputSettings {
 
               return (
                 <tr>
-                  <td class="whitespace-nowrap">{output.name}</td>
-                  <td class="whitespace-nowrap">{typeDisplayName}</td>
-                  <td class="pr-6">
+                  <td class="tw-whitespace-nowrap">{output.name}</td>
+                  <td class="tw-whitespace-nowrap">{typeDisplayName}</td>
+                  <td class="tw-pr-6">
                     <elsa-context-menu
                       menuItems={[
                         {text: 'Edit', handler: e => this.onEditOutputClick(e, output), icon: <EditIcon/>},
@@ -157,8 +157,8 @@ export class InputOutputSettings {
           </tbody>
         </table>
       </div>
-      <div class="flex justify-end m-4">
-        <button class="btn btn-primary" onClick={e => this.onAddOutputClick()}>Add output parameter</button>
+      <div class="tw-flex tw-justify-end tw-m-4">
+        <button class="elsa-btn elsa-btn-primary" onClick={e => this.onAddOutputClick()}>Add output parameter</button>
       </div>
     </div>
   };
@@ -167,8 +167,8 @@ export class InputOutputSettings {
     const outcomes = [...this.outcomes];
 
     return <div>
-      <div class="p-4">
-        <h3 class="text-md leading-6 font-medium text-gray-900">Outcomes</h3>
+      <div class="tw-p-4">
+        <h3 class="tw-text-md tw-leading-6 tw-font-medium tw-text-gray-900">Outcomes</h3>
       </div>
       <FormEntry label="" fieldId="WorkflowDefinitionOutcomes" hint="Enter a list of possible outcomes for this workflow.">
         <elsa-input-tags placeHolder="Add outcome" values={outcomes} onValueChanged={e => this.onOutcomesChanged(e.detail)}/>

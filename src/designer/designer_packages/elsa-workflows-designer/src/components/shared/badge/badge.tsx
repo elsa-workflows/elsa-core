@@ -15,5 +15,5 @@ export const Badge: FunctionalComponent<BadgeProps> = ({text, color}) => {
     backgroundColor: backColor
   };
 
-  return <span class="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium" style={style}>{text}</span>;
+  return <span class="tw-inline-flex tw-items-center tw-px-3 tw-tw-py-0.5 tw-rounded-full tw-text-sm tw-font-medium" style={style}>{text}</span>;
 };

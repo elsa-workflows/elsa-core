@@ -43,7 +43,7 @@ export class WorkflowDefinitionActivityVersionSettings {
       <InfoList title="Version" dictionary={versionDetails}/>
       {upgradeAvailable &&
         <div>
-          <button class="btn btn-default" onClick={e => this.onUpdateClick()}>Upgrade</button>
+          <button class="elsa-btn elsa-btn-default" onClick={e => this.onUpdateClick()}>Upgrade</button>
         </div>}
     </div>
   }

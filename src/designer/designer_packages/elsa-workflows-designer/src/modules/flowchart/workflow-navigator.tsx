@@ -37,21 +37,21 @@ export class WorkflowNavigator {
 
     const nodes = flatten(walkActivities(this.rootActivity));
 
-    return <div class="ml-8">
-      <nav class="flex" aria-label="Breadcrumb">
-        <ol role="list" class="flex items-center space-x-3">
+    return <div class="tw-ml-8">
+      <nav class="tw-flex" aria-label="Breadcrumb">
+        <ol role="list" class="tw-flex tw-items-center tw-space-x-3">
           {items.length > 0 && (
             <li>
-              <div class="flex items-center">
+              <div class="tw-flex tw-items-center">
                 <a onClick={e => this.onItemClick(null)}
                    href="#"
-                   class="block flex items-center text-gray-400 hover:text-gray-500">
-                  <div class="bg-blue-500 rounded">
+                   class="tw-block tw-flex tw-items-center tw-text-gray-400 hover:tw-text-gray-500">
+                  <div class="tw-bg-blue-500 tw-rounded">
                     {<FlowchartIcon/>}
                   </div>
-                  <span class="ml-4 text-sm font-medium text-gray-500 hover:text-gray-700">{this.rootActivity.id}</span>
+                  <span class="tw-ml-4 tw-text-sm tw-font-medium tw-text-gray-500 hover:tw-text-gray-700">{this.rootActivity.id}</span>
                 </a>
-                <svg class="ml-2 flex-shrink-0 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <svg class="tw-ml-2 tw-flex-shrink-0 tw-h-5 tw-w-5 tw-text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                   <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
                 </svg>
               </div>
@@ -89,15 +89,15 @@ export class WorkflowNavigator {
     if (isLastItem) {
       listElements.push(
         <li>
-          <div class="flex items-center">
-            <span class="block flex items-center text-gray-500">
-              <div class="bg-blue-500 rounded">
+          <div class="tw-flex tw-items-center">
+            <span class="tw-block tw-flex tw-items-center tw-text-gray-500">
+              <div class="tw-bg-blue-500 tw-rounded">
                 {icon}
               </div>
-              <span class="ml-4 text-sm font-medium text-gray-500">{activityId}</span>
+              <span class="tw-ml-4 tw-text-sm tw-font-medium tw-text-gray-500">{activityId}</span>
             </span>
             {!!port ? (
-              <svg class="ml-2 flex-shrink-0 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <svg class="tw-ml-2 tw-flex-shrink-0 tw-h-5 tw-w-5 tw-text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
               </svg>
             ) : undefined}
@@ -107,16 +107,16 @@ export class WorkflowNavigator {
     } else {
       listElements.push(
         <li>
-          <div class="flex items-center">
+          <div class="tw-flex tw-items-center">
             <a onClick={e => onItemClick(e, item)}
                href="#"
-               class="block flex items-center text-gray-400 hover:text-gray-500">
-              <div class="bg-blue-500 rounded">
+               class="tw-block tw-flex tw-items-center tw-text-gray-400 hover:tw-text-gray-500">
+              <div class="tw-bg-blue-500 tw-rounded">
                 {icon}
               </div>
-              <span class="ml-4 text-sm font-medium text-gray-500 hover:text-gray-700">{activityId}</span>
+              <span class="tw-ml-4 tw-text-sm tw-font-medium tw-text-gray-500 hover:tw-text-gray-700">{activityId}</span>
             </a>
-            <svg class="ml-2 flex-shrink-0 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <svg class="tw-ml-2 tw-flex-shrink-0 tw-h-5 tw-w-5 tw-text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
               <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
             </svg>
           </div>
@@ -127,8 +127,8 @@ export class WorkflowNavigator {
     if (!!port) {
       listElements.push(
         <li>
-          <div class="flex items-center">
-            <span class="text-sm font-medium text-gray-500" aria-current="page">{port.displayName}</span>
+          <div class="tw-flex tw-items-center">
+            <span class="tw-text-sm tw-font-medium tw-text-gray-500" aria-current="page">{port.displayName}</span>
           </div>
         </li>
       );

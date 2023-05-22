@@ -1,6 +1,7 @@
 import {Component, h, Prop} from '@stencil/core';
 import {Button} from "./models";
 
+// noinspection HtmlUnknownAttribute
 @Component({
   tag: 'elsa-button-group',
   shadow: false,
@@ -12,7 +13,7 @@ export class ButtonGroup {
 
   render() {
     return (
-      <span class="relative z-0 inline-flex rounded-md">
+      <span class="tw-relative tw-z-0 tw-inline-flex tw-rounded-md">
         {this.renderButtons()}
       </span>
     );
@@ -24,7 +25,7 @@ export class ButtonGroup {
     if (buttons.length == 0)
       return;
 
-    return <div class="py-1">
+    return <div class="tw-py-1">
       {buttons.map(this.renderButton)}
     </div>
   };
@@ -32,10 +33,10 @@ export class ButtonGroup {
   renderButton = (button: Button, index: number) => {
 
     const buttons = this.buttons;
-    const cssClass = buttons.length == 1 ? `relative rounded-l-md rounded-r-md`: index == 0 ? 'relative rounded-l-md' : index == this.buttons.length - 1 ? '-ml-px rounded-r-md' : '-ml-px';
+    const cssClass = buttons.length == 1 ? `tw-relative tw-rounded-l-md tw-rounded-r-md`: index == 0 ? 'tw-relative tw-rounded-l-md' : index == this.buttons.length - 1 ? '-tw-ml-px tw-rounded-r-md' : '-tw-ml-px';
 
     return <button onClick={e => ButtonGroup.onButtonClick(e, button)} type="button"
-                   class={`${cssClass} inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:z-10 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500`}>
+                   class={`${cssClass} tw-inline-flex tw-items-center tw-px-4 tw-py-2 tw-border tw-border-gray-300 tw-bg-white tw-text-sm tw-font-medium tw-text-gray-700 hover:tw-bg-gray-50 focus:tw-z-10 focus:tw-outline-none focus:tw-ring-1 focus:tw-ring-blue-500 focus:tw-border-blue-500`}>
       {button.text}
     </button>;
   }

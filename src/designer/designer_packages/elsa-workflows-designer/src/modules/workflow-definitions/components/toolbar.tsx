@@ -24,13 +24,13 @@ export class Toolbar {
     }];
 
     return (
-      <div class="elsa-panel-toolbar flex justify-center absolute border-b border-gray-200 top-0 px-1 pl-4 pb-2 text-sm bg-white z-10 space-x-2">
-        <elsa-dropdown-button text="Auto-layout" theme="Primary" items={layoutButtons} class="mt-2"/>
-        <button onClick={this.zoomToFit} class="btn btn-primary">
+      <div class="elsa-panel-toolbar tw-flex tw-justify-center tw-absolute tw-border-b tw-border-gray-200 tw-top-0 tw-px-1 tw-pl-4 tw-pb-2 tw-text-sm tw-bg-white tw-z-10 tw-space-x-2">
+        <elsa-dropdown-button text="Auto-layout" theme="Primary" items={layoutButtons} class="tw-mt-2"/>
+        <button onClick={this.zoomToFit} class="elsa-btn elsa-btn-primary">
           Zoom to fit
         </button>
         {/*Coming soon...*/}
-        {/*<button class="btn btn-action disabled" disabled={true}>*/}
+        {/*<button class="elsa-btn elsa-btn-action disabled" disabled={true}>*/}
         {/*  <PlayButtonIcon/> Run*/}
         {/*</button>*/}
       </div>

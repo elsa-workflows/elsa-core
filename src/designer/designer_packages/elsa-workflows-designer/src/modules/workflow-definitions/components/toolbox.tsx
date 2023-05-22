@@ -16,26 +16,26 @@ export class Toolbox {
   render() {
 
     const selectedTabIndex = this.selectedTabIndex;
-    const selectedCss = 'border-blue-500 text-blue-600';
-    const defaultCss = 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300';
+    const selectedCss = 'tw-border-blue-500 tw-text-blue-600';
+    const defaultCss = 'tw-border-transparent tw-text-gray-500 hover:tw-text-gray-700 hover:tw-border-gray-300';
     const activitiesTabCssClass = selectedTabIndex == 0 ? selectedCss : defaultCss;
 
     return (
 
-      <div class="activity-list  absolute inset-0 overflow-hidden">
-        <div class="h-full flex flex-col">
-          <div class="border-b border-gray-200">
-            <nav class="-mb-px flex" aria-label="Tabs">
+      <div class="activity-list tw-absolute tw-inset-0 tw-overflow-hidden">
+        <div class="tw-h-full tw-flex tw-flex-col">
+          <div class="tw-border-b tw-border-gray-200">
+            <nav class="-tw-mb-px tw-flex" aria-label="Tabs">
               <a href="#"
                  onClick={e => this.onTabSelected(e, 0)}
-                 class={`${activitiesTabCssClass} w-1/2 py-4 px-1 text-center border-b-2 font-medium text-sm`}>
+                 class={`${activitiesTabCssClass} tw-w-1/2 tw-py-4 tw-px-1 tw-text-center tw-border-b-2 tw-font-medium tw-text-sm`}>
                 Activities
               </a>
             </nav>
           </div>
 
-          <div class="flex-1 relative">
-            <div class="absolute inset-0 overflow-y-scroll">
+          <div class="tw-flex-1 tw-relative">
+            <div class="tw-absolute tw-inset-0 tw-overflow-y-scroll">
               <elsa-workflow-definition-editor-toolbox-activities
                 graph={this.graph}
                 class={selectedTabIndex == 0 ? '' : 'hidden'}/>

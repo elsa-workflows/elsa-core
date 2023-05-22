@@ -8,6 +8,7 @@ module.exports = {
   content: ['./src/**/*.tsx', './src/**/*.ts'],
   darkMode: 'media',
   important: 'elsa-studio',
+  prefix: 'tw-', // This is important to avoid conflicts with the host app's styles.
   theme: {
     extend: {
       colors: {

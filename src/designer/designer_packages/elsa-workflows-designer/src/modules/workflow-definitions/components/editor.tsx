@@ -333,10 +333,10 @@ export class WorkflowDefinitionEditor {
 
     return (
       <WorkflowDefinitionTunnel.Provider state={state}>
-        <div class="absolute inset-0" ref={el => this.container = el}>
+        <div class="tw-absolute tw-inset-0" ref={el => this.container = el}>
           <elsa-workflow-definition-editor-toolbar zoomToFit={this.onZoomToFit} onAutoLayout={(e: CustomEvent<LayoutDirection>) => this.onAutoLayout(e.detail)}/>
           <elsa-panel
-            class="elsa-activity-picker-container z-30"
+            class="elsa-activity-picker-container tw-z-30"
             position={PanelPosition.Left}
             onExpandedStateChanged={e => this.onActivityPickerPanelStateChanged(e.detail)}>
             <elsa-workflow-definition-editor-toolbox ref={el => this.toolbox = el}/>
@@ -351,7 +351,7 @@ export class WorkflowDefinitionEditor {
             onDragOver={e => this.onDragOver(e)}
             onDrop={e => this.onDrop(e)}/>
           <elsa-panel
-            class="elsa-workflow-editor-container z-30"
+            class="elsa-workflow-editor-container tw-z-30"
             position={PanelPosition.Right}
             onExpandedStateChanged={e => this.onWorkflowEditorPanelStateChanged(e.detail)}>
             <div class="object-editor-container">

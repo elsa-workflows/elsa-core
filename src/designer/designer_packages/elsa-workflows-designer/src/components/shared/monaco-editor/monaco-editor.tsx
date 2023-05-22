@@ -170,10 +170,10 @@ export class ElsaMonaco {
   }
 
   render() {
-    const padding = this.padding || 'pt-1.5 pl-1';
+    const padding = this.padding || 'tw-pt-1.5 tw-pl-1';
     return (
       <Host
-        class="monaco-editor-host border focus:ring-blue-500 focus:border-blue-500 block w-full min-w-0 rounded-md sm:text-sm border-gray-300 p-4"
+        class="monaco-editor-host tw-border focus:tw-ring-blue-500 focus:tw-border-blue-500 tw-block tw-w-full tw-min-w-0 tw-rounded-md sm:tw-text-sm tw-border-gray-300 tw-p-4"
         style={{ 'min-height': this.editorHeight }}>
         <div ref={el => this.container = el} class={`monaco-editor-container ${padding}`} />
       </Host>

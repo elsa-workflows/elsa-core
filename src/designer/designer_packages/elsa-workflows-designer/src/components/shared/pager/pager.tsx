@@ -27,25 +27,25 @@ export class ElsaPager {
     const pageCount = Math.round(((totalCount - 1) / pageSize) + 0.5);
 
     return (
-      <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-        <div class="flex-1 flex justify-between sm:hidden">
+      <div class="tw-bg-white tw-px-4 tw-py-3 tw-flex tw-items-center tw-justify-between tw-border-t tw-border-gray-200 sm:tw-px-6">
+        <div class="tw-flex-1 tw-flex tw-justify-between sm:hidden">
           <PreviousButton currentPage={page} pageCount={pageCount} onNavigate={this.onNavigate}/>
           <NextButton currentPage={page} pageCount={pageCount} onNavigate={this.onNavigate}/>
         </div>
-        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+        <div class="hidden sm:tw-flex-1 sm:tw-flex sm:tw-items-center sm:tw-justify-between">
           <div>
-            <p class="text-sm leading-5 text-gray-700 space-x-0.5">
+            <p class="tw-text-sm tw-leading-5 tw-text-gray-700 tw-space-x-0.5">
               <span>From</span>
-              <span class="font-medium">{from}</span>
+              <span class="tw-font-medium">{from}</span>
               <span>to</span>
-              <span class="font-medium">{to}</span>
+              <span class="tw-font-medium">{to}</span>
               <span>of</span>
-              <span class="font-medium">{totalCount}</span>
+              <span class="tw-font-medium">{totalCount}</span>
               <span>results</span>
             </p>
           </div>
           <div>
-            <nav class="relative z-0 inline-flex shadow-sm">
+            <nav class="tw-relative tw-z-0 tw-inline-flex tw-shadow-sm">
               <ChevronLeft currentPage={page} pageCount={pageCount} onNavigate={this.onNavigate}/>
               <PagerButtons currentPage={page} pageCount={pageCount} onNavigate={this.onNavigate}/>
               <ChevronRight currentPage={page} pageCount={pageCount} onNavigate={this.onNavigate}/>

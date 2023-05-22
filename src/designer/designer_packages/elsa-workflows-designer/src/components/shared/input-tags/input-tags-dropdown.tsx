@@ -76,18 +76,18 @@ export class InputTagsDropdown {
     const valuesJson = JSON.stringify(values.map(tag => tag.value));
 
     return (
-      <div class="py-2 px-3 bg-white shadow-sm border border-gray-300 rounded-md">
+      <div class="tw-py-2 tw-px-3 tw-bg-white tw-shadow-sm tw-border tw-border-gray-300 tw-rounded-md">
         {values.map(tag => (
-          <a href="#" onClick={e => this.onDeleteTagClick(e, tag)} class="inline-block text-xs bg-blue-400 text-white py-2 px-3 mr-1 mb-1 rounded">
+          <a href="#" onClick={e => this.onDeleteTagClick(e, tag)} class="tw-inline-block tw-text-xs tw-bg-blue-400 tw-text-white tw-py-2 tw-px-3 tw-mr-1 tw-mb-1 tw-rounded">
             <input type="hidden" value={tag.value}/>
             <span>{tag.text}</span>
-            <span class="text-white hover:text-white ml-1">&times;</span>
+            <span class="tw-text-white hover:tw-text-white tw-ml-1">&times;</span>
           </a>
         ))}
 
         <select
           id={this.fieldId}
-          class="inline-block text-xs py-2 px-3 mr-1 mb-1 pr-8 border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded"
+          class="tw-inline-block tw-text-xs tw-py-2 tw-px-3 tw-mr-1 tw-mb-1 tw-pr-8 tw-border-gray-300 focus:tw-outline-none focus:tw-ring-blue-500 focus:tw-border-blue-500 tw-rounded"
           onChange={(e) => this.onTagSelected(e)}>
           <option value="Add" disabled selected>{this.placeHolder}</option>
           {dropdownItems.map(tag => <option value={tag.value}>{tag.text}</option>)}

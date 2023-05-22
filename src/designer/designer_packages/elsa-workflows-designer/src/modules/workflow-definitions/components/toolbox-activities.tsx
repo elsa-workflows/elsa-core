@@ -108,34 +108,34 @@ export class ToolboxActivities {
   }
 
   render() {
-    return <nav class="flex-1 px-2 space-y-1 font-sans text-sm text-gray-600">
-      <input class="my-1" placeholder="Search Activities" type="text" name="activity-search" id="activitySearch" onInput={this.filterActivities.bind(this)} />
+    return <nav class="tw-flex-1 tw-px-2 tw-space-y-1 tw-font-sans tw-text-sm tw-text-gray-600">
+      <input class="tw-my-1" placeholder="Search Activities" type="text" name="activity-search" id="activitySearch" onInput={this.filterActivities.bind(this)} />
 
       {this.categoryModels.map(categoryModel => {
         const category = categoryModel.category;
         const activityDescriptors: Array<ActivityDescriptor> = categoryModel.activities;
-        const categoryButtonClass = categoryModel.expanded ? 'rotate-90' : '';
+        const categoryButtonClass = categoryModel.expanded ? 'tw-rotate-90' : '';
         const categoryContentClass = categoryModel.expanded ? '' : 'hidden';
 
-        return <div class="space-y-1">
+        return <div class="tw-space-y-1">
           <button type="button"
             onClick={() => this.onToggleActivityCategory(categoryModel)}
-            class="text-gray-600 hover:bg-gray-50 hover:text-gray-900 group w-full flex items-center pr-2 py-2 text-left text-sm font-medium rounded-md focus:outline-none">
+            class="tw-text-gray-600 hover:tw-bg-gray-50 hover:tw-text-gray-900 tw-group tw-w-full tw-flex tw-items-center tw-pr-2 tw-py-2 tw-text-left tw-text-sm tw-font-medium tw-rounded-md focus:tw-outline-none">
             <svg
-              class={`${categoryButtonClass} text-gray-300 mr-2 flex-shrink-0 h-5 w-5 transform group-hover:text-gray-400 transition-colors ease-in-out duration-150`}
+              class={`${categoryButtonClass} tw-text-gray-300 tw-mr-2 tw-flex-shrink-0 tw-h-5 tw-w-5 tw-transform group-hover:tw-text-gray-400 tw-transition-colors tw-ease-in-out tw-duration-150`}
               viewBox="0 0 20 20" aria-hidden="true">
                 <path d="M6 6L14 10L6 14V6Z" fill="currentColor"/>
             </svg>
             {category}
           </button>
 
-          <div class={`space-y-0.5 ${categoryContentClass}`}>
+          <div class={`tw-space-y-0.5 ${categoryContentClass}`}>
 
             {activityDescriptors.map(activityDescriptor => {
               const activityHtml = this.renderedActivities.get(activityDescriptor.typeName);
               return (
-                <div class="w-full flex items-center pl-10 pr-2 py-2">
-                  <div class="relative cursor-move" onDragStart={e => ToolboxActivities.onActivityStartDrag(e, activityDescriptor)}>
+                <div class="tw-w-full tw-flex tw-items-center tw-pl-10 tw-pr-2 tw-py-2">
+                  <div class="tw-relative tw-cursor-move" onDragStart={e => ToolboxActivities.onActivityStartDrag(e, activityDescriptor)}>
                     <elsa-tooltip tooltipPosition="right" tooltipContent={activityDescriptor.description}>
                         <div innerHTML={activityHtml} draggable={true}/>
                     </elsa-tooltip>

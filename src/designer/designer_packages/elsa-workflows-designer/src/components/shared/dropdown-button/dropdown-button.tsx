@@ -21,25 +21,25 @@ export class DropdownButton {
   private element: HTMLElement;
 
   public render() {
-    const buttonClass = this.theme == 'Secondary' ? 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-blue-500 hover:border-blue-500' : 'border-blue-600 bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-600 hover:border-blue-700';
-    const arrowClass = this.theme == 'Secondary' ? 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:border-blue-500' : 'border-blue-600 bg-blue-600 text-white hover:bg-blue-700 hover:border-blue-700';
+    const buttonClass = this.theme == 'Secondary' ? 'tw-border-gray-300 tw-bg-white tw-text-gray-700 hover:tw-bg-gray-50 focus:tw-ring-blue-500 hover:tw-border-blue-500' : 'tw-border-blue-600 tw-bg-blue-600 tw-text-white hover:tw-bg-blue-700 focus:tw-ring-blue-600 hover:tw-border-blue-700';
+    const arrowClass = this.theme == 'Secondary' ? 'tw-border-gray-300 tw-bg-white tw-text-gray-700 hover:tw-bg-gray-50 hover:tw-border-blue-500' : 'tw-border-blue-600 tw-bg-blue-600 tw-text-white hover:tw-bg-blue-700 hover:tw-border-blue-700';
     const handler = this.handler ?? (() => this.toggleMenu());
 
     return (
-      <Host class="block" ref={el => this.element = el}>
-        <span class="relative z-0 inline-flex shadow-sm rounded-md">
+      <Host class="tw-block" ref={el => this.element = el}>
+        <span class="tw-relative tw-z-0 tw-inline-flex tw-shadow-sm tw-rounded-md">
           <button type="button"
-                  class={`relative inline-flex items-center px-4 py-2 rounded-l-md border text-sm font-medium focus:z-10 focus:outline-none ${buttonClass}`}
+                  class={`tw-relative tw-inline-flex tw-items-center tw-px-4 tw-py-2 tw-rounded-l-md tw-border tw-text-sm tw-font-medium focus:tw-z-10 focus:tw-outline-none ${buttonClass}`}
                   onClick={handler}>
             {this.renderIcon()}
             {this.text}
           </button>
-          <div class="-ml-px block">
+          <div class="-tw-ml-px tw-block">
             <button type="button"
-                    class={`relative inline-flex items-center px-2 py-2 rounded-r-md border text-sm font-medium focus:z-10 focus:outline-none ${arrowClass}`}
+                    class={`tw-relative tw-inline-flex tw-items-center tw-px-2 tw-py-2 tw-rounded-r-md tw-border tw-text-sm tw-font-medium focus:tw-z-10 focus:tw-outline-none ${arrowClass}`}
                     onClick={() => this.toggleMenu()}
                     aria-expanded="true" aria-haspopup="true">
-              <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <svg class="tw-h-5 tw-w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>
               </svg>
             </button>
@@ -57,13 +57,13 @@ export class DropdownButton {
     const originClass = this.getOriginClass();
 
     return <div ref={el => this.contextMenu = el}
-                data-transition-enter="transition ease-out duration-100"
-                data-transition-enter-start="transform opacity-0 scale-95"
-                data-transition-leave="transition ease-in duration-75"
-                data-transition-leave-start="transform opacity-100 scale-100"
-                data-transition-leave-end="transform opacity-0 scale-95"
-                class={`hidden ${originClass} z-10 absolute mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5`}>
-      <div class="py-1" role="menu" aria-orientation="vertical">
+                data-transition-enter="tw-transition tw-ease-out tw-duration-100"
+                data-transition-enter-start="tw-transform tw-opacity-0 tw-scale-95"
+                data-transition-leave="tw-transition tw-ease-in tw-duration-75"
+                data-transition-leave-start="tw-transform tw-opacity-100 tw-scale-100"
+                data-transition-leave-end="tw-transform tw-opacity-0 tw-scale-95"
+                class={`hidden ${originClass} tw-z-10 tw-absolute tw-mt-2 tw-w-56 tw-rounded-md tw-shadow-lg tw-bg-white tw-ring-1 tw-ring-black tw-ring-opacity-5`}>
+      <div class="tw-py-1" role="menu" aria-orientation="vertical">
         {this.renderItems()}
       </div>
     </div>;
@@ -73,17 +73,17 @@ export class DropdownButton {
 
     const groups = groupBy(this.items, x => x.group ?? 0);
 
-    return <div class="divide-y divide-gray-100 focus:outline-none" role="menu" aria-orientation="vertical" aria-labelledby="option-menu">
+    return <div class="tw-divide-y tw-divide-gray-100 focus:tw-outline-none" role="menu" aria-orientation="vertical" aria-labelledby="option-menu">
       {map(groups, menuItemGroup => {
 
-        return <div class="py-1" role="none">
+        return <div class="tw-py-1" role="none">
           {menuItemGroup.map(menuItem => {
 
-            const selectedCssClass = menuItem.isSelected ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'hover:bg-gray-100 text-gray-700 hover:text-gray-900';
+            const selectedCssClass = menuItem.isSelected ? 'tw-bg-blue-600 hover:tw-bg-blue-700 tw-text-white' : 'hover:tw-bg-gray-100 tw-text-gray-700 hover:tw-text-gray-900';
             return (
-              <div class="py-1" role="none">
+              <div class="tw-py-1" role="none">
                 <a href="#" onClick={e => this.onItemClick(e, menuItem)}
-                   class={`block px-4 py-2 text-sm ${selectedCssClass}`}
+                   class={`tw-block tw-px-4 tw-py-2 tw-text-sm ${selectedCssClass}`}
                    role="menuitem">
                   {menuItem.text}
                 </a>
@@ -112,10 +112,10 @@ export class DropdownButton {
   private getOriginClass(): string {
     switch (this.origin) {
       case DropdownButtonOrigin.TopLeft:
-        return 'left-0 origin-top-left';
+        return 'tw-left-0 tw-origin-top-left';
       case DropdownButtonOrigin.TopRight:
       default:
-        return 'right-0 origin-top-right';
+        return 'tw-right-0 tw-origin-top-right';
     }
   }
 

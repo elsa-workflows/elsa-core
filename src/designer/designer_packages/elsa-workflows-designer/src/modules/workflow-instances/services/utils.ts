@@ -4,12 +4,12 @@ const statusColorMap = {};
 const subStatusColorMap = {};
 
 statusColorMap[WorkflowStatus.Running] = 'bg-rose-600';
-statusColorMap[WorkflowStatus.Finished] = 'bg-green-600';
+statusColorMap[WorkflowStatus.Finished] = 'tw-bg-green-600';
 
 subStatusColorMap[WorkflowSubStatus.Executing] = 'bg-rose-600';
-subStatusColorMap[WorkflowSubStatus.Suspended] = 'bg-blue-600';
-subStatusColorMap[WorkflowSubStatus.Finished] = 'bg-green-600';
-subStatusColorMap[WorkflowSubStatus.Faulted] = 'bg-red-600';
+subStatusColorMap[WorkflowSubStatus.Suspended] = 'tw-bg-blue-600';
+subStatusColorMap[WorkflowSubStatus.Finished] = 'tw-bg-green-600';
+subStatusColorMap[WorkflowSubStatus.Faulted] = 'tw-bg-red-600';
 subStatusColorMap[WorkflowSubStatus.Compensating] = 'bg-orange-600';
 subStatusColorMap[WorkflowSubStatus.Cancelled] = 'bg-gray-900';
 

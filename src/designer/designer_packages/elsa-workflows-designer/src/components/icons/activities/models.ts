@@ -9,19 +9,19 @@ export interface ActivityIconSettings {
 }
 
 export function getActivityIconCssClass(settings: ActivityIconSettings) {
-  const cssClasses = ['text-white', sizeToClass(settings.size)];
+  const cssClasses = ['tw-text-white', sizeToClass(settings.size)];
   return cssClasses.join(' ');
 }
 
 function sizeToClass(size?: ActivityIconSize) {
   switch (size) {
     case ActivityIconSize.Small:
-      return 'h-4 w-4';
+      return 'tw-h-4 tw-w-4';
     case ActivityIconSize.Medium:
-      return 'h-6 w-6';
+      return 'tw-h-6 tw-w-6';
     case ActivityIconSize.Large:
-      return 'h-10 w-10';
+      return 'tw-h-10 tw-w-10';
     default:
-      return 'h-6 w-6';
+      return 'tw-h-6 tw-w-6';
   }
 }

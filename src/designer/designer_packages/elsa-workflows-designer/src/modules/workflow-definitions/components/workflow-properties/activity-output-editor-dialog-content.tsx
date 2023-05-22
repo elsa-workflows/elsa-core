@@ -28,10 +28,10 @@ export class ActivityOutputEditorDialogContent {
 
     return (
       <div>
-        <form ref={el => this.formElement = el} class="h-full flex flex-col bg-white" onSubmit={e => this.onSubmit(e)} method="post">
-          <div class="pt-4">
-            <h2 class="text-lg font-medium ml-4 mb-2">Edit output definition</h2>
-            <div class="align-middle inline-block min-w-full border-b border-gray-200">
+        <form ref={el => this.formElement = el} class="tw-h-full tw-flex tw-flex-col tw-bg-white" onSubmit={e => this.onSubmit(e)} method="post">
+          <div class="tw-pt-4">
+            <h2 class="tw-text-lg tw-font-medium tw-ml-4 tw-mb-2">Edit output definition</h2>
+            <div class="tw-align-middle tw-inline-block tw-min-w-full tw-border-b tw-border-gray-200">
 
               <FormEntry fieldId="outputName" label="Name" hint="The technical name of the output.">
                 <input type="text" name="outputName" id="outputName" value={output.name}/>

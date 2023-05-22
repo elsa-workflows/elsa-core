@@ -34,11 +34,11 @@ export interface BulkActionsProps {
 
 export const Filter: FunctionalComponent<FilterProps> = ({ pageSizeFilter, orderByFilter, onBulkDelete, onBulkPublish, onBulkUnpublish, labelFilter }) => {
   return (
-    <div class="p-8 flex content-end justify-right bg-white space-x-4">
-      <div class="flex-shrink-0">
+    <div class="tw-p-8 tw-flex tw-content-end tw-justify-right tw-bg-white tw-space-x-4">
+      <div class="tw-flex-shrink-0">
         <BulkActions onBulkDelete={onBulkDelete} onBulkPublish={onBulkPublish} onBulkUnpublish={onBulkUnpublish} />
       </div>
-      <div class="flex-1">&nbsp;</div>
+      <div class="tw-flex-1">&nbsp;</div>
 
       <elsa-label-picker {...labelFilter} />
 

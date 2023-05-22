@@ -128,7 +128,7 @@ export function createGraph(
       const container = selectors && selectors.foContent
       if (container) {
         const port = document.createElement('div');
-        port.className = 'rounded-full border border-2 border-blue h-8 w-8';
+        port.className = 'tw-rounded-full tw-border tw-border-2 tw-border-blue tw-h-8 tw-w-8';
         port.innerHTML = `<p>done</p>`;
         (container as HTMLElement).append(port);
       }

@@ -33,7 +33,7 @@ export class RadioList {
 
     return (
       <elsa-input-control-switch label={displayName} hint={hint} syntax={syntax} expression={value} onExpressionChanged={this.onExpressionChanged}>
-        <div class="max-w-lg space-y-4 my-4">
+        <div class="tw-max-w-lg tw-space-y-4 tw-my-4">
           {selectList.items.map((item, index) => {
             const inputId = `${fieldId}_${index}`;
             const optionIsString = typeof (item as any) == 'string';
@@ -42,14 +42,14 @@ export class RadioList {
             const isSelected = this.selectedValue === value as string;
 
             return (
-              <div class="relative flex items-start">
-                <div class="flex items-center h-5">
+              <div class="tw-relative tw-flex tw-items-start">
+                <div class="tw-flex tw-items-center tw-h-5">
                   <input id={inputId} type="radio" name={fieldName} checked={isSelected} value={value}
                          onChange={e => this.onCheckChanged(e)}
-                         class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300"/>
+                         class="focus:tw-ring-blue-500 tw-h-4 tw-w-4 tw-text-blue-600 tw-border-gray-300"/>
                 </div>
-                <div class="ml-3 text-sm">
-                  <label htmlFor={inputId} class="font-medium text-gray-700">{text}</label>
+                <div class="tw-ml-3 tw-text-sm">
+                  <label htmlFor={inputId} class="tw-font-medium tw-text-gray-700">{text}</label>
                 </div>
               </div>
             );

@@ -40,7 +40,7 @@ export class Checkbox {
 
     return (
       <elsa-input-control-switch label={displayName} hideLabel={true} hint={hint} syntax={syntax} expression={value} onExpressionChanged={this.onExpressionChanged}>
-        <div class="flex space-x-1">
+        <div class="tw-flex tw-space-x-1">
           <input type="checkbox" name={fieldName} id={fieldId} checked={isChecked} onChange={this.onPropertyEditorChanged}/>
           <label htmlFor={fieldId}>{displayName}</label>
         </div>

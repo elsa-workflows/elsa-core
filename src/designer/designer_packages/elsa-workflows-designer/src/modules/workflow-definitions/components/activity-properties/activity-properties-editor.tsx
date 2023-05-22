@@ -152,9 +152,7 @@ export class ActivityPropertiesEditor {
       newId: activityId,
       originalId: activityId,
       activity,
-      activityDescriptor,
-      // propertyName: camelCase(inputDescriptor.name),
-      // propertyDescriptor: inputDescriptor
+      activityDescriptor
     });
 
     return activityDescriptor.inputs.map(inputDescriptor => {
@@ -363,7 +361,7 @@ export class ActivityPropertiesEditor {
         return <div key={key}>
           <FormEntry fieldId={key} label={displayName} hint={propertyDescriptor.description}>
 
-            <div class="relative">
+            <div class="tw-relative">
               <select onChange={e => this.onOutputPropertyEditorChanged(propertyDescriptor, (e.currentTarget as HTMLSelectElement).value)}>
                 {outputTargetOptions.map(outputTarget => {
                   if (!outputTarget) {
@@ -381,8 +379,8 @@ export class ActivityPropertiesEditor {
                     </optgroup>);
                 })}
               </select>
-              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-10">
-                <span class="text-gray-500 sm:text-sm">{propertyTypeName}</span>
+              <div class="tw-pointer-events-none tw-absolute tw-inset-y-0 tw-right-0 tw-flex tw-items-center pr-10">
+                <span class="tw-text-gray-500 sm:tw-text-sm">{propertyTypeName}</span>
               </div>
             </div>
           </FormEntry>
