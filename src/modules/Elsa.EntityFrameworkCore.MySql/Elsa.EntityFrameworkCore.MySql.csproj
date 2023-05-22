@@ -8,7 +8,7 @@
         <Description>
             Provides MySql implementation and migrations for various modules.
         </Description>
-        <PackageTags>elsa module persistence efcore MySql</PackageTags>
+        <PackageTags>elsa module persistence efcore mysql</PackageTags>
     </PropertyGroup>
     
     <ItemGroup>
