@@ -19,7 +19,7 @@ export class ElsaCopyButton {
 
   public render() {
     return (
-      <a href="#" class="ml-2 h-6 w-6 inline-block text-blue-500 hover:text-blue-300" title="Copy value">
+      <a href="#" class="tw-ml-2 tw-h-6 tw-w-6 tw-inline-block tw-text-blue-500 hover:tw-text-blue-300" title="Copy value">
         {!this.isCopied ? (
           <svg
             onClick={() => this.copyToClipboard()}

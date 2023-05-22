@@ -43,72 +43,72 @@ export class FormPanel {
     const orientation = this.orientation;
 
     return (
-      <div class="absolute inset-0 overflow-hidden">
-        <form class="h-full flex flex-col bg-white shadow-xl" onSubmit={e => this.onSubmit(e)} method="post">
-          <div class="flex flex-col flex-1">
+      <div class="tw-absolute tw-inset-0 tw-overflow-hidden">
+        <form class="tw-h-full tw-flex tw-flex-col tw-bg-white tw-shadow-xl" onSubmit={e => this.onSubmit(e)} method="post">
+          <div class="tw-flex tw-flex-col tw-flex-1">
 
             {orientation == 'Portrait' && (
-              <div class="px-4 py-6 bg-gray-50">
+              <div class="tw-px-4 tw-py-6 tw-bg-gray-50">
 
-                <div class="flex items-start justify-between space-x-3">
-                  <div class="space-y-1">
-                    <h2 class="text-lg font-medium text-gray-900">
+                <div class="tw-flex tw-items-start tw-justify-between tw-space-x-3">
+                  <div class="tw-space-y-1">
+                    <h2 class="tw-text-lg tw-font-medium tw-text-gray-900">
                       {mainTitle}
                     </h2>
-                    {!isNullOrWhitespace(subTitle) ? <h3 class="text-sm text-gray-700">{subTitle}</h3> : undefined}
+                    {!isNullOrWhitespace(subTitle) ? <h3 class="tw-text-sm tw-text-gray-700">{subTitle}</h3> : undefined}
                   </div>
                 </div>
               </div>)}
 
             {orientation == 'Landscape' && (
-              <div class="px-10 py-4 bg-gray-50">
-                <div class="flex items-start justify-between space-x-3">
-                  <div class="space-y-0">
-                    <h2 class="text-md font-medium text-gray-900">
+              <div class="tw-px-10 tw-py-4 tw-bg-gray-50">
+                <div class="tw-flex tw-items-start tw-justify-between tw-space-x-3">
+                  <div class="tw-space-y-0">
+                    <h2 class="tw-text-md tw-font-medium tw-text-gray-900">
                       {mainTitle}
                     </h2>
-                    {!isNullOrWhitespace(subTitle) ? <h3 class="text-xs text-gray-700">{subTitle}</h3> : undefined}
+                    {!isNullOrWhitespace(subTitle) ? <h3 class="tw-text-xs tw-text-gray-700">{subTitle}</h3> : undefined}
                   </div>
                 </div>
               </div>)}
 
-            <div class={`border-b border-gray-200 ${orientation == 'Landscape' ? 'pl-10' : 'pl-4'}`}>
-              <nav class="-mb-px flex justify-start space-x-5" aria-label="Tabs">
+            <div class={`tw-border-b tw-border-gray-200 ${orientation == 'Landscape' ? 'tw-pl-10' : 'tw-pl-4'}`}>
+              <nav class="-tw-mb-px tw-flex tw-justify-start tw-space-x-5" aria-label="Tabs">
                 {tabs.map((tab, tabIndex) => {
-                  const cssClass = tabIndex == selectedTabIndex ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300';
+                  const cssClass = tabIndex == selectedTabIndex ? 'tw-border-blue-500 tw-text-blue-600' : 'tw-border-transparent tw-text-gray-500 hover:tw-text-gray-700 hover:tw-border-gray-300';
                   return <a href="#"
                             onClick={e => this.onTabClick(e, tab)}
-                            class={`${cssClass} py-4 px-1 text-center border-b-2 font-medium text-sm`}>
+                            class={`${cssClass} tw-py-4 tw-px-1 tw-text-center tw-border-b-2 tw-font-medium tw-text-sm`}>
                     {tab.displayText}
                   </a>
                 })}
               </nav>
             </div>
 
-              <div class={`flex-1 relative`}>
-                <div class={`absolute inset-0 overflow-y-scroll ${orientation == 'Landscape' ? 'px-6' : ''}`}>
-                  {tabs.map((tab, tabIndex) => {
-                    const cssClass = tabIndex == selectedTabIndex ? '' : 'hidden';
-                    return <div class={cssClass}>
-                      {tab.content()}
-                    </div>
-                  })}
-                </div>
+            <div class={`tw-flex-1 tw-relative`}>
+              <div class={`tw-absolute tw-inset-0 tw-overflow-y-scroll ${orientation == 'Landscape' ? 'tw-px-6' : ''}`}>
+                {tabs.map((tab, tabIndex) => {
+                  const cssClass = tabIndex == selectedTabIndex ? '' : 'tw-hidden';
+                  return <div class={cssClass}>
+                    {tab.content()}
+                  </div>
+                })}
               </div>
+            </div>
           </div>
 
           {actions.length > 0 ? (
-            <div class="flex-shrink-0 px-4 border-t border-gray-200 py-5 sm:px-6">
-              <div class="space-x-3 flex justify-end">
+            <div class="tw-flex-shrink-0 tw-px-4 tw-border-t tw-border-gray-200 tw-py-5 sm:tw-px-6">
+              <div class="tw-space-x-3 tw-flex tw-justify-end">
                 {actions.map(action => {
 
                   if (action.display)
                     return action.display(action);
 
                   const cssClass = action.isPrimary
-                    ? 'text-white bg-blue-600 hover:bg-blue-700 border-transparent focus:ring-blue-500'
-                    : action.isDangerous ? 'text-white bg-red-600 hover:bg-red-700 border-transparent focus:ring-red-500'
-                      : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-blue-500';
+                    ? 'tw-text-white tw-bg-blue-600 hover:tw-bg-blue-700 tw-border-transparent focus:tw-ring-blue-500'
+                    : action.isDangerous ? 'tw-text-white tw-bg-red-600 hover:tw-bg-red-700 tw-border-transparent focus:tw-ring-red-500'
+                      : 'tw-bg-white tw-border-gray-300 tw-text-gray-700 hover:tw-bg-gray-50 focus:tw-ring-blue-500';
 
                   const buttonType = action.type == PanelActionType.Submit ? 'submit' : 'button';
 
@@ -120,7 +120,7 @@ export class FormPanel {
 
                   return <button type={buttonType}
                                  onClick={e => clickHandler(e, action)}
-                                 class={`${cssClass} py-2 px-4 border rounded-md shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2`}>
+                                 class={`${cssClass} tw-py-2 tw-px-4 tw-border tw-rounded-md tw-shadow-sm tw-text-sm tw-font-medium focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-offset-2`}>
                     {action.text}
                   </button>
                 })}

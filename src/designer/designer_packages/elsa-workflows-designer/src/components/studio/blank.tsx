@@ -6,6 +6,6 @@ import {Component, h} from "@stencil/core";
 })
 export class Blank{
   render(){
-    return <div class="bg-gray-800 overflow-hidden h-screen"></div>;
+    return <div class="tw-bg-gray-800 tw-overflow-hidden tw-h-screen"></div>;
   }
 }

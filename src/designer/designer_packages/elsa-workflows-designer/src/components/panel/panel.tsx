@@ -68,38 +68,38 @@ export class Panel {
     const stateClass = isExpanded ? 'panel-state-expanded' : 'panel-state-collapsed';
 
     const containerClassMap = [];
-    containerClassMap[PanelPosition.Left] = 'panel-position-left left-0 top-0 bottom-0 border-r';
-    containerClassMap[PanelPosition.Top] = 'panel-position-top left-0 top-0 right-0 border-b';
-    containerClassMap[PanelPosition.Bottom] = 'panel-position-bottom h-0 bottom-0 border-t';
-    containerClassMap[PanelPosition.Right] = 'panel-position-right right-0 top-0 bottom-0 border-l';
+    containerClassMap[PanelPosition.Left] = 'panel-position-left tw-left-0 tw-top-0 tw-bottom-0 tw-border-r';
+    containerClassMap[PanelPosition.Top] = 'panel-position-top tw-left-0 tw-top-0 tw-right-0 tw-border-b';
+    containerClassMap[PanelPosition.Bottom] = 'panel-position-bottom h-0 tw-bottom-0 tw-border-t';
+    containerClassMap[PanelPosition.Right] = 'panel-position-right tw-right-0 tw-top-0 tw-bottom-0 tw-border-l';
     const containerCssClass = containerClassMap[position];
 
     const toggleClassMap = {};
-    toggleClassMap[PanelPosition.Left] = 'panel-toggle-left';
-    toggleClassMap[PanelPosition.Top] = 'panel-toggle-top';
-    toggleClassMap[PanelPosition.Right] = 'panel-toggle-right';
-    toggleClassMap[PanelPosition.Bottom] = 'panel-toggle-bottom';
+    toggleClassMap[PanelPosition.Left] = 'elsa-panel-toggle-left';
+    toggleClassMap[PanelPosition.Top] = 'elsa-panel-toggle-top';
+    toggleClassMap[PanelPosition.Right] = 'elsa-panel-toggle-right';
+    toggleClassMap[PanelPosition.Bottom] = 'elsa-panel-toggle-bottom';
 
     const toggleCssClass = toggleClassMap[position];
 
     const dragBarClassMap = {
-      [PanelPosition.Left]: 'right-0 h-full cursor-col-resize w-1',
-      [PanelPosition.Right]: 'left-0 h-full cursor-col-resize w-1',
-      [PanelPosition.Bottom]: 'top-0 w-full cursor-row-resize h-1',
+      [PanelPosition.Left]: 'tw-right-0 tw-h-full tw-cursor-col-resize tw-w-1',
+      [PanelPosition.Right]: 'tw-left-0 tw-h-full tw-cursor-col-resize tw-w-1',
+      [PanelPosition.Bottom]: 'tw-top-0 tw-w-full tw-cursor-row-resize tw-h-1',
     };
 
     const dragBarClass = dragBarClassMap[this.position];
 
     return (
-      <Host class={`panel absolute bg-white z-20 ${containerCssClass} ${stateClass}`}>
-        <div class={`absolute opacity-0 bg-blue-400 transition ease-in-out duration-300 hover:opacity-100 z-10 ${dragBarClass}`} onMouseDown={this.onDragBarMouseDown} />
+      <Host class={`panel tw-absolute tw-bg-white tw-z-20 ${containerCssClass} ${stateClass}`}>
+        <div class={`tw-absolute tw-opacity-0 tw-bg-blue-400 tw-transition tw-ease-in-out tw-duration-300 hover:tw-opacity-100 tw-z-10 ${dragBarClass}`} onMouseDown={this.onDragBarMouseDown} />
         <div class="panel-content-container">
           <slot />
         </div>
 
-        <div class={`text-white ${toggleCssClass}`} onClick={() => this.onToggleClick()}>
+        <div class={`tw-text-white ${toggleCssClass}`} onClick={() => this.onToggleClick()}>
           <svg
-            class="h-6 w-6 text-gray-700"
+            class="tw-h-6 tw-w-6 tw-text-gray-700"
             width="24"
             height="24"
             viewBox="0 0 24 24"

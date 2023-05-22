@@ -19,7 +19,7 @@ export class VariablesViewer {
 
     return (
       <div>
-        <div class="align-middle inline-block min-w-full border-b border-gray-200">
+        <div class="tw-align-middle tw-inline-block tw-min-w-full tw-border-b tw-border-gray-200">
           <table class="default-table">
             <thead>
             <tr>
@@ -39,10 +39,10 @@ export class VariablesViewer {
 
                 return (
                   <tr>
-                    <td class="whitespace-nowrap">{variable.name}</td>
-                    <td class="whitespace-nowrap">{typeDisplayName}</td>
+                    <td class="tw-whitespace-nowrap">{variable.name}</td>
+                    <td class="tw-whitespace-nowrap">{typeDisplayName}</td>
                     <td>{storageName}</td>
-                    <td class="pr-6">{variableValue}</td>
+                    <td class="tw-pr-6">{variableValue}</td>
                   </tr>);
               }
             )}

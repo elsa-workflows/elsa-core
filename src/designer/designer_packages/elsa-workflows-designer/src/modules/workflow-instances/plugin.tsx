@@ -56,7 +56,7 @@ export class WorkflowInstancesPlugin implements Plugin {
 
     this.workflowInstanceBrowserInstance = this.modalDialogService.show(() =>
         <elsa-workflow-instance-browser onWorkflowInstanceSelected={this.onWorkflowInstanceSelected}/>,
-      {actions: actions, size: 'max-w-screen-2xl'})
+      {actions: actions, size: 'tw-max-w-screen-2xl'})
   }
 
   private onWorkflowInstanceSelected = async (e: CustomEvent<WorkflowInstanceSummary>) => {

@@ -3,151 +3,151 @@
 @tailwind utilities;
 
 /* Controls */
-.btn {
-  @apply inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 mt-2;
+.elsa-btn {
+  @apply tw-inline-tw-flex tw-items-center tw-px-4 tw-py-2 tw-border tw-border-transparent tw-shadow-sm tw-text-sm tw-font-medium tw-rounded-md tw-text-white tw-bg-blue-600 hover:tw-bg-blue-700 focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-offset-2 focus:tw-ring-blue-500 tw-mt-2;
 }
 
-.btn.btn-primary {
-  @apply inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 mt-2;
+.elsa-btn.elsa-btn-primary {
+  @apply tw-inline-tw-flex tw-items-center tw-px-4 tw-py-2 tw-border tw-border-transparent tw-shadow-sm tw-text-sm tw-font-medium tw-rounded-md tw-text-white tw-bg-blue-600 hover:tw-bg-blue-700 focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-offset-2 focus:tw-ring-blue-500 tw-mt-2;
 }
 
-.btn.btn-secondary {
-  @apply bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500;
+.elsa-btn.elsa-btn-secondary {
+  @apply tw-bg-white tw-py-2 tw-px-4 tw-border tw-border-gray-300 tw-rounded-md tw-shadow-sm tw-text-sm tw-font-medium tw-text-gray-700 hover:tw-bg-gray-50 focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-offset-2 focus:tw-ring-blue-500;
 }
 
-.btn.btn-action {
-  @apply inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 mt-2;
+.elsa-btn.elsa-btn-action {
+  @apply tw-inline-tw-flex tw-items-center tw-px-4 tw-py-2 tw-border tw-border-transparent tw-shadow-sm tw-text-sm tw-font-medium tw-rounded-md tw-text-white tw-bg-green-600 hover:tw-bg-green-700 focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-offset-2 focus:tw-ring-green-500 tw-mt-2;
 }
 
-.icon-button {
-  @apply h-5 w-5 mx-auto outline-none focus:outline-none;
+.elsa-icon-button {
+  @apply tw-h-5 tw-w-5 tw-mx-auto tw-outline-none focus:tw-outline-none;
 }
 
 /* Toolbar Menu */
-.toolbar-menu-wrapper a {
-  @apply block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900;
+.elsa-toolbar-menu-wrapper a {
+  @apply tw-block tw-px-4 tw-py-2 tw-text-sm tw-text-gray-700 hover:tw-bg-gray-100 hover:tw-text-gray-900;
 }
 
 /* Activities */
-.activity-content-wrapper {
+.elsa-toolbar-menu-wrapper {
   min-height: 2rem;
 }
 
 /* Panels */
-.panel-collapsed {
+.elsa-panel-collapsed {
   width: 0;
   display: none;
 }
 
-.panel-toggle-left {
+.elsa-panel-toggle-left {
   right: -26px;
   top: 50%;
   transform: translateY(-50%);
 
-  @apply absolute py-4 bg-gray-50 border border-gray-400 text-gray-400 rounded-r z-10;
+  @apply tw-absolute tw-py-4 tw-bg-gray-50 tw-border tw-border-gray-400 tw-text-gray-400 tw-rounded-r tw-z-10;
 }
 
-.panel-toggle-top {
+.elsa-panel-toggle-top {
   bottom: -42px;
   left: 50%;
   transform: translateX(-50%) rotate(90deg);
 
-  @apply absolute py-4 bg-gray-50 border border-gray-400 text-gray-400 rounded-r z-10;
+  @apply tw-absolute tw-py-4 tw-bg-gray-50 tw-border tw-border-gray-400 tw-text-gray-400 tw-rounded-r tw-z-10;
 }
 
-.panel-toggle-right {
+.elsa-panel-toggle-right {
   left: -26px;
   top: 50%;
   transform: translateY(-50%) rotate(180deg);
 
-  @apply absolute py-4 bg-gray-50 border border-gray-400 text-gray-400 rounded-r z-10;
+  @apply tw-absolute tw-py-4 tw-bg-gray-50 tw-border tw-border-gray-400 tw-text-gray-400 tw-rounded-r tw-z-10;
 }
 
-.panel-toggle-bottom {
+.elsa-panel-toggle-bottom {
   top: -42px;
   left: 50%;
   transform: translateX(-50%) rotate(270deg);
 
-  @apply absolute py-4 bg-gray-50 border border-gray-400 text-gray-400 rounded-r z-10;
+  @apply tw-absolute tw-py-4 tw-bg-gray-50 tw-border tw-border-gray-400 tw-text-gray-400 tw-rounded-r tw-z-10;
 }
 
 /* Forms */
 label {
-  @apply block text-sm font-medium text-gray-700;
+  @apply tw-block tw-text-sm tw-font-medium tw-text-gray-700;
 }
 
 input[type="text"], input[type="email"], input[type="tel"], textarea {
-  @apply shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md;
+  @apply tw-shadow-sm focus:tw-ring-blue-500 focus:tw-border-blue-500 tw-block tw-w-full sm:tw-text-sm tw-border-gray-300 tw-rounded-md;
 }
 
 input[type="checkbox"] {
-  @apply focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded;
+  @apply focus:tw-ring-blue-500 tw-h-4 tw-w-4 tw-text-blue-600 tw-border-gray-300 tw-rounded;
 }
 
 select {
-  @apply mt-1 block focus:ring-blue-500 focus:border-blue-500 w-full shadow-sm sm:text-sm border-gray-300 rounded-md;
+  @apply tw-mt-1 tw-block focus:tw-ring-blue-500 focus:tw-border-blue-500 tw-w-full tw-shadow-sm sm:tw-text-sm tw-border-gray-300 tw-rounded-md;
 }
 
 textarea {
-  @apply focus:ring-blue-500 focus:border-blue-500 block w-full min-w-0 rounded-md sm:text-sm border-gray-300;
+  @apply focus:tw-ring-blue-500 focus:tw-border-blue-500 tw-block tw-w-full tw-min-tw-w-0 tw-rounded-md sm:tw-text-sm tw-border-gray-300;
 }
 
 /* Tables */
 table {
-  @apply min-w-full;
+  @apply tw-min-w-full;
 
   thead tr {
-    @apply border-t border-gray-200;
+    @apply tw-border-t tw-border-gray-200;
   }
 
   thead tr th {
-    @apply px-6 py-3 border-b border-gray-200 bg-gray-50 text-xs leading-4 font-medium text-left text-gray-500 uppercase tracking-wider;
+    @apply tw-px-6 tw-py-3 tw-border-b tw-border-gray-200 tw-bg-gray-50 tw-text-xs tw-leading-4 tw-font-medium tw-text-left tw-text-gray-500 tw-uppercase tw-tracking-wider;
   }
 
-  thead tr th.optional, tbody tr td.optional {
-    @apply hidden md:table-cell;
+  thead tr th.tw-optional, tbody tr td.tw-optional {
+    @apply tw-hidden md:tw-table-cell;
   }
 
-  table thead tr th.align-right, tbody tr td.align-right {
-    @apply text-right;
+  table thead tr th.tw-align-right, tbody tr td.tw-align-right {
+    @apply tw-text-right;
   }
 
   tbody {
-    @apply bg-white divide-y divide-gray-100;
+    @apply tw-bg-white tw-divide-y tw-divide-gray-100;
   }
 
   tbody tr td {
-    @apply px-6 py-3 text-sm leading-5 text-gray-500 font-medium;
+    @apply tw-px-6 tw-py-3 tw-text-sm tw-leading-5 tw-text-gray-500 tw-font-medium;
   }
 
   tbody tr td:first-child {
-    @apply px-6 py-3 whitespace-nowrap text-sm leading-5 font-medium text-gray-900;
+    @apply tw-px-6 tw-py-3 tw-whitespace-nowrap tw-text-sm tw-leading-5 tw-font-medium tw-text-gray-900;
   }
 }
 
 /* Pager */
-.pager-button {
-  @apply relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm leading-5 font-medium rounded-md text-gray-700 bg-white hover:text-gray-500 focus:outline-none focus:ring-blue-300 focus:border-blue-300 active:bg-gray-100 active:text-gray-700 transition ease-in-out duration-150;
+.elsa-pager-button {
+  @apply tw-relative tw-inline-tw-flex tw-items-center tw-px-4 tw-py-2 tw-border tw-border-gray-300 tw-text-sm tw-leading-5 tw-font-medium tw-rounded-md tw-text-gray-700 tw-bg-white hover:tw-text-gray-500 focus:tw-outline-none focus:tw-ring-blue-300 focus:tw-border-blue-300 active:tw-bg-gray-100 active:tw-text-gray-700 tw-transition tw-ease-in-out tw-duration-150;
 }
 
-.pager-button.previous {
-  @apply relative;
+.elsa-pager-button.previous {
+  @apply tw-relative;
 }
 
-.pager-button.next {
-  @apply ml-3;
+.elsa-pager-button.next {
+  @apply tw-ml-3;
 }
 
-.pager-chevron {
-  @apply relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm leading-5 font-medium text-gray-500 hover:text-gray-400 focus:z-10 focus:border-blue-300 focus:ring-blue-300 active:bg-gray-100 active:text-gray-500 transition ease-in-out duration-150;
+.elsa-pager-chevron {
+  @apply tw-relative tw-inline-tw-flex tw-items-center tw-px-2 tw-py-2 tw-border tw-border-gray-300 tw-bg-white tw-text-sm tw-leading-5 tw-font-medium tw-text-gray-500 hover:tw-text-gray-400 focus:tw-z-10 focus:tw-border-blue-300 focus:tw-ring-blue-300 active:tw-bg-gray-100 active:tw-text-gray-500 tw-transition tw-ease-in-out tw-duration-150;
 }
 
-.pager-chevron.left {
-  @apply rounded-l-md;
+.elsa-pager-chevron.left {
+  @apply tw-rounded-l-md;
 }
 
-.pager-chevron.right {
-  @apply rounded-r-md -ml-px;
+.elsa-pager-chevron.right {
+  @apply tw-rounded-r-md -tw-ml-px;
 }
 
 html > body {

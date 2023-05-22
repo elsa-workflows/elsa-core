@@ -103,7 +103,7 @@ export class WorkflowInstanceBrowser {
         this.selectedSubStatus = undefined
         this.orderBy = undefined
         this.selectedWorkflowDefinitionId = undefined
-        
+
         await this.loadWorkflowInstances();
       },
       onBulkDelete: this.onDeleteManyClick,
@@ -111,15 +111,15 @@ export class WorkflowInstanceBrowser {
     };
 
     return (
-      <Host class="block">
+      <Host class="tw-block">
 
-        <div class="pt-4">
-          <h2 class="text-lg font-medium ml-4 mb-2">Workflow Instances</h2>
+        <div class="tw-pt-4">
+          <h2 class="tw-text-lg tw-font-medium tw-ml-4 tw-mb-2">Workflow Instances</h2>
 
           <Search onSearch={this.onSearch}/>
           <Filter {...filterProps}/>
 
-          <div class="align-middle inline-block min-w-full border-b border-gray-200">
+          <div class="tw-align-middle tw-inline-block tw-min-w-full tw-border-b tw-border-gray-200">
             <table class="default-table">
               <thead>
               <tr>
@@ -128,18 +128,18 @@ export class WorkflowInstanceBrowser {
                          onChange={e => this.onSelectAllCheckChange(e)}
                          ref={el => this.selectAllCheckbox = el}/>
                 </th>
-                <th><span class="lg:pl-2">ID</span></th>
-                <th class="optional">Correlation</th>
+                <th><span class="lg:tw-pl-2">ID</span></th>
+                <th class="tw-optional">Correlation</th>
                 <th>Workflow</th>
-                <th class="align-right">Version</th>
-                <th class="optional">Name</th>
+                <th class="tw-align-right">Version</th>
+                <th class="tw-optional">Name</th>
                 <th>Status</th>
-                <th class="optional">Created</th>
-                <th class="optional">Finished</th>
+                <th class="tw-optional">Created</th>
+                <th class="tw-optional">Finished</th>
                 <th/>
               </tr>
               </thead>
-              <tbody class="bg-white divide-y divide-gray-100">
+              <tbody class="tw-bg-white tw-divide-y tw-divide-gray-100">
               {workflowInstances.items.map(workflowInstance => {
                 const statusColor = getSubStatusColor(workflowInstance.subStatus);
                 const isSelected = this.selectedWorkflowInstanceIds.findIndex(x => x === workflowInstance.id) >= 0;
@@ -152,24 +152,24 @@ export class WorkflowInstanceBrowser {
                       <input type="checkbox" value={workflowInstance.id} checked={isSelected} onChange={e => this.onWorkflowInstanceCheckChange(e, workflowInstance)}/>
                     </td>
                     <td>
-                      <div class="flex items-center space-x-3 lg:pl-2">
-                        <a onClick={e => this.onWorkflowInstanceClick(e, workflowInstance)} href="#" class="truncate hover:text-gray-600"><span>{workflowInstance.id}</span></a>
+                      <div class="tw-flex tw-items-center tw-space-x-3 lg:tw-pl-2">
+                        <a onClick={e => this.onWorkflowInstanceClick(e, workflowInstance)} href="#" class="tw-truncate hover:tw-text-gray-600"><span>{workflowInstance.id}</span></a>
                       </div>
                     </td>
 
-                    <td class="optional">{workflowInstance.correlationId}</td>
-                    <td class="optional">{workflowName}</td>
-                    <td class="align-right">{workflowInstance.version}</td>
-                    <td class="optional">{workflowInstance.name}</td>
+                    <td class="tw-optional">{workflowInstance.correlationId}</td>
+                    <td class="tw-optional">{workflowName}</td>
+                    <td class="tw-align-right">{workflowInstance.version}</td>
+                    <td class="tw-optional">{workflowInstance.name}</td>
                     <td>
-                      <div class="flex items-center space-x-3 lg:pl-2">
-                        <div class={`flex-shrink-0 w-2.5 h-2.5 rounded-full ${statusColor}`}/>
+                      <div class="tw-flex tw-items-center tw-space-x-3 lg:tw-pl-2">
+                        <div class={`tw-flex-shrink-0 tw-w-2.5 tw-h-2.5 tw-rounded-full ${statusColor}`}/>
                         <span>{workflowInstance.status}</span>
                       </div>
                     </td>
-                    <td class="optional">{formatTimestamp(workflowInstance.createdAt, '-')}</td>
-                    <td class="optional">{formatTimestamp(workflowInstance.finishedAt, '-')}</td>
-                    <td class="pr-6">
+                    <td class="tw-optional">{formatTimestamp(workflowInstance.createdAt, '-')}</td>
+                    <td class="tw-optional">{formatTimestamp(workflowInstance.finishedAt, '-')}</td>
+                    <td class="tw-pr-6">
                       <elsa-context-menu menuItems={[
                         {text: 'Edit', handler: e => this.onWorkflowInstanceClick(e, workflowInstance), icon: <EditIcon/>},
                         {text: 'Delete', handler: e => this.onDeleteClick(e, workflowInstance), icon: <DeleteIcon/>}
@@ -188,7 +188,7 @@ export class WorkflowInstanceBrowser {
   }
 
   private onDeleteManyClick = async () => {
-    if(this.selectedWorkflowInstanceIds.length == 0) 
+    if(this.selectedWorkflowInstanceIds.length == 0)
       return;
 
     this.modalDialogService.show(
@@ -203,7 +203,7 @@ export class WorkflowInstanceBrowser {
   };
 
   private onCancelManyClick = async () => {
-    if(this.selectedWorkflowInstanceIds.length == 0) 
+    if(this.selectedWorkflowInstanceIds.length == 0)
       return;
 
     this.modalDialogService.show(

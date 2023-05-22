@@ -38,36 +38,36 @@ export class WorkflowToolbar {
   render() {
     const logoPath = getAssetPath('./assets/logo.png');
     const infoPanelBoolean = notificationStore.infoPanelBoolean;
-    
+
     return (
       <div>
-        <nav class="bg-gray-800">
-          <div class="mx-auto px-2 sm:px-6 lg:px-6">
+        <nav class="tw-bg-gray-800">
+          <div class="tw-mx-auto tw-px-2 sm:tw-px-6 lg:tw-px-6">
 
-            <div class="flex items-center h-16">
-              <div class="flex-shrink-0">
-                <div class="flex items-end space-x-1">
+            <div class="tw-flex tw-items-center tw-h-16">
+              <div class="tw-flex-shrink-0">
+                <div class="tw-flex tw-items-end tw-space-x-1">
                   <div>
-                    <a href="#"><img class="h-6 w-6" src={logoPath} alt="Workflow"/></a>
+                    <a href="#"><img class="tw-h-6 tw-w-6" src={logoPath} alt="Workflow"/></a>
                   </div>
                   <div>
-                    <span class="text-gray-300 text-sm">{this.currentElsaVersion}</span>
+                    <span class="tw-text-gray-300 tw-text-sm">{this.currentElsaVersion}</span>
                   </div>
                 </div>
               </div>
-              <div class="flex-grow"></div>
+              <div class="tw-flex-grow"></div>
 
-              <div class="relative flex items-center justify-end h-16">
-                <div class="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0 z-40">
-                  <div class="inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0 z-40">
+              <div class="tw-relative tw-flex tw-items-center tw-justify-end tw-h-16">
+                <div class="tw-absolute tw-inset-y-0 tw-right-0 tw-flex tw-items-center tw-pr-2 sm:tw-static sm:tw-inset-auto sm:tw-ml-6 sm:tw-pr-0 tw-z-40">
+                  <div class="tw-inset-y-0 tw-right-0 tw-flex tw-items-center tw-pr-2 sm:tw-static sm:tw-inset-auto sm:tw-ml-6 sm:tw-pr-0 tw-z-40">
                     {/* Notifications*/}
                     <button
                       onClick={e => this.onNotificationClick(e)}
                       type="button"
-                      class="bg-gray-800 p-1 rounded-full text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white mr-4"
+                      class="tw-bg-gray-800 tw-p-1 tw-rounded-full tw-text-gray-400 hover:tw-text-white focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-offset-2 focus:tw-ring-offset-gray-800 focus:tw-ring-white tw-mr-4"
                     >
-                      <span class="sr-only">View notifications</span>
-                      <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                      <span class="tw-sr-only">View notifications</span>
+                      <svg class="tw-h-6 tw-w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-tw-hidden="true">
                         <path
                           stroke-linecap="round"
                           stroke-linejoin="round"
@@ -78,7 +78,7 @@ export class WorkflowToolbar {
                     </button>
 
                     {toolbarComponentStore.components.map(component => (
-                      <div class="flex-shrink-0 mr-4">
+                      <div class="tw-flex-shrink-0 tw-mr-4">
                         {component()}
                       </div>
                     ))}

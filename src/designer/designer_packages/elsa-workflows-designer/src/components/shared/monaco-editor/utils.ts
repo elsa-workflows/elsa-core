@@ -34,7 +34,7 @@ export async function initializeMonacoWorker(libPath?: string): Promise<Monaco> 
       // The lib path is not set, which means external code will be responsible for loading the Monaco editor.
       // In this case, spin while we wait for the editor to be loaded.
 
-      // Create a promise that will resolve after the win.monaco variable exists. Do this in a tight loop, checking for win.monaco to exist on each iteration. Within the same iteration, request the next animation frame as to not block the UI.
+      // Create a promise that will resolve after the win.monaco variable exists. Do this in a tight loop, checking for win.monaco to exist on each iteration. Within the same iteration, request the next animation frame as to not tw-block the UI.
       // If we don't get win.monaco after 3 seconds, reject the promise.
 
       return new Promise<Monaco>((resolve, reject) => {
@@ -95,7 +95,7 @@ function registerLiquid(monaco: any) {
       const keywords = ['assign', 'capture', 'endcapture', 'increment', 'decrement',
         'if', 'else', 'elsif', 'endif', 'for', 'endfor', 'break',
         'continue', 'limit', 'offset', 'range', 'reversed', 'cols',
-        'case', 'endcase', 'when', 'block', 'endblock', 'true', 'false',
+        'case', 'endcase', 'when', 'tw-block', 'endblock', 'true', 'false',
         'in', 'unless', 'endunless', 'cycle', 'tablerow', 'endtablerow',
         'contains', 'startswith', 'endswith', 'comment', 'endcomment',
         'raw', 'endraw', 'editable', 'endentitylist', 'endentityview', 'endinclude',

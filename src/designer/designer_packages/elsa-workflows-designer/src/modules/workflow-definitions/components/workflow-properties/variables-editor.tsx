@@ -45,10 +45,10 @@ export class VariablesEditor {
 
     return (
       <div>
-        <div class="flex justify-end m-4">
-          <button class="btn btn-primary" onClick={e => this.onAddVariableClick()}>Add variable</button>
+        <div class="tw-flex tw-justify-end tw-m-4">
+          <button class="elsa-btn elsa-btn-primary" onClick={e => this.onAddVariableClick()}>Add variable</button>
         </div>
-        <div class="align-middle inline-block min-w-full border-b border-gray-200">
+        <div class="tw-align-middle tw-inline-block tw-min-w-full tw-border-b tw-border-gray-200">
           <table class="default-table">
             <thead>
             <tr>
@@ -67,10 +67,10 @@ export class VariablesEditor {
 
                 return (
                   <tr>
-                    <td class="whitespace-nowrap">{variable.name}</td>
-                    <td class="whitespace-nowrap">{typeDisplayName}</td>
+                    <td class="tw-whitespace-nowrap">{variable.name}</td>
+                    <td class="tw-whitespace-nowrap">{typeDisplayName}</td>
                     <td>{storageName}</td>
-                    <td class="pr-6">
+                    <td class="tw-pr-6">
                       <elsa-context-menu
                         menuItems={[
                           {text: 'Edit', handler: e => this.onEditClick(e, variable), icon: <EditIcon/>},

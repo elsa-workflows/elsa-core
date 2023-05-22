@@ -56,15 +56,15 @@ export class DefaultActivityTemplate {
           const canStartWorkflow = activity?.customProperties?.CanStartWorkflow ?? activity?.canStartWorkflow ?? false;
           const icon = this.icon;
           const hasIcon = !!icon;
-          const textColor = canStartWorkflow ? 'text-white' : 'text-gray-700';
+          const textColor = canStartWorkflow ? 'tw-text-white' : 'tw-text-gray-700';
           const isTrigger = activityDescriptor?.kind == ActivityKind.Trigger;
-          const backgroundColor = canStartWorkflow ? isTrigger ? 'bg-green-400' : 'bg-blue-400' : 'bg-white';
-          const iconBackgroundColor = isTrigger ? 'bg-green-500' : 'bg-blue-500';
-          const borderColor = canStartWorkflow ? isTrigger ? 'border-green-600' : 'border-blue-600' : 'border-gray-300';
+          const backgroundColor = canStartWorkflow ? isTrigger ? 'tw-bg-green-400' : 'tw-bg-blue-400' : 'tw-bg-white';
+          const iconBackgroundColor = isTrigger ? 'tw-bg-green-500' : 'tw-bg-blue-500';
+          const borderColor = canStartWorkflow ? isTrigger ? 'tw-border-green-600' : 'tw-border-blue-600' : 'tw-border-gray-300';
           const displayTypeIsPicker = this.displayTypeIsPicker;
           const displayTypeIsEmbedded = this.displayTypeIsEmbedded;
-          const containerCssClass = displayTypeIsEmbedded ? '' : 'drop-shadow-md';
-          const contentCssClass = displayTypeIsPicker ? 'px-2 py-2' : 'px-4 pt-0 pb-3';
+          const containerCssClass = displayTypeIsEmbedded ? '' : 'tw-drop-shadow-md';
+          const contentCssClass = displayTypeIsPicker ? 'tw-px-2 tw-py-2' : 'tw-px-4 tw-pt-0 tw-pb-3';
           let displayText = activity?.metadata?.displayText;
 
           if (isNullOrWhitespace(displayText))
@@ -73,13 +73,13 @@ export class DefaultActivityTemplate {
           if (embeddedPorts.length == 0 || displayTypeIsPicker) {
             return (
               <div>
-                <div class={`activity-wrapper border ${borderColor} ${backgroundColor} ${containerCssClass} rounded text-white overflow-hidden`}>
-                  <div class="activity-content-wrapper flex flex-row">
-                    <div class={`flex flex-shrink items-center ${iconBackgroundColor}`}>
+                <div class={`activity-wrapper tw-border ${borderColor} ${backgroundColor} ${containerCssClass} tw-rounded tw-text-white tw-overflow-hidden`}>
+                  <div class="elsa-toolbar-menu-wrapper tw-flex tw-flex-row">
+                    <div class={`tw-flex tw-flex-shrink tw-items-center ${iconBackgroundColor}`}>
                       {this.renderIcon(icon)}
                     </div>
-                    <div class="flex items-center">
-                      <div class={displayTypeIsPicker ? `m-2` : 'm-3'}>
+                    <div class="tw-flex tw-items-center">
+                      <div class={displayTypeIsPicker ? `tw-m-2` : 'tw-m-3'}>
                         <span class={`${textColor}`}>{displayText}</span>
                         <div>
                           {this.renderPorts(activity, embeddedPorts)}
@@ -93,15 +93,15 @@ export class DefaultActivityTemplate {
           } else {
             return (
               <div>
-                <div class={`activity-wrapper border ${borderColor} ${backgroundColor} ${containerCssClass} rounded overflow-hidden`}>
-                  <div class="text-white">
-                    <div class={`flex flex-shrink items-center py-3 ${ hasIcon ? 'pr-3' : 'px-3' } ${iconBackgroundColor}`}>
+                <div class={`activity-wrapper tw-border ${borderColor} ${backgroundColor} ${containerCssClass} tw-rounded tw-overflow-hidden`}>
+                  <div class="tw-text-white">
+                    <div class={`tw-flex tw-flex-shrink tw-items-center tw-py-3 ${ hasIcon ? 'tw-pr-3' : 'tw-px-3' } ${iconBackgroundColor}`}>
                       {this.renderIcon(icon)}
                       <span>{displayText}</span>
                     </div>
                   </div>
-                  <div class="activity-content-wrapper flex flex-col">
-                    <div class="flex items-center">
+                  <div class="elsa-toolbar-menu-wrapper tw-flex tw-flex-col">
+                    <div class="tw-flex tw-items-center">
                       <div class={contentCssClass}>
                         {this.renderPorts(activity, embeddedPorts)}
                       </div>
@@ -117,13 +117,13 @@ export class DefaultActivityTemplate {
   }
 
   private renderIcon = (icon?: ActivityIconProducer): string => {
-    const iconCssClass = this.displayTypeIsPicker ? 'px-2' : 'px-4';
+    const iconCssClass = this.displayTypeIsPicker ? 'tw-px-2' : 'tw-px-4';
 
     if (!icon)
       return undefined;
 
     return (
-      <div class={`${iconCssClass} py-1`}>
+      <div class={`${iconCssClass} tw-py-1`}>
         {icon()}
       </div>
     );
@@ -138,7 +138,7 @@ export class DefaultActivityTemplate {
       return;
 
     return (
-      <div class="activity-ports mt-2 flex space-x-2">
+      <div class="activity-ports tw-mt-2 tw-flex tw-space-x-2">
         {embeddedPorts.map(port => this.renderPort(activity, port))}
       </div>
     );
@@ -146,8 +146,8 @@ export class DefaultActivityTemplate {
 
   private renderPort = (activity: Activity, port: Port) => {
     const canStartWorkflow = activity?.canStartWorkflow == true;
-    const displayTextClass = canStartWorkflow ? 'text-white' : 'text-gray-600';
-    const borderColor = port.name == this.selectedPortName ? 'border-blue-600' : 'border-gray-300';
+    const displayTextClass = canStartWorkflow ? 'tw-text-white' : 'tw-text-gray-600';
+    const borderColor = port.name == this.selectedPortName ? 'tw-border-blue-600' : 'tw-border-gray-300';
     const activityDescriptor = this.activityDescriptor;
     const portProvider = this.portProviderRegistry.get(activityDescriptor.typeName);
     const activityProperty = portProvider.resolvePort(port.name, {activity, activityDescriptor}) as Activity;
@@ -156,13 +156,13 @@ export class DefaultActivityTemplate {
 
       if (!activityProperty) {
         return (
-          <div class="relative block w-full border-2 border-gray-300 border-dashed rounded-lg p-3 text-center focus:outline-none">
+          <div class="tw-relative tw-block tw-w-full tw-border-2 tw-border-gray-300 tw-border-dashed tw-rounded-lg tw-p-3 tw-text-center focus:tw-outline-none">
             <a href="#"
                onClick={e => this.onEditChildActivityClick(e, activity, port)}
                onMouseDown={e => e.stopPropagation()}
-               class="text-gray-400 hover:text-gray-600">
-              <div class="flex-grow">
-                <span class={`text-sm ${displayTextClass}`}>{port.displayName}</span>
+               class="tw-text-gray-400 hover:tw-text-gray-600">
+              <div class="tw-flex-grow">
+                <span class={`tw-text-sm ${displayTextClass}`}>{port.displayName}</span>
               </div>
             </a>
           </div>
@@ -173,13 +173,13 @@ export class DefaultActivityTemplate {
 
       if (!propertyIsArray) {
         return (
-          <div class={`relative block w-full border-2 ${borderColor} border-solid rounded-lg p-3 text-center focus:outline-none`}>
-            <div class="flex space-x-2">
+          <div class={`tw-relative tw-block tw-w-full tw-border-2 ${borderColor} tw-border-solid tw-rounded-lg tw-p-3 tw-text-center focus:tw-outline-none`}>
+            <div class="tw-flex tw-space-x-2">
               <a href="#"
                  onClick={e => this.onEditChildActivityClick(e, activity, port)}
                  onMouseDown={e => e.stopPropagation()}>
-                <div class="flex-grow">
-                  <span class={`text-sm ${displayTextClass}`}>{port.displayName}</span>
+                <div class="tw-flex-grow">
+                  <span class={`tw-text-sm ${displayTextClass}`}>{port.displayName}</span>
                 </div>
               </a>
             </div>
@@ -188,13 +188,13 @@ export class DefaultActivityTemplate {
       }
 
       return (
-        <div class={`relative block w-full border-2 ${borderColor} border-solid rounded-lg p-5 text-center focus:outline-none`}>
-          <div class="flex space-x-2">
+        <div class={`tw-relative tw-block tw-w-full tw-border-2 ${borderColor} tw-border-solid tw-rounded-lg tw-p-5 tw-text-center focus:tw-outline-none`}>
+          <div class="tw-flex tw-space-x-2">
             <a href="#"
                onClick={e => this.onEditChildActivityClick(e, activity, port)}
                onMouseDown={e => e.stopPropagation()}>
-              <div class="flex-grow">
-                <span class={`text-sm ${displayTextClass}`}>{port.displayName}</span>
+              <div class="tw-flex-grow">
+                <span class={`tw-text-sm ${displayTextClass}`}>{port.displayName}</span>
               </div>
             </a>
           </div>

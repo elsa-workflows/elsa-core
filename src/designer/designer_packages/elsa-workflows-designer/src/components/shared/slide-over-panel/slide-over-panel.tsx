@@ -74,44 +74,44 @@ export class SlideOverPanel {
   private renderPanel() {
     const isVisible = this.isVisible;
     const isHiding = this.isHiding;
-    const wrapperClass = isVisible ? 'block' : 'hidden';
-    const backdropClass = !isHiding && isVisible ? 'opacity-50' : 'opacity-0';
-    const panelClass = !isHiding && isVisible ? 'max-w-2xl w-2xl' : 'max-w-0 w-0';
+    const wrapperClass = isVisible ? 'tw-block' : 'tw-hidden';
+    const backdropClass = !isHiding && isVisible ? 'tw-opacity-50' : 'tw-opacity-0';
+    const panelClass = !isHiding && isVisible ? 'tw-max-w-2xl w-2xl' : 'tw-max-tw-w-0 tw-w-0';
     const tabs = this.tabs;
     const selectedTab = this.selectedTab;
     const actions = this.actions;
 
     return (
-      <div class={`fixed inset-0 overflow-hidden z-10 ${wrapperClass}`} aria-labelledby="slide-over-title" role="dialog"
+      <div class={`tw-fixed tw-inset-0 tw-overflow-hidden tw-z-10 ${wrapperClass}`} aria-labelledby="slide-over-title" role="dialog"
            aria-modal="true">
-        <div class="absolute inset-0 overflow-hidden">
+        <div class="tw-absolute tw-inset-0 tw-overflow-hidden">
 
-          <div class={`absolute inset-0 bg-gray-100 ease-in-out duration-200 ${backdropClass}`}
+          <div class={`tw-absolute tw-inset-0 tw-bg-gray-100 tw-ease-in-out tw-duration-200 ${backdropClass}`}
                onTransitionEnd={e => this.onTransitionEnd(e)}/>
 
-          <div class="absolute inset-0" aria-hidden="true" onClick={e => this.onOverlayClick(e)}
+          <div class="tw-absolute tw-inset-0" aria-tw-hidden="true" onClick={e => this.onOverlayClick(e)}
                ref={el => this.overlayElement = el}>
 
-            <div class="fixed inset-y-0 right-0 pl-10 max-w-full flex sm:pl-16">
+            <div class="tw-fixed tw-inset-y-0 tw-right-0 tw-pl-10 tw-max-w-full tw-flex sm:tw-pl-16">
 
-              <div class={`w-screen ease-in-out duration-200 ${panelClass}`}>
-                <form class="h-full flex flex-col bg-white shadow-xl"
+              <div class={`tw-w-screen tw-ease-in-out tw-duration-200 ${panelClass}`}>
+                <form class="tw-h-full tw-flex tw-flex-col tw-bg-white tw-shadow-xl"
                       ref={el => this.formElement = el} method="post">
-                  <div class="flex flex-col flex-1">
+                  <div class="tw-flex tw-flex-col tw-flex-1">
 
-                    <div class="px-4 py-6 bg-gray-50 sm:px-6">
-                      <div class="flex items-start justify-between space-x-3">
-                        <div class="space-y-1">
-                          <h2 class="text-lg font-medium text-gray-900" id="slide-over-title">
+                    <div class="tw-px-4 tw-py-6 tw-bg-gray-50 sm:tw-px-6">
+                      <div class="tw-flex tw-items-start tw-justify-between tw-space-x-3">
+                        <div class="tw-space-y-1">
+                          <h2 class="tw-text-lg tw-font-medium tw-text-gray-900" id="slide-over-title">
                             {this.headerText}
                           </h2>
                         </div>
-                        <div class="h-7 flex items-center">
-                          <button type="button" class="text-gray-400 hover:text-gray-500"
+                        <div class="tw-h-7 tw-flex tw-items-center">
+                          <button type="button" class="tw-text-gray-400 hover:tw-text-gray-500"
                                   onClick={() => this.onCloseClick()}>
-                            <span class="sr-only">Close panel</span>
-                            <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                 stroke="currentColor" aria-hidden="true">
+                            <span class="tw-sr-only">Close panel</span>
+                            <svg class="tw-h-6 tw-w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                 stroke="currentColor" aria-tw-hidden="true">
                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M6 18L18 6M6 6l12 12"/>
                             </svg>
@@ -120,24 +120,24 @@ export class SlideOverPanel {
                       </div>
                     </div>
 
-                    <div class="border-b border-gray-200">
-                      <nav class="-mb-px flex" aria-label="Tabs">
+                    <div class="tw-border-b tw-border-gray-200">
+                      <nav class="-tw-mb-px tw-flex" aria-label="Tabs">
                         {tabs.map(tab => {
-                          const cssClass = tab == selectedTab ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300';
+                          const cssClass = tab == selectedTab ? 'tw-border-blue-500 tw-text-blue-600' : 'tw-border-transparent tw-text-gray-500 hover:tw-text-gray-700 hover:tw-border-gray-300';
                           return <a href="#"
                                     onClick={e => this.onTabClick(e, tab)}
-                                    class={`${cssClass} py-4 px-1 text-center border-b-2 font-medium text-sm flex-1`}>
+                                    class={`${cssClass} tw-py-4 tw-px-1 tw-text-center tw-border-b-2 tw-font-medium tw-text-sm tw-flex-1`}>
                             {tab.displayText}
                           </a>
                         })}
                       </nav>
                     </div>
 
-                    <div class="flex-1 relative">
+                    <div class="tw-flex-1 tw-relative">
 
-                      <div class="absolute inset-0 overflow-y-scroll">
+                      <div class="tw-absolute tw-inset-0 tw-overflow-y-scroll">
                         {tabs.map(tab => {
-                          const cssClass = tab == selectedTab ? '' : 'hidden';
+                          const cssClass = tab == selectedTab ? '' : 'tw-hidden';
                           return <div class={cssClass}>
                             {tab.content()}
                           </div>
@@ -146,14 +146,14 @@ export class SlideOverPanel {
                     </div>
                   </div>
 
-                  <div class="flex-shrink-0 px-4 border-t border-gray-200 py-5 sm:px-6">
-                    <div class="space-x-3 flex justify-end">
+                  <div class="tw-flex-shrink-0 tw-px-4 tw-border-t tw-border-gray-200 tw-py-5 sm:tw-px-6">
+                    <div class="tw-space-x-3 tw-flex tw-justify-end">
                       {actions.map(action => {
 
                         if (action.display)
                           return action.display(action);
 
-                        const cssClass = action.isPrimary ? 'text-white bg-blue-600 hover:bg-blue-700 border-transparent' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50';
+                        const cssClass = action.isPrimary ? 'tw-text-white tw-bg-blue-600 hover:tw-bg-blue-700 tw-border-transparent' : 'tw-bg-white tw-border-gray-300 tw-text-gray-700 hover:tw-bg-gray-50';
                         const buttonType = action.type == PanelActionType.Submit ? 'submit' : 'button';
                         const cancelHandler = async () => await this.hide();
 
@@ -164,7 +164,7 @@ export class SlideOverPanel {
 
                         return <button type={buttonType}
                                        onClick={e => clickHandler({e, action})}
-                                       class={`${cssClass} py-2 px-4 border rounded-md shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}>
+                                       class={`${cssClass} tw-py-2 tw-px-4 tw-border tw-rounded-md tw-shadow-sm tw-text-sm tw-font-medium focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-offset-2 focus:tw-ring-blue-500`}>
                           {action.text}
                         </button>
                       })}

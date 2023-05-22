@@ -25,7 +25,7 @@ export class LabelPicker {
   }
 
   @Prop() public selectedLabels: Array<string> = [];
-  @Prop() public buttonClass?: string = 'text-blue-500 hover:text-blue-300';
+  @Prop() public buttonClass?: string = 'tw-text-blue-500 hover:tw-text-blue-300';
   @Prop() public containerClass?: string;
 
   @Event() public selectedLabelsChanged: EventEmitter<Array<string>>;
@@ -45,11 +45,11 @@ export class LabelPicker {
   public render() {
     const selectedLabels = this.getFilteredSelectedLabels();
 
-    return <div class={`flex ${this.containerClass}`}>
-      <div class="flex flex-grow">
+    return <div class={`tw-flex ${this.containerClass}`}>
+      <div class="tw-flex tw-flex-grow">
         {selectedLabels.map(this.renderLabel)}
       </div>
-      <div class="relative">
+      <div class="tw-relative">
         <button onClick={e => this.toggleFlyoutPanel()} class={this.buttonClass}>
           <ConfigIcon/>
         </button>
@@ -63,21 +63,21 @@ export class LabelPicker {
     const labels = this.filteredLabels;
     const searchText = this.searchText;
 
-    return <div ref={el => this.flyoutPanel = el} class="absolute z-10 right-0 transform mt-3 px-2 w-screen max-w-md px-0 hidden"
-                data-transition-enter="transition ease-out duration-200"
-                data-transition-enter-start="opacity-0 translate-y-1"
-                data-transition-enter-end="opacity-100 translate-y-0"
-                data-transition-leave="transition ease-in duration-150"
-                data-transition-leave-start="opacity-100 translate-y-0"
-                data-transition-leave-end="opacity-0 translate-y-1"
+    return <div ref={el => this.flyoutPanel = el} class="tw-absolute tw-z-10 tw-right-0 tw-transform tw-mt-3 tw-px-2 tw-w-screen tw-max-w-md tw-px-0 tw-hidden"
+                data-transition-enter="tw-transition tw-ease-out tw-duration-200"
+                data-transition-enter-start="tw-opacity-0 tw-translate-y-1"
+                data-transition-enter-end="tw-opacity-100 tw-translate-y-0"
+                data-transition-leave="tw-transition tw-ease-in tw-duration-150"
+                data-transition-leave-start="tw-opacity-100 tw-translate-y-0"
+                data-transition-leave-end="tw-opacity-0 tw-translate-y-1"
     >
-      <div class="rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 overflow-hidden">
-        <div class="mx-auto max-w-3xl transform divide-y divide-gray-100 overflow-hidden rounded-xl bg-white shadow-2xl ring-1 ring-black ring-opacity-5 transition-all opacity-100 scale-100">
-          <div class="relative">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="pointer-events-none absolute top-3.5 left-4 h-5 w-5 text-gray-400">
+      <div class="tw-rounded-lg tw-shadow-lg tw-ring-1 tw-ring-black tw-ring-opacity-5 tw-overflow-hidden">
+        <div class="tw-mx-auto tw-max-w-3xl tw-transform tw-divide-y tw-divide-gray-100 tw-overflow-hidden tw-rounded-xl tw-bg-white tw-shadow-2xl tw-ring-1 tw-ring-black tw-ring-opacity-5 tw-transition-all tw-opacity-100 tw-scale-100">
+          <div class="tw-relative">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-tw-hidden="true" class="tw-pointer-events-none tw-absolute top-3.5 left-4 tw-h-5 tw-w-5 tw-text-gray-400">
               <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
             </svg>
-            <input class="h-12 w-full border-0 bg-transparent pl-11 pr-4 text-gray-800 placeholder-gray-400 focus:ring-0 sm:text-sm"
+            <input class="tw-h-12 tw-w-full tw-border-0 tw-bg-transparent tw-pl-11 tw-pr-4 tw-text-gray-800 tw-placeholder-gray-400 focus:tw-ring-0 sm:tw-text-sm"
                    placeholder="Search..."
                    role="combobox"
                    type="text"
@@ -85,7 +85,7 @@ export class LabelPicker {
                    onInput={e => this.onSearchTextChanged(e)}
                    value={searchText}/></div>
 
-          <ul class="max-h-96 scroll-py-3 overflow-y-auto p-1" role="listbox">
+          <ul class="tw-max-h-96 tw-scroll-py-3 tw-overflow-y-auto tw-p-1" role="listbox">
             {labels.map(label => {
 
               const color = new TinyColor(label.color).lighten(40).toHexString();
@@ -94,22 +94,22 @@ export class LabelPicker {
 
               return (
                 <li role="option" tab-index="-1">
-                  <a class="block select-none rounded-xl p-3 bg-white hover:bg-gray-100" href="#" onClick={e => this.onLabelClick(e, label)}>
-                    <div class="flex justify-start gap-1.5">
-                      <div class="flex-none w-8">
+                  <a class="tw-block tw-select-none tw-rounded-xl tw-p-3 tw-bg-white hover:tw-bg-gray-100" href="#" onClick={e => this.onLabelClick(e, label)}>
+                    <div class="tw-flex tw-justify-start tw-gap-1.5">
+                      <div class="tw-flex-none tw-w-8">
                         {isSelected ? <TickIcon/> : undefined}
                       </div>
-                      <div class="flex-grow ">
-                        <div class="flex gap-1.5">
-                          <div class="flex-shrink-0 flex flex-col justify-center ">
-                            <div class="w-4 h-4 rounded-full" style={colorStyle} aria-hidden="true"/>
+                      <div class="tw-flex-grow ">
+                        <div class="tw-flex tw-gap-1.5">
+                          <div class="tw-flex-shrink-0 tw-flex tw-flex-col tw-justify-center ">
+                            <div class="tw-w-4 tw-h-4 tw-rounded-full" style={colorStyle} aria-tw-hidden="true"/>
                           </div>
-                          <div class="flex-grow">
-                            <p class="text-sm font-medium text-gray-900 font-bold">{label.name}</p>
+                          <div class="tw-flex-grow">
+                            <p class="tw-text-sm tw-font-medium tw-text-gray-900 tw-font-bold">{label.name}</p>
                           </div>
                         </div>
                         <div>
-                          <p class="text-sm font-normal text-gray-500">{label.description}</p>
+                          <p class="tw-text-sm tw-font-normal tw-text-gray-500">{label.description}</p>
                         </div>
                       </div>
                     </div>
@@ -125,7 +125,7 @@ export class LabelPicker {
 
   private renderLabel = (labelId: string) => {
     const label = labelStore.labels.find(x => x.id == labelId);
-    return <div class="mr-2">
+    return <div class="tw-mr-2">
       <Badge text={label.name} color={label.color}/>
     </div>
   };

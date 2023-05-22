@@ -46,14 +46,14 @@ export interface OrderByFilterProps {
 
 export const Filter: FunctionalComponent<FilterProps> = ({pageSizeFilter, workflowFilter, statusFilter, subStatusFilter, orderByFilter, resetFilter, onBulkDelete, onBulkCancel}) => {
 
-  return <div class="p-8 flex content-end justify-right bg-white space-x-4">
-    <div class="flex-shrink-0">
+  return <div class="tw-p-8 tw-flex tw-content-end tw-justify-right tw-bg-white tw-space-x-4">
+    <div class="tw-flex-shrink-0">
       <BulkActions onBulkDelete={onBulkDelete} onBulkCancel={onBulkCancel} />
     </div>
-    <div class="flex-1">
+    <div class="tw-flex-1">
       &nbsp;
     </div>
-    <button onClick={resetFilter} type="button" class="text-sm text-blue-600 active:text-blue-700 px-3 active:ring ring-blue-500 rounded">
+    <button onClick={resetFilter} type="button" class="tw-text-sm tw-text-blue-600 active:tw-text-blue-700 tw-px-3 active:ring tw-ring-blue-500 tw-rounded">
       Reset
     </button>
     <PageSizeFilter {...pageSizeFilter}/>

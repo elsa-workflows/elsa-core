@@ -85,15 +85,15 @@ export class SwitchEditor {
 
     return (
       <div>
-        <div class="p-4">
+        <div class="tw-p-4">
           <label>{displayName}</label>
         </div>
-        <table class="mt-1">
+        <table class="tw-mt-1">
           <thead>
           <tr>
-            <th class="w-3/12">Name</th>
-            <th class="w-8/12">Expression</th>
-            <th class="w-1/12">&nbsp;</th>
+            <th class="tw-w-3/12">Name</th>
+            <th class="tw-w-8/12">Expression</th>
+            <th class="tw-w-1/12">&nbsp;</th>
           </tr>
           </thead>
           <tbody>
@@ -105,22 +105,22 @@ export class SwitchEditor {
 
             return (
               <tr key={`case-${index}`}>
-                <td class="py-2 pr-5">
+                <td class="tw-py-2 tw-pr-5">
                   <input type="text" value={switchCase.label} onChange={e => this.onCaseLabelChanged(e, switchCase)}/>
                 </td>
-                <td class="py-2 pl-5">
-                  <div class="mt-1 relative rounded-md shadow-sm h-full">
+                <td class="tw-py-2 tw-pl-5">
+                  <div class="tw-mt-1 tw-relative tw-rounded-md tw-shadow-sm tw-h-full">
                     <elsa-monaco-editor
                       key={`monaco-editor-${index}`}
                       value={expression}
                       language={language}
                       singleLineMode={true}
                       editorHeight="2.75em"
-                      padding="pt-1.5 pl-1 pr-28"
+                      padding="tw-pt-1.5 tw-pl-1 tw-pr-28"
                       onValueChanged={e => this.onCaseExpressionChanged(e, switchCase)}
                     />
-                    <div class="absolute inset-y-0 right-0 flex items-center">
-                      <select onChange={e => this.onCaseSyntaxChanged(e, switchCase)} class="focus:ring-blue-500 focus:border-blue-500 h-full py-0 pl-2 pr-7 border-transparent bg-transparent text-gray-500 sm:text-sm rounded-md">
+                    <div class="tw-absolute tw-inset-y-0 tw-right-0 tw-flex tw-items-center">
+                      <select onChange={e => this.onCaseSyntaxChanged(e, switchCase)} class="focus:tw-ring-blue-500 focus:tw-border-blue-500 tw-h-full tw-py-0 tw-pl-2 tw-pr-7 tw-border-transparent tw-bg-transparent tw-text-gray-500 sm:tw-text-sm tw-rounded-md">
                         {supportedSyntaxes.map(supportedSyntax => {
                           const selected = supportedSyntax == syntax;
                           return <option selected={selected}>{supportedSyntax}</option>;
@@ -130,7 +130,7 @@ export class SwitchEditor {
                   </div>
                 </td>
                 <td>
-                  <button type="button" onClick={() => this.onDeleteCaseClick(switchCase)} class="icon-button">
+                  <button type="button" onClick={() => this.onDeleteCaseClick(switchCase)} class="elsa-icon-button">
                     <TrashBinButtonIcon/>
                   </button>
                 </td>
@@ -139,8 +139,8 @@ export class SwitchEditor {
           })}
           </tbody>
         </table>
-        <div class="p-4">
-          <button type="button" onClick={() => this.onAddCaseClick()} class="btn">
+        <div class="tw-p-4">
+          <button type="button" onClick={() => this.onAddCaseClick()} class="elsa-btn">
             <PlusButtonIcon/>
             Add Case
           </button>

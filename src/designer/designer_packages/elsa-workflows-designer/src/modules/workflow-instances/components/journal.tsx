@@ -57,35 +57,35 @@ export class Journal {
   render() {
     return (
 
-      <div class="absolute inset-0 overflow-hidden">
-        <div class="h-full flex flex-col bg-white shadow-xl">
-          <div class="flex flex-col flex-1">
+      <div class="tw-absolute tw-inset-0 tw-overflow-hidden">
+        <div class="tw-h-full tw-flex tw-flex-col tw-bg-white tw-shadow-xl">
+          <div class="tw-flex tw-flex-col tw-flex-1">
 
-            <div class="px-4 py-6 bg-gray-50 sm:px-6">
-              <div class="flex items-start justify-between space-x-3">
-                <div class="space-y-1">
-                  <h2 class="text-lg font-medium text-gray-900">
+            <div class="tw-px-4 tw-py-6 tw-bg-gray-50 sm:tw-px-6">
+              <div class="tw-flex tw-items-start tw-justify-between tw-space-x-3">
+                <div class="tw-space-y-1">
+                  <h2 class="tw-text-lg tw-font-medium tw-text-gray-900">
                     Workflow Journal
                   </h2>
                 </div>
               </div>
             </div>
 
-            <div class="flex-1 relative">
-              <div class="absolute inset-0 overflow-y-scroll">
+            <div class="tw-flex-1 tw-relative">
+              <div class="tw-absolute tw-inset-0 tw-overflow-y-scroll">
 
                 <table class="workflow-journal-table">
                   <thead>
                   <tr>
-                    <th class="w-1"/>
+                    <th class="tw-w-1"/>
                     <th>Time</th>
-                    <th class="min-w-full">Activity</th>
+                    <th class="tw-min-w-full">Activity</th>
                     <th>Status</th>
                     <th>Duration</th>
                   </tr>
                   </thead>
 
-                  <tbody class="bg-white divide-y divide-gray-100">
+                  <tbody class="tw-bg-white tw-divide-y tw-divide-gray-100">
                   {this.renderBlocks(this.rootBlocks)}
                   </tbody>
                 </table>
@@ -116,18 +116,18 @@ export class Journal {
       const status = block.completed ? 'Completed' : block.faulted ? 'Faulted' : 'Started';
       const icon = iconRegistry.getOrDefault(activity.type)({size: ActivityIconSize.Small});
       const expanded = !!expandedBlocks.find(x => x == block);
-      const statusColor = block.completed ? "bg-blue-100" : block.faulted ? "bg-red-100" : "bg-green-100";
+      const statusColor = block.completed ? "tw-bg-blue-100" : block.faulted ? "tw-bg-red-100" : "tw-bg-green-100";
 
       const toggleIcon = expanded
         ? (
-          <svg class="h-6 w-6 text-gray-500" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <svg class="tw-h-6 tw-w-6 tw-text-gray-500" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
             <path stroke="none" d="M0 0h24v24H0z"/>
             <rect x="4" y="4" width="16" height="16" rx="2"/>
             <line x1="9" y1="12" x2="15" y2="12"/>
           </svg>
         )
         : (
-          <svg class="h-6 w-6 text-gray-500" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <svg class="tw-h-6 tw-w-6 tw-text-gray-500" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
             <path stroke="none" d="M0 0h24v24H0z"/>
             <rect x="4" y="4" width="16" height="16" rx="2"/>
             <line x1="9" y1="12" x2="15" y2="12"/>
@@ -137,7 +137,7 @@ export class Journal {
 
       return (
         [<tr>
-          <td class="w-1">
+          <td class="tw-w-1">
             {block.children.length > 0 ? (<a href="#" onClick={e => this.onBlockClick(e, block)}>
               {toggleIcon}
             </a>) : undefined}
@@ -145,10 +145,10 @@ export class Journal {
           <td>
             <a href="#" onClick={e => this.onJournalItemClick(e, block, activity)}>{formatTime(block.timestamp)}</a>
           </td>
-          <td class="min-w-full">
-            <div class="flex items-center space-x-1">
-              <div class="flex-shrink">
-                <div class="bg-blue-500 rounded p-1">
+          <td class="tw-min-w-full">
+            <div class="tw-flex tw-items-center tw-space-x-1">
+              <div class="tw-flex-shrink">
+                <div class="tw-bg-blue-500 tw-rounded tw-p-1">
                   <a href="#" onClick={e => this.onJournalItemClick(e, block, activity)}>{icon}</a>
                 </div>
               </div>
@@ -156,7 +156,7 @@ export class Journal {
             </div>
           </td>
           <td>
-            <a href="#" onClick={e => this.onJournalItemClick(e, block, activity)} class={`inline-flex rounded-full ${statusColor} px-2 text-xs font-semibold leading-5 text-green-800`}>{status}</a>
+            <a href="#" onClick={e => this.onJournalItemClick(e, block, activity)} class={`tw-inline-tw-flex tw-rounded-full ${statusColor} tw-px-2 tw-text-xs tw-font-semibold tw-leading-5 tw-text-green-800`}>{status}</a>
           </td>
           <td><a href="#" onClick={e => this.onJournalItemClick(e, block, activity)}>{duration}</a></td>
         </tr>, expanded ? this.renderBlocks(block.children) : undefined]

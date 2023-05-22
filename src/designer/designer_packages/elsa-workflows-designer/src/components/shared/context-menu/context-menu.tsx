@@ -65,14 +65,14 @@ export class ContextMenu {
   private getAnchorPointClass = (): string => {
     switch (this.anchorPoint) {
       case ContextMenuAnchorPoint.BottomLeft:
-        return 'origin-bottom-left left-0';
+        return 'tw-origin-bottom-left tw-left-0';
       case ContextMenuAnchorPoint.BottomRight:
-        return 'origin-bottom-right right-0';
+        return 'tw-origin-bottom-right tw-right-0';
       case ContextMenuAnchorPoint.TopLeft:
-        return 'origin-top-left left-0';
+        return 'tw-origin-top-left tw-left-0';
       case ContextMenuAnchorPoint.TopRight:
       default:
-        return 'origin-top-right right-0'
+        return 'tw-origin-top-right tw-right-0'
     }
   };
 
@@ -82,16 +82,16 @@ export class ContextMenu {
     const menuItemGroups:any = groupBy(menuItems, x => x.group ?? 0);
 
     return (
-      <div class="relative flex justify-end items-center">
+      <div class="tw-relative tw-flex tw-justify-end tw-items-center">
         {this.renderButton()}
         <div ref={el => this.contextMenu = el}
-             data-transition-enter="transition ease-out duration-100"
-             data-transition-enter-start="transform opacity-0 scale-95"
-             data-transition-leave="transition ease-in duration-75"
-             data-transition-leave-start="transform opacity-100 scale-100"
-             data-transition-leave-end="transform opacity-0 scale-95"
-             class={`hidden z-10 mx-3 absolute ${anchorPointClass} w-48 mt-1 rounded-md shadow-lg`}>
-          <div class="rounded-md bg-white shadow-xs ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 focus:outline-none" role="menu" aria-orientation="vertical" aria-labelledby="project-options-menu-0">
+             data-transition-enter="tw-transition tw-ease-out tw-duration-100"
+             data-transition-enter-start="tw-transform tw-opacity-0 tw-scale-95"
+             data-transition-leave="tw-transition tw-ease-in tw-duration-75"
+             data-transition-leave-start="tw-transform tw-opacity-100 tw-scale-100"
+             data-transition-leave-end="tw-transform tw-opacity-0 tw-scale-95"
+             class={`tw-hidden tw-z-10 tw-mx-3 tw-absolute ${anchorPointClass} tw-w-48 tw-mt-1 tw-rounded-md tw-shadow-lg`}>
+          <div class="tw-rounded-md tw-bg-white tw-shadow-xs tw-ring-1 tw-ring-black tw-ring-opacity-5 tw-divide-y tw-divide-gray-100 focus:tw-outline-none" role="menu" aria-orientation="vertical" aria-labelledby="project-options-menu-0">
             {this.renderMenuItemGroups(menuItemGroups)}
           </div>
         </div>
@@ -112,7 +112,7 @@ export class ContextMenu {
 
     const hasAnyIcons = menuItems.find(x => !!x.icon) != null;
 
-    return <div class="py-1">
+    return <div class="tw-py-1">
       {menuItems.map(menuItem => {
         const anchorUrl = menuItem.anchorUrl || '#';
         const isToggle = menuItem.isToggle;
@@ -121,11 +121,11 @@ export class ContextMenu {
 
           <a href={anchorUrl}
              onClick={e => this.onMenuItemClick(e, menuItem)}
-             class="group flex items-center px-4 py-2 text-sm leading-5 text-gray-700 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:bg-gray-100 focus:text-gray-900"
+             class="tw-group tw-flex tw-items-center tw-px-4 tw-py-2 tw-text-sm tw-leading-5 tw-text-gray-700 hover:tw-bg-gray-100 hover:tw-text-gray-900 focus:tw-outline-none focus:tw-bg-gray-100 focus:tw-text-gray-900"
              role="menuitem">
-            {menuItem.icon ? <span class="mr-3">{menuItem.icon}</span> : hasAnyIcons ? <span class="mr-7"/> : undefined}
-            <span class="flex-grow">{menuItem.text}</span>
-            {isToggle && checked ? <span class="float-right"><TickIcon/></span> : undefined}
+            {menuItem.icon ? <span class="tw-mr-3">{menuItem.icon}</span> : hasAnyIcons ? <span class="tw-mr-7"/> : undefined}
+            <span class="tw-flex-grow">{menuItem.text}</span>
+            {isToggle && checked ? <span class="tw-float-right"><TickIcon/></span> : undefined}
           </a>
         );
       })}
@@ -137,8 +137,8 @@ export class ContextMenu {
       return;
 
     return <button onClick={() => this.toggleMenu()} aria-has-popup="true" type="button"
-                   class="w-8 h-8 inline-flex items-center justify-center text-gray-400 rounded-full bg-transparent hover:text-gray-500 focus:outline-none focus:text-gray-500 focus:bg-gray-100 transition ease-in-out duration-150">
-      <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                   class="tw-w-8 tw-h-8 tw-inline-tw-flex tw-items-center tw-justify-center tw-text-gray-400 tw-rounded-full tw-bg-transparent hover:tw-text-gray-500 focus:tw-outline-none focus:tw-text-gray-500 focus:tw-bg-gray-100 tw-transition tw-ease-in-out tw-duration-150">
+      <svg class="tw-w-5 tw-h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
         <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
       </svg>
     </button>;

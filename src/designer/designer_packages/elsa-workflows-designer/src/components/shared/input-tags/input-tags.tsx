@@ -59,22 +59,19 @@ export class InputTags {
     if (!Array.isArray(values))
       values = [];
 
-    // const valuesJson = JSON.stringify(values);
-
     return (
-      <div class="py-2 px-3 bg-white shadow-sm border border-gray-300 rounded-md">
+      <div class="tw-py-2 tw-px-3 tw-bg-white tw-shadow-sm tw-border tw-border-gray-300 tw-rounded-md">
         {values.map(value => (
-          <a href="#" onClick={e => this.onDeleteTagClick(e, value)} class="inline-block text-xs bg-blue-400 text-white py-2 px-3 mr-1 mb-1 rounded">
+          <a href="#" onClick={e => this.onDeleteTagClick(e, value)} class="tw-inline-block tw-text-xs tw-bg-blue-400 tw-text-white tw-py-2 tw-px-3 tw-mr-1 tw-mb-1 tw-rounded">
             <span>{value}</span>
-            <span class="text-white hover:text-white ml-1">&times;</span>
+            <span class="tw-text-white hover:tw-text-white tw-ml-1">&times;</span>
           </a>
         ))}
         <input type="text" id={this.fieldId}
                onKeyDown={e => this.onInputKeyDown(e)}
                onBlur={e => this.onInputBlur(e)}
-               class="tag-input inline-block text-sm outline-none focus:outline-none border-none shadow:none focus:border-none focus:border-transparent focus:shadow-none"
+               class="tag-input tw-inline-block tw-text-sm tw-outline-none focus:tw-outline-none tw-border-none tw-shadow-none focus:tw-border-none focus:tw-border-transparent focus:tw-shadow-none"
                placeholder={this.placeHolder}/>
-        {/*<input type="hidden" name={this.fieldName} value={valuesJson}/>*/}
       </div>
     )
   }

@@ -104,7 +104,7 @@ export class WorkflowInstanceViewer {
     const log = e.detail.executionLog;
     this.selectedActivityExecutionLog = log.faulted ? log.faultedRecord : log.completed ? log.completedRecord : log.startedRecord;
   }
-  
+
   private async importSelectedItemsWorkflow(activityNode: ActivityNode) {
     const consumingWorkflowNode = this.findConsumingWorkflowRecursive(activityNode);
 
@@ -225,12 +225,12 @@ export class WorkflowInstanceViewer {
     const workflowDefinition = this.mainWorkflowDefinitionState;
     const workflowInstance = this.workflowInstanceState;
     this.flowchartRootActivity = this.flowchartRootActivity ?? this.mainWorkflowDefinitionState.root;
-    
+
     return (
 
-      <div class="absolute inset-0" ref={el => this.container = el}>
+      <div class="tw-absolute tw-inset-0" ref={el => this.container = el}>
         <elsa-panel
-          class="elsa-activity-picker-container z-30"
+          class="elsa-activity-picker-container tw-z-30"
           position={PanelPosition.Left}
           onExpandedStateChanged={e => this.onActivityPickerPanelStateChanged(e.detail)}>
           <elsa-workflow-journal
@@ -243,7 +243,7 @@ export class WorkflowInstanceViewer {
           rootActivity={this.flowchartRootActivity}
           interactiveMode={false}/>
         <elsa-panel
-          class="elsa-workflow-editor-container z-30"
+          class="elsa-workflow-editor-container tw-z-30"
           position={PanelPosition.Right}
           onExpandedStateChanged={e => this.onActivityEditorPanelStateChanged(e.detail)}>
           <div class="object-editor-container">

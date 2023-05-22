@@ -139,14 +139,14 @@ export class WorkflowDefinitionBrowser {
     // Later, also allow CLR-based workflows to be "edited" (publish / unpublish / position activities / set variables, etc.)
     const materializerName = 'Json';
 
-    var request: ListWorkflowDefinitionsRequest = {
+    const request: ListWorkflowDefinitionsRequest = {
       materializerName,
       page: this.currentPage,
       pageSize: this.currentPageSize,
       versionOptions: {isLatest: true},
       orderBy: this.orderBy,
       label: this.labels,
-    }
+    };
     persistRequest(request)
 
     const latestWorkflowDefinitions = await this.api.list(request);
@@ -234,8 +234,8 @@ export class WorkflowDefinitionBrowser {
       labelFilter: {
         selectedLabels: this.labels,
         onSelectedLabelsChanged: this.onLabelChange,
-        buttonClass: 'text-gray-500 hover:text-gray-300',
-        containerClass: 'mt-1.5',
+        buttonClass: 'tw-text-gray-500 hover:tw-text-gray-300',
+        containerClass: 'tw-mt-1.5',
       },
       onBulkDelete: this.onDeleteManyClick,
       onBulkPublish: this.onPublishManyClick,
@@ -243,11 +243,11 @@ export class WorkflowDefinitionBrowser {
     };
 
     return (
-      <Host class="block">
-        <div class="pt-4">
-          <h2 class="text-lg font-medium ml-4 mb-2">Workflow Definitions</h2>
+      <Host class="tw-block">
+        <div class="tw-pt-4">
+          <h2 class="tw-text-lg tw-font-medium tw-ml-4 tw-mb-2">Workflow Definitions</h2>
           <Filter {...filterProps} />
-          <div class="align-middle inline-block min-w-full border-b border-gray-200">
+          <div class="tw-align-middle tw-inline-block tw-min-w-full tw-border-b tw-border-gray-200">
             <table class="default-table">
               <thead>
               <tr>
@@ -261,11 +261,11 @@ export class WorkflowDefinitionBrowser {
                   />
                 </th>
                 <th>
-                  <span class="lg:pl-2">Name</span>
+                  <span class="lg:tw-pl-2">Name</span>
                 </th>
                 <th>Instances</th>
-                <th class="optional align-right">Latest Version</th>
-                <th class="optional align-right">Published Version</th>
+                <th class="tw-optional tw-align-right">Latest Version</th>
+                <th class="tw-optional tw-align-right">Published Version</th>
                 <th/>
               </tr>
               </thead>
@@ -294,24 +294,24 @@ export class WorkflowDefinitionBrowser {
                       />
                     </td>
                     <td>
-                      <div class="flex items-center space-x-3 lg:pl-2">
-                        <a onClick={e => this.onWorkflowDefinitionClick(e, workflowDefinition)} href="#" class="truncate hover:text-gray-600">
+                      <div class="tw-flex tw-items-center tw-space-x-3 lg:tw-pl-2">
+                        <a onClick={e => this.onWorkflowDefinitionClick(e, workflowDefinition)} href="#" class="tw-truncate hover:tw-text-gray-600">
                           <span>{workflowDisplayName}</span>
                         </a>
                       </div>
                     </td>
 
                     <td>
-                      <div class="flex items-center space-x-3 lg:pl-2">
-                        <a href="#" class="truncate hover:text-gray-600">
+                      <div class="tw-flex tw-items-center tw-space-x-3 lg:tw-pl-2">
+                        <a href="#" class="tw-truncate hover:tw-text-gray-600">
                           Instances
                         </a>
                       </div>
                     </td>
 
-                    <td class="optional align-right">{latestVersionNumber}</td>
-                    <td class="optional align-right">{publishedVersionNumber}</td>
-                    <td class="pr-6">
+                    <td class="tw-optional tw-align-right">{latestVersionNumber}</td>
+                    <td class="tw-optional tw-align-right">{publishedVersionNumber}</td>
+                    <td class="tw-pr-6">
                       <elsa-context-menu
                         menuItems={[
                           {text: 'Edit', handler: e => this.onWorkflowDefinitionClick(e, workflowDefinition), icon: <EditIcon/>},
