@@ -148,7 +148,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.MassTransitAct
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ProtoActor.Cluster.AzureContainerApps", "src\modules\Elsa.ProtoActor.Cluster.AzureContainerApps\Elsa.ProtoActor.Cluster.AzureContainerApps.csproj", "{9F79BBEC-02CE-4F76-AED4-BC191DA3054B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.AzureServiceBusActivities", "src\samples\aspnet\Elsa.Samples.AzureServiceBusActivities\Elsa.Samples.AzureServiceBusActivities.csproj", "{C25CFDCF-8E06-4DD8-A83E-FF7EF9FDA02E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.AspNet.AzureServiceBusActivities", "src\samples\aspnet\Elsa.Samples.AspNet.AzureServiceBusActivities\Elsa.Samples.AspNet.AzureServiceBusActivities.csproj", "{C25CFDCF-8E06-4DD8-A83E-FF7EF9FDA02E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.ElasticsearchStorage", "src\samples\aspnet\Elsa.Samples.ElasticsearchStorage\Elsa.Samples.ElasticsearchStorage.csproj", "{4A54379F-4775-41B6-9752-FF300288916A}"
 EndProject
