@@ -80,7 +80,7 @@ export function createGraph(
       // },
       //connector: 'elsa-connector',
       connector: {
-        name: 'tw-rounded',
+        name: 'rounded',
         args: {
           radius: 20
         },
