@@ -4,7 +4,7 @@ using Elsa.Common.Services;
 using Elsa.Samples.MassTransitActivities.Messages;
 using FastEndpoints;
 
-namespace Elsa.Samples.AzureServiceBusActivities.Endpoints.Orders.Create;
+namespace Elsa.Samples.AspNet.AzureServiceBusActivities.Endpoints.Orders.Create;
 
 public class Create : EndpointWithoutRequest
 {
