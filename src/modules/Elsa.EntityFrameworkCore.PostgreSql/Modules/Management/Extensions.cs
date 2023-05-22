@@ -1,4 +1,5 @@
 ﻿using Elsa.EntityFrameworkCore.Modules.Management;
+using Elsa.EntityFrameworkCore.Common;
 using JetBrains.Annotations;
 
 // ReSharper disable once CheckNamespace
@@ -24,7 +25,9 @@ public static partial class Extensions
     
     public static EFCoreWorkflowManagementPersistenceFeature UsePostgreSql(this EFCoreWorkflowManagementPersistenceFeature feature, string connectionString)
     {
-        feature.DbContextOptionsBuilder = (_, db) => db.UseElsaPostgreSql(connectionString);
+        feature.DbContextOptionsBuilder = (_, db) => db.UseElsaDbContextOptions(new ElsaDbContextOptions{
+            SchemaName = "akash"
+        }).UseElsaPostgreSql(connectionString);
         return feature;
     }
 }

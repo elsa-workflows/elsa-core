@@ -1,4 +1,5 @@
 using Elsa.EntityFrameworkCore.Extensions;
+using Elsa.EntityFrameworkCore.Common;
 using Elsa.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
@@ -26,11 +27,11 @@ services
             identity.UseConfigurationBasedRoleProvider(options => identitySection.Bind(options));
         })
         .UseDefaultAuthentication()
-        .UseWorkflowManagement(management => management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
+        .UseWorkflowManagement(management => management.UseEntityFrameworkCore(ef => ef.UsePostgreSql(sqliteConnectionString)))
         .UseWorkflowRuntime(runtime =>
         {
-            runtime.UseDefaultRuntime(dr => dr.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)));
-            runtime.UseExecutionLogRecords(e => e.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)));
+            runtime.UseDefaultRuntime(dr => dr.UseEntityFrameworkCore(ef => ef.UsePostgreSql(sqliteConnectionString)));
+            runtime.UseExecutionLogRecords(e => e.UseEntityFrameworkCore(ef => ef.UsePostgreSql(sqliteConnectionString)));
             runtime.UseAsyncWorkflowStateExporter();
         })
         .UseScheduling()
