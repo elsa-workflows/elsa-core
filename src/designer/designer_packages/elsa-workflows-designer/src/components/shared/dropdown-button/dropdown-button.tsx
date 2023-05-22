@@ -27,16 +27,16 @@ export class DropdownButton {
 
     return (
       <Host class="tw-block" ref={el => this.element = el}>
-        <span class="tw-relative tw-z-0 tw-inline-tw-flex tw-shadow-sm tw-rounded-md">
+        <span class="tw-relative tw-z-0 tw-inline-flex tw-shadow-sm tw-rounded-md">
           <button type="button"
-                  class={`tw-relative tw-inline-tw-flex tw-items-center tw-px-4 tw-py-2 tw-rounded-l-md tw-border tw-text-sm tw-font-medium focus:tw-z-10 focus:tw-outline-none ${buttonClass}`}
+                  class={`tw-relative tw-inline-flex tw-items-center tw-px-4 tw-py-2 tw-rounded-l-md tw-border tw-text-sm tw-font-medium focus:tw-z-10 focus:tw-outline-none ${buttonClass}`}
                   onClick={handler}>
             {this.renderIcon()}
             {this.text}
           </button>
           <div class="-tw-ml-px tw-block">
             <button type="button"
-                    class={`tw-relative tw-inline-tw-flex tw-items-center tw-px-2 tw-py-2 tw-rounded-r-md tw-border tw-text-sm tw-font-medium focus:tw-z-10 focus:tw-outline-none ${arrowClass}`}
+                    class={`tw-relative tw-inline-flex tw-items-center tw-px-2 tw-py-2 tw-rounded-r-md tw-border tw-text-sm tw-font-medium focus:tw-z-10 focus:tw-outline-none ${arrowClass}`}
                     onClick={() => this.toggleMenu()}
                     aria-expanded="true" aria-haspopup="true">
               <svg class="tw-h-5 tw-w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-tw-hidden="true">

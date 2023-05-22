@@ -156,7 +156,7 @@ export class Journal {
             </div>
           </td>
           <td>
-            <a href="#" onClick={e => this.onJournalItemClick(e, block, activity)} class={`tw-inline-tw-flex tw-rounded-full ${statusColor} tw-px-2 tw-text-xs tw-font-semibold tw-leading-5 tw-text-green-800`}>{status}</a>
+            <a href="#" onClick={e => this.onJournalItemClick(e, block, activity)} class={`tw-inline-flex tw-rounded-full ${statusColor} tw-px-2 tw-text-xs tw-font-semibold tw-leading-5 tw-text-green-800`}>{status}</a>
           </td>
           <td><a href="#" onClick={e => this.onJournalItemClick(e, block, activity)}>{duration}</a></td>
         </tr>, expanded ? this.renderBlocks(block.children) : undefined]

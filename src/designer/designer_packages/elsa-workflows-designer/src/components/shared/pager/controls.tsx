@@ -56,13 +56,13 @@ export const PagerButtons: FunctionalComponent<PagerProps> = ({currentPage, page
 
     if (isCurrent) {
       buttons.push(<span
-        class={`-tw-ml-px tw-relative tw-inline-tw-flex tw-items-center tw-px-4 tw-py-2 tw-border tw-border-gray-300 tw-text-sm tw-leading-5 tw-font-medium tw-bg-blue-600 tw-text-white ${leftRoundedClass} ${rightRoundedClass}`}>
+        class={`-tw-ml-px tw-relative tw-inline-flex tw-items-center tw-px-4 tw-py-2 tw-border tw-border-gray-300 tw-text-sm tw-leading-5 tw-font-medium tw-bg-blue-600 tw-text-white ${leftRoundedClass} ${rightRoundedClass}`}>
                         {i + 1}
                     </span>);
     } else {
       buttons.push(<a href="#"
                       onClick={e => clickHandler(e, () => onNavigate(i))}
-                      class={`-tw-ml-px tw-relative tw-inline-tw-flex tw-items-center tw-px-4 tw-py-2 tw-border tw-border-gray-300 tw-bg-white tw-text-sm tw-leading-5 tw-font-medium tw-text-gray-700 hover:tw-text-gray-500 focus:tw-z-10 focus:tw-outline-none active:tw-bg-gray-100 active:tw-text-gray-700 tw-transition tw-ease-in-out tw-duration-150 ${leftRoundedClass}`}>
+                      class={`-tw-ml-px tw-relative tw-inline-flex tw-items-center tw-px-4 tw-py-2 tw-border tw-border-gray-300 tw-bg-white tw-text-sm tw-leading-5 tw-font-medium tw-text-gray-700 hover:tw-text-gray-500 focus:tw-z-10 focus:tw-outline-none active:tw-bg-gray-100 active:tw-text-gray-700 tw-transition tw-ease-in-out tw-duration-150 ${leftRoundedClass}`}>
         {i + 1}
       </a>)
     }

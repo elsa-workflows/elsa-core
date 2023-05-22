@@ -147,7 +147,7 @@ export class ActivityProperties {
                 {icon}
               </span>
             </div>
-            <div class="tw-min-tw-w-0 tw-flex-1 tw-pt-1.5 tw-flex tw-justify-between tw-space-x-4">
+            <div class="tw-min-w-0 tw-flex-1 tw-pt-1.5 tw-flex tw-justify-between tw-space-x-4">
               <div>
                 <h3 class="tw-text-lg tw-leading-6 tw-font-medium tw-text-gray-900">
                   {log.activityType}
@@ -155,7 +155,7 @@ export class ActivityProperties {
               </div>
               <div>
                 <span
-                  class={`tw-relative tw-inline-tw-flex tw-items-center tw-rounded-full ${statusColor} tw-border tw-border-gray-300 tw-px-3 tw-tw-py-0.5 tw-text-sm`}>
+                  class={`tw-relative tw-inline-flex tw-items-center tw-rounded-full ${statusColor} tw-border tw-border-gray-300 tw-px-3 tw-tw-py-0.5 tw-text-sm`}>
                   <span class="tw-absolute tw-flex-shrink-0 tw-flex tw-items-center tw-justify-center">
                     <span class={`tw-h-1.5 tw-w-1.5 tw-rounded-full`} aria-tw-hidden="true"/>
                   </span>

@@ -4,11 +4,11 @@
 
 /* Controls */
 .elsa-btn {
-  @apply tw-inline-tw-flex tw-items-center tw-px-4 tw-py-2 tw-border tw-border-transparent tw-shadow-sm tw-text-sm tw-font-medium tw-rounded-md tw-text-white tw-bg-blue-600 hover:tw-bg-blue-700 focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-offset-2 focus:tw-ring-blue-500 tw-mt-2;
+  @apply tw-inline-flex tw-items-center tw-px-4 tw-py-2 tw-border tw-border-transparent tw-shadow-sm tw-text-sm tw-font-medium tw-rounded-md tw-text-white tw-bg-blue-600 hover:tw-bg-blue-700 focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-offset-2 focus:tw-ring-blue-500 tw-mt-2;
 }
 
 .elsa-btn.elsa-btn-primary {
-  @apply tw-inline-tw-flex tw-items-center tw-px-4 tw-py-2 tw-border tw-border-transparent tw-shadow-sm tw-text-sm tw-font-medium tw-rounded-md tw-text-white tw-bg-blue-600 hover:tw-bg-blue-700 focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-offset-2 focus:tw-ring-blue-500 tw-mt-2;
+  @apply tw-inline-flex tw-items-center tw-px-4 tw-py-2 tw-border tw-border-transparent tw-shadow-sm tw-text-sm tw-font-medium tw-rounded-md tw-text-white tw-bg-blue-600 hover:tw-bg-blue-700 focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-offset-2 focus:tw-ring-blue-500 tw-mt-2;
 }
 
 .elsa-btn.elsa-btn-secondary {
@@ -16,7 +16,7 @@
 }
 
 .elsa-btn.elsa-btn-action {
-  @apply tw-inline-tw-flex tw-items-center tw-px-4 tw-py-2 tw-border tw-border-transparent tw-shadow-sm tw-text-sm tw-font-medium tw-rounded-md tw-text-white tw-bg-green-600 hover:tw-bg-green-700 focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-offset-2 focus:tw-ring-green-500 tw-mt-2;
+  @apply tw-inline-flex tw-items-center tw-px-4 tw-py-2 tw-border tw-border-transparent tw-shadow-sm tw-text-sm tw-font-medium tw-rounded-md tw-text-white tw-bg-green-600 hover:tw-bg-green-700 focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-offset-2 focus:tw-ring-green-500 tw-mt-2;
 }
 
 .elsa-icon-button {
@@ -89,7 +89,7 @@ select {
 }
 
 textarea {
-  @apply focus:tw-ring-blue-500 focus:tw-border-blue-500 tw-block tw-w-full tw-min-tw-w-0 tw-rounded-md sm:tw-text-sm tw-border-gray-300;
+  @apply focus:tw-ring-blue-500 focus:tw-border-blue-500 tw-block tw-w-full tw-min-w-0 tw-rounded-md sm:tw-text-sm tw-border-gray-300;
 }
 
 /* Tables */
@@ -127,7 +127,7 @@ table {
 
 /* Pager */
 .elsa-pager-button {
-  @apply tw-relative tw-inline-tw-flex tw-items-center tw-px-4 tw-py-2 tw-border tw-border-gray-300 tw-text-sm tw-leading-5 tw-font-medium tw-rounded-md tw-text-gray-700 tw-bg-white hover:tw-text-gray-500 focus:tw-outline-none focus:tw-ring-blue-300 focus:tw-border-blue-300 active:tw-bg-gray-100 active:tw-text-gray-700 tw-transition tw-ease-in-out tw-duration-150;
+  @apply tw-relative tw-inline-flex tw-items-center tw-px-4 tw-py-2 tw-border tw-border-gray-300 tw-text-sm tw-leading-5 tw-font-medium tw-rounded-md tw-text-gray-700 tw-bg-white hover:tw-text-gray-500 focus:tw-outline-none focus:tw-ring-blue-300 focus:tw-border-blue-300 active:tw-bg-gray-100 active:tw-text-gray-700 tw-transition tw-ease-in-out tw-duration-150;
 }
 
 .elsa-pager-button.previous {
@@ -139,7 +139,7 @@ table {
 }
 
 .elsa-pager-chevron {
-  @apply tw-relative tw-inline-tw-flex tw-items-center tw-px-2 tw-py-2 tw-border tw-border-gray-300 tw-bg-white tw-text-sm tw-leading-5 tw-font-medium tw-text-gray-500 hover:tw-text-gray-400 focus:tw-z-10 focus:tw-border-blue-300 focus:tw-ring-blue-300 active:tw-bg-gray-100 active:tw-text-gray-500 tw-transition tw-ease-in-out tw-duration-150;
+  @apply tw-relative tw-inline-flex tw-items-center tw-px-2 tw-py-2 tw-border tw-border-gray-300 tw-bg-white tw-text-sm tw-leading-5 tw-font-medium tw-text-gray-500 hover:tw-text-gray-400 focus:tw-z-10 focus:tw-border-blue-300 focus:tw-ring-blue-300 active:tw-bg-gray-100 active:tw-text-gray-500 tw-transition tw-ease-in-out tw-duration-150;
 }
 
 .elsa-pager-chevron.left {

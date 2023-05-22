@@ -45,7 +45,7 @@ export class ElsaPager {
             </p>
           </div>
           <div>
-            <nav class="tw-relative tw-z-0 tw-inline-tw-flex tw-shadow-sm">
+            <nav class="tw-relative tw-z-0 tw-inline-flex tw-shadow-sm">
               <ChevronLeft currentPage={page} pageCount={pageCount} onNavigate={this.onNavigate}/>
               <PagerButtons currentPage={page} pageCount={pageCount} onNavigate={this.onNavigate}/>
               <ChevronRight currentPage={page} pageCount={pageCount} onNavigate={this.onNavigate}/>

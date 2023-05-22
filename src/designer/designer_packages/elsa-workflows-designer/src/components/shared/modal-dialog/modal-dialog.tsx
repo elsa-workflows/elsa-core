@@ -131,7 +131,7 @@ export class ModalDialog {
                                    if (this.autoHide)
                                      this.hideInternal(true);
                                  }}
-                                 class={`${cssClass} tw-mt-3 tw-w-full tw-inline-tw-flex tw-justify-center tw-rounded-md tw-border tw-shadow-sm tw-px-4 tw-py-2 tw-text-base tw-font-medium focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-offset-2 sm:tw-mt-0 sm:tw-ml-3 sm:tw-w-auto sm:tw-text-sm`}>
+                                 class={`${cssClass} tw-mt-3 tw-w-full tw-inline-flex tw-justify-center tw-rounded-md tw-border tw-shadow-sm tw-px-4 tw-py-2 tw-text-base tw-font-medium focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-offset-2 sm:tw-mt-0 sm:tw-ml-3 sm:tw-w-auto sm:tw-text-sm`}>
                     {action.text}
                   </button>
                 })}
