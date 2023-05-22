@@ -12,7 +12,7 @@ public abstract class ElsaDbContextBase : DbContext
     /// <summary>
     /// The schema used by Elsa.
     /// </summary>
-    public const string ElsaSchema = "Elsa";
+    public static string ElsaSchema { get; set; } = "Elsa";
     
     /// <summary>
     /// The table used to store the migrations history.
