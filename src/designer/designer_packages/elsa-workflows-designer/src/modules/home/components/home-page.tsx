@@ -39,7 +39,7 @@ export class HomePage {
               </div>
               <div class="tw-mt-16 sm:tw-mt-24 lg:tw-mt-0 lg:tw-col-span-6">
                 <div class="sm:tw-max-w-md sm:tw-w-full sm:tw-mx-auto sm:tw-rounded-lg sm:tw-overflow-hidden">
-                  <div class="tw-px-4 py-8 sm:tw-px-10">
+                  <div class="tw-px-4 tw-py-8 sm:tw-px-10">
                     <img class="home-visual" src={visualPath} alt="" width={400}/>
                   </div>
                 </div>

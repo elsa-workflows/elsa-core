@@ -38,7 +38,7 @@ export class Toolbox {
             <div class="tw-absolute tw-inset-0 tw-overflow-y-scroll">
               <elsa-workflow-definition-editor-toolbox-activities
                 graph={this.graph}
-                class={selectedTabIndex == 0 ? '' : 'tw-hidden'}/>
+                class={selectedTabIndex == 0 ? '' : 'hidden'}/>
             </div>
           </div>
         </div>

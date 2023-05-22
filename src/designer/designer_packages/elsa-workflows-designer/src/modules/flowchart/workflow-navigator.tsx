@@ -51,7 +51,7 @@ export class WorkflowNavigator {
                   </div>
                   <span class="tw-ml-4 tw-text-sm tw-font-medium tw-text-gray-500 hover:tw-text-gray-700">{this.rootActivity.id}</span>
                 </a>
-                <svg class="tw-ml-2 tw-flex-shrink-0 tw-h-5 tw-w-5 tw-text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-tw-hidden="true">
+                <svg class="tw-ml-2 tw-flex-shrink-0 tw-h-5 tw-w-5 tw-text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                   <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
                 </svg>
               </div>
@@ -97,7 +97,7 @@ export class WorkflowNavigator {
               <span class="tw-ml-4 tw-text-sm tw-font-medium tw-text-gray-500">{activityId}</span>
             </span>
             {!!port ? (
-              <svg class="tw-ml-2 tw-flex-shrink-0 tw-h-5 tw-w-5 tw-text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-tw-hidden="true">
+              <svg class="tw-ml-2 tw-flex-shrink-0 tw-h-5 tw-w-5 tw-text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
               </svg>
             ) : undefined}
@@ -116,7 +116,7 @@ export class WorkflowNavigator {
               </div>
               <span class="tw-ml-4 tw-text-sm tw-font-medium tw-text-gray-500 hover:tw-text-gray-700">{activityId}</span>
             </a>
-            <svg class="tw-ml-2 tw-flex-shrink-0 tw-h-5 tw-w-5 tw-text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-tw-hidden="true">
+            <svg class="tw-ml-2 tw-flex-shrink-0 tw-h-5 tw-w-5 tw-text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
               <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
             </svg>
           </div>

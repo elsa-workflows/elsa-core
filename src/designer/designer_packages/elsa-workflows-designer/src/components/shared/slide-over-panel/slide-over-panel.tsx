@@ -74,7 +74,7 @@ export class SlideOverPanel {
   private renderPanel() {
     const isVisible = this.isVisible;
     const isHiding = this.isHiding;
-    const wrapperClass = isVisible ? 'tw-block' : 'tw-hidden';
+    const wrapperClass = isVisible ? 'tw-block' : 'hidden';
     const backdropClass = !isHiding && isVisible ? 'tw-opacity-50' : 'tw-opacity-0';
     const panelClass = !isHiding && isVisible ? 'tw-max-w-2xl w-2xl' : 'tw-max-tw-w-0 tw-w-0';
     const tabs = this.tabs;
@@ -89,7 +89,7 @@ export class SlideOverPanel {
           <div class={`tw-absolute tw-inset-0 tw-bg-gray-100 tw-ease-in-out tw-duration-200 ${backdropClass}`}
                onTransitionEnd={e => this.onTransitionEnd(e)}/>
 
-          <div class="tw-absolute tw-inset-0" aria-tw-hidden="true" onClick={e => this.onOverlayClick(e)}
+          <div class="tw-absolute tw-inset-0" aria-hidden="true" onClick={e => this.onOverlayClick(e)}
                ref={el => this.overlayElement = el}>
 
             <div class="tw-fixed tw-inset-y-0 tw-right-0 tw-pl-10 tw-max-w-full tw-flex sm:tw-pl-16">
@@ -111,7 +111,7 @@ export class SlideOverPanel {
                                   onClick={() => this.onCloseClick()}>
                             <span class="tw-sr-only">Close panel</span>
                             <svg class="tw-h-6 tw-w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                 stroke="currentColor" aria-tw-hidden="true">
+                                 stroke="currentColor" aria-hidden="true">
                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M6 18L18 6M6 6l12 12"/>
                             </svg>
@@ -137,7 +137,7 @@ export class SlideOverPanel {
 
                       <div class="tw-absolute tw-inset-0 tw-overflow-y-scroll">
                         {tabs.map(tab => {
-                          const cssClass = tab == selectedTab ? '' : 'tw-hidden';
+                          const cssClass = tab == selectedTab ? '' : 'hidden';
                           return <div class={cssClass}>
                             {tab.content()}
                           </div>

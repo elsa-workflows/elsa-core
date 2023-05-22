@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Interactivity */
+elsa-studio :is(.hidden) {
+  @apply tw-hidden;
+}
+
 /* Controls */
 .elsa-btn {
   @apply tw-inline-flex tw-items-center tw-px-4 tw-py-2 tw-border tw-border-transparent tw-shadow-sm tw-text-sm tw-font-medium tw-rounded-md tw-text-white tw-bg-blue-600 hover:tw-bg-blue-700 focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-offset-2 focus:tw-ring-blue-500 tw-mt-2;
@@ -105,7 +110,7 @@ table {
   }
 
   thead tr th.tw-optional, tbody tr td.tw-optional {
-    @apply tw-hidden md:tw-table-cell;
+    @apply hidden md:tw-table-cell;
   }
 
   table thead tr th.tw-align-right, tbody tr td.tw-align-right {

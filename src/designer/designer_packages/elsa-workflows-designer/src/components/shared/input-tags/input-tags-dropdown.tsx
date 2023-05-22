@@ -79,7 +79,7 @@ export class InputTagsDropdown {
       <div class="tw-py-2 tw-px-3 tw-bg-white tw-shadow-sm tw-border tw-border-gray-300 tw-rounded-md">
         {values.map(tag => (
           <a href="#" onClick={e => this.onDeleteTagClick(e, tag)} class="tw-inline-block tw-text-xs tw-bg-blue-400 tw-text-white tw-py-2 tw-px-3 tw-mr-1 tw-mb-1 tw-rounded">
-            <input type="tw-hidden" value={tag.value}/>
+            <input type="hidden" value={tag.value}/>
             <span>{tag.text}</span>
             <span class="tw-text-white hover:tw-text-white tw-ml-1">&times;</span>
           </a>
@@ -92,7 +92,7 @@ export class InputTagsDropdown {
           <option value="Add" disabled selected>{this.placeHolder}</option>
           {dropdownItems.map(tag => <option value={tag.value}>{tag.text}</option>)}
         </select>
-        <input type="tw-hidden" name={this.fieldName} value={valuesJson}/>
+        <input type="hidden" name={this.fieldName} value={valuesJson}/>
       </div>
     )
   }

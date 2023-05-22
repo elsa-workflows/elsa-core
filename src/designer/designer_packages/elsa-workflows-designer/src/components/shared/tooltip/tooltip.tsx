@@ -16,7 +16,7 @@ export class Tooltip {
       right: 'tw-left-0 -tw-ml-2 tw-bottom-0 tw-top-0 tw-h-full',
       left: 'tw-right-0 -tw-mr-2 tw-bottom-0 tw-top-0 tw-h-full tw-rotate-180',
       top: 'tw-left-1/2 -tw-mt-1 tw-top-full -tw-translate-x-1/2 -tw-rotate-90',
-      bottom: 'tw-left-1/2 -tw-mb-1 bottom-full -tw-translate-x-1/2 tw-rotate-90',
+      bottom: 'tw-left-1/2 -tw-mb-1 tw-bottom-full -tw-translate-x-1/2 tw-rotate-90',
     };
 
     this.triangleClass = triangleClasses[tooltipPosition];

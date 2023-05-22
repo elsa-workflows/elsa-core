@@ -54,7 +54,7 @@ export class NotificationManager {
           data-transition-leave="tw-transform tw-transition tw-ease-in-out tw-duration-100 sm:tw-duration-100"
           data-transition-leave-start="tw-translate-x-0"
           data-transition-leave-end="tw-translate-x-full"
-          class='tw-hidden tw-z-50 tw-top-16 tw-fixed tw-inset-y-0 tw-right-0 tw-flex tw-max-w-full tw-pl-10 sm:tw-pl-16'>
+          class='hidden tw-z-50 tw-top-16 tw-fixed tw-inset-y-0 tw-right-0 tw-flex tw-max-w-full tw-pl-10 sm:tw-pl-16'>
 
           <div class="tw-w-screen tw-max-w-md">
             <div class="tw-flex tw-h-full tw-flex-col tw-overflow-y-scroll tw-bg-white tw-shadow-xl">
@@ -67,7 +67,7 @@ export class NotificationManager {
                             class="tw-rounded-md tw-bg-white tw-text-gray-400 hover:tw-text-gray-500 focus:tw-ring-2 focus:tw-ring-blue-500">
                       <span class="tw-sr-only">Close panel</span>
                       <svg class="tw-h-6 tw-w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                           stroke-width="1.5" stroke="currentColor" aria-tw-hidden="true">
+                           stroke-width="1.5" stroke="currentColor" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
                       </svg>
                     </button>
@@ -87,7 +87,7 @@ export class NotificationManager {
                             <button onClick={() => this.deleteNotif(notification.id)}>
                               <svg class="tw-h-6 tw-w-6" xmlns="http://www.w3.org/2000/svg" fill="none"
                                    viewBox="0 0 24 24"
-                                   stroke-width="1.5" stroke="currentColor" aria-tw-hidden="true">
+                                   stroke-width="1.5" stroke="currentColor" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
                               </svg>
                             </button>

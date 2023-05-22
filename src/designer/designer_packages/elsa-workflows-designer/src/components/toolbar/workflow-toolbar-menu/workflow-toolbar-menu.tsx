@@ -58,7 +58,7 @@ export class WorkflowToolbarMenu {
                data-transition-leave="tw-transition tw-ease-in tw-duration-75"
                data-transition-leave-start="tw-transform tw-opacity-100 tw-scale-100"
                data-transition-leave-end="tw-transform tw-opacity-0 tw-scale-95"
-               class="tw-hidden tw-origin-top-right tw-absolute tw-right-0 tw-mt-2 tw-w-48 tw-rounded-md tw-shadow-lg tw-py-1 tw-bg-white tw-ring-1 tw-ring-black tw-ring-opacity-5 focus:tw-outline-none"
+               class="hidden tw-origin-top-right tw-absolute tw-right-0 tw-mt-2 tw-w-48 tw-rounded-md tw-shadow-lg tw-py-1 tw-bg-white tw-ring-1 tw-ring-black tw-ring-opacity-5 focus:tw-outline-none"
                role="menu" aria-orientation="vertical" aria-labelledby="user-menu-button" tabindex="-1">
             {menuItems.map(menuItem => <a onClick={e => this.onMenuItemClick(e, menuItem)} href="#" role="menuitem" tabindex="-1">{menuItem.text}</a>)}
             <a href="#" role="menuitem" tabindex="-1">Settings</a>

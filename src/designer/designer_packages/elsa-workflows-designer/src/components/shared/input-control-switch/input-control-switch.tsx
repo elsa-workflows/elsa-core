@@ -128,7 +128,7 @@ export class InputControlSwitch {
              data-transition-leave="tw-transition tw-ease-in tw-duration-75"
              data-transition-leave-start="tw-transform tw-opacity-100 tw-scale-100"
              data-transition-leave-end="tw-transform tw-opacity-0 tw-scale-95"
-             class="tw-hidden tw-origin-top-right tw-absolute right-1 tw-mt-1 tw-w-56 tw-rounded-md tw-shadow-lg tw-bg-white tw-ring-1 tw-ring-black tw-ring-opacity-5 tw-divide-y tw-divide-gray-100 focus:tw-outline-none tw-z-10" role="menu"
+             class="hidden tw-origin-top-right tw-absolute right-1 tw-mt-1 tw-w-56 tw-rounded-md tw-shadow-lg tw-bg-white tw-ring-1 tw-ring-black tw-ring-opacity-5 tw-divide-y tw-divide-gray-100 focus:tw-outline-none tw-z-10" role="menu"
              aria-orientation="vertical"
              aria-labelledby="options-menu">
           <div class="tw-py-1" role="none">
@@ -153,8 +153,8 @@ export class InputControlSwitch {
     const monacoLanguage = mapSyntaxToLanguage(selectedSyntax);
     const value = this.expression;
     const showMonaco = !!selectedSyntax && selectedSyntax != 'Literal' && !!this.supportedSyntaxes.find(x => x === selectedSyntax);
-    const expressionEditorClass = showMonaco ? 'tw-block' : 'tw-hidden';
-    const defaultEditorClass = showMonaco ? 'tw-hidden' : 'tw-block';
+    const expressionEditorClass = showMonaco ? 'tw-block' : 'hidden';
+    const defaultEditorClass = showMonaco ? 'hidden' : 'tw-block';
 
     return (
       <div>

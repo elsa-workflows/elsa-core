@@ -88,7 +88,7 @@ export class FormPanel {
             <div class={`tw-flex-1 tw-relative`}>
               <div class={`tw-absolute tw-inset-0 tw-overflow-y-scroll ${orientation == 'Landscape' ? 'tw-px-6' : ''}`}>
                 {tabs.map((tab, tabIndex) => {
-                  const cssClass = tabIndex == selectedTabIndex ? '' : 'tw-hidden';
+                  const cssClass = tabIndex == selectedTabIndex ? '' : 'hidden';
                   return <div class={cssClass}>
                     {tab.content()}
                   </div>

@@ -39,7 +39,7 @@ export class DropdownButton {
                     class={`tw-relative tw-inline-flex tw-items-center tw-px-2 tw-py-2 tw-rounded-r-md tw-border tw-text-sm tw-font-medium focus:tw-z-10 focus:tw-outline-none ${arrowClass}`}
                     onClick={() => this.toggleMenu()}
                     aria-expanded="true" aria-haspopup="true">
-              <svg class="tw-h-5 tw-w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-tw-hidden="true">
+              <svg class="tw-h-5 tw-w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>
               </svg>
             </button>
@@ -62,7 +62,7 @@ export class DropdownButton {
                 data-transition-leave="tw-transition tw-ease-in tw-duration-75"
                 data-transition-leave-start="tw-transform tw-opacity-100 tw-scale-100"
                 data-transition-leave-end="tw-transform tw-opacity-0 tw-scale-95"
-                class={`tw-hidden ${originClass} tw-z-10 tw-absolute tw-mt-2 tw-w-56 tw-rounded-md tw-shadow-lg tw-bg-white tw-ring-1 tw-ring-black tw-ring-opacity-5`}>
+                class={`hidden ${originClass} tw-z-10 tw-absolute tw-mt-2 tw-w-56 tw-rounded-md tw-shadow-lg tw-bg-white tw-ring-1 tw-ring-black tw-ring-opacity-5`}>
       <div class="tw-py-1" role="menu" aria-orientation="vertical">
         {this.renderItems()}
       </div>

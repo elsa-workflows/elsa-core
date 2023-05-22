@@ -82,7 +82,7 @@ export class ModalDialog {
     const content = this.content();
 
     return (
-      <Host class={{'tw-hidden': !this.isVisible, 'tw-block': true}}>
+      <Host class={{'hidden': !this.isVisible, 'tw-block': true}}>
         <div class="tw-fixed tw-z-50 tw-inset-0 tw-overflow-y-auto">
           <div class="tw-flex tw-items-end tw-justify-center tw-min-tw-h-screen tw-pt-4 tw-px-4 tw-pb-20 tw-text-center sm:tw-block sm:tw-p-0">
             <div ref={el => this.overlay = el}
@@ -90,11 +90,11 @@ export class ModalDialog {
                  data-transition-enter="tw-ease-out tw-duration-300" data-transition-enter-start="tw-opacity-0"
                  data-transition-enter-end="tw-opacity-0" data-transition-leave="tw-ease-in tw-duration-200"
                  data-transition-leave-start="tw-opacity-0" data-transition-leave-end="tw-opacity-0"
-                 class="tw-hidden tw-fixed tw-inset-0 tw-transition-opacity" aria-tw-hidden="true">
+                 class="hidden tw-fixed tw-inset-0 tw-transition-opacity" aria-hidden="true">
               <div class="tw-absolute tw-inset-0 tw-bg-gray-500 tw-opacity-75"/>
             </div>
 
-            <span class="tw-hidden sm:tw-inline-block sm:tw-align-middle sm:tw-h-screen" aria-tw-hidden="true"/>
+            <span class="hidden sm:tw-inline-block sm:tw-align-middle sm:tw-h-screen" aria-hidden="true"/>
             <div ref={el => this.modal = el}
                  data-transition-enter="tw-ease-out tw-duration-300"
                  data-transition-enter-start="tw-opacity-0 tw-translate-y-4 sm:tw-translate-y-0 sm:tw-scale-95"
@@ -102,7 +102,7 @@ export class ModalDialog {
                  data-transition-leave="tw-ease-in tw-duration-200"
                  data-transition-leave-start="tw-opacity-0 tw-translate-y-0 sm:tw-scale-100"
                  data-transition-leave-end="tw-opacity-0 tw-translate-y-4 sm:tw-translate-y-0 sm:tw-scale-95"
-                 class={`tw-hidden tw-inline-block sm:tw-align-top tw-bg-white tw-rounded-lg tw-text-left tw-overflow-visible tw-shadow-xl tw-transform tw-transition-all sm:tw-my-8 sm:tw-align-top ${this.size}`}
+                 class={`hidden tw-inline-block sm:tw-align-top tw-bg-white tw-rounded-lg tw-text-left tw-overflow-visible tw-shadow-xl tw-transform tw-transition-all sm:tw-my-8 sm:tw-align-top ${this.size}`}
                  role="dialog" aria-modal="true" aria-labelledby="modal-headline">
               <div class="modal-content">
                 {content}

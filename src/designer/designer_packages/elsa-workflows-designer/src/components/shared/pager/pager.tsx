@@ -28,11 +28,11 @@ export class ElsaPager {
 
     return (
       <div class="tw-bg-white tw-px-4 tw-py-3 tw-flex tw-items-center tw-justify-between tw-border-t tw-border-gray-200 sm:tw-px-6">
-        <div class="tw-flex-1 tw-flex tw-justify-between sm:tw-hidden">
+        <div class="tw-flex-1 tw-flex tw-justify-between sm:hidden">
           <PreviousButton currentPage={page} pageCount={pageCount} onNavigate={this.onNavigate}/>
           <NextButton currentPage={page} pageCount={pageCount} onNavigate={this.onNavigate}/>
         </div>
-        <div class="tw-hidden sm:tw-flex-1 sm:tw-flex sm:tw-items-center sm:tw-justify-between">
+        <div class="hidden sm:tw-flex-1 sm:tw-flex sm:tw-items-center sm:tw-justify-between">
           <div>
             <p class="tw-text-sm tw-leading-5 tw-text-gray-700 tw-space-x-0.5">
               <span>From</span>

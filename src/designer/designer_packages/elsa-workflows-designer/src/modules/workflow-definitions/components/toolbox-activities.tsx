@@ -115,7 +115,7 @@ export class ToolboxActivities {
         const category = categoryModel.category;
         const activityDescriptors: Array<ActivityDescriptor> = categoryModel.activities;
         const categoryButtonClass = categoryModel.expanded ? 'tw-rotate-90' : '';
-        const categoryContentClass = categoryModel.expanded ? '' : 'tw-hidden';
+        const categoryContentClass = categoryModel.expanded ? '' : 'hidden';
 
         return <div class="tw-space-y-1">
           <button type="button"
@@ -123,7 +123,7 @@ export class ToolboxActivities {
             class="tw-text-gray-600 hover:tw-bg-gray-50 hover:tw-text-gray-900 tw-group tw-w-full tw-flex tw-items-center tw-pr-2 tw-py-2 tw-text-left tw-text-sm tw-font-medium tw-rounded-md focus:tw-outline-none">
             <svg
               class={`${categoryButtonClass} tw-text-gray-300 tw-mr-2 tw-flex-shrink-0 tw-h-5 tw-w-5 tw-transform group-hover:tw-text-gray-400 tw-transition-colors tw-ease-in-out tw-duration-150`}
-              viewBox="0 0 20 20" aria-tw-hidden="true">
+              viewBox="0 0 20 20" aria-hidden="true">
                 <path d="M6 6L14 10L6 14V6Z" fill="currentColor"/>
             </svg>
             {category}

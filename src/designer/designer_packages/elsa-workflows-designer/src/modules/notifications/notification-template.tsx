@@ -33,7 +33,7 @@ export class NotificationTemplate {
         <div class="tw-flex-shrink-0 tw-z-30">
           {type === NotificationDisplayType.Success ?
             <svg class="tw-h-6 tw-w-6 tw-text-green-400 tw-z-30" xmlns="http://www.w3.org/2000/svg" fill="none"
-                 viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-tw-hidden="true">
+                 viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round"
                     d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
 

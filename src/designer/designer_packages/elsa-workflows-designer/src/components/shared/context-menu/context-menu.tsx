@@ -90,7 +90,7 @@ export class ContextMenu {
              data-transition-leave="tw-transition tw-ease-in tw-duration-75"
              data-transition-leave-start="tw-transform tw-opacity-100 tw-scale-100"
              data-transition-leave-end="tw-transform tw-opacity-0 tw-scale-95"
-             class={`tw-hidden tw-z-10 tw-mx-3 tw-absolute ${anchorPointClass} tw-w-48 tw-mt-1 tw-rounded-md tw-shadow-lg`}>
+             class={`hidden tw-z-10 tw-mx-3 tw-absolute ${anchorPointClass} tw-w-48 tw-mt-1 tw-rounded-md tw-shadow-lg`}>
           <div class="tw-rounded-md tw-bg-white tw-shadow-xs tw-ring-1 tw-ring-black tw-ring-opacity-5 tw-divide-y tw-divide-gray-100 focus:tw-outline-none" role="menu" aria-orientation="vertical" aria-labelledby="project-options-menu-0">
             {this.renderMenuItemGroups(menuItemGroups)}
           </div>

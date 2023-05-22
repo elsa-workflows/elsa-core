@@ -52,7 +52,7 @@ export class LoginPage {
     return <div class="tw-rounded-md tw-bg-red-50 tw-p-4">
       <div class="tw-flex">
         <div class="tw-flex-shrink-0">
-          <svg class="tw-h-5 tw-w-5 tw-text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-tw-hidden="true">
+          <svg class="tw-h-5 tw-w-5 tw-text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
             <path fill-rule="evenodd"
                   d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z"
                   clip-rule="evenodd"/>
@@ -72,8 +72,8 @@ export class LoginPage {
     return <div>
       <div class="tw-flex min-tw-h-full tw-flex-col tw-pt-20 tw-bg-gray-800 tw-h-screen">
 
-        <div class="mt-8 sm:tw-mx-auto sm:tw-w-full sm:tw-max-w-md">
-          <div class="tw-bg-white py-8 tw-px-4 tw-shadow sm:tw-rounded-lg sm:tw-px-10">
+        <div class="tw-mt-8 sm:tw-mx-auto sm:tw-w-full sm:tw-max-w-md">
+          <div class="tw-bg-white tw-py-8 tw-px-4 tw-shadow sm:tw-rounded-lg sm:tw-px-10">
 
             {this.renderError()}
 

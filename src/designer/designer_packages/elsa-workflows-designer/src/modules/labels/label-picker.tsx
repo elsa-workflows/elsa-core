@@ -63,7 +63,7 @@ export class LabelPicker {
     const labels = this.filteredLabels;
     const searchText = this.searchText;
 
-    return <div ref={el => this.flyoutPanel = el} class="tw-absolute tw-z-10 tw-right-0 tw-transform tw-mt-3 tw-px-2 tw-w-screen tw-max-w-md tw-px-0 tw-hidden"
+    return <div ref={el => this.flyoutPanel = el} class="tw-absolute tw-z-10 tw-right-0 tw-transform tw-mt-3 tw-px-2 tw-w-screen tw-max-w-md tw-px-0 hidden"
                 data-transition-enter="tw-transition tw-ease-out tw-duration-200"
                 data-transition-enter-start="tw-opacity-0 tw-translate-y-1"
                 data-transition-enter-end="tw-opacity-100 tw-translate-y-0"
@@ -74,7 +74,7 @@ export class LabelPicker {
       <div class="tw-rounded-lg tw-shadow-lg tw-ring-1 tw-ring-black tw-ring-opacity-5 tw-overflow-hidden">
         <div class="tw-mx-auto tw-max-w-3xl tw-transform tw-divide-y tw-divide-gray-100 tw-overflow-hidden tw-rounded-xl tw-bg-white tw-shadow-2xl tw-ring-1 tw-ring-black tw-ring-opacity-5 tw-transition-all tw-opacity-100 tw-scale-100">
           <div class="tw-relative">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-tw-hidden="true" class="tw-pointer-events-none tw-absolute top-3.5 left-4 tw-h-5 tw-w-5 tw-text-gray-400">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="tw-pointer-events-none tw-absolute top-3.5 left-4 tw-h-5 tw-w-5 tw-text-gray-400">
               <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
             </svg>
             <input class="tw-h-12 tw-w-full tw-border-0 tw-bg-transparent tw-pl-11 tw-pr-4 tw-text-gray-800 tw-placeholder-gray-400 focus:tw-ring-0 sm:tw-text-sm"
@@ -102,7 +102,7 @@ export class LabelPicker {
                       <div class="tw-flex-grow ">
                         <div class="tw-flex tw-gap-1.5">
                           <div class="tw-flex-shrink-0 tw-flex tw-flex-col tw-justify-center ">
-                            <div class="tw-w-4 tw-h-4 tw-rounded-full" style={colorStyle} aria-tw-hidden="true"/>
+                            <div class="tw-w-4 tw-h-4 tw-rounded-full" style={colorStyle} aria-hidden="true"/>
                           </div>
                           <div class="tw-flex-grow">
                             <p class="tw-text-sm tw-font-medium tw-text-gray-900 tw-font-bold">{label.name}</p>
