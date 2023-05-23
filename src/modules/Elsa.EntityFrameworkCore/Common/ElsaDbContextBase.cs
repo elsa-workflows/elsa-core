@@ -12,12 +12,12 @@ public abstract class ElsaDbContextBase : DbContext
     /// <summary>
     /// The schema used by Elsa.
     /// </summary>
-    public static string ElsaSchema { get; set; } = "Elsa";
+    public static string ElsaSchema = "Elsa";
     
     /// <summary>
     /// The table used to store the migrations history.
     /// </summary>
-    public const string MigrationsHistoryTable = "__EFMigrationsHistory";
+    public static string MigrationsHistoryTable = "__EFMigrationsHistory";
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ElsaDbContextBase"/> class.
@@ -25,10 +25,8 @@ public abstract class ElsaDbContextBase : DbContext
     protected ElsaDbContextBase(DbContextOptions options) : base(options)
     {
         var elsaDbContextOptions = options.FindExtension<ElsaDbContextOptionsExtension>()?.Options;
-        if(!string.IsNullOrEmpty(elsaDbContextOptions?.SchemaName))
-        {
-            ElsaSchema = elsaDbContextOptions.SchemaName;
-        }
+        ElsaSchema = elsaDbContextOptions?.SchemaName ?? ElsaSchema;
+        MigrationsHistoryTable = elsaDbContextOptions?.MigrationTableName ?? MigrationsHistoryTable;
     }
 
     /// <summary>
