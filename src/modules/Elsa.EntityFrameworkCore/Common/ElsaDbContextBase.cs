@@ -26,7 +26,7 @@ public abstract class ElsaDbContextBase : DbContext
     {
         var elsaDbContextOptions = options.FindExtension<ElsaDbContextOptionsExtension>()?.Options;
         ElsaSchema = elsaDbContextOptions?.SchemaName ?? ElsaSchema;
-        MigrationsHistoryTable = elsaDbContextOptions?.MigrationTableName ?? MigrationsHistoryTable;
+        MigrationsHistoryTable = elsaDbContextOptions?.MigrationsHistoryTableName ?? MigrationsHistoryTable;
     }
 
     /// <summary>
