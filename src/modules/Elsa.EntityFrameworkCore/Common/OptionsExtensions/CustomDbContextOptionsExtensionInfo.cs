@@ -22,7 +22,7 @@ public class CustomDbContextOptionsExtensionInfo : DbContextOptionsExtensionInfo
     public override void PopulateDebugInfo(IDictionary<string, string> debugInfo)
     {
         // Add any debug information about your custom extension to the dictionary
-        debugInfo["CustomExtension:CustomOption:SchemaName"] = ((ElsaDbContextOptionsExtension)Extension).Options.SchemaName;
+        //debugInfo["CustomExtension:CustomOption:SchemaName"] = ((ElsaDbContextOptionsExtension)Extension).Options.SchemaName;
     }
 
     public override bool ShouldUseSameServiceProvider(DbContextOptionsExtensionInfo other)

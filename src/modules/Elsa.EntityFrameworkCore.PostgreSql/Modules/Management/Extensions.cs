@@ -23,11 +23,9 @@ public static partial class Extensions
         return feature;
     }
     
-    public static EFCoreWorkflowManagementPersistenceFeature UsePostgreSql(this EFCoreWorkflowManagementPersistenceFeature feature, string connectionString)
+    public static EFCoreWorkflowManagementPersistenceFeature UsePostgreSql(this EFCoreWorkflowManagementPersistenceFeature feature, string connectionString, ElsaDbContextOptions options = default)
     {
-        feature.DbContextOptionsBuilder = (_, db) => db.UseElsaDbContextOptions(new ElsaDbContextOptions{
-            SchemaName = "akash"
-        }).UseElsaPostgreSql(connectionString);
+        feature.DbContextOptionsBuilder = (_, db) => db.UseElsaDbContextOptions(options).UseElsaPostgreSql(connectionString);
         return feature;
     }
 }

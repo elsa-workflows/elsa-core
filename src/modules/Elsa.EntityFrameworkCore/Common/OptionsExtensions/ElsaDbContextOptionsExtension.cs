@@ -29,9 +29,9 @@ public class ElsaDbContextOptionsExtension : IDbContextOptionsExtension
     {
         // Perform any validation of the options here
         // For example, check if the custom option is valid
-        if (string.IsNullOrEmpty(_options.SchemaName))
-        {
-            throw new InvalidOperationException("The custom option must be provided.");
-        }
+        //if (string.IsNullOrEmpty(_options.SchemaName))
+        //{
+        //    throw new InvalidOperationException("The custom option must be provided.");
+        //}
     }
 }
