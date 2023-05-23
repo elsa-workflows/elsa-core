@@ -27,7 +27,7 @@ services
             identity.UseConfigurationBasedRoleProvider(options => identitySection.Bind(options));
         })
         .UseDefaultAuthentication()
-        .UseWorkflowManagement(management => management.UseEntityFrameworkCore(ef => ef.UsePostgreSql(sqliteConnectionString)))
+        .UseWorkflowManagement(management => management.UseEntityFrameworkCore(ef => ef.UsePostgreSql(sqliteConnectionString, configuration.GetSection("ElsaDbContextOptions").Get<ElsaDbContextOptions>())))
         .UseWorkflowRuntime(runtime =>
         {
             runtime.UseDefaultRuntime(dr => dr.UseEntityFrameworkCore(ef => ef.UsePostgreSql(sqliteConnectionString)));
