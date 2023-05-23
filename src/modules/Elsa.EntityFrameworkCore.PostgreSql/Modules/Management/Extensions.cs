@@ -23,7 +23,7 @@ public static partial class Extensions
         return feature;
     }
     
-    public static EFCoreWorkflowManagementPersistenceFeature UsePostgreSql(this EFCoreWorkflowManagementPersistenceFeature feature, string connectionString, ElsaDbContextOptions options = default)
+    public static EFCoreWorkflowManagementPersistenceFeature UsePostgreSql(this EFCoreWorkflowManagementPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {
         feature.DbContextOptionsBuilder = (_, db) => db.UseElsaDbContextOptions(options).UseElsaPostgreSql(connectionString);
         return feature;
