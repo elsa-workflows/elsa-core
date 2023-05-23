@@ -17,7 +17,7 @@ export const InfoList: FunctionalComponent<InfoListProps> = ({ title, dictionary
       <div class="tw-mx-auto">
         <div>
           <div>
-            <h3 class="tw-text-md tw-leading-6 tw-font-medium tw-text-gray-900">{title}</h3>
+            <h3 class="tw-text-base tw-leading-6 tw-font-medium tw-text-gray-900">{title}</h3>
           </div>
           <div class="tw-mt-3 tw-border-t tw-border-gray-200">
             <dl class="sm:tw-divide-y sm:tw-divide-gray-200">
