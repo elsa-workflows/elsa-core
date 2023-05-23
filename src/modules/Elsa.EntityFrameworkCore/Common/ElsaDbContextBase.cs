@@ -24,10 +24,10 @@ public abstract class ElsaDbContextBase : DbContext
     /// </summary>
     protected ElsaDbContextBase(DbContextOptions options) : base(options)
     {
-        var customOtions = options.FindExtension<ElsaDbContextOptionsExtension>();
-        if(!string.IsNullOrEmpty(customOtions?.Options?.SchemaName))
+        var elsaDbContextOptions = options.FindExtension<ElsaDbContextOptionsExtension>()?.Options;
+        if(!string.IsNullOrEmpty(elsaDbContextOptions?.SchemaName))
         {
-            ElsaSchema = customOtions.Options.SchemaName;
+            ElsaSchema = elsaDbContextOptions.SchemaName;
         }
     }
 
