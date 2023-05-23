@@ -7,7 +7,7 @@ public class ElsaDbContextOptionsExtension : IDbContextOptionsExtension
 {
     private ElsaDbContextOptions _options;
 
-    public ElsaDbContextOptionsExtension(ElsaDbContextOptions options)
+    public ElsaDbContextOptionsExtension(ElsaDbContextOptions? options)
     {
         _options = options;
     }

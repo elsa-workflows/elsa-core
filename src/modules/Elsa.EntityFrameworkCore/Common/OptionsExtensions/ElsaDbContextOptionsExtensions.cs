@@ -7,7 +7,7 @@ public static class ElsaDbContextOptionsExtensions
 {
     public static DbContextOptionsBuilder UseElsaDbContextOptions(
         this DbContextOptionsBuilder optionsBuilder,
-        ElsaDbContextOptions options)
+        ElsaDbContextOptions? options)
     {
         ((IDbContextOptionsBuilderInfrastructure)optionsBuilder).AddOrUpdateExtension(
             new ElsaDbContextOptionsExtension(options));
