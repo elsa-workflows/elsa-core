@@ -155,7 +155,7 @@ export class ActivityProperties {
               </div>
               <div>
                 <span
-                  class={`tw-relative tw-inline-flex tw-items-center tw-rounded-full ${statusColor} tw-border tw-border-gray-300 tw-px-3 tw-tw-py-0.5 tw-text-sm`}>
+                  class={`tw-relative tw-inline-flex tw-items-center tw-rounded-full ${statusColor} tw-border tw-border-gray-300 tw-px-3 tw-py-0.5 tw-text-sm`}>
                   <span class="tw-absolute tw-flex-shrink-0 tw-flex tw-items-center tw-justify-center">
                     <span class={`tw-h-1.5 tw-w-1.5 tw-rounded-full`} aria-hidden="true"/>
                   </span>
