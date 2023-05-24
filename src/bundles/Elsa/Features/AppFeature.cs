@@ -8,7 +8,7 @@ namespace Elsa.Features;
 /// A wrapper for invoking application-specific configuration, ensuring it is invoked lastly.
 /// </summary>
 [DependsOn(typeof(ElsaFeature))]
-internal class AppFeature : FeatureBase
+public class AppFeature : FeatureBase
 {
     public AppFeature(IModule module) : base(module)
     {
