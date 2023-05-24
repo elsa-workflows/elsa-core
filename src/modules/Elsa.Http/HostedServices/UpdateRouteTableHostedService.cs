@@ -1,7 +1,4 @@
-﻿using Elsa.Extensions;
-using Elsa.Http.Contracts;
-using Elsa.Workflows.Core.Helpers;
-using Elsa.Workflows.Runtime.Contracts;
+﻿using Elsa.Http.Contracts;
 using Microsoft.Extensions.Hosting;
 
 namespace Elsa.Http.HostedServices;
@@ -11,30 +8,19 @@ namespace Elsa.Http.HostedServices;
 /// </summary>
 public class UpdateRouteTableHostedService : BackgroundService
 {
-    private readonly IRouteTable _routeTable;
-    private readonly ITriggerStore _triggerStore;
-    private readonly IBookmarkStore _bookmarkStore;
+    private readonly IRouteTableUpdater _routeTableUpdater;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="UpdateRouteTableHostedService"/> class.
     /// </summary>
-    public UpdateRouteTableHostedService(IRouteTable routeTable, ITriggerStore triggerStore, IBookmarkStore bookmarkStore)
+    public UpdateRouteTableHostedService(IRouteTableUpdater routeTableUpdater)
     {
-        _routeTable = routeTable;
-        _triggerStore = triggerStore;
-        _bookmarkStore = bookmarkStore;
+        _routeTableUpdater = routeTableUpdater;
     }
 
     /// <inheritdoc />
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var bookmarkName = ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>();
-        var triggerFilter = new TriggerFilter { Name = bookmarkName };
-        var bookmarkFilter = new BookmarkFilter { ActivityTypeName = bookmarkName};
-        var triggers = (await _triggerStore.FindManyAsync(triggerFilter, stoppingToken)).ToList();
-        var bookmarks = (await _bookmarkStore.FindManyAsync(bookmarkFilter, stoppingToken)).ToList();
-
-        _routeTable.AddRoutes(triggers);
-        _routeTable.AddRoutes(bookmarks);
+        await _routeTableUpdater.UpdateAsync(stoppingToken);
     }
 }
