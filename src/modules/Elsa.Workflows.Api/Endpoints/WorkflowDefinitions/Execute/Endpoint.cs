@@ -54,7 +54,7 @@ internal class Execute : ElsaEndpoint<Request, Response>
 
         var correlationId = request.CorrelationId;
         var input = (IDictionary<string, object>?)request.Input;
-        var startWorkflowOptions = new StartWorkflowRuntimeOptions(correlationId, input, VersionOptions.Published);
+        var startWorkflowOptions = new StartWorkflowRuntimeOptions(correlationId, input, VersionOptions.Published, request.TriggerActivityId);
         var result = await _workflowRuntime.StartWorkflowAsync(definitionId, startWorkflowOptions, cancellationToken);
 
         // If a workflow fault occurred, respond appropriately with a 500 internal server error.
