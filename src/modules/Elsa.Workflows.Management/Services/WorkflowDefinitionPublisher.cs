@@ -39,8 +39,9 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
     }
 
     /// <inheritdoc />
-    public WorkflowDefinition New()
+    public WorkflowDefinition New(IActivity? root = default)
     {
+        root ??= new Sequence();
         var id = _identityGenerator.GenerateId();
         var definitionId = _identityGenerator.GenerateId();
         const int version = 1;
@@ -53,7 +54,7 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
             IsLatest = true,
             IsPublished = false,
             CreatedAt = _systemClock.UtcNow,
-            StringData = _activitySerializer.Serialize(new Sequence()),
+            StringData = _activitySerializer.Serialize(root),
             MaterializerName = JsonWorkflowMaterializer.MaterializerName
         };
     }
@@ -155,7 +156,7 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
         var definitionId = definition.DefinitionId;
         var filter = new WorkflowDefinitionFilter { DefinitionId = definitionId };
         var lastVersion = await _workflowDefinitionStore.FindLastVersionAsync(filter, cancellationToken);
-        
+
         draft.Version = draft.Id == lastVersion?.Id ? lastVersion.Version : lastVersion?.Version + 1 ?? 1;
         draft.IsLatest = true;
         draft = Initialize(draft);

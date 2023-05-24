@@ -1,4 +1,6 @@
 using Elsa.Common.Models;
+using Elsa.Workflows.Core.Activities;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Management.Entities;
 using JetBrains.Annotations;
 
@@ -13,8 +15,9 @@ public interface IWorkflowDefinitionPublisher
     /// <summary>
     /// Creates a new workflow definition.
     /// </summary>
-    /// <returns></returns>
-    WorkflowDefinition New();
+    /// <param name="root">Optionally provide the root activity. If not specified, <see cref="Sequence" /> will be used/></param>
+    /// <returns>The new workflow definition.</returns>
+    WorkflowDefinition New(IActivity? root = default);
 
     /// <summary>
     /// Publishes a workflow definition.
