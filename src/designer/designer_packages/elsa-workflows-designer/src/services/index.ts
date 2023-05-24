@@ -16,3 +16,4 @@ export * from './activity-walker';
 export * from './default-port-provider';
 export * from './port-provider';
 export * from './port-provider-registry';
+export * from './monaco-editor-settings';
