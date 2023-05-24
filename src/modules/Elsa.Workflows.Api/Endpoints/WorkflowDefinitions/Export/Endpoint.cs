@@ -70,6 +70,7 @@ public class Export : ElsaEndpoint<Request>
             definition.Outcomes,
             definition.CustomProperties,
             definition.UsableAsActivity,
+            definition.IsReadonly,
             definition.IsLatest,
             definition.IsPublished,
             definition.Options,

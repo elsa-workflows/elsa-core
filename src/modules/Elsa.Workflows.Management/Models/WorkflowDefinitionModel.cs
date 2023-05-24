@@ -19,6 +19,7 @@ namespace Elsa.Workflows.Management.Models;
 /// <param name="Outcomes"></param>
 /// <param name="CustomProperties"></param>
 /// <param name="UsableAsActivity"></param>
+/// <param name="IsReadonly"></param>
 /// <param name="IsLatest"></param>
 /// <param name="IsPublished"></param>
 /// <param name="Options">The type of <see cref="IWorkflowActivationStrategy"/> to apply when new instances are requested to be created.</param>
@@ -37,6 +38,7 @@ public record WorkflowDefinitionModel(
     ICollection<string>? Outcomes,
     IDictionary<string, object>? CustomProperties,
     bool? UsableAsActivity,
+    bool IsReadonly,
     bool IsLatest,
     bool IsPublished,
     WorkflowOptions? Options,
@@ -45,6 +47,7 @@ public record WorkflowDefinitionModel(
 {
     /// <inheritdoc />
     public WorkflowDefinitionModel() : this(
+        default!,
         default!,
         default!,
         default!,

@@ -28,10 +28,13 @@ export class WorkflowDefinitionEditorInstance {
     this.workflowDefinitionManager = Container.get(WorkflowDefinitionManager);
     this.workflowDefinitionEditorService = Container.get(WorkflowDefinitionEditorService);
 
-    toolbarComponentStore.components = [() => <elsa-workflow-publish-button onPublishClicked={this.onPublishClicked}
-                                                                            onUnPublishClicked={this.onUnPublishClicked}
-                                                                            onExportClicked={this.onExportClicked}
-                                                                            onImportClicked={this.onImportClicked}/>];
+      toolbarComponentStore.components = [() => <elsa-workflow-publish-button
+        onPublishClicked={this.onPublishClicked}
+        onUnPublishClicked={this.onUnPublishClicked}
+        onExportClicked={this.onExportClicked}
+        onImportClicked={this.onImportClicked}
+        disabled={workflowDefinition.isReadonly}
+      />];
 
     studioComponentStore.activeComponentFactory = () => <elsa-workflow-definition-editor
       workflowDefinition={workflowDefinition} onWorkflowUpdated={this.onWorkflowUpdated}

@@ -6,6 +6,7 @@ import {Graph} from '@antv/x6';
 })
 export class Toolbox {
   @Prop() graph: Graph;
+  @Prop() isReadonly: boolean;
   @State() selectedTabIndex: number = 0;
 
   private onTabSelected = (e: Event, index: number) => {
@@ -37,6 +38,7 @@ export class Toolbox {
           <div class="tw-flex-1 tw-relative">
             <div class="tw-absolute tw-inset-0 tw-overflow-y-scroll">
               <elsa-workflow-definition-editor-toolbox-activities
+                isReadonly={this.isReadonly}
                 graph={this.graph}
                 class={selectedTabIndex == 0 ? '' : 'hidden'}/>
             </div>

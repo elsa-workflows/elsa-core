@@ -30,6 +30,7 @@ export class WorkflowDefinitionPropertiesEditor {
 
   @Prop() workflowDefinition?: WorkflowDefinition;
   @Prop() workflowVersions: Array<WorkflowDefinition>;
+  @Prop() readonly: boolean;
   @Event() workflowPropsUpdated: EventEmitter<WorkflowDefinitionPropsUpdatedArgs>;
   @Event() versionSelected: EventEmitter<WorkflowDefinition>;
   @Event() deleteVersionClicked: EventEmitter<WorkflowDefinition>;
@@ -69,6 +70,7 @@ export class WorkflowDefinitionPropertiesEditor {
 
     return (
       <elsa-form-panel
+        isReadonly={this.readonly}
         mainTitle={title}
         subTitle={subTitle}
         tabs={tabs}
@@ -121,7 +123,8 @@ export class WorkflowDefinitionPropertiesEditor {
             'Definition ID': isNullOrWhitespace(workflow.definitionId) ? '(new)' : workflow.definitionId,
             'Version ID': isNullOrWhitespace(workflow.id) ? '(new)' : workflow.id,
             'Version': workflow.version.toString(),
-            'Status': workflow.isPublished ? 'Published' : 'Draft'
+            'Status': workflow.isPublished ? 'Published' : 'Draft',
+            'Readonly': workflow.isReadonly ? 'Yes' : 'No'
           };
 
           return <InfoList title="Information" dictionary={workflowDetails}/>;

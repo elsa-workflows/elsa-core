@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -27,6 +28,7 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                     StringData = table.Column<string>(type: "text", nullable: true),
                     BinaryData = table.Column<byte[]>(type: "bytea", nullable: true),
                     UsableAsActivity = table.Column<bool>(type: "boolean", nullable: true),
+                    IsReadonly = table.Column<bool>(type: "boolean", nullable: false),
                     Data = table.Column<string>(type: "text", nullable: true),
                     CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     Version = table.Column<int>(type: "integer", nullable: false),

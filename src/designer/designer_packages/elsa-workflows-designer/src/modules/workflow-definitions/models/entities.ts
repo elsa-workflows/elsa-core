@@ -12,6 +12,7 @@ export interface WorkflowDefinition extends VersionedEntity {
   materializerName: string;
   materializerContext?: string;
   usableAsActivity?: boolean;
+  isReadonly: boolean;
   options?: WorkflowOptions;
   root: Activity;
 }
@@ -25,6 +26,7 @@ export interface WorkflowDefinitionSummary {
   isPublished: boolean;
   isLatest: boolean;
   materializerName: string;
+  isReadonly: boolean;
 }
 
 export interface WorkflowOptions {

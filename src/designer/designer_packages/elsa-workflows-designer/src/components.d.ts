@@ -31,32 +31,6 @@ import { RenderActivityPropsContext } from "./modules/workflow-definitions/compo
 import { ActivityDriverRegistry } from "./services";
 import { JournalItemSelectedArgs } from "./modules/workflow-instances/events";
 import { PublishClickedArgs } from "./modules/workflow-definitions/components/publish-button";
-export { InputDefinition, OutputDefinition, WorkflowDefinition, WorkflowDefinitionSummary } from "./modules/workflow-definitions/models/entities";
-export { Activity, ActivityDeletedArgs, ActivitySelectedArgs, ChildActivitySelectedArgs, ContainerSelectedArgs, EditChildActivityArgs, GraphUpdatedArgs, IntellisenseContext, SelectList, SelectListItem, TabChangedArgs, TabDefinition, Variable, WorkflowExecutionLogRecord, WorkflowInstance, WorkflowInstanceSummary, WorkflowUpdatedArgs } from "./models";
-export { ActivityUpdatedArgs, DeleteActivityRequestedArgs, Widget, WorkflowDefinitionPropsUpdatedArgs, WorkflowDefinitionUpdatedArgs } from "./modules/workflow-definitions/models/ui";
-export { Button } from "./components/shared/button-group/models";
-export { ActivityInputContext } from "./services/activity-input-driver";
-export { ContextMenuAnchorPoint, ContextMenuItem } from "./components/shared/context-menu/models";
-export { DropdownButtonItem, DropdownButtonOrigin } from "./components/shared/dropdown-button/models";
-export { Graph } from "@antv/x6";
-export { AddActivityArgs, FlowchartPathItem, LayoutDirection, RenameActivityArgs, UpdateActivityArgs } from "./modules/flowchart/models";
-export { OutNode } from "@antv/layout";
-export { ActivityNodeShape } from "./modules/flowchart/shapes";
-export { PanelActionClickArgs, PanelActionDefinition } from "./components/shared/form-panel/models";
-export { ExpressionChangedArs } from "./components/shared/input-control-switch/input-control-switch";
-export { SignedInArgs } from "./modules/login/models";
-export { ModalActionClickArgs, ModalActionDefinition, ModalDialogInstance } from "./components/shared/modal-dialog/models";
-export { ModalType } from "./components/shared/modal-dialog/modal-type";
-export { MonacoValueChangedArgs } from "./components/shared/monaco-editor/monaco-editor";
-export { NotificationType } from "./modules/notifications/models";
-export { PagerData } from "./components/shared/pager/pager";
-export { PanelPosition, PanelStateChangedArgs } from "./components/panel/models";
-export { StudioInitializingContext } from "./models/studio";
-export { WorkflowContextProviderDescriptor } from "./modules/workflow-contexts/services/api";
-export { RenderActivityPropsContext } from "./modules/workflow-definitions/components/models";
-export { ActivityDriverRegistry } from "./services";
-export { JournalItemSelectedArgs } from "./modules/workflow-instances/events";
-export { PublishClickedArgs } from "./modules/workflow-definitions/components/publish-button";
 export namespace Components {
     interface ElsaActivityInputEditorDialogContent {
         "getInput": () => Promise<InputDefinition>;
@@ -77,6 +51,7 @@ export namespace Components {
     interface ElsaActivityPropertiesEditor {
         "activity"?: Activity;
         "hide": () => Promise<void>;
+        "isReadonly": boolean;
         "outputs": Array<OutputDefinition>;
         "show": () => Promise<void>;
         "variables": Array<Variable>;
@@ -119,6 +94,7 @@ export namespace Components {
         "displayType": string;
     }
     interface ElsaDropdownButton {
+        "disabled": boolean;
         "handler"?: () => void;
         "icon"?: any;
         "items": Array<DropdownButtonItem>;
@@ -139,6 +115,7 @@ export namespace Components {
         "getActivity": (id: string) => Promise<Activity>;
         "getGraph": () => Promise<Graph>;
         "interactiveMode": boolean;
+        "isReadonly": boolean;
         "newRoot": () => Promise<Activity>;
         "renameActivity": (args: RenameActivityArgs) => Promise<void>;
         "reset": () => Promise<void>;
@@ -152,6 +129,7 @@ export namespace Components {
     }
     interface ElsaFormPanel {
         "actions": Array<PanelActionDefinition>;
+        "isReadonly": boolean;
         "mainTitle": string;
         "orientation": 'Landscape' | 'Portrait';
         "selectedTabIndex"?: number;
@@ -336,9 +314,11 @@ export namespace Components {
     }
     interface ElsaWorkflowDefinitionEditorToolbox {
         "graph": Graph;
+        "isReadonly": boolean;
     }
     interface ElsaWorkflowDefinitionEditorToolboxActivities {
         "graph": Graph;
+        "isReadonly": boolean;
     }
     interface ElsaWorkflowDefinitionInputOutputSettings {
         "inputs"?: Array<InputDefinition>;
@@ -350,6 +330,7 @@ export namespace Components {
     }
     interface ElsaWorkflowDefinitionPropertiesEditor {
         "hide": () => Promise<void>;
+        "readonly": boolean;
         "show": () => Promise<void>;
         "workflowDefinition"?: WorkflowDefinition;
         "workflowVersions": Array<WorkflowDefinition>;
@@ -386,6 +367,7 @@ export namespace Components {
         "rootActivity": Activity;
     }
     interface ElsaWorkflowPublishButton {
+        "disabled": boolean;
         "publishing": boolean;
     }
     interface ElsaWorkflowToolbar {
@@ -1031,6 +1013,7 @@ declare namespace LocalJSX {
     }
     interface ElsaActivityPropertiesEditor {
         "activity"?: Activity;
+        "isReadonly"?: boolean;
         "onActivityUpdated"?: (event: ElsaActivityPropertiesEditorCustomEvent<ActivityUpdatedArgs>) => void;
         "onDeleteActivityRequested"?: (event: ElsaActivityPropertiesEditorCustomEvent<DeleteActivityRequestedArgs>) => void;
         "outputs"?: Array<OutputDefinition>;
@@ -1075,6 +1058,7 @@ declare namespace LocalJSX {
         "onEditChildActivity"?: (event: ElsaDefaultActivityTemplateCustomEvent<EditChildActivityArgs>) => void;
     }
     interface ElsaDropdownButton {
+        "disabled"?: boolean;
         "handler"?: () => void;
         "icon"?: any;
         "items"?: Array<DropdownButtonItem>;
@@ -1092,6 +1076,7 @@ declare namespace LocalJSX {
     }
     interface ElsaFlowchart {
         "interactiveMode"?: boolean;
+        "isReadonly"?: boolean;
         "onActivityDeleted"?: (event: ElsaFlowchartCustomEvent<ActivityDeletedArgs>) => void;
         "onActivitySelected"?: (event: ElsaFlowchartCustomEvent<ActivitySelectedArgs>) => void;
         "onChildActivitySelected"?: (event: ElsaFlowchartCustomEvent<ChildActivitySelectedArgs>) => void;
@@ -1103,6 +1088,7 @@ declare namespace LocalJSX {
     }
     interface ElsaFormPanel {
         "actions"?: Array<PanelActionDefinition>;
+        "isReadonly"?: boolean;
         "mainTitle"?: string;
         "onActionInvoked"?: (event: ElsaFormPanelCustomEvent<PanelActionClickArgs>) => void;
         "onSelectedTabIndexChanged"?: (event: ElsaFormPanelCustomEvent<TabChangedArgs>) => void;
@@ -1296,9 +1282,11 @@ declare namespace LocalJSX {
     }
     interface ElsaWorkflowDefinitionEditorToolbox {
         "graph"?: Graph;
+        "isReadonly"?: boolean;
     }
     interface ElsaWorkflowDefinitionEditorToolboxActivities {
         "graph"?: Graph;
+        "isReadonly"?: boolean;
     }
     interface ElsaWorkflowDefinitionInputOutputSettings {
         "inputs"?: Array<InputDefinition>;
@@ -1316,6 +1304,7 @@ declare namespace LocalJSX {
         "onRevertVersionClicked"?: (event: ElsaWorkflowDefinitionPropertiesEditorCustomEvent<WorkflowDefinition>) => void;
         "onVersionSelected"?: (event: ElsaWorkflowDefinitionPropertiesEditorCustomEvent<WorkflowDefinition>) => void;
         "onWorkflowPropsUpdated"?: (event: ElsaWorkflowDefinitionPropertiesEditorCustomEvent<WorkflowDefinitionPropsUpdatedArgs>) => void;
+        "readonly"?: boolean;
         "workflowDefinition"?: WorkflowDefinition;
         "workflowVersions"?: Array<WorkflowDefinition>;
     }
@@ -1350,6 +1339,7 @@ declare namespace LocalJSX {
         "rootActivity"?: Activity;
     }
     interface ElsaWorkflowPublishButton {
+        "disabled"?: boolean;
         "onExportClicked"?: (event: ElsaWorkflowPublishButtonCustomEvent<any>) => void;
         "onImportClicked"?: (event: ElsaWorkflowPublishButtonCustomEvent<File>) => void;
         "onNewClicked"?: (event: ElsaWorkflowPublishButtonCustomEvent<any>) => void;

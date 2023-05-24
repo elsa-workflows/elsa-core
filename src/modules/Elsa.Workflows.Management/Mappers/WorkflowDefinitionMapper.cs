@@ -68,6 +68,7 @@ public class WorkflowDefinitionMapper
             workflowDefinition.Outcomes,
             workflowDefinition.CustomProperties,
             workflowDefinition.UsableAsActivity,
+            workflowDefinition.IsReadonly,
             workflowDefinition.IsLatest,
             workflowDefinition.IsPublished,
             workflow.Options,

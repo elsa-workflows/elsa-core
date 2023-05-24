@@ -44,7 +44,6 @@ export const ElsaOutputPickerInput = /*@__PURE__*/createReactComponent<JSX.ElsaO
 export const ElsaPager = /*@__PURE__*/createReactComponent<JSX.ElsaPager, HTMLElsaPagerElement>('elsa-pager');
 export const ElsaPanel = /*@__PURE__*/createReactComponent<JSX.ElsaPanel, HTMLElsaPanelElement>('elsa-panel');
 export const ElsaRadioListInput = /*@__PURE__*/createReactComponent<JSX.ElsaRadioListInput, HTMLElsaRadioListInputElement>('elsa-radio-list-input');
-export const ElsaShell = /*@__PURE__*/createReactComponent<JSX.ElsaShell, HTMLElsaShellElement>('elsa-shell');
 export const ElsaSingleLineInput = /*@__PURE__*/createReactComponent<JSX.ElsaSingleLineInput, HTMLElsaSingleLineInputElement>('elsa-single-line-input');
 export const ElsaSlideOverPanel = /*@__PURE__*/createReactComponent<JSX.ElsaSlideOverPanel, HTMLElsaSlideOverPanelElement>('elsa-slide-over-panel');
 export const ElsaStudio = /*@__PURE__*/createReactComponent<JSX.ElsaStudio, HTMLElsaStudioElement>('elsa-studio');

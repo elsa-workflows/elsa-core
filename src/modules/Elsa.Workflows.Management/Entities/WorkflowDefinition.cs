@@ -78,7 +78,12 @@ public class WorkflowDefinition : VersionedEntity
     /// An option to use the workflow as an activity in another workflow.
     /// </summary>
     public bool? UsableAsActivity { get; set; } = false;
-    
+
+    /// <summary>
+    /// An option to use the workflow as an readonly workflow
+    /// </summary>
+    public bool IsReadonly { get; set; } = false;
+
     /// <summary>
     /// Creates and returns a shallow copy of the workflow definition.
     /// </summary>

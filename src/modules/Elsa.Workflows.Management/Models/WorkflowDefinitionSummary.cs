@@ -7,7 +7,7 @@ namespace Elsa.Workflows.Management.Models;
 /// A summary of a workflow definition.
 /// </summary>
 [PublicAPI]
-public record WorkflowDefinitionSummary(string Id, string DefinitionId, string? Name, string? Description, int? Version, bool IsLatest, bool IsPublished, string MaterializerName, DateTimeOffset CreatedAt)
+public record WorkflowDefinitionSummary(string Id, string DefinitionId, string? Name, string? Description, int? Version, bool IsLatest, bool IsPublished, string MaterializerName, DateTimeOffset CreatedAt, bool IsReadonly)
 {
     /// <summary>
     /// Creates a new instance of the <see cref="WorkflowDefinitionSummary"/> class from the specified <see cref="WorkflowDefinition"/> instance.
@@ -21,6 +21,7 @@ public record WorkflowDefinitionSummary(string Id, string DefinitionId, string? 
         workflowDefinition.IsLatest,
         workflowDefinition.IsPublished,
         workflowDefinition.MaterializerName,
-        workflowDefinition.CreatedAt
+        workflowDefinition.CreatedAt,
+        workflowDefinition.IsReadonly
     );
 }
