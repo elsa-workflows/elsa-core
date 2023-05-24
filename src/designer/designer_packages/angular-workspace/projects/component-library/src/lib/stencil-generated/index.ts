@@ -39,7 +39,6 @@ export const DIRECTIVES = [
   d.ElsaPager,
   d.ElsaPanel,
   d.ElsaRadioListInput,
-  d.ElsaShell,
   d.ElsaSingleLineInput,
   d.ElsaSlideOverPanel,
   d.ElsaStudio,

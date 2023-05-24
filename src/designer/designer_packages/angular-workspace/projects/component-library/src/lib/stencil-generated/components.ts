@@ -956,33 +956,6 @@ export declare interface ElsaRadioListInput extends Components.ElsaRadioListInpu
 
 
 @ProxyCmp({
-})
-@Component({
-  selector: 'elsa-shell',
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  template: '<ng-content></ng-content>',
-  // eslint-disable-next-line @angular-eslint/no-inputs-metadata-property
-  inputs: [],
-})
-export class ElsaShell {
-  protected el: HTMLElement;
-  constructor(c: ChangeDetectorRef, r: ElementRef, protected z: NgZone) {
-    c.detach();
-    this.el = r.nativeElement;
-    proxyOutputs(this, this.el, ['initializing']);
-  }
-}
-
-
-import type { ShellInitializingContext as IElsaShellShellInitializingContext } from '@elsa-workflows/elsa-workflows-designer';
-
-export declare interface ElsaShell extends Components.ElsaShell {
-
-  initializing: EventEmitter<CustomEvent<IElsaShellShellInitializingContext>>;
-}
-
-
-@ProxyCmp({
   inputs: ['inputContext']
 })
 @Component({
@@ -1032,25 +1005,31 @@ export declare interface ElsaSlideOverPanel extends Components.ElsaSlideOverPane
 
 
 @ProxyCmp({
-  inputs: ['enableFlexiblePorts', 'monacoLibPath', 'serverUrl']
+  inputs: ['disableAuth', 'enableFlexiblePorts', 'monacoLibPath', 'serverUrl']
 })
 @Component({
   selector: 'elsa-studio',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: '<ng-content></ng-content>',
   // eslint-disable-next-line @angular-eslint/no-inputs-metadata-property
-  inputs: ['enableFlexiblePorts', 'monacoLibPath', 'serverUrl'],
+  inputs: ['disableAuth', 'enableFlexiblePorts', 'monacoLibPath', 'serverUrl'],
 })
 export class ElsaStudio {
   protected el: HTMLElement;
   constructor(c: ChangeDetectorRef, r: ElementRef, protected z: NgZone) {
     c.detach();
     this.el = r.nativeElement;
+    proxyOutputs(this, this.el, ['initializing']);
   }
 }
 
 
-export declare interface ElsaStudio extends Components.ElsaStudio {}
+import type { StudioInitializingContext as IElsaStudioStudioInitializingContext } from '@elsa-workflows/elsa-workflows-designer';
+
+export declare interface ElsaStudio extends Components.ElsaStudio {
+
+  initializing: EventEmitter<CustomEvent<IElsaStudioStudioInitializingContext>>;
+}
 
 
 @ProxyCmp({
