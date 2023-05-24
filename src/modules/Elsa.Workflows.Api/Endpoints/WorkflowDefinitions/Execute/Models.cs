@@ -8,7 +8,8 @@ internal class Request
 {
     public string DefinitionId { get; set; } = default!;
     public string? CorrelationId { get; set; }
-    
+    public string? TriggerActivityId { get; set; }
+
     [JsonConverter(typeof(ExpandoObjectConverterFactory))]
     public object? Input { get; set; }
 }
