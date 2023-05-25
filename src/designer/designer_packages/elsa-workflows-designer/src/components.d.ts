@@ -31,8 +31,6 @@ import { RenderActivityPropsContext } from "./modules/workflow-definitions/compo
 import { ActivityDriverRegistry } from "./services";
 import { JournalItemSelectedArgs } from "./modules/workflow-instances/events";
 import { PublishClickedArgs } from "./modules/workflow-definitions/components/publish-button";
-
-
 export { InputDefinition, OutputDefinition, WorkflowDefinition, WorkflowDefinitionSummary } from "./modules/workflow-definitions/models/entities";
 export { Activity, ActivityDeletedArgs, ActivitySelectedArgs, ChildActivitySelectedArgs, ContainerSelectedArgs, EditChildActivityArgs, GraphUpdatedArgs, IntellisenseContext, SelectList, SelectListItem, TabChangedArgs, TabDefinition, Variable, WorkflowExecutionLogRecord, WorkflowInstance, WorkflowInstanceSummary, WorkflowUpdatedArgs } from "./models";
 export { ActivityUpdatedArgs, DeleteActivityRequestedArgs, Widget, WorkflowDefinitionPropsUpdatedArgs, WorkflowDefinitionUpdatedArgs } from "./modules/workflow-definitions/models/ui";
@@ -59,8 +57,6 @@ export { RenderActivityPropsContext } from "./modules/workflow-definitions/compo
 export { ActivityDriverRegistry } from "./services";
 export { JournalItemSelectedArgs } from "./modules/workflow-instances/events";
 export { PublishClickedArgs } from "./modules/workflow-definitions/components/publish-button";
-
-
 export namespace Components {
     interface ElsaActivityInputEditorDialogContent {
         "getInput": () => Promise<InputDefinition>;
