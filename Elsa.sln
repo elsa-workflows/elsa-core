@@ -7,19 +7,19 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "common", "common", "{C6658DE0-2B2F-47F0-BB61-2CA66D435C09}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "solution", "solution", "{7D21EB5E-D6B4-48A5-A9BC-A26387A65F0B}"
-	ProjectSection(SolutionItems) = preProject
-		README.md = README.md
-		docker-compose.yml = docker-compose.yml
-		common.props = common.props
-		configureawait.props = configureawait.props
-		.gitignore = .gitignore
-		icon.png = icon.png
-		.github\workflows\packages.yml = .github\workflows\packages.yml
-		.github\workflows\all-in-one-web.yml = .github\workflows\all-in-one-web.yml
-		build-and-run-all-in-one-web-docker.sh = build-and-run-all-in-one-web-docker.sh
-		NuGet.Config = NuGet.Config
-		.github\workflows\npm-packages.yml = .github\workflows\npm-packages.yml
-	EndProjectSection
+ProjectSection(SolutionItems) = preProject
+	README.md = README.md
+	docker-compose.yml = docker-compose.yml
+	common.props = common.props
+	configureawait.props = configureawait.props
+	.gitignore = .gitignore
+	icon.png = icon.png
+	.github\workflows\packages.yml = .github\workflows\packages.yml
+	.github\workflows\all-in-one-web.yml = .github\workflows\all-in-one-web.yml
+	build-and-run-all-in-one-web-docker.sh = build-and-run-all-in-one-web-docker.sh
+	NuGet.Config = NuGet.Config
+	.github\workflows\npm-packages.yml = .github\workflows\npm-packages.yml
+EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{0354F050-3992-4DD4-B0EE-5FBA04AC72B6}"
 EndProject
