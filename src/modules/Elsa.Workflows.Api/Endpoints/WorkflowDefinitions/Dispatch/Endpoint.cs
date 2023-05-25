@@ -41,6 +41,7 @@ internal class Endpoint : ElsaEndpoint<Request, Response>
 
         var instanceId = request.InstanceId ?? _identityGenerator.GenerateId();
         var correlationId = request.CorrelationId;
+        var triggerActivityId = request.TriggerActivityId;
         var input = (IDictionary<string, object>?)request.Input;
         var dispatchRequest = new DispatchWorkflowDefinitionRequest
         {
@@ -48,7 +49,8 @@ internal class Endpoint : ElsaEndpoint<Request, Response>
             VersionOptions = VersionOptions.Published,
             Input = input,
             InstanceId = instanceId,
-            CorrelationId = correlationId
+            CorrelationId = correlationId,
+            TriggerActivityId = triggerActivityId
         };
 
         await _workflowDispatcher.DispatchAsync(dispatchRequest, cancellationToken);

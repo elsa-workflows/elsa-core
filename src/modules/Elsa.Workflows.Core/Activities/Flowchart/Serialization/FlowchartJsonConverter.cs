@@ -10,10 +10,17 @@ namespace Elsa.Workflows.Core.Activities.Flowchart.Serialization;
 /// </summary>
 public class FlowchartJsonConverter : JsonConverter<Activities.Flowchart>
 {
+    private readonly IIdentityGenerator _identityGenerator;
     private const string AllActivitiesKey = "AllActivities";
     private const string AllConnectionsKey = "AllConnections";
     private const string NotFoundConnectionsKey = "NotFoundConnectionsKey";
 
+    /// <inheritdoc />
+    public FlowchartJsonConverter(IIdentityGenerator identityGenerator)
+    {
+        _identityGenerator = identityGenerator;
+    }
+    
     /// <inheritdoc />
     public override Activities.Flowchart Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
@@ -22,7 +29,7 @@ public class FlowchartJsonConverter : JsonConverter<Activities.Flowchart>
 
         var connectionsElement = doc.RootElement.TryGetProperty("connections", out var connectionsEl) ? connectionsEl : default;
         var activitiesElement = doc.RootElement.TryGetProperty("activities", out var activitiesEl) ? activitiesEl : default;
-        var id = doc.RootElement.GetProperty("id").GetString()!;
+        var id = doc.RootElement.TryGetProperty("id", out var idAttribute) ? idAttribute.GetString() : _identityGenerator.GenerateId();
         var startId = doc.RootElement.TryGetProperty("start", out var startElement) ? startElement.GetString() : default;
         var activities = activitiesElement.ValueKind != JsonValueKind.Undefined ? activitiesElement.Deserialize<ICollection<IActivity>>(options) ?? new List<IActivity>() : new List<IActivity>();
         var metadataElement = doc.RootElement.TryGetProperty("metadata", out var metadataEl) ? metadataEl : default;

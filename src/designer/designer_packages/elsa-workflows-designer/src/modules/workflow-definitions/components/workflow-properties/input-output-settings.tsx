@@ -76,7 +76,7 @@ export class InputOutputSettings {
 
     return <div>
       <div class="tw-p-4">
-        <h3 class="tw-text-md tw-leading-6 tw-font-medium tw-text-gray-900">Inputs</h3>
+        <h3 class="tw-text-base tw-leading-6 tw-font-medium tw-text-gray-900">Inputs</h3>
       </div>
       <div class="tw-align-middle tw-inline-block tw-min-w-full tw-border-b tw-border-gray-200">
         <table class="default-table">
@@ -122,7 +122,7 @@ export class InputOutputSettings {
 
     return <div>
       <div class="tw-p-4">
-        <h3 class="tw-text-md tw-leading-6 tw-font-medium tw-text-gray-900">Outputs</h3>
+        <h3 class="tw-text-base tw-leading-6 tw-font-medium tw-text-gray-900">Outputs</h3>
       </div>
       <div class="tw-align-middle tw-inline-block tw-min-w-full tw-border-b tw-border-gray-200">
         <table class="default-table">
@@ -168,7 +168,7 @@ export class InputOutputSettings {
 
     return <div>
       <div class="tw-p-4">
-        <h3 class="tw-text-md tw-leading-6 tw-font-medium tw-text-gray-900">Outcomes</h3>
+        <h3 class="tw-text-base tw-leading-6 tw-font-medium tw-text-gray-900">Outcomes</h3>
       </div>
       <FormEntry label="" fieldId="WorkflowDefinitionOutcomes" hint="Enter a list of possible outcomes for this workflow.">
         <elsa-input-tags placeHolder="Add outcome" values={outcomes} onValueChanged={e => this.onOutcomesChanged(e.detail)}/>

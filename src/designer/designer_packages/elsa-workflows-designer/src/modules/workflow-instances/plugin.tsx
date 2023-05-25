@@ -13,17 +13,19 @@ import studioComponentStore from "../../data/studio-component-store";
 import NotificationService from "../notifications/notification-service";
 import {uuid} from "@antv/x6/es/util/string/uuid";
 import {NotificationDisplayType} from "../notifications/models";
+import {WorkflowInstanceViewerService} from "./services/viewer-service";
 
 @Service()
 export class WorkflowInstancesPlugin implements Plugin {
+  private readonly workflowInstanceViewerService: WorkflowInstanceViewerService;
   private readonly eventBus: EventBus;
   private readonly workflowDefinitionsApi: WorkflowDefinitionsApi;
   private readonly workflowInstancesApi: WorkflowInstancesApi;
   private readonly modalDialogService: ModalDialogService;
   private workflowInstanceBrowserInstance: ModalDialogInstance;
-  private workflowInstanceViewerElement: HTMLElsaWorkflowInstanceViewerElement;
 
   constructor() {
+    this.workflowInstanceViewerService = Container.get(WorkflowInstanceViewerService);
     this.eventBus = Container.get(EventBus);
     this.workflowDefinitionsApi = Container.get(WorkflowDefinitionsApi);
     this.workflowInstancesApi = Container.get(WorkflowInstancesApi);
@@ -43,11 +45,8 @@ export class WorkflowInstancesPlugin implements Plugin {
   }
 
   private showWorkflowInstanceViewer = (workflowDefinition: WorkflowDefinition, workflowInstance: WorkflowInstance) => {
-    studioComponentStore.activeComponentFactory = () =>
-      <elsa-workflow-instance-viewer
-        workflowDefinition={workflowDefinition}
-        workflowInstance={workflowInstance}
-        ref={el => this.workflowInstanceViewerElement = el}/>;
+    const service = Container.get(WorkflowInstanceViewerService);
+    service.show(workflowDefinition, workflowInstance);
   };
 
   private onBrowseWorkflowInstances = async () => {

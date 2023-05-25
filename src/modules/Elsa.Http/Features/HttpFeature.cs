@@ -103,6 +103,7 @@ public class HttpFeature : FeatureBase
             .AddSingleton<IRouteTable, RouteTable>()
             .AddSingleton<IAbsoluteUrlProvider, DefaultAbsoluteUrlProvider>()
             .AddSingleton<IHttpBookmarkProcessor, HttpBookmarkProcessor>()
+            .AddSingleton<IRouteTableUpdater, DefaultRouteTableUpdater>()
             .AddNotificationHandlersFrom<UpdateRouteTable>()
             .AddHttpContextAccessor()
 

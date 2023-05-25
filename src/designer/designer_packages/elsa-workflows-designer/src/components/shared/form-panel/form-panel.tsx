@@ -67,7 +67,7 @@ export class FormPanel {
               <div class="tw-px-10 tw-py-4 tw-bg-gray-50">
                 <div class="tw-flex tw-items-start tw-justify-between tw-space-x-3">
                   <div class="tw-space-y-0">
-                    <h2 class="tw-text-md tw-font-medium tw-text-gray-900">
+                    <h2 class="tw-text-base tw-font-medium tw-text-gray-900">
                       {mainTitle}
                     </h2>
                     {!isNullOrWhitespace(subTitle) ? <h3 class="tw-text-xs tw-text-gray-700">{subTitle}</h3> : undefined}
