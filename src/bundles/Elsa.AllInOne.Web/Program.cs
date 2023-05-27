@@ -33,6 +33,9 @@ services
         }))
         .UseWorkflowRuntime(runtime =>
         {
+            // runtime.UseDefaultRuntime(dr => dr.UseEntityFrameworkCore(ef => ef.UsePostgreSql(sqliteConnectionString)));
+            // runtime.UseExecutionLogRecords(e => e.UseEntityFrameworkCore(ef => ef.UsePostgreSql(sqliteConnectionString)));
+
             runtime.UseDefaultRuntime(dr => dr.UseEntityFrameworkCore(ef => {
                 ef.RunMigrations = true;
                 ef.UsePostgreSql(sqliteConnectionString, configuration.GetSection("ElsaDbContextOptions").Get<ElsaDbContextOptions>());
