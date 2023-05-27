@@ -25,14 +25,13 @@ public abstract class ElsaDbContextBase : DbContext
     protected ElsaDbContextBase(DbContextOptions options) : base(options)
     {
         var elsaDbContextOptions = options.FindExtension<ElsaDbContextOptionsExtension>()?.Options;
-        ElsaSchema = elsaDbContextOptions?.SchemaName ?? ElsaSchema;
-        MigrationsHistoryTable = elsaDbContextOptions?.MigrationsHistoryTableName ?? MigrationsHistoryTable;
+        Schema = !string.IsNullOrWhiteSpace(elsaDbContextOptions?.SchemaName) ? elsaDbContextOptions.SchemaName : ElsaSchema;
     }
 
     /// <summary>
     /// The schema used by Elsa.
     /// </summary>
-    protected virtual string Schema => ElsaSchema;
+    protected virtual string Schema { get; set; }
 
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
