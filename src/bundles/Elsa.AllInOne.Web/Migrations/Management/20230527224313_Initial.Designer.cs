@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Elsa.AllInOne.Web.Migrations.Management
 {
     [DbContext(typeof(ManagementElsaDbContext))]
-    [Migration("20230527213300_Initial")]
+    [Migration("20230527224313_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
