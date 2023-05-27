@@ -13,7 +13,7 @@ public static class DbContextOptionsBuilderExtensions
         .UseNpgsql(connectionString, db =>
         {
             db
-                .MigrationsAssembly("Elsa.AllInOne.Web")
+                .MigrationsAssembly(options?.MigrationsAssemblyName ?? typeof(DbContextOptionsBuilderExtensions).Assembly.GetName().Name)
                 .MigrationsHistoryTable(options?.MigrationsHistoryTableName ?? ElsaDbContextBase.MigrationsHistoryTable, options?.SchemaName ?? ElsaDbContextBase.ElsaSchema);
             
             configure?.Invoke(db);
