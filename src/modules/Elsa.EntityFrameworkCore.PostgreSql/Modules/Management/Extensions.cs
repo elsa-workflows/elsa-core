@@ -11,21 +11,21 @@ namespace Elsa.EntityFrameworkCore.Extensions;
 [PublicAPI]
 public static partial class Extensions
 {
-    public static EFCoreWorkflowDefinitionPersistenceFeature UsePostgreSql(this EFCoreWorkflowDefinitionPersistenceFeature feature, string connectionString)
+    public static EFCoreWorkflowDefinitionPersistenceFeature UsePostgreSql(this EFCoreWorkflowDefinitionPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {
-        feature.DbContextOptionsBuilder = (_, db) => db.UseElsaPostgreSql(connectionString);
+        feature.DbContextOptionsBuilder = (_, db) => db.UseElsaPostgreSql(connectionString, options);
         return feature;
     }
     
-    public static EFCoreWorkflowInstancePersistenceFeature UsePostgreSql(this EFCoreWorkflowInstancePersistenceFeature feature, string connectionString)
+    public static EFCoreWorkflowInstancePersistenceFeature UsePostgreSql(this EFCoreWorkflowInstancePersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {
-        feature.DbContextOptionsBuilder = (_, db) => db.UseElsaPostgreSql(connectionString);
+        feature.DbContextOptionsBuilder = (_, db) => db.UseElsaPostgreSql(connectionString, options);
         return feature;
     }
     
     public static EFCoreWorkflowManagementPersistenceFeature UsePostgreSql(this EFCoreWorkflowManagementPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {
-        feature.DbContextOptionsBuilder = (_, db) => db.UseElsaDbContextOptions(options).UseElsaPostgreSql(connectionString);
+        feature.DbContextOptionsBuilder = (_, db) => db.UseElsaPostgreSql(connectionString, options);
         return feature;
     }
 }

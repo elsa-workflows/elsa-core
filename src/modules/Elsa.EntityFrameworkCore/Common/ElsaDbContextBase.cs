@@ -12,12 +12,12 @@ public abstract class ElsaDbContextBase : DbContext
     /// <summary>
     /// The schema used by Elsa.
     /// </summary>
-    public static string ElsaSchema = "Elsa";
+    public static string ElsaSchema;
     
     /// <summary>
     /// The table used to store the migrations history.
     /// </summary>
-    public static string MigrationsHistoryTable = "__EFMigrationsHistory";
+    public static string MigrationsHistoryTable;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ElsaDbContextBase"/> class.
