@@ -24,5 +24,9 @@ public class ElsaDbContextOptionsExtension : IDbContextOptionsExtension
 
     public void Validate(IDbContextOptions options)
     {
+        if(!string.IsNullOrWhiteSpace(_options.SchemaName) && string.IsNullOrWhiteSpace(_options.MigrationsAssemblyName))
+        {
+            throw new ArgumentException("MigrationsAssemblyName must be defined for manual migration");
+        }
     }
 }
