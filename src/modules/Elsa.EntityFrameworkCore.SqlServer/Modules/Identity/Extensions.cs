@@ -1,4 +1,5 @@
-﻿using Elsa.EntityFrameworkCore.Modules.Identity;
+﻿using Elsa.EntityFrameworkCore.Common;
+using Elsa.EntityFrameworkCore.Modules.Identity;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.EntityFrameworkCore.Extensions;
@@ -14,9 +15,9 @@ public static partial class Extensions
     /// <param name="feature">The feature to configure.</param>
     /// <param name="connectionString">The connection string to use.</param>
     /// <returns>The configured feature.</returns>
-    public static EFCoreIdentityPersistenceFeature UseSqlServer(this EFCoreIdentityPersistenceFeature feature, string connectionString)
+    public static EFCoreIdentityPersistenceFeature UseSqlServer(this EFCoreIdentityPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {
-        feature.DbContextOptionsBuilder = (_, db) => db.UseElsaSqlServer(connectionString);
+        feature.DbContextOptionsBuilder = (_, db) => db.UseElsaSqlServer(connectionString, options);
         return feature;
     }
 }
