@@ -16,6 +16,7 @@ namespace Elsa.WorkflowProviders.FluentStorage.Features;
 /// A feature that enables the FluentStorage workflow definition provider.
 /// </summary>
 [DependsOn(typeof(WorkflowManagementFeature))]
+[DependsOn(typeof(DslIntegrationFeature))]
 [PublicAPI]
 public class FluentStorageFeature : FeatureBase
 {
