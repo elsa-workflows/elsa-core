@@ -18,7 +18,7 @@ services.AddElsa(elsa => elsa
         management.UseEntityFrameworkCore();
         management.UseDslIntegration(dsl =>
         {
-            dsl.MapActivityFunction("println", nameof(WriteLine), new[] { nameof(WriteLine.Text) });
+            dsl.MapActivityFunction("print", nameof(WriteLine), new[] { nameof(WriteLine.Text) });
             dsl.MapActivityFunction("http_listen", nameof(HttpEndpoint), new[] { nameof(HttpEndpoint.Path), nameof(HttpEndpoint.SupportedMethods) }, activity => activity.SetCanStartWorkflow(true));
             dsl.MapActivityFunction("http_write", nameof(WriteHttpResponse), new[] { nameof(WriteHttpResponse.StatusCode), nameof(WriteHttpResponse.Content) });
         });

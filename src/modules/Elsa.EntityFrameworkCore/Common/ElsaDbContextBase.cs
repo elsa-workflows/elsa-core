@@ -1,4 +1,5 @@
 ﻿using Elsa.EntityFrameworkCore.Extensions;
+using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
@@ -7,17 +8,18 @@ namespace Elsa.EntityFrameworkCore.Common;
 /// <summary>
 /// An optional base class to implement with some opinions on certain converters to install for certain DB providers.
 /// </summary>
+[PublicAPI]
 public abstract class ElsaDbContextBase : DbContext
 {
     /// <summary>
     /// The schema used by Elsa.
     /// </summary>
-    public static string ElsaSchema = "Elsa";
+    public static string ElsaSchema { get; set;  } = "Elsa";
 
     /// <summary>
     /// The table used to store the migrations history.
     /// </summary>
-    public static string MigrationsHistoryTable = "__EFMigrationsHistory";
+    public static string MigrationsHistoryTable { get; set; } = "__EFMigrationsHistory";
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ElsaDbContextBase"/> class.
@@ -25,6 +27,8 @@ public abstract class ElsaDbContextBase : DbContext
     protected ElsaDbContextBase(DbContextOptions options) : base(options)
     {
         var elsaDbContextOptions = options.FindExtension<ElsaDbContextOptionsExtension>()?.Options;
+        
+        // ReSharper disable once VirtualMemberCallInConstructor
         Schema = !string.IsNullOrWhiteSpace(elsaDbContextOptions?.SchemaName) ? elsaDbContextOptions.SchemaName : ElsaSchema;
     }
 

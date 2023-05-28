@@ -2,7 +2,7 @@
 http_listen("hello-world-functional-dsl", ["GET"]);
 
 // Print a message to the console.
-println("Hello functional DSL World!");
+print("Hello functional DSL World!");
 
 // Write an HTTP response.
 http_write("200", "Hello functional DSL World!");
