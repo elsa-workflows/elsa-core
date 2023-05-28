@@ -1,8 +1,6 @@
 using Antlr4.Runtime;
 using Elsa.Dsl.Contracts;
 using Elsa.Dsl.Interpreters;
-using Elsa.Dsl.Models;
-using Elsa.Expressions.Contracts;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 
@@ -12,8 +10,8 @@ namespace Elsa.Dsl.Services;
 public class DslEngine : IDslEngine
 {
     private readonly ITypeSystem _typeSystem;
+    private readonly IActivityRegistry _activityRegistry;
     private readonly IFunctionActivityRegistry _functionActivityRegistry;
-    private readonly IExpressionHandlerRegistry _expressionHandlerRegistry;
     private readonly IWorkflowBuilderFactory _workflowBuilderFactory;
 
     /// <summary>
@@ -21,13 +19,13 @@ public class DslEngine : IDslEngine
     /// </summary>
     public DslEngine(
         ITypeSystem typeSystem,
+        IActivityRegistry activityRegistry,
         IFunctionActivityRegistry functionActivityRegistry,
-        IExpressionHandlerRegistry expressionHandlerRegistry,
         IWorkflowBuilderFactory workflowBuilderFactory)
     {
         _typeSystem = typeSystem;
+        _activityRegistry = activityRegistry;
         _functionActivityRegistry = functionActivityRegistry;
-        _expressionHandlerRegistry = expressionHandlerRegistry;
         _workflowBuilderFactory = workflowBuilderFactory;
     }
 
@@ -39,7 +37,13 @@ public class DslEngine : IDslEngine
         var tokens = new CommonTokenStream(lexer);
         var parser = new ElsaParser(tokens);
         var tree = parser.program();
-        var interpreter = new WorkflowDefinitionBuilderInterpreter(_typeSystem, _functionActivityRegistry, _expressionHandlerRegistry, _workflowBuilderFactory, new WorkflowDefinitionInterpreterSettings());
+
+        var interpreter = new WorkflowDefinitionBuilderInterpreter(
+            _typeSystem,
+            _activityRegistry,
+            _functionActivityRegistry,
+            _workflowBuilderFactory);
+
         var workflowBuilder = interpreter.Visit(tree);
         var workflow = await workflowBuilder.BuildWorkflowAsync(cancellationToken);
 

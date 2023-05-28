@@ -37,6 +37,7 @@ public class TestApplicationBuilder
             .UseScheduling()
             .UseJavaScript()
             .UseLiquid()
+            .UseDsl()
             .UseWorkflows(workflows => workflows
                 .WithStandardOutStreamProvider(_ => new StandardOutStreamProvider(new XunitConsoleTextWriter(_testOutputHelper)))
             );

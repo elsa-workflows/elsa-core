@@ -14,7 +14,7 @@ namespace Elsa.Features.Implementations;
 /// <inheritdoc />
 public class Module : IModule
 {
-    private record HostedServiceDescriptor(int Order, Type HostedServiceType);
+    private record HostedServiceDescriptor(int Order, Type Type);
 
     private IDictionary<Type, IFeature> _features = new Dictionary<Type, IFeature>();
     private readonly ISet<IFeature> _configuredFeatures = new HashSet<IFeature>();
@@ -84,12 +84,12 @@ public class Module : IModule
         }
 
         foreach (var hostedServiceDescriptor in _hostedServiceDescriptors.OrderBy(x => x.Order))
-            Services.TryAddEnumerable(ServiceDescriptor.Singleton(typeof(IHostedService), hostedServiceDescriptor.HostedServiceType));
+            Services.TryAddEnumerable(ServiceDescriptor.Singleton(typeof(IHostedService), hostedServiceDescriptor.Type));
 
         // Make sure to use the complete list of features when applying them.
         foreach (var feature in _features.Values)
             feature.Apply();
-        
+
         // Add a registry of enabled features to the service collection for client applications to reflect on what features are installed.
         var registry = new InstalledFeatureRegistry();
         foreach (var feature in _features.Values)

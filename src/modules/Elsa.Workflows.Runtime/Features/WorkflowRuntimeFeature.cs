@@ -17,6 +17,7 @@ using Elsa.Workflows.Runtime.Handlers;
 using Elsa.Workflows.Runtime.HostedServices;
 using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Runtime.Options;
+using Elsa.Workflows.Runtime.Providers;
 using Elsa.Workflows.Runtime.Services;
 using Medallion.Threading;
 using Medallion.Threading.FileSystem;
@@ -124,7 +125,6 @@ public class WorkflowRuntimeFeature : FeatureBase
             // Core.
             .AddSingleton<ITriggerIndexer, TriggerIndexer>()
             .AddSingleton<IWorkflowInstanceFactory, WorkflowInstanceFactory>()
-            .AddSingleton<IWorkflowDefinitionService, WorkflowDefinitionService>()
             .AddSingleton<IWorkflowHostFactory, WorkflowHostFactory>()
             .AddSingleton<IBackgroundActivityInvoker, DefaultBackgroundActivityInvoker>()
             .AddSingleton(WorkflowRuntime)
@@ -140,7 +140,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddSingleton<IEventPublisher, EventPublisher>()
             
             // Lazy services.
-            .AddSingleton<Func<IEnumerable<IWorkflowDefinitionProvider>>>(sp => sp.GetServices<IWorkflowDefinitionProvider>)
+            .AddSingleton<Func<IEnumerable<IWorkflowProvider>>>(sp => sp.GetServices<IWorkflowProvider>)
             .AddSingleton<Func<IEnumerable<IWorkflowMaterializer>>>(sp => sp.GetServices<IWorkflowMaterializer>)
 
             // Memory stores.
@@ -153,7 +153,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddSingleton(DistributedLockProvider)
 
             // Workflow definition providers.
-            .AddWorkflowDefinitionProvider<ClrWorkflowDefinitionProvider>()
+            .AddWorkflowDefinitionProvider<ClrWorkflowProvider>()
 
             // Workflow state exporter.
             .AddSingleton(WorkflowStateExporter)

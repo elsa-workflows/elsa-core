@@ -5,7 +5,7 @@ namespace Elsa.Workflows.Runtime.Contracts;
 /// <summary>
 /// Represents a source of workflow definitions.
 /// </summary>
-public interface IWorkflowDefinitionProvider
+public interface IWorkflowProvider
 {
     /// <summary>
     /// Gets the name of the provider.
@@ -17,5 +17,5 @@ public interface IWorkflowDefinitionProvider
     /// </summary>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The workflow definitions.</returns>
-    ValueTask<IEnumerable<WorkflowDefinitionResult>> GetWorkflowDefinitionsAsync(CancellationToken cancellationToken = default);
+    ValueTask<IEnumerable<MaterializedWorkflow>> GetWorkflowDefinitionsAsync(CancellationToken cancellationToken = default);
 }

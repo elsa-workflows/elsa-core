@@ -1,60 +1,67 @@
-using System.Reflection;
+using System.Text.Json;
 using Elsa.Dsl.Contracts;
 using Elsa.Dsl.Interpreters;
+using Elsa.Dsl.Models;
 using Elsa.Expressions.Helpers;
+using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Dsl.Services;
 
+/// <inheritdoc />
 public class FunctionActivityRegistry : IFunctionActivityRegistry
 {
-    private readonly ITypeSystem _typeSystem;
+    private readonly IActivityRegistry _activityRegistry;
     private readonly IDictionary<string, FunctionActivityDescriptor> _dictionary = new Dictionary<string, FunctionActivityDescriptor>();
 
-    public FunctionActivityRegistry(ITypeSystem typeSystem)
+    /// <summary>
+    /// Creates a new instance of the <see cref="FunctionActivityRegistry"/> class.
+    /// </summary>
+    public FunctionActivityRegistry(IActivityRegistry activityRegistry)
     {
-        _typeSystem = typeSystem;
+        _activityRegistry = activityRegistry;
     }
 
-    public void RegisterFunction(string functionName, string activityTypeName, IEnumerable<string>? propertyNames = default)
+    /// <inheritdoc />
+    public void RegisterFunction(string functionName, string activityTypeName, IEnumerable<string>? propertyNames = default, Action<IActivity>? configure = default)
     {
-        var typeDescriptor = _typeSystem.ResolveTypeName(activityTypeName);
-
-        if (typeDescriptor == null)
-            throw new Exception($"Could not find activity type {activityTypeName}. Did you forget to register it?");
-
-
-        if (typeDescriptor.Kind != TypeKind.Activity)
-            throw new Exception($"Only activity types can be mapped to functions. You are trying to map {typeDescriptor.Type.Name}, which is a different kind: {typeDescriptor.Kind}");
-
-        var activityType = typeDescriptor.Type;
-        var propertyNameList = propertyNames?.ToList() ?? new List<string>();
-        var properties = propertyNameList.Select(propertyName =>
-        {
-            var property = activityType.GetProperties().FirstOrDefault(x => x.Name == propertyName);
-
-            if (property == null)
-                throw new Exception($"Activity type {typeDescriptor.Type.Name} does not have a property named {propertyName}");
-
-            return property;
-        }).ToList();
-
-        var descriptor = new FunctionActivityDescriptor(activityType, properties);
-        _dictionary.Add(functionName, descriptor);
+        var descriptor = new FunctionActivityDescriptor(functionName, activityTypeName, propertyNames, configure);
+        RegisterFunction(descriptor);
     }
 
+    /// <inheritdoc />
+    public void RegisterFunction(FunctionActivityDescriptor descriptor)
+    {
+        _dictionary.Add(descriptor.FunctionName, descriptor);
+    }
+
+    /// <inheritdoc />
     public IActivity ResolveFunction(string functionName, IEnumerable<object?>? arguments = default)
     {
         if (!_dictionary.TryGetValue(functionName, out var descriptor))
             throw new Exception($"Could not resolve function {functionName}. Did you forget to register it?");
 
-        var activityType = descriptor.ActivityType;
-        var activity = (IActivity)Activator.CreateInstance(activityType)!;
+        var activityDescriptor = _activityRegistry.Find(x => x.Name == descriptor.ActivityTypeName || x.TypeName == descriptor.ActivityTypeName);
+
+        if (activityDescriptor == null)
+            throw new Exception($"Could not find activity descriptor for activity type {descriptor.ActivityTypeName}");
+
+        var propertyNameList = descriptor.PropertyNames?.ToList() ?? new List<string>();
+        var propertyDescriptors = activityDescriptor.Inputs.Cast<PropertyDescriptor>().Concat(activityDescriptor.Outputs).ToList();
+
+        var properties = propertyNameList
+            .Select(propertyName => propertyDescriptors.FirstOrDefault(x => x.Name == propertyName))
+            .Where(x => x != null)
+            .Select(x => x!)
+            .ToList();
+
+        var dummyJsonElement = JsonDocument.Parse("{}").RootElement;
+        var constructorContext = new ActivityConstructorContext(dummyJsonElement, new JsonSerializerOptions());
+        var activity = activityDescriptor.Constructor(constructorContext);
 
         // Apply each argument in order of the described properties.
         var index = 0;
-        var properties = descriptor.Properties.ToList();
 
         if (arguments != null)
             foreach (var argument in arguments)
@@ -63,50 +70,57 @@ public class FunctionActivityRegistry : IFunctionActivityRegistry
                 SetPropertyValue(activity, property, argument);
             }
 
+        descriptor.Configure?.Invoke(activity);
         return activity;
     }
-        
-    private void SetPropertyValue(object target, PropertyInfo propertyInfo, object? value)
-    {
-        if (typeof(Input).IsAssignableFrom(propertyInfo.PropertyType))
-            value = CreateInputValue(propertyInfo, value);
-        else if (typeof(Output).IsAssignableFrom(propertyInfo.PropertyType))
-            value = CreateOutputValue(propertyInfo, value);
 
-        propertyInfo.SetValue(target, value, null);
+    private void SetPropertyValue(IActivity target, PropertyDescriptor propertyDescriptor, object? value)
+    {
+        value = propertyDescriptor switch
+        {
+            InputDescriptor inputDescriptor => CreateInputValue(inputDescriptor, value),
+            OutputDescriptor outputDescriptor => CreateOutputValue(outputDescriptor, value),
+            _ => value
+        };
+
+        propertyDescriptor.ValueSetter(target, value);
     }
 
-    private Input CreateInputValue(PropertyInfo propertyInfo, object? propertyValue)
+    private Input CreateInputValue(InputDescriptor inputDescriptor, object? propertyValue)
     {
         if (propertyValue is Input input)
             return input;
-            
-        var underlyingType = propertyInfo.PropertyType.GetGenericArguments().First();
-        var propertyValueType = propertyValue?.GetType();
+
+        var underlyingType = inputDescriptor.Type;
+        var parsedPropertyValue = propertyValue.ConvertTo(underlyingType);
+        var propertyValueType = parsedPropertyValue?.GetType();
         var inputType = typeof(Input<>).MakeGenericType(underlyingType);
 
-        if (propertyValue is ExternalExpressionReference externalExpressionReference)
+        if (parsedPropertyValue is ExternalExpressionReference externalExpressionReference)
             return (Input)Activator.CreateInstance(inputType, externalExpressionReference.Expression, externalExpressionReference.BlockReference)!;
 
         if (propertyValueType != null)
         {
-            var hasCtorWithSpecifiedType = inputType.GetConstructors().Any(x => x.GetParameters().Any(y => y.ParameterType.IsAssignableFrom(propertyValueType)));
+            // Create a literal value.
+            var literalType = typeof(Literal<>).MakeGenericType(underlyingType);
+            var hasCtorWithSpecifiedType = inputType.GetConstructors().Any(x => x.GetParameters().Any(y => y.ParameterType.IsAssignableFrom(literalType)));
 
             if (hasCtorWithSpecifiedType)
-                return (Input)Activator.CreateInstance(inputType, propertyValue)!;
+            {
+                var literalValue = Activator.CreateInstance(literalType, parsedPropertyValue)!;
+                return (Input)Activator.CreateInstance(inputType, literalValue)!;
+            }
         }
 
-        var convertedValue = propertyValue.ConvertTo(underlyingType);
-
-        return (Input)Activator.CreateInstance(inputType, convertedValue)!;
+        return (Input)Activator.CreateInstance(inputType, parsedPropertyValue)!;
     }
-        
-    private Output CreateOutputValue(PropertyInfo propertyInfo, object? propertyValue)
+
+    private Output CreateOutputValue(OutputDescriptor outputDescriptor, object? propertyValue)
     {
         if (propertyValue is Output output)
             return output;
-            
-        var underlyingType = propertyInfo.PropertyType.GetGenericArguments().First();
+
+        var underlyingType = outputDescriptor.Type;
         var propertyValueType = propertyValue?.GetType();
         var outputType = typeof(Output<>).MakeGenericType(underlyingType);
 
@@ -122,6 +136,4 @@ public class FunctionActivityRegistry : IFunctionActivityRegistry
 
         return (Output)Activator.CreateInstance(outputType, convertedValue)!;
     }
-
-    private record FunctionActivityDescriptor(Type ActivityType, ICollection<PropertyInfo> Properties);
 }

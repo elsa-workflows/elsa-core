@@ -33,7 +33,7 @@ public class ActivityDescriber : IActivityDescriber
     public async Task<ActivityDescriptor> DescribeActivityAsync([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type activityType, CancellationToken cancellationToken = default)
     {
         var activityAttr = activityType.GetCustomAttribute<ActivityAttribute>();
-        var ns = activityAttr?.Namespace ?? ActivityTypeNameHelper.GenerateNamespace(activityType);
+        var ns = activityAttr?.Namespace ?? ActivityTypeNameHelper.GenerateNamespace(activityType) ?? "Elsa";
         var typeName = activityAttr?.Type ?? activityType.Name;
         var typeVersion = activityAttr?.Version ?? 1;
         var fullTypeName = ActivityTypeNameHelper.GenerateTypeName(activityType);
@@ -73,9 +73,11 @@ public class ActivityDescriber : IActivityDescriber
 
         var descriptor = new ActivityDescriptor
         {
+            TypeName = fullTypeName,
+            Namespace = ns,
+            Name = typeName,
             Category = category,
             Description = description,
-            TypeName = fullTypeName,
             Version = typeVersion,
             DisplayName = displayName,
             Kind = isTrigger ? ActivityKind.Trigger : activityAttr?.Kind ?? ActivityKind.Action,
