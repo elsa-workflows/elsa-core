@@ -1,8 +1,6 @@
 using System.Dynamic;
 using Elsa.JavaScript.Contracts;
 using Elsa.JavaScript.Extensions;
-using Elsa.Workflows.Management.Options;
-using Microsoft.Extensions.Options;
 
 namespace Elsa.JavaScript.Services;
 
@@ -14,7 +12,7 @@ public class TypeAliasRegistry : ITypeAliasRegistry
     /// <summary>
     /// Constructor.
     /// </summary>
-    public TypeAliasRegistry(IOptions<ManagementOptions> managementOptions)
+    public TypeAliasRegistry()
     {
         this.RegisterType<object>("any");
         this.RegisterType<ExpandoObject>("any");
@@ -30,12 +28,6 @@ public class TypeAliasRegistry : ITypeAliasRegistry
         this.RegisterType<DateTimeOffset>("Date");
         this.RegisterType<DateOnly>("Date");
         this.RegisterType<TimeOnly>("Date");
-
-        foreach (var variableDescriptor in managementOptions.Value.VariableDescriptors)
-        {
-            if(!_typeAliasDictionary.ContainsKey(variableDescriptor.Type))
-                RegisterType(variableDescriptor.Type, variableDescriptor.Type.Name);
-        }
     }
 
     /// <inheritdoc />

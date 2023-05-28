@@ -15,7 +15,11 @@ public abstract class PersistenceFeatureBase<TDbContext> : FeatureBase where TDb
     public bool UseContextPooling { get; set; }
     public bool RunMigrations { get; set; } = true;
     public ServiceLifetime DbContextFactoryLifetime { get; set; } = ServiceLifetime.Singleton;
-    public Action<IServiceProvider, DbContextOptionsBuilder> DbContextOptionsBuilder = (_, _) => { };
+
+    public Action<IServiceProvider, DbContextOptionsBuilder> DbContextOptionsBuilder = (_, options) => options
+        .UseSqlite("Data Source=elsa.sqlite.db;Cache=Shared;", sqlite => sqlite
+            .MigrationsAssembly("Elsa.EntityFrameworkCore.Sqlite")
+            .MigrationsHistoryTable(ElsaDbContextBase.MigrationsHistoryTable, ElsaDbContextBase.ElsaSchema));
 
     public override void ConfigureHostedServices()
     {

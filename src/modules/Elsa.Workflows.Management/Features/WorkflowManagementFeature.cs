@@ -13,6 +13,7 @@ using Elsa.Workflows.Core.Features;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.HostedServices;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Models;
@@ -138,6 +139,7 @@ public class WorkflowManagementFeature : FeatureBase
             .AddMemoryStore<WorkflowDefinition, MemoryWorkflowDefinitionStore>()
             .AddMemoryStore<WorkflowInstance, MemoryWorkflowInstanceStore>()
             .AddActivityProvider<TypedActivityProvider>()
+            .AddSingleton<IWorkflowDefinitionService, WorkflowDefinitionService>()
             .AddSingleton<IWorkflowDefinitionPublisher, WorkflowDefinitionPublisher>()
             .AddSingleton<IWorkflowDefinitionImporter, WorkflowDefinitionImporter>()
             .AddSingleton<IWorkflowDefinitionManager, WorkflowDefinitionManager>()

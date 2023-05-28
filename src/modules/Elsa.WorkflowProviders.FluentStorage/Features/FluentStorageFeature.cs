@@ -3,7 +3,7 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.WorkflowProviders.FluentStorage.Contracts;
-using Elsa.WorkflowProviders.FluentStorage.Services;
+using Elsa.WorkflowProviders.FluentStorage.Providers;
 using Elsa.Workflows.Management.Features;
 using FluentStorage;
 using FluentStorage.Blobs;
@@ -33,7 +33,7 @@ public class FluentStorageFeature : FeatureBase
     public override void Apply()
     {
         Services.AddSingleton<IBlobStorageProvider>(sp => new BlobStorageProvider(BlobStorage(sp)));
-        Services.AddWorkflowDefinitionProvider<FluentStorageWorkflowDefinitionProvider>();
+        Services.AddWorkflowDefinitionProvider<FluentStorageWorkflowProvider>();
     }
 
     private static string GetDefaultWorkflowsDirectory()

@@ -45,6 +45,26 @@ public class WorkflowDefinitionMapper
     }
     
     /// <summary>
+    /// Maps a <see cref="WorkflowDefinitionModel"/> to a <see cref="Workflow"/>.
+    /// </summary>
+    /// <param name="source">The source <see cref="WorkflowDefinitionModel"/>.</param>
+    /// <returns>The mapped <see cref="Workflow"/>.</returns>
+    public Workflow Map(WorkflowDefinitionModel source)
+    {
+        var root = source.Root!;
+        var variables = _variableDefinitionMapper.Map(source.Variables).ToList();
+        
+        return new(
+            new WorkflowIdentity(source.DefinitionId, source.Version, source.Id),
+            new WorkflowPublication(source.IsLatest, source.IsPublished),
+            new WorkflowMetadata(source.Name, source.Description, source.CreatedAt),
+            source.Options,
+            root,
+            variables,
+            source.CustomProperties ?? new Dictionary<string, object>());
+    }
+    
+    /// <summary>
     /// Maps a <see cref="WorkflowDefinition"/> to a <see cref="Workflow"/>.
     /// </summary>
     /// <param name="workflowDefinition">The source <see cref="WorkflowDefinition"/>.</param>

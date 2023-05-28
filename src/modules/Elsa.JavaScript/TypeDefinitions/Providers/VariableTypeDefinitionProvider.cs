@@ -27,7 +27,7 @@ internal class VariableTypeDefinitionProvider : TypeDefinitionProvider
             type => type == typeof(object)
         };
 
-        var variables = context.WorkflowDefinition.Variables;
+        var variables = context.Workflow.Variables;
 
         var variableTypeQuery =
             from variable in variables

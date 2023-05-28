@@ -1,0 +1,20 @@
+// Listen for HTTP requests on the path /hello-world-dsl.
+HttpEndpoint
+{
+    Path: "hello-world-dsl",
+    SupportedMethods: ["GET"],
+    CanStartWorkflow: "true"
+};
+
+// Write a message to the console.
+WriteLine
+{
+   Text: "Hello DSL World"
+};
+
+// Write an HTTP response.
+WriteHttpResponse
+{
+    StatusCode: "200",
+    Content: "Hello DSL World!"
+};

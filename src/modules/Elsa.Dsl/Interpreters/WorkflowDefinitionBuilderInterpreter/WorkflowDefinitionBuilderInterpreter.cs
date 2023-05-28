@@ -1,7 +1,6 @@
 ﻿using Antlr4.Runtime.Tree;
 using Elsa.Dsl.Contracts;
 using Elsa.Dsl.Models;
-using Elsa.Expressions.Contracts;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
 
@@ -10,8 +9,8 @@ namespace Elsa.Dsl.Interpreters;
 public partial class WorkflowDefinitionBuilderInterpreter : ElsaParserBaseVisitor<IWorkflowBuilder>
 {
     private readonly ITypeSystem _typeSystem;
+    private readonly IActivityRegistry _activityRegistry;
     private readonly IFunctionActivityRegistry _functionActivityRegistry;
-    private readonly IExpressionHandlerRegistry _expressionHandlerRegistry;
     private readonly IWorkflowBuilder _workflowBuilder;
     private readonly ParseTreeProperty<object> _object = new();
     private readonly ParseTreeProperty<object?> _expressionValue = new();
@@ -22,22 +21,17 @@ public partial class WorkflowDefinitionBuilderInterpreter : ElsaParserBaseVisito
 
     /// <inheritdoc />
     public WorkflowDefinitionBuilderInterpreter(
-        ITypeSystem typeSystem, 
-        IFunctionActivityRegistry functionActivityRegistry, 
-        IExpressionHandlerRegistry expressionHandlerRegistry,
-        IWorkflowBuilderFactory workflowBuilderFactory,
-        WorkflowDefinitionInterpreterSettings settings)
+        ITypeSystem typeSystem,
+        IActivityRegistry activityRegistry,
+        IFunctionActivityRegistry functionActivityRegistry,
+        IWorkflowBuilderFactory workflowBuilderFactory)
     {
         _typeSystem = typeSystem;
+        _activityRegistry = activityRegistry;
         _functionActivityRegistry = functionActivityRegistry;
-        _expressionHandlerRegistry = expressionHandlerRegistry;
         _workflowBuilder = workflowBuilderFactory.CreateBuilder();
     }
 
+    /// <inheritdoc />
     protected override IWorkflowBuilder DefaultResult => _workflowBuilder;
-
-    private void VisitMany(IEnumerable<IParseTree> contexts)
-    {
-        foreach (var parseTree in contexts) Visit(parseTree);
-    }
 }

@@ -15,10 +15,10 @@
         <ProjectReference Include="..\Elsa.Expressions\Elsa.Expressions.csproj" />
         <ProjectReference Include="..\Elsa.Mediator\Elsa.Mediator.csproj" />
         <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
-        <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj" />
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="System.Linq.Async" Version="6.0.1" />
         <PackageReference Include="Jint" Version="3.0.0-beta-2044" />
     </ItemGroup>
 
