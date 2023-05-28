@@ -109,7 +109,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Email", "src\modules\E
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Workflows.Designer", "src\modules\Elsa.Workflows.Designer\Elsa.Workflows.Designer.csproj", "{B191F11D-583D-44D9-8A08-F5B0DC58B822}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.HelloWorld", "src\samples\aspnet\Elsa.Samples.HelloWorld\Elsa.Samples.HelloWorld.csproj", "{DF8CCA17-6B00-42C6-B4EC-61B42AA91EE0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.AspNet.HelloWorld", "src\samples\aspnet\Elsa.Samples.AspNet.HelloWorld\Elsa.Samples.AspNet.HelloWorld.csproj", "{DF8CCA17-6B00-42C6-B4EC-61B42AA91EE0}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Testing.Shared", "src\common\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj", "{AD8C4BB0-C78F-496C-B326-1D82C02C7568}"
 EndProject

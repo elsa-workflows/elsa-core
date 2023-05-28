@@ -1,3 +1,4 @@
+using System.Reflection;
 using Elsa.Common.Features;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
@@ -97,6 +98,21 @@ public class WorkflowRuntimeFeature : FeatureBase
     public WorkflowRuntimeFeature AddWorkflow<T>() where T : IWorkflow
     {
         Workflows.Add<T>();
+        return this;
+    }
+    
+    /// <summary>
+    /// Register all workflows in the specified assembly.
+    /// </summary>
+    public WorkflowRuntimeFeature AddWorkflowsFrom(Assembly assembly)
+    {
+        var workflowTypes = assembly.GetExportedTypes()
+            .Where(x => typeof(IWorkflow).IsAssignableFrom(x) && x is { IsAbstract: false, IsInterface: false, IsGenericType: false })
+            .ToList();
+        
+        foreach (var workflowType in workflowTypes)
+            Workflows.Add(workflowType);
+        
         return this;
     }
 

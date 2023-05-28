@@ -87,7 +87,7 @@ public class WorkflowManagementFeature : FeatureBase
     public WorkflowManagementFeature AddActivitiesFrom<TMarker>()
     {
         var activityTypes = typeof(TMarker).Assembly.GetExportedTypes()
-            .Where(x => typeof(IActivity).IsAssignableFrom(x) && !x.IsAbstract && !x.IsInterface && !x.IsGenericType)
+            .Where(x => typeof(IActivity).IsAssignableFrom(x) && x is { IsAbstract: false, IsInterface: false, IsGenericType: false })
             .ToList();
         return AddActivities(activityTypes);
     }

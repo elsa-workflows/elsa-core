@@ -4,7 +4,7 @@ using Elsa.Workflows.Core.Abstractions;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
 
-namespace Elsa.Samples.HelloWorld;
+namespace Elsa.Samples.AspNet.HelloWorld;
 
 public class HelloWorldHttpWorkflow : WorkflowBase
 {
