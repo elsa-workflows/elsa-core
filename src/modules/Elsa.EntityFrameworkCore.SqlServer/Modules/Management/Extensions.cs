@@ -1,4 +1,5 @@
-﻿using Elsa.EntityFrameworkCore.Modules.Management;
+﻿using Elsa.EntityFrameworkCore.Common;
+using Elsa.EntityFrameworkCore.Modules.Management;
 using JetBrains.Annotations;
 
 // ReSharper disable once CheckNamespace
@@ -7,21 +8,21 @@ namespace Elsa.EntityFrameworkCore.Extensions;
 [PublicAPI]
 public static partial class Extensions
 {
-    public static EFCoreWorkflowDefinitionPersistenceFeature UseSqlServer(this EFCoreWorkflowDefinitionPersistenceFeature feature, string connectionString)
+    public static EFCoreWorkflowDefinitionPersistenceFeature UseSqlServer(this EFCoreWorkflowDefinitionPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {
-        feature.DbContextOptionsBuilder = (_, db) => db.UseElsaSqlServer(connectionString);
+        feature.DbContextOptionsBuilder = (_, db) => db.UseElsaSqlServer(connectionString, options);
         return feature;
     }
     
-    public static EFCoreWorkflowInstancePersistenceFeature UseSqlServer(this EFCoreWorkflowInstancePersistenceFeature feature, string connectionString)
+    public static EFCoreWorkflowInstancePersistenceFeature UseSqlServer(this EFCoreWorkflowInstancePersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {
-        feature.DbContextOptionsBuilder = (_, db) => db.UseElsaSqlServer(connectionString);
+        feature.DbContextOptionsBuilder = (_, db) => db.UseElsaSqlServer(connectionString, options);
         return feature;
     }
     
-    public static EFCoreWorkflowManagementPersistenceFeature UseSqlServer(this EFCoreWorkflowManagementPersistenceFeature feature, string connectionString)
+    public static EFCoreWorkflowManagementPersistenceFeature UseSqlServer(this EFCoreWorkflowManagementPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {
-        feature.DbContextOptionsBuilder = (_, db) => db.UseElsaSqlServer(connectionString);
+        feature.DbContextOptionsBuilder = (_, db) => db.UseElsaSqlServer(connectionString, options);
         return feature;
     }
 }

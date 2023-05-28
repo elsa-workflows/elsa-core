@@ -1,4 +1,5 @@
 ﻿using Elsa.EntityFrameworkCore.Modules.Management;
+using Elsa.EntityFrameworkCore.Common;
 using JetBrains.Annotations;
 
 // ReSharper disable once CheckNamespace
@@ -10,21 +11,21 @@ namespace Elsa.EntityFrameworkCore.Extensions;
 [PublicAPI]
 public static partial class Extensions
 {
-    public static EFCoreWorkflowDefinitionPersistenceFeature UseMySql(this EFCoreWorkflowDefinitionPersistenceFeature feature, string connectionString)
+    public static EFCoreWorkflowDefinitionPersistenceFeature UseMySql(this EFCoreWorkflowDefinitionPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {
-        feature.DbContextOptionsBuilder = (_, db) => db.UseElsaMySql(connectionString);
+        feature.DbContextOptionsBuilder = (_, db) => db.UseElsaMySql(connectionString, options);
         return feature;
     }
 
-    public static EFCoreWorkflowInstancePersistenceFeature UseMySql(this EFCoreWorkflowInstancePersistenceFeature feature, string connectionString)
+    public static EFCoreWorkflowInstancePersistenceFeature UseMySql(this EFCoreWorkflowInstancePersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {
-        feature.DbContextOptionsBuilder = (_, db) => db.UseElsaMySql(connectionString);
+        feature.DbContextOptionsBuilder = (_, db) => db.UseElsaMySql(connectionString, options);
         return feature;
     }
 
-    public static EFCoreWorkflowManagementPersistenceFeature UseMySql(this EFCoreWorkflowManagementPersistenceFeature feature, string connectionString)
+    public static EFCoreWorkflowManagementPersistenceFeature UseMySql(this EFCoreWorkflowManagementPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {
-        feature.DbContextOptionsBuilder = (_, db) => db.UseElsaMySql(connectionString);
+        feature.DbContextOptionsBuilder = (_, db) => db.UseElsaMySql(connectionString, options);
         return feature;
     }
 }
