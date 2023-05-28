@@ -3,30 +3,39 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.EntityFrameworkCore.Common;
 
+/// <summary>
+/// Provides options for configuring Elsa's Entity Framework Core integration.
+/// </summary>
 public class ElsaDbContextOptionsExtension : IDbContextOptionsExtension
 {
-    private ElsaDbContextOptions _options;
-
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ElsaDbContextOptionsExtension"/> class.
+    /// </summary>
+    /// <param name="options">The options.</param>
     public ElsaDbContextOptionsExtension(ElsaDbContextOptions? options)
     {
-        _options = options;
+        Options = options;
     }
 
-    public ElsaDbContextOptions Options => _options;
+    /// <summary>
+    /// Gets the options.
+    /// </summary>
+    public ElsaDbContextOptions? Options { get; }
 
-    public string LogFragment => "";
-
+    /// <inheritdoc />
     public DbContextOptionsExtensionInfo Info => new CustomDbContextOptionsExtensionInfo(this);
 
+    /// <inheritdoc />
     public void ApplyServices(IServiceCollection services)
     {
     }
 
+    /// <inheritdoc />
     public void Validate(IDbContextOptions options)
     {
-        if(!string.IsNullOrWhiteSpace(_options.SchemaName) && string.IsNullOrWhiteSpace(_options.MigrationsAssemblyName))
+        if(!string.IsNullOrWhiteSpace(Options?.SchemaName) && string.IsNullOrWhiteSpace(Options.MigrationsAssemblyName))
         {
-            throw new ArgumentException("MigrationsAssemblyName must be defined for manual migration");
+            throw new ArgumentException("MigrationsAssemblyName must be defined for manual migrations");
         }
     }
 }
