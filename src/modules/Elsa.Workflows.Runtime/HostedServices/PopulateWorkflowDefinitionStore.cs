@@ -1,6 +1,7 @@
 using Elsa.Common.Contracts;
 using Elsa.Common.Models;
 using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
@@ -22,6 +23,7 @@ public class PopulateWorkflowDefinitionStore : IHostedService
     private readonly IActivitySerializer _activitySerializer;
     private readonly IPayloadSerializer _payloadSerializer;
     private readonly ISystemClock _systemClock;
+    private readonly IIdentityGraphService _identityGraphService;
 
     /// <summary>
     /// Constructor.
@@ -32,7 +34,8 @@ public class PopulateWorkflowDefinitionStore : IHostedService
         IWorkflowDefinitionStore workflowDefinitionStore,
         IActivitySerializer activitySerializer,
         IPayloadSerializer payloadSerializer,
-        ISystemClock systemClock)
+        ISystemClock systemClock,
+        IIdentityGraphService identityGraphService)
     {
         _workflowDefinitionProviders = workflowDefinitionProviders;
         _triggerIndexer = triggerIndexer;
@@ -40,6 +43,7 @@ public class PopulateWorkflowDefinitionStore : IHostedService
         _activitySerializer = activitySerializer;
         _payloadSerializer = payloadSerializer;
         _systemClock = systemClock;
+        _identityGraphService = identityGraphService;
     }
 
     /// <inheritdoc />
@@ -52,17 +56,22 @@ public class PopulateWorkflowDefinitionStore : IHostedService
 
             foreach (var result in results)
             {
+                await AssignIdentities(result.Workflow, cancellationToken);
                 await AddOrUpdateAsync(result, cancellationToken);
                 await IndexTriggersAsync(result, cancellationToken);
             }
         }
     }
 
+    private async Task AssignIdentities(Workflow workflow, CancellationToken cancellationToken)
+    {
+        await _identityGraphService.AssignIdentitiesAsync(workflow, cancellationToken);
+    }
+
     private async Task AddOrUpdateAsync(MaterializedWorkflow materializedWorkflow, CancellationToken cancellationToken = default)
     {
         var workflow = materializedWorkflow.Workflow;
 
-        // Check if there's already a workflow materializedWorkflow by the materializedWorkflow ID and version.
         var filter = new WorkflowDefinitionFilter
         {
             DefinitionId = workflow.Identity.DefinitionId,
