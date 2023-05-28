@@ -1,3 +1,4 @@
+using Elsa.AllInOne.Web.Extensions;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Management;
@@ -40,35 +41,13 @@ services
         .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options))
         .UseWebhooks(webhooks => webhooks.WebhookOptions = options => builder.Configuration.GetSection("Webhooks").Bind(options))
         .UseWorkflowsApi()
+        .AddActivitiesFrom<Program>()
+        .AddWorkflowsFrom<Program>()
     );
 
 services.AddHealthChecks();
 
-static bool AllowAny(IList<string> Values) => Values.Count == 0 || Values[0] == "*";
-services.AddCors(cors => {
-    IConfigurationSection corsPolicyConfiguration = configuration.GetSection("CorsPolicy");
-    CorsPolicy corsPolicy = corsPolicyConfiguration.Get<CorsPolicy>() ?? new CorsPolicy();
-    cors.AddDefaultPolicy(policy => {
-        var headers = corsPolicy.Headers;
-        var origins = corsPolicy.Origins;
-        var methods = corsPolicy.Methods;
-
-        if (AllowAny(headers))
-            policy.AllowAnyHeader();
-        else
-            policy.WithHeaders(headers.ToArray());
-
-        if (AllowAny(origins))
-            policy.AllowAnyOrigin();
-        else
-            policy.WithOrigins(origins.ToArray());
-
-        if (AllowAny(methods))
-            policy.AllowAnyMethod();
-        else
-            policy.WithMethods(methods.ToArray());
-    });
-});
+services.AddCors(cors => cors.Configure(configuration.GetSection("CorsPolicy")));
 
 // Razor Pages.
 services.AddRazorPages(options => options.Conventions.ConfigureFilter(new IgnoreAntiforgeryTokenAttribute()));
