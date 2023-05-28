@@ -8,12 +8,14 @@ using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Signals;
+using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Core.Activities;
 
 /// <summary>
 /// Represents a composite activity that has a single <see cref="Root"/> activity. Like a workflow, but without workflow-level properties.
 /// </summary>
+[PublicAPI]
 public abstract class Composite : Activity, IVariableContainer
 {
     /// <inheritdoc />
@@ -25,11 +27,6 @@ public abstract class Composite : Activity, IVariableContainer
     /// <inheritdoc />
     [JsonIgnore]  // Composite activities' Variables is intended to be constructed from code only.
     public ICollection<Variable> Variables { get; init; } = new List<Variable>();
-
-    /// <summary>
-    /// The result value of the composite, if any.
-    /// </summary>
-    [Output] public Output? Result { get; set; }
 
     /// <summary>
     /// A variable to allow activities to set a result.
@@ -167,12 +164,53 @@ public abstract class Composite : Activity, IVariableContainer
 }
 
 /// <summary>
-/// Represents a composite activity that has a single <see cref="Root"/> activity and returns a result.
+/// Base class for custom activities with auto-complete behavior that return a result.
 /// </summary>
-public abstract class Composite<T> : Composite
+[PublicAPI]
+public abstract class CompositeWithResult : Composite
+{
+    /// <inheritdoc />
+    protected CompositeWithResult(string? source = default, int? line = default) : base(source, line)
+    {
+    }
+
+    /// <inheritdoc />
+    protected CompositeWithResult(MemoryBlockReference? output, string? source = default, int? line = default) : base(source, line)
+    {
+        if (output != null) Result = new Output(output);
+    }
+
+    /// <inheritdoc />
+    protected CompositeWithResult(Output? output, string? source = default, int? line = default) : base(source, line)
+    {
+        Result = output;
+    }
+
+    /// <summary>
+    /// The result value of the composite.
+    /// </summary>
+    [Output] public Output? Result { get; set; }
+}
+
+/// <summary>
+/// Represents a composite activity that has a single <see cref="Composite.Root"/> activity and returns a result.
+/// </summary>
+[PublicAPI]
+public abstract class Composite<T> : Composite, IActivityWithResult<T>
 {
     /// <inheritdoc />
     protected Composite([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
+    }
+
+    /// <summary>
+    /// The result of the activity.
+    /// </summary>
+    [Output] public Output<T>? Result { get; set; }
+
+    Output? IActivityWithResult.Result
+    {
+        get => Result;
+        set => Result = (Output<T>?)value;
     }
 }
