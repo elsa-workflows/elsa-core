@@ -18,7 +18,7 @@ import WorkflowDefinitionTunnel, {WorkflowDefinitionState} from "../state";
 import {LayoutDirection, UpdateActivityArgs} from "../../flowchart/models";
 import {cloneDeep} from '@antv/x6/lib/util/object/object';
 import {removeGuidsFromPortNames} from '../../../utils/graph';
-import { WorkflowPropertiesEditorTabs } from '../models/props-editor-tabs';
+import {WorkflowPropertiesEditorTabs} from '../models/props-editor-tabs';
 
 @Component({
   tag: 'elsa-workflow-definition-editor',
@@ -107,7 +107,7 @@ export class WorkflowDefinitionEditor {
   // Updates the workflow definition without importing it into the designer.
   @Method()
   async updateWorkflowDefinition(workflowDefinition: WorkflowDefinition): Promise<void> {
-    if(this.workflowDefinitionState != workflowDefinition) {
+    if (this.workflowDefinitionState != workflowDefinition) {
       this.workflowDefinitionState = workflowDefinition;
 
       window.requestAnimationFrame(async () => {
@@ -191,7 +191,7 @@ export class WorkflowDefinitionEditor {
   private saveChanges = async (): Promise<void> => {
     const updatedWorkflowDefinition = this.workflowDefinitionState;
 
-    if(!updatedWorkflowDefinition.isLatest) {
+    if (!updatedWorkflowDefinition.isLatest) {
       console.debug('Workflow definition is not the latest version. Changes will not be saved.');
       return;
     }
@@ -210,7 +210,7 @@ export class WorkflowDefinitionEditor {
   // To prevent redundant post requests to server, save changes only if there is a difference
   // between existing workflow definition on server side and updated workflow definition on client side.
   private hasWorkflowDefinitionAnyUpdatedData = async (updatedWorkflowDefinition: WorkflowDefinition): Promise<boolean> => {
-        const existingWorkflowDefinition = await this.workflowDefinitionApi.get({definitionId: updatedWorkflowDefinition.definitionId, versionOptions: {version: updatedWorkflowDefinition.version}});
+    const existingWorkflowDefinition = await this.workflowDefinitionApi.get({definitionId: updatedWorkflowDefinition.definitionId, versionOptions: {version: updatedWorkflowDefinition.version}});
     const updatedWorkflowDefinitionClone = cloneDeep(updatedWorkflowDefinition);
 
     removeGuidsFromPortNames(updatedWorkflowDefinitionClone.root);
@@ -276,7 +276,7 @@ export class WorkflowDefinitionEditor {
   private onWorkflowPropsUpdated = (e: CustomEvent<WorkflowDefinitionPropsUpdatedArgs>) => {
     this.saveChangesDebounced();
 
-    if(e.detail.updatedTab == WorkflowPropertiesEditorTabs.Variables){
+    if (e.detail.updatedTab == WorkflowPropertiesEditorTabs.Variables) {
       const currentSelectedActivity = this.selectedActivity;
       this.selectedActivity = null;
       this.selectedActivity = currentSelectedActivity;
@@ -342,6 +342,7 @@ export class WorkflowDefinitionEditor {
             <elsa-workflow-definition-editor-toolbox ref={el => this.toolbox = el}/>
           </elsa-panel>
           <elsa-flowchart
+            key={workflowDefinition.definitionId}
             ref={el => this.flowchart = el}
             rootActivity={workflowDefinition.root}
             interactiveMode={true}
