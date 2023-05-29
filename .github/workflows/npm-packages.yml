@@ -3,13 +3,13 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - v3
+      - v3-rc1
     paths:
       - src/designer/**
       - .github/**
   pull_request:
     branches:
-      - v3
+      - v3-rc1
     paths:
       - src/designer/elsa-workflows-designer/**
       - .github/**
