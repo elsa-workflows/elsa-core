@@ -1,10 +1,9 @@
-using System.Net.Mqtt;
-using System.Threading.Tasks;
-using Elsa.Activities.Mqtt.Options;
 using Elsa.Activities.Mqtt.Services;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Services.Models;
+using MQTTnet;
+
 
 namespace Elsa.Activities.Mqtt.Activities.MqttMessageReceived
 {
@@ -35,7 +34,7 @@ namespace Elsa.Activities.Mqtt.Activities.MqttMessageReceived
 
         private IActivityExecutionResult ExecuteInternalAsync(ActivityExecutionContext context)
         {
-            if (context.Input != null && context.Input.GetType()==typeof(MqttApplicationMessage))
+            if (context.Input != null && context.Input.GetType() == typeof(MqttApplicationMessage))
             {
                 var message = (MqttApplicationMessage)context.Input;
                 Output = System.Text.Encoding.UTF8.GetString(message.Payload);
@@ -46,5 +45,7 @@ namespace Elsa.Activities.Mqtt.Activities.MqttMessageReceived
 
             return Done();
         }
+
+
     }
 }

@@ -48,7 +48,7 @@ namespace Elsa.Activities.File
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
-            var model = (FileSystemEvent)context.Input!;
+            var model = context.GetInput<FileSystemEvent>()!;
             Output = model;
             return Done(Output);
         }

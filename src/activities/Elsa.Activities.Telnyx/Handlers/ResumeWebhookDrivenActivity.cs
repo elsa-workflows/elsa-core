@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Telnyx.Extensions;
-using Elsa.Activities.Telnyx.Models;
 using Elsa.Activities.Telnyx.Providers.Bookmarks;
 using Elsa.Activities.Telnyx.Webhooks.Events;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
@@ -44,11 +43,11 @@ namespace Elsa.Activities.Telnyx.Handlers
                 return;
 
             var correlationId = receivedPayload.GetCorrelationId();
-            var bookmark = CreateBookmark();
+            var bookmark = CreateBookmark(receivedPayload);
             var context = new WorkflowsQuery(ActivityTypeName, bookmark, correlationId);
             await _workflowLaunchpad.CollectAndDispatchWorkflowsAsync(context, new WorkflowInput(receivedPayload), cancellationToken);
         }
 
-        protected virtual IBookmark CreateBookmark() => new GatherUsingSpeakBookmark();
+        protected abstract IBookmark CreateBookmark(CallPayload receivedPayload);
     }
 }

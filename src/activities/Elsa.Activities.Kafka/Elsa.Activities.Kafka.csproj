@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <Import Project="..\..\..\common.props" />
+    <Import Project="..\..\..\configureawait.props" />
+    
+    <PropertyGroup>
+        <TargetFrameworks>net5.0;net6.0;net7.0</TargetFrameworks>
+        <Description>
+            Elsa is a set of workflow libraries and tools that enable lean and mean workflowing capabilities in any .NET Core application.
+            This package provides activities to send and receive messages using Kafka.</Description>        
+        <PackageTags>elsa, workflows</PackageTags>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Confluent.Kafka" Version="1.9.0" />
+      <PackageReference Include="Confluent.SchemaRegistry" Version="1.9.0" />
+      <PackageReference Include="Confluent.SchemaRegistry.Serdes.Avro" Version="1.9.0" />
+      <PackageReference Include="System.Reactive" Version="5.0.0" />
+    </ItemGroup>
+
+</Project>

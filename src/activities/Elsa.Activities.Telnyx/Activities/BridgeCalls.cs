@@ -21,7 +21,7 @@ namespace Elsa.Activities.Telnyx.Activities
     [Action(
         Category = Constants.Category,
         Description = "Bridge two call control calls.",
-        Outcomes = new[] { TelnyxOutcomeNames.Bridged, TelnyxOutcomeNames.CallIsNoLongerActive },
+        Outcomes = new[] { TelnyxOutcomeNames.Bridging, TelnyxOutcomeNames.Bridged, TelnyxOutcomeNames.CallIsNoLongerActive },
         DisplayName = "Bridge Calls"
     )]
     public class BridgeCalls : Activity
@@ -70,16 +70,14 @@ namespace Elsa.Activities.Telnyx.Activities
             CallBridgedPayloadA = null;
             CallBridgedPayloadB = null;
 
-            var callControlIdA = CallControlIdA = context.GetCallControlId(CallControlIdA);
-            var callControlIdB = CallControlIdB = await GetCallControlBAsync(context);
+            CallControlIdA = context.GetCallControlId(CallControlIdA);
+            CallControlIdB = await GetCallControlBAsync(context);
 
-            if (callControlIdB == null)
+            if (CallControlIdB == null)
                 throw new WorkflowException("Cannot bridge calls because the second leg's call control ID was not specified and no incoming activities provided this value");
 
-            CallControlIdA = callControlIdA;
-
             var request = new BridgeCallsRequest(
-                callControlIdB,
+                CallControlIdB,
                 ClientState,
                 CommandId,
                 ParkAfterUnbridged
@@ -87,8 +85,8 @@ namespace Elsa.Activities.Telnyx.Activities
 
             try
             {
-                await _telnyxClient.Calls.BridgeCallsAsync(callControlIdA, request, context.CancellationToken);
-                return Suspend();
+                await _telnyxClient.Calls.BridgeCallsAsync(CallControlIdA, request, context.CancellationToken);
+                return Combine(Outcome(TelnyxOutcomeNames.Bridging), Suspend());
             }
             catch (ApiException e)
             {

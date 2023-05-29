@@ -12,7 +12,7 @@ export interface Secret {
 export interface SecretModel {
   id?: string;
   type: string;
-  name?: string;
+  name: string;
   displayName?: string;
   properties: Array<SecretDefinitionProperty>;
 }
@@ -59,6 +59,7 @@ export interface SecretProperties {
   supportedSyntaxes?: string[];
   type?: string;
   uiHint?: string;
+  options?: any;
 }
 
 export interface SecretEditorRenderProps {

@@ -1,4 +1,4 @@
-using System.Net.Mqtt;
+using MQTTnet.Protocol;
 using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Expressions;
@@ -49,6 +49,6 @@ namespace Elsa.Activities.Mqtt.Activities
             UIHint = ActivityInputUIHints.Dropdown,
             Order = 5,
             Category = PropertyCategories.Configuration)]
-        public MqttQualityOfService QualityOfService { get; set; } = default;
+        public MqttQualityOfServiceLevel QualityOfService { get; set; } = default;
     }
 }

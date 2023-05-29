@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Elsa.Services;
 using Microsoft.Extensions.Logging;

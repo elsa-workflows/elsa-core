@@ -34,6 +34,7 @@ namespace Elsa.Core.IntegrationTests.Workflows
                     services
                         .AddSingleton<IWorkflowLaunchpad, WorkflowLaunchpad>()
                         .AddSingleton<IWorkerManager, WorkerManager>()
+                        .AddSingleton<IAzureServiceBusTenantIdResolver, DefaultAzureServiceBusTenantIdResolver>()
                         .AddSingleton(WorkflowRegistryMoq.Object)
                         .AddBookmarkProvider<MessageReceivedBookmarkProvider>()
                         .AddHostedService<StartWorkers>();

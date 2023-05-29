@@ -1,6 +1,5 @@
 using Elsa.Activities.Mqtt.Options;
 using Elsa.Services;
-using Elsa.Services.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
@@ -10,6 +9,9 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Mqtt.Bookmarks;
+using Elsa.Models;
+using Elsa.Services.Models;
+using Elsa.Services.WorkflowStorage;
 
 namespace Elsa.Activities.Mqtt.Services
 {
@@ -21,7 +23,7 @@ namespace Elsa.Activities.Mqtt.Services
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<MqttTopicsStarter> _logger;
-        private readonly ICollection<Worker> _workers;
+        private readonly IDictionary<int,Worker> _workers;
 
         public MqttTopicsStarter(
             IMessageReceiverClientFactory receiverFactory,
@@ -35,24 +37,44 @@ namespace Elsa.Activities.Mqtt.Services
             _scopeFactory = scopeFactory;
             _serviceProvider = serviceProvider;
             _logger = logger;
-            _workers = new List<Worker>();
+            _workers = new Dictionary<int, Worker>();
+        }
+
+
+        public async Task CreateWorkersAsync(string workflowDefinitionId, CancellationToken cancellationToken)
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var triggerFinder = scope.ServiceProvider.GetRequiredService<ITriggerFinder>();
+            var workflowRegistry = scope.ServiceProvider.GetRequiredService<IWorkflowRegistry>();
+            var triggerExtractor = scope.ServiceProvider.GetRequiredService<IGetsTriggersForWorkflowBlueprints>();
+            var workflowExecutionContextFactory = scope.ServiceProvider.GetRequiredService<ICreatesWorkflowExecutionContextForWorkflowBlueprint>();
+            var workflowBlueprint = workflowRegistry.GetWorkflowAsync(workflowDefinitionId, VersionOptions.All).Result;
+
+            //Worker dispose if workflowDefinitionId not Published.
+            if (workflowBlueprint == null || !workflowBlueprint.IsPublished)
+            {
+                await DisposeExistingWorkersAsync();
+            }
+            else
+            {
+                await CreateWorkersAsync(cancellationToken);
+            }
         }
 
         public async Task CreateWorkersAsync(CancellationToken cancellationToken)
         {
             await _semaphore.WaitAsync(cancellationToken);
-
             try
             {
-                await DisposeExistingWorkersAsync();
-
                 var receiverConfigs = (await GetConfigurationsAsync(cancellationToken).ToListAsync(cancellationToken)).GroupBy(c => c.GetHashCode()).Select(x => x.First());
 
                 foreach (var config in receiverConfigs)
                 {
                     try
                     {
-                        _workers.Add(await CreateWorkerAsync(config, cancellationToken));
+
+                        if (!_workers.ContainsKey(config.GetHashCode()))
+                            _workers.Add(config.GetHashCode(), await CreateWorkerAsync(config, cancellationToken));
                     }
                     catch (Exception e)
                     {
@@ -111,11 +133,13 @@ namespace Elsa.Activities.Mqtt.Services
         {
             foreach (var worker in _workers.ToList())
             {
-                await worker.DisposeAsync();
+                await worker.Value.DisposeAsync();
                 _workers.Remove(worker);
             }
         }
 
         private async Task DisposeReceiverAsync(IMqttClientWrapper messageReceiver) => await _receiverFactory.DisposeReceiverAsync(messageReceiver);
+
+        
     }
 }

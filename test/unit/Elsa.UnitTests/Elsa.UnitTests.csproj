@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFramework>net7.0</TargetFramework>
         <IsPackable>false</IsPackable>
         <RootNamespace>Elsa</RootNamespace>
     </PropertyGroup>
@@ -22,7 +22,7 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <PackageReference Include="System.Text.Encodings.Web" Version="6.0.0" />
+        <PackageReference Include="System.Text.Encodings.Web" Version="7.0.0" />
     </ItemGroup>
 
     <ItemGroup>

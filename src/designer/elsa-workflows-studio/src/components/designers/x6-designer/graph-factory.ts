@@ -1,7 +1,14 @@
-import {CellView, Graph, Node} from '@antv/x6';
-import { ActivityModel } from '../../../models';
+import {CellView, Edge, Graph, Node, Model} from '@antv/x6';
 import './ports';
 import {ActivityNodeShape} from './shapes';
+
+let _cursorX = 0;
+let _cursorY = 0;
+
+addEventListener("mousemove", e => {
+  _cursorX = e.clientX;
+  _cursorY = e.clientY;
+});
 
 export function createGraph(
   container: HTMLElement,
@@ -42,7 +49,7 @@ export function createGraph(
     },
     selecting: {
       enabled: true,
-      showNodeSelectionBox: !disableEdit,
+      showNodeSelectionBox: false,
       rubberband: !disableEdit
     },
     scroller: {
@@ -64,7 +71,7 @@ export function createGraph(
       router: {
         name: 'manhattan',
         args: {
-          padding: 1,
+          padding: 10,
           startDirections: ['right', 'bottom'],
           endDirections: ['left'],
         },
@@ -184,11 +191,17 @@ export function addGraphEvents(graph,
 
     })
 
-    graph.bindKey(['meta+c', 'ctrl+c'], () => {
-      const cells = graph.getSelectedCells()
+    function copyGraphCells(graph, cells) {
       if (cells.length) {
         graph.copy(cells)
       }
+      const cellsJson = localStorage.getItem("x6.clipboard.cells");
+      navigator.clipboard.writeText(cellsJson);
+    }
+
+    graph.bindKey(['meta+c', 'ctrl+c'], () => {
+      const cells = graph.getSelectedCells();
+      copyGraphCells(graph, cells);
       return false
     });
 
@@ -197,36 +210,72 @@ export function addGraphEvents(graph,
       if (cells.length) {
         graph.cut(cells)
       }
-      return false
+      const cellsJson = localStorage.getItem("x6.clipboard.cells");
+      navigator.clipboard.writeText(cellsJson);
+      return false;
     });
 
     graph.bindKey(['meta+v', 'ctrl+v'], async () => {
-      if (!graph.isClipboardEmpty()) {
+      var cellsJson = await navigator.clipboard.readText();
+      if (cellsJson) {
         disableEvents();
-        const cells = graph.paste({offset: 32});
 
-        var activityIdsMap = cells.filter(x => !!x.activity).reduce(function(map, x) {
-          map[x.activity.activityId] = x.id;
-          return map;
-        }, {});
-        for (const cell of cells) {
-          if (cell.activity) {
-            cell.activity.activityId = cell.id;
+        let cells = [];
+        try {
+          cells = Model.fromJSON(JSON.parse(cellsJson)) as any;
+          if (!cells?.length) {
+            console.log("No cells to paste");
+            return;
+          }
+          cells.forEach((cell) => {
+            cell.model = null
+            cell.removeProp('zIndex')
+            cell.translate(0, 0);
+          });
+          graph.addCell(cells)
+          copyGraphCells(graph, cells); // So it would generate new cell ids to the cells in the clipboard
 
-            const cellPosition = cell.position({relative: false});
-            cell.activity.x = Math.round(cellPosition.x);
-            cell.activity.y = Math.round(cellPosition.y);
-          } else {
-            if (cell.data) {
+          var activityIdsMap = cells.filter(x => !!x.activity).reduce(function(map, x) {
+            map[x.activity.activityId] = x.id;
+            return map;
+          }, {});
+
+          const nodePositions = cells.filter(x => !!x.activity).map(x => x.position({relative: false}));
+          const minX = Math.min(...nodePositions.map(x => x.x));
+          const minY = Math.min(...nodePositions.map(x => x.y));
+
+          graph.disableHistory();
+          for (const cell of cells) {
+            if (cell.activity) {
+              cell.activity.activityId = cell.id;
+
+              // Move the cells where the cursor is located
+              const cellPosition = cell.position({relative: false});
+              const point = graph.pageToLocal(_cursorX, _cursorY);
+              const newX = point.x + cellPosition.x - minX;
+              const newY = point.y + cellPosition.y - minY;
+              cell.position(newX, newY);
+
+              cell.activity.x = Math.round(newX);
+              cell.activity.y = Math.round(newY);
+            }
+            else if (cell.data) {
               cell.data.sourceId = activityIdsMap[cell.data.sourceId] || cell.data.sourceId;
               cell.data.targetId = activityIdsMap[cell.data.targetId] || cell.data.targetId;
             }
           }
         }
+        catch(error) {
+          console.error(error);
+        }
+
+        graph.enableHistory();
 
         await enableEvents(true);
         graph.cleanSelection();
-        graph.select(cells);
+        if (cells.length) {
+          graph.select(cells);
+        }
       }
       return false
     });

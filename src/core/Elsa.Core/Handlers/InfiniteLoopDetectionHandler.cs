@@ -48,10 +48,11 @@ namespace Elsa.Handlers
             if (loopDetected)
             {
                 _logger.LogWarning(
-                    "Infinite loop detected on activity {ActivityId} of workflow instance {WorkflowInstanceId} of workflow definition {WorkflowDefinitionId}",
+                    "Infinite loop detected on activity {ActivityId} of workflow instance {WorkflowInstanceId} of workflow definition {WorkflowDefinitionId}. Source: {ActivitySource}",
                     context.ActivityId,
                     context.WorkflowInstance.Id,
-                    context.WorkflowInstance.DefinitionId);
+                    context.WorkflowInstance.DefinitionId,
+                    context.ActivityBlueprint.Source);
 
                 await HandleLoopAsync(context);
                 await detector.ResetAsync(context);

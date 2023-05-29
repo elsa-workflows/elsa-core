@@ -42,5 +42,7 @@ namespace Elsa.Activities.Telnyx.Client.Services
 
         [Post("/v2/calls/{callControlId}/actions/speak")]
         Task SpeakTextAsync(string callControlId, [Body] SpeakTextRequest request, CancellationToken cancellationToken = default);
-    }
+        
+        [Get("/v2/calls/{callControlId}")]
+        Task<TelnyxResponse<CallStatus>> GetStatusAsync(string callControlId, CancellationToken cancellationToken = default); }
 }

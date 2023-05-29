@@ -5,26 +5,21 @@ namespace Elsa.Activities.Telnyx.Client.Models
 {
     public class TelnyxResponse<T>
     {
-        public T Data { get; set; } = default!;
+        [JsonProperty("data")] public T Data { get; set; } = default!;
     }
 
-    public class DialResponse
+    public class DialResponse : CallStatus
     {
-        public string CallControlId { get; set; } = default!;
-        public string CallLegId { get; set; } = default!;
-        public string CallSessionId { get; set; } = default!;
-        public bool IsAlive { get; set; } = default!;
-        public string RecordType { get; set; } = default!;
     }
 
     public class NumberLookupResponse
     {
-        public CallerName CallerName { get; set; } = default!;
-        public Carrier Carrier { get; set; } = default!;
-        public string CountryCode { get; set; } = default!;
-        public string Fraud { get; set; } = default!;
-        public string NationalFormat { get; set; } = default!;
-        public string PhoneNumber { get; set; } = default!;
+        [JsonProperty("caller_name")]public CallerName CallerName { get; set; } = default!;
+        [JsonProperty("carrier")]public Carrier Carrier { get; set; } = default!;
+        [JsonProperty("country_code")]public string CountryCode { get; set; } = default!;
+        [JsonProperty("fraud")]public string Fraud { get; set; } = default!;
+        [JsonProperty("national_format")]public string NationalFormat { get; set; } = default!;
+        [JsonProperty("p")]public string PhoneNumber { get; set; } = default!;
         public Portability Portability { get; set; } = default!;
         public string RecordType { get; set; } = default!;
     }
@@ -48,16 +43,25 @@ namespace Elsa.Activities.Telnyx.Client.Models
 
     public class Carrier
     {
-        public string ErrorCode { get; set; } = default!;
-        public string MobileCountryCode { get; set; } = default!;
-        public int MobileNetworkCode { get; set; } = default!;
-        public string Name { get; set; } = default!;
-        public string Type { get; set; } = default!;
+        [JsonProperty("error_code")]public string ErrorCode { get; set; } = default!;
+        [JsonProperty("mobile_country_code")]public string MobileCountryCode { get; set; } = default!;
+        [JsonProperty("mobile_network_code")]public int MobileNetworkCode { get; set; } = default!;
+        [JsonProperty("name")]public string Name { get; set; } = default!;
+        [JsonProperty("type")]public string Type { get; set; } = default!;
     }
 
     public class CallerName
     {
         [JsonProperty("caller_name")] public string Name { get; set; } = default!;
-        public string ErrorCode { get; set; } = default!;
+        [JsonProperty("error_code")]public string ErrorCode { get; set; } = default!;
+    }
+
+    public class CallStatus
+    {
+        [JsonProperty("call_control_id")] public string CallControlId { get; set; } = default!;
+        [JsonProperty("call_leg_id")] public string CallLegId { get; set; } = default!;
+        [JsonProperty("call_session_id")] public string CallSessionId { get; set; } = default!;
+        [JsonProperty("is_alive")] public bool IsAlive { get; set; } = default!;
+        [JsonProperty("record_type")] public string RecordType { get; set; } = default!;
     }
 }

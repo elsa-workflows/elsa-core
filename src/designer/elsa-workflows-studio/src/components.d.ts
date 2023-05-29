@@ -55,6 +55,8 @@ export namespace Components {
     interface ElsaCredentialManagerItemsList {
         "basePath": string;
         "culture": string;
+        "monacoLibPath": string;
+        "serverUrl": string;
     }
     interface ElsaCredentialManagerListScreen {
         "basePath": string;
@@ -109,6 +111,7 @@ export namespace Components {
         "editorHeight": string;
         "expression": string;
         "language": string;
+        "opensModal": boolean;
         "padding": string;
         "serverUrl": string;
         "setExpression": (value: string) => Promise<void>;
@@ -178,6 +181,8 @@ export namespace Components {
         "propertyModel": ActivityDefinitionProperty;
         "serverUrl": string;
     }
+    interface ElsaOauth2Authorized {
+    }
     interface ElsaPager {
         "culture": string;
         "history"?: RouterHistory;
@@ -213,6 +218,8 @@ export namespace Components {
     }
     interface ElsaSecretEditorModal {
         "culture": string;
+        "monacoLibPath": string;
+        "serverUrl": string;
     }
     interface ElsaSecretsPickerModal {
     }
@@ -399,6 +406,7 @@ export namespace Components {
     }
     interface ElsaWorkflowTestPanel {
         "culture": string;
+        "selectedActivityId"?: string;
         "serverUrl": string;
         "workflowDefinition": WorkflowDefinition;
         "workflowTestActivityId": string;
@@ -582,6 +590,12 @@ declare global {
     var HTMLElsaMultiTextPropertyElement: {
         prototype: HTMLElsaMultiTextPropertyElement;
         new (): HTMLElsaMultiTextPropertyElement;
+    };
+    interface HTMLElsaOauth2AuthorizedElement extends Components.ElsaOauth2Authorized, HTMLStencilElement {
+    }
+    var HTMLElsaOauth2AuthorizedElement: {
+        prototype: HTMLElsaOauth2AuthorizedElement;
+        new (): HTMLElsaOauth2AuthorizedElement;
     };
     interface HTMLElsaPagerElement extends Components.ElsaPager, HTMLStencilElement {
     }
@@ -869,6 +883,7 @@ declare global {
         "elsa-multi-expression-editor": HTMLElsaMultiExpressionEditorElement;
         "elsa-multi-line-property": HTMLElsaMultiLinePropertyElement;
         "elsa-multi-text-property": HTMLElsaMultiTextPropertyElement;
+        "elsa-oauth2-authorized": HTMLElsaOauth2AuthorizedElement;
         "elsa-pager": HTMLElsaPagerElement;
         "elsa-property-editor": HTMLElsaPropertyEditorElement;
         "elsa-radio-list-property": HTMLElsaRadioListPropertyElement;
@@ -950,6 +965,8 @@ declare namespace LocalJSX {
     interface ElsaCredentialManagerItemsList {
         "basePath"?: string;
         "culture"?: string;
+        "monacoLibPath"?: string;
+        "serverUrl"?: string;
     }
     interface ElsaCredentialManagerListScreen {
         "basePath"?: string;
@@ -1011,6 +1028,7 @@ declare namespace LocalJSX {
         "expression"?: string;
         "language"?: string;
         "onExpressionChanged"?: (event: CustomEvent<string>) => void;
+        "opensModal"?: boolean;
         "padding"?: string;
         "serverUrl"?: string;
         "singleLineMode"?: boolean;
@@ -1082,6 +1100,8 @@ declare namespace LocalJSX {
         "propertyModel"?: ActivityDefinitionProperty;
         "serverUrl"?: string;
     }
+    interface ElsaOauth2Authorized {
+    }
     interface ElsaPager {
         "culture"?: string;
         "history"?: RouterHistory;
@@ -1119,6 +1139,8 @@ declare namespace LocalJSX {
     }
     interface ElsaSecretEditorModal {
         "culture"?: string;
+        "monacoLibPath"?: string;
+        "serverUrl"?: string;
     }
     interface ElsaSecretsPickerModal {
     }
@@ -1282,6 +1304,7 @@ declare namespace LocalJSX {
     }
     interface ElsaWorkflowPublishButton {
         "culture"?: string;
+        "onDeleteClicked"?: (event: CustomEvent<any>) => void;
         "onExportClicked"?: (event: CustomEvent<any>) => void;
         "onImportClicked"?: (event: CustomEvent<File>) => void;
         "onPublishClicked"?: (event: CustomEvent<any>) => void;
@@ -1302,6 +1325,7 @@ declare namespace LocalJSX {
     }
     interface ElsaWorkflowTestPanel {
         "culture"?: string;
+        "selectedActivityId"?: string;
         "serverUrl"?: string;
         "workflowDefinition"?: WorkflowDefinition;
         "workflowTestActivityId"?: string;
@@ -1353,6 +1377,7 @@ declare namespace LocalJSX {
         "elsa-multi-expression-editor": ElsaMultiExpressionEditor;
         "elsa-multi-line-property": ElsaMultiLineProperty;
         "elsa-multi-text-property": ElsaMultiTextProperty;
+        "elsa-oauth2-authorized": ElsaOauth2Authorized;
         "elsa-pager": ElsaPager;
         "elsa-property-editor": ElsaPropertyEditor;
         "elsa-radio-list-property": ElsaRadioListProperty;
@@ -1429,6 +1454,7 @@ declare module "@stencil/core" {
             "elsa-multi-expression-editor": LocalJSX.ElsaMultiExpressionEditor & JSXBase.HTMLAttributes<HTMLElsaMultiExpressionEditorElement>;
             "elsa-multi-line-property": LocalJSX.ElsaMultiLineProperty & JSXBase.HTMLAttributes<HTMLElsaMultiLinePropertyElement>;
             "elsa-multi-text-property": LocalJSX.ElsaMultiTextProperty & JSXBase.HTMLAttributes<HTMLElsaMultiTextPropertyElement>;
+            "elsa-oauth2-authorized": LocalJSX.ElsaOauth2Authorized & JSXBase.HTMLAttributes<HTMLElsaOauth2AuthorizedElement>;
             "elsa-pager": LocalJSX.ElsaPager & JSXBase.HTMLAttributes<HTMLElsaPagerElement>;
             "elsa-property-editor": LocalJSX.ElsaPropertyEditor & JSXBase.HTMLAttributes<HTMLElsaPropertyEditorElement>;
             "elsa-radio-list-property": LocalJSX.ElsaRadioListProperty & JSXBase.HTMLAttributes<HTMLElsaRadioListPropertyElement>;

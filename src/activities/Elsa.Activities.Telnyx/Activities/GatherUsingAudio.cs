@@ -117,11 +117,11 @@ namespace Elsa.Activities.Telnyx.Activities
                 EmptyToNull(ValidDigits)
             );
 
-            var callControlId = context.GetCallControlId(CallControlId);
+            CallControlId = context.GetCallControlId(CallControlId);
 
             try
             {
-                await _telnyxClient.Calls.GatherUsingAudioAsync(callControlId, request, context.CancellationToken);
+                await _telnyxClient.Calls.GatherUsingAudioAsync(CallControlId, request, context.CancellationToken);
                 return Suspend();
             }
             catch (ApiException e)

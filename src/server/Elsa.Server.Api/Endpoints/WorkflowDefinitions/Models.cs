@@ -15,6 +15,7 @@ public record WorkflowDefinitionSummaryModel(
     WorkflowPersistenceBehavior PersistenceBehavior,
     bool IsPublished,
     bool IsLatest,
-    Variables CustomAttributes);
+    Variables CustomAttributes,
+    Instant CreatedAt);
     
 public record WorkflowDefinitionVersionModel(string Id, string DefinitionId, int Version, bool IsLatest, bool IsPublished, Instant CreatedAt);

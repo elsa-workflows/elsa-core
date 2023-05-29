@@ -8,7 +8,6 @@ using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Builders;
 using Elsa.Design;
-using Elsa.Exceptions;
 using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -69,13 +68,13 @@ namespace Elsa.Activities.Telnyx.Activities
                 Stop
             );
 
-            var callControlId = context.GetCallControlId(CallControlId);
+            CallControlId = context.GetCallControlId(CallControlId);
             
-            context.JournalData["CallControlId"] = callControlId;
+            context.JournalData["CallControlId"] = CallControlId;
 
             try
             {
-                await _telnyxClient.Calls.StopAudioPlaybackAsync(callControlId, request, context.CancellationToken);
+                await _telnyxClient.Calls.StopAudioPlaybackAsync(CallControlId, request, context.CancellationToken);
                 return Suspend();
             }
             catch (ApiException e)

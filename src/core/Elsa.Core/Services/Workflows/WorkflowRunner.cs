@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -239,6 +238,7 @@ namespace Elsa.Services.Workflows
                     var currentActivityBlueprint = workflowExecutionContext.WorkflowBlueprint.Activities.First(bp => bp.Id == workflowExecutionContext.WorkflowInstance.CurrentActivity.ActivityId);
                     workflowExecutionContext.AddEntry(currentActivityBlueprint, "Faulted", null, SimpleException.FromException(e));
                 }
+
                 return new RunWorkflowResult(workflowExecutionContext.WorkflowInstance, activity.Id, e, false);
             }
         }
@@ -332,8 +332,11 @@ namespace Elsa.Services.Workflows
                         , _mediator
                         , cancellationToken);
 
-                    if (workflowInstance.WorkflowStatus == WorkflowStatus.Faulted)
+                    if (workflowExecutionContext.Status == WorkflowStatus.Faulted)
+                    {
                         await _mediator.Publish(new WorkflowFaulting(activityExecutionContext, activity), cancellationToken);
+                        break;
+                    }
 
                     await _mediator.Publish(new WorkflowExecutionPassCompleted(workflowExecutionContext, activityExecutionContext), cancellationToken);
 
@@ -351,8 +354,11 @@ namespace Elsa.Services.Workflows
 
             workflowInstance.CurrentActivity = null;
 
-            if (workflowExecutionContext.HasBlockingActivities)
-                workflowExecutionContext.Suspend();
+            if (workflowExecutionContext.Status != WorkflowStatus.Faulted)
+            {
+                if (workflowExecutionContext.HasBlockingActivities)
+                    workflowExecutionContext.Suspend();
+            }
 
             if (workflowExecutionContext.Status == WorkflowStatus.Running)
                 await workflowExecutionContext.CompleteAsync();

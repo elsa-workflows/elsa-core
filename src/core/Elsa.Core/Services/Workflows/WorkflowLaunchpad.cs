@@ -327,13 +327,14 @@ namespace Elsa.Services.Workflows
             }
 
             var startActivities = _getsStartActivities.GetStartActivities(workflowBlueprint).Select(x => x.Id).ToHashSet();
-            var startActivityId = activityId == null ? startActivities.FirstOrDefault() : startActivities.Contains(activityId) ? activityId : default;
 
-            if (startActivityId == null)
+            if (startActivities.Count == 0)
             {
                 _logger.LogWarning("Cannot start workflow {WorkflowDefinitionId} with version {WorkflowDefinitionVersion} because it has no starting activities", workflowBlueprint.Id, workflowBlueprint.Version);
                 return null;
             }
+            
+            var startActivityId = (activityId == null || !startActivities.Contains(activityId)) ? startActivities.FirstOrDefault() : activityId;
 
             return new StartableWorkflowDefinition(workflowBlueprint, startActivityId, correlationId, contextId);
         }

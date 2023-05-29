@@ -133,7 +133,17 @@ export class ElsaWorkflowDesigner {
       map[activity.activityId] = activity;
 
     this.selectedActivities = map;
-    this.safeRender();
+    
+    const root = d3.select(this.el);
+    root.selectAll('.node.activity').each((n: any) => {
+      const node = this.graph.node(n) as any;
+    
+      d3.select(node.elem)        
+        .select("div.activity")
+        .classed("elsa-border-blue-600", ids.includes(n))
+        .classed("elsa-border-gray-200", !ids.includes(n));
+         
+    });    
   }
 
   @Watch('activityContextMenu')
@@ -269,8 +279,11 @@ export class ElsaWorkflowDesigner {
     if (rect.height === 0 || rect.width === 0) {
       const observer = new ResizeObserver(entries => {
         for (let entry of entries) {
-          this.renderTree();
-          observer.unobserve(this.el);
+          const rect = entry.contentRect;
+          if (rect.height > 0 && rect.width > 0) {
+            this.renderTree();
+            observer.unobserve(entry.target);
+          }
         }
       });
 
@@ -291,6 +304,7 @@ export class ElsaWorkflowDesigner {
       displayContexts[model.activityId] = await this.getActivityDisplayContext(model);
 
     this.activityDisplayContexts = displayContexts;
+
     this.safeRender();
   }
 
@@ -546,7 +560,8 @@ export class ElsaWorkflowDesigner {
         scale: transform.k,
         initialZoom: this.zoomParams.initialZoom,
       };
-
+      
+      //fix for safari
       const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
       if (isSafari) {
           d3.selectAll('g.label > * > * > div, g.label > * > div').style('transform', `scale(${transform.k})`);
@@ -703,7 +718,7 @@ export class ElsaWorkflowDesigner {
     const prevTransform = this.innerD3Selected.attr('transform');
     const scaleAfter = this.zoomParams.scale;
     const root = d3.select(this.el);
-    this.svgD3Selected.call(this.zoom.scaleTo, 1);
+    this.svgD3Selected.call(this.zoom.scaleTo, 1);    
     this.dagreD3Renderer(this.innerD3Selected as any, this.graph as any);
     this.svgD3Selected.call(this.zoom.scaleTo, scaleAfter);
     this.innerD3Selected.attr('transform', prevTransform);
@@ -788,6 +803,8 @@ export class ElsaWorkflowDesigner {
 
           if (activityContext) {
             activityContext.expanded = !activityContext.expanded;
+            
+            this.safeRender();
           }
       });
 
@@ -818,11 +835,6 @@ export class ElsaWorkflowDesigner {
               this.activitySelected.emit(activity);
             }
           }
-
-          // Delay the rerender of the tree to permit the double click action to be captured
-          setTimeout(() => {
-            this.safeRender();
-          }, 90);
         }
       }).on('dblclick', async e => {
         e.stopPropagation();
@@ -835,7 +847,6 @@ export class ElsaWorkflowDesigner {
             this.selectedActivities = {};
             this.selectedActivities[activityId] = activity;
             this.activitySelected.emit(activity);
-            this.safeRender();
           }
         }
       });
@@ -865,7 +876,7 @@ export class ElsaWorkflowDesigner {
     });
   }
 
-  renderTree() {
+  renderTree() {    
     this.applyZoom();
     this.setEntities();
     this.renderNodes();

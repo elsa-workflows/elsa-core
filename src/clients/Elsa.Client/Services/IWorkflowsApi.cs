@@ -1,5 +1,4 @@
-﻿using System.Net.Http;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Client.Models;
 using Refit;

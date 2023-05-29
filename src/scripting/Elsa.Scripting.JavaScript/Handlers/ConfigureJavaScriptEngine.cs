@@ -66,7 +66,8 @@ namespace Elsa.Scripting.JavaScript.Handlers
             engine.SetValue("jsonDecode", (Func<string, object?>)JsonConvert.DeserializeObject);
             engine.SetValue("base64Encode", (Func<string, string>)Extensions.StringExtensions.ToBase64);
             engine.SetValue("base64Decode", (Func<string, string>)Extensions.StringExtensions.FromBase64);
-
+            engine.SetValue("addJournal", (Action<string, object>)((name, value) => activityExecutionContext.JournalData.Add(name,value)));
+            
             if (_scriptOptions.EnableConfigurationAccess)
                 engine.SetValue("getConfig", (Func<string, object?>)(name => _configuration.GetSection(name).Value));
 

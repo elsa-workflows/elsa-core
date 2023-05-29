@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using Elsa.Secrets.Models;
 
 namespace Elsa.Secrets.ValueFormatters
@@ -5,6 +6,6 @@ namespace Elsa.Secrets.ValueFormatters
     public interface ISecretValueFormatter
     {
         string Type { get; }
-        string FormatSecretValue(Secret secret);
+        Task<string> FormatSecretValue(Secret secret);
     }
 }

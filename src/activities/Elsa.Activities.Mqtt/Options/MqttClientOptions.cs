@@ -1,5 +1,6 @@
+using MQTTnet.Client;
+using MQTTnet.Protocol;
 using System;
-using System.Net.Mqtt;
 
 namespace Elsa.Activities.Mqtt.Options
 {
@@ -10,9 +11,9 @@ namespace Elsa.Activities.Mqtt.Options
         public int Port { get; }
         public string Username { get; }
         public string Password { get; }
-        public MqttQualityOfService QualityOfService { get; }
+        public MqttQualityOfServiceLevel QualityOfService { get; }
 
-        public MqttClientOptions(string topic, string host, int port, string username, string password, MqttQualityOfService qos)
+        public MqttClientOptions(string topic, string host, int port, string username, string password, MqttQualityOfServiceLevel qos)
         {
             Topic = topic;
             Host = host;
@@ -22,9 +23,20 @@ namespace Elsa.Activities.Mqtt.Options
             QualityOfService = qos;
         }
 
-        public MqttClientCredentials GenerateMqttClientCredentials()
+        public MQTTnet.Client.MqttClientOptions GenerateMqttClientOptions()
         {
-            return new MqttClientCredentials($"Elsa{ Guid.NewGuid():N}", Username, Password);
+            var mqttClientOptions = new MqttClientOptionsBuilder()
+                .WithTcpServer(Host, Port)
+                .WithKeepAlivePeriod(new TimeSpan(0,0,30))
+                .WithTimeout(new TimeSpan(0,0,30))
+                .WithClientId($"Elsa{Guid.NewGuid():N}");
+
+            if (!string.IsNullOrEmpty(Username) && !string.IsNullOrEmpty(Password))
+            {
+                mqttClientOptions.WithCredentials(Username, Password);
+            }
+
+            return mqttClientOptions.Build();
         }
 
         public override int GetHashCode()

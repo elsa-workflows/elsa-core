@@ -20,8 +20,10 @@ namespace Elsa
         
         public static IServiceCollection AddNotificationHandlers(this IServiceCollection services, params Type[] markerTypes)
         {
-            var assemblies = markerTypes.Select(x => x.GetTypeInfo().Assembly);
-            ServiceRegistrar.AddMediatRClasses(services, assemblies, new MediatRServiceConfiguration());
+            var assemblies = markerTypes.Select(x => x.GetTypeInfo().Assembly).ToArray();
+            var serviceConfiguration = new MediatRServiceConfiguration();
+            serviceConfiguration.RegisterServicesFromAssemblies(assemblies);
+            ServiceRegistrar.AddMediatRClasses(services, serviceConfiguration);
             return services;
         }
     }

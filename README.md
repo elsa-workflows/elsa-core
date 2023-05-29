@@ -6,11 +6,16 @@
 
 ## Elsa Workflows
 
-[![Nuget (with prereleases)](https://img.shields.io/nuget/vpre/Elsa)](https://www.nuget.org/packages/Elsa/2.0.0-rc1-0)
-[![MyGet (with prereleases)](https://img.shields.io/myget/elsa-2/vpre/Elsa?label=myget)](https://www.myget.org/gallery/elsa-2)
-[![Build status](https://ci.appveyor.com/api/projects/status/github/elsa-workflows/elsa-core?svg=true&branch=master)](https://ci.appveyor.com/project/sfmskywalker/elsa)
-[![Build elsa-dashboard:latest](https://github.com/elsa-workflows/elsa-core/actions/workflows/publish-latest-dashboard-and-server-docker.yml/badge.svg)](https://github.com/elsa-workflows/elsa-core/actions/workflows/publish-latest-dashboard-and-server-docker.yml)
+[![Nuget (with prereleases)](https://img.shields.io/nuget/vpre/Elsa)](https://www.nuget.org/packages/Elsa/)
+[![npm](https://img.shields.io/npm/v/@elsa-workflows/elsa-workflows-studio)](https://www.npmjs.com/package/@elsa-workflows/elsa-workflows-studio)
+[![feedz.io](https://img.shields.io/badge/endpoint.svg?url=https%3A%2F%2Ff.feedz.io%2Felsa-workflows%2Felsa-2%2Fshield%2FElsa%2Flatest)](https://f.feedz.io/elsa-workflows/elsa-2/nuget/index.json)
+[![feedz.io npm](https://img.shields.io/badge/dynamic/json?color=0790b2&label=feedz.io%20%28npm%29&query=%24%5B%27dist-tags%27%5D.latest&url=https%3A%2F%2Ff.feedz.io%2Felsa-workflows%2Felsa-2%2Fnpm%2F%40elsa-workflows%2Felsa-workflows-studio)](https://f.feedz.io/elsa-workflows/elsa-2/npm/@elsa-workflows/elsa-workflows-studio)
 [![Docker Image Version (latest semver)](https://img.shields.io/docker/v/elsaworkflows/elsa-dashboard-and-server?label=docker&logo=docker)](https://hub.docker.com/repository/docker/elsaworkflows/elsa-dashboard-and-server)
+
+
+[![Build Elsa](https://github.com/elsa-workflows/elsa-core/actions/workflows/publish-latest-elsa.yml/badge.svg?branch=master)](https://github.com/elsa-workflows/elsa-core/actions/workflows/publish-latest-elsa.yml)
+[![Build elsa-dashboard:latest](https://github.com/elsa-workflows/elsa-core/actions/workflows/publish-latest-dashboard-and-server-docker.yml/badge.svg)](https://github.com/elsa-workflows/elsa-core/actions/workflows/publish-latest-dashboard-and-server-docker.yml)
+
 [![Discord](https://img.shields.io/discord/814605913783795763?label=chat&logo=discord)](https://discord.gg/hhChk5H472)
 [![Stack Overflow questions](https://img.shields.io/badge/stackoverflow-elsa_workflows-orange.svg)]( http://stackoverflow.com/questions/tagged/elsa-workflows )
 [![Subreddit subscribers](https://img.shields.io/reddit/subreddit-subscribers/elsaworkflows?style=social)](https://www.reddit.com/r/elsaworkflows/)

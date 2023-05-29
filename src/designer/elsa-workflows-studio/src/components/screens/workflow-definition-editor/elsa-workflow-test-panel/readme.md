@@ -10,6 +10,7 @@
 | Property                 | Attribute                   | Description | Type                 | Default     |
 | ------------------------ | --------------------------- | ----------- | -------------------- | ----------- |
 | `culture`                | `culture`                   |             | `string`             | `undefined` |
+| `selectedActivityId`     | `selected-activity-id`      |             | `string`             | `undefined` |
 | `serverUrl`              | `server-url`                |             | `string`             | `undefined` |
 | `workflowDefinition`     | --                          |             | `WorkflowDefinition` | `undefined` |
 | `workflowTestActivityId` | `workflow-test-activity-id` |             | `string`             | `undefined` |

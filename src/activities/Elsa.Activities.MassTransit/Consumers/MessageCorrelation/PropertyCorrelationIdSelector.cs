@@ -1,5 +1,5 @@
 using System;
-using MassTransit.Internals.Reflection;
+using MassTransit.Internals;
 
 namespace Elsa.Activities.MassTransit.Consumers.MessageCorrelation
 {

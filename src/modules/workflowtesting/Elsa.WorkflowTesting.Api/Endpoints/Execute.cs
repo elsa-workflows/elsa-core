@@ -37,7 +37,7 @@ namespace Elsa.WorkflowTesting.Api.Endpoints
         {
             var tenantId = await _tenantAccessor.GetTenantIdAsync(cancellationToken);
             var testCorrelation = "test-" + request.WorkflowDefinitionId;
-            var startableWorkflow = await _workflowLaunchpad.FindStartableWorkflowAsync(request.WorkflowDefinitionId, request.Version, default, testCorrelation, default, tenantId, cancellationToken);
+            var startableWorkflow = await _workflowLaunchpad.FindStartableWorkflowAsync(request.WorkflowDefinitionId, request.Version, request.StartActivityId, testCorrelation, default, tenantId, cancellationToken);
 
             if (startableWorkflow == null)
                 return Ok(new WorkflowTestExecuteResponse { IsSuccess = false, IsAnotherInstanceRunning = true });

@@ -36,7 +36,10 @@ namespace Elsa.Activities.Http
         private readonly IEnumerable<IHttpResponseContentReader> _parsers;
         private readonly string? _defaultContentParserName;
 
-        public SendHttpRequest(IHttpClientFactory httpClientFactory, IEnumerable<IHttpResponseContentReader> parsers, IOptions<HttpActivityOptions> options)
+        public SendHttpRequest(
+            IHttpClientFactory httpClientFactory,
+            IEnumerable<IHttpResponseContentReader> parsers,
+            IOptions<HttpActivityOptions> options)
         {
             _httpClient = httpClientFactory.CreateClient(nameof(SendHttpRequest));
             _parsers = parsers;
@@ -64,7 +67,7 @@ namespace Elsa.Activities.Http
         /// The body to send along with the request.
         /// </summary>
         [ActivityInput(Hint = "The HTTP content to send along with the request.", UIHint = ActivityInputUIHints.MultiLine, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
-        public string? Content { get; set; }
+        public object? Content { get; set; }
 
         /// <summary>
         /// The Content Type header to send along with the request body.
@@ -260,11 +263,17 @@ namespace Elsa.Activities.Http
 
             if (methodSupportsBody)
             {
-                var body = Content;
+                var bodyAsString = Content as string;
+                var bodyAsBytes = Content as byte[];
                 var contentType = ContentType;
 
-                if (!string.IsNullOrWhiteSpace(body))
-                    request.Content = new StringContent(body, Encoding.UTF8, contentType);
+                if (!string.IsNullOrWhiteSpace(bodyAsString))
+                    request.Content = new StringContent(bodyAsString, Encoding.UTF8, contentType);
+                else if (bodyAsBytes != null)
+                {
+                    request.Content = new ByteArrayContent(bodyAsBytes);
+                    request.Content.Headers.ContentType = MediaTypeHeaderValue.Parse(contentType);
+                }
             }
 
             if (!string.IsNullOrWhiteSpace(authorizationHeaderValue))

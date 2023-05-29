@@ -28,7 +28,9 @@ namespace Elsa.Activities.Email.Services
             _logger = logger;
         }
 
-        public async Task SendAsync(ActivityExecutionContext context, MimeMessage message, CancellationToken cancellationToken)
+        public async Task SendAsync(ActivityExecutionContext context, MimeMessage message, CancellationToken cancellationToken) => await SendAsync(message, cancellationToken);
+
+        public async Task SendAsync(MimeMessage message, CancellationToken cancellationToken)
         {
             switch (_options.DeliveryMethod)
             {

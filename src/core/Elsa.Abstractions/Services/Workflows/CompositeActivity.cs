@@ -14,11 +14,11 @@ namespace Elsa.Services
     public class CompositeActivity : Activity
     {
         internal const string Enter = "Enter";
-        
+
         public virtual void Build(ICompositeActivityBuilder builder)
         {
         }
-        
+
         [ActivityOutput] public object? Output { get; set; }
 
         public bool IsScheduled
@@ -34,15 +34,15 @@ namespace Elsa.Services
                 // When executing a composite activity's workflow, child activities might try and reference the composite activity's "input" properties.
                 // Out of the box, that doesn't work, since "this" points to a new instance with an empty Data object.
                 // Instead, we need to capture the Data object of the composite activity (the parent of the currently executing child activity) using the ambient activity execution context.
-                if (AmbientActivityExecutionContext.Current == null) 
+                if (AmbientActivityExecutionContext.Current == null)
                     return base.Data;
-                
+
                 var context = AmbientActivityExecutionContext.Current;
-                    
-                // Check if the currently executing activity is something other than this composite activity.
-                if (context.ActivityBlueprint.Type == Type) 
+
+                // Check if the currently executing activity is this composite activity.
+                if (context.ActivityBlueprint.Id == Id)
                     return base.Data;
-                
+
                 // A child activity is attempting to retrieve property data from its parent composite activity.
                 var parentId = context.ActivityBlueprint.Parent!.Id;
                 return context.WorkflowInstance.ActivityData.GetItem(parentId)!;
@@ -73,10 +73,10 @@ namespace Elsa.Services
 
                 if (finishOutcomes.Any())
                     outcomes = finishOutcomes;
-                
+
                 output = finishOutput.Output;
             }
-            
+
             await OnExitAsync(context, output, outcomes);
 
             Output = output;
@@ -100,7 +100,7 @@ namespace Elsa.Services
         protected virtual void OnEnter(ActivityExecutionContext context)
         {
         }
-        
+
         protected virtual void OnExit(ActivityExecutionContext context, object? output, IList<string> outcomes)
         {
         }

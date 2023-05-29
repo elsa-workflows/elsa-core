@@ -20,6 +20,7 @@ export class ElsaWorkflowPublishButton {
   @Event({bubbles: true}) revertClicked: EventEmitter;
   @Event({bubbles: true}) exportClicked: EventEmitter;
   @Event({bubbles: true}) importClicked: EventEmitter<File>;
+  @Event({bubbles: true}) deleteClicked: EventEmitter;
 
   i18next: i18n;
   menu: HTMLElement;
@@ -80,6 +81,14 @@ export class ElsaWorkflowPublishButton {
     leave(this.menu);
   }
 
+  onDeleteClick = async (e: Event) => {
+    e.preventDefault();
+
+    this.deleteClicked.emit();
+
+    leave(this.menu);
+  }
+
   async onFileInputChange(e: Event) {
     const files = this.fileInput.files;
 
@@ -122,6 +131,10 @@ export class ElsaWorkflowPublishButton {
 
                   <a href="#" onClick={e => this.onImportClick(e)} class="elsa-block elsa-px-4 elsa-py-2 elsa-text-sm elsa-text-gray-700 hover:elsa-bg-gray-100 hover:elsa-text-gray-900" role="menuitem">
                     {t('Import')}
+                  </a>
+
+                  <a href="#" onClick={e => this.onDeleteClick(e)} class="elsa-block elsa-px-4 elsa-py-2 elsa-text-sm elsa-text-red-700 hover:elsa-bg-gray-100 hover:elsa-text-gray-900" role="menuitem">
+                    {t('Delete')}
                   </a>
                 </div>
               </div>

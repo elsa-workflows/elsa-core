@@ -1,5 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
@@ -47,6 +50,8 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
         public async Task<ActionResult<PagedList<WorkflowDefinitionSummaryModel>>> Handle(
             [FromQuery] string? ids,
             [FromQuery] string? searchTerm = default,
+            [FromQuery] WorkflowDefinitionOrderBy? orderBy = WorkflowDefinitionOrderBy.Name,
+            [FromQuery] SortBy? sortBy = SortBy.Ascending,
             int? page = default,
             int? pageSize = default,
             VersionOptions? version = default,
@@ -58,10 +63,20 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
            
             if (!string.IsNullOrWhiteSpace(searchTerm)) 
                 specification = specification.And(new WorkflowDefinitionSearchTermSpecification(searchTerm));
+
+            var orderBySpecification = default(OrderBy<WorkflowDefinition>);
+
+            orderBySpecification = orderBy switch
+            {
+                WorkflowDefinitionOrderBy.Name => OrderBySpecification.OrderBy<WorkflowDefinition>(x => x.Name!, (SortDirection)sortBy!.Value),
+                WorkflowDefinitionOrderBy.Description => OrderBySpecification.OrderBy<WorkflowDefinition>(x => x.Description!, (SortDirection)sortBy!.Value),
+                WorkflowDefinitionOrderBy.CreatedAt => OrderBySpecification.OrderBy<WorkflowDefinition>(x => x.CreatedAt!, (SortDirection)sortBy!.Value),
+                _ => OrderBySpecification.OrderBy<WorkflowDefinition>(x => x.Name!, (SortDirection)sortBy!.Value)
+            };
             
             var totalCount = await _workflowDefinitionStore.CountAsync(specification, cancellationToken);
             var paging = page == null || pageSize == null ? default : Paging.Page(page.Value, pageSize.Value);
-            var items = await _workflowDefinitionStore.FindManyAsync(specification, new OrderBy<WorkflowDefinition>(x => x.Name!, SortDirection.Ascending), paging, cancellationToken);
+            var items = await _workflowDefinitionStore.FindManyAsync(specification, orderBySpecification, paging, cancellationToken);
             var summaries = _mapper.Map<IList<WorkflowDefinitionSummaryModel>>(items);
             var pagedList = new PagedList<WorkflowDefinitionSummaryModel>(summaries, page, pageSize, totalCount);
 
@@ -76,5 +91,6 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             var splitIds = ids.Split(',', StringSplitOptions.RemoveEmptyEntries);
             return new ManyWorkflowDefinitionIdsSpecification(splitIds, version);
         }
+
     }
 }

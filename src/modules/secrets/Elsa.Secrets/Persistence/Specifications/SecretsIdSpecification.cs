@@ -1,9 +1,7 @@
 using Elsa.Persistence.Specifications;
 using Elsa.Secrets.Models;
 using System;
-using System.Collections.Generic;
 using System.Linq.Expressions;
-using System.Text;
 
 namespace Elsa.Secrets.Persistence.Specifications
 {
