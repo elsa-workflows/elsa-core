@@ -5,7 +5,7 @@ on:
     branches:
       - v3-rc1
 env:
-  nuget_feed_source: 'https://f.feedz.io/elsa-workflows/elsa-3/nuget/index.json'
+  nuget_feed_source: 'https://api.nuget.org/v3/index.json'
   
 jobs:
   build:
@@ -39,15 +39,17 @@ jobs:
           path: packages/*nupkg
         if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
         
-  publish_nuget_preview:
-    name: Publish to Nuget
-    needs: build_and_pack
+  publish:
+    name: Publish packages
+    needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
     steps:
-      - name: Download Nuget Packages
+      - name: Download Packages
         uses: actions/download-artifact@v3
         with:
           name: elsa-nuget-packages
 
-      - name: Publish Nuget Packages to NuGet
-        run: dotnet nuget push *.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json --skip-duplicate
+      - name: Publish to NuGet
+        run: dotnet nuget push *.nupkg -k ${{ secrets.NUGET_API_KEY }} -s ${{ env.nuget_feed_source }} --skip-duplicate
