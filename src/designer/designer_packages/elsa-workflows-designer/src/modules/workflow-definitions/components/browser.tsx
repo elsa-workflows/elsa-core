@@ -264,8 +264,8 @@ export class WorkflowDefinitionBrowser {
                   <span class="lg:tw-pl-2">Name</span>
                 </th>
                 <th>Instances</th>
-                <th class="tw-optional tw-align-right">Latest Version</th>
-                <th class="tw-optional tw-align-right">Published Version</th>
+                <th class="tw-align-right">Latest Version</th>
+                <th class="tw-align-right">Published Version</th>
                 <th/>
               </tr>
               </thead>
@@ -309,8 +309,8 @@ export class WorkflowDefinitionBrowser {
                       </div>
                     </td>
 
-                    <td class="tw-optional tw-align-right">{latestVersionNumber}</td>
-                    <td class="tw-optional tw-align-right">{publishedVersionNumber}</td>
+                    <td class="tw-align-right">{latestVersionNumber}</td>
+                    <td class="tw-align-right">{publishedVersionNumber}</td>
                     <td class="tw-pr-6">
                       <elsa-context-menu
                         menuItems={[
