@@ -1,21 +1,20 @@
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.MongoDB.Common;
-using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Features;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.MongoDB.Stores.Runtime;
+namespace Elsa.MongoDB.Modules.Runtime;
 
 /// <summary>
-/// A feature that registers the <see cref="MongoWorkflowExecutionLogStore"/> as the default <see cref="IWorkflowExecutionLogStore"/>.
+/// Configures the default workflow runtime to use MongoDb persistence providers.
 /// </summary>
 [DependsOn(typeof(WorkflowRuntimeFeature))]
-public class MongoExecutionLogRecordPersistenceFeature : PersistenceFeatureBase
+public class MongoWorkflowRuntimePersistenceFeature : PersistenceFeatureBase
 {
     /// <inheritdoc />
-    public MongoExecutionLogRecordPersistenceFeature(IModule module) : base(module)
+    public MongoWorkflowRuntimePersistenceFeature(IModule module) : base(module)
     {
     }
 
@@ -24,7 +23,8 @@ public class MongoExecutionLogRecordPersistenceFeature : PersistenceFeatureBase
     {
         Module.Configure<WorkflowRuntimeFeature>(feature =>
         {
-            feature.WorkflowExecutionLogStore = sp => sp.GetRequiredService<MongoWorkflowExecutionLogStore>();
+            feature.WorkflowTriggerStore = sp => sp.GetRequiredService<MongoTriggerStore>();
+            feature.BookmarkStore = sp => sp.GetRequiredService<MongoBookmarkStore>();
         });
     }
 
@@ -33,6 +33,7 @@ public class MongoExecutionLogRecordPersistenceFeature : PersistenceFeatureBase
     {
         base.Apply();
         
-        AddStore<WorkflowExecutionLogRecord, MongoWorkflowExecutionLogStore>();
+        AddStore<StoredTrigger, MongoTriggerStore>();
+        AddStore<Models.StoredBookmark, MongoBookmarkStore>();
     }
 }

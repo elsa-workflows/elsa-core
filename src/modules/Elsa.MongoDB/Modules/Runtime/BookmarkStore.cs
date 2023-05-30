@@ -3,10 +3,9 @@ using Elsa.MongoDB.Extensions;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
-using MongoDB.Driver;
 using MongoDB.Driver.Linq;
 
-namespace Elsa.MongoDB.Stores.Runtime;
+namespace Elsa.MongoDB.Modules.Runtime;
 
 /// <summary>
 /// An MongoDb implementation of <see cref="IBookmarkStore"/>.

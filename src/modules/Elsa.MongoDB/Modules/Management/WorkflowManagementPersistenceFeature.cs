@@ -1,12 +1,13 @@
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.MongoDB.Common;
+using Elsa.MongoDB.Stores.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Features;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.MongoDB.Stores.Management;
+namespace Elsa.MongoDB.Modules.Management;
 
 /// <summary>
 /// Configures the <see cref="WorkflowInstancesFeature"/> and <see cref="WorkflowDefinitionsFeature"/> features with an MongoDb persistence provider.
@@ -34,7 +35,7 @@ public class MongoWorkflowManagementPersistenceFeature : PersistenceFeatureBase
     {
         base.Apply();
 
-        AddStore<WorkflowInstance, MongoWorkflowInstanceStore>();
-        AddStore<WorkflowDefinition, MongoWorkflowDefinitionStore>();
+        AddStore<Models.WorkflowInstance, MongoWorkflowInstanceStore>();
+        AddStore<Models.WorkflowDefinition, MongoWorkflowDefinitionStore>();
     }
 }

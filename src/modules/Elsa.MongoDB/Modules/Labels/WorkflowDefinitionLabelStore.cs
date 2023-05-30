@@ -2,7 +2,7 @@ using Elsa.Labels.Contracts;
 using Elsa.Labels.Entities;
 using Elsa.MongoDB.Common;
 
-namespace Elsa.MongoDB.Stores.Labels;
+namespace Elsa.MongoDB.Modules.Labels;
 
 /// <inheritdoc />
 public class MongoWorkflowDefinitionLabelStore : IWorkflowDefinitionLabelStore

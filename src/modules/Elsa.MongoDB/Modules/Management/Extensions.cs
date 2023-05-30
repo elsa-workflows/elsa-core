@@ -1,6 +1,6 @@
 ﻿using Elsa.Workflows.Management.Features;
 
-namespace Elsa.MongoDB.Stores.Management;
+namespace Elsa.MongoDB.Modules.Management;
 
 /// <summary>
 /// Provides extensions to <see cref="WorkflowManagementFeature"/>.

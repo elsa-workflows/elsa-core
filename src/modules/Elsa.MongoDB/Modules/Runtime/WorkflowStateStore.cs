@@ -8,7 +8,7 @@ using Elsa.Workflows.Runtime.Contracts;
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
 
-namespace Elsa.MongoDB.Stores.Runtime;
+namespace Elsa.MongoDB.Modules.Runtime;
 
 /// <inheritdoc />
 public class MongoWorkflowStateStore : IWorkflowStateStore

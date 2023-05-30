@@ -6,7 +6,7 @@ using Elsa.Labels.Features;
 using Elsa.MongoDB.Common;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.MongoDB.Stores.Labels;
+namespace Elsa.MongoDB.Modules.Labels;
 
 [DependsOn(typeof(LabelsFeature))]
 public class MongoLabelPersistenceFeature : PersistenceFeatureBase

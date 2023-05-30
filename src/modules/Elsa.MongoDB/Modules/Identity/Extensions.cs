@@ -1,6 +1,6 @@
 ﻿using Elsa.Identity.Features;
 
-namespace Elsa.MongoDB.Stores.Identity;
+namespace Elsa.MongoDB.Modules.Identity;
 
 /// <summary>
 /// Provides extensions for <see cref="IdentityFeature"/> 

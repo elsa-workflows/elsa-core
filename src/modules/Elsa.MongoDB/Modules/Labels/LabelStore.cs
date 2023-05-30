@@ -3,11 +3,10 @@ using Elsa.Extensions;
 using Elsa.Labels.Contracts;
 using Elsa.Labels.Entities;
 using Elsa.MongoDB.Common;
-using Elsa.MongoDB.Extensions;
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
 
-namespace Elsa.MongoDB.Stores.Labels;
+namespace Elsa.MongoDB.Modules.Labels;
 
 public class MongoLabelStore : ILabelStore
 {

@@ -6,7 +6,7 @@ using Elsa.MongoDB.Common;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.MongoDB.Stores.Identity;
+namespace Elsa.MongoDB.Modules.Identity;
 
 /// <summary>
 /// Configures the <see cref="IdentityFeature"/> feature with MongoDb persistence providers.

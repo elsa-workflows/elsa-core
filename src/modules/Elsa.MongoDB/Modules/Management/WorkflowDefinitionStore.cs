@@ -66,16 +66,12 @@ public class MongoWorkflowDefinitionStore : IWorkflowDefinitionStore
     }
 
     /// <inheritdoc />
-    public async Task<IEnumerable<WorkflowDefinition>> FindManyAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
-    {
-        return await _mongoStore.FindManyAsync(queryable => Filter(queryable, filter), cancellationToken).Select(i => i.MapFromDocument(_payloadSerializer));
-    }
+    public async Task<IEnumerable<WorkflowDefinition>> FindManyAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default) => 
+        await _mongoStore.FindManyAsync(queryable => Filter(queryable, filter), cancellationToken).Select(i => i.MapFromDocument(_payloadSerializer));
 
     /// <inheritdoc />
-    public async Task<IEnumerable<WorkflowDefinition>> FindManyAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, CancellationToken cancellationToken = default)
-    {
-        return await _mongoStore.FindManyAsync(queryable => Order(Filter(queryable, filter), order), cancellationToken).Select(i => i.MapFromDocument(_payloadSerializer));
-    }
+    public async Task<IEnumerable<WorkflowDefinition>> FindManyAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, CancellationToken cancellationToken = default) => 
+        await _mongoStore.FindManyAsync(queryable => Order(Filter(queryable, filter), order), cancellationToken).Select(i => i.MapFromDocument(_payloadSerializer));
 
     /// <inheritdoc />
     public async Task<Page<WorkflowDefinitionSummary>> FindSummariesAsync(WorkflowDefinitionFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)

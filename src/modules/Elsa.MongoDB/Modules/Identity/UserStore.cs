@@ -4,7 +4,7 @@ using Elsa.Identity.Models;
 using Elsa.MongoDB.Common;
 using MongoDB.Driver.Linq;
 
-namespace Elsa.MongoDB.Stores.Identity;
+namespace Elsa.MongoDB.Modules.Identity;
 
 /// <summary>
 /// A MongoDb implementation of <see cref="IUserStore"/>.

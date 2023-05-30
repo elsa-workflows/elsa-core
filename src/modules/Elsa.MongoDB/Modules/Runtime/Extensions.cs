@@ -1,6 +1,6 @@
 ﻿using Elsa.Workflows.Runtime.Features;
 
-namespace Elsa.MongoDB.Stores.Runtime;
+namespace Elsa.MongoDB.Modules.Runtime;
 
 /// <summary>
 /// Provides extensions to the <see cref="WorkflowRuntimeFeature"/> feature.

@@ -8,7 +8,7 @@ using Elsa.Workflows.Runtime.Entities;
 using MongoDB.Driver.Linq;
 using Open.Linq.AsyncExtensions;
 
-namespace Elsa.MongoDB.Stores.Runtime;
+namespace Elsa.MongoDB.Modules.Runtime;
 
 /// <inheritdoc />
 public class MongoWorkflowExecutionLogStore : IWorkflowExecutionLogStore

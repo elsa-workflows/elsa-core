@@ -11,7 +11,7 @@ using MongoDB.Driver;
 using MongoDB.Driver.Linq;
 using Open.Linq.AsyncExtensions;
 
-namespace Elsa.MongoDB.Stores.Management;
+namespace Elsa.MongoDB.Modules.Management;
 
 /// <summary>
 /// An MongoDb implementation of <see cref="IWorkflowInstanceStore"/>.

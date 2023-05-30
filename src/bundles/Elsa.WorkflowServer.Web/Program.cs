@@ -6,8 +6,10 @@ using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Http.Handlers;
 using Elsa.JavaScript.Options;
 using Elsa.MongoDB.Extensions;
-using Elsa.MongoDB.Stores.Management;
-using Elsa.MongoDB.Stores.Runtime;
+using Elsa.MongoDB.Modules.Identity;
+using Elsa.MongoDB.Modules.Labels;
+using Elsa.MongoDB.Modules.Management;
+using Elsa.MongoDB.Modules.Runtime;
 using Elsa.WorkflowServer.Web;
 
 EndpointSecurityOptions.DisableSecurity();
@@ -26,6 +28,7 @@ services
         .AddTypeAlias<ApiResponse<User>>("ApiResponse[User]")
         .UseIdentity(identity =>
         {
+            identity.UseMongoDb();
             identity.IdentityOptions = options => identitySection.Bind(options);
             identity.TokenOptions = options => identityTokenSection.Bind(options);
             identity.UseConfigurationBasedUserProvider(options => identitySection.Bind(options));
@@ -52,6 +55,7 @@ services
         .UseWorkflowsApi(api => api.AddFastEndpointsAssembly<Program>())
         .UseJavaScript()
         .UseLiquid()
+        .UseLabels(options => options.UseMongoDb())
         .UseHttp(http => http.HttpEndpointAuthorizationHandler = sp => sp.GetRequiredService<AllowAnonymousHttpEndpointAuthorizationHandler>())
         .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options))
         .UseMongoDb(options => configuration.GetSection("MongoDb").Bind(options))
