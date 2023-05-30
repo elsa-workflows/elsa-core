@@ -4,7 +4,7 @@ using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 
-namespace Elsa.Samples.WorkflowFunctions.Workflows;
+namespace Elsa.Samples.Console.WorkflowFunctions.Workflows;
 
 /// <summary>
 /// A workflow that takes a list of numbers as runtime workflow input and returns the sum.
@@ -14,15 +14,12 @@ public class SumInputsWorkflow : WorkflowBase<float>
     protected override void Build(IWorkflowBuilder builder)
     {
         // Attach workflow variables.
-        var currentSum = new Variable<float>();
-        var currentValue = new Variable<float>();
-
-        builder.WithVariable(currentSum);
+        var currentSum = builder.WithVariable<float>();
+        var currentValue = builder.WithVariable<float>();
 
         // Define the sum logic.
         builder.Root = new Sequence
         {
-            Variables = { currentValue },
             Activities =
             {
                 new ForEach<float>(new Input<ICollection<float>>(context => context.GetInput<float[]>("numbers")!))

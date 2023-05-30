@@ -48,8 +48,9 @@ public abstract class Composite : Activity, IVariableContainer
         ConfigureActivities(context);
         
         // Register variables.
-        context.ExpressionExecutionContext.Memory.Declare(Variables);
-        
+        foreach (var variable in Variables) 
+            variable.Set(context, variable.Value);
+
         await context.ScheduleActivityAsync(Root, OnRootCompletedAsync);
     }
 

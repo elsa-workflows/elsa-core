@@ -1,4 +1,5 @@
 ﻿using Elsa.Extensions;
+using Elsa.Samples.Console.WorkflowFunctions.Workflows;
 using Elsa.Samples.WorkflowFunctions.Workflows;
 using Elsa.Workflows.Core.Contracts;
 using Microsoft.Extensions.DependencyInjection;

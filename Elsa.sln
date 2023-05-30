@@ -115,7 +115,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Testing.Shared", "src\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Workflows.Sinks", "src\modules\Elsa.Workflows.Sinks\Elsa.Workflows.Sinks.csproj", "{7F1FDA45-C731-4DCC-BFF6-403D4B857A93}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.WorkflowFunctions", "src\samples\console\Elsa.Samples.WorkflowFunctions\Elsa.Samples.WorkflowFunctions.csproj", "{4782CA82-83B0-437E-8C97-636BB8B402EA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.Console.WorkflowFunctions", "src\samples\console\Elsa.Samples.Console.WorkflowFunctions\Elsa.Samples.Console.WorkflowFunctions.csproj", "{4782CA82-83B0-437E-8C97-636BB8B402EA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.MyBackendApi", "src\samples\aspnet\Elsa.Samples.MyBackendApi\Elsa.Samples.MyBackendApi.csproj", "{1A37795B-EBAB-4A9F-8CF0-373DA3D4C64A}"
 EndProject

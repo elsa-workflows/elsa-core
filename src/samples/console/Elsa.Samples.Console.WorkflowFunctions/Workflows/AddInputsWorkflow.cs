@@ -3,7 +3,7 @@ using Elsa.Workflows.Core.Abstractions;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
 
-namespace Elsa.Samples.WorkflowFunctions.Workflows;
+namespace Elsa.Samples.Console.WorkflowFunctions.Workflows;
 
 /// <summary>
 /// A simple workflow that takes two numbers as runtime workflow input and adds them together and returns the result as the workflow's result.
