@@ -11,42 +11,16 @@ public static class DocumentExtensions
         if (selector == null) throw new ArgumentNullException(nameof(selector));
 
         if (selector.Body is not MemberExpression memberExpression)
-            throw new ArgumentException("Selector must be a member access expression.", nameof(selector));
+            throw new ArgumentException("Selector must be a member expression.", nameof(selector));
 
         var propertyName = memberExpression.Member.Name;
-        
-        var property = typeof(TDocument).GetProperty(propertyName);
-        if (property == null)
-            throw new InvalidOperationException($"The type {typeof(TDocument)} does not have a '{propertyName}' property.");
 
-        var propertyValue = property.GetValue(document);
-        
-        var parameter = Expression.Parameter(typeof(TDocument), "x");
-        var propertyAccess = Expression.Property(parameter, propertyName);
-        var constant = Expression.Constant(propertyValue);
-        var body = Expression.Equal(propertyAccess, constant);
-
-        return Expression.Lambda<Func<TDocument, bool>>(body, parameter);
+        return document.BuildFilter(propertyName);
     }
     
-    public static Expression<Func<TDocument, bool>> BuildIdFilter<TDocument>(this TDocument document)
-    {
-        var parameter = Expression.Parameter(typeof(TDocument), "x");
-        var property = Expression.Property(parameter, "Id");
-        
-        var idProperty = typeof(TDocument).GetProperty("Id");
-        if (idProperty == null)
-        {
-            throw new InvalidOperationException($"The type {typeof(TDocument)} does not have an 'Id' property.");
-        }
-        var id = idProperty.GetValue(document);
+    public static Expression<Func<TDocument, bool>> BuildIdFilter<TDocument>(this TDocument document) => 
+        document.BuildFilter("Id");
 
-        var constant = Expression.Constant(id);
-        var body = Expression.Equal(property, constant);
-
-        return Expression.Lambda<Func<TDocument, bool>>(body, parameter);
-    }
-    
     public static FilterDefinition<TDocument> BuildIdFilterForList<TDocument>(this IEnumerable<TDocument> documents)
     {
         var propertyName = "Id";
@@ -58,5 +32,23 @@ public static class DocumentExtensions
 
         var ids = documents.Select(document => idProperty.GetValue(document)).ToList();
         return Builders<TDocument>.Filter.In(propertyName, ids);
+    }
+    
+    private static Expression<Func<TDocument, bool>> BuildFilter<TDocument>(this TDocument document, string propertyName)
+    {
+        var parameter = Expression.Parameter(typeof(TDocument), "x");
+        var expressionProperty = Expression.Property(parameter, propertyName);
+        
+        var prop = typeof(TDocument).GetProperty(propertyName);
+        if (prop == null)
+        {
+            throw new InvalidOperationException($"The type {typeof(TDocument)} does not have an {propertyName} property.");
+        }
+        var propValue = prop.GetValue(document);
+
+        var constant = Expression.Constant(propValue);
+        var body = Expression.Equal(expressionProperty, constant);
+
+        return Expression.Lambda<Func<TDocument, bool>>(body, parameter);
     }
 }

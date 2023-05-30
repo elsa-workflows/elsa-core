@@ -11,27 +11,27 @@ namespace Elsa.MongoDB.Stores.Identity;
 /// </summary>
 public class MongoApplicationStore : IApplicationStore
 {
-    private readonly Store<Application> _applicationStore;
+    private readonly MongoStore<Application> _applicationMongoStore;
 
     /// <summary>
     /// Initializes a new instance of <see cref="MongoApplicationStore"/>.
     /// </summary>
-    public MongoApplicationStore(Store<Application> applicationStore)
+    public MongoApplicationStore(MongoStore<Application> applicationMongoStore)
     {
-        _applicationStore = applicationStore;
+        _applicationMongoStore = applicationMongoStore;
     }
 
     /// <inheritdoc />
     public async Task SaveAsync(Application application, CancellationToken cancellationToken = default) =>
-        await _applicationStore.SaveAsync(application, cancellationToken);
+        await _applicationMongoStore.SaveAsync(application, cancellationToken);
 
     /// <inheritdoc />
     public async Task DeleteAsync(ApplicationFilter filter, CancellationToken cancellationToken = default) => 
-        await _applicationStore.DeleteWhereAsync(query => Filter(query, filter), cancellationToken);
+        await _applicationMongoStore.DeleteWhereAsync(query => Filter(query, filter), cancellationToken);
 
     /// <inheritdoc />
     public async Task<Application?> FindAsync(ApplicationFilter filter, CancellationToken cancellationToken = default) => 
-        await _applicationStore.FindAsync(query => Filter(query, filter), cancellationToken);
+        await _applicationMongoStore.FindAsync(query => Filter(query, filter), cancellationToken);
 
     private static IMongoQueryable<Application> Filter(IQueryable<Application> query, ApplicationFilter filter) => (filter.Apply(query) as IMongoQueryable<Application>)!;
 }

@@ -11,34 +11,34 @@ namespace Elsa.MongoDB.Stores.Identity;
 /// </summary>
 public class MongoRoleStore : IRoleStore
 {
-    private readonly Store<Role> _roleStore;
+    private readonly MongoStore<Role> _roleMongoStore;
 
     /// <summary>
     /// Initializes a new instance of <see cref="MongoRoleStore"/>.
     /// </summary>
-    public MongoRoleStore(Store<Role> roleStore)
+    public MongoRoleStore(MongoStore<Role> roleMongoStore)
     {
-        _roleStore = roleStore;
+        _roleMongoStore = roleMongoStore;
     }
 
     /// <inheritdoc />
     public async Task SaveAsync(Role application, CancellationToken cancellationToken = default) => 
-        await _roleStore.SaveAsync(application, cancellationToken);
+        await _roleMongoStore.SaveAsync(application, cancellationToken);
 
     public async Task AddAsync(Role role, CancellationToken cancellationToken = default) => 
-        await _roleStore.SaveAsync(role, cancellationToken);
+        await _roleMongoStore.SaveAsync(role, cancellationToken);
 
     /// <inheritdoc />
     public async Task DeleteAsync(RoleFilter filter, CancellationToken cancellationToken = default) => 
-        await _roleStore.DeleteWhereAsync(query => Filter(query, filter), cancellationToken);
+        await _roleMongoStore.DeleteWhereAsync(query => Filter(query, filter), cancellationToken);
 
     /// <inheritdoc />
     public async Task<Role?> FindAsync(RoleFilter filter, CancellationToken cancellationToken = default) => 
-        await _roleStore.FindAsync(query => Filter(query, filter), cancellationToken);
+        await _roleMongoStore.FindAsync(query => Filter(query, filter), cancellationToken);
 
     /// <inheritdoc />
     public async Task<IEnumerable<Role>> FindManyAsync(RoleFilter filter, CancellationToken cancellationToken = default) => 
-        await _roleStore.FindManyAsync(queryable => Filter(queryable, filter), cancellationToken);
+        await _roleMongoStore.FindManyAsync(queryable => Filter(queryable, filter), cancellationToken);
 
     private static IMongoQueryable<Role> Filter(IQueryable<Role> query, RoleFilter filter) => (filter.Apply(query) as IMongoQueryable<Role>)!;
 }

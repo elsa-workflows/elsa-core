@@ -11,51 +11,51 @@ namespace Elsa.MongoDB.Stores.Labels;
 
 public class MongoLabelStore : ILabelStore
 {
-    private readonly Store<Label> _labelStore;
-    private readonly Store<WorkflowDefinitionLabel> _workflowDefinitionLabelStore;
+    private readonly MongoStore<Label> _labelMongoStore;
+    private readonly MongoStore<WorkflowDefinitionLabel> _workflowDefinitionLabelMongoStore;
 
-    public MongoLabelStore(Store<Label> labelStore, Store<WorkflowDefinitionLabel> workflowDefinitionLabelStore)
+    public MongoLabelStore(MongoStore<Label> labelMongoStore, MongoStore<WorkflowDefinitionLabel> workflowDefinitionLabelMongoStore)
     {
-        _labelStore = labelStore;
-        _workflowDefinitionLabelStore = workflowDefinitionLabelStore;
+        _labelMongoStore = labelMongoStore;
+        _workflowDefinitionLabelMongoStore = workflowDefinitionLabelMongoStore;
     }
 
     public async Task<Label?> FindByIdAsync(string id, CancellationToken cancellationToken = default) => 
-        await _labelStore.FindAsync(x => x.Id == id, cancellationToken);
+        await _labelMongoStore.FindAsync(x => x.Id == id, cancellationToken);
 
     public async Task<IEnumerable<Label>> FindManyByIdAsync(IEnumerable<string> ids, CancellationToken cancellationToken = default) => 
-        await _labelStore.FindManyAsync(x => ids.ToList().Contains(x.Id), cancellationToken);
+        await _labelMongoStore.FindManyAsync(x => ids.ToList().Contains(x.Id), cancellationToken);
     
     public async Task<Page<Label>> ListAsync(PageArgs? pageArgs = default, CancellationToken cancellationToken = default)
     {
         if (pageArgs?.Page is null || pageArgs.PageSize is null)
         {
-            var allDocuments = await _labelStore.GetCollection().AsQueryable().ToListAsync(cancellationToken);
+            var allDocuments = await _labelMongoStore.GetCollection().AsQueryable().ToListAsync(cancellationToken);
             return Page.Of(allDocuments, allDocuments.Count);
         }
         
-        var count = await _labelStore.GetCollection().AsQueryable().LongCountAsync(cancellationToken);
-        var documents = (await _labelStore.FindManyAsync(query => Paginate(query, pageArgs), cancellationToken)).ToList();
+        var count = await _labelMongoStore.GetCollection().AsQueryable().LongCountAsync(cancellationToken);
+        var documents = (await _labelMongoStore.FindManyAsync(query => Paginate(query, pageArgs), cancellationToken)).ToList();
         return Page.Of(documents, count);
     }
     
     public async Task SaveAsync(Label record, CancellationToken cancellationToken = default) => 
-        await _labelStore.SaveAsync(record, cancellationToken);
+        await _labelMongoStore.SaveAsync(record, cancellationToken);
     
     public async Task SaveManyAsync(IEnumerable<Label> records, CancellationToken cancellationToken = default) => 
-        await _labelStore.SaveManyAsync(records, cancellationToken);
+        await _labelMongoStore.SaveManyAsync(records, cancellationToken);
     
     public async Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default)
     {
-        await _workflowDefinitionLabelStore.DeleteWhereAsync(x => x.LabelId == id, cancellationToken);
-        return await _labelStore.DeleteWhereAsync(x => x.Id == id, cancellationToken) > 0;
+        await _workflowDefinitionLabelMongoStore.DeleteWhereAsync(x => x.LabelId == id, cancellationToken);
+        return await _labelMongoStore.DeleteWhereAsync(x => x.Id == id, cancellationToken) > 0;
     }
 
     public async Task<int> DeleteManyAsync(IEnumerable<string> ids, CancellationToken cancellationToken = default)
     {
         var idList = ids.ToList();
-        await _workflowDefinitionLabelStore.DeleteWhereAsync(x => idList.Contains(x.LabelId), cancellationToken);
-        return await _labelStore.DeleteWhereAsync(x => idList.Contains(x.Id), cancellationToken);
+        await _workflowDefinitionLabelMongoStore.DeleteWhereAsync(x => idList.Contains(x.LabelId), cancellationToken);
+        return await _labelMongoStore.DeleteWhereAsync(x => idList.Contains(x.Id), cancellationToken);
     }
     
     private static IMongoQueryable<Label> Paginate(IMongoQueryable<Label> queryable, PageArgs pageArgs) => 

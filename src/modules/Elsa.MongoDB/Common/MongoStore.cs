@@ -11,12 +11,12 @@ namespace Elsa.MongoDB.Common;
 /// </summary>
 /// <typeparam name="TDocument">The type of the document.</typeparam>
 [PublicAPI]
-public class Store<TDocument> where TDocument : class
+public class MongoStore<TDocument> where TDocument : class
 {
     private readonly IMongoCollection<TDocument> _collection;
     
     /// <param name="collection"></param>
-    public Store(IMongoCollection<TDocument> collection)
+    public MongoStore(IMongoCollection<TDocument> collection)
     {
         _collection = collection;
     }

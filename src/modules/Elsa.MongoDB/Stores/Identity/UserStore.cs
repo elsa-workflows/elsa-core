@@ -11,27 +11,27 @@ namespace Elsa.MongoDB.Stores.Identity;
 /// </summary>
 public class MongoUserStore : IUserStore
 {
-    private readonly Store<User> _userStore;
+    private readonly MongoStore<User> _userMongoStore;
 
     /// <summary>
     /// Initializes a new instance of <see cref="MongoUserStore"/>.
     /// </summary>
-    public MongoUserStore(Store<User> userStore)
+    public MongoUserStore(MongoStore<User> userMongoStore)
     {
-        _userStore = userStore;
+        _userMongoStore = userMongoStore;
     }
 
     /// <inheritdoc />
     public async Task SaveAsync(User user, CancellationToken cancellationToken = default) => 
-        await _userStore.SaveAsync(user, cancellationToken);
+        await _userMongoStore.SaveAsync(user, cancellationToken);
 
     /// <inheritdoc />
     public async Task DeleteAsync(UserFilter filter, CancellationToken cancellationToken = default) => 
-        await _userStore.DeleteWhereAsync(query => Filter(query, filter), cancellationToken);
+        await _userMongoStore.DeleteWhereAsync(query => Filter(query, filter), cancellationToken);
 
     /// <inheritdoc />
     public async Task<User?> FindAsync(UserFilter filter, CancellationToken cancellationToken = default) => 
-        await _userStore.FindAsync(query => Filter(query, filter), cancellationToken);
+        await _userMongoStore.FindAsync(query => Filter(query, filter), cancellationToken);
 
     private static IMongoQueryable<User> Filter(IQueryable<User> query, UserFilter filter) => (filter.Apply(query) as IMongoQueryable<User>)!;
 }

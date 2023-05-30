@@ -14,19 +14,19 @@ namespace Elsa.MongoDB.Stores.Runtime;
 public class MongoWorkflowStateStore : IWorkflowStateStore
 {
     private readonly IWorkflowStateSerializer _workflowStateSerializer;
-    private readonly Store<Models.WorkflowState> _store;
+    private readonly MongoStore<Models.WorkflowState> _mongoStore;
     private readonly ISystemClock _systemClock;
 
     /// <summary>
     /// Constructor.
     /// </summary>
     public MongoWorkflowStateStore(
-        Store<Models.WorkflowState> store,
+        MongoStore<Models.WorkflowState> mongoStore,
         IWorkflowStateSerializer workflowStateSerializer,
         ISystemClock systemClock)
     {
         _workflowStateSerializer = workflowStateSerializer;
-        _store = store;
+        _mongoStore = mongoStore;
         _systemClock = systemClock;
     }
 
@@ -35,23 +35,23 @@ public class MongoWorkflowStateStore : IWorkflowStateStore
     {
         var now = _systemClock.UtcNow;
         
-        var currentState = await _store.FindAsync(x => x.Id == id, cancellationToken);
+        var currentState = await _mongoStore.FindAsync(x => x.Id == id, cancellationToken);
         var document = state.MapToDocument(_workflowStateSerializer);
         
         document.CreatedAt = currentState is null ? now : currentState.CreatedAt == DateTimeOffset.MinValue ? now : currentState.CreatedAt;
         document.UpdatedAt = now;
 
-        await _store.SaveAsync(document, cancellationToken: cancellationToken);
+        await _mongoStore.SaveAsync(document, cancellationToken: cancellationToken);
     }
 
     /// <inheritdoc />
     public async ValueTask<WorkflowState?> LoadAsync(string id, CancellationToken cancellationToken = default) => 
-        (await _store.FindAsync(x => x.Id == id, cancellationToken))?.MapFromDocument(_workflowStateSerializer);
+        (await _mongoStore.FindAsync(x => x.Id == id, cancellationToken))?.MapFromDocument(_workflowStateSerializer);
 
     /// <inheritdoc />
     public async ValueTask<int> CountAsync(CountRunningWorkflowsArgs args, CancellationToken cancellationToken = default)
     {
-        var query = _store.GetCollection().AsQueryable().Where(x => x.Status == WorkflowStatus.Running);
+        var query = _mongoStore.GetCollection().AsQueryable().Where(x => x.Status == WorkflowStatus.Running);
 
         if (args.DefinitionId != null) query = query.Where(x => x.DefinitionId == args.DefinitionId);
         if (args.Version != null) query = query.Where(x => x.DefinitionVersion == args.Version);

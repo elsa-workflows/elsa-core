@@ -15,14 +15,14 @@ public abstract class PersistenceFeatureBase : FeatureBase
     }
 
     /// <summary>
-    /// Registers an <see cref="Store{T}"/>.
+    /// Registers an <see cref="MongoStore{TDocument}"/>.
     /// </summary>
     /// <typeparam name="TStore">The type of the store.</typeparam>
     /// <typeparam name="TDocument">The document type of the store.</typeparam>
     protected void AddStore<TDocument, TStore>() where TDocument : class where TStore : class
     {
         Services
-            .AddSingleton<Store<TDocument>>()
+            .AddSingleton<MongoStore<TDocument>>()
             .AddSingleton<TStore>()
             ;
     }

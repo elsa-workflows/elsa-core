@@ -13,55 +13,55 @@ namespace Elsa.MongoDB.Stores.Runtime;
 /// <inheritdoc />
 public class MongoWorkflowExecutionLogStore : IWorkflowExecutionLogStore
 {
-    private readonly Store<Models.WorkflowExecutionLogRecord> _store;
+    private readonly MongoStore<Models.WorkflowExecutionLogRecord> _mongoStore;
     private readonly IPayloadSerializer _serializer;
 
     /// <summary>
     /// Constructor
     /// </summary>
-    public MongoWorkflowExecutionLogStore(Store<Models.WorkflowExecutionLogRecord> store, IPayloadSerializer serializer)
+    public MongoWorkflowExecutionLogStore(MongoStore<Models.WorkflowExecutionLogRecord> mongoStore, IPayloadSerializer serializer)
     {
-        _store = store;
+        _mongoStore = mongoStore;
         _serializer = serializer;
     }
 
     /// <inheritdoc />
     public async Task SaveAsync(WorkflowExecutionLogRecord record, CancellationToken cancellationToken = default)
     {
-        await _store.SaveAsync(record.MapToDocument(_serializer), cancellationToken);
+        await _mongoStore.SaveAsync(record.MapToDocument(_serializer), cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task SaveManyAsync(IEnumerable<WorkflowExecutionLogRecord> records, CancellationToken cancellationToken = default)
     {
-        await _store.SaveManyAsync(records.Select(i => i.MapToDocument(_serializer)), cancellationToken);
+        await _mongoStore.SaveManyAsync(records.Select(i => i.MapToDocument(_serializer)), cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task<WorkflowExecutionLogRecord?> FindAsync(WorkflowExecutionLogRecordFilter filter, CancellationToken cancellationToken = default)
     {
-        return (await _store.FindAsync(queryable => Filter(queryable, filter), cancellationToken))?.MapFromDocument(_serializer);
+        return (await _mongoStore.FindAsync(queryable => Filter(queryable, filter), cancellationToken))?.MapFromDocument(_serializer);
     }
 
     /// <inheritdoc />
     public async Task<WorkflowExecutionLogRecord?> FindAsync<TOrderBy>(WorkflowExecutionLogRecordFilter filter, WorkflowExecutionLogRecordOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
-        return (await _store.FindAsync(queryable => Order(Filter(queryable, filter), order), cancellationToken))?.MapFromDocument(_serializer);
+        return (await _mongoStore.FindAsync(queryable => Order(Filter(queryable, filter), order), cancellationToken))?.MapFromDocument(_serializer);
     }
 
     /// <inheritdoc />
     public async Task<Page<WorkflowExecutionLogRecord>> FindManyAsync(WorkflowExecutionLogRecordFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
-        var count = await _store.FindManyAsync(queryable => Filter(queryable, filter).OrderBy(x => x.Timestamp), cancellationToken).LongCount();
-        var results = await _store.FindManyAsync(queryable => Paginate(Filter(queryable, filter), pageArgs), cancellationToken).Select(i => i.MapFromDocument(_serializer)).ToList();
+        var count = await _mongoStore.FindManyAsync(queryable => Filter(queryable, filter).OrderBy(x => x.Timestamp), cancellationToken).LongCount();
+        var results = await _mongoStore.FindManyAsync(queryable => Paginate(Filter(queryable, filter), pageArgs), cancellationToken).Select(i => i.MapFromDocument(_serializer)).ToList();
         return new Page<WorkflowExecutionLogRecord>(results, count);
     }
 
     /// <inheritdoc />
     public async Task<Page<WorkflowExecutionLogRecord>> FindManyAsync<TOrderBy>(WorkflowExecutionLogRecordFilter filter, PageArgs pageArgs, WorkflowExecutionLogRecordOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
-        var count = await _store.FindManyAsync(queryable => Order(Filter(queryable, filter), order), cancellationToken).LongCount();
-        var results = await _store.FindManyAsync(queryable => Paginate(Filter(queryable, filter), pageArgs), cancellationToken).Select(i => i.MapFromDocument(_serializer)).ToList();
+        var count = await _mongoStore.FindManyAsync(queryable => Order(Filter(queryable, filter), order), cancellationToken).LongCount();
+        var results = await _mongoStore.FindManyAsync(queryable => Paginate(Filter(queryable, filter), pageArgs), cancellationToken).Select(i => i.MapFromDocument(_serializer)).ToList();
         return new Page<WorkflowExecutionLogRecord>(results, count);
     }
 

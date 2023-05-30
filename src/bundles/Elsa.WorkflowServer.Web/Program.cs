@@ -5,6 +5,9 @@ using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Http.Handlers;
 using Elsa.JavaScript.Options;
+using Elsa.MongoDB.Extensions;
+using Elsa.MongoDB.Stores.Management;
+using Elsa.MongoDB.Stores.Runtime;
 using Elsa.WorkflowServer.Web;
 
 EndpointSecurityOptions.DisableSecurity();
@@ -32,15 +35,15 @@ services
         .UseDefaultAuthentication()
         .UseWorkflowManagement(management =>
         {
-            management.UseEntityFrameworkCore(m => m.UseSqlite(sqliteConnectionString));
+            management.UseMongoDb();
             management.AddVariableType<ApiResponse<User>>("Api");
             management.AddVariableType<User>("Api");
             management.AddVariableType<Support>("Api");
         })
         .UseWorkflowRuntime(runtime =>
         {
-            runtime.UseDefaultRuntime(dr => dr.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)));
-            runtime.UseExecutionLogRecords(e => e.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)));
+            runtime.UseDefaultRuntime(dr => dr.UseMongoDb());
+            runtime.UseExecutionLogRecords(e => e.UseMongoDb());
             runtime.UseAsyncWorkflowStateExporter();
             runtime.UseMassTransitDispatcher();
         })
@@ -51,6 +54,7 @@ services
         .UseLiquid()
         .UseHttp(http => http.HttpEndpointAuthorizationHandler = sp => sp.GetRequiredService<AllowAnonymousHttpEndpointAuthorizationHandler>())
         .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options))
+        .UseMongoDb(options => configuration.GetSection("MongoDb").Bind(options))
     );
 
 services.Configure<JintOptions>(options => options.AllowClrAccess = true);
