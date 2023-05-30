@@ -44,6 +44,8 @@ builder.Services.AddElsa(elsa =>
     
     // Use default authentication (JWT).
     elsa.UseDefaultAuthentication();
+
+    elsa.AddWorkflowsFrom<Program>();
 });
 
 // Configure CORS to allow designer app hosted on a different origin to invoke the APIs.

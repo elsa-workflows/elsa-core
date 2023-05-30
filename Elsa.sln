@@ -168,7 +168,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "clients", "clients", "{8960
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Api.Client", "src\clients\Elsa.Api.Client\Elsa.Api.Client.csproj", "{1FCB2200-28B8-4703-8E89-73241AAED047}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.QuartzIntegration", "src\samples\aspnet\Elsa.Samples.QuartzIntegration\Elsa.Samples.QuartzIntegration.csproj", "{B0312D9E-FA30-43E9-B666-40A8782D6E1C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.AspNet.QuartzIntegration", "src\samples\aspnet\Elsa.Samples.AspNet.QuartzIntegration\Elsa.Samples.AspNet.QuartzIntegration.csproj", "{B0312D9E-FA30-43E9-B666-40A8782D6E1C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.HangfireIntegration", "src\samples\aspnet\Elsa.Samples.HangfireIntegration\Elsa.Samples.HangfireIntegration.csproj", "{D2614FC7-102F-4F78-BB06-7C87304A10BA}"
 EndProject
