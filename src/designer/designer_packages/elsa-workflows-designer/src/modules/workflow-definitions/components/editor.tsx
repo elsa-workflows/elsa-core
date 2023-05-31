@@ -299,7 +299,7 @@ export class WorkflowDefinitionEditor {
 
   private async updateSelectedActivity() {
     if (!!this.selectedActivity)
-      this.selectedActivity = await this.flowchart.getActivity(this.selectedActivity.id);
+      this.selectedActivity = await this.flowchart?.getActivity(this.selectedActivity.id);
   }
 
   private onVersionSelected = async (e: CustomEvent<WorkflowDefinition>) => {

@@ -17,7 +17,7 @@ export class HttpStatusCodesEditor {
     const fieldId = inputDescriptor.name;
     const displayName = inputDescriptor.displayName;
     const hint = inputDescriptor.description;
-    const expectedStatusCodes: Array<HttpStatusCodeCase> = getPropertyValue(inputContext);
+    const expectedStatusCodes: Array<HttpStatusCodeCase> = getPropertyValue(inputContext) ?? [];
     const statusCodeTags = expectedStatusCodes.map(x => x.statusCode.toString());
 
     return (
