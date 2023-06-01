@@ -36,9 +36,17 @@ public class MongoTriggerStore : ITriggerStore
     /// <inheritdoc />
     public async ValueTask ReplaceAsync(IEnumerable<StoredTrigger> removed, IEnumerable<StoredTrigger> added, CancellationToken cancellationToken = default)
     {
-        var filter = new TriggerFilter { Ids = removed.Select(r => r.Id).ToList() };
-        await DeleteManyAsync(filter, cancellationToken);
-        await _mongoStore.SaveManyAsync(added, cancellationToken);
+        var removedTriggers = removed.ToList();
+        var addedTriggers = added.ToList();
+        
+        if (removedTriggers.Any())
+        {
+            var filter = new TriggerFilter {Ids = removedTriggers.Select(r => r.Id).ToList()};
+            await DeleteManyAsync(filter, cancellationToken);
+        }
+
+        if(addedTriggers.Any())
+            await _mongoStore.SaveManyAsync(addedTriggers, cancellationToken);
     }
 
     /// <inheritdoc />

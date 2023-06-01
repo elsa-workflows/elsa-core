@@ -34,6 +34,6 @@ public class MongoWorkflowRuntimePersistenceFeature : PersistenceFeatureBase
         base.Apply();
         
         AddStore<StoredTrigger, MongoTriggerStore>();
-        AddStore<Models.StoredBookmark, MongoBookmarkStore>();
+        AddStore<StoredBookmark, MongoBookmarkStore>();
     }
 }

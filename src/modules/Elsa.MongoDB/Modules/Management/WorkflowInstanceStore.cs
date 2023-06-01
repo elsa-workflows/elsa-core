@@ -2,6 +2,7 @@ using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.MongoDB.Common;
 using Elsa.MongoDB.Extensions;
+using Elsa.MongoDB.Helpers;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
@@ -18,13 +19,13 @@ namespace Elsa.MongoDB.Modules.Management;
 /// </summary>
 public class MongoWorkflowInstanceStore : IWorkflowInstanceStore
 {
-    private readonly MongoStore<Models.WorkflowInstance> _mongoStore;
+    private readonly MongoStore<WorkflowInstance> _mongoStore;
     private readonly IWorkflowStateSerializer _workflowStateSerializer;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public MongoWorkflowInstanceStore(MongoStore<Models.WorkflowInstance> mongoStore, IWorkflowStateSerializer workflowStateSerializer)
+    public MongoWorkflowInstanceStore(MongoStore<WorkflowInstance> mongoStore, IWorkflowStateSerializer workflowStateSerializer)
     {
         _mongoStore = mongoStore;
         _workflowStateSerializer = workflowStateSerializer;
@@ -32,13 +33,13 @@ public class MongoWorkflowInstanceStore : IWorkflowInstanceStore
 
     /// <inheritdoc />
     public async Task<WorkflowInstance?> FindAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default) => 
-        (await _mongoStore.FindManyAsync(query => Filter(query, filter), cancellationToken).FirstOrDefault()).MapFromDocument(_workflowStateSerializer);
+        (await _mongoStore.FindManyAsync(query => Filter(query, filter), cancellationToken).FirstOrDefault());
 
     /// <inheritdoc />
     public async Task<Page<WorkflowInstance>> FindManyAsync(WorkflowInstanceFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
         var count = await _mongoStore.FindManyAsync(query => Filter(query, filter), x => x.Id, cancellationToken).LongCount();
-        var documents = await _mongoStore.FindManyAsync(query => Paginate(Filter(query, filter), pageArgs), cancellationToken).Select(i => i.MapFromDocument(_workflowStateSerializer)).ToList();
+        var documents = await _mongoStore.FindManyAsync(query => Paginate(Filter(query, filter), pageArgs), cancellationToken).ToList();
         return Page.Of(documents, count);
     }
 
@@ -46,23 +47,23 @@ public class MongoWorkflowInstanceStore : IWorkflowInstanceStore
     public async Task<Page<WorkflowInstance>> FindManyAsync<TOrderBy>(WorkflowInstanceFilter filter, PageArgs pageArgs, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
         var count = await _mongoStore.FindManyAsync(query => Filter(query, filter), x => x.Id, cancellationToken).LongCount();
-        var documents = await _mongoStore.FindManyAsync(query => OrderAndPaginate(Filter(query, filter), order, pageArgs), cancellationToken).Select(i => i.MapFromDocument(_workflowStateSerializer)).ToList();
+        var documents = await _mongoStore.FindManyAsync(query => OrderAndPaginate(Filter(query, filter), order, pageArgs), cancellationToken).ToList();
         return Page.Of(documents, count);
     }
 
     /// <inheritdoc />
     public async Task<IEnumerable<WorkflowInstance>> FindManyAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default) =>
-        await _mongoStore.FindManyAsync(query => Filter(query, filter), cancellationToken).Select(i => i.MapFromDocument(_workflowStateSerializer)).ToList().AsEnumerable();
+        await _mongoStore.FindManyAsync(query => Filter(query, filter), cancellationToken).ToList().AsEnumerable();
 
     /// <inheritdoc />
     public async Task<IEnumerable<WorkflowInstance>> FindManyAsync<TOrderBy>(WorkflowInstanceFilter filter, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default) =>
-        await _mongoStore.FindManyAsync(query => Order(Filter(query, filter), order), cancellationToken).Select(i => i.MapFromDocument(_workflowStateSerializer)).ToList().AsEnumerable();
+        await _mongoStore.FindManyAsync(query => Order(Filter(query, filter), order), cancellationToken).ToList().AsEnumerable();
 
     /// <inheritdoc />
     public async Task<Page<WorkflowInstanceSummary>> SummarizeManyAsync(WorkflowInstanceFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
         var count = await _mongoStore.FindManyAsync(query => Filter(query, filter), x => x.Id, cancellationToken).LongCount();
-        var documents = await _mongoStore.FindManyAsync<WorkflowInstanceSummary>(query => Paginate(Filter(query, filter), pageArgs), x => WorkflowInstanceSummary.FromInstance(x.MapFromDocument(_workflowStateSerializer)), cancellationToken).ToList();
+        var documents = await _mongoStore.FindManyAsync<WorkflowInstanceSummary>(query => Paginate(Filter(query, filter), pageArgs), ExpressionHelpers.WorkflowInstanceSummary, cancellationToken).ToList();
         return Page.Of(documents, count);
     }
 
@@ -72,19 +73,19 @@ public class MongoWorkflowInstanceStore : IWorkflowInstanceStore
         var collection = _mongoStore.GetCollection();
         var queryable = Order(Filter(collection.AsQueryable(), filter), order);
         var count = queryable.LongCount();
-        var mongoQueryable = (queryable.Paginate(pageArgs) as IMongoQueryable<Models.WorkflowInstance>)!;
-        var documents = await mongoQueryable.Select(x => WorkflowInstanceSummary.FromInstance(x.MapFromDocument(_workflowStateSerializer))).ToListAsync(cancellationToken);
+        var mongoQueryable = (queryable.Paginate(pageArgs) as IMongoQueryable<WorkflowInstance>)!;
+        var documents = await mongoQueryable.Select(ExpressionHelpers.WorkflowInstanceSummary).ToListAsync(cancellationToken);
 
         return Page.Of(documents, count);
     }
 
     /// <inheritdoc />
     public async Task<IEnumerable<WorkflowInstanceSummary>> SummarizeManyAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default) =>
-        await _mongoStore.FindManyAsync(query => Filter(query, filter), x => WorkflowInstanceSummary.FromInstance(x.MapFromDocument(_workflowStateSerializer)), cancellationToken).ToList().AsEnumerable();
+        await _mongoStore.FindManyAsync(query => Filter(query, filter), ExpressionHelpers.WorkflowInstanceSummary, cancellationToken).ToList().AsEnumerable();
 
     /// <inheritdoc />
     public async Task<IEnumerable<WorkflowInstanceSummary>> SummarizeManyAsync<TOrderBy>(WorkflowInstanceFilter filter, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default) =>
-        await _mongoStore.FindManyAsync(query => Order(Filter(query, filter), order), x => WorkflowInstanceSummary.FromInstance(x.MapFromDocument(_workflowStateSerializer)), cancellationToken).ToList().AsEnumerable();
+        await _mongoStore.FindManyAsync(query => Order(Filter(query, filter), order), ExpressionHelpers.WorkflowInstanceSummary, cancellationToken).ToList().AsEnumerable();
 
     /// <inheritdoc />
     public async Task<int> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
@@ -95,21 +96,21 @@ public class MongoWorkflowInstanceStore : IWorkflowInstanceStore
 
     /// <inheritdoc />
     public async Task SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default) =>
-        await _mongoStore.SaveAsync(instance.MapToDocument(_workflowStateSerializer), cancellationToken);
+        await _mongoStore.SaveAsync(instance, cancellationToken);
 
     /// <inheritdoc />
     public async Task SaveManyAsync(IEnumerable<WorkflowInstance> instances, CancellationToken cancellationToken = default) =>
-        await _mongoStore.SaveManyAsync(instances.Select(i => i.MapToDocument(_workflowStateSerializer)), cancellationToken);
+        await _mongoStore.SaveManyAsync(instances.Select(i => i), cancellationToken);
 
-    private IMongoQueryable<Models.WorkflowInstance> Filter(IQueryable<Models.WorkflowInstance> queryable, WorkflowInstanceFilter filter) => 
-        (filter.Apply(queryable.Select(i => i.MapFromDocument(_workflowStateSerializer))).Select(j => j.MapToDocument(_workflowStateSerializer)) as IMongoQueryable<Models.WorkflowInstance>)!;
+    private IMongoQueryable<WorkflowInstance> Filter(IQueryable<WorkflowInstance> queryable, WorkflowInstanceFilter filter) => 
+        (filter.Apply(queryable.Select(i => i)) as IMongoQueryable<WorkflowInstance>)!;
     
-    private IMongoQueryable<Models.WorkflowInstance> Order<TOrderBy>(IMongoQueryable<Models.WorkflowInstance> queryable, WorkflowInstanceOrder<TOrderBy> order) => 
-        (queryable.Select(i => i.MapFromDocument(_workflowStateSerializer)).OrderBy(order).Select(i => i.MapToDocument(_workflowStateSerializer)) as IMongoQueryable<Models.WorkflowInstance>)!;
+    private IMongoQueryable<WorkflowInstance> Order<TOrderBy>(IMongoQueryable<WorkflowInstance> queryable, WorkflowInstanceOrder<TOrderBy> order) => 
+        (queryable.OrderBy(order) as IMongoQueryable<WorkflowInstance>)!;
     
-    private IMongoQueryable<Models.WorkflowInstance> Paginate(IMongoQueryable<Models.WorkflowInstance> queryable, PageArgs pageArgs) => 
-        (queryable.Select(i => i.MapFromDocument(_workflowStateSerializer)).Paginate(pageArgs).Select(i => i.MapToDocument(_workflowStateSerializer)) as IMongoQueryable<Models.WorkflowInstance>)!;
+    private IMongoQueryable<WorkflowInstance> Paginate(IMongoQueryable<WorkflowInstance> queryable, PageArgs pageArgs) => 
+        (queryable.Paginate(pageArgs) as IMongoQueryable<WorkflowInstance>)!;
     
-    private IMongoQueryable<Models.WorkflowInstance> OrderAndPaginate<TOrderBy>(IMongoQueryable<Models.WorkflowInstance> queryable, WorkflowInstanceOrder<TOrderBy> order, PageArgs pageArgs) => 
-        (queryable.Select(i => i.MapFromDocument(_workflowStateSerializer)).OrderBy(order).Paginate(pageArgs).Select(i => i.MapToDocument(_workflowStateSerializer)) as IMongoQueryable<Models.WorkflowInstance>)!;
+    private IMongoQueryable<WorkflowInstance> OrderAndPaginate<TOrderBy>(IMongoQueryable<WorkflowInstance> queryable, WorkflowInstanceOrder<TOrderBy> order, PageArgs pageArgs) => 
+        (queryable.OrderBy(order).Paginate(pageArgs) as IMongoQueryable<WorkflowInstance>)!;
 }

@@ -1,11 +1,12 @@
 using Elsa.Identity.Entities;
 using Elsa.Labels.Entities;
-using Elsa.MongoDB.Models;
+using Elsa.Workflows.Core.State;
+using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Runtime.Entities;
 using Microsoft.Extensions.Hosting;
 using MongoDB.Driver;
-using StoredBookmark = Elsa.MongoDB.Models.StoredBookmark;
-using WorkflowExecutionLogRecord = Elsa.MongoDB.Models.WorkflowExecutionLogRecord;
+using StoredBookmark = Elsa.Workflows.Runtime.Entities.StoredBookmark;
+using WorkflowExecutionLogRecord = Elsa.Workflows.Runtime.Entities.WorkflowExecutionLogRecord;
 
 namespace Elsa.MongoDB.HostedServices;
 
@@ -203,8 +204,6 @@ internal class CreateIndices : IHostedService
                             .Ascending(x => x.SubStatus)),
                         new(indexBuilder.Ascending(x => x.DefinitionId)),
                         new(indexBuilder.Ascending(x => x.CorrelationId)),
-                        new(indexBuilder.Ascending(x => x.CreatedAt)),
-                        new(indexBuilder.Ascending(x => x.UpdatedAt)),
                     },
                     cancellationToken));
     }

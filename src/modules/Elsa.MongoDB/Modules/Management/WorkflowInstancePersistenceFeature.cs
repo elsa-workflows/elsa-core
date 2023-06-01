@@ -29,6 +29,6 @@ public class MongoWorkflowInstancePersistenceFeature : PersistenceFeatureBase
     {
         base.Apply();
 
-        AddStore<Models.WorkflowInstance, MongoWorkflowInstanceStore>();
+        AddStore<WorkflowInstance, MongoWorkflowInstanceStore>();
     }
 }

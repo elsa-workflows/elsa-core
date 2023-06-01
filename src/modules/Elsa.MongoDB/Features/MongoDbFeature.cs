@@ -1,27 +1,33 @@
 using System.Security.Authentication;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
+using Elsa.Http.Models;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
 using Elsa.Labels.Contracts;
 using Elsa.Labels.Entities;
 using Elsa.MongoDB.HostedServices;
-using Elsa.MongoDB.Models;
 using Elsa.MongoDB.Modules.Identity;
 using Elsa.MongoDB.Modules.Labels;
 using Elsa.MongoDB.Modules.Management;
 using Elsa.MongoDB.Modules.Runtime;
 using Elsa.MongoDB.Options;
+using Elsa.MongoDB.Serializers;
 using Elsa.MongoDB.Stores.Management;
+using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using MongoDB.Bson.Serialization;
+using MongoDB.Bson.Serialization.Serializers;
 using MongoDB.Driver;
 using MongoDB.Driver.Core.Extensions.DiagnosticSources;
-using StoredBookmark = Elsa.MongoDB.Models.StoredBookmark;
-using WorkflowExecutionLogRecord = Elsa.MongoDB.Models.WorkflowExecutionLogRecord;
+using StoredBookmark = Elsa.Workflows.Runtime.Entities.StoredBookmark;
+using WorkflowExecutionLogRecord = Elsa.Workflows.Runtime.Entities.WorkflowExecutionLogRecord;
 
 namespace Elsa.MongoDB.Features;
 
@@ -44,8 +50,10 @@ public class MongoDbFeature : FeatureBase
     public override void Apply()
     {
         Services.Configure(Options);
-        
+
         Services.AddSingleton(CreateDatabase);
+        
+        RegisterClassMaps();
 
         AddMongoCollection<Application>(Services, "applications");
         AddMongoCollection<User>(Services, "users");
@@ -58,7 +66,7 @@ public class MongoDbFeature : FeatureBase
         AddMongoCollection<WorkflowExecutionLogRecord>(Services, "workflow-instances");
         AddMongoCollection<StoredTrigger>(Services, "triggers");
         AddMongoCollection<StoredBookmark>(Services, "bookmarks");
-            
+
         Services
             .AddSingleton<IApplicationStore, MongoApplicationStore>()
             .AddSingleton<IUserStore, MongoUserStore>()
@@ -73,6 +81,20 @@ public class MongoDbFeature : FeatureBase
             .AddSingleton<IBookmarkStore, MongoBookmarkStore>()
             .AddHostedService<CreateIndices>()
             .AddHealthChecks();
+    }
+
+    private void RegisterClassMaps()
+    {
+        BsonClassMap.RegisterClassMap<HttpEndpointBookmarkPayload>(cm =>
+        {
+            cm.AutoMap();
+            cm.SetDiscriminator("HttpEndpointBookmarkPayload");
+        });
+        
+        BsonClassMap.RegisterClassMap<StoredTrigger>(cm => {
+            cm.AutoMap();
+            cm.GetMemberMap(c => c.Payload).SetSerializer(new PolymorphicSerializer());
+        });
     }
 
     private static IMongoDatabase CreateDatabase(IServiceProvider sp)

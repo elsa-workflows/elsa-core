@@ -33,6 +33,6 @@ public class MongoWorkflowDefinitionPersistenceFeature : PersistenceFeatureBase
     {
         base.Apply();
 
-        AddStore<Models.WorkflowDefinition, MongoWorkflowDefinitionStore>();
+        AddStore<WorkflowDefinition, MongoWorkflowDefinitionStore>();
     }
 }
