@@ -10,12 +10,13 @@ import {
   Workflow
 } from '../../../models';
 import {ActivityDriverRegistry, EventBus, ActivityNode} from '../../../services';
-import {MonacoEditorSettings} from "../../../services/monaco-editor-settings";
+import {MonacoEditorSettings} from "../../../services";
 import {WorkflowDefinition} from "../../workflow-definitions/models/entities";
 import {WorkflowEditorEventTypes} from "../../workflow-definitions/models/ui";
 import {JournalItemSelectedArgs} from '../events';
 import {JournalApi} from "../services/journal-api";
 import {Flowchart} from '../../flowchart/models';
+import {WorkflowJournalModel} from "../models";
 
 @Component({
   tag: 'elsa-workflow-instance-viewer',
@@ -227,6 +228,11 @@ export class WorkflowInstanceViewer {
   public render() {
     const workflowDefinition = this.mainWorkflowDefinitionState;
     const workflowInstance = this.workflowInstanceState;
+    const workflowJournalModel: WorkflowJournalModel = {
+      workflowInstance,
+      workflowDefinition
+    }
+
     this.flowchartRootActivity = this.flowchartRootActivity ?? this.mainWorkflowDefinitionState.root;
 
     return (
@@ -236,10 +242,7 @@ export class WorkflowInstanceViewer {
           class="elsa-activity-picker-container tw-z-30"
           position={PanelPosition.Left}
           onExpandedStateChanged={e => this.onActivityPickerPanelStateChanged(e.detail)}>
-          <elsa-workflow-journal
-            workflowDefinition={workflowDefinition}
-            workflowInstance={workflowInstance}
-          />
+          <elsa-workflow-journal model={workflowJournalModel}/>
         </elsa-panel>
         <elsa-flowchart
           ref={el => this.flowchartElement = el}

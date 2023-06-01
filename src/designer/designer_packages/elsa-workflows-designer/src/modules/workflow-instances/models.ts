@@ -1,5 +1,6 @@
-import {TabDefinition, WorkflowExecutionLogRecord} from "../../models";
+import {TabDefinition, WorkflowExecutionLogRecord, WorkflowInstance} from "../../models";
 import moment from "moment";
+import {WorkflowDefinition} from "../workflow-definitions/models/entities";
 
 export const WorkflowInstanceViewerEventTypes = {
   WorkflowDefinition: {
@@ -50,4 +51,9 @@ export interface ActivityExecutionEventBlock {
   completedRecord?: WorkflowExecutionLogRecord;
   faultedRecord?: WorkflowExecutionLogRecord;
   children: Array<ActivityExecutionEventBlock>;
+}
+
+export interface WorkflowJournalModel {
+  workflowInstance: WorkflowInstance;
+  workflowDefinition: WorkflowDefinition;
 }
