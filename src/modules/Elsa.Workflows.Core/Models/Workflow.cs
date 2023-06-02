@@ -54,7 +54,7 @@ public class Workflow : Composite<object>, ICloneable
     public WorkflowIdentity Identity { get; set; } = WorkflowIdentity.VersionOne;
     public WorkflowPublication Publication { get; set; } = WorkflowPublication.LatestAndPublished;
     public WorkflowMetadata WorkflowMetadata { get; set; } = new();
-    public WorkflowOptions? Options { get; set; }
+    public WorkflowOptions Options { get; set; } = new();
     
     /// <summary>
     /// Constructs a new <see cref="Workflow"/> from the specified <see cref="IActivity"/>.

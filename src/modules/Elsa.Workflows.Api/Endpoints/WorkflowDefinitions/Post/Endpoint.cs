@@ -89,7 +89,7 @@ internal class Post : ElsaEndpoint<SaveWorkflowDefinitionRequest, WorkflowDefini
         draft.Outputs = outputs;
         draft.Outcomes = outcomes;
         draft.Options = model.Options;
-        draft.UsableAsActivity = model.UsableAsActivity;
+        draft.UsableAsActivity = model.Options?.UsableAsActivity;
         draft = request.Publish.GetValueOrDefault(false) ? await _workflowDefinitionPublisher.PublishAsync(draft, cancellationToken) : await _workflowDefinitionPublisher.SaveDraftAsync(draft, cancellationToken);
 
         var response = await _workflowDefinitionMapper.MapAsync(draft, cancellationToken);

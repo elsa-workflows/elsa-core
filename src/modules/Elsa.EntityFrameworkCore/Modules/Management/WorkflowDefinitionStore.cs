@@ -153,6 +153,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         var json = _payloadSerializer.Serialize(data);
 
         managementElsaDbContext.Entry(entity).Property("Data").CurrentValue = json;
+        managementElsaDbContext.Entry(entity).Property("UsableAsActivity").CurrentValue = data.Options.UsableAsActivity;
         return new ValueTask<WorkflowDefinition>(entity);
     }
 
@@ -166,7 +167,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
 
         if (!string.IsNullOrWhiteSpace(json)) 
             data = _payloadSerializer.Deserialize<WorkflowDefinitionState>(json);
-
+        
         entity.Options = data.Options;
         entity.Variables = data.Variables;
         entity.Inputs = data.Inputs;
@@ -194,7 +195,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         }
 
         public WorkflowDefinitionState(
-            WorkflowOptions? options,
+            WorkflowOptions options,
             ICollection<Variable> variables,
             ICollection<InputDefinition> inputs,
             ICollection<OutputDefinition> outputs,
@@ -210,7 +211,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
             CustomProperties = customProperties;
         }
 
-        public WorkflowOptions? Options { get; set; }
+        public WorkflowOptions Options { get; set; } = new();
         public ICollection<Variable> Variables { get; set; } = new List<Variable>();
         public ICollection<InputDefinition> Inputs { get; set; } = new List<InputDefinition>();
         public ICollection<OutputDefinition> Outputs { get; set; } = new List<OutputDefinition>();

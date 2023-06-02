@@ -27,7 +27,7 @@ public class WorkflowDefinition : VersionedEntity
     /// <summary>
     /// A set of options for the workflow.
     /// </summary>
-    public WorkflowOptions? Options { get; set; }
+    public WorkflowOptions Options { get; set; } = new();
     
     /// <summary>
     /// A set of workflow variables that are accessible throughout the workflow.
@@ -77,7 +77,7 @@ public class WorkflowDefinition : VersionedEntity
     /// <summary>
     /// An option to use the workflow as an activity in another workflow.
     /// </summary>
-    public bool? UsableAsActivity { get; set; } = false;
+    [Obsolete("Use Options.UsableAsActivity instead")]public bool? UsableAsActivity { get; set; } = false;
     
     /// <summary>
     /// Creates and returns a shallow copy of the workflow definition.

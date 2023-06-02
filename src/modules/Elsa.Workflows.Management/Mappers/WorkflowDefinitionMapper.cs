@@ -58,7 +58,7 @@ public class WorkflowDefinitionMapper
             new WorkflowIdentity(source.DefinitionId, source.Version, source.Id),
             new WorkflowPublication(source.IsLatest, source.IsPublished),
             new WorkflowMetadata(source.Name, source.Description, source.CreatedAt),
-            source.Options,
+            source.Options ?? new WorkflowOptions(),
             root,
             variables,
             source.CustomProperties ?? new Dictionary<string, object>());

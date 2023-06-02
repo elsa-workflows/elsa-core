@@ -126,9 +126,11 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// <inheritdoc />
     public override void ConfigureHostedServices() =>
         Module
-            .ConfigureHostedService<RegisterDescriptors>()
             .ConfigureHostedService<RegisterExpressionSyntaxDescriptors>()
-            .ConfigureHostedService<PopulateWorkflowDefinitionStore>();
+            .ConfigureHostedService<PopulateWorkflowDefinitionStoreAndActivityRegistry>()
+            // .ConfigureHostedService<PopulateActivityRegistry>()
+            // .ConfigureHostedService<PopulateWorkflowDefinitionStore>()
+        ;
 
     /// <inheritdoc />
     public override void Apply()
@@ -150,6 +152,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddSingleton(WorkflowExecutionLogStore)
             .AddSingleton(RunTaskDispatcher)
             .AddSingleton(BackgroundActivityInvoker)
+            .AddSingleton<IWorkflowDefinitionStorePopulator, DefaultWorkflowDefinitionStorePopulator>()
             .AddSingleton<ITaskReporter, TaskReporter>()
             .AddSingleton<SynchronousTaskDispatcher>()
             .AddSingleton<AsynchronousTaskDispatcher>()

@@ -20,6 +20,7 @@ var identityTokenSection = identitySection.GetSection("Tokens");
 services
     .AddElsa(elsa => elsa
         .AddActivitiesFrom<Program>()
+        .UseFluentStorageProvider()
         .AddTypeAlias<ApiResponse<User>>("ApiResponse[User]")
         .UseIdentity(identity =>
         {
