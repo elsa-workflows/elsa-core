@@ -1,6 +1,6 @@
 {
-  "id": "a0475404b3db4bb391ed546606bb3941",
-  "definitionId": "66d0af8da28b4b598e64838ee696a750",
+  "id": "matter-workflow-v1",
+  "definitionId": "matter-workflow",
   "name": "Matter Workflow",
   "createdAt": "2023-06-01T14:06:25.895316+00:00",
   "version": 1,

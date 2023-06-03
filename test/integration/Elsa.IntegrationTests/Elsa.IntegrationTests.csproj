@@ -74,6 +74,15 @@
       <None Update="Scenarios\ImportAndExecute\Workflows\writeline.json">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
+      <None Update="Scenarios\DependencyWorkflows\Workflows\atom-activity.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Scenarios\DependencyWorkflows\Workflows\matter-activity.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Scenarios\DependencyWorkflows\Workflows\molecule-activity.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
 </Project>

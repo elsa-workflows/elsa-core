@@ -20,6 +20,7 @@
       <ProjectReference Include="..\..\modules\Elsa.JavaScript\Elsa.JavaScript.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Liquid\Elsa.Liquid.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Scheduling\Elsa.Scheduling.csproj" />
+      <ProjectReference Include="..\..\modules\Elsa.WorkflowProviders.FluentStorage\Elsa.WorkflowProviders.FluentStorage.csproj" />
     </ItemGroup>
 
 </Project>

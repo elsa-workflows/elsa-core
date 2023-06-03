@@ -35,16 +35,4 @@
       <PackageReference Include="Proto.Persistence.Sqlite" Version="1.1.0" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Content Update="Workflows\matter-activity.json">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </Content>
-      <Content Update="Workflows\atom-activity.json">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </Content>
-      <Content Update="Workflows\molecule-activity.json">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </Content>
-    </ItemGroup>
-
 </Project>

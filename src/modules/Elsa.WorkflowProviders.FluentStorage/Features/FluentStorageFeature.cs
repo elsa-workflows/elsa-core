@@ -37,7 +37,11 @@ public class FluentStorageFeature : FeatureBase
         Services.AddWorkflowDefinitionProvider<FluentStorageWorkflowProvider>();
     }
 
-    private static string GetDefaultWorkflowsDirectory()
+    /// <summary>
+    /// Gets the default workflows directory.
+    /// </summary>
+    /// <returns>The default workflows directory.</returns>
+    public static string GetDefaultWorkflowsDirectory()
     {
         var entryAssemblyDir = Path.GetDirectoryName(Assembly.GetEntryAssembly()!.Location)!;
         var directory = Path.Combine(entryAssemblyDir, "Workflows");
