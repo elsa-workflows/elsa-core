@@ -68,11 +68,11 @@ public class Export : ElsaEndpoint<Request>
             definition.Outputs,
             definition.Outcomes,
             definition.CustomProperties,
-            default,
             definition.IsReadonly,
             definition.IsLatest,
             definition.IsPublished,
             definition.Options,
+            default,
             workflow.Root);
 
         var serializerOptions = _serializer.CreateOptions();

@@ -95,6 +95,7 @@ public class WorkflowDefinitionMapper
             workflowDefinition.IsLatest,
             workflowDefinition.IsPublished,
             workflow.Options,
+            default,
             workflow.Root);
     }
 }

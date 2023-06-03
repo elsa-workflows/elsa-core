@@ -8,6 +8,7 @@ using JetBrains.Annotations;
 using Medallion.Threading;
 using System.Text.Json;
 using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Serialization.Converters;
 using Elsa.Workflows.Management.Contracts;
 using Microsoft.AspNetCore.Http;
@@ -88,7 +89,7 @@ internal class Post : ElsaEndpoint<SaveWorkflowDefinitionRequest, WorkflowDefini
         draft.Inputs = inputs;
         draft.Outputs = outputs;
         draft.Outcomes = outcomes;
-        draft.Options = model.Options;
+        draft.Options = model.Options ?? new WorkflowOptions();
         draft = request.Publish.GetValueOrDefault(false) ? await _workflowDefinitionPublisher.PublishAsync(draft, cancellationToken) : await _workflowDefinitionPublisher.SaveDraftAsync(draft, cancellationToken);
 
         var response = await _workflowDefinitionMapper.MapAsync(draft, cancellationToken);
