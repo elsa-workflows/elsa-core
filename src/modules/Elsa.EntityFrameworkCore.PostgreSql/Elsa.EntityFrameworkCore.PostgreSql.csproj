@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <Import Project="..\..\..\common.props" />
-    <Import Project="..\..\..\configureawait.props" />
+    <Import Project="..\..\..\common.props"/>
+    <Import Project="..\..\..\configureawait.props"/>
 
     <PropertyGroup>
         <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
@@ -16,15 +16,11 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="7.0.3" />
+        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="7.0.3"/>
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Elsa.EntityFrameworkCore\Elsa.EntityFrameworkCore.csproj" />
+        <ProjectReference Include="..\Elsa.EntityFrameworkCore\Elsa.EntityFrameworkCore.csproj"/>
     </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Migrations\Management\" />
-    </ItemGroup>
-
+    
 </Project>

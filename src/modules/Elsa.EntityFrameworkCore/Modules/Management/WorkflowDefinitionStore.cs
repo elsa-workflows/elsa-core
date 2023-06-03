@@ -162,9 +162,9 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         var data = new WorkflowDefinitionState(entity.Options, entity.Variables, entity.Inputs, entity.Outputs, entity.Outcomes, entity.CustomProperties);
         var json = (string?)managementElsaDbContext.Entry(entity).Property("Data").CurrentValue;
 
-        if (!string.IsNullOrWhiteSpace(json)) 
+        if (!string.IsNullOrWhiteSpace(json))
             data = _payloadSerializer.Deserialize<WorkflowDefinitionState>(json);
-        
+
         entity.Options = data.Options;
         entity.Variables = data.Variables;
         entity.Inputs = data.Inputs;
@@ -186,7 +186,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         if (filter.Name != null) queryable = queryable.Where(x => x.Name == filter.Name);
         if (filter.Names != null) queryable = queryable.Where(x => filter.Names.Contains(x.Name!));
         if (filter.UsableAsActivity != null) queryable = queryable.Where(x => EF.Property<bool>(x, "UsableAsActivity") == filter.UsableAsActivity);
-        
+
         return queryable;
     }
 
@@ -228,6 +228,4 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         public ICollection<string> Outcomes { get; set; } = new List<string>();
         public IDictionary<string, object> CustomProperties { get; set; } = new Dictionary<string, object>();
     }
-
-   
 }
