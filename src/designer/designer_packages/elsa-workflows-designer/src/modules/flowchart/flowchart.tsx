@@ -71,6 +71,7 @@ export class FlowchartComponent {
   async newRoot(): Promise<Activity> {
     const flowchart = await this.createFlowchart();
     await this.setupGraph(flowchart);
+    await this.scrollToStart();
     return flowchart;
   }
 
@@ -253,7 +254,6 @@ export class FlowchartComponent {
 
   @Watch('rootActivity')
   private onActivityChanged(value: Activity) {
-    this.path = [];
     this.updateLookups();
   }
 
@@ -299,6 +299,7 @@ export class FlowchartComponent {
 
   async componentDidLoad() {
     await this.createAndInitializeGraph();
+    await this.updateGraph();
   }
 
   private getFlowchartDescriptor = () => this.getActivityDescriptor(FlowchartTypeName);
@@ -416,8 +417,6 @@ export class FlowchartComponent {
       this.graph.disableSelectionMovable();
       this.graph.disableKeyboard();
     }
-
-    await this.scrollToStart();
   };
 
   private updateGraphInternal = (activities: Array<Activity>, connections: Array<Connection>) => {
@@ -443,7 +442,6 @@ export class FlowchartComponent {
     this.graph.freeze();
     this.graph.fromJSON(model, { silent: false });
     this.graph.unfreeze();
-
     rebuildGraph(this.graph);
   }
 
@@ -691,6 +689,7 @@ export class FlowchartComponent {
     const childFlowchart = await this.getCurrentFlowchartActivity();
 
     await this.setupGraph(childFlowchart);
+    await this.scrollToStart();
   }
 
   private updatePorts = (node: any, activity: Activity) => {

@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using Elsa.Common.Models;
+using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.EntityFrameworkCore.Extensions;
@@ -7,6 +8,7 @@ namespace Elsa.EntityFrameworkCore.Extensions;
 /// <summary>
 /// Provides extensions to <see cref="IQueryable{T}"/>.
 /// </summary>
+[PublicAPI]
 public static class QueryableExtensions
 {
     /// <summary>

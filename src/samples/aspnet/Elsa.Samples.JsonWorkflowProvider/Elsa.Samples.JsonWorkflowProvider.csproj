@@ -14,9 +14,12 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Include="Workflows\HelloWorld.json">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
+      <Content Update="Workflows\HelloWorld.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
+      <Content Update="Workflows\HelloWorldHttp.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
     </ItemGroup>
 
 </Project>

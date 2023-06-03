@@ -10,12 +10,13 @@ import {
   Workflow
 } from '../../../models';
 import {ActivityDriverRegistry, EventBus, ActivityNode} from '../../../services';
-import {MonacoEditorSettings} from "../../../services/monaco-editor-settings";
+import {MonacoEditorSettings} from "../../../services";
 import {WorkflowDefinition} from "../../workflow-definitions/models/entities";
 import {WorkflowEditorEventTypes} from "../../workflow-definitions/models/ui";
-import { JournalItemSelectedArgs } from '../events';
+import {JournalItemSelectedArgs} from '../events';
 import {JournalApi} from "../services/journal-api";
-import { Flowchart } from '../../flowchart/models';
+import {Flowchart} from '../../flowchart/models';
+import {WorkflowJournalModel} from "../models";
 
 @Component({
   tag: 'elsa-workflow-instance-viewer',
@@ -26,6 +27,7 @@ export class WorkflowInstanceViewer {
   private readonly journalApi: JournalApi;
   private flowchartElement: HTMLElsaFlowchartElement;
   private container: HTMLDivElement;
+  private isJournalSelecting: boolean = false;
 
   constructor() {
     this.eventBus = Container.get(EventBus);
@@ -40,7 +42,7 @@ export class WorkflowInstanceViewer {
   @State() private targetWorkflowDefinitionState: WorkflowDefinition;
   @State() private workflowInstanceState: WorkflowInstance;
   @State() private selectedActivity?: Activity;
-  @State() private selectedActivityExecutionLog?: WorkflowExecutionLogRecord;
+  @State() private selectedExecutionLogRecord?: WorkflowExecutionLogRecord;
   @State() private flowchartRootActivity: Activity;
 
   @Watch('monacoLibPath')
@@ -77,32 +79,35 @@ export class WorkflowInstanceViewer {
 
   @Listen('activitySelected')
   private async handleActivitySelected(e: CustomEvent<ActivitySelectedArgs>) {
+    if (this.isJournalSelecting)
+      return;
+
     this.selectedActivity = e.detail.activity;
     const workflowInstanceId = this.workflowInstance.id;
     const activityId = this.selectedActivity.id;
-    this.selectedActivityExecutionLog = await this.journalApi.getLastEntry({workflowInstanceId, activityId});
+    this.selectedExecutionLogRecord = await this.journalApi.getLastEntry({workflowInstanceId, activityId});
   }
 
   @Listen('journalItemSelected')
   private async handleJournalItemSelected(e: CustomEvent<JournalItemSelectedArgs>) {
     const activityId = e.detail.activity.id;
     const activityNode = e.detail.activityNode;
-
     const graph = await this.flowchartElement.getGraph();
     const graphNode = graph.getNodes().find(n => n.id == activityId)
 
-    if(graphNode == null) {
-      await this.importSelectedItemsWorkflow(activityNode);
-      graph.resetSelection();
-      this.selectedActivity = e.detail.activity;
-    }
-    else {
-      graph.resetSelection(graphNode);
-      this.selectedActivity = graphNode.data;
-    }
+    const executionEventBlock = e.detail.executionEventBlock;
+    this.selectedExecutionLogRecord = executionEventBlock.faulted ? executionEventBlock.faultedRecord : executionEventBlock.completed ? executionEventBlock.completedRecord : executionEventBlock.startedRecord;
 
-    const log = e.detail.executionLog;
-    this.selectedActivityExecutionLog = log.faulted ? log.faultedRecord : log.completed ? log.completedRecord : log.startedRecord;
+    this.isJournalSelecting = true;
+    if (graphNode == null) {
+      await this.importSelectedItemsWorkflow(activityNode);
+      this.selectedActivity = e.detail.activity;
+      graph.resetSelection();
+    } else {
+      this.selectedActivity = graphNode.data;
+      graph.resetSelection(graphNode);
+    }
+    this.isJournalSelecting = false;
   }
 
   private async importSelectedItemsWorkflow(activityNode: ActivityNode) {
@@ -115,32 +120,29 @@ export class WorkflowInstanceViewer {
     });
   }
 
-  private findConsumingWorkflowRecursive(activityNode: ActivityNode) : ActivityNode {
+  private findConsumingWorkflowRecursive(activityNode: ActivityNode): ActivityNode {
     const parent = activityNode.parents[0];
-    if(parent == null) {
+    if (parent == null) {
       return activityNode;
-    }
-    else{
+    } else {
       const type = parent.activity.type;
-      if(type == "Elsa.Workflow" || type == "Elsa.Flowchart") {
+      if (type == "Elsa.Workflow" || type == "Elsa.Flowchart") {
         return this.findConsumingWorkflowRecursive(parent);
-      }
-      else {
+      } else {
         return parent;
       }
     }
   }
 
-  private async getFlowchartByActivityNode(consumingWorkflowNode: ActivityNode) : Promise<Flowchart> {
+  private async getFlowchartByActivityNode(consumingWorkflowNode: ActivityNode): Promise<Flowchart> {
     const isConsumingWorkflowSameAsMain = consumingWorkflowNode.parents[0] == null;
     return isConsumingWorkflowSameAsMain ? this.workflowDefinition.root as Flowchart : this.findFlowchartOfActivityRecursive(consumingWorkflowNode.activity);
   }
 
   private findFlowchartOfActivityRecursive(activity: Activity): Flowchart {
-    if(activity.type == "Elsa.Flowchart"){
+    if (activity.type == "Elsa.Flowchart") {
       return activity as Flowchart;
-    }
-    else{
+    } else {
       return this.findFlowchartOfActivityRecursive((activity as Workflow).root);
     }
   }
@@ -193,8 +195,10 @@ export class WorkflowInstanceViewer {
 
   private renderSelectedObject = () => {
     const activity = this.selectedActivity;
-    if (!!activity)
-      return <elsa-activity-properties activity={activity} activityExecutionLog={this.selectedActivityExecutionLog}/>;
+    if (!!activity) {
+      const selectedRecord = this.selectedExecutionLogRecord;
+      return <elsa-activity-properties activity={activity} activityExecutionLog={selectedRecord}/>;
+    }
   }
 
   private getWorkflowInternal = async (): Promise<WorkflowDefinition> => {
@@ -224,6 +228,11 @@ export class WorkflowInstanceViewer {
   public render() {
     const workflowDefinition = this.mainWorkflowDefinitionState;
     const workflowInstance = this.workflowInstanceState;
+    const workflowJournalModel: WorkflowJournalModel = {
+      workflowInstance,
+      workflowDefinition
+    }
+
     this.flowchartRootActivity = this.flowchartRootActivity ?? this.mainWorkflowDefinitionState.root;
 
     return (
@@ -233,10 +242,7 @@ export class WorkflowInstanceViewer {
           class="elsa-activity-picker-container tw-z-30"
           position={PanelPosition.Left}
           onExpandedStateChanged={e => this.onActivityPickerPanelStateChanged(e.detail)}>
-          <elsa-workflow-journal
-            workflowDefinition={workflowDefinition}
-            workflowInstance={workflowInstance}
-          />
+          <elsa-workflow-journal model={workflowJournalModel}/>
         </elsa-panel>
         <elsa-flowchart
           ref={el => this.flowchartElement = el}

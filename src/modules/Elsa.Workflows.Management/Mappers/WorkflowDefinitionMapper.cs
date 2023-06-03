@@ -45,6 +45,30 @@ public class WorkflowDefinitionMapper
     }
     
     /// <summary>
+    /// Maps a <see cref="WorkflowDefinitionModel"/> to a <see cref="Workflow"/>.
+    /// </summary>
+    /// <param name="source">The source <see cref="WorkflowDefinitionModel"/>.</param>
+    /// <returns>The mapped <see cref="Workflow"/>.</returns>
+    public Workflow Map(WorkflowDefinitionModel source)
+    {
+        var root = source.Root!;
+        var variables = _variableDefinitionMapper.Map(source.Variables).ToList();
+        var options = source.Options ?? new WorkflowOptions();
+        
+        // TODO: Remove this in the future when users have migrated workflows to use the new UsableAsActivity options property.
+        options.UsableAsActivity ??= source.UsableAsActivity ?? false;
+        
+        return new(
+            new WorkflowIdentity(source.DefinitionId, source.Version, source.Id),
+            new WorkflowPublication(source.IsLatest, source.IsPublished),
+            new WorkflowMetadata(source.Name, source.Description, source.CreatedAt),
+            options,
+            root,
+            variables,
+            source.CustomProperties ?? new Dictionary<string, object>());
+    }
+    
+    /// <summary>
     /// Maps a <see cref="WorkflowDefinition"/> to a <see cref="Workflow"/>.
     /// </summary>
     /// <param name="workflowDefinition">The source <see cref="WorkflowDefinition"/>.</param>
@@ -67,7 +91,6 @@ public class WorkflowDefinitionMapper
             workflowDefinition.Outputs,
             workflowDefinition.Outcomes,
             workflowDefinition.CustomProperties,
-            workflowDefinition.UsableAsActivity,
             workflowDefinition.IsReadonly,
             workflowDefinition.IsLatest,
             workflowDefinition.IsPublished,

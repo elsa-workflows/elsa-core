@@ -207,6 +207,9 @@ public class TriggerIndexer : ITriggerIndexer
         {
             var locationReference = input.MemoryBlockReference();
 
+            if(locationReference.Id == null!)
+                continue;
+            
             try
             {
                 var value = await _expressionEvaluator.EvaluateAsync(input, expressionExecutionContext);

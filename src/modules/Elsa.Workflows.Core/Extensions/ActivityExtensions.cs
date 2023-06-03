@@ -52,7 +52,7 @@ public static class ActivityExtensions
 
         return query.Select(x => x!).ToList();
     }
-    
+
     /// <summary>
     /// Gets the input properties of the specified activity.
     /// </summary>
@@ -64,17 +64,18 @@ public static class ActivityExtensions
     public static TDelegate GetDelegate<TDelegate>(this IActivity activity, string methodName) where TDelegate : Delegate
     {
         var activityType = activity.GetType();
-        var bindingFlags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy;
-        var resumeMethodInfo = activityType.GetMethod(methodName, bindingFlags);
+        const BindingFlags bindingFlags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy;
+        var resumeMethodInfo = default(MethodInfo?);
+        var currentType = activityType;
+
+        while (currentType != null && resumeMethodInfo == null)
+        {
+            resumeMethodInfo = currentType.GetMethod(methodName, bindingFlags);
+            currentType = currentType.BaseType;
+        }
 
         if (resumeMethodInfo == null)
-        {
-            if (activityType.BaseType != null)
-                resumeMethodInfo = activityType.BaseType.GetMethod(methodName, bindingFlags);
-
-            if (resumeMethodInfo == null)
-                throw new Exception($"Can't find method name {methodName} on type {activityType} or its base type {activityType.BaseType}");
-        }
+            throw new Exception($"Can't find method name {methodName} on type {activityType} or its base type {activityType.BaseType}");
 
         return resumeMethodInfo.IsStatic ? (TDelegate)Delegate.CreateDelegate(typeof(TDelegate), resumeMethodInfo) : (TDelegate)Delegate.CreateDelegate(typeof(TDelegate), activity, resumeMethodInfo);
     }
@@ -83,7 +84,7 @@ public static class ActivityExtensions
     /// Gets the Resume method for the specified activity.
     /// </summary>
     public static ExecuteActivityDelegate GetResumeActivityDelegate(this IActivity driver, string resumeMethodName) => driver.GetDelegate<ExecuteActivityDelegate>(resumeMethodName);
-    
+
     /// <summary>
     /// Gets the Child Activity Completed method for the specified activity.
     /// </summary>

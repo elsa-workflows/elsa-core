@@ -132,7 +132,7 @@ public class WorkflowBuilder : IWorkflowBuilder
         if (Result != null)
         {
             workflow.ResultVariable = Result;
-            workflow.Result = new Output(Result);
+            workflow.Result = new Output<object>(Result);
         }
 
         var graph = await _activityVisitor.VisitAsync(workflow, cancellationToken);

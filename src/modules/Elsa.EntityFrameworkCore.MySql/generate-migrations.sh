@@ -1,0 +1,5 @@
+dotnet ef migrations add Initial -c ActivityDefinitionsElsaDbContext -o Migrations/ActivityDefinitions -- "Server=localhost;Port=3306;Database=elsa;User=root;Password=password;"
+dotnet ef migrations add Initial -c LabelsElsaDbContext -o Migrations/Labels -- "Server=localhost;Port=3306;Database=elsa;User=root;Password=password;"
+dotnet ef migrations add Initial -c ManagementElsaDbContext -o Migrations/Management -- "Server=localhost;Port=3306;Database=elsa;User=root;Password=password;"
+dotnet ef migrations add Initial -c RuntimeElsaDbContext -o Migrations/Runtime -- "Server=localhost;Port=3306;Database=elsa;User=root;Password=password;"
+dotnet ef migrations add Initial -c IdentityElsaDbContext -o Migrations/Identity -- "Server=localhost;Port=3306;Database=elsa;User=root;Password=password;"

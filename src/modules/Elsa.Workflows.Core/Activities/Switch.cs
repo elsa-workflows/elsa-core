@@ -51,6 +51,12 @@ public class Switch : Activity
     public ICollection<SwitchCase> Cases { get; set; } = new List<SwitchCase>();
 
     /// <summary>
+    /// The switch mode determines whether the first match should be scheduled, or all matches.
+    /// </summary>
+    [Input(Description = "The switch mode determines whether the first match should be scheduled, or all matches.")]
+    public Input<SwitchMode> Mode { get; set; } = new(SwitchMode.MatchFirst);
+
+    /// <summary>
     /// The default activity to schedule when no case matches.
     /// </summary>
     [Port] public IActivity? Default { get; set; }
@@ -59,19 +65,28 @@ public class Switch : Activity
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         context.Set(Output, Expression);
-        var matchingCase = await FindMatchingCaseAsync(context.ExpressionExecutionContext);
+        var matchingCases = await FindMatchingCasesAsync(context.ExpressionExecutionContext);
+        var hasAnyMatches = matchingCases.Any();
 
-        if (matchingCase != null)
+        var mode = context.Get(Mode);
+        var results = mode == SwitchMode.MatchFirst ? hasAnyMatches ? new[] { matchingCases.First() } : Array.Empty<SwitchCase>() : matchingCases.ToArray();
+
+        if (hasAnyMatches)
         {
-            await context.ScheduleActivityAsync(matchingCase.Activity, OnChildActivityCompletedAsync);
+            foreach (var result in results)
+            {
+                await context.ScheduleActivityAsync(result.Activity, OnChildActivityCompletedAsync);
+            }
+
             return;
         }
 
         await context.ScheduleActivityAsync(Default, OnChildActivityCompletedAsync);
     }
 
-    private async Task<SwitchCase?> FindMatchingCaseAsync(ExpressionExecutionContext context)
+    private async Task<IEnumerable<SwitchCase>> FindMatchingCasesAsync(ExpressionExecutionContext context)
     {
+        var matchingCases = new List<SwitchCase>();
         var expressionEvaluator = context.GetRequiredService<IExpressionEvaluator>();
 
         foreach (var switchCase in Cases)
@@ -79,10 +94,12 @@ public class Switch : Activity
             var result = await expressionEvaluator.EvaluateAsync<bool?>(switchCase.Condition, context);
 
             if (result == true)
-                return switchCase;
+            {
+                matchingCases.Add(switchCase);
+            }
         }
 
-        return null;
+        return matchingCases;
     }
 
     private async ValueTask OnChildActivityCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext)

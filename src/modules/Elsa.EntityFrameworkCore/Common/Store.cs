@@ -78,7 +78,7 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
         await using var dbContext = await CreateDbContextAsync(cancellationToken);
         entity = onSaving != null ? await onSaving(dbContext, entity, cancellationToken) : entity;
         var set = dbContext.Set<TEntity>();
-        var lambda = keySelector.BuildEqualsExpresion(entity);
+        var lambda = keySelector.BuildEqualsExpression(entity);
         var exists = await set.AnyAsync(lambda, cancellationToken);
         set.Entry(entity).State = exists ? EntityState.Modified : EntityState.Added;
 
