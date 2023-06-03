@@ -2,7 +2,6 @@
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
 using Elsa.Workflows.Core.Contracts;
-using FastEndpoints;
 using JetBrains.Annotations;
 
 namespace Elsa.Identity.Endpoints.Applications.Create;

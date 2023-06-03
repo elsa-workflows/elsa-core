@@ -1,5 +1,4 @@
 using Elsa.ProtoActor.Grains;
-using Elsa.ProtoActor.Protos;
 using Elsa.Workflows.Core.State;
 
 namespace Elsa.ProtoActor;

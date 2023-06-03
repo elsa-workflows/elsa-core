@@ -1,5 +1,4 @@
 using Elsa.JavaScript.TypeDefinitions.Contracts;
-using Elsa.JavaScript.TypeDefinitions.Providers;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.JavaScript.Extensions;

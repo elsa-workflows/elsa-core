@@ -5,7 +5,6 @@ using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Webhooks.Extensions;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Cors.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.UseStaticWebAssets();

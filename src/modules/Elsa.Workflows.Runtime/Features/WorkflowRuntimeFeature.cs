@@ -9,7 +9,6 @@ using Elsa.Workflows.Core.Notifications;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Notifications;
-using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Runtime.ActivationValidators;
 using Elsa.Workflows.Runtime.Commands;
 using Elsa.Workflows.Runtime.Contracts;

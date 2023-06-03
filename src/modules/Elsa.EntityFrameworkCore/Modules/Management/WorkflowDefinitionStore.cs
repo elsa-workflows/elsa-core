@@ -1,4 +1,3 @@
-using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.EntityFrameworkCore.Common;
 using Elsa.Extensions;
@@ -10,8 +9,6 @@ using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 using Microsoft.EntityFrameworkCore;
 using Open.Linq.AsyncExtensions;
-using System.ComponentModel;
-using System.Linq.Expressions;
 
 namespace Elsa.EntityFrameworkCore.Modules.Management;
 

@@ -1,5 +1,4 @@
 using System.Net.Mime;
-using Elsa.Extensions;
 using Elsa.Http;
 using Elsa.Samples.AspNet.HttpEndpoints.Activities;
 using Elsa.Samples.AspNet.HttpEndpoints.Models;
