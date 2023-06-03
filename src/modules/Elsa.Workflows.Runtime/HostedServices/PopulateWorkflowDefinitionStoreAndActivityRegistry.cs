@@ -30,17 +30,17 @@ public class PopulateWorkflowDefinitionStoreAndActivityRegistry : IHostedService
         // Because workflow definitions can be used as activities, we need to make sure that the activity registry is populated before we populate the workflow definition store.
         // After the workflow definition store has been populated, we need to re-populate the activity registry to make sure that the activity descriptors are up-to-date.
         // Finally, we need to re-populate the workflow definition store to make sure that the workflow definitions are up-to-date.
-        
+
         // Stage 1: Populate the activity registry.
         await _activityRegistryPopulator.PopulateRegistryAsync(cancellationToken);
-        
+
         // Stage 2: Populate the workflow definition store.
         await _workflowDefinitionStorePopulator.PopulateStoreAsync(cancellationToken);
-        
-        // Stage 2: Re-populate the activity registry.
+
+        // Stage 3: Re-populate the activity registry.
         await _activityRegistryPopulator.PopulateRegistryAsync(cancellationToken);
-        
-        // tage 3. Re-update the workflow definition store with the current set of activities.
+
+        // Stage 4. Re-update the workflow definition store with the current set of activities.
         await _workflowDefinitionStorePopulator.PopulateStoreAsync(cancellationToken);
     }
 

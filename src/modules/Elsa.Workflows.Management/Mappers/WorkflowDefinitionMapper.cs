@@ -55,7 +55,8 @@ public class WorkflowDefinitionMapper
         var variables = _variableDefinitionMapper.Map(source.Variables).ToList();
         var options = source.Options ?? new WorkflowOptions();
         
-        options.UsableAsActivity = source.UsableAsActivity ?? false;
+        // TODO: Remove this in the future when users have migrated workflows to use the new UsableAsActivity options property.
+        options.UsableAsActivity ??= source.UsableAsActivity ?? false;
         
         return new(
             new WorkflowIdentity(source.DefinitionId, source.Version, source.Id),
@@ -90,7 +91,7 @@ public class WorkflowDefinitionMapper
             workflowDefinition.Outputs,
             workflowDefinition.Outcomes,
             workflowDefinition.CustomProperties,
-            workflowDefinition.UsableAsActivity,
+            workflowDefinition.Options.UsableAsActivity,
             workflowDefinition.IsLatest,
             workflowDefinition.IsPublished,
             workflow.Options,

@@ -69,7 +69,6 @@ namespace Elsa.Workflows.Management.Services
             draft.Outputs = model.Outputs ?? new List<OutputDefinition>();
             draft.Outcomes = model.Outcomes ?? new List<string>();
             draft.Options = model.Options;
-            draft.UsableAsActivity = model.Options?.UsableAsActivity;
             draft = request.Publish ?? model.IsPublished ? await _workflowDefinitionPublisher.PublishAsync(draft, cancellationToken) : await _workflowDefinitionPublisher.SaveDraftAsync(draft, cancellationToken);
 
             return draft;

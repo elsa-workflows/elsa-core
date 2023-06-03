@@ -15,7 +15,7 @@ public class WorkflowOptions
     /// <summary>
     /// Used to decide if the workflow can be used as an activity.
     /// </summary>
-    public bool UsableAsActivity { get; set; }
+    public bool? UsableAsActivity { get; set; }
     
     /// <summary>
     /// Used to decide if the consuming workflows should be updated automatically to use the last published version of the workflow when it is published.

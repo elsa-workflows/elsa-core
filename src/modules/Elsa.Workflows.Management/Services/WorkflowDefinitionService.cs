@@ -46,11 +46,6 @@ public class WorkflowDefinitionService : IWorkflowDefinitionService
         // Assign identities.
         _identityGraphService.AssignIdentities(graph);
 
-        // Update workflow options.
-        var workflowOptions = workflow.Options ?? new WorkflowOptions();
-        workflowOptions.UsableAsActivity = definition.UsableAsActivity == true;
-        workflow.Options = workflowOptions;
-        
         return workflow;
     }
 
