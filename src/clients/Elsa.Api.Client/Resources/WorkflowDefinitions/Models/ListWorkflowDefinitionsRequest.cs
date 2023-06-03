@@ -1,4 +1,3 @@
-using Elsa.Api.Client.Shared.Models;
 using Refit;
 
 namespace Elsa.Api.Client.Resources.WorkflowDefinitions.Models;

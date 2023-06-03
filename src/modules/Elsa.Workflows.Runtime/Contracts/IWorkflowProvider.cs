@@ -17,5 +17,5 @@ public interface IWorkflowProvider
     /// </summary>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The workflow definitions.</returns>
-    ValueTask<IEnumerable<MaterializedWorkflow>> GetWorkflowDefinitionsAsync(CancellationToken cancellationToken = default);
+    ValueTask<IEnumerable<MaterializedWorkflow>> GetWorkflowsAsync(CancellationToken cancellationToken = default);
 }

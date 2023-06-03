@@ -11,9 +11,14 @@ public class WorkflowOptions
     /// The type of <see cref="IWorkflowActivationStrategy"/> to apply when new instances are requested to be created.
     /// </summary>
     public Type? ActivationStrategyType { get; set; }
+
+    /// <summary>
+    /// Used to decide if the workflow can be used as an activity.
+    /// </summary>
+    public bool? UsableAsActivity { get; set; }
     
     /// <summary>
-    /// It is used to decide if the consuming workflows should be updated automatically to use the last published version of the workflow when it is published.
+    /// Used to decide if the consuming workflows should be updated automatically to use the last published version of the workflow when it is published.
     /// </summary>
     public bool AutoUpdateConsumingWorkflows { get; set; }
 }

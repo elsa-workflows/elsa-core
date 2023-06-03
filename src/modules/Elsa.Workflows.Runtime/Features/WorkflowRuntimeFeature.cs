@@ -9,7 +9,6 @@ using Elsa.Workflows.Core.Notifications;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Notifications;
-using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Runtime.ActivationValidators;
 using Elsa.Workflows.Runtime.Commands;
 using Elsa.Workflows.Runtime.Contracts;
@@ -124,11 +123,7 @@ public class WorkflowRuntimeFeature : FeatureBase
     }
 
     /// <inheritdoc />
-    public override void ConfigureHostedServices() =>
-        Module
-            .ConfigureHostedService<RegisterDescriptors>()
-            .ConfigureHostedService<RegisterExpressionSyntaxDescriptors>()
-            .ConfigureHostedService<PopulateWorkflowDefinitionStore>();
+    public override void ConfigureHostedServices() => Module.ConfigureHostedService<PopulateRegistriesHostedService>();
 
     /// <inheritdoc />
     public override void Apply()
@@ -150,6 +145,8 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddSingleton(WorkflowExecutionLogStore)
             .AddSingleton(RunTaskDispatcher)
             .AddSingleton(BackgroundActivityInvoker)
+            .AddSingleton<IWorkflowDefinitionStorePopulator, DefaultWorkflowDefinitionStorePopulator>()
+            .AddSingleton<IRegistriesPopulator, DefaultRegistriesPopulator>()
             .AddSingleton<ITaskReporter, TaskReporter>()
             .AddSingleton<SynchronousTaskDispatcher>()
             .AddSingleton<AsynchronousTaskDispatcher>()

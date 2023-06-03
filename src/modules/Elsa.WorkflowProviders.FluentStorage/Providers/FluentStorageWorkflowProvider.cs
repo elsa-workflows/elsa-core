@@ -51,7 +51,7 @@ public class FluentStorageWorkflowProvider : IWorkflowProvider
     public string Name => "FluentStorage";
 
     /// <inheritdoc />
-    public async ValueTask<IEnumerable<MaterializedWorkflow>> GetWorkflowDefinitionsAsync(CancellationToken cancellationToken = default)
+    public async ValueTask<IEnumerable<MaterializedWorkflow>> GetWorkflowsAsync(CancellationToken cancellationToken = default)
     {
         var options = new ListOptions
         {
@@ -64,14 +64,14 @@ public class FluentStorageWorkflowProvider : IWorkflowProvider
 
         foreach (var blob in blobs)
         {
-            var result = await ReadWorkflowDefinitionAsync(blob, cancellationToken);
+            var result = await ReadWorkflowAsync(blob, cancellationToken);
             results.Add(result);
         }
 
         return results;
     }
 
-    private async Task<MaterializedWorkflow> ReadWorkflowDefinitionAsync(Blob blob, CancellationToken cancellationToken)
+    private async Task<MaterializedWorkflow> ReadWorkflowAsync(Blob blob, CancellationToken cancellationToken)
     {
         var blobStorage = _blobStorageProvider.GetBlobStorage();
         var fileExtension = blob.FullPath.Split('.').Last();
@@ -97,7 +97,7 @@ public class FluentStorageWorkflowProvider : IWorkflowProvider
             DefinitionId = blob.Name
         };
 
-        return new MaterializedWorkflow(workflow, JsonWorkflowMaterializer.MaterializerName);
+        return new MaterializedWorkflow(workflow, Name, JsonWorkflowMaterializer.MaterializerName);
     }
 
     private MaterializedWorkflow ReadJsonWorkflowDefinition(string json)
@@ -105,6 +105,6 @@ public class FluentStorageWorkflowProvider : IWorkflowProvider
         var workflowDefinitionModel = _activitySerializer.Deserialize<WorkflowDefinitionModel>(json);
         var workflow = _workflowDefinitionMapper.Map(workflowDefinitionModel);
 
-        return new MaterializedWorkflow(workflow, JsonWorkflowMaterializer.MaterializerName);
+        return new MaterializedWorkflow(workflow, Name, JsonWorkflowMaterializer.MaterializerName);
     }
 }

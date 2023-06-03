@@ -57,6 +57,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Management
                     b.Property<string>("Name")
                         .HasColumnType("varchar(255)");
 
+                    b.Property<string>("ProviderName")
+                        .HasColumnType("longtext");
+
                     b.Property<string>("StringData")
                         .HasColumnType("longtext");
 
@@ -76,6 +79,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Management
 
                     b.HasIndex("Name")
                         .HasDatabaseName("IX_WorkflowDefinition_Name");
+
+                    b.HasIndex("UsableAsActivity")
+                        .HasDatabaseName("IX_WorkflowDefinition_UsableAsActivity");
 
                     b.HasIndex("Version")
                         .HasDatabaseName("IX_WorkflowDefinition_Version");

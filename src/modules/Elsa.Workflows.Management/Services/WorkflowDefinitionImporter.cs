@@ -6,6 +6,7 @@ using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Workflows.Management.Services
 {
@@ -68,8 +69,7 @@ namespace Elsa.Workflows.Management.Services
             draft.Inputs = model.Inputs ?? new List<InputDefinition>();
             draft.Outputs = model.Outputs ?? new List<OutputDefinition>();
             draft.Outcomes = model.Outcomes ?? new List<string>();
-            draft.Options = model.Options;
-            draft.UsableAsActivity = model.UsableAsActivity;
+            draft.Options = model.Options ?? new WorkflowOptions();
             draft = request.Publish ?? model.IsPublished ? await _workflowDefinitionPublisher.PublishAsync(draft, cancellationToken) : await _workflowDefinitionPublisher.SaveDraftAsync(draft, cancellationToken);
 
             return draft;

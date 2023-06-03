@@ -7,15 +7,12 @@ using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Models;
-using Microsoft.Extensions.Hosting;
 using Open.Linq.AsyncExtensions;
 
-namespace Elsa.Workflows.Runtime.HostedServices;
+namespace Elsa.Workflows.Runtime.Services;
 
-/// <summary>
-/// Updates the workflow store from <see cref="IWorkflowProvider"/> implementations and creates triggers.
-/// </summary>
-public class PopulateWorkflowDefinitionStore : IHostedService
+/// <inheritdoc />
+public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStorePopulator
 {
     private readonly Func<IEnumerable<IWorkflowProvider>> _workflowDefinitionProviders;
     private readonly ITriggerIndexer _triggerIndexer;
@@ -28,7 +25,7 @@ public class PopulateWorkflowDefinitionStore : IHostedService
     /// <summary>
     /// Constructor.
     /// </summary>
-    public PopulateWorkflowDefinitionStore(
+    public DefaultWorkflowDefinitionStorePopulator(
         Func<IEnumerable<IWorkflowProvider>> workflowDefinitionProviders,
         ITriggerIndexer triggerIndexer,
         IWorkflowDefinitionStore workflowDefinitionStore,
@@ -47,12 +44,12 @@ public class PopulateWorkflowDefinitionStore : IHostedService
     }
 
     /// <inheritdoc />
-    public async Task StartAsync(CancellationToken cancellationToken)
+    public async Task PopulateStoreAsync(CancellationToken cancellationToken = default)
     {
         var providers = _workflowDefinitionProviders();
         foreach (var provider in providers)
         {
-            var results = await provider.GetWorkflowDefinitionsAsync(cancellationToken).AsTask().ToList();
+            var results = await provider.GetWorkflowsAsync(cancellationToken).AsTask().ToList();
 
             foreach (var result in results)
             {
@@ -101,6 +98,8 @@ public class PopulateWorkflowDefinitionStore : IHostedService
         existingDefinition.Variables = workflow.Variables;
         existingDefinition.StringData = workflowJson;
         existingDefinition.CreatedAt = workflow.WorkflowMetadata.CreatedAt == default ? _systemClock.UtcNow : workflow.WorkflowMetadata.CreatedAt;
+        existingDefinition.Options = workflow.Options;
+        existingDefinition.ProviderName = materializedWorkflow.ProviderName;
         existingDefinition.MaterializerContext = materializerContextJson;
         existingDefinition.MaterializerName = materializedWorkflow.MaterializerName;
 
@@ -108,7 +107,4 @@ public class PopulateWorkflowDefinitionStore : IHostedService
     }
 
     private async Task IndexTriggersAsync(MaterializedWorkflow workflow, CancellationToken cancellationToken) => await _triggerIndexer.IndexTriggersAsync(workflow.Workflow, cancellationToken);
-
-    /// <inheritdoc />
-    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }

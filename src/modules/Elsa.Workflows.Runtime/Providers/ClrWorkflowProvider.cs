@@ -35,14 +35,14 @@ public class ClrWorkflowProvider : IWorkflowProvider
     public string Name => "CLR";
 
     /// <inheritdoc />
-    public async ValueTask<IEnumerable<MaterializedWorkflow>> GetWorkflowDefinitionsAsync(CancellationToken cancellationToken = default)
+    public async ValueTask<IEnumerable<MaterializedWorkflow>> GetWorkflowsAsync(CancellationToken cancellationToken = default)
     {
-        var workflowDefinitionTasks = _options.Workflows.Values.Select(async x => await BuildWorkflowDefinition(x, cancellationToken)).ToList();
-        var workflowDefinitions = await Task.WhenAll(workflowDefinitionTasks);
+        var buildWorkflowTasks = _options.Workflows.Values.Select(async x => await BuildWorkflowAsync(x, cancellationToken)).ToList();
+        var workflowDefinitions = await Task.WhenAll(buildWorkflowTasks);
         return workflowDefinitions;
     }
 
-    private async Task<MaterializedWorkflow> BuildWorkflowDefinition(Func<IServiceProvider, ValueTask<IWorkflow>> workflowFactory, CancellationToken cancellationToken)
+    private async Task<MaterializedWorkflow> BuildWorkflowAsync(Func<IServiceProvider, ValueTask<IWorkflow>> workflowFactory, CancellationToken cancellationToken)
     {
         var builder = _workflowBuilderFactory.CreateBuilder();
         var workflowBuilder = await workflowFactory(_serviceProvider);
@@ -53,6 +53,6 @@ public class ClrWorkflowProvider : IWorkflowProvider
 
         var workflow = await builder.BuildWorkflowAsync(cancellationToken);
         var materializerContext = new ClrWorkflowMaterializerContext(workflowBuilder.GetType());
-        return new MaterializedWorkflow(workflow, ClrWorkflowMaterializer.MaterializerName, materializerContext);
+        return new MaterializedWorkflow(workflow, Name, ClrWorkflowMaterializer.MaterializerName, materializerContext);
     }
 }
