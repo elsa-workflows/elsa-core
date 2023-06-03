@@ -53,12 +53,15 @@ public class WorkflowDefinitionMapper
     {
         var root = source.Root!;
         var variables = _variableDefinitionMapper.Map(source.Variables).ToList();
+        var options = source.Options ?? new WorkflowOptions();
+        
+        options.UsableAsActivity = source.UsableAsActivity ?? false;
         
         return new(
             new WorkflowIdentity(source.DefinitionId, source.Version, source.Id),
             new WorkflowPublication(source.IsLatest, source.IsPublished),
             new WorkflowMetadata(source.Name, source.Description, source.CreatedAt),
-            source.Options ?? new WorkflowOptions(),
+            options,
             root,
             variables,
             source.CustomProperties ?? new Dictionary<string, object>());

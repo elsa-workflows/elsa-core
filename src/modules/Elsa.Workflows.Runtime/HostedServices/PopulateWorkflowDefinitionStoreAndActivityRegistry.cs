@@ -27,6 +27,10 @@ public class PopulateWorkflowDefinitionStoreAndActivityRegistry : IHostedService
     /// <inheritdoc />
     public async Task StartAsync(CancellationToken cancellationToken)
     {
+        // Because workflow definitions can be used as activities, we need to make sure that the activity registry is populated before we populate the workflow definition store.
+        // After the workflow definition store has been populated, we need to re-populate the activity registry to make sure that the activity descriptors are up-to-date.
+        // Finally, we need to re-populate the workflow definition store to make sure that the workflow definitions are up-to-date.
+        
         // Stage 1: Populate the activity registry.
         await _activityRegistryPopulator.PopulateRegistryAsync(cancellationToken);
         
