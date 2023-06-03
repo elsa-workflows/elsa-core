@@ -55,6 +55,11 @@ public class WorkflowDefinition : VersionedEntity
     public IDictionary<string, object> CustomProperties { get; set; } = new Dictionary<string, object>();
 
     /// <summary>
+    /// The name of the workflow provider that created this workflow, if any.
+    /// </summary>
+    public string? ProviderName { get; set; }
+    
+    /// <summary>
     /// The name of the workflow materializer to interpret the <see cref="StringData"/> or <see cref="BinaryData"/>.
     /// </summary>
     public string MaterializerName { get; set; } = default!;

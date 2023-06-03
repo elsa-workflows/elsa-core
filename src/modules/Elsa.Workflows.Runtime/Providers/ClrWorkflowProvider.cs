@@ -53,6 +53,6 @@ public class ClrWorkflowProvider : IWorkflowProvider
 
         var workflow = await builder.BuildWorkflowAsync(cancellationToken);
         var materializerContext = new ClrWorkflowMaterializerContext(workflowBuilder.GetType());
-        return new MaterializedWorkflow(workflow, ClrWorkflowMaterializer.MaterializerName, materializerContext);
+        return new MaterializedWorkflow(workflow, Name, ClrWorkflowMaterializer.MaterializerName, materializerContext);
     }
 }

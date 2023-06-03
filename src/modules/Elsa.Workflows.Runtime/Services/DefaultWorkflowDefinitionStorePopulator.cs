@@ -99,6 +99,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         existingDefinition.StringData = workflowJson;
         existingDefinition.CreatedAt = workflow.WorkflowMetadata.CreatedAt == default ? _systemClock.UtcNow : workflow.WorkflowMetadata.CreatedAt;
         existingDefinition.Options = workflow.Options;
+        existingDefinition.ProviderName = materializedWorkflow.ProviderName;
         existingDefinition.MaterializerContext = materializerContextJson;
         existingDefinition.MaterializerName = materializedWorkflow.MaterializerName;
 
