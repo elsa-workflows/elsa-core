@@ -99,7 +99,7 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
     private static SearchRequestDescriptor<WorkflowInstance> Sort<TProp>(SearchRequestDescriptor<WorkflowInstance> descriptor, WorkflowInstanceOrder<TProp> order)
     {
         var sortDescriptor = new SortOptionsDescriptor<WorkflowInstance>();
-        var propName = order.KeySelector.GetProperty()!.Name;
+        var propName = order.KeySelector.GetPropertyName();
         var sortOrder = order.Direction == OrderDirection.Ascending ? SortOrder.Asc : SortOrder.Desc;
         sortDescriptor.Field(propName, f => f.Order(sortOrder));
 

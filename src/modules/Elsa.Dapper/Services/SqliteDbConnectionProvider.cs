@@ -1,5 +1,6 @@
 using System.Data;
 using Elsa.Dapper.Contracts;
+using Elsa.Dapper.Dialects;
 using Microsoft.Data.Sqlite;
 
 namespace Elsa.Dapper.Services;
@@ -17,4 +18,7 @@ public class SqliteDbConnectionProvider : IDbConnectionProvider
             ConnectionString = "Data Source=elsa.db"
         };
     }
+
+    /// <inheritdoc />
+    public ISqlDialect Dialect => new SqliteDialect();
 }
