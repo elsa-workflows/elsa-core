@@ -12,11 +12,14 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\Elsa.Dapper.Migrations\Elsa.Dapper.Migrations.csproj" />
         <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj" />
     </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="Dapper" Version="2.0.123" />
+        <PackageReference Include="FluentMigrator" Version="3.3.2" />
+        <PackageReference Include="FluentMigrator.Runner" Version="3.3.2" />
         <PackageReference Include="Microsoft.Data.Sqlite.Core" Version="7.0.5" />
         <PackageReference Include="System.Data.SqlClient" Version="4.7.0" />
     </ItemGroup>

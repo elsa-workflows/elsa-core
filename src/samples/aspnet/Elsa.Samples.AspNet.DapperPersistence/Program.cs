@@ -1,3 +1,5 @@
+using Elsa.Dapper.Extensions;
+using Elsa.Dapper.Modules.Management.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
@@ -7,8 +9,13 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddElsa(elsa =>
 {
-    // Configure management feature to use EF Core.
-    elsa.UseWorkflowManagement(management => management.UseEntityFrameworkCore());
+    elsa.UseDapperMigrations();
+    
+    elsa.UseWorkflowManagement(management =>
+    {
+        management.UseEntityFrameworkCore();
+        management.UseWorkflowDefinitions(f => f.UseDapper());
+    });
 
     elsa.UseWorkflowRuntime(runtime =>
     {
@@ -17,16 +24,10 @@ builder.Services.AddElsa(elsa =>
         runtime.UseAsyncWorkflowStateExporter();
     });
     
-    // Expose API endpoints.
     elsa.UseWorkflowsApi();
-
-    // Add services for HTTP activities and workflow middleware.
     elsa.UseHttp();
-    
-    // Use timers.
     elsa.UseScheduling();
     
-    // Configure identity so that we can create a default admin user.
     elsa.UseIdentity(identity =>
     {
         identity.UseAdminUserProvider();
@@ -37,19 +38,14 @@ builder.Services.AddElsa(elsa =>
         };
     });
     
-    // Use default authentication (JWT).
     elsa.UseDefaultAuthentication(auth => auth.UseAdminApiKey());
-    
-    // Register custom activities.
     elsa.AddActivitiesFrom<Program>();
 });
 
-// Configure CORS to allow designer app hosted on a different origin to invoke the APIs.
 builder.Services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 app.UseHttpsRedirection();
 app.UseCors();
 app.UseAuthentication();

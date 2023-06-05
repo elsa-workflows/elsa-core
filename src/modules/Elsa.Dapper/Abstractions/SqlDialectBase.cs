@@ -9,13 +9,20 @@ namespace Elsa.Dapper.Abstractions;
 public abstract class SqlDialectBase : ISqlDialect
 {
     /// <inheritdoc />
-    public virtual string From(string table) => $"select * from {table} where 1=1";
+    public virtual string From(string table) => From(table, "*");
+
+    /// <inheritdoc />
+    public virtual string From(string table, params string[] fields)
+    {
+        var fieldList = string.Join(", ", fields);
+        return $"select {fieldList} from {table} where 1=1";
+    }
 
     /// <inheritdoc />
     public string Delete(string table) => $"delete from {table} where 1=1";
 
     /// <inheritdoc />
-    public string Count(string table) => $"select COUNT(*) from {table} wherw 1=1";
+    public string Count(string table) => $"select COUNT(*) from {table} where 1=1";
 
     /// <inheritdoc />
     public virtual string And(string field) => $"and {field} = @{field}";

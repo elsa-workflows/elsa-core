@@ -14,6 +14,13 @@ public interface ISqlDialect
     string From(string table);
     
     /// <summary>
+    /// Returns a SELECT FROM query.
+    /// </summary>
+    /// <param name="table">The table to query.</param>
+    /// <param name="fields">The fields to query.</param>
+    string From(string table, params string[] fields);
+    
+    /// <summary>
     /// Returns a DELETE FROM query.
     /// </summary>
     /// <param name="table">The table to query.</param>

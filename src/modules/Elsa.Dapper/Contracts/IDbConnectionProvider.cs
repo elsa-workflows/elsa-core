@@ -8,6 +8,12 @@ namespace Elsa.Dapper.Contracts;
 public interface IDbConnectionProvider
 {
     /// <summary>
+    /// Gets the connection string.
+    /// </summary>
+    /// <returns>The connection string.</returns>
+    string GetConnectionString();
+    
+    /// <summary>
     /// Gets a connection to the database.
     /// </summary>
     /// <returns>A connection to the database.</returns>

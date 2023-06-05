@@ -1,5 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
-using System.Text;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Dapper.Models;
@@ -19,10 +19,43 @@ public static class ParameterizedQueryBuilderExtensions
     /// </summary>
     /// <param name="query">The query.</param>
     /// <param name="table">The table.</param>
-    /// <returns>The query.</returns>
     public static ParameterizedQuery From(this ParameterizedQuery query, string table)
     {
         query.Sql.AppendLine(query.Dialect.From(table));
+        return query;
+    }
+    
+    /// <summary>
+    /// Begins a SELECT FROM query.
+    /// </summary>
+    /// <param name="query">The query.</param>
+    /// <param name="table">The table.</param>
+    /// <param name="fields">The fields.</param>
+    public static ParameterizedQuery From(this ParameterizedQuery query, string table, params string[] fields)
+    {
+        query.Sql.AppendLine(query.Dialect.From(table, fields));
+        return query;
+    }
+    
+    /// <summary>
+    /// Begins a SELECT FROM query.
+    /// </summary>
+    /// <param name="query">The query.</param>
+    /// <param name="table">The table.</param>
+    /// <typeparam name="T">The fields to include based on the public properties of the specified type.</typeparam>
+    public static ParameterizedQuery From<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]T>(this ParameterizedQuery query, string table) => query.From(table, typeof(T));
+
+    /// <summary>
+    /// Begins a SELECT FROM query.
+    /// </summary>
+    /// <param name="query">The query.</param>
+    /// <param name="table">The table.</param>
+    /// <param name="modelType">The fields to include based on the public properties of the specified type.</param>
+    public static ParameterizedQuery From(this ParameterizedQuery query, string table, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type modelType)
+    {
+        // Create a list of fields based on the public properties of the specified type.
+        var fields = modelType.GetProperties().Select(x => x.Name).ToArray();
+        query.Sql.AppendLine(query.Dialect.From(table, fields));
         return query;
     }
     
@@ -31,7 +64,6 @@ public static class ParameterizedQueryBuilderExtensions
     /// </summary>
     /// <param name="query">The query.</param>
     /// <param name="table">The table.</param>
-    /// <returns>The query.</returns>
     public static ParameterizedQuery Delete(this ParameterizedQuery query, string table)
     {
         query.Sql.AppendLine(query.Dialect.Delete(table));
@@ -43,7 +75,6 @@ public static class ParameterizedQueryBuilderExtensions
     /// </summary>
     /// <param name="query">The query.</param>
     /// <param name="table">The table.</param>
-    /// <returns>The query.</returns>
     public static ParameterizedQuery Count(this ParameterizedQuery query, string table)
     {
         query.Sql.AppendLine(query.Dialect.Count(table));
@@ -56,7 +87,6 @@ public static class ParameterizedQueryBuilderExtensions
     /// <param name="query">The query.</param>
     /// <param name="field">The field.</param>
     /// <param name="value">The value.</param>
-    /// <returns>The query.</returns>
     public static ParameterizedQuery And(this ParameterizedQuery query, string field, object? value)
     {
         if (value == null) return query;
@@ -72,7 +102,6 @@ public static class ParameterizedQueryBuilderExtensions
     /// <param name="query">The query.</param>
     /// <param name="field">The field.</param>
     /// <param name="values">The values.</param>
-    /// <returns>The query.</returns>
     public static ParameterizedQuery And(this ParameterizedQuery query, string field, object[]? values)
     {
         if (values == null || !values.Any()) return query;
@@ -94,7 +123,6 @@ public static class ParameterizedQueryBuilderExtensions
     /// </summary>
     /// <param name="query">The query.</param>
     /// <param name="versionOptions">The version options.</param>
-    /// <returns>The query.</returns>
     public static ParameterizedQuery And(this ParameterizedQuery query, VersionOptions? versionOptions)
     {
         if(versionOptions == null) return query;
@@ -123,7 +151,6 @@ public static class ParameterizedQueryBuilderExtensions
     /// <param name="direction">The order direction.</param>
     /// <typeparam name="TRecord">The type of the record.</typeparam>
     /// <typeparam name="TField">The type of the field.</typeparam>
-    /// <returns>The query.</returns>
     public static ParameterizedQuery OrderBy<TRecord, TField>(this ParameterizedQuery query, Expression<Func<TRecord, TField>> keySelector, OrderDirection direction)
     {
         var fieldName = keySelector.GetPropertyName();
@@ -136,7 +163,6 @@ public static class ParameterizedQueryBuilderExtensions
     /// <param name="query">The query.</param>
     /// <param name="field">The field.</param>
     /// <param name="direction">The direction.</param>
-    /// <returns>The query.</returns>
     public static ParameterizedQuery OrderBy(this ParameterizedQuery query, string field, OrderDirection direction)
     {
         var directionString = direction == OrderDirection.Ascending ? "asc" : "desc";
@@ -149,7 +175,6 @@ public static class ParameterizedQueryBuilderExtensions
     /// </summary>
     /// <param name="query">The query.</param>
     /// <param name="skip">The number of records to skip.</param>
-    /// <returns>The query.</returns>
     public static ParameterizedQuery Skip(this ParameterizedQuery query, int skip)
     {
         query.Sql.AppendLine(query.Dialect.Skip(skip));
@@ -161,7 +186,6 @@ public static class ParameterizedQueryBuilderExtensions
     /// </summary>
     /// <param name="query">The query.</param>
     /// <param name="take">The number of records to take.</param>
-    /// <returns>The query.</returns>
     public static ParameterizedQuery Take(this ParameterizedQuery query, int take)
     {
         query.Sql.AppendLine(query.Dialect.Take(take));
@@ -173,7 +197,6 @@ public static class ParameterizedQueryBuilderExtensions
     /// </summary>
     /// <param name="query">The query.</param>
     /// <param name="pageArgs">The page arguments.</param>
-    /// <returns>The query.</returns>
     public static ParameterizedQuery Page(this ParameterizedQuery query, PageArgs pageArgs)
     {
         if(pageArgs.Offset != null)
@@ -192,7 +215,6 @@ public static class ParameterizedQueryBuilderExtensions
     /// <param name="table">The table.</param>
     /// <param name="primaryKeyField">The primary key field.</param>
     /// <param name="record">The record.</param>
-    /// <returns>The query.</returns>
     public static ParameterizedQuery Upsert(this ParameterizedQuery query, string table, string primaryKeyField, object record)
     {
         var fields = record.GetType().GetProperties()
