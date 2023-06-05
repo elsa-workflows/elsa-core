@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import {h} from "@stencil/core";
 import {Container, Service} from "typedi";
-import {ActivityDescriptor, Plugin} from "../../../models";
+import {ActivityDescriptor, Plugin, WorkflowInstance, WorkflowInstanceSummary} from "../../../models";
 import newButtonItemStore from "../../../data/new-button-item-store";
 import {Flowchart} from "../../flowchart/models";
 import {generateUniqueActivityName} from '../../../utils/generate-activity-name';
@@ -21,6 +21,8 @@ import {DropdownButtonItem} from "../../../components/shared/dropdown-button/mod
 import {NotificationDisplayType} from "../../notifications/models";
 import {WorkflowDefinitionEditorInstance} from "../services/editor-instance";
 import {WorkflowDefinitionEditorService} from "../services/editor-service";
+import { WorkflowInstanceViewerService } from '../../workflow-instances/services/viewer-service';
+import { WorkflowInstancesApi } from '../../workflow-instances/services/workflow-instances-api';
 
 const FlowchartTypeName = 'Elsa.Flowchart';
 
@@ -36,6 +38,8 @@ export class WorkflowDefinitionsPlugin implements Plugin {
   private workflowDefinitionBrowserInstance: ModalDialogInstance;
   private inputControlRegistry: InputControlRegistry;
   private workflowDefinitionEditorInstance: WorkflowDefinitionEditorInstance;
+  private readonly workflowInstancesApi: WorkflowInstancesApi;
+  private workflowInstanceBrowserInstance: ModalDialogInstance;
 
   constructor() {
     this.eventBus = Container.get(EventBus);
@@ -45,6 +49,7 @@ export class WorkflowDefinitionsPlugin implements Plugin {
     this.modalDialogService = Container.get(ModalDialogService);
     this.activityDescriptorManager = Container.get(ActivityDescriptorManager);
     this.inputControlRegistry = Container.get(InputControlRegistry)
+    this.workflowInstancesApi = Container.get(WorkflowInstancesApi);
 
     const newMenuItems: Array<DropdownButtonItem> = [{
       order: 0,
@@ -150,6 +155,7 @@ export class WorkflowDefinitionsPlugin implements Plugin {
 
     this.workflowDefinitionBrowserInstance = this.modalDialogService.show(() =>
         <elsa-workflow-definition-browser onWorkflowDefinitionSelected={this.onWorkflowDefinitionSelected}
+                                          onWorkflowInstancesSelected={this.onWorkflowInstancesSelected}
                                           onNewWorkflowDefinitionSelected={this.onNewWorkflowDefinitionSelected}/>,
       {actions})
   }
@@ -159,6 +165,18 @@ export class WorkflowDefinitionsPlugin implements Plugin {
     const workflowDefinition = await this.api.get({definitionId});
     this.showWorkflowDefinitionEditor(workflowDefinition);
     this.modalDialogService.hide(this.workflowDefinitionBrowserInstance);
+  }
+
+  private onWorkflowInstancesSelected = async (e: CustomEvent<WorkflowDefinitionSummary>) => {
+    const definitionId = e.detail.definitionId;
+    const version = e.detail.version;
+    const workflow = await this.api.get({definitionId, versionOptions:{version}});
+
+    this.workflowInstanceBrowserInstance = this.modalDialogService.show(() =>
+        <elsa-workflow-instance-browser 
+          workflowDefinition={workflow} 
+          onWorkflowInstanceSelected={this.onWorkflowInstanceSelected}/>,
+          {actions: [DefaultModalActions.Close()], size: 'tw-max-w-screen-2xl'});
   }
 
   public publishCurrentWorkflow = async (args: PublishClickedArgs) => {
@@ -224,4 +242,40 @@ export class WorkflowDefinitionsPlugin implements Plugin {
         });
       });
   }
+
+  private onWorkflowInstanceSelected = async (e: CustomEvent<WorkflowInstanceSummary>) => {
+    const definitionId = e.detail.definitionId;
+    const instanceId = e.detail.id;
+    const version = e.detail.version;
+
+    await this.api.get({definitionId, versionOptions: {version}, includeCompositeRoot: true})
+      .then(async (workflowDefinition) => {
+        await this.workflowInstancesApi.get({id: instanceId}).then((workflowInstance) => {
+          this.showWorkflowInstanceViewer(workflowDefinition, workflowInstance);
+          this.modalDialogService.hide(this.workflowInstanceBrowserInstance);
+          this.modalDialogService.hide(this.workflowDefinitionBrowserInstance);
+        }).catch(() => {
+          NotificationService.createNotification({
+            title: 'Error',
+            id: uuid(),
+            text: <div>Could not load workflow instance {instanceId} information</div>,
+            type: NotificationDisplayType.Error
+          });
+          this.modalDialogService.hide(this.workflowInstanceBrowserInstance);
+        });
+      }).catch(() => {
+        NotificationService.createNotification({
+          title: 'Error',
+          id: uuid(),
+          text: <div>Could not load workflow {definitionId} information</div>,
+          type: NotificationDisplayType.Error
+        });
+        this.modalDialogService.hide(this.workflowInstanceBrowserInstance);
+      });
+  }
+
+  private showWorkflowInstanceViewer = (workflowDefinition: WorkflowDefinition, workflowInstance: WorkflowInstance) => {
+    const service = Container.get(WorkflowInstanceViewerService);
+    service.show(workflowDefinition, workflowInstance);
+  };
 }

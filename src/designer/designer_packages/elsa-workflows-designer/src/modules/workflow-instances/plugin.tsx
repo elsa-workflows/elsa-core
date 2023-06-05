@@ -17,7 +17,6 @@ import {WorkflowInstanceViewerService} from "./services/viewer-service";
 
 @Service()
 export class WorkflowInstancesPlugin implements Plugin {
-  private readonly workflowInstanceViewerService: WorkflowInstanceViewerService;
   private readonly eventBus: EventBus;
   private readonly workflowDefinitionsApi: WorkflowDefinitionsApi;
   private readonly workflowInstancesApi: WorkflowInstancesApi;
@@ -25,7 +24,6 @@ export class WorkflowInstancesPlugin implements Plugin {
   private workflowInstanceBrowserInstance: ModalDialogInstance;
 
   constructor() {
-    this.workflowInstanceViewerService = Container.get(WorkflowInstanceViewerService);
     this.eventBus = Container.get(EventBus);
     this.workflowDefinitionsApi = Container.get(WorkflowDefinitionsApi);
     this.workflowInstancesApi = Container.get(WorkflowInstancesApi);
@@ -86,6 +84,5 @@ export class WorkflowInstancesPlugin implements Plugin {
         });
         this.modalDialogService.hide(this.workflowInstanceBrowserInstance);
       });
-
   }
 }
