@@ -112,9 +112,7 @@ export class WorkflowInstanceViewer {
 
   private async importSelectedItemsWorkflow(activityNode: ActivityNode) {
     const consumingWorkflowNode = this.findConsumingWorkflowRecursive(activityNode);
-
     this.flowchartRootActivity = await this.getFlowchartByActivityNode(consumingWorkflowNode);
-
     window.requestAnimationFrame(async () => {
       await this.flowchartElement.updateGraph();
     });
@@ -140,8 +138,8 @@ export class WorkflowInstanceViewer {
   }
 
   private findFlowchartOfActivityRecursive(activity: Activity): Flowchart {
-    if (activity.type == "Elsa.Flowchart") {
-      return activity as Flowchart;
+    if (activity.type == "Elsa.Flowchart" || (activity.root == null && activity.body.type == "Elsa.Flowchart")) {
+      return activity.body as Flowchart;
     } else {
       return this.findFlowchartOfActivityRecursive((activity as Workflow).root);
     }
