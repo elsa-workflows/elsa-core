@@ -1,6 +1,5 @@
 using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Modules.Management.Extensions;
-using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 
@@ -13,8 +12,7 @@ builder.Services.AddElsa(elsa =>
     
     elsa.UseWorkflowManagement(management =>
     {
-        management.UseEntityFrameworkCore();
-        management.UseWorkflowDefinitions(f => f.UseDapper());
+        management.UseDapper();
     });
 
     elsa.UseWorkflowRuntime(runtime =>

@@ -1,4 +1,3 @@
-using System.Reflection;
 using Elsa.Dapper.Contracts;
 using Elsa.Dapper.HostedServices;
 using Elsa.Dapper.Migrations.Management;

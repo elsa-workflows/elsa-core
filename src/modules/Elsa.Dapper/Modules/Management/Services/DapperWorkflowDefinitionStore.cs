@@ -212,72 +212,65 @@ public class DapperWorkflowDefinitionStore : IWorkflowDefinitionStore
             .And(nameof(WorkflowDefinition.Options.UsableAsActivity), filter.UsableAsActivity);
     }
 
-    private IEnumerable<WorkflowDefinition> Map(IEnumerable<WorkflowDefinitionRecord> records)
-    {
-        return records.Select(Map);
-    }
+    private IEnumerable<WorkflowDefinition> Map(IEnumerable<WorkflowDefinitionRecord> records) => records.Select(Map);
 
-    private WorkflowDefinition Map(WorkflowDefinitionRecord record)
+    private WorkflowDefinition Map(WorkflowDefinitionRecord source)
     {
-        var props = _payloadSerializer.Deserialize<WorkflowDefinitionProps>(record.Props);
-        var definition = new WorkflowDefinition
+        var props = _payloadSerializer.Deserialize<WorkflowDefinitionProps>(source.Props);
+        return new WorkflowDefinition
         {
-            Id = record.Id,
-            DefinitionId = record.DefinitionId,
-            Version = record.Version,
-            Name = record.Name,
-            Description = record.Description,
-            IsPublished = record.IsPublished,
-            IsLatest = record.IsLatest,
-            CreatedAt = record.CreatedAt,
-            StringData = record.StringData,
+            Id = source.Id,
+            DefinitionId = source.DefinitionId,
+            Version = source.Version,
+            Name = source.Name,
+            Description = source.Description,
+            IsPublished = source.IsPublished,
+            IsLatest = source.IsLatest,
+            CreatedAt = source.CreatedAt,
+            StringData = source.StringData,
             Options = props.Options,
             Variables = props.Variables,
             Inputs = props.Inputs,
             Outputs = props.Outputs,
             Outcomes = props.Outcomes,
             CustomProperties = props.CustomProperties,
-            MaterializerContext = record.MaterializerContext,
-            BinaryData = record.BinaryData,
-            MaterializerName = record.MaterializerName,
-            ProviderName = record.ProviderName
+            MaterializerContext = source.MaterializerContext,
+            BinaryData = source.BinaryData,
+            MaterializerName = source.MaterializerName,
+            ProviderName = source.ProviderName
         };
-
-        return definition;
     }
 
-    private WorkflowDefinitionRecord Map(WorkflowDefinition workflowDefinition)
+    private WorkflowDefinitionRecord Map(WorkflowDefinition source)
     {
         var props = new WorkflowDefinitionProps
         {
-            Options = workflowDefinition.Options,
-            Variables = workflowDefinition.Variables,
-            Inputs = workflowDefinition.Inputs,
-            Outputs = workflowDefinition.Outputs,
-            Outcomes = workflowDefinition.Outcomes,
-            CustomProperties = workflowDefinition.CustomProperties
+            Options = source.Options,
+            Variables = source.Variables,
+            Inputs = source.Inputs,
+            Outputs = source.Outputs,
+            Outcomes = source.Outcomes,
+            CustomProperties = source.CustomProperties
         };
 
-        var record = new WorkflowDefinitionRecord
+        return new WorkflowDefinitionRecord
         {
-            Id = workflowDefinition.Id,
-            DefinitionId = workflowDefinition.DefinitionId,
-            Version = workflowDefinition.Version,
-            Name = workflowDefinition.Name,
-            Description = workflowDefinition.Description,
-            IsPublished = workflowDefinition.IsPublished,
-            IsLatest = workflowDefinition.IsLatest,
-            CreatedAt = workflowDefinition.CreatedAt,
-            StringData = workflowDefinition.StringData,
+            Id = source.Id,
+            DefinitionId = source.DefinitionId,
+            Version = source.Version,
+            Name = source.Name,
+            Description = source.Description,
+            IsPublished = source.IsPublished,
+            IsLatest = source.IsLatest,
+            CreatedAt = source.CreatedAt,
+            StringData = source.StringData,
             Props = _payloadSerializer.Serialize(props),
-            MaterializerName = workflowDefinition.MaterializerName,
-            UsableAsActivity = workflowDefinition.Options.UsableAsActivity,
-            ProviderName = workflowDefinition.ProviderName,
-            BinaryData = workflowDefinition.BinaryData,
-            MaterializerContext = workflowDefinition.MaterializerContext
+            MaterializerName = source.MaterializerName,
+            UsableAsActivity = source.Options.UsableAsActivity,
+            ProviderName = source.ProviderName,
+            BinaryData = source.BinaryData,
+            MaterializerContext = source.MaterializerContext
         };
-
-        return record;
     }
 
     private class WorkflowDefinitionProps

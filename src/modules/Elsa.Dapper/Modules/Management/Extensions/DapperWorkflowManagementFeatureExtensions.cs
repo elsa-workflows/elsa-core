@@ -19,21 +19,21 @@ public static class DapperWorkflowManagementFeatureExtensions
         return feature;
     }
 
-    // /// <summary>
-    // /// Sets up the EF Core persistence provider. 
-    // /// </summary>
-    // public static WorkflowInstancesFeature UseEntityFrameworkCore(this WorkflowInstancesFeature feature, Action<EFCoreWorkflowInstancePersistenceFeature>? configure = default)
-    // {
-    //     feature.Module.Configure(configure);
-    //     return feature;
-    // }
-    //
-    // /// <summary>
-    // /// Sets up the EF Core persistence provider. 
-    // /// </summary>
-    // public static WorkflowManagementFeature UseEntityFrameworkCore(this WorkflowManagementFeature feature, Action<EFCoreWorkflowManagementPersistenceFeature>? configure = default)
-    // {
-    //     feature.Module.Configure(configure);
-    //     return feature;
-    // }
+    /// <summary>
+    /// Sets up the EF Core persistence provider. 
+    /// </summary>
+    public static WorkflowInstancesFeature UseDapper(this WorkflowInstancesFeature feature, Action<DapperWorkflowInstancePersistenceFeature>? configure = default)
+    {
+        feature.Module.Configure(configure);
+        return feature;
+    }
+    
+    /// <summary>
+    /// Sets up the Dapper persistence provider. 
+    /// </summary>
+    public static WorkflowManagementFeature UseDapper(this WorkflowManagementFeature feature, Action<DapperWorkflowManagementPersistenceFeature>? configure = default)
+    {
+        feature.Module.Configure(configure);
+        return feature;
+    }
 }

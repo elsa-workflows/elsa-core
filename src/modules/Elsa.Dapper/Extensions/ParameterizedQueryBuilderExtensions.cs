@@ -144,6 +144,19 @@ public static class ParameterizedQueryBuilderExtensions
     }
     
     /// <summary>
+    /// Appends an AND clause to the query if the value is not null.
+    /// </summary>
+    /// <param name="query">The query.</param>
+    /// <param name="searchTerm">The search term.</param>
+    public static ParameterizedQuery AndWorkflowInstanceSearchTerm(this ParameterizedQuery query, string? searchTerm)
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm)) return query;
+        query.Sql.AppendLine("and (Name like @SearchTerm or ID like @SearchTerm or DefinitionId like @SearchTerm or CorrelationId like @SearchTerm)");
+        query.Parameters.Add("@SearchTerm", searchTerm);
+        return query;
+    }
+    
+    /// <summary>
     /// Appends an ORDER BY clause to the query.
     /// </summary>
     /// <param name="query">The query.</param>
@@ -199,11 +212,12 @@ public static class ParameterizedQueryBuilderExtensions
     /// <param name="pageArgs">The page arguments.</param>
     public static ParameterizedQuery Page(this ParameterizedQuery query, PageArgs pageArgs)
     {
-        if(pageArgs.Offset != null)
-            query.Skip(pageArgs.Offset.Value);
-        
+        // Attention: the order is important here for SQLite (LIMIT must come before OFFSET).
         if(pageArgs.Limit != null)
             query.Take(pageArgs.Limit.Value);
+        
+        if(pageArgs.Offset != null)
+            query.Skip(pageArgs.Offset.Value);
         
         return query;
     }

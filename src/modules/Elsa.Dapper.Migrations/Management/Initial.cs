@@ -27,7 +27,7 @@ public class Initial : Migration
             .WithColumn("Version").AsInt32().NotNullable()
             .WithColumn("IsLatest").AsBoolean().NotNullable()
             .WithColumn("IsPublished").AsBoolean().NotNullable();
-        
+
         IfDatabase("Sqlite")
             .Create
             .Table("WorkflowDefinitions")
@@ -46,11 +46,48 @@ public class Initial : Migration
             .WithColumn("Version").AsInt32().NotNullable()
             .WithColumn("IsLatest").AsBoolean().NotNullable()
             .WithColumn("IsPublished").AsBoolean().NotNullable();
+
+        IfDatabase("SqlServer", "Oracle", "MySql", "Postgres")
+            .Create
+            .Table("WorkflowInstances")
+            .WithColumn("Id").AsString().PrimaryKey()
+            .WithColumn("DefinitionId").AsString().NotNullable()
+            .WithColumn("DefinitionVersionId").AsString().NotNullable()
+            .WithColumn("Version").AsInt32().NotNullable()
+            .WithColumn("WorkflowState").AsString().NotNullable()
+            .WithColumn("Status").AsString().NotNullable()
+            .WithColumn("SubStatus").AsString().NotNullable()
+            .WithColumn("CorrelationId").AsString().Nullable()
+            .WithColumn("Name").AsString().Nullable()
+            .WithColumn("CreatedAt").AsDateTimeOffset().NotNullable()
+            .WithColumn("LastExecutedAt").AsDateTimeOffset().Nullable()
+            .WithColumn("FinishedAt").AsDateTimeOffset().Nullable()
+            .WithColumn("CancelledAt").AsDateTimeOffset().Nullable()
+            .WithColumn("FaultedAt").AsDateTimeOffset().Nullable();
+
+        IfDatabase("Sqlite")
+            .Create
+            .Table("WorkflowInstances")
+            .WithColumn("Id").AsString().PrimaryKey()
+            .WithColumn("DefinitionId").AsString().NotNullable()
+            .WithColumn("DefinitionVersionId").AsString().NotNullable()
+            .WithColumn("Version").AsInt32().NotNullable()
+            .WithColumn("WorkflowState").AsString().NotNullable()
+            .WithColumn("Status").AsString().NotNullable()
+            .WithColumn("SubStatus").AsString().NotNullable()
+            .WithColumn("CorrelationId").AsString().Nullable()
+            .WithColumn("Name").AsString().Nullable()
+            .WithColumn("CreatedAt").AsDateTime2().NotNullable()
+            .WithColumn("LastExecutedAt").AsDateTime2().Nullable()
+            .WithColumn("FinishedAt").AsDateTime2().Nullable()
+            .WithColumn("CancelledAt").AsDateTime2().Nullable()
+            .WithColumn("FaultedAt").AsDateTime2().Nullable();
     }
 
     /// <inheritdoc />
     public override void Down()
     {
         Delete.Table("WorkflowDefinitions");
+        Delete.Table("WorkflowInstances");
     }
 }

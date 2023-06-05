@@ -26,14 +26,53 @@ public class WorkflowDefinitionSummary
         CreatedAt = workflowDefinition.CreatedAt
     };
 
-    public string Id { get; init; }
-    public string DefinitionId { get; init; }
-    public string? Name { get; init; }
-    public string? Description { get; init; }
-    public int? Version { get; init; }
-    public bool IsLatest { get; init; }
-    public bool IsPublished { get; init; }
-    public string? ProviderName { get; init; }
-    public string MaterializerName { get; init; }
-    public DateTimeOffset CreatedAt { get; init; }
+    /// <summary>
+    /// The version ID of the workflow definition.
+    /// </summary>
+    public string Id { get; set; } = default!;
+    
+    /// <summary>
+    /// The ID of the workflow definition.
+    /// </summary>
+    public string DefinitionId { get; set; } = default!;
+    
+    /// <summary>
+    /// The name of the workflow definition.
+    /// </summary>
+    public string? Name { get; set; }
+    
+    /// <summary>
+    /// The description of the workflow definition.
+    /// </summary>
+    public string? Description { get; set; }
+    
+    /// <summary>
+    /// The version of the workflow definition.
+    /// </summary>
+    public int? Version { get; set; }
+    
+    /// <summary>
+    /// Whether this is the latest version of the workflow definition.
+    /// </summary>
+    public bool IsLatest { get; set; }
+    
+    /// <summary>
+    /// Whether this workflow definition is published.
+    /// </summary>
+    public bool IsPublished { get; set; }
+    
+    /// <summary>
+    /// The provider name of the workflow definition.
+    /// </summary>
+    public string? ProviderName { get; set; }
+    
+    /// <summary>
+    /// The materializer name of the workflow definition.
+    /// </summary>
+    public string MaterializerName { get; set; }  = default!;
+    
+    /// <summary>
+    /// The timestamp when the workflow definition was created.
+    /// </summary>
+    public DateTimeOffset CreatedAt { get; set; }
 }
