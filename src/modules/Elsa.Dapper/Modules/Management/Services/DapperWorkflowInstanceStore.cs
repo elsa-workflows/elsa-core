@@ -4,6 +4,8 @@ using Elsa.Dapper.Contracts;
 using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Models;
 using Elsa.Dapper.Modules.Management.Records;
+using Elsa.Dapper.Services;
+using Elsa.Extensions;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Contracts;
@@ -18,9 +20,11 @@ namespace Elsa.Dapper.Modules.Management.Services;
 /// </summary>
 public class DapperWorkflowInstanceStore : IWorkflowInstanceStore
 {
+    private const string TableName = "WorkflowInstances";
+    private const string PrimaryKeyName = "Id";
     private readonly IDbConnectionProvider _dbConnectionProvider;
     private readonly IWorkflowStateSerializer _workflowStateSerializer;
-    private const string TableName = "WorkflowInstances";
+    private readonly Store<WorkflowInstanceRecord> _store;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DapperWorkflowInstanceStore"/> class.
@@ -29,14 +33,13 @@ public class DapperWorkflowInstanceStore : IWorkflowInstanceStore
     {
         _dbConnectionProvider = dbConnectionProvider;
         _workflowStateSerializer = workflowStateSerializer;
+        _store = new Store<WorkflowInstanceRecord>(dbConnectionProvider, TableName, PrimaryKeyName);
     }
 
     /// <inheritdoc />
     public async Task<WorkflowInstance?> FindAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
-        using var connection = _dbConnectionProvider.GetConnection();
-        var query = CreateSelectQuery<WorkflowInstanceRecord>(filter);
-        var record = await query.SingleOrDefaultAsync<WorkflowInstanceRecord>(connection);
+        var record = await _store.FindAsync(q => ApplyFilter(q, filter), cancellationToken);
         return record == null ? null : await MapAsync(record);
     }
 
@@ -53,30 +56,21 @@ public class DapperWorkflowInstanceStore : IWorkflowInstanceStore
     /// <inheritdoc />
     public async Task<Page<WorkflowInstance>> FindManyAsync<TOrderBy>(WorkflowInstanceFilter filter, PageArgs pageArgs, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
-        using var connection = _dbConnectionProvider.GetConnection();
-        var query = CreateSelectQuery<WorkflowInstanceRecord>(filter).OrderBy(order.KeySelector, order.Direction).Page(pageArgs);
-        var countQuery = CreateCountQuery(filter);
-        var records = await query.QueryAsync<WorkflowInstanceRecord>(connection);
-        var totalCount = await countQuery.SingleAsync<long>(connection);
-        var entities = (await MapAsync(records)).ToList();
-        return Page.Of(entities, totalCount);
+        var page = await _store.FindManyAsync(q => ApplyFilter(q, filter), pageArgs, order.KeySelector.GetPropertyName(), order.Direction, cancellationToken);
+        return await MapAsync(page);
     }
 
     /// <inheritdoc />
     public async Task<IEnumerable<WorkflowInstance>> FindManyAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
-        using var connection = _dbConnectionProvider.GetConnection();
-        var query = CreateSelectQuery<WorkflowInstanceRecord>(filter);
-        var records = await query.QueryAsync<WorkflowInstanceRecord>(connection);
+        var records = await _store.FindManyAsync(q => ApplyFilter(q, filter), cancellationToken);
         return (await MapAsync(records)).ToList();
     }
 
     /// <inheritdoc />
     public async Task<IEnumerable<WorkflowInstance>> FindManyAsync<TOrderBy>(WorkflowInstanceFilter filter, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
-        using var connection = _dbConnectionProvider.GetConnection();
-        var query = CreateSelectQuery<WorkflowInstanceRecord>(filter).OrderBy(order.KeySelector, order.Direction);
-        var records = await query.QueryAsync<WorkflowInstanceRecord>(connection);
+        var records = await _store.FindManyAsync(q => ApplyFilter(q, filter), order.KeySelector.GetPropertyName(), order.Direction, cancellationToken);
         return (await MapAsync(records)).ToList();
     }
 
@@ -93,101 +87,69 @@ public class DapperWorkflowInstanceStore : IWorkflowInstanceStore
     /// <inheritdoc />
     public async Task<Page<WorkflowInstanceSummary>> SummarizeManyAsync<TOrderBy>(WorkflowInstanceFilter filter, PageArgs pageArgs, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
-        using var connection = _dbConnectionProvider.GetConnection();
-        var query = CreateSelectQuery<WorkflowInstanceSummary>(filter).OrderBy(order.KeySelector, order.Direction).Page(pageArgs);
-        var countQuery = CreateCountQuery(filter);
-        var records = (await query.QueryAsync<WorkflowInstanceSummary>(connection)).ToList();
-        var totalCount = await countQuery.SingleAsync<long>(connection);
-        return Page.Of(records, totalCount);
+        return await _store.FindManyAsync<WorkflowInstanceSummary>(q => ApplyFilter(q, filter), pageArgs, order.KeySelector.GetPropertyName(), order.Direction, cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task<IEnumerable<WorkflowInstanceSummary>> SummarizeManyAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
-        using var connection = _dbConnectionProvider.GetConnection();
-        var query = CreateSelectQuery<WorkflowInstanceSummary>(filter);
-        var records = await query.QueryAsync<WorkflowInstanceSummary>(connection);
-        return records.ToList();
+        return await SummarizeManyAsync(filter, new WorkflowInstanceOrder<DateTimeOffset>(x => x.CreatedAt, OrderDirection.Ascending), cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task<IEnumerable<WorkflowInstanceSummary>> SummarizeManyAsync<TOrder>(WorkflowInstanceFilter filter, WorkflowInstanceOrder<TOrder> order, CancellationToken cancellationToken = default)
     {
-        using var connection = _dbConnectionProvider.GetConnection();
-        var query = CreateSelectQuery<WorkflowInstanceSummary>(filter).OrderBy(order.KeySelector, order.Direction);
-        var records = await query.QueryAsync<WorkflowInstanceSummary>(connection);
-        return records.ToList();
+        return await _store.FindManyAsync<WorkflowInstanceSummary>(q => ApplyFilter(q, filter), order.KeySelector.GetPropertyName(), order.Direction, cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
     {
         var record = await MapAsync(instance);
-        using var connection = _dbConnectionProvider.GetConnection();
-        var query = new ParameterizedQuery(_dbConnectionProvider.Dialect).Upsert(TableName, nameof(WorkflowDefinitionRecord.Id), record);
-        await query.ExecuteAsync(connection);
+        await _store.SaveAsync(record, PrimaryKeyName, cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task SaveManyAsync(IEnumerable<WorkflowInstance> instances, CancellationToken cancellationToken = default)
     {
-        var query = new ParameterizedQuery(_dbConnectionProvider.Dialect);
-        
-        foreach (var instance in instances)
-        {
-            var record = await MapAsync(instance);
-            query.Upsert(TableName, nameof(WorkflowDefinitionRecord.Id), record);
-        }
-        
-        using var connection = _dbConnectionProvider.GetConnection();
-        await query.ExecuteAsync(connection);
+        var records = await MapAsync(instances);
+        await _store.SaveManyAsync(records, PrimaryKeyName, cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task<int> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
-        var query = CreateDeleteQuery(filter);
-        using var connection = _dbConnectionProvider.GetConnection();
-        return await query.ExecuteAsync(connection);
+        return await _store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
     }
-
-    private ParameterizedQuery CreateCountQuery(WorkflowInstanceFilter filter)
+    
+    private void ApplyFilter(ParameterizedQuery query, WorkflowInstanceFilter filter)
     {
-        var query = new ParameterizedQuery(_dbConnectionProvider.Dialect).Count(TableName);
-        return ApplyQueryClauses(query, filter);
-    }
-
-    private ParameterizedQuery CreateSelectQuery<T>(WorkflowInstanceFilter filter)
-    {
-        var query = new ParameterizedQuery(_dbConnectionProvider.Dialect).From<T>(TableName);
-        return ApplyQueryClauses(query, filter);
-    }
-
-    private ParameterizedQuery CreateDeleteQuery(WorkflowInstanceFilter filter)
-    {
-        var query = new ParameterizedQuery(_dbConnectionProvider.Dialect).Delete(TableName);
-        return ApplyQueryClauses(query, filter);
-    }
-
-    private ParameterizedQuery ApplyQueryClauses(ParameterizedQuery query, WorkflowInstanceFilter filter)
-    {
-        return query
-                .And(nameof(WorkflowInstance.Id), filter.Id)
-                .And(nameof(WorkflowInstance.Id), filter.Ids)
-                .And(nameof(WorkflowInstance.DefinitionId), filter.DefinitionId)
-                .And(nameof(WorkflowInstance.DefinitionId), filter.DefinitionIds)
-                .And(nameof(WorkflowInstance.DefinitionVersionId), filter.DefinitionVersionId)
-                .And(nameof(WorkflowInstance.DefinitionVersionId), filter.DefinitionVersionIds)
-                .And(nameof(WorkflowInstance.Status), filter.WorkflowStatus?.ToString())
-                .And(nameof(WorkflowInstance.SubStatus), filter.WorkflowSubStatus?.ToString())
-                .And(nameof(WorkflowInstance.Name), filter.Version)
-                .And(nameof(WorkflowInstance.CorrelationId), filter.CorrelationId)
-                .And(nameof(WorkflowInstance.CorrelationId), filter.CorrelationIds)
-                .AndWorkflowInstanceSearchTerm(filter.SearchTerm)
+        query
+            .And(nameof(WorkflowInstance.Id), filter.Id)
+            .And(nameof(WorkflowInstance.Id), filter.Ids)
+            .And(nameof(WorkflowInstance.DefinitionId), filter.DefinitionId)
+            .And(nameof(WorkflowInstance.DefinitionId), filter.DefinitionIds)
+            .And(nameof(WorkflowInstance.DefinitionVersionId), filter.DefinitionVersionId)
+            .And(nameof(WorkflowInstance.DefinitionVersionId), filter.DefinitionVersionIds)
+            .And(nameof(WorkflowInstance.Status), filter.WorkflowStatus?.ToString())
+            .And(nameof(WorkflowInstance.SubStatus), filter.WorkflowSubStatus?.ToString())
+            .And(nameof(WorkflowInstance.Name), filter.Version)
+            .And(nameof(WorkflowInstance.CorrelationId), filter.CorrelationId)
+            .And(nameof(WorkflowInstance.CorrelationId), filter.CorrelationIds)
+            .AndWorkflowInstanceSearchTerm(filter.SearchTerm)
             ;
+    }
+    
+    private async Task<Page<WorkflowInstance>> MapAsync(Page<WorkflowInstanceRecord> source)
+    {
+        var items = (await MapAsync(source.Items)).ToList();
+        return Page.Of(items, source.TotalCount);
     }
 
     private async Task<IEnumerable<WorkflowInstance>> MapAsync(IEnumerable<WorkflowInstanceRecord> source) =>
+        await Task.WhenAll(source.Select(async x => await MapAsync(x)));
+    
+    private async Task<IEnumerable<WorkflowInstanceRecord>> MapAsync(IEnumerable<WorkflowInstance> source) =>
         await Task.WhenAll(source.Select(async x => await MapAsync(x)));
 
     private async Task<WorkflowInstance> MapAsync(WorkflowInstanceRecord source)
