@@ -34,8 +34,9 @@ export class Journal {
   @Event() journalItemSelected: EventEmitter<JournalItemSelectedArgs>;
 
   @Watch('model')
-  async onWorkflowInstanceModelChanged(value: WorkflowJournalModel) {
-    await this.refresh();
+  async onWorkflowInstanceModelChanged(oldValue: WorkflowJournalModel, newValue: WorkflowJournalModel) {
+    if(oldValue.workflowInstance.id != newValue.workflowInstance.id)
+      await this.refresh();
   }
 
   async componentWillLoad(): Promise<void> {
