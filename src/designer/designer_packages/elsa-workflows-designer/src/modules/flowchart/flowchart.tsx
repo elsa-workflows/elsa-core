@@ -208,8 +208,10 @@ export class FlowchartComponent {
       nodeShape.activity = activity;
 
       // If the ID of the activity changed, we need to update connection references (X6 stores deep copies of data).
-      if (activityId !== originalId)
+      if (activityId !== originalId) {
         this.syncEdgeData(originalId, activity);
+        await this.updateModel();
+      }
 
       // Update ports.
       if (args.updatePorts) {
@@ -241,8 +243,10 @@ export class FlowchartComponent {
     node.activity = activity;
 
     // If the ID of the activity changed, we need to update connection references (X6 stores deep copies of data).
-    if (activity.id !== originalId)
+    if (activity.id !== originalId) {
       this.syncEdgeData(originalId, activity);
+      await this.updateModel();
+    }
   }
 
   @Method()
