@@ -28,7 +28,7 @@ public static class Extensions
     /// <summary>
     /// Configures the <see cref="ExecutionLogRecordFeature"/> to use the <see cref="EFCoreWorkflowExecutionLogStore"/>.
     /// </summary>
-    public static ExecutionLogRecordFeature UseEntityFrameworkCore(this ExecutionLogRecordFeature feature, Action<EFCoreExecutionLogRecordPersistenceFeature>? configure = default)
+    public static ExecutionLogRecordFeature UseEntityFrameworkCore(this ExecutionLogRecordFeature feature, Action<EFCoreExecutionLogPersistenceFeature>? configure = default)
     {
         feature.Module.Configure(configure);
         return feature;

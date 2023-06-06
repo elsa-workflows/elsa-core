@@ -19,7 +19,7 @@ public static partial class Extensions
         return feature;
     }
     
-    public static EFCoreExecutionLogRecordPersistenceFeature UseSqlite(this EFCoreExecutionLogRecordPersistenceFeature feature, string connectionString = Constants.DefaultConnectionString, ElsaDbContextOptions? options = default)
+    public static EFCoreExecutionLogPersistenceFeature UseSqlite(this EFCoreExecutionLogPersistenceFeature feature, string connectionString = Constants.DefaultConnectionString, ElsaDbContextOptions? options = default)
     {
         feature.DbContextOptionsBuilder = (_, db) => db.UseElsaSqlite(connectionString, options);
         return feature;

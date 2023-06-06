@@ -1,36 +1,36 @@
-﻿using Elsa.Workflows.Management.Features;
-using JetBrains.Annotations;
+﻿using Elsa.Dapper.Modules.Runtime.Features;
+using Elsa.Dapper.Modules.Runtime.Services;
+using Elsa.Workflows.Runtime.Features;
 
 namespace Elsa.Dapper.Modules.Runtime.Extensions;
 
 /// <summary>
-/// Provides extensions to various management related features.
+/// Provides extensions to the <see cref="WorkflowRuntimeFeature"/> feature.
 /// </summary>
-[PublicAPI]
-public static class DapperWorkflowManagementFeatureExtensions
+public static class DapperWorkflowRuntimeExtensions
 {
     /// <summary>
-    /// Sets up the EF Core persistence provider. 
+    /// Configures the <see cref="WorkflowRuntimeFeature"/> to use the <see cref="DapperWorkflowRuntimePersistenceFeature"/>.
     /// </summary>
-    public static WorkflowDefinitionsFeature UseDapper(this WorkflowDefinitionsFeature feature, Action<DapperWorkflowDefinitionPersistenceFeature>? configure = default)
-    {
-        feature.Module.Configure(configure);
-        return feature;
-    }
-
-    /// <summary>
-    /// Sets up the EF Core persistence provider. 
-    /// </summary>
-    public static WorkflowInstancesFeature UseDapper(this WorkflowInstancesFeature feature, Action<DapperWorkflowInstancePersistenceFeature>? configure = default)
+    public static WorkflowRuntimeFeature UseDapper(this WorkflowRuntimeFeature feature, Action<DapperWorkflowRuntimePersistenceFeature>? configure = default)
     {
         feature.Module.Configure(configure);
         return feature;
     }
     
     /// <summary>
-    /// Sets up the Dapper persistence provider. 
+    /// Configures the <see cref="DefaultWorkflowRuntimeFeature"/> to use the <see cref="DapperDefaultWorkflowRuntimePersistenceFeature"/>.
     /// </summary>
-    public static WorkflowManagementFeature UseDapper(this WorkflowManagementFeature feature, Action<DapperWorkflowManagementPersistenceFeature>? configure = default)
+    public static DefaultWorkflowRuntimeFeature UseDapper(this DefaultWorkflowRuntimeFeature feature, Action<DapperDefaultWorkflowRuntimePersistenceFeature>? configure = default)
+    {
+        feature.Module.Configure(configure);
+        return feature;
+    }
+        
+    /// <summary>
+    /// Configures the <see cref="ExecutionLogRecordFeature"/> to use the <see cref="DapperWorkflowExecutionLogStore"/>.
+    /// </summary>
+    public static ExecutionLogRecordFeature UseDapper(this ExecutionLogRecordFeature feature, Action<EFCoreExecutionLogPersistenceFeature>? configure = default)
     {
         feature.Module.Configure(configure);
         return feature;

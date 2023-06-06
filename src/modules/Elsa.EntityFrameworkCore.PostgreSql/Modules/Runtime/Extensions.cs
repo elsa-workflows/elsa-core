@@ -12,7 +12,7 @@ public static partial class Extensions
         return feature;
     }
     
-    public static EFCoreExecutionLogRecordPersistenceFeature UsePostgreSql(this EFCoreExecutionLogRecordPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
+    public static EFCoreExecutionLogPersistenceFeature UsePostgreSql(this EFCoreExecutionLogPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {
         feature.DbContextOptionsBuilder = (_, db) => db.UseElsaPostgreSql(connectionString, options);
         return feature;

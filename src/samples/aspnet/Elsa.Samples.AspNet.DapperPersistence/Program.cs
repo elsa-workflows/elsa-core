@@ -1,6 +1,6 @@
 using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Modules.Management.Extensions;
-using Elsa.EntityFrameworkCore.Modules.Runtime;
+using Elsa.Dapper.Modules.Runtime.Extensions;
 using Elsa.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,7 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddElsa(elsa =>
 {
-    elsa.UseMigrations();
+    elsa.UseDapper(dapper => dapper.UseMigrations());
     
     elsa.UseWorkflowManagement(management =>
     {
@@ -17,8 +17,8 @@ builder.Services.AddElsa(elsa =>
 
     elsa.UseWorkflowRuntime(runtime =>
     {
-        runtime.UseDefaultRuntime(dr => dr.UseEntityFrameworkCore());
-        runtime.UseExecutionLogRecords(e => e.UseEntityFrameworkCore());
+        runtime.UseDefaultRuntime(dr => dr.UseDapper());
+        runtime.UseExecutionLogRecords(e => e.UseDapper());
         runtime.UseAsyncWorkflowStateExporter();
     });
     

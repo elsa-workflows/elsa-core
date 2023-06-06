@@ -1,4 +1,6 @@
 ﻿using Elsa.Dapper.Contracts;
+using Elsa.Dapper.Extensions;
+using Elsa.Dapper.Models;
 using Elsa.Dapper.Modules.Runtime.Records;
 using Elsa.Dapper.Services;
 using Elsa.Workflows.Core.Contracts;
@@ -25,32 +27,68 @@ public class DapperTriggerStore : ITriggerStore
         _payloadSerializer = payloadSerializer;
         _store = new Store<StoredTriggerRecord>(dbConnectionProvider, TableName, PrimaryKeyName);
     }
-
-
+    
     /// <inheritdoc />
     public async ValueTask SaveAsync(StoredTrigger record, CancellationToken cancellationToken = default)
     {
         var mappedRecord = Map(record);
+        await _store.SaveAsync(mappedRecord, PrimaryKeyName, cancellationToken);
     }
 
-    public ValueTask SaveManyAsync(IEnumerable<StoredTrigger> records, CancellationToken cancellationToken = default)
+    /// <inheritdoc />
+    public async ValueTask SaveManyAsync(IEnumerable<StoredTrigger> records, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        var mappedRecords = records.Select(Map);
+        await _store.SaveManyAsync(mappedRecords, PrimaryKeyName, cancellationToken);
     }
 
-    public ValueTask<IEnumerable<StoredTrigger>> FindManyAsync(TriggerFilter filter, CancellationToken cancellationToken = default)
+    /// <inheritdoc />
+    public async ValueTask<IEnumerable<StoredTrigger>> FindManyAsync(TriggerFilter filter, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        var records = await _store.FindManyAsync(q => ApplyFilter(q, filter), cancellationToken);
+        return Map(records);
     }
 
-    public ValueTask ReplaceAsync(IEnumerable<StoredTrigger> removed, IEnumerable<StoredTrigger> added, CancellationToken cancellationToken = default)
+    /// <inheritdoc />
+    public async ValueTask ReplaceAsync(IEnumerable<StoredTrigger> removed, IEnumerable<StoredTrigger> added, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        var filter = new TriggerFilter { Ids = removed.Select(r => r.Id).ToList() };
+        await DeleteManyAsync(filter, cancellationToken);
+        await SaveManyAsync(added, cancellationToken);
     }
 
-    public ValueTask<long> DeleteManyAsync(TriggerFilter filter, CancellationToken cancellationToken = default)
+    /// <inheritdoc />
+    public async ValueTask<long> DeleteManyAsync(TriggerFilter filter, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return await _store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
+    }
+
+    private void ApplyFilter(ParameterizedQuery query, TriggerFilter filter)
+    {
+        query
+            .And(nameof(StoredTriggerRecord.Id), filter.Id)
+            .And(nameof(StoredTriggerRecord.Id), filter.Ids)
+            .And(nameof(StoredTriggerRecord.WorkflowDefinitionId), filter.WorkflowDefinitionId)
+            .And(nameof(StoredTriggerRecord.WorkflowDefinitionId), filter.WorkflowDefinitionIds)
+            .And(nameof(StoredTriggerRecord.Name), filter.Name)
+            .And(nameof(StoredTriggerRecord.Name), filter.Names)
+            .And(nameof(StoredTriggerRecord.Hash), filter.Hash)
+            ;
+    }
+
+    private IEnumerable<StoredTrigger> Map(IEnumerable<StoredTriggerRecord> source) => source.Select(Map);
+
+    private StoredTrigger Map(StoredTriggerRecord source)
+    {
+        return new StoredTrigger
+        {
+            Id = source.Id,
+            ActivityId = source.ActivityId,
+            Hash = source.Hash,
+            Name = source.Name,
+            WorkflowDefinitionId = source.WorkflowDefinitionId,
+            Payload = source.SerializedPayload != null ? _payloadSerializer.Deserialize(source.SerializedPayload) : default
+        };
     }
 
     private StoredTriggerRecord Map(StoredTrigger source)
