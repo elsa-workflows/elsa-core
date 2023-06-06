@@ -1,11 +1,9 @@
-using System.Linq.Expressions;
 using Dapper;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Dapper.Contracts;
 using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Models;
-using Elsa.Dapper.Modules.Management.Records;
 using JetBrains.Annotations;
 
 namespace Elsa.Dapper.Services;

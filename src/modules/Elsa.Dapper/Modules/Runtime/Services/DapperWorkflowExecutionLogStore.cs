@@ -1,4 +1,3 @@
-using System.DirectoryServices;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Dapper.Contracts;

@@ -1,5 +1,3 @@
-using Elsa.Workflows.Core.Models;
-
 namespace Elsa.Dapper.Modules.Runtime.Records;
 
 internal class WorkflowStateRecord

@@ -1,7 +1,5 @@
-using Elsa.Dapper.Contracts;
 using Elsa.Dapper.Features;
 using Elsa.Dapper.Modules.Management.Services;
-using Elsa.Dapper.Services;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
