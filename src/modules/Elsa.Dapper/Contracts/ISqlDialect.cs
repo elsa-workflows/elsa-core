@@ -65,6 +65,14 @@ public interface ISqlDialect
     string Take(int count);
 
     /// <summary>
+    /// Builds an INSERT query.
+    /// </summary>
+    /// <param name="table">The table.</param>
+    /// <param name="fields">The fields.</param>
+    /// <returns>The query.</returns>
+    string Insert(string table, string[] fields);
+    
+    /// <summary>
     /// Builds an UPSERT query.
     /// </summary>
     /// <param name="table">The table.</param>

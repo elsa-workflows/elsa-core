@@ -1,11 +1,14 @@
 using FluentMigrator;
+using JetBrains.Annotations;
 
 namespace Elsa.Dapper.Migrations.Runtime;
 
 /// <inheritdoc />
 [Migration(20001, "Elsa:Runtime:Initial")]
+[PublicAPI]
 public class Initial : Migration
 {
+    /// <inheritdoc />
     public override void Up()
     {
         Create
@@ -77,6 +80,7 @@ public class Initial : Migration
             ;
     }
 
+    /// <inheritdoc />
     public override void Down()
     {
         Delete.Table("Triggers");

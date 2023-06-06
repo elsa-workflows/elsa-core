@@ -24,7 +24,7 @@ public static class ParameterizedQueryBuilderExtensions
         query.Sql.AppendLine(query.Dialect.From(table));
         return query;
     }
-    
+
     /// <summary>
     /// Begins a SELECT FROM query.
     /// </summary>
@@ -36,14 +36,14 @@ public static class ParameterizedQueryBuilderExtensions
         query.Sql.AppendLine(query.Dialect.From(table, fields));
         return query;
     }
-    
+
     /// <summary>
     /// Begins a SELECT FROM query.
     /// </summary>
     /// <param name="query">The query.</param>
     /// <param name="table">The table.</param>
     /// <typeparam name="T">The fields to include based on the public properties of the specified type.</typeparam>
-    public static ParameterizedQuery From<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]T>(this ParameterizedQuery query, string table) => query.From(table, typeof(T));
+    public static ParameterizedQuery From<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>(this ParameterizedQuery query, string table) => query.From(table, typeof(T));
 
     /// <summary>
     /// Begins a SELECT FROM query.
@@ -58,7 +58,7 @@ public static class ParameterizedQueryBuilderExtensions
         query.Sql.AppendLine(query.Dialect.From(table, fields));
         return query;
     }
-    
+
     /// <summary>
     /// Begins a DELETE FROM query.
     /// </summary>
@@ -69,7 +69,7 @@ public static class ParameterizedQueryBuilderExtensions
         query.Sql.AppendLine(query.Dialect.Delete(table));
         return query;
     }
-    
+
     /// <summary>
     /// Begins a SELECT COUNT(*) FROM query.
     /// </summary>
@@ -80,7 +80,7 @@ public static class ParameterizedQueryBuilderExtensions
         query.Sql.AppendLine(query.Dialect.Count(table));
         return query;
     }
-    
+
     /// <summary>
     /// Appends an AND clause to the query if the value is not null.
     /// </summary>
@@ -92,7 +92,7 @@ public static class ParameterizedQueryBuilderExtensions
         if (value == null) return query;
         query.Sql.AppendLine(query.Dialect.And(field));
         query.Parameters.Add($"@{field}", value);
-        
+
         return query;
     }
 
@@ -105,9 +105,9 @@ public static class ParameterizedQueryBuilderExtensions
     public static ParameterizedQuery In(this ParameterizedQuery query, string field, IEnumerable<object>? values)
     {
         var valueList = values?.ToList();
-        
+
         if (valueList == null || !valueList.Any()) return query;
-        
+
         var fieldParamNames = valueList
             .Select((_, index) => $"@{field}{index}")
             .ToArray();
@@ -116,7 +116,7 @@ public static class ParameterizedQueryBuilderExtensions
 
         for (var i = 0; i < fieldParamNames.Length; i++)
             query.Parameters.Add(fieldParamNames[i], valueList.ElementAt(i));
-        
+
         return query;
     }
 
@@ -127,7 +127,7 @@ public static class ParameterizedQueryBuilderExtensions
     /// <param name="versionOptions">The version options.</param>
     public static ParameterizedQuery Equals(this ParameterizedQuery query, VersionOptions? versionOptions)
     {
-        if(versionOptions == null) return query;
+        if (versionOptions == null) return query;
 
         var sql = query.Sql;
         var options = versionOptions.Value;
@@ -141,10 +141,10 @@ public static class ParameterizedQueryBuilderExtensions
             sql.AppendLine(query.Dialect.And("Version"));
             query.Parameters.Add("@Version", options.Version);
         }
-        
+
         return query;
     }
-    
+
     /// <summary>
     /// Appends an AND clause to the query if the value is not null.
     /// </summary>
@@ -157,7 +157,7 @@ public static class ParameterizedQueryBuilderExtensions
         query.Parameters.Add("@SearchTerm", searchTerm);
         return query;
     }
-    
+
     /// <summary>
     /// Appends an ORDER BY clause to the query.
     /// </summary>
@@ -184,7 +184,7 @@ public static class ParameterizedQueryBuilderExtensions
         query.Sql.AppendLine($"order by {field} {directionString}");
         return query;
     }
-    
+
     /// <summary>
     /// Appends an OFFSET clause to the query.
     /// </summary>
@@ -195,7 +195,7 @@ public static class ParameterizedQueryBuilderExtensions
         query.Sql.AppendLine(query.Dialect.Skip(skip));
         return query;
     }
-    
+
     /// <summary>
     /// Appends a LIMIT clause to the query.
     /// </summary>
@@ -206,7 +206,7 @@ public static class ParameterizedQueryBuilderExtensions
         query.Sql.AppendLine(query.Dialect.Take(take));
         return query;
     }
-    
+
     /// <summary>
     /// Applies paging to the query.
     /// </summary>
@@ -215,12 +215,12 @@ public static class ParameterizedQueryBuilderExtensions
     public static ParameterizedQuery Page(this ParameterizedQuery query, PageArgs pageArgs)
     {
         // Attention: the order is important here for SQLite (LIMIT must come before OFFSET).
-        if(pageArgs.Limit != null)
+        if (pageArgs.Limit != null)
             query.Take(pageArgs.Limit.Value);
-        
-        if(pageArgs.Offset != null)
+
+        if (pageArgs.Offset != null)
             query.Skip(pageArgs.Offset.Value);
-        
+
         return query;
     }
 
@@ -237,18 +237,41 @@ public static class ParameterizedQueryBuilderExtensions
             .Where(x => x.CanRead && x.Name != primaryKeyField)
             .Select(x => x.Name)
             .ToArray();
-        
+
         query.Sql.AppendLine(query.Dialect.Upsert(table, primaryKeyField, fields));
-        
+
         var primaryKeyValue = record.GetType().GetProperty(primaryKeyField)?.GetValue(record);
         query.Parameters.Add($"@{primaryKeyField}", primaryKeyValue);
-        
+
         foreach (var field in fields)
         {
             var value = record.GetType().GetProperty(field)?.GetValue(record);
             query.Parameters.Add($"@{field}", value);
         }
-        
+
+        return query;
+    }
+
+    /// <summary>
+    /// Appends a statement that inserts a record.
+    /// </summary>
+    /// <param name="query">The query.</param>
+    /// <param name="table">The table.</param>
+    /// <param name="record">The record.</param>
+    public static ParameterizedQuery Insert(this ParameterizedQuery query, string table, object record)
+    {
+        var fields = record.GetType().GetProperties()
+            .Select(x => x.Name)
+            .ToArray();
+
+        query.Sql.AppendLine(query.Dialect.Insert(table, fields));
+
+        foreach (var field in fields)
+        {
+            var value = record.GetType().GetProperty(field)?.GetValue(record);
+            query.Parameters.Add($"@{field}", value);
+        }
+
         return query;
     }
 }

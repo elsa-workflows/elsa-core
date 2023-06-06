@@ -2,7 +2,8 @@
 using Elsa.Dapper.Modules.Runtime.Services;
 using Elsa.Workflows.Runtime.Features;
 
-namespace Elsa.Dapper.Modules.Runtime.Extensions;
+// ReSharper disable once CheckNamespace
+namespace Elsa.Extensions;
 
 /// <summary>
 /// Provides extensions to the <see cref="WorkflowRuntimeFeature"/> feature.

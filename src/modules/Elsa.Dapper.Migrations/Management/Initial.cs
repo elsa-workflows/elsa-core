@@ -1,9 +1,11 @@
 using FluentMigrator;
+using JetBrains.Annotations;
 
 namespace Elsa.Dapper.Migrations.Management;
 
 /// <inheritdoc />
 [Migration(10001, "Elsa:Management:Initial")]
+[PublicAPI]
 public class Initial : Migration
 {
     /// <inheritdoc />
