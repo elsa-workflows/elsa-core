@@ -87,7 +87,7 @@ public static class ParameterizedQueryBuilderExtensions
     /// <param name="query">The query.</param>
     /// <param name="field">The field.</param>
     /// <param name="value">The value.</param>
-    public static ParameterizedQuery And(this ParameterizedQuery query, string field, object? value)
+    public static ParameterizedQuery Equals(this ParameterizedQuery query, string field, object? value)
     {
         if (value == null) return query;
         query.Sql.AppendLine(query.Dialect.And(field));
@@ -102,18 +102,20 @@ public static class ParameterizedQueryBuilderExtensions
     /// <param name="query">The query.</param>
     /// <param name="field">The field.</param>
     /// <param name="values">The values.</param>
-    public static ParameterizedQuery And(this ParameterizedQuery query, string field, object[]? values)
+    public static ParameterizedQuery In(this ParameterizedQuery query, string field, IEnumerable<object>? values)
     {
-        if (values == null || !values.Any()) return query;
+        var valueList = values?.ToList();
         
-        var fieldParamNames = values
+        if (valueList == null || !valueList.Any()) return query;
+        
+        var fieldParamNames = valueList
             .Select((_, index) => $"@{field}{index}")
             .ToArray();
 
         query.Sql.AppendLine(query.Dialect.And(field, fieldParamNames));
 
         for (var i = 0; i < fieldParamNames.Length; i++)
-            query.Parameters.Add(fieldParamNames[i], values.ElementAt(i));
+            query.Parameters.Add(fieldParamNames[i], valueList.ElementAt(i));
         
         return query;
     }
@@ -123,7 +125,7 @@ public static class ParameterizedQueryBuilderExtensions
     /// </summary>
     /// <param name="query">The query.</param>
     /// <param name="versionOptions">The version options.</param>
-    public static ParameterizedQuery And(this ParameterizedQuery query, VersionOptions? versionOptions)
+    public static ParameterizedQuery Equals(this ParameterizedQuery query, VersionOptions? versionOptions)
     {
         if(versionOptions == null) return query;
 

@@ -125,17 +125,17 @@ public class DapperWorkflowInstanceStore : IWorkflowInstanceStore
     private void ApplyFilter(ParameterizedQuery query, WorkflowInstanceFilter filter)
     {
         query
-            .And(nameof(WorkflowInstance.Id), filter.Id)
-            .And(nameof(WorkflowInstance.Id), filter.Ids)
-            .And(nameof(WorkflowInstance.DefinitionId), filter.DefinitionId)
-            .And(nameof(WorkflowInstance.DefinitionId), filter.DefinitionIds)
-            .And(nameof(WorkflowInstance.DefinitionVersionId), filter.DefinitionVersionId)
-            .And(nameof(WorkflowInstance.DefinitionVersionId), filter.DefinitionVersionIds)
-            .And(nameof(WorkflowInstance.Status), filter.WorkflowStatus?.ToString())
-            .And(nameof(WorkflowInstance.SubStatus), filter.WorkflowSubStatus?.ToString())
-            .And(nameof(WorkflowInstance.Name), filter.Version)
-            .And(nameof(WorkflowInstance.CorrelationId), filter.CorrelationId)
-            .And(nameof(WorkflowInstance.CorrelationId), filter.CorrelationIds)
+            .Equals(nameof(WorkflowInstance.Id), filter.Id)
+            .In(nameof(WorkflowInstance.Id), filter.Ids)
+            .Equals(nameof(WorkflowInstance.DefinitionId), filter.DefinitionId)
+            .In(nameof(WorkflowInstance.DefinitionId), filter.DefinitionIds)
+            .Equals(nameof(WorkflowInstance.DefinitionVersionId), filter.DefinitionVersionId)
+            .In(nameof(WorkflowInstance.DefinitionVersionId), filter.DefinitionVersionIds)
+            .Equals(nameof(WorkflowInstance.Status), filter.WorkflowStatus?.ToString())
+            .Equals(nameof(WorkflowInstance.SubStatus), filter.WorkflowSubStatus?.ToString())
+            .Equals(nameof(WorkflowInstance.Name), filter.Version)
+            .Equals(nameof(WorkflowInstance.CorrelationId), filter.CorrelationId)
+            .In(nameof(WorkflowInstance.CorrelationId), filter.CorrelationIds)
             .AndWorkflowInstanceSearchTerm(filter.SearchTerm)
             ;
     }

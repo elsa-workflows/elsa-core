@@ -3,7 +3,7 @@ using FluentMigrator;
 namespace Elsa.Dapper.Migrations.Management;
 
 /// <inheritdoc />
-[Migration(1, "Initial")]
+[Migration(10001, "Elsa:Management:Initial")]
 public class Initial : Migration
 {
     /// <inheritdoc />

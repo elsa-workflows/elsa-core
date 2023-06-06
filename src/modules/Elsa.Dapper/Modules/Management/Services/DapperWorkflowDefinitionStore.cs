@@ -141,19 +141,18 @@ public class DapperWorkflowDefinitionStore : IWorkflowDefinitionStore
     {
         return await _store.AnyAsync(q => ApplyFilter(q, filter), cancellationToken);
     }
-    
+
     private void ApplyFilter(ParameterizedQuery query, WorkflowDefinitionFilter filter)
     {
-        query
-            .And(nameof(WorkflowDefinition.DefinitionId), filter.DefinitionId)
-            .And(nameof(WorkflowDefinition.DefinitionId), filter.DefinitionIds)
-            .And(nameof(WorkflowDefinition.Id), filter.Id)
-            .And(nameof(WorkflowDefinition.Id), filter.Ids)
-            .And(filter.VersionOptions)
-            .And(nameof(WorkflowDefinition.MaterializerName), filter.MaterializerName)
-            .And(nameof(WorkflowDefinition.Name), filter.Name)
-            .And(nameof(WorkflowDefinition.Name), filter.Names)
-            .And(nameof(WorkflowDefinition.Options.UsableAsActivity), filter.UsableAsActivity);
+        ParameterizedQueryBuilderExtensions.Equals(query
+                .Equals(nameof(WorkflowDefinition.DefinitionId), filter.DefinitionId)
+                .In(nameof(WorkflowDefinition.DefinitionId), filter.DefinitionIds)
+                .Equals(nameof(WorkflowDefinition.Id), filter.Id)
+                .In(nameof(WorkflowDefinition.Id), filter.Ids), filter.VersionOptions)
+            .Equals(nameof(WorkflowDefinition.MaterializerName), filter.MaterializerName)
+            .Equals(nameof(WorkflowDefinition.Name), filter.Name)
+            .In(nameof(WorkflowDefinition.Name), filter.Names)
+            .Equals(nameof(WorkflowDefinition.Options.UsableAsActivity), filter.UsableAsActivity);
     }
 
     private Page<WorkflowDefinition> Map(Page<WorkflowDefinitionRecord> source) => new(Map(source.Items).ToList(), source.TotalCount);

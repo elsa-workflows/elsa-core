@@ -38,7 +38,7 @@ public class DapperWorkflowStateStore : IWorkflowStateStore
     /// <inheritdoc />
     public async ValueTask<WorkflowState?> LoadAsync(string id, CancellationToken cancellationToken = default)
     {
-        var record = await _store.FindAsync(q => q.And(PrimaryKeyName, id), cancellationToken);
+        var record = await _store.FindAsync(q => q.Equals(PrimaryKeyName, id), cancellationToken);
         return record == null ? null : await MapAsync(record, cancellationToken);
     }
 
@@ -48,9 +48,9 @@ public class DapperWorkflowStateStore : IWorkflowStateStore
         return await _store.CountAsync(q =>
         {
             q
-                .And(nameof(WorkflowStateRecord.Status), WorkflowStatus.Running)
-                .And(nameof(WorkflowStateRecord.DefinitionId), args.DefinitionId)
-                .And(nameof(WorkflowStateRecord.CorrelationId), args.CorrelationId);
+                .Equals(nameof(WorkflowStateRecord.Status), WorkflowStatus.Running)
+                .Equals(nameof(WorkflowStateRecord.DefinitionId), args.DefinitionId)
+                .Equals(nameof(WorkflowStateRecord.CorrelationId), args.CorrelationId);
         }, cancellationToken);
     }
 
@@ -62,8 +62,8 @@ public class DapperWorkflowStateStore : IWorkflowStateStore
             DefinitionId = source.DefinitionId,
             DefinitionVersion = source.DefinitionVersion,
             CorrelationId = source.CorrelationId,
-            Status = source.Status,
-            SubStatus = source.SubStatus,
+            Status = source.Status.ToString(),
+            SubStatus = source.SubStatus.ToString(),
             Props = await _workflowStateSerializer.SerializeAsync(source, cancellationToken)
         };
     }

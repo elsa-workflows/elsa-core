@@ -51,11 +51,11 @@ public class DapperBookmarkStore : IBookmarkStore
     private void ApplyFilter(ParameterizedQuery query, BookmarkFilter filter)
     {
         query
-            .And(nameof(StoredBookmarkRecord.Hash), filter.Hash)
-            .And(nameof(StoredBookmarkRecord.WorkflowInstanceId), filter.WorkflowInstanceId)
-            .And(nameof(StoredBookmarkRecord.CorrelationId), filter.CorrelationId)
-            .And(nameof(StoredBookmarkRecord.ActivityTypeName), filter.ActivityTypeName)
-            .And(nameof(StoredBookmarkRecord.ActivityTypeName), filter.ActivityTypeNames)
+            .Equals(nameof(StoredBookmarkRecord.Hash), filter.Hash)
+            .Equals(nameof(StoredBookmarkRecord.WorkflowInstanceId), filter.WorkflowInstanceId)
+            .Equals(nameof(StoredBookmarkRecord.CorrelationId), filter.CorrelationId)
+            .Equals(nameof(StoredBookmarkRecord.ActivityTypeName), filter.ActivityTypeName)
+            .In(nameof(StoredBookmarkRecord.ActivityTypeName), filter.ActivityTypeNames)
             ;
     }
     

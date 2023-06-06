@@ -66,13 +66,13 @@ public class DapperTriggerStore : ITriggerStore
     private void ApplyFilter(ParameterizedQuery query, TriggerFilter filter)
     {
         query
-            .And(nameof(StoredTriggerRecord.Id), filter.Id)
-            .And(nameof(StoredTriggerRecord.Id), filter.Ids)
-            .And(nameof(StoredTriggerRecord.WorkflowDefinitionId), filter.WorkflowDefinitionId)
-            .And(nameof(StoredTriggerRecord.WorkflowDefinitionId), filter.WorkflowDefinitionIds)
-            .And(nameof(StoredTriggerRecord.Name), filter.Name)
-            .And(nameof(StoredTriggerRecord.Name), filter.Names)
-            .And(nameof(StoredTriggerRecord.Hash), filter.Hash)
+            .Equals(nameof(StoredTriggerRecord.Id), filter.Id)
+            .In(nameof(StoredTriggerRecord.Id), filter.Ids)
+            .Equals(nameof(StoredTriggerRecord.WorkflowDefinitionId), filter.WorkflowDefinitionId)
+            .In(nameof(StoredTriggerRecord.WorkflowDefinitionId), filter.WorkflowDefinitionIds)
+            .Equals(nameof(StoredTriggerRecord.Name), filter.Name)
+            .In(nameof(StoredTriggerRecord.Name), filter.Names)
+            .Equals(nameof(StoredTriggerRecord.Hash), filter.Hash)
             ;
     }
 

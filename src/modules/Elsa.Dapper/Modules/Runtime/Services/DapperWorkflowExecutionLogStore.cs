@@ -80,10 +80,10 @@ public class DapperWorkflowExecutionLogStore : IWorkflowExecutionLogStore
     private void ApplyFilter(ParameterizedQuery query, WorkflowExecutionLogRecordFilter filter)
     {
         query
-            .And(nameof(WorkflowExecutionLogRecordRecord.ActivityId), filter.ActivityId)
-            .And(nameof(WorkflowExecutionLogRecordRecord.WorkflowInstanceId), filter.WorkflowInstanceId)
-            .And(nameof(WorkflowExecutionLogRecordRecord.EventName), filter.EventName)
-            .And(nameof(WorkflowExecutionLogRecordRecord.ActivityId), filter.AnyEventName)
+            .Equals(nameof(WorkflowExecutionLogRecordRecord.ActivityId), filter.ActivityId)
+            .Equals(nameof(WorkflowExecutionLogRecordRecord.WorkflowInstanceId), filter.WorkflowInstanceId)
+            .Equals(nameof(WorkflowExecutionLogRecordRecord.EventName), filter.EventName)
+            .In(nameof(WorkflowExecutionLogRecordRecord.ActivityId), filter.AnyEventName)
             ;
     }
 
