@@ -14,6 +14,7 @@
     <ItemGroup>
         <ProjectReference Include="..\Elsa.Dapper.Migrations\Elsa.Dapper.Migrations.csproj" />
         <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj" />
+        <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
     </ItemGroup>
 
     <ItemGroup>

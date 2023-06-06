@@ -8,7 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddElsa(elsa =>
 {
-    elsa.UseDapperMigrations();
+    elsa.UseMigrations();
     
     elsa.UseWorkflowManagement(management =>
     {

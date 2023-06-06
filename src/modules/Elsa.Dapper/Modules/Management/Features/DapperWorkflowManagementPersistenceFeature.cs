@@ -1,7 +1,5 @@
-using Elsa.Dapper.Contracts;
 using Elsa.Dapper.Features;
 using Elsa.Dapper.Modules.Management.Services;
-using Elsa.Dapper.Services;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
@@ -17,7 +15,7 @@ namespace Elsa.Dapper.Modules.Management.Features;
 [DependsOn(typeof(WorkflowManagementFeature))]
 [DependsOn(typeof(WorkflowInstancesFeature))]
 [DependsOn(typeof(WorkflowDefinitionsFeature))]
-[DependsOn(typeof(CommonFeature))]
+[DependsOn(typeof(DapperFeature))]
 [PublicAPI]
 public class DapperWorkflowManagementPersistenceFeature : FeatureBase
 {
@@ -25,11 +23,6 @@ public class DapperWorkflowManagementPersistenceFeature : FeatureBase
     public DapperWorkflowManagementPersistenceFeature(IModule module) : base(module)
     {
     }
-    
-    /// <summary>
-    /// Gets or sets a factory that provides an <see cref="IDbConnectionProvider"/> instance.
-    /// </summary>
-    public Func<IServiceProvider, IDbConnectionProvider> DbConnectionProvider { get; set; } = _ => new SqliteDbConnectionProvider();
 
     /// <inheritdoc />
     public override void Configure()
@@ -42,8 +35,7 @@ public class DapperWorkflowManagementPersistenceFeature : FeatureBase
     public override void Apply()
     {
         base.Apply();
-
-        Services.AddSingleton(DbConnectionProvider);
+        
         Services.AddSingleton<DapperWorkflowInstanceStore>();
         Services.AddSingleton<DapperWorkflowDefinitionStore>();
     }

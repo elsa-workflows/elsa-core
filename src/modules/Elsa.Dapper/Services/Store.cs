@@ -215,4 +215,18 @@ public class Store<T> where T : notnull
         using var connection = _dbConnectionProvider.GetConnection();
         return await connection.QueryFirstOrDefaultAsync<object>(query.Sql.ToString(), query.Parameters) != null;
     }
+    
+    /// <summary>
+    /// Returns the number of records matching the specified query. 
+    /// </summary>
+    /// <param name="filter">The conditions to apply to the query.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The number of records matching the specified query.</returns>
+    public async Task<long> CountAsync(Action<ParameterizedQuery> filter, CancellationToken cancellationToken = default)
+    {
+        var countQuery = _dbConnectionProvider.CreateQuery().Count(TableName);
+        filter(countQuery);
+        using var connection = _dbConnectionProvider.GetConnection();
+        return await countQuery.SingleAsync<long>(connection);
+    }
 }

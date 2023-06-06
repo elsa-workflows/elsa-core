@@ -14,14 +14,14 @@ public static class DapperMigrationsFeatureExtensions
     /// <summary>
     /// Adds the Dapper migrations feature. 
     /// </summary>
-    public static IModule UseDapperMigrations(this IModule module, Action<IMigrationRunnerBuilder> configure) => module.UseDapperMigrations(feature => feature.ConfigureRunner = configure);
+    public static DapperFeature UseMigrations(this DapperFeature feature, Action<IMigrationRunnerBuilder> configure) => feature.UseMigrations(migrations => migrations.ConfigureRunner = configure);
     
     /// <summary>
     /// Adds the Dapper migrations feature. 
     /// </summary>
-    public static IModule UseDapperMigrations(this IModule module, Action<DapperMigrationsFeature>? configure = default)
+    public static DapperFeature UseMigrations(this DapperFeature feature, Action<DapperMigrationsFeature>? configure = default)
     {
-        module.Configure(configure);
-        return module;
+        feature.Module.Configure(configure);
+        return feature;
     }
 }
