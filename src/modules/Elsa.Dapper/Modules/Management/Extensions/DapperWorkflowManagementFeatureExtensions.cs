@@ -2,7 +2,8 @@
 using Elsa.Workflows.Management.Features;
 using JetBrains.Annotations;
 
-namespace Elsa.Dapper.Modules.Management.Extensions;
+// ReSharper disable once CheckNamespace
+namespace Elsa.Extensions;
 
 /// <summary>
 /// Provides extensions to various management related features.

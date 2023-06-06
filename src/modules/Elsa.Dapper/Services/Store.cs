@@ -187,6 +187,18 @@ public class Store<T> where T : notnull
         using var connection = _dbConnectionProvider.GetConnection();
         await query.ExecuteAsync(connection);
     }
+    
+    /// <summary>
+    /// Adds the specified record.
+    /// </summary>
+    /// <param name="record">The record.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    public async Task AddAsync(T record, CancellationToken cancellationToken = default)
+    {
+        using var connection = _dbConnectionProvider.GetConnection();
+        var query = new ParameterizedQuery(_dbConnectionProvider.Dialect).Insert(TableName, record);
+        await query.ExecuteAsync(connection);
+    }
 
     /// <summary>
     /// Deletes all records matching the specified query.

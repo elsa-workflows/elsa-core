@@ -1,9 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+    <Import Project="..\..\..\common.props" />
+    <Import Project="..\..\..\configureawait.props" />
+
     <PropertyGroup>
         <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
+        <Description>
+            Provides Dapper migrations for Dapper perisstence providers from various modules.
+        </Description>
+        <PackageTags>elsa persistence dapper migrations</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>

@@ -47,6 +47,15 @@ public abstract class SqlDialectBase : ISqlDialect
     public virtual string Take(int count) => $"LIMIT {count}";
 
     /// <inheritdoc />
+    public string Insert(string table, string[] fields)
+    {
+        var fieldList = string.Join(", ", fields);
+        var fieldParamNames = fields.Select(x => $"@{x}");
+        var fieldParamList = string.Join(", ", fieldParamNames);
+        return $"INSERT INTO {table} ({fieldList}) VALUES ({fieldParamList});";
+    }
+
+    /// <inheritdoc />
     public virtual string Upsert(string table, string primaryKeyField, string[] fields)
     {
         var fieldList = string.Join(", ", fields);

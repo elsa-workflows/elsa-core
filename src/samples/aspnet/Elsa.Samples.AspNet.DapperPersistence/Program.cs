@@ -1,6 +1,4 @@
 using Elsa.Dapper.Extensions;
-using Elsa.Dapper.Modules.Management.Extensions;
-using Elsa.Dapper.Modules.Runtime.Extensions;
 using Elsa.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -28,7 +26,7 @@ builder.Services.AddElsa(elsa =>
     
     elsa.UseIdentity(identity =>
     {
-        identity.UseAdminUserProvider();
+        identity.UseDapper();
         identity.TokenOptions = options =>
         {
             options.SigningKey = "secret-token-signing-key";
@@ -36,7 +34,7 @@ builder.Services.AddElsa(elsa =>
         };
     });
     
-    elsa.UseDefaultAuthentication(auth => auth.UseAdminApiKey());
+    elsa.UseDefaultAuthentication();
     elsa.AddActivitiesFrom<Program>();
 });
 
