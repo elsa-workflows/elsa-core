@@ -5,7 +5,7 @@ import uniqBy from 'lodash/uniqBy';
 import {Container} from 'typedi';
 import {ActivityDescriptor} from "../../../models";
 import descriptorsStore from "../../../data/descriptors-store";
-import {ActivityDriverRegistry} from "../../../services";
+import {ActivityDescriptorManager, ActivityDriverRegistry} from "../../../services";
 
 interface ActivityCategoryModel {
   category: string;
@@ -38,6 +38,9 @@ export class ToolboxActivities {
   }
 
   componentWillLoad() {
+    const activityDescriptorManager = Container.get(ActivityDescriptorManager);
+    activityDescriptorManager.onActivityDescriptorsUpdated(this.buildModel);
+    
     this.buildModel();
   }
 
