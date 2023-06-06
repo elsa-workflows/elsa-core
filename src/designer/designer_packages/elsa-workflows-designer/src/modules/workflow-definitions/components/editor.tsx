@@ -141,7 +141,7 @@ export class WorkflowDefinitionEditor {
   async loadWorkflowVersions(): Promise<void> {
     if (this.workflowDefinitionState.definitionId != null && this.workflowDefinitionState.definitionId.length > 0) {
       const workflowVersions = await this.workflowDefinitionApi.getVersions(this.workflowDefinitionState.definitionId);
-      this.workflowVersions = workflowVersions.sort(x => x.version).reverse();
+      this.workflowVersions = workflowVersions.sort((a, b) => a.version > b.version ? -1 : 1);
     } else {
       this.workflowVersions = [];
     }

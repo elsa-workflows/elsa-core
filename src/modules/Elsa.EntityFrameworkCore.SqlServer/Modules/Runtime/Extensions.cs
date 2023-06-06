@@ -12,7 +12,7 @@ public static partial class Extensions
         return feature;
     }
 
-    public static EFCoreExecutionLogRecordPersistenceFeature UseSqlServer(this EFCoreExecutionLogRecordPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
+    public static EFCoreExecutionLogPersistenceFeature UseSqlServer(this EFCoreExecutionLogPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {
         feature.DbContextOptionsBuilder = (_, db) => db.UseElsaSqlServer(connectionString, options);
         return feature;

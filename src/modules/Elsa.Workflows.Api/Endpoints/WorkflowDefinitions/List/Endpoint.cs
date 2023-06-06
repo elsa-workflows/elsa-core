@@ -1,6 +1,7 @@
 using Elsa.Abstractions;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
+using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
@@ -45,9 +46,9 @@ internal class List : ElsaEndpoint<Request, Response>
 
     private async Task<Page<WorkflowDefinitionSummary>> FindAsync(Request request, WorkflowDefinitionFilter filter, PageArgs pageArgs, CancellationToken cancellationToken)
     {
-        request.OrderBy ??= OrderByWfDefinition.Created;
+        request.OrderBy ??= OrderByWorkflowDefinition.Created;
 
-        var direction = request.OrderBy == OrderByWfDefinition.Name ? (request.OrderDirection ?? OrderDirection.Ascending) : (request.OrderDirection ?? OrderDirection.Descending);
+        var direction = request.OrderBy == OrderByWorkflowDefinition.Name ? (request.OrderDirection ?? OrderDirection.Ascending) : (request.OrderDirection ?? OrderDirection.Descending);
 
         switch (request.OrderBy)
         {
@@ -61,7 +62,7 @@ internal class List : ElsaEndpoint<Request, Response>
 
                     return await _store.FindSummariesAsync(filter, order, pageArgs, cancellationToken);
                 }
-            case OrderByWfDefinition.Name:
+            case OrderByWorkflowDefinition.Name:
                 {
                     var order = new WorkflowDefinitionOrder<string>
                     {

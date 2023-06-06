@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <Import Project="..\..\..\common.props" />
+    <Import Project="..\..\..\configureawait.props" />
+
+    <PropertyGroup>
+        <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
+        <Description>
+            Provides Dapper implementations of various persistence abstractions from various modules.
+        </Description>
+        <PackageTags>elsa module persistence dapper</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Elsa.Dapper.Migrations\Elsa.Dapper.Migrations.csproj" />
+        <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj" />
+        <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Dapper" Version="2.0.123" />
+        <PackageReference Include="FluentMigrator" Version="3.3.2" />
+        <PackageReference Include="FluentMigrator.Runner" Version="3.3.2" />
+        <PackageReference Include="Microsoft.Data.Sqlite.Core" Version="7.0.5" />
+        <PackageReference Include="System.Data.SqlClient" Version="4.7.0" />
+    </ItemGroup>
+
+</Project>

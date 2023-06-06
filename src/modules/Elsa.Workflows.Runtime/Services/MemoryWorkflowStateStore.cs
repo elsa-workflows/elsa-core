@@ -25,7 +25,7 @@ public class MemoryWorkflowStateStore : IWorkflowStateStore
     }
 
     /// <inheritdoc />
-    public ValueTask<int> CountAsync(CountRunningWorkflowsArgs args, CancellationToken cancellationToken = default)
+    public ValueTask<long> CountAsync(CountRunningWorkflowsArgs args, CancellationToken cancellationToken = default)
     {
         var query = _workflowStates.Values.AsQueryable().Where(x => x.Status == WorkflowStatus.Running);
 
