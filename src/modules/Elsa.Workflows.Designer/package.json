@@ -6,7 +6,7 @@
     "build:debug": "cross-env webpack --mode=development --env configuration=Debug"
   },
   "devDependencies": {
-    "@elsa-workflows/elsa-workflows-designer": "3.0.3-preview.161",
+    "@elsa-workflows/elsa-workflows-designer": "3.0.3-preview.162",
     "copy-webpack-plugin": "^11.0.0",
     "cross-env": "^7.0.3",
     "monaco-editor": "^0.36.1",
