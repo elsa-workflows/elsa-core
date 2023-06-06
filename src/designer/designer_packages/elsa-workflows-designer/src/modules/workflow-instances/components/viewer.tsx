@@ -138,9 +138,13 @@ export class WorkflowInstanceViewer {
   }
 
   private findFlowchartOfActivityRecursive(activity: Activity): Flowchart {
-    if (activity.type == "Elsa.Flowchart" || (activity.root == null && activity.body.type == "Elsa.Flowchart")) {
+    if (activity.type == "Elsa.Flowchart") {
+      return activity as Flowchart;
+    }
+    else if(activity.root == null && activity.body.type == "Elsa.Flowchart"){
       return activity.body as Flowchart;
-    } else {
+    } 
+    else {
       return this.findFlowchartOfActivityRecursive((activity as Workflow).root);
     }
   }
