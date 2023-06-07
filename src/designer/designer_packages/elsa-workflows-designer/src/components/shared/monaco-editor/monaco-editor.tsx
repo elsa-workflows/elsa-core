@@ -26,12 +26,13 @@ export class ElsaMonaco {
   editor: any;
 
   @Watch('language')
-  languageChangeHandler(newValue: string) {
+  async languageChangeHandler(newValue: string) {
     if (!this.editor)
       return;
 
     const model = this.editor.getModel();
-    this.monaco.editor.setModelLanguage(model, this.language);
+    const monaco = await this.getMonaco();
+    monaco.editor.setModelLanguage(model, this.language);
   }
 
   @Method()
@@ -45,7 +46,7 @@ export class ElsaMonaco {
 
   @Method()
   async addJavaScriptLib(libSource: string, libUri: string) {
-    const monaco = this.monaco;
+    const monaco = await this.getMonaco();
 
     monaco.languages.typescript.javascriptDefaults.setExtraLibs([{
       filePath: "lib.es5.d.ts"
@@ -69,13 +70,8 @@ export class ElsaMonaco {
     }
   }
 
-  async componentWillLoad() {
-    const monacoLibPath = monacoStore.monacoLibPath;
-    this.monaco = await initializeMonacoWorker(monacoLibPath);
-  }
-
-  componentDidLoad() {
-    const monaco = this.monaco;
+  async componentDidLoad() {
+    const monaco = await this.getMonaco();
     const language = this.language;
 
     // Validation settings.
@@ -160,6 +156,14 @@ export class ElsaMonaco {
         }
       });
     }
+  }
+
+  private async getMonaco() {
+    if(!!this.monaco)
+      return this.monaco;
+
+    const monacoLibPath = monacoStore.monacoLibPath;
+    return this.monaco = await initializeMonacoWorker(monacoLibPath);
   }
 
   disconnectedCallback() {
