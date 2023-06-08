@@ -51,8 +51,33 @@ namespace Elsa.Activities.Kafka.Services
             _consumer = new ConsumerBuilder<Ignore, byte[]>(consumerConfig).Build();
 
             if (_consumer != null)
-                Consumer.Consume(topic, _consumer).Subscribe(HandleMessage, OnError, _cancellationToken);
-
+            {
+                Task.Run(
+                      async () =>
+                      {
+                          try
+                          {
+                              _consumer.Subscribe(topic);
+                              while (!_cancellationToken.IsCancellationRequested)
+                              {
+                                  // This code gets executed sometimes, even though the consumer has been disposed. This results in an "handle is destroyed" exepction
+                                  var consumeResult = _consumer.Consume(_cancellationToken);
+                                  if (consumeResult.IsPartitionEOF) continue;
+                                  await HandleMessage(consumeResult.Message);
+                                  _consumer.Commit(consumeResult);
+                              }
+                          }
+                          catch (KafkaException kafkaException)
+                          {
+                              OnError(kafkaException);
+                          }
+                          catch (Exception exception)
+                          {
+                              OnError(exception);
+                          }
+                      }, _cancellationToken);
+            }
+            
             return Task.CompletedTask;
         }
 
@@ -95,7 +120,7 @@ namespace Elsa.Activities.Kafka.Services
             if (_errHandler != null) await _errHandler(error);
         }
 
-        private async void HandleMessage(Message<Ignore, byte[]> message)
+        private async Task HandleMessage(Message<Ignore, byte[]> message)
         {
             var ev = new KafkaMessageEvent(message, _cancellationToken);
 
