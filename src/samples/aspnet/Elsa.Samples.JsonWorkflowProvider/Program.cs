@@ -1,3 +1,6 @@
+using Elsa.EntityFrameworkCore.Modules.Identity;
+using Elsa.EntityFrameworkCore.Modules.Management;
+using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,11 +13,15 @@ services.AddElsa(elsa => elsa
 
     // Expose API endpoints.
     .UseWorkflowsApi()
+    
+    .UseWorkflowManagement(management => management.UseEntityFrameworkCore())
+    .UseWorkflowRuntime(runtime => runtime.UseEntityFrameworkCore())
 
     // Configure identity so that we can create a default admin user.
     .UseIdentity(identity =>
     {
         identity.UseAdminUserProvider();
+        identity.UseEntityFrameworkCore();
         identity.TokenOptions = options =>
         {
             options.SigningKey = "secret-token-signing-key";
@@ -29,6 +36,8 @@ services.AddElsa(elsa => elsa
     .UseDefaultAuthentication(auth => auth.UseAdminApiKey())
 );
 
+services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()));
+
 // Configure middleware pipeline.
 var app = builder.Build();
 
@@ -38,6 +47,7 @@ if (app.Environment.IsDevelopment())
 // Configure the HTTP request pipeline.
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseCors();
 app.UseWorkflowsApi();
 app.UseWorkflows();
 app.Run();
