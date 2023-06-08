@@ -97,6 +97,22 @@ public static class ParameterizedQueryBuilderExtensions
     }
 
     /// <summary>
+    /// Appends an search for workflowdfefinitions to the search
+    /// </summary>
+    /// <param name="query">The query.</param>
+    /// <param name="searchTerm">The search term.</param>
+    public static ParameterizedQuery AndWorkflowDefinitionSearchTerm(this ParameterizedQuery query, string? searchTerm)
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm)) return query;
+
+        var searchTermLike = $"%{searchTerm}%";
+        query.Sql.AppendLine("and (Name like @SearchTermLike or Id = @SearchTerm or DefinitionId = @SearchTerm)");
+        query.Parameters.Add("@SearchTerm", searchTerm);
+        query.Parameters.Add("@SearchTermLike", searchTermLike);
+        return query;
+    }
+
+    /// <summary>
     /// Appends an AND clause to the query if the value is not null.
     /// </summary>
     /// <param name="query">The query.</param>
@@ -153,8 +169,11 @@ public static class ParameterizedQueryBuilderExtensions
     public static ParameterizedQuery AndWorkflowInstanceSearchTerm(this ParameterizedQuery query, string? searchTerm)
     {
         if (string.IsNullOrWhiteSpace(searchTerm)) return query;
-        query.Sql.AppendLine("and (Name like @SearchTerm or ID like @SearchTerm or DefinitionId like @SearchTerm or CorrelationId like @SearchTerm)");
+
+        var searchTermLike = $"%{searchTerm}%";
+        query.Sql.AppendLine("and (Name like @SearchTermLike or ID = @SearchTerm or DefinitionId = @SearchTerm = @SearchTerm or CorrelationId = @SearchTerm)");
         query.Parameters.Add("@SearchTerm", searchTerm);
+        query.Parameters.Add("@SearchTermLike", searchTermLike);
         return query;
     }
 

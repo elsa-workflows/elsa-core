@@ -40,7 +40,12 @@ public class WorkflowDefinitionFilter
     /// Filter by the name of the workflow definition.
     /// </summary>
     public string? Name { get; set; }
-    
+
+    /// <summary>
+    /// Filter by the name or id of the workflow definition.
+    /// </summary>
+    public string? SearchTerm { get; set; }
+
     /// <summary>
     /// Filter by the names of the workflow definitions.
     /// </summary>
@@ -73,7 +78,8 @@ public class WorkflowDefinitionFilter
         if (filter.Name != null) queryable = queryable.Where(x => x.Name == filter.Name);
         if (filter.Names != null) queryable = queryable.Where(x => filter.Names.Contains(x.Name!));
         if (filter.UsableAsActivity != null) queryable = queryable.Where(x => x.Options.UsableAsActivity == filter.UsableAsActivity);
-        
+        if (filter.SearchTerm != null) queryable = queryable.Where(x => x.Name.Contains(filter.SearchTerm) || x.Id == filter.SearchTerm || x.DefinitionId == filter.SearchTerm);
+
         return queryable;
     }
 }
