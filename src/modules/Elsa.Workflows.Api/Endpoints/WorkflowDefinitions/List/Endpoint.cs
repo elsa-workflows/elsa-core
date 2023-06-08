@@ -39,8 +39,8 @@ internal class List : ElsaEndpoint<Request, Response>
         var versionOptions = request.VersionOptions != null ? VersionOptions.FromString(request.VersionOptions) : default(VersionOptions?);
         var splitIds = request.DefinitionIds ?? Array.Empty<string>();
 
-        if (request.SearchTerm != null) {
-            return new WorkflowDefinitionFilter { SearchTerm = request.SearchTerm };
+        if (!string.IsNullOrWhiteSpace(request.SearchTerm)) {
+            return new WorkflowDefinitionFilter { SearchTerm = request.SearchTerm, VersionOptions = versionOptions };
         }
 
         return splitIds.Any()
