@@ -1,7 +1,7 @@
-using Elsa.WorkflowProviders.FluentStorage.Contracts;
+using Elsa.WorkflowProviders.BlobStorage.Contracts;
 using FluentStorage.Blobs;
 
-namespace Elsa.WorkflowProviders.FluentStorage.Providers;
+namespace Elsa.WorkflowProviders.BlobStorage.Providers;
 
 /// <summary>
 /// A provider of <see cref="IBlobStorage"/>.

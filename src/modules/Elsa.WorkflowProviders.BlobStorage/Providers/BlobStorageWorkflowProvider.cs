@@ -1,6 +1,6 @@
 ﻿using Elsa.Common.Contracts;
 using Elsa.Dsl.Contracts;
-using Elsa.WorkflowProviders.FluentStorage.Contracts;
+using Elsa.WorkflowProviders.BlobStorage.Contracts;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Materializers;
@@ -10,13 +10,13 @@ using Elsa.Workflows.Runtime.Models;
 using FluentStorage.Blobs;
 using JetBrains.Annotations;
 
-namespace Elsa.WorkflowProviders.FluentStorage.Providers;
+namespace Elsa.WorkflowProviders.BlobStorage.Providers;
 
 /// <summary>
 /// A workflow definition provider that loads workflow definitions from a storage using FluentStorage (See https://github.com/robinrodricks/FluentStorage).
 /// </summary>
 [PublicAPI]
-public class FluentStorageWorkflowProvider : IWorkflowProvider
+public class BlobStorageWorkflowProvider : IWorkflowProvider
 {
     private readonly IBlobStorageProvider _blobStorageProvider;
     private readonly IActivitySerializer _activitySerializer;
@@ -27,9 +27,9 @@ public class FluentStorageWorkflowProvider : IWorkflowProvider
     private readonly VariableDefinitionMapper _variableDefinitionMapper;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="FluentStorageWorkflowProvider"/> class.
+    /// Initializes a new instance of the <see cref="BlobStorageWorkflowProvider"/> class.
     /// </summary>
-    public FluentStorageWorkflowProvider(
+    public BlobStorageWorkflowProvider(
         IBlobStorageProvider blobStorageProvider,
         IActivitySerializer activitySerializer,
         IDslEngine dslEngine,

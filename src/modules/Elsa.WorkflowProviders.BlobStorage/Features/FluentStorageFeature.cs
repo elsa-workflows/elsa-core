@@ -2,15 +2,15 @@ using System.Reflection;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
-using Elsa.WorkflowProviders.FluentStorage.Contracts;
-using Elsa.WorkflowProviders.FluentStorage.Providers;
+using Elsa.WorkflowProviders.BlobStorage.Contracts;
+using Elsa.WorkflowProviders.BlobStorage.Providers;
 using Elsa.Workflows.Management.Features;
 using FluentStorage;
 using FluentStorage.Blobs;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.WorkflowProviders.FluentStorage.Features;
+namespace Elsa.WorkflowProviders.BlobStorage.Features;
 
 /// <summary>
 /// A feature that enables the FluentStorage workflow definition provider.
@@ -34,7 +34,7 @@ public class FluentStorageFeature : FeatureBase
     public override void Apply()
     {
         Services.AddSingleton<IBlobStorageProvider>(sp => new BlobStorageProvider(BlobStorage(sp)));
-        Services.AddWorkflowDefinitionProvider<FluentStorageWorkflowProvider>();
+        Services.AddWorkflowDefinitionProvider<BlobStorageWorkflowProvider>();
     }
 
     /// <summary>

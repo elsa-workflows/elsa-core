@@ -1,5 +1,5 @@
 using Elsa.Features.Services;
-using Elsa.WorkflowProviders.FluentStorage.Features;
+using Elsa.WorkflowProviders.BlobStorage.Features;
 using FluentStorage.Blobs;
 using JetBrains.Annotations;
 
