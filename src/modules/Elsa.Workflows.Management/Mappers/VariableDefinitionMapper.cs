@@ -3,7 +3,6 @@ using Elsa.Expressions.Extensions;
 using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Management.Models;
 
 namespace Elsa.Workflows.Management.Mappers;
 

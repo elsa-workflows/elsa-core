@@ -192,8 +192,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.JsonWorkflows"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.JsonWorkflowProvider", "src\samples\aspnet\Elsa.Samples.JsonWorkflowProvider\Elsa.Samples.JsonWorkflowProvider.csproj", "{C5043453-5FB8-4796-9A80-C4C766F2CB62}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.WorkflowProviders.FluentStorage", "src\modules\Elsa.WorkflowProviders.FluentStorage\Elsa.WorkflowProviders.FluentStorage.csproj", "{044C3108-FE79-460A-9C31-A03C30228836}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.AspNet.ProtoActorRuntime.AzureContainerApps", "src\samples\aspnet\Elsa.Samples.AspNet.ProtoActorRuntime.AzureContainerApps\Elsa.Samples.AspNet.ProtoActorRuntime.AzureContainerApps.csproj", "{3212A999-4AC4-4911-9AA4-92AB906BCB5E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.AspNet.HttpEndpoints", "src\samples\aspnet\Elsa.Samples.AspNet.HttpEndpoints\Elsa.Samples.AspNet.HttpEndpoints.csproj", "{165ACC9D-B67C-4B49-A818-ECFD247C899C}"
@@ -223,6 +221,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.AspNet.DapperPersistence", "src\samples\aspnet\Elsa.Samples.AspNet.DapperPersistence\Elsa.Samples.AspNet.DapperPersistence.csproj", "{D5905087-2E73-44AD-B3CC-70FE8AAA99A1}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Dapper.Migrations", "src\modules\Elsa.Dapper.Migrations\Elsa.Dapper.Migrations.csproj", "{A86DF0F0-24E9-470E-984B-9E7332544972}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.WorkflowProviders.BlobStorage", "src\modules\Elsa.WorkflowProviders.BlobStorage\Elsa.WorkflowProviders.BlobStorage.csproj", "{A702DD84-B55C-4807-9C28-D8F5AC3CCA78}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -518,10 +518,6 @@ Global
 		{C5043453-5FB8-4796-9A80-C4C766F2CB62}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C5043453-5FB8-4796-9A80-C4C766F2CB62}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C5043453-5FB8-4796-9A80-C4C766F2CB62}.Release|Any CPU.Build.0 = Release|Any CPU
-		{044C3108-FE79-460A-9C31-A03C30228836}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{044C3108-FE79-460A-9C31-A03C30228836}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{044C3108-FE79-460A-9C31-A03C30228836}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{044C3108-FE79-460A-9C31-A03C30228836}.Release|Any CPU.Build.0 = Release|Any CPU
 		{3212A999-4AC4-4911-9AA4-92AB906BCB5E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{3212A999-4AC4-4911-9AA4-92AB906BCB5E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3212A999-4AC4-4911-9AA4-92AB906BCB5E}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -554,6 +550,10 @@ Global
 		{A86DF0F0-24E9-470E-984B-9E7332544972}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A86DF0F0-24E9-470E-984B-9E7332544972}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A86DF0F0-24E9-470E-984B-9E7332544972}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A702DD84-B55C-4807-9C28-D8F5AC3CCA78}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A702DD84-B55C-4807-9C28-D8F5AC3CCA78}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A702DD84-B55C-4807-9C28-D8F5AC3CCA78}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A702DD84-B55C-4807-9C28-D8F5AC3CCA78}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{155227F0-A33B-40AA-A4B4-06F813EB921B} = {61017E64-6D00-49CB-9E81-5002DC8F7D5F}
@@ -637,7 +637,6 @@ Global
 		{30B49E42-AE61-4F7C-981F-923F07BB3986} = {5948B0A5-7873-4DBB-BA03-EB283D6EA91B}
 		{B08B4E00-C2AB-48F3-8389-449F42AEF179} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 		{302BFC43-ED2F-43AE-8AD4-FCD481B0AC67} = {B08B4E00-C2AB-48F3-8389-449F42AEF179}
-		{044C3108-FE79-460A-9C31-A03C30228836} = {B08B4E00-C2AB-48F3-8389-449F42AEF179}
 		{C9539BD8-D2AE-4A8D-8281-71A05B3FBF31} = {B08B4E00-C2AB-48F3-8389-449F42AEF179}
 		{169E2C9B-6687-427F-A278-30BF849BFEDC} = {B08B4E00-C2AB-48F3-8389-449F42AEF179}
 		{B191F11D-583D-44D9-8A08-F5B0DC58B822} = {B08B4E00-C2AB-48F3-8389-449F42AEF179}
@@ -655,5 +654,6 @@ Global
 		{4D8F3BB2-709D-481A-8FD3-0DA9762B366D} = {9B4F139F-7D26-435C-A561-89E65A67A8E5}
 		{D5905087-2E73-44AD-B3CC-70FE8AAA99A1} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 		{A86DF0F0-24E9-470E-984B-9E7332544972} = {9B4F139F-7D26-435C-A561-89E65A67A8E5}
+		{A702DD84-B55C-4807-9C28-D8F5AC3CCA78} = {B08B4E00-C2AB-48F3-8389-449F42AEF179}
 	EndGlobalSection
 EndGlobal

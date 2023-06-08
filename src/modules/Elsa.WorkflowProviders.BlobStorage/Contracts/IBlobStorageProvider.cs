@@ -1,6 +1,6 @@
 using FluentStorage.Blobs;
 
-namespace Elsa.WorkflowProviders.FluentStorage.Contracts;
+namespace Elsa.WorkflowProviders.BlobStorage.Contracts;
 
 /// <summary>
 /// A provider of <see cref="IBlobStorage"/>. The point of this interface is to provide a wrapper for actual <see cref="IBlobStorage"/> implementations.

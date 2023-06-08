@@ -441,6 +441,7 @@ export class FlowchartComponent {
     this.graph.fromJSON(model, {silent: false});
     this.graph.unfreeze();
     rebuildGraph(this.graph);
+    this.graph.scrollToContent();
   }
 
   private getFlowchartModel = (): FlowchartModel => {
