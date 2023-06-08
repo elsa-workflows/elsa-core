@@ -22,13 +22,19 @@ public class Workflow : Composite<object>, ICloneable
         WorkflowIdentity identity,
         WorkflowPublication publication,
         WorkflowMetadata workflowMetadata,
-        WorkflowOptions? options,
+        WorkflowOptions options,
         IActivity root,
         ICollection<Variable> variables,
+        ICollection<InputDefinition> inputs,
+        ICollection<OutputDefinition> outputs,
+        ICollection<string> outcomes,
         IDictionary<string, object> customProperties)
     {
         Identity = identity;
         Publication = publication;
+        Inputs = inputs;
+        Outputs = outputs;
+        Outcomes = outcomes;
         WorkflowMetadata = workflowMetadata;
         Options = options;
         Variables = variables;
@@ -45,15 +51,45 @@ public class Workflow : Composite<object>, ICloneable
     }
 
     /// <summary>
-    /// Constructor.
+    /// Initializes a new instance of the <see cref="Workflow"/> class.
     /// </summary>
     public Workflow()
     {
     }
 
+    /// <summary>
+    /// Gets or sets the workflow identity.
+    /// </summary>
     public WorkflowIdentity Identity { get; set; } = WorkflowIdentity.VersionOne;
+    
+    /// <summary>
+    /// Gets or sets the publication status of the workflow.
+    /// </summary>
     public WorkflowPublication Publication { get; set; } = WorkflowPublication.LatestAndPublished;
+    
+    /// <summary>
+    /// Gets or sets input definitions.
+    /// </summary>
+    public ICollection<InputDefinition> Inputs { get; set; } = new List<InputDefinition>();
+    
+    /// <summary>
+    /// Gets or sets output definitions.
+    /// </summary>
+    public ICollection<OutputDefinition> Outputs { get; set; } = new List<OutputDefinition>();
+    
+    /// <summary>
+    /// Gets or sets possible outcomes for this workflow.
+    /// </summary>
+    public ICollection<string> Outcomes { get; set; } = new List<string>();
+    
+    /// <summary>
+    /// Gets or sets metadata about the workflow.
+    /// </summary>
     public WorkflowMetadata WorkflowMetadata { get; set; } = new();
+    
+    /// <summary>
+    /// Gets or sets options for the workflow.
+    /// </summary>
     public WorkflowOptions Options { get; set; } = new();
     
     /// <summary>

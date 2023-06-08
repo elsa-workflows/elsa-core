@@ -46,6 +46,21 @@ public interface IWorkflowBuilder
     /// The workflow variables to store with the workflow being built.
     /// </summary>
     ICollection<Variable> Variables { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the inputs.
+    /// </summary>
+    ICollection<InputDefinition> Inputs { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the outputs.
+    /// </summary>
+    ICollection<OutputDefinition> Outputs { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the outcomes.
+    /// </summary>
+    ICollection<string> Outcomes { get; set; }
 
     /// <summary>
     /// An internal variable used to get and set the result of the workflow.

@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Management.Models;
+namespace Elsa.Workflows.Core.Models;
 
 /// <summary>
 /// Base class for workflow input and output definitions.
