@@ -40,7 +40,7 @@ export const Filter: FunctionalComponent<FilterProps> = ({ pageSizeFilter, order
       </div>
       <div class="tw-flex-1">&nbsp;</div>
 
-      <elsa-label-picker {...labelFilter} />
+      <search-field />
 
       <PageSizeFilter {...pageSizeFilter} />
 
