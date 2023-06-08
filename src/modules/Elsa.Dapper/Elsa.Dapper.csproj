@@ -23,7 +23,7 @@
         <PackageReference Include="FluentMigrator" Version="3.3.2" />
         <PackageReference Include="FluentMigrator.Runner" Version="3.3.2" />
         <PackageReference Include="Microsoft.Data.Sqlite.Core" Version="7.0.5" />
-        <PackageReference Include="System.Data.SqlClient" Version="4.7.0" />
+        <PackageReference Include="System.Data.SqlClient" Version="4.8.5" />
     </ItemGroup>
 
 </Project>
