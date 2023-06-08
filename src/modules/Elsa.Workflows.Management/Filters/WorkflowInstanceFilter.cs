@@ -94,9 +94,9 @@ public class WorkflowInstanceFilter
             query =
                 from instance in query
                 where instance.Name!.Contains(searchTerm)
-                      || instance.Id.Contains(searchTerm)
-                      || instance.DefinitionId.Contains(searchTerm)
-                      || instance.CorrelationId!.Contains(searchTerm)
+                      || instance.Id.Equals(searchTerm)
+                      || instance.DefinitionId.Equals(searchTerm)
+                      || instance.CorrelationId!.Equals(searchTerm)
                 select instance;
         }
 
