@@ -5,7 +5,6 @@ using Elsa.JavaScript.TypeDefinitions.Contracts;
 using Elsa.JavaScript.TypeDefinitions.Models;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Contracts;
-using FastEndpoints;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.Scripting.JavaScript.TypeDefinitions;
