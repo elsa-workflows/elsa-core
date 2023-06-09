@@ -106,7 +106,7 @@ public static class ParameterizedQueryBuilderExtensions
         if (string.IsNullOrWhiteSpace(searchTerm)) return query;
 
         var searchTermLike = $"%{searchTerm}%";
-        query.Sql.AppendLine("and (Name like @SearchTermLike or Id = @SearchTerm or DefinitionId = @SearchTerm)");
+        query.Sql.AppendLine("and (Name like @SearchTermLike or Description like @SearchTermLike or Id = @SearchTerm or DefinitionId = @SearchTerm)");
         query.Parameters.Add("@SearchTerm", searchTerm);
         query.Parameters.Add("@SearchTermLike", searchTermLike);
         return query;
@@ -171,7 +171,7 @@ public static class ParameterizedQueryBuilderExtensions
         if (string.IsNullOrWhiteSpace(searchTerm)) return query;
 
         var searchTermLike = $"%{searchTerm}%";
-        query.Sql.AppendLine("and (Name like @SearchTermLike or ID = @SearchTerm or DefinitionId = @SearchTerm = @SearchTerm or CorrelationId = @SearchTerm)");
+        query.Sql.AppendLine("and (Name like @SearchTermLike or ID = @SearchTerm or DefinitionId = @SearchTerm or DefinitionVersionId = @SearchTerm or CorrelationId = @SearchTerm)");
         query.Parameters.Add("@SearchTerm", searchTerm);
         query.Parameters.Add("@SearchTermLike", searchTermLike);
         return query;
