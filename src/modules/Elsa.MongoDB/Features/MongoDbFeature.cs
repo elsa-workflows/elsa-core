@@ -13,7 +13,6 @@ using Elsa.MongoDB.Modules.Management;
 using Elsa.MongoDB.Modules.Runtime;
 using Elsa.MongoDB.Options;
 using Elsa.MongoDB.Serializers;
-using Elsa.MongoDB.Stores.Management;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Management.Contracts;
@@ -53,17 +52,17 @@ public class MongoDbFeature : FeatureBase
 
         Services.AddSingleton(CreateDatabase);
         
-        RegisterClassMaps();
+        RegisterSerializers();
 
         AddMongoCollection<Application>(Services, "applications");
         AddMongoCollection<User>(Services, "users");
         AddMongoCollection<Role>(Services, "roles");
         AddMongoCollection<Label>(Services, "labels");
-        AddMongoCollection<WorkflowDefinitionLabel>(Services, "workflow-definition-labels");
-        AddMongoCollection<WorkflowDefinition>(Services, "workflow-definitions");
-        AddMongoCollection<WorkflowInstance>(Services, "workflow-instances");
-        AddMongoCollection<WorkflowState>(Services, "workflow-definitions");
-        AddMongoCollection<WorkflowExecutionLogRecord>(Services, "workflow-instances");
+        AddMongoCollection<WorkflowDefinitionLabel>(Services, "workflow_definition_labels");
+        AddMongoCollection<WorkflowDefinition>(Services, "workflow_definitions");
+        AddMongoCollection<WorkflowInstance>(Services, "workflow_instances");
+        AddMongoCollection<WorkflowState>(Services, "workflow_definitions");
+        AddMongoCollection<WorkflowExecutionLogRecord>(Services, "workflow_instances");
         AddMongoCollection<StoredTrigger>(Services, "triggers");
         AddMongoCollection<StoredBookmark>(Services, "bookmarks");
 
@@ -83,18 +82,9 @@ public class MongoDbFeature : FeatureBase
             .AddHealthChecks();
     }
 
-    private void RegisterClassMaps()
+    private void RegisterSerializers()
     {
-        BsonClassMap.RegisterClassMap<HttpEndpointBookmarkPayload>(cm =>
-        {
-            cm.AutoMap();
-            cm.SetDiscriminator("HttpEndpointBookmarkPayload");
-        });
-        
-        BsonClassMap.RegisterClassMap<StoredTrigger>(cm => {
-            cm.AutoMap();
-            cm.GetMemberMap(c => c.Payload).SetSerializer(new PolymorphicSerializer());
-        });
+        BsonSerializer.RegisterSerializer(typeof(object), new PolymorphicSerializer());
     }
 
     private static IMongoDatabase CreateDatabase(IServiceProvider sp)
@@ -103,7 +93,7 @@ public class MongoDbFeature : FeatureBase
         var settings = MongoClientSettings.FromConnectionString(options.ConnectionString);
 
         settings.ClusterConfigurator = cb => cb.Subscribe(new DiagnosticsActivityEventSubscriber());
-        settings.ApplicationName = "elsa-workflows";
+        settings.ApplicationName = "elsa_workflows";
         settings.WriteConcern = WriteConcern.WMajority;
         settings.ReadConcern = ReadConcern.Available;
         settings.ReadPreference = ReadPreference.Nearest;

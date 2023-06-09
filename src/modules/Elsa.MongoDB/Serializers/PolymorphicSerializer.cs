@@ -1,50 +1,50 @@
-using Elsa.Http.Models;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
+using MongoDB.Bson.Serialization.Serializers;
 
 namespace Elsa.MongoDB.Serializers;
 
 public class PolymorphicSerializer : IBsonSerializer<object>
 {
-    private readonly Dictionary<string, IBsonSerializer> _serializers = new Dictionary<string, IBsonSerializer>();
-
-    public PolymorphicSerializer()
-    {
-        _serializers.Add(typeof(HttpEndpointBookmarkPayload).FullName, new HttpEndpointBookmarkPayloadSerializer());
-    }
-
     public Type ValueType => typeof(object);
 
     public object Deserialize(BsonDeserializationContext context, BsonDeserializationArgs args)
     {
-        var typeValue = context.Reader.ReadString();
-        if (_serializers.TryGetValue(typeValue, out var serializer))
+        var reader = context.Reader;
+        var bookmark = reader.GetBookmark();
+        var bsonType = reader.GetCurrentBsonType();
+        if (bsonType == BsonType.Document)
         {
-            return serializer.Deserialize(context, args);
+            var document = BsonDocumentSerializer.Instance.Deserialize(context);
+            if (document.Contains("$type") && document.Contains("$value"))
+            {
+                var typeValue = document["$type"].AsString;
+                var type = Type.GetType(typeValue);
+                var value = BsonSerializer.Deserialize(document["$value"].AsBsonDocument, type);
+                return value;
+            }
         }
-        throw new BsonSerializationException($"No serializer found for type {typeValue}");
+        reader.ReturnToBookmark(bookmark);
+        return BsonValueSerializer.Instance.Deserialize(context);
     }
 
-    public void Serialize(BsonSerializationContext context, BsonSerializationArgs args, object value)
+    public void Serialize(BsonSerializationContext context, BsonSerializationArgs args, object? value)
     {
-        if (_serializers.TryGetValue(value.GetType().FullName, out var serializer))
+        var writer = context.Writer;
+        if (value == null)
         {
-            context.Writer.WriteString(value.GetType().FullName);
-            serializer.Serialize(context, args, value);
+            writer.WriteNull();
         }
         else
         {
-            throw new BsonSerializationException($"No serializer found for type {value.GetType().FullName}");
+            var type = value.GetType();
+            var serializer = BsonSerializer.LookupSerializer(type);
+            writer.WriteStartDocument();
+            writer.WriteName("$type");
+            writer.WriteString(type.AssemblyQualifiedName);
+            writer.WriteName("$value");
+            serializer.Serialize(context, value);
+            writer.WriteEndDocument();
         }
-    }
-
-    object IBsonSerializer.Deserialize(BsonDeserializationContext context, BsonDeserializationArgs args)
-    {
-        return Deserialize(context, args);
-    }
-
-    void IBsonSerializer.Serialize(BsonSerializationContext context, BsonSerializationArgs args, object value)
-    {
-        Serialize(context, args, value);
     }
 }
