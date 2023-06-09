@@ -47,6 +47,7 @@ public class JavaScriptFeature : FeatureBase
             .AddSingleton<ITypeDefinitionDocumentRenderer, TypeDefinitionDocumentRenderer>()
             .AddSingleton<ITypeAliasRegistry, TypeAliasRegistry>()
             .AddFunctionDefinitionProvider<CommonFunctionsDefinitionProvider>()
+            .AddFunctionDefinitionProvider<ActivityOutputFunctionsDefinitionProvider>()
             .AddTypeDefinitionProvider<CommonTypeDefinitionProvider>()
             .AddTypeDefinitionProvider<VariableTypeDefinitionProvider>()
             ;

@@ -346,7 +346,7 @@ public static class ActivityExecutionContextExtensions
     }
     
     /// <summary>
-    /// Returns a the first context that is associated with a <see cref="IVariableContainer"/>.
+    /// Returns the first context that is associated with a <see cref="IVariableContainer"/>.
     /// </summary>
     public static ActivityExecutionContext? FindParentWithVariableContainer(this ActivityExecutionContext context)
     {

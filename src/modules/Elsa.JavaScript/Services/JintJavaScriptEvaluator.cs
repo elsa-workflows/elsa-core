@@ -4,9 +4,11 @@ using System.Text.RegularExpressions;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.JavaScript.Contracts;
+using Elsa.JavaScript.Extensions;
 using Elsa.JavaScript.Notifications;
 using Elsa.JavaScript.Options;
 using Elsa.Mediator.Contracts;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Humanizer;
 using Jint;
@@ -63,9 +65,14 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         engine.SetValue("setVariable", (Action<string, object>)((id, value) => context.SetVariable(id, value)));
         engine.SetValue("getVariable", (Func<string, object?>)(id => context.GetVariable(id)));
         engine.SetValue("getInput", (Func<string, object?>)(name => context.GetWorkflowExecutionContext().Input.GetValue(name)));
+        engine.SetValue("getOutputFrom", (Func<string, string?, object?>)((activityIdOrNodeId, outputName) => GetOutput(context, activityIdOrNodeId, outputName)));
+        engine.SetValue("getLastResult", (Func<object?>)(() => GetLastResult(context)));
 
         // Create variable getters and setters for each variable.
         CreateVariableAccessors(engine, context);
+
+        // Create output getters for each activity.
+        CreateOutputAccessors(engine, context);
 
         engine.SetValue("isNullOrWhiteSpace", (Func<string, bool>)(value => string.IsNullOrWhiteSpace(value)));
         engine.SetValue("isNullOrEmpty", (Func<string, bool>)(value => string.IsNullOrEmpty(value)));
@@ -87,6 +94,19 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         return engine;
     }
 
+    private static object? GetLastResult(ExpressionExecutionContext context)
+    {
+        var workflowExecutionContext = context.GetWorkflowExecutionContext();
+        return workflowExecutionContext.GetLastActivityResult();
+    }
+
+    private static object? GetOutput(ExpressionExecutionContext context, string activityId, string? outputName)
+    {
+        var workflowExecutionContext = context.GetWorkflowExecutionContext();
+        var outputRegister = workflowExecutionContext.GetActivityOutputRegister();
+        return outputRegister.FindOutputByActivityId(activityId, outputName);
+    }
+
     private static void CreateVariableAccessors(Engine engine, ExpressionExecutionContext context)
     {
         var variableNames = GetVariableNamesInScope(context).ToList();
@@ -99,7 +119,7 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         }
     }
 
-    private static IEnumerable<string> GetVariableNamesInScope(ExpressionExecutionContext context) => 
+    private static IEnumerable<string> GetVariableNamesInScope(ExpressionExecutionContext context) =>
         EnumerateVariablesInScope(context)
             .Select(x => x.Name)
             .Where(x => !string.IsNullOrWhiteSpace(x))
@@ -142,6 +162,26 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
                 yield return variable;
 
             currentScope = currentScope.ParentContext;
+        }
+    }
+
+    private static void CreateOutputAccessors(Engine engine, ExpressionExecutionContext context)
+    {
+        // Select activities with outputs.
+        var activityExecutionContext = context.GetActivityExecutionContext();
+        var activitiesWithOutputs = activityExecutionContext.GetActivitiesWithOutputs();
+
+        foreach (var activityWithOutput in activitiesWithOutputs)
+        {
+            var activity = activityWithOutput.Activity;
+            var activityDescriptor = activityWithOutput.ActivityDescriptor;
+
+            foreach (var output in activityDescriptor.Outputs)
+            {
+                var outputPascalName = output.Name.Pascalize();
+                var activityIdPascalName = activity.Id.Pascalize();
+                engine.SetValue($"get{outputPascalName}From{activityIdPascalName}", (Func<object?>)(() => GetOutput(context, activity.Id, output.Name)));
+            }
         }
     }
 

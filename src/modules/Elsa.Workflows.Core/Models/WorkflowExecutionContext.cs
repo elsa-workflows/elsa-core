@@ -5,6 +5,7 @@ using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
 using System.Collections.ObjectModel;
+using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Core.Models;
 
@@ -19,8 +20,11 @@ public record ActivityCompletionCallbackEntry(ActivityExecutionContext Owner, Ac
 /// <summary>
 /// Provides context to the currently executing workflow.
 /// </summary>
+[PublicAPI]
 public class WorkflowExecutionContext : IExecutionContext
 {
+    private static readonly object ActivityOutputRegistryKey = new();
+    private static readonly object LastActivityResultKey = new();
     internal static ValueTask Complete(ActivityExecutionContext context) => context.CompleteActivityAsync();
     private readonly IServiceProvider _serviceProvider;
     private readonly IHasher _hasher;
@@ -358,6 +362,27 @@ public class WorkflowExecutionContext : IExecutionContext
     }
 
     /// <summary>
+    /// Returns a register of recorded activity output.
+    /// </summary>
+    public ActivityOutputRegister GetActivityOutputRegister() => TransientProperties.GetOrAdd(ActivityOutputRegistryKey, () => new ActivityOutputRegister());
+
+    /// <summary>
+    /// Returns the last activity result.
+    /// </summary>
+    public object? GetLastActivityResult() => TransientProperties.TryGetValue(LastActivityResultKey, out var value) ? value : default;
+
+    /// <summary>
+    /// Cancels the specified activity. 
+    /// </summary>
+    public async Task CancelActivityAsync(IActivity activity)
+    {
+        var activityExecutionContext = ActivityExecutionContexts.FirstOrDefault(x => x.Activity == activity);
+
+        if (activityExecutionContext != null)
+            await activityExecutionContext.CancelActivityAsync();
+    }
+
+    /// <summary>
     /// Removes the specified <see cref="ActivityExecutionContext"/>.
     /// </summary>
     internal async Task RemoveActivityExecutionContextAsync(ActivityExecutionContext context)
@@ -387,14 +412,19 @@ public class WorkflowExecutionContext : IExecutionContext
     internal void AddActivityExecutionContext(ActivityExecutionContext context) => _activityExecutionContexts.Add(context);
 
     /// <summary>
-    /// Cancels the specified activity. 
+    /// Records the output of the specified activity into the current workflow execution context. 
     /// </summary>
-    public async Task CancelActivityAsync(IActivity activity)
+    /// <param name="activityExecutionContext">The <see cref="ActivityExecutionContext"/> of the activity.</param>
+    /// <param name="outputName">The name of the output.</param>
+    /// <param name="value">The value of the output.</param>
+    internal void RecordActivityOutput(ActivityExecutionContext activityExecutionContext, string? outputName, object? value)
     {
-        var activityExecutionContext = ActivityExecutionContexts.FirstOrDefault(x => x.Activity == activity);
+        var register = GetActivityOutputRegister();
+        register.Record(activityExecutionContext, outputName, value);
 
-        if (activityExecutionContext != null)
-            await activityExecutionContext.CancelActivityAsync();
+        // If the output name is the default output name, record the value as the last activity result.
+        if (outputName == ActivityOutputRegister.DefaultOutputName)
+            TransientProperties[LastActivityResultKey] = value!;
     }
 
     private WorkflowStatus GetMainStatus(WorkflowSubStatus subStatus) =>
