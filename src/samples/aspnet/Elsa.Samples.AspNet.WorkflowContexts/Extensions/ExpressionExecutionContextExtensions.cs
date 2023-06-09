@@ -1,6 +1,7 @@
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Samples.AspNet.WorkflowContexts.Contracts;
+using Elsa.Samples.AspNet.WorkflowContexts.Entities;
 using Elsa.Samples.AspNet.WorkflowContexts.Providers;
 
 namespace Elsa.Samples.AspNet.WorkflowContexts.Extensions;

@@ -1,3 +1,3 @@
-namespace Elsa.Samples.AspNet.WorkflowContexts.Contracts;
+namespace Elsa.Samples.AspNet.WorkflowContexts.Entities;
 
 public class Order{}
