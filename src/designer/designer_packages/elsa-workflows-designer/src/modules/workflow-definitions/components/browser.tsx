@@ -2,7 +2,8 @@ import {Component, Event, EventEmitter, h, Host, Method, Prop, State, Watch} fro
 import {OrderBy, PagedList, VersionOptions} from '../../../models';
 import {Container} from 'typedi';
 import {DeleteIcon, EditIcon, PublishIcon, UnPublishIcon} from '../../../components/icons/tooling';
-import {Filter, FilterProps} from './filter';
+import { Search } from "./search";
+import { Filter, FilterProps } from './filter';
 import {PagerData} from '../../../components/shared/pager/pager';
 import {updateSelectedWorkflowDefinitions} from '../services/utils';
 import {WorkflowDefinitionSummary} from "../models/entities";
@@ -43,6 +44,7 @@ export class WorkflowDefinitionBrowser {
   @State() private orderBy?: WorkflowDefinitionsOrderBy;
   @State() private labels?: string[];
   @State() private selectAllChecked: boolean;
+  @State() private searchTerm?: string;
 
   async componentWillLoad() {
     const persistedRequest = getRequest();
@@ -59,6 +61,13 @@ export class WorkflowDefinitionBrowser {
   private onNewDefinitionClick = async () => {
     this.newWorkflowDefinitionSelected.emit();
   };
+
+  private onSearch = async (term: string) => {
+    this.searchTerm = term;
+    this.resetPagination();
+    await this.loadWorkflowDefinitions();
+  };
+
 
   private async onPublishClick(e: MouseEvent, workflowDefinition: WorkflowDefinitionSummary) {
     await this.api.publish(workflowDefinition);
@@ -146,6 +155,7 @@ export class WorkflowDefinitionBrowser {
     const materializerName = 'Json';
 
     const request: ListWorkflowDefinitionsRequest = {
+      searchTerm: this.searchTerm,
       materializerName,
       page: this.currentPage,
       pageSize: this.currentPageSize,
@@ -252,6 +262,8 @@ export class WorkflowDefinitionBrowser {
       <Host class="tw-block">
         <div class="tw-pt-4">
           <h2 class="tw-text-lg tw-font-medium tw-ml-4 tw-mb-2">Workflow Definitions</h2>
+
+          <Search onSearch={this.onSearch} />
           <Filter {...filterProps} />
           <div class="tw-align-middle tw-inline-block tw-min-w-full tw-border-b tw-border-gray-200">
             <table class="default-table">

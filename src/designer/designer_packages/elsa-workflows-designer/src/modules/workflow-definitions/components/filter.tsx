@@ -40,8 +40,6 @@ export const Filter: FunctionalComponent<FilterProps> = ({ pageSizeFilter, order
       </div>
       <div class="tw-flex-1">&nbsp;</div>
 
-      <search-field />
-
       <PageSizeFilter {...pageSizeFilter} />
 
       <OrderByFilter {...orderByFilter} />
