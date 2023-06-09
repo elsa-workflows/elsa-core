@@ -1,7 +1,6 @@
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.MongoDB.Common;
-using Elsa.MongoDB.Stores.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Features;
 using JetBrains.Annotations;

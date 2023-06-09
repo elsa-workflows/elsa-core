@@ -1,10 +1,8 @@
-using System.Linq.Expressions;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.MongoDB.Common;
 using Elsa.MongoDB.Helpers;
-using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
@@ -13,29 +11,23 @@ using MongoDB.Driver;
 using MongoDB.Driver.Linq;
 using Open.Linq.AsyncExtensions;
 
-namespace Elsa.MongoDB.Stores.Management;
+namespace Elsa.MongoDB.Modules.Management;
 
 /// <inheritdoc />
 public class MongoWorkflowDefinitionStore : IWorkflowDefinitionStore
 {
     private readonly MongoStore<WorkflowDefinition> _mongoStore;
     private readonly IWorkflowInstanceStore _workflowInstanceStore;
-    private readonly IActivitySerializer _activitySerializer;
-    private readonly IPayloadSerializer _payloadSerializer;
 
     /// <summary>
     /// Constructor.
     /// </summary>
     public MongoWorkflowDefinitionStore(
         MongoStore<WorkflowDefinition> mongoStore,
-        IWorkflowInstanceStore workflowInstanceStore,
-        IActivitySerializer activitySerializer,
-        IPayloadSerializer payloadSerializer)
+        IWorkflowInstanceStore workflowInstanceStore)
     {
         _mongoStore = mongoStore;
         _workflowInstanceStore = workflowInstanceStore;
-        _activitySerializer = activitySerializer;
-        _payloadSerializer = payloadSerializer;
     }
 
     /// <inheritdoc />

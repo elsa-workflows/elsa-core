@@ -1,8 +1,6 @@
 using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.MongoDB.Common;
-using Elsa.MongoDB.Extensions;
-using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using MongoDB.Driver.Linq;
@@ -14,15 +12,13 @@ namespace Elsa.MongoDB.Modules.Runtime;
 public class MongoWorkflowExecutionLogStore : IWorkflowExecutionLogStore
 {
     private readonly MongoStore<WorkflowExecutionLogRecord> _mongoStore;
-    private readonly IPayloadSerializer _serializer;
 
     /// <summary>
     /// Constructor
     /// </summary>
-    public MongoWorkflowExecutionLogStore(MongoStore<WorkflowExecutionLogRecord> mongoStore, IPayloadSerializer serializer)
+    public MongoWorkflowExecutionLogStore(MongoStore<WorkflowExecutionLogRecord> mongoStore)
     {
         _mongoStore = mongoStore;
-        _serializer = serializer;
     }
 
     /// <inheritdoc />

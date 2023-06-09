@@ -13,15 +13,13 @@ namespace Elsa.MongoDB.Modules.Runtime;
 public class MongoBookmarkStore : IBookmarkStore
 {
     private readonly MongoStore<StoredBookmark> _mongoStore;
-    private readonly IPayloadSerializer _serializer;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public MongoBookmarkStore(MongoStore<StoredBookmark> mongoStore, IPayloadSerializer serializer)
+    public MongoBookmarkStore(MongoStore<StoredBookmark> mongoStore)
     {
         _mongoStore = mongoStore;
-        _serializer = serializer;
     }
 
     /// <inheritdoc />

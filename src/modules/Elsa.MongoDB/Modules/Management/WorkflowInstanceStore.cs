@@ -20,15 +20,13 @@ namespace Elsa.MongoDB.Modules.Management;
 public class MongoWorkflowInstanceStore : IWorkflowInstanceStore
 {
     private readonly MongoStore<WorkflowInstance> _mongoStore;
-    private readonly IWorkflowStateSerializer _workflowStateSerializer;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public MongoWorkflowInstanceStore(MongoStore<WorkflowInstance> mongoStore, IWorkflowStateSerializer workflowStateSerializer)
+    public MongoWorkflowInstanceStore(MongoStore<WorkflowInstance> mongoStore)
     {
         _mongoStore = mongoStore;
-        _workflowStateSerializer = workflowStateSerializer;
     }
 
     /// <inheritdoc />

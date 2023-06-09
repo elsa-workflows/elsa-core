@@ -62,4 +62,14 @@ public class WorkflowState : Entity
     /// A global property bag that contains properties set by application code and/or activities.
     /// </summary>
     public IDictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
+    
+    /// <summary>
+    /// The created time of the workflow.
+    /// </summary>
+    public DateTimeOffset CreatedAt { get; set; }
+    
+    /// <summary>
+    /// The last updated time of the workflow.
+    /// </summary>
+    public DateTimeOffset UpdatedAt { get; set; }
 }

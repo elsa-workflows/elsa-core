@@ -1,6 +1,5 @@
 using Elsa.Common.Contracts;
 using Elsa.MongoDB.Common;
-using Elsa.MongoDB.Extensions;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.State;
@@ -13,7 +12,6 @@ namespace Elsa.MongoDB.Modules.Runtime;
 /// <inheritdoc />
 public class MongoWorkflowStateStore : IWorkflowStateStore
 {
-    private readonly IWorkflowStateSerializer _workflowStateSerializer;
     private readonly MongoStore<WorkflowState> _mongoStore;
     private readonly ISystemClock _systemClock;
 
@@ -22,10 +20,8 @@ public class MongoWorkflowStateStore : IWorkflowStateStore
     /// </summary>
     public MongoWorkflowStateStore(
         MongoStore<WorkflowState> mongoStore,
-        IWorkflowStateSerializer workflowStateSerializer,
         ISystemClock systemClock)
     {
-        _workflowStateSerializer = workflowStateSerializer;
         _mongoStore = mongoStore;
         _systemClock = systemClock;
     }
@@ -36,12 +32,11 @@ public class MongoWorkflowStateStore : IWorkflowStateStore
         var now = _systemClock.UtcNow;
         
         var currentState = await _mongoStore.FindAsync(x => x.Id == id, cancellationToken);
-        var document = state;
-        
-        // document.CreatedAt = currentState is null ? now : currentState.CreatedAt == DateTimeOffset.MinValue ? now : currentState.CreatedAt;
-        // document.UpdatedAt = now;
 
-        await _mongoStore.SaveAsync(document, cancellationToken: cancellationToken);
+        state.CreatedAt = currentState is null || currentState.CreatedAt == default ? now : currentState.CreatedAt;
+        state.UpdatedAt = now;
+
+        await _mongoStore.SaveAsync(state, cancellationToken: cancellationToken);
     }
 
     /// <inheritdoc />

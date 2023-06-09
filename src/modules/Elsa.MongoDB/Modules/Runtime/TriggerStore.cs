@@ -10,15 +10,13 @@ namespace Elsa.MongoDB.Modules.Runtime;
 public class MongoTriggerStore : ITriggerStore
 {
     private readonly MongoStore<StoredTrigger> _mongoStore;
-    private readonly IPayloadSerializer _serializer;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public MongoTriggerStore(MongoStore<StoredTrigger> mongoStore, IPayloadSerializer serializer)
+    public MongoTriggerStore(MongoStore<StoredTrigger> mongoStore)
     {
         _mongoStore = mongoStore;
-        _serializer = serializer;
     }
 
     /// <inheritdoc />

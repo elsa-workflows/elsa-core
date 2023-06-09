@@ -26,18 +26,16 @@ public class Configurations :
         builder.Ignore(x => x.Fault);
         builder.Ignore(x => x.Output);
         builder.Property<string>("Data");
-        builder.Property<DateTimeOffset>("CreatedAt");
-        builder.Property<DateTimeOffset>("UpdatedAt");
         builder.Property(x => x.Status).HasConversion<EnumToStringConverter<WorkflowStatus>>();
         builder.Property(x => x.SubStatus).HasConversion<EnumToStringConverter<WorkflowSubStatus>>();
         builder.HasIndex(x => x.CorrelationId).HasDatabaseName($"IX_{nameof(WorkflowState)}_{nameof(WorkflowState.CorrelationId)}");
-        builder.HasIndex(x=>x.DefinitionId).HasDatabaseName($"IX_{nameof(WorkflowState)}_{nameof(WorkflowState.DefinitionId)}");
+        builder.HasIndex(x=> x.DefinitionId).HasDatabaseName($"IX_{nameof(WorkflowState)}_{nameof(WorkflowState.DefinitionId)}");
         builder.HasIndex(x => new { x.Status, x.SubStatus, x.DefinitionId, x.DefinitionVersion }).HasDatabaseName($"IX_{nameof(WorkflowState)}_{nameof(WorkflowState.Status)}_{nameof(WorkflowState.SubStatus)}_{nameof(WorkflowState.DefinitionId)}_{nameof(WorkflowState.DefinitionVersion)}");
         builder.HasIndex(x => new { x.Status, x.SubStatus }).HasDatabaseName($"IX_{nameof(WorkflowState)}_{nameof(WorkflowState.Status)}_{nameof(WorkflowState.SubStatus)}");
         builder.HasIndex(x => new { x.Status, x.DefinitionId}).HasDatabaseName($"IX_{nameof(WorkflowState)}_{nameof(WorkflowState.Status)}_{nameof(WorkflowState.DefinitionId)}");
         builder.HasIndex(x => new { x.Status, x.SubStatus }).HasDatabaseName($"IX_{nameof(WorkflowState)}_{nameof(WorkflowState.Status)}_{nameof(WorkflowState.SubStatus)}");
-        builder.HasIndex("CreatedAt").HasDatabaseName($"IX_{nameof(WorkflowState)}_CreatedAt");
-        builder.HasIndex("UpdatedAt").HasDatabaseName($"IX_{nameof(WorkflowState)}_UpdatedAt");
+        builder.HasIndex(x => x.CreatedAt).HasDatabaseName($"IX_{nameof(WorkflowState)}_{nameof(WorkflowState.CreatedAt)}");
+        builder.HasIndex(x => x.UpdatedAt).HasDatabaseName($"IX_{nameof(WorkflowState)}_{nameof(WorkflowState.UpdatedAt)}");
     }
 
     /// <inheritdoc />
