@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Runtime.CompilerServices;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
@@ -260,6 +261,8 @@ public class ActivityExecutionContext : IExecutionContext
     public IEnumerable<T> GetServices<T>() where T : notnull => WorkflowExecutionContext.GetServices<T>();
     public object? GetService(Type serviceType) => WorkflowExecutionContext.GetService(serviceType);
     public T? Get<T>(Input<T>? input) => input == null ? default : Get<T>(input.MemoryBlockReference());
+    public T? Get<T>(Output<T>? output) => output == null ? default : Get<T>(output.MemoryBlockReference());
+    public object? Get(Output? output) => output == null ? default : Get(output.MemoryBlockReference());
 
     public object? Get(MemoryBlockReference blockReference)
     {
@@ -274,8 +277,16 @@ public class ActivityExecutionContext : IExecutionContext
     }
 
     public void Set(MemoryBlockReference blockReference, object? value, Action<MemoryBlock>? configure = default) => ExpressionExecutionContext.Set(blockReference, value, configure);
-    public void Set(Output? output, object? value) => ExpressionExecutionContext.Set(output, value);
-    public void Set<T>(Output<T>? output, T? value) => ExpressionExecutionContext.Set(output, value);
+    public void Set<T>(Output<T>? output, T? value, [CallerArgumentExpression("output")] string? outputName = default) => Set((Output?)output, value, outputName);
+    
+    public void Set(Output? output, object? value, [CallerArgumentExpression("output")] string? outputName = default)
+    {
+        // Store the value in the expression execution memory block.
+        ExpressionExecutionContext.Set(output, value);
+        
+        // Also store the value in the workflow execution transient activity output register.
+        WorkflowExecutionContext.RecordActivityOutput(this, outputName, value);
+    }
 
     /// <summary>
     /// Stops further execution of the workflow.

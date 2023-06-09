@@ -43,7 +43,7 @@ internal class ConfigureLiquidEngine : INotificationHandler<RenderingLiquidTempl
         memberAccessStrategy.Register<ExpandoObject>();
         memberAccessStrategy.Register<LiquidPropertyAccessor, FluidValue>((x, name) => x.GetValueAsync(name));
         memberAccessStrategy.Register<ExpandoObject, object>((x, name) => ((IDictionary<string, object>)x!)[name]);
-        memberAccessStrategy.Register<ExpressionExecutionContext, LiquidPropertyAccessor>("Variables", x => new LiquidPropertyAccessor(name => ToFluidValue(x, name, options)));
+        memberAccessStrategy.Register<ExpressionExecutionContext, LiquidPropertyAccessor>("Variables", x => new LiquidPropertyAccessor(name => GetVariable(x, name, options)));
         memberAccessStrategy.Register<ExpressionExecutionContext, string?>("CorrelationId", x => x.GetWorkflowExecutionContext().CorrelationId);
 
         if (_fluidOptions.AllowConfigurationAccess)
@@ -62,7 +62,7 @@ internal class ConfigureLiquidEngine : INotificationHandler<RenderingLiquidTempl
     private ConfigurationSectionWrapper GetConfigurationValue(string name) => new(_configuration.GetSection(name));
     private Task<FluidValue> ToFluidValue(object? input, TemplateOptions options) => Task.FromResult(FluidValue.Create(input, options));
 
-    private Task<FluidValue> ToFluidValue(ExpressionExecutionContext context, string key, TemplateOptions options)
+    private Task<FluidValue> GetVariable(ExpressionExecutionContext context, string key, TemplateOptions options)
     {
         var value = GetVariableInScope(context, key);
         return Task.FromResult(value == null ? NilValue.Instance : FluidValue.Create(value, options));
