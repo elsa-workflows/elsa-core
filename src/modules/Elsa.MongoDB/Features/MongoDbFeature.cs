@@ -61,8 +61,8 @@ public class MongoDbFeature : FeatureBase
         AddMongoCollection<WorkflowDefinitionLabel>(Services, "workflow_definition_labels");
         AddMongoCollection<WorkflowDefinition>(Services, "workflow_definitions");
         AddMongoCollection<WorkflowInstance>(Services, "workflow_instances");
-        AddMongoCollection<WorkflowState>(Services, "workflow_definitions");
-        AddMongoCollection<WorkflowExecutionLogRecord>(Services, "workflow_instances");
+        AddMongoCollection<WorkflowState>(Services, "workflow_states");
+        AddMongoCollection<WorkflowExecutionLogRecord>(Services, "workflow_execution_logs");
         AddMongoCollection<StoredTrigger>(Services, "triggers");
         AddMongoCollection<StoredBookmark>(Services, "bookmarks");
 
