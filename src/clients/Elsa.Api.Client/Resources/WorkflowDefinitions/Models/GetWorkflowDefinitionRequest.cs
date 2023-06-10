@@ -1,7 +1,14 @@
+using Refit;
+
 namespace Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 
+/// <summary>
+/// Represents a request to get a workflow definition.
+/// </summary>
 public class GetWorkflowDefinitionRequest
 {
-    public string DefinitionId { get; set; } = default!;
-    public string? VersionOptions { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether the response should include the root activity of composite activities.
+    /// </summary>
+    public bool IncludeCompositeRoot { get; set; }
 }
