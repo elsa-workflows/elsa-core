@@ -57,6 +57,7 @@ public class InputDescriptor : PropertyDescriptor
     /// True if the property is wrapped with an <see cref="Input{T}"/> type, false otherwise.
     /// </summary>
     public bool IsWrapped { get; set; }
+    
     /// <summary>
     /// A string value that hints at what UI control might be used to render in a UI tool.  
     /// </summary>
