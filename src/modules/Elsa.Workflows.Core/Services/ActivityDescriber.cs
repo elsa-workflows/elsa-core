@@ -53,14 +53,14 @@ public class ActivityDescriber : IActivityDescriber
             {
                 Name = portAttr?.Name ?? prop.Name,
                 DisplayName = portAttr?.DisplayName ?? portAttr?.Name ?? prop.Name,
-                Mode = PortMode.Embedded,
+                Type = PortType.Embedded,
                 IsBrowsable = portAttr != null && (portBrowsableAttr == null || portBrowsableAttr.Browsable)
             };
 
         var flowNodeAttr = activityType.GetCustomAttribute<FlowNodeAttribute>();
         var flowPorts = flowNodeAttr?.Outcomes.Select(x => new Port
         {
-            Mode = PortMode.Port,
+            Type = PortType.Flow,
             Name = x,
             DisplayName = x
         }).ToDictionary(x => x.Name) ?? new Dictionary<string, Port>();
