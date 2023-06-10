@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import {Service} from "typedi";
-import {Activity, Port, PortMode} from "../../../models";
+import {Activity, Port, PortType} from "../../../models";
 import {PortProvider, PortProviderContext} from "../../../services";
 import {HttpStatusCodeCase, SendHttpRequest} from "./models";
 
@@ -10,12 +10,12 @@ export class HttpRequestPortProvider implements PortProvider {
   getOutboundPorts(context: PortProviderContext): Array<Port> {
     const activity = context.activity as SendHttpRequest;
 
-    if(activity == null)
+    if (activity == null)
       return [];
 
-    const defaultPort = {name: 'unmatchedStatusCode', displayName: 'Unmatched status code', mode: PortMode.Embedded}; // Hide the port from the designer until the editor uI is finished.
+    const defaultPort: Port = {name: 'unmatchedStatusCode', displayName: 'Unmatched status code', type: PortType.Embedded}; // Hide the port from the designer until the editor uI is finished.
     const statusCodes = activity.expectedStatusCodes ?? [];
-    const ports = statusCodes.map(x => ({name: x.statusCode.toString(), displayName: x.statusCode.toString(), mode: PortMode.Embedded}));
+    const ports: Port[] = statusCodes.map(x => ({name: x.statusCode.toString(), displayName: x.statusCode.toString(), type: PortType.Embedded}));
 
     return [...ports, defaultPort];
   }
@@ -23,7 +23,7 @@ export class HttpRequestPortProvider implements PortProvider {
   resolvePort(portName: string, context: PortProviderContext): Activity | Array<Activity> {
     const activity = context.activity as SendHttpRequest;
 
-    if(portName == 'unmatchedStatusCode')
+    if (portName == 'unmatchedStatusCode')
       return activity.unmatchedStatusCode;
 
     const expectedStatusCodes: Array<HttpStatusCodeCase> = activity.expectedStatusCodes ?? [];
@@ -32,9 +32,9 @@ export class HttpRequestPortProvider implements PortProvider {
   }
 
   assignPort(portName: string, activity: Activity, context: PortProviderContext) {
-    const sendHttpRequestActivity  = context.activity as SendHttpRequest;
+    const sendHttpRequestActivity = context.activity as SendHttpRequest;
 
-    if(portName == 'unmatchedStatusCode') {
+    if (portName == 'unmatchedStatusCode') {
       sendHttpRequestActivity.unmatchedStatusCode = activity;
       return;
     }
@@ -42,7 +42,7 @@ export class HttpRequestPortProvider implements PortProvider {
     const statusCodes = sendHttpRequestActivity.expectedStatusCodes ?? [];
     const matchingStatusCode = statusCodes.find(x => x.statusCode.toString() === portName);
 
-    if(!matchingStatusCode)
+    if (!matchingStatusCode)
       return;
 
     matchingStatusCode.activity = activity;

@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Core.Models;
+namespace Elsa.Api.Client.Resources.ActivityDescriptors.Models;
 
 /// <summary>
 /// Represents a port on an activity.

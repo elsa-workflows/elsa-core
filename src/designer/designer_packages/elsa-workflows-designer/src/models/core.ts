@@ -116,13 +116,13 @@ export interface OutputDescriptor extends PropertyDescriptor {
 export interface Port {
   name: string;
   displayName: string;
-  mode: PortMode;
+  type: PortType;
   isBrowsable?: boolean;
 }
 
-export enum PortMode {
+export enum PortType {
   Embedded = 'Embedded',
-  Port = 'Port'
+  Flow = 'Flow'
 }
 
 export interface CompletionCallbackState {
