@@ -63,6 +63,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                     b.Property<string>("Name")
                         .HasColumnType("text");
 
+                    b.Property<string>("ProviderName")
+                        .HasColumnType("text");
+
                     b.Property<string>("StringData")
                         .HasColumnType("text");
 
@@ -82,6 +85,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
 
                     b.HasIndex("Name")
                         .HasDatabaseName("IX_WorkflowDefinition_Name");
+
+                    b.HasIndex("UsableAsActivity")
+                        .HasDatabaseName("IX_WorkflowDefinition_UsableAsActivity");
 
                     b.HasIndex("Version")
                         .HasDatabaseName("IX_WorkflowDefinition_Version");

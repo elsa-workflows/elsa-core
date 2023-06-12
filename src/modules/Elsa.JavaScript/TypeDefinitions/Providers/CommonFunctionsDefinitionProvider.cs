@@ -80,7 +80,7 @@ internal class CommonFunctionsDefinitionProvider : FunctionDefinitionProvider
             .ReturnType("string"));
         
         // Variable getter and setters.
-        foreach (var variable in context.WorkflowDefinition.Variables)
+        foreach (var variable in context.Workflow.Variables)
         {
             var pascalName = variable.Name.Pascalize();
             var variableType = variable.GetVariableType();
@@ -91,17 +91,6 @@ internal class CommonFunctionsDefinitionProvider : FunctionDefinitionProvider
             
             // set{Variable}.
             yield return CreateFunctionDefinition(builder => builder.Name($"set{pascalName}").Parameter("value", typeAlias));
-        }
-        
-        // Input argument getters.
-        foreach (var input in context.WorkflowDefinition.Inputs)
-        {
-            var pascalName = input.Name.Pascalize();
-            var variableType = input.Type;
-            var typeAlias = _typeAliasRegistry.TryGetAlias(variableType, out var alias) ? alias : "any";
-
-            // get{Input}.
-            yield return CreateFunctionDefinition(builder => builder.Name($"get{pascalName}").ReturnType(typeAlias));
         }
     }
 }

@@ -7,7 +7,6 @@ using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Models;
-using Elsa.Workflows.Runtime.Contracts;
 using Humanizer;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Export;
@@ -69,11 +68,11 @@ public class Export : ElsaEndpoint<Request>
             definition.Outputs,
             definition.Outcomes,
             definition.CustomProperties,
-            definition.UsableAsActivity,
             definition.IsReadonly,
             definition.IsLatest,
             definition.IsPublished,
             definition.Options,
+            default,
             workflow.Root);
 
         var serializerOptions = _serializer.CreateOptions();

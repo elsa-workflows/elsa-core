@@ -1,0 +1,109 @@
+{
+  "id": "fec9de7279a440f693a5901507140a77",
+  "definitionId": "86e355d944764f15872f8cfdcc1e9cec",
+  "name": "MoleculeActivity",
+  "createdAt": "2023-06-01T14:05:32.409643+00:00",
+  "version": 1,
+  "variables": [],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [],
+  "customProperties": {},
+  "isLatest": true,
+  "isPublished": true,
+  "options": {
+    "usableAsActivity": true,
+    "autoUpdateConsumingWorkflows": true
+  },
+  "root": {
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "id": "Flowchart1",
+    "metadata": {},
+    "applicationProperties": {
+      "NotFoundConnectionsKey": [],
+      "CanStartWorkflow": false,
+      "RunAsynchronously": false
+    },
+    "start": "AtomActivity1",
+    "activities": [
+      {
+        "workflowDefinitionId": "40a40a0cdf5448acbc899391b2c50458",
+        "workflowDefinitionVersionId": "82b53ccf2a4e4ced966b85fb3cc13eed",
+        "latestAvailablePublishedVersion": 1,
+        "latestAvailablePublishedVersionId": "82b53ccf2a4e4ced966b85fb3cc13eed",
+        "id": "AtomActivity1",
+        "type": "AtomActivity",
+        "version": 1,
+        "customProperties": {
+          "CanStartWorkflow": false,
+          "RunAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 2228,
+              "y": 2418
+            }
+          }
+        }
+      },
+      {
+        "workflowDefinitionId": "40a40a0cdf5448acbc899391b2c50458",
+        "workflowDefinitionVersionId": "82b53ccf2a4e4ced966b85fb3cc13eed",
+        "latestAvailablePublishedVersion": 1,
+        "latestAvailablePublishedVersionId": "82b53ccf2a4e4ced966b85fb3cc13eed",
+        "id": "AtomActivity2",
+        "type": "AtomActivity",
+        "version": 1,
+        "customProperties": {
+          "CanStartWorkflow": false,
+          "RunAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 2458,
+              "y": 2487
+            }
+          }
+        }
+      },
+      {
+        "workflowDefinitionId": "40a40a0cdf5448acbc899391b2c50458",
+        "workflowDefinitionVersionId": "82b53ccf2a4e4ced966b85fb3cc13eed",
+        "latestAvailablePublishedVersion": 1,
+        "latestAvailablePublishedVersionId": "82b53ccf2a4e4ced966b85fb3cc13eed",
+        "id": "AtomActivity3",
+        "type": "AtomActivity",
+        "version": 1,
+        "customProperties": {
+          "CanStartWorkflow": false,
+          "RunAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 2660,
+              "y": 2560
+            }
+          }
+        }
+      }
+    ],
+    "connections": [
+      {
+        "source": "AtomActivity1",
+        "target": "AtomActivity2",
+        "sourcePort": "Done",
+        "targetPort": "In"
+      },
+      {
+        "source": "AtomActivity2",
+        "target": "AtomActivity3",
+        "sourcePort": "Done",
+        "targetPort": "In"
+      }
+    ]
+  }
+}

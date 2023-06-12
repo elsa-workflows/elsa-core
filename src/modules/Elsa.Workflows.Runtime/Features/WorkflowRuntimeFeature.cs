@@ -1,3 +1,4 @@
+using System.Reflection;
 using Elsa.Common.Features;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
@@ -8,7 +9,6 @@ using Elsa.Workflows.Core.Notifications;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Notifications;
-using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Runtime.ActivationValidators;
 using Elsa.Workflows.Runtime.Commands;
 using Elsa.Workflows.Runtime.Contracts;
@@ -17,6 +17,7 @@ using Elsa.Workflows.Runtime.Handlers;
 using Elsa.Workflows.Runtime.HostedServices;
 using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Runtime.Options;
+using Elsa.Workflows.Runtime.Providers;
 using Elsa.Workflows.Runtime.Services;
 using Medallion.Threading;
 using Medallion.Threading.FileSystem;
@@ -98,6 +99,21 @@ public class WorkflowRuntimeFeature : FeatureBase
         Workflows.Add<T>();
         return this;
     }
+    
+    /// <summary>
+    /// Register all workflows in the specified assembly.
+    /// </summary>
+    public WorkflowRuntimeFeature AddWorkflowsFrom(Assembly assembly)
+    {
+        var workflowTypes = assembly.GetExportedTypes()
+            .Where(x => typeof(IWorkflow).IsAssignableFrom(x) && x is { IsAbstract: false, IsInterface: false, IsGenericType: false })
+            .ToList();
+        
+        foreach (var workflowType in workflowTypes)
+            Workflows.Add(workflowType);
+        
+        return this;
+    }
 
     /// <inheritdoc />
     public override void Configure()
@@ -107,11 +123,7 @@ public class WorkflowRuntimeFeature : FeatureBase
     }
 
     /// <inheritdoc />
-    public override void ConfigureHostedServices() =>
-        Module
-            .ConfigureHostedService<RegisterDescriptors>()
-            .ConfigureHostedService<RegisterExpressionSyntaxDescriptors>()
-            .ConfigureHostedService<PopulateWorkflowDefinitionStore>();
+    public override void ConfigureHostedServices() => Module.ConfigureHostedService<PopulateRegistriesHostedService>();
 
     /// <inheritdoc />
     public override void Apply()
@@ -124,7 +136,6 @@ public class WorkflowRuntimeFeature : FeatureBase
             // Core.
             .AddSingleton<ITriggerIndexer, TriggerIndexer>()
             .AddSingleton<IWorkflowInstanceFactory, WorkflowInstanceFactory>()
-            .AddSingleton<IWorkflowDefinitionService, WorkflowDefinitionService>()
             .AddSingleton<IWorkflowHostFactory, WorkflowHostFactory>()
             .AddSingleton<IBackgroundActivityInvoker, DefaultBackgroundActivityInvoker>()
             .AddSingleton(WorkflowRuntime)
@@ -134,13 +145,15 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddSingleton(WorkflowExecutionLogStore)
             .AddSingleton(RunTaskDispatcher)
             .AddSingleton(BackgroundActivityInvoker)
+            .AddSingleton<IWorkflowDefinitionStorePopulator, DefaultWorkflowDefinitionStorePopulator>()
+            .AddSingleton<IRegistriesPopulator, DefaultRegistriesPopulator>()
             .AddSingleton<ITaskReporter, TaskReporter>()
             .AddSingleton<SynchronousTaskDispatcher>()
             .AddSingleton<AsynchronousTaskDispatcher>()
             .AddSingleton<IEventPublisher, EventPublisher>()
             
             // Lazy services.
-            .AddSingleton<Func<IEnumerable<IWorkflowDefinitionProvider>>>(sp => sp.GetServices<IWorkflowDefinitionProvider>)
+            .AddSingleton<Func<IEnumerable<IWorkflowProvider>>>(sp => sp.GetServices<IWorkflowProvider>)
             .AddSingleton<Func<IEnumerable<IWorkflowMaterializer>>>(sp => sp.GetServices<IWorkflowMaterializer>)
 
             // Memory stores.
@@ -153,7 +166,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddSingleton(DistributedLockProvider)
 
             // Workflow definition providers.
-            .AddWorkflowDefinitionProvider<ClrWorkflowDefinitionProvider>()
+            .AddWorkflowDefinitionProvider<ClrWorkflowProvider>()
 
             // Workflow state exporter.
             .AddSingleton(WorkflowStateExporter)

@@ -1,8 +1,8 @@
-using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Core.Models;
 
 namespace Elsa.JavaScript.TypeDefinitions.Models;
 
 /// <summary>
 /// Provides context to intellisense providers.
 /// </summary>
-public record TypeDefinitionContext(WorkflowDefinition WorkflowDefinition, string? ActivityTypeName, string? PropertyName, CancellationToken CancellationToken);
+public record TypeDefinitionContext(Workflow Workflow, string? ActivityTypeName, string? PropertyName, CancellationToken CancellationToken);

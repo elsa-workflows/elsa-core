@@ -11,13 +11,54 @@ namespace Elsa.Workflows.Core.Models;
 [DebuggerDisplay("{TypeName}")]
 public class ActivityDescriptor
 {
+    /// <summary>
+    /// The fully qualified name of the activity type.
+    /// </summary>
     public string TypeName { get; set; } = default!;
+
+    /// <summary>
+    /// The namespace of the activity type.
+    /// </summary>
+    public string Namespace { get; set; } = default!;
+    
+    /// <summary>
+    /// The name of the activity type.
+    /// </summary>
+    public string Name { get; set; } = default!;
+    
+    /// <summary>
+    /// The version of the activity type.
+    /// </summary>
     public int Version { get; set; }
+    
+    /// <summary>
+    /// The category of the activity type.
+    /// </summary>
     public string Category { get; set; } = default!;
+    
+    /// <summary>
+    /// The display name of the activity type.
+    /// </summary>
     public string? DisplayName { get; set; }
+    
+    /// <summary>
+    /// The description of the activity type.
+    /// </summary>
     public string? Description { get; set; }
+    
+    /// <summary>
+    /// The input properties of the activity type.
+    /// </summary>
     public ICollection<InputDescriptor> Inputs { get; init; } = new List<InputDescriptor>();
+    
+    /// <summary>
+    /// The output properties of the activity type.
+    /// </summary>
     public ICollection<OutputDescriptor> Outputs { get; init; } = new List<OutputDescriptor>();
+    
+    /// <summary>
+    /// The attributes of the activity type.
+    /// </summary>
     [JsonIgnore] public ICollection<Attribute> Attributes { get; set; } = new List<Attribute>();
 
     /// <summary>
@@ -26,8 +67,19 @@ public class ActivityDescriptor
     [JsonIgnore]
     public Func<ActivityConstructorContext, IActivity> Constructor { get; init; } = default!;
 
+    /// <summary>
+    /// The kind of activity.
+    /// </summary>
     public ActivityKind Kind { get; set; } = ActivityKind.Action;
+    
+    /// <summary>
+    /// The ports of the activity type.
+    /// </summary>
     public ICollection<Port> Ports { get; init; } = new List<Port>();
+    
+    /// <summary>
+    /// The custom properties of the activity type.
+    /// </summary>
     public IDictionary<string, object> CustomProperties { get; set; } = new Dictionary<string, object>();
 
     /// <summary>
@@ -41,4 +93,6 @@ public class ActivityDescriptor
     public bool IsBrowsable { get; set; }
 }
 
+// TODO: Refactor this to remove the dependency on JsonElement and JsonSerializerOptions.
+// This limits the ability to use this class in other contexts, such as constructing activities from the DSL.
 public record ActivityConstructorContext(JsonElement Element, JsonSerializerOptions SerializerOptions);

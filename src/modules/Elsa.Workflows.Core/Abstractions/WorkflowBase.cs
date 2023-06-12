@@ -69,7 +69,7 @@ public abstract class WorkflowBase<TResult> : WorkflowBase
     /// <inheritdoc />
     protected override ValueTask AfterBuildAsync(IWorkflowBuilder builder, CancellationToken cancellationToken = default)
     {
-        var variables = builder.Variables ?? new List<Variable>();
+        var variables = builder.Variables;
         
         if(!variables.Contains(Result))
            variables.Add(Result);

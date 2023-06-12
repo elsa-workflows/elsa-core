@@ -37,11 +37,12 @@ public record WorkflowDefinitionModel(
     ICollection<OutputDefinition>? Outputs,
     ICollection<string>? Outcomes,
     IDictionary<string, object>? CustomProperties,
-    bool? UsableAsActivity,
     bool IsReadonly,
     bool IsLatest,
     bool IsPublished,
     WorkflowOptions? Options,
+    [property: Obsolete("Use Options.UsableAsActivity instead")]
+    bool? UsableAsActivity,
     IActivity? Root
 )
 {

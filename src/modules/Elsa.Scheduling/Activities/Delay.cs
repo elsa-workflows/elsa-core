@@ -3,7 +3,6 @@ using System.Text.Json.Serialization;
 using Elsa.Common.Contracts;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
-using Elsa.Scheduling.Models;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 

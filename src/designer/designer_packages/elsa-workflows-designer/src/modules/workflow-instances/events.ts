@@ -4,6 +4,6 @@ import { ActivityExecutionEventBlock } from "./models";
 
 export interface JournalItemSelectedArgs {
     activity: Activity;
-    executionLog: ActivityExecutionEventBlock;
+    executionEventBlock: ActivityExecutionEventBlock;
     activityNode: ActivityNode;
 }

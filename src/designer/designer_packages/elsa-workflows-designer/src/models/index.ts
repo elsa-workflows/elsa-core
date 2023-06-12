@@ -6,3 +6,4 @@ export * from './expressions';
 export * from './plugin';
 export * from './ui';
 export * from './shared';
+export * from './studio';

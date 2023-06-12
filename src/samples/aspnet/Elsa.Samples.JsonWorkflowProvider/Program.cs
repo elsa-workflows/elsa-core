@@ -22,6 +22,9 @@ services.AddElsa(elsa => elsa
         };
     })
 
+    // HTTP workflows.
+    .UseHttp()
+
     // Use default authentication (JWT).
     .UseDefaultAuthentication(auth => auth.UseAdminApiKey())
 );
@@ -36,4 +39,5 @@ if (app.Environment.IsDevelopment())
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseWorkflowsApi();
+app.UseWorkflows();
 app.Run();

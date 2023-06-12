@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using Elsa.Expressions.Helpers;
+using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 
@@ -7,6 +8,7 @@ namespace Elsa.Dsl.Interpreters;
 
 public partial class WorkflowDefinitionBuilderInterpreter
 {
+    /// <inheritdoc />
     public override IWorkflowBuilder VisitProperty(ElsaParser.PropertyContext context)
     {
         var @object = _object.Get(context.Parent.Parent.Parent);
@@ -21,7 +23,9 @@ public partial class WorkflowDefinitionBuilderInterpreter
         VisitChildren(context);
 
         var propertyValue = _expressionValue.Get(context.expr());
-        SetPropertyValue(@object, propertyInfo, propertyValue);
+        var propertyType = propertyInfo.PropertyType;
+        var parsedPropertyValue = typeof(Input).IsAssignableFrom(propertyType) ? propertyValue : propertyValue.ConvertTo(propertyType);
+        SetPropertyValue(@object, propertyInfo, parsedPropertyValue);
 
         return DefaultResult;
     }
@@ -37,19 +41,25 @@ public partial class WorkflowDefinitionBuilderInterpreter
     private Input CreateInputValue(PropertyInfo propertyInfo, object? propertyValue)
     {
         var underlyingType = propertyInfo.PropertyType.GetGenericArguments().First();
-        var propertyValueType = propertyValue?.GetType();
+        var parsedPropertyValue = propertyValue.ConvertTo(underlyingType);
+        var propertyValueType = parsedPropertyValue?.GetType();
         var inputType = typeof(Input<>).MakeGenericType(underlyingType);
 
         if (propertyValueType != null)
         {
-            var hasCtorWithSpecifiedType = inputType.GetConstructors().Any(x => x.GetParameters().Any(y => y.ParameterType.IsAssignableFrom(propertyValueType)));
+            // Create a literal value.
+            var literalType = typeof(Literal<>).MakeGenericType(underlyingType);
+            var hasCtorWithSpecifiedType = inputType.GetConstructors().Any(x => x.GetParameters().Any(y => y.ParameterType.IsAssignableFrom(literalType)));
 
             if (hasCtorWithSpecifiedType)
-                return (Input)Activator.CreateInstance(inputType, propertyValue)!;
+            {
+                var literalValue = Activator.CreateInstance(literalType, parsedPropertyValue)!;
+                return (Input)Activator.CreateInstance(inputType, literalValue)!;
+            }
         }
 
-        return propertyValue is ExternalExpressionReference externalExpressionReference 
-            ? (Input)Activator.CreateInstance(inputType, externalExpressionReference.Expression, externalExpressionReference.BlockReference)! 
-            : (Input)Activator.CreateInstance(inputType, propertyValue.ConvertTo(underlyingType))!;
+        return parsedPropertyValue is ExternalExpressionReference externalExpressionReference
+            ? (Input)Activator.CreateInstance(inputType, externalExpressionReference.Expression, externalExpressionReference.BlockReference)!
+            : (Input)Activator.CreateInstance(inputType, parsedPropertyValue)!;
     }
 }

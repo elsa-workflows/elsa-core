@@ -101,7 +101,8 @@ export class WorkflowDefinitionsPlugin implements Plugin {
       materializerName: 'Json'
     };
 
-    this.showWorkflowDefinitionEditor(workflowDefinition);
+    const newWorkflowDefinition = await this.workflowDefinitionManager.saveWorkflow(workflowDefinition, false);
+    this.showWorkflowDefinitionEditor(newWorkflowDefinition);
   };
 
   private getFlowchartDescriptor = () => this.getActivityDescriptor(FlowchartTypeName);

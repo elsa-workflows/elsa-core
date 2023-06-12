@@ -130,7 +130,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
         var cancellationToken = context.CancellationToken;
         var targetType = ParsedContent.GetTargetType(context);
         var contentStream = httpRequest.Body;
-        var contentType = httpRequest.ContentType;
+        var contentType = httpRequest.ContentType!;
 
         return await context.ParseContentAsync(contentStream, contentType, targetType, cancellationToken);
     }
@@ -141,9 +141,9 @@ public class HttpEndpoint : Trigger<HttpRequest>
     {
         // Generate bookmark data for path and selected methods.
         var path = context.Get(Path);
-        var methods = context.Get(SupportedMethods);
-        var authorize = context.Get(Authorize);
-        var policy = context.Get(Policy);
+        var methods = SupportedMethods.GetOrDefault(context) ?? new List<string>{ HttpMethods.Get };
+        var authorize = Authorize.GetOrDefault(context);
+        var policy = Policy.GetOrDefault(context);
         return methods!.Select(x =>
             new HttpEndpointBookmarkPayload(path!, x.ToLowerInvariant(), authorize, policy))
             .Cast<object>().ToArray();
@@ -159,7 +159,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
         var path = context.GetInput<PathString>(RequestPathInputKey);
         var routeData = GetRouteData(httpContext, path);
 
-        var routeDictionary = routeData.Values.ToDictionary(route => route.Key, route => route.Value);
+        var routeDictionary = routeData.Values.ToDictionary(route => route.Key, route => route.Value!);
         var queryStringDictionary = httpContext.Request.Query.ToDictionary<KeyValuePair<string, StringValues>, string, object>(queryString => queryString.Key, queryString => queryString.Value[0]!);
         var headersDictionary = httpContext.Request.Headers.ToDictionary<KeyValuePair<string, StringValues>, string, object>(header => header.Key, header => header.Value[0]!);
 

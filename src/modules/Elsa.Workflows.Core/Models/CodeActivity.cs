@@ -1,5 +1,6 @@
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
+using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Behaviors;
 using Elsa.Workflows.Core.Contracts;
 using JetBrains.Annotations;
@@ -89,7 +90,7 @@ public abstract class CodeActivity<T> : CodeActivity, IActivityWithResult<T>
     /// <summary>
     /// The result of the activity.
     /// </summary>
-    public Output<T>? Result { get; set; }
+    [Output] public Output<T>? Result { get; set; }
 
     Output? IActivityWithResult.Result
     {

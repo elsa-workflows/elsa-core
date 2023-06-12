@@ -1,5 +1,3 @@
-using System.Runtime.CompilerServices;
-using System.Text.Json.Serialization;
 using Elsa.Expressions;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Models;
@@ -9,6 +7,8 @@ using Elsa.Workflows.Core.Activities.Flowchart.Models;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 using JetBrains.Annotations;
+using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
 
 namespace Elsa.Workflows.Core.Activities.Flowchart.Activities;
 
@@ -33,17 +33,29 @@ public class FlowSwitch : Activity
 
     [Input(UIHint = "flow-switch-editor")] public ICollection<FlowSwitchCase> Cases { get; set; } = new List<FlowSwitchCase>();
 
+    /// <summary>
+    /// The switch mode determines whether the first match should be scheduled, or all matches.
+    /// </summary>
+    [Input(Description = "The switch mode determines whether the first match should be scheduled, or all matches.")]
+    public Input<SwitchMode> Mode { get; set; } = new(SwitchMode.MatchFirst);
+
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        var matchingCase = await FindMatchingCaseAsync(context.ExpressionExecutionContext);
-        var outcome = matchingCase?.Label ?? "Default";
+        var matchingCases = await FindMatchingCasesAsync(context.ExpressionExecutionContext);
+        var hasAnyMatches = matchingCases.Any();
 
-        await context.CompleteActivityAsync(new Outcomes(outcome));
+        var mode = context.Get(Mode);
+        var results = mode == SwitchMode.MatchFirst ? hasAnyMatches ? new[] { matchingCases.First() } : Array.Empty<FlowSwitchCase>() : matchingCases.ToArray();
+
+        var outcomes = hasAnyMatches ? results.Select(r => r.Label).ToArray() : new[] { "Default" };
+
+        await context.CompleteActivityAsync(new Outcomes(outcomes));
     }
 
-    private async Task<FlowSwitchCase?> FindMatchingCaseAsync(ExpressionExecutionContext context)
+    private async Task<IEnumerable<FlowSwitchCase>> FindMatchingCasesAsync(ExpressionExecutionContext context)
     {
+        var matchingCases = new List<FlowSwitchCase>();
         var expressionEvaluator = context.GetRequiredService<IExpressionEvaluator>();
 
         foreach (var switchCase in Cases)
@@ -51,10 +63,12 @@ public class FlowSwitch : Activity
             var result = await expressionEvaluator.EvaluateAsync<bool?>(switchCase.Condition, context);
 
             if (result == true)
-                return switchCase;
+            {
+                matchingCases.Add(switchCase);
+            }
         }
 
-        return null;
+        return matchingCases;
     }
 }
 

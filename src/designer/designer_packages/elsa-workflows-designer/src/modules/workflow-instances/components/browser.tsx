@@ -129,13 +129,13 @@ export class WorkflowInstanceBrowser {
                          ref={el => this.selectAllCheckbox = el}/>
                 </th>
                 <th><span class="lg:tw-pl-2">ID</span></th>
-                <th class="tw-optional">Correlation</th>
+                <th>Correlation</th>
                 <th>Workflow</th>
                 <th class="tw-align-right">Version</th>
-                <th class="tw-optional">Name</th>
+                <th>Name</th>
                 <th>Status</th>
-                <th class="tw-optional">Created</th>
-                <th class="tw-optional">Finished</th>
+                <th>Created</th>
+                <th>Finished</th>
                 <th/>
               </tr>
               </thead>
@@ -157,18 +157,18 @@ export class WorkflowInstanceBrowser {
                       </div>
                     </td>
 
-                    <td class="tw-optional">{workflowInstance.correlationId}</td>
-                    <td class="tw-optional">{workflowName}</td>
+                    <td>{workflowInstance.correlationId}</td>
+                    <td>{workflowName}</td>
                     <td class="tw-align-right">{workflowInstance.version}</td>
-                    <td class="tw-optional">{workflowInstance.name}</td>
+                    <td>{workflowInstance.name}</td>
                     <td>
                       <div class="tw-flex tw-items-center tw-space-x-3 lg:tw-pl-2">
                         <div class={`tw-flex-shrink-0 tw-w-2.5 tw-h-2.5 tw-rounded-full ${statusColor}`}/>
                         <span>{workflowInstance.status}</span>
                       </div>
                     </td>
-                    <td class="tw-optional">{formatTimestamp(workflowInstance.createdAt, '-')}</td>
-                    <td class="tw-optional">{formatTimestamp(workflowInstance.finishedAt, '-')}</td>
+                    <td>{formatTimestamp(workflowInstance.createdAt, '-')}</td>
+                    <td>{formatTimestamp(workflowInstance.finishedAt, '-')}</td>
                     <td class="tw-pr-6">
                       <elsa-context-menu menuItems={[
                         {text: 'Edit', handler: e => this.onWorkflowInstanceClick(e, workflowInstance), icon: <EditIcon/>},

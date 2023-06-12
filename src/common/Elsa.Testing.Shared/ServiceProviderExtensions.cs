@@ -1,5 +1,4 @@
 using Elsa.Common.Models;
-using Elsa.Expressions.Contracts;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.State;
@@ -22,10 +21,8 @@ public static class ServiceProviderExtensions
     /// <param name="services">The services.</param>
     public static async Task PopulateRegistriesAsync(this IServiceProvider services)
     {
-        var activityRegistryPopulator = services.GetRequiredService<IActivityRegistryPopulator>();
-        var expressionSyntaxRegistryPopulator = services.GetRequiredService<IExpressionSyntaxRegistryPopulator>();
-        await activityRegistryPopulator.PopulateRegistryAsync();
-        await expressionSyntaxRegistryPopulator.PopulateRegistryAsync();
+        var registriesPopulator = services.GetRequiredService<IRegistriesPopulator>();
+        await registriesPopulator.PopulateAsync();
     }
 
     /// <summary>

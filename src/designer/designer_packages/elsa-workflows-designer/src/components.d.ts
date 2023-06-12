@@ -29,6 +29,7 @@ import { StudioInitializingContext } from "./models/studio";
 import { WorkflowContextProviderDescriptor } from "./modules/workflow-contexts/services/api";
 import { RenderActivityPropsContext } from "./modules/workflow-definitions/components/models";
 import { ActivityDriverRegistry } from "./services";
+import { WorkflowJournalModel } from "./modules/workflow-instances/models";
 import { JournalItemSelectedArgs } from "./modules/workflow-instances/events";
 import { PublishClickedArgs } from "./modules/workflow-definitions/components/publish-button";
 export { InputDefinition, OutputDefinition, WorkflowDefinition, WorkflowDefinitionSummary } from "./modules/workflow-definitions/models/entities";
@@ -55,6 +56,7 @@ export { StudioInitializingContext } from "./models/studio";
 export { WorkflowContextProviderDescriptor } from "./modules/workflow-contexts/services/api";
 export { RenderActivityPropsContext } from "./modules/workflow-definitions/components/models";
 export { ActivityDriverRegistry } from "./services";
+export { WorkflowJournalModel } from "./modules/workflow-instances/models";
 export { JournalItemSelectedArgs } from "./modules/workflow-instances/events";
 export { PublishClickedArgs } from "./modules/workflow-definitions/components/publish-button";
 export namespace Components {
@@ -385,8 +387,8 @@ export namespace Components {
         "workflowInstance": WorkflowInstance;
     }
     interface ElsaWorkflowJournal {
-        "workflowDefinition": WorkflowDefinition;
-        "workflowInstance": WorkflowInstance;
+        "model": WorkflowJournalModel;
+        "refresh": () => Promise<void>;
     }
     interface ElsaWorkflowNavigator {
         "items": Array<FlowchartPathItem>;
@@ -1355,9 +1357,8 @@ declare namespace LocalJSX {
         "workflowInstance"?: WorkflowInstance;
     }
     interface ElsaWorkflowJournal {
+        "model"?: WorkflowJournalModel;
         "onJournalItemSelected"?: (event: ElsaWorkflowJournalCustomEvent<JournalItemSelectedArgs>) => void;
-        "workflowDefinition"?: WorkflowDefinition;
-        "workflowInstance"?: WorkflowInstance;
     }
     interface ElsaWorkflowNavigator {
         "items"?: Array<FlowchartPathItem>;

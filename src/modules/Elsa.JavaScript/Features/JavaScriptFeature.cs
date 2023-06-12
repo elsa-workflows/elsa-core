@@ -4,7 +4,6 @@ using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
-using Elsa.JavaScript.Activities;
 using Elsa.JavaScript.Contracts;
 using Elsa.JavaScript.Expressions;
 using Elsa.JavaScript.Extensions;
@@ -14,7 +13,6 @@ using Elsa.JavaScript.TypeDefinitions.Contracts;
 using Elsa.JavaScript.TypeDefinitions.Providers;
 using Elsa.JavaScript.TypeDefinitions.Services;
 using Elsa.Mediator.Features;
-using Elsa.Workflows.Core.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.JavaScript.Features;
@@ -32,19 +30,12 @@ public class JavaScriptFeature : FeatureBase
     }
 
     /// <inheritdoc />
-    public override void Configure()
-    {
-        Module.UseWorkflowManagement(management => management.AddActivitiesFrom<JavaScriptFeature>());
-    }
-
-    /// <inheritdoc />
     public override void Apply()
     {
         // JavaScript services.
         Services
             .AddSingleton<IExpressionSyntaxProvider, JavaScriptExpressionSyntaxProvider>()
             .AddSingleton<IJavaScriptEvaluator, JintJavaScriptEvaluator>()
-            .AddSingleton<IActivityPropertyOptionsProvider, RunJavaScriptOptionsProvider>()
             .AddSingleton<ITypeDefinitionService, TypeDefinitionService>()
             .AddExpressionHandler<JavaScriptExpressionHandler, JavaScriptExpression>()
             ;

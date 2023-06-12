@@ -1,3 +1,4 @@
+using System.Reflection;
 using Elsa.Features.Services;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Runtime.Features;
@@ -35,6 +36,20 @@ public static class ModuleExtensions
     public static IModule AddWorkflow<T>(this IModule module) where T : IWorkflow
     {
         module.Configure<WorkflowRuntimeFeature>().AddWorkflow<T>();
+        return module;
+    }
+
+    /// <summary>
+    /// Register all workflows contained in the assembly containing the specified marker type.
+    /// </summary>
+    public static IModule AddWorkflowsFrom<TMarker>(this IModule module) => module.AddWorkflowsFrom(typeof(TMarker).Assembly);
+    
+    /// <summary>
+    /// Register all workflows in the specified assembly.
+    /// </summary>
+    public static IModule AddWorkflowsFrom(this IModule module, Assembly assembly)
+    {
+        module.Configure<WorkflowRuntimeFeature>().AddWorkflowsFrom(assembly);
         return module;
     }
     

@@ -1,5 +1,4 @@
 using Elsa.Workflows.Core.Features;
-using Elsa.Workflows.Core.Middleware.Activities;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;

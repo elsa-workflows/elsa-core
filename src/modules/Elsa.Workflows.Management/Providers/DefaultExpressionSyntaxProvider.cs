@@ -3,6 +3,7 @@ using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Expressions;
+using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Workflows.Management.Providers;
 
@@ -26,17 +27,18 @@ public class DefaultExpressionSyntaxProvider : IExpressionSyntaxProvider
         var @object = CreateObjectDescriptor();
         var json = CreateJsonDescriptor();
         var @delegate = CreateDelegateDescriptor();
+        var variable = CreateVariableDescriptor();
 
-        return ValueTask.FromResult<IEnumerable<ExpressionSyntaxDescriptor>>(new[] { literal, @object, json, @delegate });
+        return ValueTask.FromResult<IEnumerable<ExpressionSyntaxDescriptor>>(new[] { literal, @object, json, @delegate, variable });
     }
 
-    private ExpressionSyntaxDescriptor CreateLiteralDescriptor() => DefaultExpressionSyntaxProvider.CreateDescriptor<LiteralExpression>(
+    private ExpressionSyntaxDescriptor CreateLiteralDescriptor() => CreateDescriptor<LiteralExpression>(
         "Literal",
         CreateLiteralExpression,
         context => new Literal(context.GetExpression<LiteralExpression>().Value),
         expression => expression.Value);
 
-    private ExpressionSyntaxDescriptor CreateObjectDescriptor() => DefaultExpressionSyntaxProvider.CreateDescriptor<ObjectExpression>(
+    private ExpressionSyntaxDescriptor CreateObjectDescriptor() => CreateDescriptor<ObjectExpression>(
         "Object",
         CreateObjectExpression,
         context => new ObjectLiteral(context.GetExpression<ObjectExpression>().Value),
@@ -44,17 +46,23 @@ public class DefaultExpressionSyntaxProvider : IExpressionSyntaxProvider
     
     // TODO: this is replaced by the above and exists only for existing workflow definitions. To be removed in a future version.
     [Obsolete]
-    private ExpressionSyntaxDescriptor CreateJsonDescriptor() => DefaultExpressionSyntaxProvider.CreateDescriptor<ObjectExpression>(
+    private ExpressionSyntaxDescriptor CreateJsonDescriptor() => CreateDescriptor<ObjectExpression>(
         "Json",
         CreateObjectExpression,
         context => new ObjectLiteral(context.GetExpression<ObjectExpression>().Value),
         expression => expression.Value);
 
-    private ExpressionSyntaxDescriptor CreateDelegateDescriptor() => DefaultExpressionSyntaxProvider.CreateDescriptor<DelegateExpression>(
+    private ExpressionSyntaxDescriptor CreateDelegateDescriptor() => CreateDescriptor<DelegateExpression>(
         "Delegate",
         CreateObjectExpression,
         context => new DelegateBlockReference(),
         expression => expression.DelegateBlockReference.Delegate?.ToString());
+    
+    private ExpressionSyntaxDescriptor CreateVariableDescriptor() => CreateDescriptor<VariableExpression>(
+        "Variable",
+        CreateVariableExpression,
+        context => new Variable(),
+        expression => expression.Variable);
 
     private static ExpressionSyntaxDescriptor CreateDescriptor<TExpression>(
         string syntax,
@@ -85,6 +93,11 @@ public class DefaultExpressionSyntaxProvider : IExpressionSyntaxProvider
     {
         var expressionValue = context.Element.GetProperty("value").ToString();
         return new ObjectExpression(expressionValue);
+    }
+    
+    private IExpression CreateVariableExpression(ExpressionConstructorContext context)
+    {
+        return new VariableExpression();
     }
 
     private string GenerateId() => _identityGenerator.GenerateId();

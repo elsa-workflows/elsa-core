@@ -26,5 +26,5 @@
     <ItemGroup>
       <Folder Include="Migrations\Management\" />
     </ItemGroup>
-
+    
 </Project>

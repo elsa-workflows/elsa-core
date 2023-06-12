@@ -7,7 +7,6 @@ using Elsa.JavaScript.TypeDefinitions.Contracts;
 using Elsa.JavaScript.TypeDefinitions.Models;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Management.Entities;
 
 namespace Elsa.WorkflowContexts.Scripting.JavaScript;
 
@@ -50,7 +49,7 @@ public class ConfigureJavaScriptEngine : INotificationHandler<EvaluatingJavaScri
     /// <inheritdoc />
     public ValueTask<IEnumerable<TypeDefinition>> GetTypeDefinitionsAsync(TypeDefinitionContext context)
     {
-        var providerTypes = GetProviderTypes(context.WorkflowDefinition);
+        var providerTypes = GetProviderTypes(context.Workflow);
         var contextTypes = providerTypes.Select(x => x.GetWorkflowContextType());
         var typeDefinitions = contextTypes.Select(x => _typeDescriber.DescribeType(x));
         return new(typeDefinitions);
@@ -59,7 +58,7 @@ public class ConfigureJavaScriptEngine : INotificationHandler<EvaluatingJavaScri
     /// <inheritdoc />
     public ValueTask<IEnumerable<FunctionDefinition>> GetFunctionDefinitionsAsync(TypeDefinitionContext context)
     {
-        var providerTypes = GetProviderTypes(context.WorkflowDefinition);
+        var providerTypes = GetProviderTypes(context.Workflow);
         var functionDefinitions = BuildFunctionDefinitions(providerTypes);
         return new(functionDefinitions);
     }
@@ -80,5 +79,5 @@ public class ConfigureJavaScriptEngine : INotificationHandler<EvaluatingJavaScri
     }
 
     private IEnumerable<Type> GetProviderTypes(WorkflowExecutionContext workflowExecutionContext) => workflowExecutionContext.Workflow.GetWorkflowContextProviderTypes();
-    private IEnumerable<Type> GetProviderTypes(WorkflowDefinition workflowDefinition) => workflowDefinition.GetWorkflowContextProviderTypes();
+    private IEnumerable<Type> GetProviderTypes(Workflow workflow) => workflow.GetWorkflowContextProviderTypes();
 }

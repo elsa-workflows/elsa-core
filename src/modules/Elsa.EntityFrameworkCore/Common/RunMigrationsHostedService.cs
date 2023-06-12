@@ -9,8 +9,13 @@ namespace Elsa.EntityFrameworkCore.Common;
 public class RunMigrationsHostedService<TDbContext> : IHostedService where TDbContext : DbContext
 {
     private readonly IDbContextFactory<TDbContext> _dbContextFactory;
+    
+    /// <summary>
+    /// Initializes a new instance of the <see cref="RunMigrationsHostedService{TDbContext}"/> class.
+    /// </summary>
     public RunMigrationsHostedService(IDbContextFactory<TDbContext> dbContextFactoryFactory) => _dbContextFactory = dbContextFactoryFactory;
 
+    /// <inheritdoc />
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
@@ -18,5 +23,6 @@ public class RunMigrationsHostedService<TDbContext> : IHostedService where TDbCo
         await dbContext.DisposeAsync();
     }
 
+    /// <inheritdoc />
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }

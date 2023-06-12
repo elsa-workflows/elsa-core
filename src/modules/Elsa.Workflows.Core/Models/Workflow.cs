@@ -13,7 +13,7 @@ namespace Elsa.Workflows.Core.Models;
 [Browsable(false)]
 [Activity("Elsa", "Workflows", "A workflow is an activity that executes its Root activity.")]
 [PublicAPI]
-public class Workflow : Composite, ICloneable
+public class Workflow : Composite<object>, ICloneable
 {
     /// <summary>
     /// Constructor.
@@ -54,7 +54,7 @@ public class Workflow : Composite, ICloneable
     public WorkflowIdentity Identity { get; set; } = WorkflowIdentity.VersionOne;
     public WorkflowPublication Publication { get; set; } = WorkflowPublication.LatestAndPublished;
     public WorkflowMetadata WorkflowMetadata { get; set; } = new();
-    public WorkflowOptions? Options { get; set; }
+    public WorkflowOptions Options { get; set; } = new();
     
     /// <summary>
     /// Constructs a new <see cref="Workflow"/> from the specified <see cref="IActivity"/>.

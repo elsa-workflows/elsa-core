@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import {Container, Service} from "typedi";
 import {Plugin} from "../models";
 import {SequencePlugin} from "../modules/sequence/sequence-plugin";
-import {WorkflowDefinitionsPlugin} from "../modules/workflow-definitions/plugins/workflow-definitions-plugin";
+import {WorkflowDefinitionsPlugin} from "../modules/workflow-definitions";
 import {CompositeActivityVersionPlugin} from "../modules/workflow-definitions/plugins/composite-version-plugin";
 import {WorkflowInstancesPlugin} from "../modules/workflow-instances/plugin";
 import {LoginPlugin} from "../modules/login/plugin";

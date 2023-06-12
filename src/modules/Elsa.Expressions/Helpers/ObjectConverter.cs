@@ -1,6 +1,7 @@
 using System.Collections;
 using System.ComponentModel;
 using System.Dynamic;
+using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Contracts;
@@ -121,7 +122,7 @@ public static class ObjectConverter
 
         if (targetTypeConverter.CanConvertFrom(underlyingSourceType))
             return targetTypeConverter.IsValid(value)
-                ? targetTypeConverter.ConvertFrom(value)
+                ? targetTypeConverter.ConvertFrom(null, CultureInfo.InvariantCulture, value)
                 : targetType.GetDefaultValue();
 
         var sourceTypeConverter = TypeDescriptor.GetConverter(underlyingSourceType);

@@ -293,8 +293,8 @@ public class ActivityExecutionContext : IExecutionContext
 
     internal void IncrementExecutionCount() => _executionCount++;
 
-    private MemoryBlock? GetMemoryBlock(MemoryBlockReference locationBlockReference) =>
-        ExpressionExecutionContext.Memory.TryGetBlock(locationBlockReference.Id, out var memoryBlock)
-            ? memoryBlock
-            : ParentActivityExecutionContext?.GetMemoryBlock(locationBlockReference);
+    private MemoryBlock? GetMemoryBlock(MemoryBlockReference locationBlockReference)
+    {
+        return ExpressionExecutionContext.TryGetBlock(locationBlockReference, out var memoryBlock) ? memoryBlock : default;
+    }
 }
