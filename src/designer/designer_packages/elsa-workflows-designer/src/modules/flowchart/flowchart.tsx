@@ -44,6 +44,7 @@ export class FlowchartComponent {
   @Prop() rootActivity: Activity;
   @Prop() interactiveMode: boolean = true;
   @Prop() silent: boolean = false;
+  @Prop() isReadonly: boolean;
 
   @Element() el: HTMLElement;
   container: HTMLElement;
