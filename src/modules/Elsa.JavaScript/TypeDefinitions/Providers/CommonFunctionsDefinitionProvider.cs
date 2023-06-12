@@ -17,46 +17,56 @@ internal class CommonFunctionsDefinitionProvider : FunctionDefinitionProvider
     {
         _typeAliasRegistry = typeAliasRegistry;
     }
-    
+
     protected override IEnumerable<FunctionDefinition> GetFunctionDefinitions(TypeDefinitionContext context)
     {
         yield return CreateFunctionDefinition(builder => builder
             .Name("getWorkflowInstanceId")
             .ReturnType("string"));
-        
+
         yield return CreateFunctionDefinition(builder => builder
             .Name("getCorrelationId")
             .ReturnType("string"));
-        
+
         yield return CreateFunctionDefinition(builder => builder
             .Name("setCorrelationId")
             .Parameter("value", "string"));
-        
+
         yield return CreateFunctionDefinition(builder => builder
             .Name("setVariable")
             .Parameter("name", "string")
             .Parameter("value", "any"));
-        
+
         yield return CreateFunctionDefinition(builder => builder
             .Name("getVariable")
             .Parameter("name", "string")
             .ReturnType("any"));
-        
+
         yield return CreateFunctionDefinition(builder => builder
             .Name("getInput")
             .Parameter("name", "string")
             .ReturnType("any"));
+
+        yield return CreateFunctionDefinition(builder => builder
+            .Name("getOutputFrom")
+            .Parameter("activityId", "string")
+            .Parameter("outputName", "string", true)
+            .ReturnType("any"));
         
+        yield return CreateFunctionDefinition(builder => builder
+            .Name("getLastResult")
+            .ReturnType("any"));
+
         yield return CreateFunctionDefinition(builder => builder
             .Name("isNullOrWhiteSpace")
             .Parameter("value", "string")
             .ReturnType("boolean"));
-        
+
         yield return CreateFunctionDefinition(builder => builder
             .Name("isNullOrEmpty")
             .Parameter("value", "string")
             .ReturnType("boolean"));
-        
+
         yield return CreateFunctionDefinition(builder => builder
             .Name("parseGuid")
             .Parameter("value", "string")
@@ -78,7 +88,7 @@ internal class CommonFunctionsDefinitionProvider : FunctionDefinitionProvider
             .Name("toJson")
             .Parameter("value", "any")
             .ReturnType("string"));
-        
+
         // Variable getter and setters.
         foreach (var variable in context.Workflow.Variables)
         {
@@ -88,7 +98,7 @@ internal class CommonFunctionsDefinitionProvider : FunctionDefinitionProvider
 
             // get{Variable}.
             yield return CreateFunctionDefinition(builder => builder.Name($"get{pascalName}").ReturnType(typeAlias));
-            
+
             // set{Variable}.
             yield return CreateFunctionDefinition(builder => builder.Name($"set{pascalName}").Parameter("value", typeAlias));
         }

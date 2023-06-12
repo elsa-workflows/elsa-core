@@ -222,6 +222,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Dapper.Migrations", "s
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.WorkflowProviders.BlobStorage", "src\modules\Elsa.WorkflowProviders.BlobStorage\Elsa.WorkflowProviders.BlobStorage.csproj", "{A702DD84-B55C-4807-9C28-D8F5AC3CCA78}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.ConsoleApp.ActivityOutput", "src\samples\console\Elsa.Samples.ConsoleApp.ActivityOutput\Elsa.Samples.ConsoleApp.ActivityOutput.csproj", "{9C9FEB8E-A253-4705-A344-49BFEFC9A516}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -552,6 +554,10 @@ Global
 		{A702DD84-B55C-4807-9C28-D8F5AC3CCA78}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A702DD84-B55C-4807-9C28-D8F5AC3CCA78}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A702DD84-B55C-4807-9C28-D8F5AC3CCA78}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9C9FEB8E-A253-4705-A344-49BFEFC9A516}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9C9FEB8E-A253-4705-A344-49BFEFC9A516}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9C9FEB8E-A253-4705-A344-49BFEFC9A516}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9C9FEB8E-A253-4705-A344-49BFEFC9A516}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{155227F0-A33B-40AA-A4B4-06F813EB921B} = {61017E64-6D00-49CB-9E81-5002DC8F7D5F}
@@ -652,5 +658,6 @@ Global
 		{D5905087-2E73-44AD-B3CC-70FE8AAA99A1} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 		{A86DF0F0-24E9-470E-984B-9E7332544972} = {9B4F139F-7D26-435C-A561-89E65A67A8E5}
 		{A702DD84-B55C-4807-9C28-D8F5AC3CCA78} = {B08B4E00-C2AB-48F3-8389-449F42AEF179}
+		{9C9FEB8E-A253-4705-A344-49BFEFC9A516} = {873BFC3E-63C2-4495-A503-5EC05DCD84E4}
 	EndGlobalSection
 EndGlobal

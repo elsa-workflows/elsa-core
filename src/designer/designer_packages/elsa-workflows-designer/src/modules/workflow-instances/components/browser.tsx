@@ -57,7 +57,7 @@ export class WorkflowInstanceBrowser {
 
     if (persistedRequest) {
       // TODO: Persist search term, need to bind the value to the input
-      // this.searchTerm = persistedRequest.searchTerm
+      //this.searchTerm = persistedRequest.searchTerm
       this.currentPage = persistedRequest.page
       this.currentPageSize = persistedRequest.pageSize
       this.orderBy = persistedRequest.orderBy

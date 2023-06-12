@@ -1,7 +1,7 @@
 import {Component, h, Prop, State, Event, EventEmitter, Listen, Element} from "@stencil/core";
 import {ActivityIconProducer, ActivityIconRegistry, PortProviderRegistry} from "../../services";
 import {Container} from "typedi";
-import {Activity, ActivityDescriptor, ActivityKind, ActivitySelectedArgs, ChildActivitySelectedArgs, EditChildActivityArgs, Port, PortMode} from "../../models";
+import {Activity, ActivityDescriptor, ActivityKind, ActivitySelectedArgs, ChildActivitySelectedArgs, EditChildActivityArgs, Port, PortType} from "../../models";
 import descriptorsStore from "../../data/descriptors-store";
 import {isNullOrWhitespace} from "../../utils";
 import FlowchartTunnel from "./state";
@@ -52,7 +52,7 @@ export class DefaultActivityTemplate {
         {({nodeMap}) => {
           const activity: Activity = nodeMap[activityId];
           const ports = portProvider.getOutboundPorts({activityDescriptor, activity});
-          const embeddedPorts = ports.filter(x => x.mode == PortMode.Embedded && x.isBrowsable !== false);
+          const embeddedPorts = ports.filter(x => x.type == PortType.Embedded && x.isBrowsable !== false);
           const canStartWorkflow = activity?.customProperties?.CanStartWorkflow ?? activity?.canStartWorkflow ?? false;
           const icon = this.icon;
           const hasIcon = !!icon;

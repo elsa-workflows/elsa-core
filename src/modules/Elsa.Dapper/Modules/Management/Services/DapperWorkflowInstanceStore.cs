@@ -136,8 +136,7 @@ public class DapperWorkflowInstanceStore : IWorkflowInstanceStore
             .Equals(nameof(WorkflowInstance.Name), filter.Version)
             .Equals(nameof(WorkflowInstance.CorrelationId), filter.CorrelationId)
             .In(nameof(WorkflowInstance.CorrelationId), filter.CorrelationIds)
-            .AndWorkflowInstanceSearchTerm(filter.SearchTerm)
-            ;
+            .AndWorkflowInstanceSearchTerm(filter.SearchTerm);
     }
     
     private async Task<Page<WorkflowInstance>> MapAsync(Page<WorkflowInstanceRecord> source)

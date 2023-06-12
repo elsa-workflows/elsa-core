@@ -1,3 +1,5 @@
+using Elsa.Samples.AspNet.WorkflowContexts.Entities;
+
 namespace Elsa.Samples.AspNet.WorkflowContexts.Contracts;
 
 /// <summary>

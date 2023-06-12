@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import {Service} from "typedi";
-import {Activity, Port, PortMode} from "../../../models";
+import {Activity, Port, PortType} from "../../../models";
 import {FlowSwitchActivity} from "./models";
 import {PortProvider, PortProviderContext} from "../../../services";
 
@@ -14,7 +14,7 @@ export class FlowSwitchPortProvider implements PortProvider {
       return [];
 
     const cases = activity.cases ?? [];
-    return cases.map(x => ({name: x.label, displayName: x.label, mode: PortMode.Port}));
+    return cases.map(x => ({name: x.label, displayName: x.label, type: PortType.Flow}));
   }
 
   resolvePort(portName: string, context: PortProviderContext): Activity | Array<Activity> {

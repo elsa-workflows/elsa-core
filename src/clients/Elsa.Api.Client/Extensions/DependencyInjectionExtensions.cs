@@ -1,5 +1,7 @@
+using System.Text.Json;
 using Elsa.Api.Client.Contracts;
 using Elsa.Api.Client.Options;
+using Elsa.Api.Client.Resources.ActivityDescriptors.Contracts;
 using Elsa.Api.Client.Resources.Identity.Contracts;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Contracts;
 using Elsa.Api.Client.Services;
@@ -23,9 +25,19 @@ public static class DependencyInjectionExtensions
     {
         services.Configure(configureOptions);
         services.AddSingleton<IElsaClient, ElsaClient>();
+
+        JsonSerializerOptions jsonSerializerSettings = new()
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            
+        };
         
-        var settings = new RefitSettings();
+        var settings = new RefitSettings
+        {
+            ContentSerializer = new SystemTextJsonContentSerializer(jsonSerializerSettings)
+        };
         services.AddElsaApiClient<IWorkflowDefinitionsApi>(settings);
+        services.AddElsaApiClient<IActivityDescriptorsApi>(settings);
         services.AddElsaApiClient<ILoginApi>(settings);
         return services;
     }

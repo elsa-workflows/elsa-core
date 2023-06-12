@@ -56,7 +56,7 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
             Name = outcome,
             DisplayName = outcome,
             IsBrowsable = true,
-            Mode = PortMode.Port
+            Type = PortType.Flow
         }).ToList();
         
         var rootPort = new Port
@@ -64,7 +64,7 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
             Name = nameof(WorkflowDefinitionActivity.Root),
             DisplayName = "Root",
             IsBrowsable = false,
-            Mode = PortMode.Embedded
+            Type = PortType.Embedded
         };
         
         ports.Insert(0, rootPort);

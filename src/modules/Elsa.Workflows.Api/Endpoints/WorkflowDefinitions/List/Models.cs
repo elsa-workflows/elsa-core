@@ -15,6 +15,7 @@ public class Request
     public int? PageSize { get; set; }
     public OrderByWorkflowDefinition? OrderBy { get; set; }
     public OrderDirection? OrderDirection { get; set; }
+    public string? SearchTerm { get; set; }
 }
 
 public class Response

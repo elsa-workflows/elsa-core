@@ -1,4 +1,5 @@
 using Elsa.Samples.AspNet.WorkflowContexts.Contracts;
+using Elsa.Samples.AspNet.WorkflowContexts.Entities;
 using Elsa.Samples.AspNet.WorkflowContexts.Extensions;
 using Elsa.WorkflowContexts.Abstractions;
 using Elsa.Workflows.Core.Models;

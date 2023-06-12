@@ -53,9 +53,11 @@ export const Filter: FunctionalComponent<FilterProps> = ({pageSizeFilter, workfl
     <div class="tw-flex-1">
       &nbsp;
     </div>
+
     <button onClick={resetFilter} type="button" class="tw-text-sm tw-text-blue-600 active:tw-text-blue-700 tw-px-3 active:ring tw-ring-blue-500 tw-rounded">
       Reset
     </button>
+  
     <PageSizeFilter {...pageSizeFilter}/>
     <WorkflowFilter {...workflowFilter}/>
     <StatusFilter {...statusFilter}/>

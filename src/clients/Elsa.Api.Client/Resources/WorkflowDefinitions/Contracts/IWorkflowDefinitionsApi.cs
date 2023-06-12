@@ -16,8 +16,19 @@ public interface IWorkflowDefinitionsApi
     /// <param name="versionOptions">The version options.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The response containing the workflow definitions.</returns>
-    [Get("/workflow-definitions?versionOptions={VersionOptions}")]
-    Task<ListWorkflowDefinitionsResponse> ListAsync([Query]ListWorkflowDefinitionsRequest request, VersionOptions? versionOptions = default, CancellationToken cancellationToken = default);
+    [Get("/workflow-definitions?versionOptions={versionOptions}")]
+    Task<ListWorkflowDefinitionsResponse> ListAsync([Query]ListWorkflowDefinitionsRequest request, [Query]VersionOptions? versionOptions = default, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets a workflow definition.
+    /// </summary>
+    /// <param name="definitionId">The ID of the workflow definition to get.</param>
+    /// <param name="versionOptions">The version options.</param>
+    /// <param name="includeCompositeRoot">Whether to include the root activity of composite activities.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The workflow definition.</returns>
+    [Get("/workflow-definitions/{definitionId}?versionOptions={VersionOptions}&includeCompositeRoot={includeCompositeRoot}")]
+    Task<WorkflowDefinition?> GetAsync(string definitionId, VersionOptions? versionOptions = default, bool includeCompositeRoot = false, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Deletes a workflow definition.
