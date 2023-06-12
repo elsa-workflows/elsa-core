@@ -26,6 +26,11 @@ public class PolymorphicSerializer : IBsonSerializer<object>
                 return BsonSerializer.Deserialize(jsonReader, type);
             }
         }
+        else if (bsonType == BsonType.Null)
+        {
+            reader.ReadNull(); // consume the null value
+            return null;
+        }
         reader.ReturnToBookmark(bookmark);
         return BsonValueSerializer.Instance.Deserialize(context);
     }
