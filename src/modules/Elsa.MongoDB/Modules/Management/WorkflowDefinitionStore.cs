@@ -2,6 +2,7 @@ using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.MongoDB.Common;
+using Elsa.MongoDB.Helpers;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
@@ -72,7 +73,7 @@ public class MongoWorkflowDefinitionStore : IWorkflowDefinitionStore
         var queryable = Filter(collection.AsQueryable(), filter);
         var count = queryable.LongCount();
         queryable = (queryable.Paginate(pageArgs) as IMongoQueryable<WorkflowDefinition>)!;
-        var documents = await queryable.Select(x=> WorkflowDefinitionSummary.FromDefinition(x)).ToListAsync(cancellationToken);
+        var documents = await queryable.Select(ExpressionHelpers.WorkflowDefinitionSummary).ToListAsync(cancellationToken);
 
         return Page.Of(documents, count);
     }
@@ -84,24 +85,24 @@ public class MongoWorkflowDefinitionStore : IWorkflowDefinitionStore
         var queryable = Order(Filter(collection.AsQueryable(), filter), order);
         var count = queryable.LongCount();
         var mongoQueryable = (queryable.Paginate(pageArgs) as IMongoQueryable<WorkflowDefinition>)!;
-        var documents = await mongoQueryable.Select(x=> WorkflowDefinitionSummary.FromDefinition(x)).ToListAsync(cancellationToken);
+        var documents = await mongoQueryable.Select(ExpressionHelpers.WorkflowDefinitionSummary).ToListAsync(cancellationToken);
 
         return Page.Of(documents, count);
     }
 
     /// <inheritdoc />
     public async Task<IEnumerable<WorkflowDefinitionSummary>> FindSummariesAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default) =>
-        await _mongoStore.FindManyAsync(query => Filter(query, filter), x => WorkflowDefinitionSummary.FromDefinition(x), cancellationToken).ToList().AsEnumerable();
+        await _mongoStore.FindManyAsync(query => Filter(query, filter), ExpressionHelpers.WorkflowDefinitionSummary, cancellationToken).ToList().AsEnumerable();
 
     /// <inheritdoc />
     public async Task<IEnumerable<WorkflowDefinitionSummary>> FindSummariesAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, CancellationToken cancellationToken = default) =>
-        await _mongoStore.FindManyAsync(query => Order(Filter(query, filter), order), x => WorkflowDefinitionSummary.FromDefinition(x), cancellationToken).ToList().AsEnumerable();
+        await _mongoStore.FindManyAsync(query => Order(Filter(query, filter), order), ExpressionHelpers.WorkflowDefinitionSummary, cancellationToken).ToList().AsEnumerable();
 
     /// <inheritdoc />
     public async Task<WorkflowDefinition?> FindLastVersionAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken)
     {
         var order = new WorkflowDefinitionOrder<int>(x => x.Version, OrderDirection.Descending);
-        return await _mongoStore.FindAsync(queryable => Order(Filter(queryable, filter), order), cancellationToken);
+        return (await _mongoStore.FindAsync(queryable => Order(Filter(queryable, filter), order), cancellationToken));
     }
 
     /// <inheritdoc />

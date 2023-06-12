@@ -25,7 +25,7 @@ public class MongoDefaultWorkflowRuntimePersistenceFeature : PersistenceFeatureB
     {
         Module.Configure<WorkflowRuntimeFeature>(feature =>
         {
-            feature.TriggerStore = sp => sp.GetRequiredService<MongoTriggerStore>();
+            feature.WorkflowTriggerStore = sp => sp.GetRequiredService<MongoTriggerStore>();
             feature.BookmarkStore = sp => sp.GetRequiredService<MongoBookmarkStore>();
         });
         

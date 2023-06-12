@@ -1,6 +1,9 @@
 using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.MongoDB.Common;
+using Elsa.MongoDB.Extensions;
+using Elsa.MongoDB.Helpers;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
@@ -58,7 +61,7 @@ public class MongoWorkflowInstanceStore : IWorkflowInstanceStore
     public async Task<Page<WorkflowInstanceSummary>> SummarizeManyAsync(WorkflowInstanceFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
         var count = await _mongoStore.CountAsync(query => Filter(query, filter), cancellationToken);
-        var documents = await _mongoStore.FindManyAsync<WorkflowInstanceSummary>(query => Paginate(Filter(query, filter), pageArgs), x => WorkflowInstanceSummary.FromInstance(x), cancellationToken).ToList();
+        var documents = await _mongoStore.FindManyAsync<WorkflowInstanceSummary>(query => Paginate(Filter(query, filter), pageArgs), ExpressionHelpers.WorkflowInstanceSummary, cancellationToken).ToList();
         return Page.Of(documents, count);
     }
 
@@ -69,18 +72,18 @@ public class MongoWorkflowInstanceStore : IWorkflowInstanceStore
         var queryable = Order(Filter(collection.AsQueryable(), filter), order);
         var count = queryable.LongCount();
         var mongoQueryable = (queryable.Paginate(pageArgs) as IMongoQueryable<WorkflowInstance>)!;
-        var documents = await mongoQueryable.Select(x => WorkflowInstanceSummary.FromInstance(x)).ToListAsync(cancellationToken);
+        var documents = await mongoQueryable.Select(ExpressionHelpers.WorkflowInstanceSummary).ToListAsync(cancellationToken);
 
         return Page.Of(documents, count);
     }
 
     /// <inheritdoc />
     public async Task<IEnumerable<WorkflowInstanceSummary>> SummarizeManyAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default) =>
-        await _mongoStore.FindManyAsync(query => Filter(query, filter), x => WorkflowInstanceSummary.FromInstance(x), cancellationToken).ToList().AsEnumerable();
+        await _mongoStore.FindManyAsync(query => Filter(query, filter), ExpressionHelpers.WorkflowInstanceSummary, cancellationToken).ToList().AsEnumerable();
 
     /// <inheritdoc />
     public async Task<IEnumerable<WorkflowInstanceSummary>> SummarizeManyAsync<TOrderBy>(WorkflowInstanceFilter filter, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default) =>
-        await _mongoStore.FindManyAsync(query => Order(Filter(query, filter), order), x => WorkflowInstanceSummary.FromInstance(x), cancellationToken).ToList().AsEnumerable();
+        await _mongoStore.FindManyAsync(query => Order(Filter(query, filter), order), ExpressionHelpers.WorkflowInstanceSummary, cancellationToken).ToList().AsEnumerable();
 
     /// <inheritdoc />
     public async Task<int> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
