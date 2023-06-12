@@ -12,7 +12,7 @@ public static partial class Extensions
         return feature;
     }
 
-    public static EFCoreExecutionLogRecordPersistenceFeature UseMySql(this EFCoreExecutionLogRecordPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
+    public static EFCoreExecutionLogPersistenceFeature UseMySql(this EFCoreExecutionLogPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {
         feature.DbContextOptionsBuilder = (_, db) => db.UseElsaMySql(connectionString, options);
         return feature;

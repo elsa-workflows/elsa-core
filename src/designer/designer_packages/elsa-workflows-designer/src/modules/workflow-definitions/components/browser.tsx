@@ -2,7 +2,8 @@ import {Component, Event, EventEmitter, h, Host, Method, Prop, State, Watch} fro
 import {OrderBy, PagedList, VersionOptions} from '../../../models';
 import {Container} from 'typedi';
 import {DeleteIcon, EditIcon, PublishIcon, UnPublishIcon} from '../../../components/icons/tooling';
-import {Filter, FilterProps} from './filter';
+import { Search } from "./search";
+import { Filter, FilterProps } from './filter';
 import {PagerData} from '../../../components/shared/pager/pager';
 import {updateSelectedWorkflowDefinitions} from '../services/utils';
 import {WorkflowDefinitionSummary} from "../models/entities";
@@ -33,6 +34,7 @@ export class WorkflowDefinitionBrowser {
   }
 
   @Event() workflowDefinitionSelected: EventEmitter<WorkflowDefinitionSummary>;
+  @Event() workflowInstancesSelected: EventEmitter<WorkflowDefinitionSummary>;
   @Event() public newWorkflowDefinitionSelected: EventEmitter;
   @State() private workflowDefinitions: PagedList<WorkflowDefinitionSummary> = {items: [], totalCount: 0};
   @State() private publishedWorkflowDefinitions: PagedList<WorkflowDefinitionSummary> = {items: [], totalCount: 0};
@@ -42,6 +44,7 @@ export class WorkflowDefinitionBrowser {
   @State() private orderBy?: WorkflowDefinitionsOrderBy;
   @State() private labels?: string[];
   @State() private selectAllChecked: boolean;
+  @State() private searchTerm?: string;
 
   async componentWillLoad() {
     const persistedRequest = getRequest();
@@ -58,6 +61,13 @@ export class WorkflowDefinitionBrowser {
   private onNewDefinitionClick = async () => {
     this.newWorkflowDefinitionSelected.emit();
   };
+
+  private onSearch = async (term: string) => {
+    this.searchTerm = term;
+    this.resetPagination();
+    await this.loadWorkflowDefinitions();
+  };
+
 
   private async onPublishClick(e: MouseEvent, workflowDefinition: WorkflowDefinitionSummary) {
     await this.api.publish(workflowDefinition);
@@ -133,6 +143,11 @@ export class WorkflowDefinitionBrowser {
     this.workflowDefinitionSelected.emit(workflowDefinition);
   };
 
+  private onWorkflowInstancesClick = async (e: MouseEvent, workflowDefinition: WorkflowDefinitionSummary) => {
+    e.preventDefault();
+    this.workflowInstancesSelected.emit(workflowDefinition);
+  };
+
   private async loadWorkflowDefinitions() {
 
     // TODO: Load only json-based workflow definitions for now.
@@ -140,6 +155,7 @@ export class WorkflowDefinitionBrowser {
     const materializerName = 'Json';
 
     const request: ListWorkflowDefinitionsRequest = {
+      searchTerm: this.searchTerm,
       materializerName,
       page: this.currentPage,
       pageSize: this.currentPageSize,
@@ -246,6 +262,8 @@ export class WorkflowDefinitionBrowser {
       <Host class="tw-block">
         <div class="tw-pt-4">
           <h2 class="tw-text-lg tw-font-medium tw-ml-4 tw-mb-2">Workflow Definitions</h2>
+
+          <Search onSearch={this.onSearch} />
           <Filter {...filterProps} />
           <div class="tw-align-middle tw-inline-block tw-min-w-full tw-border-b tw-border-gray-200">
             <table class="default-table">
@@ -278,6 +296,8 @@ export class WorkflowDefinitionBrowser {
                   : publishedWorkflowDefinitions.find(x => x.definitionId == workflowDefinition.definitionId);
                 const publishedVersionNumber = !!publishedVersion ? publishedVersion.version : '-';
 
+                const isReadonly = workflowDefinition.isReadonly;
+
                 const isSelected = this.selectedWorkflowDefinitionIds.findIndex(x => x === workflowDefinition.definitionId) >= 0;
                 let workflowDisplayName = workflowDefinition.name;
 
@@ -287,6 +307,7 @@ export class WorkflowDefinitionBrowser {
                   <tr>
                     <td>
                       <input
+                        disabled={isReadonly}
                         type="checkbox"
                         value={workflowDefinition.definitionId}
                         checked={isSelected}
@@ -303,7 +324,7 @@ export class WorkflowDefinitionBrowser {
 
                     <td>
                       <div class="tw-flex tw-items-center tw-space-x-3 lg:tw-pl-2">
-                        <a href="#" class="tw-truncate hover:tw-text-gray-600">
+                      <a onClick={e => this.onWorkflowInstancesClick(e, workflowDefinition)} href="#" class="tw-truncate hover:tw-text-gray-600">
                           Instances
                         </a>
                       </div>
@@ -312,19 +333,20 @@ export class WorkflowDefinitionBrowser {
                     <td class="tw-align-right">{latestVersionNumber}</td>
                     <td class="tw-align-right">{publishedVersionNumber}</td>
                     <td class="tw-pr-6">
-                      <elsa-context-menu
-                        menuItems={[
-                          {text: 'Edit', handler: e => this.onWorkflowDefinitionClick(e, workflowDefinition), icon: <EditIcon/>},
-                          isPublished
-                            ? {text: 'Unpublish', handler: e => this.onUnPublishClick(e, workflowDefinition), icon: <UnPublishIcon/>}
-                            : {
-                              text: 'Publish',
-                              handler: e => this.onPublishClick(e, workflowDefinition),
-                              icon: <PublishIcon/>,
-                            },
-                          {text: 'Delete', handler: e => this.onDeleteClick(e, workflowDefinition), icon: <DeleteIcon/>},
-                        ]}
-                      />
+                      {isReadonly ? "" :
+                        <elsa-context-menu
+                          menuItems={[
+                            { text: 'Edit', handler: e => this.onWorkflowDefinitionClick(e, workflowDefinition), icon: <EditIcon /> },
+                            isPublished
+                              ? { text: 'Unpublish', handler: e => this.onUnPublishClick(e, workflowDefinition), icon: <UnPublishIcon /> }
+                              : {
+                                text: 'Publish',
+                                handler: e => this.onPublishClick(e, workflowDefinition),
+                                icon: <PublishIcon />,
+                              },
+                            { text: 'Delete', handler: e => this.onDeleteClick(e, workflowDefinition), icon: <DeleteIcon /> },
+                          ]}
+                        />}
                     </td>
                   </tr>
                 );

@@ -21,5 +21,5 @@ public interface IWorkflowStateStore
     /// <summary>
     /// Count the number of workflow states based on the provided <see cref="CountRunningWorkflowsArgs"/>. 
     /// </summary>
-    ValueTask<int> CountAsync(CountRunningWorkflowsArgs args, CancellationToken cancellationToken = default);
+    ValueTask<long> CountAsync(CountRunningWorkflowsArgs args, CancellationToken cancellationToken = default);
 }

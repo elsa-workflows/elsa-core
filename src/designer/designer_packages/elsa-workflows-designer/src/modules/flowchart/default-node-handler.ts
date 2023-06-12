@@ -3,7 +3,7 @@ import {Node} from "@antv/x6";
 import {Container, Service} from "typedi"
 import {ActivityNodeHandler, UINodeContext, UIPortContext} from "./activity-node-handler";
 import {PortProviderContext, PortProviderRegistry} from "../../services";
-import {PortMode} from "../../models";
+import {PortType} from "../../models";
 import {v4 as uuid} from 'uuid';
 
 @Service()
@@ -34,12 +34,12 @@ export class DefaultNodeHandler implements ActivityNodeHandler {
     const {activityDescriptor, activity} = context;
     const provider = this.portProviderRegistry.get(activityDescriptor.typeName);
     const providerContext: PortProviderContext = {activityDescriptor, activity};
-    const inPorts = [{name: 'In', displayName: null, mode: PortMode.Port}];
-    let outPorts = provider.getOutboundPorts(providerContext).filter(x => x.mode == PortMode.Port);
+    const inPorts = [{name: 'In', displayName: null, mode: PortType.Flow}];
+    let outPorts = provider.getOutboundPorts(providerContext).filter(x => x.type == PortType.Flow);
 
     // In a flowchart, always add a Done port to connect the next node.
     if (outPorts.length == 0)
-      outPorts = [{name: 'Done', displayName: 'Done', mode: PortMode.Port}];
+      outPorts = [{name: 'Done', displayName: 'Done', type: PortType.Flow}];
 
     if (outPorts.length == 1)
       outPorts[0].displayName = null;

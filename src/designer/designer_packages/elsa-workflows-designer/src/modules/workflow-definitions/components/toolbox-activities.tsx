@@ -5,7 +5,7 @@ import uniqBy from 'lodash/uniqBy';
 import {Container} from 'typedi';
 import {ActivityDescriptor} from "../../../models";
 import descriptorsStore from "../../../data/descriptors-store";
-import {ActivityDriverRegistry} from "../../../services";
+import {ActivityDescriptorManager, ActivityDriverRegistry} from "../../../services";
 
 interface ActivityCategoryModel {
   category: string;
@@ -18,6 +18,7 @@ interface ActivityCategoryModel {
 })
 export class ToolboxActivities {
   @Prop() graph: Graph;
+  @Prop() isReadonly: boolean;
   private dnd: Addon.Dnd;
   @State() private expandedCategories: Array<string> = [];
 
@@ -38,6 +39,9 @@ export class ToolboxActivities {
   }
 
   componentWillLoad() {
+    const activityDescriptorManager = Container.get(ActivityDescriptorManager);
+    activityDescriptorManager.onActivityDescriptorsUpdated(this.buildModel);
+    
     this.buildModel();
   }
 
@@ -135,9 +139,9 @@ export class ToolboxActivities {
               const activityHtml = this.renderedActivities.get(activityDescriptor.typeName);
               return (
                 <div class="tw-w-full tw-flex tw-items-center tw-pl-10 tw-pr-2 tw-py-2">
-                  <div class="tw-relative tw-cursor-move" onDragStart={e => ToolboxActivities.onActivityStartDrag(e, activityDescriptor)}>
+                      <div class="tw-relative tw-cursor-move" onDragStart={e => ToolboxActivities.onActivityStartDrag(e, activityDescriptor)}>
                     <elsa-tooltip tooltipPosition="right" tooltipContent={activityDescriptor.description}>
-                        <div innerHTML={activityHtml} draggable={true}/>
+                      <div innerHTML={activityHtml} draggable={!this.isReadonly}/>
                     </elsa-tooltip>
                   </div>
                 </div>

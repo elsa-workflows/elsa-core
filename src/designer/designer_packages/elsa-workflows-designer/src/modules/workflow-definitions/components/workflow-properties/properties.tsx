@@ -30,6 +30,7 @@ export class WorkflowDefinitionPropertiesEditor {
 
   @Prop() workflowDefinition?: WorkflowDefinition;
   @Prop() workflowVersions: Array<WorkflowDefinition>;
+  @Prop() readonly: boolean;
   @Event() workflowPropsUpdated: EventEmitter<WorkflowDefinitionPropsUpdatedArgs>;
   @Event() versionSelected: EventEmitter<WorkflowDefinition>;
   @Event() deleteVersionClicked: EventEmitter<WorkflowDefinition>;
@@ -69,6 +70,7 @@ export class WorkflowDefinitionPropertiesEditor {
 
     return (
       <elsa-form-panel
+        isReadonly={this.readonly}
         mainTitle={title}
         subTitle={subTitle}
         tabs={tabs}
@@ -85,6 +87,7 @@ export class WorkflowDefinitionPropertiesEditor {
     const workflowDefinition = this.workflowDefinition;
     const options: WorkflowOptions = workflowDefinition.options || {};
     const autoUpdateConsumingWorkflows = options.autoUpdateConsumingWorkflows ?? false;
+    const usableAsActivity = options.usableAsActivity ?? false;
 
     if (!workflowDefinition) {
       this.model = model;
@@ -121,7 +124,8 @@ export class WorkflowDefinitionPropertiesEditor {
             'Definition ID': isNullOrWhitespace(workflow.definitionId) ? '(new)' : workflow.definitionId,
             'Version ID': isNullOrWhitespace(workflow.id) ? '(new)' : workflow.id,
             'Version': workflow.version.toString(),
-            'Status': workflow.isPublished ? 'Published' : 'Draft'
+            'Status': workflow.isPublished ? 'Published' : 'Draft',
+            'Readonly': workflow.isReadonly ? 'Yes' : 'No'
           };
 
           return <InfoList title="Information" dictionary={workflowDetails}/>;
@@ -168,29 +172,26 @@ export class WorkflowDefinitionPropertiesEditor {
         </FormEntry>
       },
       {
-        name: 'useAsActivity',
+        name: 'usableAsActivity',
         order: 0,
-        content: () => <FormEntry label="Usable As Activity" fieldId="useAsActivity" hint="Allow this workflow to be used as an activity.">
-          <select name="workflowActivityFeature" onChange={e => this.onPropertyEditorChanged(wf => {
-            const selectElement = (e.target as HTMLSelectElement);
-            wf.usableAsActivity = selectElement.value != "false";
+        content: () => <CheckboxFormEntry label="Usable As Activity" fieldId="UsableAsActivity" hint="Allow this workflow to be used as an activity.">
+          <input type="checkbox" id="UsableAsActivity" name="UsableAsActivity" checked={usableAsActivity} onChange={e => this.onPropertyEditorChanged(wf => {
+            const inputElement = (e.target as HTMLInputElement);
+            wf.options.usableAsActivity = inputElement.checked;
             this.createModel();
-          })}>
-            <option value="false" selected={!this.workflowDefinition.usableAsActivity}>No</option>
-            <option value="true" selected={this.workflowDefinition.usableAsActivity}>Yes</option>
-          </select>
-        </FormEntry>
+          })}/>
+        </CheckboxFormEntry>
       },
       {
         name: 'autoUpdateConsumingWorkflows',
         order: 0,
-        content: () => 
+        content: () =>
           <CheckboxFormEntry fieldId="UpdateConsumingWorkflows" label="Auto-update consuming workflows" hint="When you publish a new version, all of the consuming workflows will be updated to point to the new version of this workflow.">
-            <input type="checkbox" name="UpdateConsumingWorkflows" id="UpdateConsumingWorkflows" value={"true"} checked={autoUpdateConsumingWorkflows} onChange={e => this.onPropertyEditorChanged(wf => {
+            <input type="checkbox" name="UpdateConsumingWorkflows" id="UpdateConsumingWorkflows" checked={autoUpdateConsumingWorkflows} onChange={e => this.onPropertyEditorChanged(wf => {
               const inputElement = e.target as HTMLInputElement;
               options.autoUpdateConsumingWorkflows = inputElement.checked;
               wf.options = options;
-          })}/>
+            })}/>
           </CheckboxFormEntry>
       }
     ];

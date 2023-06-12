@@ -14,6 +14,7 @@ export class DropdownButton {
   @Prop() public origin: DropdownButtonOrigin = DropdownButtonOrigin.TopLeft;
   @Prop() public items: Array<DropdownButtonItem> = [];
   @Prop() public theme: ('Primary' | 'Secondary') = 'Primary';
+  @Prop() public disabled: boolean;
   @Event() public itemSelected: EventEmitter<DropdownButtonItem>
   @Event() public menuOpened: EventEmitter<void>
 
@@ -21,14 +22,17 @@ export class DropdownButton {
   private element: HTMLElement;
 
   public render() {
-    const buttonClass = this.theme == 'Secondary' ? 'tw-border-gray-300 tw-bg-white tw-text-gray-700 hover:tw-bg-gray-50 focus:tw-ring-blue-500 hover:tw-border-blue-500' : 'tw-border-blue-600 tw-bg-blue-600 tw-text-white hover:tw-bg-blue-700 focus:tw-ring-blue-600 hover:tw-border-blue-700';
-    const arrowClass = this.theme == 'Secondary' ? 'tw-border-gray-300 tw-bg-white tw-text-gray-700 hover:tw-bg-gray-50 hover:tw-border-blue-500' : 'tw-border-blue-600 tw-bg-blue-600 tw-text-white hover:tw-bg-blue-700 hover:tw-border-blue-700';
+    const disabled = this.disabled;
+    const buttonClass = this.theme == 'Secondary' ? 'tw-border-gray-300 tw-bg-white tw-text-gray-700 hover:tw-bg-gray-50 focus:tw-ring-blue-500 hover:tw-border-blue-500' + (disabled==true ? ' tw-opacity-50' : '') : 'tw-border-blue-600 tw-bg-blue-600 tw-text-white hover:tw-bg-blue-700 focus:tw-ring-blue-600 hover:tw-border-blue-700' + (disabled==true ? ' tw-opacity-50' : '');
+    const arrowClass = this.theme == 'Secondary' ? 'tw-border-gray-300 tw-bg-white tw-text-gray-700 hover:tw-bg-gray-50 hover:tw-border-blue-500' + (disabled==true ? ' tw-opacity-50' : '') : 'tw-border-blue-600 tw-bg-blue-600 tw-text-white hover:tw-bg-blue-700 hover:tw-border-blue-700' + (disabled==true ? ' tw-opacity-50' : '');
     const handler = this.handler ?? (() => this.toggleMenu());
 
     return (
       <Host class="tw-block" ref={el => this.element = el}>
         <span class="tw-relative tw-z-0 tw-inline-flex tw-shadow-sm tw-rounded-md">
-          <button type="button"
+          <button
+            type="button"
+            disabled={disabled}
                   class={`tw-relative tw-inline-flex tw-items-center tw-px-4 tw-py-2 tw-rounded-l-md tw-border tw-text-sm tw-font-medium focus:tw-z-10 focus:tw-outline-none ${buttonClass}`}
                   onClick={handler}>
             {this.renderIcon()}
@@ -36,6 +40,7 @@ export class DropdownButton {
           </button>
           <div class="-tw-ml-px tw-block">
             <button type="button"
+              disabled={disabled}
                     class={`tw-relative tw-inline-flex tw-items-center tw-px-2 tw-py-2 tw-rounded-r-md tw-border tw-text-sm tw-font-medium focus:tw-z-10 focus:tw-outline-none ${arrowClass}`}
                     onClick={() => this.toggleMenu()}
                     aria-expanded="true" aria-haspopup="true">

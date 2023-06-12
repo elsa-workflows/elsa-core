@@ -69,4 +69,9 @@ public static class ModuleExtensions
     /// Adds the specified activity type to the system.
     /// </summary>
     public static IModule AddActivity<T>(this IModule module) where T : IActivity => module.UseWorkflowManagement(management => management.AddActivity<T>());
+    
+    /// <summary>
+    /// Removes the specified activity type from the system.
+    /// </summary>
+    public static IModule RemoveActivity<T>(this IModule module) where T : IActivity => module.UseWorkflowManagement(management => management.RemoveActivity<T>());
 }

@@ -30,9 +30,9 @@ export class InputControlSwitch {
   }
 
   // Tunneled props.
-  @Prop() workflowDefinitionId: string;
-  @Prop() activityType: string;
-  @Prop() propertyName: string;
+  @Prop({mutable: true}) workflowDefinitionId: string;
+  @Prop({mutable: true}) activityType: string;
+  @Prop({mutable: true}) propertyName: string;
 
   @Prop() label: string;
   @Prop() hideLabel: boolean;

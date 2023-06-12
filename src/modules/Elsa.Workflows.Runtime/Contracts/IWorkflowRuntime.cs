@@ -1,5 +1,4 @@
 using Elsa.Common.Models;
-using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.State;
@@ -101,7 +100,7 @@ public interface IWorkflowRuntime
     /// <summary>
     /// Counts the number of workflow instances based on the provided query args.
     /// </summary>
-    Task<int> CountRunningWorkflowsAsync(CountRunningWorkflowsArgs args, CancellationToken cancellationToken = default);
+    Task<long> CountRunningWorkflowsAsync(CountRunningWorkflowsArgs args, CancellationToken cancellationToken = default);
 }
 
 public record StartWorkflowRuntimeOptions(string? CorrelationId = default, IDictionary<string, object>? Input = default, VersionOptions VersionOptions = default, string? TriggerActivityId = default, string? InstanceId = default);

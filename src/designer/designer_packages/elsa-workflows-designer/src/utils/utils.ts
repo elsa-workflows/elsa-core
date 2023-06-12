@@ -129,5 +129,5 @@ export function generateIdentity() {
 }
 
 export function formatTextWithLineBreaks(text: string) {
-  return text.replace(/\n/g, '<br />');
+  return text?.replace(/\n/g, '<br />');
 }

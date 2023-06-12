@@ -12,4 +12,5 @@ internal class Response
     }
 
     public ICollection<ActivityDescriptor> Items { get; set; }
+    public int Count => Items.Count;
 }

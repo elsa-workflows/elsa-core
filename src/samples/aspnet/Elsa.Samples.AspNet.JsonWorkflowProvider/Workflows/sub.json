@@ -1,0 +1,95 @@
+{
+  "id": "401f5e84019848ffa28d75e75d611b39",
+  "definitionId": "2f6ba5802e254082b00bd4dab00e650a",
+  "name": "sub",
+  "createdAt": "2023-04-04T11:31:58.018203+00:00",
+  "version": 3,
+  "variables": [
+    {
+      "id": "cb1309762f244c5c8237e0547772ef12",
+      "name": "subvar",
+      "typeName": "String",
+      "isArray": false,
+      "value": "",
+      "storageDriverTypeName": "Elsa.Workflows.Core.Services.WorkflowStorageDriver, Elsa.Workflows.Core"
+    }
+  ],
+  "inputs": [
+    {
+      "uiHint": "single-line",
+      "storageDriverType": "Elsa.Workflows.Core.Services.WorkflowStorageDriver, Elsa.Workflows.Core",
+      "type": "String",
+      "name": "fromMain",
+      "displayName": "fromMain",
+      "description": "",
+      "category": "",
+      "isArray": false
+    }
+  ],
+  "outputs": [
+    {
+      "type": "String",
+      "name": "toMain",
+      "displayName": "toMain",
+      "description": "",
+      "isArray": false
+    }
+  ],
+  "outcomes": [],
+  "customProperties": {},
+  "usableAsActivity": true,
+  "isLatest": true,
+  "isPublished": true,
+  "root": {
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "id": "Flowchart1",
+    "metadata": {},
+    "applicationProperties": {
+      "NotFoundConnectionsKey": [],
+      "CanStartWorkflow": false,
+      "RunAsynchronously": false
+    },
+    "start": "SetOutput1",
+    "activities": [
+      {
+        "outputName": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "toMain"
+          },
+          "memoryReference": {
+            "id": "SetOutput1:input-1"
+          }
+        },
+        "outputValue": {
+          "typeName": "Object",
+          "expression": {
+            "type": "JavaScript",
+            "value": "return \u0027hi there\u0027 \u002B getFromMain();"
+          },
+          "memoryReference": {
+            "id": "SetOutput1:input-2"
+          }
+        },
+        "id": "SetOutput1",
+        "type": "Elsa.SetOutput",
+        "version": 1,
+        "customProperties": {
+          "CanStartWorkflow": true,
+          "RunAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 1660,
+              "y": 2260
+            }
+          }
+        }
+      }
+    ],
+    "connections": []
+  }
+}

@@ -1,11 +1,10 @@
-import {Component, h, Prop, State, Watch, Event, EventEmitter} from "@stencil/core";
+import {Component, h, Prop, State, Watch, Event, EventEmitter, Method} from "@stencil/core";
 import {Activity, Workflow, WorkflowExecutionLogRecord, WorkflowInstance} from "../../../models";
 import {Container} from "typedi";
 import {ActivityIconRegistry, ActivityNode, flatten, walkActivities} from "../../../services";
 import {durationToString, formatTime, getDuration, Hash, isNullOrWhitespace} from "../../../utils";
-import {ActivityExecutionEventBlock} from "../models";
+import {ActivityExecutionEventBlock, WorkflowJournalModel} from "../models";
 import {ActivityIconSize} from "../../../components/icons/activities";
-import {WorkflowDefinition} from "../../workflow-definitions/models/entities";
 import {WorkflowInstancesApi} from "../services/workflow-instances-api";
 import {JournalItemSelectedArgs} from "../events";
 
@@ -26,8 +25,7 @@ export class Journal {
     this.workflowInstancesApi = Container.get(WorkflowInstancesApi);
   }
 
-  @Prop() workflowInstance: WorkflowInstance;
-  @Prop() workflowDefinition: WorkflowDefinition;
+  @Prop() model: WorkflowJournalModel;
   @State() workflowExecutionLogRecords: Array<WorkflowExecutionLogRecord> = [];
   @State() blocks: Array<ActivityExecutionEventBlock> = [];
   @State() rootBlocks: Array<ActivityExecutionEventBlock> = [];
@@ -35,21 +33,19 @@ export class Journal {
   @State() journalActivityMap: Set<ActivityNode> = new Set<ActivityNode>();
   @Event() journalItemSelected: EventEmitter<JournalItemSelectedArgs>;
 
-  @Watch('workflowInstance')
-  async onWorkflowInstanceChanged(value: string) {
-    await this.loadJournalPage(0);
-    this.createActivityMapForJournal();
-
-  }
-
-  @Watch('workflowDefinition')
-  async onWorkflowDefinitionChanged(value: string) {
-    this.rootBlocks = [];
-    await this.loadJournalPage(0);
-    this.createActivityMapForJournal();
+  @Watch('model')
+  async onWorkflowInstanceModelChanged(oldValue: WorkflowJournalModel, newValue: WorkflowJournalModel) {
+    if(oldValue.workflowInstance.id != newValue.workflowInstance.id)
+      await this.refresh();
   }
 
   async componentWillLoad(): Promise<void> {
+    await this.refresh();
+  }
+
+  @Method()
+  async refresh() {
+    this.rootBlocks = [];
     await this.loadJournalPage(0);
     this.createActivityMapForJournal();
   }
@@ -105,6 +101,10 @@ export class Journal {
 
     return sortedBlocks.map((block) => {
       const activityNode = journalActivityMap[block.nodeId];
+
+      if (activityNode == null)
+        debugger
+
       const activity = activityNode.activity;
 
       if (activity.type == "Elsa.Workflow" || activity.type == "Elsa.Flowchart")
@@ -165,10 +165,11 @@ export class Journal {
   }
 
   private loadJournalPage = async (page: number): Promise<void> => {
-    if (!this.workflowInstance || !this.workflowDefinition)
+    if (!this.model)
       return;
 
-    const workflowInstanceId = this.workflowInstance.id;
+    const workflowInstance = this.model.workflowInstance;
+    const workflowInstanceId = workflowInstance.id;
     const pageOfRecords = await this.workflowInstancesApi.getJournal({page, pageSize: PAGE_SIZE, workflowInstanceId: workflowInstanceId});
     const blocks = this.createBlocks(pageOfRecords.items);
     const rootBlocks = blocks.filter(x => !x.parentActivityInstanceId);
@@ -239,13 +240,15 @@ export class Journal {
   }
 
   private createActivityMapForJournal() {
+    const workflowDefinition = this.model.workflowDefinition;
+
     // Create dummy root workflow to match structure of workflow execution log entries in order to generate the right node IDs.
     const workflow: Workflow = {
       type: 'Elsa.Workflow',
-      version: this.workflowDefinition.version,
+      version: workflowDefinition.version,
       id: "Workflow1",
-      root: this.workflowDefinition.root,
-      variables: this.workflowDefinition.variables,
+      root: workflowDefinition.root,
+      variables: workflowDefinition.variables,
       metadata: {},
       customProperties: {}
     }

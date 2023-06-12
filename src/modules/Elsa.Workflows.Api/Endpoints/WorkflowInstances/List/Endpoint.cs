@@ -1,6 +1,7 @@
 using Elsa.Abstractions;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
+using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
@@ -44,13 +45,13 @@ internal class List : ElsaEndpoint<Request, Response>
 
     private async Task<Page<WorkflowInstanceSummary>> FindAsync(Request request, WorkflowInstanceFilter filter, PageArgs pageArgs, CancellationToken cancellationToken)
     {
-        request.OrderBy = request.OrderBy ?? OrderByWfInstance.Created;
-        var direction = request.OrderBy == OrderByWfInstance.Name ? (request.OrderDirection ?? OrderDirection.Ascending) : (request.OrderDirection ?? OrderDirection.Descending);
+        request.OrderBy = request.OrderBy ?? OrderByWorkflowInstance.Created;
+        var direction = request.OrderBy == OrderByWorkflowInstance.Name ? (request.OrderDirection ?? OrderDirection.Ascending) : (request.OrderDirection ?? OrderDirection.Descending);
 
         switch (request.OrderBy)
         {
             default:
-            case OrderByWfInstance.Created:
+            case OrderByWorkflowInstance.Created:
                 {
                     var o = new WorkflowInstanceOrder<DateTimeOffset>
                     {
@@ -60,7 +61,7 @@ internal class List : ElsaEndpoint<Request, Response>
 
                     return await _store.SummarizeManyAsync(filter, pageArgs, o, cancellationToken);
                 }
-            case OrderByWfInstance.LastExecuted:
+            case OrderByWorkflowInstance.LastExecuted:
                 {
                     var o = new WorkflowInstanceOrder<DateTimeOffset?>
                     {
@@ -70,7 +71,7 @@ internal class List : ElsaEndpoint<Request, Response>
 
                     return await _store.SummarizeManyAsync(filter, pageArgs, o, cancellationToken);
                 }
-            case OrderByWfInstance.Finished:
+            case OrderByWorkflowInstance.Finished:
                 {
                     var o = new WorkflowInstanceOrder<DateTimeOffset?>
                     {
@@ -80,7 +81,7 @@ internal class List : ElsaEndpoint<Request, Response>
 
                     return await _store.SummarizeManyAsync(filter, pageArgs, o, cancellationToken);
                 }
-            case OrderByWfInstance.Name:
+            case OrderByWorkflowInstance.Name:
                 {
                     var o = new WorkflowInstanceOrder<string>
                     {

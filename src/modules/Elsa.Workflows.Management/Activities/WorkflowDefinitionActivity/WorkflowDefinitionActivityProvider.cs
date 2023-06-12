@@ -1,9 +1,7 @@
 using Elsa.Common.Models;
 using Elsa.Extensions;
-using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Notifications;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
@@ -58,7 +56,7 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
             Name = outcome,
             DisplayName = outcome,
             IsBrowsable = true,
-            Mode = PortMode.Port
+            Type = PortType.Flow
         }).ToList();
         
         var rootPort = new Port
@@ -66,7 +64,7 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
             Name = nameof(WorkflowDefinitionActivity.Root),
             DisplayName = "Root",
             IsBrowsable = false,
-            Mode = PortMode.Embedded
+            Type = PortType.Embedded
         };
         
         ports.Insert(0, rootPort);

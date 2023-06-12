@@ -31,7 +31,7 @@ export class ActivityPropertiesEditor {
   @Prop() activity?: Activity;
   @Prop() variables: Array<Variable> = [];
   @Prop() outputs: Array<OutputDefinition> = [];
-
+  @Prop() isReadonly: boolean;
   @Event() activityUpdated: EventEmitter<ActivityUpdatedArgs>;
   @Event() deleteActivityRequested: EventEmitter<DeleteActivityRequestedArgs>;
   @State() private selectedTabIndex: number = 0;
@@ -79,6 +79,7 @@ export class ActivityPropertiesEditor {
 
     return (
       <elsa-form-panel
+        isReadonly={this.isReadonly}
         mainTitle={mainTitle}
         subTitle={subTitle}
         orientation="Landscape"

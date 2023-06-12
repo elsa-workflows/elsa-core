@@ -130,6 +130,7 @@ export class WorkflowDefinitionEditor {
       version: 1,
       isLatest: true,
       isPublished: false,
+      isReadonly: false,
       materializerName: 'Json'
     }
 
@@ -141,7 +142,7 @@ export class WorkflowDefinitionEditor {
   async loadWorkflowVersions(): Promise<void> {
     if (this.workflowDefinitionState.definitionId != null && this.workflowDefinitionState.definitionId.length > 0) {
       const workflowVersions = await this.workflowDefinitionApi.getVersions(this.workflowDefinitionState.definitionId);
-      this.workflowVersions = workflowVersions.sort(x => x.version).reverse();
+      this.workflowVersions = workflowVersions.sort((a, b) => a.version > b.version ? -1 : 1);
     } else {
       this.workflowVersions = [];
     }
@@ -174,6 +175,7 @@ export class WorkflowDefinitionEditor {
   private renderSelectedObject = () => {
     if (!!this.selectedActivity)
       return <elsa-activity-properties-editor
+        isReadonly={this.workflowDefinition.isReadonly}
         activity={this.selectedActivity}
         variables={this.workflowDefinitionState.variables}
         outputs={this.workflowDefinitionState.outputs}
@@ -191,7 +193,13 @@ export class WorkflowDefinitionEditor {
   private saveChanges = async (): Promise<void> => {
     const updatedWorkflowDefinition = this.workflowDefinitionState;
 
-    if (!updatedWorkflowDefinition.isLatest) {
+
+    if (updatedWorkflowDefinition.isReadonly) {
+      console.debug('Workflow definition is readonly. Changes will not be saved.');
+      return;
+    }
+
+    if(!updatedWorkflowDefinition.isLatest) {
       console.debug('Workflow definition is not the latest version. Changes will not be saved.');
       return;
     }
@@ -299,7 +307,7 @@ export class WorkflowDefinitionEditor {
 
   private async updateSelectedActivity() {
     if (!!this.selectedActivity)
-      this.selectedActivity = await this.flowchart.getActivity(this.selectedActivity.id);
+      this.selectedActivity = await this.flowchart?.getActivity(this.selectedActivity.id);
   }
 
   private onVersionSelected = async (e: CustomEvent<WorkflowDefinition>) => {
@@ -339,9 +347,12 @@ export class WorkflowDefinitionEditor {
             class="elsa-activity-picker-container tw-z-30"
             position={PanelPosition.Left}
             onExpandedStateChanged={e => this.onActivityPickerPanelStateChanged(e.detail)}>
-            <elsa-workflow-definition-editor-toolbox ref={el => this.toolbox = el}/>
+            <elsa-workflow-definition-editor-toolbox
+              isReadonly={this.workflowDefinition.isReadonly}
+              ref={el => this.toolbox = el} />
           </elsa-panel>
           <elsa-flowchart
+            isReadonly={this.workflowDefinition.isReadonly}
             key={workflowDefinition.definitionId}
             ref={el => this.flowchart = el}
             rootActivity={workflowDefinition.root}
@@ -357,6 +368,7 @@ export class WorkflowDefinitionEditor {
             onExpandedStateChanged={e => this.onWorkflowEditorPanelStateChanged(e.detail)}>
             <div class="object-editor-container">
               <elsa-workflow-definition-properties-editor
+                readonly={this.workflowDefinition.isReadonly}
                 workflowDefinition={this.workflowDefinitionState}
                 workflowVersions={this.workflowVersions}
                 onWorkflowPropsUpdated={e => this.onWorkflowPropsUpdated(e)}

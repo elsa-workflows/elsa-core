@@ -9,7 +9,6 @@ using Elsa.Workflows.Core.Notifications;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Notifications;
-using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Runtime.ActivationValidators;
 using Elsa.Workflows.Runtime.Commands;
 using Elsa.Workflows.Runtime.Contracts;
@@ -60,7 +59,7 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// <summary>
     /// A factory that instantiates an <see cref="ITriggerStore"/>.
     /// </summary>
-    public Func<IServiceProvider, ITriggerStore> WorkflowTriggerStore { get; set; } = sp => sp.GetRequiredService<MemoryTriggerStore>();
+    public Func<IServiceProvider, ITriggerStore> TriggerStore { get; set; } = sp => sp.GetRequiredService<MemoryTriggerStore>();
 
     /// <summary>
     /// A factory that instantiates an <see cref="IWorkflowExecutionLogStore"/>.
@@ -124,11 +123,7 @@ public class WorkflowRuntimeFeature : FeatureBase
     }
 
     /// <inheritdoc />
-    public override void ConfigureHostedServices() =>
-        Module
-            .ConfigureHostedService<RegisterDescriptors>()
-            .ConfigureHostedService<RegisterExpressionSyntaxDescriptors>()
-            .ConfigureHostedService<PopulateWorkflowDefinitionStore>();
+    public override void ConfigureHostedServices() => Module.ConfigureHostedService<PopulateRegistriesHostedService>();
 
     /// <inheritdoc />
     public override void Apply()
@@ -146,10 +141,12 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddSingleton(WorkflowRuntime)
             .AddSingleton(WorkflowDispatcher)
             .AddSingleton(BookmarkStore)
-            .AddSingleton(WorkflowTriggerStore)
+            .AddSingleton(TriggerStore)
             .AddSingleton(WorkflowExecutionLogStore)
             .AddSingleton(RunTaskDispatcher)
             .AddSingleton(BackgroundActivityInvoker)
+            .AddSingleton<IWorkflowDefinitionStorePopulator, DefaultWorkflowDefinitionStorePopulator>()
+            .AddSingleton<IRegistriesPopulator, DefaultRegistriesPopulator>()
             .AddSingleton<ITaskReporter, TaskReporter>()
             .AddSingleton<SynchronousTaskDispatcher>()
             .AddSingleton<AsynchronousTaskDispatcher>()

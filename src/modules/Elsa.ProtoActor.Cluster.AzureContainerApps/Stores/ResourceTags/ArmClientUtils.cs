@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 using Azure.Core;
 using Azure.ResourceManager;
 using Azure.ResourceManager.Resources;

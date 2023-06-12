@@ -1,10 +1,10 @@
-import {Component, Event, EventEmitter, h, Host, Method, State} from '@stencil/core';
+import {Component, Event, EventEmitter, h, Host, Method, Prop, State} from '@stencil/core';
 import _ from 'lodash';
 import {Search} from "./search";
 import {Filter, FilterProps} from "./filter";
 import {ListWorkflowInstancesRequest, WorkflowInstancesApi} from "../services/workflow-instances-api";
 import {getRequest, persistRequest} from '../services/lookup-persistence';
-import {WorkflowDefinitionSummary} from "../../workflow-definitions/models/entities";
+import {WorkflowDefinition, WorkflowDefinitionSummary} from "../../workflow-definitions/models/entities";
 import {OrderBy, OrderDirection, PagedList, VersionOptions, WorkflowInstanceSummary, WorkflowStatus, WorkflowSubStatus} from "../../../models";
 import {Container} from "typedi";
 import {WorkflowDefinitionsApi} from "../../workflow-definitions/services/api";
@@ -38,6 +38,7 @@ export class WorkflowInstanceBrowser {
     this.modalDialogService = Container.get(ModalDialogService);
   }
 
+  @Prop() workflowDefinition: WorkflowDefinition;
   @Event() public workflowInstanceSelected: EventEmitter<WorkflowInstanceSummary>;
   @State() private workflowInstances: PagedList<WorkflowInstanceSummary> = {items: [], totalCount: 0};
   @State() private workflows: Array<WorkflowDefinitionSummary> = [];
@@ -56,7 +57,7 @@ export class WorkflowInstanceBrowser {
 
     if (persistedRequest) {
       // TODO: Persist search term, need to bind the value to the input
-      // this.searchTerm = persistedRequest.searchTerm
+      //this.searchTerm = persistedRequest.searchTerm
       this.currentPage = persistedRequest.page
       this.currentPageSize = persistedRequest.pageSize
       this.orderBy = persistedRequest.orderBy
@@ -65,6 +66,9 @@ export class WorkflowInstanceBrowser {
       this.selectedSubStatus = persistedRequest.subStatus
     }
 
+    if(this.workflowDefinition != null)
+      this.selectedWorkflowDefinitionId = this.workflowDefinition.definitionId;
+    
     await this.loadWorkflowDefinitions();
     await this.loadWorkflowInstances();
   }

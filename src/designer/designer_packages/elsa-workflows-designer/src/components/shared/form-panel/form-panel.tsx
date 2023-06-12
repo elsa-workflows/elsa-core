@@ -9,6 +9,7 @@ import {PanelActionClickArgs, PanelActionDefinition, PanelActionType} from "./mo
 export class FormPanel {
   @Prop() public mainTitle: string;
   @Prop() public subTitle: string;
+  @Prop() public isReadonly: boolean;
   @Prop() public orientation: 'Landscape' | 'Portrait' = 'Portrait';
   @Prop() public tabs: Array<TabDefinition> = [];
   @Prop({mutable: true}) public selectedTabIndex?: number;
@@ -41,10 +42,12 @@ export class FormPanel {
     const mainTitle = this.mainTitle;
     const subTitle = this.subTitle;
     const orientation = this.orientation;
+    const readonly = true;
 
     return (
       <div class="tw-absolute tw-inset-0 tw-overflow-hidden">
         <form class="tw-h-full tw-flex tw-flex-col tw-bg-white tw-shadow-xl" onSubmit={e => this.onSubmit(e)} method="post">
+        
           <div class="tw-flex tw-flex-col tw-flex-1">
 
             {orientation == 'Portrait' && (
@@ -87,12 +90,16 @@ export class FormPanel {
 
             <div class={`tw-flex-1 tw-relative`}>
               <div class={`tw-absolute tw-inset-0 tw-overflow-y-scroll ${orientation == 'Landscape' ? 'tw-px-6' : ''}`}>
+               
                 {tabs.map((tab, tabIndex) => {
                   const cssClass = tabIndex == selectedTabIndex ? '' : 'hidden';
                   return <div class={cssClass}>
-                    {tab.content()}
+                    <fieldset disabled={readonly}>
+                      {tab.content()}
+                    </fieldset>
                   </div>
                 })}
+               
               </div>
             </div>
           </div>
@@ -125,7 +132,8 @@ export class FormPanel {
                   </button>
                 })}
               </div>
-            </div>) : undefined}
+              </div>) : undefined}
+        
         </form>
       </div>
     );

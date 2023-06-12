@@ -70,6 +70,7 @@ export class FlowchartComponent {
   async newRoot(): Promise<Activity> {
     const flowchart = await this.createFlowchart();
     await this.setupGraph(flowchart);
+    await this.scrollToStart();
     return flowchart;
   }
 
@@ -207,8 +208,10 @@ export class FlowchartComponent {
       nodeShape.activity = activity;
 
       // If the ID of the activity changed, we need to update connection references (X6 stores deep copies of data).
-      if (activityId !== originalId)
+      if (activityId !== originalId) {
         this.syncEdgeData(originalId, activity);
+        await this.updateModel();
+      }
 
       // Update ports.
       if (args.updatePorts) {
@@ -240,8 +243,10 @@ export class FlowchartComponent {
     node.activity = activity;
 
     // If the ID of the activity changed, we need to update connection references (X6 stores deep copies of data).
-    if (activity.id !== originalId)
+    if (activity.id !== originalId) {
       this.syncEdgeData(originalId, activity);
+      await this.updateModel();
+    }
   }
 
   @Method()
@@ -258,7 +263,7 @@ export class FlowchartComponent {
   private async onInteractiveModeChange(value: boolean) {
     const graph = this.graph;
 
-    if (!value) {
+    if (!value || this.isReadonly) {
       graph.disableSelectionMovable();
       graph.disableKeyboard();
     } else {
@@ -297,6 +302,7 @@ export class FlowchartComponent {
 
   async componentDidLoad() {
     await this.createAndInitializeGraph();
+    await this.updateGraph();
   }
 
   private getFlowchartDescriptor = () => this.getActivityDescriptor(FlowchartTypeName);
@@ -409,7 +415,11 @@ export class FlowchartComponent {
     const activities = flowchart.activities;
     const connections = flowchart.connections;
     this.updateGraphInternal(activities, connections);
-    await this.scrollToStart();
+	
+	if (this.isReadonly) {
+      this.graph.disableSelectionMovable();
+      this.graph.disableKeyboard();
+    }
   };
 
   private updateGraphInternal = (activities: Array<Activity>, connections: Array<Connection>) => {
@@ -435,8 +445,8 @@ export class FlowchartComponent {
     this.graph.freeze();
     this.graph.fromJSON(model, {silent: false});
     this.graph.unfreeze();
-
     rebuildGraph(this.graph);
+    this.graph.scrollToContent();
   }
 
   private getFlowchartModel = (): FlowchartModel => {
@@ -552,7 +562,7 @@ export class FlowchartComponent {
         handler: () => this.onDeleteActivityClicked(node)
       }];
 
-    this.activityContextMenu.menuItems = menuItems;
+    this.activityContextMenu.menuItems = this.isReadonly ? [] : menuItems;
     const localPos = this.graph.localToClient(e.x, e.y);
     const scroll = this.graph.getScrollbarPosition();
     this.activityContextMenu.style.top = `${localPos.y}px`;
@@ -684,6 +694,7 @@ export class FlowchartComponent {
     const childFlowchart = await this.getCurrentFlowchartActivity();
 
     await this.setupGraph(childFlowchart);
+    await this.scrollToStart();
   }
 
   private updatePorts = (node: any, activity: Activity) => {

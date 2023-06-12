@@ -1,0 +1,61 @@
+{
+  "id": "82b53ccf2a4e4ced966b85fb3cc13eed",
+  "definitionId": "40a40a0cdf5448acbc899391b2c50458",
+  "name": "AtomActivity",
+  "createdAt": "2023-06-01T14:00:29.374132+00:00",
+  "version": 1,
+  "variables": [],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [],
+  "customProperties": {},
+  "usableAsActivity": true,
+  "isLatest": true,
+  "isPublished": true,
+  "options": {
+    "autoUpdateConsumingWorkflows": true
+  },
+  "root": {
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "id": "Flowchart1",
+    "metadata": {},
+    "applicationProperties": {
+      "NotFoundConnectionsKey": [],
+      "CanStartWorkflow": false,
+      "RunAsynchronously": false
+    },
+    "start": "Atom",
+    "activities": [
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Atom"
+          },
+          "memoryReference": {
+            "id": "65ee0198-2051-491d-9035-6d05e73fbd08"
+          }
+        },
+        "id": "Atom",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "CanStartWorkflow": false,
+          "RunAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 2394,
+              "y": 2472
+            }
+          },
+          "displayText": "Atom"
+        }
+      }
+    ],
+    "connections": []
+  }
+}

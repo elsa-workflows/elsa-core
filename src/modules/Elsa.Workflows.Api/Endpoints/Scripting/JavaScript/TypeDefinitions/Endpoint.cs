@@ -1,14 +1,11 @@
 using System.Text;
+using Elsa.Abstractions;
 using Elsa.Common.Models;
 using Elsa.JavaScript.TypeDefinitions.Contracts;
 using Elsa.JavaScript.TypeDefinitions.Models;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Contracts;
-using Elsa.Workflows.Management.Entities;
-using Elsa.Workflows.Runtime.Contracts;
-using FastEndpoints;
 using JetBrains.Annotations;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Api.Endpoints.Scripting.JavaScript.TypeDefinitions;
 
@@ -16,7 +13,7 @@ namespace Elsa.Workflows.Api.Endpoints.Scripting.JavaScript.TypeDefinitions;
 /// Returns a TypeScript definition that is used by the Monaco editor to display intellisense for JavaScript expressions.
 /// </summary>
 [PublicAPI]
-internal class Get : Endpoint<Request>
+internal class Get : ElsaEndpoint<Request>
 {
     private readonly ITypeDefinitionService _typeDefinitionService;
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
@@ -32,6 +29,7 @@ internal class Get : Endpoint<Request>
     public override void Configure()
     {
         Post("scripting/javascript/type-definitions/{workflowDefinitionId}");
+        ConfigurePermissions("read:*", "read:javascript-type-definitions");
     }
 
     /// <inheritdoc />

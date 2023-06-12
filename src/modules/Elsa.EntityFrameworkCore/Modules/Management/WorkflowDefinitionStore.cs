@@ -1,4 +1,3 @@
-using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.EntityFrameworkCore.Common;
 using Elsa.Extensions;
@@ -10,8 +9,6 @@ using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 using Microsoft.EntityFrameworkCore;
 using Open.Linq.AsyncExtensions;
-using System.ComponentModel;
-using System.Linq.Expressions;
 
 namespace Elsa.EntityFrameworkCore.Modules.Management;
 
@@ -20,7 +17,6 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
 {
     private readonly EntityStore<ManagementElsaDbContext, WorkflowDefinition> _store;
     private readonly IWorkflowInstanceStore _workflowInstanceStore;
-    private readonly IActivitySerializer _activitySerializer;
     private readonly IPayloadSerializer _payloadSerializer;
 
     /// <summary>
@@ -29,12 +25,10 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
     public EFCoreWorkflowDefinitionStore(
         EntityStore<ManagementElsaDbContext, WorkflowDefinition> store,
         IWorkflowInstanceStore workflowInstanceStore,
-        IActivitySerializer activitySerializer,
         IPayloadSerializer payloadSerializer)
     {
         _store = store;
         _workflowInstanceStore = workflowInstanceStore;
-        _activitySerializer = activitySerializer;
         _payloadSerializer = payloadSerializer;
     }
 
@@ -153,6 +147,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         var json = _payloadSerializer.Serialize(data);
 
         managementElsaDbContext.Entry(entity).Property("Data").CurrentValue = json;
+        managementElsaDbContext.Entry(entity).Property("UsableAsActivity").CurrentValue = data.Options.UsableAsActivity;
         return new ValueTask<WorkflowDefinition>(entity);
     }
 
@@ -164,7 +159,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         var data = new WorkflowDefinitionState(entity.Options, entity.Variables, entity.Inputs, entity.Outputs, entity.Outcomes, entity.CustomProperties);
         var json = (string?)managementElsaDbContext.Entry(entity).Property("Data").CurrentValue;
 
-        if (!string.IsNullOrWhiteSpace(json)) 
+        if (!string.IsNullOrWhiteSpace(json))
             data = _payloadSerializer.Deserialize<WorkflowDefinitionState>(json);
 
         entity.Options = data.Options;
@@ -177,12 +172,56 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         return new ValueTask<WorkflowDefinition?>(entity);
     }
 
-    private IQueryable<WorkflowDefinition> Filter(IQueryable<WorkflowDefinition> queryable, WorkflowDefinitionFilter filter) => filter.Apply(queryable);
+    private IQueryable<WorkflowDefinition> Filter(IQueryable<WorkflowDefinition> queryable, WorkflowDefinitionFilter filter)
+    {
+        if (filter.DefinitionId != null) queryable = queryable.Where(x => x.DefinitionId == filter.DefinitionId);
+        if (filter.DefinitionIds != null) queryable = queryable.Where(x => filter.DefinitionIds.Contains(x.DefinitionId));
+        if (filter.Id != null) queryable = queryable.Where(x => x.Id == filter.Id);
+        if (filter.Ids != null) queryable = queryable.Where(x => filter.Ids.Contains(x.Id));
+        if (filter.VersionOptions != null) queryable = queryable.WithVersion(filter.VersionOptions.Value);
+        if (filter.MaterializerName != null) queryable = queryable.Where(x => x.MaterializerName == filter.MaterializerName);
+        if (filter.Name != null) queryable = queryable.Where(x => x.Name == filter.Name);
+        if (filter.Names != null) queryable = queryable.Where(x => filter.Names.Contains(x.Name!));
+        if (filter.UsableAsActivity != null) queryable = queryable.Where(x => EF.Property<bool>(x, "UsableAsActivity") == filter.UsableAsActivity);
+        if (!string.IsNullOrWhiteSpace(filter.SearchTerm)) queryable = queryable.Where(x => x.Name.Contains(filter.SearchTerm) || x.Description.Contains(filter.SearchTerm) || x.Id == filter.SearchTerm || x.DefinitionId == filter.SearchTerm);
+        return queryable;
+    }
 
     private IQueryable<WorkflowDefinition> Paginate(IQueryable<WorkflowDefinition> queryable, PageArgs? pageArgs)
     {
         if (pageArgs?.Offset != null) queryable = queryable.Skip(pageArgs.Offset.Value);
         if (pageArgs?.Limit != null) queryable = queryable.Take(pageArgs.Limit.Value);
         return queryable;
+    }
+    
+    private class WorkflowDefinitionState
+    {
+        public WorkflowDefinitionState()
+        {
+        }
+
+        public WorkflowDefinitionState(
+            WorkflowOptions options,
+            ICollection<Variable> variables,
+            ICollection<InputDefinition> inputs,
+            ICollection<OutputDefinition> outputs,
+            ICollection<string> outcomes,
+            IDictionary<string, object> customProperties
+        )
+        {
+            Options = options;
+            Variables = variables;
+            Inputs = inputs;
+            Outputs = outputs;
+            Outcomes = outcomes;
+            CustomProperties = customProperties;
+        }
+
+        public WorkflowOptions Options { get; set; } = new();
+        public ICollection<Variable> Variables { get; set; } = new List<Variable>();
+        public ICollection<InputDefinition> Inputs { get; set; } = new List<InputDefinition>();
+        public ICollection<OutputDefinition> Outputs { get; set; } = new List<OutputDefinition>();
+        public ICollection<string> Outcomes { get; set; } = new List<string>();
+        public IDictionary<string, object> CustomProperties { get; set; } = new Dictionary<string, object>();
     }
 }

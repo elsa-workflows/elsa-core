@@ -24,7 +24,7 @@ export class WorkflowToolbar {
     this.packagesApi = Container.get(PackagesApi);
   }
 
-  async componentDidLoad() {
+  async componentWillLoad() {
     var response = await this.packagesApi.getVersion();
     return this.currentElsaVersion = response.packageVersion;
   }

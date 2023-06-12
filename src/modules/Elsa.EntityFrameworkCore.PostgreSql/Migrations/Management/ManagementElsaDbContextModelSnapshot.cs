@@ -18,7 +18,7 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "7.0.2")
+                .HasAnnotation("ProductVersion", "7.0.3")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -50,6 +50,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                     b.Property<bool>("IsPublished")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsReadonly")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("MaterializerContext")
                         .HasColumnType("text");
 
@@ -58,6 +61,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                         .HasColumnType("text");
 
                     b.Property<string>("Name")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ProviderName")
                         .HasColumnType("text");
 
                     b.Property<string>("StringData")
@@ -79,6 +85,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
 
                     b.HasIndex("Name")
                         .HasDatabaseName("IX_WorkflowDefinition_Name");
+
+                    b.HasIndex("UsableAsActivity")
+                        .HasDatabaseName("IX_WorkflowDefinition_UsableAsActivity");
 
                     b.HasIndex("Version")
                         .HasDatabaseName("IX_WorkflowDefinition_Version");

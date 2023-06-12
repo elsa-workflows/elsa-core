@@ -45,6 +45,19 @@ services:
       - "127.0.0.1:27017:27017"
     volumes:
       - mongodb_data:/data/db
+        
+  mysql:
+    image: arm64v8/mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: 'elsa'
+      MYSQL_USER: 'user'
+      MYSQL_PASSWORD: 'password'
+      MYSQL_ROOT_PASSWORD: 'password'
+    ports:
+      - '3306:3306'
+    expose:
+      - '3306'
 
   redis:
     image: redis:latest

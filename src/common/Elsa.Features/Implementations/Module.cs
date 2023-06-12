@@ -95,10 +95,11 @@ public class Module : IModule
         foreach (var feature in _features.Values)
         {
             var type = feature.GetType();
-            var name = type.Name;
-            var displayName = name.Replace("Feature", string.Empty);
+            var name = type.Name.Replace("Feature", string.Empty);
+            var ns = "Elsa";
+            var displayName = type.GetCustomAttribute<DisplayNameAttribute>()?.DisplayName ?? name;
             var description = type.GetCustomAttribute<DescriptionAttribute>()?.Description;
-            registry.Add(new FeatureDescriptor(name, displayName, description));
+            registry.Add(new FeatureDescriptor(name, ns, displayName, description));
         }
 
         Services.AddSingleton<IInstalledFeatureRegistry>(registry);

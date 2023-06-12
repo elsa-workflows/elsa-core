@@ -5,7 +5,6 @@ using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Webhooks.Extensions;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Cors.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.UseStaticWebAssets();
@@ -65,9 +64,9 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.MapHealthChecks("/health");
+app.UseRouting();
 app.UseCors();
 app.UseStaticFiles();
-app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseWorkflowsApi();

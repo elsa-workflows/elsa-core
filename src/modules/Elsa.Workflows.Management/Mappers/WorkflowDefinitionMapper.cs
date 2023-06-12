@@ -33,7 +33,7 @@ public class WorkflowDefinitionMapper
     public Workflow Map(WorkflowDefinition source)
     {
         var root = _activitySerializer.Deserialize(source.StringData!);
-        
+
         return new(
             new WorkflowIdentity(source.DefinitionId, source.Version, source.Id),
             new WorkflowPublication(source.IsLatest, source.IsPublished),
@@ -41,9 +41,12 @@ public class WorkflowDefinitionMapper
             source.Options,
             root,
             source.Variables,
+            source.Inputs,
+            source.Outputs,
+            source.Outcomes,
             source.CustomProperties);
     }
-    
+
     /// <summary>
     /// Maps a <see cref="WorkflowDefinitionModel"/> to a <see cref="Workflow"/>.
     /// </summary>
@@ -53,17 +56,24 @@ public class WorkflowDefinitionMapper
     {
         var root = source.Root!;
         var variables = _variableDefinitionMapper.Map(source.Variables).ToList();
-        
+        var options = source.Options ?? new WorkflowOptions();
+
+        // TODO: Remove this in the future when users have migrated workflows to use the new UsableAsActivity options property.
+        options.UsableAsActivity ??= source.UsableAsActivity ?? false;
+
         return new(
             new WorkflowIdentity(source.DefinitionId, source.Version, source.Id),
             new WorkflowPublication(source.IsLatest, source.IsPublished),
             new WorkflowMetadata(source.Name, source.Description, source.CreatedAt),
-            source.Options,
+            options,
             root,
             variables,
+            source.Inputs ?? new List<InputDefinition>(),
+            source.Outputs ?? new List<OutputDefinition>(),
+            source.Outcomes ?? new List<string>(),
             source.CustomProperties ?? new Dictionary<string, object>());
     }
-    
+
     /// <summary>
     /// Maps a <see cref="WorkflowDefinition"/> to a <see cref="Workflow"/>.
     /// </summary>
@@ -87,10 +97,11 @@ public class WorkflowDefinitionMapper
             workflowDefinition.Outputs,
             workflowDefinition.Outcomes,
             workflowDefinition.CustomProperties,
-            workflowDefinition.UsableAsActivity,
+            workflowDefinition.IsReadonly,
             workflowDefinition.IsLatest,
             workflowDefinition.IsPublished,
             workflow.Options,
+            default,
             workflow.Root);
     }
 }
