@@ -126,7 +126,13 @@ public class MongoStore<TDocument> where TDocument : class
     /// </summary>
     public async Task<IEnumerable<TResult>> FindMany<TResult>(Func<IMongoQueryable<TDocument>, IMongoQueryable<TDocument>> query, Expression<Func<TDocument, TResult>> selector, CancellationToken cancellationToken = default) => 
         await query(_collection.AsQueryable()).Select(selector).ToListAsync(cancellationToken);
-
+    
+    /// <summary>
+    /// Counts documents in the collection using a filter.
+    /// </summary>
+    public async Task<long> CountAsync(Func<IMongoQueryable<TDocument>, IMongoQueryable<TDocument>> query, CancellationToken cancellationToken = default) => 
+        await query(_collection.AsQueryable()).LongCountAsync(cancellationToken);
+    
     /// <summary>
     /// Checks if any documents exist.
     /// </summary>

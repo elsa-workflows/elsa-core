@@ -45,7 +45,7 @@ public class MongoWorkflowDefinitionStore : IWorkflowDefinitionStore
     /// <inheritdoc />
     public async Task<Page<WorkflowDefinition>> FindManyAsync(WorkflowDefinitionFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
-        var count = await _mongoStore.FindManyAsync(queryable => Filter(queryable, filter), cancellationToken).LongCount();
+        var count = await _mongoStore.CountAsync(queryable => Filter(queryable, filter), cancellationToken);
         var results = await _mongoStore.FindManyAsync(queryable => Paginate(Filter(queryable, filter), pageArgs), cancellationToken).ToList();
         return new Page<WorkflowDefinition>(results, count);
     }
@@ -53,7 +53,7 @@ public class MongoWorkflowDefinitionStore : IWorkflowDefinitionStore
     /// <inheritdoc />
     public async Task<Page<WorkflowDefinition>> FindManyAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
-        var count = await _mongoStore.FindManyAsync(queryable => Order(Filter(queryable, filter), order), cancellationToken).LongCount();
+        var count = await _mongoStore.CountAsync(queryable => Order(Filter(queryable, filter), order), cancellationToken);
         var results = await _mongoStore.FindManyAsync(queryable => OrderAndPaginate(Filter(queryable, filter), order, pageArgs), cancellationToken).ToList();
         return new Page<WorkflowDefinition>(results, count);
     }

@@ -48,7 +48,7 @@ public class MongoWorkflowExecutionLogStore : IWorkflowExecutionLogStore
     /// <inheritdoc />
     public async Task<Page<WorkflowExecutionLogRecord>> FindManyAsync(WorkflowExecutionLogRecordFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
-        var count = await _mongoStore.FindManyAsync(queryable => Filter(queryable, filter).OrderBy(x => x.Timestamp), cancellationToken).LongCount();
+        var count = await _mongoStore.CountAsync(queryable => Filter(queryable, filter).OrderBy(x => x.Timestamp), cancellationToken);
         var results = await _mongoStore.FindManyAsync(queryable => Paginate(Filter(queryable, filter), pageArgs), cancellationToken).ToList();
         return new Page<WorkflowExecutionLogRecord>(results, count);
     }
@@ -56,7 +56,7 @@ public class MongoWorkflowExecutionLogStore : IWorkflowExecutionLogStore
     /// <inheritdoc />
     public async Task<Page<WorkflowExecutionLogRecord>> FindManyAsync<TOrderBy>(WorkflowExecutionLogRecordFilter filter, PageArgs pageArgs, WorkflowExecutionLogRecordOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
-        var count = await _mongoStore.FindManyAsync(queryable => Order(Filter(queryable, filter), order), cancellationToken).LongCount();
+        var count = await _mongoStore.CountAsync(queryable => Order(Filter(queryable, filter), order), cancellationToken);
         var results = await _mongoStore.FindManyAsync(queryable => Paginate(Filter(queryable, filter), pageArgs), cancellationToken).ToList();
         return new Page<WorkflowExecutionLogRecord>(results, count);
     }

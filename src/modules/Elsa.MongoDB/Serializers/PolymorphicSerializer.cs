@@ -1,4 +1,5 @@
 using MongoDB.Bson;
+using MongoDB.Bson.IO;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
 
@@ -20,8 +21,9 @@ public class PolymorphicSerializer : IBsonSerializer<object>
             {
                 var typeValue = document["$type"].AsString;
                 var type = Type.GetType(typeValue);
-                var value = BsonSerializer.Deserialize(document["$value"].AsBsonDocument, type);
-                return value;
+                var valueBson = document["$value"];
+                using var jsonReader = new JsonReader(valueBson.ToJson());
+                return BsonSerializer.Deserialize(jsonReader, type);
             }
         }
         reader.ReturnToBookmark(bookmark);

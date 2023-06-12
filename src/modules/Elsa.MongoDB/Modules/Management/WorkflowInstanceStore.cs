@@ -36,7 +36,7 @@ public class MongoWorkflowInstanceStore : IWorkflowInstanceStore
     /// <inheritdoc />
     public async Task<Page<WorkflowInstance>> FindManyAsync(WorkflowInstanceFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
-        var count = await _mongoStore.FindManyAsync(query => Filter(query, filter), x => x.Id, cancellationToken).LongCount();
+        var count = await _mongoStore.CountAsync(query => Filter(query, filter), cancellationToken);
         var documents = await _mongoStore.FindManyAsync(query => Paginate(Filter(query, filter), pageArgs), cancellationToken).ToList();
         return Page.Of(documents, count);
     }
@@ -44,7 +44,7 @@ public class MongoWorkflowInstanceStore : IWorkflowInstanceStore
     /// <inheritdoc />
     public async Task<Page<WorkflowInstance>> FindManyAsync<TOrderBy>(WorkflowInstanceFilter filter, PageArgs pageArgs, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
-        var count = await _mongoStore.FindManyAsync(query => Filter(query, filter), x => x.Id, cancellationToken).LongCount();
+        var count = await _mongoStore.CountAsync(query => Filter(query, filter), cancellationToken);
         var documents = await _mongoStore.FindManyAsync(query => OrderAndPaginate(Filter(query, filter), order, pageArgs), cancellationToken).ToList();
         return Page.Of(documents, count);
     }
@@ -60,7 +60,7 @@ public class MongoWorkflowInstanceStore : IWorkflowInstanceStore
     /// <inheritdoc />
     public async Task<Page<WorkflowInstanceSummary>> SummarizeManyAsync(WorkflowInstanceFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
-        var count = await _mongoStore.FindManyAsync(query => Filter(query, filter), x => x.Id, cancellationToken).LongCount();
+        var count = await _mongoStore.CountAsync(query => Filter(query, filter), cancellationToken);
         var documents = await _mongoStore.FindManyAsync<WorkflowInstanceSummary>(query => Paginate(Filter(query, filter), pageArgs), ExpressionHelpers.WorkflowInstanceSummary, cancellationToken).ToList();
         return Page.Of(documents, count);
     }
