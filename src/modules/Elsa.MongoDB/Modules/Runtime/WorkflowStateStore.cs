@@ -44,7 +44,7 @@ public class MongoWorkflowStateStore : IWorkflowStateStore
         (await _mongoStore.FindAsync(x => x.Id == id, cancellationToken));
 
     /// <inheritdoc />
-    public async ValueTask<int> CountAsync(CountRunningWorkflowsArgs args, CancellationToken cancellationToken = default)
+    public async ValueTask<long> CountAsync(CountRunningWorkflowsArgs args, CancellationToken cancellationToken = default)
     {
         var query = _mongoStore.GetCollection().AsQueryable().Where(x => x.Status == WorkflowStatus.Running);
 

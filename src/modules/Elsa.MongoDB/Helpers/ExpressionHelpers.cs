@@ -8,33 +8,33 @@ public class ExpressionHelpers
 {
     public static readonly Expression<Func<WorkflowDefinition, WorkflowDefinitionSummary>> WorkflowDefinitionSummary = 
         workflowDefinition => new WorkflowDefinitionSummary
-        (
-            workflowDefinition.Id,
-            workflowDefinition.DefinitionId,
-            workflowDefinition.Name,
-            workflowDefinition.Description,
-            workflowDefinition.Version,
-            workflowDefinition.IsLatest,
-            workflowDefinition.IsPublished,
-            workflowDefinition.MaterializerName,
-            workflowDefinition.CreatedAt
-        );
+        {
+            Id = workflowDefinition.Id,
+            DefinitionId = workflowDefinition.DefinitionId,
+            Name = workflowDefinition.Name,
+            Description = workflowDefinition.Description,
+            Version = workflowDefinition.Version,
+            IsLatest = workflowDefinition.IsLatest,
+            IsPublished = workflowDefinition.IsPublished,
+            MaterializerName = workflowDefinition.MaterializerName,
+            CreatedAt = workflowDefinition.CreatedAt
+        };
     
     public static readonly Expression<Func<WorkflowInstance, WorkflowInstanceSummary>> WorkflowInstanceSummary = 
         workflowInstance => new WorkflowInstanceSummary
-        (
-            workflowInstance.Id,
-            workflowInstance.DefinitionId,
-            workflowInstance.DefinitionVersionId,
-            workflowInstance.Version,
-            workflowInstance.Status,
-            workflowInstance.SubStatus,
-            workflowInstance.CorrelationId,
-            workflowInstance.Name,
-            workflowInstance.CreatedAt,
-            workflowInstance.LastExecutedAt,
-            workflowInstance.FinishedAt,
-            workflowInstance.CancelledAt,
-            workflowInstance.FaultedAt
-        );
+        {
+            Id = workflowInstance.Id,
+            DefinitionId = workflowInstance.DefinitionId,
+            DefinitionVersionId = workflowInstance.DefinitionVersionId,
+            Version = workflowInstance.Version,
+            Status = workflowInstance.Status,
+            SubStatus = workflowInstance.SubStatus,
+            CorrelationId = workflowInstance.CorrelationId,
+            Name = workflowInstance.Name,
+            CreatedAt = workflowInstance.CreatedAt,
+            LastExecutedAt = workflowInstance.LastExecutedAt,
+            FinishedAt = workflowInstance.FinishedAt,
+            CancelledAt = workflowInstance.CancelledAt,
+            FaultedAt = workflowInstance.FaultedAt
+        };
 }
