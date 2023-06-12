@@ -42,7 +42,7 @@ export class FormPanel {
     const mainTitle = this.mainTitle;
     const subTitle = this.subTitle;
     const orientation = this.orientation;
-    const readonly = true;
+    const readonly = this.isReadonly;
 
     return (
       <div class="tw-absolute tw-inset-0 tw-overflow-hidden">
