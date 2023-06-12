@@ -16,7 +16,7 @@ public class WorkflowState : Entity
     /// <summary>
     /// The workflow definition version.
     /// </summary>
-    public int DefinitionVersion { get; set; } = default!;
+    public int DefinitionVersion { get; set; }
 
     /// <summary>
     /// The correlation ID of the workflow, if any.

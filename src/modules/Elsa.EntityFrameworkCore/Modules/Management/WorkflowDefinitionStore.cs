@@ -17,7 +17,6 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
 {
     private readonly EntityStore<ManagementElsaDbContext, WorkflowDefinition> _store;
     private readonly IWorkflowInstanceStore _workflowInstanceStore;
-    private readonly IActivitySerializer _activitySerializer;
     private readonly IPayloadSerializer _payloadSerializer;
 
     /// <summary>
@@ -26,12 +25,10 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
     public EFCoreWorkflowDefinitionStore(
         EntityStore<ManagementElsaDbContext, WorkflowDefinition> store,
         IWorkflowInstanceStore workflowInstanceStore,
-        IActivitySerializer activitySerializer,
         IPayloadSerializer payloadSerializer)
     {
         _store = store;
         _workflowInstanceStore = workflowInstanceStore;
-        _activitySerializer = activitySerializer;
         _payloadSerializer = payloadSerializer;
     }
 

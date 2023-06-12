@@ -26,7 +26,7 @@ public class OrderDefinition<T, TProp>
     /// <summary>
     /// The direction in which to order the results.
     /// </summary>
-    public OrderDirection Direction { get; set; } = default!;
+    public OrderDirection Direction { get; set; }
     
     /// <summary>
     /// The key selector to use to order the results.

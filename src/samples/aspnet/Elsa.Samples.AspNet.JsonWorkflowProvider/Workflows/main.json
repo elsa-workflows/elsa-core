@@ -1,0 +1,200 @@
+{
+  "id": "f608ffca0f0a419caea715233edc0259",
+  "definitionId": "0b1bfb787a2e464e85ef752551a4204e",
+  "name": "main",
+  "createdAt": "2023-03-28T07:47:44.969978+00:00",
+  "version": 6,
+  "variables": [
+    {
+      "id": "516509d438e44171ab68321a4b706f31",
+      "name": "fromSub",
+      "typeName": "String",
+      "isArray": false,
+      "value": "",
+      "storageDriverTypeName": "Elsa.Workflows.Core.Services.WorkflowStorageDriver, Elsa.Workflows.Core"
+    }
+  ],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [],
+  "customProperties": {},
+  "usableAsActivity": false,
+  "isLatest": true,
+  "isPublished": true,
+  "root": {
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "id": "Flowchart1",
+    "metadata": {},
+    "applicationProperties": {
+      "NotFoundConnectionsKey": [],
+      "CanStartWorkflow": false,
+      "RunAsynchronously": false
+    },
+    "start": "HttpEndpoint1",
+    "activities": [
+      {
+        "path": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "/mymain"
+          },
+          "memoryReference": {
+            "id": "HttpEndpoint1:input-1"
+          }
+        },
+        "supportedMethods": {
+          "typeName": "String[]",
+          "expression": {
+            "type": "Object",
+            "value": "[\u0022GET\u0022]"
+          },
+          "memoryReference": {
+            "id": "HttpEndpoint1:input-2"
+          }
+        },
+        "authorize": {
+          "typeName": "Boolean",
+          "expression": {
+            "type": "Literal",
+            "value": "False"
+          },
+          "memoryReference": {
+            "id": "HttpEndpoint1:input-3"
+          }
+        },
+        "policy": null,
+        "parsedContent": null,
+        "routeData": null,
+        "queryStringData": null,
+        "headers": null,
+        "result": null,
+        "id": "HttpEndpoint1",
+        "type": "Elsa.HttpEndpoint",
+        "version": 1,
+        "customProperties": {
+          "CanStartWorkflow": true,
+          "RunAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 1484,
+              "y": 2317
+            }
+          }
+        }
+      },
+      {
+        "statusCode": {
+          "typeName": "System.Net.HttpStatusCode, System.Net.Primitives",
+          "expression": {
+            "type": "Literal",
+            "value": "OK"
+          },
+          "memoryReference": {
+            "id": "WriteHttpResponse1:input-1"
+          }
+        },
+        "content": {
+          "typeName": "Object",
+          "expression": {
+            "type": "JavaScript",
+            "value": "return getFromSub();"
+          },
+          "memoryReference": {
+            "id": "WriteHttpResponse1:input-2"
+          }
+        },
+        "contentType": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "text/plain"
+          },
+          "memoryReference": {
+            "id": "WriteHttpResponse1:input-3"
+          }
+        },
+        "responseHeaders": {
+          "typeName": "Elsa.Http.Models.HttpResponseHeaders, Elsa.Http",
+          "expression": {
+            "type": "Literal",
+            "value": "{}"
+          },
+          "memoryReference": {
+            "id": "WriteHttpResponse1:input-4"
+          }
+        },
+        "id": "WriteHttpResponse1",
+        "type": "Elsa.WriteHttpResponse",
+        "version": 1,
+        "customProperties": {
+          "CanStartWorkflow": false,
+          "RunAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 1860,
+              "y": 2320
+            }
+          }
+        }
+      },
+      {
+        "workflowDefinitionId": "2f6ba5802e254082b00bd4dab00e650a",
+        "workflowDefinitionVersionId": "401f5e84019848ffa28d75e75d611b39",
+        "latestAvailablePublishedVersion": 3,
+        "latestAvailablePublishedVersionId": "401f5e84019848ffa28d75e75d611b39",
+        "result": null,
+        "id": "Sub1",
+        "type": "Sub",
+        "version": 3,
+        "customProperties": {
+          "CanStartWorkflow": false,
+          "RunAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 1740,
+              "y": 2320
+            }
+          }
+        },
+        "fromMain": {
+          "typeName": "String",
+          "expression": {
+            "type": "JavaScript",
+            "value": "return \u0027obi wan kenobi\u0027;"
+          },
+          "memoryReference": {
+            "id": "Sub1:input-1"
+          }
+        },
+        "toMain": {
+          "typeName": "String",
+          "memoryReference": {
+            "id": "516509d438e44171ab68321a4b706f31"
+          }
+        }
+      }
+    ],
+    "connections": [
+      {
+        "source": "Sub1",
+        "target": "WriteHttpResponse1",
+        "sourcePort": "Done",
+        "targetPort": "In"
+      },
+      {
+        "source": "HttpEndpoint1",
+        "target": "Sub1",
+        "sourcePort": "Done",
+        "targetPort": "In"
+      }
+    ]
+  }
+}

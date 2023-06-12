@@ -96,6 +96,9 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         existingDefinition.IsPublished = workflow.Publication.IsPublished;
         existingDefinition.CustomProperties = workflow.CustomProperties;
         existingDefinition.Variables = workflow.Variables;
+        existingDefinition.Inputs = workflow.Inputs;
+        existingDefinition.Outputs = workflow.Outputs;
+        existingDefinition.Outcomes = workflow.Outcomes;
         existingDefinition.StringData = workflowJson;
         existingDefinition.CreatedAt = workflow.WorkflowMetadata.CreatedAt == default ? _systemClock.UtcNow : workflow.WorkflowMetadata.CreatedAt;
         existingDefinition.Options = workflow.Options;

@@ -23,7 +23,7 @@ public class EFCoreWorkflowRuntimePersistenceFeature : PersistenceFeatureBase<Ru
     {
         Module.Configure<WorkflowRuntimeFeature>(feature =>
         {
-            feature.WorkflowTriggerStore = sp => sp.GetRequiredService<EFCoreTriggerStore>();
+            feature.TriggerStore = sp => sp.GetRequiredService<EFCoreTriggerStore>();
             feature.BookmarkStore = sp => sp.GetRequiredService<EFCoreBookmarkStore>();
         });
     }

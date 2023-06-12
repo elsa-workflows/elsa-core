@@ -26,7 +26,6 @@ export async function initializeMonacoWorker(libPath?: string): Promise<Monaco> 
   return await mutex.runExclusive(async () => {
 
     if (isInitialized) {
-
       return win.monaco;
     }
 
@@ -40,8 +39,6 @@ export async function initializeMonacoWorker(libPath?: string): Promise<Monaco> 
       return new Promise<Monaco>((resolve, reject) => {
         const startTime = Date.now();
         const timeout = 3000;
-
-        debugger;
 
         const checkForMonaco = () => {
           if (win.monaco) {

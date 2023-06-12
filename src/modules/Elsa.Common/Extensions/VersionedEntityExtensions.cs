@@ -6,13 +6,22 @@ using LinqKit;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
 
+/// <summary>
+/// Provides extension methods for <see cref="VersionedEntity"/> objects.
+/// </summary>
 public static class VersionedEntityExtensions
 {
-    public static bool WithVersion(this VersionedEntity workflow, VersionOptions versionOptions)
+    /// <summary>
+    /// Returns true if the specified entity matches the version options.
+    /// </summary>
+    /// <param name="entity">The entity to check.</param>
+    /// <param name="versionOptions">The version options.</param>
+    /// <returns>True if the entity matches the version options.</returns>
+    public static bool WithVersion(this VersionedEntity entity, VersionOptions versionOptions)
     {
-        var isPublished = workflow.IsPublished;
-        var isLatest = workflow.IsLatest;
-        var version = workflow.Version;
+        var isPublished = entity.IsPublished;
+        var isLatest = entity.IsLatest;
+        var version = entity.Version;
 
         if (versionOptions.IsDraft)
             return !isPublished;
@@ -31,11 +40,25 @@ public static class VersionedEntityExtensions
         return true;
     }
 
+    /// <summary>
+    /// Filters the specified enumerable by the version options.
+    /// </summary>
+    /// <param name="enumerable">The enumerable to filter.</param>
+    /// <param name="versionOptions">The version options.</param>
+    /// <typeparam name="T">The type of the enumerable.</typeparam>
+    /// <returns>The filtered enumerable.</returns>
     public static IEnumerable<T> WithVersion<T>(
-        this IEnumerable<T> query,
+        this IEnumerable<T> enumerable,
         VersionOptions versionOptions) where T : VersionedEntity =>
-        query.Where(x => x.WithVersion(versionOptions)).OrderByDescending(x => x.Version);
+        enumerable.Where(x => x.WithVersion(versionOptions)).OrderByDescending(x => x.Version);
 
+    /// <summary>
+    /// Filters the specified queryable by the version options.
+    /// </summary>
+    /// <param name="query">The queryable to filter.</param>
+    /// <param name="versionOptions">The version options.</param>
+    /// <typeparam name="T">The type of the queryable.</typeparam>
+    /// <returns>The filtered queryable.</returns>
     public static IQueryable<T> WithVersion<T>(this IQueryable<T> query, VersionOptions versionOptions) where T : VersionedEntity
     {
         if (versionOptions.IsDraft)
@@ -54,21 +77,28 @@ public static class VersionedEntityExtensions
         return query;
     }
 
-    public static Expression<Func<T, bool>> WithVersion<T>(this Expression<Func<T, bool>> predicate, VersionOptions versionOptions) where T : VersionedEntity
+    /// <summary>
+    /// Returns an expression that filters the specified expression by the version options.
+    /// </summary>
+    /// <param name="expression">The expression to filter.</param>
+    /// <param name="versionOptions">The version options.</param>
+    /// <typeparam name="T">The type of the expression.</typeparam>
+    /// <returns>The filtered expression.</returns>
+    public static Expression<Func<T, bool>> WithVersion<T>(this Expression<Func<T, bool>> expression, VersionOptions versionOptions) where T : VersionedEntity
     {
         if (versionOptions.IsDraft)
-            return predicate.And(x => !x.IsPublished);
+            return expression.And(x => !x.IsPublished);
         if (versionOptions.IsLatest)
-            return predicate.And(x => x.IsLatest);
+            return expression.And(x => x.IsLatest);
         if (versionOptions.IsPublished)
-            return predicate.And(x => x.IsPublished);
+            return expression.And(x => x.IsPublished);
         if (versionOptions.IsLatestOrPublished)
-            return predicate.And(x => x.IsPublished || x.IsLatest);
+            return expression.And(x => x.IsPublished || x.IsLatest);
         if (versionOptions.IsLatestAndPublished)
-            return predicate.And(x => x.IsPublished && x.IsLatest);
+            return expression.And(x => x.IsPublished && x.IsLatest);
         if (versionOptions.Version > 0)
-            return predicate.And(x => x.Version == versionOptions.Version);
+            return expression.And(x => x.Version == versionOptions.Version);
 
-        return predicate;
+        return expression;
     }
 }

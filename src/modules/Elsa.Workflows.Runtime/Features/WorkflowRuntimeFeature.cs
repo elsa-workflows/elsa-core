@@ -59,7 +59,7 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// <summary>
     /// A factory that instantiates an <see cref="ITriggerStore"/>.
     /// </summary>
-    public Func<IServiceProvider, ITriggerStore> WorkflowTriggerStore { get; set; } = sp => sp.GetRequiredService<MemoryTriggerStore>();
+    public Func<IServiceProvider, ITriggerStore> TriggerStore { get; set; } = sp => sp.GetRequiredService<MemoryTriggerStore>();
 
     /// <summary>
     /// A factory that instantiates an <see cref="IWorkflowExecutionLogStore"/>.
@@ -141,7 +141,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddSingleton(WorkflowRuntime)
             .AddSingleton(WorkflowDispatcher)
             .AddSingleton(BookmarkStore)
-            .AddSingleton(WorkflowTriggerStore)
+            .AddSingleton(TriggerStore)
             .AddSingleton(WorkflowExecutionLogStore)
             .AddSingleton(RunTaskDispatcher)
             .AddSingleton(BackgroundActivityInvoker)

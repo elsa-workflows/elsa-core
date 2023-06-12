@@ -72,3 +72,5 @@ src/designer/elsa-workflows-designer/loader
 
 # Created by developers using GNU/Linux
 .directory
+
+src/modules/Elsa.Workflows.Designer/package-lock.json

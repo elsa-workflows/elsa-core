@@ -12,10 +12,10 @@ namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 /// A feature that registers the <see cref="EFCoreWorkflowExecutionLogStore"/> as the default <see cref="IWorkflowExecutionLogStore"/>.
 /// </summary>
 [DependsOn(typeof(WorkflowRuntimeFeature))]
-public class EFCoreExecutionLogRecordPersistenceFeature : PersistenceFeatureBase<RuntimeElsaDbContext>
+public class EFCoreExecutionLogPersistenceFeature : PersistenceFeatureBase<RuntimeElsaDbContext>
 {
     /// <inheritdoc />
-    public EFCoreExecutionLogRecordPersistenceFeature(IModule module) : base(module)
+    public EFCoreExecutionLogPersistenceFeature(IModule module) : base(module)
     {
     }
 

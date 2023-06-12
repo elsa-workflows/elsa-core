@@ -45,14 +45,23 @@ public class WorkflowBuilder : IWorkflowBuilder
     public ICollection<Variable> Variables { get; set; } = new List<Variable>();
 
     /// <inheritdoc />
+    public ICollection<InputDefinition> Inputs { get; set; } = new List<InputDefinition>();
+
+    /// <inheritdoc />
+    public ICollection<OutputDefinition> Outputs { get; set; } = new List<OutputDefinition>();
+
+    /// <inheritdoc />
+    public ICollection<string> Outcomes { get; set; } = new List<string>();
+
+    /// <inheritdoc />
     public Variable? Result { get; set; }
 
     /// <inheritdoc />
     public IDictionary<string, object> CustomProperties { get; set; } = new Dictionary<string, object>();
 
     /// <inheritdoc />
-    public WorkflowOptions WorkflowOptions { get;  } = new(); 
-    
+    public WorkflowOptions WorkflowOptions { get; } = new();
+
     /// <inheritdoc />
     public Variable<T> WithVariable<T>()
     {
@@ -69,7 +78,7 @@ public class WorkflowBuilder : IWorkflowBuilder
             Name = name,
             Value = value
         };
-        
+
         Variables.Add(variable);
         return variable;
     }
@@ -88,7 +97,7 @@ public class WorkflowBuilder : IWorkflowBuilder
         Variables.Add(variable);
         return this;
     }
-    
+
     /// <inheritdoc />
     public IWorkflowBuilder WithVariable(Variable variable)
     {
@@ -126,7 +135,7 @@ public class WorkflowBuilder : IWorkflowBuilder
         var identity = new WorkflowIdentity(definitionId, Version, id);
         var publication = WorkflowPublication.LatestAndPublished;
         var workflowMetadata = new WorkflowMetadata(Name, Description);
-        var workflow = new Workflow(identity, publication, workflowMetadata, WorkflowOptions, root, Variables, CustomProperties);
+        var workflow = new Workflow(identity, publication, workflowMetadata, WorkflowOptions, root, Variables, Inputs, Outputs, Outcomes, CustomProperties);
 
         // If a Result variable is defined, install it into the workflow so we can capture the output into it.
         if (Result != null)
@@ -137,14 +146,14 @@ public class WorkflowBuilder : IWorkflowBuilder
 
         var graph = await _activityVisitor.VisitAsync(workflow, cancellationToken);
         var nodes = graph.Flatten().ToList();
-        
+
         // Register all activity types first. The identity graph service will need to know about all activity types.
         var distinctActivityTypes = nodes.Select(x => x.Activity.GetType()).Distinct().ToList();
         await _activityRegistry.RegisterAsync(distinctActivityTypes, cancellationToken);
-        
+
         // Assign identities to all activities.
         _identityGraphService.AssignIdentities(nodes);
-        
+
         return workflow;
     }
 

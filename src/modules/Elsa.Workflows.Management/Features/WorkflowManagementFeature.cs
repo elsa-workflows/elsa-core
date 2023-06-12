@@ -68,15 +68,20 @@ public class WorkflowManagementFeature : FeatureBase
         new(typeof(TimeSpan), PrimitivesCategory, "Represents a duration of time."),
         new(typeof(IDictionary<string, string>), LookupsCategory, "A dictionary with string key and values."),
         new(typeof(IDictionary<string, object>), LookupsCategory, "A dictionary with string key and object values."),
-        new (typeof(ExpandoObject), DynamicCategory, "A dictionary that can be typed as dynamic to access members using dot notation.")
+        new(typeof(ExpandoObject), DynamicCategory, "A dictionary that can be typed as dynamic to access members using dot notation.")
     };
 
     /// <summary>
     /// Adds the specified activity type to the system.
     /// </summary>
-    public WorkflowManagementFeature AddActivity<T>() where T : IActivity
+    public WorkflowManagementFeature AddActivity<T>() where T : IActivity => AddActivity(typeof(T));
+
+    /// <summary>
+    /// Adds the specified activity type to the system.
+    /// </summary>
+    public WorkflowManagementFeature AddActivity(Type activityType)
     {
-        ActivityTypes.Add(typeof(T));
+        ActivityTypes.Add(activityType);
         return this;
     }
 
@@ -97,6 +102,20 @@ public class WorkflowManagementFeature : FeatureBase
     public WorkflowManagementFeature AddActivities(IEnumerable<Type> activityTypes)
     {
         ActivityTypes.AddRange(activityTypes);
+        return this;
+    }
+
+    /// <summary>
+    /// Removes the specified activity type from the system.
+    /// </summary>
+    public WorkflowManagementFeature RemoveActivity<T>() where T : IActivity => RemoveActivity(typeof(T));
+
+    /// <summary>
+    /// Adds the specified activity type to the system.
+    /// </summary>
+    public WorkflowManagementFeature RemoveActivity(Type activityType)
+    {
+        ActivityTypes.Remove(activityType);
         return this;
     }
 

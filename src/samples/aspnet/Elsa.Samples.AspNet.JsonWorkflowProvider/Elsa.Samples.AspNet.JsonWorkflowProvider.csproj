@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net7.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\bundles\Elsa\Elsa.csproj" />
+      <ProjectReference Include="..\..\..\modules\Elsa.EntityFrameworkCore.Sqlite\Elsa.EntityFrameworkCore.Sqlite.csproj" />
+      <ProjectReference Include="..\..\..\modules\Elsa.EntityFrameworkCore\Elsa.EntityFrameworkCore.csproj" />
+      <ProjectReference Include="..\..\..\modules\Elsa.Identity\Elsa.Identity.csproj" />
+      <ProjectReference Include="..\..\..\modules\Elsa.WorkflowProviders.BlobStorage\Elsa.WorkflowProviders.BlobStorage.csproj" />
+      <ProjectReference Include="..\..\..\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Update="Workflows\HelloWorld.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
+      <Content Update="Workflows\HelloWorldHttp.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="bak\" />
+    </ItemGroup>
+
+</Project>

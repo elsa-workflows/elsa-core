@@ -44,7 +44,13 @@ internal class Execute : ElsaEndpoint<Request, Response>
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
         var definitionId = request.DefinitionId;
-        var exists = await _store.AnyAsync(new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = VersionOptions.Published }, cancellationToken);
+
+        var versionOptions = VersionOptions.Published;
+        if (request.Version.HasValue) {
+            versionOptions = VersionOptions.SpecificVersion(request.Version.Value);
+        }
+
+        var exists = await _store.AnyAsync(new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = versionOptions }, cancellationToken);
 
         if (!exists)
         {
@@ -54,7 +60,7 @@ internal class Execute : ElsaEndpoint<Request, Response>
 
         var correlationId = request.CorrelationId;
         var input = (IDictionary<string, object>?)request.Input;
-        var startWorkflowOptions = new StartWorkflowRuntimeOptions(correlationId, input, VersionOptions.Published, request.TriggerActivityId);
+        var startWorkflowOptions = new StartWorkflowRuntimeOptions(correlationId, input, versionOptions, request.TriggerActivityId);
         var result = await _workflowRuntime.StartWorkflowAsync(definitionId, startWorkflowOptions, cancellationToken);
 
         // If a workflow fault occurred, respond appropriately with a 500 internal server error.

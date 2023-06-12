@@ -52,7 +52,7 @@ public class EFCoreWorkflowStateStore : IWorkflowStateStore
     }
 
     /// <inheritdoc />
-    public async ValueTask<int> CountAsync(CountRunningWorkflowsArgs args, CancellationToken cancellationToken = default)
+    public async ValueTask<long> CountAsync(CountRunningWorkflowsArgs args, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
         var query = dbContext.WorkflowStates.AsQueryable().Where(x => x.Status == WorkflowStatus.Running);

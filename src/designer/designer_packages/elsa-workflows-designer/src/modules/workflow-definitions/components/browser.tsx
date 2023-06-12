@@ -33,6 +33,7 @@ export class WorkflowDefinitionBrowser {
   }
 
   @Event() workflowDefinitionSelected: EventEmitter<WorkflowDefinitionSummary>;
+  @Event() workflowInstancesSelected: EventEmitter<WorkflowDefinitionSummary>;
   @Event() public newWorkflowDefinitionSelected: EventEmitter;
   @State() private workflowDefinitions: PagedList<WorkflowDefinitionSummary> = {items: [], totalCount: 0};
   @State() private publishedWorkflowDefinitions: PagedList<WorkflowDefinitionSummary> = {items: [], totalCount: 0};
@@ -131,6 +132,11 @@ export class WorkflowDefinitionBrowser {
   private onWorkflowDefinitionClick = async (e: MouseEvent, workflowDefinition: WorkflowDefinitionSummary) => {
     e.preventDefault();
     this.workflowDefinitionSelected.emit(workflowDefinition);
+  };
+
+  private onWorkflowInstancesClick = async (e: MouseEvent, workflowDefinition: WorkflowDefinitionSummary) => {
+    e.preventDefault();
+    this.workflowInstancesSelected.emit(workflowDefinition);
   };
 
   private async loadWorkflowDefinitions() {
@@ -306,7 +312,7 @@ export class WorkflowDefinitionBrowser {
 
                     <td>
                       <div class="tw-flex tw-items-center tw-space-x-3 lg:tw-pl-2">
-                        <a href="#" class="tw-truncate hover:tw-text-gray-600">
+                      <a onClick={e => this.onWorkflowInstancesClick(e, workflowDefinition)} href="#" class="tw-truncate hover:tw-text-gray-600">
                           Instances
                         </a>
                       </div>

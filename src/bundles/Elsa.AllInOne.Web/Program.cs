@@ -64,9 +64,9 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.MapHealthChecks("/health");
+app.UseRouting();
 app.UseCors();
 app.UseStaticFiles();
-app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseWorkflowsApi();

@@ -3,7 +3,7 @@
 namespace Elsa.EntityFrameworkCore.Modules.Management;
 
 /// <summary>
-/// Provides extensions to <see cref="WorkflowManagementFeature"/>.
+/// Provides extensions to various management related features.
 /// </summary>
 public static class WorkflowManagementFeatureExtensions
 {

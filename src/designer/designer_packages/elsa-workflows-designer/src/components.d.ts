@@ -369,6 +369,7 @@ export namespace Components {
         "workflowVersions": Array<WorkflowDefinition>;
     }
     interface ElsaWorkflowInstanceBrowser {
+        "workflowDefinition": WorkflowDefinition;
     }
     interface ElsaWorkflowInstanceProperties {
         "hide": () => Promise<void>;
@@ -1298,6 +1299,7 @@ declare namespace LocalJSX {
     interface ElsaWorkflowDefinitionBrowser {
         "onNewWorkflowDefinitionSelected"?: (event: ElsaWorkflowDefinitionBrowserCustomEvent<any>) => void;
         "onWorkflowDefinitionSelected"?: (event: ElsaWorkflowDefinitionBrowserCustomEvent<WorkflowDefinitionSummary>) => void;
+        "onWorkflowInstancesSelected"?: (event: ElsaWorkflowDefinitionBrowserCustomEvent<WorkflowDefinitionSummary>) => void;
     }
     interface ElsaWorkflowDefinitionEditor {
         "monacoLibPath"?: string;
@@ -1346,6 +1348,7 @@ declare namespace LocalJSX {
     }
     interface ElsaWorkflowInstanceBrowser {
         "onWorkflowInstanceSelected"?: (event: ElsaWorkflowInstanceBrowserCustomEvent<WorkflowInstanceSummary>) => void;
+        "workflowDefinition"?: WorkflowDefinition;
     }
     interface ElsaWorkflowInstanceProperties {
         "workflowDefinition"?: WorkflowDefinition;
