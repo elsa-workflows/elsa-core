@@ -75,4 +75,9 @@ public class WorkflowDefinitionSummary
     /// The timestamp when the workflow definition was created.
     /// </summary>
     public DateTimeOffset CreatedAt { get; set; }
+
+    /// <summary>
+    /// Makes workflow
+    /// </summary>
+    public bool IsReadonly { get; set; }
 }

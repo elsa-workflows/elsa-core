@@ -50,6 +50,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                     b.Property<bool>("IsPublished")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsReadonly")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("MaterializerContext")
                         .HasColumnType("text");
 

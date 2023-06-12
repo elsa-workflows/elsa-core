@@ -47,6 +47,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Management
                     b.Property<bool>("IsPublished")
                         .HasColumnType("tinyint(1)");
 
+                    b.Property<bool>("IsReadonly")
+                        .HasColumnType("tinyint(1)");
+
                     b.Property<string>("MaterializerContext")
                         .HasColumnType("longtext");
 

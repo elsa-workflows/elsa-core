@@ -50,6 +50,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Management
                     b.Property<bool>("IsPublished")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsReadonly")
+                        .HasColumnType("bit");
+
                     b.Property<string>("MaterializerContext")
                         .HasColumnType("nvarchar(max)");
 

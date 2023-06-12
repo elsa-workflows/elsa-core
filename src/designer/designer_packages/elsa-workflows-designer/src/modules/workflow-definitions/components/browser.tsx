@@ -284,6 +284,8 @@ export class WorkflowDefinitionBrowser {
                   : publishedWorkflowDefinitions.find(x => x.definitionId == workflowDefinition.definitionId);
                 const publishedVersionNumber = !!publishedVersion ? publishedVersion.version : '-';
 
+                const isReadonly = workflowDefinition.isReadonly;
+
                 const isSelected = this.selectedWorkflowDefinitionIds.findIndex(x => x === workflowDefinition.definitionId) >= 0;
                 let workflowDisplayName = workflowDefinition.name;
 
@@ -293,6 +295,7 @@ export class WorkflowDefinitionBrowser {
                   <tr>
                     <td>
                       <input
+                        disabled={isReadonly}
                         type="checkbox"
                         value={workflowDefinition.definitionId}
                         checked={isSelected}
@@ -318,19 +321,20 @@ export class WorkflowDefinitionBrowser {
                     <td class="tw-align-right">{latestVersionNumber}</td>
                     <td class="tw-align-right">{publishedVersionNumber}</td>
                     <td class="tw-pr-6">
-                      <elsa-context-menu
-                        menuItems={[
-                          {text: 'Edit', handler: e => this.onWorkflowDefinitionClick(e, workflowDefinition), icon: <EditIcon/>},
-                          isPublished
-                            ? {text: 'Unpublish', handler: e => this.onUnPublishClick(e, workflowDefinition), icon: <UnPublishIcon/>}
-                            : {
-                              text: 'Publish',
-                              handler: e => this.onPublishClick(e, workflowDefinition),
-                              icon: <PublishIcon/>,
-                            },
-                          {text: 'Delete', handler: e => this.onDeleteClick(e, workflowDefinition), icon: <DeleteIcon/>},
-                        ]}
-                      />
+                      {isReadonly ? "" :
+                        <elsa-context-menu
+                          menuItems={[
+                            { text: 'Edit', handler: e => this.onWorkflowDefinitionClick(e, workflowDefinition), icon: <EditIcon /> },
+                            isPublished
+                              ? { text: 'Unpublish', handler: e => this.onUnPublishClick(e, workflowDefinition), icon: <UnPublishIcon /> }
+                              : {
+                                text: 'Publish',
+                                handler: e => this.onPublishClick(e, workflowDefinition),
+                                icon: <PublishIcon />,
+                              },
+                            { text: 'Delete', handler: e => this.onDeleteClick(e, workflowDefinition), icon: <DeleteIcon /> },
+                          ]}
+                        />}
                     </td>
                   </tr>
                 );

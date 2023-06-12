@@ -97,10 +97,11 @@ public class WorkflowDefinitionMapper
             workflowDefinition.Outputs,
             workflowDefinition.Outcomes,
             workflowDefinition.CustomProperties,
-            workflowDefinition.Options.UsableAsActivity,
+            workflowDefinition.IsReadonly,
             workflowDefinition.IsLatest,
             workflowDefinition.IsPublished,
             workflow.Options,
+            default,
             workflow.Root);
     }
 }

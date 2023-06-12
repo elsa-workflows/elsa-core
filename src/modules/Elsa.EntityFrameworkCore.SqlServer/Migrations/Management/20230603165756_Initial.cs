@@ -1,8 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
+namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Management
 {
     /// <inheritdoc />
     public partial class Initial : Migration
@@ -18,21 +19,22 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                 schema: "Elsa",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "text", nullable: false),
-                    DefinitionId = table.Column<string>(type: "text", nullable: false),
-                    Name = table.Column<string>(type: "text", nullable: true),
-                    Description = table.Column<string>(type: "text", nullable: true),
-                    ProviderName = table.Column<string>(type: "text", nullable: true),
-                    MaterializerName = table.Column<string>(type: "text", nullable: false),
-                    MaterializerContext = table.Column<string>(type: "text", nullable: true),
-                    StringData = table.Column<string>(type: "text", nullable: true),
-                    BinaryData = table.Column<byte[]>(type: "bytea", nullable: true),
-                    Data = table.Column<string>(type: "text", nullable: true),
-                    UsableAsActivity = table.Column<bool>(type: "boolean", nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    Version = table.Column<int>(type: "integer", nullable: false),
-                    IsLatest = table.Column<bool>(type: "boolean", nullable: false),
-                    IsPublished = table.Column<bool>(type: "boolean", nullable: false)
+                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    DefinitionId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ProviderName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    MaterializerName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    MaterializerContext = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    StringData = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    BinaryData = table.Column<byte[]>(type: "varbinary(max)", nullable: true),
+                    IsReadonly = table.Column<bool>(type: "bit", nullable: false),
+                    Data = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UsableAsActivity = table.Column<bool>(type: "bit", nullable: true),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    Version = table.Column<int>(type: "int", nullable: false),
+                    IsLatest = table.Column<bool>(type: "bit", nullable: false),
+                    IsPublished = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -44,20 +46,20 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                 schema: "Elsa",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "text", nullable: false),
-                    DefinitionId = table.Column<string>(type: "text", nullable: false),
-                    DefinitionVersionId = table.Column<string>(type: "text", nullable: false),
-                    Version = table.Column<int>(type: "integer", nullable: false),
-                    Status = table.Column<string>(type: "text", nullable: false),
-                    SubStatus = table.Column<string>(type: "text", nullable: false),
-                    CorrelationId = table.Column<string>(type: "text", nullable: true),
-                    Name = table.Column<string>(type: "text", nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    LastExecutedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    FinishedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    CancelledAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    FaultedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    Data = table.Column<string>(type: "text", nullable: true)
+                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    DefinitionId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    DefinitionVersionId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Version = table.Column<int>(type: "int", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    SubStatus = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    CorrelationId = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    Name = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    LastExecutedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    FinishedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    CancelledAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    FaultedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    Data = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {

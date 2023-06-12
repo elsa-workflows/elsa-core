@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Management
 {
     [DbContext(typeof(ManagementElsaDbContext))]
-    [Migration("20230603095544_Initial")]
+    [Migration("20230603165756_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -51,6 +51,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Management
                         .HasColumnType("bit");
 
                     b.Property<bool>("IsPublished")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsReadonly")
                         .HasColumnType("bit");
 
                     b.Property<string>("MaterializerContext")

@@ -79,6 +79,11 @@ public class WorkflowDefinition : VersionedEntity
     public byte[]? BinaryData { get; set; }
 
     /// <summary>
+    /// An option to use the workflow as a readonly workflow
+    /// </summary>
+    public bool IsReadonly { get; set; } = false;
+
+    /// <summary>
     /// Creates and returns a shallow copy of the workflow definition.
     /// </summary>
     /// <returns></returns>

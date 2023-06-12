@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Management
 {
     [DbContext(typeof(ManagementElsaDbContext))]
-    [Migration("20230603095516_Initial")]
+    [Migration("20230603171947_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -46,6 +46,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Management
                         .HasColumnType("INTEGER");
 
                     b.Property<bool>("IsPublished")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsReadonly")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("MaterializerContext")

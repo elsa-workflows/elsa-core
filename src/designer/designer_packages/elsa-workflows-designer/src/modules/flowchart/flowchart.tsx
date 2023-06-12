@@ -263,7 +263,7 @@ export class FlowchartComponent {
   private async onInteractiveModeChange(value: boolean) {
     const graph = this.graph;
 
-    if (!value) {
+    if (!value || this.isReadonly) {
       graph.disableSelectionMovable();
       graph.disableKeyboard();
     } else {
@@ -415,6 +415,11 @@ export class FlowchartComponent {
     const activities = flowchart.activities;
     const connections = flowchart.connections;
     this.updateGraphInternal(activities, connections);
+	
+	if (this.isReadonly) {
+      this.graph.disableSelectionMovable();
+      this.graph.disableKeyboard();
+    }
   };
 
   private updateGraphInternal = (activities: Array<Activity>, connections: Array<Connection>) => {
@@ -557,7 +562,7 @@ export class FlowchartComponent {
         handler: () => this.onDeleteActivityClicked(node)
       }];
 
-    this.activityContextMenu.menuItems = menuItems;
+    this.activityContextMenu.menuItems = this.isReadonly ? [] : menuItems;
     const localPos = this.graph.localToClient(e.x, e.y);
     const scroll = this.graph.getScrollbarPosition();
     this.activityContextMenu.style.top = `${localPos.y}px`;

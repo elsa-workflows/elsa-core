@@ -45,6 +45,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Management
                     b.Property<bool>("IsPublished")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("IsReadonly")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("MaterializerContext")
                         .HasColumnType("TEXT");
 

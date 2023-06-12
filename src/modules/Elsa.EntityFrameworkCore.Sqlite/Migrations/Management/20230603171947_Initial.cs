@@ -23,6 +23,7 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Management
                     MaterializerContext = table.Column<string>(type: "TEXT", nullable: true),
                     StringData = table.Column<string>(type: "TEXT", nullable: true),
                     BinaryData = table.Column<byte[]>(type: "BLOB", nullable: true),
+                    IsReadonly = table.Column<bool>(type: "INTEGER", nullable: false),
                     Data = table.Column<string>(type: "TEXT", nullable: true),
                     UsableAsActivity = table.Column<bool>(type: "INTEGER", nullable: true),
                     CreatedAt = table.Column<string>(type: "TEXT", nullable: false),

@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elsa.EntityFrameworkCore.MySql.Migrations.Management
 {
     [DbContext(typeof(ManagementElsaDbContext))]
-    [Migration("20230603095256_Initial")]
+    [Migration("20230603165710_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -48,6 +48,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Management
                         .HasColumnType("tinyint(1)");
 
                     b.Property<bool>("IsPublished")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("IsReadonly")
                         .HasColumnType("tinyint(1)");
 
                     b.Property<string>("MaterializerContext")

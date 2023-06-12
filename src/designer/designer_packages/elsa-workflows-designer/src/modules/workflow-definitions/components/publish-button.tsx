@@ -14,6 +14,7 @@ export interface PublishClickedArgs {
 export class PublishButton {
 
   @Prop() publishing: boolean;
+  @Prop() disabled: boolean;
   @Event({bubbles: true}) newClicked: EventEmitter;
   @Event({bubbles: true}) publishClicked: EventEmitter<PublishClickedArgs>;
   @Event({bubbles: true}) unPublishClicked: EventEmitter;
@@ -74,6 +75,6 @@ export class PublishButton {
       handler: publishing ? () => {} : () => this.onPublishClick()
     }
 
-    return <elsa-dropdown-button text={mainItem.text} handler={mainItem.handler} items={items} icon={this.publishingIcon()} onMenuOpened={() => NotificationService.hideAllNotifications()} />
+    return <elsa-dropdown-button disabled={this.disabled} text={mainItem.text} handler={mainItem.handler} items={items} icon={this.publishingIcon()} onMenuOpened={() => NotificationService.hideAllNotifications()} />
   }
 }

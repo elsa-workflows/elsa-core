@@ -102,6 +102,7 @@ export class WorkflowDefinitionsPlugin implements Plugin {
       version: 1,
       isLatest: true,
       isPublished: false,
+      isReadonly:false,
       materializerName: 'Json'
     };
 

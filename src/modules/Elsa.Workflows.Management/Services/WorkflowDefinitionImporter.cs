@@ -1,4 +1,4 @@
-﻿using Elsa.Common.Models;
+using Elsa.Common.Models;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
@@ -69,6 +69,7 @@ namespace Elsa.Workflows.Management.Services
             draft.Inputs = model.Inputs ?? new List<InputDefinition>();
             draft.Outputs = model.Outputs ?? new List<OutputDefinition>();
             draft.Outcomes = model.Outcomes ?? new List<string>();
+            draft.IsReadonly = model.IsReadonly;
             draft.Options = model.Options ?? new WorkflowOptions();
             draft = request.Publish ?? model.IsPublished ? await _workflowDefinitionPublisher.PublishAsync(draft, cancellationToken) : await _workflowDefinitionPublisher.SaveDraftAsync(draft, cancellationToken);
 
