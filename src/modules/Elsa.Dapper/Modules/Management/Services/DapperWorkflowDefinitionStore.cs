@@ -152,7 +152,8 @@ public class DapperWorkflowDefinitionStore : IWorkflowDefinitionStore
             .Equals(nameof(WorkflowDefinition.MaterializerName), filter.MaterializerName)
             .Equals(nameof(WorkflowDefinition.Name), filter.Name)
             .In(nameof(WorkflowDefinition.Name), filter.Names)
-            .Equals(nameof(WorkflowDefinition.Options.UsableAsActivity), filter.UsableAsActivity);
+            .Equals(nameof(WorkflowDefinition.Options.UsableAsActivity), filter.UsableAsActivity)
+            .AndWorkflowDefinitionSearchTerm(filter.SearchTerm);
     }
 
     private Page<WorkflowDefinition> Map(Page<WorkflowDefinitionRecord> source) => new(Map(source.Items).ToList(), source.TotalCount);

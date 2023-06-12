@@ -91,6 +91,8 @@ export class WorkflowDefinitionsApi {
 
     if (!!request.label) queryString.label = request.label;
 
+    if (!!request.searchTerm) queryString.searchTerm = request.searchTerm;
+
     const queryStringText = serializeQueryString(queryString);
     const httpClient = await this.getHttpClient();
     const response = await httpClient.get<PagedList<WorkflowDefinitionSummary>>(`workflow-definitions${queryStringText}`);
@@ -255,6 +257,7 @@ export enum WorkflowDefinitionsOrderBy {
 }
 
 export interface ListWorkflowDefinitionsRequest {
+  searchTerm?: string;
   page?: number;
   pageSize?: number;
   definitionIds?: Array<string>;
