@@ -44,7 +44,8 @@ public class WorkflowDefinitionMapper
             source.Inputs,
             source.Outputs,
             source.Outcomes,
-            source.CustomProperties);
+            source.CustomProperties,
+            source.IsReadonly);
     }
 
     /// <summary>
@@ -71,7 +72,8 @@ public class WorkflowDefinitionMapper
             source.Inputs ?? new List<InputDefinition>(),
             source.Outputs ?? new List<OutputDefinition>(),
             source.Outcomes ?? new List<string>(),
-            source.CustomProperties ?? new Dictionary<string, object>());
+            source.CustomProperties ?? new Dictionary<string, object>(),
+            source.IsReadonly);
     }
 
     /// <summary>
