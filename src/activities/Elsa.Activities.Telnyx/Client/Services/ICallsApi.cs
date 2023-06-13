@@ -48,5 +48,8 @@ namespace Elsa.Activities.Telnyx.Client.Services
 
         [Post("/v2/calls/{callControlId}/actions/transcription_start")]
         Task StartTranscriptionAsync(string callControlId, [Body] StartTranscriptionRequest request, CancellationToken cancellationToken = default);
+        
+        [Post("/v2/calls/{callControlId}/actions/transcription_stop")]
+        Task StopTranscriptionAsync(string callControlId, [Body] StopTranscriptionRequest request, CancellationToken cancellationToken = default);
     }
 }
