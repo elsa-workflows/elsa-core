@@ -28,7 +28,8 @@ public class Workflow : Composite<object>, ICloneable
         ICollection<InputDefinition> inputs,
         ICollection<OutputDefinition> outputs,
         ICollection<string> outcomes,
-        IDictionary<string, object> customProperties)
+        IDictionary<string, object> customProperties,
+        bool isReadonly)
     {
         Identity = identity;
         Publication = publication;
@@ -40,6 +41,7 @@ public class Workflow : Composite<object>, ICloneable
         Variables = variables;
         CustomProperties = customProperties;
         Root = root;
+        IsReadonly = isReadonly;
     }
 
     /// <summary>
@@ -91,7 +93,14 @@ public class Workflow : Composite<object>, ICloneable
     /// Gets or sets options for the workflow.
     /// </summary>
     public WorkflowOptions Options { get; set; } = new();
-    
+
+
+    /// <summary>
+    /// Make workflow definition readonly.
+    /// </summary>
+    public bool IsReadonly { get; set; }
+
+
     /// <summary>
     /// Constructs a new <see cref="Workflow"/> from the specified <see cref="IActivity"/>.
     /// </summary>

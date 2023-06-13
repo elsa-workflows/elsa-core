@@ -39,6 +39,9 @@ public class WorkflowBuilder : IWorkflowBuilder
     public string? Description { get; set; }
 
     /// <inheritdoc />
+    public bool IsReadonly { get; set; }
+
+    /// <inheritdoc />
     public IActivity? Root { get; set; }
 
     /// <inheritdoc />
@@ -135,7 +138,7 @@ public class WorkflowBuilder : IWorkflowBuilder
         var identity = new WorkflowIdentity(definitionId, Version, id);
         var publication = WorkflowPublication.LatestAndPublished;
         var workflowMetadata = new WorkflowMetadata(Name, Description);
-        var workflow = new Workflow(identity, publication, workflowMetadata, WorkflowOptions, root, Variables, Inputs, Outputs, Outcomes, CustomProperties);
+        var workflow = new Workflow(identity, publication, workflowMetadata, WorkflowOptions, root, Variables, Inputs, Outputs, Outcomes, CustomProperties, IsReadonly);
 
         // If a Result variable is defined, install it into the workflow so we can capture the output into it.
         if (Result != null)
