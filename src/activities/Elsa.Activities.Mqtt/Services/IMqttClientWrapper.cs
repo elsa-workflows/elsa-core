@@ -10,8 +10,6 @@ namespace Elsa.Activities.Mqtt.Services
     {
         IMqttClient Client { get; }
         Options.MqttClientOptions Options { get; }
-
-        Task SubscribeAsync(string topic);
         Task PublishMessageAsync(string topic, string message);
         Task SetMessageHandlerAsync(Func<MqttApplicationMessage, Task> handler);
     }

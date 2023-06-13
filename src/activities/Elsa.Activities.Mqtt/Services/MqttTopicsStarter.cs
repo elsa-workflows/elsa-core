@@ -72,9 +72,10 @@ namespace Elsa.Activities.Mqtt.Services
                 {
                     try
                     {
-
                         if (!_workers.ContainsKey(config.GetHashCode()))
                             _workers.Add(config.GetHashCode(), await CreateWorkerAsync(config, cancellationToken));
+                        else
+                            _workers[config.GetHashCode()].Ping();
                     }
                     catch (Exception e)
                     {

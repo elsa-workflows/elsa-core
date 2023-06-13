@@ -25,15 +25,15 @@ namespace Elsa.Activities.Mqtt.Services
             _logger = logger;
         }
 
-        static bool subscribed = false;
-
-        public async Task SubscribeAsync(string topic)
+        
+        private async Task SubscribeAsync(string topic, Func<MqttApplicationMessage, Task> handler)
         {
             if (!Client.IsConnected)
             {
                 var opt = Options.GenerateMqttClientOptions();
                 Client.ConnectAsync(opt).Wait(); //Sync
-
+                _messageHandler = handler;
+                await Client.SubscribeAsync(topic, Options.QualityOfService);
                 Client.ApplicationMessageReceivedAsync += async e =>
                 {
                     if (_messageHandler != null)
@@ -41,9 +41,6 @@ namespace Elsa.Activities.Mqtt.Services
                     else
                         _logger.LogWarning("Attempted to subscribe to topic {Topic}, but no message handler was set.", Options.Topic);
                 };
-
-                await Client.SubscribeAsync(topic, Options.QualityOfService);
-
             }
         }
 
@@ -60,8 +57,7 @@ namespace Elsa.Activities.Mqtt.Services
 
         public async Task SetMessageHandlerAsync(Func<MqttApplicationMessage, Task> handler)
         {
-            _messageHandler = handler;
-            await SubscribeAsync(Options.Topic);
+            await SubscribeAsync(Options.Topic, handler);
         }
 
         public void Dispose()
