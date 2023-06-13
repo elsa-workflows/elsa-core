@@ -83,11 +83,11 @@ namespace Elsa.Activities.Telnyx.Activities
                 InterimResults
             );
 
-            CallControlId = context.GetCallControlId(CallControlId);
+            var callControlId = context.GetCallControlId(CallControlId);
 
             try
             {
-                await _callsApi.StartTranscriptionAsync(CallControlId, request, context.CancellationToken);
+                await _callsApi.StartTranscriptionAsync(callControlId, request, context.CancellationToken);
                 return Done();
             }
             catch (ApiException e)
