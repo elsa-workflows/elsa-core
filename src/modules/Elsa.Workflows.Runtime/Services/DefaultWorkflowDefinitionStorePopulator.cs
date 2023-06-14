@@ -94,6 +94,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         existingDefinition.Name = workflow.WorkflowMetadata.Name;
         existingDefinition.IsLatest = workflow.Publication.IsLatest;
         existingDefinition.IsPublished = workflow.Publication.IsPublished;
+        existingDefinition.IsReadonly = workflow.IsReadonly;
         existingDefinition.CustomProperties = workflow.CustomProperties;
         existingDefinition.Variables = workflow.Variables;
         existingDefinition.Inputs = workflow.Inputs;
