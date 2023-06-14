@@ -31,7 +31,13 @@ public interface IWorkflowBuilder
     /// A description of the workflow.
     /// </summary>
     string? Description { get; set; }
-    
+
+
+    /// <summary>
+    /// WorkflowDefinition is readonly.
+    /// </summary>
+    bool IsReadonly { get; set; }
+
     /// <summary>
     /// Options for the workflow being built.
     /// </summary>
