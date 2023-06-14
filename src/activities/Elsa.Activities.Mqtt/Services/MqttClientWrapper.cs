@@ -30,9 +30,11 @@ namespace Elsa.Activities.Mqtt.Services
         {
             if (!Client.IsConnected)
             {
+
+                _messageHandler = handler;
+
                 var opt = Options.GenerateMqttClientOptions();
                 Client.ConnectAsync(opt).Wait(); //Sync
-                _messageHandler = handler;
                 await Client.SubscribeAsync(topic, Options.QualityOfService);
                 Client.ApplicationMessageReceivedAsync += async e =>
                 {
