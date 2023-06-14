@@ -48,12 +48,12 @@ namespace Elsa.Activities.Telnyx.Activities
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            CallControlId = context.GetCallControlId(CallControlId);
+            var callControlId = context.GetCallControlId(CallControlId);
             var request = new HangupCallRequest(ClientState, CommandId);
 
             try
             {
-                await _telnyxClient.Calls.HangupCallAsync(CallControlId, request, context.CancellationToken);
+                await _telnyxClient.Calls.HangupCallAsync(callControlId, request, context.CancellationToken);
                 return Done();
             }
             catch (ApiException e)

@@ -68,13 +68,13 @@ namespace Elsa.Activities.Telnyx.Activities
                 Stop
             );
 
-            CallControlId = context.GetCallControlId(CallControlId);
+            var callControlId = context.GetCallControlId(CallControlId);
             
-            context.JournalData["CallControlId"] = CallControlId;
+            context.JournalData["CallControlId"] = callControlId;
 
             try
             {
-                await _telnyxClient.Calls.StopAudioPlaybackAsync(CallControlId, request, context.CancellationToken);
+                await _telnyxClient.Calls.StopAudioPlaybackAsync(callControlId, request, context.CancellationToken);
                 return Suspend();
             }
             catch (ApiException e)

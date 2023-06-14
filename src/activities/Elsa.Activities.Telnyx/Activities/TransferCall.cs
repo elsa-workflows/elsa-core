@@ -189,11 +189,11 @@ namespace Elsa.Activities.Telnyx.Activities
                 WebhookUrlMethod
             );
 
-            CallControlId = context.GetCallControlId(CallControlId);
+            var callControlId = context.GetCallControlId(CallControlId);
 
             try
             {
-                await _telnyxClient.Calls.TransferCallAsync(CallControlId, request, context.CancellationToken);
+                await _telnyxClient.Calls.TransferCallAsync(callControlId, request, context.CancellationToken);
             }
             catch (ApiException e)
             {
