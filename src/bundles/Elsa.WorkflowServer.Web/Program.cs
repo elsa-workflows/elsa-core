@@ -5,12 +5,13 @@ using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Http.Handlers;
 using Elsa.JavaScript.Options;
-using Elsa.MongoDB.Extensions;
-using Elsa.MongoDB.Modules.Identity;
-using Elsa.MongoDB.Modules.Labels;
-using Elsa.MongoDB.Modules.Management;
-using Elsa.MongoDB.Modules.Runtime;
+using Elsa.MongoDb.Extensions;
+using Elsa.MongoDb.Modules.Identity;
+using Elsa.MongoDb.Modules.Labels;
+using Elsa.MongoDb.Modules.Management;
+using Elsa.MongoDb.Modules.Runtime;
 using Elsa.WorkflowServer.Web;
+using Jint;
 
 EndpointSecurityOptions.DisableSecurity();
 
@@ -59,7 +60,7 @@ services
         .UseLabels(options => options.UseMongoDb())
         .UseHttp(http => http.HttpEndpointAuthorizationHandler = sp => sp.GetRequiredService<AllowAnonymousHttpEndpointAuthorizationHandler>())
         .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options))
-        .UseMongoDb(options => configuration.GetSection("MongoDb").Bind(options))
+        .UseMongoDb(configuration.GetConnectionString("MongoDb")!)
     );
 
 services.Configure<JintOptions>(options => options.AllowClrAccess = true);

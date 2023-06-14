@@ -11,20 +11,6 @@ public interface IWorkflowStateSerializer
     /// Serializes the specified workflow state.
     /// </summary>
     /// <param name="workflowState">The workflow state to serialize.</param>
-    /// <returns>The serialized workflow state.</returns>
-    string Serialize(WorkflowState workflowState);
-    
-    /// <summary>
-    /// Deserializes the specified serialized state.
-    /// </summary>
-    /// <param name="serializedState">The serialized state.</param>
-    /// <returns>The deserialized workflow state.</returns>
-    WorkflowState Deserialize(string serializedState);
-    
-    /// <summary>
-    /// Serializes the specified workflow state.
-    /// </summary>
-    /// <param name="workflowState">The workflow state to serialize.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The serialized workflow state.</returns>
     Task<string> SerializeAsync(WorkflowState workflowState, CancellationToken cancellationToken = default);

@@ -23,21 +23,6 @@ public class JsonWorkflowStateSerializer : IWorkflowStateSerializer
     {
         _wellKnownTypeRegistry = wellKnownTypeRegistry;
     }
-    
-    public string Serialize(WorkflowState workflowState)
-    {
-        var options = GetSerializerOptions();
-        var json = JsonSerializer.Serialize(workflowState, options);
-        return json;
-    }
-
-    /// <inheritdoc />
-    public WorkflowState Deserialize(string serializedState)
-    {
-        var options = GetSerializerOptions();
-        var workflowState = JsonSerializer.Deserialize<WorkflowState>(serializedState, options)!;
-        return workflowState;
-    }
 
     /// <inheritdoc />
     public Task<string> SerializeAsync(WorkflowState workflowState, CancellationToken cancellationToken = default)

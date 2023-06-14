@@ -200,8 +200,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.EntityFrameworkCore.My
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.AspNet.DslWorkflowProvider", "src\samples\aspnet\Elsa.Samples.AspNet.DslWorkflowProvider\Elsa.Samples.AspNet.DslWorkflowProvider.csproj", "{4BC5D3D2-9425-41D7-9804-D145B92520EE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.MongoDB", "src\modules\Elsa.MongoDB\Elsa.MongoDB.csproj", "{F84DD219-8693-4F1E-8C65-59B673E70DD5}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "persistence", "persistence", "{9B4F139F-7D26-435C-A561-89E65A67A8E5}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripting", "scripting", "{6EF07978-A6D2-40EB-891D-7D70C5F37E76}"
@@ -225,6 +223,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.WorkflowProviders.BlobStorage", "src\modules\Elsa.WorkflowProviders.BlobStorage\Elsa.WorkflowProviders.BlobStorage.csproj", "{A702DD84-B55C-4807-9C28-D8F5AC3CCA78}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.ConsoleApp.ActivityOutput", "src\samples\console\Elsa.Samples.ConsoleApp.ActivityOutput\Elsa.Samples.ConsoleApp.ActivityOutput.csproj", "{9C9FEB8E-A253-4705-A344-49BFEFC9A516}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.MongoDb", "src\modules\Elsa.MongoDb\Elsa.MongoDb.csproj", "{3A377A6A-F735-4010-9E00-72E8BEB8F1F2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -540,10 +540,6 @@ Global
 		{4BC5D3D2-9425-41D7-9804-D145B92520EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4BC5D3D2-9425-41D7-9804-D145B92520EE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4BC5D3D2-9425-41D7-9804-D145B92520EE}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F84DD219-8693-4F1E-8C65-59B673E70DD5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F84DD219-8693-4F1E-8C65-59B673E70DD5}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F84DD219-8693-4F1E-8C65-59B673E70DD5}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F84DD219-8693-4F1E-8C65-59B673E70DD5}.Release|Any CPU.Build.0 = Release|Any CPU
 		{4D8F3BB2-709D-481A-8FD3-0DA9762B366D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{4D8F3BB2-709D-481A-8FD3-0DA9762B366D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4D8F3BB2-709D-481A-8FD3-0DA9762B366D}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -564,6 +560,10 @@ Global
 		{9C9FEB8E-A253-4705-A344-49BFEFC9A516}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9C9FEB8E-A253-4705-A344-49BFEFC9A516}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9C9FEB8E-A253-4705-A344-49BFEFC9A516}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3A377A6A-F735-4010-9E00-72E8BEB8F1F2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3A377A6A-F735-4010-9E00-72E8BEB8F1F2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3A377A6A-F735-4010-9E00-72E8BEB8F1F2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3A377A6A-F735-4010-9E00-72E8BEB8F1F2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{155227F0-A33B-40AA-A4B4-06F813EB921B} = {61017E64-6D00-49CB-9E81-5002DC8F7D5F}
@@ -665,6 +665,6 @@ Global
 		{A86DF0F0-24E9-470E-984B-9E7332544972} = {9B4F139F-7D26-435C-A561-89E65A67A8E5}
 		{A702DD84-B55C-4807-9C28-D8F5AC3CCA78} = {B08B4E00-C2AB-48F3-8389-449F42AEF179}
 		{9C9FEB8E-A253-4705-A344-49BFEFC9A516} = {873BFC3E-63C2-4495-A503-5EC05DCD84E4}
-		{F84DD219-8693-4F1E-8C65-59B673E70DD5} = {9B4F139F-7D26-435C-A561-89E65A67A8E5}
+		{3A377A6A-F735-4010-9E00-72E8BEB8F1F2} = {9B4F139F-7D26-435C-A561-89E65A67A8E5}
 	EndGlobalSection
 EndGlobal
