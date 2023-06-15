@@ -30,6 +30,11 @@ namespace Elsa.Activities.Mqtt.Services
             _receiverClient.SetMessageHandlerAsync(OnMessageReceived);
         }
 
+        public void Ping()
+        {
+            _receiverClient.SetMessageHandlerAsync(OnMessageReceived);
+        }
+
         private string ActivityType => nameof(MqttMessageReceived);
         public async ValueTask DisposeAsync() => await _disposeReceiverAction(_receiverClient);
 
