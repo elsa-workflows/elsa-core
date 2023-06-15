@@ -36,6 +36,10 @@ public class MongoDefaultWorkflowRuntimePersistenceFeature : PersistenceFeatureB
     public override void Apply()
     {
         base.Apply();
+        
+        AddCollection<WorkflowState>("workflow_states");
+        AddCollection<StoredTrigger>("triggers");
+        AddCollection<StoredBookmark>("bookmarks");
 
         AddStore<WorkflowState, MongoWorkflowStateStore>();
         AddStore<StoredTrigger, MongoTriggerStore>();

@@ -1,6 +1,7 @@
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Microsoft.Extensions.DependencyInjection;
+using MongoDB.Driver;
 
 namespace Elsa.MongoDb.Common;
 
@@ -25,5 +26,17 @@ public abstract class PersistenceFeatureBase : FeatureBase
             .AddSingleton<MongoDbStore<TDocument>>()
             .AddSingleton<TStore>()
             ;
+    }
+
+    /// <summary>
+    /// Registers a <see cref="IMongoCollection{TDocument}"/>.
+    /// </summary>
+    /// <param name="collectionName">The name of the collection.</param>
+    /// <typeparam name="TDocument">The document type of the collection.</typeparam>
+    protected void AddCollection<TDocument>(string collectionName) where TDocument : class
+    {
+        Services.AddSingleton(
+            sp => sp.GetRequiredService<IMongoDatabase>()
+                .GetCollection<TDocument>(collectionName));
     }
 }

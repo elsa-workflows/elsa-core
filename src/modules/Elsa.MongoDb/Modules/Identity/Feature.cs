@@ -35,6 +35,10 @@ public class MongoIdentityPersistenceFeature : PersistenceFeatureBase
     public override void Apply()
     {
         base.Apply();
+        
+        AddCollection<User>("users");
+        AddCollection<Application>("applications");
+        AddCollection<Role>("roles");
 
         AddStore<User, MongoUserStore>();
         AddStore<Application, MongoApplicationStore>();

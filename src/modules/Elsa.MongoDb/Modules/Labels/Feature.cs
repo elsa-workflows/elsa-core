@@ -27,6 +27,9 @@ public class MongoLabelPersistenceFeature : PersistenceFeatureBase
     public override void Apply()
     {
         base.Apply();
+        
+        AddCollection<Label>("labels");
+        AddCollection<WorkflowDefinitionLabel>("workflow_definition_labels");
 
         AddStore<Label, MongoLabelStore>();
         AddStore<WorkflowDefinitionLabel, MongoWorkflowDefinitionLabelStore>();

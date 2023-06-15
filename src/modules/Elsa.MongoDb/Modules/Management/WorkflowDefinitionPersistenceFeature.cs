@@ -31,6 +31,8 @@ public class MongoWorkflowDefinitionPersistenceFeature : PersistenceFeatureBase
     public override void Apply()
     {
         base.Apply();
+        
+        AddCollection<WorkflowDefinition>("workflow_definitions");
 
         AddStore<WorkflowDefinition, MongoWorkflowDefinitionStore>();
     }

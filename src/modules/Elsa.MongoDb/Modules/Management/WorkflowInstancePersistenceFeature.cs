@@ -28,6 +28,8 @@ public class MongoWorkflowInstancePersistenceFeature : PersistenceFeatureBase
     public override void Apply()
     {
         base.Apply();
+        
+        AddCollection<WorkflowInstance>("workflow_instances");
 
         AddStore<WorkflowInstance, MongoWorkflowInstanceStore>();
     }

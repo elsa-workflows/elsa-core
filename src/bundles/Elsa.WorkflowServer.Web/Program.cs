@@ -60,7 +60,7 @@ services
         .UseLabels(options => options.UseMongoDb())
         .UseHttp(http => http.HttpEndpointAuthorizationHandler = sp => sp.GetRequiredService<AllowAnonymousHttpEndpointAuthorizationHandler>())
         .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options))
-        .UseMongoDb(configuration.GetConnectionString("MongoDb")!)
+        .UseMongoDb(configuration.GetConnectionString("MongoDb")!, options => configuration.GetSection("MongoDb").Bind(options))
     );
 
 services.Configure<JintOptions>(options => options.AllowClrAccess = true);
