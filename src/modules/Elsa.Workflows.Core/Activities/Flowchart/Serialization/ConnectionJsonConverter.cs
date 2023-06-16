@@ -5,43 +5,57 @@ using Elsa.Workflows.Core.Contracts;
 
 namespace Elsa.Workflows.Core.Activities.Flowchart.Serialization;
 
+/// <summary>
+/// Converts <see cref="Connection"/> to and from JSON.
+/// </summary>
 public class ConnectionJsonConverter : JsonConverter<Connection>
 {
     private readonly IDictionary<string, IActivity> _activities;
 
+    /// <inheritdoc />
     public override bool CanConvert(Type typeToConvert) => typeToConvert == typeof(Connection);
 
+    /// <inheritdoc />
     public ConnectionJsonConverter(IDictionary<string, IActivity> activities)
     {
         _activities = activities;
     }
 
+    /// <inheritdoc />
     public override Connection Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         if (!JsonDocument.TryParseValue(ref reader, out var doc))
             throw new JsonException("Failed to parse JsonDocument");
 
-        var sourceId = doc.RootElement.GetProperty("source").GetString()!;
-        var targetId = doc.RootElement.GetProperty("target").GetString()!;
-        var sourcePort = doc.RootElement.GetProperty("sourcePort").GetString()!;
-        var targetPort = doc.RootElement.GetProperty("targetPort").GetString()!;
+        var sourceElement = doc.RootElement.GetProperty("source");
+        var targetElement = doc.RootElement.GetProperty("target");
+        var sourceId = sourceElement.GetProperty("activity").GetString()!;
+        var targetId = targetElement.GetProperty("activity").GetString()!;
+        var sourcePort = sourceElement.GetProperty("port").GetString()!;
+        var targetPort = targetElement.GetProperty("port").GetString()!;
 
-        var source = _activities.TryGetValue(sourceId, out var s) ? s : default!;
-        var target = _activities.TryGetValue(targetId, out var t) ? t : default!;
-
-        return new Connection(source, target, sourcePort, targetPort);
+        var sourceActivity = _activities.TryGetValue(sourceId, out var s) ? s : default!;
+        var targetActivity = _activities.TryGetValue(targetId, out var t) ? t : default!;
+        var source = new Endpoint(sourceActivity, sourcePort);
+        var target = new Endpoint(targetActivity, targetPort);
+        return new Connection(source, target);
     }
 
+    /// <inheritdoc />
     public override void Write(Utf8JsonWriter writer, Connection value, JsonSerializerOptions options)
     {
-        var (activity, target, sourcePort, targetPort) = value;
-
         var model = new
         {
-            Source = activity.Id,
-            Target = target.Id,
-            SourcePort = sourcePort,
-            TargetPort = targetPort
+            Source = new
+            {
+                Activity = value.Source.Activity.Id,
+                Port = value.Source.Port
+            },
+            Target = new
+            {
+                Activity = value.Target.Activity.Id,
+                Port = value.Target.Port
+            }
         };
 
         JsonSerializer.Serialize(writer, model, options);

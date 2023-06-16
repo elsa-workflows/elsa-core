@@ -84,11 +84,11 @@ public class Flowchart : Container
 
         // If specific outcomes were provided by the completed activity, use them to find the connection to the next activity.
         Func<Connection, bool> outboundConnectionsQuery = signal.Result is Outcomes outcomes
-            ? connection => connection.Source == completedActivity && outcomes.Names.Contains(connection.SourcePort)
-            : connection => connection.Source == completedActivity;
+            ? connection => connection.Source.Activity == completedActivity && outcomes.Names.Contains(connection.Source.Port)
+            : connection => connection.Source.Activity == completedActivity;
 
         var outboundConnections = Connections.Where(outboundConnectionsQuery).ToList();
-        var children = outboundConnections.Select(x => x.Target).ToList();
+        var children = outboundConnections.Select(x => x.Target.Activity).ToList();
         var scope = flowchartActivityExecutionContext.GetProperty(ScopeProperty, () => new FlowScope());
 
         scope.RegisterActivityExecution(completedActivity);

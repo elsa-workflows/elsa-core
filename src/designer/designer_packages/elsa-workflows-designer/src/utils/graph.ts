@@ -1,8 +1,8 @@
-import { Edge, Graph, Node } from "@antv/x6";
-import { PortManager } from "@antv/x6/lib/model/port";
-import { Connection } from "../modules/flowchart/models";
-import { v4 as uuid } from 'uuid';
-import { Activity } from "../models";
+import {Edge, Graph, Node} from "@antv/x6";
+import {PortManager} from "@antv/x6/lib/model/port";
+import {Connection} from "../modules/flowchart/models";
+import {v4 as uuid} from 'uuid';
+import {Activity} from "../models";
 import optionsStore from '../data/designer-options-store';
 
 export function rebuildGraph(graph: Graph) {
@@ -22,7 +22,7 @@ export function autoOrientConnections(graph: Graph, selectedNode: Node) {
       neighbourNode: neighbourNode
     }
   });
-  nodeCouplesWithPositions.forEach(couple => updatePortsWithNewPositions(graph,  couple.selectedNode, couple.portPositionOfSelectedNode, couple.neighbourNode as Node, couple.portPositionOfNeighbourNode));
+  nodeCouplesWithPositions.forEach(couple => updatePortsWithNewPositions(graph, couple.selectedNode, couple.portPositionOfSelectedNode, couple.neighbourNode as Node, couple.portPositionOfNeighbourNode));
 }
 
 function updatePortsWithNewPositions(
@@ -40,12 +40,12 @@ function updatePortsWithNewPositions(
 }
 
 function calculatePositionsForInflexibleNode(sourceNode: Node<Node.Properties>, targetNodes: Node<Node.Properties>[]):
-{ sourceNode: Node<Node.Properties>, sourceNodePosition: "left" | "right" | "top" | "bottom"; targetNode: Node<Node.Properties>, targetNodePosition: "left" | "right" | "top" | "bottom"; }[] {
+  { sourceNode: Node<Node.Properties>, sourceNodePosition: "left" | "right" | "top" | "bottom"; targetNode: Node<Node.Properties>, targetNodePosition: "left" | "right" | "top" | "bottom"; }[] {
   const sourceNodeCenter = sourceNode.getBBox().center;
   const dxAverageForTargetNodes = targetNodes.map(node => node.getBBox().center.x).reduce((a, b) => a + b, 0) / targetNodes.length;
   const dyAverageForTargetNodes = targetNodes.map(node => node.getBBox().center.y).reduce((a, b) => a + b, 0) / targetNodes.length;
 
-  const sourcePortWithNewPosition = { node: sourceNode, position: calculatePortPositionsOfNodeCouple(sourceNodeCenter.x, sourceNodeCenter.y, dxAverageForTargetNodes, dyAverageForTargetNodes).portPositionOfSelectedNode };
+  const sourcePortWithNewPosition = {node: sourceNode, position: calculatePortPositionsOfNodeCouple(sourceNodeCenter.x, sourceNodeCenter.y, dxAverageForTargetNodes, dyAverageForTargetNodes).portPositionOfSelectedNode};
   return targetNodes.map((targetNode) => {
     return {
       sourceNode: sourcePortWithNewPosition.node,
@@ -79,7 +79,7 @@ function calculatePortPositionsOfNodeCouple(selectedNodeX: number, selectedNodeY
     }
   } else if (dx <= 0 && dy <= 0) {
     if (dx > dy) {
-      return {portPositionOfSelectedNode: "right",  portPositionOfNeighbourNode: "left"};
+      return {portPositionOfSelectedNode: "right", portPositionOfNeighbourNode: "left"};
     } else {
       return {portPositionOfSelectedNode: "bottom", portPositionOfNeighbourNode: "left"};
     }
@@ -87,11 +87,11 @@ function calculatePortPositionsOfNodeCouple(selectedNodeX: number, selectedNodeY
 }
 
 function updatePortsAndEdgeOfNodeCouple(graph: Graph, sourceNode: Node<Node.Properties>, targetNode: Node<Node.Properties>, portPositionOfSourceNode: string, portPositionOfTargetNode: string) {
-  const edge = graph.model.getEdges().find(({ data }) => data.source == sourceNode.id && data.target == targetNode.id);
+  const edge = graph.model.getEdges().find(({data}) => data.source == sourceNode.id && data.target == targetNode.id);
 
   if (edge != null) {
     const sourcePortOfConnection = edge.data.sourcePort;
-    if(!optionsStore.enableFlexiblePorts && isNewCalculationNeededForInflexiblePort(graph, sourceNode, sourcePortOfConnection)){
+    if (!optionsStore.enableFlexiblePorts && isNewCalculationNeededForInflexiblePort(graph, sourceNode, sourcePortOfConnection)) {
       const outgoingEdges = findOutgoingEdges(graph, sourceNode, sourcePortOfConnection);
       const targetNodes = graph.getNodes().filter(node => outgoingEdges.map(edge => edge.data.target).includes(node.id));
       const nodeCouplesWithPositions = calculatePositionsForInflexibleNode(sourceNode, targetNodes);
@@ -119,7 +119,7 @@ function isNewCalculationNeededForInflexiblePort(graph: Graph, sourceNode: Node<
 }
 
 function updatePortsAndEdge(graph: Graph, sourceNode: Node<Node.Properties>, targetNode: Node<Node.Properties>, newSourceNodePosition: string, newTargetNodePosition: string) {
-  const edge = graph.model.getEdges().find(({ data }) => data.source == sourceNode.id && data.target == targetNode.id);
+  const edge = graph.model.getEdges().find(({data}) => data.source == sourceNode.id && data.target == targetNode.id);
 
   const sourceNodePort = sourceNode.getPort(edge.data.sourcePort) ?? sourceNode.getPorts().find(p => p.type == "out" && getPortNameByPortId(p.id) == getPortNameByPortId(edge.data.sourcePort));
   const targetNodePort = targetNode.getPort(edge.data.targetPort) ?? targetNode.getPorts().find(p => p.type == "in" && getPortNameByPortId(p.id) == getPortNameByPortId(edge.data.targetPort));
@@ -131,16 +131,20 @@ function updatePortsAndEdge(graph: Graph, sourceNode: Node<Node.Properties>, tar
     const newTargetNodePortId = updatePort(graph, targetNode, targetNodePort, newTargetNodePosition);
 
     graph.addEdge(createEdge({
-      source: sourceNode.id,
-      target: targetNode.id,
-      sourcePort: newSourceNodePortId ?? sourceNodePort.id,
-      targetPort: newTargetNodePortId ?? targetNodePort.id
+      source: {
+        activity: sourceNode.id,
+        port: newSourceNodePortId ?? sourceNodePort.id
+      },
+      target: {
+        activity: targetNode.id,
+        port: newTargetNodePortId ?? targetNodePort.id
+      }
     }));
   }
 }
 
 function hasPortAnEdge(graph: Graph, port: PortManager.PortMetadata) {
-  return graph.getEdges().some(({ data }) => data.sourcePort == port.id || data.targetPort == port.id);
+  return graph.getEdges().some(({data}) => data.sourcePort == port.id || data.targetPort == port.id);
 }
 
 function findMatchingPortForEdge(node: Node<Node.Properties>, position: string, portType: string, portName: string) {
@@ -152,7 +156,7 @@ export function getPortNameByPortId(portId: string) {
 }
 
 function findOutgoingEdges(graph: Graph, node: Node<Node.Properties>, portId: string): Edge<Edge.Properties>[] {
-  return graph.model.getEdges().filter(({ data }) => data.source == node.id && getPortNameByPortId(data.sourcePort) == getPortNameByPortId(portId));
+  return graph.model.getEdges().filter(({data}) => data.source == node.id && getPortNameByPortId(data.sourcePort) == getPortNameByPortId(portId));
 }
 
 function updatePort(graph: Graph, node: Node<Node.Properties>, nodePort: PortManager.PortMetadata, newPortPosition: string) {
@@ -167,8 +171,7 @@ function updatePort(graph: Graph, node: Node<Node.Properties>, nodePort: PortMan
 
     if (matchingPort == null) {
       newNodePortId = createNewPort(nodePort, node, newPortPosition);
-    }
-    else {
+    } else {
       newNodePortId = matchingPort.id;
     }
   }
@@ -208,8 +211,7 @@ export function adjustPortMarkupByNode(node: Node) {
           fill: '#888',
         },
       });
-    }
-    else {
+    } else {
       node.setPortProp(port.id, "attrs", {
         circle: {
           r: 5,
@@ -232,10 +234,10 @@ export function createEdge(connection: Connection): Edge.Metadata {
     shape: 'elsa-edge',
     zIndex: -1,
     data: connection,
-    source: connection.source,
-    target: connection.target,
-    sourcePort: connection.sourcePort,
-    targetPort: connection.targetPort
+    source: connection.source.activity,
+    target: connection.target.activity,
+    sourcePort: connection.source.port,
+    targetPort: connection.target.port
   };
 }
 

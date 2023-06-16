@@ -6,10 +6,13 @@ export interface Flowchart extends Container {
 }
 
 export interface Connection {
-  source: string;
-  target: string;
-  sourcePort: string;
-  targetPort: string;
+  source: Endpoint;
+  target: Endpoint;
+}
+
+export interface Endpoint {
+  activity: string;
+  port: string;
 }
 
 export interface FlowchartNavigationItem {
