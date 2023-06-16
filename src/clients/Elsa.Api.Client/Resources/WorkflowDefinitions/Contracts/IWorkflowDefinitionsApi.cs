@@ -31,6 +31,15 @@ public interface IWorkflowDefinitionsApi
     Task<WorkflowDefinition?> GetAsync(string definitionId, VersionOptions? versionOptions = default, bool includeCompositeRoot = false, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Saves a workflow definition.
+    /// </summary>
+    /// <param name="request">The request containing the workflow definition to save.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The workflow definition.</returns>
+    [Post("/workflow-definitions")]
+    Task<WorkflowDefinition> SaveAsync(SaveWorkflowDefinitionRequest request, CancellationToken cancellationToken = default);
+    
+    /// <summary>
     /// Deletes a workflow definition.
     /// </summary>
     /// <param name="definitionId">The ID of the workflow definition to delete.</param>
