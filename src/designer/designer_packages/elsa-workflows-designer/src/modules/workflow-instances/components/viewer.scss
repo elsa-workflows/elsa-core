@@ -3,6 +3,11 @@
   --activity-picker-width: 300px;
   --activity-editor-height: 200px;
 }
+
+.x6-graph-scroller {
+  height: calc(100vh - var(--activity-editor-height) - 64px) !important;
+}
+
 elsa-flowchart {
   position: absolute;
   left: var(--activity-picker-width);
