@@ -81,6 +81,7 @@ export class Panel {
     toggleClassMap[PanelPosition.Bottom] = 'elsa-panel-toggle-bottom';
 
     const toggleCssClass = toggleClassMap[position];
+    const iconOrientationCssClass = isExpanded ? 'tw-rotate-180': '';
 
     const dragBarClassMap = {
       [PanelPosition.Left]: 'tw-right-0 tw-h-full tw-cursor-col-resize tw-w-1',
@@ -99,7 +100,7 @@ export class Panel {
 
         <div class={`tw-text-white ${toggleCssClass}`} onClick={() => this.onToggleClick()}>
           <svg
-            class="tw-h-6 tw-w-6 tw-text-gray-700"
+            class={`tw-h-6 tw-w-6 tw-text-gray-700 ${iconOrientationCssClass}`}
             width="24"
             height="24"
             viewBox="0 0 24 24"
