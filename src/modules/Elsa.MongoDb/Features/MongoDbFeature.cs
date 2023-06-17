@@ -1,19 +1,7 @@
-using System.Security.Authentication;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
-using Elsa.Identity.Contracts;
-using Elsa.Identity.Entities;
-using Elsa.Labels.Contracts;
-using Elsa.Labels.Entities;
-using Elsa.MongoDb.HostedServices;
-using Elsa.MongoDb.Modules.Identity;
-using Elsa.MongoDb.Modules.Labels;
-using Elsa.MongoDb.Modules.Management;
-using Elsa.MongoDb.Modules.Runtime;
 using Elsa.MongoDB.Options;
 using Elsa.MongoDb.Serializers;
-using Elsa.Workflows.Management.Contracts;
-using Elsa.Workflows.Runtime.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson.Serialization;
@@ -51,20 +39,7 @@ public class MongoDbFeature : FeatureBase
         
         RegisterSerializers();
         
-        Services
-            .AddSingleton<IApplicationStore, MongoApplicationStore>()
-            .AddSingleton<IUserStore, MongoUserStore>()
-            .AddSingleton<IRoleStore, MongoRoleStore>()
-            .AddSingleton<ILabelStore, MongoLabelStore>()
-            .AddSingleton<IWorkflowDefinitionLabelStore, MongoWorkflowDefinitionLabelStore>()
-            .AddSingleton<IWorkflowDefinitionStore, MongoWorkflowDefinitionStore>()
-            .AddSingleton<IWorkflowInstanceStore, MongoWorkflowInstanceStore>()
-            .AddSingleton<IWorkflowExecutionLogStore, MongoWorkflowExecutionLogStore>()
-            .AddSingleton<IWorkflowStateStore, MongoWorkflowStateStore>()
-            .AddSingleton<ITriggerStore, MongoTriggerStore>()
-            .AddSingleton<IBookmarkStore, MongoBookmarkStore>()
-            .AddHostedService<CreateIndices>()
-            .AddHealthChecks();
+        Services.AddHealthChecks();
     }
 
     private void RegisterSerializers()
