@@ -23,12 +23,6 @@ public class MongoDefaultWorkflowRuntimePersistenceFeature : PersistenceFeatureB
     /// <inheritdoc />
     public override void Configure()
     {
-        Module.Configure<WorkflowRuntimeFeature>(feature =>
-        {
-            feature.TriggerStore = sp => sp.GetRequiredService<MongoTriggerStore>();
-            feature.BookmarkStore = sp => sp.GetRequiredService<MongoBookmarkStore>();
-        });
-        
         Module.Configure<DefaultWorkflowRuntimeFeature>(feature => { feature.WorkflowStateStore = sp => sp.GetRequiredService<MongoWorkflowStateStore>(); });
     }
 
