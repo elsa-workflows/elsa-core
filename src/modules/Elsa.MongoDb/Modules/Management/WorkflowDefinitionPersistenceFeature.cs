@@ -35,5 +35,7 @@ public class MongoWorkflowDefinitionPersistenceFeature : PersistenceFeatureBase
         AddCollection<WorkflowDefinition>("workflow_definitions");
 
         AddStore<WorkflowDefinition, MongoWorkflowDefinitionStore>();
+        
+        Services.AddHostedService<CreateIndices>();
     }
 }

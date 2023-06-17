@@ -43,5 +43,7 @@ public class MongoIdentityPersistenceFeature : PersistenceFeatureBase
         AddStore<User, MongoUserStore>();
         AddStore<Application, MongoApplicationStore>();
         AddStore<Role, MongoRoleStore>();
+
+        Services.AddHostedService<CreateIndices>();
     }
 }

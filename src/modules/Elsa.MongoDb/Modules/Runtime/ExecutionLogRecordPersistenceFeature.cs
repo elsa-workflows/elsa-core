@@ -36,5 +36,7 @@ public class MongoExecutionLogRecordPersistenceFeature : PersistenceFeatureBase
         AddCollection<WorkflowExecutionLogRecord>("workflow_execution_logs");
         
         AddStore<WorkflowExecutionLogRecord, MongoWorkflowExecutionLogStore>();
+        
+        Services.AddHostedService<CreateIndices>();
     }
 }

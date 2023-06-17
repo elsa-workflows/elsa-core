@@ -33,5 +33,7 @@ public class MongoLabelPersistenceFeature : PersistenceFeatureBase
 
         AddStore<Label, MongoLabelStore>();
         AddStore<WorkflowDefinitionLabel, MongoWorkflowDefinitionLabelStore>();
+        
+        Services.AddHostedService<CreateIndices>();
     }
 }

@@ -38,11 +38,9 @@ public class MongoDefaultWorkflowRuntimePersistenceFeature : PersistenceFeatureB
         base.Apply();
         
         AddCollection<WorkflowState>("workflow_states");
-        AddCollection<StoredTrigger>("triggers");
-        AddCollection<StoredBookmark>("bookmarks");
 
         AddStore<WorkflowState, MongoWorkflowStateStore>();
-        AddStore<StoredTrigger, MongoTriggerStore>();
-        AddStore<StoredBookmark, MongoBookmarkStore>();
+        
+        Services.AddHostedService<CreateIndices>();
     }
 }
