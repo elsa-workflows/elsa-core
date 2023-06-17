@@ -143,7 +143,7 @@ export class WorkflowInstanceViewer {
     }
     else if(activity.root == null && activity.body.type == "Elsa.Flowchart"){
       return activity.body as Flowchart;
-    } 
+    }
     else {
       return this.findFlowchartOfActivityRecursive((activity as Workflow).root);
     }
@@ -261,7 +261,7 @@ export class WorkflowInstanceViewer {
         <elsa-panel
           class="elsa-activity-editor-container"
           position={PanelPosition.Bottom}
-          onExpandedStateChanged={e => this.onActivityEditorPanelStateChanged(e.detail)}>
+        >
           <div class="activity-editor-container">
             {this.renderSelectedObject()}
           </div>
