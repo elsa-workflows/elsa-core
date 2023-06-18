@@ -17,7 +17,7 @@ public static class ModuleExtensions
     public static IModule UseMongoDb(
         this IModule module, 
         string connectionString,
-        Action<MongoDbOptions> options,
+        Action<MongoDbOptions>? options = default,
         Action<MongoDbFeature>? configure = default)
     {
         configure += f => f.ConnectionString = connectionString;

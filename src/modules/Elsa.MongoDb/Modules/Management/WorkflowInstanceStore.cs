@@ -15,7 +15,7 @@ using Open.Linq.AsyncExtensions;
 namespace Elsa.MongoDb.Modules.Management;
 
 /// <summary>
-/// An MongoDb implementation of <see cref="IWorkflowInstanceStore"/>.
+/// A MongoDb implementation of <see cref="IWorkflowInstanceStore"/>.
 /// </summary>
 public class MongoWorkflowInstanceStore : IWorkflowInstanceStore
 {

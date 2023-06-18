@@ -8,7 +8,7 @@ using MongoDB.Driver.Linq;
 namespace Elsa.MongoDb.Modules.Runtime;
 
 /// <summary>
-/// An MongoDb implementation of <see cref="IBookmarkStore"/>.
+/// A MongoDb implementation of <see cref="IBookmarkStore"/>.
 /// </summary>
 public class MongoBookmarkStore : IBookmarkStore
 {

@@ -1,3 +1,4 @@
+using Elsa.Extensions;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 
@@ -32,7 +33,7 @@ public class TypeSerializer : IBsonSerializer<Type>
         }
         else
         {
-            context.Writer.WriteString(value.AssemblyQualifiedName);
+            context.Writer.WriteString(value.GetSimpleAssemblyQualifiedName());
         }
     }
 

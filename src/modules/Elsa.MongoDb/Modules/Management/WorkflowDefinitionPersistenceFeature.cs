@@ -8,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.MongoDb.Modules.Management;
 
 /// <summary>
-/// Configures the <see cref="WorkflowDefinitionsFeature"/> feature with an MongoDb persistence provider.
+/// Configures the <see cref="WorkflowDefinitionsFeature"/> feature with a MongoDb persistence provider.
 /// </summary>
 [DependsOn(typeof(WorkflowManagementFeature))]
 public class MongoWorkflowDefinitionPersistenceFeature : PersistenceFeatureBase
