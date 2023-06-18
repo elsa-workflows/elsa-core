@@ -29,13 +29,12 @@ public class FlowchartJsonConverter : JsonConverter<Activities.Flowchart>
 
         var connectionsElement = doc.RootElement.TryGetProperty("connections", out var connectionsEl) ? connectionsEl : default;
         var activitiesElement = doc.RootElement.TryGetProperty("activities", out var activitiesEl) ? activitiesEl : default;
-        var id = doc.RootElement.TryGetProperty("id", out var idAttribute) ? idAttribute.GetString() : _identityGenerator.GenerateId();
+        var id = doc.RootElement.TryGetProperty("id", out var idAttribute) ? idAttribute.GetString()! : _identityGenerator.GenerateId();
         var startId = doc.RootElement.TryGetProperty("start", out var startElement) ? startElement.GetString() : default;
         var activities = activitiesElement.ValueKind != JsonValueKind.Undefined ? activitiesElement.Deserialize<ICollection<IActivity>>(options) ?? new List<IActivity>() : new List<IActivity>();
         var metadataElement = doc.RootElement.TryGetProperty("metadata", out var metadataEl) ? metadataEl : default;
         var metadata = metadataElement.ValueKind != JsonValueKind.Undefined ? metadataElement.Deserialize<IDictionary<string, object>>(options) ?? new Dictionary<string, object>() : new Dictionary<string, object>();
         var start = activities.FirstOrDefault(x => x.Id == startId) ?? activities.FirstOrDefault();
-        //var connectionSerializerOptions = new JsonSerializerOptions(options);
         var activityDictionary = activities.ToDictionary(x => x.Id);
         var connections = DeserializeConnections(connectionsElement, activityDictionary, options);
         var notFoundConnections = GetNotFoundConnections(doc.RootElement, activityDictionary, connections, options);
@@ -93,9 +92,9 @@ public class FlowchartJsonConverter : JsonConverter<Activities.Flowchart>
     
     private static ICollection<Connection> GetNotFoundConnections(JsonElement rootElement, IDictionary<string, IActivity> activities, IEnumerable<Connection> connections, JsonSerializerOptions connectionSerializerOptions)
     {
-        var applicationPropertiesElement = rootElement.TryGetProperty("applicationProperties", out var applicationPropertiesEl) ? applicationPropertiesEl : default;
-        var notFoundConnectionsElement = applicationPropertiesElement.ValueKind != JsonValueKind.Undefined ? applicationPropertiesElement.TryGetProperty(NotFoundConnectionsKey, out var notFoundConnectionsEl) ? notFoundConnectionsEl : default : default;
-        var notFoundConnections = DeserializeConnections(notFoundConnectionsElement, activities, connectionSerializerOptions);
+        var customPropertiesElement = rootElement.TryGetProperty("customProperties", out var customPropertiesEl) ? customPropertiesEl : default;
+        var notFoundConnectionsElement = customPropertiesElement.ValueKind != JsonValueKind.Undefined ? customPropertiesElement.TryGetProperty(NotFoundConnectionsKey, out var notFoundConnectionsEl) ? notFoundConnectionsEl : default : default;
+        var notFoundConnections = notFoundConnectionsElement.ValueKind != JsonValueKind.Undefined ? DeserializeConnections(notFoundConnectionsElement, activities, connectionSerializerOptions) : new List<Connection>();
 
         // Add connections of NotFoundActivity to the list if they aren't already in it.
         var notFoundActivities = activities.Values.Where(x => x is NotFoundActivity).Cast<NotFoundActivity>().ToList();

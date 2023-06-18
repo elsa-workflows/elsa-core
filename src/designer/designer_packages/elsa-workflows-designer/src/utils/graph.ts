@@ -243,9 +243,9 @@ export function createEdge(connection: Connection): Edge.Metadata {
 
 export function removeGuidsFromPortNames(root: Activity) {
   if (root.connections?.length > 0) {
-    root.connections.forEach((connection: { sourcePort: string; targetPort: string; }) => {
-      connection.sourcePort = getPortNameByPortId(connection.sourcePort);
-      connection.targetPort = getPortNameByPortId(connection.targetPort);
+    root.connections.forEach((connection: Connection) => {
+      connection.source.port = getPortNameByPortId(connection.source.port);
+      connection.target.port = getPortNameByPortId(connection.target.port);
     });
   }
   let activitiesWithConnections = root.activities?.filter(act => act.body?.connections?.length > 0);
@@ -256,9 +256,9 @@ export function removeGuidsFromPortNames(root: Activity) {
 
 export function addGuidsToPortNames(root: Activity) {
   if (root.connections.length > 0) {
-    root.connections.forEach((connection: { sourcePort: string; targetPort: string; }) => {
-      connection.sourcePort = uuid() + '_' + connection.sourcePort;
-      connection.targetPort = uuid() + '_' + connection.targetPort;
+    root.connections.forEach((connection: Connection) => {
+      connection.source.port = uuid() + '_' + connection.source.port;
+      connection.target.port = uuid() + '_' + connection.target.port;
     });
   }
   let activitiesWithConnections = root.activities?.filter(act => act.body?.connections?.length > 0);
