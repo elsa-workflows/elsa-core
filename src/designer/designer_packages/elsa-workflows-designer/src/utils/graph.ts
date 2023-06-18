@@ -87,13 +87,22 @@ function calculatePortPositionsOfNodeCouple(selectedNodeX: number, selectedNodeY
 }
 
 function updatePortsAndEdgeOfNodeCouple(graph: Graph, sourceNode: Node<Node.Properties>, targetNode: Node<Node.Properties>, portPositionOfSourceNode: string, portPositionOfTargetNode: string) {
-  const edge = graph.model.getEdges().find(({data}) => data.source == sourceNode.id && data.target == targetNode.id);
+
+  const edge = graph.model.getEdges().find(({data}) => {
+    const connection: Connection = data;
+    const source = connection.source;
+    const target = connection.target;
+    const sourceActivityId = source.activity;
+    const targetActivityId = target.activity;
+    return sourceActivityId == sourceNode.id && targetActivityId == targetNode.id;
+  });
 
   if (edge != null) {
-    const sourcePortOfConnection = edge.data.sourcePort;
+    const connection: Connection = edge.data;
+    const sourcePortOfConnection = connection.source.port;
     if (!optionsStore.enableFlexiblePorts && isNewCalculationNeededForInflexiblePort(graph, sourceNode, sourcePortOfConnection)) {
       const outgoingEdges = findOutgoingEdges(graph, sourceNode, sourcePortOfConnection);
-      const targetNodes = graph.getNodes().filter(node => outgoingEdges.map(edge => edge.data.target).includes(node.id));
+      const targetNodes = graph.getNodes().filter(node => outgoingEdges.map(edge => connection.target.activity).includes(node.id));
       const nodeCouplesWithPositions = calculatePositionsForInflexibleNode(sourceNode, targetNodes);
 
       nodeCouplesWithPositions.forEach(couple => {
@@ -119,12 +128,19 @@ function isNewCalculationNeededForInflexiblePort(graph: Graph, sourceNode: Node<
 }
 
 function updatePortsAndEdge(graph: Graph, sourceNode: Node<Node.Properties>, targetNode: Node<Node.Properties>, newSourceNodePosition: string, newTargetNodePosition: string) {
-  const edge = graph.model.getEdges().find(({data}) => data.source == sourceNode.id && data.target == targetNode.id);
+  const edge = graph.model.getEdges().find(({data}) => {
+    const conn: Connection = data;
+    return conn.source.activity == sourceNode.id && conn.target.activity == targetNode.id;
+  });
+  const connection: Connection = edge.data;
+  const source = connection.source;
+  const sourcePort = source.port;
+  const target = connection.target;
+  const targetPort = target.port;
+  const sourceNodePort = sourceNode.getPort(sourcePort) ?? sourceNode.getPorts().find(p => p.type == "out" && getPortNameByPortId(p.id) == getPortNameByPortId(sourcePort));
+  const targetNodePort = targetNode.getPort(targetPort) ?? targetNode.getPorts().find(p => p.type == "in" && getPortNameByPortId(p.id) == getPortNameByPortId(targetPort));
 
-  const sourceNodePort = sourceNode.getPort(edge.data.sourcePort) ?? sourceNode.getPorts().find(p => p.type == "out" && getPortNameByPortId(p.id) == getPortNameByPortId(edge.data.sourcePort));
-  const targetNodePort = targetNode.getPort(edge.data.targetPort) ?? targetNode.getPorts().find(p => p.type == "in" && getPortNameByPortId(p.id) == getPortNameByPortId(edge.data.targetPort));
-
-  if (sourceNode.getPort(edge.data.sourcePort) == null || targetNode.getPort(edge.data.targetPort) == null || sourceNodePort?.position != newSourceNodePosition || targetNodePort?.position != newTargetNodePosition) {
+  if (sourceNode.getPort(sourcePort) == null || targetNode.getPort(targetPort) == null || sourceNodePort?.position != newSourceNodePosition || targetNodePort?.position != newTargetNodePosition) {
     graph.removeEdge(edge);
 
     const newSourceNodePortId = updatePort(graph, sourceNode, sourceNodePort, newSourceNodePosition);
@@ -144,7 +160,14 @@ function updatePortsAndEdge(graph: Graph, sourceNode: Node<Node.Properties>, tar
 }
 
 function hasPortAnEdge(graph: Graph, port: PortManager.PortMetadata) {
-  return graph.getEdges().some(({data}) => data.sourcePort == port.id || data.targetPort == port.id);
+  return graph.getEdges().some(({data}) => {
+    const connection: Connection = data;
+    const source = connection.source;
+    const sourcePort = source.port;
+    const target = connection.target;
+    const targetPort = target.port;
+    return sourcePort == port.id || targetPort == port.id;
+  });
 }
 
 function findMatchingPortForEdge(node: Node<Node.Properties>, position: string, portType: string, portName: string) {
@@ -156,7 +179,13 @@ export function getPortNameByPortId(portId: string) {
 }
 
 function findOutgoingEdges(graph: Graph, node: Node<Node.Properties>, portId: string): Edge<Edge.Properties>[] {
-  return graph.model.getEdges().filter(({data}) => data.source == node.id && getPortNameByPortId(data.sourcePort) == getPortNameByPortId(portId));
+  return graph.model.getEdges().filter(({data}) => {
+    const connection: Connection = data;
+    const source = connection.source;
+    const sourceActivityId = source.activity;
+    const sourcePort = source.port;
+    return sourceActivityId == node.id && getPortNameByPortId(sourcePort) == getPortNameByPortId(portId);
+  });
 }
 
 function updatePort(graph: Graph, node: Node<Node.Properties>, nodePort: PortManager.PortMetadata, newPortPosition: string) {
