@@ -238,10 +238,17 @@ export function createGraph(
 
       for (const cell of connectionCells) {
         const connection = {...cell.getData()} as Connection;
-        connection.sourcePort = deriveNewPortId(connection.sourcePort);
-        connection.targetPort = deriveNewPortId(connection.targetPort);
-        connection.source = idMap[connection.source];
-        connection.target = idMap[connection.target];
+
+        connection.source = {
+          activity: idMap[connection.source.activity],
+          port: deriveNewPortId(connection.source.port)
+        };
+
+        connection.target = {
+          activity: idMap[connection.target.activity],
+          port: deriveNewPortId(connection.target.port)
+        };
+
         const newEdgeProps = createEdge(connection);
         const edge = graph.createEdge(newEdgeProps);
         newCells.push(edge);
