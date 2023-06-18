@@ -14,17 +14,23 @@ internal class ActivityOutputFunctionsDefinitionProvider : FunctionDefinitionPro
 {
     private readonly IActivityVisitor _activityVisitor;
     private readonly IActivityRegistry _activityRegistry;
+    private readonly IIdentityGraphService _identityGraphService;
 
-    public ActivityOutputFunctionsDefinitionProvider(IActivityVisitor activityVisitor, IActivityRegistry activityRegistry)
+    public ActivityOutputFunctionsDefinitionProvider(IActivityVisitor activityVisitor, IActivityRegistry activityRegistry, IIdentityGraphService identityGraphService)
     {
         _activityVisitor = activityVisitor;
         _activityRegistry = activityRegistry;
+        _identityGraphService = identityGraphService;
     }
 
     protected override async ValueTask<IEnumerable<FunctionDefinition>> GetFunctionDefinitionsAsync(TypeDefinitionContext context)
     {
         // Output getters.
         var nodes = (await _activityVisitor.VisitAsync(context.Workflow.Root, context.CancellationToken)).Flatten().Distinct().ToList();
+        
+        // Ensure identities.
+        _identityGraphService.AssignIdentities(nodes);
+        
         var activitiesWithOutputs = nodes.GetActivitiesWithOutputs(_activityRegistry);
         var definitions = new List<FunctionDefinition>();
 
