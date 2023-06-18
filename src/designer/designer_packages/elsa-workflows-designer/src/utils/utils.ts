@@ -128,6 +128,9 @@ export function generateIdentity() {
   return uuid().replace(/-/g, '');
 }
 
-export function formatTextWithLineBreaks(text: string) {
+export function formatTextWithLineBreaks(text: any) {
+  if(typeof(text) != 'string')
+    return text;
+
   return text?.replace(/\n/g, '<br />');
 }
