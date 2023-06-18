@@ -70,10 +70,10 @@ public class FlowchartJsonConverter : JsonConverter<Activities.Flowchart>
 
         var allActivities = value.CustomProperties.TryGetValue(AllActivitiesKey, out var a) ? a : activities;
         var allConnections = (ICollection<Connection>)(value.CustomProperties.TryGetValue(AllConnectionsKey, out var c) ? c : value.Connections);
-        var applicationProperties = new Dictionary<string, object>(value.CustomProperties);
+        var customProperties = new Dictionary<string, object>(value.CustomProperties);
 
-        applicationProperties.Remove(AllActivitiesKey);
-        applicationProperties.Remove(AllConnectionsKey);
+        customProperties.Remove(AllActivitiesKey);
+        customProperties.Remove(AllConnectionsKey);
 
         var model = new
         {
@@ -81,7 +81,7 @@ public class FlowchartJsonConverter : JsonConverter<Activities.Flowchart>
             value.Version,
             value.Id,
             value.Metadata,
-            ApplicationProperties = applicationProperties,
+            CustomProperties = customProperties,
             Start = value.Start?.Id,
             Activities = allActivities,
             Connections = allConnections
