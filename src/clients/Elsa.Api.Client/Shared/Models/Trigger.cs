@@ -1,4 +1,4 @@
-namespace Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
+namespace Elsa.Api.Client.Shared.Models;
 
 /// <summary>
 /// Represents a trigger.

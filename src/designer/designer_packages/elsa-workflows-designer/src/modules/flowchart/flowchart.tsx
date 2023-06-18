@@ -416,8 +416,8 @@ export class FlowchartComponent {
     const activities = flowchart.activities;
     const connections = flowchart.connections;
     this.updateGraphInternal(activities, connections);
-	
-	if (this.isReadonly) {
+
+    if (this.isReadonly) {
       this.graph.disableSelectionMovable();
       this.graph.disableKeyboard();
     }
@@ -457,7 +457,7 @@ export class FlowchartComponent {
     const connections = graphModel.cells.filter(x => x.shape == 'elsa-edge' && !!x.data).map(x => x.data as Connection);
 
     let rootActivities = activities.filter(activity => {
-      const hasInboundConnections = connections.find(c => c.target == activity.id) != null;
+      const hasInboundConnections = connections.find(c => c.target.activity == activity.id) != null;
       return !hasInboundConnections;
     });
 
@@ -475,10 +475,10 @@ export class FlowchartComponent {
       shape: 'elsa-edge',
       zIndex: -1,
       data: connection,
-      source: connection.source,
-      target: connection.target,
-      sourcePort: connection.sourcePort,
-      targetPort: connection.targetPort
+      source: connection.source.activity,
+      target: connection.target.activity,
+      sourcePort: connection.source.port,
+      targetPort: connection.target.port
     };
   }
 
@@ -489,14 +489,14 @@ export class FlowchartComponent {
     for (const edge of edges) {
       const connection: Connection = edge.data;
 
-      if (connection.target != cachedActivityId && connection.source != cachedActivityId)
+      if (connection.target.activity != cachedActivityId && connection.source.activity != cachedActivityId)
         continue;
 
-      if (connection.target == cachedActivityId)
-        connection.target = updatedActivity.id;
+      if (connection.target.activity == cachedActivityId)
+        connection.target.activity = updatedActivity.id;
 
-      if (connection.source == cachedActivityId)
-        connection.source = updatedActivity.id;
+      if (connection.source.activity == cachedActivityId)
+        connection.source.activity = updatedActivity.id;
 
       edge.data = connection;
     }
@@ -599,10 +599,14 @@ export class FlowchartComponent {
     const targetPort = targetNode.getPort(edge.getTargetPortId()).id;
 
     const connection: Connection = {
-      source: sourceActivity.id,
-      sourcePort: sourcePort,
-      target: targetActivity.id,
-      targetPort: targetPort
+      source: {
+        activity: sourceActivity.id,
+        port: sourcePort
+      },
+      target: {
+        activity: targetActivity.id,
+        port: targetPort
+      }
     };
 
     edge.data = connection;

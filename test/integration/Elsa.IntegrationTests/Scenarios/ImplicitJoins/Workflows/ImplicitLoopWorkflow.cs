@@ -34,8 +34,8 @@ public class ImplicitLoopWorkflow : WorkflowBase
             {
                 new Connection(start, incrementCounter),
                 new Connection(incrementCounter, counterGreaterThanOne),
-                new Connection(counterGreaterThanOne, retry, SourcePort: "False"),
-                new Connection(counterGreaterThanOne, end, SourcePort: "True"),
+                new Connection(new Endpoint(counterGreaterThanOne, "False"), new Endpoint(retry)),
+                new Connection(new Endpoint(counterGreaterThanOne, "True"), new Endpoint(end)),
                 new Connection(retry, incrementCounter),
             }
         };
