@@ -240,12 +240,12 @@ export function createGraph(
         const connection = {...cell.getData()} as Connection;
 
         connection.source = {
-          activity: idMap[connection.source.activity],
+          activity: idMap[connection.source.activity] ?? connection.source.activity,
           port: deriveNewPortId(connection.source.port)
         };
 
         connection.target = {
-          activity: idMap[connection.target.activity],
+          activity: idMap[connection.target.activity] ?? connection.target.activity,
           port: deriveNewPortId(connection.target.port)
         };
 
