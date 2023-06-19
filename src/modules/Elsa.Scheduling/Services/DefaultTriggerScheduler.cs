@@ -92,8 +92,11 @@ public class DefaultTriggerScheduler : ITriggerScheduler
         // Select all StartAt triggers.
         var startAtTriggers = triggerList.Filter<StartAt>().ToList();
 
+        // Select all Cron triggers.
+        var cronTriggers = triggerList.Filter<Cron>().ToList();
+
         // Concatenate the filtered triggers.
-        var filteredTriggers = timerTriggers.Concat(startAtTriggers).ToList();
+        var filteredTriggers = timerTriggers.Concat(startAtTriggers).Concat(cronTriggers).ToList();
 
         // Unschedule each trigger.
         foreach (var trigger in filteredTriggers)
