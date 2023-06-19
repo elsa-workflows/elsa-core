@@ -5,7 +5,7 @@ using FastEndpoints;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.List;
 
-public class Request
+internal class Request
 {
     public string? VersionOptions { get; set; }
     public string[]? DefinitionIds { get; set; }
@@ -18,7 +18,7 @@ public class Request
     public string? SearchTerm { get; set; }
 }
 
-public class Response
+internal class Response
 {
     public Response(ICollection<WorkflowDefinitionSummary> items, long totalCount)
     {
