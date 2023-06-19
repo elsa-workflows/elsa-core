@@ -71,5 +71,5 @@ public class WorkflowDefinition : VersionedEntity
     /// <summary>
     /// The root activity of the workflow.
     /// </summary>
-    public JsonElement Root { get; set; } = default!;
+    public Activity Root { get; set; } = default!;
 }
