@@ -1,7 +1,8 @@
+using Elsa.Api.Client.Activities;
 using Elsa.Api.Client.Extensions;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 
-namespace Elsa.Api.Client.Shared.Models;
+namespace Elsa.Api.Client.Models;
 
 /// <summary>
 /// Represents a container activity.

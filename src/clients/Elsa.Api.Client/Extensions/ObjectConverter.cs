@@ -10,7 +10,15 @@ namespace Elsa.Api.Client.Extensions;
 /// <summary>
 /// Provides options to the conversion method.
 /// </summary>
-public record ObjectConverterOptions(JsonSerializerOptions? SerializerOptions = default);
+public record ObjectConverterOptions(JsonSerializerOptions? SerializerOptions = default)
+{
+    /// <inheritdoc />
+    public ObjectConverterOptions(Action<JsonSerializerOptions> configureSerializerOptions) : this()
+    {
+        SerializerOptions = new JsonSerializerOptions();
+        configureSerializerOptions(SerializerOptions);
+    }
+}
 
 /// <summary>
 /// A helper that attempts many strategies to try and convert the source value into the destination type. 

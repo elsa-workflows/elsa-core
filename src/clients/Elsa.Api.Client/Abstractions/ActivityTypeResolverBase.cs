@@ -1,6 +1,5 @@
+using Elsa.Api.Client.Activities;
 using Elsa.Api.Client.Contracts;
-using Elsa.Api.Client.Models;
-using Elsa.Api.Client.Shared.Models;
 
 namespace Elsa.Api.Client.Abstractions;
 

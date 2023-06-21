@@ -22,4 +22,20 @@ public static class DictionaryExtensions
         dictionary[key] = defaultVal;
         return defaultVal;
     }
+    
+    /// <summary>
+    /// Returns the value of the specified property if it exists, otherwise the default value.
+    /// </summary>
+    public static object? TryGetValue(this IDictionary<string, object> dictionary, string key, Func<object>? defaultValue = default)
+    {
+        if (dictionary.TryGetValue(key, out var value) && value is not JsonElement { ValueKind: JsonValueKind.Undefined }) 
+            return value;
+        
+        if (defaultValue == null)
+            return default;
+
+        var defaultVal = defaultValue()!;
+        dictionary[key] = defaultVal;
+        return defaultVal;
+    }
 }

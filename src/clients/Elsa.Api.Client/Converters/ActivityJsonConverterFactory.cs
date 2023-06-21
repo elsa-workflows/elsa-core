@@ -1,6 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Elsa.Api.Client.Shared.Models;
+using Elsa.Api.Client.Activities;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Api.Client.Converters;

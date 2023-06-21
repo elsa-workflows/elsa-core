@@ -1,5 +1,4 @@
-﻿using Elsa.Api.Client.Models;
-using Elsa.Api.Client.Shared.Models;
+﻿using Elsa.Api.Client.Activities;
 
 namespace Elsa.Api.Client.Contracts;
 
@@ -27,3 +26,9 @@ public interface IActivityTypeResolver
     /// <returns>The resolved type.</returns>
     Type ResolveType(ActivityTypeResolverContext context);
 }
+
+/// <summary>
+/// Provides context for an <see cref="IActivityTypeResolver"/>.
+/// </summary>
+/// <param name="ActivityTypeName">The activity type.</param>
+public record ActivityTypeResolverContext(string ActivityTypeName);

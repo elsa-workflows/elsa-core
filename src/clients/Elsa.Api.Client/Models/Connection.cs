@@ -1,4 +1,4 @@
-namespace Elsa.Api.Client.Shared.Models;
+namespace Elsa.Api.Client.Models;
 
 /// <summary>
 /// Represents a connection between two activities.

@@ -80,6 +80,7 @@ public static class DependencyInjectionExtensions
         jsonSerializerSettings.Converters.Add(new JsonStringEnumConverter());
         jsonSerializerSettings.Converters.Add(new VersionOptionsJsonConverter());
         jsonSerializerSettings.Converters.Add(new ActivityJsonConverterFactory(serviceProvider));
+        jsonSerializerSettings.Converters.Add(new ExpressionJsonConverterFactory());
         
         var settings = new RefitSettings
         {

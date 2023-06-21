@@ -1,6 +1,6 @@
 using Elsa.Api.Client.Extensions;
 
-namespace Elsa.Api.Client.Shared.Models;
+namespace Elsa.Api.Client.Activities;
 
 /// <summary>
 /// Represents an activity in a workflow definition.
