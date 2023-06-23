@@ -25,19 +25,17 @@ public class DefaultBookmarkScheduler : IBookmarkScheduler
     /// <inheritdoc />
     public async Task ScheduleAsync(IEnumerable<StoredBookmark> bookmarks, CancellationToken cancellationToken = default)
     {
-        var bookmarkList = bookmarks.ToList();
-
         // Select all Delay bookmarks.
-        var delayBookmarks = bookmarkList.Filter<Delay>().ToList();
+        var delayBookmarks = bookmarks.Filter<Delay>();
 
         // Select all StartAt bookmarks.
-        var startAtBookmarks = bookmarkList.Filter<StartAt>().ToList();
+        var startAtBookmarks = bookmarks.Filter<StartAt>();
 
         // Select all Timer bookmarks.
-        var timerBookmarks = bookmarkList.Filter<Activities.Timer>().ToList();
+        var timerBookmarks = bookmarks.Filter<Activities.Timer>();
 
         // Select all Cron bookmarks.
-        var cronBookmarks = bookmarkList.Filter<Cron>().ToList();
+        var cronBookmarks = bookmarks.Filter<Cron>();
 
         // Schedule each Delay bookmark.
         foreach (var bookmark in delayBookmarks)
@@ -83,19 +81,17 @@ public class DefaultBookmarkScheduler : IBookmarkScheduler
     /// <inheritdoc />
     public async Task ScheduleAsync(string workflowInstanceId, IEnumerable<Bookmark> bookmarks, CancellationToken cancellationToken = default)
     {
-        var bookmarkList = bookmarks.ToList();
-
         // Select all Delay bookmarks.
-        var delayBookmarks = bookmarkList.Filter<Delay>().ToList();
+        var delayBookmarks = bookmarks.Filter<Delay>();
 
         // Select all StartAt bookmarks.
-        var startAtBookmarks = bookmarkList.Filter<StartAt>().ToList();
+        var startAtBookmarks = bookmarks.Filter<StartAt>();
 
         // Select all Timer bookmarks.
-        var timerBookmarks = bookmarkList.Filter<Activities.Timer>().ToList();
+        var timerBookmarks = bookmarks.Filter<Activities.Timer>();
 
         // Select all Cron bookmarks.
-        var cronBookmarks = bookmarkList.Filter<Cron>().ToList();
+        var cronBookmarks = bookmarks.Filter<Cron>();
 
         // Schedule each Delay bookmark.
         foreach (var bookmark in delayBookmarks)
