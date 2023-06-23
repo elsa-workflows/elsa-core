@@ -59,6 +59,9 @@ public static class DependencyInjectionExtensions
             .ConfigureHttpClient(ConfigureElsaApiHttpClient);
     }
     
+    /// <summary>
+    /// Adds an activity type resolver to the service collection.
+    /// </summary>
     public static IServiceCollection AddActivityTypeResolver<T>(this IServiceCollection services) where T : class, IActivityTypeResolver
     {
         return services.AddSingleton<IActivityTypeResolver, T>();

@@ -19,8 +19,7 @@ public class LiteralExpression : IExpression
     /// <summary>
     /// Initializes a new instance of the <see cref="LiteralExpression"/> class.
     /// </summary>
-    /// <param name="value"></param>
-    public LiteralExpression(object value)
+    public LiteralExpression(object? value)
     {
         Value = value;
     }
@@ -29,4 +28,9 @@ public class LiteralExpression : IExpression
     /// The literal value.
     /// </summary>
     public object? Value { get; set; }
+
+    /// <summary>
+    /// Returns the string representation of the expression.
+    /// </summary>
+    public override string ToString() => Value?.ToString() ?? "";
 }
