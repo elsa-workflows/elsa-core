@@ -25,12 +25,10 @@ public class DefaultTriggerScheduler : ITriggerScheduler
     /// <inheritdoc />
     public async Task ScheduleAsync(IEnumerable<StoredTrigger> triggers, CancellationToken cancellationToken = default)
     {
-        var triggerList = triggers.ToList();
-
         // Select Timer, StartAt and Cron triggers.
-        var timerTriggers = triggerList.Filter<Activities.Timer>().ToList();
-        var startAtTriggers = triggerList.Filter<StartAt>().ToList();
-        var cronTriggers = triggerList.Filter<Cron>().ToList();
+        var timerTriggers = triggers.Filter<Activities.Timer>();
+        var startAtTriggers = triggers.Filter<StartAt>();
+        var cronTriggers = triggers.Filter<Cron>();
 
         // Schedule each Timer trigger.
         foreach (var trigger in timerTriggers)
@@ -84,19 +82,17 @@ public class DefaultTriggerScheduler : ITriggerScheduler
     /// <inheritdoc />
     public async Task UnscheduleAsync(IEnumerable<StoredTrigger> triggers, CancellationToken cancellationToken = default)
     {
-        var triggerList = triggers.ToList();
-
         // Select all Timer triggers.
-        var timerTriggers = triggerList.Filter<Activities.Timer>().ToList();
+        var timerTriggers = triggers.Filter<Activities.Timer>();
 
         // Select all StartAt triggers.
-        var startAtTriggers = triggerList.Filter<StartAt>().ToList();
+        var startAtTriggers = triggers.Filter<StartAt>();
 
         // Select all Cron triggers.
-        var cronTriggers = triggerList.Filter<Cron>().ToList();
+        var cronTriggers = triggers.Filter<Cron>();
 
         // Concatenate the filtered triggers.
-        var filteredTriggers = timerTriggers.Concat(startAtTriggers).Concat(cronTriggers).ToList();
+        var filteredTriggers = timerTriggers.Concat(startAtTriggers).Concat(cronTriggers);
 
         // Unschedule each trigger.
         foreach (var trigger in filteredTriggers)
