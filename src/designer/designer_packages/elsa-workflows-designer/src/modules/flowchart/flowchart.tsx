@@ -56,7 +56,6 @@ export class FlowchartComponent {
   @Event() containerSelected: EventEmitter<ContainerSelectedArgs>;
   @Event() childActivitySelected: EventEmitter<ChildActivitySelectedArgs>;
   @Event() graphUpdated: EventEmitter<GraphUpdatedArgs>;
-  @Event() workflowUpdated: EventEmitter<WorkflowUpdatedArgs>;
 
   @State() private activityLookup: Hash<Activity> = {};
   @State() private activities: Array<Activity> = [];
@@ -349,7 +348,6 @@ export class FlowchartComponent {
     graph.on('node:moved', this.onNodeMoved);
 
     graph.on('node:moved', this.onGraphChanged);
-    //graph.on('node:added', this.onGraphChanged);
     graph.on('node:added', this.onNodeAdded);
     graph.on('node:removed', this.onNodeRemoved);
     graph.on('edge:added', this.onGraphChanged);
