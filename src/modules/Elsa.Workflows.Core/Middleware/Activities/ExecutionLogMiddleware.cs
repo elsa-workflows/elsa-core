@@ -34,13 +34,13 @@ public class ExecutionLogMiddleware : IActivityExecutionMiddleware
     /// <inheritdoc />
     public async ValueTask InvokeAsync(ActivityExecutionContext context)
     {
-        context.AddExecutionLogEntry("Started", includeActivityState: true);
+        context.AddExecutionLogEntry(IsActivityBookmarked(context) ? "Resumed" : "Started", includeActivityState: true);
 
         try
         {
             await _next(context);
 
-            context.AddExecutionLogEntry("Completed", payload: context.JournalData, includeActivityState: true);
+            context.AddExecutionLogEntry(IsActivityBookmarked(context) ? "Suspended" : "Completed", payload: context.JournalData, includeActivityState: true);
         }
         catch (Exception exception)
         {
@@ -60,4 +60,7 @@ public class ExecutionLogMiddleware : IActivityExecutionMiddleware
             throw;
         }
     }
+
+    private static bool IsActivityBookmarked(ActivityExecutionContext context) =>
+        context.WorkflowExecutionContext.Bookmarks.Any(b => b.ActivityNodeId.Equals(context.ActivityNode.NodeId));
 }

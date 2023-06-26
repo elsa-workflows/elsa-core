@@ -44,12 +44,14 @@ export interface ActivityExecutionEventBlock {
   activityInstanceId: string;
   parentActivityInstanceId: string;
   completed: boolean;
+  suspended: boolean;
   faulted: boolean;
   timestamp: Date;
   duration?: moment.Duration;
   startedRecord: WorkflowExecutionLogRecord;
   completedRecord?: WorkflowExecutionLogRecord;
   faultedRecord?: WorkflowExecutionLogRecord;
+  suspendedRecord?: WorkflowExecutionLogRecord;
   children: Array<ActivityExecutionEventBlock>;
 }
 

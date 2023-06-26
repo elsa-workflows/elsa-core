@@ -113,7 +113,7 @@ export class Journal {
       const activityMetadata = activity.metadata;
       const activityDisplayText = isNullOrWhitespace(activityMetadata.displayText) ? activity.id : activityMetadata.displayText;
       const duration = durationToString(block.duration);
-      const status = block.completed ? 'Completed' : block.faulted ? 'Faulted' : 'Started';
+      const status = block.completed ? 'Completed' : block.suspended ? 'Suspended' : block.faulted ? 'Faulted' : 'Started';
       const icon = iconRegistry.getOrDefault(activity.type)({size: ActivityIconSize.Small});
       const expanded = !!expandedBlocks.find(x => x == block);
       const statusColor = block.completed ? "tw-bg-blue-100" : block.faulted ? "tw-bg-red-100" : "tw-bg-green-100";
@@ -182,10 +182,12 @@ export class Journal {
     const startedEvents = records.filter(x => x.eventName == 'Started');
     const completedEvents = records.filter(x => x.eventName == 'Completed');
     const faultedEvents = records.filter(x => x.eventName == 'Faulted');
+    const suspendedEvents = records.filter(x => x.eventName == 'Suspended');
 
     const blocks = startedEvents.map(startedRecord => {
       const completedRecord = completedEvents.find(x => x.activityInstanceId == startedRecord.activityInstanceId);
       const faultedRecord = faultedEvents.find(x => x.activityInstanceId == startedRecord.activityInstanceId);
+      const suspendedRecord = suspendedEvents.find(x => x.activityInstanceId == startedRecord.activityInstanceId);
       const duration = !!completedRecord ? getDuration(completedRecord.timestamp, startedRecord.timestamp) : null;
 
       return {
@@ -195,11 +197,13 @@ export class Journal {
         parentActivityInstanceId: startedRecord.parentActivityInstanceId,
         completed: !!completedRecord,
         faulted: !!faultedRecord,
+        suspended: !!suspendedRecord,
         timestamp: startedRecord.timestamp,
         duration: duration,
         startedRecord: startedRecord,
         completedRecord: completedRecord,
         faultedRecord: faultedRecord,
+        suspendedRecord: suspendedRecord,
         children: []
       };
     });
