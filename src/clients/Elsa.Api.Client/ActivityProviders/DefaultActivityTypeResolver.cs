@@ -1,7 +1,6 @@
 using Elsa.Api.Client.Abstractions;
 using Elsa.Api.Client.Activities;
 using Elsa.Api.Client.Contracts;
-using JetBrains.Annotations;
 
 namespace Elsa.Api.Client.ActivityProviders;
 
