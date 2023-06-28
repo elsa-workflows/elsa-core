@@ -1,7 +1,6 @@
 using Elsa.Common.Models;
 using Elsa.Http.Contracts;
 using Elsa.Http.Models;
-using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Management.Contracts;
