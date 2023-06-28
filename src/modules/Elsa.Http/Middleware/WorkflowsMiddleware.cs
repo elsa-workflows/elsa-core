@@ -85,7 +85,7 @@ public class WorkflowsMiddleware
             }
 
             // Strip the base path.
-            path = path.Substring(basePath.Value.Value.Length);
+            path = path[basePath.Value.Value!.Length..];
         }
 
         var matchingPath = GetMatchingRoute(path);
