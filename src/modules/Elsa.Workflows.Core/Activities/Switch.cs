@@ -31,12 +31,6 @@ public class Switch : Activity
     }
 
     /// <summary>
-    /// The value to switch on.
-    /// </summary>
-    [Input(Description = "The value to switch on.")]
-    public Input<object> Expression { get; set; } = default!;
-
-    /// <summary>
     /// The value to switch on, made available as output for capturing.
     /// </summary>
     public Output<object>? Output { get; set; }
@@ -64,10 +58,8 @@ public class Switch : Activity
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        context.Set(Output, Expression);
-        var matchingCases = await FindMatchingCasesAsync(context.ExpressionExecutionContext);
+        var matchingCases = (await FindMatchingCasesAsync(context.ExpressionExecutionContext)).ToList();
         var hasAnyMatches = matchingCases.Any();
-
         var mode = context.Get(Mode);
         var results = mode == SwitchMode.MatchFirst ? hasAnyMatches ? new[] { matchingCases.First() } : Array.Empty<SwitchCase>() : matchingCases.ToArray();
 
