@@ -61,9 +61,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     CorrelationId = table.Column<string>(type: "TEXT", nullable: true),
                     Status = table.Column<string>(type: "TEXT", nullable: false),
                     SubStatus = table.Column<string>(type: "TEXT", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: false),
-                    Data = table.Column<string>(type: "TEXT", nullable: true),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: false)
+                    CreatedAt = table.Column<string>(type: "TEXT", nullable: false),
+                    UpdatedAt = table.Column<string>(type: "TEXT", nullable: false),
+                    Data = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {

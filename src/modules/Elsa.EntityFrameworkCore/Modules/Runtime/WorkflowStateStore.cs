@@ -70,11 +70,10 @@ public class EFCoreWorkflowStateStore : IWorkflowStateStore
         var now = _systemClock.UtcNow;
         var entry = dbContext.Entry(entity);
 
-        if (entry.Property<DateTimeOffset>("CreatedAt").CurrentValue == DateTimeOffset.MinValue)
-            entry.Property<DateTimeOffset>("CreatedAt").CurrentValue = now;
+        entity.CreatedAt = entity.CreatedAt == default ? now : entity.CreatedAt;
+        entity.UpdatedAt = now;
 
         entry.Property<string>("Data").CurrentValue = json;
-        entry.Property<DateTimeOffset>("UpdatedAt").CurrentValue = now;
         return entity;
     }
 }

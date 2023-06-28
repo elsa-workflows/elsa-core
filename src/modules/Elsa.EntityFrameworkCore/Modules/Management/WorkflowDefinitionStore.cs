@@ -193,8 +193,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         if (pageArgs?.Limit != null) queryable = queryable.Take(pageArgs.Limit.Value);
         return queryable;
     }
-
-
+    
     private class WorkflowDefinitionState
     {
         public WorkflowDefinitionState()
