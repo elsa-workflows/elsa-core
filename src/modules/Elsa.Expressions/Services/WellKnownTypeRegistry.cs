@@ -49,7 +49,10 @@ public class WellKnownTypeRegistry : IWellKnownTypeRegistry
             RegisterType(entry.Value, entry.Key);
     }
 
-    private WellKnownTypeRegistry()
+    /// <summary>
+    /// Initializes a new instance of the <see cref="WellKnownTypeRegistry"/> class.
+    /// </summary>
+    public WellKnownTypeRegistry()
     {
     }
 
