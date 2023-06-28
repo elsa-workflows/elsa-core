@@ -1,4 +1,3 @@
-using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
@@ -14,15 +13,16 @@ builder.Services.AddElsa(elsa =>
     // Configure management feature to use EF Core.
     elsa.UseWorkflowManagement(management =>
     {
-        management.UseWorkflowDefinitions(dm => dm.UseEntityFrameworkCore(ef => ef.UseSqlite()));
-        management.UseWorkflowInstances(w => w.UseEntityFrameworkCore(ef => ef.UseSqlite()));
+        management.UseWorkflowDefinitions(dm => dm.UseEntityFrameworkCore());
+        management.UseWorkflowInstances(w => w.UseEntityFrameworkCore());
     });
     
     // Configure runtime feature to use EF Core.
     elsa.UseWorkflowRuntime(runtime =>
     {
-        runtime.UseDefaultRuntime(d => d.UseEntityFrameworkCore(ef => ef.UseSqlite()));
-        runtime.UseExecutionLogRecords(d => d.UseEntityFrameworkCore(ef => ef.UseSqlite()));
+        runtime.UseEntityFrameworkCore();
+        runtime.UseDefaultRuntime(d => d.UseEntityFrameworkCore());
+        runtime.UseExecutionLogRecords(d => d.UseEntityFrameworkCore());
     });
     
     // Expose API endpoints.

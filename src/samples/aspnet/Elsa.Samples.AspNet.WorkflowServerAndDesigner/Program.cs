@@ -17,7 +17,8 @@ builder.Services.AddElsa(elsa =>
     // Configure the default runtime feature to use EF Core.
     elsa.UseWorkflowRuntime(runtime =>
     {
-        runtime.UseDefaultRuntime(defaultRuntime => defaultRuntime.UseEntityFrameworkCore(ef => ef.UseSqlite()));
+        runtime.UseEntityFrameworkCore();
+        runtime.UseDefaultRuntime(defaultRuntime => defaultRuntime.UseEntityFrameworkCore());
     });
     
     // Expose API endpoints.

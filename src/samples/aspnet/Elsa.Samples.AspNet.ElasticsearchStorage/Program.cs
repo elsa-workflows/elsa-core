@@ -1,7 +1,6 @@
 using Elsa.Elasticsearch.Extensions;
 using Elsa.Elasticsearch.Modules.Management;
 using Elsa.Elasticsearch.Modules.Runtime;
-using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
@@ -15,7 +14,7 @@ builder.Services.AddElsa(elsa =>
     // Configure management feature to use EF Core.
     elsa.UseWorkflowManagement(management =>
     {
-        management.UseWorkflowDefinitions(d => d.UseEntityFrameworkCore(ef => ef.UseSqlite()));
+        management.UseWorkflowDefinitions(d => d.UseEntityFrameworkCore());
         management.UseWorkflowInstances(i => i.UseElasticsearch());
     });
     
@@ -25,7 +24,8 @@ builder.Services.AddElsa(elsa =>
     // Configure runtime feature to use EF Core.
     elsa.UseWorkflowRuntime(runtime =>
     {
-        runtime.UseDefaultRuntime(d => d.UseEntityFrameworkCore(ef => ef.UseSqlite()));
+        runtime.UseEntityFrameworkCore();
+        runtime.UseDefaultRuntime(d => d.UseEntityFrameworkCore());
         runtime.UseExecutionLogRecords(log => log.UseElasticsearch());
         runtime.UseAsyncWorkflowStateExporter();
     });
