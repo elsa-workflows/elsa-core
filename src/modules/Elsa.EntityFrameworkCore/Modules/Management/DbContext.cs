@@ -1,4 +1,5 @@
 ﻿using Elsa.EntityFrameworkCore.Common;
+using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Management.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,6 +24,13 @@ public class ManagementElsaDbContext : ElsaDbContextBase
     /// The workflow instances.
     /// </summary>
     public DbSet<WorkflowInstance> WorkflowInstances { get; set; } = default!;
+
+    /// <inheritdoc />
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+        modelBuilder.Ignore<WorkflowState>();
+    }
 
     /// <inheritdoc />
     protected override void ApplyEntityConfigurations(ModelBuilder modelBuilder)
