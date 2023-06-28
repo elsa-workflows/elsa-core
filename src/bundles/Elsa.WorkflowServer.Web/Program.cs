@@ -2,6 +2,11 @@ using Elsa;
 using Elsa.Extensions;
 using Elsa.Http.Handlers;
 using Elsa.JavaScript.Options;
+using Elsa.MongoDb.Extensions;
+using Elsa.MongoDb.Modules.Identity;
+using Elsa.MongoDb.Modules.Labels;
+using Elsa.MongoDb.Modules.Management;
+using Elsa.MongoDb.Modules.Runtime;
 using Elsa.WorkflowServer.Web;
 
 EndpointSecurityOptions.DisableSecurity();
@@ -38,7 +43,7 @@ services
         })
         .UseWorkflowRuntime(runtime =>
         {
-            runtime.UseMongoDb()
+            runtime.UseMongoDb();
             runtime.UseDefaultRuntime(dr => dr.UseMongoDb());
             runtime.UseExecutionLogRecords(e => e.UseMongoDb());
             runtime.UseAsyncWorkflowStateExporter();

@@ -9,31 +9,31 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\modules\Elsa.Elasticsearch\Elsa.Elasticsearch.csproj" />
-      <ProjectReference Include="..\..\modules\Elsa.Email\Elsa.Email.csproj" />
-      <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.PostgreSql\Elsa.EntityFrameworkCore.PostgreSql.csproj" />
-      <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.Sqlite\Elsa.EntityFrameworkCore.Sqlite.csproj" />
-      <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore\Elsa.EntityFrameworkCore.csproj" />
-      <ProjectReference Include="..\..\modules\Elsa.Environments\Elsa.Environments.csproj" />
-      <ProjectReference Include="..\..\modules\Elsa.MassTransit\Elsa.MassTransit.csproj" />
-      <ProjectReference Include="..\..\modules\Elsa.MongoDb\Elsa.MongoDb.csproj" />
-      <ProjectReference Include="..\..\modules\Elsa.ProtoActor\Elsa.ProtoActor.csproj" />
-      <ProjectReference Include="..\..\modules\Elsa.Identity\Elsa.Identity.csproj" />
-      <ProjectReference Include="..\..\modules\Elsa.ProtoActor.Cluster.AzureContainerApps\Elsa.ProtoActor.Cluster.AzureContainerApps.csproj" />
-      <ProjectReference Include="..\..\modules\Elsa.WorkflowProviders.BlobStorage\Elsa.WorkflowProviders.BlobStorage.csproj" />
-      <ProjectReference Include="..\Elsa\Elsa.csproj" />
-      <ProjectReference Include="..\..\modules\Elsa.Hangfire\Elsa.Hangfire.csproj" />
-      <ProjectReference Include="..\..\modules\Elsa.Http\Elsa.Http.csproj" />
-      <ProjectReference Include="..\..\modules\Elsa.Labels\Elsa.Labels.csproj" />
-      <ProjectReference Include="..\..\modules\Elsa.Liquid\Elsa.Liquid.csproj" />
-      <ProjectReference Include="..\..\modules\Elsa.Quartz\Elsa.Quartz.csproj" />
-      <ProjectReference Include="..\..\modules\Elsa.WorkflowContexts\Elsa.WorkflowContexts.csproj" />
-      <ProjectReference Include="..\..\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj" />
+        <ProjectReference Include="..\Elsa\Elsa.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.Elasticsearch\Elsa.Elasticsearch.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.Email\Elsa.Email.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.PostgreSql\Elsa.EntityFrameworkCore.PostgreSql.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.Sqlite\Elsa.EntityFrameworkCore.Sqlite.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore\Elsa.EntityFrameworkCore.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.Environments\Elsa.Environments.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.MassTransit\Elsa.MassTransit.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.MongoDb\Elsa.MongoDb.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.ProtoActor\Elsa.ProtoActor.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.Identity\Elsa.Identity.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.ProtoActor.Cluster.AzureContainerApps\Elsa.ProtoActor.Cluster.AzureContainerApps.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.WorkflowProviders.BlobStorage\Elsa.WorkflowProviders.BlobStorage.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.Hangfire\Elsa.Hangfire.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.Http\Elsa.Http.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.Labels\Elsa.Labels.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.Liquid\Elsa.Liquid.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.Quartz\Elsa.Quartz.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.WorkflowContexts\Elsa.WorkflowContexts.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Azure.Identity" Version="1.8.2" />
-      <PackageReference Include="Proto.Persistence.Sqlite" Version="1.1.0" />
+        <PackageReference Include="Azure.Identity" Version="1.8.2"/>
+        <PackageReference Include="Proto.Persistence.Sqlite" Version="1.1.0"/>
     </ItemGroup>
 
 </Project>
