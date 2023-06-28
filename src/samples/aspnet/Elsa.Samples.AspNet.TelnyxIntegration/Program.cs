@@ -1,4 +1,3 @@
-using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.Extensions;
 using Elsa.Identity;
 using Elsa.Identity.Options;
@@ -56,10 +55,7 @@ services
         })
         .UseWorkflowRuntime(runtime =>
         {
-            runtime.UseProtoActor(proto =>
-            {
-                //proto.PersistenceProvider = _ => new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString));
-            });
+            runtime.UseEntityFrameworkCore();
             runtime.UseDefaultRuntime(dr => dr.UseEntityFrameworkCore());
             runtime.UseExecutionLogRecords(d => d.UseEntityFrameworkCore());
             runtime.UseAsyncWorkflowStateExporter();

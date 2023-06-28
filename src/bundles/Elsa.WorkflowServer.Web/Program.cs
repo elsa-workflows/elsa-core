@@ -40,8 +40,10 @@ services
         })
         .UseWorkflowRuntime(runtime =>
         {
-            runtime.UseDefaultRuntime(dr => dr.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)));
+            runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
             runtime.UseExecutionLogRecords(e => e.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)));
+            //runtime.UseDefaultRuntime(dr => dr.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)));
+            runtime.UseProtoActor();
             runtime.UseAsyncWorkflowStateExporter();
             runtime.UseMassTransitDispatcher();
         })

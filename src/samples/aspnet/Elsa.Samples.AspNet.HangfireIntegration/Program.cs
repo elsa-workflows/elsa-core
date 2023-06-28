@@ -12,17 +12,18 @@ var identityTokenSection = identitySection.GetSection("Tokens");
 builder.Services.AddElsa(elsa =>
 {
     // Configure management feature to use EF Core.
-    elsa.UseWorkflowManagement(management => management.UseEntityFrameworkCore(ef => ef.UseSqlite()));
+    elsa.UseWorkflowManagement(management => management.UseEntityFrameworkCore());
 
     elsa.UseWorkflowRuntime(runtime =>
     {
-        runtime.UseDefaultRuntime(dr => dr.UseEntityFrameworkCore(ef => ef.UseSqlite()));
+        runtime.UseEntityFrameworkCore();
+        runtime.UseDefaultRuntime(dr => dr.UseEntityFrameworkCore());
         
         // Use Hangfire to schedule background activities.
         runtime.UseHangfireBackgroundActivityScheduler();
         
         // Capture execution log records.
-        runtime.UseExecutionLogRecords(e => e.UseEntityFrameworkCore(ef => ef.UseSqlite()));
+        runtime.UseExecutionLogRecords(e => e.UseEntityFrameworkCore());
         
         // Capture workflow state.
         runtime.UseAsyncWorkflowStateExporter();
