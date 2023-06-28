@@ -24,7 +24,7 @@ public class MongoDbFeature : FeatureBase
     /// <summary>
     /// The MongoDB connection string.
     /// </summary>
-    public string ConnectionString { get; set; }
+    public string ConnectionString { get; set; } = default!;
     
     /// <summary>
     /// A delegate that configures MongoDb.
@@ -39,8 +39,6 @@ public class MongoDbFeature : FeatureBase
         Services.AddSingleton(sp => CreateDatabase(sp, ConnectionString));
         
         RegisterSerializers();
-        
-        Services.AddHealthChecks();
     }
 
     private void RegisterSerializers()
