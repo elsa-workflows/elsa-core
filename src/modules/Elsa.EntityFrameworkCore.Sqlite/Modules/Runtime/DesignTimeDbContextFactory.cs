@@ -4,6 +4,7 @@ using Elsa.EntityFrameworkCore.Sqlite.Abstractions;
 namespace Elsa.EntityFrameworkCore.Sqlite.Modules.Runtime;
 
 // ReSharper disable once UnusedType.Global
-public class SqliteDesignTimeRuntimeDbContextFactory : SqliteDesignTimeDbContextFactoryBase<RuntimeElsaDbContext>
+/// <inheritdoc />
+public class DesignTimeRuntimeDbContextFactory : SqliteDesignTimeDbContextFactoryBase<RuntimeElsaDbContext>
 {
 }
