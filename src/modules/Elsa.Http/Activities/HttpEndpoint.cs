@@ -90,14 +90,6 @@ public class HttpEndpoint : Trigger<HttpRequest>
             context.CreateBookmarks(GetBookmarkPayloads(context.ExpressionExecutionContext));
             return;
         }
-        
-        // If we did not receive external input, it means we are just now encountering this activity and we need to block execution by creating a bookmark.
-        if (!context.TryGetInput<bool>(HttpContextInputKey, out var isHttpContext))
-        {
-            // Create bookmarks for when we receive the expected HTTP request.
-            context.CreateBookmarks(GetBookmarkPayloads(context.ExpressionExecutionContext));
-            return;
-        }
 
         var httpContextAccessor = context.GetRequiredService<IHttpContextAccessor>();
         var httpContext = httpContextAccessor.HttpContext;
@@ -106,7 +98,6 @@ public class HttpEndpoint : Trigger<HttpRequest>
         {
             // We're executing in a non-HTTP context (e.g. in a virtual actor).
             // Create a bookmark to allow the invoker to export the state and resume execution from there.
-
             context.CreateBookmark(OnResumeAsync);
             return;
         }

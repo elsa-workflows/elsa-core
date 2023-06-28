@@ -1,6 +1,7 @@
 using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Http.Contracts;
+using Elsa.Http.Models;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
@@ -58,7 +59,10 @@ public class HttpBookmarkProcessor : IHttpBookmarkProcessor
         var query =
             from executionResult in executionResults
             from bookmark in executionResult.Bookmarks
-            where bookmark.Name == writeHttpResponseTypeName || bookmark.Name == httpEndpointTypeName
+            where bookmark.Name == writeHttpResponseTypeName 
+                  || (bookmark.Name == httpEndpointTypeName
+                      // If a "regular" HttpEndpointBookmarkPayload bookmark was created, we do not want to resume that - it's a bookmark that was created to block the workflow until the desired HTTP request comes in.
+                      && bookmark.Payload is not HttpEndpointBookmarkPayload)
             select (InstanceId: executionResult.WorkflowInstanceId, bookmark.Id);
 
         var workflowExecutionResults = new Stack<(string InstanceId, string BookmarkId)>(query);
@@ -92,10 +96,6 @@ public class HttpBookmarkProcessor : IHttpBookmarkProcessor
                 workflowDefinition,
                 cancellationToken);
             
-            var bookmark = workflowState.Bookmarks.First(x => x.Id == result.BookmarkId);
-            if (!await CanActivityStartWorkflow(workflow, bookmark, cancellationToken))
-                return workflowStates;
-
             var workflowHost = await _workflowHostFactory.CreateAsync(workflow, workflowState, cancellationToken);
             var options = new ResumeWorkflowHostOptions(correlationId, result.BookmarkId, Input: input);
             await workflowHost.ResumeWorkflowAsync(options, cancellationToken);
@@ -107,19 +107,5 @@ public class HttpBookmarkProcessor : IHttpBookmarkProcessor
         }
 
         return workflowStates;
-    }
-
-    private async Task<bool> CanActivityStartWorkflow(Workflow workflow, Bookmark bookmark, CancellationToken cancellationToken)
-    {
-        var nodes = (await _activityVisitor.VisitAsync(workflow.Root, cancellationToken)).Flatten().Distinct().ToList();
-
-        if (bookmark.Name == ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>() || bookmark.Name == ActivityTypeNameHelper.GenerateTypeName<WriteHttpResponse>())
-        {
-            var activityNode = nodes.Single(n => n.NodeId.Equals(bookmark.ActivityNodeId));
-            if (!activityNode.Activity.GetCanStartWorkflow())
-                return false;
-        }
-
-        return true;
     }
 }
