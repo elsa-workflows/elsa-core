@@ -234,7 +234,7 @@ public class WorkflowGrain : WorkflowGrainBase
         _definitionId = workflowState.DefinitionId;
         _instanceId = workflowState.Id;
         _version = workflowState.DefinitionVersion;
-        _workflowHost = await CreateWorkflowHostAsync(_definitionId, VersionOptions.SpecificVersion(_version), Context.CancellationToken);
+        _workflowHost = await CreateWorkflowHostAsync(workflowState, Context.CancellationToken);
 
         return new ImportWorkflowStateResponse();
     }
@@ -262,5 +262,18 @@ public class WorkflowGrain : WorkflowGrainBase
 
         var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
         return await _workflowHostFactory.CreateAsync(workflow, cancellationToken);
+    }
+    
+    private async Task<IWorkflowHost> CreateWorkflowHostAsync(WorkflowState workflowState, CancellationToken cancellationToken)
+    {
+        var definitionId = workflowState.DefinitionId;
+        var versionOptions = VersionOptions.SpecificVersion(workflowState.DefinitionVersion);
+        var workflowDefinition = await _workflowDefinitionService.FindAsync(definitionId, versionOptions, cancellationToken);
+
+        if (workflowDefinition == null)
+            throw new Exception("Specified workflow definition and version does not exist");
+
+        var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
+        return await _workflowHostFactory.CreateAsync(workflow, workflowState, cancellationToken);
     }
 }
