@@ -1,10 +1,8 @@
 using Elsa.Common.Models;
-using Elsa.Extensions;
 using Elsa.Http.Contracts;
 using Elsa.Http.Models;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Helpers;
-using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
@@ -19,7 +17,6 @@ public class HttpBookmarkProcessor : IHttpBookmarkProcessor
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly IWorkflowHostFactory _workflowHostFactory;
     private readonly IHttpContextAccessor _httpContextAccessor;
-    private readonly IActivityVisitor _activityVisitor;
 
     /// <summary>
     /// Constructor.
@@ -28,14 +25,12 @@ public class HttpBookmarkProcessor : IHttpBookmarkProcessor
         IWorkflowRuntime workflowRuntime,
         IWorkflowDefinitionService workflowDefinitionService,
         IWorkflowHostFactory workflowHostFactory,
-        IHttpContextAccessor httpContextAccessor,
-        IActivityVisitor activityVisitor)
+        IHttpContextAccessor httpContextAccessor)
     {
         _workflowRuntime = workflowRuntime;
         _workflowDefinitionService = workflowDefinitionService;
         _workflowHostFactory = workflowHostFactory;
         _httpContextAccessor = httpContextAccessor;
-        _activityVisitor = activityVisitor;
     }
     
     /// <inheritdoc />
