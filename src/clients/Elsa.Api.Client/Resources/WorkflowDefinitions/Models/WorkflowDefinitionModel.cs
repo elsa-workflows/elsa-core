@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Elsa.Api.Client.Activities;
 using JetBrains.Annotations;
 

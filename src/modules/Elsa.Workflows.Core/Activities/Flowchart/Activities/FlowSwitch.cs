@@ -42,12 +42,10 @@ public class FlowSwitch : Activity
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        var matchingCases = await FindMatchingCasesAsync(context.ExpressionExecutionContext);
+        var matchingCases = (await FindMatchingCasesAsync(context.ExpressionExecutionContext)).ToList();
         var hasAnyMatches = matchingCases.Any();
-
         var mode = context.Get(Mode);
         var results = mode == SwitchMode.MatchFirst ? hasAnyMatches ? new[] { matchingCases.First() } : Array.Empty<FlowSwitchCase>() : matchingCases.ToArray();
-
         var outcomes = hasAnyMatches ? results.Select(r => r.Label).ToArray() : new[] { "Default" };
 
         await context.CompleteActivityAsync(new Outcomes(outcomes));

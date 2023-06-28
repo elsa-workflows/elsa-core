@@ -5,7 +5,7 @@ namespace Elsa.Api.Client.Models;
 /// <summary>
 /// Represents an input value for an activity.
 /// </summary>
-public class ActivityInput
+public class WrappedInput
 {
     /// <summary>
     /// Gets or sets the type of this input.
