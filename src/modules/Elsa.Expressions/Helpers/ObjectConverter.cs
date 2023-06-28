@@ -22,8 +22,14 @@ public record ObjectConverterOptions(JsonSerializerOptions? SerializerOptions = 
 /// </summary>
 public static class ObjectConverter
 {
+    /// <summary>
+    /// Attempts to convert the source value into the destination type.
+    /// </summary>
     public static Result TryConvertTo<T>(this object? value, ObjectConverterOptions? serializerOptions = null) => value.TryConvertTo(typeof(T), serializerOptions);
 
+    /// <summary>
+    /// Attempts to convert the source value into the destination type.
+    /// </summary>
     public static Result TryConvertTo(this object? value, Type targetType, ObjectConverterOptions? serializerOptions = null)
     {
         try
@@ -37,8 +43,14 @@ public static class ObjectConverter
         }
     }
 
+    /// <summary>
+    /// Attempts to convert the source value into the destination type.
+    /// </summary>
     public static T? ConvertTo<T>(this object? value, ObjectConverterOptions? serializerOptions = null) => value != null ? (T?)value.ConvertTo(typeof(T), serializerOptions) : default;
 
+    /// <summary>
+    /// Attempts to convert the source value into the destination type.
+    /// </summary>
     public static object? ConvertTo(this object? value, Type targetType, ObjectConverterOptions? converterOptions = null)
     {
         if (value == null)

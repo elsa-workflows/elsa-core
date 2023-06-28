@@ -8,7 +8,6 @@ using Elsa.JavaScript.Extensions;
 using Elsa.JavaScript.Notifications;
 using Elsa.JavaScript.Options;
 using Elsa.Mediator.Contracts;
-using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Humanizer;
 using Jint;
@@ -62,8 +61,8 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         engine.SetValue("getWorkflowInstanceId", (Func<string>)(() => context.GetActivityExecutionContext().WorkflowExecutionContext.Id));
         engine.SetValue("setCorrelationId", (Action<string?>)(value => context.GetActivityExecutionContext().WorkflowExecutionContext.CorrelationId = value));
         engine.SetValue("getCorrelationId", (Func<string?>)(() => context.GetActivityExecutionContext().WorkflowExecutionContext.CorrelationId));
-        engine.SetValue("setVariable", (Action<string, object>)((id, value) => context.SetVariable(id, value)));
-        engine.SetValue("getVariable", (Func<string, object?>)(id => context.GetVariable(id)));
+        engine.SetValue("setVariable", (Action<string, object>)((name, value) => SetVariableInScope(context, name, value)));
+        engine.SetValue("getVariable", (Func<string, object?>)(name => GetVariableInScope(context, name)));
         engine.SetValue("getInput", (Func<string, object?>)(name => context.GetWorkflowExecutionContext().Input.GetValue(name)));
         engine.SetValue("getOutputFrom", (Func<string, string?, object?>)((activityIdOrNodeId, outputName) => GetOutput(context, activityIdOrNodeId, outputName)));
         engine.SetValue("getLastResult", (Func<object?>)(() => GetLastResult(context)));

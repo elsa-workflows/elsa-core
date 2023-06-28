@@ -16,7 +16,7 @@ namespace Elsa.Workflows.Core.Activities.Flowchart.Activities;
 /// Evaluates the specified case conditions and schedules the one that evaluates to <code>true</code>.
 /// </summary>
 [FlowNode("Default")]
-[Activity("Elsa", "Flow", "Evaluate a set of case conditions and schedule the activity for a matching case.")]
+[Activity("Elsa", "Branching", "Evaluate a set of case conditions and schedule the activity for a matching case.")]
 [PublicAPI]
 public class FlowSwitch : Activity
 {
@@ -42,12 +42,10 @@ public class FlowSwitch : Activity
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        var matchingCases = await FindMatchingCasesAsync(context.ExpressionExecutionContext);
+        var matchingCases = (await FindMatchingCasesAsync(context.ExpressionExecutionContext)).ToList();
         var hasAnyMatches = matchingCases.Any();
-
         var mode = context.Get(Mode);
         var results = mode == SwitchMode.MatchFirst ? hasAnyMatches ? new[] { matchingCases.First() } : Array.Empty<FlowSwitchCase>() : matchingCases.ToArray();
-
         var outcomes = hasAnyMatches ? results.Select(r => r.Label).ToArray() : new[] { "Default" };
 
         await context.CompleteActivityAsync(new Outcomes(outcomes));

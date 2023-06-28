@@ -11,13 +11,14 @@ public class Variable : MemoryBlockReference
         Id = Guid.NewGuid().ToString("N");
     }
 
-    public Variable(string id)
+    public Variable(string name) : this()
     {
-        Id = id;
+        Name = name;
     }
 
-    public Variable(string id, object? value = default) : this(id)
+    public Variable(string name, object? value = default) : this()
     {
+        Name = name;
         Value = value;
     }
 

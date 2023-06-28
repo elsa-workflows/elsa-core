@@ -1,5 +1,5 @@
-using System.Text.Json;
-using Elsa.Api.Client.Shared.Models;
+using Elsa.Api.Client.Activities;
+using Elsa.Api.Client.Models;
 
 namespace Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 
@@ -71,5 +71,5 @@ public class WorkflowDefinition : VersionedEntity
     /// <summary>
     /// The root activity of the workflow.
     /// </summary>
-    public JsonElement Root { get; set; } = default!;
+    public Activity Root { get; set; } = default!;
 }

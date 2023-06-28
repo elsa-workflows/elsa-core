@@ -52,6 +52,7 @@ public class RunJavaScript : CodeActivity<object?>
         var result = await javaScriptEvaluator.EvaluateAsync(script, typeof(object), context.ExpressionExecutionContext, cancellationToken: context.CancellationToken);
 
         // Set the result as output, if any.
-        context.Set(Result, result);
+        if(result is not null)
+            context.Set(Result, result);
     }
 }

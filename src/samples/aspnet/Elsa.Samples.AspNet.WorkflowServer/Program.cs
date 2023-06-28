@@ -12,6 +12,7 @@ builder.Services.AddElsa(elsa =>
 
     elsa.UseWorkflowRuntime(runtime =>
     {
+        runtime.UseEntityFrameworkCore();
         runtime.UseDefaultRuntime(dr => dr.UseEntityFrameworkCore());
         runtime.UseExecutionLogRecords(e => e.UseEntityFrameworkCore());
         runtime.UseAsyncWorkflowStateExporter();

@@ -29,7 +29,7 @@ public class InputDescriptor : PropertyDescriptor
     public object? Options { get; set; }
     
     /// <summary>
-    /// The category to whcih this input belongs. Can be used by UI to e.g. render different inputs in different tabs.
+    /// The category to which this input belongs. Can be used by UI to e.g. render different inputs in different tabs.
     /// </summary>
     public string? Category { get; set; }
     

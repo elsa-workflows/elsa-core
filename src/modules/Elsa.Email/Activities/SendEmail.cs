@@ -19,7 +19,7 @@ namespace Elsa.Email.Activities;
 /// <summary>
 /// Send an email message.
 /// </summary>
-[Activity("Email", "Send an email message.", Kind = ActivityKind.Task)]
+[Activity("Elsa", "Email", "Send an email message.", Kind = ActivityKind.Task)]
 public class SendEmail : Activity
 {
     /// <inheritdoc />

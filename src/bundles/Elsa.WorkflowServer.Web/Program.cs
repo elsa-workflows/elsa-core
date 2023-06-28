@@ -47,6 +47,7 @@ services
         })
         .UseWorkflowRuntime(runtime =>
         {
+            runtime.UseMongoDb()
             runtime.UseDefaultRuntime(dr => dr.UseMongoDb());
             runtime.UseExecutionLogRecords(e => e.UseMongoDb());
             runtime.UseAsyncWorkflowStateExporter();

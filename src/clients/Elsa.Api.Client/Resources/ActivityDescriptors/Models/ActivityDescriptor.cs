@@ -43,12 +43,12 @@ public record ActivityDescriptor
     /// <summary>
     /// The input properties of the activity type.
     /// </summary>
-    public ICollection<InputDescriptor> Inputs { get; init; } = new List<InputDescriptor>();
+    public IReadOnlyCollection<InputDescriptor> Inputs { get; init; } = new List<InputDescriptor>();
     
     /// <summary>
     /// The output properties of the activity type.
     /// </summary>
-    public ICollection<OutputDescriptor> Outputs { get; init; } = new List<OutputDescriptor>();
+    public IReadOnlyCollection<OutputDescriptor> Outputs { get; init; } = new List<OutputDescriptor>();
 
     /// <summary>
     /// The kind of activity.
@@ -58,12 +58,12 @@ public record ActivityDescriptor
     /// <summary>
     /// The ports of the activity type.
     /// </summary>
-    public ICollection<Port> Ports { get; init; } = new List<Port>();
+    public IReadOnlyCollection<Port> Ports { get; init; } = new List<Port>();
     
     /// <summary>
     /// The custom properties of the activity type.
     /// </summary>
-    public IDictionary<string, object> CustomProperties { get; set; } = new Dictionary<string, object>();
+    public IReadOnlyDictionary<string, object> CustomProperties { get; set; } = new Dictionary<string, object>();
 
     /// <summary>
     /// A value indicating whether this activity is a container of child activities.

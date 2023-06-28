@@ -11,7 +11,7 @@ namespace Elsa.AzureServiceBus.Activities;
 /// <summary>
 /// Triggered when a message is received on a specified queue or topic and subscription.
 /// </summary>
-[Activity("Elsa.AzureServiceBus.MessageReceived", "Azure Service Bus", "Executes when a message is received from the configured queue or topic and subscription")]
+[Activity("Elsa.AzureServiceBus", "Azure Service Bus", "Executes when a message is received from the configured queue or topic and subscription")]
 public class MessageReceived : Trigger
 {
     internal const string InputKey = "TransportMessage";

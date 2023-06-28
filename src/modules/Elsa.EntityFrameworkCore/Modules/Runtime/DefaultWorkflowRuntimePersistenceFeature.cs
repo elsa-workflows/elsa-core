@@ -12,7 +12,6 @@ namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 /// </summary>
 [DependsOn(typeof(WorkflowRuntimeFeature))]
 [DependsOn(typeof(DefaultWorkflowRuntimeFeature))]
-[DependsOn(typeof(EFCoreWorkflowRuntimePersistenceFeature))]
 public class EFCoreDefaultWorkflowRuntimePersistenceFeature : PersistenceFeatureBase<RuntimeElsaDbContext>
 {
     /// <inheritdoc />

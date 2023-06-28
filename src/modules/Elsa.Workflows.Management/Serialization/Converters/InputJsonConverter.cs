@@ -51,7 +51,7 @@ public class InputJsonConverter<T> : JsonConverter<Input<T>>
 
             doc.RootElement.TryGetProperty("memoryReference", out var memoryReferenceElement);
 
-            var memoryReferenceId = memoryReferenceElement.ValueKind == JsonValueKind.Undefined
+            var memoryReferenceId = memoryReferenceElement.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null
                 ? default
                 : memoryReferenceElement.TryGetProperty("id", out var memoryReferenceIdElement)
                     ? memoryReferenceIdElement.GetString()

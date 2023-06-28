@@ -15,6 +15,7 @@ builder.Services.AddElsa(elsa =>
 
     elsa.UseWorkflowRuntime(runtime =>
     {
+        runtime.UseDapper();
         runtime.UseDefaultRuntime(dr => dr.UseDapper());
         runtime.UseExecutionLogRecords(e => e.UseDapper());
         runtime.UseAsyncWorkflowStateExporter();

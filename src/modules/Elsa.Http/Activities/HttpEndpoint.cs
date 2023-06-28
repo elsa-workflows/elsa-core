@@ -85,10 +85,8 @@ public class HttpEndpoint : Trigger<HttpRequest>
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        // If we did not receive external input, it means we are just now encountering this activity and we need to block execution by creating a bookmark.
-        if (!context.TryGetInput<bool>(HttpContextInputKey, out var isHttpContext))
+        if (!context.IsTriggerOfWorkflow())
         {
-            // Create bookmarks for when we receive the expected HTTP request.
             context.CreateBookmarks(GetBookmarkPayloads(context.ExpressionExecutionContext));
             return;
         }
@@ -100,7 +98,6 @@ public class HttpEndpoint : Trigger<HttpRequest>
         {
             // We're executing in a non-HTTP context (e.g. in a virtual actor).
             // Create a bookmark to allow the invoker to export the state and resume execution from there.
-
             context.CreateBookmark(OnResumeAsync);
             return;
         }

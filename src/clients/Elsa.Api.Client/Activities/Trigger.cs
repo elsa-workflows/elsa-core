@@ -1,4 +1,4 @@
-namespace Elsa.Api.Client.Shared.Models;
+namespace Elsa.Api.Client.Activities;
 
 /// <summary>
 /// Represents a trigger.

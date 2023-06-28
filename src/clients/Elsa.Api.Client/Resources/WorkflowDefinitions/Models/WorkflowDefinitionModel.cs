@@ -1,4 +1,4 @@
-using System.Text.Json;
+using Elsa.Api.Client.Activities;
 using JetBrains.Annotations;
 
 namespace Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
@@ -39,7 +39,7 @@ public record WorkflowDefinitionModel(
     bool IsLatest,
     bool IsPublished,
     WorkflowOptions? Options,
-    JsonElement? Root
+    Activity? Root
 )
 {
     /// <inheritdoc />

@@ -1,5 +1,7 @@
 using Elsa.Common.Models;
 using Elsa.Http.Contracts;
+using Elsa.Http.Models;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Management.Contracts;
@@ -52,7 +54,10 @@ public class HttpBookmarkProcessor : IHttpBookmarkProcessor
         var query =
             from executionResult in executionResults
             from bookmark in executionResult.Bookmarks
-            where bookmark.Name == writeHttpResponseTypeName || bookmark.Name == httpEndpointTypeName
+            where bookmark.Name == writeHttpResponseTypeName 
+                  || (bookmark.Name == httpEndpointTypeName
+                      // If a "regular" HttpEndpointBookmarkPayload bookmark was created, we do not want to resume that - it's a bookmark that was created to block the workflow until the desired HTTP request comes in.
+                      && bookmark.Payload is not HttpEndpointBookmarkPayload)
             select (InstanceId: executionResult.WorkflowInstanceId, bookmark.Id);
 
         var workflowExecutionResults = new Stack<(string InstanceId, string BookmarkId)>(query);
@@ -85,7 +90,7 @@ public class HttpBookmarkProcessor : IHttpBookmarkProcessor
             var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(
                 workflowDefinition,
                 cancellationToken);
-
+            
             var workflowHost = await _workflowHostFactory.CreateAsync(workflow, workflowState, cancellationToken);
             var options = new ResumeWorkflowHostOptions(correlationId, result.BookmarkId, Input: input);
             await workflowHost.ResumeWorkflowAsync(options, cancellationToken);
