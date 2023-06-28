@@ -1,6 +1,9 @@
 using Elsa.Common.Models;
+using Elsa.Extensions;
 using Elsa.Http.Contracts;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Helpers;
+using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
@@ -15,6 +18,7 @@ public class HttpBookmarkProcessor : IHttpBookmarkProcessor
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly IWorkflowHostFactory _workflowHostFactory;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IActivityVisitor _activityVisitor;
 
     /// <summary>
     /// Constructor.
@@ -23,12 +27,14 @@ public class HttpBookmarkProcessor : IHttpBookmarkProcessor
         IWorkflowRuntime workflowRuntime,
         IWorkflowDefinitionService workflowDefinitionService,
         IWorkflowHostFactory workflowHostFactory,
-        IHttpContextAccessor httpContextAccessor)
+        IHttpContextAccessor httpContextAccessor,
+        IActivityVisitor activityVisitor)
     {
         _workflowRuntime = workflowRuntime;
         _workflowDefinitionService = workflowDefinitionService;
         _workflowHostFactory = workflowHostFactory;
         _httpContextAccessor = httpContextAccessor;
+        _activityVisitor = activityVisitor;
     }
     
     /// <inheritdoc />
@@ -85,6 +91,10 @@ public class HttpBookmarkProcessor : IHttpBookmarkProcessor
             var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(
                 workflowDefinition,
                 cancellationToken);
+            
+            var bookmark = workflowState.Bookmarks.First(x => x.Id == result.BookmarkId);
+            if (!await CanActivityStartWorkflow(workflow, bookmark, cancellationToken))
+                return workflowStates;
 
             var workflowHost = await _workflowHostFactory.CreateAsync(workflow, workflowState, cancellationToken);
             var options = new ResumeWorkflowHostOptions(correlationId, result.BookmarkId, Input: input);
@@ -97,5 +107,19 @@ public class HttpBookmarkProcessor : IHttpBookmarkProcessor
         }
 
         return workflowStates;
+    }
+
+    private async Task<bool> CanActivityStartWorkflow(Workflow workflow, Bookmark bookmark, CancellationToken cancellationToken)
+    {
+        var nodes = (await _activityVisitor.VisitAsync(workflow.Root, cancellationToken)).Flatten().Distinct().ToList();
+
+        if (bookmark.Name == ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>() || bookmark.Name == ActivityTypeNameHelper.GenerateTypeName<WriteHttpResponse>())
+        {
+            var activityNode = nodes.Single(n => n.NodeId.Equals(bookmark.ActivityNodeId));
+            if (!activityNode.Activity.GetCanStartWorkflow())
+                return false;
+        }
+
+        return true;
     }
 }

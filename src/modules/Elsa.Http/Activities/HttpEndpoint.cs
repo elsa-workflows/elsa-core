@@ -85,6 +85,12 @@ public class HttpEndpoint : Trigger<HttpRequest>
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
+        if (!context.IsTriggerOfWorkflow())
+        {
+            context.CreateBookmarks(GetBookmarkPayloads(context.ExpressionExecutionContext));
+            return;
+        }
+        
         // If we did not receive external input, it means we are just now encountering this activity and we need to block execution by creating a bookmark.
         if (!context.TryGetInput<bool>(HttpContextInputKey, out var isHttpContext))
         {
