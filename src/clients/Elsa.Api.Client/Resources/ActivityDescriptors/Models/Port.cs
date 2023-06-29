@@ -23,5 +23,5 @@ public class Port
     /// <summary>
     /// Gets or sets the visibility of the port.
     /// </summary>
-    public bool IsBrowsable { get; set; } = true;
+    public bool? IsBrowsable { get; set; } = true;
 }

@@ -32,5 +32,5 @@ public class ObjectExpression : IExpression
     /// <summary>
     /// Returns the string representation of the expression.
     /// </summary>
-    public override string ToString() => Value?.ToString() ?? "";
+    public override string ToString() => Value ?? "";
 }

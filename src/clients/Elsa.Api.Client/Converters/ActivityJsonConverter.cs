@@ -27,7 +27,7 @@ public class ActivityJsonConverter : JsonConverter<Activity>
         var activityRoot = doc.RootElement;
         var activityTypeName = activityRoot.GetProperty("type").GetString()!;
         var activityType = _activityTypeService.ResolveType(activityTypeName);
-        var newOptions = new JsonSerializerOptions();
+        var newOptions = new JsonSerializerOptions(options);
         var activity = (Activity)JsonSerializer.Deserialize(activityRoot.GetRawText(), activityType, newOptions)!;
       
         return activity;

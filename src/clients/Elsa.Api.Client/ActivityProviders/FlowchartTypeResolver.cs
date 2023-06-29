@@ -7,7 +7,7 @@ namespace Elsa.Api.Client.ActivityProviders;
 /// <summary>
 /// Constructs a <see cref="Flowchart"/> activity.
 /// </summary>
-public class FlowchartActivityTypeResolver : ActivityTypeResolverBase
+public class FlowchartTypeResolver : ActivityTypeResolverBase
 {
     /// <inheritdoc />
     protected override bool GetSupportsType(ActivityTypeResolverContext context) => context.ActivityTypeName == "Elsa.Flowchart";

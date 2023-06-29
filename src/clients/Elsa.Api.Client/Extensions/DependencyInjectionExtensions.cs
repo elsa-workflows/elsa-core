@@ -43,7 +43,8 @@ public static class DependencyInjectionExtensions
     {
         services.AddSingleton<IActivityTypeService, DefaultActivityTypeService>();
         services.AddActivityTypeResolver<DefaultActivityTypeResolver>();
-        services.AddActivityTypeResolver<FlowchartActivityTypeResolver>();
+        services.AddActivityTypeResolver<FlowchartTypeResolver>();
+        services.AddActivityTypeResolver<FlowSwitchTypeResolver>();
         return services;
     }
     
