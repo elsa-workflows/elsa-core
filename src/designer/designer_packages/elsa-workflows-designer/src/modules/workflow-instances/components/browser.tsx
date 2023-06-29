@@ -7,7 +7,7 @@ import {getRequest, persistRequest} from '../services/lookup-persistence';
 import {WorkflowDefinition, WorkflowDefinitionSummary} from "../../workflow-definitions/models/entities";
 import {OrderBy, OrderDirection, PagedList, VersionOptions, WorkflowInstanceSummary, WorkflowStatus, WorkflowSubStatus} from "../../../models";
 import {Container} from "typedi";
-import {WorkflowDefinitionsApi} from "../../workflow-definitions/services/api";
+import {WorkflowDefinitionsApi} from "../../workflow-definitions";
 import {getSubStatusColor, updateSelectedWorkflowInstances} from "../services/utils";
 import {formatTimestamp} from "../../../utils";
 import {DeleteIcon, EditIcon} from "../../../components/icons/tooling";
@@ -68,7 +68,7 @@ export class WorkflowInstanceBrowser {
 
     if(this.workflowDefinition != null)
       this.selectedWorkflowDefinitionId = this.workflowDefinition.definitionId;
-    
+
     await this.loadWorkflowDefinitions();
     await this.loadWorkflowInstances();
   }
