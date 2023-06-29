@@ -141,6 +141,12 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
     /// <inheritdoc />
     public async Task<bool> AnyAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default) => await _store.QueryAsync(queryable => Filter(queryable, filter), cancellationToken).Any();
 
+    /// <inheritdoc />
+    public async Task<long> CountDistinctAsync(CancellationToken cancellationToken = default)
+    {
+        return await _store.CountAsync(x => true, x =>  x.DefinitionId, cancellationToken);
+    }
+
     private ValueTask<WorkflowDefinition> SaveAsync(ManagementElsaDbContext managementElsaDbContext, WorkflowDefinition entity, CancellationToken cancellationToken)
     {
         var data = new WorkflowDefinitionState(entity.Options, entity.Variables, entity.Inputs, entity.Outputs, entity.Outcomes, entity.CustomProperties);

@@ -134,6 +134,12 @@ public class MongoDbStore<TDocument> where TDocument : class
         await query(_collection.AsQueryable()).LongCountAsync(cancellationToken);
     
     /// <summary>
+    /// Counts documents in the collection using a filter and distinct by a key selector.
+    /// </summary>
+    public async Task<long> CountAsync<TProperty>(Func<IMongoQueryable<TDocument>, IMongoQueryable<TDocument>> query, Expression<Func<TDocument, TProperty>> propertySelector, CancellationToken cancellationToken = default) => 
+        await query((IMongoQueryable<TDocument>)_collection.AsQueryable().DistinctBy(propertySelector)).LongCountAsync(cancellationToken);
+    
+    /// <summary>
     /// Checks if any documents exist.
     /// </summary>
     public async Task<bool> AnyAsync(Expression<Func<TDocument, bool>> predicate, CancellationToken cancellationToken = default) => 

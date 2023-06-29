@@ -59,11 +59,11 @@ public class MongoWorkflowDefinitionStore : IWorkflowDefinitionStore
     }
 
     /// <inheritdoc />
-    public async Task<IEnumerable<WorkflowDefinition>> FindManyAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default) => 
+    public async Task<IEnumerable<WorkflowDefinition>> FindManyAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default) =>
         await _mongoDbStore.FindManyAsync(queryable => Filter(queryable, filter), cancellationToken);
 
     /// <inheritdoc />
-    public async Task<IEnumerable<WorkflowDefinition>> FindManyAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, CancellationToken cancellationToken = default) => 
+    public async Task<IEnumerable<WorkflowDefinition>> FindManyAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, CancellationToken cancellationToken = default) =>
         await _mongoDbStore.FindManyAsync(queryable => Order(Filter(queryable, filter), order), cancellationToken);
 
     /// <inheritdoc />
@@ -106,11 +106,11 @@ public class MongoWorkflowDefinitionStore : IWorkflowDefinitionStore
     }
 
     /// <inheritdoc />
-    public async Task SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default) => 
+    public async Task SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default) =>
         await _mongoDbStore.SaveAsync(definition, cancellationToken);
 
     /// <inheritdoc />
-    public async Task SaveManyAsync(IEnumerable<WorkflowDefinition> definitions, CancellationToken cancellationToken = default) => 
+    public async Task SaveManyAsync(IEnumerable<WorkflowDefinition> definitions, CancellationToken cancellationToken = default) =>
         await _mongoDbStore.SaveManyAsync(definitions.Select(i => i), cancellationToken);
 
     /// <inheritdoc />
@@ -123,18 +123,26 @@ public class MongoWorkflowDefinitionStore : IWorkflowDefinitionStore
     }
 
     /// <inheritdoc />
-    public async Task<bool> AnyAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default) => 
-        await _mongoDbStore.FindManyAsync(queryable => Filter(queryable, filter), cancellationToken).Any();
+    public async Task<bool> AnyAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
+    {
+        return await _mongoDbStore.FindManyAsync(queryable => Filter(queryable, filter), cancellationToken).Any();
+    }
 
-    private IMongoQueryable<WorkflowDefinition> Filter(IMongoQueryable<WorkflowDefinition> queryable, WorkflowDefinitionFilter filter) => 
+    /// <inheritdoc />
+    public async Task<long> CountDistinctAsync(CancellationToken cancellationToken = default)
+    {
+        return await _mongoDbStore.CountAsync(queryable => queryable, x => x.DefinitionId, cancellationToken);
+    }
+
+    private IMongoQueryable<WorkflowDefinition> Filter(IMongoQueryable<WorkflowDefinition> queryable, WorkflowDefinitionFilter filter) =>
         (filter.Apply(queryable) as IMongoQueryable<WorkflowDefinition>)!;
 
-    private IMongoQueryable<WorkflowDefinition> Order<TOrderBy>(IMongoQueryable<WorkflowDefinition> queryable, WorkflowDefinitionOrder<TOrderBy> order) => 
+    private IMongoQueryable<WorkflowDefinition> Order<TOrderBy>(IMongoQueryable<WorkflowDefinition> queryable, WorkflowDefinitionOrder<TOrderBy> order) =>
         (queryable.OrderBy(order) as IMongoQueryable<WorkflowDefinition>)!;
-    
-    private IMongoQueryable<WorkflowDefinition> Paginate(IMongoQueryable<WorkflowDefinition> queryable, PageArgs pageArgs) => 
+
+    private IMongoQueryable<WorkflowDefinition> Paginate(IMongoQueryable<WorkflowDefinition> queryable, PageArgs pageArgs) =>
         (queryable.Paginate(pageArgs) as IMongoQueryable<WorkflowDefinition>)!;
-    
-    private IMongoQueryable<WorkflowDefinition> OrderAndPaginate<TOrderBy>(IMongoQueryable<WorkflowDefinition> queryable, WorkflowDefinitionOrder<TOrderBy> order, PageArgs pageArgs) => 
+
+    private IMongoQueryable<WorkflowDefinition> OrderAndPaginate<TOrderBy>(IMongoQueryable<WorkflowDefinition> queryable, WorkflowDefinitionOrder<TOrderBy> order, PageArgs pageArgs) =>
         (queryable.OrderBy(order).Paginate(pageArgs) as IMongoQueryable<WorkflowDefinition>)!;
 }

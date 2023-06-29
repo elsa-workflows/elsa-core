@@ -22,7 +22,10 @@ public abstract class SqlDialectBase : ISqlDialect
     public string Delete(string table) => $"delete from {table} where 1=1";
 
     /// <inheritdoc />
-    public string Count(string table) => $"select COUNT(*) from {table} where 1=1";
+    public string Count(string table) => Count("*", table);
+
+    /// <inheritdoc />
+    public string Count(string fieldExpression, string table) => $"select COUNT({fieldExpression}) from {table} where 1=1";
 
     /// <inheritdoc />
     public virtual string And(string field) => $"and {field} = @{field}";

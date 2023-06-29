@@ -31,6 +31,13 @@ public interface ISqlDialect
     /// </summary>
     /// <param name="table">The table to query.</param>
     string Count(string table);
+
+    /// <summary>
+    /// Returns a SELECT count(fieldExpression) FROM query.
+    /// </summary>
+    /// <param name="fieldExpression">The field expression to query. Examples: "*", "distinct FieldName"</param>
+    /// <param name="table">The table to query.</param>
+    string Count(string fieldExpression, string table);
     
     /// <summary>
     /// Returns an AND clause.

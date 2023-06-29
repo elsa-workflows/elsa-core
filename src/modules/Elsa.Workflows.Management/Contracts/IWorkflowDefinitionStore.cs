@@ -141,4 +141,9 @@ public interface IWorkflowDefinitionStore
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>True if any workflow definition matches the specified filter.</returns>
     Task<bool> AnyAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Returns the number of logical workflow definitions.
+    /// </summary>
+    Task<long> CountDistinctAsync(CancellationToken cancellationToken = default);
 }

@@ -82,6 +82,18 @@ public static class ParameterizedQueryBuilderExtensions
     }
 
     /// <summary>
+    /// Begins a SELECT COUNT(expression) FROM query.
+    /// </summary>
+    /// <param name="query">The query.</param>
+    /// <param name="expression">The expression. Examples: "*" or "DISTINCT FieldName"</param>
+    /// <param name="table">The table.</param>
+    public static ParameterizedQuery Count(this ParameterizedQuery query, string expression, string table)
+    {
+        query.Sql.AppendLine(query.Dialect.Count(expression, table));
+        return query;
+    }
+
+    /// <summary>
     /// Appends an AND clause to the query if the value is not null.
     /// </summary>
     /// <param name="query">The query.</param>

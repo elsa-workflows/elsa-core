@@ -305,4 +305,33 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
         var set = dbContext.Set<TEntity>();
         return await set.AnyAsync(predicate, cancellationToken);
     }
+
+    /// <summary>
+    /// Counts the number of entities matching a predicate.
+    /// </summary>
+    /// <param name="predicate">The predicate.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    public async Task<long> CountAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await CreateDbContextAsync(cancellationToken);
+        var set = dbContext.Set<TEntity>();
+        return await set.CountAsync(predicate, cancellationToken);
+    }
+
+    /// <summary>
+    /// Counts the distinct number of entities matching a predicate.
+    /// </summary>
+    /// <param name="predicate">The predicate.</param>
+    /// <param name="propertySelector">The property selector to distinct by.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    public async Task<long> CountAsync<TProperty>(Expression<Func<TEntity, bool>> predicate, Expression<Func<TEntity, TProperty>> propertySelector, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await CreateDbContextAsync(cancellationToken);
+        var set = dbContext.Set<TEntity>();
+        return await set
+            .Where(predicate)
+            .Select(propertySelector)
+            .Distinct()
+            .CountAsync(cancellationToken);
+    }
 }

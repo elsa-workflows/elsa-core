@@ -152,4 +152,17 @@ public class MemoryStore<TEntity>
     /// <param name="predicate">The predicate to match.</param>
     /// <returns>True if any entity matches the specified predicate, otherwise false.</returns>
     public bool AnyAsync(Func<TEntity, bool> predicate) => Entities.Values.Any(predicate);
+
+    /// <summary>
+    /// Returns the number of entities matching the specified predicate.
+    /// </summary>
+    /// <param name="predicate">The predicate to match.</param>
+    /// <param name="propertySelector">The property to distinct by.</param>
+    /// <returns>True if any entity matches the specified predicate, otherwise false.</returns>
+    public long CountAsync<TProperty>(Func<TEntity, bool> predicate, Func<TEntity, TProperty> propertySelector)
+    {
+        return Entities.Values
+            .DistinctBy(propertySelector)
+            .Count(predicate);
+    }
 }

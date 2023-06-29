@@ -142,6 +142,14 @@ public class DapperWorkflowDefinitionStore : IWorkflowDefinitionStore
         return await _store.AnyAsync(q => ApplyFilter(q, filter), cancellationToken);
     }
 
+    /// <inheritdoc />
+    public async Task<long> CountDistinctAsync(CancellationToken cancellationToken = default)
+    {
+        return await _store.CountAsync(
+            filter => filter.Count($"distinct {nameof(WorkflowDefinition.DefinitionId)}", TableName), 
+            cancellationToken);
+    }
+
     private void ApplyFilter(ParameterizedQuery query, WorkflowDefinitionFilter filter)
     {
         ParameterizedQueryBuilderExtensions.Equals(query

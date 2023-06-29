@@ -1,5 +1,6 @@
 using Elsa.Api.Client.Models;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
+using JetBrains.Annotations;
 using Refit;
 
 namespace Elsa.Api.Client.Resources.WorkflowDefinitions.Contracts;
@@ -7,6 +8,7 @@ namespace Elsa.Api.Client.Resources.WorkflowDefinitions.Contracts;
 /// <summary>
 /// Represents a client for the workflow definitions API.
 /// </summary>
+[PublicAPI]
 public interface IWorkflowDefinitionsApi
 {
     /// <summary>
@@ -27,8 +29,24 @@ public interface IWorkflowDefinitionsApi
     /// <param name="includeCompositeRoot">Whether to include the root activity of composite activities.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The workflow definition.</returns>
-    [Get("/workflow-definitions/{definitionId}?versionOptions={VersionOptions}&includeCompositeRoot={includeCompositeRoot}")]
+    [Get("/workflow-definitions/{definitionId}?versionOptions={versionOptions}&includeCompositeRoot={includeCompositeRoot}")]
     Task<WorkflowDefinition?> GetAsync(string definitionId, VersionOptions? versionOptions = default, bool includeCompositeRoot = false, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Gets the number of workflow definitions.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    [Get("/workflow-definitions/query/count")]
+    Task<CountWorkflowDefinitionsResponse> CountAsync(CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Gets a value indicating whether a workflow definition name is unique.
+    /// </summary>
+    /// <param name="name">The name to check.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A response containing a value indicating whether the name is unique.</returns>
+    [Get("/workflow-definitions/validation/is-name-unique?name={name}")]
+    Task<GetIsNameUniqueResponse> GetIsNameUniqueAsync(string name, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Saves a workflow definition.
