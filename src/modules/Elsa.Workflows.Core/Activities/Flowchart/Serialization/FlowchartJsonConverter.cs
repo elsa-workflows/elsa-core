@@ -138,6 +138,9 @@ public class FlowchartJsonConverter : JsonConverter<Activities.Flowchart>
 
     private static ICollection<Connection> DeserializeConnections(JsonElement connectionsElement, IDictionary<string, IActivity> activityDictionary, JsonSerializerOptions options)
     {
+        if(connectionsElement.ValueKind == JsonValueKind.Undefined)
+            return new List<Connection>();
+        
         // To not break existing workflow definitions, we need to support the old connection format.
         var useOldConnectionConverter = connectionsElement.EnumerateArray().Any(x => x.TryGetProperty("sourcePort", out var sourcePort) && sourcePort.ValueKind == JsonValueKind.String);
 
