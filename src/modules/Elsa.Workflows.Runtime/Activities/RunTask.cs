@@ -36,7 +36,7 @@ public class RunTask : Activity<object>, IBookmarksPersistedHandler
     /// <summary>
     /// The name of the task being requested.
     /// </summary>
-    [Input(Description = "AnyAsync additional parameters to send to the task.")]
+    [Input(Description = "Any additional parameters to send to the task.")]
     public Input<IDictionary<string, object>?> Payload { get; set; } = default!;
     
     /// <inheritdoc />
