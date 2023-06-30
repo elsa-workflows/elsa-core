@@ -9,6 +9,7 @@ using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Notifications;
+using Elsa.Workflows.Management.Requests;
 
 namespace Elsa.Workflows.Management.Services;
 
@@ -19,6 +20,7 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
     private readonly IEventPublisher _eventPublisher;
     private readonly IIdentityGenerator _identityGenerator;
     private readonly IActivitySerializer _activitySerializer;
+    private readonly IRequestSender _requestSender;
     private readonly ISystemClock _systemClock;
 
     /// <summary>
@@ -29,12 +31,14 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
         IEventPublisher eventPublisher,
         IIdentityGenerator identityGenerator,
         IActivitySerializer activitySerializer,
+        IRequestSender requestSender,
         ISystemClock systemClock)
     {
         _workflowDefinitionStore = workflowDefinitionStore;
         _eventPublisher = eventPublisher;
         _identityGenerator = identityGenerator;
         _activitySerializer = activitySerializer;
+        _requestSender = requestSender;
         _systemClock = systemClock;
     }
 
@@ -74,6 +78,10 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
     /// <inheritdoc />
     public async Task<WorkflowDefinition> PublishAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
     {
+        var response = await _requestSender.RequestAsync(new ValidateWorkflowRequest(definition), cancellationToken);
+        if(response.ValidationErrors.Any())
+            throw new InvalidOperationException($"Cannot publish workflow definition '{definition.DefinitionId}' as it contains the following errors: {string.Join(", ", response.ValidationErrors)}");
+        
         await _eventPublisher.PublishAsync(new WorkflowDefinitionPublishing(definition), cancellationToken);
 
         var definitionId = definition.DefinitionId;

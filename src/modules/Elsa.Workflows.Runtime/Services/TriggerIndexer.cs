@@ -173,7 +173,7 @@ public class TriggerIndexer : ITriggerIndexer
     {
         var workflow = context.Workflow;
         var cancellationToken = context.CancellationToken;
-        var expressionExecutionContext = await CreateExpressionExecutionContextAsync(context, trigger);
+        var expressionExecutionContext = await trigger.CreateExpressionExecutionContextAsync(_serviceProvider, context, _expressionEvaluator, _logger);
 
         var triggerIndexingContext = new TriggerIndexingContext(context, expressionExecutionContext, trigger, cancellationToken);
         var triggerData = await TryGetTriggerDataAsync(trigger, triggerIndexingContext);
@@ -190,38 +190,6 @@ public class TriggerIndexer : ITriggerIndexer
         });
 
         return triggers.ToList();
-    }
-
-    private async Task<ExpressionExecutionContext> CreateExpressionExecutionContextAsync(WorkflowIndexingContext context, ITrigger trigger)
-    {
-        var inputs = trigger.GetInputs();
-        var assignedInputs = inputs.Where(x => x.MemoryBlockReference != null!).ToList();
-        var register = context.GetOrCreateRegister(trigger);
-        var cancellationToken = context.CancellationToken;
-        var expressionInput = new Dictionary<string, object>();
-        var applicationProperties = ExpressionExecutionContextExtensions.CreateTriggerIndexingPropertiesFrom(context.Workflow, expressionInput);
-        var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, register, default, applicationProperties, cancellationToken);
-
-        // Evaluate activity inputs before requesting trigger data.
-        foreach (var input in assignedInputs)
-        {
-            var locationReference = input.MemoryBlockReference();
-
-            if(locationReference.Id == null!)
-                continue;
-            
-            try
-            {
-                var value = await _expressionEvaluator.EvaluateAsync(input, expressionExecutionContext);
-                locationReference.Set(expressionExecutionContext, value);
-            }
-            catch (Exception e)
-            {
-                _logger.LogWarning(e, "Failed to evaluate '{@Expression}'", input.Expression);
-            }
-        }
-
-        return expressionExecutionContext;
     }
 
     private async Task<ICollection<object>> TryGetTriggerDataAsync(ITrigger trigger, TriggerIndexingContext context)
