@@ -46,11 +46,24 @@ public interface ISqlDialect
     string And(string field);
     
     /// <summary>
+    /// Returns a negating AND clause.
+    /// </summary>
+    /// <param name="field">The field to query.</param>
+    string AndNot(string field);
+    
+    /// <summary>
     /// Returns an AND field IN () clause.
     /// </summary>
     /// <param name="field">The field to query.</param>
     /// <param name="fieldParamNames">The parameter names to query.</param>
     string And(string field, string[] fieldParamNames);
+    
+    /// <summary>
+    /// Returns a negating AND field IN () clause.
+    /// </summary>
+    /// <param name="field">The field to query.</param>
+    /// <param name="fieldParamNames">The parameter names to query.</param>
+    string AndNot(string field, string[] fieldParamNames);
     
     /// <summary>
     /// Returns an ORDER BY clause.

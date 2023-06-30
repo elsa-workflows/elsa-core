@@ -146,4 +146,12 @@ public interface IWorkflowDefinitionStore
     /// Returns the number of logical workflow definitions.
     /// </summary>
     Task<long> CountDistinctAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets a value indicating whether the specified name is unique.
+    /// </summary>
+    /// <param name="name">The name.</param>
+    /// <param name="definitionId">The definition ID to exclude from the check.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    Task<bool> GetIsNameUnique(string name, string? definitionId = default, CancellationToken cancellationToken = default);
 }

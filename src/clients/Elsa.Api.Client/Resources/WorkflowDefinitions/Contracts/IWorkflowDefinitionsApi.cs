@@ -36,14 +36,15 @@ public interface IWorkflowDefinitionsApi
     /// <param name="cancellationToken">The cancellation token.</param>
     [Get("/workflow-definitions/query/count")]
     Task<CountWorkflowDefinitionsResponse> CountAsync(CancellationToken cancellationToken = default);
-    
+
     /// <summary>
     /// Gets a value indicating whether a workflow definition name is unique.
     /// </summary>
     /// <param name="name">The name to check.</param>
+    /// <param name="definitionId">The ID of the workflow definition to exclude from the check.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     [Get("/workflow-definitions/validation/is-name-unique?name={name}")]
-    Task<GetIsNameUniqueResponse> GetIsNameUniqueAsync(string name, CancellationToken cancellationToken = default);
+    Task<GetIsNameUniqueResponse> GetIsNameUniqueAsync(string name, string? definitionId = default, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Saves a workflow definition.

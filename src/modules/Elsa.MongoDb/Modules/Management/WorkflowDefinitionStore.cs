@@ -134,6 +134,12 @@ public class MongoWorkflowDefinitionStore : IWorkflowDefinitionStore
         return await _mongoDbStore.CountAsync(queryable => queryable, x => x.DefinitionId, cancellationToken);
     }
 
+    /// <inheritdoc />
+    public async Task<bool> GetIsNameUnique(string name, string? definitionId = default, CancellationToken cancellationToken = default)
+    {
+        return await _mongoDbStore.AnyAsync(x => x.Name == name && x.DefinitionId != definitionId, cancellationToken);
+    }
+
     private IMongoQueryable<WorkflowDefinition> Filter(IMongoQueryable<WorkflowDefinition> queryable, WorkflowDefinitionFilter filter) =>
         (filter.Apply(queryable) as IMongoQueryable<WorkflowDefinition>)!;
 

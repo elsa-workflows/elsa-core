@@ -107,9 +107,24 @@ public static class ParameterizedQueryBuilderExtensions
 
         return query;
     }
+    
+    /// <summary>
+    /// Appends a negating AND clause to the query if the value is not null.
+    /// </summary>
+    /// <param name="query">The query.</param>
+    /// <param name="field">The field.</param>
+    /// <param name="value">The value.</param>
+    public static ParameterizedQuery NotEquals(this ParameterizedQuery query, string field, object? value)
+    {
+        if (value == null) return query;
+        query.Sql.AppendLine(query.Dialect.AndNot(field));
+        query.Parameters.Add($"@{field}", value);
+
+        return query;
+    }
 
     /// <summary>
-    /// Appends an search for workflowdfefinitions to the search
+    /// Appends a search term for workflow definitions to the search.
     /// </summary>
     /// <param name="query">The query.</param>
     /// <param name="searchTerm">The search term.</param>
@@ -174,7 +189,7 @@ public static class ParameterizedQueryBuilderExtensions
     }
 
     /// <summary>
-    /// Appends an AND clause to the query if the value is not null.
+    /// Appends an AND clause to the query if the search term is not null.
     /// </summary>
     /// <param name="query">The query.</param>
     /// <param name="searchTerm">The search term.</param>

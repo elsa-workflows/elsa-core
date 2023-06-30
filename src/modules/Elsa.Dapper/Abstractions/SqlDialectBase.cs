@@ -29,11 +29,20 @@ public abstract class SqlDialectBase : ISqlDialect
 
     /// <inheritdoc />
     public virtual string And(string field) => $"and {field} = @{field}";
+    
+    /// <inheritdoc />
+    public virtual string AndNot(string field) => $"and not {field} = @{field}";
 
     /// <inheritdoc />
     public virtual string And(string field, string[] fieldParamNames)
     {
         return $"and {field} in ({string.Join(", ", fieldParamNames)})";
+    }
+    
+    /// <inheritdoc />
+    public virtual string AndNot(string field, string[] fieldParamNames)
+    {
+        return $"and {field} not in ({string.Join(", ", fieldParamNames)})";
     }
 
     /// <inheritdoc />
