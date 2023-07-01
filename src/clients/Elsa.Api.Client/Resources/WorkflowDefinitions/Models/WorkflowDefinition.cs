@@ -72,4 +72,9 @@ public class WorkflowDefinition : VersionedEntity
     /// The root activity of the workflow.
     /// </summary>
     public Activity Root { get; set; } = default!;
+    
+    /// <summary>
+    /// An option to use the workflow as a readonly workflow.
+    /// </summary>
+    public bool IsReadonly { get; set; } = false;
 }
