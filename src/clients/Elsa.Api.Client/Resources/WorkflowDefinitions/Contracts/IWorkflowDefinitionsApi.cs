@@ -60,7 +60,7 @@ public interface IWorkflowDefinitionsApi
     /// <param name="definitionId">The ID of the workflow definition to delete.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     [Delete("/workflow-definitions/{definitionId}")]
-    Task<DeleteWorkflowDefinitionResponse> DeleteAsync(string definitionId, CancellationToken cancellationToken = default);
+    Task DeleteAsync(string definitionId, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Deletes many workflow definitions.
