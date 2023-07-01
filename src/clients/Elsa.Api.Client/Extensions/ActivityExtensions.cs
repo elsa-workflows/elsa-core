@@ -86,4 +86,23 @@ public static class ActivityExtensions
         metadata["showDescription"] = value;
         activity.Metadata = metadata;
     }
+    
+    /// <summary>
+    /// Gets a value indicating whether the specified activity can trigger the workflow.
+    /// </summary>
+    public static bool? GetCanStartWorkflow(this Activity activity)
+    {
+        var properties = activity.CustomProperties;
+        return properties.TryGetValue<bool>("canStartWorkflow");
+    }
+    
+    /// <summary>
+    /// Sets a value indicating whether the specified activity can trigger the workflow.
+    /// </summary>
+    public static void SetCanStartWorkflow(this Activity activity, bool value)
+    {
+        var properties = activity.CustomProperties;
+        properties["canStartWorkflow"] = value;
+        activity.CustomProperties = properties;
+    }
 }
