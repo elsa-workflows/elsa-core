@@ -43,7 +43,7 @@ internal class List : ElsaEndpointWithoutRequest<Response>
         return Task.FromResult(response);
     }
 
-    private VariableDescriptorModel Map(VariableDescriptor descriptor)
+    private VariableTypeDescriptor Map(VariableDescriptor descriptor)
     {
         var type = descriptor.Type;
         var hasAlias = _wellKnownTypeRegistry.TryGetAlias(type, out var alias);
