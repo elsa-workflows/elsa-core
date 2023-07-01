@@ -20,6 +20,7 @@ public class ListWorkflowDefinitionsRequest
     /// <summary>
     /// The IDs of the workflow definitions to filter by.
     /// </summary>
+    [Query(CollectionFormat.Multi)]
     public ICollection<string>? DefinitionIds { get; set; }
 
     /// <summary>
