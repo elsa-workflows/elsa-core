@@ -8,6 +8,7 @@ using Elsa.Api.Client.Resources.ActivityDescriptors.Contracts;
 using Elsa.Api.Client.Resources.Identity.Contracts;
 using Elsa.Api.Client.Resources.StorageDrivers.Contracts;
 using Elsa.Api.Client.Resources.VariableTypes.Contracts;
+using Elsa.Api.Client.Resources.WorkflowActivationStrategies.Contracts;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Contracts;
 using Elsa.Api.Client.Services;
 using JetBrains.Annotations;
@@ -36,6 +37,7 @@ public static class DependencyInjectionExtensions
         services.AddApi<IActivityDescriptorsApi>(CreateRefitSettings);
         services.AddApi<IStorageDriversApi>(CreateRefitSettings);
         services.AddApi<IVariableTypesApi>(CreateRefitSettings);
+        services.AddApi<IWorkflowActivationStrategiesApi>(CreateRefitSettings);
         services.AddApi<ILoginApi>(CreateRefitSettings);
         return services;
     }
