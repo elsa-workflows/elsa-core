@@ -3,13 +3,13 @@ namespace Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 /// <summary>
 /// A request to delete many workflow definitions.
 /// </summary>
-public class DeleteManyWorkflowDefinitionsRequest
+public class BulkDeleteWorkflowDefinitionsRequest
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="DeleteManyWorkflowDefinitionsRequest"/> class.
+    /// Initializes a new instance of the <see cref="BulkDeleteWorkflowDefinitionsRequest"/> class.
     /// </summary>
     /// <param name="definitionIds">The IDs of the workflow definitions to delete.</param>
-    public DeleteManyWorkflowDefinitionsRequest(IEnumerable<string> definitionIds)
+    public BulkDeleteWorkflowDefinitionsRequest(IEnumerable<string> definitionIds)
     {
         DefinitionIds = definitionIds.ToArray();
     }

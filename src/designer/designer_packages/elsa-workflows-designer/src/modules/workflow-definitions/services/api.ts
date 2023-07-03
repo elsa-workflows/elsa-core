@@ -162,7 +162,7 @@ export class WorkflowDefinitionsApi {
 
   async publishMany(request: PublishManyWorkflowDefinitionRequest): Promise<PublishManyWorkflowDefinitionResponse> {
     const httpClient = await this.getHttpClient();
-    const response = await httpClient.post<PublishManyWorkflowDefinitionResponse>(`/bulk-actions/publish/workflow-definitions/by-definition-id`, {
+    const response = await httpClient.post<PublishManyWorkflowDefinitionResponse>(`/bulk-actions/publish/workflow-definitions/by-definition-ids`, {
       definitionIds: request.definitionIds,
     });
     return response.data;
@@ -170,7 +170,7 @@ export class WorkflowDefinitionsApi {
 
   async unpublishMany(request: UnpublishManyWorkflowDefinitionRequest): Promise<UnpublishManyWorkflowDefinitionResponse> {
     const httpClient = await this.getHttpClient();
-    const response = await httpClient.post<UnpublishManyWorkflowDefinitionResponse>(`/bulk-actions/retract/workflow-definitions/by-definition-id`, {
+    const response = await httpClient.post<UnpublishManyWorkflowDefinitionResponse>(`/bulk-actions/retract/workflow-definitions/by-definition-ids`, {
       definitionIds: request.definitionIds,
     });
     return response.data;

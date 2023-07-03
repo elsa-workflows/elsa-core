@@ -4,4 +4,4 @@ namespace Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 /// The response from a request to delete workflow definitions.
 /// </summary>
 /// <param name="Deleted">The number of workflow definitions deleted.</param>
-public record DeleteManyWorkflowDefinitionsResponse(long Deleted);
+public record BulkDeleteWorkflowDefinitionsResponse(long Deleted);

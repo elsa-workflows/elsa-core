@@ -68,7 +68,15 @@ public interface IWorkflowDefinitionsApi
     /// <param name="request">The request containing the IDs of the workflow definitions to delete.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     [Post("/bulk-actions/delete/workflow-definitions/by-definition-id")]
-    Task<DeleteManyWorkflowDefinitionsResponse> DeleteManyAsync(DeleteManyWorkflowDefinitionsRequest request, CancellationToken cancellationToken = default);
+    Task<BulkDeleteWorkflowDefinitionsResponse> BulkDeleteAsync(BulkDeleteWorkflowDefinitionsRequest request, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Publishes many workflow definitions.
+    /// </summary>
+    /// <param name="request">The request containing the IDs of the workflow definitions to publish.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    [Post("/bulk-actions/publish/workflow-definitions/by-definition-ids")]
+    Task<BulkPublishWorkflowDefinitionsResponse> BulkPublishAsync(BulkPublishWorkflowDefinitionsRequest request, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Exports a workflow definition.
