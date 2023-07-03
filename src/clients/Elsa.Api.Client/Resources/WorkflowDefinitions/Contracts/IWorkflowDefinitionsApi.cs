@@ -69,4 +69,13 @@ public interface IWorkflowDefinitionsApi
     /// <param name="cancellationToken">The cancellation token.</param>
     [Post("/bulk-actions/delete/workflow-definitions/by-definition-id")]
     Task<DeleteManyWorkflowDefinitionsResponse> DeleteManyAsync(DeleteManyWorkflowDefinitionsRequest request, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Exports a workflow definition.
+    /// </summary>
+    /// <param name="definitionId">The ID of the workflow definition to export.</param>
+    /// <param name="versionOptions">The version options.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    [Get("/workflow-definitions/{definitionId}/export?versionOptions={versionOptions}")]
+    Task<IApiResponse<Stream>> ExportAsync(string definitionId, VersionOptions? versionOptions = default, CancellationToken cancellationToken = default);
 }
