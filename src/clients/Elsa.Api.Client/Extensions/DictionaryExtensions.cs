@@ -12,9 +12,14 @@ public static class DictionaryExtensions
     /// </summary>
     public static T? TryGetValue<T>(this IDictionary<string, object> dictionary, string key, Func<T>? defaultValue = default, JsonSerializerOptions? serializerOptions = default)
     {
-        if (dictionary.TryGetValue(key, out var value) && value is not JsonElement { ValueKind: JsonValueKind.Undefined }) 
-            return value.ConvertTo<T>(new ObjectConverterOptions(serializerOptions));
-        
+        if (dictionary.TryGetValue(key, out var value) && value is not JsonElement { ValueKind: JsonValueKind.Undefined })
+        {
+            var convertedValue = value.ConvertTo<T>(new ObjectConverterOptions(serializerOptions));
+
+            if (convertedValue != null)
+                return convertedValue;
+        }
+
         if (defaultValue == null)
             return default;
 
@@ -22,15 +27,15 @@ public static class DictionaryExtensions
         dictionary[key] = defaultVal;
         return defaultVal;
     }
-    
+
     /// <summary>
     /// Returns the value of the specified property if it exists, otherwise the default value.
     /// </summary>
     public static object? TryGetValue(this IDictionary<string, object> dictionary, string key, Func<object>? defaultValue = default)
     {
-        if (dictionary.TryGetValue(key, out var value) && value is not JsonElement { ValueKind: JsonValueKind.Undefined }) 
+        if (dictionary.TryGetValue(key, out var value) && value is not JsonElement { ValueKind: JsonValueKind.Undefined })
             return value;
-        
+
         if (defaultValue == null)
             return default;
 
