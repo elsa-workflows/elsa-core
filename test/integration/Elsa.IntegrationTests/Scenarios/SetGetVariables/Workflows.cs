@@ -1,4 +1,3 @@
-using Elsa.Extensions;
 using Elsa.Workflows.Core.Abstractions;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
@@ -6,46 +5,51 @@ using Elsa.Workflows.Core.Models;
 
 namespace Elsa.IntegrationTests.Scenarios.SetGetVariables;
 
-class SetGetVariablesWorkflow : WorkflowBase
+class SetGetVariableWorkflow : WorkflowBase
 {
     protected override void Build(IWorkflowBuilder workflow)
     {
-        var variable = new Variable<string>("test");
+        var variable1 = new Variable<string>();
 
         workflow.Root = new Sequence
         {
             Variables = {
-                variable
+                variable1
             },
 
             Activities =
             {
-                new SetVariable<string>(variable,"Line 5"),
-                new WriteLine(variable)
+                new SetVariable<string>(variable1,"Line 5"),
+                new WriteLine(variable1)
             }
         };
     }
 }
 
-class SetGetNamedVariablesWorkflow : WorkflowBase
+class SetGetVariablesWorkflow : WorkflowBase
 {
     protected override void Build(IWorkflowBuilder workflow)
     {
+        var variable1 = new Variable<string>();
+        var variable2 = new Variable<string>();
+        
         workflow.Root = new Sequence
         {    
+            Variables = { variable1, variable2 },
+            
             Activities =
             {
-                new SetVariable()
+                new SetVariable
                 {
-                    Variable = new Variable("MyVar"),
-                    Value = new ("Some value")
+                    Variable = variable1,
+                    Value = new ("The value of variable 1")
                 },
                 new SetVariable()
                 {
-                    Variable = new Variable("some_other_variable"),
-                    Value = new Input<object?>(new Variable("MyVar"))
+                    Variable = variable2,
+                    Value = new Input<object?>(variable1)
                 },
-                new WriteLine(context => $"Other variable: {context.GetVariable<string>("MyVar")}")
+                new WriteLine(context => $"Variable 2: {variable2.Get(context)}")
             }
         };
     }
