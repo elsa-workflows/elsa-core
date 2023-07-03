@@ -179,6 +179,9 @@ public class TriggerIndexer : ITriggerIndexer
         var triggerData = await TryGetTriggerDataAsync(trigger, triggerIndexingContext);
         var triggerTypeName = trigger.Type;
 
+        // If no trigger payloads were returned, create a null payload.
+        if (!triggerData.Any()) triggerData.Add(null!);
+
         var triggers = triggerData.Select(payload => new StoredTrigger
         {
             Id = _identityGenerator.GenerateId(),
