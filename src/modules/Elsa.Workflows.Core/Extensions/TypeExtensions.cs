@@ -24,7 +24,16 @@ public static class TypeExtensions
     /// <summary>
     /// Returns true if the specified type is a collection type, false otherwise.
     /// </summary>
-    public static bool IsCollectionType(this Type type) => type.IsGenericType && typeof(ICollection<>).IsAssignableFrom(type.GetGenericTypeDefinition());
+    public static bool IsCollectionType(this Type type)
+    {
+        if (!type.IsGenericType)
+            return false;
+        
+        var elementType = type.GenericTypeArguments[0];
+        var collectionType = typeof(ICollection<>).MakeGenericType(elementType);
+        var listType = typeof(IList<>).MakeGenericType(elementType);
+        return collectionType.IsAssignableFrom(type) || listType.IsAssignableFrom(type);
+    }
 
     /// <summary>
     /// Constructs a collection type from the specified type.
