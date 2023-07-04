@@ -61,6 +61,22 @@ public interface IWorkflowDefinitionsApi
     /// <param name="cancellationToken">The cancellation token.</param>
     [Delete("/workflow-definitions/{definitionId}")]
     Task DeleteAsync(string definitionId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Publishes a workflow definition.
+    /// </summary>
+    /// <param name="definitionId">The ID of the workflow definition to publish.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    [Post("/workflow-definitions/{definitionId}/publish")]
+    Task<WorkflowDefinition> PublishAsync(string definitionId, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Retracts a workflow definition.
+    /// </summary>
+    /// <param name="definitionId">The ID of the workflow definition to retract.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    [Post("/workflow-definitions/{definitionId}/retract")]
+    Task<WorkflowDefinition> RetractAsync(string definitionId, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Deletes many workflow definitions.
@@ -77,6 +93,14 @@ public interface IWorkflowDefinitionsApi
     /// <param name="cancellationToken">The cancellation token.</param>
     [Post("/bulk-actions/publish/workflow-definitions/by-definition-ids")]
     Task<BulkPublishWorkflowDefinitionsResponse> BulkPublishAsync(BulkPublishWorkflowDefinitionsRequest request, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Retracts many workflow definitions.
+    /// </summary>
+    /// <param name="request">The request containing the IDs of the workflow definitions to retract.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    [Post("/bulk-actions/retract/workflow-definitions/by-definition-ids")]
+    Task<BulkRetractWorkflowDefinitionsResponse> BulkRetractAsync(BulkRetractWorkflowDefinitionsRequest request, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Exports a workflow definition.

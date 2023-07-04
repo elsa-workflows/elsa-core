@@ -6,9 +6,9 @@ namespace Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 public class BulkPublishWorkflowDefinitionsRequest
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="BulkDeleteWorkflowDefinitionsRequest"/> class.
+    /// Initializes a new instance of the <see cref="BulkPublishWorkflowDefinitionsRequest"/> class.
     /// </summary>
-    /// <param name="definitionIds">The IDs of the workflow definitions to delete.</param>
+    /// <param name="definitionIds">The IDs of the workflow definitions to publish.</param>
     public BulkPublishWorkflowDefinitionsRequest(IEnumerable<string> definitionIds)
     {
         DefinitionIds = definitionIds.ToArray();
