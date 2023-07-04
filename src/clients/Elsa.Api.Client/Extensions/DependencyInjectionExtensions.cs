@@ -82,19 +82,19 @@ public static class DependencyInjectionExtensions
     
     private static RefitSettings CreateRefitSettings(IServiceProvider serviceProvider)
     {
-        JsonSerializerOptions jsonSerializerSettings = new()
+        JsonSerializerOptions serializerOptions = new()
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         };
         
-        jsonSerializerSettings.Converters.Add(new JsonStringEnumConverter());
-        jsonSerializerSettings.Converters.Add(new VersionOptionsJsonConverter());
-        jsonSerializerSettings.Converters.Add(new ActivityJsonConverterFactory(serviceProvider));
-        jsonSerializerSettings.Converters.Add(new ExpressionJsonConverterFactory());
+        serializerOptions.Converters.Add(new JsonStringEnumConverter());
+        serializerOptions.Converters.Add(new VersionOptionsJsonConverter());
+        serializerOptions.Converters.Add(new ActivityJsonConverterFactory(serviceProvider));
+        serializerOptions.Converters.Add(new ExpressionJsonConverterFactory());
         
         var settings = new RefitSettings
         {
-            ContentSerializer = new SystemTextJsonContentSerializer(jsonSerializerSettings)
+            ContentSerializer = new SystemTextJsonContentSerializer(serializerOptions)
         };    
             
         return settings;

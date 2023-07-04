@@ -1,3 +1,4 @@
+using System.Net.Mime;
 using Elsa.Api.Client.Models;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 using JetBrains.Annotations;
@@ -69,14 +70,16 @@ public interface IWorkflowDefinitionsApi
     /// <param name="cancellationToken">The cancellation token.</param>
     [Post("/workflow-definitions/{definitionId}/publish")]
     Task<WorkflowDefinition> PublishAsync(string definitionId, CancellationToken cancellationToken = default);
-    
+
     /// <summary>
     /// Retracts a workflow definition.
     /// </summary>
     /// <param name="definitionId">The ID of the workflow definition to retract.</param>
+    /// <param name="request">An empty object to satisfy the request body requirement.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     [Post("/workflow-definitions/{definitionId}/retract")]
-    Task<WorkflowDefinition> RetractAsync(string definitionId, CancellationToken cancellationToken = default);
+    [Headers(MediaTypeNames.Application.Json)]
+    Task<WorkflowDefinition> RetractAsync(string definitionId, RetractWorkflowDefinitionRequest request, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Deletes many workflow definitions.
@@ -110,4 +113,13 @@ public interface IWorkflowDefinitionsApi
     /// <param name="cancellationToken">The cancellation token.</param>
     [Get("/workflow-definitions/{definitionId}/export?versionOptions={versionOptions}")]
     Task<IApiResponse<Stream>> ExportAsync(string definitionId, VersionOptions? versionOptions = default, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Imports a workflow definition.
+    /// </summary>
+    /// <param name="model">The model containing the workflow definition to import.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The imported workflow definition.</returns>
+    [Post("/workflow-definitions/import")]
+    Task<WorkflowDefinition> ImportAsync(WorkflowDefinitionModel model, CancellationToken cancellationToken = default);
 }
