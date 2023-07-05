@@ -74,8 +74,18 @@ internal class List : ElsaEndpoint<Request, Response>
                         Direction = direction
                     };
 
-                    return await _store.FindSummariesAsync<string>(filter, order, pageArgs, cancellationToken);
+                    return await _store.FindSummariesAsync(filter, order, pageArgs, cancellationToken);
                 }
+            case OrderByWorkflowDefinition.Version:
+            {
+                var order = new WorkflowDefinitionOrder<int>
+                {
+                    KeySelector = p => p.Version,
+                    Direction = direction
+                };
+
+                return await _store.FindSummariesAsync(filter, order, pageArgs, cancellationToken);
+            }
         }
     }
 }

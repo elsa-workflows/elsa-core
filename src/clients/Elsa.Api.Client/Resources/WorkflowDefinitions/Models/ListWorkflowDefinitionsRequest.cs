@@ -1,3 +1,4 @@
+using Elsa.Api.Client.Models;
 using Refit;
 
 namespace Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
@@ -34,4 +35,14 @@ public class ListWorkflowDefinitionsRequest
     /// </summary>
     [AliasAs("label")]
     public string[]? Labels { get; set; }
+    
+    /// <summary>
+    /// The field to order by.
+    /// </summary>
+    public OrderByWorkflowDefinition? OrderBy { get; set; }
+    
+    /// <summary>
+    /// The order direction.
+    /// </summary>
+    public OrderDirection? OrderDirection { get; set; }
 }

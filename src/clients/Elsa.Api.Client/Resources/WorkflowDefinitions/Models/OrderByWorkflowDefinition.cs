@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Api.Models;
+namespace Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 
 /// <summary>
 /// Defines the order by options for workflow definitions.
