@@ -28,6 +28,7 @@ namespace Elsa.Services.Workflows
             var workflowInstance = new WorkflowInstance
             {
                 Id = _idGenerator.Generate(),
+                Name = workflowBlueprint.Name,
                 DefinitionId = workflowBlueprint.Id,
                 TenantId = tenantId ?? workflowBlueprint.TenantId,
                 Version = workflowBlueprint.Version,
