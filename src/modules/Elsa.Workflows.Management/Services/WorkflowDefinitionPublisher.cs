@@ -142,6 +142,7 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
         var draft = definition.ShallowClone();
 
         draft.Version = lastVersion?.Version + 1 ?? 1;
+        draft.CreatedAt = _systemClock.UtcNow;
         draft.Id = _identityGenerator.GenerateId();
         draft.IsLatest = true;
         draft.IsPublished = false;
