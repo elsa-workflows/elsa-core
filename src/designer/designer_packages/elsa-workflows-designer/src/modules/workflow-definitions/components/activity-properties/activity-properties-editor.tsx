@@ -218,7 +218,7 @@ export class ActivityPropertiesEditor {
     const activity: Activity = this.activity;
     const inputElement = e.target as HTMLInputElement;
 
-    activity.customProperties.CanStartWorkflow = inputElement.checked;
+    activity.customProperties.canStartWorkflow = inputElement.checked;
 
     this.updateActivity();
   }
@@ -299,7 +299,7 @@ export class ActivityPropertiesEditor {
     const {activity} = this.renderContext;
     const activityId = activity.id;
     const displayText: string = activity.metadata?.displayText ?? '';
-    const canStartWorkflow: boolean = activity.customProperties?.CanStartWorkflow ?? activity.canStartWorkflow ?? false;
+    const canStartWorkflow: boolean = activity.customProperties?.canStartWorkflow ?? activity?.customProperties?.CanStartWorkflow ?? activity.canStartWorkflow ?? false;
     const key = `${activityId}`;
 
     return <div key={key}>

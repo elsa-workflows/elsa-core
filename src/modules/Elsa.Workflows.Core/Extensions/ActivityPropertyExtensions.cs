@@ -8,9 +8,9 @@ namespace Elsa.Extensions;
 /// </summary>
 public static class ActivityPropertyExtensions
 {
-    private const string CanStartWorkflowPropertyName = "CanStartWorkflow";
-    private const string RunAsynchronouslyPropertyName = "RunAsynchronously";
-    private const string SourcePropertyName = "Source";
+    private static readonly string[] CanStartWorkflowPropertyName = {"canStartWorkflow", "CanStartWorkflow", };
+    private static readonly string[] RunAsynchronouslyPropertyName = {"runAsynchronously", "RunAsynchronously" };
+    private static readonly string[] SourcePropertyName = {"source", "Source"};
 
     /// <summary>
     /// Gets a flag indicating whether this activity can be used for starting a workflow.
@@ -21,7 +21,7 @@ public static class ActivityPropertyExtensions
     /// <summary>
     /// Sets a flag indicating whether this activity can be used for starting a workflow.
     /// </summary>
-    public static void SetCanStartWorkflow(this IActivity activity, bool value) => activity.CustomProperties[CanStartWorkflowPropertyName] = value;
+    public static void SetCanStartWorkflow(this IActivity activity, bool value) => activity.CustomProperties[CanStartWorkflowPropertyName[0]] = value;
 
     /// <summary>
     /// Gets a flag indicating if this activity should execute synchronously or asynchronously.
@@ -35,7 +35,7 @@ public static class ActivityPropertyExtensions
     /// By default, activities with an <see cref="Workflows.Core.Models.ActivityKind"/> of <see cref="Workflows.Core.Models.ActivityKind.Action"/>, <see cref="Workflows.Core.Models.ActivityKind.Task"/> or <see cref="Workflows.Core.Models.ActivityKind.Trigger"/>
     /// will execute synchronously, while activities of the <see cref="Workflows.Core.Models.ActivityKind.Job"/> kind will execute asynchronously.
     /// </summary>
-    public static void SetRunAsynchronously(this IActivity activity, bool value) => activity.CustomProperties[RunAsynchronouslyPropertyName] = value;
+    public static void SetRunAsynchronously(this IActivity activity, bool value) => activity.CustomProperties[RunAsynchronouslyPropertyName[0]] = value;
 
     /// <summary>
     /// Gets the source file and line number where this activity was instantiated, if any.
@@ -45,7 +45,7 @@ public static class ActivityPropertyExtensions
     /// <summary>
     /// Sets the source file and line number where this activity was instantiated, if any.
     /// </summary>
-    public static void SetSource(this IActivity activity, string value) => activity.CustomProperties[SourcePropertyName] = value;
+    public static void SetSource(this IActivity activity, string value) => activity.CustomProperties[SourcePropertyName[0]] = value;
 
     /// <summary>
     /// Sets the source file and line number where this activity was instantiated, if any.

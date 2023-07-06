@@ -12,7 +12,9 @@ public static class DictionaryExtensions
     /// </summary>
     public static T? TryGetValue<T>(this IDictionary<string, object> dictionary, string key, Func<T>? defaultValue = default, JsonSerializerOptions? serializerOptions = default)
     {
-        if (dictionary.TryGetValue(key, out var value) && value is not JsonElement { ValueKind: JsonValueKind.Undefined })
+        var caseInsensitiveDictionary = new Dictionary<string, object>(dictionary, StringComparer.OrdinalIgnoreCase);
+        
+        if (caseInsensitiveDictionary.TryGetValue(key, out var value) && value is not JsonElement { ValueKind: JsonValueKind.Undefined })
         {
             var convertedValue = value.ConvertTo<T>(new ObjectConverterOptions(serializerOptions));
 
@@ -33,7 +35,9 @@ public static class DictionaryExtensions
     /// </summary>
     public static object? TryGetValue(this IDictionary<string, object> dictionary, string key, Func<object>? defaultValue = default)
     {
-        if (dictionary.TryGetValue(key, out var value) && value is not JsonElement { ValueKind: JsonValueKind.Undefined })
+        var caseInsensitiveDictionary = new Dictionary<string, object>(dictionary, StringComparer.OrdinalIgnoreCase);
+        
+        if (caseInsensitiveDictionary.TryGetValue(key, out var value) && value is not JsonElement { ValueKind: JsonValueKind.Undefined })
             return value;
 
         if (defaultValue == null)

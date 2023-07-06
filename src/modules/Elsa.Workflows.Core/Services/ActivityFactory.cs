@@ -16,21 +16,29 @@ public class ActivityFactory : IActivityFactory
         var canStartWorkflow = GetBoolean(context.Element, "canStartWorkflow");
         var runAsynchronously = GetBoolean(context.Element, "runAsynchronously");
         var activity = (IActivity)context.Element.Deserialize(type, context.SerializerOptions)!;
-        
+
         activity.SetCanStartWorkflow(canStartWorkflow);
         activity.SetRunAsynchronously(runAsynchronously);
-        
+
         return activity;
     }
-    
+
     private static bool GetBoolean(JsonElement element, string propertyName)
     {
-        if (element.TryGetProperty("customProperties", out var customPropertyElement))
+        var propertyNames = new[] { propertyName.Camelize(), propertyName.Pascalize() };
+
+        foreach (var name in propertyNames)
         {
-            if(customPropertyElement.TryGetProperty(propertyName.Pascalize(), out var canStartWorkflowElement))
-                return canStartWorkflowElement.GetBoolean();
+            if (element.TryGetProperty("customProperties", out var customPropertyElement))
+            {
+                if (customPropertyElement.TryGetProperty(name, out var canStartWorkflowElement))
+                    return canStartWorkflowElement.GetBoolean();
+            }
+
+            if (element.TryGetProperty(propertyName.Camelize(), out var property) && property.GetBoolean())
+                return true;
         }
-        
-        return element.TryGetProperty(propertyName.Camelize(), out var property) && property.GetBoolean();
+
+        return false;
     }
 }
