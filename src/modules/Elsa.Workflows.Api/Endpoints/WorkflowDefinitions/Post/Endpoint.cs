@@ -83,6 +83,7 @@ internal class Post : ElsaEndpoint<SaveWorkflowDefinitionRequest, WorkflowDefini
         draft!.StringData = stringData;
         draft.MaterializerName = JsonWorkflowMaterializer.MaterializerName;
         draft.Name = model.Name?.Trim();
+        draft.ToolVersion = model.ToolVersion;
         draft.Description = model.Description?.Trim();
         draft.CustomProperties = model.CustomProperties ?? new Dictionary<string, object>();
         draft.Variables = variables;

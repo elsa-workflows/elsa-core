@@ -64,6 +64,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Management
                     b.Property<string>("StringData")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("ToolVersion")
+                        .HasColumnType("TEXT");
+
                     b.Property<bool?>("UsableAsActivity")
                         .HasColumnType("INTEGER");
 

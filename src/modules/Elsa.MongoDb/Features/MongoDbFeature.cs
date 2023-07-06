@@ -6,6 +6,7 @@ using Elsa.Workflows.Core.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson.Serialization;
+using MongoDB.Bson.Serialization.Serializers;
 using MongoDB.Driver;
 using MongoDB.Driver.Core.Extensions.DiagnosticSources;
 
@@ -46,6 +47,7 @@ public class MongoDbFeature : FeatureBase
         BsonSerializer.RegisterSerializer(typeof(object), new PolymorphicSerializer());
         BsonSerializer.RegisterSerializer(typeof(Type), new TypeSerializer());
         BsonSerializer.RegisterSerializer(typeof(Variable), new VariableSerializer());
+        BsonSerializer.RegisterSerializer(typeof(Version), new VersionSerializer());
     }
 
     private static IMongoDatabase CreateDatabase(IServiceProvider sp, string connectionString)

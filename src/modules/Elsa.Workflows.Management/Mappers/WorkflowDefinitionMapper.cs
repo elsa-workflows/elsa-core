@@ -60,12 +60,15 @@ public class WorkflowDefinitionMapper
         var options = source.Options ?? new WorkflowOptions();
 
         // TODO: Remove this in the future when users have migrated workflows to use the new UsableAsActivity options property.
+        
+#pragma warning disable CS0618
         options.UsableAsActivity ??= source.UsableAsActivity ?? false;
+#pragma warning restore CS0618
 
         return new(
             new WorkflowIdentity(source.DefinitionId, source.Version, source.Id),
             new WorkflowPublication(source.IsLatest, source.IsPublished),
-            new WorkflowMetadata(source.Name, source.Description, source.CreatedAt),
+            new WorkflowMetadata(source.Name, source.Description, source.CreatedAt, source.ToolVersion),
             options,
             root,
             variables,
@@ -94,6 +97,7 @@ public class WorkflowDefinitionMapper
             workflowDefinition.Description,
             workflowDefinition.CreatedAt,
             workflowDefinition.Version,
+            workflowDefinition.ToolVersion,
             variables,
             workflowDefinition.Inputs,
             workflowDefinition.Outputs,

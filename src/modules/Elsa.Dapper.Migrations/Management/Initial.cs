@@ -17,6 +17,7 @@ public class Initial : Migration
             .WithColumn("Id").AsString().PrimaryKey()
             .WithColumn("DefinitionId").AsString().NotNullable()
             .WithColumn("Name").AsString().Nullable()
+            .WithColumn("ToolVersion").AsString().Nullable()
             .WithColumn("Description").AsString().Nullable()
             .WithColumn("ProviderName").AsString().Nullable()
             .WithColumn("MaterializerName").AsString().NotNullable()

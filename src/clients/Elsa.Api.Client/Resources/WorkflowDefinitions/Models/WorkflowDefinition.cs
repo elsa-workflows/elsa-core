@@ -24,6 +24,11 @@ public class WorkflowDefinition : VersionedEntity
     public string? Description { get; set; }
 
     /// <summary>
+    /// The version of the tool that created this workflow.
+    /// </summary>
+    public Version? ToolVersion { get; set; }
+
+    /// <summary>
     /// A set of options for the workflow.
     /// </summary>
     public WorkflowOptions Options { get; set; } = new();

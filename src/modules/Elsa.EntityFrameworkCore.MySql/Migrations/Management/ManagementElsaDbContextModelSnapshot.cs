@@ -66,6 +66,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Management
                     b.Property<string>("StringData")
                         .HasColumnType("longtext");
 
+                    b.Property<string>("ToolVersion")
+                        .HasColumnType("longtext");
+
                     b.Property<bool?>("UsableAsActivity")
                         .HasColumnType("tinyint(1)");
 
