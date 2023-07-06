@@ -35,6 +35,9 @@ public abstract class Activity : IActivity, ISignalHandler
 
     /// <inheritdoc />
     public string Id { get; set; } = default!;
+    
+    /// <inheritdoc />
+    public string? Name { get; set; }
 
     /// <inheritdoc />
     public string Type { get; set; }

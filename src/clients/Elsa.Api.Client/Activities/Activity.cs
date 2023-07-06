@@ -3,7 +3,7 @@ using Elsa.Api.Client.Extensions;
 namespace Elsa.Api.Client.Activities;
 
 /// <summary>
-/// Represents an activity in a workflow definition.
+/// Represents an activity.
 /// </summary>
 public class Activity : Dictionary<string, object>
 {
@@ -14,6 +14,15 @@ public class Activity : Dictionary<string, object>
     {
         get => this.TryGetValue<string>("id")!;
         set => this["id"] = value;
+    }
+    
+    /// <summary>
+    /// Gets or sets the name of this activity.
+    /// </summary>
+    public string? Name
+    {
+        get => this.TryGetValue<string>("name")!;
+        set => this["name"] = value!;
     }
 
     /// <summary>

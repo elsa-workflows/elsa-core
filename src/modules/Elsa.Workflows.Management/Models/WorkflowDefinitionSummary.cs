@@ -19,6 +19,7 @@ public class WorkflowDefinitionSummary
         Name = workflowDefinition.Name,
         Description = workflowDefinition.Description,
         Version = workflowDefinition.Version,
+        ToolVersion = workflowDefinition.ToolVersion,
         IsLatest = workflowDefinition.IsLatest,
         IsPublished = workflowDefinition.IsPublished,
         ProviderName = workflowDefinition.ProviderName,
@@ -50,6 +51,11 @@ public class WorkflowDefinitionSummary
     /// The version of the workflow definition.
     /// </summary>
     public int? Version { get; set; }
+    
+    /// <summary>
+    /// The version of the tool that created the workflow definition.
+    /// </summary>
+    public Version? ToolVersion { get; set; }
     
     /// <summary>
     /// Whether this is the latest version of the workflow definition.

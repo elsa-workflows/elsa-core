@@ -14,6 +14,11 @@ public interface IActivity
     string Id { get; set; }
     
     /// <summary>
+    /// An optional name by which the activity can be referenced.
+    /// </summary>
+    string? Name { get; set; }
+    
+    /// <summary>
     /// The logical type name of the activity.
     /// </summary>
     string Type { get; set; }
