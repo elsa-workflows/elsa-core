@@ -38,7 +38,7 @@ public class Timer : EventGenerator
     /// <summary>
     /// The interval at which the timer should execute.
     /// </summary>
-    [Input(Description = "The interval at which the timer should execute.")]
+    [Input(Description = "The interval at which the timer should execute.", DefaultValue = "00:01:00")]
     public Input<TimeSpan> Interval { get; set; } = default!;
 
     /// <inheritdoc />
