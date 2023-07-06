@@ -22,14 +22,23 @@ public interface IWorkflowDefinitionsApi
     Task<ListWorkflowDefinitionsResponse> ListAsync([Query]ListWorkflowDefinitionsRequest request, [Query]VersionOptions? versionOptions = default, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Gets a workflow definition.
+    /// Gets a workflow definition by definition ID.
     /// </summary>
-    /// <param name="definitionId">The ID of the workflow definition to get.</param>
+    /// <param name="definitionId">The definition ID of the workflow definition to get.</param>
     /// <param name="versionOptions">The version options.</param>
     /// <param name="includeCompositeRoot">Whether to include the root activity of composite activities.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    [Get("/workflow-definitions/{definitionId}?versionOptions={versionOptions}&includeCompositeRoot={includeCompositeRoot}")]
-    Task<WorkflowDefinition?> GetAsync(string definitionId, VersionOptions? versionOptions = default, bool includeCompositeRoot = false, CancellationToken cancellationToken = default);
+    [Get("/workflow-definitions/by-definition-id/{definitionId}?versionOptions={versionOptions}&includeCompositeRoot={includeCompositeRoot}")]
+    Task<WorkflowDefinition?> GetByDefinitionIdAsync(string definitionId, VersionOptions? versionOptions = default, bool includeCompositeRoot = false, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Gets a workflow definition by ID.
+    /// </summary>
+    /// <param name="id">The ID of the workflow definition to get.</param>
+    /// <param name="includeCompositeRoot">Whether to include the root activity of composite activities.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    [Get("/workflow-definitions/by-id/{id}?includeCompositeRoot={includeCompositeRoot}")]
+    Task<WorkflowDefinition?> GetByIdAsync(string id, bool includeCompositeRoot = false, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Gets the number of workflow definitions.

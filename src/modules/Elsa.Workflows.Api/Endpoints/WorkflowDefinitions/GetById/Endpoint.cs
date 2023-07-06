@@ -6,17 +6,19 @@ using Elsa.Workflows.Core.Serialization.Converters;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Mappers;
+using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
 
-namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Get;
+namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.GetById;
 
-internal class Get : ElsaEndpoint<Request>
+[PublicAPI]
+internal class GetById : ElsaEndpoint<Request>
 {
     private readonly IWorkflowDefinitionStore _store;
     private readonly IApiSerializer _apiSerializer;
     private readonly WorkflowDefinitionMapper _mapper;
 
-    public Get(IWorkflowDefinitionStore store, IApiSerializer apiSerializer, WorkflowDefinitionMapper mapper)
+    public GetById(IWorkflowDefinitionStore store, IApiSerializer apiSerializer, WorkflowDefinitionMapper mapper)
     {
         _store = store;
         _apiSerializer = apiSerializer;
@@ -25,29 +27,25 @@ internal class Get : ElsaEndpoint<Request>
 
     public override void Configure()
     {
-        Get("/workflow-definitions/{definitionId}");
+        Get("/workflow-definitions/by-id/{id}");
         ConfigurePermissions("read:workflow-definitions");
     }
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
-        var versionOptions = request.VersionOptions != null ? VersionOptions.FromString(request.VersionOptions) : VersionOptions.Latest;
-
         var filter = new WorkflowDefinitionFilter
         {
-            DefinitionId = request.DefinitionId,
-            VersionOptions = versionOptions
+            Id = request.Id
         };
 
-        var order = new WorkflowDefinitionOrder<int>(x => x.Version, OrderDirection.Descending);
-        var definition = (await _store.FindManyAsync(filter, order, cancellationToken: cancellationToken)).FirstOrDefault();
+        var definition = (await _store.FindManyAsync(filter, cancellationToken)).FirstOrDefault();
 
         if (definition == null)
         {
             await SendNotFoundAsync(cancellationToken);
             return;
         }
-        
+
         var model = await _mapper.MapAsync(definition, cancellationToken);
         var serializerOptions = _apiSerializer.CreateOptions();
 

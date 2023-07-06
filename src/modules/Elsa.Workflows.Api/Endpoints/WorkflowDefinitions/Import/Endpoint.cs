@@ -53,7 +53,7 @@ internal class Import : ElsaEndpoint<WorkflowDefinitionModel, WorkflowDefinition
         var updatedModel = await _workflowDefinitionMapper.MapAsync(draft, cancellationToken);
 
         if (isNew)
-            await SendCreatedAtAsync<Get.Get>(new { DefinitionId = definitionId }, updatedModel, cancellation: cancellationToken);
+            await SendCreatedAtAsync<GetByDefinitionId.GetByDefinitionId>(new { DefinitionId = definitionId }, updatedModel, cancellation: cancellationToken);
         else
             await SendOkAsync(updatedModel, cancellationToken);
     }

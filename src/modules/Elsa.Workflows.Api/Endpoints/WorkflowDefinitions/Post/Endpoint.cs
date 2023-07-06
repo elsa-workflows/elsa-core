@@ -95,7 +95,7 @@ internal class Post : ElsaEndpoint<SaveWorkflowDefinitionRequest, WorkflowDefini
         var response = await _workflowDefinitionMapper.MapAsync(draft, cancellationToken);
 
         if (isNew)
-            await SendCreatedAtAsync<Get.Get>(new { definitionId }, response, cancellation: cancellationToken);
+            await SendCreatedAtAsync<GetByDefinitionId.GetByDefinitionId>(new { definitionId }, response, cancellation: cancellationToken);
         else
         {
             await HttpContext.Response.WriteAsJsonAsync(response, serializerOptions, cancellationToken);
