@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel;
 using System.Globalization;
-using Elsa.Api.Client.Models;
+using Elsa.Api.Client.Shared.Models;
 
 namespace Elsa.Api.Client.Converters;
 

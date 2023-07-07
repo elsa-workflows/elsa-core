@@ -1,4 +1,5 @@
 using Elsa.Api.Client.Resources.VariableTypes.Models;
+using Elsa.Api.Client.Resources.VariableTypes.Responses;
 using Refit;
 
 namespace Elsa.Api.Client.Resources.VariableTypes.Contracts;

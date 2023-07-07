@@ -6,62 +6,28 @@ namespace Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 /// <summary>
 /// Represents a serializable workflow definition.
 /// </summary>
-/// <param name="Id"></param>
-/// <param name="DefinitionId"></param>
-/// <param name="Name"></param>
-/// <param name="Description"></param>
-/// <param name="CreatedAt"></param>
-/// <param name="Version"></param>
-/// <param name="Variables"></param>
-/// <param name="Inputs"></param>
-/// <param name="Outputs"></param>
-/// <param name="Outcomes"></param>
-/// <param name="CustomProperties"></param>
-/// <param name="IsReadonly"></param>
-/// <param name="IsLatest"></param>
-/// <param name="IsPublished"></param>
-/// <param name="Options">The type of <c>IWorkflowActivationStrategy</c> to apply when new instances are requested to be created.</param>
-/// <param name="Root"></param>
 [PublicAPI]
-public record WorkflowDefinitionModel(
-    string Id,
-    string DefinitionId,
-    string? Name,
-    string? Description,
-    DateTimeOffset CreatedAt,
-    int Version,
-    Version? ToolVersion,
-    ICollection<VariableDefinition>? Variables,
-    ICollection<InputDefinition>? Inputs,
-    ICollection<OutputDefinition>? Outputs,
-    ICollection<string>? Outcomes,
-    IDictionary<string, object>? CustomProperties,
-    bool IsReadonly,
-    bool IsLatest,
-    bool IsPublished,
-    WorkflowOptions? Options,
-    Activity? Root
-)
+public class WorkflowDefinitionModel
 {
-    /// <inheritdoc />
-    public WorkflowDefinitionModel() : this(
-        default!,
-        default!,
-        default!,
-        default!,
-        default!,
-        default!,
-        default!,
-        default!,
-        default!,
-        default!,
-        default!,
-        default!,
-        default!,
-        default!,
-        default!,
-        default!,
-        default!)
-    {
-    }
+    public string Id { get; set; } = default!;
+    public string DefinitionId { get; set; } = default!;
+    public string? Name { get; set; }
+    public string? Description { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public int Version { get; set; }
+    public Version? ToolVersion { get; set; }
+    public ICollection<VariableDefinition>? Variables { get; set; }
+    public ICollection<InputDefinition>? Inputs { get; set; }
+    public ICollection<OutputDefinition>? Outputs { get; set; }
+    public ICollection<string>? Outcomes { get; set; }
+    public IDictionary<string, object>? CustomProperties { get; set; }
+    public bool IsReadonly { get; set; }
+    public bool IsLatest { get; set; }
+    public bool IsPublished { get; set; }
+
+    /// <summary>The type of <c>IWorkflowActivationStrategy</c> to apply when new instances are requested to be created.</summary>
+    public WorkflowOptions? Options { get; set; }
+
+    /// <summary></summary>
+    public Activity? Root { get; set; }
 }

@@ -1,4 +1,5 @@
 using Elsa.Api.Client.Resources.StorageDrivers.Models;
+using Elsa.Api.Client.Resources.StorageDrivers.Responses;
 using Refit;
 
 namespace Elsa.Api.Client.Resources.StorageDrivers.Contracts;

@@ -36,16 +36,16 @@ internal class List : ElsaEndpoint<Request, Response>
 
     private WorkflowDefinitionFilter CreateFilter(Request request)
     {
-        var versionOptions = request.VersionOptions != null ? VersionOptions.FromString(request.VersionOptions) : default(VersionOptions?);
-        var splitIds = request.DefinitionIds ?? Array.Empty<string>();
+        var versionOptions = string.IsNullOrWhiteSpace(request.VersionOptions) ? default(VersionOptions?) : VersionOptions.FromString(request.VersionOptions);
 
-        if (!string.IsNullOrWhiteSpace(request.SearchTerm)) {
-            return new WorkflowDefinitionFilter { SearchTerm = request.SearchTerm, VersionOptions = versionOptions };
-        }
-
-        return splitIds.Any()
-            ? new WorkflowDefinitionFilter { DefinitionIds = splitIds, VersionOptions = versionOptions }
-            : new WorkflowDefinitionFilter { MaterializerName = request.MaterializerName, VersionOptions = versionOptions };
+        return new WorkflowDefinitionFilter
+        {
+            VersionOptions = versionOptions,
+            SearchTerm = request.SearchTerm?.Trim(),
+            MaterializerName = request.MaterializerName,
+            DefinitionIds = request.DefinitionIds,
+            Ids = request.Ids
+        };
     }
 
     private async Task<Page<WorkflowDefinitionSummary>> FindAsync(Request request, WorkflowDefinitionFilter filter, PageArgs pageArgs, CancellationToken cancellationToken)
@@ -58,24 +58,24 @@ internal class List : ElsaEndpoint<Request, Response>
         {
             default:
             {
-                    var order = new WorkflowDefinitionOrder<DateTimeOffset>
-                    {
-                        KeySelector = p => p.CreatedAt,
-                        Direction = direction
-                    };
-
-                    return await _store.FindSummariesAsync(filter, order, pageArgs, cancellationToken);
-                }
-            case OrderByWorkflowDefinition.Name:
+                var order = new WorkflowDefinitionOrder<DateTimeOffset>
                 {
-                    var order = new WorkflowDefinitionOrder<string>
-                    {
-                        KeySelector = p => p.Name ?? string.Empty,
-                        Direction = direction
-                    };
+                    KeySelector = p => p.CreatedAt,
+                    Direction = direction
+                };
 
-                    return await _store.FindSummariesAsync(filter, order, pageArgs, cancellationToken);
-                }
+                return await _store.FindSummariesAsync(filter, order, pageArgs, cancellationToken);
+            }
+            case OrderByWorkflowDefinition.Name:
+            {
+                var order = new WorkflowDefinitionOrder<string>
+                {
+                    KeySelector = p => p.Name ?? string.Empty,
+                    Direction = direction
+                };
+
+                return await _store.FindSummariesAsync(filter, order, pageArgs, cancellationToken);
+            }
             case OrderByWorkflowDefinition.Version:
             {
                 var order = new WorkflowDefinitionOrder<int>

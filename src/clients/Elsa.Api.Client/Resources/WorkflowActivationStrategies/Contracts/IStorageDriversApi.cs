@@ -1,5 +1,5 @@
-using Elsa.Api.Client.Models;
 using Elsa.Api.Client.Resources.WorkflowActivationStrategies.Models;
+using Elsa.Api.Client.Shared.Models;
 using Refit;
 
 namespace Elsa.Api.Client.Resources.WorkflowActivationStrategies.Contracts;
