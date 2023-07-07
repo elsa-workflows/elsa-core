@@ -15,7 +15,9 @@ public class Request
     public string? CorrelationId { get; set; }
     public int? Version { get; set; }
     public WorkflowStatus? Status { get; set; }
+    public ICollection<string>? Statuses { get; set; }
     public WorkflowSubStatus? SubStatus { get; set; }
+    public ICollection<string>? SubStatuses { get; set; }
     public OrderByWorkflowInstance? OrderBy { get; set; }
     public OrderDirection? OrderDirection { get; set; }
 }

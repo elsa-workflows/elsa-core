@@ -120,6 +120,8 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
         // TODO: filter by DefinitionIDs
         // TODO: filter by DefinitionVersionIDs
         // TODO: filter by CorrelationIDs
+        // TODO: filter by WorkflowStatuses
+        // TODO: filter by WorkflowSubStatuses
         
         if (filter.Version != null) descriptor = descriptor.Match(m => m.Field(f => f.Version).Query(filter.Version.ToString()!));
         if (!string.IsNullOrWhiteSpace(filter.CorrelationId)) descriptor = descriptor.Match(m => m.Field(f => f.CorrelationId).Query(filter.CorrelationId));

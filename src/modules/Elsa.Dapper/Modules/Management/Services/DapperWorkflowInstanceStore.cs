@@ -136,6 +136,8 @@ public class DapperWorkflowInstanceStore : IWorkflowInstanceStore
             .Equals(nameof(WorkflowInstance.Name), filter.Version)
             .Equals(nameof(WorkflowInstance.CorrelationId), filter.CorrelationId)
             .In(nameof(WorkflowInstance.CorrelationId), filter.CorrelationIds)
+            .In(nameof(WorkflowInstance.Status), filter.WorkflowStatuses?.Select(x => x.ToString()))
+            .In(nameof(WorkflowInstance.SubStatus), filter.WorkflowSubStatuses?.Select(x => x.ToString()))
             .AndWorkflowInstanceSearchTerm(filter.SearchTerm);
     }
     

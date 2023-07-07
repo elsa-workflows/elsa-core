@@ -14,7 +14,10 @@ public class ListWorkflowInstancesRequest
     public string? CorrelationId { get; set; }
     public int? Version { get; set; }
     public WorkflowStatus? Status { get; set; }
+    [Query(CollectionFormat.Multi)] public ICollection<WorkflowStatus>? Statuses { get; set; }
     public WorkflowSubStatus? SubStatus { get; set; }
+    [Query(CollectionFormat.Multi)] public ICollection<WorkflowSubStatus>? SubStatuses { get; set; }
+
     public OrderByWorkflowInstance? OrderBy { get; set; }
     public OrderDirection? OrderDirection { get; set; }
 }
