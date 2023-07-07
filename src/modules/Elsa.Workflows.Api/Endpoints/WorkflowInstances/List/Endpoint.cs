@@ -33,6 +33,7 @@ internal class List : ElsaEndpoint<Request, Response>
         {
             SearchTerm = request.SearchTerm,
             DefinitionId = request.DefinitionId,
+            DefinitionIds = request.DefinitionIds,
             Version = request.Version,
             CorrelationId = request.CorrelationId,
             WorkflowStatus = request.Status,
