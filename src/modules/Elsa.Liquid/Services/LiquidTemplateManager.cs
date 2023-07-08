@@ -5,6 +5,7 @@ using Elsa.Liquid.Contracts;
 using Elsa.Liquid.Notifications;
 using Elsa.Liquid.Options;
 using Elsa.Mediator.Contracts;
+using Elsa.Mediator.PublishingStrategies;
 using Fluid;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
@@ -73,7 +74,7 @@ public class LiquidTemplateManager : ILiquidTemplateManager
     private async Task<TemplateContext> CreateTemplateContextAsync(ExpressionExecutionContext expressionExecutionContext, CancellationToken cancellationToken)
     {
         var context = new TemplateContext(expressionExecutionContext, new TemplateOptions());
-        await _eventPublisher.PublishAsync(new RenderingLiquidTemplate(context, expressionExecutionContext), cancellationToken);
+        await _eventPublisher.PublishAsync(new RenderingLiquidTemplate(context, expressionExecutionContext), new SequentialProcessingStrategy(), cancellationToken);
         context.SetValue("ExpressionExecutionContext", expressionExecutionContext);
         return context;
     }

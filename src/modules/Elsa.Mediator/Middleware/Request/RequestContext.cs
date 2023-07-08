@@ -14,5 +14,5 @@ public class RequestContext
     public IRequest Request { get; init; }
     public Type ResponseType { get; init; }
     public CancellationToken CancellationToken { get; init; }
-    public object? Response { get; set; }
+    public ICollection<object> Responses { get; set; } = new List<object>();
 }

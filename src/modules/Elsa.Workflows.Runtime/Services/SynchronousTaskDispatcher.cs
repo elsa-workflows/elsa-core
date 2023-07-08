@@ -1,3 +1,4 @@
+using Elsa.Mediator.PublishingStrategies;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Notifications;
 using IEventPublisher = Elsa.Mediator.Contracts.IEventPublisher;
@@ -17,5 +18,5 @@ public class SynchronousTaskDispatcher : ITaskDispatcher
     public SynchronousTaskDispatcher(IEventPublisher eventPublisher) => _eventPublisher = eventPublisher;
 
     /// <inheritdoc />
-    public async Task DispatchAsync(RunTaskRequest request, CancellationToken cancellationToken = default) => await _eventPublisher.PublishAsync(request, cancellationToken);
+    public async Task DispatchAsync(RunTaskRequest request, CancellationToken cancellationToken = default) => await _eventPublisher.PublishAsync(request, new SequentialProcessingStrategy(), cancellationToken);
 }

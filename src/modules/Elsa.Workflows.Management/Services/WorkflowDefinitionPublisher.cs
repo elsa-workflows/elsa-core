@@ -2,6 +2,7 @@ using Elsa.Common.Contracts;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Mediator.Contracts;
+using Elsa.Mediator.PublishingStrategies;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Management.Contracts;
@@ -78,11 +79,12 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
     /// <inheritdoc />
     public async Task<WorkflowDefinition> PublishAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
     {
-        var response = await _requestSender.RequestAsync(new ValidateWorkflowRequest(definition), cancellationToken);
-        if(response.ValidationErrors.Any())
-            throw new InvalidOperationException($"Cannot publish workflow definition '{definition.DefinitionId}' as it contains the following errors: {string.Join(", ", response.ValidationErrors)}");
+        var responses = await _requestSender.RequestAsync(new ValidateWorkflowRequest(definition), cancellationToken);
+        var validationErrors = responses.SelectMany(r => r.ValidationErrors).ToList();
+        if(validationErrors.Any())
+            throw new InvalidOperationException($"Cannot publish workflow definition '{definition.DefinitionId}' as it contains the following errors: {string.Join(", ", validationErrors)}");
         
-        await _eventPublisher.PublishAsync(new WorkflowDefinitionPublishing(definition), cancellationToken);
+        await _eventPublisher.PublishAsync(new WorkflowDefinitionPublishing(definition), cancellationToken: cancellationToken);
 
         var definitionId = definition.DefinitionId;
 
@@ -102,7 +104,7 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
         definition = Initialize(definition);
         await _workflowDefinitionStore.SaveAsync(definition, cancellationToken);
 
-        await _eventPublisher.PublishAsync(new WorkflowDefinitionPublished(definition), cancellationToken);
+        await _eventPublisher.PublishAsync(new WorkflowDefinitionPublished(definition), new SequentialProcessingStrategy(), cancellationToken);
         return definition;
     }
 
@@ -127,9 +129,9 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
         definition.IsPublished = false;
         definition = Initialize(definition);
 
-        await _eventPublisher.PublishAsync(new WorkflowDefinitionRetracting(definition), cancellationToken);
+        await _eventPublisher.PublishAsync(new WorkflowDefinitionRetracting(definition), cancellationToken: cancellationToken);
         await _workflowDefinitionStore.SaveAsync(definition, cancellationToken);
-        await _eventPublisher.PublishAsync(new WorkflowDefinitionRetracted(definition), cancellationToken);
+        await _eventPublisher.PublishAsync(new WorkflowDefinitionRetracted(definition), new SequentialProcessingStrategy(), cancellationToken);
         return definition;
     }
 
@@ -173,7 +175,7 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
 
         if (lastVersion is null)
         {
-            await _eventPublisher.PublishAsync(new WorkflowDefinitionCreated(definition), cancellationToken);
+            await _eventPublisher.PublishAsync(new WorkflowDefinitionCreated(definition), new SequentialProcessingStrategy(), cancellationToken);
         }
 
         if (lastVersion is { IsPublished: true, IsLatest: true })

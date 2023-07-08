@@ -8,6 +8,7 @@ using Elsa.JavaScript.Extensions;
 using Elsa.JavaScript.Notifications;
 using Elsa.JavaScript.Options;
 using Elsa.Mediator.Contracts;
+using Elsa.Mediator.PublishingStrategies;
 using Elsa.Workflows.Core.Models;
 using Humanizer;
 using Jint;
@@ -88,7 +89,7 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         engine.RegisterType<Guid>();
 
         // Allow listeners invoked by the mediator to configure the engine.
-        await _mediator.PublishAsync(new EvaluatingJavaScript(engine, context), cancellationToken);
+        await _mediator.PublishAsync(new EvaluatingJavaScript(engine, context), new SequentialProcessingStrategy(), cancellationToken);
 
         return engine;
     }

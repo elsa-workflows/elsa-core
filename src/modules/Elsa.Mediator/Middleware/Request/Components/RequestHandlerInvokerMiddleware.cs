@@ -26,20 +26,19 @@ public class RequestHandlerInvokerMiddleware : IRequestMiddleware
         if (!handlers.Any())
             throw new InvalidOperationException($"There is no handler to handle the {requestType.FullName} request");
 
-        if (handlers.Length > 1)
-            throw new InvalidOperationException($"Multiple handlers were found to handle the {requestType.FullName} request");
+        foreach (var handler in handlers)
+        {
+            var handleMethod = handlerType.GetMethod("HandleAsync")!;
+            var cancellationToken = context.CancellationToken;
+            var task = (Task)handleMethod.Invoke(handler, new object?[] { request, cancellationToken })!;
+            await task;
 
-        var handler = handlers.First();
-        var handleMethod = handlerType.GetMethod("HandleAsync")!;
-        var cancellationToken = context.CancellationToken;
-        var task = (Task)handleMethod.Invoke(handler, new object?[] { request, cancellationToken })!;
-        await task;
-
-        // Get result of task.
-        var taskWithReturnType = typeof(Task<>).MakeGenericType(responseType);
-        var resultProperty = taskWithReturnType.GetProperty(nameof(Task<object>.Result))!;
-        context.Response = resultProperty.GetValue(task);
-
+            // Get result of task.
+            var taskWithReturnType = typeof(Task<>).MakeGenericType(responseType);
+            var resultProperty = taskWithReturnType.GetProperty(nameof(Task<object>.Result))!;
+            context.Responses.Add(resultProperty.GetValue(task)!);
+        }
+        
         // Invoke next middleware.
         await _next(context);
     }

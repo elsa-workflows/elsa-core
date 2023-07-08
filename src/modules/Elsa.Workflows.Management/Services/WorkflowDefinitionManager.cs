@@ -1,6 +1,7 @@
 using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
+using Elsa.Mediator.PublishingStrategies;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Contracts;
@@ -44,7 +45,7 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
     {
         var filter = new WorkflowDefinitionFilter { DefinitionId = definitionId };
         var count = await _store.DeleteAsync(filter, cancellationToken);
-        await _eventPublisher.PublishAsync(new WorkflowDefinitionDeleted(definitionId), cancellationToken);
+        await _eventPublisher.PublishAsync(new WorkflowDefinitionDeleted(definitionId), new SequentialProcessingStrategy(), cancellationToken);
         return count;
     }
 
@@ -54,7 +55,7 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
         var ids = definitionIds.ToList();
         var filter = new WorkflowDefinitionFilter { DefinitionIds = ids };
         var count = await _store.DeleteAsync(filter, cancellationToken);
-        await _eventPublisher.PublishAsync(new WorkflowDefinitionsDeleted(ids), cancellationToken);
+        await _eventPublisher.PublishAsync(new WorkflowDefinitionsDeleted(ids), new SequentialProcessingStrategy(), cancellationToken);
         return count;
     }
 
@@ -77,7 +78,7 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
         if (!isDeleted)
             return false;
 
-        await _eventPublisher.PublishAsync(new WorkflowDefinitionVersionDeleted(definitionId, versionToDelete), cancellationToken);
+        await _eventPublisher.PublishAsync(new WorkflowDefinitionVersionDeleted(definitionId, versionToDelete), cancellationToken: cancellationToken);
 
         if (latestVersion.Version != versionToDelete)
             return isDeleted;

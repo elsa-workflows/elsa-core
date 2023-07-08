@@ -25,13 +25,18 @@ public class DefaultMediator : IMediator
         _notificationPipeline = notificationPipeline;
     }
 
-    public async Task<T> RequestAsync<T>(IRequest<T> request, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<T>> RequestAsync<T>(IRequest<T> request, CancellationToken cancellationToken = default)
     {
         var responseType = typeof(T);
         var context = new RequestContext(request, responseType, cancellationToken);
         await _requestPipeline.ExecuteAsync(context);
 
-        return (T)context.Response!;
+        if(context.Responses.All(x => x is T))
+        {
+            return context.Responses.Cast<T>().AsEnumerable();
+        }
+
+        throw new InvalidCastException($"Unable to cast objects in Responses property to type {typeof(T)}");
     }
 
     public async Task SendAsync(ICommand command, CancellationToken cancellationToken = default)
@@ -50,9 +55,9 @@ public class DefaultMediator : IMediator
         return (T)context.Result!;
     }
 
-    public async Task PublishAsync(INotification notification, CancellationToken cancellationToken = default)
+    public async Task PublishAsync(INotification notification, IEventPublishingStrategy? strategy = default, CancellationToken cancellationToken = default)
     {
-        var context = new NotificationContext(notification, cancellationToken);
+        var context = new NotificationContext(notification, strategy, cancellationToken);
         await _notificationPipeline.ExecuteAsync(context);
     }
 }

@@ -1,5 +1,6 @@
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
+using Elsa.Mediator.PublishingStrategies;
 using Elsa.Workflows.Core.Abstractions;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
@@ -165,7 +166,7 @@ public class WorkflowRunner : IWorkflowRunner
         var cancellationToken = workflowExecutionContext.CancellationToken;
 
         // Publish domain event.
-        await _eventPublisher.PublishAsync(new WorkflowExecuting(workflow, workflowExecutionContext), cancellationToken);
+        await _eventPublisher.PublishAsync(new WorkflowExecuting(workflow, workflowExecutionContext), cancellationToken: cancellationToken);
 
         // Transition into the Running state.
         workflowExecutionContext.TransitionTo(WorkflowSubStatus.Executing);
@@ -182,7 +183,7 @@ public class WorkflowRunner : IWorkflowRunner
         var result = workflow.ResultVariable?.Get(workflowExecutionContext.MemoryRegister);
 
         // Publish domain event.
-        await _eventPublisher.PublishAsync(new WorkflowExecuted(workflow, workflowState, workflowExecutionContext), cancellationToken);
+        await _eventPublisher.PublishAsync(new WorkflowExecuted(workflow, workflowState, workflowExecutionContext), new SequentialProcessingStrategy(), cancellationToken);
 
         // Return workflow execution result containing state + bookmarks.
         return new RunWorkflowResult(workflowState, workflowExecutionContext.Workflow, result);
