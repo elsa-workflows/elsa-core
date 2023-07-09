@@ -2,7 +2,6 @@ using System.Collections.ObjectModel;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Memory;
-using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Workflows.Core.Activities;
 

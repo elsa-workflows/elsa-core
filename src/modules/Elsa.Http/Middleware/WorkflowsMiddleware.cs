@@ -3,7 +3,6 @@ using Elsa.Http.Models;
 using Elsa.Http.Options;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Helpers;
-using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Runtime.Contracts;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;

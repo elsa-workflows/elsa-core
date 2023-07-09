@@ -4,7 +4,6 @@ using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.MassTransit.Implementations;
 using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Models;
 
 namespace Elsa.MassTransit.Activities;
 

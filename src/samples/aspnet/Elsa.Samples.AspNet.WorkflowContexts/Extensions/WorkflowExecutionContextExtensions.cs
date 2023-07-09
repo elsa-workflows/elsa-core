@@ -1,7 +1,6 @@
 using Elsa.Extensions;
 using Elsa.Samples.AspNet.WorkflowContexts.Providers;
 using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Samples.AspNet.WorkflowContexts.Extensions;
 

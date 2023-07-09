@@ -1,6 +1,4 @@
 using Elsa.Abstractions;
-using Elsa.Common.Entities;
-using Elsa.Common.Models;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Serialization.Converters;
 using Elsa.Workflows.Management.Contracts;

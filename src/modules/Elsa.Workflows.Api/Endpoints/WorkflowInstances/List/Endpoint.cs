@@ -3,7 +3,6 @@ using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;

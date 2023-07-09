@@ -7,7 +7,7 @@ using Elsa.JavaScript.TypeDefinitions.Contracts;
 using Elsa.JavaScript.TypeDefinitions.Models;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Activities;
 
 namespace Elsa.WorkflowContexts.Scripting.JavaScript;
 

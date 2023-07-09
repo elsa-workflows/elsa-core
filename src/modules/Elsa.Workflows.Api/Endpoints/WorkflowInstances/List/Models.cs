@@ -1,7 +1,6 @@
 using Elsa.Common.Entities;
 using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Models;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.List;

@@ -1,4 +1,5 @@
 using Elsa.Workflows.Core.Abstractions;
+using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.State;
 

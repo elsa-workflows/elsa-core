@@ -3,7 +3,6 @@ using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Models;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Core.Activities;

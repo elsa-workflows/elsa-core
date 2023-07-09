@@ -5,7 +5,6 @@ using Elsa.JavaScript.Notifications;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Memory;
-using Elsa.Workflows.Core.Models;
 using Humanizer;
 using JetBrains.Annotations;
 using Jint;

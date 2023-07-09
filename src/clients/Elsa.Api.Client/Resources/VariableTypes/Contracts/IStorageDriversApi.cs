@@ -1,4 +1,3 @@
-using Elsa.Api.Client.Resources.VariableTypes.Models;
 using Elsa.Api.Client.Resources.VariableTypes.Responses;
 using Refit;
 

@@ -1,7 +1,7 @@
 ﻿using Elsa.Extensions;
 using Elsa.Testing.Shared;
+using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Models;
 using Microsoft.Extensions.DependencyInjection;
 
 // Setup service container.

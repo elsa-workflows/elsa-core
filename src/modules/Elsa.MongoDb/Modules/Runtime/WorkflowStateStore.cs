@@ -1,8 +1,6 @@
 using Elsa.Common.Contracts;
 using Elsa.MongoDb.Common;
 using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Runtime.Contracts;
 using MongoDB.Driver;

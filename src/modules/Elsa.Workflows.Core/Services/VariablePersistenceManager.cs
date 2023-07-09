@@ -2,7 +2,6 @@ using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Memory;
-using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Workflows.Core.Services;
 
