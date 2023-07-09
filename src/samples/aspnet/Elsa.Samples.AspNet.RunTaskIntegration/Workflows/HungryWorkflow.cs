@@ -3,6 +3,7 @@ using Elsa.Http;
 using Elsa.Workflows.Core.Abstractions;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Core.Memory;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Runtime.Activities;
 using Microsoft.AspNetCore.Http;

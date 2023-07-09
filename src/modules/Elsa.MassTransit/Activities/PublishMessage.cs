@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
 using Elsa.MassTransit.Implementations;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 using MassTransit;

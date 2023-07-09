@@ -1,5 +1,7 @@
 using Elsa.Extensions;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Activities;
+using Elsa.Workflows.Core.Memory;
 using Elsa.Workflows.Core.Models;
 
 public class AskDetails : Composite<Person>

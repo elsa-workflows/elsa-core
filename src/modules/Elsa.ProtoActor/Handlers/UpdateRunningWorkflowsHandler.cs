@@ -5,7 +5,7 @@ using Elsa.ProtoActor.Grains;
 using Elsa.ProtoActor.Protos;
 using Elsa.Workflows.Core.Notifications;
 using Proto.Cluster;
-using WorkflowStatus = Elsa.Workflows.Core.Models.WorkflowStatus;
+using WorkflowStatus = Elsa.Workflows.Core.WorkflowStatus;
 
 namespace Elsa.ProtoActor.Handlers;
 

@@ -4,9 +4,11 @@ using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Core.Memory;
+using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
 
-namespace Elsa.Workflows.Core.Models;
+namespace Elsa.Workflows.Core;
 
 /// <summary>
 /// Represents the context of an activity execution.
@@ -73,6 +75,8 @@ public class ActivityExecutionContext : IExecutionContext
     /// A cancellation token to use when invoking asynchronous operations.
     /// </summary>
     public CancellationToken CancellationToken { get; }
+
+    public ActivityStatus Status { get; set; }
     
     /// <inheritdoc />
     public IDictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
@@ -126,23 +130,49 @@ public class ActivityExecutionContext : IExecutionContext
     /// </summary>
     public IDictionary<string, object> ActivityState { get; set; } = new Dictionary<string, object>();
 
+    /// <summary>
+    /// Schedules the specified activity to be executed.
+    /// </summary>
+    /// <param name="activity">The activity to schedule.</param>
+    /// <param name="completionCallback">An optional callback that is invoked when the activity completes.</param>
+    /// <param name="tag">An optional tag that can be used to identify the activity.</param>
     public async ValueTask ScheduleActivityAsync(IActivity? activity, ActivityCompletionCallback? completionCallback = default, object? tag = default)
     {
         var activityNode = activity != null ? WorkflowExecutionContext.FindNodeByActivity(activity) : default;
         await ScheduleActivityAsync(activityNode, completionCallback, tag);
     }
     
+    /// <summary>
+    /// Schedules the specified activity to be executed.
+    /// </summary>
+    /// <param name="activity">The activity to schedule.</param>
+    /// <param name="owner">The activity execution context that owns the activity.</param>
+    /// <param name="completionCallback">An optional callback that is invoked when the activity completes.</param>
+    /// <param name="tag">An optional tag that can be used to identify the activity.</param>
     public async ValueTask ScheduleActivityAsync(IActivity? activity, ActivityExecutionContext owner, ActivityCompletionCallback? completionCallback = default, object? tag = default)
     {
         var activityNode = activity != null ? WorkflowExecutionContext.FindNodeByActivity(activity) : default;
         await ScheduleActivityAsync(activityNode, this, completionCallback, tag);
     }
     
+    /// <summary>
+    /// Schedules the specified activity to be executed.
+    /// </summary>
+    /// <param name="activityNode">The activity node to schedule.</param>
+    /// <param name="completionCallback">An optional callback that is invoked when the activity completes.</param>
+    /// <param name="tag">An optional tag that can be used to identify the activity.</param>
     public async ValueTask ScheduleActivityAsync(ActivityNode? activityNode, ActivityCompletionCallback? completionCallback = default, object? tag = default)
     {
         await ScheduleActivityAsync(activityNode, this, completionCallback, tag);
     }
 
+    /// <summary>
+    /// Schedules the specified activity to be executed.
+    /// </summary>
+    /// <param name="activityNode">The activity node to schedule.</param>
+    /// <param name="owner">The activity execution context that owns the activity.</param>
+    /// <param name="completionCallback">An optional callback that is invoked when the activity completes.</param>
+    /// <param name="tag">An optional tag that can be used to identify the activity.</param>
     public async ValueTask ScheduleActivityAsync(ActivityNode? activityNode, ActivityExecutionContext owner, ActivityCompletionCallback? completionCallback = default, object? tag = default)
     {
         if (activityNode == null)
@@ -157,25 +187,67 @@ public class ActivityExecutionContext : IExecutionContext
         WorkflowExecutionContext.Schedule(activityNode, owner, completionCallback, tag);
     }
 
+    /// <summary>
+    /// Schedules the specified activities to be executed.
+    /// </summary>
+    /// <param name="activities">The activities to schedule.</param>
     public async ValueTask ScheduleActivitiesAsync(params IActivity?[] activities) => await ScheduleActivities(activities);
 
+    /// <summary>
+    /// Schedules the specified activities to be executed.
+    /// </summary>
+    /// <param name="activities">The activities to schedule.</param>
+    /// <param name="completionCallback">An optional callback that is invoked for each activity when it completes.</param>
     public async ValueTask ScheduleActivities(IEnumerable<IActivity?> activities, ActivityCompletionCallback? completionCallback = default)
     {
         foreach (var activity in activities)
             await ScheduleActivityAsync(activity, completionCallback);
     }
 
+    /// <summary>
+    /// Creates a bookmark for each payload.
+    /// </summary>
+    /// <param name="payloads">The payloads to create bookmarks for.</param>
+    /// <param name="callback">An optional callback that is invoked when the bookmark is resumed.</param>
     public void CreateBookmarks(IEnumerable<object> payloads, ExecuteActivityDelegate? callback = default)
     {
         foreach (var payload in payloads)
             CreateBookmark(new BookmarkOptions(payload, callback));
     }
 
+    /// <summary>
+    /// Adds each bookmark to the list of bookmarks.
+    /// </summary>
+    /// <param name="bookmarks">The bookmarks to add.</param>
     public void AddBookmarks(IEnumerable<Bookmark> bookmarks) => _bookmarks.AddRange(bookmarks);
+    
+    /// <summary>
+    /// Adds a bookmark to the list of bookmarks.
+    /// </summary>
+    /// <param name="bookmark">The bookmark to add.</param>
     public void AddBookmark(Bookmark bookmark) => _bookmarks.Add(bookmark);
 
+    /// <summary>
+    /// Creates a bookmark so that this activity can be resumed at a later time.
+    /// </summary>
+    /// <param name="callback">An optional callback that is invoked when the bookmark is resumed.</param>
+    /// <returns>The created bookmark.</returns>
     public Bookmark CreateBookmark(ExecuteActivityDelegate callback) => CreateBookmark(new BookmarkOptions(default, callback));
+    
+    
+    /// <summary>
+    /// Creates a bookmark so that this activity can be resumed at a later time.
+    /// </summary>
+    /// <param name="payload">The payload to associate with the bookmark.</param>
+    /// <param name="callback">An optional callback that is invoked when the bookmark is resumed.</param>
+    /// <returns>The created bookmark.</returns>
     public Bookmark CreateBookmark(object payload, ExecuteActivityDelegate callback) => CreateBookmark(new BookmarkOptions(payload, callback));
+    
+    /// <summary>
+    /// Creates a bookmark so that this activity can be resumed at a later time. 
+    /// </summary>
+    /// <param name="payload">The payload to associate with the bookmark.</param>
+    /// <returns>The created bookmark.</returns>
     public Bookmark CreateBookmark(object payload) => CreateBookmark(new BookmarkOptions(payload));
 
     /// <summary>

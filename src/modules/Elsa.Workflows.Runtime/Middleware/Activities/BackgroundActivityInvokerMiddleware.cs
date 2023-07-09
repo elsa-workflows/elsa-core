@@ -1,4 +1,5 @@
 using Elsa.Extensions;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Middleware.Activities;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Pipelines.ActivityExecution;
@@ -8,7 +9,7 @@ using Elsa.Workflows.Runtime.Models.Bookmarks;
 namespace Elsa.Workflows.Runtime.Middleware.Activities;
 
 /// <summary>
-/// Executes the current activity from a background job if the activity is of kind <see cref="ActivityKind.Job"/> or <see cref="ActivityKind.Task"/>.
+/// Executes the current activity from a background job if the activity is of kind <see cref="ActivityKind.Job"/> or <see cref="Task"/>.
 /// </summary>
 public class BackgroundActivityInvokerMiddleware : DefaultActivityInvokerMiddleware
 {

@@ -5,6 +5,7 @@ using Elsa.Liquid.Helpers;
 using Elsa.Liquid.Notifications;
 using Elsa.Liquid.Options;
 using Elsa.Mediator.Contracts;
+using Elsa.Workflows.Core.Memory;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Options;
 using Fluid;

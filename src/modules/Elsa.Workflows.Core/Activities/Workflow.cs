@@ -3,6 +3,7 @@ using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Core.Memory;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Core.Models;

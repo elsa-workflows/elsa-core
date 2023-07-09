@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Core.Models;
+namespace Elsa.Workflows.Core;
 
 /// <summary>
 /// Represents the kind of an activity, which affects how it is executed.

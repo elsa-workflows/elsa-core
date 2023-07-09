@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Elsa.Workflows.Core.Abstractions;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Core.Memory;
 using Elsa.Workflows.Core.Models;
 
 namespace Elsa.IntegrationTests.Activities;

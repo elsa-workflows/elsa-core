@@ -1,3 +1,4 @@
+using Elsa.Workflows.Core.Memory;
 using Elsa.Workflows.Core.Models;
 
 // ReSharper disable once CheckNamespace

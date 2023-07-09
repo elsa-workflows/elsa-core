@@ -1,4 +1,5 @@
 using Elsa.Dsl.Contracts;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 

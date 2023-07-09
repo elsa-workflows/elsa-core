@@ -12,6 +12,7 @@ using System.Net;
 using System.Net.Mime;
 using System.Text.Json;
 using Elsa.Extensions;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.State;
 
 namespace Elsa.Http.Middleware;

@@ -4,8 +4,9 @@ using Elsa.Extensions;
 using Elsa.Workflows.Core.Behaviors;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Helpers;
+using Elsa.Workflows.Core.Models;
 
-namespace Elsa.Workflows.Core.Models;
+namespace Elsa.Workflows.Core;
 
 /// <summary>
 /// Base class for custom activities.
@@ -58,7 +59,7 @@ public abstract class Activity : IActivity, ISignalHandler
 
     /// <summary>
     /// A flag indicating if this activity should execute synchronously or asynchronously.
-    /// By default, activities with an <see cref="Workflows.Core.Models.ActivityKind"/> of <see cref="Workflows.Core.Models.ActivityKind.Action"/>, <see cref="Workflows.Core.Models.ActivityKind.Task"/> or <see cref="Workflows.Core.Models.ActivityKind.Trigger"/>
+    /// By default, activities with an <see cref="Workflows.Core.Models.ActivityKind"/> of <see cref="Action"/>, <see cref="Task"/> or <see cref="Trigger"/>
     /// will execute synchronously, while activities of the <see cref="Workflows.Core.Models.ActivityKind.Job"/> kind will execute asynchronously.
     /// </summary>
     [JsonIgnore]

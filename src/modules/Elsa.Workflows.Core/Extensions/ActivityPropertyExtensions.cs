@@ -1,3 +1,4 @@
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Contracts;
 
 // ReSharper disable once CheckNamespace
@@ -25,14 +26,14 @@ public static class ActivityPropertyExtensions
 
     /// <summary>
     /// Gets a flag indicating if this activity should execute synchronously or asynchronously.
-    /// By default, activities with an <see cref="Workflows.Core.Models.ActivityKind"/> of <see cref="Workflows.Core.Models.ActivityKind.Action"/>, <see cref="Workflows.Core.Models.ActivityKind.Task"/> or <see cref="Workflows.Core.Models.ActivityKind.Trigger"/>
+    /// By default, activities with an <see cref="Workflows.Core.Models.ActivityKind"/> of <see cref="Action"/>, <see cref="Task"/> or <see cref="Trigger"/>
     /// will execute synchronously, while activities of the <see cref="Workflows.Core.Models.ActivityKind.Job"/> kind will execute asynchronously.
     /// </summary>
     public static bool GetRunAsynchronously(this IActivity activity) => activity.CustomProperties.GetValueOrDefault(RunAsynchronouslyPropertyName, () => false);
 
     /// <summary>
     /// Sets a flag indicating if this activity should execute synchronously or asynchronously.
-    /// By default, activities with an <see cref="Workflows.Core.Models.ActivityKind"/> of <see cref="Workflows.Core.Models.ActivityKind.Action"/>, <see cref="Workflows.Core.Models.ActivityKind.Task"/> or <see cref="Workflows.Core.Models.ActivityKind.Trigger"/>
+    /// By default, activities with an <see cref="Workflows.Core.Models.ActivityKind"/> of <see cref="Action"/>, <see cref="Task"/> or <see cref="Trigger"/>
     /// will execute synchronously, while activities of the <see cref="Workflows.Core.Models.ActivityKind.Job"/> kind will execute asynchronously.
     /// </summary>
     public static void SetRunAsynchronously(this IActivity activity, bool value) => activity.CustomProperties[RunAsynchronouslyPropertyName[0]] = value;

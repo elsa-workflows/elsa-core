@@ -1,6 +1,6 @@
 using Elsa.Workflows.Core.Contracts;
 
-namespace Elsa.Workflows.Core.Models;
+namespace Elsa.Workflows.Core;
 
 /// <summary>
 /// Represents an activity that acts as a workflow trigger.

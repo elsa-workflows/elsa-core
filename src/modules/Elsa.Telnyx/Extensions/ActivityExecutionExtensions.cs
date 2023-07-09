@@ -1,5 +1,6 @@
 using Elsa.Extensions;
 using Elsa.Telnyx.Models;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Telnyx.Extensions;

@@ -1,5 +1,8 @@
-namespace Elsa.Workflows.Core.Models;
+namespace Elsa.Workflows.Core;
 
+/// <summary>
+/// Represents the switch mode.
+/// </summary>
 [Flags]
 public enum TypeKind
 {

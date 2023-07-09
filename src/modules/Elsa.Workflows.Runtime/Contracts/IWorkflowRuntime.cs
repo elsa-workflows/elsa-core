@@ -1,4 +1,5 @@
 using Elsa.Common.Models;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.State;

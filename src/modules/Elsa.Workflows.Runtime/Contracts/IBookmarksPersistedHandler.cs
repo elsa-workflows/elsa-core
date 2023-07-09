@@ -1,3 +1,4 @@
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Workflows.Runtime.Contracts;

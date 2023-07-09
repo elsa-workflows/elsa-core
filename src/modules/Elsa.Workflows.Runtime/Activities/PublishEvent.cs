@@ -5,6 +5,7 @@ using Elsa.Workflows.Runtime.Contracts;
 using JetBrains.Annotations;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
+using Elsa.Workflows.Core;
 
 namespace Elsa.Workflows.Runtime.Activities;
 

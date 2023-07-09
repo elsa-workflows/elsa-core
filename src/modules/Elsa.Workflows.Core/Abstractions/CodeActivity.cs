@@ -3,9 +3,10 @@ using Elsa.Extensions;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Behaviors;
 using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Core.Models;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.Core.Models;
+namespace Elsa.Workflows.Core;
 
 /// <summary>
 /// Base class for custom activities with auto-complete behavior.

@@ -2,6 +2,7 @@ using System.Net.Mime;
 using Elsa.Abstractions;
 using Elsa.Common.Models;
 using Elsa.Http.Contracts;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.State;

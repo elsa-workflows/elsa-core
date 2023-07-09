@@ -2,6 +2,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Elsa.IntegrationTests.Scenarios.ImplicitJoins.Workflows;
 using Elsa.Testing.Shared;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Microsoft.Extensions.DependencyInjection;

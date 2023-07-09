@@ -5,9 +5,11 @@ using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
 using System.Collections.ObjectModel;
+using Elsa.Workflows.Core.Memory;
+using Elsa.Workflows.Core.Models;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.Core.Models;
+namespace Elsa.Workflows.Core;
 
 /// <summary>
 /// A delegate entry that is used by activities to be notified when the activities they scheduled are completed.

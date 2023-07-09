@@ -1,6 +1,7 @@
 using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Core.Models;
 
-namespace Elsa.Workflows.Core.Models;
+namespace Elsa.Workflows.Core;
 
 public abstract class Behavior : IBehavior
 {

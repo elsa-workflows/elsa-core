@@ -10,7 +10,7 @@ using Proto;
 using Proto.Cluster;
 using Proto.Persistence;
 using Exception = System.Exception;
-using WorkflowStatus = Elsa.Workflows.Core.Models.WorkflowStatus;
+using WorkflowStatus = Elsa.Workflows.Core.WorkflowStatus;
 using ProtoBookmark = Elsa.ProtoActor.Protos.Bookmark;
 
 namespace Elsa.ProtoActor.Grains;

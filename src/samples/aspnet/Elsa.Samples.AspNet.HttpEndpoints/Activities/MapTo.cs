@@ -1,5 +1,6 @@
 using AutoMapper;
 using Elsa.Extensions;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Samples.AspNet.HttpEndpoints.Activities;

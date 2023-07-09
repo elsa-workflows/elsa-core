@@ -7,6 +7,7 @@ using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Helpers;
+using Elsa.Workflows.Core.Memory;
 using Elsa.Workflows.Core.Models;
 using Humanizer;
 

@@ -1,7 +1,8 @@
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Core.Models;
 
-namespace Elsa.Workflows.Core.Models;
+namespace Elsa.Workflows.Core;
 
 public class WorkflowIndexingContext
 {

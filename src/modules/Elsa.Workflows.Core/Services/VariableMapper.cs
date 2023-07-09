@@ -3,6 +3,7 @@ using Elsa.Expressions.Extensions;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Services;
 using Elsa.Extensions;
+using Elsa.Workflows.Core.Memory;
 using Elsa.Workflows.Core.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
