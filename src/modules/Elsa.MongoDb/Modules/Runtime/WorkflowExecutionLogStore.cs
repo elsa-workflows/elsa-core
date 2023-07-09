@@ -61,12 +61,12 @@ public class MongoWorkflowExecutionLogStore : IWorkflowExecutionLogStore
         return new Page<WorkflowExecutionLogRecord>(results, count);
     }
 
-    private IMongoQueryable<WorkflowExecutionLogRecord> Filter(IMongoQueryable<WorkflowExecutionLogRecord> queryable, WorkflowExecutionLogRecordFilter filter) => 
+    private IMongoQueryable<WorkflowExecutionLogRecord> Filter(IMongoQueryable<WorkflowExecutionLogRecord> queryable, WorkflowExecutionLogRecordFilter filter) =>
         (filter.Apply(queryable) as IMongoQueryable<WorkflowExecutionLogRecord>)!;
-    
-    private IMongoQueryable<WorkflowExecutionLogRecord> Order<TOrderBy>(IMongoQueryable<WorkflowExecutionLogRecord> queryable, WorkflowExecutionLogRecordOrder<TOrderBy> order) => 
+
+    private IMongoQueryable<WorkflowExecutionLogRecord> Order<TOrderBy>(IMongoQueryable<WorkflowExecutionLogRecord> queryable, WorkflowExecutionLogRecordOrder<TOrderBy> order) =>
         (queryable.OrderBy(order) as IMongoQueryable<WorkflowExecutionLogRecord>)!;
 
-    private IMongoQueryable<WorkflowExecutionLogRecord> Paginate(IMongoQueryable<WorkflowExecutionLogRecord> queryable, PageArgs pageArgs) => 
+    private IMongoQueryable<WorkflowExecutionLogRecord> Paginate(IMongoQueryable<WorkflowExecutionLogRecord> queryable, PageArgs pageArgs) =>
         (queryable.Paginate(pageArgs) as IMongoQueryable<WorkflowExecutionLogRecord>)!;
 }

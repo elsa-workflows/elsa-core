@@ -34,6 +34,7 @@ public class Initial : Migration
             .Create
             .Table("WorkflowExecutionLogRecords")
             .WithColumn("Id").AsString().PrimaryKey()
+            .WithColumn("Sequence").AsInt32().NotNullable()
             .WithColumn("WorkflowDefinitionId").AsString().NotNullable()
             .WithColumn("WorkflowInstanceId").AsString().NotNullable()
             .WithColumn("WorkflowVersion").AsInt32().NotNullable()
@@ -66,7 +67,8 @@ public class Initial : Migration
             .WithColumn("Source").AsString().Nullable()
             .WithColumn("SerializedActivityState").AsString().Nullable()
             .WithColumn("SerializedPayload").AsString().Nullable()
-            .WithColumn("Timestamp").AsDateTime2().NotNullable();
+            .WithColumn("Timestamp").AsDateTime2().NotNullable()
+            .WithColumn("Sequence").AsInt64().NotNullable();
 
         Create
             .Table("WorkflowStates")
@@ -76,6 +78,7 @@ public class Initial : Migration
             .WithColumn("CorrelationId").AsString().Nullable()
             .WithColumn("Status").AsString().NotNullable()
             .WithColumn("SubStatus").AsString().NotNullable()
+            .WithColumn("ExecutionLogSequence").AsInt64().NotNullable()
             .WithColumn("Props").AsString().NotNullable()
             ;
     }

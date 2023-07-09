@@ -7,7 +7,7 @@ namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.Journal.List;
 /// <summary>
 /// Represents a request for a page of workflow execution log records.
 /// </summary>
-public class Request
+internal class Request
 {
     /// <summary>
     /// The ID of the workflow instance to get the execution log for.
@@ -25,7 +25,7 @@ public class Request
     public int? PageSize { get; set; }
 }
 
-public class Response
+internal class Response
 {
     public Response(ICollection<ExecutionLogRecord> items, long totalCount)
     {
@@ -37,7 +37,7 @@ public class Response
     public long TotalCount { get; }
 }
 
-public record ExecutionLogRecord(
+internal record ExecutionLogRecord(
     string Id,
     string ActivityInstanceId,
     string? ParentActivityInstanceId,
@@ -45,6 +45,7 @@ public record ExecutionLogRecord(
     string ActivityType,
     string NodeId,
     DateTimeOffset Timestamp,
+    long Sequence,
     string? EventName,
     string? Message,
     string? Source,

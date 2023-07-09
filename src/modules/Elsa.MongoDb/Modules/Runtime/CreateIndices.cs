@@ -72,7 +72,9 @@ internal class CreateIndices : IHostedService
                     new List<CreateIndexModel<WorkflowExecutionLogRecord>>
                     {
                         new(indexBuilder.Ascending(x => x.WorkflowDefinitionId)),
+                        new(indexBuilder.Ascending(x => x.Sequence)),
                         new(indexBuilder.Ascending(x => x.Timestamp)),
+                        new(indexBuilder.Ascending(x => x.Timestamp).Ascending(x => x.Sequence)),
                         new(indexBuilder.Ascending(x => x.ActivityInstanceId)),
                         new(indexBuilder.Ascending(x => x.ParentActivityInstanceId)),
                         new(indexBuilder.Ascending(x => x.ActivityId)),

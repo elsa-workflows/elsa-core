@@ -54,6 +54,11 @@ public class WorkflowState : Entity
     public ICollection<ActivityExecutionContextState> ActivityExecutionContexts { get; set; } = new List<ActivityExecutionContextState>();
     
     /// <summary>
+    /// The current execution log sequence number.
+    /// </summary>
+    public long ExecutionLogSequence { get; set; }
+    
+    /// <summary>
     /// A dictionary of outputs produced by the workflow.
     /// </summary>
     public IDictionary<string, object> Output { get; set; } = new Dictionary<string, object>();

@@ -40,6 +40,7 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     ActivityType = table.Column<string>(type: "TEXT", nullable: false),
                     NodeId = table.Column<string>(type: "TEXT", nullable: false),
                     Timestamp = table.Column<string>(type: "TEXT", nullable: false),
+                    Sequence = table.Column<long>(type: "INTEGER", nullable: false),
                     EventName = table.Column<string>(type: "TEXT", nullable: true),
                     Message = table.Column<string>(type: "TEXT", nullable: true),
                     Source = table.Column<string>(type: "TEXT", nullable: true),
@@ -61,6 +62,7 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     CorrelationId = table.Column<string>(type: "TEXT", nullable: true),
                     Status = table.Column<string>(type: "TEXT", nullable: false),
                     SubStatus = table.Column<string>(type: "TEXT", nullable: false),
+                    ExecutionLogSequence = table.Column<long>(type: "INTEGER", nullable: false),
                     CreatedAt = table.Column<string>(type: "TEXT", nullable: false),
                     UpdatedAt = table.Column<string>(type: "TEXT", nullable: false),
                     Data = table.Column<string>(type: "TEXT", nullable: true)
@@ -137,9 +139,19 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                 column: "ParentActivityInstanceId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_WorkflowExecutionLogRecord_Sequence",
+                table: "WorkflowExecutionLogRecords",
+                column: "Sequence");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_WorkflowExecutionLogRecord_Timestamp",
                 table: "WorkflowExecutionLogRecords",
                 column: "Timestamp");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowExecutionLogRecord_Timestamp_Sequence",
+                table: "WorkflowExecutionLogRecords",
+                columns: new[] { "Timestamp", "Sequence" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowExecutionLogRecord_WorkflowDefinitionId",

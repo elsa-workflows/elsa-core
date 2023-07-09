@@ -198,7 +198,12 @@ public class WorkflowExecutionContext : IExecutionContext
     }
 
     /// <summary>
-    /// A volatile collection of executed activity instance IDs. This collection is reset when workflow execution starts.
+    /// The last execution log sequence number. This number is incremented every time a new entry is added to the execution log and is persisted alongside the workflow instance and restored when the workflow is resumed.
+    /// </summary>
+    public long ExecutionLogSequence { get; set; }
+
+    /// <summary>
+    /// A collection of execution log entries. This collection is flushed when the workflow execution context ends.
     /// </summary>
     public ICollection<WorkflowExecutionLogEntry> ExecutionLog { get; } = new List<WorkflowExecutionLogEntry>();
 

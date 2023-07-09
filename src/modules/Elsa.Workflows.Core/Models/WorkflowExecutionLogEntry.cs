@@ -11,6 +11,7 @@ public record WorkflowExecutionLogEntry(
     string NodeId,
     IDictionary<string, object>? ActivityState,
     DateTimeOffset Timestamp,
+    long Sequence,
     string? EventName,
     string? Message,
     string? Source,

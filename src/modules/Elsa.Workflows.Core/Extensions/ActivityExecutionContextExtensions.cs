@@ -99,6 +99,7 @@ public static class ActivityExecutionContextExtensions
             context.NodeId,
             activityState,
             now,
+            workflowExecutionContext.ExecutionLogSequence++,
             eventName,
             message,
             source ?? activity.GetSource(),

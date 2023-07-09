@@ -53,6 +53,11 @@ public class WorkflowExecutionLogRecord : Entity
     public DateTimeOffset Timestamp { get; set; }
     
     /// <summary>
+    /// A local sequence number of the log entry within a batch of log entries. This is used to order log entries whose timestamps are (close to) identical.
+    /// </summary>
+    public long Sequence { get; set; }
+    
+    /// <summary>
     /// The name of the event.
     /// </summary>
     public string? EventName { get; set; }
