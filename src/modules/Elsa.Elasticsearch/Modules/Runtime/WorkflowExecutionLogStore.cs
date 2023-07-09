@@ -3,6 +3,7 @@ using Elastic.Clients.Elasticsearch.QueryDsl;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Elasticsearch.Common;
+using Elsa.Elasticsearch.Shared.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
@@ -64,11 +65,21 @@ public class ElasticWorkflowExecutionLogStore : IWorkflowExecutionLogStore
 
     private static SearchRequestDescriptor<WorkflowExecutionLogRecord> Sort<TProp>(SearchRequestDescriptor<WorkflowExecutionLogRecord> descriptor, WorkflowExecutionLogRecordOrder<TProp> order)
     {
-        var sortDescriptor = new SortOptionsDescriptor<WorkflowExecutionLogRecord>();
         var propName = order.KeySelector.GetProperty()!.Name;
-        var sortOrder = order.Direction == OrderDirection.Ascending ? SortOrder.Asc : SortOrder.Desc;
-        sortDescriptor.Field(propName, f => f.Order(sortOrder));
-
+        var orderField = new OrderField(propName, order.Direction);
+        return Sort(descriptor, orderField);
+    }
+    
+    private static SearchRequestDescriptor<WorkflowExecutionLogRecord> Sort(SearchRequestDescriptor<WorkflowExecutionLogRecord> descriptor, params OrderField[] orderFields)
+    {
+        var sortDescriptor = new SortOptionsDescriptor<WorkflowExecutionLogRecord>();
+        
+        foreach (var orderField in orderFields)
+        {
+            var sortOrder = orderField.Direction == OrderDirection.Ascending ? SortOrder.Asc : SortOrder.Desc;
+            sortDescriptor.Field(orderField.Field, f => f.Order(sortOrder));    
+        }
+        
         descriptor.Sort(sortDescriptor);
         return descriptor;
     }

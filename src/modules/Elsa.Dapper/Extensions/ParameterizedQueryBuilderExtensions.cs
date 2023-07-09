@@ -107,7 +107,7 @@ public static class ParameterizedQueryBuilderExtensions
 
         return query;
     }
-    
+
     /// <summary>
     /// Appends a negating AND clause to the query if the value is not null.
     /// </summary>
@@ -228,6 +228,21 @@ public static class ParameterizedQueryBuilderExtensions
     {
         var directionString = direction == OrderDirection.Ascending ? "asc" : "desc";
         query.Sql.AppendLine($"order by {field} {directionString}");
+        return query;
+    }
+
+    /// <summary>
+    /// Appends an ORDER BY clause to the query.
+    /// </summary>
+    /// <param name="query">The query.</param>
+    /// <param name="orderFields">The fields by which to order.</param>
+    public static ParameterizedQuery OrderBy(this ParameterizedQuery query, params OrderField[] orderFields)
+    {
+        if (!orderFields.Any())
+            return query;
+        
+        var clauses = string.Join(",", orderFields.Select(x => $"{x.Field} {(x.Direction == OrderDirection.Ascending ? "asc" : "desc")}"));
+        query.Sql.AppendLine($"order by {clauses}");
         return query;
     }
 

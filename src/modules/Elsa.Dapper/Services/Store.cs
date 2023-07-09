@@ -84,6 +84,19 @@ public class Store<T> where T : notnull
     /// </summary>
     /// <param name="filter">The conditions to apply to the query.</param>
     /// <param name="pageArgs">The page arguments.</param>
+    /// <param name="orderFields">The fields by which to order the results.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A page of records.</returns>
+    public async Task<Page<T>> FindManyAsync(Action<ParameterizedQuery> filter, PageArgs pageArgs, IEnumerable<OrderField> orderFields, CancellationToken cancellationToken = default)
+    {
+        return await FindManyAsync<T>(filter, pageArgs, orderFields, cancellationToken);
+    }
+
+    /// <summary>
+    /// Returns a page of records in the specified shape.
+    /// </summary>
+    /// <param name="filter">The conditions to apply to the query.</param>
+    /// <param name="pageArgs">The page arguments.</param>
     /// <param name="orderKey">The order key selector.</param>
     /// <param name="orderDirection">The order direction.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
@@ -91,11 +104,25 @@ public class Store<T> where T : notnull
     /// <returns>A page of records.</returns>
     public async Task<Page<TShape>> FindManyAsync<TShape>(Action<ParameterizedQuery> filter, PageArgs pageArgs, string orderKey, OrderDirection orderDirection, CancellationToken cancellationToken = default)
     {
+        return await FindManyAsync<TShape>(filter, pageArgs, new[] { new OrderField(orderKey, orderDirection) }, cancellationToken);
+    }
+
+    /// <summary>
+    /// Returns a page of records in the specified shape.
+    /// </summary>
+    /// <param name="filter">The conditions to apply to the query.</param>
+    /// <param name="pageArgs">The page arguments.</param>
+    /// <param name="orderFields">The fields by which to order the results.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <typeparam name="TShape">The shape type.</typeparam>
+    /// <returns>A page of records.</returns>
+    public async Task<Page<TShape>> FindManyAsync<TShape>(Action<ParameterizedQuery> filter, PageArgs pageArgs, IEnumerable<OrderField> orderFields, CancellationToken cancellationToken = default)
+    {
         using var connection = _dbConnectionProvider.GetConnection();
 
         var query = _dbConnectionProvider.CreateQuery().From(TableName);
         filter(query);
-        query = query.OrderBy(orderKey, orderDirection).Page(pageArgs);
+        query = query.OrderBy(orderFields.ToArray()).Page(pageArgs);
 
         var countQuery = _dbConnectionProvider.CreateQuery().Count(TableName);
         filter(countQuery);
