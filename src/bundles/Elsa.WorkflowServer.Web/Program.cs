@@ -1,16 +1,11 @@
 using Elsa;
 using Elsa.EntityFrameworkCore.Modules.Identity;
-using Elsa.EntityFrameworkCore.Modules.Labels;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using Elsa.Http.Handlers;
 using Elsa.JavaScript.Options;
 using Elsa.MongoDb.Extensions;
-using Elsa.MongoDb.Modules.Identity;
-using Elsa.MongoDb.Modules.Labels;
-using Elsa.MongoDb.Modules.Management;
-using Elsa.MongoDb.Modules.Runtime;
 using Elsa.WorkflowServer.Web;
 
 EndpointSecurityOptions.DisableSecurity();
@@ -18,7 +13,6 @@ EndpointSecurityOptions.DisableSecurity();
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 var configuration = builder.Configuration;
-var sqliteConnectionString = configuration.GetConnectionString("Sqlite")!;
 var identitySection = configuration.GetSection("Identity");
 var identityTokenSection = identitySection.GetSection("Tokens");
 

@@ -93,7 +93,7 @@ public static class DependencyInjectionExtensions
         serializerOptions.Converters.Add(new VersionOptionsJsonConverter());
         serializerOptions.Converters.Add(new ActivityJsonConverterFactory(serviceProvider));
         serializerOptions.Converters.Add(new ExpressionJsonConverterFactory());
-        
+
         var settings = new RefitSettings
         {
             ContentSerializer = new SystemTextJsonContentSerializer(serializerOptions)
