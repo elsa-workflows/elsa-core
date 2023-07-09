@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Core.Models;
+namespace Elsa.Workflows.Core;
 
 /// <summary>
 /// Represents the status of an activity.
@@ -14,4 +14,14 @@ public enum ActivityStatus
     /// The activity is in the Completed state.
     /// </summary>
     Completed,
+    
+    /// <summary>
+    /// The activity is in the Canceled state.
+    /// </summary>
+    Canceled,
+    
+    /// <summary>
+    /// The activity is in the Faulted state.
+    /// </summary>
+    Faulted
 }

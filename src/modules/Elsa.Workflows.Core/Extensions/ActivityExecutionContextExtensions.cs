@@ -299,6 +299,7 @@ public static class ActivityExecutionContextExtensions
     public static async ValueTask SendSignalAsync(this ActivityExecutionContext context, object signal)
     {
         var ancestorContexts = new[] { context }.Concat(context.GetAncestors());
+        var workflowExecutionContext = context.WorkflowExecutionContext;
 
         foreach (var ancestorContext in ancestorContexts)
         {
@@ -306,8 +307,11 @@ public static class ActivityExecutionContextExtensions
 
             if (ancestorContext.Activity is not ISignalHandler handler)
                 continue;
-
-            await handler.HandleSignalAsync(signal, signalContext);
+            
+            var workItem = new ActivityWorkItem(ancestorContext.NodeId, async () => await handler.HandleSignalAsync(signal, signalContext));
+            workflowExecutionContext.Scheduler.Schedule(workItem);
+            
+            //await handler.HandleSignalAsync(signal, signalContext);
 
             if (signalContext.StopPropagationRequested)
                 return;
@@ -319,6 +323,12 @@ public static class ActivityExecutionContextExtensions
     /// </summary>
     public static async ValueTask CompleteActivityAsync(this ActivityExecutionContext context, object? result = default)
     {
+        // Mark the activity as complete.
+        context.Status = ActivityStatus.Completed;
+        
+        // Add an execution log entry.
+        context.AddExecutionLogEntry("Completed", payload: context.JournalData, includeActivityState: true);
+        
         // Send a signal.
         await context.SendSignalAsync(new ActivityCompleted(result));
 
@@ -342,8 +352,13 @@ public static class ActivityExecutionContextExtensions
     public static async Task CancelActivityAsync(this ActivityExecutionContext context)
     {
         var publisher = context.GetRequiredService<IEventPublisher>();
+        context.Status = ActivityStatus.Canceled;
         context.ClearBookmarks();
         context.WorkflowExecutionContext.Bookmarks.RemoveWhere(x => x.ActivityNodeId == context.NodeId);
+        
+        // Add an execution log entry.
+        context.AddExecutionLogEntry("Canceled", payload: context.JournalData, includeActivityState: true);
+        
         await context.SendSignalAsync(new CancelSignal());
         await publisher.PublishAsync(new ActivityCancelled(context));
     }

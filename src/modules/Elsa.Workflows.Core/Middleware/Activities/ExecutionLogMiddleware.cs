@@ -40,10 +40,15 @@ public class ExecutionLogMiddleware : IActivityExecutionMiddleware
         {
             await _next(context);
 
-            context.AddExecutionLogEntry(IsActivityBookmarked(context) ? "Suspended" : "Completed", payload: context.JournalData, includeActivityState: true);
+            if (context.Status == ActivityStatus.Running)
+            {
+                if (IsActivityBookmarked(context))
+                    context.AddExecutionLogEntry("Suspended", payload: context.JournalData, includeActivityState: true);
+            }
         }
         catch (Exception exception)
         {
+            context.Status = ActivityStatus.Faulted;
             context.AddExecutionLogEntry("Faulted",
                 includeActivityState: true,
                 payload: new

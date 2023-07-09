@@ -105,7 +105,8 @@ public class WorkflowExecutionContextMapper : IWorkflowExecutionContextMapper
                 ScheduledActivityNodeId = activityExecutionContext.NodeId,
                 OwnerActivityNodeId = activityExecutionContext.ParentActivityExecutionContext?.NodeId,
                 Properties = activityExecutionContext.Properties,
-                ActivityState = activityExecutionContext.ActivityState
+                ActivityState = activityExecutionContext.ActivityState,
+                Status = activityExecutionContext.Status,
             };
             return activityExecutionContextState;
         }
@@ -123,6 +124,7 @@ public class WorkflowExecutionContextMapper : IWorkflowExecutionContextMapper
             activityExecutionContext.Id = activityExecutionContextState.Id;
             activityExecutionContext.Properties = properties;
             activityExecutionContext.ActivityState = activityExecutionContextState.ActivityState ?? new Dictionary<string, object>();
+            activityExecutionContext.Status = activityExecutionContextState.Status;
 
             return activityExecutionContext;
         }

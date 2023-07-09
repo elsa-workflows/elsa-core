@@ -76,6 +76,9 @@ public class ActivityExecutionContext : IExecutionContext
     /// </summary>
     public CancellationToken CancellationToken { get; }
 
+    /// <summary>
+    /// The current status of the activity.
+    /// </summary>
     public ActivityStatus Status { get; set; }
     
     /// <inheritdoc />
@@ -123,8 +126,6 @@ public class ActivityExecutionContext : IExecutionContext
     // ReSharper disable once CollectionNeverQueried.Global
     public IDictionary<string, object?> JournalData { get; } = new Dictionary<string, object?>();
 
-    public ResumedBookmarkContext? ResumedBookmarkContext => WorkflowExecutionContext.ResumedBookmarkContext;
-    
     /// <summary>
     /// Stores the evaluated inputs for the current activity.
     /// </summary>
@@ -233,7 +234,6 @@ public class ActivityExecutionContext : IExecutionContext
     /// <param name="callback">An optional callback that is invoked when the bookmark is resumed.</param>
     /// <returns>The created bookmark.</returns>
     public Bookmark CreateBookmark(ExecuteActivityDelegate callback) => CreateBookmark(new BookmarkOptions(default, callback));
-    
     
     /// <summary>
     /// Creates a bookmark so that this activity can be resumed at a later time.
