@@ -29,7 +29,7 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
     /// <inheritdoc />
     public async Task<WorkflowInstance?> FindAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
-        var result = await _store.SearchAsync(d => Filter(d, filter), new PageArgs(0, 1), cancellationToken);
+        var result = await _store.SearchAsync(d => Filter(d, filter), PageArgs.FromRange(0, 1), cancellationToken);
         return result.Items.FirstOrDefault();
     }
 

@@ -40,14 +40,14 @@ public class ElasticWorkflowExecutionLogStore : IWorkflowExecutionLogStore
     /// <inheritdoc />
     public async Task<WorkflowExecutionLogRecord?> FindAsync(WorkflowExecutionLogRecordFilter filter, CancellationToken cancellationToken = default)
     {
-        var result = await _store.SearchAsync(d => Filter(d, filter), new PageArgs(0, 1), cancellationToken);
+        var result = await _store.SearchAsync(d => Filter(d, filter), PageArgs.FromRange(0, 1), cancellationToken);
         return result.Items.FirstOrDefault();
     }
 
     /// <inheritdoc />
     public async Task<WorkflowExecutionLogRecord?> FindAsync<TOrderBy>(WorkflowExecutionLogRecordFilter filter, WorkflowExecutionLogRecordOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
-        var result = await _store.SearchAsync(d => Sort(Filter(d, filter), order), new PageArgs(0, 1), cancellationToken);
+        var result = await _store.SearchAsync(d => Sort(Filter(d, filter), order), PageArgs.FromRange(0, 1), cancellationToken);
         return result.Items.FirstOrDefault();
     }
 

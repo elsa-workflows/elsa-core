@@ -27,7 +27,7 @@ internal class List : ElsaEndpoint<Request, Response>
 
     public override async Task<Response> ExecuteAsync(Request request, CancellationToken cancellationToken)
     {
-        var pageArgs = new PageArgs(request.Page, request.PageSize);
+        var pageArgs = PageArgs.FromPage(request.Page, request.PageSize);
         var filter = CreateFilter(request);
 
         var summaries = await FindAsync(request, filter, pageArgs, cancellationToken);

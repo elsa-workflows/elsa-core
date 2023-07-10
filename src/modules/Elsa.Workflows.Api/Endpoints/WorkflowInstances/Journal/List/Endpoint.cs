@@ -30,7 +30,7 @@ internal class Get : ElsaEndpoint<Request, Response>
     /// <inheritdoc />
     public override async Task<Response> ExecuteAsync(Request request, CancellationToken cancellationToken)
     {
-        var pageArgs = new PageArgs(request.Page, request.PageSize);
+        var pageArgs = PageArgs.From(request.Page, request.PageSize, request.Skip, request.Take);
         var filter = new WorkflowExecutionLogRecordFilter { WorkflowInstanceId = request.WorkflowInstanceId };
         var order = new WorkflowExecutionLogRecordOrder<long>(x => x.Sequence, OrderDirection.Ascending);
         var pageOfRecords = await _store.FindManyAsync(filter, pageArgs, order, cancellationToken);

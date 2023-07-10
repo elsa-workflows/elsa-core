@@ -23,6 +23,16 @@ internal class Request
     /// The size of the page to get.
     /// </summary>
     public int? PageSize { get; set; }
+
+    /// <summary>
+    /// The number of records to skip.
+    /// </summary>
+    public int? Skip { get; set; }
+    
+    /// <summary>
+    /// The number of records to take.
+    /// </summary>
+    public int? Take { get; set; }
 }
 
 internal class Response

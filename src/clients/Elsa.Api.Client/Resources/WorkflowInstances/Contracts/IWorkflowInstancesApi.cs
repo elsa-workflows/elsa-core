@@ -28,11 +28,11 @@ public interface IWorkflowInstancesApi
     /// Returns a workflow instance.
     /// </summary>
     /// <param name="workflowInstanceId">The ID of the workflow instance for which to return the journal.</param>
-    /// <param name="page">The page number.</param>
-    /// <param name="pageSize">The page size.</param>
+    /// <param name="skip">The number of records to skip.</param>
+    /// <param name="take">The number of records to return.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     [Get("/workflow-instances/{workflowInstanceId}/journal")]
-    Task<PagedListResponse<ExecutionLogRecord>> GetJournalAsync(string workflowInstanceId, int? page = default, int? pageSize = default, CancellationToken cancellationToken = default);
+    Task<PagedListResponse<ExecutionLogRecord>> GetJournalAsync(string workflowInstanceId, int? skip = default, int? take = default, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Deletes a workflow instance.

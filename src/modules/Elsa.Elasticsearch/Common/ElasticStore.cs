@@ -30,7 +30,7 @@ public class ElasticStore<T> where T : class
     /// </summary>
     public async Task<IEnumerable<T>> SearchAsync(Action<SearchRequestDescriptor<T>> search, CancellationToken cancellationToken = default)
     {
-        var page = new PageArgs(0, 1000);
+        var page = PageArgs.FromPage(0, 1000);
         var collectedItems = new List<T>();
         
         while(true)
