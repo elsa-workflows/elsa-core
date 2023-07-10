@@ -16,5 +16,6 @@ public class WorkflowDefinitionSearchTermSpecification : Specification<WorkflowD
     public override Expression<Func<WorkflowDefinition, bool>> ToExpression()=> x => 
         x.Name!.Contains(SearchTerm) ||
         x.DisplayName!.Contains(SearchTerm) ||
-        x.Description!.Contains(SearchTerm);
+        x.Description!.Contains(SearchTerm) ||
+        x.Tag!.Contains(SearchTerm);
 }

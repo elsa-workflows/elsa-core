@@ -1,5 +1,5 @@
-﻿import {PropertyDisplayDriver} from "../services/property-display-driver";
-import {ActivityModel, ActivityPropertyDescriptor, IntellisenseContext} from "../models";
+import {PropertyDisplayDriver} from "../services/property-display-driver";
+import {ActivityModel, ActivityPropertyDescriptor, CodeEditorSettings, IntellisenseContext, PropertySettings} from "../models";
 import {h} from "@stencil/core";
 import {getOrCreateProperty, setActivityModelProperty} from "../utils/utils";
 
@@ -7,9 +7,9 @@ export class CodeEditorDriver implements PropertyDisplayDriver {
 
   display(activity: ActivityModel, property: ActivityPropertyDescriptor) {
     const prop = getOrCreateProperty(activity, property.name);
-    const options = property.options || {};
+    const options = property.options as CodeEditorSettings;
     const editorHeight = this.getEditorHeight(options);
-    const syntax = options.syntax;
+    const syntax = options?.syntax;
 
     return <elsa-script-property activityModel={activity} propertyDescriptor={property} propertyModel={prop}
                                  editor-height={editorHeight} syntax={syntax}/>;
@@ -20,15 +20,13 @@ export class CodeEditorDriver implements PropertyDisplayDriver {
     setActivityModelProperty(activity, property.name, value, "Literal");
   }
 
-  getEditorHeight(options: any) {
-    const editorHeightName = options.editorHeight || 'Default';
+  getEditorHeight(options?: PropertySettings) {
+    const editorHeightName = options?.editorHeight || 'Default';
 
     switch (editorHeightName) {
       case 'Large':
         return '20em'
-      case 'Default':
-      default:
-        return '8em';
     }
+    return '8em';
   }
 }

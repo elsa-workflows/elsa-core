@@ -3,8 +3,8 @@ import { Secret } from "../secret.model";
 export const MySqlServer: Secret = {
   category: "Sql",
   customAttributes: {},
-  description: "Sql connection data",
-  displayName: "MySQL Server secret",
+  description: "Sql connection string",
+  displayName: "MySQL Server",
   inputProperties: [
     {
       disableWorkflowProviderSelection: false,
@@ -169,6 +169,18 @@ export const MySqlServer: Secret = {
       order: 0,
       supportedSyntaxes: ["JavaScript", "Liquid"],
       type: "System.Int64",
+      uiHint: "single-line",
+    },
+    {
+      disableWorkflowProviderSelection: false,
+      isBrowsable: true,
+      isReadOnly: false,
+      label: "Additional Settings",
+      name: "AdditionalSettings",
+      hint: "The content entered will be appended to the end of the generated connection string.",
+      order: 20,
+      supportedSyntaxes: ["JavaScript", "Liquid"],
+      type: "System.String",
       uiHint: "single-line",
     },
   ],
