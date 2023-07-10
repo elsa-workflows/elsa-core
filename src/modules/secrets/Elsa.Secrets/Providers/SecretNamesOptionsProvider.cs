@@ -27,7 +27,7 @@ namespace Elsa.Secrets.Providers
             var secrets = secretsManager.GetSecrets().Result;
 
             var items = secrets.Where(x => string.IsNullOrWhiteSpace(x.Name) == false)
-                .Select(x => new SelectListItem($"{x.Name} ({x.Type})", $"{x.Type}:{x.Name!}")).ToList();
+                .Select(x => new SelectListItem($"{(string.IsNullOrWhiteSpace(x.DisplayName) == false ? x.DisplayName : x.Name)} ({x.Type})", $"{x.Type}:{x.Name!}")).ToList();
             items.Insert(0, new SelectListItem("", "empty"));
 
             return new SelectList { Items = items };
