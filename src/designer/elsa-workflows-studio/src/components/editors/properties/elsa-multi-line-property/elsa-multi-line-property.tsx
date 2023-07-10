@@ -1,5 +1,5 @@
 import {Component, h, Prop, State} from '@stencil/core';
-import {ActivityDefinitionProperty, ActivityModel, ActivityPropertyDescriptor, SyntaxNames} from "../../../../models";
+import {ActivityDefinitionProperty, ActivityModel, ActivityPropertyDescriptor, PropertySettings, SyntaxNames} from "../../../../models";
 
 @Component({
   tag: 'elsa-multi-line-property',
@@ -17,16 +17,14 @@ export class ElsaMultiLineProperty {
     this.currentValue = this.propertyModel.expressions[defaultSyntax] || undefined;
   }
 
-  getEditorHeight(options: any) {
-    const editorHeightName = options.editorHeight || 'Default';
+  getEditorHeight(options?: PropertySettings) {
+    const editorHeightName = options?.editorHeight || 'Default';
 
     switch (editorHeightName) {
       case 'Large':
         return {propertyEditor: '20em', textArea: 6}
-      case 'Default':
-      default:
-        return {propertyEditor: '15em', textArea: 3}
     }
+    return {propertyEditor: '15em', textArea: 3}
   }
 
   onChange(e: Event) {
@@ -42,9 +40,9 @@ export class ElsaMultiLineProperty {
     const propertyDescriptor = this.propertyDescriptor;
     const propertyModel = this.propertyModel;
     const propertyName = propertyDescriptor.name;
-    const options = propertyDescriptor.options || {};
+    const options = propertyDescriptor.options as PropertySettings;
     const editorHeight = this.getEditorHeight(options);
-    const context: string = options.context;
+    const context: string = options?.context;
     const fieldId = propertyName;
     const fieldName = propertyName;
     let value = this.currentValue;

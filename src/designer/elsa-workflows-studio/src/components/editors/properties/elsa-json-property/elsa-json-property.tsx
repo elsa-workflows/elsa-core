@@ -1,5 +1,5 @@
 import {Component, h, Prop, State} from '@stencil/core';
-import {ActivityDefinitionProperty, ActivityModel, ActivityPropertyDescriptor, SyntaxNames} from "../../../../models";
+import { ActivityDefinitionProperty, ActivityModel, ActivityPropertyDescriptor, PropertySettings, SyntaxNames} from "../../../../models";
 import {MonacoValueChangedArgs} from "../../../controls/elsa-monaco/elsa-monaco";
 
 @Component({
@@ -18,16 +18,14 @@ export class ElsaJsonProperty {
     this.currentValue = this.propertyModel.expressions[defaultSyntax] || undefined;
   }
 
-  getEditorHeight(options: any) {
-    const editorHeightName = options.editorHeight || 'Large';
+  getEditorHeight(options?: PropertySettings) {
+    const editorHeightName = options?.editorHeight || 'Large';
 
     switch (editorHeightName) {
       case 'Large':
         return '20em';
-      case 'Default':
-      default:
-        return '15em';
     }
+    return '15em';
   }
 
   onMonacoValueChanged(e: MonacoValueChangedArgs) {
@@ -41,9 +39,9 @@ export class ElsaJsonProperty {
   render() {
     const propertyDescriptor = this.propertyDescriptor;
     const propertyModel = this.propertyModel;
-    const options = propertyDescriptor.options || {};
+    const options = propertyDescriptor.options as PropertySettings;
     const editorHeight = this.getEditorHeight(options);
-    const context: string = options.context;
+    const context: string = options?.context;
     let value = this.currentValue;
 
     if (value == undefined) {

@@ -3,8 +3,8 @@ import { Secret } from "../secret.model";
 export const PostgreSql: Secret = {
   category: "Sql",
   customAttributes: {},
-  description: "Sql connection data",
-  displayName: "PostgreSql secret",
+  description: "Sql connection string",
+  displayName: "PostgreSql",
   inputProperties: [
     {
       disableWorkflowProviderSelection: false,
@@ -60,7 +60,19 @@ export const PostgreSql: Secret = {
       supportedSyntaxes: ["JavaScript", "Liquid"],
       type: "System.String",
       uiHint: "single-line",
-    }
+    },
+    {
+      disableWorkflowProviderSelection: false,
+      isBrowsable: true,
+      isReadOnly: false,
+      label: "Additional Settings",
+      name: "AdditionalSettings",
+      hint: "The content entered will be appended to the end of the generated connection string.",
+      order: 20,
+      supportedSyntaxes: ["JavaScript", "Liquid"],
+      type: "System.String",
+      uiHint: "single-line",
+    },
   ],
   type: "PostgreSql"
 }

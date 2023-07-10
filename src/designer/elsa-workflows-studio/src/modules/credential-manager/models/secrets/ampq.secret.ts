@@ -3,8 +3,8 @@ import { Secret } from "../secret.model";
 export const Ampq: Secret = {
   category: "AMPQ",
   customAttributes: {},
-  description: "AMPQ connection data",
-  displayName: "AMPQ secret",
+  description: "AMPQ connection string",
+  displayName: "AMPQ",
   inputProperties: [
     {
       disableWorkflowProviderSelection: false,

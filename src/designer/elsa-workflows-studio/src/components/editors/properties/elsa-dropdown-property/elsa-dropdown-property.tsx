@@ -21,7 +21,7 @@ export class ElsaDropdownProperty {
   async componentWillLoad() {
     const defaultSyntax = this.propertyDescriptor.defaultSyntax || SyntaxNames.Literal;
     this.currentValue = this.propertyModel.expressions[defaultSyntax] || undefined;
-    const dependsOnEvent = this.propertyDescriptor.options?.context?.dependsOnEvent;
+    const dependsOnEvent = this.propertyDescriptor.options && "context" in this.propertyDescriptor.options ? this.propertyDescriptor.options?.context?.dependsOnEvent : undefined;
 
     // Does this property have a dependency on another property?
     if (!!dependsOnEvent) {
@@ -42,13 +42,14 @@ export class ElsaDropdownProperty {
         initialDepsValue[event] = dependentInputElement.value;
       }
 
+      const existingOptions = this.propertyDescriptor.options as RuntimeSelectListProviderSettings;
       // Load the list items from the backend.
       const options: RuntimeSelectListProviderSettings = {
         context: {
-          ...this.propertyDescriptor.options.context,
+          ...existingOptions.context,
           depValues: initialDepsValue
         },
-        runtimeSelectListProviderType: (this.propertyDescriptor.options as RuntimeSelectListProviderSettings).runtimeSelectListProviderType
+        runtimeSelectListProviderType: existingOptions.runtimeSelectListProviderType
 
       };
       this.selectList = await getSelectListItems(this.serverUrl, { options: options } as ActivityPropertyDescriptor);
@@ -94,8 +95,9 @@ export class ElsaDropdownProperty {
 
   private reloadSelectListFromDeps = async (e: InputEvent) => {
     const depValues = {};
+    const options = this.propertyDescriptor.options as RuntimeSelectListProviderSettings;
 
-    for (const dependencyPropName of this.propertyDescriptor.options.context.dependsOnValue) {
+    for (const dependencyPropName of options.context.dependsOnValue) {
       const value = this.activityModel.properties.find((prop) => {
         return prop.name == dependencyPropName;
       });
@@ -107,15 +109,15 @@ export class ElsaDropdownProperty {
     const currentTarget = e.currentTarget as HTMLSelectElement;
     depValues[currentTarget.id] = currentTarget.value;
 
-    let options: RuntimeSelectListProviderSettings = {
+    let newOptions: RuntimeSelectListProviderSettings = {
       context: {
-        ...this.propertyDescriptor.options.context,
+        ...options.context,
         depValues: depValues
       },
-      runtimeSelectListProviderType: (this.propertyDescriptor.options as RuntimeSelectListProviderSettings).runtimeSelectListProviderType
+      runtimeSelectListProviderType: options.runtimeSelectListProviderType
     }
 
-    this.selectList = await getSelectListItems(this.serverUrl, { options: options } as ActivityPropertyDescriptor);
+    this.selectList = await getSelectListItems(this.serverUrl, { options: newOptions } as ActivityPropertyDescriptor);
 
     
     
