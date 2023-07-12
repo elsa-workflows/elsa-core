@@ -93,11 +93,11 @@ export class ElsaStudioWorkflowDefinitionsList {
                   <div class="elsa-divide-y elsa-divide-gray-100 focus:elsa-outline-none" role="menu" aria-orientation="vertical" aria-labelledby="option-menu">
 
                     <div class="elsa-py-1" role="none">
-                      <a href="#" onClick={this.restoreWorkflows} class="elsa-block elsa-px-4 elsa-py-2 elsa-text-sm elsa-text-gray-700 hover:elsa-bg-gray-100 hover:elsa-text-gray-900" role="menuitem">
+                      <a href="#" onClick={(e) => this.restoreWorkflows(e)} class="elsa-block elsa-px-4 elsa-py-2 elsa-text-sm elsa-text-gray-700 hover:elsa-bg-gray-100 hover:elsa-text-gray-900" role="menuitem">
                         <IntlMessage label="RestoreButton" />
                       </a>
 
-                      <a href={`${basePath}/v1/workflow-definitions/backup`} onClick={this.toggleMenu} class="elsa-block elsa-px-4 elsa-py-2 elsa-text-sm elsa-text-gray-700 hover:elsa-bg-gray-100 hover:elsa-text-gray-900" role="menuitem">
+                      <a href={`${basePath}/v1/workflow-definitions/backup`} onClick={(e) => this.toggleMenu(e)} class="elsa-block elsa-px-4 elsa-py-2 elsa-text-sm elsa-text-gray-700 hover:elsa-bg-gray-100 hover:elsa-text-gray-900" role="menuitem">
                         <IntlMessage label="BackupButton" />
                       </a>
 
@@ -110,7 +110,7 @@ export class ElsaStudioWorkflowDefinitionsList {
         </div>
 
         <elsa-workflow-definitions-list-screen ref={el => this.workflowDefinitionsListScreen = el} />
-        <input type="file" class="hidden" onChange={this.onFileInputChange} ref={el => this.fileInput = el} accept=".zip" />
+        <input type="file" class="hidden" onChange={(e) => this.onFileInputChange(e)} ref={el => this.fileInput = el} accept=".zip" />
       </div>
     );
   }
