@@ -110,7 +110,7 @@ export class ElsaStudioWorkflowDefinitionsList {
         </div>
 
         <elsa-workflow-definitions-list-screen ref={el => this.workflowDefinitionsListScreen = el} />
-        <input type="file" class="hidden" onChange={this.onFileInputChange} ref={el => this.fileInput = el} />
+        <input type="file" class="hidden" onChange={this.onFileInputChange} ref={el => this.fileInput = el} accept=".zip" />
       </div>
     );
   }
