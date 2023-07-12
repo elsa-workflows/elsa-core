@@ -114,9 +114,8 @@ export class ActivityProperties {
     };
 
     for (const property of properties) {
-      const propertyName = camelCase(property.name);
       const loggedPropName = property.name;
-      const propertyValue = activityState[loggedPropName] ?? activity[propertyName]?.expression?.value;
+      const propertyValue = activityState[loggedPropName];
       const propertyValueText = (propertyValue !== null && typeof propertyValue === 'object') ? JSON.stringify(propertyValue) : (propertyValue != null ? propertyValue.toString() : '');
       propertyDetails[property.displayName] = propertyValueText;
     }
