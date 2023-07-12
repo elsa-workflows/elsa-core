@@ -48,6 +48,9 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             using var zipArchive = new ZipArchive(file.OpenReadStream(), ZipArchiveMode.Read, true);
             foreach (var item in zipArchive.Entries)
             {
+                if (item.Name.EndsWith(".json", System.StringComparison.OrdinalIgnoreCase) == false) 
+                    continue;
+
                 await using var jsonFile = item.Open();
                 var json = await jsonFile.ReadStringToEndAsync(cancellationToken);
                 var postedModel = _contentSerializer.Deserialize<WorkflowDefinition>(json);
