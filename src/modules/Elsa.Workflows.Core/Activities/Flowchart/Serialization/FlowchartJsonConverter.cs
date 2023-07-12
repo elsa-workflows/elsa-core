@@ -124,8 +124,12 @@ public class FlowchartJsonConverter : JsonConverter<Activities.Flowchart>
         {
             var missingSource = notFoundConnection.Source;
             var missingTarget = notFoundConnection.Target;
-            var source = foundActivities.FirstOrDefault(x => x.Id == missingSource.Activity.Id);
-            var target = foundActivities.FirstOrDefault(x => x.Id == missingTarget.Activity.Id);
+            
+            // ReSharper disable ConditionalAccessQualifierIsNonNullableAccordingToAPIContract
+            // Activity might be null in case of JSON missing information.
+            var source = foundActivities.FirstOrDefault(x => x.Id == missingSource.Activity?.Id); 
+            var target = foundActivities.FirstOrDefault(x => x.Id == missingTarget.Activity?.Id);
+            // ReSharper restore ConditionalAccessQualifierIsNonNullableAccordingToAPIContract
 
             if (source == null || target == null) continue;
 
