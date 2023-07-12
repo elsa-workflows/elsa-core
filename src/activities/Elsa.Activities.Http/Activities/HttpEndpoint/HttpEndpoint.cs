@@ -74,7 +74,7 @@ namespace Elsa.Activities.Http
         /// Allow authenticated requests only
         /// </summary>
         [ActivityInput(
-            Hint = "Check to allow authenticated requests only",
+            Hint = "Check to only allow requests, which satisfy a specified policy",
             SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid },
             Category = "Security"
         )]
@@ -89,6 +89,25 @@ namespace Elsa.Activities.Http
             Category = "Security"
         )]
         public string? Policy { get; set; }
+        
+        [ActivityInput(
+            Hint = "Check to only allow requests, which has a specified header with a specified value",
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid },
+            Category = "Security"
+        )]
+        public bool AuthorizeWithCustomHeader { get; set; }
+        
+        [ActivityInput(
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid },
+            Category = "Security"
+        )]
+        public string? CustomHeaderName { get; set; }
+        
+        [ActivityInput(
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid },
+            Category = "Security"
+        )]
+        public string? CustomHeaderValue { get; set; }
 
         /// <summary>
         /// The received HTTP request.
