@@ -299,8 +299,7 @@ public static class ActivityExecutionContextExtensions
     public static async ValueTask SendSignalAsync(this ActivityExecutionContext context, object signal)
     {
         var ancestorContexts = new[] { context }.Concat(context.GetAncestors());
-        var workflowExecutionContext = context.WorkflowExecutionContext;
-
+        
         foreach (var ancestorContext in ancestorContexts)
         {
             var signalContext = new SignalContext(ancestorContext, context, context.CancellationToken);
@@ -308,10 +307,7 @@ public static class ActivityExecutionContextExtensions
             if (ancestorContext.Activity is not ISignalHandler handler)
                 continue;
             
-            var workItem = new ActivityWorkItem(ancestorContext.NodeId, async () => await handler.HandleSignalAsync(signal, signalContext));
-            workflowExecutionContext.Scheduler.Schedule(workItem);
-            
-            //await handler.HandleSignalAsync(signal, signalContext);
+            await handler.HandleSignalAsync(signal, signalContext);
 
             if (signalContext.StopPropagationRequested)
                 return;
