@@ -90,9 +90,9 @@ public class ActivityDescriptor
     /// <summary>
     /// Whether this activity type is selectable from activity pickers.
     /// </summary>
-    public bool IsBrowsable { get; set; }
+    public bool IsBrowsable { get; set; } = true;
 }
 
 // TODO: Refactor this to remove the dependency on JsonElement and JsonSerializerOptions.
 // This limits the ability to use this class in other contexts, such as constructing activities from the DSL.
-public record ActivityConstructorContext(JsonElement Element, JsonSerializerOptions SerializerOptions);
+public record ActivityConstructorContext(ActivityDescriptor ActivityDescriptor, JsonElement Element, JsonSerializerOptions SerializerOptions);

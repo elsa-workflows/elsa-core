@@ -37,7 +37,7 @@ public abstract class PropertyDescriptor
     /// <summary>
     /// True if this input should be displayed by UI tools, false otherwise.
     /// </summary>
-    public bool? IsBrowsable { get; set; }
+    public bool? IsBrowsable { get; set; } = true;
 
     /// <summary>
     /// True if this input property is synthetic, which means it does not exist physically on the activity's .NET type.

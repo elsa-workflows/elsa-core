@@ -199,11 +199,14 @@ public static class ActivityExecutionContextExtensions
         {
             var evaluator = context.GetRequiredService<IExpressionEvaluator>();
             var expressionExecutionContext = context.ExpressionExecutionContext;
-            value = input != null ? await evaluator.EvaluateAsync(input, expressionExecutionContext) : defaultValue;
+            value = input?.Expression != null ? await evaluator.EvaluateAsync(input, expressionExecutionContext) : defaultValue;
         }
             
         var memoryReference = input?.MemoryBlockReference();
-        memoryReference?.Set(context, value);
+        
+        // When input is created from an activity provider, there may be no memory block reference.
+        if(memoryReference?.Id != null!)
+            memoryReference.Set(context, value);
 
         // Store the evaluated input value in the activity state.
         context.ActivityState[inputDescriptor.Name] = value!;

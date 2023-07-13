@@ -57,7 +57,7 @@ public class FunctionActivityRegistry : IFunctionActivityRegistry
             .ToList();
 
         var dummyJsonElement = JsonDocument.Parse("{}").RootElement;
-        var constructorContext = new ActivityConstructorContext(dummyJsonElement, new JsonSerializerOptions());
+        var constructorContext = new ActivityConstructorContext(activityDescriptor, dummyJsonElement, new JsonSerializerOptions());
         var activity = activityDescriptor.Constructor(constructorContext);
 
         // Apply each argument in order of the described properties.

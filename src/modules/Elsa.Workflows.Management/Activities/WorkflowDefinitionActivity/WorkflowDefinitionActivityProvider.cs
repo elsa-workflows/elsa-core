@@ -112,8 +112,8 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
             {
                 Type = nakedType,
                 IsWrapped = true,
-                ValueGetter = activity => ((WorkflowDefinitionActivity)activity).SyntheticProperties.GetValueOrDefault(inputDefinition.Name),
-                ValueSetter = (activity, value) => ((WorkflowDefinitionActivity)activity).SyntheticProperties[inputDefinition.Name] = value!,
+                ValueGetter = activity => activity.SyntheticProperties.GetValueOrDefault(inputDefinition.Name),
+                ValueSetter = (activity, value) => activity.SyntheticProperties[inputDefinition.Name] = value!,
                 Name = inputDefinition.Name,
                 DisplayName = inputDefinition.DisplayName,
                 Description = inputDefinition.Description,
@@ -136,8 +136,8 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
             return new OutputDescriptor
             {
                 Type = nakedType,
-                ValueGetter = activity => ((WorkflowDefinitionActivity)activity).SyntheticProperties.GetValueOrDefault(outputDefinition.Name),
-                ValueSetter = (activity, value) => ((WorkflowDefinitionActivity)activity).SyntheticProperties[outputDefinition.Name] = value!,
+                ValueGetter = activity => activity.SyntheticProperties.GetValueOrDefault(outputDefinition.Name),
+                ValueSetter = (activity, value) => activity.SyntheticProperties[outputDefinition.Name] = value!,
                 Name = outputDefinition.Name,
                 DisplayName = outputDefinition.DisplayName,
                 Description = outputDefinition.Description,

@@ -43,15 +43,15 @@ public partial class WorkflowDefinitionBuilderInterpreter
         var objectTypeName = context.ID().GetText();
 
         // First, check if the symbol matches an activity type.
-        var activityType = _activityRegistry.Find(x => x.Name == objectTypeName);
+        var activityDescriptor = _activityRegistry.Find(x => x.Name == objectTypeName);
 
-        if (activityType != null)
+        if (activityDescriptor != null)
         {
             // TODO: Refactor this to remove the dependency on JsonElement and JsonSerializerOptions.
             // This limits the ability to use this class in other contexts, such as constructing activities from the DSL.
             var jsonElement = JsonSerializer.Deserialize<JsonElement>("{}");
-            var ctorArgs = new ActivityConstructorContext(jsonElement, new JsonSerializerOptions());
-            return activityType.Constructor(ctorArgs);
+            var ctorArgs = new ActivityConstructorContext(activityDescriptor, jsonElement, new JsonSerializerOptions());
+            return activityDescriptor.Constructor(ctorArgs);
         }
 
         var objectTypeDescriptor = _typeSystem.ResolveTypeName(objectTypeName);
