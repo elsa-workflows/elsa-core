@@ -7,6 +7,7 @@ using Elsa.ProtoActor.Protos;
 using Google.Protobuf.WellKnownTypes;
 using Microsoft.Data.Sqlite;
 using Proto.Cluster.AzureContainerApps;
+using Proto.Cluster.AzureContainerApps.Stores.Redis;
 using Proto.Persistence.Sqlite;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
@@ -15,13 +16,17 @@ var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 var configuration = builder.Configuration;
 var sqliteConnectionString = configuration.GetConnectionString("Sqlite")!;
+var redisConnectionString = configuration.GetConnectionString("Redis")!;
 var identitySection = configuration.GetSection("Identity");
 var identityTokenSection = identitySection.GetSection("Tokens");
 var protoActorSection = configuration.GetSection("ProtoActor");
 var protoActorClusterSection = protoActorSection.GetSection("Cluster");
 
 // Configure Proto Actor cluster provider services.
-services.AddAzureContainerAppsProvider(ArmClientProviders.DefaultAzureCredential, options => protoActorClusterSection.GetSection("AzureContainerApps").Bind(options));
+services.AddAzureContainerAppsProvider(
+    ArmClientProviders.DefaultAzureCredential, 
+    sc => sc.AddRedisClusterMemberStore(redisConnectionString),
+    options => protoActorClusterSection.GetSection("AzureContainerApps").Bind(options));
 
 // Add Elsa services.
 services

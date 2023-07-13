@@ -17,5 +17,6 @@
         <PackageReference Include="Azure.ResourceManager.AppContainers" Version="1.0.3" />
         <PackageReference Include="Azure.ResourceManager.Resources" Version="1.4.0" />
         <PackageReference Include="Proto.Cluster" Version="1.1.0" />
+        <PackageReference Include="StackExchange.Redis" Version="2.6.122" />
     </ItemGroup>
 </Project>

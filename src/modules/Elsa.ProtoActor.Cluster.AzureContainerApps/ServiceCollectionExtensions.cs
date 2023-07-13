@@ -19,9 +19,10 @@ public static class ServiceCollectionExtensions
     /// </summary>
     /// <param name="services">The service collection to add the provider to.</param>
     /// <param name="armClientProvider">An <see cref="IArmClientProvider"/> to create <see cref="ArmClient"/> instances.</param>
+    /// <param name="configureMemberStore">An optional configuration for the member store.</param>
     /// <param name="configure">An optional action to configure the provider options.</param>
     /// <returns>The service collection.</returns>
-    public static IServiceCollection AddAzureContainerAppsProvider(this IServiceCollection services, IArmClientProvider? armClientProvider = default, [AllowNull] Action<AzureContainerAppsProviderOptions> configure = null)
+    public static IServiceCollection AddAzureContainerAppsProvider(this IServiceCollection services, IArmClientProvider? armClientProvider = default, Action<IServiceCollection>? configureMemberStore = null, Action<AzureContainerAppsProviderOptions>? configure = null)
     {
         var configureOptions = configure ?? (_ => { });
         services.Configure(configureOptions);
@@ -31,14 +32,16 @@ public static class ServiceCollectionExtensions
         if (armClientProvider != null)
             services.AddSingleton(armClientProvider);
 
-        // Register the default member store.
-        services.AddSingleton<IClusterMemberStore, ResourceTagsClusterMemberStore>(sp =>
-        {
-            var clientProvider = sp.GetRequiredService<IArmClientProvider>();
-            var logger = sp.GetRequiredService<ILogger<ResourceTagsClusterMemberStore>>();
-            var options = sp.GetRequiredService<IOptions<AzureContainerAppsProviderOptions>>().Value;
-            return new ResourceTagsClusterMemberStore(clientProvider, logger, options.ResourceGroupName, options.SubscriptionId);
-        });
+        if (configureMemberStore != null)
+            configureMemberStore.Invoke(services);
+        else
+            services.AddSingleton<IClusterMemberStore, ResourceTagsClusterMemberStore>(sp =>
+            {
+                var clientProvider = sp.GetRequiredService<IArmClientProvider>();
+                var logger = sp.GetRequiredService<ILogger<ResourceTagsClusterMemberStore>>();
+                var options = sp.GetRequiredService<IOptions<AzureContainerAppsProviderOptions>>().Value;
+                return new ResourceTagsClusterMemberStore(clientProvider, logger, options.ResourceGroupName, options.SubscriptionId);
+            });
 
         return services;
     }
