@@ -18,7 +18,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddRedisClusterMemberStore(this IServiceCollection services, string connectionString)
     {
         services.AddSingleton<ConnectionMultiplexer>(sp => ConnectionMultiplexer.Connect(connectionString));
-        services.Replace(new ServiceDescriptor(typeof(IClusterMemberStore), typeof(RedisClusterMemberStore), ServiceLifetime.Singleton));
+        services.AddSingleton<IClusterMemberStore, RedisClusterMemberStore>();
         return services;
     }
 }

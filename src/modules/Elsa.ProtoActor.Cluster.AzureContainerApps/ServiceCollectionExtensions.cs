@@ -35,13 +35,7 @@ public static class ServiceCollectionExtensions
         if (configureMemberStore != null)
             configureMemberStore.Invoke(services);
         else
-            services.AddSingleton<IClusterMemberStore, ResourceTagsClusterMemberStore>(sp =>
-            {
-                var clientProvider = sp.GetRequiredService<IArmClientProvider>();
-                var logger = sp.GetRequiredService<ILogger<ResourceTagsClusterMemberStore>>();
-                var options = sp.GetRequiredService<IOptions<AzureContainerAppsProviderOptions>>().Value;
-                return new ResourceTagsClusterMemberStore(clientProvider, logger, options.ResourceGroupName, options.SubscriptionId);
-            });
+            services.AddResourceTagsMemberStore();
 
         return services;
     }

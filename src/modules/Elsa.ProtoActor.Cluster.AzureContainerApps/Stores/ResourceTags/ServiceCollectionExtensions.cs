@@ -1,6 +1,8 @@
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Proto.Cluster.AzureContainerApps.Stores.ResourceTags;
 
@@ -20,8 +22,16 @@ public static class ServiceCollectionExtensions
         var configureOptions = configure ?? (_ => { });
         services.Configure(configureOptions);
         services.ConfigureOptions<ResourceTagsMemberStoreOptionsValidator>();
-        services.Replace(new ServiceDescriptor(typeof(IClusterMemberStore), typeof(ResourceTagsClusterMemberStore), ServiceLifetime.Singleton));
 
+        services.AddSingleton<IClusterMemberStore, ResourceTagsClusterMemberStore>(sp =>
+        {
+            var clientProvider = sp.GetRequiredService<IArmClientProvider>();
+            var logger = sp.GetRequiredService<ILogger<ResourceTagsClusterMemberStore>>();
+            var options = sp.GetRequiredService<IOptions<AzureContainerAppsProviderOptions>>().Value;
+            return new ResourceTagsClusterMemberStore(clientProvider, logger, options.ResourceGroupName,
+                options.SubscriptionId);
+        });
+        
         return services;
     }
 }
