@@ -42,17 +42,17 @@ public class ActivityExecutionContext : IExecutionContext
     /// The ID of the current activity execution context.
     /// </summary>
     public string Id { get; set; }
-    
+
     /// <summary>
     /// The workflow execution context. 
     /// </summary>
     public WorkflowExecutionContext WorkflowExecutionContext { get; }
-    
+
     /// <summary>
     /// The parent activity execution context, if any. 
     /// </summary>
     public ActivityExecutionContext? ParentActivityExecutionContext { get; internal set; }
-    
+
     /// <summary>
     /// The expression execution context.
     /// </summary>
@@ -80,7 +80,7 @@ public class ActivityExecutionContext : IExecutionContext
     /// The current status of the activity.
     /// </summary>
     public ActivityStatus Status { get; set; }
-    
+
     /// <inheritdoc />
     public IDictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
 
@@ -142,7 +142,7 @@ public class ActivityExecutionContext : IExecutionContext
         var activityNode = activity != null ? WorkflowExecutionContext.FindNodeByActivity(activity) : default;
         await ScheduleActivityAsync(activityNode, completionCallback, tag);
     }
-    
+
     /// <summary>
     /// Schedules the specified activity to be executed.
     /// </summary>
@@ -155,7 +155,7 @@ public class ActivityExecutionContext : IExecutionContext
         var activityNode = activity != null ? WorkflowExecutionContext.FindNodeByActivity(activity) : default;
         await ScheduleActivityAsync(activityNode, this, completionCallback, tag);
     }
-    
+
     /// <summary>
     /// Schedules the specified activity to be executed.
     /// </summary>
@@ -221,7 +221,7 @@ public class ActivityExecutionContext : IExecutionContext
     /// </summary>
     /// <param name="bookmarks">The bookmarks to add.</param>
     public void AddBookmarks(IEnumerable<Bookmark> bookmarks) => _bookmarks.AddRange(bookmarks);
-    
+
     /// <summary>
     /// Adds a bookmark to the list of bookmarks.
     /// </summary>
@@ -234,7 +234,7 @@ public class ActivityExecutionContext : IExecutionContext
     /// <param name="callback">An optional callback that is invoked when the bookmark is resumed.</param>
     /// <returns>The created bookmark.</returns>
     public Bookmark CreateBookmark(ExecuteActivityDelegate callback) => CreateBookmark(new BookmarkOptions(default, callback));
-    
+
     /// <summary>
     /// Creates a bookmark so that this activity can be resumed at a later time.
     /// </summary>
@@ -242,7 +242,7 @@ public class ActivityExecutionContext : IExecutionContext
     /// <param name="callback">An optional callback that is invoked when the bookmark is resumed.</param>
     /// <returns>The created bookmark.</returns>
     public Bookmark CreateBookmark(object payload, ExecuteActivityDelegate callback) => CreateBookmark(new BookmarkOptions(payload, callback));
-    
+
     /// <summary>
     /// Creates a bookmark so that this activity can be resumed at a later time. 
     /// </summary>
@@ -318,7 +318,7 @@ public class ActivityExecutionContext : IExecutionContext
         Properties[key] = value;
         return value;
     }
-    
+
     /// <summary>
     /// Removes a property associated with the current activity context.
     /// </summary>
@@ -338,8 +338,17 @@ public class ActivityExecutionContext : IExecutionContext
 
     public object? Get(MemoryBlockReference blockReference)
     {
-        var location = GetMemoryBlock(blockReference) ?? throw new InvalidOperationException($"No location found with ID {blockReference.Id}. Did you forget to declare a variable with a container?");
-        return location.Value;
+        var memoryBlock = GetMemoryBlock(blockReference);
+
+        if (memoryBlock == null)
+        {
+            if (blockReference is Literal literal)
+                return literal.Value;
+
+            throw new InvalidOperationException($"The memory block '{blockReference}' does not exist.");
+        }
+
+        return memoryBlock.Value;
     }
 
     public T? Get<T>(MemoryBlockReference blockReference)
@@ -350,12 +359,12 @@ public class ActivityExecutionContext : IExecutionContext
 
     public void Set(MemoryBlockReference blockReference, object? value, Action<MemoryBlock>? configure = default) => ExpressionExecutionContext.Set(blockReference, value, configure);
     public void Set<T>(Output<T>? output, T? value, [CallerArgumentExpression("output")] string? outputName = default) => Set((Output?)output, value, outputName);
-    
+
     public void Set(Output? output, object? value, [CallerArgumentExpression("output")] string? outputName = default)
     {
         // Store the value in the expression execution memory block.
         ExpressionExecutionContext.Set(output, value);
-        
+
         // Also store the value in the workflow execution transient activity output register.
         WorkflowExecutionContext.RecordActivityOutput(this, outputName, value);
     }

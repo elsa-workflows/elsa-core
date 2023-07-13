@@ -32,7 +32,6 @@ services
             runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
             runtime.UseDefaultRuntime(dr => dr.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)));
             runtime.UseExecutionLogRecords(e => e.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)));
-            runtime.UseAsyncWorkflowStateExporter();
         })
         .UseScheduling()
         .UseJavaScript()

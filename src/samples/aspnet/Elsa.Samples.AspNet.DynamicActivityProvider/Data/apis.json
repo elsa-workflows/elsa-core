@@ -1,0 +1,43 @@
+[{
+  "name": "Reqres",
+  "baseUrl": "https://reqres.in",
+  "endpoints": [
+    {
+      "name": "GetUsers",
+      "path": "/api/users",
+      "method": "GET",
+      "description": "Get all users"
+    },
+    {
+      "name": "GetUser",
+      "path": "/api/users/{UserId}",
+      "method": "GET",
+      "description": "Get a user",
+      "params": [
+        {
+          "name": "UserId",
+          "type": "number",
+          "description": "User id"
+        }
+      ]
+    },
+    {
+      "name": "CreateUser",
+      "path": "/api/users",
+      "method": "POST",
+      "description": "Create a user",
+      "params": [
+        {
+          "name": "UserName",
+          "type": "string",
+          "description": "User name"
+        },
+        {
+          "name": "Job",
+          "type": "string",
+          "description": "User job"
+        }
+      ]
+    }
+  ]
+}]

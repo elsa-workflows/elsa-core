@@ -1,4 +1,5 @@
 using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
 
 // ReSharper disable once CheckNamespace
@@ -13,6 +14,11 @@ public static class ActivityRegistryExtensions
     /// Finds the activity descriptor for the specified activity.
     /// </summary>
     public static ActivityDescriptor? Find(this IActivityRegistry activityRegistry, IActivity activity) => activityRegistry.Find(activity.Type, activity.Version);
+
+    /// <summary>
+    /// Finds the activity descriptor for the specified activity type.
+    /// </summary>
+    public static ActivityDescriptor? Find<T>(this IActivityRegistry activityRegistry) where T:IActivity => activityRegistry.Find(ActivityTypeNameHelper.GenerateTypeName<T>());
     
     /// <summary>
     /// Registers the specified activity type with the registry.

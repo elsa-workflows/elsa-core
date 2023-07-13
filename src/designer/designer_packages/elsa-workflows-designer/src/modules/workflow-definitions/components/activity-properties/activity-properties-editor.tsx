@@ -156,7 +156,9 @@ export class ActivityPropertiesEditor {
       activityDescriptor
     });
 
-    return activityDescriptor.inputs.map(inputDescriptor => {
+    const filteredInputs = activityDescriptor.inputs.filter(x => x.isBrowsable);
+
+    return filteredInputs.map(inputDescriptor => {
       const renderInputContext: ActivityInputContext = {
         activity: activity,
         activityDescriptor: activityDescriptor,

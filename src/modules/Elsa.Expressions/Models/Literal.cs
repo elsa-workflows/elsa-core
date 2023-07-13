@@ -6,7 +6,7 @@ public class Literal : MemoryBlockReference
     {
     }
 
-    public Literal(object? value)
+    public Literal(object? value, string? id = default) : base(id!)
     {
         Value = value;
     }
@@ -23,7 +23,7 @@ public class Literal<T> : Literal
     {
     }
 
-    public Literal(T value) : base(value!)
+    public Literal(T value, string? id = default) : base(value!, id)
     {
     }
 }
