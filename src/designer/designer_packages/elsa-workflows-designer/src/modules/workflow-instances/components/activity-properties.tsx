@@ -102,7 +102,7 @@ export class ActivityProperties {
   private renderPropertiesTab = () => {
     const activity = this.activity;
     const activityDescriptor = this.findActivityDescriptor();
-    const properties = activityDescriptor.inputs;
+    const properties = activityDescriptor.inputs.filter(x => x.isBrowsable);
     const activityId = activity.id;
     const displayText: string = activity.metadata?.displayText ?? '';
     const executionLogEntry = this.activityExecutionLog;
