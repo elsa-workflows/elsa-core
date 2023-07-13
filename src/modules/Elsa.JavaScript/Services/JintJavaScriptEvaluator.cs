@@ -8,6 +8,7 @@ using Elsa.JavaScript.Extensions;
 using Elsa.JavaScript.Notifications;
 using Elsa.JavaScript.Options;
 using Elsa.Mediator.Contracts;
+using Elsa.Mediator.PublishingStrategies;
 using Elsa.Workflows.Core.Memory;
 using Humanizer;
 using Jint;

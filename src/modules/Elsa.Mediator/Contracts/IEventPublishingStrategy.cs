@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Logging;
-
 namespace Elsa.Mediator.Contracts;
 
 /// <summary>
@@ -7,5 +5,9 @@ namespace Elsa.Mediator.Contracts;
 /// </summary>
 public interface IEventPublishingStrategy
 {
-    Task PublishAsync(INotification notification, INotificationHandler[] handlers, ILogger logger, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Publishes an event.
+    /// </summary>
+    /// <param name="context">The context for publishing the event.</param>
+    Task PublishAsync(PublishContext context);
 }

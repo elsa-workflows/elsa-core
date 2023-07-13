@@ -9,11 +9,14 @@ namespace Elsa.Mediator.PublishingStrategies;
 /// </summary>
 public class ParallelProcessingStrategy : IEventPublishingStrategy
 {
-    public async Task PublishAsync(INotification notification, INotificationHandler[] handlers, ILogger logger, CancellationToken cancellationToken = default)
+    /// <inheritdoc />
+    public async Task PublishAsync(PublishContext context)
     {
         var tasks = new List<Task>();
+        var notification = context.Notification;
+        var cancellationToken = context.CancellationToken;
 
-        foreach (var handler in handlers)
+        foreach (var handler in context.Handlers)
         {
             var notificationType = notification.GetType();
             var handlerType = typeof(INotificationHandler<>).MakeGenericType(notificationType);

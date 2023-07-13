@@ -1,3 +1,4 @@
+using Elsa.Mediator.PublishingStrategies;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution;

@@ -8,16 +8,21 @@ namespace Elsa.Mediator.PublishingStrategies;
 /// </summary>
 public class FireAndForgetStrategy : IEventPublishingStrategy
 {
-    public Task PublishAsync(INotification notification, INotificationHandler[] handlers, ILogger logger, CancellationToken cancellationToken = default)
+    /// <inheritdoc />
+    public Task PublishAsync(PublishContext context)
     {
+        var notification = context.Notification;
         var notificationType = notification.GetType();
+        var handlers = context.Handlers;
+        var logger = context.Logger;
+        var cancellationToken = context.CancellationToken;
 
         foreach (var handler in handlers)
         {
             var handlerType = typeof(INotificationHandler<>).MakeGenericType(notificationType);
             var handleMethod = handlerType.GetMethod("HandleAsync")!;
-            
-            var task = (Task)handleMethod.Invoke(handler, new object?[] {notification, cancellationToken})!;
+
+            var task = (Task)handleMethod.Invoke(handler, new object?[] { notification, cancellationToken })!;
             var _ = task.ContinueWith(t =>
             {
                 if (t.IsFaulted)

@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
+using Elsa.Mediator.PublishingStrategies;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;

@@ -29,8 +29,9 @@ public class NotificationHandlerInvokerMiddleware : INotificationMiddleware
         var notificationType = notification.GetType();
         var handlerType = typeof(INotificationHandler<>).MakeGenericType(notificationType);
         var handlers = _notificationHandlers.Where(x => handlerType.IsInstanceOfType(x)).DistinctBy(x => x.GetType()).ToArray();
+        var publishContext = new PublishContext(notification, handlers, _logger, context.CancellationToken);
 
-        await context.PublishingStrategy.PublishAsync(notification, handlers, _logger, context.CancellationToken);
+        await context.PublishingStrategy.PublishAsync(publishContext);
 
         // Invoke next middleware.
         await _next(context);

@@ -8,15 +8,19 @@ namespace Elsa.Mediator.PublishingStrategies;
 /// </summary>
 public class SequentialProcessingStrategy : IEventPublishingStrategy
 {
-    public async Task PublishAsync(INotification notification, INotificationHandler[] handlers, ILogger logger, CancellationToken cancellationToken = default)
+    /// <inheritdoc />
+    public async Task PublishAsync(PublishContext context)
     {
-        foreach (var handler in handlers)
+        var notification = context.Notification;
+        var cancellationToken = context.CancellationToken;
+
+        foreach (var handler in context.Handlers)
         {
             var notificationType = notification.GetType();
             var handlerType = typeof(INotificationHandler<>).MakeGenericType(notificationType);
             var handleMethod = handlerType.GetMethod("HandleAsync")!;
-            
-            var task = (Task)handleMethod.Invoke(handler, new object?[] {notification, cancellationToken})!;
+
+            var task = (Task)handleMethod.Invoke(handler, new object?[] { notification, cancellationToken })!;
             await task;
         }
     }
