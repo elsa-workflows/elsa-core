@@ -24,6 +24,5 @@ public class AsyncWorkflowStateExporterFeature : FeatureBase
     public override void Configure()
     {
         Module.Configure<WorkflowRuntimeFeature>(workflowRuntime => workflowRuntime.WorkflowStateExporter = sp => ActivatorUtilities.CreateInstance<AsyncWorkflowStateExporter>(sp));
-        Services.AddCommandHandler<ExportWorkflowStateToDbCommandHandler, ExportWorkflowStateToDbCommand>();
     }
 }
