@@ -1,0 +1,236 @@
+{
+  "id": "0ad67e344f664e4ba40430933db6383d",
+  "definitionId": "2a29bd086ba047ad82c296f380b2b21d",
+  "name": "Create User",
+  "createdAt": "2023-07-13T14:06:07.932781+00:00",
+  "version": 9,
+  "variables": [],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [],
+  "customProperties": {},
+  "isReadonly": false,
+  "isLatest": true,
+  "isPublished": true,
+  "options": {
+    "autoUpdateConsumingWorkflows": false
+  },
+  "root": {
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "id": "Flowchart1",
+    "metadata": {},
+    "customProperties": {
+      "NotFoundConnectionsKey": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "start": "HttpEndpoint1",
+    "activities": [
+      {
+        "path": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "/users"
+          },
+          "memoryReference": {
+            "id": "540fb073-7da0-40e4-affd-7d12b83bd41b"
+          }
+        },
+        "supportedMethods": {
+          "typeName": "String[]",
+          "expression": {
+            "type": "Object",
+            "value": "[\u0022POST\u0022]"
+          },
+          "memoryReference": {
+            "id": "cd84bc03-5395-449b-96eb-27d5ad17ca53"
+          }
+        },
+        "authorize": {
+          "typeName": "Boolean",
+          "expression": {
+            "type": "Literal",
+            "value": "False"
+          },
+          "memoryReference": {
+            "id": "HttpEndpoint1:input-1"
+          }
+        },
+        "policy": null,
+        "parsedContent": {
+          "typeName": "Object",
+          "memoryReference": {
+            "id": "0a9e4d85af2149119068e324e3e61e32"
+          }
+        },
+        "routeData": null,
+        "queryStringData": null,
+        "headers": null,
+        "result": null,
+        "id": "HttpEndpoint1",
+        "name": null,
+        "type": "Elsa.HttpEndpoint",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": true,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 120,
+              "y": 260
+            }
+          }
+        }
+      },
+      {
+        "statusCode": {
+          "typeName": "System.Net.HttpStatusCode, System.Net.Primitives",
+          "expression": {
+            "type": "Literal",
+            "value": "OK"
+          },
+          "memoryReference": {
+            "id": "WriteHttpResponse1:input-1"
+          }
+        },
+        "content": {
+          "typeName": "Object",
+          "expression": {
+            "type": "JavaScript",
+            "value": "getParsedContentFromCreateUser1()"
+          },
+          "memoryReference": {
+            "id": "457df76f-3bdd-4e7e-ba8a-10ebed80281d"
+          }
+        },
+        "contentType": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "application/json"
+          },
+          "memoryReference": {
+            "id": "4673dc8b-e2ee-48c2-8b7a-5c3e2c3a7560"
+          }
+        },
+        "responseHeaders": {
+          "typeName": "Elsa.Http.Models.HttpResponseHeaders, Elsa.Http",
+          "expression": {
+            "type": "Literal",
+            "value": "{}"
+          },
+          "memoryReference": {
+            "id": "WriteHttpResponse1:input-2"
+          }
+        },
+        "id": "WriteHttpResponse1",
+        "name": null,
+        "type": "Elsa.WriteHttpResponse",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 640,
+              "y": 260
+            }
+          }
+        }
+      },
+      {
+        "expectedStatusCodes": [],
+        "unmatchedStatusCode": null,
+        "url": {
+          "typeName": "System.Uri, System.Private.Uri",
+          "memoryReference": {
+            "id": "44cb8368-b578-4b02-beb7-cbac55359ab6"
+          }
+        },
+        "method": {
+          "typeName": "String",
+          "memoryReference": {
+            "id": "d39ebcb9-8943-4d76-8299-7761aef1f8e3"
+          }
+        },
+        "content": null,
+        "contentType": null,
+        "authorization": null,
+        "requestHeaders": {
+          "typeName": "Elsa.Http.Models.HttpRequestHeaders, Elsa.Http",
+          "expression": {
+            "type": "Literal",
+            "value": "{}"
+          },
+          "memoryReference": {}
+        },
+        "parsedContent": null,
+        "result": null,
+        "id": "CreateUser1",
+        "name": null,
+        "type": "Demo.Reqres.CreateUser",
+        "version": 0,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 428,
+              "y": 255
+            }
+          }
+        },
+        "userName": {
+          "typeName": "String",
+          "expression": {
+            "type": "JavaScript",
+            "value": "getParsedContentFromHttpEndpoint1().user;"
+          },
+          "memoryReference": {
+            "id": "14ebd00e-bd1a-4953-a933-d49439ed418c"
+          }
+        },
+        "job": {
+          "typeName": "String",
+          "expression": {
+            "type": "JavaScript",
+            "value": "getParsedContentFromHttpEndpoint1().job;"
+          },
+          "memoryReference": {
+            "id": "e92af470-3d83-4891-96b4-e83331d0896e"
+          }
+        }
+      }
+    ],
+    "connections": [
+      {
+        "source": {
+          "activity": "HttpEndpoint1",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "CreateUser1",
+          "port": "In"
+        }
+      },
+      {
+        "source": {
+          "activity": "CreateUser1",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "WriteHttpResponse1",
+          "port": "In"
+        }
+      }
+    ]
+  }
+}
