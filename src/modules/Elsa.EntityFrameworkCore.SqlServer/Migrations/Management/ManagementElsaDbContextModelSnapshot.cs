@@ -69,6 +69,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Management
                     b.Property<string>("StringData")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("ToolVersion")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<bool?>("UsableAsActivity")
                         .HasColumnType("bit");
 

@@ -2,8 +2,10 @@ using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Core.Memory;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Runtime.Bookmarks;
 using Elsa.Workflows.Runtime.Contracts;
@@ -36,7 +38,7 @@ public class RunTask : Activity<object>, IBookmarksPersistedHandler
     /// <summary>
     /// The name of the task being requested.
     /// </summary>
-    [Input(Description = "AnyAsync additional parameters to send to the task.")]
+    [Input(Description = "Any additional parameters to send to the task.")]
     public Input<IDictionary<string, object>?> Payload { get; set; } = default!;
     
     /// <inheritdoc />

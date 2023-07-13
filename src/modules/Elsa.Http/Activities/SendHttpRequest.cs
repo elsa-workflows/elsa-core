@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using System.Text.Json.Serialization;
+using System.Xml.Linq;
 using Elsa.Extensions;
 using Elsa.Http.ContentWriters;
 using Elsa.Workflows.Core;
@@ -7,6 +8,7 @@ using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using JetBrains.Annotations;
+using Newtonsoft.Json.Linq;
 using HttpRequestHeaders = Elsa.Http.Models.HttpRequestHeaders;
 
 namespace Elsa.Http;
@@ -210,6 +212,12 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
         var targetType = ParsedContent.GetTargetType(context);
         var contentStream = await httpContent.ReadAsStreamAsync(cancellationToken);
         var contentType = httpContent.Headers.ContentType?.MediaType!;
+
+        targetType ??= contentType switch
+        {
+            "application/json" => typeof(object),
+            _ => typeof(string)
+        };
 
         return await context.ParseContentAsync(contentStream, contentType, targetType, cancellationToken);
     }

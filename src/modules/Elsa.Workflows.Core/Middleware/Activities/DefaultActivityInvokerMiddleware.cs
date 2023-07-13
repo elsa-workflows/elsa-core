@@ -1,7 +1,6 @@
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Pipelines.ActivityExecution;
 using Elsa.Workflows.Core.Services;
 
@@ -47,7 +46,7 @@ public class DefaultActivityInvokerMiddleware : IActivityExecutionMiddleware
         // Reset execute delegate.
         workflowExecutionContext.ExecuteDelegate = null;
 
-        // If a bookmark was used to resume, burn it if not burnt by the activity.
+        // If a bookmark was used to resume, burn it if not burnt already by the activity.
         var resumedBookmark = workflowExecutionContext.ResumedBookmarkContext?.Bookmark;
 
         if (resumedBookmark is { AutoBurn: true })

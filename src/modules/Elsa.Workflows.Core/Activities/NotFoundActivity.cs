@@ -1,6 +1,5 @@
 using System.ComponentModel;
 using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Models;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Core.Activities;

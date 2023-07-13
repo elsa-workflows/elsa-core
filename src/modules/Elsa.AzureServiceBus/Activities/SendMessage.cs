@@ -2,6 +2,7 @@ using Azure.Messaging.ServiceBus;
 using Elsa.Common.Contracts;
 using Elsa.Common.Services;
 using Elsa.Extensions;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 using JetBrains.Annotations;

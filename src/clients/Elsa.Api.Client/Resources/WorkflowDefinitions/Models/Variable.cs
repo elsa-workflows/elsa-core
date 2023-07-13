@@ -34,4 +34,9 @@ public class Variable
     /// The storage driver type to use for persistence.
     /// </summary>
     public string? StorageDriverTypeName { get; set; }
+    
+    /// <summary>
+    /// The type name of the variable, including the array indicator.
+    /// </summary>
+    public string GetTypeDisplayName() => IsArray ? $"{TypeName}[]" : TypeName;
 }

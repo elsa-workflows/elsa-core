@@ -1,5 +1,5 @@
 using Elsa.Api.Client.Extensions;
-using Elsa.Api.Client.Models;
+using Elsa.Api.Client.Shared.Models;
 
 namespace Elsa.Api.Client.Activities;
 

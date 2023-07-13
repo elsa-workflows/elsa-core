@@ -13,5 +13,10 @@ public enum OrderByWorkflowDefinition
     /// <summary>
     /// Order by the name of the workflow definition.
     /// </summary>
-    Name
+    Name,
+    
+    /// <summary>
+    /// Order by the version of the workflow definition.
+    /// </summary>
+    Version
 }

@@ -1,7 +1,6 @@
 using Elsa.Mediator.Contracts;
 using Elsa.Mediator.PublishingStrategies;
 using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Notifications;
 using Elsa.Workflows.Core.Pipelines.ActivityExecution;
 

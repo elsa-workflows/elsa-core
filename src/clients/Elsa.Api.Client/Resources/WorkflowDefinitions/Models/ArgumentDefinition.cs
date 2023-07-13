@@ -34,4 +34,9 @@ public abstract class ArgumentDefinition
     /// The category to which this input belongs.
     /// </summary>
     public string Category { get; set; } = default!;
+    
+    /// <summary>
+    /// The type name of the variable, including the array indicator.
+    /// </summary>
+    public string GetTypeDisplayName() => IsArray ? $"{Type}[]" : Type;
 }

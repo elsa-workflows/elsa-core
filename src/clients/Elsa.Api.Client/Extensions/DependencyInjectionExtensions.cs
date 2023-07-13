@@ -6,7 +6,11 @@ using Elsa.Api.Client.Converters;
 using Elsa.Api.Client.Options;
 using Elsa.Api.Client.Resources.ActivityDescriptors.Contracts;
 using Elsa.Api.Client.Resources.Identity.Contracts;
+using Elsa.Api.Client.Resources.StorageDrivers.Contracts;
+using Elsa.Api.Client.Resources.VariableTypes.Contracts;
+using Elsa.Api.Client.Resources.WorkflowActivationStrategies.Contracts;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Contracts;
+using Elsa.Api.Client.Resources.WorkflowInstances.Contracts;
 using Elsa.Api.Client.Services;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
@@ -31,7 +35,11 @@ public static class DependencyInjectionExtensions
         services.AddActivityTypeService();
 
         services.AddApi<IWorkflowDefinitionsApi>(CreateRefitSettings);
+        services.AddApi<IWorkflowInstancesApi>(CreateRefitSettings);
         services.AddApi<IActivityDescriptorsApi>(CreateRefitSettings);
+        services.AddApi<IStorageDriversApi>(CreateRefitSettings);
+        services.AddApi<IVariableTypesApi>(CreateRefitSettings);
+        services.AddApi<IWorkflowActivationStrategiesApi>(CreateRefitSettings);
         services.AddApi<ILoginApi>(CreateRefitSettings);
         return services;
     }
@@ -76,19 +84,19 @@ public static class DependencyInjectionExtensions
     
     private static RefitSettings CreateRefitSettings(IServiceProvider serviceProvider)
     {
-        JsonSerializerOptions jsonSerializerSettings = new()
+        JsonSerializerOptions serializerOptions = new()
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         };
         
-        jsonSerializerSettings.Converters.Add(new JsonStringEnumConverter());
-        jsonSerializerSettings.Converters.Add(new VersionOptionsJsonConverter());
-        jsonSerializerSettings.Converters.Add(new ActivityJsonConverterFactory(serviceProvider));
-        jsonSerializerSettings.Converters.Add(new ExpressionJsonConverterFactory());
-        
+        serializerOptions.Converters.Add(new JsonStringEnumConverter());
+        serializerOptions.Converters.Add(new VersionOptionsJsonConverter());
+        serializerOptions.Converters.Add(new ActivityJsonConverterFactory(serviceProvider));
+        serializerOptions.Converters.Add(new ExpressionJsonConverterFactory());
+
         var settings = new RefitSettings
         {
-            ContentSerializer = new SystemTextJsonContentSerializer(jsonSerializerSettings)
+            ContentSerializer = new SystemTextJsonContentSerializer(serializerOptions)
         };    
             
         return settings;

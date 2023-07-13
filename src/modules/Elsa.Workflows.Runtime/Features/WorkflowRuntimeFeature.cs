@@ -74,7 +74,7 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// <summary>
     /// A factory that instantiates an <see cref="IWorkflowStateExporter"/>.
     /// </summary>
-    public Func<IServiceProvider, IWorkflowStateExporter> WorkflowStateExporter { get; set; } = ActivatorUtilities.GetServiceOrCreateInstance<NoopWorkflowStateExporter>;
+    public Func<IServiceProvider, IWorkflowStateExporter> WorkflowStateExporter { get; set; } = ActivatorUtilities.GetServiceOrCreateInstance<AsyncWorkflowStateExporter>;
 
     /// <summary>
     /// A factory that instantiates an <see cref="ITaskDispatcher"/>.
@@ -120,6 +120,9 @@ public class WorkflowRuntimeFeature : FeatureBase
     {
         // Activities
         Module.AddActivitiesFrom<WorkflowRuntimeFeature>();
+        
+        // Add command handler for export workflow state to database.
+        Services.AddCommandHandler<ExportWorkflowStateToDbCommandHandler, ExportWorkflowStateToDbCommand>();
     }
 
     /// <inheritdoc />

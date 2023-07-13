@@ -1,13 +1,6 @@
 using Elsa.Abstractions;
-using Elsa.Common.Entities;
-using Elsa.Common.Models;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Serialization.Converters;
 using Elsa.Workflows.Management.Contracts;
-using Elsa.Workflows.Management.Filters;
-using Elsa.Workflows.Management.Mappers;
 using JetBrains.Annotations;
-using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Count;
 

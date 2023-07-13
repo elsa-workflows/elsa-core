@@ -20,7 +20,7 @@ internal class BulkRetract : ElsaEndpoint<Request, Response>
 
     public override void Configure()
     {
-        Post("/bulk-actions/retract/workflow-definitions/by-definition-id");
+        Post("/bulk-actions/retract/workflow-definitions/by-definition-ids");
         ConfigurePermissions("retract:workflow-definitions");
     }
 

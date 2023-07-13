@@ -32,6 +32,7 @@ public record WorkflowDefinitionModel(
     string? Description,
     DateTimeOffset CreatedAt,
     int Version,
+    Version? ToolVersion,
     ICollection<VariableDefinition>? Variables,
     ICollection<InputDefinition>? Inputs,
     ICollection<OutputDefinition>? Outputs,
@@ -48,6 +49,7 @@ public record WorkflowDefinitionModel(
 {
     /// <inheritdoc />
     public WorkflowDefinitionModel() : this(
+        default!,
         default!,
         default!,
         default!,

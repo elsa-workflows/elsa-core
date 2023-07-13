@@ -7,10 +7,11 @@ using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Mediator.Contracts;
-using Elsa.Mediator.PublishingStrategies;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Activities.Flowchart.Models;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Core.Memory;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Notifications;
 using Elsa.Workflows.Core.Signals;
@@ -100,6 +101,7 @@ public static class ActivityExecutionContextExtensions
             context.NodeId,
             activityState,
             now,
+            workflowExecutionContext.ExecutionLogSequence++,
             eventName,
             message,
             source ?? activity.GetSource(),
@@ -197,11 +199,14 @@ public static class ActivityExecutionContextExtensions
         {
             var evaluator = context.GetRequiredService<IExpressionEvaluator>();
             var expressionExecutionContext = context.ExpressionExecutionContext;
-            value = input != null ? await evaluator.EvaluateAsync(input, expressionExecutionContext) : defaultValue;
+            value = input?.Expression != null ? await evaluator.EvaluateAsync(input, expressionExecutionContext) : defaultValue;
         }
             
         var memoryReference = input?.MemoryBlockReference();
-        memoryReference?.Set(context, value);
+        
+        // When input is created from an activity provider, there may be no memory block reference.
+        if(memoryReference?.Id != null!)
+            memoryReference.Set(context, value);
 
         // Store the evaluated input value in the activity state.
         context.ActivityState[inputDescriptor.Name] = value!;
@@ -297,14 +302,14 @@ public static class ActivityExecutionContextExtensions
     public static async ValueTask SendSignalAsync(this ActivityExecutionContext context, object signal)
     {
         var ancestorContexts = new[] { context }.Concat(context.GetAncestors());
-
+        
         foreach (var ancestorContext in ancestorContexts)
         {
             var signalContext = new SignalContext(ancestorContext, context, context.CancellationToken);
 
             if (ancestorContext.Activity is not ISignalHandler handler)
                 continue;
-
+            
             await handler.HandleSignalAsync(signal, signalContext);
 
             if (signalContext.StopPropagationRequested)
@@ -317,6 +322,12 @@ public static class ActivityExecutionContextExtensions
     /// </summary>
     public static async ValueTask CompleteActivityAsync(this ActivityExecutionContext context, object? result = default)
     {
+        // Mark the activity as complete.
+        context.Status = ActivityStatus.Completed;
+        
+        // Add an execution log entry.
+        context.AddExecutionLogEntry("Completed", payload: context.JournalData, includeActivityState: true);
+        
         // Send a signal.
         await context.SendSignalAsync(new ActivityCompleted(result));
 
@@ -340,8 +351,13 @@ public static class ActivityExecutionContextExtensions
     public static async Task CancelActivityAsync(this ActivityExecutionContext context)
     {
         var publisher = context.GetRequiredService<IEventPublisher>();
+        context.Status = ActivityStatus.Canceled;
         context.ClearBookmarks();
         context.WorkflowExecutionContext.Bookmarks.RemoveWhere(x => x.ActivityNodeId == context.NodeId);
+        
+        // Add an execution log entry.
+        context.AddExecutionLogEntry("Canceled", payload: context.JournalData, includeActivityState: true);
+        
         await context.SendSignalAsync(new CancelSignal());
         await publisher.PublishAsync(new ActivityCancelled(context));
     }

@@ -1,5 +1,3 @@
-using Elsa.Workflows.Core.Models;
-
 namespace Elsa.Workflows.Core.State;
 
 /// <summary>
@@ -45,6 +43,9 @@ public class ActivityExecutionContextState
     /// The evaluated values of the activity's properties.
     /// </summary>
     public IDictionary<string, object>? ActivityState { get; set; }
-    
-    //public RegisterState Register { get; set; } = default!;
+
+    /// <summary>
+    /// The status of the activity.
+    /// </summary>
+    public ActivityStatus Status { get; set; }
 }

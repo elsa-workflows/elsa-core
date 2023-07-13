@@ -5,6 +5,7 @@ using Elsa.Telnyx.Activities;
 using Elsa.Telnyx.Attributes;
 using Elsa.Telnyx.Helpers;
 using Elsa.Telnyx.Payloads.Abstract;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Extensions;
@@ -36,9 +37,9 @@ public class WebhookEventActivityProvider : IActivityProvider
         return await CreateDescriptorsAsync(payloadTypes, cancellationToken);
     }
 
-    private async Task<IEnumerable<ActivityDescriptor>> CreateDescriptorsAsync(IEnumerable<Type> jobTypes, CancellationToken cancellationToken = default)
+    private async Task<IEnumerable<ActivityDescriptor>> CreateDescriptorsAsync(IEnumerable<Type> payloadTypes, CancellationToken cancellationToken = default)
     {
-        return await Task.WhenAll(jobTypes.Select(async x => await CreateDescriptorAsync(x, cancellationToken)));
+        return await Task.WhenAll(payloadTypes.Select(async x => await CreateDescriptorAsync(x, cancellationToken)));
     }
 
     private async Task<ActivityDescriptor> CreateDescriptorAsync(Type payloadType, CancellationToken cancellationToken = default)

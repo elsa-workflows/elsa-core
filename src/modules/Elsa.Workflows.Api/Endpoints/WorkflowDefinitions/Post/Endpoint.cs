@@ -83,6 +83,7 @@ internal class Post : ElsaEndpoint<SaveWorkflowDefinitionRequest, WorkflowDefini
         draft!.StringData = stringData;
         draft.MaterializerName = JsonWorkflowMaterializer.MaterializerName;
         draft.Name = model.Name?.Trim();
+        draft.ToolVersion = model.ToolVersion;
         draft.Description = model.Description?.Trim();
         draft.CustomProperties = model.CustomProperties ?? new Dictionary<string, object>();
         draft.Variables = variables;
@@ -95,7 +96,7 @@ internal class Post : ElsaEndpoint<SaveWorkflowDefinitionRequest, WorkflowDefini
         var response = await _workflowDefinitionMapper.MapAsync(draft, cancellationToken);
 
         if (isNew)
-            await SendCreatedAtAsync<Get.Get>(new { definitionId }, response, cancellation: cancellationToken);
+            await SendCreatedAtAsync<GetByDefinitionId.GetByDefinitionId>(new { definitionId }, response, cancellation: cancellationToken);
         else
         {
             await HttpContext.Response.WriteAsJsonAsync(response, serializerOptions, cancellationToken);

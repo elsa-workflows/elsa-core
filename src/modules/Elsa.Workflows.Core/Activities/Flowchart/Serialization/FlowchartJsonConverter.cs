@@ -124,8 +124,12 @@ public class FlowchartJsonConverter : JsonConverter<Activities.Flowchart>
         {
             var missingSource = notFoundConnection.Source;
             var missingTarget = notFoundConnection.Target;
-            var source = foundActivities.FirstOrDefault(x => x.Id == missingSource.Activity.Id);
-            var target = foundActivities.FirstOrDefault(x => x.Id == missingTarget.Activity.Id);
+            
+            // ReSharper disable ConditionalAccessQualifierIsNonNullableAccordingToAPIContract
+            // Activity might be null in case of JSON missing information.
+            var source = foundActivities.FirstOrDefault(x => x.Id == missingSource.Activity?.Id); 
+            var target = foundActivities.FirstOrDefault(x => x.Id == missingTarget.Activity?.Id);
+            // ReSharper restore ConditionalAccessQualifierIsNonNullableAccordingToAPIContract
 
             if (source == null || target == null) continue;
 
@@ -138,6 +142,9 @@ public class FlowchartJsonConverter : JsonConverter<Activities.Flowchart>
 
     private static ICollection<Connection> DeserializeConnections(JsonElement connectionsElement, IDictionary<string, IActivity> activityDictionary, JsonSerializerOptions options)
     {
+        if(connectionsElement.ValueKind == JsonValueKind.Undefined)
+            return new List<Connection>();
+        
         // To not break existing workflow definitions, we need to support the old connection format.
         var useOldConnectionConverter = connectionsElement.EnumerateArray().Any(x => x.TryGetProperty("sourcePort", out var sourcePort) && sourcePort.ValueKind == JsonValueKind.String);
 

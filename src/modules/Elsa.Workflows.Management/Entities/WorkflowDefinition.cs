@@ -1,4 +1,5 @@
 using Elsa.Common.Entities;
+using Elsa.Workflows.Core.Memory;
 using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Workflows.Management.Entities;
@@ -19,9 +20,14 @@ public class WorkflowDefinition : VersionedEntity
     public string? Name { get; set; }
     
     /// <summary>
-    /// A short description of that the workflow is about.  
+    /// A short description of what the workflow is about.  
     /// </summary>
     public string? Description { get; set; }
+
+    /// <summary>
+    /// The version of the tool that created this workflow.
+    /// </summary>
+    public Version? ToolVersion { get; set; }
 
     /// <summary>
     /// A set of options for the workflow.

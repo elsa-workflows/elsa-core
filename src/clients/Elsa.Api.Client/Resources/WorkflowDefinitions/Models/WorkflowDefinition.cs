@@ -1,5 +1,5 @@
 using Elsa.Api.Client.Activities;
-using Elsa.Api.Client.Models;
+using Elsa.Api.Client.Shared.Models;
 
 namespace Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 
@@ -22,6 +22,11 @@ public class WorkflowDefinition : VersionedEntity
     /// A short description of that the workflow is about.  
     /// </summary>
     public string? Description { get; set; }
+
+    /// <summary>
+    /// The version of the tool that created this workflow.
+    /// </summary>
+    public Version? ToolVersion { get; set; }
 
     /// <summary>
     /// A set of options for the workflow.
@@ -72,4 +77,9 @@ public class WorkflowDefinition : VersionedEntity
     /// The root activity of the workflow.
     /// </summary>
     public Activity Root { get; set; } = default!;
+    
+    /// <summary>
+    /// An option to use the workflow as a readonly workflow.
+    /// </summary>
+    public bool IsReadonly { get; set; } = false;
 }

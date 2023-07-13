@@ -138,9 +138,17 @@ public class MemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
         return Task.FromResult(exists);
     }
 
+    /// <inheritdoc />
     public Task<long> CountDistinctAsync(CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(_store.Count(x => true, x => x.DefinitionId));
+    }
+
+    /// <inheritdoc />
+    public Task<bool> GetIsNameUnique(string name, string? definitionId = default, CancellationToken cancellationToken = default)
+    {
+        var exists = _store.Any(x => x.Name == name && x.DefinitionId != definitionId);
+        return Task.FromResult(!exists);
     }
 
     private IQueryable<WorkflowDefinition> Filter(IQueryable<WorkflowDefinition> queryable, WorkflowDefinitionFilter filter) => filter.Apply(queryable);

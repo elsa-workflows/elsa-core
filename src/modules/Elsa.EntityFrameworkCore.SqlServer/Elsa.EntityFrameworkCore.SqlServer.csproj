@@ -24,7 +24,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Migrations\Management\" />
+      <Folder Include="Migrations\Runtime\" />
     </ItemGroup>
 
 </Project>

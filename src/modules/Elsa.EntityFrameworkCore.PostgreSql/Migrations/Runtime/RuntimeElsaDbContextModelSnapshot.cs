@@ -44,6 +44,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                     b.Property<int>("DefinitionVersion")
                         .HasColumnType("integer");
 
+                    b.Property<long>("ExecutionLogSequence")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("text");
@@ -192,6 +195,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                     b.Property<string>("PayloadData")
                         .HasColumnType("text");
 
+                    b.Property<long>("Sequence")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("Source")
                         .HasColumnType("text");
 
@@ -226,6 +232,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                     b.HasIndex("ParentActivityInstanceId")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_ParentActivityInstanceId");
 
+                    b.HasIndex("Sequence")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_Sequence");
+
                     b.HasIndex("Timestamp")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_Timestamp");
 
@@ -237,6 +246,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
 
                     b.HasIndex("WorkflowVersion")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_WorkflowVersion");
+
+                    b.HasIndex("Timestamp", "Sequence")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_Timestamp_Sequence");
 
                     b.ToTable("WorkflowExecutionLogRecords", "Elsa");
                 });

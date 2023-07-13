@@ -1,4 +1,4 @@
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Management.Entities;
 
 namespace Elsa.Workflows.Management.Filters;
@@ -62,11 +62,21 @@ public class WorkflowInstanceFilter
     /// Filter workflow instances by status.
     /// </summary>
     public WorkflowStatus? WorkflowStatus { get; set; }
+    
+    /// <summary>
+    /// Filter workflow instances by a set of statuses.
+    /// </summary>
+    public ICollection<WorkflowStatus>? WorkflowStatuses { get; set; }
 
     /// <summary>
     /// Filter workflow instances by sub-status.
     /// </summary>
     public WorkflowSubStatus? WorkflowSubStatus { get; set; }
+    
+    /// <summary>
+    /// Filter workflow instances by a set of sub-status.
+    /// </summary>
+    public ICollection<WorkflowSubStatus>? WorkflowSubStatuses { get; set; }
 
     /// <summary>
     /// Applies the filter to the specified query.
@@ -87,6 +97,8 @@ public class WorkflowInstanceFilter
         if (filter.CorrelationIds != null) query = query.Where(x => filter.CorrelationIds.Contains(x.CorrelationId!));
         if (filter.WorkflowStatus != null) query = query.Where(x => x.Status == filter.WorkflowStatus);
         if (filter.WorkflowSubStatus != null) query = query.Where(x => x.SubStatus == filter.WorkflowSubStatus);
+        if (filter.WorkflowStatuses != null) query = query.Where(x => filter.WorkflowStatuses.Contains(x.Status));
+        if (filter.WorkflowSubStatuses != null) query = query.Where(x => filter.WorkflowSubStatuses.Contains(x.SubStatus));
 
         var searchTerm = filter.SearchTerm;
         if (!string.IsNullOrWhiteSpace(searchTerm))

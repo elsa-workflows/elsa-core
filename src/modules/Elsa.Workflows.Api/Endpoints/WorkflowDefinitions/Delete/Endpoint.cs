@@ -3,7 +3,7 @@ using Elsa.Workflows.Management.Contracts;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Delete;
 
-public class Delete : ElsaEndpoint<Request>
+internal class Delete : ElsaEndpoint<Request>
 {
     private readonly IWorkflowDefinitionManager _workflowDefinitionManager;
 

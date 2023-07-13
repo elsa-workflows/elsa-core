@@ -1,4 +1,5 @@
-using Elsa.Api.Client.Resources.Identity.Models;
+using Elsa.Api.Client.Resources.Identity.Requests;
+using Elsa.Api.Client.Resources.Identity.Responses;
 using Refit;
 
 namespace Elsa.Api.Client.Resources.Identity.Contracts;

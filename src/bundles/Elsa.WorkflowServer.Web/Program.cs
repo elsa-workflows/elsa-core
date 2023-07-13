@@ -1,16 +1,11 @@
 using Elsa;
 using Elsa.EntityFrameworkCore.Modules.Identity;
-using Elsa.EntityFrameworkCore.Modules.Labels;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using Elsa.Http.Handlers;
 using Elsa.JavaScript.Options;
 using Elsa.MongoDb.Extensions;
-using Elsa.MongoDb.Modules.Identity;
-using Elsa.MongoDb.Modules.Labels;
-using Elsa.MongoDb.Modules.Management;
-using Elsa.MongoDb.Modules.Runtime;
 using Elsa.WorkflowServer.Web;
 
 EndpointSecurityOptions.DisableSecurity();
@@ -18,7 +13,6 @@ EndpointSecurityOptions.DisableSecurity();
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 var configuration = builder.Configuration;
-var sqliteConnectionString = configuration.GetConnectionString("Sqlite")!;
 var identitySection = configuration.GetSection("Identity");
 var identityTokenSection = identitySection.GetSection("Tokens");
 
@@ -30,7 +24,6 @@ services
         .AddTypeAlias<ApiResponse<User>>("ApiResponse[User]")
         .UseIdentity(identity =>
         {
-            //identity.UseMongoDb();
             identity.UseEntityFrameworkCore();
             identity.IdentityOptions = options => identitySection.Bind(options);
             identity.TokenOptions = options => identityTokenSection.Bind(options);
@@ -41,7 +34,6 @@ services
         .UseDefaultAuthentication()
         .UseWorkflowManagement(management =>
         {
-            //management.UseMongoDb();
             management.UseEntityFrameworkCore();
             management.AddVariableType<ApiResponse<User>>("Api");
             management.AddVariableType<User>("Api");
@@ -49,10 +41,7 @@ services
         })
         .UseWorkflowRuntime(runtime =>
         {
-            //runtime.UseMongoDb();
             runtime.UseEntityFrameworkCore();
-            // runtime.UseDefaultRuntime(dr => dr.UseMongoDb());
-            // runtime.UseExecutionLogRecords(e => e.UseMongoDb());
             runtime.UseDefaultRuntime(dr => dr.UseEntityFrameworkCore());
             runtime.UseExecutionLogRecords(e => e.UseEntityFrameworkCore());
             runtime.UseAsyncWorkflowStateExporter();
@@ -63,8 +52,6 @@ services
         .UseWorkflowsApi(api => api.AddFastEndpointsAssembly<Program>())
         .UseJavaScript()
         .UseLiquid()
-        // .UseLabels(options => options.UseMongoDb())
-        .UseLabels(options => options.UseEntityFrameworkCore())
         .UseHttp(http => http.HttpEndpointAuthorizationHandler = sp => sp.GetRequiredService<AllowAnonymousHttpEndpointAuthorizationHandler>())
         .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options))
         .UseMongoDb(configuration.GetConnectionString("MongoDb")!, options => configuration.GetSection("MongoDb").Bind(options))

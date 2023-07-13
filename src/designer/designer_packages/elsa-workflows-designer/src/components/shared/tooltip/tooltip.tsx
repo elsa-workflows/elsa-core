@@ -25,6 +25,10 @@ export class Tooltip {
   private onMouseOver = () => {
     const rootNode: HTMLElement = this.element.querySelector('.tooltip-container');
     const tooltip: HTMLElement = this.element.querySelector('.tooltip');
+
+    if(!tooltip)
+      return;
+
     const rect = rootNode.getBoundingClientRect();
     const tooltipRect = tooltip.getBoundingClientRect();
 

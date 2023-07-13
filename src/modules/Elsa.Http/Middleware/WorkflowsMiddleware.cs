@@ -3,7 +3,6 @@ using Elsa.Http.Models;
 using Elsa.Http.Options;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Helpers;
-using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Runtime.Contracts;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
@@ -12,6 +11,7 @@ using System.Net;
 using System.Net.Mime;
 using System.Text.Json;
 using Elsa.Extensions;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.State;
 
 namespace Elsa.Http.Middleware;

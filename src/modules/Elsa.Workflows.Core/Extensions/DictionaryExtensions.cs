@@ -6,6 +6,7 @@ namespace Elsa.Extensions;
 public static class DictionaryExtensions
 {
     public static bool TryGetValue<T>(this IDictionary<string, object> dictionary, string key, out T value) => dictionary.TryGetValue<string, T>(key, out value);
+    public static bool TryGetValue<T>(this IDictionary<string, object> dictionary, IEnumerable<string> keys, out T value) => dictionary.TryGetValue<string, T>(keys, out value);
     public static bool TryGetValue<T>(this IDictionary<object, object> dictionary, string key, out T value) => dictionary.TryGetValue<object, T>(key, out value);
 
     public static bool TryGetValue<TKey, T>(this IDictionary<TKey, object> dictionary, TKey key, out T value)
@@ -19,6 +20,21 @@ public static class DictionaryExtensions
         value = ConvertValue<T>(item);
         return true;
     }
+    
+    public static bool TryGetValue<TKey, T>(this IDictionary<TKey, object> dictionary, IEnumerable<TKey> keys, out T value)
+    {
+        foreach (var key in keys)
+        {
+            if (dictionary.TryGetValue(key, out var item))
+            {
+                value = ConvertValue<T>(item);
+                return true;
+            }    
+        }
+        
+        value = default!;
+        return false;
+    }
 
     public static T? GetValue<TKey, T>(this IDictionary<TKey, T> dictionary, TKey key) => ConvertValue<T>(dictionary[key]);
     public static T? GetValue<T>(this IDictionary<string, object> dictionary, string key) => ConvertValue<T>(dictionary[key]);
@@ -26,6 +42,7 @@ public static class DictionaryExtensions
     public static T? GetValueOrDefault<TKey, T>(this IDictionary<TKey, object> dictionary, TKey key, Func<T?> defaultValueFactory) => TryGetValue<TKey, T>(dictionary, key, out var value) ? value : defaultValueFactory();
     public static T? GetValueOrDefault<TKey, T>(this IDictionary<TKey, object> dictionary, TKey key) => GetValueOrDefault<TKey, T>(dictionary, key, () => default);
     public static T? GetValueOrDefault<T>(this IDictionary<string, object> dictionary, string key, Func<T?> defaultValueFactory) => TryGetValue<T>(dictionary, key, out var value) ? value : defaultValueFactory();
+    public static T? GetValueOrDefault<T>(this IDictionary<string, object> dictionary, IEnumerable<string> keys, Func<T?> defaultValueFactory) => TryGetValue<T>(dictionary, keys, out var value) ? value : defaultValueFactory();
     public static T? GetValueOrDefault<T>(this IDictionary<string, object> dictionary, string key) => GetValueOrDefault<T>(dictionary, key, () => default);
     public static object? GetValueOrDefault(this IDictionary<string, object> dictionary, string key) => GetValueOrDefault<object>(dictionary, key, () => default);
 

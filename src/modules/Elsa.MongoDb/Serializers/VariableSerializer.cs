@@ -1,4 +1,5 @@
 using Elsa.Expressions.Services;
+using Elsa.Workflows.Core.Memory;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
 using Microsoft.Extensions.Logging.Abstractions;

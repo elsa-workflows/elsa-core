@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using Elsa.Expressions.Models;
@@ -8,8 +8,7 @@ using Elsa.JavaScript.Extensions;
 using Elsa.JavaScript.Notifications;
 using Elsa.JavaScript.Options;
 using Elsa.Mediator.Contracts;
-using Elsa.Mediator.PublishingStrategies;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Memory;
 using Humanizer;
 using Jint;
 using Microsoft.Extensions.Options;

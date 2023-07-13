@@ -2,6 +2,7 @@ using Elsa.Abstractions;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Workflows.Api.Models;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
@@ -27,16 +28,19 @@ internal class List : ElsaEndpoint<Request, Response>
 
     public override async Task<Response> ExecuteAsync(Request request, CancellationToken cancellationToken)
     {
-        var pageArgs = new PageArgs(request.Page, request.PageSize);
+        var pageArgs = PageArgs.FromPage(request.Page, request.PageSize);
 
         var filter = new WorkflowInstanceFilter
         {
             SearchTerm = request.SearchTerm,
             DefinitionId = request.DefinitionId,
+            DefinitionIds = request.DefinitionIds,
             Version = request.Version,
             CorrelationId = request.CorrelationId,
             WorkflowStatus = request.Status,
-            WorkflowSubStatus = request.SubStatus
+            WorkflowSubStatus = request.SubStatus,
+            WorkflowStatuses = request.Statuses?.Select(Enum.Parse<WorkflowStatus>).ToList(),
+            WorkflowSubStatuses = request.SubStatuses?.Select(Enum.Parse<WorkflowSubStatus>).ToList()
         };
 
         var summaries = await FindAsync(request, filter, pageArgs, cancellationToken);

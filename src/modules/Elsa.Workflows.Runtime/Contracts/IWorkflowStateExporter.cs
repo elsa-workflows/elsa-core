@@ -1,4 +1,4 @@
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.State;
 
 namespace Elsa.Workflows.Runtime.Contracts;
@@ -9,5 +9,12 @@ namespace Elsa.Workflows.Runtime.Contracts;
 /// </summary>
 public interface IWorkflowStateExporter
 {
+    /// <summary>
+    /// Exports the workflow state.
+    /// </summary>
+    /// <param name="workflow"></param>
+    /// <param name="workflowState"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     ValueTask ExportAsync(Workflow workflow, WorkflowState workflowState, CancellationToken cancellationToken);
 }

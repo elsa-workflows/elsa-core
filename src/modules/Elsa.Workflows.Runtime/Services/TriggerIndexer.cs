@@ -2,10 +2,10 @@ using System.Runtime.CompilerServices;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
-using Elsa.Mediator.PublishingStrategies;
+using Elsa.Workflows.Core;
+using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Helpers;
-using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Runtime.Comparers;
@@ -179,6 +179,9 @@ public class TriggerIndexer : ITriggerIndexer
         var triggerIndexingContext = new TriggerIndexingContext(context, expressionExecutionContext, trigger, cancellationToken);
         var triggerData = await TryGetTriggerDataAsync(trigger, triggerIndexingContext);
         var triggerTypeName = trigger.Type;
+
+        // If no trigger payloads were returned, create a null payload.
+        if (!triggerData.Any()) triggerData.Add(null!);
 
         var triggers = triggerData.Select(payload => new StoredTrigger
         {

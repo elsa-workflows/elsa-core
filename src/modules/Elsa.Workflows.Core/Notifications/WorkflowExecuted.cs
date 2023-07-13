@@ -1,5 +1,5 @@
 using Elsa.Mediator.Contracts;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.State;
 
 namespace Elsa.Workflows.Core.Notifications;

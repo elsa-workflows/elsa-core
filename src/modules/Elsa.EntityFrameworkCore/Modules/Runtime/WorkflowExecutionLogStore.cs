@@ -55,8 +55,8 @@ public class EFCoreWorkflowExecutionLogStore : IWorkflowExecutionLogStore
     /// <inheritdoc />
     public async Task<Page<WorkflowExecutionLogRecord>> FindManyAsync<TOrderBy>(WorkflowExecutionLogRecordFilter filter, PageArgs pageArgs, WorkflowExecutionLogRecordOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
-        var count = await _store.QueryAsync(queryable => Filter(queryable, filter).OrderBy(order), cancellationToken).LongCount();
-        var results = await _store.QueryAsync(queryable => Paginate(Filter(queryable, filter), pageArgs), LoadAsync, cancellationToken).ToList();
+        var count = await _store.QueryAsync(queryable => Filter(queryable, filter), cancellationToken).LongCount();
+        var results = await _store.QueryAsync(queryable => Paginate(Filter(queryable, filter), pageArgs).OrderBy(order), LoadAsync, cancellationToken).ToList();
         return new(results, count);
     }
 

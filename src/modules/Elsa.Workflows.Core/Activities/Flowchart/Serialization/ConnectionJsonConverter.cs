@@ -44,6 +44,9 @@ public class ConnectionJsonConverter : JsonConverter<Connection>
     /// <inheritdoc />
     public override void Write(Utf8JsonWriter writer, Connection value, JsonSerializerOptions options)
     {
+        if (value.Source.Activity == null! || value.Target.Activity == null!)
+            return;
+        
         var model = new
         {
             Source = new

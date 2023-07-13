@@ -2,6 +2,7 @@
 using System.Text.Json.Serialization;
 using Elsa.Common.Contracts;
 using Elsa.Extensions;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 
@@ -38,7 +39,7 @@ public class Timer : EventGenerator
     /// <summary>
     /// The interval at which the timer should execute.
     /// </summary>
-    [Input(Description = "The interval at which the timer should execute.")]
+    [Input(Description = "The interval at which the timer should execute.", DefaultValue = "00:01:00")]
     public Input<TimeSpan> Interval { get; set; } = default!;
 
     /// <inheritdoc />

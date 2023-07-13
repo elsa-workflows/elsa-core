@@ -1,6 +1,5 @@
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Samples.ConsoleApp.LoopingWorkflows.Workflows;
 

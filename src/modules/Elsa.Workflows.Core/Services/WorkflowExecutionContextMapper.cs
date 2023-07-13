@@ -20,6 +20,7 @@ public class WorkflowExecutionContextMapper : IWorkflowExecutionContextMapper
             Status = workflowExecutionContext.Status,
             SubStatus = workflowExecutionContext.SubStatus,
             Bookmarks = workflowExecutionContext.Bookmarks,
+            ExecutionLogSequence = workflowExecutionContext.ExecutionLogSequence,
             Output = workflowExecutionContext.Output,
             Fault = MapFault(workflowExecutionContext.Fault)
         };
@@ -39,6 +40,7 @@ public class WorkflowExecutionContextMapper : IWorkflowExecutionContextMapper
         workflowExecutionContext.SubStatus = state.SubStatus;
         workflowExecutionContext.Bookmarks = state.Bookmarks;
         workflowExecutionContext.Output = state.Output;
+        workflowExecutionContext.ExecutionLogSequence = state.ExecutionLogSequence;
         ApplyProperties(state, workflowExecutionContext);
         ApplyActivityExecutionContexts(state, workflowExecutionContext);
         ApplyCompletionCallbacks(state, workflowExecutionContext);
@@ -103,7 +105,8 @@ public class WorkflowExecutionContextMapper : IWorkflowExecutionContextMapper
                 ScheduledActivityNodeId = activityExecutionContext.NodeId,
                 OwnerActivityNodeId = activityExecutionContext.ParentActivityExecutionContext?.NodeId,
                 Properties = activityExecutionContext.Properties,
-                ActivityState = activityExecutionContext.ActivityState
+                ActivityState = activityExecutionContext.ActivityState,
+                Status = activityExecutionContext.Status,
             };
             return activityExecutionContextState;
         }
@@ -121,6 +124,7 @@ public class WorkflowExecutionContextMapper : IWorkflowExecutionContextMapper
             activityExecutionContext.Id = activityExecutionContextState.Id;
             activityExecutionContext.Properties = properties;
             activityExecutionContext.ActivityState = activityExecutionContextState.ActivityState ?? new Dictionary<string, object>();
+            activityExecutionContext.Status = activityExecutionContextState.Status;
 
             return activityExecutionContext;
         }

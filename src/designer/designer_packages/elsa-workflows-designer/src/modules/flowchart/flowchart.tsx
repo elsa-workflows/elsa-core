@@ -305,7 +305,7 @@ export class FlowchartComponent {
     await this.updateGraph();
   }
 
-  private getFlowchartDescriptor = () => this.getActivityDescriptor(FlowchartTypeName);
+  private getFlowchartDescriptor = () => this.getActivityDescriptor(FlowchartTypeName, 1);
 
   private createFlowchart = async (): Promise<Flowchart> => {
     const descriptor = this.getFlowchartDescriptor();
@@ -408,7 +408,7 @@ export class FlowchartComponent {
     return this.rootActivity;
   }
 
-  private getActivityDescriptor = (typeName: string): ActivityDescriptor => descriptorsStore.activityDescriptors.find(x => x.typeName == typeName)
+  private getActivityDescriptor = (typeName: string, version: number): ActivityDescriptor => descriptorsStore.activityDescriptors.find(x => x.typeName == typeName && x.version == version);
 
   private setupGraph = async (flowchart: Flowchart) => {
     const activities = flowchart.activities;
@@ -428,7 +428,7 @@ export class FlowchartComponent {
     const nodes: Array<Node.Metadata> = activities.map(activity => {
       const position = activity.metadata.designer?.position || {x: 100, y: 100};
       const {x, y} = position;
-      const descriptor = this.getActivityDescriptor(activity.type);
+      const descriptor = this.getActivityDescriptor(activity.type, activity.version);
       return this.nodeFactory.createNode(descriptor, activity, x, y);
     });
 
@@ -638,7 +638,7 @@ export class FlowchartComponent {
 
     if (!node.isClone) {
       const activity = {...node.getData()} as Activity;
-      const activityDescriptor = this.getActivityDescriptor(activity.type);
+      const activityDescriptor = this.getActivityDescriptor(activity.type, activity.version);
       activity.id = await this.generateUniqueActivityName(activityDescriptor)
       node.activity = {...activity};
     }
@@ -701,7 +701,7 @@ export class FlowchartComponent {
   }
 
   private updatePorts = (node: any, activity: Activity) => {
-    const descriptor = this.getActivityDescriptor(activity.type);
+    const descriptor = this.getActivityDescriptor(activity.type, activity.version);
     const desiredPorts = this.nodeFactory.createPorts(descriptor, activity);
     const actualPorts = node.ports.items;
 

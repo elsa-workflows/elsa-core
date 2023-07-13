@@ -69,6 +69,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                     b.Property<string>("StringData")
                         .HasColumnType("text");
 
+                    b.Property<string>("ToolVersion")
+                        .HasColumnType("text");
+
                     b.Property<bool?>("UsableAsActivity")
                         .HasColumnType("boolean");
 

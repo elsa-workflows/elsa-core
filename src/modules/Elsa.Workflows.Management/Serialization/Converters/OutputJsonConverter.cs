@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Extensions;
+using Elsa.Workflows.Core.Memory;
 using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Workflows.Management.Serialization.Converters;

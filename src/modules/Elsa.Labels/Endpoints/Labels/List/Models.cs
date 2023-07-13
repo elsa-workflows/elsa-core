@@ -8,7 +8,7 @@ public class Request
     public int? Page { get; set; }
     public int? PageSize { get; set; }
 
-    public PageArgs ToPageArgs() => new(Page, PageSize);
+    public PageArgs ToPageArgs() => PageArgs.FromPage(Page, PageSize);
 }
 
 public class Response

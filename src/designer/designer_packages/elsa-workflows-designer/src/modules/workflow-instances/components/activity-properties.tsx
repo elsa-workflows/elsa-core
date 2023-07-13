@@ -102,7 +102,7 @@ export class ActivityProperties {
   private renderPropertiesTab = () => {
     const activity = this.activity;
     const activityDescriptor = this.findActivityDescriptor();
-    const properties = activityDescriptor.inputs;
+    const properties = activityDescriptor.inputs.filter(x => x.isBrowsable);
     const activityId = activity.id;
     const displayText: string = activity.metadata?.displayText ?? '';
     const executionLogEntry = this.activityExecutionLog;
@@ -114,9 +114,8 @@ export class ActivityProperties {
     };
 
     for (const property of properties) {
-      const propertyName = camelCase(property.name);
       const loggedPropName = property.name;
-      const propertyValue = activityState[loggedPropName] ?? activity[propertyName]?.expression?.value;
+      const propertyValue = activityState[loggedPropName];
       const propertyValueText = (propertyValue !== null && typeof propertyValue === 'object') ? JSON.stringify(propertyValue) : (propertyValue != null ? propertyValue.toString() : '');
       propertyDetails[property.displayName] = propertyValueText;
     }

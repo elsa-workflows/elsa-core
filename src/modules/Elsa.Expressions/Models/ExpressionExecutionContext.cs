@@ -126,6 +126,9 @@ public class ExpressionExecutionContext
 
     private MemoryBlock? GetBlockInternal(MemoryBlockReference blockReference)
     {
+        if (blockReference.Id == null!)
+            return null;
+        
         var currentContext = this;
 
         while (currentContext != null)

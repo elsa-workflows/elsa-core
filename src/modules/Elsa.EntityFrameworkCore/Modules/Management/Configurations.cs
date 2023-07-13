@@ -1,4 +1,5 @@
-using Elsa.Workflows.Core.Models;
+using System.Linq.Expressions;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Management.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -8,6 +9,9 @@ namespace Elsa.EntityFrameworkCore.Modules.Management;
 
 internal class Configurations : IEntityTypeConfiguration<WorkflowDefinition>, IEntityTypeConfiguration<WorkflowInstance>
 {
+    private static Expression<Func<Version?, string?>> VersionToStringConverter => v => v != null ? v.ToString() : null;
+    private static Expression<Func<string?, Version?>> StringToVersionConverter => v => v != null ? Version.Parse(v) : null;
+    
     public void Configure(EntityTypeBuilder<WorkflowDefinition> builder)
     {
         builder.Ignore(x => x.Variables);
@@ -18,6 +22,7 @@ internal class Configurations : IEntityTypeConfiguration<WorkflowDefinition>, IE
         builder.Ignore(x => x.Options);
         builder.Property<string>("Data");
         builder.Property<bool?>("UsableAsActivity");
+        builder.Property(x => x.ToolVersion).HasConversion(VersionToStringConverter, StringToVersionConverter);
 
         builder.HasIndex(x => new {x.DefinitionId, x.Version}).HasDatabaseName($"IX_{nameof(WorkflowDefinition)}_{nameof(WorkflowDefinition.DefinitionId)}_{nameof(WorkflowDefinition.Version)}").IsUnique();
         builder.HasIndex(x => x.Version).HasDatabaseName($"IX_{nameof(WorkflowDefinition)}_{nameof(WorkflowDefinition.Version)}");

@@ -1,5 +1,4 @@
 using System.Text.Json.Serialization;
-using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Workflows.Core.Contracts;
 
@@ -12,6 +11,11 @@ public interface IActivity
     /// An identifier that is unique within a collection of activities. 
     /// </summary>
     string Id { get; set; }
+    
+    /// <summary>
+    /// An optional name by which the activity can be referenced.
+    /// </summary>
+    string? Name { get; set; }
     
     /// <summary>
     /// The logical type name of the activity.

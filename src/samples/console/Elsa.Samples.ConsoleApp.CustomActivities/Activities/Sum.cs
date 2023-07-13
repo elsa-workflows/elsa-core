@@ -1,4 +1,6 @@
 using Elsa.Extensions;
+using Elsa.Workflows.Core;
+using Elsa.Workflows.Core.Memory;
 using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Samples.ConsoleApp.CustomActivities.Activities;

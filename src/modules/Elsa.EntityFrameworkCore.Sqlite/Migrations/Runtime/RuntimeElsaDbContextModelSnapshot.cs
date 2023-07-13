@@ -38,6 +38,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     b.Property<int>("DefinitionVersion")
                         .HasColumnType("INTEGER");
 
+                    b.Property<long>("ExecutionLogSequence")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -187,6 +190,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     b.Property<string>("PayloadData")
                         .HasColumnType("TEXT");
 
+                    b.Property<long>("Sequence")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Source")
                         .HasColumnType("TEXT");
 
@@ -222,6 +228,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     b.HasIndex("ParentActivityInstanceId")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_ParentActivityInstanceId");
 
+                    b.HasIndex("Sequence")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_Sequence");
+
                     b.HasIndex("Timestamp")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_Timestamp");
 
@@ -233,6 +242,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
 
                     b.HasIndex("WorkflowVersion")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_WorkflowVersion");
+
+                    b.HasIndex("Timestamp", "Sequence")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_Timestamp_Sequence");
 
                     b.ToTable("WorkflowExecutionLogRecords");
                 });

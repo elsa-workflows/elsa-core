@@ -274,7 +274,6 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
         var set = dbContext.Set<TEntity>();
         var queryable = query(set.AsQueryable());
 
-        queryable = query(queryable);
         var entities = await queryable.ToListAsync(cancellationToken);
 
         if (onLoading != null)

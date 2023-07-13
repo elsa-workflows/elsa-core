@@ -3,8 +3,20 @@ using MongoDB.Driver;
 
 namespace Elsa.MongoDb.Extensions;
 
+/// <summary>
+/// Provides extension methods for building expressions.
+/// </summary>
 public static class DocumentExtensions
 {
+    /// <summary>
+    /// Builds a filter expression for the specified property name.
+    /// </summary>
+    /// <param name="document">The document.</param>
+    /// <param name="selector">The property selector.</param>
+    /// <typeparam name="TDocument">The type of the document.</typeparam>
+    /// <typeparam name="TResult">The type of the property.</typeparam>
+    /// <exception cref="ArgumentNullException">The document is null.</exception>
+    /// <exception cref="ArgumentException">The selector is not a member expression.</exception>
     public static Expression<Func<TDocument, bool>> BuildExpression<TDocument, TResult>(this TDocument document, Expression<Func<TDocument, TResult>> selector)
     {
         if (document == null) throw new ArgumentNullException(nameof(document));
@@ -18,9 +30,20 @@ public static class DocumentExtensions
         return document.BuildFilter(propertyName);
     }
     
+    /// <summary>
+    /// Builds a filter expression for the Id property.
+    /// </summary>
+    /// <param name="document">The document.</param>
+    /// <typeparam name="TDocument">The type of the document.</typeparam>
     public static Expression<Func<TDocument, bool>> BuildIdFilter<TDocument>(this TDocument document) => 
         document.BuildFilter("Id");
 
+    /// <summary>
+    /// Builds a filter expression for the Id property name of the specified documents.
+    /// </summary>
+    /// <param name="documents">The documents.</param>
+    /// <typeparam name="TDocument">The type of the document.</typeparam>
+    /// <exception cref="InvalidOperationException">The type does not have an Id property.</exception>
     public static FilterDefinition<TDocument> BuildIdFilterForList<TDocument>(this IEnumerable<TDocument> documents)
     {
         var propertyName = "Id";

@@ -5,6 +5,7 @@ internal class WorkflowDefinitionRecord
     public string Id { get; set; } = default!;
     public string DefinitionId { get; set; } = default!;
     public string? Name { get; set; }
+    public string? ToolVersion { get; set; }
     public string? Description { get; set; }
     public string? ProviderName { get; set; }
     public string MaterializerName { get; set; } = default!;

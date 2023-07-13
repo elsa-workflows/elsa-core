@@ -6,8 +6,8 @@ using Elsa.Dapper.Models;
 using Elsa.Dapper.Modules.Management.Records;
 using Elsa.Dapper.Services;
 using Elsa.Extensions;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
@@ -136,6 +136,8 @@ public class DapperWorkflowInstanceStore : IWorkflowInstanceStore
             .Equals(nameof(WorkflowInstance.Name), filter.Version)
             .Equals(nameof(WorkflowInstance.CorrelationId), filter.CorrelationId)
             .In(nameof(WorkflowInstance.CorrelationId), filter.CorrelationIds)
+            .In(nameof(WorkflowInstance.Status), filter.WorkflowStatuses?.Select(x => x.ToString()))
+            .In(nameof(WorkflowInstance.SubStatus), filter.WorkflowSubStatuses?.Select(x => x.ToString()))
             .AndWorkflowInstanceSearchTerm(filter.SearchTerm);
     }
     

@@ -1,6 +1,6 @@
 using Elsa.Mediator.Contracts;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Helpers;
-using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Notifications;
 using Elsa.Workflows.Runtime.Activities;
 using Elsa.Workflows.Runtime.Bookmarks;

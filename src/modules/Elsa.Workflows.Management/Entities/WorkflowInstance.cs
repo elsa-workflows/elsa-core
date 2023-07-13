@@ -1,5 +1,5 @@
 using Elsa.Common.Entities;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.State;
 
 namespace Elsa.Workflows.Management.Entities;

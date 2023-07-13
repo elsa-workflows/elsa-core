@@ -1,6 +1,6 @@
 using Elsa.Samples.AspNet.WorkflowContexts.Entities;
 using Elsa.WorkflowContexts.Abstractions;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core;
 
 namespace Elsa.Samples.AspNet.WorkflowContexts.Providers;
 

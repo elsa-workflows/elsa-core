@@ -1,3 +1,4 @@
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
@@ -107,8 +108,7 @@ public static class WorkflowExecutionContextExtensions
     }
 
     /// <summary>
-    /// Returns true if all activities have completed.
+    /// Returns true if all activities have completed or canceled, false otherwise.
     /// </summary>
-    /// <returns>True if all activities have completed, otherwise false.</returns>
-    public static bool AllActivitiesCompleted(this WorkflowExecutionContext workflowExecutionContext) => !workflowExecutionContext.ActivityExecutionContexts.Any();
+    public static bool AllActivitiesCompleted(this WorkflowExecutionContext workflowExecutionContext) => workflowExecutionContext.ActivityExecutionContexts.All(x => x.Status != ActivityStatus.Running);
 }

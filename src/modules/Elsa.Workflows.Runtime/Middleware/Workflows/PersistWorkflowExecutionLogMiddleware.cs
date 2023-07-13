@@ -1,5 +1,5 @@
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
@@ -16,7 +16,7 @@ public class PersistWorkflowExecutionLogMiddleware : WorkflowExecutionMiddleware
 
     /// <inheritdoc />
     public PersistWorkflowExecutionLogMiddleware(
-        WorkflowMiddlewareDelegate next, 
+        WorkflowMiddlewareDelegate next,
         IWorkflowExecutionLogStore workflowExecutionLogStore,
         IIdentityGenerator identityGenerator) : base(next)
     {
@@ -31,7 +31,7 @@ public class PersistWorkflowExecutionLogMiddleware : WorkflowExecutionMiddleware
         await Next(context);
 
         // Persist workflow execution log entries.
-        var entries = await Task.WhenAll(context.ExecutionLog.Select(x => Task.FromResult(new WorkflowExecutionLogRecord
+        var entries = context.ExecutionLog.Select(x => new WorkflowExecutionLogRecord
         {
             Id = _identityGenerator.GenerateId(),
             ActivityInstanceId = x.ActivityInstanceId,
@@ -47,8 +47,9 @@ public class PersistWorkflowExecutionLogMiddleware : WorkflowExecutionMiddleware
             Source = x.Source,
             ActivityState = x.ActivityState,
             Payload = x.Payload,
-            Timestamp = x.Timestamp
-        })).ToList());
+            Timestamp = x.Timestamp,
+            Sequence = x.Sequence
+        }).ToList();
 
         await _workflowExecutionLogStore.SaveManyAsync(entries, context.CancellationToken);
     }

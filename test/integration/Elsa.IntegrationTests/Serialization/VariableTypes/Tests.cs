@@ -2,7 +2,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 using Xunit.Abstractions;

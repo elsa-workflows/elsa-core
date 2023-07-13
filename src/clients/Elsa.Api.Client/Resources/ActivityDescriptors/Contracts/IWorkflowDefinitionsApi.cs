@@ -1,4 +1,5 @@
-using Elsa.Api.Client.Resources.ActivityDescriptors.Models;
+using Elsa.Api.Client.Resources.ActivityDescriptors.Requests;
+using Elsa.Api.Client.Resources.ActivityDescriptors.Responses;
 using Refit;
 
 namespace Elsa.Api.Client.Resources.ActivityDescriptors.Contracts;

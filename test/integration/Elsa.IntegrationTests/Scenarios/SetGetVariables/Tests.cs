@@ -21,10 +21,10 @@ public class Tests
         _workflowRunner = services.GetRequiredService<IWorkflowRunner>();
     }
 
-    [Fact(DisplayName = "Subsequent activity does not get scheduled when previous activity created a bookmark")]
+    [Fact(DisplayName = "Workflow can set variable")]
     public async Task Test1()
     {
-        await _workflowRunner.RunAsync<SetGetVariablesWorkflow>();
+        await _workflowRunner.RunAsync<SetGetVariableWorkflow>();
         var lines = _capturingTextWriter.Lines.ToList();
         Assert.Equal(new[] { "Line 5" }, lines);
     }
@@ -32,8 +32,8 @@ public class Tests
     [Fact(DisplayName = "Workflow can reference variables set in previous activities")]
     public async Task Test2()
     {
-        await _workflowRunner.RunAsync<SetGetNamedVariablesWorkflow>();
+        await _workflowRunner.RunAsync<SetGetVariablesWorkflow>();
         var lines = _capturingTextWriter.Lines.ToList();
-        Assert.Equal(new[] { "Other variable: Some value" }, lines);
+        Assert.Equal(new[] { "Variable 2: The value of variable 1" }, lines);
     }
 }

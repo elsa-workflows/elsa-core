@@ -8,6 +8,7 @@ using Elsa.Dapper.Modules.Management.Records;
 using Elsa.Dapper.Services;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Core.Memory;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
@@ -148,6 +149,18 @@ public class DapperWorkflowDefinitionStore : IWorkflowDefinitionStore
         return await _store.CountAsync(
             filter => filter.Count($"distinct {nameof(WorkflowDefinition.DefinitionId)}", TableName), 
             cancellationToken);
+    }
+
+    public async Task<bool> GetIsNameUnique(string name, string? definitionId = default, CancellationToken cancellationToken = default)
+    {
+        return await _store.AnyAsync(query =>
+        {
+            query.Equals(nameof(WorkflowDefinition.Name), name);
+            
+            if(definitionId != null)
+                query.NotEquals(nameof(WorkflowDefinition.DefinitionId), definitionId);
+            
+        }, cancellationToken);
     }
 
     private void ApplyFilter(ParameterizedQuery query, WorkflowDefinitionFilter filter)

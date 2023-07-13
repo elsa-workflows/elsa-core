@@ -1,11 +1,11 @@
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.BulkPublish;
 
-public class Request
+internal class Request
 {
     public ICollection<string> DefinitionIds { get; set; } = default!;
 }
 
-public class Response
+internal class Response
 {
     public Response(ICollection<string> published, ICollection<string> alreadyPublished, ICollection<string> notFound)
     {

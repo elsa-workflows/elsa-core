@@ -35,19 +35,10 @@ public class InputJsonConverter<T> : JsonConverter<Input<T>>
             if (!doc.RootElement.TryGetProperty("typeName", out _))
                 return default!;
 
-            var expressionElement = doc.RootElement.GetProperty("expression");
-
-            if (!expressionElement.TryGetProperty("type", out var expressionTypeNameElement))
-                return default!;
-
-            if (!expressionElement.TryGetProperty("value", out _))
-                return default!;
-
-            var expressionTypeName = expressionTypeNameElement.GetString() ?? "Literal";
-            var expressionSyntaxDescriptor = _expressionSyntaxRegistry.Find(expressionTypeName);
-
-            if (expressionSyntaxDescriptor == null)
-                return default!;
+            var expressionElement = doc.RootElement.TryGetProperty("expression", out var expressionElementValue) ? expressionElementValue : default;
+            var expressionTypeNameElement = expressionElement.ValueKind != JsonValueKind.Undefined ? expressionElement.TryGetProperty("type", out var expressionTypeNameElementValue) ? expressionTypeNameElementValue : default : default;
+            var expressionTypeName = expressionTypeNameElement.ValueKind != JsonValueKind.Undefined ? expressionTypeNameElement.GetString() ?? "Literal" : default;
+            var expressionSyntaxDescriptor = expressionTypeName != null ? _expressionSyntaxRegistry.Find(expressionTypeName) : default;
 
             doc.RootElement.TryGetProperty("memoryReference", out var memoryReferenceElement);
 
@@ -58,8 +49,11 @@ public class InputJsonConverter<T> : JsonConverter<Input<T>>
                     : default;
 
             var context = new ExpressionConstructorContext(expressionElement, options);
-            var expression = expressionSyntaxDescriptor.CreateExpression(context);
-            var memoryBlockReference = expressionSyntaxDescriptor.CreateBlockReference(new BlockReferenceConstructorContext(expression));
+            var expression = expressionSyntaxDescriptor?.CreateExpression(context);
+            var memoryBlockReference = expression != null ? expressionSyntaxDescriptor?.CreateBlockReference(new BlockReferenceConstructorContext(expression)) : memoryReferenceId != null ? new ReadReference(memoryReferenceId) : default;
+
+            if (memoryBlockReference == null)
+                return default!;
 
             if (memoryBlockReference.Id == null!)
                 memoryBlockReference.Id = memoryReferenceId!;
@@ -75,18 +69,15 @@ public class InputJsonConverter<T> : JsonConverter<Input<T>>
     public override void Write(Utf8JsonWriter writer, Input<T> value, JsonSerializerOptions options)
     {
         var expression = value.Expression;
-        var expressionType = expression.GetType();
+        var expressionType = expression?.GetType();
         var targetType = value.Type;
         var memoryReferenceId = value.MemoryBlockReference().Id;
-        var expressionSyntaxDescriptor = _expressionSyntaxRegistry.Find(x => x.Type == expressionType);
-
-        if (expressionSyntaxDescriptor == null)
-            throw new Exception($"Syntax descriptor with expression type {expressionType} not found in registry");
+        var expressionSyntaxDescriptor = expression != null ? _expressionSyntaxRegistry.Find(x => x.Type == expressionType) : default;
 
         var model = new
         {
             TypeName = targetType,
-            Expression = expressionSyntaxDescriptor.CreateSerializableObject(new SerializableObjectConstructorContext(expression)),
+            Expression = expressionSyntaxDescriptor?.CreateSerializableObject(new SerializableObjectConstructorContext(expression!)),
             MemoryReference = new
             {
                 Id = memoryReferenceId

@@ -8,5 +8,6 @@ internal class WorkflowStateRecord
     public string? CorrelationId { get; set; }
     public string Status { get; set; } = default!;
     public string SubStatus { get; set; } = default!;
+    public long ExecutionLogSequence { get; set; }
     public string Props { get; set; } = default!;
 }

@@ -41,6 +41,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                     b.Property<int>("DefinitionVersion")
                         .HasColumnType("int");
 
+                    b.Property<long>("ExecutionLogSequence")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("varchar(255)");
@@ -189,6 +192,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                     b.Property<string>("PayloadData")
                         .HasColumnType("longtext");
 
+                    b.Property<long>("Sequence")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("Source")
                         .HasColumnType("longtext");
 
@@ -223,6 +229,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                     b.HasIndex("ParentActivityInstanceId")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_ParentActivityInstanceId");
 
+                    b.HasIndex("Sequence")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_Sequence");
+
                     b.HasIndex("Timestamp")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_Timestamp");
 
@@ -234,6 +243,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
 
                     b.HasIndex("WorkflowVersion")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_WorkflowVersion");
+
+                    b.HasIndex("Timestamp", "Sequence")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_Timestamp_Sequence");
 
                     b.ToTable("WorkflowExecutionLogRecords", "Elsa");
                 });

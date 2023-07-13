@@ -9,6 +9,7 @@ internal class Request
 {
     public string? VersionOptions { get; set; }
     public string[]? DefinitionIds { get; set; }
+    public string[]? Ids { get; set; }
     [BindFrom("materializer")] public string? MaterializerName { get; set; }
     [BindFrom("label")] public string[]? Labels { get; set; }
     public int? Page { get; set; }

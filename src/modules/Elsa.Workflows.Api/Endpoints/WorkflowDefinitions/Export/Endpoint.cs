@@ -63,6 +63,7 @@ public class Export : ElsaEndpoint<Request>
             definition.Description,
             definition.CreatedAt,
             definition.Version,
+            definition.ToolVersion,
             variables,
             definition.Inputs,
             definition.Outputs,

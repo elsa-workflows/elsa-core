@@ -1,3 +1,5 @@
+using Elsa.Api.Client.Resources.ActivityDescriptors.Enums;
+
 namespace Elsa.Api.Client.Resources.ActivityDescriptors.Models;
 
 /// <summary>

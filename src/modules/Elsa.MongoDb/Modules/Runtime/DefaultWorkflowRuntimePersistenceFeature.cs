@@ -2,7 +2,6 @@ using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.MongoDb.Common;
 using Elsa.Workflows.Core.State;
-using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Features;
 using Microsoft.Extensions.DependencyInjection;
 

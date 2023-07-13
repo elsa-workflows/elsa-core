@@ -6,7 +6,9 @@ using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Helpers;
 using Elsa.Telnyx.Models;
 using Elsa.Telnyx.Payloads.Abstract;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Memory;
 using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Telnyx.Activities;

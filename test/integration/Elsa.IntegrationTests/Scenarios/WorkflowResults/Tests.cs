@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 using Xunit.Abstractions;
@@ -20,24 +20,24 @@ public class Tests
         _workflowRunner = services.GetRequiredService<IWorkflowRunner>();
     }
 
-    [Fact(DisplayName = "Setting a named variable should be captured when the ResultVariable is set")]
+    [Fact(DisplayName = "Setting a variable should be captured when the ResultVariable is set")]
     public async Task Test1()
     {
         var expectedValue = "Some value";
-        var variableName = "MyVar";
+        var variable1 = new Variable();
         
         var workflow = Workflow.FromActivity(new Sequence
         {
             Activities =
             {
-                new SetVariable()
+                new SetVariable
                 {
-                    Variable = new (variableName),
+                    Variable = variable1,
                     Value = new (expectedValue)
                 }
             }
         });
-        workflow.ResultVariable = new (variableName);
+        workflow.ResultVariable = variable1;
         var runWorkflowResult = await _workflowRunner.RunAsync(workflow);
         Assert.Equal(expectedValue, runWorkflowResult.Result);
     }
