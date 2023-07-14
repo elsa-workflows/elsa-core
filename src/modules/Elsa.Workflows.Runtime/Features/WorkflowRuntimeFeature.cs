@@ -49,7 +49,7 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// <summary>
     /// A factory that instantiates an <see cref="IWorkflowDispatcher"/>.
     /// </summary>
-    public Func<IServiceProvider, IWorkflowDispatcher> WorkflowDispatcher { get; set; } = sp => ActivatorUtilities.CreateInstance<TaskBasedWorkflowDispatcher>(sp);
+    public Func<IServiceProvider, IWorkflowDispatcher> WorkflowDispatcher { get; set; } = sp => ActivatorUtilities.CreateInstance<BackgroundWorkflowDispatcher>(sp);
     
     /// <summary>
     /// A factory that instantiates an <see cref="IBookmarkStore"/>.
@@ -74,12 +74,12 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// <summary>
     /// A factory that instantiates an <see cref="IWorkflowStateExporter"/>.
     /// </summary>
-    public Func<IServiceProvider, IWorkflowStateExporter> WorkflowStateExporter { get; set; } = ActivatorUtilities.GetServiceOrCreateInstance<AsyncWorkflowStateExporter>;
+    public Func<IServiceProvider, IWorkflowStateExporter> WorkflowStateExporter { get; set; } = ActivatorUtilities.GetServiceOrCreateInstance<BackgroundWorkflowStateExporter>;
 
     /// <summary>
     /// A factory that instantiates an <see cref="ITaskDispatcher"/>.
     /// </summary>
-    public Func<IServiceProvider, ITaskDispatcher> RunTaskDispatcher { get; set; } = sp => sp.GetRequiredService<AsynchronousTaskDispatcher>();
+    public Func<IServiceProvider, ITaskDispatcher> RunTaskDispatcher { get; set; } = sp => sp.GetRequiredService<BackgroundTaskDispatcher>();
 
     /// <summary>
     /// A factory that instantiates an <see cref="IBackgroundActivityScheduler"/>.
@@ -152,7 +152,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddSingleton<IRegistriesPopulator, DefaultRegistriesPopulator>()
             .AddSingleton<ITaskReporter, TaskReporter>()
             .AddSingleton<SynchronousTaskDispatcher>()
-            .AddSingleton<AsynchronousTaskDispatcher>()
+            .AddSingleton<BackgroundTaskDispatcher>()
             .AddSingleton<IEventPublisher, EventPublisher>()
             
             // Lazy services.

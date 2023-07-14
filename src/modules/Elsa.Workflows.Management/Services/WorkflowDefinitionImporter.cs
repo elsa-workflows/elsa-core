@@ -31,7 +31,7 @@ namespace Elsa.Workflows.Management.Services
         }
 
         /// <inheritdoc />
-        public async Task<WorkflowDefinition> ImportAsync(SaveWorkflowDefinitionRequest request, CancellationToken cancellationToken = default)
+        public async Task<ImportWorkflowResult> ImportAsync(SaveWorkflowDefinitionRequest request, CancellationToken cancellationToken = default)
         {
             var model = request.Model;
             var definitionId = model.DefinitionId;
@@ -71,9 +71,15 @@ namespace Elsa.Workflows.Management.Services
             draft.Outcomes = model.Outcomes ?? new List<string>();
             draft.IsReadonly = model.IsReadonly;
             draft.Options = model.Options ?? new WorkflowOptions();
-            draft = request.Publish ?? model.IsPublished ? await _workflowDefinitionPublisher.PublishAsync(draft, cancellationToken) : await _workflowDefinitionPublisher.SaveDraftAsync(draft, cancellationToken);
 
-            return draft;
+            if (request.Publish ?? model.IsPublished)
+            {
+                var result = await _workflowDefinitionPublisher.PublishAsync(draft, cancellationToken);
+                return new ImportWorkflowResult(result.Succeeded, draft, result.ValidationErrors);
+            }
+
+            await _workflowDefinitionPublisher.SaveDraftAsync(draft, cancellationToken);
+            return new ImportWorkflowResult(true, draft, new List<WorkflowValidationError>());
         }
     }
 }

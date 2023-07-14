@@ -1,3 +1,4 @@
+using Elsa.Mediator;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Sinks.Commands;
@@ -6,16 +7,16 @@ using Elsa.Workflows.Sinks.Contracts;
 namespace Elsa.Workflows.Sinks.Services;
 
 /// <summary>
-/// A default <see cref="IWorkflowSinkDispatcher"/> implementation that uses the <see cref="IBackgroundCommandSender"/> service for asynchronous, in-process invocation of workflow state sinks.
+/// Uses the <see cref="ICommandSender"/> to process the received workflow state from a background worker.
 /// </summary>
-public class DefaultWorkflowSinkDispatcher : IWorkflowSinkDispatcher
+public class BackgroundWorkflowSinkDispatcher : IWorkflowSinkDispatcher
 {
-    private readonly IBackgroundCommandSender _sender;
+    private readonly ICommandSender _sender;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public DefaultWorkflowSinkDispatcher(IBackgroundCommandSender sender)
+    public BackgroundWorkflowSinkDispatcher(ICommandSender sender)
     {
         _sender = sender;
     }
@@ -24,6 +25,6 @@ public class DefaultWorkflowSinkDispatcher : IWorkflowSinkDispatcher
     public async Task DispatchAsync(WorkflowState workflowState, CancellationToken cancellationToken = default)
     {
         var command = new ProcessWorkflowState(workflowState);
-        await _sender.SendAsync(command, cancellationToken);
+        await _sender.SendAsync(command, CommandStrategy.Background, cancellationToken);
     }
 }

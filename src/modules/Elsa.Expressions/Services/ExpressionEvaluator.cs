@@ -12,15 +12,15 @@ public class ExpressionEvaluator : IExpressionEvaluator
         _registry = registry;
     }
 
-    public async ValueTask<T?> EvaluateAsync<T>(IExpression input, ExpressionExecutionContext context) => (T?)await EvaluateAsync(input, typeof(T), context);
+    public async ValueTask<T?> EvaluateAsync<T>(IExpression expression, ExpressionExecutionContext context) => (T?)await EvaluateAsync(expression, typeof(T), context);
 
-    public async ValueTask<object?> EvaluateAsync(IExpression input, Type returnType, ExpressionExecutionContext context)
+    public async ValueTask<object?> EvaluateAsync(IExpression expression, Type returnType, ExpressionExecutionContext context)
     {
-        var handler = _registry.GetHandler(input);
+        var handler = _registry.GetHandler(expression);
 
         if (handler != null)
-            return await handler.EvaluateAsync(input, returnType, context);
+            return await handler.EvaluateAsync(expression, returnType, context);
         
-        throw new InvalidOperationException($"Could not find handler for expression type {input.GetType().FullName}");
+        throw new InvalidOperationException($"Could not find handler for expression type {expression.GetType().FullName}");
     }
 }

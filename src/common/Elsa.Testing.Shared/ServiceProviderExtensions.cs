@@ -44,7 +44,8 @@ public static class ServiceProviderExtensions
         };
         
         var workflowDefinitionImporter = services.GetRequiredService<IWorkflowDefinitionImporter>();
-        return await workflowDefinitionImporter.ImportAsync(workflowDefinitionRequest);
+        var result = await workflowDefinitionImporter.ImportAsync(workflowDefinitionRequest);
+        return result.WorkflowDefinition;
     }
 
     /// <summary>

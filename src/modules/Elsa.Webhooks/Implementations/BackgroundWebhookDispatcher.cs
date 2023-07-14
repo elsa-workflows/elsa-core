@@ -1,3 +1,4 @@
+using Elsa.Mediator;
 using Elsa.Mediator.Contracts;
 using Elsa.Webhooks.Commands;
 using Elsa.Webhooks.Models;
@@ -10,15 +11,15 @@ namespace Elsa.Webhooks.Implementations;
 /// </summary>
 public class BackgroundWebhookDispatcher : IWebhookDispatcher
 {
-    private readonly IBackgroundCommandSender _backgroundCommandSender;
+    private readonly ICommandSender _commandSender;
     private readonly IWebhookRegistrationService _webhookRegistrationService;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public BackgroundWebhookDispatcher(IBackgroundCommandSender backgroundCommandSender, IWebhookRegistrationService webhookRegistrationService)
+    public BackgroundWebhookDispatcher(ICommandSender commandSender, IWebhookRegistrationService webhookRegistrationService)
     {
-        _backgroundCommandSender = backgroundCommandSender;
+        _commandSender = commandSender;
         _webhookRegistrationService = webhookRegistrationService;
     }
 
@@ -30,7 +31,7 @@ public class BackgroundWebhookDispatcher : IWebhookDispatcher
         foreach (var registration in registrations)
         {
             var notification = new InvokeWebhook(registration, webhookEvent);
-            await _backgroundCommandSender.SendAsync(notification, cancellationToken);
+            await _commandSender.SendAsync(notification, CommandStrategy.Background, cancellationToken);
         }
     }
 }

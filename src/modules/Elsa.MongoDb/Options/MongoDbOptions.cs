@@ -2,7 +2,7 @@ using System.Security.Authentication;
 using JetBrains.Annotations;
 using MongoDB.Driver;
 
-namespace Elsa.MongoDB.Options;
+namespace Elsa.MongoDb.Options;
 
 /// <summary>
 /// Contains MongoDb settings.

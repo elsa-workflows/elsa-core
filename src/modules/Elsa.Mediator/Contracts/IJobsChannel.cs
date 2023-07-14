@@ -6,7 +6,7 @@ namespace Elsa.Mediator.Contracts;
 /// <summary>
 /// A channel that can be used to enqueue jobs.
 /// </summary>
-public interface IJobChannel
+public interface IJobsChannel
 {
     /// <summary>
     /// Gets the writer for the job queue.

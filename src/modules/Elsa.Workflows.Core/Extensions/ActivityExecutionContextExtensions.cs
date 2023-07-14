@@ -350,7 +350,7 @@ public static class ActivityExecutionContextExtensions
     /// </summary>
     public static async Task CancelActivityAsync(this ActivityExecutionContext context)
     {
-        var publisher = context.GetRequiredService<IEventPublisher>();
+        var publisher = context.GetRequiredService<INotificationSender>();
         context.Status = ActivityStatus.Canceled;
         context.ClearBookmarks();
         context.WorkflowExecutionContext.Bookmarks.RemoveWhere(x => x.ActivityNodeId == context.NodeId);
@@ -359,7 +359,7 @@ public static class ActivityExecutionContextExtensions
         context.AddExecutionLogEntry("Canceled", payload: context.JournalData, includeActivityState: true);
         
         await context.SendSignalAsync(new CancelSignal());
-        await publisher.PublishAsync(new ActivityCancelled(context));
+        await publisher.SendAsync(new ActivityCancelled(context));
     }
     
     /// <summary>

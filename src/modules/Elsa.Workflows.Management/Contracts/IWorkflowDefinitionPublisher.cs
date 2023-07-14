@@ -2,6 +2,7 @@ using Elsa.Common.Models;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Models;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Management.Contracts;
@@ -25,7 +26,7 @@ public interface IWorkflowDefinitionPublisher
     /// <param name="definitionId">The ID of the workflow definition to publish.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The published workflow definition.</returns>
-    Task<WorkflowDefinition?> PublishAsync(string definitionId, CancellationToken cancellationToken = default);
+    Task<PublishWorkflowDefinitionResult> PublishAsync(string definitionId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Publishes a workflow definition.
@@ -33,7 +34,7 @@ public interface IWorkflowDefinitionPublisher
     /// <param name="definition">The workflow definition to publish.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The published workflow definition.</returns>
-    Task<WorkflowDefinition> PublishAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default);
+    Task<PublishWorkflowDefinitionResult> PublishAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Retracts a workflow definition.

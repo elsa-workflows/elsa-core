@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using Elsa.Expressions.Models;
@@ -22,13 +22,13 @@ namespace Elsa.JavaScript.Services;
 /// </summary>
 public class JintJavaScriptEvaluator : IJavaScriptEvaluator
 {
-    private readonly IEventPublisher _mediator;
+    private readonly INotificationSender _mediator;
     private readonly JintOptions _jintOptions;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public JintJavaScriptEvaluator(IEventPublisher mediator, IOptions<JintOptions> scriptOptions)
+    public JintJavaScriptEvaluator(INotificationSender mediator, IOptions<JintOptions> scriptOptions)
     {
         _mediator = mediator;
         _jintOptions = scriptOptions.Value;
@@ -88,7 +88,7 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         engine.RegisterType<Guid>();
 
         // Allow listeners invoked by the mediator to configure the engine.
-        await _mediator.PublishAsync(new EvaluatingJavaScript(engine, context), cancellationToken);
+        await _mediator.SendAsync(new EvaluatingJavaScript(engine, context), cancellationToken);
 
         return engine;
     }

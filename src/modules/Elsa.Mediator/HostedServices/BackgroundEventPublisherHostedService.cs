@@ -11,17 +11,17 @@ namespace Elsa.Mediator.HostedServices;
 public class BackgroundEventPublisherHostedService : BackgroundService
 {
     private readonly int _workerCount;
-    private readonly ChannelReader<INotification> _channelReader;
-    private readonly IEventPublisher _eventPublisher;
+    private readonly INotificationsChannel _notificationsChannel;
+    private readonly INotificationSender _notificationSender;
     private readonly IList<Channel<INotification>> _outputs;
     private readonly ILogger _logger;
 
     /// <inheritdoc />
-    public BackgroundEventPublisherHostedService(int workerCount, ChannelReader<INotification> channelReader, IEventPublisher eventPublisher, ILogger<BackgroundEventPublisherHostedService> logger)
+    public BackgroundEventPublisherHostedService(int workerCount, INotificationsChannel notificationsChannel, INotificationSender notificationSender, ILogger<BackgroundEventPublisherHostedService> logger)
     {
         _workerCount = workerCount;
-        _channelReader = channelReader;
-        _eventPublisher = eventPublisher;
+        _notificationsChannel = notificationsChannel;
+        _notificationSender = notificationSender;
         _logger = logger;
         _outputs = new List<Channel<INotification>>(workerCount);
     }
@@ -38,7 +38,9 @@ public class BackgroundEventPublisherHostedService : BackgroundService
             _ = ReadOutputAsync(output, cancellationToken);
         }
 
-        await foreach (var notification in _channelReader.ReadAllAsync(cancellationToken))
+        var channelReader = _notificationsChannel.Reader;
+        
+        await foreach (var notification in channelReader.ReadAllAsync(cancellationToken))
         {
             var output = _outputs[index];
             await output.Writer.WriteAsync(notification, cancellationToken);
@@ -51,13 +53,13 @@ public class BackgroundEventPublisherHostedService : BackgroundService
         }
     }
 
-    private async Task ReadOutputAsync(Channel<INotification> output, CancellationToken cancellationToken)
+    private async Task ReadOutputAsync(Channel<INotification, INotification> output, CancellationToken cancellationToken)
     {
         await foreach (var notification in output.Reader.ReadAllAsync(cancellationToken))
         {
             try
             {
-                await _eventPublisher.PublishAsync(notification, cancellationToken);
+                await _notificationSender.SendAsync(notification, NotificationStrategy.Parallel, cancellationToken);
             }
             catch (Exception e)
             {

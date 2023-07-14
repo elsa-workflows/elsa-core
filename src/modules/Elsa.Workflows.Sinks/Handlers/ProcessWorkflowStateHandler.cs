@@ -8,7 +8,7 @@ namespace Elsa.Workflows.Sinks.Handlers;
 
 /// <summary>
 /// A handler for the <see cref="ProcessWorkflowState"/> command.
-/// Only used when the <see cref="DefaultWorkflowSinkDispatcher"/> is used, which internally relies on the mediator.
+/// Only used when the <see cref="BackgroundWorkflowSinkDispatcher"/> is used, which internally relies on the mediator.
 /// </summary>
 internal class ProcessWorkflowStateHandler : ICommandHandler<ProcessWorkflowState>
 {

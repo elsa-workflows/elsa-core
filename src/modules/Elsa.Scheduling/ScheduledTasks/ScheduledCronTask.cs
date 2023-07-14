@@ -1,4 +1,5 @@
 using Elsa.Common.Contracts;
+using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Scheduling.Commands;
 using Elsa.Scheduling.Contracts;
@@ -16,13 +17,13 @@ public class ScheduledCronTask : IScheduledTask
     private readonly ITask _task;
     private readonly string _cronExpression;
     private readonly ICronParser _cronParser;
-    private readonly IBackgroundCommandSender _commandSender;
+    private readonly ICommandSender _commandSender;
     private readonly CancellationTokenSource _cancellationTokenSource;
 
     /// <summary>
     /// Initializes a new instance of <see cref="ScheduledCronTask"/>.
     /// </summary>
-    public ScheduledCronTask(ITask task, string cronExpression, ICronParser cronParser, IBackgroundCommandSender commandSender, ISystemClock systemClock)
+    public ScheduledCronTask(ITask task, string cronExpression, ICronParser cronParser, ICommandSender commandSender, ISystemClock systemClock)
     {
         _task = task;
         _cronExpression = cronExpression;

@@ -16,17 +16,17 @@ public class LiquidTemplateManager : ILiquidTemplateManager
 {
     private readonly LiquidParser _parser;
     private readonly IMemoryCache _memoryCache;
-    private readonly IEventPublisher _eventPublisher;
+    private readonly INotificationSender _notificationSender;
     private readonly FluidOptions _options;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public LiquidTemplateManager(LiquidParser parser, IMemoryCache memoryCache, IEventPublisher eventPublisher, IOptions<FluidOptions> options, IServiceProvider serviceProvider)
+    public LiquidTemplateManager(LiquidParser parser, IMemoryCache memoryCache, INotificationSender notificationSender, IOptions<FluidOptions> options, IServiceProvider serviceProvider)
     {
         _parser = parser;
         _memoryCache = memoryCache;
-        _eventPublisher = eventPublisher;
+        _notificationSender = notificationSender;
         _options = options.Value;
     }
 
@@ -62,7 +62,7 @@ public class LiquidTemplateManager : ILiquidTemplateManager
                 e.SetSlidingExpiration(TimeSpan.FromSeconds(30));
                 return parsed;
             });
-        return result;
+        return result!;
     }
 
     /// <inheritdoc />
@@ -73,7 +73,7 @@ public class LiquidTemplateManager : ILiquidTemplateManager
     private async Task<TemplateContext> CreateTemplateContextAsync(ExpressionExecutionContext expressionExecutionContext, CancellationToken cancellationToken)
     {
         var context = new TemplateContext(expressionExecutionContext, new TemplateOptions());
-        await _eventPublisher.PublishAsync(new RenderingLiquidTemplate(context, expressionExecutionContext), cancellationToken);
+        await _notificationSender.SendAsync(new RenderingLiquidTemplate(context, expressionExecutionContext), cancellationToken);
         context.SetValue("ExpressionExecutionContext", expressionExecutionContext);
         return context;
     }

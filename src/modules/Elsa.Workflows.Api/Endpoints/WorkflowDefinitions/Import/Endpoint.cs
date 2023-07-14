@@ -47,10 +47,21 @@ internal class Import : ElsaEndpoint<WorkflowDefinitionModel, WorkflowDefinition
             Model = model,
             Publish = false,
         };
-        var draft = await _workflowDefinitionImporter.ImportAsync(saveWorkflowRequest, cancellationToken);
+        
+        var result = await _workflowDefinitionImporter.ImportAsync(saveWorkflowRequest, cancellationToken);
+
+        if (!result.Succeeded)
+        {
+            foreach (var validationError in result.ValidationErrors) 
+                AddError(validationError.Message);
+
+            await SendErrorsAsync(400, cancellationToken);
+            return;
+        }
 
         // Map the workflow definition for serialization.
-        var updatedModel = await _workflowDefinitionMapper.MapAsync(draft, cancellationToken);
+        var definition = result.WorkflowDefinition;
+        var updatedModel = await _workflowDefinitionMapper.MapAsync(definition, cancellationToken);
 
         if (isNew)
             await SendCreatedAtAsync<GetByDefinitionId.GetByDefinitionId>(new { DefinitionId = definitionId }, updatedModel, cancellation: cancellationToken);
