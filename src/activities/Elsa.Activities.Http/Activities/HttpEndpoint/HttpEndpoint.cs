@@ -91,7 +91,7 @@ namespace Elsa.Activities.Http
         public string? Policy { get; set; }
         
         [ActivityInput(
-            Hint = "Check to only allow requests, which has a specified header with a specified value",
+            Hint = "Check to only allow requests, which have a specified header with a specified value",
             SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid },
             Category = "Security"
         )]
