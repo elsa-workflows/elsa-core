@@ -10,9 +10,10 @@ public class CommandContext
     /// <summary>
     /// Initializes a new instance of the <see cref="CommandContext"/> class.
     /// </summary>
-    public CommandContext(ICommand command, Type resultType, CancellationToken cancellationToken)
+    public CommandContext(ICommand command, ICommandStrategy commandStrategy, Type resultType, CancellationToken cancellationToken)
     {
         Command = command;
+        CommandStrategy = commandStrategy;
         ResultType = resultType;
         CancellationToken = cancellationToken;
     }
@@ -21,7 +22,12 @@ public class CommandContext
     /// Gets the command.
     /// </summary>
     public ICommand Command { get; init; }
-    
+
+    /// <summary>
+    /// Gets the command strategy.
+    /// </summary>
+    public ICommandStrategy CommandStrategy { get; }
+
     /// <summary>
     /// Gets the result type.
     /// </summary>

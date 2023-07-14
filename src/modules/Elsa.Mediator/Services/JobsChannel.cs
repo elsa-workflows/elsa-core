@@ -5,14 +5,14 @@ using Elsa.Mediator.Models;
 namespace Elsa.Mediator.Services;
 
 /// <inheritdoc />
-public class JobChannel : IJobChannel
+public class JobsChannel : IJobsChannel
 {
     private readonly Channel<EnqueuedJob> _channel;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="JobChannel"/> class.
+    /// Initializes a new instance of the <see cref="JobsChannel"/> class.
     /// </summary>
-    public JobChannel()
+    public JobsChannel()
     {
         _channel = Channel.CreateUnbounded<EnqueuedJob>();
     }

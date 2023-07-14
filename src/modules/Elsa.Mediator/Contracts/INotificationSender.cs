@@ -5,7 +5,7 @@ namespace Elsa.Mediator.Contracts;
 /// <summary>
 /// Publishes notifications.
 /// </summary>
-public interface IEventPublisher
+public interface INotificationSender
 {
     /// <summary>
     /// Publishes the given notification.
@@ -13,5 +13,5 @@ public interface IEventPublisher
     /// <param name="notification">The notification to publish.</param>
     /// <param name="strategy"><see cref="FireAndForgetStrategy"/><see cref="SequentialProcessingStrategy"/><see cref="ParallelProcessingStrategy"/></param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    Task PublishAsync(INotification notification, IEventPublishingStrategy? strategy = default, CancellationToken cancellationToken = default);
+    Task SendAsync(INotification notification, IEventPublishingStrategy? strategy = default, CancellationToken cancellationToken = default);
 }

@@ -1,4 +1,6 @@
+using Elsa.Mediator.Contexts;
 using Elsa.Mediator.Contracts;
+using Elsa.Mediator.Extensions;
 
 namespace Elsa.Mediator.PublishingStrategies;
 
@@ -8,21 +10,13 @@ namespace Elsa.Mediator.PublishingStrategies;
 public class ParallelProcessingStrategy : IEventPublishingStrategy
 {
     /// <inheritdoc />
-    public async Task PublishAsync(PublishContext context)
+    public async Task PublishAsync(NotificationStrategyContext context)
     {
-        var tasks = new List<Task>();
         var notification = context.Notification;
         var cancellationToken = context.CancellationToken;
-
-        foreach (var handler in context.Handlers)
-        {
-            var notificationType = notification.GetType();
-            var handlerType = typeof(INotificationHandler<>).MakeGenericType(notificationType);
-            var handleMethod = handlerType.GetMethod("HandleAsync")!;
-            
-            var task = (Task)handleMethod.Invoke(handler, new object?[] {notification, cancellationToken})!;
-            tasks.Add(task);
-        }
+        var notificationType = notification.GetType();
+        var handleMethod = notificationType.GetNotificationHandlerMethod();
+        var tasks = context.Handlers.Select(handler => handler.InvokeAsync(handleMethod, notification, cancellationToken)).ToList();
 
         await Task.WhenAll(tasks);
     }

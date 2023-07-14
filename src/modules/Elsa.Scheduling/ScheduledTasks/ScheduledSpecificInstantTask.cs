@@ -1,4 +1,5 @@
 using Elsa.Common.Contracts;
+using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Scheduling.Commands;
 using Elsa.Scheduling.Contracts;
@@ -14,14 +15,14 @@ public class ScheduledSpecificInstantTask : IScheduledTask
     private readonly ITask _task;
     private readonly ISystemClock _systemClock;
     private readonly DateTimeOffset _startAt;
-    private readonly IBackgroundCommandSender _commandSender;
+    private readonly ICommandSender _commandSender;
     private readonly CancellationTokenSource _cancellationTokenSource;
     private Timer? _timer;
 
     /// <summary>
     /// Initializes a new instance of <see cref="ScheduledSpecificInstantTask"/>.
     /// </summary>
-    public ScheduledSpecificInstantTask(ITask task, DateTimeOffset startAt, IBackgroundCommandSender commandSender, ISystemClock systemClock)
+    public ScheduledSpecificInstantTask(ITask task, DateTimeOffset startAt, ICommandSender commandSender, ISystemClock systemClock)
     {
         _task = task;
         _systemClock = systemClock;

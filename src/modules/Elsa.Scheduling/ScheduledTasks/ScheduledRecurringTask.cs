@@ -1,4 +1,5 @@
 using Elsa.Common.Contracts;
+using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Scheduling.Commands;
 using Elsa.Scheduling.Contracts;
@@ -14,7 +15,7 @@ public class ScheduledRecurringTask : IScheduledTask
     private readonly ITask _task;
     private readonly ISystemClock _systemClock;
     private readonly TimeSpan _interval;
-    private readonly IBackgroundCommandSender _commandSender;
+    private readonly ICommandSender _commandSender;
     private readonly CancellationTokenSource _cancellationTokenSource;
     private DateTimeOffset _startAt;
     private Timer? _timer;
@@ -27,7 +28,7 @@ public class ScheduledRecurringTask : IScheduledTask
     /// <param name="interval">The interval at which to execute the task.</param>
     /// <param name="commandSender">The command sender.</param>
     /// <param name="systemClock">The system clock.</param>
-    public ScheduledRecurringTask(ITask task, DateTimeOffset startAt, TimeSpan interval, IBackgroundCommandSender commandSender, ISystemClock systemClock)
+    public ScheduledRecurringTask(ITask task, DateTimeOffset startAt, TimeSpan interval, ICommandSender commandSender, ISystemClock systemClock)
     {
         _task = task;
         _systemClock = systemClock;

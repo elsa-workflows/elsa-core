@@ -18,6 +18,7 @@ public class DefaultMediator : IMediator
     private readonly ICommandPipeline _commandPipeline;
     private readonly INotificationPipeline _notificationPipeline;
     private readonly IEventPublishingStrategy _defaultPublishingStrategy;
+    private readonly ICommandStrategy _defaultCommandStrategy;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DefaultMediator"/> class.
@@ -36,43 +37,44 @@ public class DefaultMediator : IMediator
         _commandPipeline = commandPipeline;
         _notificationPipeline = notificationPipeline;
         _defaultPublishingStrategy = options.Value.DefaultPublishingStrategy;
+        _defaultCommandStrategy = options.Value.DefaultCommandStrategy;
     }
 
     /// <inheritdoc />
-    public async Task<IEnumerable<T>> RequestAsync<T>(IRequest<T> request, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<T>> SendAsync<T>(IRequest<T> request, CancellationToken cancellationToken = default)
     {
         var responseType = typeof(T);
         var context = new RequestContext(request, responseType, cancellationToken);
         await _requestPipeline.ExecuteAsync(context);
 
-        if(context.Responses.All(x => x is T))
-        {
+        if (context.Responses.All(x => x is T))
             return context.Responses.Cast<T>().AsEnumerable();
-        }
 
         throw new InvalidCastException($"Unable to cast objects in Responses property to type {typeof(T)}");
     }
 
     /// <inheritdoc />
-    public async Task SendAsync(ICommand command, CancellationToken cancellationToken = default)
+    public async Task SendAsync(ICommand command, ICommandStrategy? strategy = default, CancellationToken cancellationToken = default)
     {
         var resultType = typeof(Unit);
-        var context = new CommandContext(command, resultType, cancellationToken);
+        strategy ??= _defaultCommandStrategy;
+        var context = new CommandContext(command, strategy, resultType, cancellationToken);
         await _commandPipeline.InvokeAsync(context);
     }
 
     /// <inheritdoc />
-    public async Task<T> SendAsync<T>(ICommand<T> command, CancellationToken cancellationToken = default)
+    public async Task<T> SendAsync<T>(ICommand<T> command, ICommandStrategy? strategy = default, CancellationToken cancellationToken = default)
     {
         var resultType = typeof(T);
-        var context = new CommandContext(command, resultType, cancellationToken);
+        strategy ??= _defaultCommandStrategy;
+        var context = new CommandContext(command, strategy, resultType, cancellationToken);
         await _commandPipeline.InvokeAsync(context);
 
         return (T)context.Result!;
     }
 
     /// <inheritdoc />
-    public async Task PublishAsync(INotification notification, IEventPublishingStrategy? strategy = default, CancellationToken cancellationToken = default)
+    public async Task SendAsync(INotification notification, IEventPublishingStrategy? strategy = default, CancellationToken cancellationToken = default)
     {
         strategy ??= _defaultPublishingStrategy;
         var context = new NotificationContext(notification, strategy, cancellationToken);

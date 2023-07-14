@@ -20,5 +20,10 @@ public class MediatorOptions
     /// <summary>
     /// The default publishing strategy to use.
     /// </summary>
-    public IEventPublishingStrategy DefaultPublishingStrategy { get; set; } = PublishingStrategy.Sequential;
+    public IEventPublishingStrategy DefaultPublishingStrategy { get; set; } = NotificationStrategy.Sequential;
+
+    /// <summary>
+    /// The default command strategy to use.
+    /// </summary>
+    public ICommandStrategy DefaultCommandStrategy { get; set; } = CommandStrategy.Default;
 }

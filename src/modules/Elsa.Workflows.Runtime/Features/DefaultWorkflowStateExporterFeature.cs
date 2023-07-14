@@ -11,7 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.Workflows.Runtime.Features;
 
 /// <summary>
-/// Configures and enables <see cref="AsyncWorkflowStateExporter"/>.
+/// Configures and enables <see cref="BackgroundWorkflowStateExporter"/>.
 /// </summary>
 [DependsOn(typeof(WorkflowInstancesFeature))]
 [PublicAPI]

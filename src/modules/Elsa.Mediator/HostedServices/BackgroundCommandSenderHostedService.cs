@@ -1,4 +1,5 @@
 using System.Threading.Channels;
+using Elsa.Mediator.CommandStrategies;
 using Elsa.Mediator.Contracts;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -11,16 +12,16 @@ namespace Elsa.Mediator.HostedServices;
 public class BackgroundCommandSenderHostedService : BackgroundService
 {
     private readonly int _workerCount;
-    private readonly ChannelReader<ICommand> _channelReader;
+    private readonly ICommandsChannel _commandsChannel;
     private readonly ICommandSender _commandSender;
     private readonly IList<Channel<ICommand>> _outputs;
     private readonly ILogger _logger;
 
     /// <inheritdoc />
-    public BackgroundCommandSenderHostedService(int workerCount, ChannelReader<ICommand> channelReader, ICommandSender commandSender, ILogger<BackgroundCommandSenderHostedService> logger)
+    public BackgroundCommandSenderHostedService(int workerCount, ICommandsChannel commandsChannel, ICommandSender commandSender, ILogger<BackgroundCommandSenderHostedService> logger)
     {
         _workerCount = workerCount;
-        _channelReader = channelReader;
+        _commandsChannel = commandsChannel;
         _commandSender = commandSender;
         _logger = logger;
         _outputs = new List<Channel<ICommand>>(workerCount);
@@ -38,7 +39,7 @@ public class BackgroundCommandSenderHostedService : BackgroundService
             _ = ReadOutputAsync(output, cancellationToken);
         }
 
-        await foreach (var command in _channelReader.ReadAllAsync(cancellationToken))
+        await foreach (var command in _commandsChannel.Reader.ReadAllAsync(cancellationToken))
         {
             var output = _outputs[index];
             await output.Writer.WriteAsync(command, cancellationToken);
@@ -57,7 +58,7 @@ public class BackgroundCommandSenderHostedService : BackgroundService
         {
             try
             {
-                await _commandSender.SendAsync(command, cancellationToken);
+                await _commandSender.SendAsync(command, CommandStrategy.Default, cancellationToken);
             }
             catch (Exception e)
             {

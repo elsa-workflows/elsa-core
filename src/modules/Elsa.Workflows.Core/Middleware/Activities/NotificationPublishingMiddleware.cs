@@ -12,23 +12,23 @@ namespace Elsa.Workflows.Core.Middleware.Activities;
 public class NotificationPublishingMiddleware : IActivityExecutionMiddleware
 {
     private readonly ActivityMiddlewareDelegate _next;
-    private readonly IEventPublisher _eventPublisher;
+    private readonly INotificationSender _notificationSender;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public NotificationPublishingMiddleware(ActivityMiddlewareDelegate next, IEventPublisher eventPublisher)
+    public NotificationPublishingMiddleware(ActivityMiddlewareDelegate next, INotificationSender notificationSender)
     {
         _next = next;
-        _eventPublisher = eventPublisher;
+        _notificationSender = notificationSender;
     }
 
     /// <inheritdoc />
     public async ValueTask InvokeAsync(ActivityExecutionContext context)
     {
-        await _eventPublisher.PublishAsync(new ActivityExecuting(context));
+        await _notificationSender.SendAsync(new ActivityExecuting(context));
         await _next(context);
-        await _eventPublisher.PublishAsync(new ActivityExecuted(context));
+        await _notificationSender.SendAsync(new ActivityExecuted(context));
     }
 }
 

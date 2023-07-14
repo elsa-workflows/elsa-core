@@ -1,8 +1,7 @@
 using System.Runtime.CompilerServices;
 using Elsa.Expressions.Contracts;
-using Elsa.Expressions.Models;
 using Elsa.Extensions;
-using Elsa.Mediator.PublishingStrategies;
+using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
@@ -16,7 +15,6 @@ using Elsa.Workflows.Runtime.Models.Notifications;
 using Elsa.Workflows.Runtime.Notifications;
 using Microsoft.Extensions.Logging;
 using Open.Linq.AsyncExtensions;
-using IEventPublisher = Elsa.Mediator.Contracts.IEventPublisher;
 
 namespace Elsa.Workflows.Runtime.Services;
 
@@ -28,7 +26,7 @@ public class TriggerIndexer : ITriggerIndexer
     private readonly IExpressionEvaluator _expressionEvaluator;
     private readonly IIdentityGenerator _identityGenerator;
     private readonly ITriggerStore _triggerStore;
-    private readonly IEventPublisher _eventPublisher;
+    private readonly INotificationSender _notificationSender;
     private readonly IServiceProvider _serviceProvider;
     private readonly IBookmarkHasher _hasher;
     private readonly ILogger _logger;
@@ -42,7 +40,7 @@ public class TriggerIndexer : ITriggerIndexer
         IExpressionEvaluator expressionEvaluator,
         IIdentityGenerator identityGenerator,
         ITriggerStore triggerStore,
-        IEventPublisher eventPublisher,
+        INotificationSender notificationSender,
         IServiceProvider serviceProvider,
         IBookmarkHasher hasher,
         ILogger<TriggerIndexer> logger)
@@ -51,7 +49,7 @@ public class TriggerIndexer : ITriggerIndexer
         _expressionEvaluator = expressionEvaluator;
         _identityGenerator = identityGenerator;
         _triggerStore = triggerStore;
-        _eventPublisher = eventPublisher;
+        _notificationSender = notificationSender;
         _serviceProvider = serviceProvider;
         _hasher = hasher;
         _logger = logger;
@@ -85,7 +83,7 @@ public class TriggerIndexer : ITriggerIndexer
         var indexedWorkflow = new IndexedWorkflowTriggers(workflow, diff.Added, diff.Removed, diff.Unchanged);
 
         // Publish event.
-        await _eventPublisher.PublishAsync(new WorkflowTriggersIndexed(indexedWorkflow), cancellationToken);
+        await _notificationSender.SendAsync(new WorkflowTriggersIndexed(indexedWorkflow), cancellationToken);
         return indexedWorkflow;
     }
 
@@ -109,7 +107,7 @@ public class TriggerIndexer : ITriggerIndexer
         var indexedWorkflow = new IndexedWorkflowTriggers(workflow, emptyTriggerList, currentTriggers, emptyTriggerList);
 
         // Publish event.
-        await _eventPublisher.PublishAsync(new WorkflowTriggersIndexed(indexedWorkflow), cancellationToken);
+        await _notificationSender.SendAsync(new WorkflowTriggersIndexed(indexedWorkflow), cancellationToken);
 
         return indexedWorkflow;
     }

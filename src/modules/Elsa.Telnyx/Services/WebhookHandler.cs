@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using Elsa.Mediator;
 using Elsa.Mediator.Contracts;
 using Elsa.Telnyx.Contracts;
 using Elsa.Telnyx.Events;
@@ -15,7 +16,7 @@ namespace Elsa.Telnyx.Services;
 internal class WebhookHandler : IWebhookHandler
 {
     private static readonly JsonSerializerOptions SerializerSettings;
-    private readonly IBackgroundEventPublisher _mediator;
+    private readonly INotificationSender _mediator;
     private readonly ILogger<WebhookHandler> _logger;
 
     static WebhookHandler()
@@ -23,7 +24,7 @@ internal class WebhookHandler : IWebhookHandler
         SerializerSettings = CreateSerializerSettings();
     }
 
-    public WebhookHandler(IBackgroundEventPublisher mediator, ILogger<WebhookHandler> logger)
+    public WebhookHandler(INotificationSender mediator, ILogger<WebhookHandler> logger)
     {
         _mediator = mediator;
         _logger = logger;
@@ -38,7 +39,7 @@ internal class WebhookHandler : IWebhookHandler
 
         using var loggingScope = _logger.BeginScope(new Dictionary<string, object> { ["CorrelationId"] = correlationId });
         _logger.LogDebug("Telnyx webhook payload received: {@Webhook}", webhook);
-        await _mediator.PublishAsync(new TelnyxWebhookReceived(webhook), cancellationToken);
+        await _mediator.SendAsync(new TelnyxWebhookReceived(webhook), NotificationStrategy.Background, cancellationToken);
     }
 
     private static async Task<string> ReadRequestBodyAsync(HttpContext httpContext)

@@ -1,3 +1,5 @@
+using Elsa.Mediator.Contexts;
+
 namespace Elsa.Mediator.Contracts;
 
 /// <summary>
@@ -9,5 +11,5 @@ public interface IEventPublishingStrategy
     /// Publishes an event.
     /// </summary>
     /// <param name="context">The context for publishing the event.</param>
-    Task PublishAsync(PublishContext context);
+    Task PublishAsync(NotificationStrategyContext context);
 }

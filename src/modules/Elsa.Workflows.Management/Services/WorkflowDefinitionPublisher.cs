@@ -19,7 +19,7 @@ namespace Elsa.Workflows.Management.Services;
 public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
 {
     private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
-    private readonly IEventPublisher _eventPublisher;
+    private readonly INotificationSender _notificationSender;
     private readonly IIdentityGenerator _identityGenerator;
     private readonly IActivitySerializer _activitySerializer;
     private readonly IRequestSender _requestSender;
@@ -30,14 +30,14 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
     /// </summary>
     public WorkflowDefinitionPublisher(
         IWorkflowDefinitionStore workflowDefinitionStore,
-        IEventPublisher eventPublisher,
+        INotificationSender notificationSender,
         IIdentityGenerator identityGenerator,
         IActivitySerializer activitySerializer,
         IRequestSender requestSender,
         ISystemClock systemClock)
     {
         _workflowDefinitionStore = workflowDefinitionStore;
-        _eventPublisher = eventPublisher;
+        _notificationSender = notificationSender;
         _identityGenerator = identityGenerator;
         _activitySerializer = activitySerializer;
         _requestSender = requestSender;
@@ -80,12 +80,12 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
     /// <inheritdoc />
     public async Task<WorkflowDefinition> PublishAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
     {
-        var responses = await _requestSender.RequestAsync(new ValidateWorkflowRequest(definition), cancellationToken);
+        var responses = await _requestSender.SendAsync(new ValidateWorkflowRequest(definition), cancellationToken);
         var validationErrors = responses.SelectMany(r => r.ValidationErrors).ToList();
         if(validationErrors.Any())
             throw new InvalidOperationException($"Cannot publish workflow definition '{definition.DefinitionId}' as it contains the following errors: {string.Join(", ", validationErrors)}");
         
-        await _eventPublisher.PublishAsync(new WorkflowDefinitionPublishing(definition), cancellationToken);
+        await _notificationSender.SendAsync(new WorkflowDefinitionPublishing(definition), cancellationToken);
 
         var definitionId = definition.DefinitionId;
 
@@ -105,7 +105,7 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
         definition = Initialize(definition);
         await _workflowDefinitionStore.SaveAsync(definition, cancellationToken);
 
-        await _eventPublisher.PublishAsync(new WorkflowDefinitionPublished(definition), cancellationToken);
+        await _notificationSender.SendAsync(new WorkflowDefinitionPublished(definition), cancellationToken);
         return definition;
     }
 
@@ -130,9 +130,9 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
         definition.IsPublished = false;
         definition = Initialize(definition);
 
-        await _eventPublisher.PublishAsync(new WorkflowDefinitionRetracting(definition), cancellationToken);
+        await _notificationSender.SendAsync(new WorkflowDefinitionRetracting(definition), cancellationToken);
         await _workflowDefinitionStore.SaveAsync(definition, cancellationToken);
-        await _eventPublisher.PublishAsync(new WorkflowDefinitionRetracted(definition), cancellationToken);
+        await _notificationSender.SendAsync(new WorkflowDefinitionRetracted(definition), cancellationToken);
         return definition;
     }
 
@@ -177,7 +177,7 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
 
         if (lastVersion is null)
         {
-            await _eventPublisher.PublishAsync(new WorkflowDefinitionCreated(definition), cancellationToken);
+            await _notificationSender.SendAsync(new WorkflowDefinitionCreated(definition), cancellationToken);
         }
 
         if (lastVersion is { IsPublished: true, IsLatest: true })

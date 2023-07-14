@@ -22,7 +22,7 @@ public class WorkflowSinksFeature : FeatureBase
     /// <summary>
     /// Resolves an instance of a concrete implementation of <see cref="IWorkflowSinkDispatcher"/>.
     /// </summary>
-    public Func<IServiceProvider, IWorkflowSinkDispatcher> WorkflowSinkDispatcher { get; set; } = sp => ActivatorUtilities.CreateInstance<DefaultWorkflowSinkDispatcher>(sp);
+    public Func<IServiceProvider, IWorkflowSinkDispatcher> WorkflowSinkDispatcher { get; set; } = sp => ActivatorUtilities.CreateInstance<BackgroundWorkflowSinkDispatcher>(sp);
 
     /// <inheritdoc />
     public override void Configure()
