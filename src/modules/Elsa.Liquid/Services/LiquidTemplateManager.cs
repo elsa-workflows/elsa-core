@@ -63,7 +63,7 @@ public class LiquidTemplateManager : ILiquidTemplateManager
                 e.SetSlidingExpiration(TimeSpan.FromSeconds(30));
                 return parsed;
             });
-        return result;
+        return result!;
     }
 
     /// <inheritdoc />
@@ -74,7 +74,7 @@ public class LiquidTemplateManager : ILiquidTemplateManager
     private async Task<TemplateContext> CreateTemplateContextAsync(ExpressionExecutionContext expressionExecutionContext, CancellationToken cancellationToken)
     {
         var context = new TemplateContext(expressionExecutionContext, new TemplateOptions());
-        await _eventPublisher.PublishAsync(new RenderingLiquidTemplate(context, expressionExecutionContext), new SequentialProcessingStrategy(), cancellationToken);
+        await _eventPublisher.PublishAsync(new RenderingLiquidTemplate(context, expressionExecutionContext), cancellationToken);
         context.SetValue("ExpressionExecutionContext", expressionExecutionContext);
         return context;
     }

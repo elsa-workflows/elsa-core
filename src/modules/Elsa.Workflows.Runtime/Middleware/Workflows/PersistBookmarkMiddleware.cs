@@ -1,13 +1,13 @@
-using Elsa.Mediator.PublishingStrategies;
+using Elsa.Extensions;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Models.Notifications;
 using Elsa.Workflows.Runtime.Notifications;
-using IEventPublisher = Elsa.Mediator.Contracts.IEventPublisher;
 
 namespace Elsa.Workflows.Runtime.Middleware.Workflows;
+using IEventPublisher = Elsa.Mediator.Contracts.IEventPublisher;
 
 /// <summary>
 /// Takes care of loading and persisting bookmarks.
@@ -46,7 +46,7 @@ public class PersistBookmarkMiddleware : WorkflowExecutionMiddleware
         await _workflowRuntime.UpdateBookmarksAsync(updateBookmarksContext, cancellationToken);
 
         // Publish domain event.
-        await _eventPublisher.PublishAsync(new WorkflowBookmarksIndexed(context, new IndexedWorkflowBookmarks(context.Id, diff.Added, diff.Removed, diff.Unchanged)), new SequentialProcessingStrategy(), cancellationToken);
+        await _eventPublisher.PublishAsync(new WorkflowBookmarksIndexed(context, new IndexedWorkflowBookmarks(context.Id, diff.Added, diff.Removed, diff.Unchanged)), cancellationToken);
 
         // Notify all interested activities that the bookmarks have been persisted.
         var activityExecutionContexts = context.ActivityExecutionContexts.Where(x => x.Activity is IBookmarksPersistedHandler && x.Bookmarks.Any()).ToList();

@@ -85,7 +85,7 @@ public class TriggerIndexer : ITriggerIndexer
         var indexedWorkflow = new IndexedWorkflowTriggers(workflow, diff.Added, diff.Removed, diff.Unchanged);
 
         // Publish event.
-        await _eventPublisher.PublishAsync(new WorkflowTriggersIndexed(indexedWorkflow), new SequentialProcessingStrategy(), cancellationToken);
+        await _eventPublisher.PublishAsync(new WorkflowTriggersIndexed(indexedWorkflow), cancellationToken);
         return indexedWorkflow;
     }
 
@@ -109,7 +109,7 @@ public class TriggerIndexer : ITriggerIndexer
         var indexedWorkflow = new IndexedWorkflowTriggers(workflow, emptyTriggerList, currentTriggers, emptyTriggerList);
 
         // Publish event.
-        await _eventPublisher.PublishAsync(new WorkflowTriggersIndexed(indexedWorkflow), new SequentialProcessingStrategy(), cancellationToken);
+        await _eventPublisher.PublishAsync(new WorkflowTriggersIndexed(indexedWorkflow), cancellationToken);
 
         return indexedWorkflow;
     }

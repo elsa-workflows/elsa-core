@@ -1,6 +1,6 @@
 using System.Threading.Channels;
+using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
-using Elsa.Mediator.PublishingStrategies;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -58,7 +58,7 @@ public class BackgroundEventPublisherHostedService : BackgroundService
         {
             try
             {
-                await _eventPublisher.PublishAsync(notification, new SequentialProcessingStrategy(), cancellationToken);
+                await _eventPublisher.PublishAsync(notification, cancellationToken);
             }
             catch (Exception e)
             {

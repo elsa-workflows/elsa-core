@@ -45,7 +45,7 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
     {
         var filter = new WorkflowDefinitionFilter { DefinitionId = definitionId };
         var count = await _store.DeleteAsync(filter, cancellationToken);
-        await _eventPublisher.PublishAsync(new WorkflowDefinitionDeleted(definitionId), new SequentialProcessingStrategy(), cancellationToken);
+        await _eventPublisher.PublishAsync(new WorkflowDefinitionDeleted(definitionId), cancellationToken);
         return count;
     }
 
@@ -55,7 +55,7 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
         var ids = definitionIds.ToList();
         var filter = new WorkflowDefinitionFilter { DefinitionIds = ids };
         var count = await _store.DeleteAsync(filter, cancellationToken);
-        await _eventPublisher.PublishAsync(new WorkflowDefinitionsDeleted(ids), new SequentialProcessingStrategy(), cancellationToken);
+        await _eventPublisher.PublishAsync(new WorkflowDefinitionsDeleted(ids), cancellationToken);
         return count;
     }
 
@@ -78,7 +78,7 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
         if (!isDeleted)
             return false;
 
-        await _eventPublisher.PublishAsync(new WorkflowDefinitionVersionDeleted(definitionId, versionToDelete), cancellationToken: cancellationToken);
+        await _eventPublisher.PublishAsync(new WorkflowDefinitionVersionDeleted(definitionId, versionToDelete), cancellationToken);
 
         if (latestVersion.Version != versionToDelete)
             return isDeleted;

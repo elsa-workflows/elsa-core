@@ -11,17 +11,28 @@ public class NotificationContext
     /// <summary>
     /// Initializes a new instance of the <see cref="NotificationContext"/> class.
     /// </summary>
-    /// <param name="notification"></param>
-    /// <param name="publishingStrategy">Default value is <see cref="FireAndForgetStrategy"/></param>
-    /// <param name="cancellationToken"></param>
-    public NotificationContext(INotification notification, IEventPublishingStrategy? publishingStrategy, CancellationToken cancellationToken = default)
+    /// <param name="notification">The notification to publish.</param>
+    /// <param name="publishingStrategy">The publishing strategy to use.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    public NotificationContext(INotification notification, IEventPublishingStrategy publishingStrategy, CancellationToken cancellationToken = default)
     {
         Notification = notification;
-        PublishingStrategy = publishingStrategy ?? new FireAndForgetStrategy();
+        PublishingStrategy = publishingStrategy;
         CancellationToken = cancellationToken;
     }
 
+    /// <summary>
+    /// Gets the notification to publish.
+    /// </summary>
     public INotification Notification { get; init; }
+    
+    /// <summary>
+    /// Gets the publishing strategy to use.
+    /// </summary>
     public IEventPublishingStrategy PublishingStrategy { get; init; }
+    
+    /// <summary>
+    /// Gets the cancellation token.
+    /// </summary>
     public CancellationToken CancellationToken { get; init; }
 }

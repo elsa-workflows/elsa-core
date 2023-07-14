@@ -1,5 +1,4 @@
 using Elsa.Mediator.Contracts;
-using Microsoft.Extensions.Logging;
 
 namespace Elsa.Mediator.PublishingStrategies;
 

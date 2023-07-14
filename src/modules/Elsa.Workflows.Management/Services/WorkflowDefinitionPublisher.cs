@@ -1,6 +1,7 @@
 using Elsa.Common.Contracts;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
+using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Mediator.PublishingStrategies;
 using Elsa.Workflows.Core.Activities;
@@ -84,7 +85,7 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
         if(validationErrors.Any())
             throw new InvalidOperationException($"Cannot publish workflow definition '{definition.DefinitionId}' as it contains the following errors: {string.Join(", ", validationErrors)}");
         
-        await _eventPublisher.PublishAsync(new WorkflowDefinitionPublishing(definition), cancellationToken: cancellationToken);
+        await _eventPublisher.PublishAsync(new WorkflowDefinitionPublishing(definition), cancellationToken);
 
         var definitionId = definition.DefinitionId;
 
@@ -104,7 +105,7 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
         definition = Initialize(definition);
         await _workflowDefinitionStore.SaveAsync(definition, cancellationToken);
 
-        await _eventPublisher.PublishAsync(new WorkflowDefinitionPublished(definition), new SequentialProcessingStrategy(), cancellationToken);
+        await _eventPublisher.PublishAsync(new WorkflowDefinitionPublished(definition), cancellationToken);
         return definition;
     }
 
@@ -129,9 +130,9 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
         definition.IsPublished = false;
         definition = Initialize(definition);
 
-        await _eventPublisher.PublishAsync(new WorkflowDefinitionRetracting(definition), cancellationToken: cancellationToken);
+        await _eventPublisher.PublishAsync(new WorkflowDefinitionRetracting(definition), cancellationToken);
         await _workflowDefinitionStore.SaveAsync(definition, cancellationToken);
-        await _eventPublisher.PublishAsync(new WorkflowDefinitionRetracted(definition), new SequentialProcessingStrategy(), cancellationToken);
+        await _eventPublisher.PublishAsync(new WorkflowDefinitionRetracted(definition), cancellationToken);
         return definition;
     }
 
@@ -176,7 +177,7 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
 
         if (lastVersion is null)
         {
-            await _eventPublisher.PublishAsync(new WorkflowDefinitionCreated(definition), new SequentialProcessingStrategy(), cancellationToken);
+            await _eventPublisher.PublishAsync(new WorkflowDefinitionCreated(definition), cancellationToken);
         }
 
         if (lastVersion is { IsPublished: true, IsLatest: true })
