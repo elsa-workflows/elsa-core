@@ -11,7 +11,6 @@ public class RedisClusterMemberStoreTests : IClassFixture<RedisFixture>
 
     public RedisClusterMemberStoreTests(RedisFixture redisFixture)
     {
-        
         var multiplexer = ConnectionMultiplexer.Connect(redisFixture.GetConnectionString());
         _memberStore = new RedisClusterMemberStore(multiplexer);
 
@@ -24,7 +23,7 @@ public class RedisClusterMemberStoreTests : IClassFixture<RedisFixture>
         };
     }
 
-    [Fact]
+    [Fact(DisplayName = "Invoking RegisterAsync should register member")]
     public async Task RegisterAsync_ShouldRegisterMember()
     {
         await _memberStore.RegisterAsync("cluster", _member);
@@ -33,7 +32,7 @@ public class RedisClusterMemberStoreTests : IClassFixture<RedisFixture>
         Assert.Contains(members, m => m.Id == _member.Id);
     }
 
-    [Fact]
+    [Fact(DisplayName = "Invoking UnregisterAsync should unregister member")]
     public async Task UnregisterAsync_ShouldUnregisterMember()
     {
         await _memberStore.RegisterAsync("cluster", _member);
@@ -43,7 +42,7 @@ public class RedisClusterMemberStoreTests : IClassFixture<RedisFixture>
         Assert.DoesNotContain(members, m => m.Id == _member.Id);
     }
 
-    [Fact]
+    [Fact(DisplayName = "Invoking ClearAsync should clear all members")]
     public async Task ClearAsync_ShouldClearAllMembers()
     {
         await _memberStore.RegisterAsync("cluster", _member);
@@ -53,7 +52,7 @@ public class RedisClusterMemberStoreTests : IClassFixture<RedisFixture>
         Assert.Empty(members);
     }
 
-    [Fact]
+    [Fact(DisplayName = "Invoking ListAsync should return all registered members")]
     public async Task ListAsync_ShouldReturnAllRegisteredMembers()
     {
         await _memberStore.RegisterAsync("cluster", _member);
