@@ -1,3 +1,4 @@
+using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Requests;
 
 namespace Elsa.Workflows.Management.Responses;
@@ -6,4 +7,4 @@ namespace Elsa.Workflows.Management.Responses;
 /// Provides a response to a <see cref="ValidateWorkflowRequest"/>.
 /// </summary>
 /// <param name="ValidationErrors">The validation errors, if any.</param>
-public record ValidateWorkflowResponse(ICollection<string> ValidationErrors);
+public record ValidateWorkflowResponse(ICollection<WorkflowValidationError> ValidationErrors);

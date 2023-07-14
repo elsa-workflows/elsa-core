@@ -9,6 +9,7 @@ using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Materializers;
+using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Notifications;
 using Elsa.Workflows.Management.Requests;
 
@@ -31,6 +32,7 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
     public WorkflowDefinitionPublisher(
         IWorkflowDefinitionService workflowDefinitionService,
         IWorkflowDefinitionStore workflowDefinitionStore,
+        IWorkflowValidator workflowValidator,
         INotificationSender notificationSender,
         IIdentityGenerator identityGenerator,
         IActivitySerializer activitySerializer,
@@ -68,26 +70,29 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
     }
 
     /// <inheritdoc />
-    public async Task<WorkflowDefinition?> PublishAsync(string definitionId, CancellationToken cancellationToken = default)
+    public async Task<PublishWorkflowDefinitionResult> PublishAsync(string definitionId, CancellationToken cancellationToken = default)
     {
         var filter = new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = VersionOptions.Latest };
         var definition = await _workflowDefinitionStore.FindAsync(filter, cancellationToken);
 
         if (definition == null)
-            return null;
+            return new PublishWorkflowDefinitionResult(false, new List<WorkflowValidationError>
+            {
+                new("Workflow definition not found.")
+            });
 
         return await PublishAsync(definition, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task<WorkflowDefinition> PublishAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
+    public async Task<PublishWorkflowDefinitionResult> PublishAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
     {
         var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(definition, cancellationToken);
-        var responses = await _requestSender.SendAsync(new ValidateWorkflowRequest(definition, workflow), cancellationToken);
+        var responses = await _requestSender.SendAsync(new ValidateWorkflowRequest(workflow), cancellationToken);
         var validationErrors = responses.SelectMany(r => r.ValidationErrors).ToList();
-        
-        if(validationErrors.Any())
-            throw new InvalidOperationException($"Cannot publish workflow definition '{definition.DefinitionId}' as it contains the following errors: {string.Join(", ", validationErrors)}");
+
+        if (validationErrors.Any())
+            return new PublishWorkflowDefinitionResult(false, validationErrors);
         
         await _notificationSender.SendAsync(new WorkflowDefinitionPublishing(definition), cancellationToken);
 
@@ -110,7 +115,7 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
         await _workflowDefinitionStore.SaveAsync(definition, cancellationToken);
 
         await _notificationSender.SendAsync(new WorkflowDefinitionPublished(definition), cancellationToken);
-        return definition;
+        return new PublishWorkflowDefinitionResult(true, validationErrors);
     }
 
     /// <inheritdoc />

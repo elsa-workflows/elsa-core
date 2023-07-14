@@ -2,6 +2,7 @@ using Elsa.Extensions;
 using Elsa.Http.Models;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Core.Helpers;
+using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Requests;
 using Elsa.Workflows.Management.Responses;
 using Elsa.Workflows.Runtime.Contracts;
@@ -30,19 +31,24 @@ public class ValidateWorkflowRequestHandler : IRequestHandler<ValidateWorkflowRe
     {
         var workflow = request.Workflow;
         var httpEndpointTriggers = (await _triggerIndexer.GetTriggersAsync(workflow, cancellationToken)).Where(x => x.Payload is HttpEndpointBookmarkPayload).ToList();
-        var pathsToValidate = httpEndpointTriggers.Select(x => x.GetPayload<HttpEndpointBookmarkPayload>().Path).ToList();
         var publishedWorkflowsTriggers = (await _triggerStore.FindManyAsync(new TriggerFilter { Name = ActivityTypeNameHelper.GenerateTypeName(typeof(HttpEndpoint)) }, cancellationToken)).ToList();
+        var validationErrors = new List<WorkflowValidationError>(); 
         
-        var invalidPaths = pathsToValidate
-            .Where(path => publishedWorkflowsTriggers
-                .Any(t => t.WorkflowDefinitionId != workflow.Identity.DefinitionId && t.Payload is HttpEndpointBookmarkPayload payload && payload.Path == path))
-            .ToList();
-        
-        var validationErrors = new List<string>();
-        
-        if(invalidPaths.Any())
-            validationErrors.Add($"The following paths are already in use by other workflows: {string.Join(", ", invalidPaths)}");
+        foreach (var httpEndpointTrigger in httpEndpointTriggers)
+        {
+            var path = httpEndpointTrigger.GetPayload<HttpEndpointBookmarkPayload>().Path;
+            
+            var otherWorkflowsWithSamePath = publishedWorkflowsTriggers
+                .Where(x => x.WorkflowDefinitionId != workflow.Identity.DefinitionId && x.Payload is HttpEndpointBookmarkPayload payload && payload.Path == path)
+                .ToList();
 
+            if (!otherWorkflowsWithSamePath.Any()) 
+                continue;
+            
+            var message = $"The following path is already in use by another workflow: {path}";
+            validationErrors.Add(new WorkflowValidationError(message, httpEndpointTrigger.ActivityId));
+        }
+        
         return new ValidateWorkflowResponse(validationErrors);
     }
 }

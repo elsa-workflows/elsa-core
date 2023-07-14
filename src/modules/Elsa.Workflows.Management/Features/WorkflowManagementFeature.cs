@@ -159,6 +159,7 @@ public class WorkflowManagementFeature : FeatureBase
             .AddMemoryStore<WorkflowInstance, MemoryWorkflowInstanceStore>()
             .AddActivityProvider<TypedActivityProvider>()
             .AddSingleton<IWorkflowDefinitionService, WorkflowDefinitionService>()
+            .AddSingleton<IWorkflowValidator, WorkflowValidator>()
             .AddSingleton<IWorkflowDefinitionPublisher, WorkflowDefinitionPublisher>()
             .AddSingleton<IWorkflowDefinitionImporter, WorkflowDefinitionImporter>()
             .AddSingleton<IWorkflowDefinitionManager, WorkflowDefinitionManager>()
