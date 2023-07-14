@@ -1,5 +1,4 @@
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using StackExchange.Redis;
 
 namespace Proto.Cluster.AzureContainerApps.Stores.Redis;

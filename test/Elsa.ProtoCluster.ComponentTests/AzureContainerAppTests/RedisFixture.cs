@@ -1,4 +1,3 @@
-using DotNet.Testcontainers.Builders;
 using Testcontainers.Redis;
 
 namespace Elsa.ProtoCluster.ComponentTests.AzureContainerAppTests;

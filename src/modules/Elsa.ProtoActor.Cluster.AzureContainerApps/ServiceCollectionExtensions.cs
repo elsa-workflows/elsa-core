@@ -1,9 +1,6 @@
-using System.Diagnostics.CodeAnalysis;
 using Azure.ResourceManager;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Proto.Cluster.AzureContainerApps.Stores.ResourceTags;
 
 namespace Proto.Cluster.AzureContainerApps;

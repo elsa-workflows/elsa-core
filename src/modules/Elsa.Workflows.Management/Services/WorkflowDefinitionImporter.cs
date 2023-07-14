@@ -1,7 +1,6 @@
 using Elsa.Common.Models;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Management.Contracts;
-using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Models;
