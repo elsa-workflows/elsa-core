@@ -1,5 +1,4 @@
 using System.Threading.Channels;
-using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;

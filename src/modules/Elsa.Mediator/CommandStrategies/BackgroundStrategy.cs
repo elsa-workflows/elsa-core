@@ -1,6 +1,5 @@
 using Elsa.Mediator.Contexts;
 using Elsa.Mediator.Contracts;
-using Elsa.Mediator.Models;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Mediator.CommandStrategies;

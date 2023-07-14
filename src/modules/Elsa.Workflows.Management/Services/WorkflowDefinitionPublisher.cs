@@ -3,7 +3,6 @@ using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
-using Elsa.Mediator.PublishingStrategies;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Management.Contracts;

@@ -5,7 +5,6 @@ using Elsa.Liquid.Contracts;
 using Elsa.Liquid.Notifications;
 using Elsa.Liquid.Options;
 using Elsa.Mediator.Contracts;
-using Elsa.Mediator.PublishingStrategies;
 using Fluid;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;

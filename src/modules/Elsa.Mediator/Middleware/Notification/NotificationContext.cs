@@ -1,5 +1,4 @@
 using Elsa.Mediator.Contracts;
-using Elsa.Mediator.PublishingStrategies;
 
 namespace Elsa.Mediator.Middleware.Notification;
 

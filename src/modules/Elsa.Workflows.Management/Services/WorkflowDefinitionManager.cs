@@ -1,7 +1,6 @@
 using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
-using Elsa.Mediator.PublishingStrategies;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Contracts;
