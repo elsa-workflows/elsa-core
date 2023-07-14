@@ -31,10 +31,7 @@ public class RequestHandlerInvokerMiddleware : IRequestMiddleware
         var responseType = context.ResponseType;
         var handlerType = typeof(IRequestHandler<,>).MakeGenericType(requestType, responseType);
         var handlers = _requestHandlers.Where(x => handlerType.IsInstanceOfType(x)).ToArray();
-
-        if (!handlers.Any())
-            throw new InvalidOperationException($"There is no handler to handle the {requestType.FullName} request");
-
+        
         foreach (var handler in handlers)
         {
             var handleMethod = handlerType.GetMethod("HandleAsync")!;

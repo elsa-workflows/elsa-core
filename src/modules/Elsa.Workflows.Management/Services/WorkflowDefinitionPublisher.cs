@@ -18,6 +18,7 @@ namespace Elsa.Workflows.Management.Services;
 /// <inheritdoc />
 public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
 {
+    private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
     private readonly INotificationSender _notificationSender;
     private readonly IIdentityGenerator _identityGenerator;
@@ -29,6 +30,7 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
     /// Constructor.
     /// </summary>
     public WorkflowDefinitionPublisher(
+        IWorkflowDefinitionService workflowDefinitionService,
         IWorkflowDefinitionStore workflowDefinitionStore,
         INotificationSender notificationSender,
         IIdentityGenerator identityGenerator,
@@ -36,6 +38,7 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
         IRequestSender requestSender,
         ISystemClock systemClock)
     {
+        _workflowDefinitionService = workflowDefinitionService;
         _workflowDefinitionStore = workflowDefinitionStore;
         _notificationSender = notificationSender;
         _identityGenerator = identityGenerator;
@@ -80,8 +83,10 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
     /// <inheritdoc />
     public async Task<WorkflowDefinition> PublishAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
     {
-        var responses = await _requestSender.SendAsync(new ValidateWorkflowRequest(definition), cancellationToken);
+        var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(definition, cancellationToken);
+        var responses = await _requestSender.SendAsync(new ValidateWorkflowRequest(definition, workflow), cancellationToken);
         var validationErrors = responses.SelectMany(r => r.ValidationErrors).ToList();
+        
         if(validationErrors.Any())
             throw new InvalidOperationException($"Cannot publish workflow definition '{definition.DefinitionId}' as it contains the following errors: {string.Join(", ", validationErrors)}");
         

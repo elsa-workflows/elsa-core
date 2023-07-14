@@ -10,7 +10,7 @@ namespace Elsa.Mediator.CommandStrategies;
 public class DefaultStrategy : ICommandStrategy
 {
     /// <inheritdoc />
-    public async Task ExecuteAsync(CommandStrategyContext context)
+    public async Task<TResult> ExecuteAsync<TResult>(CommandStrategyContext context)
     {
         var command = context.Command;
         var cancellationToken = context.CancellationToken;
@@ -18,6 +18,6 @@ public class DefaultStrategy : ICommandStrategy
         var handleMethod = commandType.GetCommandHandlerMethod();
         var handler = context.Handler;
         
-        await handler.InvokeAsync(handleMethod, command, cancellationToken);
+        return await handler.InvokeAsync<TResult>(handleMethod, command, cancellationToken);
     }
 }

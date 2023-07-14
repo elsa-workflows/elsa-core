@@ -32,6 +32,7 @@ namespace Elsa.Workflows.Management.Features;
 [DependsOn(typeof(SystemClockFeature))]
 [DependsOn(typeof(WorkflowsFeature))]
 [DependsOn(typeof(WorkflowDefinitionsFeature))]
+[DependsOn(typeof(WorkflowInstancesFeature))]
 [PublicAPI]
 public class WorkflowManagementFeature : FeatureBase
 {

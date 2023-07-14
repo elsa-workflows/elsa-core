@@ -17,6 +17,7 @@ using Elsa.JavaScript.Features;
 using Elsa.Liquid.Features;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Management.Requests;
+using Elsa.Workflows.Management.Responses;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;

@@ -1,5 +1,6 @@
 using Elsa.Mediator.Contexts;
 using Elsa.Mediator.Contracts;
+using Elsa.Mediator.Models;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Mediator.CommandStrategies;
@@ -10,9 +11,10 @@ namespace Elsa.Mediator.CommandStrategies;
 public class BackgroundStrategy : ICommandStrategy
 {
     /// <inheritdoc />
-    public async Task ExecuteAsync(CommandStrategyContext context)
+    public async Task<TResult> ExecuteAsync<TResult>(CommandStrategyContext context)
     {
         var commandsChannel = context.ServiceProvider.GetRequiredService<ICommandsChannel>();
         await commandsChannel.Writer.WriteAsync(context.Command, context.CancellationToken);
+        return default!;
     }
 }

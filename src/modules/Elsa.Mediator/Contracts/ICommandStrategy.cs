@@ -11,5 +11,5 @@ public interface ICommandStrategy
     /// Executes a command.
     /// </summary>
     /// <param name="context">The context for executing the command.</param>
-    Task ExecuteAsync(CommandStrategyContext context);
+    Task<TResult> ExecuteAsync<TResult>(CommandStrategyContext context);
 }

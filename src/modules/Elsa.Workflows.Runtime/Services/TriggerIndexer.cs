@@ -71,7 +71,7 @@ public class TriggerIndexer : ITriggerIndexer
 
         // Collect new triggers **if workflow is published**.
         var newTriggers = workflow.Publication.IsPublished
-            ? await GetTriggersAsync(workflow, cancellationToken).ToListAsync(cancellationToken)
+            ? await GetTriggersInternalAsync(workflow, cancellationToken).ToListAsync(cancellationToken)
             : new List<StoredTrigger>(0);
 
         // Diff triggers.
@@ -85,6 +85,19 @@ public class TriggerIndexer : ITriggerIndexer
         // Publish event.
         await _notificationSender.SendAsync(new WorkflowTriggersIndexed(indexedWorkflow), cancellationToken);
         return indexedWorkflow;
+    }
+
+    /// <inheritdoc />
+    public async Task<IEnumerable<StoredTrigger>> GetTriggersAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
+    {
+        var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(definition, cancellationToken);
+        return await GetTriggersAsync(workflow, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<IEnumerable<StoredTrigger>> GetTriggersAsync(Workflow workflow, CancellationToken cancellationToken)
+    {
+        return await GetTriggersInternalAsync(workflow, cancellationToken).ToListAsync(cancellationToken);
     }
 
     /// <inheritdoc />
@@ -124,7 +137,7 @@ public class TriggerIndexer : ITriggerIndexer
         return await _triggerStore.FindManyAsync(filter, cancellationToken);
     }
 
-    private async IAsyncEnumerable<StoredTrigger> GetTriggersAsync(Workflow workflow, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    private async IAsyncEnumerable<StoredTrigger> GetTriggersInternalAsync(Workflow workflow, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var context = new WorkflowIndexingContext(workflow, cancellationToken);
         var nodes = await _activityVisitor.VisitAsync(workflow.Root, cancellationToken);

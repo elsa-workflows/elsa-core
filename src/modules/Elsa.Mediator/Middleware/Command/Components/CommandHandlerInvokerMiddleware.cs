@@ -42,9 +42,11 @@ public class CommandHandlerInvokerMiddleware : ICommandMiddleware
         var handler = handlers.First();
         var strategyContext = new CommandStrategyContext(command, handler, _serviceProvider, context.CancellationToken);
         var strategy = context.CommandStrategy;
-
-        var task = strategy.ExecuteAsync(strategyContext);
-        await task;
+        var executeMethod = strategy.GetType().GetMethod(nameof(ICommandStrategy.ExecuteAsync))!;
+        var executeMethodWithReturnType = executeMethod.MakeGenericMethod(resultType);
+        
+        // Execute command.
+        var task = executeMethodWithReturnType.Invoke(strategy, new object[] { strategyContext });
 
         // Get result of task.
         var taskWithReturnType = typeof(Task<>).MakeGenericType(resultType);
