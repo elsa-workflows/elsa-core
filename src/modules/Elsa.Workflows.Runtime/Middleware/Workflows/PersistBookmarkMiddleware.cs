@@ -1,10 +1,11 @@
+using Elsa.Extensions;
+using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Models.Notifications;
 using Elsa.Workflows.Runtime.Notifications;
-using IEventPublisher = Elsa.Mediator.Contracts.IEventPublisher;
 
 namespace Elsa.Workflows.Runtime.Middleware.Workflows;
 
@@ -14,13 +15,13 @@ namespace Elsa.Workflows.Runtime.Middleware.Workflows;
 public class PersistBookmarkMiddleware : WorkflowExecutionMiddleware
 {
     private readonly IWorkflowRuntime _workflowRuntime;
-    private readonly IEventPublisher _eventPublisher;
+    private readonly INotificationSender _notificationSender;
 
     /// <inheritdoc />
-    public PersistBookmarkMiddleware(WorkflowMiddlewareDelegate next, IWorkflowRuntime workflowRuntime, IEventPublisher eventPublisher) : base(next)
+    public PersistBookmarkMiddleware(WorkflowMiddlewareDelegate next, IWorkflowRuntime workflowRuntime, INotificationSender notificationSender) : base(next)
     {
         _workflowRuntime = workflowRuntime;
-        _eventPublisher = eventPublisher;
+        _notificationSender = notificationSender;
     }
 
     /// <inheritdoc />
@@ -45,7 +46,7 @@ public class PersistBookmarkMiddleware : WorkflowExecutionMiddleware
         await _workflowRuntime.UpdateBookmarksAsync(updateBookmarksContext, cancellationToken);
 
         // Publish domain event.
-        await _eventPublisher.PublishAsync(new WorkflowBookmarksIndexed(context, new IndexedWorkflowBookmarks(context.Id, diff.Added, diff.Removed, diff.Unchanged)), cancellationToken);
+        await _notificationSender.SendAsync(new WorkflowBookmarksIndexed(context, new IndexedWorkflowBookmarks(context.Id, diff.Added, diff.Removed, diff.Unchanged)), cancellationToken);
 
         // Notify all interested activities that the bookmarks have been persisted.
         var activityExecutionContexts = context.ActivityExecutionContexts.Where(x => x.Activity is IBookmarksPersistedHandler && x.Bookmarks.Any()).ToList();

@@ -1,6 +1,6 @@
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
-using Elsa.MongoDB.Options;
+using Elsa.MongoDb.Options;
 using Elsa.MongoDb.Serializers;
 using Elsa.Workflows.Core.Memory;
 using Microsoft.Extensions.DependencyInjection;

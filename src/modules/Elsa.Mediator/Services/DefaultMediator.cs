@@ -6,53 +6,78 @@ using Elsa.Mediator.Middleware.Notification.Contracts;
 using Elsa.Mediator.Middleware.Request;
 using Elsa.Mediator.Middleware.Request.Contracts;
 using Elsa.Mediator.Models;
+using Elsa.Mediator.Options;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Mediator.Services;
 
+/// <inheritdoc />
 public class DefaultMediator : IMediator
 {
     private readonly IRequestPipeline _requestPipeline;
     private readonly ICommandPipeline _commandPipeline;
     private readonly INotificationPipeline _notificationPipeline;
+    private readonly IEventPublishingStrategy _defaultPublishingStrategy;
+    private readonly ICommandStrategy _defaultCommandStrategy;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DefaultMediator"/> class.
+    /// </summary>
+    /// <param name="requestPipeline">The request pipeline.</param>
+    /// <param name="commandPipeline">The command pipeline.</param>
+    /// <param name="notificationPipeline">The notification pipeline.</param>
+    /// <param name="options">The mediator options.</param>
     public DefaultMediator(
         IRequestPipeline requestPipeline,
         ICommandPipeline commandPipeline,
-        INotificationPipeline notificationPipeline)
+        INotificationPipeline notificationPipeline,
+        IOptions<MediatorOptions> options)
     {
         _requestPipeline = requestPipeline;
         _commandPipeline = commandPipeline;
         _notificationPipeline = notificationPipeline;
+        _defaultPublishingStrategy = options.Value.DefaultPublishingStrategy;
+        _defaultCommandStrategy = options.Value.DefaultCommandStrategy;
     }
 
-    public async Task<T> RequestAsync<T>(IRequest<T> request, CancellationToken cancellationToken = default)
+    /// <inheritdoc />
+    public async Task<IEnumerable<T>> SendAsync<T>(IRequest<T> request, CancellationToken cancellationToken = default)
     {
         var responseType = typeof(T);
         var context = new RequestContext(request, responseType, cancellationToken);
         await _requestPipeline.ExecuteAsync(context);
 
-        return (T)context.Response!;
+        if (context.Responses.All(x => x is T))
+            return context.Responses.Cast<T>().AsEnumerable();
+
+        throw new InvalidCastException($"Unable to cast objects in Responses property to type {typeof(T)}");
     }
 
-    public async Task SendAsync(ICommand command, CancellationToken cancellationToken = default)
+    /// <inheritdoc />
+    public async Task SendAsync(ICommand command, ICommandStrategy? strategy = default, CancellationToken cancellationToken = default)
     {
         var resultType = typeof(Unit);
-        var context = new CommandContext(command, resultType, cancellationToken);
+        strategy ??= _defaultCommandStrategy;
+        var context = new CommandContext(command, strategy, resultType, cancellationToken);
         await _commandPipeline.InvokeAsync(context);
     }
 
-    public async Task<T> SendAsync<T>(ICommand<T> command, CancellationToken cancellationToken = default)
+    /// <inheritdoc />
+    public async Task<T> SendAsync<T>(ICommand<T> command, ICommandStrategy? strategy = default, CancellationToken cancellationToken = default)
     {
         var resultType = typeof(T);
-        var context = new CommandContext(command, resultType, cancellationToken);
+        strategy ??= _defaultCommandStrategy;
+        var context = new CommandContext(command, strategy, resultType, cancellationToken);
         await _commandPipeline.InvokeAsync(context);
 
         return (T)context.Result!;
     }
 
-    public async Task PublishAsync(INotification notification, CancellationToken cancellationToken = default)
+    /// <inheritdoc />
+    public async Task SendAsync(INotification notification, IEventPublishingStrategy? strategy = default, CancellationToken cancellationToken = default)
     {
-        var context = new NotificationContext(notification, cancellationToken);
+        strategy ??= _defaultPublishingStrategy;
+        var context = new NotificationContext(notification, strategy, cancellationToken);
         await _notificationPipeline.ExecuteAsync(context);
     }
 }

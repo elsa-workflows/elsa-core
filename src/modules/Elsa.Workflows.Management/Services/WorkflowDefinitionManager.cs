@@ -14,7 +14,7 @@ namespace Elsa.Workflows.Management.Services;
 public class WorkflowDefinitionManager : IWorkflowDefinitionManager
 {
     private readonly IWorkflowDefinitionStore _store;
-    private readonly IEventPublisher _eventPublisher;
+    private readonly INotificationSender _notificationSender;
     private readonly IWorkflowDefinitionPublisher _workflowPublisher;
     private readonly IIdentityGenerator _identityGenerator;
     private readonly IActivitySerializer _activitySerializer;
@@ -25,14 +25,14 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
     /// </summary>
     public WorkflowDefinitionManager(
         IWorkflowDefinitionStore store,
-        IEventPublisher eventPublisher,
+        INotificationSender notificationSender,
         IWorkflowDefinitionPublisher workflowPublisher,
         IIdentityGenerator identityGenerator,
         IActivitySerializer activitySerializer,
         IActivityVisitor activityVisitor)
     {
         _store = store;
-        _eventPublisher = eventPublisher;
+        _notificationSender = notificationSender;
         _workflowPublisher = workflowPublisher;
         _identityGenerator = identityGenerator;
         _activitySerializer = activitySerializer;
@@ -44,7 +44,7 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
     {
         var filter = new WorkflowDefinitionFilter { DefinitionId = definitionId };
         var count = await _store.DeleteAsync(filter, cancellationToken);
-        await _eventPublisher.PublishAsync(new WorkflowDefinitionDeleted(definitionId), cancellationToken);
+        await _notificationSender.SendAsync(new WorkflowDefinitionDeleted(definitionId), cancellationToken);
         return count;
     }
 
@@ -54,7 +54,7 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
         var ids = definitionIds.ToList();
         var filter = new WorkflowDefinitionFilter { DefinitionIds = ids };
         var count = await _store.DeleteAsync(filter, cancellationToken);
-        await _eventPublisher.PublishAsync(new WorkflowDefinitionsDeleted(ids), cancellationToken);
+        await _notificationSender.SendAsync(new WorkflowDefinitionsDeleted(ids), cancellationToken);
         return count;
     }
 
@@ -77,7 +77,7 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
         if (!isDeleted)
             return false;
 
-        await _eventPublisher.PublishAsync(new WorkflowDefinitionVersionDeleted(definitionId, versionToDelete), cancellationToken);
+        await _notificationSender.SendAsync(new WorkflowDefinitionVersionDeleted(definitionId, versionToDelete), cancellationToken);
 
         if (latestVersion.Version != versionToDelete)
             return isDeleted;

@@ -10,13 +10,13 @@ namespace Elsa.Mediator.HostedServices;
 public class JobRunnerHostedService : BackgroundService
 {
     private const int WorkerCount = 4;
-    private readonly IJobChannel _jobChannel;
+    private readonly IJobsChannel _jobsChannel;
     private readonly ILogger<JobRunnerHostedService> _logger;
 
     /// <inheritdoc />
-    public JobRunnerHostedService(IJobChannel jobChannel, ILogger<JobRunnerHostedService> logger)
+    public JobRunnerHostedService(IJobsChannel jobsChannel, ILogger<JobRunnerHostedService> logger)
     {
-        _jobChannel = jobChannel;
+        _jobsChannel = jobsChannel;
         _logger = logger;
     }
 
@@ -33,7 +33,7 @@ public class JobRunnerHostedService : BackgroundService
 
     private async Task ProcessJobsAsync(CancellationToken stoppingToken)
     {
-        await foreach (var jobItem in _jobChannel.Reader.ReadAllAsync(stoppingToken))
+        await foreach (var jobItem in _jobsChannel.Reader.ReadAllAsync(stoppingToken))
         {
             try
             {

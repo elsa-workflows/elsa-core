@@ -1,3 +1,4 @@
+using Elsa.Mediator;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Runtime.Commands;
 using Elsa.Workflows.Runtime.Contracts;
@@ -8,16 +9,16 @@ namespace Elsa.Workflows.Runtime.Services;
 /// <summary>
 /// A simple implementation that queues the specified request for workflow execution on a non-durable background worker.
 /// </summary>
-public class TaskBasedWorkflowDispatcher : IWorkflowDispatcher
+public class BackgroundWorkflowDispatcher : IWorkflowDispatcher
 {
-    private readonly IBackgroundCommandSender _backgroundCommandSender;
+    private readonly ICommandSender _commandSender;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public TaskBasedWorkflowDispatcher(IBackgroundCommandSender backgroundCommandSender)
+    public BackgroundWorkflowDispatcher(ICommandSender commandSender)
     {
-        _backgroundCommandSender = backgroundCommandSender;
+        _commandSender = commandSender;
     }
 
     /// <inheritdoc />
@@ -31,7 +32,7 @@ public class TaskBasedWorkflowDispatcher : IWorkflowDispatcher
             request.InstanceId,
             request.TriggerActivityId);
 
-        await _backgroundCommandSender.SendAsync(command, cancellationToken);
+        await _commandSender.SendAsync(command, CommandStrategy.Background, cancellationToken);
         return new DispatchWorkflowDefinitionResponse();
     }
 
@@ -48,7 +49,7 @@ public class TaskBasedWorkflowDispatcher : IWorkflowDispatcher
             request.Input, 
             request.CorrelationId);
         
-        await _backgroundCommandSender.SendAsync(command, cancellationToken);
+        await _commandSender.SendAsync(command, CommandStrategy.Background, cancellationToken);
         return new DispatchWorkflowInstanceResponse();
     }
 
@@ -56,7 +57,7 @@ public class TaskBasedWorkflowDispatcher : IWorkflowDispatcher
     public async Task<DispatchTriggerWorkflowsResponse> DispatchAsync(DispatchTriggerWorkflowsRequest request, CancellationToken cancellationToken = default)
     {
         var command = new DispatchTriggerWorkflowsCommand(request.ActivityTypeName, request.BookmarkPayload, request.CorrelationId, request.WorkflowInstanceId, request.Input);
-        await _backgroundCommandSender.SendAsync(command, cancellationToken);
+        await _commandSender.SendAsync(command, CommandStrategy.Background, cancellationToken);
         return new DispatchTriggerWorkflowsResponse();
     }
 
@@ -64,7 +65,7 @@ public class TaskBasedWorkflowDispatcher : IWorkflowDispatcher
     public async Task<DispatchResumeWorkflowsResponse> DispatchAsync(DispatchResumeWorkflowsRequest request, CancellationToken cancellationToken = default)
     {
         var command = new DispatchResumeWorkflowsCommand(request.ActivityTypeName, request.BookmarkPayload, request.CorrelationId, request.Input);
-        await _backgroundCommandSender.SendAsync(command, cancellationToken);
+        await _commandSender.SendAsync(command, CommandStrategy.Background, cancellationToken);
         return new DispatchResumeWorkflowsResponse();
     }
 }

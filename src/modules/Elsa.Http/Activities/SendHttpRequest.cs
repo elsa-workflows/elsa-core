@@ -1,6 +1,5 @@
 using System.Net.Http.Headers;
 using System.Text.Json.Serialization;
-using System.Xml.Linq;
 using Elsa.Extensions;
 using Elsa.Http.ContentWriters;
 using Elsa.Workflows.Core;
@@ -8,7 +7,6 @@ using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using JetBrains.Annotations;
-using Newtonsoft.Json.Linq;
 using HttpRequestHeaders = Elsa.Http.Models.HttpRequestHeaders;
 
 namespace Elsa.Http;

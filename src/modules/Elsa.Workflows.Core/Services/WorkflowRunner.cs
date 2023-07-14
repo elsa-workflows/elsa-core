@@ -19,7 +19,7 @@ public class WorkflowRunner : IWorkflowRunner
     private readonly IWorkflowBuilderFactory _workflowBuilderFactory;
     private readonly IIdentityGenerator _identityGenerator;
     private readonly IWorkflowExecutionContextFactory _workflowExecutionContextFactory;
-    private readonly IEventPublisher _eventPublisher;
+    private readonly INotificationSender _notificationSender;
 
     /// <summary>
     /// Constructor.
@@ -31,7 +31,7 @@ public class WorkflowRunner : IWorkflowRunner
         IWorkflowBuilderFactory workflowBuilderFactory,
         IIdentityGenerator identityGenerator,
         IWorkflowExecutionContextFactory workflowExecutionContextFactory,
-        IEventPublisher eventPublisher)
+        INotificationSender notificationSender)
     {
         _serviceScopeFactory = serviceScopeFactory;
         _pipeline = pipeline;
@@ -39,7 +39,7 @@ public class WorkflowRunner : IWorkflowRunner
         _workflowBuilderFactory = workflowBuilderFactory;
         _identityGenerator = identityGenerator;
         _workflowExecutionContextFactory = workflowExecutionContextFactory;
-        _eventPublisher = eventPublisher;
+        _notificationSender = notificationSender;
     }
 
     /// <inheritdoc />
@@ -166,7 +166,7 @@ public class WorkflowRunner : IWorkflowRunner
         var cancellationToken = workflowExecutionContext.CancellationToken;
 
         // Publish domain event.
-        await _eventPublisher.PublishAsync(new WorkflowExecuting(workflow, workflowExecutionContext), cancellationToken);
+        await _notificationSender.SendAsync(new WorkflowExecuting(workflow, workflowExecutionContext), cancellationToken);
 
         // Transition into the Running state.
         workflowExecutionContext.TransitionTo(WorkflowSubStatus.Executing);
@@ -183,7 +183,7 @@ public class WorkflowRunner : IWorkflowRunner
         var result = workflow.ResultVariable?.Get(workflowExecutionContext.MemoryRegister);
 
         // Publish domain event.
-        await _eventPublisher.PublishAsync(new WorkflowExecuted(workflow, workflowState, workflowExecutionContext), cancellationToken);
+        await _notificationSender.SendAsync(new WorkflowExecuted(workflow, workflowState, workflowExecutionContext), cancellationToken);
 
         // Return workflow execution result containing state + bookmarks.
         return new RunWorkflowResult(workflowState, workflowExecutionContext.Workflow, result);

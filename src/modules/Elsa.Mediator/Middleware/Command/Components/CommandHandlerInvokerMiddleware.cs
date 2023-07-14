@@ -1,3 +1,4 @@
+using Elsa.Mediator.Contexts;
 using Elsa.Mediator.Contracts;
 using Elsa.Mediator.Middleware.Command.Contracts;
 
@@ -9,14 +10,16 @@ namespace Elsa.Mediator.Middleware.Command.Components;
 public class CommandHandlerInvokerMiddleware : ICommandMiddleware
 {
     private readonly CommandMiddlewareDelegate _next;
+    private readonly IServiceProvider _serviceProvider;
     private readonly IEnumerable<ICommandHandler> _commandHandlers;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public CommandHandlerInvokerMiddleware(CommandMiddlewareDelegate next, IEnumerable<ICommandHandler> commandHandlers)
+    public CommandHandlerInvokerMiddleware(CommandMiddlewareDelegate next, IEnumerable<ICommandHandler> commandHandlers, IServiceProvider serviceProvider)
     {
         _next = next;
+        _serviceProvider = serviceProvider;
         _commandHandlers = commandHandlers.DistinctBy(x => x.GetType()).ToList();
     }
 
@@ -37,10 +40,13 @@ public class CommandHandlerInvokerMiddleware : ICommandMiddleware
             throw new InvalidOperationException($"Multiple handlers were found to handle the {commandType.FullName} command");
 
         var handler = handlers.First();
-        var handleMethod = handlerType.GetMethod("HandleAsync")!;
-        var cancellationToken = context.CancellationToken;
-        var task = (Task)handleMethod.Invoke(handler, new object?[] { command, cancellationToken })!;
-        await task;
+        var strategyContext = new CommandStrategyContext(command, handler, _serviceProvider, context.CancellationToken);
+        var strategy = context.CommandStrategy;
+        var executeMethod = strategy.GetType().GetMethod(nameof(ICommandStrategy.ExecuteAsync))!;
+        var executeMethodWithReturnType = executeMethod.MakeGenericMethod(resultType);
+        
+        // Execute command.
+        var task = executeMethodWithReturnType.Invoke(strategy, new object[] { strategyContext });
 
         // Get result of task.
         var taskWithReturnType = typeof(Task<>).MakeGenericType(resultType);

@@ -7,15 +7,15 @@ namespace Elsa.Mediator.Services;
 /// <inheritdoc />
 public class JobQueue : IJobQueue
 {
-    private readonly IJobChannel _jobChannel;
+    private readonly IJobsChannel _jobsChannel;
     private readonly ConcurrentDictionary<string, EnqueuedJob> _jobItems;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="JobQueue"/> class.
     /// </summary>
-    public JobQueue(IJobChannel jobChannel)
+    public JobQueue(IJobsChannel jobsChannel)
     {
-        _jobChannel = jobChannel;
+        _jobsChannel = jobsChannel;
         _jobItems = new ConcurrentDictionary<string, EnqueuedJob>();
     }
 
@@ -27,7 +27,7 @@ public class JobQueue : IJobQueue
         var jobItem = new EnqueuedJob(jobId, job, cts, OnJobCompleted);
         
         _jobItems.TryAdd(jobId, jobItem);
-        _jobChannel.Writer.TryWrite(jobItem);
+        _jobsChannel.Writer.TryWrite(jobItem);
         return jobId;
     }
 

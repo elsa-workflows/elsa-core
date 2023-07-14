@@ -2,8 +2,17 @@ using System.Reflection;
 
 namespace Elsa.Mediator.Middleware;
 
+/// <summary>
+/// Provides a set of static methods for working with middleware.
+/// </summary>
 public static class MiddlewareHelpers
 {
+    /// <summary>
+    /// Gets the Invoke or InvokeAsync method from the middleware type.
+    /// </summary>
+    /// <param name="middleware">The middleware type.</param>
+    /// <returns>The Invoke or InvokeAsync method.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the Invoke or InvokeAsync method cannot be found or the return type is not Task or ValueTask.</exception>
     public static MethodInfo GetInvokeMethod(Type middleware)
     {
         const string invokeMethodName = "Invoke";

@@ -7,6 +7,7 @@ using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Models;
+using Medallion.Threading;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Workflows.Runtime.Services;
@@ -20,6 +21,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
     private readonly IActivitySerializer _activitySerializer;
     private readonly IPayloadSerializer _payloadSerializer;
     private readonly ISystemClock _systemClock;
+    private readonly IDistributedLockProvider _distributedLockProvider;
     private readonly IIdentityGraphService _identityGraphService;
 
     /// <summary>
