@@ -1,5 +1,7 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Elsa.Mediator.Contracts;
+using Elsa.Mediator.Models;
 
 namespace Elsa.Mediator.Extensions;
 
@@ -24,9 +26,12 @@ public static class HandlerExtensions
     /// </summary>
     /// <param name="commandType">The command type.</param>
     /// <returns>The handle method.</returns>
-    public static MethodInfo GetCommandHandlerMethod(this Type commandType)
+    public static MethodInfo GetCommandHandlerMethod([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] this Type commandType)
     {
-        var handlerType = typeof(ICommandHandler<>).MakeGenericType(commandType);
+        var commandTypeInterfaces = commandType.GetInterfaces();
+        var commandTypeInterface = commandTypeInterfaces.FirstOrDefault(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(ICommand<>));
+        var resultType = commandTypeInterface?.GetGenericArguments()[0] ?? typeof(Unit);
+        var handlerType = typeof(ICommandHandler<,>).MakeGenericType(commandType, resultType);
         return handlerType.GetMethod("HandleAsync")!;
     }
     
