@@ -16,7 +16,7 @@
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
-        <Version>2.12</Version>
+        <Version>2.13</Version>
     </PropertyGroup>
 
     <ItemGroup>

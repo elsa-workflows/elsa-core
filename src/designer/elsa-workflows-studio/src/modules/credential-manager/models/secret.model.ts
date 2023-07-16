@@ -1,3 +1,4 @@
+import { ActivityPropertyDescriptor } from '../../../models';
 import {Map} from '../../../utils/utils';
 
 export interface Secret {
@@ -48,18 +49,9 @@ export interface SecretPropertyDescriptor {
   isReadOnly?: boolean;
 }
 
-export interface SecretProperties {
-  disableWorkflowProviderSelection?: boolean;
-  hint?: string;
+export interface SecretProperties extends ActivityPropertyDescriptor {
   isBrowsable?: boolean;
-  isReadOnly?: boolean;
-  label?: string;
-  name?: string;
   order?: number;
-  supportedSyntaxes?: string[];
-  type?: string;
-  uiHint?: string;
-  options?: any;
 }
 
 export interface SecretEditorRenderProps {

@@ -1,8 +1,9 @@
-﻿@page "/"
+@page "/"
 @inject IConfiguration _configuration;
 @{
     ViewData["Title"] = "Home page";
     var serverUrl = _configuration["Elsa:Server:BaseUrl"];
+    var basePath = Request.PathBase.Value;
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -18,8 +19,30 @@
     <script type="module" src="/_content/Elsa.Designer.Components.Web/elsa-workflows-studio/elsa-workflows-studio.esm.js"></script>
 </head>
 <body>
-<elsa-studio-root server-url="@serverUrl" monaco-lib-path="_content/Elsa.Designer.Components.Web/monaco-editor/min">
-    <elsa-studio-dashboard></elsa-studio-dashboard>
-</elsa-studio-root>
+    <elsa-studio-root server-url="@serverUrl" monaco-lib-path="_content/Elsa.Designer.Components.Web/monaco-editor/min">
+        <elsa-studio-dashboard></elsa-studio-dashboard>
+    </elsa-studio-root>
+    <script type="module">
+        // Integration demos.
+
+        // Import publicly exposed services and models.
+        import { CredentialManagerPlugin } from "@basePath/_content/Elsa.Designer.Components.Web/elsa-workflows-studio/index.esm.js";
+
+        // Get a handle to the elsa-studio-root element.
+        const elsaStudioRoot = document.querySelector('elsa-studio-root');
+
+        // Configure Elsa during the 'initializing' event.
+        elsaStudioRoot.addEventListener('initializing', e => {
+            const elsa = e.detail;
+            elsa.pluginManager.registerPlugins([
+                CredentialManagerPlugin,
+            ]);
+        });
+
+        // Some components publish DOM events that we can handle directly:
+        elsaStudioRoot.addEventListener('workflow-changed', e => {
+            console.log('Workflow model changed! New model: ${e.detail}');
+        })
+    </script>
 </body>
 </html>

@@ -37,7 +37,7 @@ namespace Elsa.Activities.Kafka.Bookmarks
             Headers = headers ?? new Dictionary<string, string>();
             AutoOffsetReset = autoOffsetReset;
             IgnoreHeaders = ignoreHeaders;
-            Schema = schema;
+            Schema = schema ?? "";
         }
 
         public string Topic { get; set; } = default!;

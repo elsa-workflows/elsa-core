@@ -39,19 +39,26 @@ namespace Elsa.Services.Triggers
             IDictionary<string, ActivityType> activityTypes,
             CancellationToken cancellationToken = default)
         {
-            var bookmarkProviderContext = GetBookmarkProviderContext(activityBlueprint, workflowExecutionContext, cancellationToken, activityTypes);
-            var supportedBookmarkProviders = await GetSupportedBookmarkProvidersForContextAsync(bookmarkProviderContext)
-                .ToListAsync(cancellationToken);
+            if (activityTypes.ContainsKey(activityBlueprint.Type))
+            {
+                var bookmarkProviderContext = GetBookmarkProviderContext(activityBlueprint, workflowExecutionContext, cancellationToken, activityTypes);
+                var supportedBookmarkProviders = await GetSupportedBookmarkProvidersForContextAsync(bookmarkProviderContext)
+                    .ToListAsync(cancellationToken);
 
-            var tasksOfListsOfTriggers = supportedBookmarkProviders
-                .Select(bookmarkProvider => GetTriggersForBookmarkProvider(bookmarkProvider,
-                    bookmarkProviderContext,
-                    activityBlueprint,
-                    workflowExecutionContext.WorkflowBlueprint,
-                    cancellationToken));
-            return (await Task.WhenAll(tasksOfListsOfTriggers))
-                .SelectMany(x => x)
-                .ToList();
+                var tasksOfListsOfTriggers = supportedBookmarkProviders
+                    .Select(bookmarkProvider => GetTriggersForBookmarkProvider(bookmarkProvider,
+                        bookmarkProviderContext,
+                        activityBlueprint,
+                        workflowExecutionContext.WorkflowBlueprint,
+                        cancellationToken));
+                return (await Task.WhenAll(tasksOfListsOfTriggers))
+                    .SelectMany(x => x)
+                    .ToList();
+            }
+            else
+            {
+                return Enumerable.Empty<WorkflowTrigger>();
+            }
         }
 
         private BookmarkProviderContext GetBookmarkProviderContext(

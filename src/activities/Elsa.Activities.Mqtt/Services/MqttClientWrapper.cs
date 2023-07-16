@@ -1,8 +1,11 @@
-using Elsa.Activities.Mqtt.Options;
 using Microsoft.Extensions.Logging;
+using MQTTnet;
+using MQTTnet.Client;
+using MQTTnet.Protocol;
+using MQTTnet.Server;
 using System;
-using System.Net.Mqtt;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Elsa.Activities.Mqtt.Services
@@ -11,66 +14,52 @@ namespace Elsa.Activities.Mqtt.Services
     {
         private readonly ILogger _logger;
         private Func<MqttApplicationMessage, Task>? _messageHandler;
-
+        private readonly SemaphoreSlim _semaphore = new(1);
         public IMqttClient Client { get; }
-        public MqttClientOptions Options { get; }
+        public Options.MqttClientOptions Options { get; }
 
-
-        public MqttClientWrapper(IMqttClient client, MqttClientOptions options, ILogger<MqttClientWrapper> logger)
+        public MqttClientWrapper(IMqttClient client, Options.MqttClientOptions options, ILogger<MqttClientWrapper> logger)
         {
             Client = client;
             Options = options;
             _logger = logger;
         }
 
-        public async Task SubscribeAsync(string topic)
+        
+        private async Task SubscribeAsync(string topic, Func<MqttApplicationMessage, Task> handler)
         {
-            await ConnectAsync();
-
-            await Client.SubscribeAsync(topic, Options.QualityOfService);
-
-            Client.MessageStream.Subscribe(async message =>
+            if (!Client.IsConnected)
             {
-                if (_messageHandler != null)
-                    await _messageHandler(message);
-                else
-                    _logger.LogWarning("Attempted to subscribe to topic {Topic}, but no message handler was set.", Options.Topic);
 
-                //Verify isConnected before Unsubscribe
-                if (Client != null && Client.IsConnected)
+                _messageHandler = handler;
+
+                var opt = Options.GenerateMqttClientOptions();
+                Client.ConnectAsync(opt).Wait(); //Sync
+                await Client.SubscribeAsync(topic, Options.QualityOfService);
+                Client.ApplicationMessageReceivedAsync += async e =>
                 {
-                    //sometimes Unsubscribe fail using System.Net.Mqtt
-                    try
-                    {
-                        await Client.UnsubscribeAsync(topic);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogWarning(ex,ex.Message);
-                    }
-                    
-                    await DisconnectAsync();
-                }
-            });
+                    if (_messageHandler != null)
+                        await _messageHandler(e.ApplicationMessage);
+                    else
+                        _logger.LogWarning("Attempted to subscribe to topic {Topic}, but no message handler was set.", Options.Topic);
+                };
+            }
         }
 
         public async Task PublishMessageAsync(string topic, string message)
         {
             await ConnectAsync();
 
-            var applicationMessage = CreateApplicationMessage(topic, message);
+            var applicationMessage = CreateApplicationMessage(topic, message, Options.QualityOfService);
 
-            await Client.PublishAsync(applicationMessage, Options.QualityOfService);
+            await Client.PublishAsync(applicationMessage);
 
             await DisconnectAsync();
         }
 
         public async Task SetMessageHandlerAsync(Func<MqttApplicationMessage, Task> handler)
         {
-           
-            _messageHandler = handler;
-            await SubscribeAsync(Options.Topic);
-            
+            await SubscribeAsync(Options.Topic, handler);
         }
 
         public void Dispose()
@@ -81,14 +70,31 @@ namespace Elsa.Activities.Mqtt.Services
 
         private async Task ConnectAsync()
         {
-            if (!Client.IsConnected) await Client.ConnectAsync(Options.GenerateMqttClientCredentials(), null, true); 
+            if (!Client.IsConnected)
+            {
+                var opt = Options.GenerateMqttClientOptions();
+                await Client.ConnectAsync(opt);
+            }
         }
 
         private async Task DisconnectAsync()
         {
-            if (Client.IsConnected) await Client.DisconnectAsync();
+            if (Client.IsConnected)
+            {
+                await Client.DisconnectAsync();
+            }
         }
 
-        private MqttApplicationMessage CreateApplicationMessage(string topic, string message) => new(topic, Encoding.UTF8.GetBytes(message));
+        private MqttApplicationMessage CreateApplicationMessage(string topic, string message, MqttQualityOfServiceLevel qos)
+        {
+            var msg = new MqttApplicationMessage()
+            {
+                Topic = topic,
+                Payload = Encoding.UTF8.GetBytes(message),
+                QualityOfServiceLevel = qos
+            };
+            return msg;
+        }
+
     }
 }

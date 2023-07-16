@@ -1,5 +1,5 @@
 using System;
-using System.Net.Mqtt;
+using MQTTnet.Protocol;
 using System.Threading.Tasks;
 using Elsa.Builders;
 using Elsa.Services.Models;
@@ -44,10 +44,10 @@ namespace Elsa.Activities.Mqtt.Activities.SendMqttMessage
         public static ISetupActivity<SendMqttMessage> WithMessage(this ISetupActivity<SendMqttMessage> messageReceived, Func<ActivityExecutionContext, string> value) => messageReceived.Set(x => x.Message, value!);
         public static ISetupActivity<SendMqttMessage> WithMessage(this ISetupActivity<SendMqttMessage> messageReceived, string value) => messageReceived.Set(x => x.Message, value!);
 
-        public static ISetupActivity<SendMqttMessage> WithQualityOfService(this ISetupActivity<SendMqttMessage> messageReceived, Func<ActivityExecutionContext, ValueTask<MqttQualityOfService>> value) => messageReceived.Set(x => x.QualityOfService, value!);
-        public static ISetupActivity<SendMqttMessage> WithQualityOfService(this ISetupActivity<SendMqttMessage> messageReceived, Func<ValueTask<MqttQualityOfService>> value) => messageReceived.Set(x => x.QualityOfService, value!);
-        public static ISetupActivity<SendMqttMessage> WithQualityOfService(this ISetupActivity<SendMqttMessage> messageReceived, Func<MqttQualityOfService> value) => messageReceived.Set(x => x.QualityOfService, value!);
-        public static ISetupActivity<SendMqttMessage> WithQualityOfService(this ISetupActivity<SendMqttMessage> messageReceived, Func<ActivityExecutionContext, MqttQualityOfService> value) => messageReceived.Set(x => x.QualityOfService, value!);
-        public static ISetupActivity<SendMqttMessage> WithQualityOfService(this ISetupActivity<SendMqttMessage> messageReceived, MqttQualityOfService value) => messageReceived.Set(x => x.QualityOfService, value!);
+        public static ISetupActivity<SendMqttMessage> WithQualityOfService(this ISetupActivity<SendMqttMessage> messageReceived, Func<ActivityExecutionContext, ValueTask<MqttQualityOfServiceLevel>> value) => messageReceived.Set(x => x.QualityOfService, value!);
+        public static ISetupActivity<SendMqttMessage> WithQualityOfService(this ISetupActivity<SendMqttMessage> messageReceived, Func<ValueTask<MqttQualityOfServiceLevel>> value) => messageReceived.Set(x => x.QualityOfService, value!);
+        public static ISetupActivity<SendMqttMessage> WithQualityOfService(this ISetupActivity<SendMqttMessage> messageReceived, Func<MqttQualityOfServiceLevel> value) => messageReceived.Set(x => x.QualityOfService, value!);
+        public static ISetupActivity<SendMqttMessage> WithQualityOfService(this ISetupActivity<SendMqttMessage> messageReceived, Func<ActivityExecutionContext, MqttQualityOfServiceLevel> value) => messageReceived.Set(x => x.QualityOfService, value!);
+        public static ISetupActivity<SendMqttMessage> WithQualityOfService(this ISetupActivity<SendMqttMessage> messageReceived, MqttQualityOfServiceLevel value) => messageReceived.Set(x => x.QualityOfService, value!);
     }
 }

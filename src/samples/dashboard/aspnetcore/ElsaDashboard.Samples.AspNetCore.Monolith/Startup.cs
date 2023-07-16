@@ -28,6 +28,15 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith
             // Elsa Server settings.
             var elsaSection = Configuration.GetSection("Elsa");
 
+            var features = new[] {
+                typeof(Startup),
+                typeof(Elsa.Persistence.EntityFramework.Sqlite.Startup),
+                typeof(Elsa.Persistence.EntityFramework.SqlServer.Startup),
+                typeof(Elsa.Secrets.Persistence.EntityFramework.Sqlite.Startup),
+                typeof(Elsa.Secrets.Persistence.EntityFramework.SqlServer.Startup),
+                typeof(Elsa.Secrets.Http.Startup),
+            };
+
             services
                 .AddElsa(options => options
                     .UseEntityFrameworkPersistence(ef => ef.UseSqlite())
@@ -38,7 +47,7 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith
                     .AddJavaScriptActivities()
                     .AddUserTaskActivities()
                     .AddActivitiesFrom<Startup>()
-                    .AddFeatures(new[] { typeof(Startup) }, Configuration)
+                    .AddFeatures(features, Configuration)
                     .WithContainerName(elsaSection.GetSection("Server:ContainerName").Get<string>())
                 );
             services

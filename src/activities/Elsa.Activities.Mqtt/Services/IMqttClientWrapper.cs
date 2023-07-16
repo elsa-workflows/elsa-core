@@ -1,6 +1,7 @@
 using Elsa.Activities.Mqtt.Options;
+using MQTTnet;
+using MQTTnet.Client;
 using System;
-using System.Net.Mqtt;
 using System.Threading.Tasks;
 
 namespace Elsa.Activities.Mqtt.Services
@@ -8,9 +9,7 @@ namespace Elsa.Activities.Mqtt.Services
     public interface IMqttClientWrapper : IDisposable
     {
         IMqttClient Client { get; }
-        MqttClientOptions Options { get; }
-
-        Task SubscribeAsync(string topic);
+        Options.MqttClientOptions Options { get; }
         Task PublishMessageAsync(string topic, string message);
         Task SetMessageHandlerAsync(Func<MqttApplicationMessage, Task> handler);
     }

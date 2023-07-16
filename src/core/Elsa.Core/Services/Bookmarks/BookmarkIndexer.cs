@@ -146,23 +146,26 @@ namespace Elsa.Services.Bookmarks
 
             foreach (var blockingActivity in blockingActivities)
             {
-                var activityExecutionContext = new ActivityExecutionContext(_serviceProvider, workflowExecutionContext, blockingActivity, null, false, cancellationToken);
-                var activityType = activityTypes[blockingActivity.Type];
-                var providerContext = new BookmarkProviderContext(activityExecutionContext, activityType, BookmarkIndexingMode.WorkflowInstance);
-                var providers = await FilterProvidersAsync(providerContext).ToListAsync(cancellationToken);
-
-                foreach (var provider in providers)
+                if(activityTypes.ContainsKey(blockingActivity.Type))
                 {
-                    var bookmarkResults = (await provider.GetBookmarksAsync(providerContext, cancellationToken)).ToList();
+                    var activityExecutionContext = new ActivityExecutionContext(_serviceProvider, workflowExecutionContext, blockingActivity, null, false, cancellationToken);
+                    var activityType = activityTypes[blockingActivity.Type];
+                    var providerContext = new BookmarkProviderContext(activityExecutionContext, activityType, BookmarkIndexingMode.WorkflowInstance);
+                    var providers = await FilterProvidersAsync(providerContext).ToListAsync(cancellationToken);
 
-                    bookmarkedWorkflows.AddRange(bookmarkResults.Select(bookmarkResult => new BookmarkedWorkflow
+                    foreach (var provider in providers)
                     {
-                        WorkflowBlueprint = workflowBlueprint,
-                        WorkflowInstanceId = workflowInstance.Id,
-                        ActivityType = bookmarkResult.ActivityTypeName ?? blockingActivity.Type,
-                        ActivityId = blockingActivity.Id,
-                        Bookmark = bookmarkResult.Bookmark
-                    }));
+                        var bookmarkResults = (await provider.GetBookmarksAsync(providerContext, cancellationToken)).ToList();
+
+                        bookmarkedWorkflows.AddRange(bookmarkResults.Select(bookmarkResult => new BookmarkedWorkflow
+                        {
+                            WorkflowBlueprint = workflowBlueprint,
+                            WorkflowInstanceId = workflowInstance.Id,
+                            ActivityType = bookmarkResult.ActivityTypeName ?? blockingActivity.Type,
+                            ActivityId = blockingActivity.Id,
+                            Bookmark = bookmarkResult.Bookmark
+                        }));
+                    }
                 }
             }
 

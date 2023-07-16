@@ -3,7 +3,7 @@ import { Secret } from "../secret.model";
 export const Token: Secret = {
   category: "Http",
   customAttributes: {},
-  description: "Authorization token secret",
+  description: "Authorization token",
   displayName: "Authorization",
   inputProperties: [
     {
