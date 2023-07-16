@@ -78,7 +78,7 @@ public static class ObjectConverter
                 if (firstChar is '{' or '[')
                     return JsonSerializer.Deserialize(stringValue, underlyingTargetType, options);
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 throw new Exception($"Failed to deserialize {stringValue} to {underlyingTargetType}");
             }
@@ -180,7 +180,7 @@ public static class ObjectConverter
         {
             return Convert.ChangeType(value, underlyingTargetType);
         }
-        catch (InvalidCastException e)
+        catch (InvalidCastException)
         {
             throw new Exception($"Failed to convert an object of type {sourceType} to {underlyingTargetType}");
         }
