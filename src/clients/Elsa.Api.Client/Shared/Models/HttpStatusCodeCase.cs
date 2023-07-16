@@ -1,4 +1,4 @@
-using Elsa.Api.Client.Activities;
+using System.Text.Json.Nodes;
 
 namespace Elsa.Api.Client.Shared.Models;
 
@@ -15,5 +15,5 @@ public class HttpStatusCodeCase
     /// <summary>
     /// The activity to execute when the HTTP status code matches.
     /// </summary>
-    public Activity? Activity { get; set; }
+    public JsonObject? Activity { get; set; }
 }

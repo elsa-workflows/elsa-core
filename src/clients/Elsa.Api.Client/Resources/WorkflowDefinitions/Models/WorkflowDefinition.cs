@@ -1,4 +1,7 @@
-using Elsa.Api.Client.Activities;
+//using Elsa.Api.Client.Activities;
+
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Elsa.Api.Client.Shared.Models;
 
 namespace Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
@@ -76,7 +79,7 @@ public class WorkflowDefinition : VersionedEntity
     /// <summary>
     /// The root activity of the workflow.
     /// </summary>
-    public Activity Root { get; set; } = default!;
+    public JsonObject Root { get; set; } = default!;
     
     /// <summary>
     /// An option to use the workflow as a readonly workflow.

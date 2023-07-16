@@ -1,6 +1,5 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Elsa.Api.Client.ActivityProviders;
 using Elsa.Api.Client.Contracts;
 using Elsa.Api.Client.Converters;
 using Elsa.Api.Client.Options;
@@ -49,10 +48,6 @@ public static class DependencyInjectionExtensions
     /// </summary>
     public static IServiceCollection AddActivityTypeService(this IServiceCollection services)
     {
-        services.AddSingleton<IActivityTypeService, DefaultActivityTypeService>();
-        services.AddActivityTypeResolver<DefaultActivityTypeResolver>();
-        services.AddActivityTypeResolver<FlowchartTypeResolver>();
-        services.AddActivityTypeResolver<FlowSwitchTypeResolver>();
         return services;
     }
     
@@ -66,14 +61,6 @@ public static class DependencyInjectionExtensions
     {
         services.AddRefitClient<T>(settings)
             .ConfigureHttpClient(ConfigureElsaApiHttpClient);
-    }
-    
-    /// <summary>
-    /// Adds an activity type resolver to the service collection.
-    /// </summary>
-    public static IServiceCollection AddActivityTypeResolver<T>(this IServiceCollection services) where T : class, IActivityTypeResolver
-    {
-        return services.AddSingleton<IActivityTypeResolver, T>();
     }
 
     private static void ConfigureElsaApiHttpClient(IServiceProvider serviceProvider, HttpClient httpClient)
@@ -91,7 +78,6 @@ public static class DependencyInjectionExtensions
         
         serializerOptions.Converters.Add(new JsonStringEnumConverter());
         serializerOptions.Converters.Add(new VersionOptionsJsonConverter());
-        serializerOptions.Converters.Add(new ActivityJsonConverterFactory(serviceProvider));
         serializerOptions.Converters.Add(new ExpressionJsonConverterFactory());
 
         var settings = new RefitSettings

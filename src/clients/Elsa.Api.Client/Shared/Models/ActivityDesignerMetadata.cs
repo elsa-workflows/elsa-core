@@ -41,10 +41,10 @@ public class ActivityDesignerMetadata
     /// <summary>
     /// Gets or sets the position of the activity.
     /// </summary>
-    public Position Position { get; set; } = default!;
+    public Position Position { get; set; } = new();
     
     /// <summary>
     /// Gets or sets the size of the activity.
     /// </summary>
-    public Size Size { get; set; } = default!;
+    public Size Size { get; set; } = new();
 }
