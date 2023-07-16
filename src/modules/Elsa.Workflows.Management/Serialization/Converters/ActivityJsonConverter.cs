@@ -72,69 +72,8 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
 
         var context = new ActivityConstructorContext(activityDescriptor, activityRoot, newOptions);
         var activity = activityDescriptor.Constructor(context);
-        
-        // ReadSyntheticInputs(activityDescriptor, activity, activityRoot, newOptions);
-        // ReadSyntheticOutputs(activityDescriptor, activity, activityRoot);
-
         return activity;
     }
-
-    // private void ReadSyntheticInputs(ActivityDescriptor activityDescriptor, IActivity activity, JsonElement activityRoot, JsonSerializerOptions options)
-    // {
-    //     foreach (var inputDescriptor in activityDescriptor.Inputs.Where(x => x.IsSynthetic))
-    //     {
-    //         var inputName = inputDescriptor.Name;
-    //         var propertyName = inputName.Camelize();
-    //         var nakedType = inputDescriptor.Type;
-    //         var wrappedType = typeof(Input<>).MakeGenericType(nakedType);
-    //
-    //         if (!activityRoot.TryGetProperty(propertyName, out var propertyElement) || propertyElement.ValueKind == JsonValueKind.Null || propertyElement.ValueKind == JsonValueKind.Undefined) 
-    //             continue;
-    //         
-    //         var isWrapped = propertyElement.ValueKind == JsonValueKind.Object && propertyElement.GetProperty("typeName").ValueKind != JsonValueKind.Undefined;
-    //
-    //         if (isWrapped)
-    //         {
-    //             var json = propertyElement.ToString();
-    //             var inputValue = JsonSerializer.Deserialize(json, wrappedType, options);
-    //
-    //             activity.SyntheticProperties[inputName] = inputValue!;
-    //         }
-    //         else
-    //         {
-    //             activity.SyntheticProperties[inputName] = propertyElement.ConvertTo(inputDescriptor.Type)!;
-    //         }
-    //     }
-    // }
-    //
-    // private void ReadSyntheticOutputs(ActivityDescriptor activityDescriptor, IActivity activity, JsonElement activityRoot)
-    // {
-    //     foreach (var outputDescriptor in activityDescriptor.Outputs.Where(x => x.IsSynthetic))
-    //     {
-    //         var outputName = outputDescriptor.Name;
-    //         var propertyName = outputName.Camelize();
-    //         var nakedType = outputDescriptor.Type;
-    //         var wrappedType = typeof(Output<>).MakeGenericType(nakedType);
-    //
-    //         if (!activityRoot.TryGetProperty(propertyName, out var propertyElement) || propertyElement.ValueKind == JsonValueKind.Null || propertyElement.ValueKind == JsonValueKind.Undefined)
-    //             continue;
-    //
-    //         var memoryReferenceElement = propertyElement.GetProperty("memoryReference");
-    //
-    //         if (!memoryReferenceElement.TryGetProperty("id", out var memoryReferenceIdElement))
-    //             continue;
-    //
-    //         var variable = new Variable
-    //         {
-    //             Id = memoryReferenceIdElement.GetString()!
-    //         };
-    //         variable.Name = variable.Id;
-    //
-    //         var output = Activator.CreateInstance(wrappedType, variable)!;
-    //
-    //         activity.SyntheticProperties[outputName] = output!;
-    //     }
-    // }
 
     /// <inheritdoc />
     public override void Write(Utf8JsonWriter writer, IActivity value, JsonSerializerOptions options)
