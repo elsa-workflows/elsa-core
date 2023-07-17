@@ -46,7 +46,7 @@ export class SwitchPortProvider implements PortProvider {
     const caseItem = cases.find(x => x.label == portName);
 
     if (!caseItem)
-      return null;
+      return;
 
     caseItem.activity = activity;
   }
