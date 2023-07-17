@@ -4,9 +4,9 @@ using Elsa.Api.Client.Expressions;
 namespace Elsa.Api.Client.Shared.Models;
 
 /// <summary>
-/// Represents a case in a switch expression.
+/// Represents a case in a flow switch expression.
 /// </summary>
-public class Case
+public class FlowSwitchCase
 {
     /// <summary>
     /// Gets or sets the label of the case.
