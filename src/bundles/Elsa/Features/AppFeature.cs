@@ -10,12 +10,17 @@ namespace Elsa.Features;
 [DependsOn(typeof(ElsaFeature))]
 public class AppFeature : FeatureBase
 {
+    /// <inheritdoc />
     public AppFeature(IModule module) : base(module)
     {
     }
     
+    /// <summary>
+    /// The configurator to invoke.
+    /// </summary>
     public Action<IModule>? Configurator { get; set; }
 
+    /// <inheritdoc />
     public override void Configure()
     {
         Configurator?.Invoke(Module);

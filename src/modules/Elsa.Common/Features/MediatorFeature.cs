@@ -17,6 +17,8 @@ public class MediatorFeature : FeatureBase
     /// <inheritdoc />
     public override void Apply()
     {
-        Services.AddMediator();
+        Services
+            .AddMediator()
+            .AddMediatorHostedServices();
     }
 }

@@ -20,7 +20,7 @@ using Microsoft.Extensions.Options;
 namespace Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
-/// Adds extension methods to <see cref="IModule"/> that enable &amp; configure mediator specific features.
+/// Adds mediator services to the <see cref="IServiceCollection"/>.
 /// </summary>
 [PublicAPI]
 public static class DependencyInjectionExtensions
@@ -40,24 +40,32 @@ public static class DependencyInjectionExtensions
                 .AddSingleton<IRequestPipeline, RequestPipeline>()
                 .AddSingleton<ICommandPipeline, CommandPipeline>()
                 .AddSingleton<INotificationPipeline, NotificationPipeline>()
-                .AddSingleton<INotificationsChannel, NotificationsChannel>()
-                .AddSingleton<ICommandsChannel, CommandsChannel>()
-                .AddSingleton<IJobsChannel, JobsChannel>()
-                .AddSingleton<IJobQueue, JobQueue>()
-                .AddHostedService<JobRunnerHostedService>()
-                .AddHostedService(sp =>
-                {
-                    var options = sp.GetRequiredService<IOptions<MediatorOptions>>().Value;
-                    return ActivatorUtilities.CreateInstance<BackgroundCommandSenderHostedService>(sp, options.CommandWorkerCount);
-                })
-                .AddHostedService(sp =>
-                {
-                    var options = sp.GetRequiredService<IOptions<MediatorOptions>>().Value;
-                    return ActivatorUtilities.CreateInstance<BackgroundEventPublisherHostedService>(sp, options.NotificationWorkerCount);
-                })
-                .CreateChannel<ICommand>()
-                .CreateChannel<INotification>()
             ;
+    }
+
+    /// <summary>
+    /// Adds mediator hosted services to the <see cref="IServiceCollection"/>.
+    /// </summary>
+    /// <param name="services"></param>
+    /// <returns></returns>
+    public static IServiceCollection AddMediatorHostedServices(this IServiceCollection services)
+    {
+        return services
+            .AddSingleton<INotificationsChannel, NotificationsChannel>()
+            .AddSingleton<ICommandsChannel, CommandsChannel>()
+            .AddSingleton<IJobsChannel, JobsChannel>()
+            .AddSingleton<IJobQueue, JobQueue>()
+            .AddHostedService<JobRunnerHostedService>()
+            .AddHostedService(sp =>
+            {
+                var options = sp.GetRequiredService<IOptions<MediatorOptions>>().Value;
+                return ActivatorUtilities.CreateInstance<BackgroundCommandSenderHostedService>(sp, options.CommandWorkerCount);
+            })
+            .AddHostedService(sp =>
+            {
+                var options = sp.GetRequiredService<IOptions<MediatorOptions>>().Value;
+                return ActivatorUtilities.CreateInstance<BackgroundEventPublisherHostedService>(sp, options.NotificationWorkerCount);
+            });
     }
     
     /// <summary>
@@ -193,16 +201,7 @@ public static class DependencyInjectionExtensions
     /// Registers all handlers from the specified assembly with the service container.
     /// </summary>
     public static IServiceCollection AddCommandHandlersFrom(this IServiceCollection services, Assembly assembly) => services.AddHandlersFromInternal<ICommandHandler>(assembly);
-
-    /// <summary>
-    /// Registers a channel for the specified type <c>T</c> as well as a channel reader and writer. 
-    /// </summary>
-    public static IServiceCollection CreateChannel<T>(this IServiceCollection services) =>
-        services
-            .AddSingleton(CreateChannel<T>())
-            .AddTransient(CreateChannelReader<T>)
-            .AddTransient(CreateChannelWriter<T>);
-
+    
     private static IServiceCollection AddHandlersFromInternal<TService, TMarker>(this IServiceCollection services) => services.AddHandlersFromInternal<TService>(typeof(TMarker));
     private static IServiceCollection AddHandlersFromInternal<TService>(this IServiceCollection services, Type assemblyMarkerType) => services.AddHandlersFromInternal<TService>(assemblyMarkerType.Assembly);
 
