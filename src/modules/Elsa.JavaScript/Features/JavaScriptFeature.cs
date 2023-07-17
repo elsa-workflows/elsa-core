@@ -1,3 +1,4 @@
+using Elsa.Common.Features;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Features;
 using Elsa.Extensions;
@@ -12,7 +13,6 @@ using Elsa.JavaScript.Services;
 using Elsa.JavaScript.TypeDefinitions.Contracts;
 using Elsa.JavaScript.TypeDefinitions.Providers;
 using Elsa.JavaScript.TypeDefinitions.Services;
-using Elsa.Mediator.Features;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.JavaScript.Features;

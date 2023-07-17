@@ -76,7 +76,7 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
             Version = definition.Version,
             DisplayName = definition.Name,
             Description = definition.Description,
-            Category = "Workflows",
+            Category = definition.Options.ActivityCategory ?? "Workflows",
             Kind = ActivityKind.Action,
             IsBrowsable = definition.IsPublished,
             Inputs = DescribeInputs(definition).ToList(),

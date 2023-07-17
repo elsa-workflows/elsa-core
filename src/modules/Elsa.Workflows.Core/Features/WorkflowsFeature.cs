@@ -26,6 +26,7 @@ namespace Elsa.Workflows.Core.Features;
 /// </summary>
 [DependsOn(typeof(SystemClockFeature))]
 [DependsOn(typeof(ExpressionsFeature))]
+[DependsOn(typeof(MediatorFeature))]
 public class WorkflowsFeature : FeatureBase
 {
     /// <inheritdoc />

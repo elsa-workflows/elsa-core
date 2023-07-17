@@ -19,4 +19,9 @@ public class WorkflowOptions
     /// Used to decide if the consuming workflows should be updated automatically to use the last published version of the workflow when it is published.
     /// </summary>
     public bool AutoUpdateConsumingWorkflows { get; set; }
+
+    /// <summary>
+    /// The category to use when the workflow is used as an activity.
+    /// </summary>
+    public string? ActivityCategory { get; set; }
 }

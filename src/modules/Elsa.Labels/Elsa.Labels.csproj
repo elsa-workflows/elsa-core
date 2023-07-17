@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <Import Project="..\..\..\common.props" />
-    <Import Project="..\..\..\configureawait.props" />
+    <Import Project="..\..\..\common.props"/>
+    <Import Project="..\..\..\configureawait.props"/>
 
     <PropertyGroup>
         <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
@@ -12,14 +12,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Open.Linq.AsyncExtensions" Version="1.2.0" />
+        <PackageReference Include="Open.Linq.AsyncExtensions" Version="1.2.0"/>
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\common\Elsa.Api.Common\Elsa.Api.Common.csproj" />
-        <ProjectReference Include="..\Elsa.Mediator\Elsa.Mediator.csproj" />
-        <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
-        <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj" />
+        <ProjectReference Include="..\..\common\Elsa.Api.Common\Elsa.Api.Common.csproj"/>
+        <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj"/>
+        <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj"/>
     </ItemGroup>
 
 </Project>

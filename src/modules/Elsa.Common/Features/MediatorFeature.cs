@@ -2,7 +2,7 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Mediator.Features;
+namespace Elsa.Common.Features;
 
 /// <summary>
 /// Adds and configures the Mediator feature.

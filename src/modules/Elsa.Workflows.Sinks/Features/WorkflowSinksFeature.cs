@@ -1,7 +1,7 @@
+using Elsa.Common.Features;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
-using Elsa.Mediator.Features;
 using Elsa.Workflows.Sinks.Contracts;
 using Elsa.Workflows.Sinks.Services;
 using Microsoft.Extensions.DependencyInjection;

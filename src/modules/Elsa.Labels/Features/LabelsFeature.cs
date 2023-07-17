@@ -1,3 +1,4 @@
+using Elsa.Common.Features;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
@@ -5,7 +6,6 @@ using Elsa.Features.Services;
 using Elsa.Labels.Contracts;
 using Elsa.Labels.Entities;
 using Elsa.Labels.Services;
-using Elsa.Mediator.Features;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Labels.Features;
@@ -31,6 +31,7 @@ public class LabelsFeature : FeatureBase
     /// </summary>
     public Func<IServiceProvider, IWorkflowDefinitionLabelStore> WorkflowDefinitionLabelStore { get; set; } = sp => sp.GetRequiredService<InMemoryWorkflowDefinitionLabelStore>();
 
+    /// <inheritdoc />
     public override void Configure()
     {
         Module.AddFastEndpointsAssembly(GetType());

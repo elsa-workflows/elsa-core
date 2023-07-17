@@ -7,7 +7,6 @@ using Elsa.Mediator.Middleware.Notification.Contracts;
 using Elsa.Mediator.Middleware.Request;
 using Elsa.Mediator.Middleware.Request.Contracts;
 using Elsa.Mediator.Models;
-using Elsa.Features.Services;
 using Elsa.Mediator.Channels;
 using Elsa.Mediator.Contracts;
 using Elsa.Mediator.HostedServices;

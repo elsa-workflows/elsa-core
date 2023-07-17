@@ -11,7 +11,6 @@ using Elsa.Liquid.Filters;
 using Elsa.Liquid.Handlers;
 using Elsa.Liquid.Providers;
 using Elsa.Liquid.Services;
-using Elsa.Mediator.Features;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Liquid.Features;

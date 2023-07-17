@@ -7,7 +7,6 @@ using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
-using Elsa.Mediator.Features;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Features;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;

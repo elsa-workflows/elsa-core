@@ -11,14 +11,15 @@
         </Description>
         <PackageTags>elsa module common</PackageTags>
     </PropertyGroup>
-    
+
     <ItemGroup>
-      <ProjectReference Include="..\..\common\Elsa.Features\Elsa.Features.csproj" />
+        <ProjectReference Include="..\..\common\Elsa.Features\Elsa.Features.csproj" />
+        <ProjectReference Include="..\..\common\Elsa.Mediator\Elsa.Mediator.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="LinqKit.Core" Version="1.2.3" />
-      <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="7.0.0" />
+        <PackageReference Include="LinqKit.Core" Version="1.2.3" />
+        <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="7.0.0" />
     </ItemGroup>
 
 </Project>

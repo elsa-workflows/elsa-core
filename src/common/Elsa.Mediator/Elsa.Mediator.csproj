@@ -13,13 +13,15 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="7.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="7.0.0" />
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.0" />
         <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="7.0.0" />
     </ItemGroup>
 
-    <ItemGroup>
-        <ProjectReference Include="..\..\common\Elsa.Features\Elsa.Features.csproj" />
-        <ProjectReference Include="..\Elsa.Common\Elsa.Common.csproj" />
+    <ItemGroup><!--        <ProjectReference Include="..\..\common\Elsa.Features\Elsa.Features.csproj" />-->
+<!--        <ProjectReference Include="..\Elsa.Common\Elsa.Common.csproj" />-->
+    
+      <Folder Include="Features\" />
     </ItemGroup>
 
 </Project>
