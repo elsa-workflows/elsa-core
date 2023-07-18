@@ -19,6 +19,8 @@ namespace Elsa.Secrets.Models
             Expressions = expressions;
             Syntax = syntax;
         }
+        
+        public bool IsEncrypted { get; set; }
 
         /// <summary>
         /// The name of the property.

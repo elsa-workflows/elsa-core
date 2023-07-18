@@ -17,6 +17,7 @@ namespace Elsa.Secrets.Persistence.MongoDb
             var section = configuration.GetSection($"Elsa:Features:WorkflowSettings");
             var connectionStringName = section.GetValue<string>("ConnectionStringIdentifier");
             var connectionString = section.GetValue<string>("ConnectionString");
+            var encryptSecrets = section.GetValue<bool>("EncryptionEnabled");
 
             if (string.IsNullOrWhiteSpace(connectionString))
             {
@@ -33,7 +34,7 @@ namespace Elsa.Secrets.Persistence.MongoDb
             secretsOptionsBuilder.UseSecretsMongoDbPersistence(options => options.ConnectionString = connectionString);
             services.AddScoped(sp => secretsOptionsBuilder.SecretsOptions.SecretsStoreFactory(sp));
 
-            elsa.AddSecrets();
+            elsa.AddSecrets(encryptSecrets);
         }
     }
 }

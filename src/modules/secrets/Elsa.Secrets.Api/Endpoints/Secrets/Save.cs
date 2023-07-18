@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Elsa.Secrets.Api.Models;
 using Elsa.Secrets.Models;
 using Elsa.Secrets.Persistence;
+using Elsa.Secrets.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Elsa.Secrets.Api.Endpoints.Secrets
@@ -14,9 +15,11 @@ namespace Elsa.Secrets.Api.Endpoints.Secrets
     public class Save : Controller
     {
         private readonly ISecretsStore _secretsStore;
-        public Save(ISecretsStore secretsStore)
+        private readonly ISecuredSecretService _securedSecretService;
+        public Save(ISecretsStore secretsStore, ISecuredSecretService securedSecretService)
         {
             _secretsStore = secretsStore;
+            _securedSecretService = securedSecretService;
         }
 
         [HttpPost]
@@ -27,9 +30,11 @@ namespace Elsa.Secrets.Api.Endpoints.Secrets
                 Id = request.SecretId,
                 DisplayName = request.Name,
                 Name = request.Name,
-                Type = request.Type,   
+                Type = request.Type,
                 Properties = request.Properties
             };
+            _securedSecretService.SetSecret(model);
+            _securedSecretService.EncryptProperties();
 
             if (model.Id == null)
                 await _secretsStore.AddAsync(model);

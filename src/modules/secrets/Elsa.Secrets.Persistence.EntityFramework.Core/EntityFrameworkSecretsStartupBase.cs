@@ -19,6 +19,7 @@ namespace Elsa.Secrets.Persistence.EntityFramework.Core
             var section = configuration.GetSection($"Elsa:Features:Secrets");
             var connectionStringName = section.GetValue<string>("ConnectionStringIdentifier");
             var connectionString = section.GetValue<string>("ConnectionString");
+            var encryptSecrets = section.GetValue<bool>("EncryptionEnabled");
 
             if (string.IsNullOrWhiteSpace(connectionString))
             {
@@ -35,7 +36,7 @@ namespace Elsa.Secrets.Persistence.EntityFramework.Core
             secretsOptionsBuilder.UseEntityFrameworkPersistence(options => Configure(options, connectionString));
             services.AddScoped(sp => secretsOptionsBuilder.SecretsOptions.SecretsStoreFactory(sp));
 
-            elsa.AddSecrets();
+            elsa.AddSecrets(encryptSecrets);
         }
 
         protected virtual string GetDefaultConnectionString() => throw new Exception($"No connection string specified for the {ProviderName} provider");
