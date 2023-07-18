@@ -90,6 +90,7 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
             // Create a local scope variable for each input property.
             var variable = new Variable(inputDescriptor.Name)
             {
+                Id = inputDescriptor.Name,
                 Name = inputDescriptor.Name,
                 StorageDriverType = inputDescriptor.StorageDriverType
             };
@@ -103,6 +104,7 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
             // Create a local scope variable for each output property.
             var variable = new Variable(outputDescriptor.Name)
             {
+                Id = outputDescriptor.Name,
                 Name = outputDescriptor.Name
             };
 
@@ -112,7 +114,7 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
 
     private async ValueTask OnChildCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext)
     {
-        // Do we have a complete composite signal that triggered the completion?
+        // Do we have a "complete composite" signal that triggered the completion?
         var completeCompositeSignal = context.WorkflowExecutionContext.TransientProperties.TryGetValue(nameof(CompleteCompositeSignal), out var signal) ? (CompleteCompositeSignal)signal : default;
 
         await context.CompleteActivityAsync(completeCompositeSignal?.Value);
