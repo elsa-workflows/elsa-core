@@ -69,10 +69,18 @@ public interface IWorkflowDefinitionsApi
     /// <summary>
     /// Deletes a workflow definition.
     /// </summary>
-    /// <param name="definitionId">The ID of the workflow definition to delete.</param>
+    /// <param name="definitionId">The definition ID of the workflow definition, and all of its versions, to delete.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     [Delete("/workflow-definitions/{definitionId}")]
     Task DeleteAsync(string definitionId, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Deletes a workflow definition version.
+    /// </summary>
+    /// <param name="id">The ID of a specific workflow definition version to delete.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    [Delete("/workflow-definition-versions/{id}")]
+    Task DeleteVersionAsync(string id, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Publishes a workflow definition.

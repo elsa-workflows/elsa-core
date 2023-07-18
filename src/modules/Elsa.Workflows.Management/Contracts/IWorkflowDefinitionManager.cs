@@ -15,6 +15,13 @@ public interface IWorkflowDefinitionManager
     /// <returns>The number of deleted workflow definitions.</returns>
     Task<int> DeleteByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default);
     
+    /// <summary>
+    /// Deletes a specific version of a workflow definition.
+    /// </summary>
+    /// <param name="id">The ID of the workflow definition version.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>True if the workflow definition version was deleted, otherwise false.</returns>
+    Task<bool> DeleteByIdAsync(string id, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Deletes a specific workflow definition version.

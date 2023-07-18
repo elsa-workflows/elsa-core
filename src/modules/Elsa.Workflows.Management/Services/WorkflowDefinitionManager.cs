@@ -49,6 +49,18 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
     }
 
     /// <inheritdoc />
+    public async Task<bool> DeleteByIdAsync(string id, CancellationToken cancellationToken = default)
+    {
+        var filter = new WorkflowDefinitionFilter { Id = id};
+        var definition = await _store.FindAsync(filter, cancellationToken);
+        
+        if (definition == null)
+            return false;
+        
+        return await DeleteVersionAsync(definition, cancellationToken);
+    }
+
+    /// <inheritdoc />
     public async Task<int> BulkDeleteByDefinitionIdsAsync(IEnumerable<string> definitionIds, CancellationToken cancellationToken = default)
     {
         var ids = definitionIds.ToList();
@@ -61,37 +73,13 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
     /// <inheritdoc />
     public async Task<bool> DeleteVersionAsync(string definitionId, int versionToDelete, CancellationToken cancellationToken = default)
     {
-        var filter = new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = VersionOptions.LatestAndPublished };
-        var workflows = (await _store.FindManyAsync(filter, cancellationToken)).ToList();
-        var latestVersion = workflows.WithVersion(VersionOptions.Latest).First();
-        var publishedVersion = workflows.WithVersion(VersionOptions.Published).FirstOrDefault();
-
-        if (versionToDelete == publishedVersion?.Version)
-        {
-            throw new Exception("Published version cannot be deleted");
-        }
-
-        filter = new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = VersionOptions.SpecificVersion(versionToDelete) };
-        var isDeleted = await _store.DeleteAsync(filter, cancellationToken) > 0;
-
-        if (!isDeleted)
+        var filter = new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = VersionOptions.SpecificVersion(versionToDelete) };
+        var definitionToDelete = await _store.FindAsync(filter, cancellationToken);
+        
+        if (definitionToDelete == null)
             return false;
-
-        await _notificationSender.SendAsync(new WorkflowDefinitionVersionDeleted(definitionId, versionToDelete), cancellationToken);
-
-        if (latestVersion.Version != versionToDelete)
-            return isDeleted;
-
-        filter = new WorkflowDefinitionFilter { DefinitionId = definitionId };
-        var lastVersion = await _store.FindLastVersionAsync(filter, cancellationToken);
-
-        if (lastVersion is null)
-            return isDeleted;
-
-        lastVersion.IsLatest = true;
-        await _store.SaveAsync(lastVersion, cancellationToken);
-
-        return isDeleted;
+        
+        return await DeleteVersionAsync(definitionToDelete, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -158,5 +146,38 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
             await _store.SaveManyAsync(updatedWorkflowDefinitions, cancellationToken);
 
         return updatedWorkflowDefinitions;
+    }
+    
+    private async Task<bool> DeleteVersionAsync(WorkflowDefinition definitionToDelete, CancellationToken cancellationToken)
+    {
+        if (definitionToDelete.IsPublished)
+        {
+            throw new Exception("Published version cannot be deleted before retracting it");
+        }
+        
+        var filter = new WorkflowDefinitionFilter { Id = definitionToDelete.Id };
+        var isDeleted = await _store.DeleteAsync(filter, cancellationToken) > 0;
+
+        if (!isDeleted)
+            return false;
+
+        await _notificationSender.SendAsync(new WorkflowDefinitionVersionDeleted(definitionToDelete), cancellationToken);
+
+        if (!definitionToDelete.IsLatest)
+            return isDeleted;
+
+        // The deleted version was also the latest version, so we need to update the current latest version to "IsLatest = true".
+        filter = new WorkflowDefinitionFilter { DefinitionId = definitionToDelete.DefinitionId };
+        var lastVersion = await _store.FindLastVersionAsync(filter, cancellationToken);
+
+        // If there are no more versions left, then we're done.
+        if (lastVersion is null)
+            return isDeleted;
+
+        // Otherwise, we need to update the latest version.
+        lastVersion.IsLatest = true;
+        await _store.SaveAsync(lastVersion, cancellationToken);
+
+        return isDeleted;
     }
 }
