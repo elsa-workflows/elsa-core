@@ -207,7 +207,10 @@ public static class ActivityExecutionContextExtensions
         
         // When input is created from an activity provider, there may be no memory block reference.
         if(memoryReference?.Id != null!)
-            memoryReference.Set(context, value);
+        {
+            // Declare the input memory block on the current context. 
+            context.ExpressionExecutionContext.Set(memoryReference, value!);
+        }
 
         // Store the evaluated input value in the activity state.
         context.ActivityState[inputDescriptor.Name] = value!;
