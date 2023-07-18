@@ -10,6 +10,7 @@ internal class WorkflowExecutionLogRecordRecord
     public string? ParentActivityInstanceId { get; set; }
     public string ActivityId { get; set; } = default!;
     public string ActivityType { get; set; } = default!;
+    public int ActivityTypeVersion { get; set; }
     public string NodeId { get; set; } = default!;
     public DateTimeOffset Timestamp { get; set; }
     public string? EventName { get; set; }

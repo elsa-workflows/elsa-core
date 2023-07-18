@@ -179,6 +179,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<int>("ActivityTypeVersion")
+                        .HasColumnType("int");
+
                     b.Property<string>("EventName")
                         .HasColumnType("nvarchar(450)");
 
@@ -226,6 +229,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                     b.HasIndex("ActivityType")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_ActivityType");
 
+                    b.HasIndex("ActivityTypeVersion")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_ActivityTypeVersion");
+
                     b.HasIndex("EventName")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_EventName");
 
@@ -246,6 +252,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
 
                     b.HasIndex("WorkflowVersion")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_WorkflowVersion");
+
+                    b.HasIndex("ActivityType", "ActivityTypeVersion")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_ActivityType_ActivityTypeVersion");
 
                     b.HasIndex("Timestamp", "Sequence")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_Timestamp_Sequence");

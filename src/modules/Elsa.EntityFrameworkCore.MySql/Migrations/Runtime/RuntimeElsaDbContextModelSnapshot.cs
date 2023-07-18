@@ -176,6 +176,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                         .IsRequired()
                         .HasColumnType("varchar(255)");
 
+                    b.Property<int>("ActivityTypeVersion")
+                        .HasColumnType("int");
+
                     b.Property<string>("EventName")
                         .HasColumnType("varchar(255)");
 
@@ -223,6 +226,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                     b.HasIndex("ActivityType")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_ActivityType");
 
+                    b.HasIndex("ActivityTypeVersion")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_ActivityTypeVersion");
+
                     b.HasIndex("EventName")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_EventName");
 
@@ -243,6 +249,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
 
                     b.HasIndex("WorkflowVersion")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_WorkflowVersion");
+
+                    b.HasIndex("ActivityType", "ActivityTypeVersion")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_ActivityType_ActivityTypeVersion");
 
                     b.HasIndex("Timestamp", "Sequence")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_Timestamp_Sequence");

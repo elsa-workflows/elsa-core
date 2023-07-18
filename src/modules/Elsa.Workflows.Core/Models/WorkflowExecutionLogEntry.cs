@@ -8,6 +8,7 @@ public record WorkflowExecutionLogEntry(
     string? ParentActivityInstanceId,
     string ActivityId,
     string ActivityType,
+    int ActivityTypeVersion,
     string NodeId,
     IDictionary<string, object>? ActivityState,
     DateTimeOffset Timestamp,

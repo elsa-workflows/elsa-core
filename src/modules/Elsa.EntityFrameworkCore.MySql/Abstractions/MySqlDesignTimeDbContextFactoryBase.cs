@@ -4,8 +4,13 @@ using Microsoft.EntityFrameworkCore.Design;
 
 namespace Elsa.EntityFrameworkCore.MySql.Abstractions;
 
+/// <summary>
+/// A base class for implementing a design-time factory for creating a <see cref="DbContext"/> with a MySQL database.
+/// </summary>
+/// <typeparam name="TDbContext">The type of the <see cref="DbContext"/>.</typeparam>
 public abstract class MySqlDesignTimeDbContextFactoryBase<TDbContext> : IDesignTimeDbContextFactory<TDbContext> where TDbContext : DbContext
 {
+    /// <inheritdoc />
     public TDbContext CreateDbContext(string[] args)
     {
         var connectionString = args.Any() ? args[0] : "Data Source=local";

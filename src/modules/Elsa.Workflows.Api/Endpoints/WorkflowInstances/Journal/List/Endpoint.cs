@@ -42,6 +42,7 @@ internal class Get : ElsaEndpoint<Request, Response>
                     x.ParentActivityInstanceId,
                     x.ActivityId,
                     x.ActivityType,
+                    x.ActivityTypeVersion,
                     x.NodeId,
                     x.Timestamp,
                     x.Sequence,

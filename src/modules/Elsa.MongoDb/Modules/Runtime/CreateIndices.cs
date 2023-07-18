@@ -79,6 +79,7 @@ internal class CreateIndices : IHostedService
                         new(indexBuilder.Ascending(x => x.ParentActivityInstanceId)),
                         new(indexBuilder.Ascending(x => x.ActivityId)),
                         new(indexBuilder.Ascending(x => x.ActivityType)),
+                        new(indexBuilder.Ascending(x => x.ActivityTypeVersion)),
                         new(indexBuilder.Ascending(x => x.EventName)),
                         new(indexBuilder.Ascending(x => x.WorkflowInstanceId)),
                         new(indexBuilder.Ascending(x => x.WorkflowVersion))

@@ -98,6 +98,7 @@ public static class ActivityExecutionContextExtensions
             parentActivityInstanceId,
             activity.Id,
             activity.Type,
+            activity.Version,
             context.NodeId,
             activityState,
             now,

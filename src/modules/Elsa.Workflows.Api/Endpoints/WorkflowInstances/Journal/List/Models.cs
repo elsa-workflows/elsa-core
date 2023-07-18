@@ -53,6 +53,7 @@ internal record ExecutionLogRecord(
     string? ParentActivityInstanceId,
     string ActivityId,
     string ActivityType,
+    int ActivityTypeVersion,
     string NodeId,
     DateTimeOffset Timestamp,
     long Sequence,

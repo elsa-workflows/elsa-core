@@ -174,6 +174,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("ActivityTypeVersion")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("EventName")
                         .HasColumnType("TEXT");
 
@@ -222,6 +225,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     b.HasIndex("ActivityType")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_ActivityType");
 
+                    b.HasIndex("ActivityTypeVersion")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_ActivityTypeVersion");
+
                     b.HasIndex("EventName")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_EventName");
 
@@ -242,6 +248,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
 
                     b.HasIndex("WorkflowVersion")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_WorkflowVersion");
+
+                    b.HasIndex("ActivityType", "ActivityTypeVersion")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_ActivityType_ActivityTypeVersion");
 
                     b.HasIndex("Timestamp", "Sequence")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_Timestamp_Sequence");

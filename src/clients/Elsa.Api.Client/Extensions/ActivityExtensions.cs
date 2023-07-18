@@ -12,6 +12,11 @@ public static class ActivityExtensions
     /// Gets the type name of the specified activity.
     /// </summary>
     public static string GetTypeName(this JsonObject activity) => activity.GetProperty<string>("type")!;
+    
+    /// <summary>
+    /// Gets the version of the specified activity.
+    /// </summary>
+    public static int GetVersion(this JsonObject activity) => activity.GetProperty<int>("version");
 
     /// <summary>
     /// Gets the ID of the specified activity.
