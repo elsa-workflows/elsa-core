@@ -21,6 +21,18 @@ namespace Elsa.Secrets.Api.Endpoints.Secrets
         { 
             _secretStore = secretStore;
         }
+        
+        private void HideEncryptedProperties(Secret secret)
+        {
+            foreach (var secretProperty in secret.Properties)
+            {
+                if (!secretProperty.IsEncrypted) continue;
+                foreach (var key in secretProperty.Expressions.Keys)
+                {
+                    secretProperty.Expressions[key] = new string('*', secretProperty.Expressions[key]!.Length);
+                }
+            }
+        }
 
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<Secret>))]
@@ -28,6 +40,10 @@ namespace Elsa.Secrets.Api.Endpoints.Secrets
         {
             var specification = Specification<Secret>.Identity;
             var items = await _secretStore.FindManyAsync(specification, cancellationToken: cancellationToken);
+            foreach (var secret in items)
+            {
+                HideEncryptedProperties(secret);
+            }
 
             return Json(items);
         }

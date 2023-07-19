@@ -23,6 +23,7 @@ export interface SecretDefinitionProperty {
   syntax?: string;
   expressions: Map<string>;
   value?: any;
+  isEncrypted?: boolean;
 }
 
 export interface SecretDescriptor {
