@@ -7,6 +7,8 @@ using Elsa.Elasticsearch.Shared.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Filters;
+using Elsa.Workflows.Runtime.OrderDefinitions;
 
 namespace Elsa.Elasticsearch.Modules.Runtime;
 
@@ -61,6 +63,12 @@ public class ElasticWorkflowExecutionLogStore : IWorkflowExecutionLogStore
     public async Task<Page<WorkflowExecutionLogRecord>> FindManyAsync<TOrderBy>(WorkflowExecutionLogRecordFilter filter, PageArgs pageArgs, WorkflowExecutionLogRecordOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
         return await _store.SearchAsync(d => Sort(Filter(d, filter), order), pageArgs, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<long> DeleteManyAsync(WorkflowExecutionLogRecordFilter filter, CancellationToken cancellationToken = default)
+    {
+        return await _store.DeleteByQueryAsync(d => Filter(d, filter), cancellationToken);
     }
 
     private static SearchRequestDescriptor<WorkflowExecutionLogRecord> Sort<TProp>(SearchRequestDescriptor<WorkflowExecutionLogRecord> descriptor, WorkflowExecutionLogRecordOrder<TProp> order)

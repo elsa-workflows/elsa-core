@@ -3,7 +3,7 @@ using Elsa.Extensions;
 using Elsa.Scheduling.Activities;
 using Elsa.Scheduling.Contracts;
 using Elsa.Workflows.Runtime.Entities;
-using Elsa.Workflows.Runtime.Models.Requests;
+using Elsa.Workflows.Runtime.Requests;
 
 namespace Elsa.Scheduling.Services;
 
@@ -26,9 +26,10 @@ public class DefaultTriggerScheduler : ITriggerScheduler
     public async Task ScheduleAsync(IEnumerable<StoredTrigger> triggers, CancellationToken cancellationToken = default)
     {
         // Select Timer, StartAt and Cron triggers.
-        var timerTriggers = triggers.Filter<Activities.Timer>();
-        var startAtTriggers = triggers.Filter<StartAt>();
-        var cronTriggers = triggers.Filter<Cron>();
+        var triggerList = triggers.ToList();
+        var timerTriggers = triggerList.Filter<Activities.Timer>();
+        var startAtTriggers = triggerList.Filter<StartAt>();
+        var cronTriggers = triggerList.Filter<Cron>();
 
         // Schedule each Timer trigger.
         foreach (var trigger in timerTriggers)

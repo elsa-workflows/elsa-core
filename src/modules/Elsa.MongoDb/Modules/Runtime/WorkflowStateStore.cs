@@ -3,6 +3,7 @@ using Elsa.MongoDb.Common;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Filters;
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
 
@@ -39,18 +40,22 @@ public class MongoWorkflowStateStore : IWorkflowStateStore
     }
 
     /// <inheritdoc />
-    public async ValueTask<WorkflowState?> LoadAsync(string id, CancellationToken cancellationToken = default) => 
-        (await _mongoDbStore.FindAsync(x => x.Id == id, cancellationToken));
+    public async ValueTask<WorkflowState?> FindAsync(WorkflowStateFilter filter, CancellationToken cancellationToken = default)
+    {
+        return await _mongoDbStore.FindAsync(queryable => Filter(queryable, filter), cancellationToken);
+    }
 
     /// <inheritdoc />
-    public async ValueTask<long> CountAsync(CountRunningWorkflowsArgs args, CancellationToken cancellationToken = default)
+    public async ValueTask<long> CountAsync(WorkflowStateFilter filter, CancellationToken cancellationToken = default)
     {
-        var query = _mongoDbStore.GetCollection().AsQueryable().Where(x => x.Status == WorkflowStatus.Running);
-
-        if (args.DefinitionId != null) query = query.Where(x => x.DefinitionId == args.DefinitionId);
-        if (args.Version != null) query = query.Where(x => x.DefinitionVersion == args.Version);
-        if (args.CorrelationId != null) query = query.Where(x => x.CorrelationId == args.CorrelationId);
-
-        return (int)await query.LongCountAsync(cancellationToken);
+        return await _mongoDbStore.CountAsync(queryable => Filter(queryable, filter), cancellationToken);
     }
+
+    /// <inheritdoc />
+    public async Task<long> DeleteManyAsync(WorkflowStateFilter filter, CancellationToken cancellationToken = default)
+    {
+        return await _mongoDbStore.DeleteWhereAsync(queryable => Filter(queryable, filter), cancellationToken);
+    }
+
+    private IMongoQueryable<WorkflowState> Filter(IMongoQueryable<WorkflowState> queryable, WorkflowStateFilter filter) => (filter.Apply(queryable) as IMongoQueryable<WorkflowState>)!;
 }

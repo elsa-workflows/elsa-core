@@ -9,6 +9,8 @@ using Elsa.Extensions;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Filters;
+using Elsa.Workflows.Runtime.OrderDefinitions;
 
 namespace Elsa.Dapper.Modules.Runtime.Services;
 
@@ -76,12 +78,21 @@ public class DapperWorkflowExecutionLogStore : IWorkflowExecutionLogStore
         return Map(page);
     }
 
-    private void ApplyFilter(ParameterizedQuery query, WorkflowExecutionLogRecordFilter filter)
+    /// <inheritdoc />
+    public async Task<long> DeleteManyAsync(WorkflowExecutionLogRecordFilter filter, CancellationToken cancellationToken = default)
+    {
+        return await _store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
+    }
+
+    private static void ApplyFilter(ParameterizedQuery query, WorkflowExecutionLogRecordFilter filter)
     {
         query
-            .Equals(nameof(WorkflowExecutionLogRecordRecord.ActivityId), filter.ActivityId)
-            .Equals(nameof(WorkflowExecutionLogRecordRecord.WorkflowInstanceId), filter.WorkflowInstanceId)
-            .Equals(nameof(WorkflowExecutionLogRecordRecord.EventName), filter.EventName)
+            .Is(nameof(WorkflowExecutionLogRecordRecord.Id), filter.Id)
+            .In(nameof(WorkflowExecutionLogRecordRecord.Id), filter.Ids)
+            .Is(nameof(WorkflowExecutionLogRecordRecord.ActivityId), filter.ActivityId)
+            .Is(nameof(WorkflowExecutionLogRecordRecord.WorkflowInstanceId), filter.WorkflowInstanceId)
+            .In(nameof(WorkflowExecutionLogRecordRecord.WorkflowInstanceId), filter.WorkflowInstanceIds)
+            .Is(nameof(WorkflowExecutionLogRecordRecord.EventName), filter.EventName)
             .In(nameof(WorkflowExecutionLogRecordRecord.ActivityId), filter.AnyEventName)
             ;
     }
@@ -97,6 +108,7 @@ public class DapperWorkflowExecutionLogStore : IWorkflowExecutionLogStore
         {
             Id = source.Id,
             WorkflowDefinitionId = source.WorkflowDefinitionId,
+            WorkflowDefinitionVersionId = source.WorkflowDefinitionVersionId,
             WorkflowInstanceId = source.WorkflowInstanceId,
             WorkflowVersion = source.WorkflowVersion,
             ActivityInstanceId = source.ActivityInstanceId,
@@ -120,6 +132,7 @@ public class DapperWorkflowExecutionLogStore : IWorkflowExecutionLogStore
         {
             Id = source.Id,
             WorkflowDefinitionId = source.WorkflowDefinitionId,
+            WorkflowDefinitionVersionId = source.WorkflowDefinitionVersionId,
             WorkflowInstanceId = source.WorkflowInstanceId,
             WorkflowVersion = source.WorkflowVersion,
             ActivityInstanceId = source.ActivityInstanceId,

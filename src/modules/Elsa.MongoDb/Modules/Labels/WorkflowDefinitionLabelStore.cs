@@ -10,7 +10,7 @@ public class MongoWorkflowDefinitionLabelStore : IWorkflowDefinitionLabelStore
     private readonly MongoDbStore<WorkflowDefinitionLabel> _mongoDbStore;
 
     /// <summary>
-    /// Constructor
+    /// Initializes a new instance of the <see cref="MongoWorkflowDefinitionLabelStore"/> class.
     /// </summary>
     public MongoWorkflowDefinitionLabelStore(MongoDbStore<WorkflowDefinitionLabel> mongoDbStore) => _mongoDbStore = mongoDbStore;
 
@@ -39,22 +39,22 @@ public class MongoWorkflowDefinitionLabelStore : IWorkflowDefinitionLabelStore
     }
 
     /// <inheritdoc />
-    public async Task<int> DeleteByWorkflowDefinitionIdAsync(string workflowDefinitionId, CancellationToken cancellationToken = default) =>
+    public async Task<long> DeleteByWorkflowDefinitionIdAsync(string workflowDefinitionId, CancellationToken cancellationToken = default) =>
         await _mongoDbStore.DeleteWhereAsync(x => x.WorkflowDefinitionId == workflowDefinitionId, cancellationToken);
 
     /// <inheritdoc />
-    public async Task<int> DeleteByWorkflowDefinitionVersionIdAsync(string workflowDefinitionVersionId, CancellationToken cancellationToken = default) =>
+    public async Task<long> DeleteByWorkflowDefinitionVersionIdAsync(string workflowDefinitionVersionId, CancellationToken cancellationToken = default) =>
         await _mongoDbStore.DeleteWhereAsync(x => x.WorkflowDefinitionVersionId == workflowDefinitionVersionId, cancellationToken);
 
     /// <inheritdoc />
-    public async Task<int> DeleteByWorkflowDefinitionIdsAsync(IEnumerable<string> workflowDefinitionIds, CancellationToken cancellationToken = default)
+    public async Task<long> DeleteByWorkflowDefinitionIdsAsync(IEnumerable<string> workflowDefinitionIds, CancellationToken cancellationToken = default)
     {
         var ids = workflowDefinitionIds.ToList();
         return await _mongoDbStore.DeleteWhereAsync(x => ids.Contains(x.WorkflowDefinitionId), cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task<int> DeleteByWorkflowDefinitionVersionIdsAsync(IEnumerable<string> workflowDefinitionVersionIds, CancellationToken cancellationToken = default)
+    public async Task<long> DeleteByWorkflowDefinitionVersionIdsAsync(IEnumerable<string> workflowDefinitionVersionIds, CancellationToken cancellationToken = default)
     {
         var ids = workflowDefinitionVersionIds.ToList();
         return await _mongoDbStore.DeleteWhereAsync(x => ids.Contains(x.WorkflowDefinitionVersionId), cancellationToken);

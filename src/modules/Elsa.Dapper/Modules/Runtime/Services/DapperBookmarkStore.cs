@@ -6,6 +6,7 @@ using Elsa.Dapper.Services;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Filters;
 
 namespace Elsa.Dapper.Modules.Runtime.Services;
 
@@ -51,10 +52,10 @@ public class DapperBookmarkStore : IBookmarkStore
     private void ApplyFilter(ParameterizedQuery query, BookmarkFilter filter)
     {
         query
-            .Equals(nameof(StoredBookmarkRecord.Hash), filter.Hash)
-            .Equals(nameof(StoredBookmarkRecord.WorkflowInstanceId), filter.WorkflowInstanceId)
-            .Equals(nameof(StoredBookmarkRecord.CorrelationId), filter.CorrelationId)
-            .Equals(nameof(StoredBookmarkRecord.ActivityTypeName), filter.ActivityTypeName)
+            .Is(nameof(StoredBookmarkRecord.Hash), filter.Hash)
+            .Is(nameof(StoredBookmarkRecord.WorkflowInstanceId), filter.WorkflowInstanceId)
+            .Is(nameof(StoredBookmarkRecord.CorrelationId), filter.CorrelationId)
+            .Is(nameof(StoredBookmarkRecord.ActivityTypeName), filter.ActivityTypeName)
             .In(nameof(StoredBookmarkRecord.ActivityTypeName), filter.ActivityTypeNames)
             ;
     }

@@ -13,6 +13,11 @@ public class StoredTrigger : Entity
     public string WorkflowDefinitionId { get; set; } = default!;
     
     /// <summary>
+    /// The version ID of the workflow definition.
+    /// </summary>
+    public string WorkflowDefinitionVersionId { get; set; } = default!;
+    
+    /// <summary>
     /// The name of the trigger.
     /// </summary>
     public string Name { get; set; } = default!;

@@ -15,6 +15,7 @@ public class WorkflowExecutionContextMapper : IWorkflowExecutionContextMapper
         {
             Id = workflowExecutionContext.Id,
             DefinitionId = workflowExecutionContext.Workflow.Identity.DefinitionId,
+            DefinitionVersionId = workflowExecutionContext.Workflow.Id,
             DefinitionVersion = workflowExecutionContext.Workflow.Identity.Version,
             CorrelationId = workflowExecutionContext.CorrelationId,
             Status = workflowExecutionContext.Status,

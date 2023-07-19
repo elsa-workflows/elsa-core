@@ -2,7 +2,7 @@ using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Runtime.Activities;
 using Elsa.Workflows.Runtime.Bookmarks;
 using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Models.Requests;
+using Elsa.Workflows.Runtime.Requests;
 
 namespace Elsa.Workflows.Runtime.Services;
 

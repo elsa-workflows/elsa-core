@@ -1,4 +1,4 @@
-using Elsa.Workflows.Runtime.Models.Requests;
+using Elsa.Workflows.Runtime.Requests;
 
 namespace Elsa.Workflows.Runtime.Contracts;
 

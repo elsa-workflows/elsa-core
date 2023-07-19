@@ -1,7 +1,7 @@
 using Elsa.Scheduling.Contracts;
 using Elsa.Scheduling.Schedules;
 using Elsa.Scheduling.Tasks;
-using Elsa.Workflows.Runtime.Models.Requests;
+using Elsa.Workflows.Runtime.Requests;
 
 namespace Elsa.Scheduling.Services;
 

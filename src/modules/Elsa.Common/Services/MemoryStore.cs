@@ -83,7 +83,7 @@ public class MemoryStore<TEntity>
     /// </summary>
     /// <param name="predicate">The predicate to match.</param>
     /// <returns>The number of entities deleted.</returns>
-    public int DeleteWhere(Func<TEntity, bool> predicate)
+    public long DeleteWhere(Func<TEntity, bool> predicate)
     {
         var query =
             from entry in Entities
@@ -94,7 +94,7 @@ public class MemoryStore<TEntity>
         foreach (var entry in entries)
             Entities.Remove(entry);
 
-        return entries.Count;
+        return entries.LongCount();
     }
 
     /// <summary>
@@ -102,7 +102,7 @@ public class MemoryStore<TEntity>
     /// </summary>
     /// <param name="ids">The IDs of the entities to delete.</param>
     /// <returns>The number of entities deleted.</returns>
-    public int DeleteMany(IEnumerable<string> ids)
+    public long DeleteMany(IEnumerable<string> ids)
     {
         var count = 0;
         foreach (var id in ids)
@@ -120,7 +120,7 @@ public class MemoryStore<TEntity>
     /// <param name="entities">The entities to delete.</param>
     /// <param name="idAccessor">A function that returns the ID of the entity.</param>
     /// <returns></returns>
-    public int DeleteMany(IEnumerable<TEntity> entities, Func<TEntity, string> idAccessor)
+    public long DeleteMany(IEnumerable<TEntity> entities, Func<TEntity, string> idAccessor)
     {
         var count = 0;
         var list = entities.ToList();

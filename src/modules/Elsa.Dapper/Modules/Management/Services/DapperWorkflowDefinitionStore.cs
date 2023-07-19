@@ -132,7 +132,7 @@ public class DapperWorkflowDefinitionStore : IWorkflowDefinitionStore
     }
 
     /// <inheritdoc />
-    public async Task<int> DeleteAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
+    public async Task<long> DeleteAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
         return await _store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
     }
@@ -147,34 +147,35 @@ public class DapperWorkflowDefinitionStore : IWorkflowDefinitionStore
     public async Task<long> CountDistinctAsync(CancellationToken cancellationToken = default)
     {
         return await _store.CountAsync(
-            filter => filter.Count($"distinct {nameof(WorkflowDefinition.DefinitionId)}", TableName), 
+            filter => filter.Count($"distinct {nameof(WorkflowDefinition.DefinitionId)}", TableName),
             cancellationToken);
     }
 
+    /// <inheritdoc />
     public async Task<bool> GetIsNameUnique(string name, string? definitionId = default, CancellationToken cancellationToken = default)
     {
         return await _store.AnyAsync(query =>
         {
-            query.Equals(nameof(WorkflowDefinition.Name), name);
-            
-            if(definitionId != null)
-                query.NotEquals(nameof(WorkflowDefinition.DefinitionId), definitionId);
-            
+            query.Is(nameof(WorkflowDefinition.Name), name);
+
+            if (definitionId != null)
+                query.IsNot(nameof(WorkflowDefinition.DefinitionId), definitionId);
         }, cancellationToken);
     }
 
     private void ApplyFilter(ParameterizedQuery query, WorkflowDefinitionFilter filter)
     {
-        ParameterizedQueryBuilderExtensions.Equals(query
-                .Equals(nameof(WorkflowDefinition.DefinitionId), filter.DefinitionId)
-                .In(nameof(WorkflowDefinition.DefinitionId), filter.DefinitionIds)
-                .Equals(nameof(WorkflowDefinition.Id), filter.Id)
-                .In(nameof(WorkflowDefinition.Id), filter.Ids), filter.VersionOptions)
-            .Equals(nameof(WorkflowDefinition.MaterializerName), filter.MaterializerName)
-            .Equals(nameof(WorkflowDefinition.Name), filter.Name)
+        query
+            .Is(nameof(WorkflowDefinition.DefinitionId), filter.DefinitionId)
+            .In(nameof(WorkflowDefinition.DefinitionId), filter.DefinitionIds)
+            .Is(nameof(WorkflowDefinition.Id), filter.Id)
+            .In(nameof(WorkflowDefinition.Id), filter.Ids)
+            .Is(filter.VersionOptions)
+            .Is(nameof(WorkflowDefinition.MaterializerName), filter.MaterializerName)
+            .Is(nameof(WorkflowDefinition.Name), filter.Name)
             .In(nameof(WorkflowDefinition.Name), filter.Names)
-            .Equals(nameof(WorkflowDefinition.Options.UsableAsActivity), filter.UsableAsActivity)
-            .AndWorkflowDefinitionSearchTerm(filter.SearchTerm);
+            .Is(nameof(WorkflowDefinition.Options.UsableAsActivity), filter.UsableAsActivity)
+            .WorkflowDefinitionSearchTerm(filter.SearchTerm);
     }
 
     private Page<WorkflowDefinition> Map(Page<WorkflowDefinitionRecord> source) => new(Map(source.Items).ToList(), source.TotalCount);

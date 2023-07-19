@@ -2,7 +2,7 @@ using Elsa.Extensions;
 using Elsa.Quartz.Jobs;
 using Elsa.Scheduling.Contracts;
 using Elsa.Scheduling.Services;
-using Elsa.Workflows.Runtime.Models.Requests;
+using Elsa.Workflows.Runtime.Requests;
 using Quartz;
 
 namespace Elsa.Quartz.Services;

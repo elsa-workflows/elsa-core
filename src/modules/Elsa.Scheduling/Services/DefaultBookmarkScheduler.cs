@@ -3,7 +3,7 @@ using Elsa.Scheduling.Activities;
 using Elsa.Scheduling.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Runtime.Entities;
-using Elsa.Workflows.Runtime.Models.Requests;
+using Elsa.Workflows.Runtime.Requests;
 
 namespace Elsa.Scheduling.Services;
 

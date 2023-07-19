@@ -3,8 +3,8 @@ using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Middleware.Activities;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Pipelines.ActivityExecution;
+using Elsa.Workflows.Runtime.Bookmarks;
 using Elsa.Workflows.Runtime.Models;
-using Elsa.Workflows.Runtime.Models.Bookmarks;
 
 namespace Elsa.Workflows.Runtime.Middleware.Activities;
 

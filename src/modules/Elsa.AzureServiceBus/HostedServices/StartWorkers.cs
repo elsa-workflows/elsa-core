@@ -4,6 +4,7 @@ using Elsa.AzureServiceBus.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Filters;
 using Microsoft.Extensions.Hosting;
 
 namespace Elsa.AzureServiceBus.HostedServices;

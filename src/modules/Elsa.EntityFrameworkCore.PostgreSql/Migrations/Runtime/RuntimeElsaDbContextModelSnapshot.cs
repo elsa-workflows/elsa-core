@@ -44,6 +44,10 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                     b.Property<int>("DefinitionVersion")
                         .HasColumnType("integer");
 
+                    b.Property<string>("DefinitionVersionId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<long>("ExecutionLogSequence")
                         .HasColumnType("bigint");
 
@@ -68,6 +72,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
 
                     b.HasIndex("DefinitionId")
                         .HasDatabaseName("IX_WorkflowState_DefinitionId");
+
+                    b.HasIndex("DefinitionVersionId")
+                        .HasDatabaseName("IX_WorkflowState_DefinitionVersionId");
 
                     b.HasIndex("UpdatedAt")
                         .HasDatabaseName("IX_WorkflowState_UpdatedAt");
@@ -145,6 +152,10 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("WorkflowDefinitionVersionId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Hash")
@@ -155,6 +166,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
 
                     b.HasIndex("WorkflowDefinitionId")
                         .HasDatabaseName("IX_StoredTrigger_WorkflowDefinitionId");
+
+                    b.HasIndex("WorkflowDefinitionVersionId")
+                        .HasDatabaseName("IX_StoredTrigger_WorkflowDefinitionVersionId");
 
                     b.ToTable("WorkflowTriggers", "Elsa");
                 });
@@ -211,6 +225,10 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("WorkflowDefinitionVersionId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
                         .HasColumnType("text");
@@ -246,6 +264,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
 
                     b.HasIndex("WorkflowDefinitionId")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_WorkflowDefinitionId");
+
+                    b.HasIndex("WorkflowDefinitionVersionId")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_WorkflowDefinitionVersionId");
 
                     b.HasIndex("WorkflowInstanceId")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_WorkflowInstanceId");

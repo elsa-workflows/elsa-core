@@ -41,6 +41,10 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                     b.Property<int>("DefinitionVersion")
                         .HasColumnType("int");
 
+                    b.Property<string>("DefinitionVersionId")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
                     b.Property<long>("ExecutionLogSequence")
                         .HasColumnType("bigint");
 
@@ -65,6 +69,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
 
                     b.HasIndex("DefinitionId")
                         .HasDatabaseName("IX_WorkflowState_DefinitionId");
+
+                    b.HasIndex("DefinitionVersionId")
+                        .HasDatabaseName("IX_WorkflowState_DefinitionVersionId");
 
                     b.HasIndex("UpdatedAt")
                         .HasDatabaseName("IX_WorkflowState_UpdatedAt");
@@ -142,6 +149,10 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                         .IsRequired()
                         .HasColumnType("varchar(255)");
 
+                    b.Property<string>("WorkflowDefinitionVersionId")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Hash")
@@ -152,6 +163,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
 
                     b.HasIndex("WorkflowDefinitionId")
                         .HasDatabaseName("IX_StoredTrigger_WorkflowDefinitionId");
+
+                    b.HasIndex("WorkflowDefinitionVersionId")
+                        .HasDatabaseName("IX_StoredTrigger_WorkflowDefinitionVersionId");
 
                     b.ToTable("WorkflowTriggers", "Elsa");
                 });
@@ -208,6 +222,10 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                         .IsRequired()
                         .HasColumnType("varchar(255)");
 
+                    b.Property<string>("WorkflowDefinitionVersionId")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
                         .HasColumnType("varchar(255)");
@@ -243,6 +261,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
 
                     b.HasIndex("WorkflowDefinitionId")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_WorkflowDefinitionId");
+
+                    b.HasIndex("WorkflowDefinitionVersionId")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_WorkflowDefinitionVersionId");
 
                     b.HasIndex("WorkflowInstanceId")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_WorkflowInstanceId");

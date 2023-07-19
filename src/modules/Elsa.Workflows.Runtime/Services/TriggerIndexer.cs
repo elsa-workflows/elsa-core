@@ -11,7 +11,7 @@ using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Runtime.Comparers;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
-using Elsa.Workflows.Runtime.Models.Notifications;
+using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Notifications;
 using Microsoft.Extensions.Logging;
 using Open.Linq.AsyncExtensions;
@@ -177,6 +177,7 @@ public class TriggerIndexer : ITriggerIndexer
         {
             Id = _identityGenerator.GenerateId(),
             WorkflowDefinitionId = workflow.Identity.DefinitionId,
+            WorkflowDefinitionVersionId = workflow.Identity.Id,
             Name = activity.Type,
             ActivityId = activity.Id
         };
@@ -199,6 +200,7 @@ public class TriggerIndexer : ITriggerIndexer
         {
             Id = _identityGenerator.GenerateId(),
             WorkflowDefinitionId = workflow.Identity.DefinitionId,
+            WorkflowDefinitionVersionId = workflow.Identity.Id,
             Name = triggerTypeName,
             ActivityId = trigger.Id,
             Hash = _hasher.Hash(triggerTypeName, payload),

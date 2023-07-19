@@ -2,17 +2,17 @@ using System.Text.Json.Serialization;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.BulkDelete;
 
-public class Request
+internal class Request
 {
     public ICollection<string> DefinitionIds { get; set; } = default!;
 }
 
-public class Response
+internal class Response
 {
-    public Response(int deletedCount)
+    public Response(long deletedCount)
     {
         DeletedCount = deletedCount;
     }
 
-    [JsonPropertyName("deleted")] public int DeletedCount { get; }
+    [JsonPropertyName("deleted")] public long DeletedCount { get; }
 }

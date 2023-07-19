@@ -2,6 +2,8 @@ using Elsa.Abstractions;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Filters;
+using Elsa.Workflows.Runtime.OrderDefinitions;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.Journal.List;

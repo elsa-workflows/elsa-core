@@ -3,7 +3,14 @@ using Elsa.Mediator.Models;
 
 namespace Elsa.Workflows.Runtime.Commands;
 
-// ReSharper disable once UnusedType.Global
+/// <summary>
+/// Represents a command that dispatches a workflow instance.
+/// </summary>
+/// <param name="ActivityTypeName"></param>
+/// <param name="BookmarkPayload"></param>
+/// <param name="CorrelationId"></param>
+/// <param name="WorkflowInstanceId"></param>
+/// <param name="Input"></param>
 public record DispatchTriggerWorkflowsCommand(
     string ActivityTypeName, 
     object BookmarkPayload, 

@@ -2,6 +2,7 @@ using Elsa.Extensions;
 using Elsa.Http.Contracts;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Filters;
 
 namespace Elsa.Http.Services;
 

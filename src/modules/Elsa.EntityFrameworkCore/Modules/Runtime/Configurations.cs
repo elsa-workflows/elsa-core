@@ -30,6 +30,7 @@ public class Configurations :
         builder.Property(x => x.SubStatus).HasConversion<EnumToStringConverter<WorkflowSubStatus>>();
         builder.HasIndex(x => x.CorrelationId).HasDatabaseName($"IX_{nameof(WorkflowState)}_{nameof(WorkflowState.CorrelationId)}");
         builder.HasIndex(x=> x.DefinitionId).HasDatabaseName($"IX_{nameof(WorkflowState)}_{nameof(WorkflowState.DefinitionId)}");
+        builder.HasIndex(x=> x.DefinitionVersionId).HasDatabaseName($"IX_{nameof(WorkflowState)}_{nameof(WorkflowState.DefinitionVersionId)}");
         builder.HasIndex(x => new { x.Status, x.SubStatus, x.DefinitionId, x.DefinitionVersion }).HasDatabaseName($"IX_{nameof(WorkflowState)}_{nameof(WorkflowState.Status)}_{nameof(WorkflowState.SubStatus)}_{nameof(WorkflowState.DefinitionId)}_{nameof(WorkflowState.DefinitionVersion)}");
         builder.HasIndex(x => new { x.Status, x.SubStatus }).HasDatabaseName($"IX_{nameof(WorkflowState)}_{nameof(WorkflowState.Status)}_{nameof(WorkflowState.SubStatus)}");
         builder.HasIndex(x => new { x.Status, x.DefinitionId}).HasDatabaseName($"IX_{nameof(WorkflowState)}_{nameof(WorkflowState.Status)}_{nameof(WorkflowState.DefinitionId)}");
@@ -44,6 +45,7 @@ public class Configurations :
         builder.Ignore(x => x.Payload);
         builder.Property<string>("Data");
         builder.HasIndex(x => x.WorkflowDefinitionId).HasDatabaseName($"IX_{nameof(StoredTrigger)}_{nameof(StoredTrigger.WorkflowDefinitionId)}");
+        builder.HasIndex(x => x.WorkflowDefinitionVersionId).HasDatabaseName($"IX_{nameof(StoredTrigger)}_{nameof(StoredTrigger.WorkflowDefinitionVersionId)}");
         builder.HasIndex(x => x.Name).HasDatabaseName($"IX_{nameof(StoredTrigger)}_{nameof(StoredTrigger.Name)}");
         builder.HasIndex(x => x.Hash).HasDatabaseName($"IX_{nameof(StoredTrigger)}_{nameof(StoredTrigger.Hash)}");
     }
@@ -67,6 +69,7 @@ public class Configurations :
         builder.HasIndex(x => new {x.ActivityType, x.ActivityTypeVersion}).HasDatabaseName($"IX_{nameof(WorkflowExecutionLogRecord)}_{nameof(WorkflowExecutionLogRecord.ActivityType)}_{nameof(WorkflowExecutionLogRecord.ActivityTypeVersion)}");
         builder.HasIndex(x => x.EventName).HasDatabaseName($"IX_{nameof(WorkflowExecutionLogRecord)}_{nameof(WorkflowExecutionLogRecord.EventName)}");
         builder.HasIndex(x => x.WorkflowDefinitionId).HasDatabaseName($"IX_{nameof(WorkflowExecutionLogRecord)}_{nameof(WorkflowExecutionLogRecord.WorkflowDefinitionId)}");
+        builder.HasIndex(x => x.WorkflowDefinitionVersionId).HasDatabaseName($"IX_{nameof(WorkflowExecutionLogRecord)}_{nameof(WorkflowExecutionLogRecord.WorkflowDefinitionVersionId)}");
         builder.HasIndex(x => x.WorkflowInstanceId).HasDatabaseName($"IX_{nameof(WorkflowExecutionLogRecord)}_{nameof(WorkflowExecutionLogRecord.WorkflowInstanceId)}");
         builder.HasIndex(x => x.WorkflowVersion).HasDatabaseName($"IX_{nameof(WorkflowExecutionLogRecord)}_{nameof(WorkflowExecutionLogRecord.WorkflowVersion)}");
     }

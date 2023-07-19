@@ -1,17 +1,17 @@
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Runtime.Bookmarks;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Middleware.Activities;
 using Elsa.Workflows.Runtime.Models;
-using Elsa.Workflows.Runtime.Models.Bookmarks;
 using Elsa.Workflows.Runtime.Notifications;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Runtime.Handlers;
 
 /// <summary>
-/// A handler that cancels background activities.
+/// A handler that cancels background activities based on removed bookmarks.
 /// </summary>
 [PublicAPI]
 public class CancelBackgroundActivities : INotificationHandler<WorkflowBookmarksIndexed>

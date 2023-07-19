@@ -1,4 +1,5 @@
 using Elsa.Common.Models;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.State;
@@ -6,6 +7,8 @@ using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Extensions;
+using Elsa.Workflows.Runtime.Filters;
 using Medallion.Threading;
 using Microsoft.Extensions.Logging;
 
@@ -120,7 +123,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
     {
         await using (await _distributedLockProvider.AcquireLockAsync(workflowInstanceId, TimeSpan.FromMinutes(1), cancellationToken))
         {
-            var workflowState = await _workflowStateStore.LoadAsync(workflowInstanceId, cancellationToken);
+            var workflowState = await _workflowStateStore.FindAsync(workflowInstanceId, cancellationToken);
 
             if (workflowState == null)
                 throw new Exception($"Workflow instance {workflowInstanceId} not found");
@@ -210,7 +213,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
     }
 
     /// <inheritdoc />
-    public async Task<WorkflowState?> ExportWorkflowStateAsync(string workflowInstanceId, CancellationToken cancellationToken = default) => await _workflowStateStore.LoadAsync(workflowInstanceId, cancellationToken);
+    public async Task<WorkflowState?> ExportWorkflowStateAsync(string workflowInstanceId, CancellationToken cancellationToken = default) => await _workflowStateStore.FindAsync(workflowInstanceId, cancellationToken);
 
     /// <inheritdoc />
     public async Task ImportWorkflowStateAsync(WorkflowState workflowState, CancellationToken cancellationToken = default) => await _workflowStateStore.SaveAsync(workflowState.Id, workflowState, cancellationToken);
@@ -229,7 +232,17 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
     }
 
     /// <inheritdoc />
-    public async Task<long> CountRunningWorkflowsAsync(CountRunningWorkflowsArgs args, CancellationToken cancellationToken = default) => await _workflowStateStore.CountAsync(args, cancellationToken);
+    public async Task<long> CountRunningWorkflowsAsync(CountRunningWorkflowsArgs args, CancellationToken cancellationToken = default)
+    {
+        var filter = new WorkflowStateFilter
+        {
+            DefinitionId = args.DefinitionId,
+            Version = args.Version,
+            CorrelationId = args.CorrelationId,
+            WorkflowStatus = WorkflowStatus.Running
+        };
+        return await _workflowStateStore.CountAsync(filter, cancellationToken);
+    }
 
     private async Task<WorkflowExecutionResult> StartWorkflowAsync(WorkflowDefinition workflowDefinition, StartWorkflowRuntimeOptions options, CancellationToken cancellationToken = default)
     {

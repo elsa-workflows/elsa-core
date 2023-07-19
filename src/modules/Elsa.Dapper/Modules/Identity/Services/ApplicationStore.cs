@@ -49,9 +49,9 @@ public class DapperApplicationStore : IApplicationStore
     private void ApplyFilter(ParameterizedQuery query, ApplicationFilter filter)
     {
         query
-            .Equals(nameof(ApplicationRecord.Id), filter.Id)
-            .Equals(nameof(ApplicationRecord.ClientId), filter.ClientId)
-            .Equals(nameof(ApplicationRecord.Name), filter.Name)
+            .Is(nameof(ApplicationRecord.Id), filter.Id)
+            .Is(nameof(ApplicationRecord.ClientId), filter.ClientId)
+            .Is(nameof(ApplicationRecord.Name), filter.Name)
             ;
     }
     

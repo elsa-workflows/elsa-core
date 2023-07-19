@@ -1,11 +1,12 @@
 using Elsa.Dapper.Contracts;
 using Elsa.Dapper.Extensions;
+using Elsa.Dapper.Models;
 using Elsa.Dapper.Modules.Runtime.Records;
 using Elsa.Dapper.Services;
-using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Filters;
 
 namespace Elsa.Dapper.Modules.Runtime.Services;
 
@@ -36,22 +37,22 @@ public class DapperWorkflowStateStore : IWorkflowStateStore
     }
 
     /// <inheritdoc />
-    public async ValueTask<WorkflowState?> LoadAsync(string id, CancellationToken cancellationToken = default)
+    public async ValueTask<WorkflowState?> FindAsync(WorkflowStateFilter filter, CancellationToken cancellationToken = default)
     {
-        var record = await _store.FindAsync(q => q.Equals(PrimaryKeyName, id), cancellationToken);
+        var record = await _store.FindAsync(query => ApplyFilter(query, filter), cancellationToken);
         return record == null ? null : await MapAsync(record, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async ValueTask<long> CountAsync(CountRunningWorkflowsArgs args, CancellationToken cancellationToken = default)
+    public async ValueTask<long> CountAsync(WorkflowStateFilter filter, CancellationToken cancellationToken = default)
     {
-        return await _store.CountAsync(q =>
-        {
-            q
-                .Equals(nameof(WorkflowStateRecord.Status), WorkflowStatus.Running)
-                .Equals(nameof(WorkflowStateRecord.DefinitionId), args.DefinitionId)
-                .Equals(nameof(WorkflowStateRecord.CorrelationId), args.CorrelationId);
-        }, cancellationToken);
+        return await _store.CountAsync(query => ApplyFilter(query, filter), cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<long> DeleteManyAsync(WorkflowStateFilter filter, CancellationToken cancellationToken = default)
+    {
+        return await _store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
     }
 
     private async Task<WorkflowStateRecord> MapAsync(WorkflowState source, CancellationToken cancellationToken)
@@ -71,5 +72,24 @@ public class DapperWorkflowStateStore : IWorkflowStateStore
     private async Task<WorkflowState> MapAsync(WorkflowStateRecord source, CancellationToken cancellationToken)
     {
         return await _workflowStateSerializer.DeserializeAsync(source.Props, cancellationToken);
+    }
+    
+    private void ApplyFilter(ParameterizedQuery query, WorkflowStateFilter filter)
+    {
+        query
+            .Is(nameof(WorkflowState.Id), filter.Id)
+            .In(nameof(WorkflowState.Id), filter.Ids)
+            .Is(nameof(WorkflowState.CorrelationId), filter.CorrelationId)
+            .In(nameof(WorkflowState.CorrelationId), filter.CorrelationIds)
+            .Is(nameof(WorkflowState.DefinitionId), filter.DefinitionId)
+            .In(nameof(WorkflowState.DefinitionId), filter.DefinitionIds)
+            .Is(nameof(WorkflowState.DefinitionVersion), filter.Version)
+            .Is(nameof(WorkflowState.DefinitionVersionId), filter.DefinitionVersionId)
+            .In(nameof(WorkflowState.DefinitionVersionId), filter.DefinitionVersionIds)
+            .Is(nameof(WorkflowState.Status), filter.WorkflowStatus?.ToString())
+            .Is(nameof(WorkflowState.SubStatus), filter.WorkflowSubStatus?.ToString())
+            .In(nameof(WorkflowState.Status), filter.WorkflowStatuses?.Select(x => x.ToString()))
+            .In(nameof(WorkflowState.SubStatus), filter.WorkflowSubStatuses?.Select(x => x.ToString()))
+            ;
     }
 }

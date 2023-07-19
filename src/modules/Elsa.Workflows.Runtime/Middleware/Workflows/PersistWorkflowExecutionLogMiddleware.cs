@@ -43,6 +43,7 @@ public class PersistWorkflowExecutionLogMiddleware : WorkflowExecutionMiddleware
             Message = x.Message,
             EventName = x.EventName,
             WorkflowDefinitionId = context.Workflow.Identity.DefinitionId,
+            WorkflowDefinitionVersionId = context.Workflow.Identity.Id,
             WorkflowInstanceId = context.Id,
             WorkflowVersion = context.Workflow.Version,
             Source = x.Source,

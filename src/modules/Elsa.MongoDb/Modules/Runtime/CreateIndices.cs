@@ -42,6 +42,7 @@ internal class CreateIndices : IHostedService
                     {
                         new(indexBuilder
                             .Ascending(x => x.DefinitionId)
+                            .Ascending(x => x.DefinitionVersionId)
                             .Ascending(x => x.DefinitionVersion)
                             .Ascending(x => x.SubStatus)
                             .Ascending(x => x.Status)),
@@ -72,6 +73,7 @@ internal class CreateIndices : IHostedService
                     new List<CreateIndexModel<WorkflowExecutionLogRecord>>
                     {
                         new(indexBuilder.Ascending(x => x.WorkflowDefinitionId)),
+                        new(indexBuilder.Ascending(x => x.WorkflowDefinitionVersionId)),
                         new(indexBuilder.Ascending(x => x.Sequence)),
                         new(indexBuilder.Ascending(x => x.Timestamp)),
                         new(indexBuilder.Ascending(x => x.Timestamp).Ascending(x => x.Sequence)),
@@ -125,6 +127,7 @@ internal class CreateIndices : IHostedService
                     new List<CreateIndexModel<StoredTrigger>>
                     {
                         new(indexBuilder.Ascending(x => x.WorkflowDefinitionId)),
+                        new(indexBuilder.Ascending(x => x.WorkflowDefinitionVersionId)),
                         new(indexBuilder.Ascending(x => x.Name)),
                         new(indexBuilder.Ascending(x => x.Hash))
                     },

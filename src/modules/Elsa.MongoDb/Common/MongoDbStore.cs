@@ -149,10 +149,10 @@ public class MongoDbStore<TDocument> where TDocument : class
     /// Deletes documents using a predicate.
     /// </summary>
     /// <returns>The number of documents deleted.</returns>
-    public async Task<int> DeleteWhereAsync(Expression<Func<TDocument, bool>> predicate, CancellationToken cancellationToken = default)
+    public async Task<long> DeleteWhereAsync(Expression<Func<TDocument, bool>> predicate, CancellationToken cancellationToken = default)
     {
         var documentsToDelete = await _collection.AsQueryable().Where(predicate).ToListAsync(cancellationToken);
-        var count = documentsToDelete.Count;
+        var count = documentsToDelete.LongCount();
     
         await _collection.DeleteManyAsync(predicate, cancellationToken);
 
@@ -163,10 +163,10 @@ public class MongoDbStore<TDocument> where TDocument : class
     /// Deletes documents using a query.
     /// </summary>
     /// <returns>The number of documents deleted.</returns>
-    public async Task<int> DeleteWhereAsync(Func<IMongoQueryable<TDocument>, IMongoQueryable<TDocument>> query, CancellationToken cancellationToken = default)
+    public async Task<long> DeleteWhereAsync(Func<IMongoQueryable<TDocument>, IMongoQueryable<TDocument>> query, CancellationToken cancellationToken = default)
     {
         var documentsToDelete = await query(_collection.AsQueryable()).ToListAsync(cancellationToken);
-        var count = documentsToDelete.Count;
+        var count = documentsToDelete.LongCount();
 
         var filter = documentsToDelete.BuildIdFilterForList();
         await _collection.DeleteManyAsync(filter, cancellationToken);

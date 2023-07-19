@@ -175,16 +175,14 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddSingleton(WorkflowStateExporter)
 
             // Domain handlers.
-            .AddCommandHandler<DispatchWorkflowRequestHandler, DispatchTriggerWorkflowsCommand>()
-            .AddCommandHandler<DispatchWorkflowRequestHandler, DispatchWorkflowDefinitionCommand>()
-            .AddCommandHandler<DispatchWorkflowRequestHandler, DispatchWorkflowInstanceCommand>()
-            .AddCommandHandler<DispatchWorkflowRequestHandler, DispatchResumeWorkflowsCommand>()
-            .AddNotificationHandler<ExportWorkflowStateHandler, WorkflowExecuted>()
-            .AddNotificationHandler<ResumeDispatchWorkflowActivityHandler, WorkflowExecuted>()
-            .AddNotificationHandler<IndexWorkflowTriggersHandler, WorkflowDefinitionPublished>()
-            .AddNotificationHandler<IndexWorkflowTriggersHandler, WorkflowDefinitionRetracted>()
-            .AddNotificationHandler<ScheduleBackgroundActivities, WorkflowBookmarksIndexed>()
-            .AddNotificationHandler<CancelBackgroundActivities, WorkflowBookmarksIndexed>()
+            .AddCommandHandler<DispatchWorkflowRequestHandler>()
+            .AddNotificationHandler<ExportWorkflowStateHandler>()
+            .AddNotificationHandler<ResumeDispatchWorkflowActivityHandler>()
+            .AddNotificationHandler<IndexWorkflowTriggersHandler>()
+            .AddNotificationHandler<ScheduleBackgroundActivities>()
+            .AddNotificationHandler<CancelBackgroundActivities>()
+            .AddNotificationHandler<DeleteBookmarks>()
+            .AddNotificationHandler<DeleteTriggers>()
 
             // Workflow activation strategies.
             .AddSingleton<IWorkflowActivationStrategy, SingletonStrategy>()

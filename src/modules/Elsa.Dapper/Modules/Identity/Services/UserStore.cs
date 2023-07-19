@@ -49,8 +49,8 @@ public class DapperUserStore : IUserStore
     private static void ApplyFilter(ParameterizedQuery query, UserFilter filter)
     {
         query
-            .Equals(nameof(UserRecord.Id), filter.Id)
-            .Equals(nameof(UserRecord.Name), filter.Name)
+            .Is(nameof(UserRecord.Id), filter.Id)
+            .Is(nameof(UserRecord.Name), filter.Name)
             ;
     }
 

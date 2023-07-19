@@ -1,6 +1,7 @@
 using Elsa.Common.Services;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Filters;
 
 namespace Elsa.Workflows.Runtime.Services;
 
@@ -10,7 +11,7 @@ public class MemoryTriggerStore : ITriggerStore
     private readonly MemoryStore<StoredTrigger> _store;
 
     /// <summary>
-    /// Constructor.
+    /// Initializes a new instance of the <see cref="MemoryTriggerStore"/> class.
     /// </summary>
     public MemoryTriggerStore(MemoryStore<StoredTrigger> store)
     {

@@ -40,10 +40,12 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
     }
 
     /// <inheritdoc />
-    public async Task<int> DeleteByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default)
+    public async Task<long> DeleteByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default)
     {
+        await _notificationSender.SendAsync(new WorkflowDefinitionDeleting(definitionId), cancellationToken);
         var filter = new WorkflowDefinitionFilter { DefinitionId = definitionId };
         var count = await _store.DeleteAsync(filter, cancellationToken);
+        await EnsureLastVersionIsLatestAsync(definitionId, cancellationToken);
         await _notificationSender.SendAsync(new WorkflowDefinitionDeleted(definitionId), cancellationToken);
         return count;
     }
@@ -61,12 +63,28 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
     }
 
     /// <inheritdoc />
-    public async Task<int> BulkDeleteByDefinitionIdsAsync(IEnumerable<string> definitionIds, CancellationToken cancellationToken = default)
+    public async Task<long> BulkDeleteByDefinitionIdsAsync(IEnumerable<string> definitionIds, CancellationToken cancellationToken = default)
     {
-        var ids = definitionIds.ToList();
-        var filter = new WorkflowDefinitionFilter { DefinitionIds = ids };
+        var definitionIdList = definitionIds.Distinct().ToList();
+        await _notificationSender.SendAsync(new WorkflowDefinitionsDeleting(definitionIdList), cancellationToken);
+        var filter = new WorkflowDefinitionFilter { DefinitionIds = definitionIdList };
         var count = await _store.DeleteAsync(filter, cancellationToken);
-        await _notificationSender.SendAsync(new WorkflowDefinitionsDeleted(ids), cancellationToken);
+        await EnsureLastVersionIsLatestAsync(definitionIdList, cancellationToken);
+        await _notificationSender.SendAsync(new WorkflowDefinitionsDeleted(definitionIdList), cancellationToken);
+        return count;
+    }
+
+    /// <inheritdoc />
+    public async Task<long> BulkDeleteByIdsAsync(IEnumerable<string> ids, CancellationToken cancellationToken = default)
+    {
+        var idList = ids.ToList();
+        var definitions = await _store.FindSummariesAsync(new WorkflowDefinitionFilter { Ids = idList }, cancellationToken);
+        var definitionIds = definitions.Select(x => x.DefinitionId).Distinct().ToList();
+        await _notificationSender.SendAsync(new WorkflowDefinitionVersionsDeleting(idList), cancellationToken);
+        var filter = new WorkflowDefinitionFilter { Ids = idList };
+        var count = await _store.DeleteAsync(filter, cancellationToken);
+        await EnsureLastVersionIsLatestAsync(definitionIds, cancellationToken);
+        await _notificationSender.SendAsync(new WorkflowDefinitionVersionsDeleted(idList), cancellationToken);
         return count;
     }
 
@@ -155,29 +173,40 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
             throw new Exception("Published version cannot be deleted before retracting it");
         }
         
+        await _notificationSender.SendAsync(new WorkflowDefinitionVersionDeleting(definitionToDelete), cancellationToken);
+        
         var filter = new WorkflowDefinitionFilter { Id = definitionToDelete.Id };
         var isDeleted = await _store.DeleteAsync(filter, cancellationToken) > 0;
 
         if (!isDeleted)
             return false;
 
+        await EnsureLastVersionIsLatestAsync(definitionToDelete.DefinitionId, cancellationToken);
         await _notificationSender.SendAsync(new WorkflowDefinitionVersionDeleted(definitionToDelete), cancellationToken);
 
-        if (!definitionToDelete.IsLatest)
-            return isDeleted;
+        return isDeleted;
+    }
 
-        // The deleted version was also the latest version, so we need to update the current latest version to "IsLatest = true".
-        filter = new WorkflowDefinitionFilter { DefinitionId = definitionToDelete.DefinitionId };
+    private async Task EnsureLastVersionIsLatestAsync(IEnumerable<string> definitionIds, CancellationToken cancellationToken)
+    {
+        foreach (var definitionId in definitionIds) 
+            await EnsureLastVersionIsLatestAsync(definitionId, cancellationToken);
+    }
+
+    /// <summary>
+    /// Ensures that the last version of a workflow definition is marked as "IsLatest = true".
+    /// </summary>
+    /// <param name="definitionId">The definition ID.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    private async Task EnsureLastVersionIsLatestAsync(string definitionId, CancellationToken cancellationToken)
+    {
+        var filter = new WorkflowDefinitionFilter { DefinitionId = definitionId };
         var lastVersion = await _store.FindLastVersionAsync(filter, cancellationToken);
 
-        // If there are no more versions left, then we're done.
         if (lastVersion is null)
-            return isDeleted;
+            return;
 
-        // Otherwise, we need to update the latest version.
         lastVersion.IsLatest = true;
         await _store.SaveAsync(lastVersion, cancellationToken);
-
-        return isDeleted;
     }
 }

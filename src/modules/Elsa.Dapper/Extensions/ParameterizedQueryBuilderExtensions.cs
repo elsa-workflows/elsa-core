@@ -99,7 +99,7 @@ public static class ParameterizedQueryBuilderExtensions
     /// <param name="query">The query.</param>
     /// <param name="field">The field.</param>
     /// <param name="value">The value.</param>
-    public static ParameterizedQuery Equals(this ParameterizedQuery query, string field, object? value)
+    public static ParameterizedQuery Is(this ParameterizedQuery query, string field, object? value)
     {
         if (value == null) return query;
         query.Sql.AppendLine(query.Dialect.And(field));
@@ -114,7 +114,7 @@ public static class ParameterizedQueryBuilderExtensions
     /// <param name="query">The query.</param>
     /// <param name="field">The field.</param>
     /// <param name="value">The value.</param>
-    public static ParameterizedQuery NotEquals(this ParameterizedQuery query, string field, object? value)
+    public static ParameterizedQuery IsNot(this ParameterizedQuery query, string field, object? value)
     {
         if (value == null) return query;
         query.Sql.AppendLine(query.Dialect.AndNot(field));
@@ -128,7 +128,7 @@ public static class ParameterizedQueryBuilderExtensions
     /// </summary>
     /// <param name="query">The query.</param>
     /// <param name="searchTerm">The search term.</param>
-    public static ParameterizedQuery AndWorkflowDefinitionSearchTerm(this ParameterizedQuery query, string? searchTerm)
+    public static ParameterizedQuery WorkflowDefinitionSearchTerm(this ParameterizedQuery query, string? searchTerm)
     {
         if (string.IsNullOrWhiteSpace(searchTerm)) return query;
 
@@ -168,7 +168,7 @@ public static class ParameterizedQueryBuilderExtensions
     /// </summary>
     /// <param name="query">The query.</param>
     /// <param name="versionOptions">The version options.</param>
-    public static ParameterizedQuery Equals(this ParameterizedQuery query, VersionOptions? versionOptions)
+    public static ParameterizedQuery Is(this ParameterizedQuery query, VersionOptions? versionOptions)
     {
         if (versionOptions == null) return query;
 

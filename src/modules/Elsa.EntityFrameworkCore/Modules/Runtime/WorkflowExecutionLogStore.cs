@@ -4,6 +4,8 @@ using Elsa.Extensions;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Filters;
+using Elsa.Workflows.Runtime.OrderDefinitions;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.EntityFrameworkCore.Modules.Runtime;
@@ -58,6 +60,12 @@ public class EFCoreWorkflowExecutionLogStore : IWorkflowExecutionLogStore
         var count = await _store.QueryAsync(queryable => Filter(queryable, filter), cancellationToken).LongCount();
         var results = await _store.QueryAsync(queryable => Paginate(Filter(queryable, filter), pageArgs).OrderBy(order), LoadAsync, cancellationToken).ToList();
         return new(results, count);
+    }
+
+    /// <inheritdoc />
+    public async Task<long> DeleteManyAsync(WorkflowExecutionLogRecordFilter filter, CancellationToken cancellationToken = default)
+    {
+        return await _store.DeleteWhereAsync(queryable => Filter(queryable, filter), cancellationToken);
     }
 
     private ValueTask<WorkflowExecutionLogRecord> SaveAsync(RuntimeElsaDbContext dbContext, WorkflowExecutionLogRecord entity, CancellationToken cancellationToken)

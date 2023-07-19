@@ -1,7 +1,7 @@
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Runtime.Entities;
-using Elsa.Workflows.Runtime.Models.Notifications;
+using Elsa.Workflows.Runtime.Notifications;
 
 namespace Elsa.Workflows.Runtime.Contracts;
 

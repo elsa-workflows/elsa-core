@@ -4,6 +4,7 @@ using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Filters;
 using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.EntityFrameworkCore.Modules.Runtime;
@@ -32,38 +33,29 @@ public class EFCoreWorkflowStateStore : IWorkflowStateStore
     }
 
     /// <inheritdoc />
-    public async ValueTask SaveAsync(string id, WorkflowState state, CancellationToken cancellationToken = default) => 
-        await _store.SaveAsync(state, SaveAsync, cancellationToken: cancellationToken);
-
-    /// <inheritdoc />
-    public async ValueTask<WorkflowState?> LoadAsync(string id, CancellationToken cancellationToken = default)
+    public async ValueTask SaveAsync(string id, WorkflowState state, CancellationToken cancellationToken = default)
     {
-        await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
-        var entity = await dbContext.WorkflowStates.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
-
-        if (entity == null)
-            return null;
-
-        var entry = dbContext.Entry(entity);
-        var json = entry.Property<string>("Data").CurrentValue;
-        var state = await _workflowStateSerializer.DeserializeAsync(json, cancellationToken);
-
-        return state;
+        await _store.SaveAsync(state, SaveAsync, cancellationToken: cancellationToken);
     }
 
     /// <inheritdoc />
-    public async ValueTask<long> CountAsync(CountRunningWorkflowsArgs args, CancellationToken cancellationToken = default)
+    public async ValueTask<WorkflowState?> FindAsync(WorkflowStateFilter filter, CancellationToken cancellationToken = default)
     {
-        await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
-        var query = dbContext.WorkflowStates.AsQueryable().Where(x => x.Status == WorkflowStatus.Running);
-
-        if (args.DefinitionId != null) query = query.Where(x => x.DefinitionId == args.DefinitionId);
-        if (args.Version != null) query = query.Where(x => x.DefinitionVersion == args.Version);
-        if (args.CorrelationId != null) query = query.Where(x => x.CorrelationId == args.CorrelationId);
-
-        return await query.CountAsync(cancellationToken);
+        return await _store.FindAsync(filter.Apply, LoadAsync, cancellationToken);
     }
     
+    /// <inheritdoc />
+    public async ValueTask<long> CountAsync(WorkflowStateFilter filter, CancellationToken cancellationToken = default)
+    {
+        return await _store.CountAsync(filter.Apply, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<long> DeleteManyAsync(WorkflowStateFilter filter, CancellationToken cancellationToken = default)
+    {
+        return await _store.DeleteWhereAsync(filter.Apply, cancellationToken);
+    }
+
     private async ValueTask<WorkflowState> SaveAsync(RuntimeElsaDbContext dbContext, WorkflowState entity, CancellationToken cancellationToken)
     {
         var json = await _workflowStateSerializer.SerializeAsync(entity, cancellationToken);
@@ -76,4 +68,17 @@ public class EFCoreWorkflowStateStore : IWorkflowStateStore
         entry.Property<string>("Data").CurrentValue = json;
         return entity;
     }
+    
+    private async ValueTask<WorkflowState?> LoadAsync(RuntimeElsaDbContext dbContext, WorkflowState? entity, CancellationToken cancellationToken)
+    {
+        if (entity is null)
+            return entity;
+
+        var entry = dbContext.Entry(entity);
+        var json = entry.Property<string>("Data").CurrentValue;
+        var state = await _workflowStateSerializer.DeserializeAsync(json, cancellationToken);
+
+        return state;
+    }
+
 }

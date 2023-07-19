@@ -3,6 +3,8 @@ using Elsa.Extensions;
 using Elsa.MongoDb.Common;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Filters;
+using Elsa.Workflows.Runtime.OrderDefinitions;
 using MongoDB.Driver.Linq;
 using Open.Linq.AsyncExtensions;
 
@@ -36,13 +38,13 @@ public class MongoWorkflowExecutionLogStore : IWorkflowExecutionLogStore
     /// <inheritdoc />
     public async Task<WorkflowExecutionLogRecord?> FindAsync(WorkflowExecutionLogRecordFilter filter, CancellationToken cancellationToken = default)
     {
-        return (await _mongoDbStore.FindAsync(queryable => Filter(queryable, filter), cancellationToken));
+        return await _mongoDbStore.FindAsync(queryable => Filter(queryable, filter), cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task<WorkflowExecutionLogRecord?> FindAsync<TOrderBy>(WorkflowExecutionLogRecordFilter filter, WorkflowExecutionLogRecordOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
-        return (await _mongoDbStore.FindAsync(queryable => Order(Filter(queryable, filter), order), cancellationToken));
+        return await _mongoDbStore.FindAsync(queryable => Order(Filter(queryable, filter), order), cancellationToken);
     }
 
     /// <inheritdoc />
@@ -59,6 +61,12 @@ public class MongoWorkflowExecutionLogStore : IWorkflowExecutionLogStore
         var count = await _mongoDbStore.CountAsync(queryable => Order(Filter(queryable, filter), order), cancellationToken);
         var results = await _mongoDbStore.FindManyAsync(queryable => Paginate(Filter(queryable, filter), pageArgs), cancellationToken).ToList();
         return new Page<WorkflowExecutionLogRecord>(results, count);
+    }
+
+    /// <inheritdoc />
+    public async Task<long> DeleteManyAsync(WorkflowExecutionLogRecordFilter filter, CancellationToken cancellationToken = default)
+    {
+        return await _mongoDbStore.DeleteWhereAsync(queryable => Filter(queryable, filter), cancellationToken);
     }
 
     private IMongoQueryable<WorkflowExecutionLogRecord> Filter(IMongoQueryable<WorkflowExecutionLogRecord> queryable, WorkflowExecutionLogRecordFilter filter) =>

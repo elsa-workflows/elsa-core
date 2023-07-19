@@ -5,6 +5,7 @@ using Elsa.EntityFrameworkCore.Extensions;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 using Open.Linq.AsyncExtensions;
+using QueryableExtensions = System.Data.Entity.QueryableExtensions;
 
 namespace Elsa.EntityFrameworkCore.Common;
 
@@ -241,7 +242,7 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
     /// Deletes entities using a predicate.
     /// </summary>
     /// <returns>The number of entities deleted.</returns>
-    public async Task<int> DeleteWhereAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
+    public async Task<long> DeleteWhereAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await CreateDbContextAsync(cancellationToken);
         var set = dbContext.Set<TEntity>();
@@ -252,7 +253,7 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
     /// Deletes entities using a query.
     /// </summary>
     /// <returns>The number of entities deleted.</returns>
-    public async Task<int> DeleteWhereAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> query, CancellationToken cancellationToken = default)
+    public async Task<long> DeleteWhereAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> query, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await CreateDbContextAsync(cancellationToken);
         var set = dbContext.Set<TEntity>();
@@ -293,6 +294,19 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
 
         queryable = query(queryable);
         return await queryable.Select(selector).ToListAsync(cancellationToken);
+    }
+    
+    /// <summary>
+    /// Counts the number of entities matching a query.
+    /// </summary>
+    public async Task<long> CountAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> query, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await CreateDbContextAsync(cancellationToken);
+        var set = dbContext.Set<TEntity>();
+        var queryable = query(set.AsQueryable());
+
+        queryable = query(queryable);
+        return await QueryableExtensions.LongCountAsync(queryable, cancellationToken);
     }
 
     /// <summary>

@@ -132,7 +132,7 @@ public interface IWorkflowDefinitionStore
     /// <param name="filter">The filter.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The number of workflow definitions deleted.</returns>
-    Task<int> DeleteAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default);
+    Task<long> DeleteAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Returns true if any workflow definition matches the specified filter.

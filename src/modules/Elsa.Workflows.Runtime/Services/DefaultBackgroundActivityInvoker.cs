@@ -7,7 +7,7 @@ using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Middleware.Activities;
 using Elsa.Workflows.Runtime.Models;
-using Elsa.Workflows.Runtime.Models.Requests;
+using Elsa.Workflows.Runtime.Requests;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Runtime.Services;

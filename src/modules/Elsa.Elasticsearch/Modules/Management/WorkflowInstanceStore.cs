@@ -90,12 +90,9 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
         await _store.SaveManyAsync(instances, cancellationToken);
 
     /// <inheritdoc />
-    public async Task<int> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
-    {
-        var result = await _store.DeleteByQueryAsync(d => Filter(d, filter), cancellationToken);
-        return (int)result;
-    }
-    
+    public async Task<long> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default) => 
+        await _store.DeleteByQueryAsync(d => Filter(d, filter), cancellationToken);
+
     private static SearchRequestDescriptor<WorkflowInstance> Sort<TProp>(SearchRequestDescriptor<WorkflowInstance> descriptor, WorkflowInstanceOrder<TProp> order)
     {
         var sortDescriptor = new SortOptionsDescriptor<WorkflowInstance>();

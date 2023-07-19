@@ -109,6 +109,14 @@ public interface IWorkflowDefinitionsApi
     Task<BulkDeleteWorkflowDefinitionsResponse> BulkDeleteAsync(BulkDeleteWorkflowDefinitionsRequest request, CancellationToken cancellationToken = default);
     
     /// <summary>
+    /// Deletes many workflow definition versions.
+    /// </summary>
+    /// <param name="request">The request containing the IDs of the workflow definition versions to delete.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    [Post("/bulk-actions/delete/workflow-definitions/by-id")]
+    Task<BulkDeleteWorkflowDefinitionsResponse> BulkDeleteVersionsAsync(BulkDeleteWorkflowDefinitionVersionsRequest request, CancellationToken cancellationToken = default);
+    
+    /// <summary>
     /// Publishes many workflow definitions.
     /// </summary>
     /// <param name="request">The request containing the IDs of the workflow definitions to publish.</param>

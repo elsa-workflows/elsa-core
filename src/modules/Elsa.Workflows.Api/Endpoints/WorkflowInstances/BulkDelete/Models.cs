@@ -9,10 +9,10 @@ internal class Request
 
 internal class Response
 {
-    public Response(int deletedCount)
+    public Response(long deletedCount)
     {
         DeletedCount = deletedCount;
     }
 
-    [JsonPropertyName("deleted")] public int DeletedCount { get; }
+    [JsonPropertyName("deleted")] public long DeletedCount { get; }
 }

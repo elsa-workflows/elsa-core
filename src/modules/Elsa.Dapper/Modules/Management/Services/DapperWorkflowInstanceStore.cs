@@ -117,7 +117,7 @@ public class DapperWorkflowInstanceStore : IWorkflowInstanceStore
     }
 
     /// <inheritdoc />
-    public async Task<int> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
+    public async Task<long> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
         return await _store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
     }
@@ -125,16 +125,16 @@ public class DapperWorkflowInstanceStore : IWorkflowInstanceStore
     private void ApplyFilter(ParameterizedQuery query, WorkflowInstanceFilter filter)
     {
         query
-            .Equals(nameof(WorkflowInstance.Id), filter.Id)
+            .Is(nameof(WorkflowInstance.Id), filter.Id)
             .In(nameof(WorkflowInstance.Id), filter.Ids)
-            .Equals(nameof(WorkflowInstance.DefinitionId), filter.DefinitionId)
+            .Is(nameof(WorkflowInstance.DefinitionId), filter.DefinitionId)
             .In(nameof(WorkflowInstance.DefinitionId), filter.DefinitionIds)
-            .Equals(nameof(WorkflowInstance.DefinitionVersionId), filter.DefinitionVersionId)
+            .Is(nameof(WorkflowInstance.DefinitionVersionId), filter.DefinitionVersionId)
             .In(nameof(WorkflowInstance.DefinitionVersionId), filter.DefinitionVersionIds)
-            .Equals(nameof(WorkflowInstance.Status), filter.WorkflowStatus?.ToString())
-            .Equals(nameof(WorkflowInstance.SubStatus), filter.WorkflowSubStatus?.ToString())
-            .Equals(nameof(WorkflowInstance.Name), filter.Version)
-            .Equals(nameof(WorkflowInstance.CorrelationId), filter.CorrelationId)
+            .Is(nameof(WorkflowInstance.Status), filter.WorkflowStatus?.ToString())
+            .Is(nameof(WorkflowInstance.SubStatus), filter.WorkflowSubStatus?.ToString())
+            .Is(nameof(WorkflowInstance.Name), filter.Version)
+            .Is(nameof(WorkflowInstance.CorrelationId), filter.CorrelationId)
             .In(nameof(WorkflowInstance.CorrelationId), filter.CorrelationIds)
             .In(nameof(WorkflowInstance.Status), filter.WorkflowStatuses?.Select(x => x.ToString()))
             .In(nameof(WorkflowInstance.SubStatus), filter.WorkflowSubStatuses?.Select(x => x.ToString()))

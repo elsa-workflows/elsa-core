@@ -17,17 +17,13 @@ namespace Elsa.MongoDb.Modules.Management;
 public class MongoWorkflowDefinitionStore : IWorkflowDefinitionStore
 {
     private readonly MongoDbStore<WorkflowDefinition> _mongoDbStore;
-    private readonly IWorkflowInstanceStore _workflowInstanceStore;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public MongoWorkflowDefinitionStore(
-        MongoDbStore<WorkflowDefinition> mongoDbStore,
-        IWorkflowInstanceStore workflowInstanceStore)
+    public MongoWorkflowDefinitionStore(MongoDbStore<WorkflowDefinition> mongoDbStore)
     {
         _mongoDbStore = mongoDbStore;
-        _workflowInstanceStore = workflowInstanceStore;
     }
 
     /// <inheritdoc />
@@ -114,11 +110,10 @@ public class MongoWorkflowDefinitionStore : IWorkflowDefinitionStore
         await _mongoDbStore.SaveManyAsync(definitions.Select(i => i), cancellationToken);
 
     /// <inheritdoc />
-    public async Task<int> DeleteAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
+    public async Task<long> DeleteAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
         var queryable = _mongoDbStore.GetCollection().AsQueryable();
         var ids = await Filter(queryable, filter).Select(x => x.Id).Distinct().ToListAsync(cancellationToken);
-        await _workflowInstanceStore.DeleteAsync(new WorkflowInstanceFilter { DefinitionVersionIds = ids }, cancellationToken);
         return await _mongoDbStore.DeleteWhereAsync(x => ids.Contains(x.Id), cancellationToken);
     }
 

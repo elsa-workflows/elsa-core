@@ -13,6 +13,7 @@ using System.Text.Json;
 using Elsa.Extensions;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.State;
+using Elsa.Workflows.Runtime.Filters;
 
 namespace Elsa.Http.Middleware;
 

@@ -84,11 +84,8 @@ public class MongoWorkflowInstanceStore : IWorkflowInstanceStore
         await _mongoDbStore.FindManyAsync(query => Order(Filter(query, filter), order), ExpressionHelpers.WorkflowInstanceSummary, cancellationToken).ToList().AsEnumerable();
 
     /// <inheritdoc />
-    public async Task<int> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
-    {
-        var count = await _mongoDbStore.DeleteWhereAsync(query => Filter(query, filter), cancellationToken);
-        return count;
-    }
+    public async Task<long> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default) => 
+        await _mongoDbStore.DeleteWhereAsync(query => Filter(query, filter), cancellationToken);
 
     /// <inheritdoc />
     public async Task SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default) =>

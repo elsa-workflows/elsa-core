@@ -64,7 +64,7 @@ public class DapperRoleStore : IRoleStore
     private void ApplyFilter(ParameterizedQuery query, RoleFilter filter)
     {
         query
-            .Equals(nameof(RoleRecord.Id), filter.Id)
+            .Is(nameof(RoleRecord.Id), filter.Id)
             .In(nameof(RoleRecord.Name), filter.Ids)
             ;   
     }

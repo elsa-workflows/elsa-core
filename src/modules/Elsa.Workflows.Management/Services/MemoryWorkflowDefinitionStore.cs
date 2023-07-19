@@ -14,17 +14,13 @@ namespace Elsa.Workflows.Management.Services;
 public class MemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
 {
     private readonly MemoryStore<WorkflowDefinition> _store;
-    private readonly MemoryStore<WorkflowInstance> _instanceStore;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public MemoryWorkflowDefinitionStore(
-        MemoryStore<WorkflowDefinition> store,
-        MemoryStore<WorkflowInstance> instanceStore)
+    public MemoryWorkflowDefinitionStore(MemoryStore<WorkflowDefinition> store)
     {
         _store = store;
-        _instanceStore = instanceStore;
     }
 
     /// <inheritdoc />
@@ -123,12 +119,11 @@ public class MemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
     }
 
     /// <inheritdoc />
-    public Task<int> DeleteAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
+    public Task<long> DeleteAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
         var workflowDefinitionIds = _store.Query(query => Filter(query, filter)).Select(x => x.DefinitionId).Distinct().ToList();
-        _instanceStore.DeleteWhere(x => workflowDefinitionIds.Contains(x.DefinitionId));
         _store.DeleteWhere(x => workflowDefinitionIds.Contains(x.DefinitionId));
-        return Task.FromResult(workflowDefinitionIds.Count);
+        return Task.FromResult(workflowDefinitionIds.LongCount());
     }
 
     /// <inheritdoc />

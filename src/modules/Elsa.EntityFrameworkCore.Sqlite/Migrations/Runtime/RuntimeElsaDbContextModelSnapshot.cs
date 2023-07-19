@@ -38,6 +38,10 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     b.Property<int>("DefinitionVersion")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("DefinitionVersionId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<long>("ExecutionLogSequence")
                         .HasColumnType("INTEGER");
 
@@ -63,6 +67,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
 
                     b.HasIndex("DefinitionId")
                         .HasDatabaseName("IX_WorkflowState_DefinitionId");
+
+                    b.HasIndex("DefinitionVersionId")
+                        .HasDatabaseName("IX_WorkflowState_DefinitionVersionId");
 
                     b.HasIndex("UpdatedAt")
                         .HasDatabaseName("IX_WorkflowState_UpdatedAt");
@@ -140,6 +147,10 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("WorkflowDefinitionVersionId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Hash")
@@ -150,6 +161,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
 
                     b.HasIndex("WorkflowDefinitionId")
                         .HasDatabaseName("IX_StoredTrigger_WorkflowDefinitionId");
+
+                    b.HasIndex("WorkflowDefinitionVersionId")
+                        .HasDatabaseName("IX_StoredTrigger_WorkflowDefinitionVersionId");
 
                     b.ToTable("WorkflowTriggers");
                 });
@@ -207,6 +221,10 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("WorkflowDefinitionVersionId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -242,6 +260,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
 
                     b.HasIndex("WorkflowDefinitionId")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_WorkflowDefinitionId");
+
+                    b.HasIndex("WorkflowDefinitionVersionId")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_WorkflowDefinitionVersionId");
 
                     b.HasIndex("WorkflowInstanceId")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_WorkflowInstanceId");

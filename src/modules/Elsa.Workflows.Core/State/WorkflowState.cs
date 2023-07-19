@@ -14,6 +14,11 @@ public class WorkflowState : Entity
     public string DefinitionId { get; set; } = default!;
     
     /// <summary>
+    /// The workflow definition version ID.
+    /// </summary>
+    public string DefinitionVersionId { get; set; } = default!;
+    
+    /// <summary>
     /// The workflow definition version.
     /// </summary>
     public int DefinitionVersion { get; set; }

@@ -8,6 +8,7 @@ using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Filters;
 using Proto.Cluster;
 using Bookmark = Elsa.Workflows.Core.Models.Bookmark;
 using ProtoWorkflowStatus = Elsa.ProtoActor.Protos.WorkflowStatus;

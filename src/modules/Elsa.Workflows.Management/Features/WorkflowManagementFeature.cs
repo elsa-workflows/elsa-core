@@ -162,6 +162,7 @@ public class WorkflowManagementFeature : FeatureBase
             .AddSingleton<IWorkflowDefinitionPublisher, WorkflowDefinitionPublisher>()
             .AddSingleton<IWorkflowDefinitionImporter, WorkflowDefinitionImporter>()
             .AddSingleton<IWorkflowDefinitionManager, WorkflowDefinitionManager>()
+            .AddSingleton<IWorkflowInstanceManager, WorkflowInstanceManager>()
             .AddSingleton<IActivityRegistryPopulator, ActivityRegistryPopulator>()
             .AddSingleton<IExpressionSyntaxRegistry, ExpressionSyntaxRegistry>()
             .AddSingleton<IExpressionSyntaxProvider, DefaultExpressionSyntaxProvider>()

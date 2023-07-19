@@ -2,6 +2,7 @@
 using Elsa.Scheduling.Contracts;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Filters;
 using Microsoft.Extensions.Hosting;
 using Timer = Elsa.Scheduling.Activities.Timer;
 

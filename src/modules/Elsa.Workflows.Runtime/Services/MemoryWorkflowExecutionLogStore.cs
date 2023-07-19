@@ -3,6 +3,8 @@ using Elsa.Common.Services;
 using Elsa.Extensions;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Filters;
+using Elsa.Workflows.Runtime.OrderDefinitions;
 
 namespace Elsa.Workflows.Runtime.Services;
 
@@ -61,6 +63,14 @@ public class MemoryWorkflowExecutionLogStore : IWorkflowExecutionLogStore
         var count = _store.Query(query => Filter(query, filter)).LongCount();
         var result = _store.Query(query => Filter(query, filter).OrderBy(order).Paginate(pageArgs)).ToList();
         return Task.FromResult(Page.Of(result, count));
+    }
+
+    /// <inheritdoc />
+    public Task<long> DeleteManyAsync(WorkflowExecutionLogRecordFilter filter, CancellationToken cancellationToken = default)
+    {
+        var records = _store.Query(query => Filter(query, filter)).ToList();
+        _store.DeleteMany(records, x => x.Id);
+        return Task.FromResult(records.LongCount());
     }
 
     private IQueryable<WorkflowExecutionLogRecord> Filter(IQueryable<WorkflowExecutionLogRecord> queryable, WorkflowExecutionLogRecordFilter filter) => filter.Apply(queryable);

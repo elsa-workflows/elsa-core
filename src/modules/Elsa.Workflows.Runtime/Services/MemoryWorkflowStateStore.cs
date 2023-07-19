@@ -1,38 +1,54 @@
 using System.Collections.Concurrent;
+using Elsa.Common.Services;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Filters;
 
 namespace Elsa.Workflows.Runtime.Services;
 
 /// <inheritdoc />
 public class MemoryWorkflowStateStore : IWorkflowStateStore
 {
-    private readonly ConcurrentDictionary<string, WorkflowState> _workflowStates = new();
+    private readonly MemoryStore<WorkflowState> _store;
+    
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MemoryWorkflowStateStore"/> class.
+    /// </summary>
+    public MemoryWorkflowStateStore(MemoryStore<WorkflowState> store)
+    {
+        _store = store;
+    }
 
     /// <inheritdoc />
     public ValueTask SaveAsync(string id, WorkflowState state, CancellationToken cancellationToken = default)
     {
-        _workflowStates.AddOrUpdate(id, state, (_, _) => state);
+        _store.Save(state, x => x.Id);
         return ValueTask.CompletedTask;
     }
 
     /// <inheritdoc />
-    public ValueTask<WorkflowState?> LoadAsync(string id, CancellationToken cancellationToken = default)
+    public ValueTask<WorkflowState?> FindAsync(WorkflowStateFilter filter, CancellationToken cancellationToken = default)
     {
-        var state = _workflowStates.TryGetValue(id, out var value) ? value : default;
-        return new(state);
+        var entity = _store.Query(query => Filter(query, filter)).FirstOrDefault();
+        return new(entity);
     }
 
     /// <inheritdoc />
-    public ValueTask<long> CountAsync(CountRunningWorkflowsArgs args, CancellationToken cancellationToken = default)
+    public ValueTask<long> CountAsync(WorkflowStateFilter filter, CancellationToken cancellationToken = default)
     {
-        var query = _workflowStates.Values.AsQueryable().Where(x => x.Status == WorkflowStatus.Running);
-
-        if (args.DefinitionId != null) query = query.Where(x => x.DefinitionId == args.DefinitionId);
-        if (args.Version != null) query = query.Where(x => x.DefinitionVersion == args.Version);
-        if (args.CorrelationId != null) query = query.Where(x => x.CorrelationId == args.CorrelationId);
-
-        return new(query.Count());
+        var count = _store.Query(query => Filter(query, filter)).LongCount();
+        return new(count);
     }
+
+    /// <inheritdoc />
+    public Task<long> DeleteManyAsync(WorkflowStateFilter filter, CancellationToken cancellationToken = default)
+    {
+        var entities = _store.Query(query => Filter(query, filter)).ToList();
+        var count = _store.DeleteMany(entities, x => x.Id);
+        return Task.FromResult(count);
+    }
+
+    private static IQueryable<WorkflowState> Filter(IQueryable<WorkflowState> query, WorkflowStateFilter filter) => filter.Apply(query);
 }

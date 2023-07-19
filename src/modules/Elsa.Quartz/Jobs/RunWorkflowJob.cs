@@ -1,7 +1,7 @@
 using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Models.Requests;
+using Elsa.Workflows.Runtime.Requests;
 using Quartz;
 
 namespace Elsa.Quartz.Jobs;

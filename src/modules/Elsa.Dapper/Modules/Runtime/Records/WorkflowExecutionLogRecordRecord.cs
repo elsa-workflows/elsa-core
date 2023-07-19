@@ -4,6 +4,7 @@ internal class WorkflowExecutionLogRecordRecord
 {
     public string Id { get; set; } = default!;
     public string WorkflowDefinitionId { get; set; } = default!;
+    public string WorkflowDefinitionVersionId { get; set; } = default!;
     public string WorkflowInstanceId { get; set; } = default!;
     public int WorkflowVersion { get; set; }
     public string ActivityInstanceId { get; set; } = default!;

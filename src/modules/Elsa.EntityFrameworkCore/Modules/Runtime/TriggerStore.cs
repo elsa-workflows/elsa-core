@@ -2,6 +2,7 @@ using Elsa.EntityFrameworkCore.Common;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Filters;
 
 namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 

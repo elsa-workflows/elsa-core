@@ -17,19 +17,14 @@ namespace Elsa.EntityFrameworkCore.Modules.Management;
 public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
 {
     private readonly EntityStore<ManagementElsaDbContext, WorkflowDefinition> _store;
-    private readonly IWorkflowInstanceStore _workflowInstanceStore;
     private readonly IPayloadSerializer _payloadSerializer;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public EFCoreWorkflowDefinitionStore(
-        EntityStore<ManagementElsaDbContext, WorkflowDefinition> store,
-        IWorkflowInstanceStore workflowInstanceStore,
-        IPayloadSerializer payloadSerializer)
+    public EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, WorkflowDefinition> store, IPayloadSerializer payloadSerializer)
     {
         _store = store;
-        _workflowInstanceStore = workflowInstanceStore;
         _payloadSerializer = payloadSerializer;
     }
 
@@ -129,13 +124,12 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
     public async Task SaveManyAsync(IEnumerable<WorkflowDefinition> definitions, CancellationToken cancellationToken = default) => await _store.SaveManyAsync(definitions, SaveAsync, cancellationToken);
 
     /// <inheritdoc />
-    public async Task<int> DeleteAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
+    public async Task<long> DeleteAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
         var set = dbContext.WorkflowDefinitions;
         var queryable = set.AsQueryable();
         var ids = await Filter(queryable, filter).Select(x => x.Id).Distinct().ToListAsync(cancellationToken);
-        await _workflowInstanceStore.DeleteAsync(new WorkflowInstanceFilter { DefinitionVersionIds = ids }, cancellationToken);
         return await _store.DeleteWhereAsync(x => ids.Contains(x.Id), cancellationToken);
     }
 

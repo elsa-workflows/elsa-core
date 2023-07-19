@@ -56,21 +56,21 @@ public class InMemoryWorkflowDefinitionLabelStore : IWorkflowDefinitionLabelStor
     }
 
     /// <inheritdoc />
-    public Task<int> DeleteByWorkflowDefinitionIdAsync(string workflowDefinitionId, CancellationToken cancellationToken = default)
+    public Task<long> DeleteByWorkflowDefinitionIdAsync(string workflowDefinitionId, CancellationToken cancellationToken = default)
     {
         var result = _store.DeleteWhere(x => x.WorkflowDefinitionId == workflowDefinitionId);
         return Task.FromResult(result);
     }
 
     /// <inheritdoc />
-    public Task<int> DeleteByWorkflowDefinitionVersionIdAsync(string workflowDefinitionVersionId, CancellationToken cancellationToken = default)
+    public Task<long> DeleteByWorkflowDefinitionVersionIdAsync(string workflowDefinitionVersionId, CancellationToken cancellationToken = default)
     {
         var result = _store.DeleteWhere(x => x.WorkflowDefinitionVersionId == workflowDefinitionVersionId);
         return Task.FromResult(result);
     }
 
     /// <inheritdoc />
-    public Task<int> DeleteByWorkflowDefinitionIdsAsync(IEnumerable<string> workflowDefinitionIds, CancellationToken cancellationToken = default)
+    public Task<long> DeleteByWorkflowDefinitionIdsAsync(IEnumerable<string> workflowDefinitionIds, CancellationToken cancellationToken = default)
     {
         var ids = workflowDefinitionIds.ToList();
         var result = _store.DeleteWhere(x => ids.Contains(x.WorkflowDefinitionId));
@@ -78,14 +78,14 @@ public class InMemoryWorkflowDefinitionLabelStore : IWorkflowDefinitionLabelStor
     }
 
     /// <inheritdoc />
-    public Task<int> DeleteByWorkflowDefinitionVersionIdsAsync(IEnumerable<string> workflowDefinitionVersionIds, CancellationToken cancellationToken = default)
+    public Task<long> DeleteByWorkflowDefinitionVersionIdsAsync(IEnumerable<string> workflowDefinitionVersionIds, CancellationToken cancellationToken = default)
     {
         var ids = workflowDefinitionVersionIds.ToList();
         var result = _store.DeleteWhere(x => ids.Contains(x.WorkflowDefinitionVersionId));
         return Task.FromResult(result);
     }
     
-    private Task<int> DeleteManyAsync(IEnumerable<string> ids, CancellationToken cancellationToken = default)
+    private Task<long> DeleteManyAsync(IEnumerable<string> ids, CancellationToken cancellationToken = default)
     {
         var result = _store.DeleteMany(ids);
         return Task.FromResult(result);

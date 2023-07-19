@@ -4,7 +4,6 @@ using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Models.Notifications;
 using Elsa.Workflows.Runtime.Notifications;
 
 namespace Elsa.Workflows.Runtime.Middleware.Workflows;

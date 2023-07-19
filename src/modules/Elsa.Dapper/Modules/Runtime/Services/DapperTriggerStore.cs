@@ -6,6 +6,7 @@ using Elsa.Dapper.Services;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Filters;
 
 namespace Elsa.Dapper.Modules.Runtime.Services;
 
@@ -27,7 +28,7 @@ public class DapperTriggerStore : ITriggerStore
         _payloadSerializer = payloadSerializer;
         _store = new Store<StoredTriggerRecord>(dbConnectionProvider, TableName, PrimaryKeyName);
     }
-    
+
     /// <inheritdoc />
     public async ValueTask SaveAsync(StoredTrigger record, CancellationToken cancellationToken = default)
     {
@@ -66,13 +67,13 @@ public class DapperTriggerStore : ITriggerStore
     private void ApplyFilter(ParameterizedQuery query, TriggerFilter filter)
     {
         query
-            .Equals(nameof(StoredTriggerRecord.Id), filter.Id)
+            .Is(nameof(StoredTriggerRecord.Id), filter.Id)
             .In(nameof(StoredTriggerRecord.Id), filter.Ids)
-            .Equals(nameof(StoredTriggerRecord.WorkflowDefinitionId), filter.WorkflowDefinitionId)
+            .Is(nameof(StoredTriggerRecord.WorkflowDefinitionId), filter.WorkflowDefinitionId)
             .In(nameof(StoredTriggerRecord.WorkflowDefinitionId), filter.WorkflowDefinitionIds)
-            .Equals(nameof(StoredTriggerRecord.Name), filter.Name)
+            .Is(nameof(StoredTriggerRecord.Name), filter.Name)
             .In(nameof(StoredTriggerRecord.Name), filter.Names)
-            .Equals(nameof(StoredTriggerRecord.Hash), filter.Hash)
+            .Is(nameof(StoredTriggerRecord.Hash), filter.Hash)
             ;
     }
 
@@ -87,6 +88,7 @@ public class DapperTriggerStore : ITriggerStore
             Hash = source.Hash,
             Name = source.Name,
             WorkflowDefinitionId = source.WorkflowDefinitionId,
+            WorkflowDefinitionVersionId = source.WorkflowDefinitionVersionId,
             Payload = source.SerializedPayload != null ? _payloadSerializer.Deserialize(source.SerializedPayload) : default
         };
     }
@@ -100,6 +102,7 @@ public class DapperTriggerStore : ITriggerStore
             Hash = source.Hash,
             Name = source.Name,
             WorkflowDefinitionId = source.WorkflowDefinitionId,
+            WorkflowDefinitionVersionId = source.WorkflowDefinitionVersionId,
             SerializedPayload = source.Payload != null ? _payloadSerializer.Serialize(source.Payload) : default
         };
     }

@@ -46,7 +46,7 @@ public class InMemoryLabelStore : ILabelStore
     }
 
     /// <inheritdoc />
-    public Task<int> DeleteManyAsync(IEnumerable<string> ids, CancellationToken cancellationToken = default)
+    public Task<long> DeleteManyAsync(IEnumerable<string> ids, CancellationToken cancellationToken = default)
     {
         var idList = ids.ToList();
         _workflowDefinitionLabelStore.DeleteWhere(x => idList.Contains(x.LabelId));

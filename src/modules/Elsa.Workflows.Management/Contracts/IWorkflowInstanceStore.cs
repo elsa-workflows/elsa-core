@@ -116,5 +116,5 @@ public interface IWorkflowInstanceStore
     /// <param name="filter">The filter.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The number of deleted workflow instances.</returns>
-    Task<int> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default);
+    Task<long> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default);
 }

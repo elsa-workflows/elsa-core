@@ -1,11 +1,11 @@
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Runtime.Bookmarks;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Middleware.Activities;
 using Elsa.Workflows.Runtime.Models;
-using Elsa.Workflows.Runtime.Models.Bookmarks;
 using Elsa.Workflows.Runtime.Notifications;
 using JetBrains.Annotations;
 
@@ -15,7 +15,7 @@ namespace Elsa.Workflows.Runtime.Handlers;
 /// A handler that schedules background activities.
 /// </summary>
 [PublicAPI]
-public class ScheduleBackgroundActivities : INotificationHandler<WorkflowBookmarksIndexed>
+internal class ScheduleBackgroundActivities : INotificationHandler<WorkflowBookmarksIndexed>
 {
     private readonly IBackgroundActivityScheduler _backgroundActivityScheduler;
     private readonly IBookmarkPayloadSerializer _bookmarkPayloadSerializer;

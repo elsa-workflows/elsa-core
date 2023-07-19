@@ -13,7 +13,7 @@ public interface IWorkflowDefinitionManager
     /// <param name="definitionId">The definition ID.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The number of deleted workflow definitions.</returns>
-    Task<int> DeleteByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default);
+    Task<long> DeleteByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Deletes a specific version of a workflow definition.
@@ -38,7 +38,15 @@ public interface IWorkflowDefinitionManager
     /// <param name="definitionIds">The definition IDs.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The number of deleted workflow definitions.</returns>
-    Task<int> BulkDeleteByDefinitionIdsAsync(IEnumerable<string> definitionIds, CancellationToken cancellationToken = default);
+    Task<long> BulkDeleteByDefinitionIdsAsync(IEnumerable<string> definitionIds, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Deletes all workflow definition versions with the specified IDs.
+    /// </summary>
+    /// <param name="ids">The IDs.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The number of deleted workflow definitions.</returns>
+    Task<long> BulkDeleteByIdsAsync(IEnumerable<string> ids, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Creates a new workflow definition from the specified version.

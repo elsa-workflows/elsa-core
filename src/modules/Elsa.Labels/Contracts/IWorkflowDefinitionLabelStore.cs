@@ -21,20 +21,20 @@ public interface IWorkflowDefinitionLabelStore
     /// <summary>
     /// Deletes all associated labels for the specified workflow definition ID.
     /// </summary>
-    Task<int> DeleteByWorkflowDefinitionIdAsync(string workflowDefinitionId, CancellationToken cancellationToken = default);
+    Task<long> DeleteByWorkflowDefinitionIdAsync(string workflowDefinitionId, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Deletes all associated labels for the specified workflow definition version ID.
     /// </summary>
-    Task<int> DeleteByWorkflowDefinitionVersionIdAsync(string workflowDefinitionVersionId, CancellationToken cancellationToken = default);
+    Task<long> DeleteByWorkflowDefinitionVersionIdAsync(string workflowDefinitionVersionId, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Deletes all associated labels for the specified workflow definition IDs.
     /// </summary>
-    Task<int> DeleteByWorkflowDefinitionIdsAsync(IEnumerable<string> workflowDefinitionIds, CancellationToken cancellationToken = default);
+    Task<long> DeleteByWorkflowDefinitionIdsAsync(IEnumerable<string> workflowDefinitionIds, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Deletes all associated labels for the specified workflow definition version IDs.
     /// </summary>
-    Task<int> DeleteByWorkflowDefinitionVersionIdsAsync(IEnumerable<string> workflowDefinitionVersionIds, CancellationToken cancellationToken = default);
+    Task<long> DeleteByWorkflowDefinitionVersionIdsAsync(IEnumerable<string> workflowDefinitionVersionIds, CancellationToken cancellationToken = default);
 }

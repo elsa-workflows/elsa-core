@@ -105,7 +105,7 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
     }
     
     /// <inheritdoc />
-    public Task<int> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
+    public Task<long> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
         var query = Filter(_store.List().AsQueryable(), filter);
         var count = _store.DeleteMany(query, x => x.Id);

@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Core.Models;
+namespace Elsa.Workflows.Runtime.Bookmarks;
 
 public class EventBookmarkPayload
 {

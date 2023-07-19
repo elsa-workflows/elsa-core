@@ -14,7 +14,7 @@ namespace Elsa.Workflows.Runtime.Handlers;
 /// <summary>
 /// A default implementation that asynchronously stores the workflow state in a database using <see cref="IWorkflowInstanceStore"/>.
 /// </summary>
-public class ExportWorkflowStateToDbCommandHandler : ICommandHandler<ExportWorkflowStateToDbCommand>
+internal class ExportWorkflowStateToDbCommandHandler : ICommandHandler<ExportWorkflowStateToDbCommand>
 {
     private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
     private readonly IWorkflowInstanceStore _workflowInstanceStore;

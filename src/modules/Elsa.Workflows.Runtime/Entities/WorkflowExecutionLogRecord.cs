@@ -13,6 +13,11 @@ public class WorkflowExecutionLogRecord : Entity
     public string WorkflowDefinitionId { get; set; } = default!;
     
     /// <summary>
+    /// The version ID of the workflow definition.
+    /// </summary>
+    public string WorkflowDefinitionVersionId { get; set; } = default!;
+    
+    /// <summary>
     /// The ID of the workflow instance.
     /// </summary>
     public string WorkflowInstanceId { get; set; } = default!;
