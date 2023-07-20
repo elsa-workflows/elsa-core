@@ -81,17 +81,19 @@ public class DefaultBookmarkScheduler : IBookmarkScheduler
     /// <inheritdoc />
     public async Task ScheduleAsync(string workflowInstanceId, IEnumerable<Bookmark> bookmarks, CancellationToken cancellationToken = default)
     {
+        var bookmarkList = bookmarks.ToList();
+        
         // Select all Delay bookmarks.
-        var delayBookmarks = bookmarks.Filter<Delay>();
+        var delayBookmarks = bookmarkList.Filter<Delay>();
 
         // Select all StartAt bookmarks.
-        var startAtBookmarks = bookmarks.Filter<StartAt>();
+        var startAtBookmarks = bookmarkList.Filter<StartAt>();
 
         // Select all Timer bookmarks.
-        var timerBookmarks = bookmarks.Filter<Activities.Timer>();
+        var timerBookmarks = bookmarkList.Filter<Activities.Timer>();
 
         // Select all Cron bookmarks.
-        var cronBookmarks = bookmarks.Filter<Cron>();
+        var cronBookmarks = bookmarkList.Filter<Cron>();
 
         // Schedule each Delay bookmark.
         foreach (var bookmark in delayBookmarks)
@@ -131,7 +133,7 @@ public class DefaultBookmarkScheduler : IBookmarkScheduler
     }
 
     /// <inheritdoc />
-    public async Task UnscheduleAsync(string workflowInstanceId, IEnumerable<Bookmark> bookmarks, CancellationToken cancellationToken = default)
+    public async Task UnscheduleAsync(IEnumerable<Bookmark> bookmarks, CancellationToken cancellationToken = default)
     {
         var bookmarkList = bookmarks.ToList();
 
@@ -153,5 +155,30 @@ public class DefaultBookmarkScheduler : IBookmarkScheduler
         // Unschedule each bookmark.
         foreach (var bookmark in bookmarksToUnSchedule)
             await _workflowScheduler.UnscheduleAsync(bookmark.Id, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task UnscheduleAsync(IEnumerable<StoredBookmark> bookmarks, CancellationToken cancellationToken = default)
+    {
+        var bookmarkList = bookmarks.ToList();
+
+        // Select all Delay bookmarks.
+        var delayBookmarks = bookmarkList.Filter<Delay>().ToList();
+
+        // Select all StartAt bookmarks.
+        var startAtBookmarks = bookmarkList.Filter<StartAt>().ToList();
+
+        // Select all Timer bookmarks.
+        var timerBookmarks = bookmarkList.Filter<Activities.Timer>().ToList();
+
+        // Select all Cron bookmarks.
+        var cronBookmarks = bookmarkList.Filter<Cron>().ToList();
+
+        // Concatenate the filtered bookmarks.
+        var bookmarksToUnSchedule = delayBookmarks.Concat(startAtBookmarks).Concat(timerBookmarks).Concat(cronBookmarks).ToList();
+
+        // Unschedule each bookmark.
+        foreach (var bookmark in bookmarksToUnSchedule)
+            await _workflowScheduler.UnscheduleAsync(bookmark.BookmarkId, cancellationToken);
     }
 }

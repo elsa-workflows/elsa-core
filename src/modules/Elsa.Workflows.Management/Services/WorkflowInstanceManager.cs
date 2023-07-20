@@ -20,7 +20,23 @@ public class WorkflowInstanceManager : IWorkflowInstanceManager
         _store = store;
         _notificationSender = notificationSender;
     }
-    
+
+
+    /// <inheritdoc />
+    public async Task<bool> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
+    {
+        var instance = await _store.FindAsync(filter, cancellationToken);
+        
+        if(instance == null)
+            return false;
+
+        var ids = new[] { instance.Id };
+        await _notificationSender.SendAsync(new WorkflowInstancesDeleting(ids), cancellationToken);
+        await _store.DeleteAsync(filter, cancellationToken);
+        await _notificationSender.SendAsync(new WorkflowInstancesDeleted(ids), cancellationToken);
+        return true;
+    }
+
     /// <inheritdoc />
     public async Task<long> BulkDeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {

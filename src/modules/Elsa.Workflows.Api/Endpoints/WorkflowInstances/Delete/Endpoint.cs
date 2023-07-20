@@ -8,8 +8,8 @@ namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.Delete;
 [PublicAPI]
 internal class Delete : ElsaEndpoint<Request>
 {
-    private readonly IWorkflowInstanceStore _store;
-    public Delete(IWorkflowInstanceStore store) => _store = store;
+    private readonly IWorkflowInstanceManager _store;
+    public Delete(IWorkflowInstanceManager store) => _store = store;
 
     public override void Configure()
     {
@@ -22,7 +22,7 @@ internal class Delete : ElsaEndpoint<Request>
         var filter = new WorkflowInstanceFilter { Id = request.Id };
         var deleted = await _store.DeleteAsync(filter, cancellationToken);
 
-        if (deleted > 0)
+        if (deleted)
             await SendNoContentAsync(cancellationToken);
         else
             await SendNotFoundAsync(cancellationToken);

@@ -83,14 +83,16 @@ public class DefaultTriggerScheduler : ITriggerScheduler
     /// <inheritdoc />
     public async Task UnscheduleAsync(IEnumerable<StoredTrigger> triggers, CancellationToken cancellationToken = default)
     {
+        var triggerList = triggers.ToList();
+        
         // Select all Timer triggers.
-        var timerTriggers = triggers.Filter<Activities.Timer>();
+        var timerTriggers = triggerList.Filter<Activities.Timer>();
 
         // Select all StartAt triggers.
-        var startAtTriggers = triggers.Filter<StartAt>();
+        var startAtTriggers = triggerList.Filter<StartAt>();
 
         // Select all Cron triggers.
-        var cronTriggers = triggers.Filter<Cron>();
+        var cronTriggers = triggerList.Filter<Cron>();
 
         // Concatenate the filtered triggers.
         var filteredTriggers = timerTriggers.Concat(startAtTriggers).Concat(cronTriggers);
