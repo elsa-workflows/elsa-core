@@ -103,19 +103,18 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
     /// <inheritdoc />
     public async Task<WorkflowDefinition> RevertVersionAsync(string definitionId, int version, CancellationToken cancellationToken = default)
     {
-        var filter = new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = VersionOptions.LatestAndPublished };
-        var publishedAndLatestVersions = (await _store.FindManyAsync(filter, cancellationToken)).ToList();
-
-        if (publishedAndLatestVersions.Any(v => v.Version == version))
-            throw new Exception("Latest or published versions cannot be reverted");
-
-        var latestVersion = publishedAndLatestVersions.First(v => v.IsLatest);
-        latestVersion.IsLatest = false;
-        await _store.SaveAsync(latestVersion, cancellationToken);
+        var filter = new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = VersionOptions.Latest };
+        var latestVersion = await _store.FindAsync(filter, cancellationToken);
+        
+        if(latestVersion != null)
+        {
+            latestVersion.IsLatest = false;
+            await _store.SaveAsync(latestVersion, cancellationToken);
+        }
 
         var draft = await _workflowPublisher.GetDraftAsync(definitionId, VersionOptions.SpecificVersion(version), cancellationToken);
         draft!.Id = _identityGenerator.GenerateId();
-        draft.Version = latestVersion.Version + 1;
+        draft.Version = (latestVersion?.Version ?? 0) + 1;
         draft.IsLatest = true;
 
         await _store.SaveAsync(draft, cancellationToken);
