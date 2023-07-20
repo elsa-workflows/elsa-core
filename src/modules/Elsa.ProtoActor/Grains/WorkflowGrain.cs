@@ -159,10 +159,13 @@ public class WorkflowGrain : WorkflowGrainBase
     }
 
     /// <inheritdoc />
-    public override async Task Stop()
+    public override Task Stop()
     {
-        // Stop immediately.
-        await Context.StopAsync(Context.Self);
+        // Stop after all current messages have been processed.
+        // ReSharper disable once MethodHasAsyncOverload
+        // Calling StopAsync seems to cause a deadlock or some other issue where the call never returns. See also: https://github.com/asynkron/protoactor-dotnet/issues/492
+        Context.Stop(Context.Self);
+        return Task.CompletedTask;
     }
 
     /// <inheritdoc />
