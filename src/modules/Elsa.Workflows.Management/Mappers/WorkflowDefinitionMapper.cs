@@ -81,6 +81,15 @@ public class WorkflowDefinitionMapper
     }
 
     /// <summary>
+    /// Maps many <see cref="WorkflowDefinition"/>s to many <see cref="WorkflowDefinitionModel"/>s.
+    /// </summary>
+    /// <param name="source">The source <see cref="WorkflowDefinition"/>s.</param>
+    /// <param name="cancellationToken">An optional cancellation token.</param>
+    /// <returns>The mapped <see cref="WorkflowDefinitionModel"/>s.</returns>
+    public async Task<IEnumerable<WorkflowDefinitionModel>> MapAsync(IEnumerable<WorkflowDefinition> source, CancellationToken cancellationToken = default) => 
+        await Task.WhenAll(source.Select(async x => await MapAsync(x, cancellationToken)));
+
+    /// <summary>
     /// Maps a <see cref="WorkflowDefinition"/> to a <see cref="Workflow"/>.
     /// </summary>
     /// <param name="workflowDefinition">The source <see cref="WorkflowDefinition"/>.</param>

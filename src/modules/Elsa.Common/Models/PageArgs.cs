@@ -34,8 +34,8 @@ public record PageArgs
         
         if(offset != null && limit != null)
             return FromRange(offset, limit);
-        
-        throw new ArgumentException("Either page and pageSize or offset and limit must be specified.");
+
+        return FromPage(0, 100);
     }
     
     /// <summary>

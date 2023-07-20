@@ -1,22 +1,24 @@
 using Elsa.Abstractions;
+using Elsa.Models;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Serialization.Converters;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Mappers;
+using Elsa.Workflows.Management.Models;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
 
-namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.GetById;
+namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.GetManyById;
 
 [PublicAPI]
-internal class GetById : ElsaEndpoint<Request>
+internal class GetManyById : ElsaEndpoint<Request>
 {
     private readonly IWorkflowDefinitionStore _store;
     private readonly IApiSerializer _apiSerializer;
     private readonly WorkflowDefinitionMapper _mapper;
 
-    public GetById(IWorkflowDefinitionStore store, IApiSerializer apiSerializer, WorkflowDefinitionMapper mapper)
+    public GetManyById(IWorkflowDefinitionStore store, IApiSerializer apiSerializer, WorkflowDefinitionMapper mapper)
     {
         _store = store;
         _apiSerializer = apiSerializer;
@@ -25,7 +27,7 @@ internal class GetById : ElsaEndpoint<Request>
 
     public override void Configure()
     {
-        Get("/workflow-definitions/by-id/{id}");
+        Get("/workflow-definitions/many-by-id");
         ConfigurePermissions("read:workflow-definitions");
     }
 
@@ -33,24 +35,18 @@ internal class GetById : ElsaEndpoint<Request>
     {
         var filter = new WorkflowDefinitionFilter
         {
-            Id = request.Id
+            Ids = request.Ids
         };
 
-        var definition = await _store.FindAsync(filter, cancellationToken);
-
-        if (definition == null)
-        {
-            await SendNotFoundAsync(cancellationToken);
-            return;
-        }
-
-        var model = await _mapper.MapAsync(definition, cancellationToken);
+        var definitions = (await _store.FindManyAsync(filter, cancellationToken)).ToList();
+        var models = (await _mapper.MapAsync(definitions, cancellationToken)).ToList();
         var serializerOptions = _apiSerializer.CreateOptions();
 
         // If the root of composite activities is not requested, exclude them from being serialized.
         if (!request.IncludeCompositeRoot)
             serializerOptions.Converters.Add(new JsonIgnoreCompositeRootConverterFactory());
 
-        await HttpContext.Response.WriteAsJsonAsync(model, serializerOptions, cancellationToken);
+        var response = new ListResponse<WorkflowDefinitionModel>(models);
+        await HttpContext.Response.WriteAsJsonAsync(response, serializerOptions, cancellationToken);
     }
 }

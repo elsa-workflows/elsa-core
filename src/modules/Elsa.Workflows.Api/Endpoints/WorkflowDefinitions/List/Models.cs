@@ -18,15 +18,3 @@ internal class Request
     public OrderDirection? OrderDirection { get; set; }
     public string? SearchTerm { get; set; }
 }
-
-internal class Response
-{
-    public Response(ICollection<WorkflowDefinitionSummary> items, long totalCount)
-    {
-        Items = items;
-        TotalCount = totalCount;
-    }
-
-    public ICollection<WorkflowDefinitionSummary> Items { get; set; }
-    public long TotalCount { get; set; }
-}

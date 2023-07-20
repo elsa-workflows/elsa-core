@@ -89,7 +89,9 @@ public class DapperWorkflowExecutionLogStore : IWorkflowExecutionLogStore
         query
             .Is(nameof(WorkflowExecutionLogRecordRecord.Id), filter.Id)
             .In(nameof(WorkflowExecutionLogRecordRecord.Id), filter.Ids)
+            .Is(nameof(WorkflowExecutionLogRecordRecord.ParentActivityInstanceId), filter.ParentActivityInstanceId)
             .Is(nameof(WorkflowExecutionLogRecordRecord.ActivityId), filter.ActivityId)
+            .In(nameof(WorkflowExecutionLogRecordRecord.ActivityId), filter.ActivityIds)
             .Is(nameof(WorkflowExecutionLogRecordRecord.WorkflowInstanceId), filter.WorkflowInstanceId)
             .In(nameof(WorkflowExecutionLogRecordRecord.WorkflowInstanceId), filter.WorkflowInstanceIds)
             .Is(nameof(WorkflowExecutionLogRecordRecord.EventName), filter.EventName)

@@ -1,9 +1,11 @@
 ﻿using Elsa.Workflows.Management.Contracts;
 using FastEndpoints;
+using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Version;
 
-public class RevertVersion : EndpointWithoutRequest
+[PublicAPI]
+internal class RevertVersion : EndpointWithoutRequest
 {
     private readonly IWorkflowDefinitionManager _workflowDefinitionManager;
 

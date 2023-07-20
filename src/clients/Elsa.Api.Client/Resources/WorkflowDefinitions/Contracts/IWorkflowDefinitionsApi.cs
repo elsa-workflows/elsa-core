@@ -21,7 +21,7 @@ public interface IWorkflowDefinitionsApi
     /// <param name="versionOptions">The version options.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     [Get("/workflow-definitions?versionOptions={versionOptions}")]
-    Task<ListWorkflowDefinitionsResponse> ListAsync([Query]ListWorkflowDefinitionsRequest request, [Query]VersionOptions? versionOptions = default, CancellationToken cancellationToken = default);
+    Task<PagedListResponse<WorkflowDefinitionSummary>> ListAsync([Query]ListWorkflowDefinitionsRequest request, [Query]VersionOptions? versionOptions = default, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets a workflow definition by definition ID.
@@ -41,6 +41,15 @@ public interface IWorkflowDefinitionsApi
     /// <param name="cancellationToken">The cancellation token.</param>
     [Get("/workflow-definitions/by-id/{id}?includeCompositeRoot={includeCompositeRoot}")]
     Task<WorkflowDefinition?> GetByIdAsync(string id, bool includeCompositeRoot = false, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Gets a workflow definition by ID.
+    /// </summary>
+    /// <param name="ids">The IDs of the workflow definition versions to get.</param>
+    /// <param name="includeCompositeRoot">Whether to include the root activity of composite activities.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    [Get("/workflow-definitions/many-by-id")]
+    Task<ListResponse<WorkflowDefinition>> GetManyByIdAsync([Query(CollectionFormat.Multi)]ICollection<string> ids, bool includeCompositeRoot = false, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Gets the number of workflow definitions.

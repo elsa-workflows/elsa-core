@@ -25,7 +25,7 @@ public interface IWorkflowInstancesApi
     Task<WorkflowInstance> GetAsync(string id, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Returns a workflow instance.
+    /// Returns a page of journal records for the specified workflow instance.
     /// </summary>
     /// <param name="workflowInstanceId">The ID of the workflow instance for which to return the journal.</param>
     /// <param name="skip">The number of records to skip.</param>
@@ -33,6 +33,17 @@ public interface IWorkflowInstancesApi
     /// <param name="cancellationToken">The cancellation token.</param>
     [Get("/workflow-instances/{workflowInstanceId}/journal")]
     Task<PagedListResponse<ExecutionLogRecord>> GetJournalAsync(string workflowInstanceId, int? skip = default, int? take = default, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returns a page of journal records for the specified workflow instance.
+    /// </summary>
+    /// <param name="workflowInstanceId">The ID of the workflow instance for which to return the journal.</param>
+    /// <param name="filter">The filter to apply.</param>
+    /// <param name="skip">The number of records to skip.</param>
+    /// <param name="take">The number of records to return.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    [Post("/workflow-instances/{workflowInstanceId}/journal")]
+    Task<PagedListResponse<ExecutionLogRecord>> GetFilteredJournalAsync(string workflowInstanceId, GetFilteredJournalRequest? filter, int? skip = default, int? take = default, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Deletes a workflow instance.

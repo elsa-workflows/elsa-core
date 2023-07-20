@@ -71,6 +71,8 @@ public class DapperTriggerStore : ITriggerStore
             .In(nameof(StoredTriggerRecord.Id), filter.Ids)
             .Is(nameof(StoredTriggerRecord.WorkflowDefinitionId), filter.WorkflowDefinitionId)
             .In(nameof(StoredTriggerRecord.WorkflowDefinitionId), filter.WorkflowDefinitionIds)
+            .Is(nameof(StoredTriggerRecord.WorkflowDefinitionVersionId), filter.WorkflowDefinitionVersionId)
+            .In(nameof(StoredTriggerRecord.WorkflowDefinitionVersionId), filter.WorkflowDefinitionVersionIds)
             .Is(nameof(StoredTriggerRecord.Name), filter.Name)
             .In(nameof(StoredTriggerRecord.Name), filter.Names)
             .Is(nameof(StoredTriggerRecord.Hash), filter.Hash)

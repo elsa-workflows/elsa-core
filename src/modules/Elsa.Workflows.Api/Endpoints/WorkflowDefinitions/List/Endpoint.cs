@@ -1,6 +1,7 @@
 using Elsa.Abstractions;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
+using Elsa.Models;
 using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
@@ -10,7 +11,7 @@ using JetBrains.Annotations;
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.List;
 
 [PublicAPI]
-internal class List : ElsaEndpoint<Request, Response>
+internal class List : ElsaEndpoint<Request, PagedListResponse<WorkflowDefinitionSummary>>
 {
     private readonly IWorkflowDefinitionStore _store;
 
@@ -25,13 +26,12 @@ internal class List : ElsaEndpoint<Request, Response>
         ConfigurePermissions("read:workflow-definitions");
     }
 
-    public override async Task<Response> ExecuteAsync(Request request, CancellationToken cancellationToken)
+    public override async Task<PagedListResponse<WorkflowDefinitionSummary>> ExecuteAsync(Request request, CancellationToken cancellationToken)
     {
         var pageArgs = PageArgs.FromPage(request.Page, request.PageSize);
         var filter = CreateFilter(request);
-
         var summaries = await FindAsync(request, filter, pageArgs, cancellationToken);
-        return new Response(summaries.Items, summaries.TotalCount);
+        return new PagedListResponse<WorkflowDefinitionSummary>(summaries);
     }
 
     private WorkflowDefinitionFilter CreateFilter(Request request)

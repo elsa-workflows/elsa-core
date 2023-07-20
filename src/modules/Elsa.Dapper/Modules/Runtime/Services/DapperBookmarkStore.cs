@@ -54,6 +54,7 @@ public class DapperBookmarkStore : IBookmarkStore
         query
             .Is(nameof(StoredBookmarkRecord.Hash), filter.Hash)
             .Is(nameof(StoredBookmarkRecord.WorkflowInstanceId), filter.WorkflowInstanceId)
+            .In(nameof(StoredBookmarkRecord.WorkflowInstanceId), filter.WorkflowInstanceIds)
             .Is(nameof(StoredBookmarkRecord.CorrelationId), filter.CorrelationId)
             .Is(nameof(StoredBookmarkRecord.ActivityTypeName), filter.ActivityTypeName)
             .In(nameof(StoredBookmarkRecord.ActivityTypeName), filter.ActivityTypeNames)
