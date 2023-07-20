@@ -160,4 +160,13 @@ public interface IWorkflowDefinitionsApi
     /// <returns>A list of workflow definitions that were affected by the update.</returns> 
     [Post("/workflow-definitions/{definitionId}/update-references")]
     Task<UpdateConsumingWorkflowReferencesResponse> UpdateReferencesAsync(string definitionId, UpdateConsumingWorkflowReferencesRequest request, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Reverts a workflow definition to a previous version.
+    /// </summary>
+    /// <param name="definitionId">The definition ID of the workflow definition to revert.</param>
+    /// <param name="version">The version to revert to.</param>
+    /// <param name="cancellationToken">An optional cancellation token.</param>
+    [Post("/workflow-definitions/{definitionId}/revert/{version}")]
+    Task RevertVersionAsync(string definitionId, int version, CancellationToken cancellationToken = default);
 }
