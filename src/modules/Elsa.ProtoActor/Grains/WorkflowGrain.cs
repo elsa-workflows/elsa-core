@@ -159,6 +159,13 @@ public class WorkflowGrain : WorkflowGrainBase
     }
 
     /// <inheritdoc />
+    public override async Task Stop()
+    {
+        // Stop immediately.
+        await Context.StopAsync(Context.Self);
+    }
+
+    /// <inheritdoc />
     public override async Task<WorkflowExecutionResponse> Resume(ResumeWorkflowRequest request)
     {
         _input = request.Input?.Deserialize();

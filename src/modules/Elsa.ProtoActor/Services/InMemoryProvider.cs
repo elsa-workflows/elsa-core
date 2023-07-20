@@ -4,11 +4,15 @@ using Proto.Persistence;
 
 namespace Elsa.ProtoActor.Services;
 
+/// <summary>
+/// An in-memory provider for Proto.Persistence.
+/// </summary>
 public class InMemoryProvider : IProvider
 {
     private readonly ConcurrentDictionary<string, Dictionary<long, object>> _events = new();
     private readonly ConcurrentDictionary<string, Dictionary<long, object>> _snapshots = new();
 
+    /// <inheritdoc />
     public Task<(object? Snapshot, long Index)> GetSnapshotAsync(string actorName)
     {
         if (!_snapshots.TryGetValue(actorName, out var snapshots))
@@ -18,6 +22,7 @@ public class InMemoryProvider : IProvider
         return Task.FromResult((snapshot.Value, snapshot.Key))!;
     }
 
+    /// <inheritdoc />
     public Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
     {
         var lastIndex = 0L;
@@ -33,6 +38,7 @@ public class InMemoryProvider : IProvider
         return Task.FromResult(lastIndex);
     }
 
+    /// <inheritdoc />
     public Task<long> PersistEventAsync(string actorName, long index, object @event)
     {
         var events = _events.GetOrAdd(actorName, new Dictionary<long, object>());
@@ -44,6 +50,7 @@ public class InMemoryProvider : IProvider
         return Task.FromResult(max);
     }
 
+    /// <inheritdoc />
     public Task PersistSnapshotAsync(string actorName, long index, object snapshot)
     {
         var type = snapshot.GetType();
@@ -55,6 +62,7 @@ public class InMemoryProvider : IProvider
         return Task.CompletedTask;
     }
 
+    /// <inheritdoc />
     public Task DeleteEventsAsync(string actorName, long inclusiveToIndex)
     {
         if (!_events.TryGetValue(actorName, out var events))
@@ -69,6 +77,7 @@ public class InMemoryProvider : IProvider
         return Task.CompletedTask;
     }
 
+    /// <inheritdoc />
     public Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
     {
         if (!_snapshots.TryGetValue(actorName, out var snapshots))

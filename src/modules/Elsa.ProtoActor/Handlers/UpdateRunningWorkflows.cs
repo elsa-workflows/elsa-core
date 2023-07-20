@@ -4,6 +4,7 @@ using Elsa.ProtoActor.Extensions;
 using Elsa.ProtoActor.Grains;
 using Elsa.ProtoActor.Protos;
 using Elsa.Workflows.Core.Notifications;
+using JetBrains.Annotations;
 using Proto.Cluster;
 using WorkflowStatus = Elsa.Workflows.Core.WorkflowStatus;
 
@@ -12,11 +13,12 @@ namespace Elsa.ProtoActor.Handlers;
 /// <summary>
 /// Updates the <see cref="RunningWorkflowsGrain"/> with running workflow instances.
 /// </summary>
-internal class UpdateRunningWorkflowsHandler : INotificationHandler<WorkflowExecuted>
+[PublicAPI]
+internal class UpdateRunningWorkflows : INotificationHandler<WorkflowExecuted>
 {
     private readonly Cluster _cluster;
 
-    public UpdateRunningWorkflowsHandler(Cluster cluster)
+    public UpdateRunningWorkflows(Cluster cluster)
     {
         _cluster = cluster;
     }

@@ -8,6 +8,7 @@ import "Messages.proto";
 service WorkflowGrain {
   rpc CanStart (StartWorkflowRequest) returns (CanStartWorkflowResponse);
   rpc Start (StartWorkflowRequest) returns (WorkflowExecutionResponse);
+  rpc Stop (Empty) returns (Empty);
   rpc Resume (ResumeWorkflowRequest) returns (WorkflowExecutionResponse);
   rpc ExportState(ExportWorkflowStateRequest) returns (ExportWorkflowStateResponse);
   rpc ImportState(ImportWorkflowStateRequest) returns (ImportWorkflowStateResponse);
