@@ -88,6 +88,7 @@ public interface IWorkflowDefinitionsApi
     /// <param name="definitionId">The ID of the workflow definition to publish.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     [Post("/workflow-definitions/{definitionId}/publish")]
+    [Headers(MediaTypeNames.Application.Json)]
     Task<WorkflowDefinition> PublishAsync(string definitionId, CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -149,4 +150,14 @@ public interface IWorkflowDefinitionsApi
     /// <returns>The imported workflow definition.</returns>
     [Post("/workflow-definitions/import")]
     Task<WorkflowDefinition> ImportAsync(WorkflowDefinitionModel model, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Updates the references of consuming workflow definitions to point to the latest version of the specified definition.
+    /// </summary>
+    /// <param name="definitionId">The definition ID of the workflow definition to update references for.</param>
+    /// <param name="request">An empty object to satisfy the request body requirement.</param>
+    /// <param name="cancellationToken">An optional cancellation token.</param>
+    /// <returns>A list of workflow definitions that were affected by the update.</returns> 
+    [Post("/workflow-definitions/{definitionId}/update-references")]
+    Task<UpdateConsumingWorkflowReferencesResponse> UpdateReferencesAsync(string definitionId, UpdateConsumingWorkflowReferencesRequest request, CancellationToken cancellationToken = default);
 }

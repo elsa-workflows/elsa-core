@@ -21,6 +21,7 @@ internal class UpdateReferences : ElsaEndpoint<Request, Response>
     public override void Configure()
     {
         Post("/workflow-definitions/{definitionId}/update-references");
+        ConfigurePermissions("publish:workflow-definitions");
     }
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
@@ -41,7 +42,7 @@ internal class UpdateReferences : ElsaEndpoint<Request, Response>
 
         var affectedWorkflows = await _workflowDefinitionManager.UpdateReferencesInConsumingWorkflows(definition, cancellationToken);
 
-        var response = new Response { AffectedWorkflows = affectedWorkflows.Select(w => w.Name ?? w.DefinitionId) };
+        var response = new Response(affectedWorkflows.Select(w => w.Name ?? w.DefinitionId));
         await SendOkAsync(response, cancellationToken);
     }
 }

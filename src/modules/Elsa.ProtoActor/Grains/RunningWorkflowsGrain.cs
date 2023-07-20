@@ -7,6 +7,7 @@ using Proto.Persistence.SnapshotStrategies;
 
 namespace Elsa.ProtoActor.Grains;
 
+// TODO: Replace this grain with a store-based implementation that stores metrics.
 /// <summary>
 /// Represents a registry of workflow instances for a given workflow definition version.
 /// </summary>
