@@ -10,19 +10,19 @@ namespace Elsa.Workflows.Runtime.Handlers;
 /// </summary>
 public class DeleteBookmarks : INotificationHandler<WorkflowInstancesDeleting>
 {
-    private readonly IBookmarkStore _bookmarkStore;
+    private readonly IBookmarkManager _bookmarkManager;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DeleteBookmarks"/> class.
     /// </summary>
-    public DeleteBookmarks(IBookmarkStore bookmarkStore)
+    public DeleteBookmarks(IBookmarkManager bookmarkManager)
     {
-        _bookmarkStore = bookmarkStore;
+        _bookmarkManager = bookmarkManager;
     }
 
     /// <inheritdoc />
     public async Task HandleAsync(WorkflowInstancesDeleting notification, CancellationToken cancellationToken)
     {
-        await _bookmarkStore.DeleteAsync(new BookmarkFilter { WorkflowInstanceIds = notification.Ids }, cancellationToken);
+        await _bookmarkManager.DeleteManyAsync(new BookmarkFilter { WorkflowInstanceIds = notification.Ids }, cancellationToken);
     }
 }

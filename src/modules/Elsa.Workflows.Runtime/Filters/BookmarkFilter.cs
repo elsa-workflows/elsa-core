@@ -8,6 +8,16 @@ namespace Elsa.Workflows.Runtime.Filters;
 public class BookmarkFilter
 {
     /// <summary>
+    /// Gets or sets the ID of the bookmark.
+    /// </summary>
+    public string? BookmarkId { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the IDs of the bookmark.
+    /// </summary>
+    public ICollection<string>? BookmarkIds { get; set; }
+    
+    /// <summary>
     /// Gets or sets the IDs of the workflow instance.
     /// </summary>
     public string? WorkflowInstanceId { get; set; }
@@ -43,6 +53,8 @@ public class BookmarkFilter
     public IQueryable<StoredBookmark> Apply(IQueryable<StoredBookmark> query)
     {
         var filter = this;
+        if (filter.BookmarkId != null) query = query.Where(x => x.BookmarkId == filter.BookmarkId);
+        if (filter.BookmarkIds != null) query = query.Where(x => filter.BookmarkIds.Contains(x.BookmarkId));
         if (filter.CorrelationId != null) query = query.Where(x => x.CorrelationId == filter.CorrelationId);
         if (filter.Hash != null) query = query.Where(x => x.Hash == filter.Hash);
         if (filter.WorkflowInstanceId != null) query = query.Where(x => x.WorkflowInstanceId == filter.WorkflowInstanceId);

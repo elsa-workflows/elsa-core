@@ -3,6 +3,7 @@ using Elsa.Scheduling.Contracts;
 using Elsa.Workflows.Management.Notifications;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Filters;
+using Elsa.Workflows.Runtime.Notifications;
 
 namespace Elsa.Scheduling.Handlers;
 
@@ -14,7 +15,7 @@ public class DeleteSchedules :
     INotificationHandler<WorkflowDefinitionsDeleting>,
     INotificationHandler<WorkflowDefinitionVersionDeleting>,
     INotificationHandler<WorkflowDefinitionVersionsDeleting>,
-    INotificationHandler<WorkflowInstancesDeleting>
+    INotificationHandler<BookmarksDeleting>
 {
     private readonly ITriggerScheduler _triggerScheduler;
     private readonly IBookmarkScheduler _bookmarkScheduler;
@@ -32,9 +33,10 @@ public class DeleteSchedules :
         _bookmarkStore = bookmarkStore;
     }
 
-    async Task INotificationHandler<WorkflowInstancesDeleting>.HandleAsync(WorkflowInstancesDeleting notification, CancellationToken cancellationToken)
+    async Task INotificationHandler<BookmarksDeleting>.HandleAsync(BookmarksDeleting notification, CancellationToken cancellationToken)
     {
-        var bookmarks = await _bookmarkStore.FindManyAsync(new BookmarkFilter { WorkflowInstanceIds = notification.Ids }, cancellationToken);
+        var ids = notification.Bookmarks.Select(x => x.BookmarkId).ToList();
+        var bookmarks = await _bookmarkStore.FindManyAsync(new BookmarkFilter { BookmarkIds = ids }, cancellationToken);
         await _bookmarkScheduler.UnscheduleAsync(bookmarks, cancellationToken);
     }
 
