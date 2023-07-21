@@ -14,7 +14,7 @@ namespace Elsa.Http;
 /// Write a response to the current HTTP response object.
 /// </summary>
 [Activity("Elsa", "HTTP", "Write a response to the current HTTP response object.", DisplayName = "HTTP Response")]
-public class WriteHttpResponse : CodeActivity
+public class WriteHttpResponse : Activity
 {
     /// <summary>
     /// The status code to return.
@@ -105,6 +105,9 @@ public class WriteHttpResponse : CodeActivity
 
         // Write content.
         await httpContent.CopyToAsync(response.Body);
+        
+        // Complete activity.
+        await context.CompleteActivityAsync();
     }
 
     private string DetermineContentType(object? content) => content is byte[] or Stream
