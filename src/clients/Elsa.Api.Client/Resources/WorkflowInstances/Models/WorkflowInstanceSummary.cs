@@ -37,14 +37,8 @@ public record WorkflowInstanceSummary
     public DateTimeOffset CreatedAt { get; set; }
 
     /// <summary>The timestamp when the workflow instance was last executed.</summary>
-    public DateTimeOffset? LastExecutedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
 
     /// <summary>The timestamp when the workflow instance was finished.</summary>
     public DateTimeOffset? FinishedAt { get; set; }
-
-    /// <summary>The timestamp when the workflow instance was cancelled.</summary>
-    public DateTimeOffset? CancelledAt { get; set; }
-
-    /// <summary>The timestamp when the workflow instance was faulted.</summary>
-    public DateTimeOffset? FaultedAt { get; set; }
 }

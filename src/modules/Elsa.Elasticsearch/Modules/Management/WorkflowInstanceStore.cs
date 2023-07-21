@@ -144,10 +144,8 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
             field => field.Field(f => f.Version),
             field => field.Field(f => f.Name),
             field => field.Field(f => f.CreatedAt),
-            field => field.Field(f => f.CancelledAt),
-            field => field.Field(f => f.FaultedAt),
             field => field.Field(f => f.FinishedAt),
             field => field.Field(f => f.DefinitionVersionId),
-            field => field.Field(f => f.LastExecutedAt)
+            field => field.Field(f => f.UpdatedAt)
         );
 }

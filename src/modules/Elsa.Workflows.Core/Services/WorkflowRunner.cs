@@ -1,3 +1,4 @@
+using Elsa.Common.Contracts;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Core.Abstractions;
@@ -19,6 +20,7 @@ public class WorkflowRunner : IWorkflowRunner
     private readonly IWorkflowBuilderFactory _workflowBuilderFactory;
     private readonly IIdentityGenerator _identityGenerator;
     private readonly IWorkflowExecutionContextFactory _workflowExecutionContextFactory;
+    private readonly ISystemClock _systemClock;
     private readonly INotificationSender _notificationSender;
 
     /// <summary>
@@ -31,6 +33,7 @@ public class WorkflowRunner : IWorkflowRunner
         IWorkflowBuilderFactory workflowBuilderFactory,
         IIdentityGenerator identityGenerator,
         IWorkflowExecutionContextFactory workflowExecutionContextFactory,
+        ISystemClock systemClock,
         INotificationSender notificationSender)
     {
         _serviceScopeFactory = serviceScopeFactory;
@@ -39,6 +42,7 @@ public class WorkflowRunner : IWorkflowRunner
         _workflowBuilderFactory = workflowBuilderFactory;
         _identityGenerator = identityGenerator;
         _workflowExecutionContextFactory = workflowExecutionContextFactory;
+        _systemClock = systemClock;
         _notificationSender = notificationSender;
     }
 
@@ -178,6 +182,12 @@ public class WorkflowRunner : IWorkflowRunner
         var workflowState = workflowExecutionContext.TransientProperties.TryGetValue(workflowExecutionContext, out var state)
             ? (WorkflowState)state
             : _workflowExecutionContextMapper.Extract(workflowExecutionContext);
+        
+        // Update timestamps.
+        workflowState.UpdatedAt = _systemClock.UtcNow;
+
+        if (workflowState.Status == WorkflowStatus.Finished) 
+            workflowState.FinishedAt = workflowState.UpdatedAt;
 
         // Read captured output, if any.
         var result = workflow.ResultVariable?.Get(workflowExecutionContext.MemoryRegister);

@@ -14,7 +14,7 @@ export enum WorkflowSubStatus {
 
 export enum OrderBy {
   Created = 'Created',
-  LastExecuted = 'LastExecuted',
+  Updated = 'Updated',
   Finished = 'Finished'
 }
 
@@ -33,10 +33,8 @@ export interface WorkflowInstanceSummary {
   correlationId: string;
   name?: string;
   createdAt: Date;
-  lastExecutedAt?: Date;
+  updatedAt?: Date;
   finishedAt?: Date;
-  cancelledAt?: Date;
-  faultedAt?: Date;
 }
 
 export interface WorkflowInstance extends WorkflowInstanceSummary {

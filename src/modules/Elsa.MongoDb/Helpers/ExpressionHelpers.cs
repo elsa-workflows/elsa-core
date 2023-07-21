@@ -4,7 +4,7 @@ using Elsa.Workflows.Management.Models;
 
 namespace Elsa.MongoDb.Helpers;
 
-public class ExpressionHelpers
+internal class ExpressionHelpers
 {
     public static readonly Expression<Func<WorkflowDefinition, WorkflowDefinitionSummary>> WorkflowDefinitionSummary = 
         workflowDefinition => new WorkflowDefinitionSummary
@@ -32,9 +32,7 @@ public class ExpressionHelpers
             CorrelationId = workflowInstance.CorrelationId,
             Name = workflowInstance.Name,
             CreatedAt = workflowInstance.CreatedAt,
-            LastExecutedAt = workflowInstance.LastExecutedAt,
-            FinishedAt = workflowInstance.FinishedAt,
-            CancelledAt = workflowInstance.CancelledAt,
-            FaultedAt = workflowInstance.FaultedAt
+            UpdatedAt = workflowInstance.UpdatedAt,
+            FinishedAt = workflowInstance.FinishedAt
         };
 }

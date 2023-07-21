@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
 {
     [DbContext(typeof(RuntimeElsaDbContext))]
-    [Migration("20230719215632_Initial")]
+    [Migration("20230721120343_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -192,6 +192,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("ActivityName")
+                        .HasColumnType("text");
+
                     b.Property<string>("ActivityType")
                         .IsRequired()
                         .HasColumnType("text");
@@ -246,6 +249,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
 
                     b.HasIndex("ActivityInstanceId")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_ActivityInstanceId");
+
+                    b.HasIndex("ActivityName")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_ActivityName");
 
                     b.HasIndex("ActivityType")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_ActivityType");

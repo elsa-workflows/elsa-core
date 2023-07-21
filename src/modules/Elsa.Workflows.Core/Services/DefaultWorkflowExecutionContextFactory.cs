@@ -1,3 +1,4 @@
+using Elsa.Common.Contracts;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
@@ -13,6 +14,7 @@ public class DefaultWorkflowExecutionContextFactory : IWorkflowExecutionContextF
     private readonly IActivitySchedulerFactory _schedulerFactory;
     private readonly IActivityRegistry _activityRegistry;
     private readonly IWorkflowExecutionContextMapper _workflowExecutionContextMapper;
+    private readonly ISystemClock _systemClock;
     private readonly IHasher _hasher;
 
     /// <summary>
@@ -24,6 +26,7 @@ public class DefaultWorkflowExecutionContextFactory : IWorkflowExecutionContextF
         IActivitySchedulerFactory schedulerFactory,
         IActivityRegistry activityRegistry,
         IWorkflowExecutionContextMapper workflowExecutionContextMapper,
+        ISystemClock systemClock,
         IHasher hasher)
     {
         _activityVisitor = activityVisitor;
@@ -31,6 +34,7 @@ public class DefaultWorkflowExecutionContextFactory : IWorkflowExecutionContextF
         _schedulerFactory = schedulerFactory;
         _activityRegistry = activityRegistry;
         _workflowExecutionContextMapper = workflowExecutionContextMapper;
+        _systemClock = systemClock;
         _hasher = hasher;
     }
 
@@ -79,6 +83,7 @@ public class DefaultWorkflowExecutionContextFactory : IWorkflowExecutionContextF
             executeActivityDelegate,
             triggerActivityId,
             default,
+            workflowState?.CreatedAt ?? _systemClock.UtcNow,
             cancellationToken);
 
         // Restore workflow execution context from state, if provided.

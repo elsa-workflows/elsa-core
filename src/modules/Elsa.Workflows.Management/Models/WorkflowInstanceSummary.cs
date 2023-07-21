@@ -26,10 +26,8 @@ public class WorkflowInstanceSummary
             CorrelationId = workflowInstance.CorrelationId,
             Name = workflowInstance.Name,
             CreatedAt = workflowInstance.CreatedAt,
-            LastExecutedAt = workflowInstance.LastExecutedAt,
-            FinishedAt = workflowInstance.FinishedAt,
-            CancelledAt = workflowInstance.CancelledAt,
-            FaultedAt = workflowInstance.FaultedAt,
+            UpdatedAt = workflowInstance.UpdatedAt,
+            FinishedAt = workflowInstance.FinishedAt
         };
     }
 
@@ -61,14 +59,9 @@ public class WorkflowInstanceSummary
     public DateTimeOffset CreatedAt { get; set; }
 
     /// <summary>The timestamp when the workflow instance was last executed.</summary>
-    public DateTimeOffset? LastExecutedAt { get; set; }
+    public DateTimeOffset? UpdatedAt { get; set; }
 
     /// <summary>The timestamp when the workflow instance was finished.</summary>
     public DateTimeOffset? FinishedAt { get; set; }
-
-    /// <summary>The timestamp when the workflow instance was cancelled.</summary>
-    public DateTimeOffset? CancelledAt { get; set; }
-
-    /// <summary>The timestamp when the workflow instance was faulted.</summary>
-    public DateTimeOffset? FaultedAt { get; set; }
+    
 }

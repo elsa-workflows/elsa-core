@@ -57,7 +57,7 @@ export const Filter: FunctionalComponent<FilterProps> = ({pageSizeFilter, workfl
     <button onClick={resetFilter} type="button" class="tw-text-sm tw-text-blue-600 active:tw-text-blue-700 tw-px-3 active:ring tw-ring-blue-500 tw-rounded">
       Reset
     </button>
-  
+
     <PageSizeFilter {...pageSizeFilter}/>
     <WorkflowFilter {...workflowFilter}/>
     <StatusFilter {...statusFilter}/>
@@ -160,7 +160,7 @@ const SubStatusFilter: FunctionalComponent<SubStatusFilterProps> = ({selectedSta
 
 const OrderByFilter: FunctionalComponent<OrderByFilterProps> = ({selectedOrderBy, onChange}) => {
   const selectedOrderByText = !!selectedOrderBy ? `Ordered by: ${selectedOrderBy}` : 'Order by';
-  const orderByValues: Array<OrderBy> = [OrderBy.Finished, OrderBy.LastExecuted, OrderBy.Created];
+  const orderByValues: Array<OrderBy> = [OrderBy.Finished, OrderBy.Updated, OrderBy.Created];
   const items: Array<DropdownButtonItem> = orderByValues.map(x => ({text: x, value: x, isSelected: x == selectedOrderBy}));
   const onOrderByChanged = (e: CustomEvent<DropdownButtonItem>) => onChange(e.detail.value);
 

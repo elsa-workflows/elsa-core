@@ -1,3 +1,4 @@
+using Elsa.Common.Contracts;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
@@ -12,12 +13,18 @@ public class PersistWorkflowStateMiddleware : WorkflowExecutionMiddleware
 {
     private readonly IWorkflowStateStore _workflowStateStore;
     private readonly IWorkflowExecutionContextMapper _workflowExecutionContextMapper;
+    private readonly ISystemClock _systemClock;
 
     /// <inheritdoc />
-    public PersistWorkflowStateMiddleware(WorkflowMiddlewareDelegate next, IWorkflowStateStore workflowStateStore, IWorkflowExecutionContextMapper workflowExecutionContextMapper) : base(next)
+    public PersistWorkflowStateMiddleware(
+        WorkflowMiddlewareDelegate next, 
+        IWorkflowStateStore workflowStateStore, 
+        IWorkflowExecutionContextMapper workflowExecutionContextMapper, 
+        ISystemClock systemClock) : base(next)
     {
         _workflowStateStore = workflowStateStore;
         _workflowExecutionContextMapper = workflowExecutionContextMapper;
+        _systemClock = systemClock;
     }
 
     /// <inheritdoc />
@@ -28,7 +35,13 @@ public class PersistWorkflowStateMiddleware : WorkflowExecutionMiddleware
 
         // Extract workflow state.
         var workflowState = _workflowExecutionContextMapper.Extract(context);
-
+        var now = _systemClock.UtcNow;
+        
+        if(context.Status == WorkflowStatus.Finished) 
+            workflowState.FinishedAt = now;
+        
+        workflowState.UpdatedAt = now;
+        
         // Store the serializable state in context for the pipeline caller.
         context.TransientProperties[context] = workflowState;
         

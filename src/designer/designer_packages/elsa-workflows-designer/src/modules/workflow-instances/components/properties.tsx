@@ -101,9 +101,8 @@ export class WorkflowDefinitionPropertiesEditor {
 
           const timestampDetails = {
             'Created': formatTimestamp(workflowInstance.createdAt),
-            'Last execution': formatTimestamp(workflowInstance.lastExecutedAt),
+            'Last execution': formatTimestamp(workflowInstance.updatedAt),
             'Finished': formatTimestamp(workflowInstance.finishedAt),
-            'Faulted': formatTimestamp(workflowInstance.faultedAt),
           };
 
           return <div>

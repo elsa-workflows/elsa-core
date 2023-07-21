@@ -5,6 +5,7 @@ using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
 using System.Collections.ObjectModel;
+using Elsa.Common.Contracts;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Memory;
 using Elsa.Workflows.Core.Models;
@@ -53,6 +54,7 @@ public class WorkflowExecutionContext : IExecutionContext
         ExecuteActivityDelegate? executeDelegate,
         string? triggerActivityId,
         IEnumerable<ActivityExecutionContext>? activityExecutionContexts,
+        DateTimeOffset createdAt,
         CancellationToken cancellationToken)
     {
         _serviceProvider = serviceProvider;
@@ -69,6 +71,7 @@ public class WorkflowExecutionContext : IExecutionContext
         Input = input != null ? new Dictionary<string, object>(input, StringComparer.OrdinalIgnoreCase) : new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
         ExecuteDelegate = executeDelegate;
         TriggerActivityId = triggerActivityId;
+        CreatedAt = createdAt;
         CancellationToken = cancellationToken;
         NodeIdLookup = _nodes.ToDictionary(x => x.NodeId);
         NodeHashLookup = _nodes.ToDictionary(x => Hash(x.NodeId));
@@ -112,6 +115,11 @@ public class WorkflowExecutionContext : IExecutionContext
     /// </summary>
     public string? CorrelationId { get; set; }
 
+    /// <summary>
+    /// The date and time the workflow execution context was created.
+    /// </summary>
+    public DateTimeOffset CreatedAt { get; set; }
+    
     /// <summary>
     /// A flattened list of <see cref="ActivityNode"/>s from the <see cref="Graph"/>. 
     /// </summary>

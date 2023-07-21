@@ -104,9 +104,6 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Management
                     b.Property<string>("Id")
                         .HasColumnType("varchar(255)");
 
-                    b.Property<DateTimeOffset?>("CancelledAt")
-                        .HasColumnType("datetime(6)");
-
                     b.Property<string>("CorrelationId")
                         .HasColumnType("varchar(255)");
 
@@ -124,13 +121,7 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Management
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<DateTimeOffset?>("FaultedAt")
-                        .HasColumnType("datetime(6)");
-
                     b.Property<DateTimeOffset?>("FinishedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTimeOffset?>("LastExecutedAt")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("Name")
@@ -143,6 +134,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Management
                     b.Property<string>("SubStatus")
                         .IsRequired()
                         .HasColumnType("varchar(255)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<int>("Version")
                         .HasColumnType("int");
@@ -158,14 +152,8 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Management
                     b.HasIndex("DefinitionId")
                         .HasDatabaseName("IX_WorkflowInstance_DefinitionId");
 
-                    b.HasIndex("FaultedAt")
-                        .HasDatabaseName("IX_WorkflowInstance_FaultedAt");
-
                     b.HasIndex("FinishedAt")
                         .HasDatabaseName("IX_WorkflowInstance_FinishedAt");
-
-                    b.HasIndex("LastExecutedAt")
-                        .HasDatabaseName("IX_WorkflowInstance_LastExecutedAt");
 
                     b.HasIndex("Name")
                         .HasDatabaseName("IX_WorkflowInstance_Name");
@@ -175,6 +163,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Management
 
                     b.HasIndex("SubStatus")
                         .HasDatabaseName("IX_WorkflowInstance_SubStatus");
+
+                    b.HasIndex("UpdatedAt")
+                        .HasDatabaseName("IX_WorkflowInstance_UpdatedAt");
 
                     b.HasIndex("Status", "DefinitionId")
                         .HasDatabaseName("IX_WorkflowInstance_Status_DefinitionId");

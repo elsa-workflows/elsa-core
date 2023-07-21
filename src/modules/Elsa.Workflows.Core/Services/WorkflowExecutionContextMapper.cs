@@ -23,7 +23,8 @@ public class WorkflowExecutionContextMapper : IWorkflowExecutionContextMapper
             Bookmarks = workflowExecutionContext.Bookmarks,
             ExecutionLogSequence = workflowExecutionContext.ExecutionLogSequence,
             Output = workflowExecutionContext.Output,
-            Fault = MapFault(workflowExecutionContext.Fault)
+            Fault = MapFault(workflowExecutionContext.Fault),
+            CreatedAt = workflowExecutionContext.CreatedAt
         };
 
         ExportProperties(state, workflowExecutionContext);
@@ -42,6 +43,7 @@ public class WorkflowExecutionContextMapper : IWorkflowExecutionContextMapper
         workflowExecutionContext.Bookmarks = state.Bookmarks;
         workflowExecutionContext.Output = state.Output;
         workflowExecutionContext.ExecutionLogSequence = state.ExecutionLogSequence;
+        workflowExecutionContext.CreatedAt = state.CreatedAt;
         ApplyProperties(state, workflowExecutionContext);
         ApplyActivityExecutionContexts(state, workflowExecutionContext);
         ApplyCompletionCallbacks(state, workflowExecutionContext);

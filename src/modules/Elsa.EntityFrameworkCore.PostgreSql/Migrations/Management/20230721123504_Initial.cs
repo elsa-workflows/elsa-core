@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -55,10 +56,8 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                     CorrelationId = table.Column<string>(type: "text", nullable: true),
                     Name = table.Column<string>(type: "text", nullable: true),
                     CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    LastExecutedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     FinishedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    CancelledAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    FaultedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     Data = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
@@ -122,22 +121,10 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                 column: "DefinitionId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_WorkflowInstance_FaultedAt",
-                schema: "Elsa",
-                table: "WorkflowInstances",
-                column: "FaultedAt");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_WorkflowInstance_FinishedAt",
                 schema: "Elsa",
                 table: "WorkflowInstances",
                 column: "FinishedAt");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_WorkflowInstance_LastExecutedAt",
-                schema: "Elsa",
-                table: "WorkflowInstances",
-                column: "LastExecutedAt");
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowInstance_Name",
@@ -180,6 +167,12 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                 schema: "Elsa",
                 table: "WorkflowInstances",
                 columns: new[] { "SubStatus", "DefinitionId" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowInstance_UpdatedAt",
+                schema: "Elsa",
+                table: "WorkflowInstances",
+                column: "UpdatedAt");
         }
 
         /// <inheritdoc />

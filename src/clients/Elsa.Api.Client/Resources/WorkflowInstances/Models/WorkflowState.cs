@@ -72,4 +72,9 @@ public class WorkflowState : Entity
     /// The last updated time of the workflow.
     /// </summary>
     public DateTimeOffset UpdatedAt { get; set; }
+    
+    /// <summary>
+    /// The finished time of the workflow.
+    /// </summary>
+    public DateTimeOffset? FinishedAt { get; set; }
 }

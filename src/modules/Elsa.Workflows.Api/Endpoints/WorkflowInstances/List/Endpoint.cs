@@ -65,11 +65,11 @@ internal class List : ElsaEndpoint<Request, Response>
 
                     return await _store.SummarizeManyAsync(filter, pageArgs, o, cancellationToken);
                 }
-            case OrderByWorkflowInstance.LastExecuted:
+            case OrderByWorkflowInstance.UpdatedAt:
                 {
                     var o = new WorkflowInstanceOrder<DateTimeOffset?>
                     {
-                        KeySelector = p => p.LastExecutedAt,
+                        KeySelector = p => p.UpdatedAt,
                         Direction = direction
                     };
 

@@ -9,6 +9,7 @@ namespace Elsa.Api.Client.Resources.WorkflowInstances.Models;
 /// <param name="ActivityId">The ID of the activity associated with the execution log record.</param>
 /// <param name="ActivityType">The type of the activity associated with the execution log record.</param>
 /// <param name="ActivityTypeVersion">The version of the activity type associated with the execution log record.</param>
+/// <param name="ActivityName">The name of the activity associated with the execution log record.</param>
 /// <param name="NodeId">The ID of the node associated with the execution log record.</param>
 /// <param name="Timestamp">The timestamp of the execution log record.</param>
 /// <param name="Sequence">The sequence of the execution log record.</param>
@@ -24,6 +25,7 @@ public record ExecutionLogRecord(
     string ActivityId,
     string ActivityType,
     int ActivityTypeVersion,
+    string? ActivityName,
     string NodeId,
     DateTimeOffset Timestamp,
     long Sequence,

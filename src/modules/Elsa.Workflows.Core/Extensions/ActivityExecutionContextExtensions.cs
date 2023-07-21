@@ -99,6 +99,7 @@ public static class ActivityExecutionContextExtensions
             activity.Id,
             activity.Type,
             activity.Version,
+            activity.Name,
             context.NodeId,
             activityState,
             now,

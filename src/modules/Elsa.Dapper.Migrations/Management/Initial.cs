@@ -66,10 +66,8 @@ public class Initial : Migration
             .WithColumn("CorrelationId").AsString().Nullable()
             .WithColumn("Name").AsString().Nullable()
             .WithColumn("CreatedAt").AsDateTimeOffset().NotNullable()
-            .WithColumn("LastExecutedAt").AsDateTimeOffset().Nullable()
-            .WithColumn("FinishedAt").AsDateTimeOffset().Nullable()
-            .WithColumn("CancelledAt").AsDateTimeOffset().Nullable()
-            .WithColumn("FaultedAt").AsDateTimeOffset().Nullable();
+            .WithColumn("UpdatedAt").AsDateTimeOffset().Nullable()
+            .WithColumn("FinishedAt").AsDateTimeOffset().Nullable();
 
         IfDatabase("Sqlite")
             .Create
@@ -84,10 +82,8 @@ public class Initial : Migration
             .WithColumn("CorrelationId").AsString().Nullable()
             .WithColumn("Name").AsString().Nullable()
             .WithColumn("CreatedAt").AsDateTime2().NotNullable()
-            .WithColumn("LastExecutedAt").AsDateTime2().Nullable()
-            .WithColumn("FinishedAt").AsDateTime2().Nullable()
-            .WithColumn("CancelledAt").AsDateTime2().Nullable()
-            .WithColumn("FaultedAt").AsDateTime2().Nullable();
+            .WithColumn("UpdatedAt").AsDateTime2().Nullable()
+            .WithColumn("FinishedAt").AsDateTime2().Nullable();
     }
 
     /// <inheritdoc />

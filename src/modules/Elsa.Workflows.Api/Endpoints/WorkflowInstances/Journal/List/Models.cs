@@ -1,3 +1,4 @@
+using Elsa.Workflows.Api.Models;
 using FastEndpoints;
 
 // ReSharper disable NotAccessedPositionalProperty.Global
@@ -46,19 +47,3 @@ internal class Response
     public ICollection<ExecutionLogRecord> Items { get; }
     public long TotalCount { get; }
 }
-
-internal record ExecutionLogRecord(
-    string Id,
-    string ActivityInstanceId,
-    string? ParentActivityInstanceId,
-    string ActivityId,
-    string ActivityType,
-    int ActivityTypeVersion,
-    string NodeId,
-    DateTimeOffset Timestamp,
-    long Sequence,
-    string? EventName,
-    string? Message,
-    string? Source,
-    IDictionary<string, object>? ActivityState,
-    object? Payload);

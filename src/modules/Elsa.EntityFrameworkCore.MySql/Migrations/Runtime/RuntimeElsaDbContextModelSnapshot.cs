@@ -186,6 +186,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                         .IsRequired()
                         .HasColumnType("varchar(255)");
 
+                    b.Property<string>("ActivityName")
+                        .HasColumnType("varchar(255)");
+
                     b.Property<string>("ActivityType")
                         .IsRequired()
                         .HasColumnType("varchar(255)");
@@ -240,6 +243,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
 
                     b.HasIndex("ActivityInstanceId")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_ActivityInstanceId");
+
+                    b.HasIndex("ActivityName")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_ActivityName");
 
                     b.HasIndex("ActivityType")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_ActivityType");

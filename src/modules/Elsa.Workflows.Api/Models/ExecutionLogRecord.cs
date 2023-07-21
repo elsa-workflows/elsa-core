@@ -1,20 +1,18 @@
-namespace Elsa.Workflows.Core.Models;
+namespace Elsa.Workflows.Api.Models;
 
-/// <summary>
-/// Represents a workflow execution log entry.
-/// </summary>
-public record WorkflowExecutionLogEntry(
+internal record ExecutionLogRecord(
+    string Id,
     string ActivityInstanceId,
     string? ParentActivityInstanceId,
     string ActivityId,
     string ActivityType,
     int ActivityTypeVersion,
-    string? ActivityName,
+    string ActivityName,
     string NodeId,
-    IDictionary<string, object>? ActivityState,
     DateTimeOffset Timestamp,
     long Sequence,
     string? EventName,
     string? Message,
     string? Source,
+    IDictionary<string, object>? ActivityState,
     object? Payload);

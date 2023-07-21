@@ -76,9 +76,8 @@ internal class CreateIndices : IHostedService
                         new(indexBuilder.Ascending(x => x.CorrelationId)),
                         new(indexBuilder.Ascending(x => x.Name)),
                         new(indexBuilder.Ascending(x => x.CreatedAt)),
-                        new(indexBuilder.Ascending(x => x.LastExecutedAt)),
-                        new(indexBuilder.Ascending(x => x.FinishedAt)),
-                        new(indexBuilder.Ascending(x => x.FaultedAt)),
+                        new(indexBuilder.Ascending(x => x.UpdatedAt)),
+                        new(indexBuilder.Ascending(x => x.FinishedAt))
                     },
                     cancellationToken));
     }

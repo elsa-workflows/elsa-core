@@ -50,12 +50,11 @@ internal class ExportWorkflowStateToDbCommandHandler : ICommandHandler<ExportWor
 
         var instanceFilter = new WorkflowInstanceFilter { Id = workflowState.Id };
         var workflowInstance = await _workflowInstanceStore.FindAsync(instanceFilter, cancellationToken);
-        var now = _systemClock.UtcNow;
 
         workflowInstance ??= new WorkflowInstance
         {
             Id = workflowState.Id,
-            CreatedAt = now
+            CreatedAt = workflowState.CreatedAt
         };
 
         workflowInstance.DefinitionId = workflowState.DefinitionId;
@@ -64,7 +63,8 @@ internal class ExportWorkflowStateToDbCommandHandler : ICommandHandler<ExportWor
         workflowInstance.Status = workflowState.Status;
         workflowInstance.SubStatus = workflowState.SubStatus;
         workflowInstance.CorrelationId = workflowState.CorrelationId;
-        workflowInstance.LastExecutedAt = now;
+        workflowInstance.UpdatedAt = workflowState.UpdatedAt;
+        workflowInstance.FinishedAt = workflowState.FinishedAt;
         workflowInstance.WorkflowState = workflowState;
 
         if (workflowState.Properties.TryGetValue<string>(SetName.WorkflowInstanceNameKey, out var name))

@@ -19,15 +19,7 @@ internal class Response
     public WorkflowSubStatus SubStatus { get; set; }
     public string? CorrelationId { get; set; }
     public string? Name { get; set; }
-
-    [Obsolete("Use WorkflowState.Properties instead.")]
-    public IDictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
-
-    [Obsolete("Use WorkflowState.Fault instead.")]
-    public WorkflowFaultState? Fault { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset? LastExecutedAt { get; set; }
     public DateTimeOffset? FinishedAt { get; set; }
-    public DateTimeOffset? CancelledAt { get; set; }
-    public DateTimeOffset? FaultedAt { get; set; }
 }

@@ -64,6 +64,8 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                     ActivityType = table.Column<string>(type: "varchar(255)", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     ActivityTypeVersion = table.Column<int>(type: "int", nullable: false),
+                    ActivityName = table.Column<string>(type: "varchar(255)", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     NodeId = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Timestamp = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
@@ -182,6 +184,12 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                 schema: "Elsa",
                 table: "WorkflowExecutionLogRecords",
                 column: "ActivityInstanceId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowExecutionLogRecord_ActivityName",
+                schema: "Elsa",
+                table: "WorkflowExecutionLogRecords",
+                column: "ActivityName");
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowExecutionLogRecord_ActivityType",

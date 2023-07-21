@@ -184,6 +184,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("ActivityName")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("ActivityType")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -239,6 +242,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
 
                     b.HasIndex("ActivityInstanceId")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_ActivityInstanceId");
+
+                    b.HasIndex("ActivityName")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_ActivityName");
 
                     b.HasIndex("ActivityType")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_ActivityType");

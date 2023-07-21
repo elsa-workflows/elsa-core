@@ -189,6 +189,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("ActivityName")
+                        .HasColumnType("text");
+
                     b.Property<string>("ActivityType")
                         .IsRequired()
                         .HasColumnType("text");
@@ -243,6 +246,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
 
                     b.HasIndex("ActivityInstanceId")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_ActivityInstanceId");
+
+                    b.HasIndex("ActivityName")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_ActivityName");
 
                     b.HasIndex("ActivityType")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_ActivityType");

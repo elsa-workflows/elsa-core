@@ -13,7 +13,7 @@ public enum OrderByWorkflowInstance
     /// <summary>
     /// Order by the date the workflow instance was last executed.
     /// </summary>
-    LastExecuted,
+    UpdatedAt,
 
     /// <summary>
     /// Order by the date the workflow instance was finished.

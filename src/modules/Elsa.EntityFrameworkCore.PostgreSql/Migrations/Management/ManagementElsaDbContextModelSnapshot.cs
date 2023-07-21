@@ -107,9 +107,6 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                     b.Property<string>("Id")
                         .HasColumnType("text");
 
-                    b.Property<DateTimeOffset?>("CancelledAt")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<string>("CorrelationId")
                         .HasColumnType("text");
 
@@ -127,13 +124,7 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<DateTimeOffset?>("FaultedAt")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<DateTimeOffset?>("FinishedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset?>("LastExecutedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Name")
@@ -146,6 +137,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                     b.Property<string>("SubStatus")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("Version")
                         .HasColumnType("integer");
@@ -161,14 +155,8 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                     b.HasIndex("DefinitionId")
                         .HasDatabaseName("IX_WorkflowInstance_DefinitionId");
 
-                    b.HasIndex("FaultedAt")
-                        .HasDatabaseName("IX_WorkflowInstance_FaultedAt");
-
                     b.HasIndex("FinishedAt")
                         .HasDatabaseName("IX_WorkflowInstance_FinishedAt");
-
-                    b.HasIndex("LastExecutedAt")
-                        .HasDatabaseName("IX_WorkflowInstance_LastExecutedAt");
 
                     b.HasIndex("Name")
                         .HasDatabaseName("IX_WorkflowInstance_Name");
@@ -178,6 +166,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
 
                     b.HasIndex("SubStatus")
                         .HasDatabaseName("IX_WorkflowInstance_SubStatus");
+
+                    b.HasIndex("UpdatedAt")
+                        .HasDatabaseName("IX_WorkflowInstance_UpdatedAt");
 
                     b.HasIndex("Status", "DefinitionId")
                         .HasDatabaseName("IX_WorkflowInstance_Status_DefinitionId");

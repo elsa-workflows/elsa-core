@@ -1,6 +1,7 @@
 using Elsa.Abstractions;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
+using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.OrderDefinitions;
@@ -49,6 +50,7 @@ internal class Get : ElsaEndpoint<Request, Response>
                     x.ActivityId,
                     x.ActivityType,
                     x.ActivityTypeVersion,
+                    x.ActivityName,
                     x.NodeId,
                     x.Timestamp,
                     x.Sequence,

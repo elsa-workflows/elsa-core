@@ -20,12 +20,8 @@ internal class WorkflowInstanceMapper : ResponseMapper<Response, WorkflowInstanc
         SubStatus = e.SubStatus,
         CorrelationId = e.CorrelationId,
         Name = e.Name,
-        Properties = e.WorkflowState.Properties,
-        Fault = e.WorkflowState.Fault,
-        CancelledAt = e.CancelledAt,
         CreatedAt = e.CreatedAt,
-        FaultedAt = e.FaultedAt,
         FinishedAt = e.FinishedAt,
-        LastExecutedAt = e.LastExecutedAt
+        LastExecutedAt = e.UpdatedAt
     };
 }

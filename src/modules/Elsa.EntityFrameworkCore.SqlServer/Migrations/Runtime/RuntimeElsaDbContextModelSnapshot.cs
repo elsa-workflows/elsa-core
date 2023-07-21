@@ -189,6 +189,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<string>("ActivityName")
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<string>("ActivityType")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
@@ -243,6 +246,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
 
                     b.HasIndex("ActivityInstanceId")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_ActivityInstanceId");
+
+                    b.HasIndex("ActivityName")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_ActivityName");
 
                     b.HasIndex("ActivityType")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_ActivityType");
