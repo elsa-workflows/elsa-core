@@ -59,8 +59,8 @@ public abstract class Activity : IActivity, ISignalHandler
 
     /// <summary>
     /// A flag indicating if this activity should execute synchronously or asynchronously.
-    /// By default, activities with an <see cref="Workflows.Core.Models.ActivityKind"/> of <see cref="Action"/>, <see cref="Task"/> or <see cref="Trigger"/>
-    /// will execute synchronously, while activities of the <see cref="Workflows.Core.Models.ActivityKind.Job"/> kind will execute asynchronously.
+    /// By default, activities with an <see cref="ActivityKind"/> of <see cref="Action"/>, <see cref="Task"/> or <see cref="Trigger"/>
+    /// will execute synchronously, while activities of the <see cref="ActivityKind.Job"/> kind will execute asynchronously.
     /// </summary>
     [JsonIgnore]
     public bool RunAsynchronously
