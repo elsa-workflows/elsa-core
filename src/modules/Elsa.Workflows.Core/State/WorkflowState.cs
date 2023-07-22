@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using Elsa.Common.Entities;
 using Elsa.Workflows.Core.Models;
 
@@ -56,6 +57,7 @@ public class WorkflowState : Entity
     /// <summary>
     /// A flattened list of <see cref="ActivityExecutionContextState"/> objects, representing the various active "call stacks" of the workflow.
     /// </summary>
+    [NotMapped]
     public ICollection<ActivityExecutionContextState> ActivityExecutionContexts { get; set; } = new List<ActivityExecutionContextState>();
     
     /// <summary>

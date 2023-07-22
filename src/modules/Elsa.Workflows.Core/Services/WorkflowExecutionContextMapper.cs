@@ -29,7 +29,7 @@ public class WorkflowExecutionContextMapper : IWorkflowExecutionContextMapper
 
         ExportProperties(state, workflowExecutionContext);
         ExtractCompletionCallbacks(state, workflowExecutionContext);
-        ExtractActivityExecutionContexts(state, workflowExecutionContext);
+        ExtractActiveActivityExecutionContexts(state, workflowExecutionContext);
 
         return state;
     }
@@ -64,8 +64,8 @@ public class WorkflowExecutionContextMapper : IWorkflowExecutionContextMapper
     {
         foreach (var completionCallbackEntry in state.CompletionCallbacks)
         {
-            var ownerActivityExecutionContext = workflowExecutionContext.ActivityExecutionContexts.First(x => x.Id == completionCallbackEntry.OwnerInstanceId);
-            var childNode = workflowExecutionContext.ActivityExecutionContexts.First(x => x.NodeId == completionCallbackEntry.ChildNodeId).ActivityNode;
+            var ownerActivityExecutionContext = workflowExecutionContext.ActiveActivityExecutionContexts.First(x => x.Id == completionCallbackEntry.OwnerInstanceId);
+            var childNode = workflowExecutionContext.ActiveActivityExecutionContexts.First(x => x.NodeId == completionCallbackEntry.ChildNodeId).ActivityNode;
             var callbackName = completionCallbackEntry.MethodName;
             var callbackDelegate = !string.IsNullOrEmpty(callbackName) ? ownerActivityExecutionContext.Activity.GetActivityCompletionCallback(callbackName) : default;
             workflowExecutionContext.AddCompletionCallback(ownerActivityExecutionContext, childNode, callbackDelegate);
@@ -77,7 +77,7 @@ public class WorkflowExecutionContextMapper : IWorkflowExecutionContextMapper
         // Assert all referenced owner contexts exist.
         foreach (var completionCallback in workflowExecutionContext.CompletionCallbacks)
         {
-            var ownerContext = workflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x == completionCallback.Owner);
+            var ownerContext = workflowExecutionContext.ActiveActivityExecutionContexts.FirstOrDefault(x => x == completionCallback.Owner);
 
             if (ownerContext == null)
                 throw new Exception("Lost an owner context");
@@ -87,7 +87,7 @@ public class WorkflowExecutionContextMapper : IWorkflowExecutionContextMapper
         state.CompletionCallbacks = completionCallbacks.ToList();
     }
 
-    private static void ExtractActivityExecutionContexts(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
+    private static void ExtractActiveActivityExecutionContexts(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
     {
         ActivityExecutionContextState CreateActivityExecutionContextState(ActivityExecutionContext activityExecutionContext)
         {
@@ -95,7 +95,7 @@ public class WorkflowExecutionContextMapper : IWorkflowExecutionContextMapper
 
             if (parentId != null)
             {
-                var parentContext = activityExecutionContext.WorkflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Id == parentId);
+                var parentContext = activityExecutionContext.WorkflowExecutionContext.ActiveActivityExecutionContexts.FirstOrDefault(x => x.Id == parentId);
 
                 if (parentContext == null)
                     throw new Exception("We lost a context");
@@ -110,11 +110,14 @@ public class WorkflowExecutionContextMapper : IWorkflowExecutionContextMapper
                 Properties = activityExecutionContext.Properties,
                 ActivityState = activityExecutionContext.ActivityState,
                 Status = activityExecutionContext.Status,
+                StartedAt = activityExecutionContext.StartedAt,
+                CompletedAt = activityExecutionContext.CompletedAt
             };
             return activityExecutionContextState;
         }
 
-        state.ActivityExecutionContexts = workflowExecutionContext.ActivityExecutionContexts.Reverse().Select(CreateActivityExecutionContextState).ToList();
+        // Notice that we only persist the active activity execution contexts. The completed ones are not persisted.
+        state.ActivityExecutionContexts = workflowExecutionContext.ActiveActivityExecutionContexts.Reverse().Select(CreateActivityExecutionContextState).ToList();
     }
 
     private static void ApplyActivityExecutionContexts(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
@@ -128,6 +131,8 @@ public class WorkflowExecutionContextMapper : IWorkflowExecutionContextMapper
             activityExecutionContext.Properties = properties;
             activityExecutionContext.ActivityState = activityExecutionContextState.ActivityState ?? new Dictionary<string, object>();
             activityExecutionContext.Status = activityExecutionContextState.Status;
+            activityExecutionContext.StartedAt = activityExecutionContextState.StartedAt;
+            activityExecutionContext.CompletedAt = activityExecutionContextState.CompletedAt;
 
             return activityExecutionContext;
         }

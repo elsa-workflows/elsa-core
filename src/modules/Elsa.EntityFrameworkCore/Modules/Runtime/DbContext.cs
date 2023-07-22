@@ -29,6 +29,11 @@ public class RuntimeElsaDbContext : ElsaDbContextBase
     /// The workflow execution log records.
     /// </summary>
     public DbSet<WorkflowExecutionLogRecord> WorkflowExecutionLogRecords { get; set; } = default!;
+
+    /// <summary>
+    /// The activity execution records.
+    /// </summary>
+    public DbSet<ActivityExecutionRecord> ActivityExecutionRecords { get; set; } = default!;
     
     /// <summary>
     /// The workflow bookmarks.
@@ -42,6 +47,7 @@ public class RuntimeElsaDbContext : ElsaDbContextBase
         modelBuilder.ApplyConfiguration<WorkflowState>(config);
         modelBuilder.ApplyConfiguration<StoredTrigger>(config);
         modelBuilder.ApplyConfiguration<WorkflowExecutionLogRecord>(config);
+        modelBuilder.ApplyConfiguration<ActivityExecutionRecord>(config);
         modelBuilder.ApplyConfiguration<StoredBookmark>(config);
     }
 }

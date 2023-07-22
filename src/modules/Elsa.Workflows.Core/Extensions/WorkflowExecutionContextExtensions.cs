@@ -21,7 +21,7 @@ public static class WorkflowExecutionContextExtensions
 
         // Remove each context.
         foreach (var context in list) 
-            await workflowExecutionContext.RemoveActivityExecutionContextAsync(context);
+            await workflowExecutionContext.CompleteActivityExecutionContextAsync(context);
     }
 
     /// <summary>
@@ -72,7 +72,7 @@ public static class WorkflowExecutionContextExtensions
     public static void ScheduleBookmark(this WorkflowExecutionContext workflowExecutionContext, Bookmark bookmark)
     {
         // Construct bookmark.
-        var bookmarkedActivityContext = workflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Id == bookmark.ActivityInstanceId);
+        var bookmarkedActivityContext = workflowExecutionContext.ActiveActivityExecutionContexts.FirstOrDefault(x => x.Id == bookmark.ActivityInstanceId);
         
         if(bookmarkedActivityContext == null)
             return;
@@ -110,5 +110,5 @@ public static class WorkflowExecutionContextExtensions
     /// <summary>
     /// Returns true if all activities have completed or canceled, false otherwise.
     /// </summary>
-    public static bool AllActivitiesCompleted(this WorkflowExecutionContext workflowExecutionContext) => workflowExecutionContext.ActivityExecutionContexts.All(x => x.Status != ActivityStatus.Running);
+    public static bool AllActivitiesCompleted(this WorkflowExecutionContext workflowExecutionContext) => workflowExecutionContext.ActiveActivityExecutionContexts.All(x => x.Status != ActivityStatus.Running);
 }

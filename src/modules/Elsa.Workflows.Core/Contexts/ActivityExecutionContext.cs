@@ -27,6 +27,7 @@ public class ActivityExecutionContext : IExecutionContext
         ExpressionExecutionContext expressionExecutionContext,
         IActivity activity,
         ActivityDescriptor activityDescriptor,
+        DateTimeOffset startedAt,
         CancellationToken cancellationToken)
     {
         WorkflowExecutionContext = workflowExecutionContext;
@@ -34,6 +35,7 @@ public class ActivityExecutionContext : IExecutionContext
         ExpressionExecutionContext = expressionExecutionContext;
         Activity = activity;
         ActivityDescriptor = activityDescriptor;
+        StartedAt = startedAt;
         CancellationToken = cancellationToken;
         Id = Guid.NewGuid().ToString();
     }
@@ -42,6 +44,21 @@ public class ActivityExecutionContext : IExecutionContext
     /// The ID of the current activity execution context.
     /// </summary>
     public string Id { get; set; }
+
+    /// <summary>
+    /// The time at which the activity execution context was created.
+    /// </summary>
+    public DateTimeOffset StartedAt { get; set; }
+    
+    /// <summary>
+    /// The time at which the activity execution context was completed.
+    /// </summary>
+    public DateTimeOffset? CompletedAt { get; set; }
+    
+    /// <summary>
+    /// Returns true if the activity execution context has completed.
+    /// </summary>
+    public bool IsCompleted => CompletedAt != null;
 
     /// <summary>
     /// The workflow execution context. 
@@ -326,41 +343,133 @@ public class ActivityExecutionContext : IExecutionContext
     /// <param name="key">The property key.</param>
     public void RemoveProperty(string key) => Properties.Remove(key);
 
+    /// <summary>
+    /// Resolves a required service using the service provider.
+    /// </summary>
+    /// <typeparam name="T">The service type.</typeparam>
+    /// <returns>The resolved service.</returns>
     public T GetRequiredService<T>() where T : notnull => WorkflowExecutionContext.GetRequiredService<T>();
+    
+    /// <summary>
+    /// Resolves a required service using the service provider.
+    /// </summary>
+    /// <param name="serviceType">The service type.</param>
+    /// <returns>The resolved service.</returns>
     public object GetRequiredService(Type serviceType) => WorkflowExecutionContext.GetRequiredService(serviceType);
+    
+    /// <summary>
+    /// Resolves a service using the service provider. If not found, a new instance is created.
+    /// </summary>
+    /// <typeparam name="T">The service type.</typeparam>
+    /// <returns>The resolved service.</returns>
     public T GetOrCreateService<T>() where T : notnull => WorkflowExecutionContext.GetOrCreateService<T>();
+    
+    /// <summary>
+    /// Resolves a service using the service provider. If not found, a new instance is created.
+    /// </summary>
+    /// <param name="serviceType">The service type.</param>
+    /// <returns>The resolved service.</returns>
     public object GetOrCreateService(Type serviceType) => WorkflowExecutionContext.GetOrCreateService(serviceType);
+    
+    /// <summary>
+    /// Resolves a service using the service provider.
+    /// </summary>
+    /// <typeparam name="T">The service type.</typeparam>
+    /// <returns>The resolved service.</returns>
     public T? GetService<T>() where T : notnull => WorkflowExecutionContext.GetService<T>();
+    
+    /// <summary>
+    /// Resolves all services of the specified type using the service provider.
+    /// </summary>
+    /// <typeparam name="T">The service type.</typeparam>
+    /// <returns>The resolved services.</returns>
     public IEnumerable<T> GetServices<T>() where T : notnull => WorkflowExecutionContext.GetServices<T>();
+    
+    /// <summary>
+    /// Resolves a service using the service provider.
+    /// </summary>
+    /// <param name="serviceType">The service type.</param>
+    /// <returns>The resolved service.</returns>
     public object? GetService(Type serviceType) => WorkflowExecutionContext.GetService(serviceType);
+    
+    /// <summary>
+    /// Gets the value of the specified input.
+    /// </summary>
+    /// <param name="input">The input.</param>
+    /// <typeparam name="T">The type of the input.</typeparam>
+    /// <returns>The input value.</returns>
     public T? Get<T>(Input<T>? input) => input == null ? default : Get<T>(input.MemoryBlockReference());
+    
+    /// <summary>
+    /// Gets the value of the specified output.
+    /// </summary>
+    /// <param name="output">The output.</param>
+    /// <typeparam name="T">The type of the output.</typeparam>
+    /// <returns>The output value.</returns>
     public T? Get<T>(Output<T>? output) => output == null ? default : Get<T>(output.MemoryBlockReference());
+    
+    /// <summary>
+    /// Gets the value of the specified output.
+    /// </summary>
+    /// <param name="output">The output.</param>
+    /// <returns>The output value.</returns>
     public object? Get(Output? output) => output == null ? default : Get(output.MemoryBlockReference());
 
+    /// <summary>
+    /// Gets the value of the specified memory block.
+    /// </summary>
+    /// <param name="blockReference">The memory block reference.</param>
+    /// <returns>The memory block value.</returns>
+    /// <exception cref="InvalidOperationException">The memory block does not exist.</exception>
     public object? Get(MemoryBlockReference blockReference)
     {
         var memoryBlock = GetMemoryBlock(blockReference);
 
-        if (memoryBlock == null)
-        {
-            if (blockReference is Literal literal)
-                return literal.Value;
+        if (memoryBlock != null) 
+            return memoryBlock.Value;
+        
+        if (blockReference is Literal literal)
+            return literal.Value;
 
-            throw new InvalidOperationException($"The memory block '{blockReference}' does not exist.");
-        }
+        throw new InvalidOperationException($"The memory block '{blockReference}' does not exist.");
 
-        return memoryBlock.Value;
     }
 
+    /// <summary>
+    /// Gets the value of the specified memory block.
+    /// </summary>
+    /// <param name="blockReference">The memory block reference.</param>
+    /// <typeparam name="T">The type of the memory block.</typeparam>
+    /// <returns>The memory block value.</returns>
     public T? Get<T>(MemoryBlockReference blockReference)
     {
         var value = Get(blockReference);
         return value != default ? value.ConvertTo<T>() : default;
     }
 
+    /// <summary>
+    /// Sets a value at the specified memory block.
+    /// </summary>
+    /// <param name="blockReference">The memory block reference.</param>
+    /// <param name="value">The value to set.</param>
+    /// <param name="configure">An optional callback that can be used to configure the memory block.</param>
     public void Set(MemoryBlockReference blockReference, object? value, Action<MemoryBlock>? configure = default) => ExpressionExecutionContext.Set(blockReference, value, configure);
+    
+    /// <summary>
+    /// Sets a value at the specified output.
+    /// </summary>
+    /// <param name="output">The output.</param>
+    /// <param name="value">The value to set.</param>
+    /// <param name="outputName">The name of the output.</param>
+    /// <typeparam name="T">The type of the output.</typeparam>
     public void Set<T>(Output<T>? output, T? value, [CallerArgumentExpression("output")] string? outputName = default) => Set((Output?)output, value, outputName);
 
+    /// <summary>
+    /// Sets a value at the specified output.
+    /// </summary>
+    /// <param name="output">The output.</param>
+    /// <param name="value">The value to set.</param>
+    /// <param name="outputName">The name of the output.</param>
     public void Set(Output? output, object? value, [CallerArgumentExpression("output")] string? outputName = default)
     {
         // Store the value in the expression execution memory block.

@@ -1,6 +1,5 @@
 using Elsa.Common.Entities;
 using Elsa.Workflows.Api.Models;
-using Elsa.Workflows.Management.Models;
 using FastEndpoints;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.List;

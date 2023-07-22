@@ -48,4 +48,14 @@ public class ActivityExecutionContextState
     /// The status of the activity.
     /// </summary>
     public ActivityStatus Status { get; set; }
+
+    /// <summary>
+    /// The time at which the activity execution began.
+    /// </summary>
+    public DateTimeOffset StartedAt { get; set; }
+    
+    /// <summary>
+    /// The time at which the activity execution completed.
+    /// </summary>
+    public DateTimeOffset? CompletedAt { get; set; }
 }

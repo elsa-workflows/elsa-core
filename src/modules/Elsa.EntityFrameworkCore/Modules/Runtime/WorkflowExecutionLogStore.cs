@@ -10,14 +10,16 @@ using Open.Linq.AsyncExtensions;
 
 namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 
-/// <inheritdoc />
+/// <summary>
+/// An EF Core implementation of <see cref="IWorkflowExecutionLogStore"/>.
+/// </summary>
 public class EFCoreWorkflowExecutionLogStore : IWorkflowExecutionLogStore
 {
     private readonly EntityStore<RuntimeElsaDbContext, WorkflowExecutionLogRecord> _store;
     private readonly IPayloadSerializer _serializer;
 
     /// <summary>
-    /// Constructor
+    /// Initializes a new instance of the <see cref="EFCoreWorkflowExecutionLogStore"/> class.
     /// </summary>
     public EFCoreWorkflowExecutionLogStore(EntityStore<RuntimeElsaDbContext, WorkflowExecutionLogRecord> store, IPayloadSerializer serializer)
     {

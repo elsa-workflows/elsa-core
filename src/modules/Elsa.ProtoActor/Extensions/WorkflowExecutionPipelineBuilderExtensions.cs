@@ -17,6 +17,7 @@ public static class WorkflowExecutionPipelineBuilderExtensions
             .Reset()
             .UsePersistentVariables()
             .UseBookmarkPersistence()
+            .UseActivityExecutionLogPersistence()
             .UseWorkflowExecutionLogPersistence()
             .UseDefaultActivityScheduler();
 }

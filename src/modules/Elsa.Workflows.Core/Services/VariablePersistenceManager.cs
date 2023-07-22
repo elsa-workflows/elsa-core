@@ -23,7 +23,7 @@ public class VariablePersistenceManager : IVariablePersistenceManager
     {
         var cancellationToken = workflowExecutionContext.CancellationToken;
         
-        var contexts = workflowExecutionContext.ActivityExecutionContexts
+        var contexts = workflowExecutionContext.ActiveActivityExecutionContexts
             .Cast<IExecutionContext>()
             .Concat(new[]{workflowExecutionContext})
             .ToList();
@@ -62,7 +62,7 @@ public class VariablePersistenceManager : IVariablePersistenceManager
     {
         var cancellationToken = workflowExecutionContext.CancellationToken;
         
-        var contexts = workflowExecutionContext.ActivityExecutionContexts
+        var contexts = workflowExecutionContext.ActiveActivityExecutionContexts
             .Cast<IExecutionContext>()
             .Concat(new[]{workflowExecutionContext})
             .ToList();

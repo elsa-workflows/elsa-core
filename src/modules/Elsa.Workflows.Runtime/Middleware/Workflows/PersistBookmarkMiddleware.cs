@@ -48,7 +48,7 @@ public class PersistBookmarkMiddleware : WorkflowExecutionMiddleware
         await _notificationSender.SendAsync(new WorkflowBookmarksIndexed(context, new IndexedWorkflowBookmarks(context.Id, diff.Added, diff.Removed, diff.Unchanged)), cancellationToken);
 
         // Notify all interested activities that the bookmarks have been persisted.
-        var activityExecutionContexts = context.ActivityExecutionContexts.Where(x => x.Activity is IBookmarksPersistedHandler && x.Bookmarks.Any()).ToList();
+        var activityExecutionContexts = context.ActiveActivityExecutionContexts.Where(x => x.Activity is IBookmarksPersistedHandler && x.Bookmarks.Any()).ToList();
 
         foreach (var activityExecutionContext in activityExecutionContexts) 
             await ((IBookmarksPersistedHandler)activityExecutionContext.Activity).BookmarksPersistedAsync(activityExecutionContext);

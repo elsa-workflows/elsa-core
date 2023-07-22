@@ -5,13 +5,14 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
+namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
 {
     [DbContext(typeof(RuntimeElsaDbContext))]
-    [Migration("20230721120324_Initial")]
+    [Migration("20230722190431_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -21,46 +22,51 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
             modelBuilder
                 .HasDefaultSchema("Elsa")
                 .HasAnnotation("ProductVersion", "7.0.3")
-                .HasAnnotation("Relational:MaxIdentifierLength", 64);
+                .HasAnnotation("Relational:MaxIdentifierLength", 63);
+
+            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("Elsa.Workflows.Core.State.WorkflowState", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("text");
 
                     b.Property<string>("CorrelationId")
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("text");
 
                     b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Data")
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
                     b.Property<string>("DefinitionId")
                         .IsRequired()
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("text");
 
                     b.Property<int>("DefinitionVersion")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<string>("DefinitionVersionId")
                         .IsRequired()
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("text");
 
                     b.Property<long>("ExecutionLogSequence")
                         .HasColumnType("bigint");
 
+                    b.Property<DateTimeOffset?>("FinishedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("text");
 
                     b.Property<string>("SubStatus")
                         .IsRequired()
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("text");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
@@ -91,28 +97,70 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                     b.ToTable("WorkflowStates", "Elsa");
                 });
 
-            modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.StoredBookmark", b =>
+            modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.ActivityExecutionRecord", b =>
                 {
-                    b.Property<string>("BookmarkId")
-                        .HasColumnType("varchar(255)");
+                    b.Property<string>("Id")
+                        .HasColumnType("text");
 
-                    b.Property<string>("ActivityTypeName")
+                    b.Property<string>("ActivityId")
                         .IsRequired()
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("text");
 
-                    b.Property<string>("CorrelationId")
-                        .HasColumnType("longtext");
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Data")
-                        .HasColumnType("longtext");
+                    b.Property<bool>("HasBookmarks")
+                        .HasColumnType("boolean");
 
-                    b.Property<string>("Hash")
-                        .IsRequired()
-                        .HasColumnType("varchar(255)");
+                    b.Property<DateTimeOffset>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActivityId")
+                        .HasDatabaseName("IX_ActivityExecutionRecord_ActivityId");
+
+                    b.HasIndex("CompletedAt")
+                        .HasDatabaseName("IX_ActivityExecutionRecord_CompletedAt");
+
+                    b.HasIndex("HasBookmarks")
+                        .HasDatabaseName("IX_ActivityExecutionRecord_HasBookmarks");
+
+                    b.HasIndex("StartedAt")
+                        .HasDatabaseName("IX_ActivityExecutionRecord_StartedAt");
+
+                    b.HasIndex("WorkflowInstanceId")
+                        .HasDatabaseName("IX_ActivityExecutionRecord_WorkflowInstanceId");
+
+                    b.ToTable("ActivityExecutionRecords", "Elsa");
+                });
+
+            modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.StoredBookmark", b =>
+                {
+                    b.Property<string>("BookmarkId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ActivityTypeName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("CorrelationId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Data")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Hash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("WorkflowInstanceId")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.HasKey("BookmarkId");
 
@@ -132,29 +180,29 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.StoredTrigger", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("text");
 
                     b.Property<string>("ActivityId")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
                     b.Property<string>("Data")
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
                     b.Property<string>("Hash")
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("text");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("text");
 
                     b.Property<string>("WorkflowDefinitionId")
                         .IsRequired()
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("text");
 
                     b.Property<string>("WorkflowDefinitionVersionId")
                         .IsRequired()
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -176,68 +224,68 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.WorkflowExecutionLogRecord", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("text");
 
                     b.Property<string>("ActivityData")
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
                     b.Property<string>("ActivityId")
                         .IsRequired()
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("text");
 
                     b.Property<string>("ActivityInstanceId")
                         .IsRequired()
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("text");
 
                     b.Property<string>("ActivityName")
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("text");
 
                     b.Property<string>("ActivityType")
                         .IsRequired()
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("text");
 
                     b.Property<int>("ActivityTypeVersion")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<string>("EventName")
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("text");
 
                     b.Property<string>("Message")
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
                     b.Property<string>("NodeId")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
                     b.Property<string>("ParentActivityInstanceId")
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("text");
 
                     b.Property<string>("PayloadData")
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
                     b.Property<long>("Sequence")
                         .HasColumnType("bigint");
 
                     b.Property<string>("Source")
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
                     b.Property<DateTimeOffset>("Timestamp")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("WorkflowDefinitionId")
                         .IsRequired()
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("text");
 
                     b.Property<string>("WorkflowDefinitionVersionId")
                         .IsRequired()
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("text");
 
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("text");
 
                     b.Property<int>("WorkflowVersion")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 

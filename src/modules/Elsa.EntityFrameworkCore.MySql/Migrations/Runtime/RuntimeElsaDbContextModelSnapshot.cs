@@ -48,6 +48,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                     b.Property<long>("ExecutionLogSequence")
                         .HasColumnType("bigint");
 
+                    b.Property<DateTimeOffset?>("FinishedAt")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("varchar(255)");
@@ -86,6 +89,48 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                         .HasDatabaseName("IX_WorkflowState_Status_SubStatus_DefinitionId_DefinitionVersion");
 
                     b.ToTable("WorkflowStates", "Elsa");
+                });
+
+            modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.ActivityExecutionRecord", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("ActivityId")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("HasBookmarks")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTimeOffset>("StartedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("WorkflowInstanceId")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActivityId")
+                        .HasDatabaseName("IX_ActivityExecutionRecord_ActivityId");
+
+                    b.HasIndex("CompletedAt")
+                        .HasDatabaseName("IX_ActivityExecutionRecord_CompletedAt");
+
+                    b.HasIndex("HasBookmarks")
+                        .HasDatabaseName("IX_ActivityExecutionRecord_HasBookmarks");
+
+                    b.HasIndex("StartedAt")
+                        .HasDatabaseName("IX_ActivityExecutionRecord_StartedAt");
+
+                    b.HasIndex("WorkflowInstanceId")
+                        .HasDatabaseName("IX_ActivityExecutionRecord_WorkflowInstanceId");
+
+                    b.ToTable("ActivityExecutionRecords", "Elsa");
                 });
 
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.StoredBookmark", b =>

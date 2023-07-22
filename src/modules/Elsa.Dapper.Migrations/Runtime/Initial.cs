@@ -89,6 +89,27 @@ public class Initial : Migration
             .WithColumn("ExecutionLogSequence").AsInt64().NotNullable()
             .WithColumn("Props").AsString().NotNullable()
             ;
+        
+        IfDatabase("SqlServer", "Oracle", "MySql", "Postgres")
+            .Create
+            .Table("ActivityExecutionRecords")
+            .WithColumn("Id").AsString().PrimaryKey()
+            .WithColumn("WorkflowInstanceId").AsString().NotNullable()
+            .WithColumn("ActivityId").AsString().NotNullable()
+            .WithColumn("StartedAt").AsDateTimeOffset().NotNullable()
+            .WithColumn("CompletedAt").AsDateTimeOffset().Nullable()
+            .WithColumn("HasBookmarks").AsBoolean().NotNullable()
+            ;
+
+        IfDatabase("Sqlite")
+            .Create
+            .Table("ActivityExecutionRecords")
+            .WithColumn("Id").AsString().PrimaryKey()
+            .WithColumn("WorkflowInstanceId").AsString().NotNullable()
+            .WithColumn("ActivityId").AsString().NotNullable()
+            .WithColumn("StartedAt").AsDateTime2().NotNullable()
+            .WithColumn("CompletedAt").AsDateTime2().Nullable()
+            .WithColumn("HasBookmarks").AsBoolean().NotNullable();
     }
 
     /// <inheritdoc />
@@ -98,5 +119,6 @@ public class Initial : Migration
         Delete.Table("Bookmarks");
         Delete.Table("WorkflowExecutionLogRecords");
         Delete.Table("WorkflowStates");
+        Delete.Table("ActivityExecutionRecords");
     }
 }

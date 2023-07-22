@@ -72,7 +72,7 @@ public class FlowJoin : Activity, IJoinNode
         var connections = flowchart.Connections;
         var workflowExecutionContext = context.WorkflowExecutionContext;
         var inboundActivities = connections.LeftAncestorActivities(this).Select(x => workflowExecutionContext.FindNodeByActivity(x)).Select(x => x.Activity).ToList();
-        var inboundActivityExecutionContexts = workflowExecutionContext.ActivityExecutionContexts.Where(x => inboundActivities.Contains(x.Activity)).ToList();
+        var inboundActivityExecutionContexts = workflowExecutionContext.ActiveActivityExecutionContexts.Where(x => inboundActivities.Contains(x.Activity)).ToList();
 
         // Cancel each inbound activity.
         foreach (var activityExecutionContext in inboundActivityExecutionContexts) 

@@ -14,6 +14,7 @@ public class Configurations :
     IEntityTypeConfiguration<WorkflowState>,
     IEntityTypeConfiguration<StoredTrigger>,
     IEntityTypeConfiguration<WorkflowExecutionLogRecord>,
+    IEntityTypeConfiguration<ActivityExecutionRecord>,
     IEntityTypeConfiguration<StoredBookmark>
 {
     /// <inheritdoc />
@@ -73,6 +74,16 @@ public class Configurations :
         builder.HasIndex(x => x.WorkflowDefinitionVersionId).HasDatabaseName($"IX_{nameof(WorkflowExecutionLogRecord)}_{nameof(WorkflowExecutionLogRecord.WorkflowDefinitionVersionId)}");
         builder.HasIndex(x => x.WorkflowInstanceId).HasDatabaseName($"IX_{nameof(WorkflowExecutionLogRecord)}_{nameof(WorkflowExecutionLogRecord.WorkflowInstanceId)}");
         builder.HasIndex(x => x.WorkflowVersion).HasDatabaseName($"IX_{nameof(WorkflowExecutionLogRecord)}_{nameof(WorkflowExecutionLogRecord.WorkflowVersion)}");
+    }
+
+    /// <inheritdoc />
+    public void Configure(EntityTypeBuilder<ActivityExecutionRecord> builder)
+    {
+        builder.HasIndex(x => x.WorkflowInstanceId).HasDatabaseName($"IX_{nameof(ActivityExecutionRecord)}_{nameof(ActivityExecutionRecord.WorkflowInstanceId)}");
+        builder.HasIndex(x => x.ActivityId).HasDatabaseName($"IX_{nameof(ActivityExecutionRecord)}_{nameof(ActivityExecutionRecord.ActivityId)}");
+        builder.HasIndex(x => x.StartedAt).HasDatabaseName($"IX_{nameof(ActivityExecutionRecord)}_{nameof(ActivityExecutionRecord.StartedAt)}");
+        builder.HasIndex(x => x.HasBookmarks).HasDatabaseName($"IX_{nameof(ActivityExecutionRecord)}_{nameof(ActivityExecutionRecord.HasBookmarks)}");
+        builder.HasIndex(x => x.CompletedAt).HasDatabaseName($"IX_{nameof(ActivityExecutionRecord)}_{nameof(ActivityExecutionRecord.CompletedAt)}");
     }
 
     /// <inheritdoc />

@@ -18,6 +18,27 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
+                name: "ActivityExecutionRecords",
+                schema: "Elsa",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    WorkflowInstanceId = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ActivityId = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    StartedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
+                    HasBookmarks = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    CompletedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ActivityExecutionRecords", x => x.Id);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
                 name: "Bookmarks",
                 schema: "Elsa",
                 columns: table => new
@@ -108,6 +129,7 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                     ExecutionLogSequence = table.Column<long>(type: "bigint", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
+                    FinishedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: true),
                     Data = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4")
                 },
@@ -142,6 +164,36 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                     table.PrimaryKey("PK_WorkflowTriggers", x => x.Id);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ActivityExecutionRecord_ActivityId",
+                schema: "Elsa",
+                table: "ActivityExecutionRecords",
+                column: "ActivityId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ActivityExecutionRecord_CompletedAt",
+                schema: "Elsa",
+                table: "ActivityExecutionRecords",
+                column: "CompletedAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ActivityExecutionRecord_HasBookmarks",
+                schema: "Elsa",
+                table: "ActivityExecutionRecords",
+                column: "HasBookmarks");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ActivityExecutionRecord_StartedAt",
+                schema: "Elsa",
+                table: "ActivityExecutionRecords",
+                column: "StartedAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ActivityExecutionRecord_WorkflowInstanceId",
+                schema: "Elsa",
+                table: "ActivityExecutionRecords",
+                column: "WorkflowInstanceId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_StoredBookmark_ActivityTypeName",
@@ -339,6 +391,10 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "ActivityExecutionRecords",
+                schema: "Elsa");
+
             migrationBuilder.DropTable(
                 name: "Bookmarks",
                 schema: "Elsa");

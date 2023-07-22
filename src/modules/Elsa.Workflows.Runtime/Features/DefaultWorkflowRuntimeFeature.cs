@@ -3,7 +3,6 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Workflows.Core.State;
-using Elsa.Workflows.Management.Notifications;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Handlers;
 using Elsa.Workflows.Runtime.Services;

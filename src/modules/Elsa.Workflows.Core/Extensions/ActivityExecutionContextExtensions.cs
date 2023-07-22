@@ -290,7 +290,7 @@ public static class ActivityExecutionContextExtensions
     /// </summary>
     /// <returns></returns>
     public static IEnumerable<ActivityExecutionContext> GetChildren(this ActivityExecutionContext context) =>
-        context.WorkflowExecutionContext.ActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context);
+        context.WorkflowExecutionContext.ActiveActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context);
 
     /// <summary>
     /// Removes all child <see cref="ActivityExecutionContext"/> objects.
@@ -337,7 +337,7 @@ public static class ActivityExecutionContextExtensions
         await context.SendSignalAsync(new ActivityCompleted(result));
 
         // Remove the context.
-        await context.WorkflowExecutionContext.RemoveActivityExecutionContextAsync(context);
+        await context.WorkflowExecutionContext.CompleteActivityExecutionContextAsync(context);
     }
 
     /// <summary>

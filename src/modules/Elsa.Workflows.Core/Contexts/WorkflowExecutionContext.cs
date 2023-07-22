@@ -32,6 +32,7 @@ public class WorkflowExecutionContext : IExecutionContext
     internal static ValueTask Complete(ActivityExecutionContext context) => context.CompleteActivityAsync();
     private readonly IServiceProvider _serviceProvider;
     private readonly IHasher _hasher;
+    private readonly ISystemClock _systemClock;
     private readonly IActivityRegistry _activityRegistry;
     private readonly IList<ActivityNode> _nodes;
     private readonly IList<ActivityCompletionCallbackEntry> _completionCallbackEntries = new List<ActivityCompletionCallbackEntry>();
@@ -43,6 +44,7 @@ public class WorkflowExecutionContext : IExecutionContext
     public WorkflowExecutionContext(
         IServiceProvider serviceProvider,
         IHasher hasher,
+        ISystemClock systemClock,
         string id,
         string? correlationId,
         Workflow workflow,
@@ -59,6 +61,7 @@ public class WorkflowExecutionContext : IExecutionContext
     {
         _serviceProvider = serviceProvider;
         _hasher = hasher;
+        _systemClock = systemClock;
         _activityRegistry = activityRegistry;
         Workflow = workflow;
         Graph = graph;
@@ -198,6 +201,11 @@ public class WorkflowExecutionContext : IExecutionContext
     /// A list of <see cref="ActivityCompletionCallbackEntry"/> callbacks that are invoked when the associated child activity completes.
     /// </summary>
     public ICollection<ActivityCompletionCallbackEntry> CompletionCallbacks => new ReadOnlyCollection<ActivityCompletionCallbackEntry>(_completionCallbackEntries);
+
+    /// <summary>
+    /// A list of <see cref="ActivityExecutionContext"/>s that are currently active.
+    /// </summary>
+    public IReadOnlyCollection<ActivityExecutionContext> ActiveActivityExecutionContexts => ActivityExecutionContexts.Where(x => !x.IsCompleted).ToList();
 
     /// <summary>
     /// A list of <see cref="ActivityExecutionContext"/>s that are currently active.
@@ -371,8 +379,9 @@ public class WorkflowExecutionContext : IExecutionContext
         var parentExpressionExecutionContext = parentContext?.ExpressionExecutionContext ?? ExpressionExecutionContext;
         var properties = ExpressionExecutionContextExtensions.CreateActivityExecutionContextPropertiesFrom(this, Input);
         var memory = new MemoryRegister();
+        var now = _systemClock.UtcNow;
         var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, memory, parentExpressionExecutionContext, properties, CancellationToken);
-        var activityExecutionContext = new ActivityExecutionContext(this, parentContext, expressionExecutionContext, activity, activityDescriptor, CancellationToken);
+        var activityExecutionContext = new ActivityExecutionContext(this, parentContext, expressionExecutionContext, activity, activityDescriptor, now, CancellationToken);
         expressionExecutionContext.TransientProperties[ExpressionExecutionContextExtensions.ActivityExecutionContextKey] = activityExecutionContext;
         return activityExecutionContext;
     }
@@ -392,24 +401,25 @@ public class WorkflowExecutionContext : IExecutionContext
     /// </summary>
     public async Task CancelActivityAsync(IActivity activity)
     {
-        var activityExecutionContext = ActivityExecutionContexts.FirstOrDefault(x => x.Activity == activity);
+        var activityExecutionContext = ActiveActivityExecutionContexts.FirstOrDefault(x => x.Activity == activity);
 
         if (activityExecutionContext != null)
             await activityExecutionContext.CancelActivityAsync();
     }
 
     /// <summary>
-    /// Removes the specified <see cref="ActivityExecutionContext"/>.
+    /// Marks the specified activity execution context as completed.
     /// </summary>
-    internal async Task RemoveActivityExecutionContextAsync(ActivityExecutionContext context)
+    internal async Task CompleteActivityExecutionContextAsync(ActivityExecutionContext context)
     {
-        // Remove all contexts referencing this one as a parent.
-        var childContexts = _activityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context).ToList();
+        // Select all child contexts.
+        var childContexts = ActiveActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context).ToList();
 
-        foreach (var childContext in childContexts) await RemoveActivityExecutionContextAsync(childContext);
+        foreach (var childContext in childContexts) await CompleteActivityExecutionContextAsync(childContext);
 
-        // Remove the context.
-        _activityExecutionContexts.Remove(context);
+        // // Remove the context.
+        //_activityExecutionContexts.Remove(context);
+        context.CompletedAt = _systemClock.UtcNow;
 
         // Remove all associated completion callbacks.
         context.ClearCompletionCallbacks();

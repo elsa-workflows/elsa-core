@@ -72,6 +72,7 @@ public class DefaultWorkflowExecutionContextFactory : IWorkflowExecutionContextF
         var workflowExecutionContext = new WorkflowExecutionContext(
             serviceProvider,
             _hasher,
+            _systemClock,
             instanceId,
             correlationId,
             workflow,

@@ -1,7 +1,6 @@
 using Elsa.EntityFrameworkCore.Common;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
-using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Features;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 
 /// <summary>
-/// A feature that registers the <see cref="EFCoreWorkflowExecutionLogStore"/> as the default <see cref="IWorkflowExecutionLogStore"/>.
+/// A feature that registers the <see cref="EFCoreWorkflowExecutionLogStore"/> and the <see cref="EFCoreActivityExecutionLogStore"/>.
 /// </summary>
 [DependsOn(typeof(WorkflowRuntimeFeature))]
 public class EFCoreExecutionLogPersistenceFeature : PersistenceFeatureBase<RuntimeElsaDbContext>
@@ -25,6 +24,7 @@ public class EFCoreExecutionLogPersistenceFeature : PersistenceFeatureBase<Runti
         Module.Configure<WorkflowRuntimeFeature>(feature =>
         {
             feature.WorkflowExecutionLogStore = sp => sp.GetRequiredService<EFCoreWorkflowExecutionLogStore>();
+            feature.ActivityExecutionLogStore = sp => sp.GetRequiredService<EFCoreActivityExecutionLogStore>();
         });
     }
 
@@ -34,5 +34,6 @@ public class EFCoreExecutionLogPersistenceFeature : PersistenceFeatureBase<Runti
         base.Apply();
         
         AddEntityStore<WorkflowExecutionLogRecord, EFCoreWorkflowExecutionLogStore>();
+        AddEntityStore<ActivityExecutionRecord, EFCoreActivityExecutionLogStore>();
     }
 }

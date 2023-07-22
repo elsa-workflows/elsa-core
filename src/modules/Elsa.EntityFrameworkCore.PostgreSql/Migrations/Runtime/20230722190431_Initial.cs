@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
+namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
 {
     /// <inheritdoc />
     public partial class Initial : Migration
@@ -15,16 +15,33 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                 name: "Elsa");
 
             migrationBuilder.CreateTable(
+                name: "ActivityExecutionRecords",
+                schema: "Elsa",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "text", nullable: false),
+                    WorkflowInstanceId = table.Column<string>(type: "text", nullable: false),
+                    ActivityId = table.Column<string>(type: "text", nullable: false),
+                    StartedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    HasBookmarks = table.Column<bool>(type: "boolean", nullable: false),
+                    CompletedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ActivityExecutionRecords", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Bookmarks",
                 schema: "Elsa",
                 columns: table => new
                 {
-                    BookmarkId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    ActivityTypeName = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Hash = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    WorkflowInstanceId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    CorrelationId = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Data = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    BookmarkId = table.Column<string>(type: "text", nullable: false),
+                    ActivityTypeName = table.Column<string>(type: "text", nullable: false),
+                    Hash = table.Column<string>(type: "text", nullable: false),
+                    WorkflowInstanceId = table.Column<string>(type: "text", nullable: false),
+                    CorrelationId = table.Column<string>(type: "text", nullable: true),
+                    Data = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -36,25 +53,25 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                 schema: "Elsa",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    WorkflowDefinitionId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    WorkflowDefinitionVersionId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    WorkflowInstanceId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    WorkflowVersion = table.Column<int>(type: "int", nullable: false),
-                    ActivityInstanceId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    ParentActivityInstanceId = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    ActivityId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    ActivityType = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    ActivityTypeVersion = table.Column<int>(type: "int", nullable: false),
-                    ActivityName = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    NodeId = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Timestamp = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    Id = table.Column<string>(type: "text", nullable: false),
+                    WorkflowDefinitionId = table.Column<string>(type: "text", nullable: false),
+                    WorkflowDefinitionVersionId = table.Column<string>(type: "text", nullable: false),
+                    WorkflowInstanceId = table.Column<string>(type: "text", nullable: false),
+                    WorkflowVersion = table.Column<int>(type: "integer", nullable: false),
+                    ActivityInstanceId = table.Column<string>(type: "text", nullable: false),
+                    ParentActivityInstanceId = table.Column<string>(type: "text", nullable: true),
+                    ActivityId = table.Column<string>(type: "text", nullable: false),
+                    ActivityType = table.Column<string>(type: "text", nullable: false),
+                    ActivityTypeVersion = table.Column<int>(type: "integer", nullable: false),
+                    ActivityName = table.Column<string>(type: "text", nullable: true),
+                    NodeId = table.Column<string>(type: "text", nullable: false),
+                    Timestamp = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     Sequence = table.Column<long>(type: "bigint", nullable: false),
-                    EventName = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    Message = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Source = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    ActivityData = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    PayloadData = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    EventName = table.Column<string>(type: "text", nullable: true),
+                    Message = table.Column<string>(type: "text", nullable: true),
+                    Source = table.Column<string>(type: "text", nullable: true),
+                    ActivityData = table.Column<string>(type: "text", nullable: true),
+                    PayloadData = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -66,17 +83,18 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                 schema: "Elsa",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    DefinitionId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    DefinitionVersionId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    DefinitionVersion = table.Column<int>(type: "int", nullable: false),
-                    CorrelationId = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    Status = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    SubStatus = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Id = table.Column<string>(type: "text", nullable: false),
+                    DefinitionId = table.Column<string>(type: "text", nullable: false),
+                    DefinitionVersionId = table.Column<string>(type: "text", nullable: false),
+                    DefinitionVersion = table.Column<int>(type: "integer", nullable: false),
+                    CorrelationId = table.Column<string>(type: "text", nullable: true),
+                    Status = table.Column<string>(type: "text", nullable: false),
+                    SubStatus = table.Column<string>(type: "text", nullable: false),
                     ExecutionLogSequence = table.Column<long>(type: "bigint", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    Data = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    FinishedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    Data = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -88,18 +106,48 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                 schema: "Elsa",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    WorkflowDefinitionId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    WorkflowDefinitionVersionId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    ActivityId = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Hash = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    Data = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Id = table.Column<string>(type: "text", nullable: false),
+                    WorkflowDefinitionId = table.Column<string>(type: "text", nullable: false),
+                    WorkflowDefinitionVersionId = table.Column<string>(type: "text", nullable: false),
+                    Name = table.Column<string>(type: "text", nullable: false),
+                    ActivityId = table.Column<string>(type: "text", nullable: false),
+                    Hash = table.Column<string>(type: "text", nullable: true),
+                    Data = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_WorkflowTriggers", x => x.Id);
                 });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ActivityExecutionRecord_ActivityId",
+                schema: "Elsa",
+                table: "ActivityExecutionRecords",
+                column: "ActivityId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ActivityExecutionRecord_CompletedAt",
+                schema: "Elsa",
+                table: "ActivityExecutionRecords",
+                column: "CompletedAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ActivityExecutionRecord_HasBookmarks",
+                schema: "Elsa",
+                table: "ActivityExecutionRecords",
+                column: "HasBookmarks");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ActivityExecutionRecord_StartedAt",
+                schema: "Elsa",
+                table: "ActivityExecutionRecords",
+                column: "StartedAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ActivityExecutionRecord_WorkflowInstanceId",
+                schema: "Elsa",
+                table: "ActivityExecutionRecords",
+                column: "WorkflowInstanceId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_StoredBookmark_ActivityTypeName",
@@ -297,6 +345,10 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "ActivityExecutionRecords",
+                schema: "Elsa");
+
             migrationBuilder.DropTable(
                 name: "Bookmarks",
                 schema: "Elsa");

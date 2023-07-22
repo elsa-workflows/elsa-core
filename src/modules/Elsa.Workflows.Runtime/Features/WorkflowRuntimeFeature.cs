@@ -5,18 +5,15 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Notifications;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Handlers;
-using Elsa.Workflows.Management.Notifications;
 using Elsa.Workflows.Runtime.ActivationValidators;
 using Elsa.Workflows.Runtime.Commands;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Handlers;
 using Elsa.Workflows.Runtime.HostedServices;
-using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Providers;
 using Elsa.Workflows.Runtime.Services;
@@ -65,7 +62,12 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// <summary>
     /// A factory that instantiates an <see cref="IWorkflowExecutionLogStore"/>.
     /// </summary>
-    public Func<IServiceProvider, IWorkflowExecutionLogStore> WorkflowExecutionLogStore { get; set; } = sp => sp.GetRequiredService<MemoryWorkflowExecutionLogStore>();
+    public Func<IServiceProvider, IWorkflowExecutionLogStore> WorkflowExecutionLogStore { get; set; } = sp => sp.GetRequiredService<NoopWorkflowExecutionLogStore>();
+    
+    /// <summary>
+    /// A factory that instantiates an <see cref="IActivityExecutionLogStore"/>.
+    /// </summary>
+    public Func<IServiceProvider, IActivityExecutionLogStore> ActivityExecutionLogStore { get; set; } = sp => sp.GetRequiredService<NoopActivityExecutionLogStore>();
 
     /// <summary>
     /// A factory that instantiates an <see cref="IDistributedLockProvider"/>.
@@ -147,6 +149,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddSingleton(BookmarkStore)
             .AddSingleton(TriggerStore)
             .AddSingleton(WorkflowExecutionLogStore)
+            .AddSingleton(ActivityExecutionLogStore)
             .AddSingleton(RunTaskDispatcher)
             .AddSingleton(BackgroundActivityInvoker)
             .AddSingleton<IBookmarkManager, DefaultBookmarkManager>()
@@ -161,11 +164,16 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddSingleton<Func<IEnumerable<IWorkflowProvider>>>(sp => sp.GetServices<IWorkflowProvider>)
             .AddSingleton<Func<IEnumerable<IWorkflowMaterializer>>>(sp => sp.GetServices<IWorkflowMaterializer>)
 
+            // Noop stores.
+            .AddSingleton<NoopWorkflowExecutionLogStore>()
+            .AddSingleton<NoopActivityExecutionLogStore>()
+            
             // Memory stores.
             .AddMemoryStore<WorkflowState, MemoryWorkflowStateStore>()
             .AddMemoryStore<StoredBookmark, MemoryBookmarkStore>()
             .AddMemoryStore<StoredTrigger, MemoryTriggerStore>()
             .AddMemoryStore<WorkflowExecutionLogRecord, MemoryWorkflowExecutionLogStore>()
+            .AddMemoryStore<ActivityExecutionRecord, MemoryActivityExecutionLogStore>()
 
             // Distributed locking.
             .AddSingleton(DistributedLockProvider)
