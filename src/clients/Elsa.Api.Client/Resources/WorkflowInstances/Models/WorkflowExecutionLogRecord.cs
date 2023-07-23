@@ -18,7 +18,7 @@ namespace Elsa.Api.Client.Resources.WorkflowInstances.Models;
 /// <param name="Source">The source of the execution log record.</param>
 /// <param name="ActivityState">The state of the activity associated with the execution log record.</param>
 /// <param name="Payload">The payload associated with the execution log record.</param>
-public record ExecutionLogRecord(
+public record WorkflowExecutionLogRecord(
     string Id,
     string ActivityInstanceId,
     string? ParentActivityInstanceId,
