@@ -122,6 +122,28 @@ public static class ParameterizedQueryBuilderExtensions
 
         return query;
     }
+    
+    /// <summary>
+    /// Appends an IS NULL clause to the query.
+    /// </summary>
+    /// <param name="query">The query.</param>
+    /// <param name="field">The field.</param>
+    public static ParameterizedQuery IsNull(this ParameterizedQuery query, string field)
+    {
+        query.Sql.AppendLine(query.Dialect.IsNull(field));
+        return query;
+    }
+    
+    /// <summary>
+    /// Appends an IS NOT NULL clause to the query.
+    /// </summary>
+    /// <param name="query">The query.</param>
+    /// <param name="field">The field.</param>
+    public static ParameterizedQuery IsNotNull(this ParameterizedQuery query, string field)
+    {
+        query.Sql.AppendLine(query.Dialect.IsNotNull(field));
+        return query;
+    }
 
     /// <summary>
     /// Appends a search term for workflow definitions to the search.

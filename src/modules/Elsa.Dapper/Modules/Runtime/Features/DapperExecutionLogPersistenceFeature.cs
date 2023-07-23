@@ -27,12 +27,16 @@ public class EFCoreExecutionLogPersistenceFeature : FeatureBase
         Module.Configure<WorkflowRuntimeFeature>(feature =>
         {
             feature.WorkflowExecutionLogStore = sp => sp.GetRequiredService<DapperWorkflowExecutionLogStore>();
+            feature.ActivityExecutionLogStore = sp => sp.GetRequiredService<DapperActivityExecutionRecordStore>();
         });
     }
 
     /// <inheritdoc />
     public override void Apply()
     {
-        Services.AddSingleton<DapperWorkflowExecutionLogStore>();
+        Services
+            .AddSingleton<DapperWorkflowExecutionLogStore>()
+            .AddSingleton<DapperActivityExecutionRecordStore>()
+            ;
     }
 }

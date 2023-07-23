@@ -26,13 +26,17 @@ public class PersistActivityExecutionLogMiddleware : WorkflowExecutionMiddleware
 
         // Get all activity execution contexts.
         var activityExecutionContexts = context.ActivityExecutionContexts;
-        
+
         // Persist activity execution entries.
         var entries = activityExecutionContexts.Select(x => new ActivityExecutionRecord
         {
             Id = x.Id,
             ActivityId = x.Activity.Id,
             WorkflowInstanceId = context.Id,
+            ActivityType = x.Activity.Type,
+            ActivityName = x.Activity.Name,
+            ActivityState = x.ActivityState,
+            ActivityTypeVersion = x.Activity.Version,
             StartedAt = x.StartedAt,
             HasBookmarks = x.Bookmarks.Any(),
             CompletedAt = x.CompletedAt

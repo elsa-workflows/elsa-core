@@ -66,6 +66,18 @@ public interface ISqlDialect
     string AndNot(string field, string[] fieldParamNames);
     
     /// <summary>
+    /// Returns an IS NULL clause.
+    /// </summary>
+    /// <param name="field">The field to query.</param>
+    string IsNull(string field);
+    
+    /// <summary>
+    /// Returns an IS NOT NULL clause.
+    /// </summary>
+    /// <param name="field">The field to query.</param>
+    string IsNotNull(string field);
+    
+    /// <summary>
     /// Returns an ORDER BY clause.
     /// </summary>
     /// <param name="field">The field to order by.</param>

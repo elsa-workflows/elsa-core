@@ -1,6 +1,6 @@
-using Elsa.Common.Entities;
+using Elsa.Api.Client.Shared.Models;
 
-namespace Elsa.Workflows.Runtime.Entities;
+namespace Elsa.Api.Client.Resources.ActivityExecutions.Models;
 
 /// <summary>
 /// Represents a single workflow execution, associated with an individual activity instance.
@@ -18,24 +18,9 @@ public class ActivityExecutionRecord : Entity
     public string ActivityId { get; set; } = default!;
 
     /// <summary>
-    /// The type of the activity.
+    /// Gets or sets the activity type version.
     /// </summary>
-    public string ActivityType { get; set; } = default!;
-
-    /// <summary>
-    /// The version of the activity type.
-    /// </summary>
-    public int ActivityTypeVersion { get; set; }
-
-    /// <summary>
-    /// The name of the activity.
-    /// </summary>
-    public string? ActivityName { get; set; } = default!;
-    
-    /// <summary>
-    /// The state of the activity at the time this record is created or last updated.
-    /// </summary>
-    public IDictionary<string, object>? ActivityState { get; set; }
+    public int Version { get; set; }
 
     /// <summary>
     /// Gets or sets the time at which the activity execution began.

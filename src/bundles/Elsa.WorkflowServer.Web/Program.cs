@@ -7,6 +7,8 @@ using Elsa.Http.Handlers;
 using Elsa.JavaScript.Options;
 using Elsa.MongoDb.Extensions;
 using Elsa.WorkflowServer.Web;
+using Microsoft.Data.Sqlite;
+using Proto.Persistence.Sqlite;
 
 EndpointSecurityOptions.DisableSecurity();
 
@@ -15,6 +17,7 @@ var services = builder.Services;
 var configuration = builder.Configuration;
 var identitySection = configuration.GetSection("Identity");
 var identityTokenSection = identitySection.GetSection("Tokens");
+var sqliteConnectionString = configuration.GetConnectionString("Sqlite");
 
 // Add Elsa services.
 services
@@ -42,9 +45,9 @@ services
         .UseWorkflowRuntime(runtime =>
         {
             runtime.UseEntityFrameworkCore();
-            runtime.UseDefaultRuntime(dr => dr.UseEntityFrameworkCore());
+            //runtime.UseDefaultRuntime(dr => dr.UseEntityFrameworkCore());
+            runtime.UseProtoActor(proto => proto.PersistenceProvider = _ => new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString)));
             runtime.UseExecutionLogRecords(e => e.UseEntityFrameworkCore());
-            runtime.UseAsyncWorkflowStateExporter();
             runtime.UseMassTransitDispatcher();
         })
         .UseEnvironments(environments => environments.EnvironmentsOptions = options => configuration.GetSection("Environments").Bind(options))

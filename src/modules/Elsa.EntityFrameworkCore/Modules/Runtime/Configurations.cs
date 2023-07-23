@@ -79,8 +79,15 @@ public class Configurations :
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<ActivityExecutionRecord> builder)
     {
+        builder.Ignore(x => x.ActivityState);
+        builder.Property<string>("ActivityData");
+        
         builder.HasIndex(x => x.WorkflowInstanceId).HasDatabaseName($"IX_{nameof(ActivityExecutionRecord)}_{nameof(ActivityExecutionRecord.WorkflowInstanceId)}");
         builder.HasIndex(x => x.ActivityId).HasDatabaseName($"IX_{nameof(ActivityExecutionRecord)}_{nameof(ActivityExecutionRecord.ActivityId)}");
+        builder.HasIndex(x => x.ActivityType).HasDatabaseName($"IX_{nameof(ActivityExecutionRecord)}_{nameof(ActivityExecutionRecord.ActivityType)}");
+        builder.HasIndex(x => x.ActivityTypeVersion).HasDatabaseName($"IX_{nameof(ActivityExecutionRecord)}_{nameof(ActivityExecutionRecord.ActivityTypeVersion)}");
+        builder.HasIndex(x => new {x.ActivityType, x.ActivityTypeVersion}).HasDatabaseName($"IX_{nameof(ActivityExecutionRecord)}_{nameof(ActivityExecutionRecord.ActivityType)}_{nameof(ActivityExecutionRecord.ActivityTypeVersion)}");
+        builder.HasIndex(x => x.ActivityName).HasDatabaseName($"IX_{nameof(ActivityExecutionRecord)}_{nameof(ActivityExecutionRecord.ActivityName)}");
         builder.HasIndex(x => x.StartedAt).HasDatabaseName($"IX_{nameof(ActivityExecutionRecord)}_{nameof(ActivityExecutionRecord.StartedAt)}");
         builder.HasIndex(x => x.HasBookmarks).HasDatabaseName($"IX_{nameof(ActivityExecutionRecord)}_{nameof(ActivityExecutionRecord.HasBookmarks)}");
         builder.HasIndex(x => x.CompletedAt).HasDatabaseName($"IX_{nameof(ActivityExecutionRecord)}_{nameof(ActivityExecutionRecord.CompletedAt)}");

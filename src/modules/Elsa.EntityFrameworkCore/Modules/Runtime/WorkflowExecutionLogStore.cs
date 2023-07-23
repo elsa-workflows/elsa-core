@@ -28,7 +28,7 @@ public class EFCoreWorkflowExecutionLogStore : IWorkflowExecutionLogStore
     }
 
     /// <inheritdoc />
-    public async Task SaveAsync(WorkflowExecutionLogRecord record, CancellationToken cancellationToken = default) => await _store.SaveAsync(record, cancellationToken);
+    public async Task SaveAsync(WorkflowExecutionLogRecord record, CancellationToken cancellationToken = default) => await _store.SaveAsync(record, SaveAsync, cancellationToken);
 
     /// <inheritdoc />
     public async Task SaveManyAsync(IEnumerable<WorkflowExecutionLogRecord> records, CancellationToken cancellationToken = default)

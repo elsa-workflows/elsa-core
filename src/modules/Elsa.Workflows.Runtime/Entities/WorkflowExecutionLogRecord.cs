@@ -55,7 +55,7 @@ public class WorkflowExecutionLogRecord : Entity
     /// <summary>
     /// The name of the activity.
     /// </summary>
-    public string? ActivityName { get; set; } = default!;
+    public string? ActivityName { get; set; }
 
     /// <summary>
     /// The unique ID of the node within the workflow graph.

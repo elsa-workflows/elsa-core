@@ -22,9 +22,13 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     WorkflowInstanceId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     ActivityId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ActivityType = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ActivityTypeVersion = table.Column<int>(type: "int", nullable: false),
+                    ActivityName = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     StartedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     HasBookmarks = table.Column<bool>(type: "bit", nullable: false),
-                    CompletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    CompletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    ActivityData = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -124,6 +128,30 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                 schema: "Elsa",
                 table: "ActivityExecutionRecords",
                 column: "ActivityId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ActivityExecutionRecord_ActivityName",
+                schema: "Elsa",
+                table: "ActivityExecutionRecords",
+                column: "ActivityName");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ActivityExecutionRecord_ActivityType",
+                schema: "Elsa",
+                table: "ActivityExecutionRecords",
+                column: "ActivityType");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ActivityExecutionRecord_ActivityType_ActivityTypeVersion",
+                schema: "Elsa",
+                table: "ActivityExecutionRecords",
+                columns: new[] { "ActivityType", "ActivityTypeVersion" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ActivityExecutionRecord_ActivityTypeVersion",
+                schema: "Elsa",
+                table: "ActivityExecutionRecords",
+                column: "ActivityTypeVersion");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ActivityExecutionRecord_CompletedAt",

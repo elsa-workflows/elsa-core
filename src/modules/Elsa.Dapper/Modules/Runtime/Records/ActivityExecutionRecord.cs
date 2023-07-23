@@ -1,12 +1,17 @@
 using Elsa.Common.Entities;
 
-namespace Elsa.Workflows.Runtime.Entities;
+namespace Elsa.Dapper.Modules.Runtime.Records;
 
 /// <summary>
 /// Represents a single workflow execution, associated with an individual activity instance.
 /// </summary>
-public class ActivityExecutionRecord : Entity
+public class ActivityExecutionRecordRecord
 {
+    /// <summary>
+    /// Gets or sets the ID of the activity execution record.
+    /// </summary>
+    public string Id { get; set; } = default!;
+    
     /// <summary>
     /// Gets or sets the workflow instance ID.
     /// </summary>
@@ -35,7 +40,7 @@ public class ActivityExecutionRecord : Entity
     /// <summary>
     /// The state of the activity at the time this record is created or last updated.
     /// </summary>
-    public IDictionary<string, object>? ActivityState { get; set; }
+    public string? ActivityState { get; set; }
 
     /// <summary>
     /// Gets or sets the time at which the activity execution began.

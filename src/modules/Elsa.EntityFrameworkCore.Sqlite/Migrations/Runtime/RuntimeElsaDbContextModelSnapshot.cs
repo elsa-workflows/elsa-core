@@ -94,9 +94,22 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     b.Property<string>("Id")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("ActivityData")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("ActivityId")
                         .IsRequired()
                         .HasColumnType("TEXT");
+
+                    b.Property<string>("ActivityName")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ActivityType")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ActivityTypeVersion")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("CompletedAt")
                         .HasColumnType("TEXT");
@@ -117,6 +130,15 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     b.HasIndex("ActivityId")
                         .HasDatabaseName("IX_ActivityExecutionRecord_ActivityId");
 
+                    b.HasIndex("ActivityName")
+                        .HasDatabaseName("IX_ActivityExecutionRecord_ActivityName");
+
+                    b.HasIndex("ActivityType")
+                        .HasDatabaseName("IX_ActivityExecutionRecord_ActivityType");
+
+                    b.HasIndex("ActivityTypeVersion")
+                        .HasDatabaseName("IX_ActivityExecutionRecord_ActivityTypeVersion");
+
                     b.HasIndex("CompletedAt")
                         .HasDatabaseName("IX_ActivityExecutionRecord_CompletedAt");
 
@@ -128,6 +150,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
 
                     b.HasIndex("WorkflowInstanceId")
                         .HasDatabaseName("IX_ActivityExecutionRecord_WorkflowInstanceId");
+
+                    b.HasIndex("ActivityType", "ActivityTypeVersion")
+                        .HasDatabaseName("IX_ActivityExecutionRecord_ActivityType_ActivityTypeVersion");
 
                     b.ToTable("ActivityExecutionRecords");
                 });

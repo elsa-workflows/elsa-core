@@ -29,21 +29,21 @@ public abstract class SqlDialectBase : ISqlDialect
 
     /// <inheritdoc />
     public virtual string And(string field) => $"and {field} = @{field}";
-    
+
     /// <inheritdoc />
     public virtual string AndNot(string field) => $"and not {field} = @{field}";
 
     /// <inheritdoc />
-    public virtual string And(string field, string[] fieldParamNames)
-    {
-        return $"and {field} in ({string.Join(", ", fieldParamNames)})";
-    }
-    
+    public virtual string And(string field, string[] fieldParamNames) => $"and {field} in ({string.Join(", ", fieldParamNames)})";
+
     /// <inheritdoc />
-    public virtual string AndNot(string field, string[] fieldParamNames)
-    {
-        return $"and {field} not in ({string.Join(", ", fieldParamNames)})";
-    }
+    public virtual string AndNot(string field, string[] fieldParamNames) => $"and {field} not in ({string.Join(", ", fieldParamNames)})";
+
+    /// <inheritdoc />
+    public string IsNull(string field) => $"and {field} is null";
+
+    /// <inheritdoc />
+    public string IsNotNull(string field) => $"and {field} is not null";
 
     /// <inheritdoc />
     public virtual string OrderBy(string field, OrderDirection direction)

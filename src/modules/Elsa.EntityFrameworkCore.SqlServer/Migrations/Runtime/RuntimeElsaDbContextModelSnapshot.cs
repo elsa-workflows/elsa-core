@@ -99,9 +99,22 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<string>("ActivityData")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("ActivityId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ActivityName")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ActivityType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("ActivityTypeVersion")
+                        .HasColumnType("int");
 
                     b.Property<DateTimeOffset?>("CompletedAt")
                         .HasColumnType("datetimeoffset");
@@ -121,6 +134,15 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                     b.HasIndex("ActivityId")
                         .HasDatabaseName("IX_ActivityExecutionRecord_ActivityId");
 
+                    b.HasIndex("ActivityName")
+                        .HasDatabaseName("IX_ActivityExecutionRecord_ActivityName");
+
+                    b.HasIndex("ActivityType")
+                        .HasDatabaseName("IX_ActivityExecutionRecord_ActivityType");
+
+                    b.HasIndex("ActivityTypeVersion")
+                        .HasDatabaseName("IX_ActivityExecutionRecord_ActivityTypeVersion");
+
                     b.HasIndex("CompletedAt")
                         .HasDatabaseName("IX_ActivityExecutionRecord_CompletedAt");
 
@@ -132,6 +154,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
 
                     b.HasIndex("WorkflowInstanceId")
                         .HasDatabaseName("IX_ActivityExecutionRecord_WorkflowInstanceId");
+
+                    b.HasIndex("ActivityType", "ActivityTypeVersion")
+                        .HasDatabaseName("IX_ActivityExecutionRecord_ActivityType_ActivityTypeVersion");
 
                     b.ToTable("ActivityExecutionRecords", "Elsa");
                 });
