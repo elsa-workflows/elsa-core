@@ -18,9 +18,24 @@ public class ActivityExecutionRecord : Entity
     public string ActivityId { get; set; } = default!;
 
     /// <summary>
-    /// Gets or sets the activity type version.
+    /// The type of the activity.
     /// </summary>
-    public int Version { get; set; }
+    public string ActivityType { get; set; } = default!;
+
+    /// <summary>
+    /// The version of the activity type.
+    /// </summary>
+    public int ActivityTypeVersion { get; set; }
+
+    /// <summary>
+    /// The name of the activity.
+    /// </summary>
+    public string? ActivityName { get; set; } = default!;
+    
+    /// <summary>
+    /// The state of the activity at the time this record is created or last updated.
+    /// </summary>
+    public IDictionary<string, object>? ActivityState { get; set; }
 
     /// <summary>
     /// Gets or sets the time at which the activity execution began.
