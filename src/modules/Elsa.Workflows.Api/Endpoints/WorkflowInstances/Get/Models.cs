@@ -10,7 +10,7 @@ internal class Request
 
 internal class Response
 {
-    public string Id { get; set; }
+    public string Id { get; set; } = default!;
     public string DefinitionId { get; init; } = default!;
     public string DefinitionVersionId { get; init; } = default!;
     public int Version { get; init; }
@@ -20,6 +20,6 @@ internal class Response
     public string? CorrelationId { get; set; }
     public string? Name { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
-    public DateTimeOffset? LastExecutedAt { get; set; }
+    public DateTimeOffset? UpdatedAt { get; set; }
     public DateTimeOffset? FinishedAt { get; set; }
 }

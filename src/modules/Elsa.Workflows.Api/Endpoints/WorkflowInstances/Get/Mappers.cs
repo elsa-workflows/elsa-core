@@ -22,6 +22,6 @@ internal class WorkflowInstanceMapper : ResponseMapper<Response, WorkflowInstanc
         Name = e.Name,
         CreatedAt = e.CreatedAt,
         FinishedAt = e.FinishedAt,
-        LastExecutedAt = e.UpdatedAt
+        UpdatedAt = e.UpdatedAt
     };
 }
