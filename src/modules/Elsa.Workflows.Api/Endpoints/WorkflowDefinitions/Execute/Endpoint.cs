@@ -45,7 +45,9 @@ internal class Execute : ElsaEndpoint<Request, Response>
     {
         var definitionId = request.DefinitionId;
 
-        var versionOptions = VersionOptions.Published;
+        var versionOptions = request.VersionOptions ?? VersionOptions.Published;
+        
+        // Obsolete. Remove in 3.0 release.
         if (request.Version.HasValue) {
             versionOptions = VersionOptions.SpecificVersion(request.Version.Value);
         }

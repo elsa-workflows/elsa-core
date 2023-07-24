@@ -178,4 +178,14 @@ public interface IWorkflowDefinitionsApi
     /// <param name="cancellationToken">An optional cancellation token.</param>
     [Post("/workflow-definitions/{definitionId}/revert/{version}")]
     Task RevertVersionAsync(string definitionId, int version, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Executes a workflow definition.
+    /// </summary>
+    /// <param name="definitionId">The definition ID of the workflow definition to execute.</param>
+    /// <param name="request">An optional request containing options for executing the workflow definition.</param>
+    /// <param name="cancellationToken">An optional cancellation token.</param>
+    /// <returns>A response containing information about the workflow instance that was created.</returns>
+    [Post("/workflow-definitions/{definitionId}/execute")]
+    Task<ExecuteWorkflowDefinitionResponse> ExecuteAsync(string definitionId, ExecuteWorkflowDefinitionRequest? request, CancellationToken cancellationToken = default);
 }
