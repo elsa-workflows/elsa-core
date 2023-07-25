@@ -1,6 +1,6 @@
 # Elsa Workflows
 
-<a href="https://elsa-workflows.github.io/elsa-core/tree/v3">
+<a href="https://v3.elsaworkflows.io/">
   <p align="center">
     <img src="./design/artwork/android-elsa-portrait.png" alt="Elsa">
   </p>
