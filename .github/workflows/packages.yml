@@ -62,7 +62,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    if: ${{ github.event_name == 'release' }}
+    if: ${{ github.event_name == 'release' || github.event_name == 'prereleased' }}
     steps:
       - name: Download Packages
         uses: actions/download-artifact@v3

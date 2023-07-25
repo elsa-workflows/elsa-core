@@ -13,7 +13,8 @@ on:
     paths:
       - src/designer/elsa-workflows-designer/**
       - .github/**
-
+  release:
+    types: [ prereleased ]
 env:
   NODE_OPTIONS: --max-old-space-size=8096
   ELSA_VERSION: 3.0.3
@@ -27,7 +28,7 @@ jobs:
 
       - name: Set preview VERSION variable
         run: echo "VERSION=$ELSA_VERSION-preview.${{ github.run_number }}" >> $GITHUB_ENV
-        if: ${{ github.event_name != 'release' }}
+        if: ${{ github.event_name != 'release' || github.event_name == 'prereleased' }}
 
       - name: Set release VERSION variable
         run: echo "VERSION=${{ github.ref_name }}" >> $GITHUB_ENV
@@ -91,7 +92,7 @@ jobs:
     name: Publish release package to npmjs
     needs: build_and_pack
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'release' }}
+    if: ${{ github.event_name == 'release' || github.event_name == 'prereleased' }}
     steps:
       - name: Download NPM Package
         uses: actions/download-artifact@v3
