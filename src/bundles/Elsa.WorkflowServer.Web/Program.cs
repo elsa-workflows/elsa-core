@@ -63,7 +63,7 @@ services
 
 services.Configure<JintOptions>(options => options.AllowClrAccess = true);
 services.AddHealthChecks();
-services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()));
+services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("*")));
 
 // Configure middleware pipeline.
 var app = builder.Build();
