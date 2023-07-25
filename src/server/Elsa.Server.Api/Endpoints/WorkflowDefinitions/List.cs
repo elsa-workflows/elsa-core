@@ -83,7 +83,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             return Json(pagedList, SerializationHelper.GetSettingsForWorkflowDefinition());
         }
 
-        private Specification<WorkflowDefinition> GetSpecification(string? ids, VersionOptions version)
+        internal static Specification<WorkflowDefinition> GetSpecification(string? ids, VersionOptions version)
         {
             if (string.IsNullOrWhiteSpace(ids)) 
                 return new VersionOptionsSpecification(version);

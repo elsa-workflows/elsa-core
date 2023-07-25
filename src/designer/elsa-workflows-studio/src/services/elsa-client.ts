@@ -1,4 +1,4 @@
-﻿import axios, {AxiosInstance, AxiosRequestConfig} from "axios";
+import axios, {AxiosInstance, AxiosRequestConfig} from "axios";
 import {Service} from 'axios-middleware';
 import * as collection from 'lodash/collection';
 import {eventBus} from './event-bus';
@@ -145,6 +145,15 @@ export const createElsaClient = async function (serverUrl: string): Promise<Elsa
           }
         });
         return response.data;
+      },
+      restore: async (file: File): Promise<void> => {
+        const formData = new FormData();
+        formData.append("file", file);
+        await httpClient.post(`v1/workflow-definitions/restore`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
       }
     },
     workflowTestApi: {
@@ -406,6 +415,8 @@ export interface WorkflowDefinitionsApi {
   export(workflowDefinitionId: string, versionOptions: VersionOptions): Promise<ExportWorkflowResponse>;
 
   import(workflowDefinitionId: string, file: File): Promise<WorkflowDefinition>;
+
+  restore(file: File): Promise<void>;
 }
 
 export interface WorkflowTestApi {

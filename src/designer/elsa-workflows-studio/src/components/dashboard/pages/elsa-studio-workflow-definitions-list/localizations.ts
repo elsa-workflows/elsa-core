@@ -2,7 +2,9 @@ export const resources = {
   'en': {
     default: {
       'Title': 'Workflow Definitions',
-      'CreateButton': 'Create Workflow'
+      'CreateButton': 'Create Workflow',
+      'BackupButton': 'Backup Workflows',
+      'RestoreButton': 'Restore Workflows'
     }
   },
   'zh-CN': {

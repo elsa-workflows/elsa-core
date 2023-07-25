@@ -1,4 +1,4 @@
-import {Component, Event, h, Prop, State} from '@stencil/core';
+import {Component, Event, h, Method, Prop, State} from '@stencil/core';
 import {createElsaClient} from "../../../../services";
 import {PagedList, VersionOptions, WorkflowDefinitionSummary} from "../../../../models";
 import {injectHistory, LocationSegments, RouterHistory} from "@stencil/router";
@@ -112,6 +112,7 @@ export class ElsaWorkflowDefinitionsListScreen {
     await this.loadWorkflowDefinitions();
   };
 
+  @Method()
   async loadWorkflowDefinitions() {
     const elsaClient = await this.createClient();
     const page = this.currentPage;
