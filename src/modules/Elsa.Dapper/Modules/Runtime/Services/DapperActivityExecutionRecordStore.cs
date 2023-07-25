@@ -12,9 +12,9 @@ using Elsa.Workflows.Runtime.OrderDefinitions;
 namespace Elsa.Dapper.Modules.Runtime.Services;
 
 /// <summary>
-/// Implements the <see cref="IActivityExecutionLogStore"/> using Dapper.
+/// Implements the <see cref="IActivityExecutionStore"/> using Dapper.
 /// </summary>
-public class DapperActivityExecutionRecordStore : IActivityExecutionLogStore
+public class DapperActivityExecutionRecordStore : IActivityExecutionStore
 {
     private const string TableName = "WorkflowExecutionLogRecords";
     private const string PrimaryKeyName = "Id";

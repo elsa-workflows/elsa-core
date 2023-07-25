@@ -8,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 
 /// <summary>
-/// A feature that registers the <see cref="EFCoreWorkflowExecutionLogStore"/> and the <see cref="EFCoreActivityExecutionLogStore"/>.
+/// A feature that registers the <see cref="EFCoreWorkflowExecutionLogStore"/> and the <see cref="EFCoreActivityExecutionStore"/>.
 /// </summary>
 [DependsOn(typeof(WorkflowRuntimeFeature))]
 public class EFCoreExecutionLogPersistenceFeature : PersistenceFeatureBase<RuntimeElsaDbContext>
@@ -24,7 +24,7 @@ public class EFCoreExecutionLogPersistenceFeature : PersistenceFeatureBase<Runti
         Module.Configure<WorkflowRuntimeFeature>(feature =>
         {
             feature.WorkflowExecutionLogStore = sp => sp.GetRequiredService<EFCoreWorkflowExecutionLogStore>();
-            feature.ActivityExecutionLogStore = sp => sp.GetRequiredService<EFCoreActivityExecutionLogStore>();
+            feature.ActivityExecutionLogStore = sp => sp.GetRequiredService<EFCoreActivityExecutionStore>();
         });
     }
 
@@ -34,6 +34,6 @@ public class EFCoreExecutionLogPersistenceFeature : PersistenceFeatureBase<Runti
         base.Apply();
         
         AddEntityStore<WorkflowExecutionLogRecord, EFCoreWorkflowExecutionLogStore>();
-        AddEntityStore<ActivityExecutionRecord, EFCoreActivityExecutionLogStore>();
+        AddEntityStore<ActivityExecutionRecord, EFCoreActivityExecutionStore>();
     }
 }

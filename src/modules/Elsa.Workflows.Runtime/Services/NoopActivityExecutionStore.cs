@@ -8,7 +8,7 @@ namespace Elsa.Workflows.Runtime.Services;
 /// <summary>
 /// An activity execution log store that does nothing.
 /// </summary>
-public class NoopActivityExecutionLogStore : IActivityExecutionLogStore
+public class NoopActivityExecutionStore : IActivityExecutionStore
 {
     /// <inheritdoc />
     public Task SaveAsync(ActivityExecutionRecord record, CancellationToken cancellationToken = default) => Task.CompletedTask;

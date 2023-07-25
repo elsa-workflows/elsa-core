@@ -10,14 +10,14 @@ namespace Elsa.Workflows.Runtime.Services;
 /// <summary>
 /// Stores activity execution records in memory.
 /// </summary>
-public class MemoryActivityExecutionLogStore : IActivityExecutionLogStore
+public class MemoryActivityExecutionStore : IActivityExecutionStore
 {
     private readonly MemoryStore<ActivityExecutionRecord> _store;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="MemoryActivityExecutionLogStore"/> class.
+    /// Initializes a new instance of the <see cref="MemoryActivityExecutionStore"/> class.
     /// </summary>
-    public MemoryActivityExecutionLogStore(MemoryStore<ActivityExecutionRecord> store)
+    public MemoryActivityExecutionStore(MemoryStore<ActivityExecutionRecord> store)
     {
         _store = store;
     }

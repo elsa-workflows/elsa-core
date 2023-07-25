@@ -65,9 +65,9 @@ public class WorkflowRuntimeFeature : FeatureBase
     public Func<IServiceProvider, IWorkflowExecutionLogStore> WorkflowExecutionLogStore { get; set; } = sp => sp.GetRequiredService<NoopWorkflowExecutionLogStore>();
     
     /// <summary>
-    /// A factory that instantiates an <see cref="IActivityExecutionLogStore"/>.
+    /// A factory that instantiates an <see cref="IActivityExecutionStore"/>.
     /// </summary>
-    public Func<IServiceProvider, IActivityExecutionLogStore> ActivityExecutionLogStore { get; set; } = sp => sp.GetRequiredService<NoopActivityExecutionLogStore>();
+    public Func<IServiceProvider, IActivityExecutionStore> ActivityExecutionLogStore { get; set; } = sp => sp.GetRequiredService<NoopActivityExecutionStore>();
 
     /// <summary>
     /// A factory that instantiates an <see cref="IDistributedLockProvider"/>.
@@ -156,6 +156,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddSingleton<IWorkflowDefinitionStorePopulator, DefaultWorkflowDefinitionStorePopulator>()
             .AddSingleton<IRegistriesPopulator, DefaultRegistriesPopulator>()
             .AddSingleton<ITaskReporter, TaskReporter>()
+            .AddSingleton<IActivityExecutionService, ActivityExecutionService>()
             .AddSingleton<SynchronousTaskDispatcher>()
             .AddSingleton<BackgroundTaskDispatcher>()
             .AddSingleton<IEventPublisher, EventPublisher>()
@@ -166,14 +167,14 @@ public class WorkflowRuntimeFeature : FeatureBase
 
             // Noop stores.
             .AddSingleton<NoopWorkflowExecutionLogStore>()
-            .AddSingleton<NoopActivityExecutionLogStore>()
+            .AddSingleton<NoopActivityExecutionStore>()
             
             // Memory stores.
             .AddMemoryStore<WorkflowState, MemoryWorkflowStateStore>()
             .AddMemoryStore<StoredBookmark, MemoryBookmarkStore>()
             .AddMemoryStore<StoredTrigger, MemoryTriggerStore>()
             .AddMemoryStore<WorkflowExecutionLogRecord, MemoryWorkflowExecutionLogStore>()
-            .AddMemoryStore<ActivityExecutionRecord, MemoryActivityExecutionLogStore>()
+            .AddMemoryStore<ActivityExecutionRecord, MemoryActivityExecutionStore>()
 
             // Distributed locking.
             .AddSingleton(DistributedLockProvider)

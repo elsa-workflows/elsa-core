@@ -17,4 +17,13 @@ public static class ModuleExtensions
         module.Configure(configure);
         return module;
     }
+    
+    /// <summary>
+    /// Configures the real time workflow updates feature
+    /// </summary>
+    public static IModule UseRealTimeWorkflows(this IModule module, Action<RealTimeWorkflowUpdatesFeature>? configure = default)
+    {
+        module.Configure(configure);
+        return module;
+    }
 }

@@ -53,6 +53,7 @@ services
         .UseEnvironments(environments => environments.EnvironmentsOptions = options => configuration.GetSection("Environments").Bind(options))
         .UseScheduling()
         .UseWorkflowsApi(api => api.AddFastEndpointsAssembly<Program>())
+        .UseRealTimeWorkflows()
         .UseJavaScript()
         .UseLiquid()
         .UseHttp(http => http.HttpEndpointAuthorizationHandler = sp => sp.GetRequiredService<AllowAnonymousHttpEndpointAuthorizationHandler>())
@@ -87,6 +88,10 @@ app.UseJsonSerializationErrorHandler();
 
 // Elsa HTTP Endpoint activities
 app.UseWorkflows();
+
+// SignalR.
+app.UseRouting();
+app.UseWorkflowsSignalRHubs();
 
 // Run.
 app.Run();

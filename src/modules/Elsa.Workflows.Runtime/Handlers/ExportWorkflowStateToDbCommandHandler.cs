@@ -7,6 +7,7 @@ using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
+using Elsa.Workflows.Management.Notifications;
 using Elsa.Workflows.Runtime.Commands;
 
 namespace Elsa.Workflows.Runtime.Handlers;
@@ -18,7 +19,7 @@ internal class ExportWorkflowStateToDbCommandHandler : ICommandHandler<ExportWor
 {
     private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
     private readonly IWorkflowInstanceStore _workflowInstanceStore;
-    private readonly ISystemClock _systemClock;
+    private readonly INotificationSender _notificationSender;
 
     /// <summary>
     /// Constructor.
@@ -26,12 +27,12 @@ internal class ExportWorkflowStateToDbCommandHandler : ICommandHandler<ExportWor
     public ExportWorkflowStateToDbCommandHandler(
         IWorkflowDefinitionStore workflowDefinitionStore,
         IWorkflowInstanceStore workflowInstanceStore,
-        ISystemClock systemClock
+        INotificationSender notificationSender
     )
     {
         _workflowDefinitionStore = workflowDefinitionStore;
         _workflowInstanceStore = workflowInstanceStore;
-        _systemClock = systemClock;
+        _notificationSender = notificationSender;
     }
 
     /// <inheritdoc />
@@ -70,9 +71,8 @@ internal class ExportWorkflowStateToDbCommandHandler : ICommandHandler<ExportWor
         if (workflowState.Properties.TryGetValue<string>(SetName.WorkflowInstanceNameKey, out var name))
             workflowInstance.Name = name;
 
-        // TODO: Store timestamps such as CancelledAt, FaultedAt, etc.
-
         await _workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);
+        await _notificationSender.SendAsync(new WorkflowInstanceSaved(workflowInstance), cancellationToken);
         return Unit.Instance;
     }
 }

@@ -10,17 +10,17 @@ using Open.Linq.AsyncExtensions;
 namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 
 /// <summary>
-/// An EF Core implementation of <see cref="IActivityExecutionLogStore"/>.
+/// An EF Core implementation of <see cref="IActivityExecutionStore"/>.
 /// </summary>
-public class EFCoreActivityExecutionLogStore : IActivityExecutionLogStore
+public class EFCoreActivityExecutionStore : IActivityExecutionStore
 {
     private readonly EntityStore<RuntimeElsaDbContext, ActivityExecutionRecord> _store;
     private readonly IPayloadSerializer _serializer;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="EFCoreActivityExecutionLogStore"/> class.
+    /// Initializes a new instance of the <see cref="EFCoreActivityExecutionStore"/> class.
     /// </summary>
-    public EFCoreActivityExecutionLogStore(EntityStore<RuntimeElsaDbContext, ActivityExecutionRecord> store, IPayloadSerializer serializer)
+    public EFCoreActivityExecutionStore(EntityStore<RuntimeElsaDbContext, ActivityExecutionRecord> store, IPayloadSerializer serializer)
     {
         _store = store;
         _serializer = serializer;

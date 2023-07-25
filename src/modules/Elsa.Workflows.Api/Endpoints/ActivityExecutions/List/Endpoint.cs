@@ -15,10 +15,10 @@ namespace Elsa.Workflows.Api.Endpoints.ActivityExecutions.List;
 [PublicAPI]
 internal class List : ElsaEndpoint<Request, ListResponse<ActivityExecutionRecord>>
 {
-    private readonly IActivityExecutionLogStore _store;
+    private readonly IActivityExecutionStore _store;
 
     /// <inheritdoc />
-    public List(IActivityExecutionLogStore store)
+    public List(IActivityExecutionStore store)
     {
         _store = store;
     }

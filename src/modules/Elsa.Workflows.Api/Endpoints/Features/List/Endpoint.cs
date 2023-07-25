@@ -3,18 +3,18 @@ using Elsa.Features.Contracts;
 using Elsa.Features.Models;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.Api.Endpoints.Features.Installed;
+namespace Elsa.Workflows.Api.Endpoints.Features.List;
 
 /// <summary>
 /// Returns a list of installed features.
 /// </summary>
 [PublicAPI]
-internal class Installed : ElsaEndpointWithoutRequest<Response>
+internal class List : ElsaEndpointWithoutRequest<Response>
 {
     private readonly IInstalledFeatureRegistry _installedFeatureRegistry;
 
     /// <inheritdoc />
-    public Installed(IInstalledFeatureRegistry installedFeatureRegistry)
+    public List(IInstalledFeatureRegistry installedFeatureRegistry)
     {
         _installedFeatureRegistry = installedFeatureRegistry;
     }

@@ -18,4 +18,11 @@ public interface IInstalledFeatureRegistry
     /// </summary>
     /// <returns>All installed features.</returns>
     IEnumerable<FeatureDescriptor> List();
+    
+    /// <summary>
+    /// Finds a feature descriptor by its full name.
+    /// </summary>
+    /// <param name="fullName">The full name of the feature.</param>
+    /// <returns>The feature descriptor or null if not found.</returns>
+    FeatureDescriptor? Find(string fullName);
 }

@@ -1,8 +1,10 @@
 using Elsa.Common.Contracts;
+using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Notifications;
 
 namespace Elsa.Workflows.Runtime.Middleware.Workflows;
 
@@ -13,17 +15,20 @@ public class PersistWorkflowStateMiddleware : WorkflowExecutionMiddleware
 {
     private readonly IWorkflowStateStore _workflowStateStore;
     private readonly IWorkflowExecutionContextMapper _workflowExecutionContextMapper;
+    private readonly INotificationSender _notificationSender;
     private readonly ISystemClock _systemClock;
 
     /// <inheritdoc />
     public PersistWorkflowStateMiddleware(
         WorkflowMiddlewareDelegate next, 
         IWorkflowStateStore workflowStateStore, 
-        IWorkflowExecutionContextMapper workflowExecutionContextMapper, 
+        IWorkflowExecutionContextMapper workflowExecutionContextMapper,
+        INotificationSender notificationSender,
         ISystemClock systemClock) : base(next)
     {
         _workflowStateStore = workflowStateStore;
         _workflowExecutionContextMapper = workflowExecutionContextMapper;
+        _notificationSender = notificationSender;
         _systemClock = systemClock;
     }
 

@@ -23,14 +23,21 @@ internal class Execute : ElsaEndpoint<Request, Response>
     private readonly IWorkflowRuntime _workflowRuntime;
     private readonly IHttpBookmarkProcessor _httpBookmarkProcessor;
     private IApiSerializer _apiSerializer;
+    private readonly IIdentityGenerator _identityGenerator;
 
     /// <inheritdoc />
-    public Execute(IWorkflowDefinitionStore store, IWorkflowRuntime workflowRuntime, IHttpBookmarkProcessor httpBookmarkProcessor, IApiSerializer apiSerializer)
+    public Execute(
+        IWorkflowDefinitionStore store, 
+        IWorkflowRuntime workflowRuntime, 
+        IHttpBookmarkProcessor httpBookmarkProcessor, 
+        IApiSerializer apiSerializer, 
+        IIdentityGenerator identityGenerator)
     {
         _store = store;
         _workflowRuntime = workflowRuntime;
         _httpBookmarkProcessor = httpBookmarkProcessor;
         _apiSerializer = apiSerializer;
+        _identityGenerator = identityGenerator;
     }
 
     /// <inheritdoc />
@@ -44,7 +51,6 @@ internal class Execute : ElsaEndpoint<Request, Response>
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
         var definitionId = request.DefinitionId;
-
         var versionOptions = request.VersionOptions ?? VersionOptions.Published;
         
         // Obsolete. Remove in 3.0 release.
@@ -62,7 +68,13 @@ internal class Execute : ElsaEndpoint<Request, Response>
 
         var correlationId = request.CorrelationId;
         var input = (IDictionary<string, object>?)request.Input;
-        var startWorkflowOptions = new StartWorkflowRuntimeOptions(correlationId, input, versionOptions, request.TriggerActivityId);
+        var instanceId = _identityGenerator.GenerateId();
+        var startWorkflowOptions = new StartWorkflowRuntimeOptions(correlationId, input, versionOptions, request.TriggerActivityId, instanceId);
+        
+        // Write the workflow instance ID to the response header. This allows clients to read the header even if the workflow writes a response body. 
+        HttpContext.Response.Headers.Add("x-elsa-workflow-instance-id", instanceId);
+        
+        // Start the workflow.
         var result = await _workflowRuntime.StartWorkflowAsync(definitionId, startWorkflowOptions, cancellationToken);
 
         // If a workflow fault occurred, respond appropriately with a 500 internal server error.
@@ -85,7 +97,11 @@ internal class Execute : ElsaEndpoint<Request, Response>
             }
 
             if (!HttpContext.Response.HasStarted)
+            {
+                // Write a response header to indicate that the response is a workflow state response.
+                HttpContext.Response.Headers.Add("x-elsa-response", "true");
                 await SendOkAsync(new Response(workflowState), cancellationToken);
+            }
         }
     }
 

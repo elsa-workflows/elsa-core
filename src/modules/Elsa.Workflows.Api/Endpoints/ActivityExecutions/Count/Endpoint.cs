@@ -12,10 +12,10 @@ namespace Elsa.Workflows.Api.Endpoints.ActivityExecutions.Count;
 [PublicAPI]
 internal class Count : ElsaEndpoint<Request, CountResponse>
 {
-    private readonly IActivityExecutionLogStore _store;
+    private readonly IActivityExecutionStore _store;
 
     /// <inheritdoc />
-    public Count(IActivityExecutionLogStore store)
+    public Count(IActivityExecutionStore store)
     {
         _store = store;
     }

@@ -7,7 +7,7 @@ namespace Elsa.Workflows.Runtime.Contracts;
 /// <summary>
 /// Stores activity execution records.
 /// </summary>
-public interface IActivityExecutionLogStore
+public interface IActivityExecutionStore
 {
     /// <summary>
     /// Saves the specified activity execution record.

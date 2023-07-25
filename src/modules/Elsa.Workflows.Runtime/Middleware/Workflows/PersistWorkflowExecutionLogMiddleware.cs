@@ -1,8 +1,10 @@
+using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Notifications;
 
 namespace Elsa.Workflows.Runtime.Middleware.Workflows;
 
@@ -12,15 +14,18 @@ namespace Elsa.Workflows.Runtime.Middleware.Workflows;
 public class PersistWorkflowExecutionLogMiddleware : WorkflowExecutionMiddleware
 {
     private readonly IWorkflowExecutionLogStore _workflowExecutionLogStore;
+    private readonly INotificationSender _notificationSender;
     private readonly IIdentityGenerator _identityGenerator;
 
     /// <inheritdoc />
     public PersistWorkflowExecutionLogMiddleware(
         WorkflowMiddlewareDelegate next,
         IWorkflowExecutionLogStore workflowExecutionLogStore,
+        INotificationSender notificationSender,
         IIdentityGenerator identityGenerator) : base(next)
     {
         _workflowExecutionLogStore = workflowExecutionLogStore;
+        _notificationSender = notificationSender;
         _identityGenerator = identityGenerator;
     }
 
@@ -55,5 +60,8 @@ public class PersistWorkflowExecutionLogMiddleware : WorkflowExecutionMiddleware
         }).ToList();
 
         await _workflowExecutionLogStore.SaveManyAsync(entries, context.CancellationToken);
+        
+        // Publish notification.
+        await _notificationSender.SendAsync(new WorkflowExecutionLogUpdated(context));
     }
 }

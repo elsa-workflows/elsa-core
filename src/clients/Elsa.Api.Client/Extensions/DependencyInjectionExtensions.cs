@@ -5,6 +5,7 @@ using Elsa.Api.Client.Converters;
 using Elsa.Api.Client.Options;
 using Elsa.Api.Client.Resources.ActivityDescriptors.Contracts;
 using Elsa.Api.Client.Resources.ActivityExecutions.Contracts;
+using Elsa.Api.Client.Resources.Features.Contracts;
 using Elsa.Api.Client.Resources.Identity.Contracts;
 using Elsa.Api.Client.Resources.StorageDrivers.Contracts;
 using Elsa.Api.Client.Resources.VariableTypes.Contracts;
@@ -42,6 +43,7 @@ public static class DependencyInjectionExtensions
         services.AddApi<IVariableTypesApi>(CreateRefitSettings);
         services.AddApi<IWorkflowActivationStrategiesApi>(CreateRefitSettings);
         services.AddApi<ILoginApi>(CreateRefitSettings);
+        services.AddApi<IFeaturesApi>(CreateRefitSettings);
         return services;
     }
 

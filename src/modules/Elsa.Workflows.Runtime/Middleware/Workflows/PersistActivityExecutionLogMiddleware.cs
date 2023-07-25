@@ -1,7 +1,9 @@
+using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Notifications;
 
 namespace Elsa.Workflows.Runtime.Middleware.Workflows;
 
@@ -10,12 +12,14 @@ namespace Elsa.Workflows.Runtime.Middleware.Workflows;
 /// </summary>
 public class PersistActivityExecutionLogMiddleware : WorkflowExecutionMiddleware
 {
-    private readonly IActivityExecutionLogStore _activityExecutionLogStore;
+    private readonly IActivityExecutionStore _activityExecutionStore;
+    private readonly INotificationSender _notificationSender;
 
     /// <inheritdoc />
-    public PersistActivityExecutionLogMiddleware(WorkflowMiddlewareDelegate next, IActivityExecutionLogStore activityExecutionLogStore) : base(next)
+    public PersistActivityExecutionLogMiddleware(WorkflowMiddlewareDelegate next, IActivityExecutionStore activityExecutionStore, INotificationSender notificationSender) : base(next)
     {
-        _activityExecutionLogStore = activityExecutionLogStore;
+        _activityExecutionStore = activityExecutionStore;
+        _notificationSender = notificationSender;
     }
 
     /// <inheritdoc />
@@ -42,6 +46,7 @@ public class PersistActivityExecutionLogMiddleware : WorkflowExecutionMiddleware
             CompletedAt = x.CompletedAt
         }).ToList();
 
-        await _activityExecutionLogStore.SaveManyAsync(entries, context.CancellationToken);
+        await _activityExecutionStore.SaveManyAsync(entries, context.CancellationToken);
+        await _notificationSender.SendAsync(new ActivityExecutionLogUpdated(context, entries));
     }
 }

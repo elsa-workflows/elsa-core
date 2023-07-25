@@ -101,7 +101,7 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
     {
         var versionOptions = options.VersionOptions;
         var correlationId = options.CorrelationId;
-        var workflowInstanceId = _identityGenerator.GenerateId();
+        var workflowInstanceId = options.InstanceId ?? _identityGenerator.GenerateId();
         var input = options.Input;
 
         var request = new StartWorkflowRequest
