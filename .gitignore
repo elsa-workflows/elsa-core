@@ -74,3 +74,5 @@ src/designer/elsa-workflows-designer/loader
 .directory
 
 src/modules/Elsa.Workflows.Designer/package-lock.json
+
+unlist.sh

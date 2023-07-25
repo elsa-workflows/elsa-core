@@ -5,7 +5,8 @@ on:
     branches:
       - v3
 env:
-  nuget_feed_source: 'https://f.feedz.io/elsa-workflows/elsa-3/nuget/index.json'
+  feedz_feed_source: 'https://f.feedz.io/elsa-workflows/elsa-3/nuget/index.json'
+  nuget_feed_source: 'https://api.nuget.org/v3/index.json'
   
 jobs:
   build:
@@ -39,8 +40,8 @@ jobs:
           path: packages/*nupkg
         if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
         
-  publish:
-    name: Publish packages
+  publish_preview_feedz:
+    name: Publish to feedz.io
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -52,4 +53,19 @@ jobs:
           name: elsa-nuget-packages
 
       - name: Publish to feedz.io
-        run: dotnet nuget push *.nupkg -k ${{ secrets.FEEDZ_API_KEY }} -s ${{ env.nuget_feed_source }} --skip-duplicate
+        run: dotnet nuget push *.nupkg -k ${{ secrets.FEEDZ_API_KEY }} -s ${{ env.feedz_feed_source }} --skip-duplicate
+
+  publish_preview_nuget:
+    name: Publish to nuget.org
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: ${{ github.event_name == 'release' }}
+    steps:
+      - name: Download Packages
+        uses: actions/download-artifact@v3
+        with:
+          name: elsa-nuget-packages
+
+      - name: Publish to nuget.org
+        run: dotnet nuget push *.nupkg -k ${{ secrets.NUGET_API_KEY }} -s ${{ env.nuget_feed_source }} --skip-duplicate
