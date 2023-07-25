@@ -2,7 +2,7 @@
 
 <a href="https://elsa-workflows.github.io/elsa-core/tree/v3">
   <p align="center">
-    <img src="./artwork/android-elsa-portrait.png" alt="Elsa">
+    <img src="./design/artwork/android-elsa-portrait.png" alt="Elsa">
   </p>
 </a>
 
