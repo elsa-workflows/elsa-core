@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - v3
+  release:
+    types: [ prereleased ]
 env:
   feedz_feed_source: 'https://f.feedz.io/elsa-workflows/elsa-3/nuget/index.json'
   nuget_feed_source: 'https://api.nuget.org/v3/index.json'
