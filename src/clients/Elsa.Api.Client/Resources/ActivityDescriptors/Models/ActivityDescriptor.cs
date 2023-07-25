@@ -66,6 +66,11 @@ public record ActivityDescriptor
     /// The custom properties of the activity type.
     /// </summary>
     public IReadOnlyDictionary<string, object> CustomProperties { get; set; } = new Dictionary<string, object>();
+    
+    /// <summary>
+    /// The properties to set when constructing an activity in the designer.
+    /// </summary>
+    public IDictionary<string, object> ConstructionProperties { get; set; } = new Dictionary<string, object>();
 
     /// <summary>
     /// A value indicating whether this activity is a container of child activities.

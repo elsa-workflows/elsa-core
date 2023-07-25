@@ -70,7 +70,7 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
         
         ports.Insert(0, rootPort);
 
-        return new()
+        return new ActivityDescriptor
         {
             TypeName = typeName,
             Version = definition.Version,
@@ -86,6 +86,12 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
             {
                 ["RootType"] = nameof(WorkflowDefinitionActivity),
                 ["WorkflowDefinitionVersionId"] = definition.Id
+            },
+            ConstructionProperties = new Dictionary<string, object>
+            {
+                [nameof(WorkflowDefinitionActivity.WorkflowDefinitionId)] = definition.DefinitionId,
+                [nameof(WorkflowDefinitionActivity.WorkflowDefinitionVersionId)] = definition.Id,
+                [nameof(WorkflowDefinitionActivity.Version)] = definition.Version,
             },
             Constructor = context =>
             {
