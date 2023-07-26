@@ -13,17 +13,20 @@ using Elsa.Persistence.Specifications;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Persistence.EntityFramework.Core.Stores
 {
     public abstract class EntityFrameworkStore<T, TContext> : IStore<T> where T : class, IEntity where TContext:DbContext
     {
         private readonly IMapper _mapper;
+        private readonly ILogger _logger;
         private readonly SemaphoreSlim _semaphore = new(1);
 
-        protected EntityFrameworkStore(IContextFactory<TContext> dbContextFactory, IMapper mapper)
+        protected EntityFrameworkStore(IContextFactory<TContext> dbContextFactory, IMapper mapper, ILogger logger)
         {
             _mapper = mapper;
+            _logger = logger;
             DbContextFactory = dbContextFactory;
         }
 
@@ -150,6 +153,12 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
                 if (paging != null)
                     queryable = queryable.Skip(paging.Skip).Take(paging.Take);
 
+                if(_logger.IsEnabled(LogLevel.Debug))
+                {
+                    var sql = queryable.ToQueryString() ?? "";
+                    _logger.LogDebug(sql);
+                }
+                
                 return (await queryable.ToListAsync(cancellationToken)).Select(x => ReadShadowProperties(dbContext, x)).ToList();
             }, cancellationToken);
         }

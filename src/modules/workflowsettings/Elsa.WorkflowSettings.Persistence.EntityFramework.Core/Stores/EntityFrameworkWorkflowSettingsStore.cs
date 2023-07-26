@@ -6,6 +6,7 @@ using Elsa.Serialization;
 using Elsa.WorkflowSettings.Models;
 using AutoMapper;
 using Elsa.WorkflowSettings.Persistence.EntityFramework.Core.Services;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.WorkflowSettings.Persistence.EntityFramework.Core.Stores
 {
@@ -13,7 +14,7 @@ namespace Elsa.WorkflowSettings.Persistence.EntityFramework.Core.Stores
     {
         private readonly IContentSerializer _contentSerializer;
 
-        public EntityFrameworkWorkflowSettingsStore(IWorkflowSettingsContextFactory dbContextFactory, IMapper mapper, IContentSerializer contentSerializer) : base(dbContextFactory, mapper)
+        public EntityFrameworkWorkflowSettingsStore(IWorkflowSettingsContextFactory dbContextFactory, IMapper mapper, IContentSerializer contentSerializer, ILogger<EntityFrameworkWorkflowSettingsStore> logger) : base(dbContextFactory, mapper, logger)
         {
             _contentSerializer = contentSerializer;
         }
