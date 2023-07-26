@@ -9,7 +9,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\modules\Elsa.Workflows.Api.Rpc\Elsa.Workflows.Api.Rpc.csproj" />
         <ProjectReference Include="..\Elsa\Elsa.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Elasticsearch\Elsa.Elasticsearch.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Email\Elsa.Email.csproj" />
