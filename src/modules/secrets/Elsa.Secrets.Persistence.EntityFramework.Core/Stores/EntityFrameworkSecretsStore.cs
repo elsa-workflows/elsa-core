@@ -6,6 +6,7 @@ using Elsa.Persistence.Specifications;
 using Elsa.Secrets.Models;
 using Elsa.Secrets.Persistence.EntityFramework.Core.Services;
 using Elsa.Serialization;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
 namespace Elsa.Secrets.Persistence.EntityFramework.Core.Stores
@@ -14,7 +15,7 @@ namespace Elsa.Secrets.Persistence.EntityFramework.Core.Stores
     {
         private readonly IContentSerializer _contentSerializer;
 
-        public EntityFrameworkSecretsStore(ISecretsContextFactory dbContextFactory, IMapper mapper, IContentSerializer contentSerializer) : base(dbContextFactory, mapper) => _contentSerializer = contentSerializer;
+        public EntityFrameworkSecretsStore(ISecretsContextFactory dbContextFactory, IMapper mapper, IContentSerializer contentSerializer, ILogger<EntityFrameworkSecretsStore> logger) : base(dbContextFactory, mapper, logger) => _contentSerializer = contentSerializer;
 
         protected override Expression<Func<Secret, bool>> MapSpecification(ISpecification<Secret> specification) => AutoMapSpecification(specification);
 
