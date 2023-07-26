@@ -264,6 +264,7 @@ export namespace Components {
         "basePath": string;
         "culture": string;
         "history": RouterHistory;
+        "serverUrl": string;
     }
     interface ElsaStudioWorkflowInstancesList {
         "culture": string;
@@ -348,6 +349,7 @@ export namespace Components {
         "basePath": string;
         "culture": string;
         "history"?: RouterHistory;
+        "loadWorkflowDefinitions": () => Promise<void>;
         "serverUrl": string;
     }
     interface ElsaWorkflowFaultInformation {
@@ -1185,6 +1187,7 @@ declare namespace LocalJSX {
         "basePath"?: string;
         "culture"?: string;
         "history"?: RouterHistory;
+        "serverUrl"?: string;
     }
     interface ElsaStudioWorkflowInstancesList {
         "culture"?: string;
