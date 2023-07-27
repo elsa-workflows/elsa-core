@@ -10,7 +10,7 @@ export class ElsaSingleLineProperty {
   @Prop() activityModel: ActivityModel;
   @Prop() propertyDescriptor: ActivityPropertyDescriptor;
   @Prop() propertyModel: ActivityDefinitionProperty;
-  @Prop() clearOnFocus?: boolean;
+  @Prop() isEncypted?: boolean;
   @State() currentValue: string;
 
   onChange(e: Event) {
@@ -20,7 +20,7 @@ export class ElsaSingleLineProperty {
   }
 
   onFocus(e: Event) {
-    if (this.clearOnFocus) {
+    if (this.isEncypted) {
       const input = e.currentTarget as HTMLInputElement;
       const defaultSyntax = this.propertyDescriptor.defaultSyntax || SyntaxNames.Literal;
       input.value = this.propertyModel.expressions[defaultSyntax] = this.currentValue = "";

@@ -7,9 +7,9 @@ using System.Text;
 using System.Threading.Tasks;
 using Elsa.Secrets.Http.Extensions;
 using Elsa.Secrets.Http.Models;
+using Elsa.Secrets.Manager;
 using Elsa.Secrets.Models;
 using Elsa.Secrets.Persistence;
-using Elsa.Secrets.Services;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
@@ -25,16 +25,14 @@ public class OAuth2TokenService : IOAuth2TokenService
 {
 	private readonly ILogger<OAuth2TokenService> _logger;
 	private readonly IHttpClientFactory _httpClientFactory;
-	private readonly ISecretsStore _secretsStore;
-    private readonly ISecuredSecretService _securedSecretService;
+	private readonly ISecretsManager _secretsManager;
 
-	public OAuth2TokenService(IHttpClientFactory httpClientFactory, ILogger<OAuth2TokenService> logger, ISecretsStore secretsStore, ISecuredSecretService securedSecretService)
+	public OAuth2TokenService(IHttpClientFactory httpClientFactory, ILogger<OAuth2TokenService> logger, ISecretsManager secretsManager)
 	{
 		_logger = logger;
 		_httpClientFactory = httpClientFactory;
-		_secretsStore = secretsStore;
-        _securedSecretService = securedSecretService;
-    }
+		_secretsManager = secretsManager;
+	}
 	
 	private static string Base64Encode(string plainText) 
 	{
@@ -44,13 +42,12 @@ public class OAuth2TokenService : IOAuth2TokenService
 
 	public async Task<TokenResponse> GetToken(Secret secret, string? authCode, string? redirectUri)
 	{
-        _securedSecretService.SetSecret(secret);
-		var clientId = _securedSecretService.GetProperty("ClientId");
-		var clientSecret = _securedSecretService.GetProperty("ClientSecret");
-		var clientAuthMethod = _securedSecretService.GetProperty("ClientAuthMethod") ?? "client_secret_basic";
+		var clientId = secret.GetProperty("ClientId");
+		var clientSecret = secret.GetProperty("ClientSecret");
+		var clientAuthMethod = secret.GetProperty("ClientAuthMethod") ?? "client_secret_basic";
 		var content = new Dictionary<string, string>
 		{
-			{ "grant_type", _securedSecretService.GetProperty("GrantType") }
+			{ "grant_type", secret.GetProperty("GrantType") }
 		};
 
 		if (clientAuthMethod == "client_secret_post")
@@ -67,7 +64,7 @@ public class OAuth2TokenService : IOAuth2TokenService
 		}
 		else
 		{
-			content.Add("scope", _securedSecretService.GetProperty("Scope"));
+			content.Add("scope", secret.GetProperty("Scope"));
 		}
 		if (redirectUri != null)
 		{
@@ -82,7 +79,7 @@ public class OAuth2TokenService : IOAuth2TokenService
 				httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", GenerateAuthorizationValue(clientId, clientSecret));
 			}
 			
-			var response = await httpClient.PostAsync(_securedSecretService.GetProperty("AccessTokenUrl"), new FormUrlEncodedContent(content));
+			var response = await httpClient.PostAsync(secret.GetProperty("AccessTokenUrl"), new FormUrlEncodedContent(content));
 			var json = await response.Content.ReadAsStringAsync();
 			var result = JsonConvert.DeserializeObject<TokenResponse>(json);
 
@@ -92,8 +89,8 @@ public class OAuth2TokenService : IOAuth2TokenService
 			}
 			
 			var tokenData = result.ToTokenData();
-            _securedSecretService.AddOrUpdateProperty("Token", JsonConvert.SerializeObject(tokenData));
-			await _secretsStore.UpdateAsync(secret);
+			secret.AddOrUpdateProperty("Token", JsonConvert.SerializeObject(tokenData));
+			await _secretsManager.AddOrUpdateSecret(secret);
 
 			return result;
 		}
@@ -106,10 +103,9 @@ public class OAuth2TokenService : IOAuth2TokenService
 
 	public async Task<TokenResponse> GetTokenByRefreshToken(Secret secret, string refreshToken)
 	{
-        _securedSecretService.SetSecret(secret);
-		var clientId = _securedSecretService.GetProperty("ClientId");
-		var clientSecret = _securedSecretService.GetProperty("ClientSecret");
-		var clientAuthMethod = _securedSecretService.GetProperty("ClientAuthMethod") ?? "client_secret_basic";
+		var clientId = secret.GetProperty("ClientId");
+		var clientSecret = secret.GetProperty("ClientSecret");
+		var clientAuthMethod = secret.GetProperty("ClientAuthMethod") ?? "client_secret_basic";
 		var content = new Dictionary<string, string>
 		{
 			{ "grant_type", "refresh_token" },
@@ -129,14 +125,14 @@ public class OAuth2TokenService : IOAuth2TokenService
 			{
 				httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", GenerateAuthorizationValue(clientId, clientSecret));
 			}
-			var response = await httpClient.PostAsync(_securedSecretService.GetProperty("AccessTokenUrl"), new FormUrlEncodedContent(content));
+			var response = await httpClient.PostAsync(secret.GetProperty("AccessTokenUrl"), new FormUrlEncodedContent(content));
 			var json = await response.Content.ReadAsStringAsync();
 			var result = JsonConvert.DeserializeObject<TokenResponse>(json);
 			
 			if (response.StatusCode == HttpStatusCode.Unauthorized || !string.IsNullOrEmpty(result?.Error))
 			{
-                _securedSecretService.RemoveProperty("Token");
-				await _secretsStore.UpdateAsync(secret);
+				secret.RemoveProperty("Token");
+				await _secretsManager.AddOrUpdateSecret(secret);
 				throw new Exception("OAuth2 refresh token has expired - credential must be authorized with OAuth2 provider");
 			}
 
@@ -150,8 +146,8 @@ public class OAuth2TokenService : IOAuth2TokenService
 			{
 				tokenData.RefreshToken = refreshToken;
 			}
-            _securedSecretService.AddOrUpdateProperty("Token", JsonConvert.SerializeObject(tokenData));
-			await _secretsStore.UpdateAsync(secret);
+			secret.AddOrUpdateProperty("Token", JsonConvert.SerializeObject(tokenData));
+			await _secretsManager.AddOrUpdateSecret(secret);
 
 			return result;
 		}

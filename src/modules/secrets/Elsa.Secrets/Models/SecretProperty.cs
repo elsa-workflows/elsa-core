@@ -1,8 +1,10 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Elsa.Secrets.Models
 {
-    public class SecretProperty
+    public class SecretProperty : ICloneable
     {
         public static SecretProperty Literal(string name, string expression) => new(name, CreateSingleExpression("Literal", expression), null);
         public static SecretProperty Liquid(string name, string expression) => new(name, CreateSingleExpression("Liquid", expression), "Liquid");
@@ -44,5 +46,16 @@ namespace Elsa.Secrets.Models
 
         public override string ToString()
             => this.Name;
+
+        public object Clone()
+        {
+            return new SecretProperty
+            {
+                Name = Name,
+                Syntax = Syntax,
+                Expressions = Expressions.ToDictionary(x => x.Key, x=> x.Value),
+                IsEncrypted = IsEncrypted
+            };
+        }
     }
 }

@@ -3,6 +3,7 @@ using System.Net.Mime;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Persistence.Specifications;
+using Elsa.Secrets.Manager;
 using Elsa.Secrets.Models;
 using Elsa.Secrets.Persistence;
 using Microsoft.AspNetCore.Http;
@@ -16,34 +17,17 @@ namespace Elsa.Secrets.Api.Endpoints.Secrets
     [Produces(MediaTypeNames.Application.Json)]
     public class List : Controller
     {
-        private readonly ISecretsStore _secretStore;
-        public List(ISecretsStore secretStore)
-        { 
-            _secretStore = secretStore;
-        }
-        
-        private void HideEncryptedProperties(Secret secret)
+        private readonly ISecretsManager _secretsManager;
+        public List(ISecretsManager secretsManager)
         {
-            foreach (var secretProperty in secret.Properties)
-            {
-                if (!secretProperty.IsEncrypted) continue;
-                foreach (var key in secretProperty.Expressions.Keys)
-                {
-                    secretProperty.Expressions[key] = new string('*', secretProperty.Expressions[key]!.Length);
-                }
-            }
+            _secretsManager = secretsManager;
         }
 
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<Secret>))]
         public async Task<ActionResult<IEnumerable<Secret>>> Handle(CancellationToken cancellationToken = default)
         {
-            var specification = Specification<Secret>.Identity;
-            var items = await _secretStore.FindManyAsync(specification, cancellationToken: cancellationToken);
-            foreach (var secret in items)
-            {
-                HideEncryptedProperties(secret);
-            }
+            var items = await _secretsManager.GetSecretViewModels(cancellationToken);
 
             return Json(items);
         }

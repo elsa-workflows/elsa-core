@@ -34,5 +34,18 @@ namespace Elsa.Secrets.Manager
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
         Task<IEnumerable<Secret>> GetSecrets(string type, CancellationToken cancellationToken = default);
+        /// <summary>
+        /// Get view models of all secrets
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        Task<IEnumerable<Secret>> GetSecretViewModels(CancellationToken cancellationToken = default);
+        /// <summary>
+        /// Add or update secret if it exists
+        /// </summary>
+        /// <param name="secret">Secret to be saved</param>
+        /// <param name="restoreHiddenProperties">In case of saving from frontend, properties will be be hidden and must be restored</param>
+        /// <returns>The saved model, which may differ from the input</returns>
+        Task<Secret> AddOrUpdateSecret(Secret secret, bool restoreHiddenProperties = false, CancellationToken cancellationToken = default);
     }
 }

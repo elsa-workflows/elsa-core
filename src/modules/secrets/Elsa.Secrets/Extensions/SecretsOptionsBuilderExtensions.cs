@@ -5,7 +5,6 @@ using Elsa.Secrets.Manager;
 using Elsa.Secrets.Persistence;
 using Elsa.Secrets.Persistence.Decorators;
 using Elsa.Secrets.Providers;
-using Elsa.Secrets.Services;
 using Elsa.Secrets.ValueFormatters;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -13,17 +12,8 @@ namespace Elsa.Secrets.Extensions
 {
     public static class SecretsOptionsBuilderExtensions
     {
-        public static ElsaOptionsBuilder AddSecrets(this ElsaOptionsBuilder elsaOptions, bool encryptSecrets)
+        public static ElsaOptionsBuilder AddSecrets(this ElsaOptionsBuilder elsaOptions)
         {
-            if (encryptSecrets)
-            {
-                elsaOptions.Services.AddSingleton<ISecuredSecretService, SecuredSecretService>();
-            }
-            else
-            {
-                elsaOptions.Services.AddSingleton<ISecuredSecretService, NotSecuredSecretService>();
-            }
-
             elsaOptions.Services
                 .AddScoped<ISecretValueFormatter, MsSqlSecretValueFormatter>()
                 .AddScoped<ISecretValueFormatter, PostgreSqlSecretValueFormatter>()

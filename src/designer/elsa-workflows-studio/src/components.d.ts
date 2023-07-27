@@ -225,7 +225,7 @@ export namespace Components {
     }
     interface ElsaSingleLineProperty {
         "activityModel": ActivityModel;
-        "clearOnFocus"?: boolean;
+        "isEncypted"?: boolean;
         "propertyDescriptor": ActivityPropertyDescriptor;
         "propertyModel": ActivityDefinitionProperty;
     }
@@ -1147,7 +1147,7 @@ declare namespace LocalJSX {
     }
     interface ElsaSingleLineProperty {
         "activityModel"?: ActivityModel;
-        "clearOnFocus"?: boolean;
+        "isEncypted"?: boolean;
         "propertyDescriptor"?: ActivityPropertyDescriptor;
         "propertyModel"?: ActivityDefinitionProperty;
     }

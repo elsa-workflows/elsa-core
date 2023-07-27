@@ -7,7 +7,6 @@ using System.Web;
 using Elsa.Secrets.Extensions;
 using Elsa.Secrets.Models;
 using Elsa.Secrets.Persistence;
-using Elsa.Secrets.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -22,14 +21,12 @@ public class GetUrl : Controller
 {
 	private readonly ISecretsStore _secretStore;
 	private readonly IConfiguration _configuration;
-    private readonly ISecuredSecretService _securedSecretService;
 
-	public GetUrl(ISecretsStore secretStore, IConfiguration configuration, ISecuredSecretService securedSecretService)
+	public GetUrl(ISecretsStore secretStore, IConfiguration configuration)
 	{ 
 		_secretStore = secretStore;
 		_configuration = configuration;
-        _securedSecretService = securedSecretService;
-    }
+	}
 
 	[HttpGet]
 	[ProducesResponseType(StatusCodes.Status200OK, Type = typeof(string))]
@@ -38,14 +35,12 @@ public class GetUrl : Controller
 		var secret = await _secretStore.FindByIdAsync(secretId, cancellationToken);
 		if (secret == null)
 			return NotFound();
-        
-        _securedSecretService.SetSecret(secret);
 
-		var uriBuilder = new UriBuilder(_securedSecretService.GetProperty("AuthorizationUrl"));
+		var uriBuilder = new UriBuilder(secret.GetProperty("AuthorizationUrl"));
 		var query = HttpUtility.ParseQueryString(uriBuilder.Query);
 		query["response_type"] = "code";
-		query["client_id"] = _securedSecretService.GetProperty("ClientId");
-		query["scope"] = _securedSecretService.GetProperty("Scope");
+		query["client_id"] = secret.GetProperty("ClientId");
+		query["scope"] = secret.GetProperty("Scope");
 		query["prompt"] = "consent";
 		query["access_type"] = "offline";
 		query["state"] = secret.Id;
