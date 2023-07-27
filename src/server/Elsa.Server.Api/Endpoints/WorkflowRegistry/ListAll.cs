@@ -37,7 +37,7 @@ public class ListAll : Controller
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(List<WorkflowBlueprintSummaryModel>))]
     [SwaggerOperation(
         Summary = "Returns a list of workflow blueprints.",
-        Description = "Returns paginated a list of workflow blueprints. When no version options are specified, the latest version is returned.",
+        Description = "Returns a list of workflow blueprints. When no version options are specified, the latest version is returned.",
         OperationId = "WorkflowBlueprints.List",
         Tags = new[] { "WorkflowBlueprints" })
     ]
