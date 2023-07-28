@@ -4,6 +4,7 @@ using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Memory;
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Services;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
@@ -44,18 +45,43 @@ public static class ExpressionExecutionContextExtensions
     public static T? Get<T>(this ExpressionExecutionContext context, Input<T>? input) => input != null ? context.GetBlock(input.MemoryBlockReference).Value.ConvertTo<T>() : default;
     public static T? Get<T>(this ExpressionExecutionContext context, Output output) => context.GetBlock(output.MemoryBlockReference).Value.ConvertTo<T>();
     public static object? Get(this ExpressionExecutionContext context, Output output) => context.GetBlock(output.MemoryBlockReference).Value;
-    public static T? GetVariable<T>(this ExpressionExecutionContext context, string name) => (T?)context.GetVariable(name);
-    public static object? GetVariable(this ExpressionExecutionContext context, string name) => new Variable(name).Get(context);
-    public static Variable SetVariable<T>(this ExpressionExecutionContext context, string name, T? value, Type? storageDriverType = default) => context.SetVariable(name, (object?)value, storageDriverType, default);
+    public static T? GetVariableByName<T>(this ExpressionExecutionContext context, string name) => (T?)context.GetVariableByName(name)?.Value;
 
-    public static Variable SetVariable(this ExpressionExecutionContext context, string name, object? value, Type? storageDriverType, Action<MemoryBlock>? configure = default)
+    private static Variable? GetVariableByName(this ExpressionExecutionContext context, string name)
     {
+        foreach (var block in context.Memory.Blocks.Where(b => b.Value.Metadata is VariableBlockMetadata))
+        {
+            var metadata = block.Value.Metadata as VariableBlockMetadata;
+            if (metadata!.Variable.Name == name)
+                return metadata.Variable;
+        }
+
+        return null;
+    }
+
+    public static Variable CreateVariable<T>(this ExpressionExecutionContext context, string name, T? value, Type? storageDriverType = null, Action<MemoryBlock>? configure = default)
+    {
+        var existingVariable = context.GetVariableByName(name);
+        if(existingVariable != null)
+            throw new Exception($"Variable {name} already exists in the context.");
+        
         var variable = new Variable(name, value)
         {
-            StorageDriverType = storageDriverType
+            StorageDriverType = storageDriverType ?? typeof(WorkflowStorageDriver)
         };
-
+        
         context.Set(variable, value, configure);
+        return variable;
+    }
+
+    public static Variable SetVariable<T>(this ExpressionExecutionContext context, string name, T? value, Action<MemoryBlock>? configure = default)
+    {
+        var variable = context.GetVariableByName(name);
+        if(variable is null)
+            throw new Exception($"Variable {name} not found in the context.");
+
+        variable.Value = value;
+        variable.Set(context, value, configure);
         return variable;
     }
 

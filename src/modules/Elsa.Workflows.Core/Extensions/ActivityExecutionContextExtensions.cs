@@ -114,25 +114,36 @@ public static class ActivityExecutionContextExtensions
     }
 
     /// <summary>
-    /// Sets a workflow variable by name.
+    /// Creates a workflow variable by name and optionally sets the value.
     /// </summary>
     /// <param name="context">The <see cref="ActivityExecutionContext"/> being extended.</param>
     /// <param name="name">The name of the variable.</param>
     /// <param name="value">The value of the variable.</param>
-    /// <param name="storageDriverType">The type of the storage driver to use.</param>
+    /// <param name="storageDriverType">The type of storage driver to use for the variable.</param>
     /// <param name="configure">A callback to configure the memory block.</param>
     /// <returns>The created <see cref="Variable"/>.</returns>
-    public static Variable SetVariable(this ActivityExecutionContext context, string name, object? value, Type? storageDriverType = default, Action<MemoryBlock>? configure = default) =>
-        context.ExpressionExecutionContext.SetVariable(name, value, storageDriverType, configure);
+    public static Variable CreateVariable(this ActivityExecutionContext context, string name, object? value, Type? storageDriverType = default, Action<MemoryBlock>? configure = default) =>
+        context.ExpressionExecutionContext.CreateVariable(name, value, storageDriverType, configure);
 
     /// <summary>
     /// Sets a workflow variable by name.
     /// </summary>
     /// <param name="context">The <see cref="ActivityExecutionContext"/> being extended.</param>
     /// <param name="name">The name of the variable.</param>
+    /// <param name="value">The value of the variable.</param>
+    /// <param name="configure">A callback to configure the memory block.</param>
+    /// <returns>The created <see cref="Variable"/>.</returns>
+    public static Variable SetVariable(this ActivityExecutionContext context, string name, object? value, Action<MemoryBlock>? configure = default) =>
+        context.ExpressionExecutionContext.SetVariable(name, value, configure);
+
+    /// <summary>
+    /// Gets a workflow variable by name.
+    /// </summary>
+    /// <param name="context">The <see cref="ActivityExecutionContext"/> being extended.</param>
+    /// <param name="name">The name of the variable.</param>
     /// <typeparam name="T">The type of the variable.</typeparam>
     /// <returns>The variable if found, otherwise null.</returns>
-    public static T? GetVariable<T>(this ActivityExecutionContext context, string name) => context.ExpressionExecutionContext.GetVariable<T?>(name);
+    public static T? GetVariableByName<T>(this ActivityExecutionContext context, string name) => context.ExpressionExecutionContext.GetVariableByName<T?>(name);
 
     /// <summary>
     /// Returns a dictionary of variable keys and their values across scopes.
