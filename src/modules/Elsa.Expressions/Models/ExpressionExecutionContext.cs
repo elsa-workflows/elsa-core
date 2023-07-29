@@ -1,3 +1,4 @@
+using Elsa.Expressions.Helpers;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Expressions.Models;
@@ -102,7 +103,7 @@ public class ExpressionExecutionContext
     /// <summary>
     /// Returns the value of the memory block pointed to by the specified memory block reference.
     /// </summary>
-    public T? Get<T>(MemoryBlockReference blockReference) => (T?)Get(blockReference);
+    public T? Get<T>(MemoryBlockReference blockReference) => Get(blockReference).ConvertTo<T>();
 
     /// <summary>
     /// Sets the value of the memory block pointed to by the specified memory block reference.
