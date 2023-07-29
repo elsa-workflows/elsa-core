@@ -56,7 +56,7 @@ public static class ExpressionExecutionContextExtensions
                 return metadata.Variable;
         }
 
-        return null;
+        return context.ParentContext?.GetVariableByName(name);
     }
 
     public static Variable CreateVariable<T>(this ExpressionExecutionContext context, string name, T? value, Type? storageDriverType = null, Action<MemoryBlock>? configure = default)
