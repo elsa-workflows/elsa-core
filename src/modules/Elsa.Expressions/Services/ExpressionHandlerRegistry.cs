@@ -17,11 +17,11 @@ public class ExpressionHandlerRegistry : IExpressionHandlerRegistry
 
     private IDictionary<Type, Type> Dictionary { get; }
 
-    public void Register(Type expression, Type handler) => Dictionary.Add(expression, handler);
+    public void Register(Type expressionType, Type handler) => Dictionary.Add(expressionType, handler);
 
-    public IExpressionHandler? GetHandler(IExpression input)
+    public IExpressionHandler? GetHandler(IExpression expression)
     {
-        var expressionType = input.GetType();
+        var expressionType = expression.GetType();
 
         if (expressionType.IsConstructedGenericType)
             expressionType = expressionType.BaseType;

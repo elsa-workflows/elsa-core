@@ -68,9 +68,9 @@ class SetGetNamedVariableWorkflow : WorkflowBase
 
             Activities =
             {
-                new WriteLine(context => $"Foo = {context.GetVariableByName<string>("Foo")}"),
+                new WriteLine(context => $"Foo = {context.GetVariable<string>("Foo")}"),
                 Inline.From(context => context.SetVariable("Foo", "Baz")),
-                new WriteLine(context => $"Foo = {context.GetVariableByName<string>("Foo")}"),
+                new WriteLine(context => $"Foo = {context.GetVariable<string>("Foo")}"),
             }
         };
     }

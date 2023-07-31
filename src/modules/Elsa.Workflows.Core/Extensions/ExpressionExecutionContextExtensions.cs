@@ -45,9 +45,9 @@ public static class ExpressionExecutionContextExtensions
     public static T? Get<T>(this ExpressionExecutionContext context, Input<T>? input) => input != null ? context.GetBlock(input.MemoryBlockReference).Value.ConvertTo<T>() : default;
     public static T? Get<T>(this ExpressionExecutionContext context, Output output) => context.GetBlock(output.MemoryBlockReference).Value.ConvertTo<T>();
     public static object? Get(this ExpressionExecutionContext context, Output output) => context.GetBlock(output.MemoryBlockReference).Value;
-    public static T? GetVariableByName<T>(this ExpressionExecutionContext context, string name) => (T?)context.GetVariableByName(name)?.Value;
+    public static T? GetVariable<T>(this ExpressionExecutionContext context, string name) => (T?)context.GetVariable(name)?.Value;
 
-    private static Variable? GetVariableByName(this ExpressionExecutionContext context, string name)
+    private static Variable? GetVariable(this ExpressionExecutionContext context, string name)
     {
         foreach (var block in context.Memory.Blocks.Where(b => b.Value.Metadata is VariableBlockMetadata))
         {
@@ -56,12 +56,12 @@ public static class ExpressionExecutionContextExtensions
                 return metadata.Variable;
         }
 
-        return context.ParentContext?.GetVariableByName(name);
+        return context.ParentContext?.GetVariable(name);
     }
 
     public static Variable CreateVariable<T>(this ExpressionExecutionContext context, string name, T? value, Type? storageDriverType = null, Action<MemoryBlock>? configure = default)
     {
-        var existingVariable = context.GetVariableByName(name);
+        var existingVariable = context.GetVariable(name);
         if(existingVariable != null)
             throw new Exception($"Variable {name} already exists in the context.");
         
@@ -76,7 +76,7 @@ public static class ExpressionExecutionContextExtensions
 
     public static Variable SetVariable<T>(this ExpressionExecutionContext context, string name, T? value, Action<MemoryBlock>? configure = default)
     {
-        var variable = context.GetVariableByName(name);
+        var variable = context.GetVariable(name);
         if(variable is null)
             throw new Exception($"Variable {name} not found in the context.");
 

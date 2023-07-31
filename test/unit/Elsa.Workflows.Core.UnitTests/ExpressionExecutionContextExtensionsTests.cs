@@ -7,7 +7,7 @@ namespace Elsa.Workflows.Core.UnitTests;
 public class ExpressionExecutionContextExtensionsTests
 {
     [Fact]
-    public void GetVariableByName_ReturnsVariable_WhenVariableExists()
+    public void GetVariable_ReturnsVariable_WhenVariableExists()
     {
         // Arrange
         var variable = new Variable("test", 5);
@@ -19,21 +19,21 @@ public class ExpressionExecutionContextExtensionsTests
         var context = new ExpressionExecutionContext(null!, memoryRegister);
 
         // Act
-        var result = context.GetVariableByName<int>("test");
+        var result = context.GetVariable<int>("test");
 
         // Assert
         Assert.Equal(5, result);
     }
 
     [Fact]
-    public void GetVariableByName_ReturnsNull_WhenVariableDoesNotExist()
+    public void GetVariable_ReturnsNull_WhenVariableDoesNotExist()
     {
         // Arrange
         var memoryRegister = new MemoryRegister(new Dictionary<string, MemoryBlock>());
         var context = new ExpressionExecutionContext(null!, memoryRegister);
 
         // Act
-        var result = context.GetVariableByName<string>("nonexistent");
+        var result = context.GetVariable<string>("nonexistent");
 
         // Assert
         Assert.Null(result);
@@ -66,7 +66,7 @@ public class ExpressionExecutionContextExtensionsTests
         context.CreateVariable("newVariable", 10);
 
         // Assert
-        var variable = context.GetVariableByName<int>("newVariable");
+        var variable = context.GetVariable<int>("newVariable");
         Assert.Equal(10, variable);
     }
 
@@ -97,7 +97,7 @@ public class ExpressionExecutionContextExtensionsTests
         context.SetVariable("test", 10);
 
         // Assert
-        var updatedVariable = context.GetVariableByName<int>("test");
+        var updatedVariable = context.GetVariable<int>("test");
         Assert.Equal(10, updatedVariable);
     }
 }

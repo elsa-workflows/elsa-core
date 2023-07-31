@@ -143,7 +143,7 @@ public static class ActivityExecutionContextExtensions
     /// <param name="name">The name of the variable.</param>
     /// <typeparam name="T">The type of the variable.</typeparam>
     /// <returns>The variable if found, otherwise null.</returns>
-    public static T? GetVariableByName<T>(this ActivityExecutionContext context, string name) => context.ExpressionExecutionContext.GetVariableByName<T?>(name);
+    public static T? GetVariable<T>(this ActivityExecutionContext context, string name) => context.ExpressionExecutionContext.GetVariable<T?>(name);
 
     /// <summary>
     /// Returns a dictionary of variable keys and their values across scopes.
