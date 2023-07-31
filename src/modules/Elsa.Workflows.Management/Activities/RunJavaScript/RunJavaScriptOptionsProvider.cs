@@ -6,7 +6,7 @@ namespace Elsa.JavaScript.Activities;
 
 internal class RunJavaScriptOptionsProvider : IActivityPropertyOptionsProvider
 {
-    public ValueTask<object> GetOptionsAsync(PropertyInfo property, CancellationToken cancellationToken = default)
+    public ValueTask<object?> GetOptionsAsync(PropertyInfo property, CancellationToken cancellationToken = default)
     {
         return new(new CodeEditorOptions
         {

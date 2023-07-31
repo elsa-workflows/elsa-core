@@ -10,5 +10,5 @@ public interface IActivityPropertyOptionsProvider
     /// <summary>
     /// Returns options for the specified property.
     /// </summary>
-    ValueTask<object> GetOptionsAsync(PropertyInfo property, CancellationToken cancellationToken = default);
+    ValueTask<object?> GetOptionsAsync(PropertyInfo property, CancellationToken cancellationToken = default);
 }

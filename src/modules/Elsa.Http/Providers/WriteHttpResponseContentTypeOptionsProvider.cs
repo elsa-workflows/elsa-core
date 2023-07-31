@@ -14,7 +14,7 @@ internal class WriteHttpResponseContentTypeOptionsProvider : IActivityPropertyOp
         _options = options.Value;
     }
     
-    public ValueTask<object> GetOptionsAsync(PropertyInfo property, CancellationToken cancellationToken = default)
+    public ValueTask<object?> GetOptionsAsync(PropertyInfo property, CancellationToken cancellationToken = default)
     {
         return new(GetOptions(property));
     }
