@@ -28,12 +28,24 @@ public class Tests
         var lines = _capturingTextWriter.Lines.ToList();
         Assert.Equal(new[] { "Line 5" }, lines);
     }
-    
+
     [Fact(DisplayName = "Workflow can reference variables set in previous activities")]
     public async Task Test2()
     {
         await _workflowRunner.RunAsync<SetGetVariablesWorkflow>();
         var lines = _capturingTextWriter.Lines.ToList();
         Assert.Equal(new[] { "Variable 2: The value of variable 1" }, lines);
+    }
+
+    [Fact(DisplayName = "Workflow can set and get named variables")]
+    public async Task Test3()
+    {
+        await _workflowRunner.RunAsync<SetGetNamedVariableWorkflow>();
+        var lines = _capturingTextWriter.Lines.ToList();
+        Assert.Equal(new[]
+        {
+            "Foo = Bar",
+            "Foo = Baz"
+        }, lines);
     }
 }
