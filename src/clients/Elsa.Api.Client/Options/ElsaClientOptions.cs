@@ -14,4 +14,9 @@ public class ElsaClientOptions
     /// Gets or sets the API key to use when authenticating with the Elsa server.
     /// </summary>
     public string ApiKey { get; set; } = default!;
+    
+    /// <summary>
+    /// Gets or sets a delegate that can be used to configure the HTTP client.
+    /// </summary>
+    public Action<HttpClient>? ConfigureHttpClient { get; set; }
 }

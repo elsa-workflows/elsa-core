@@ -32,7 +32,7 @@ public static class DependencyInjectionExtensions
     public static IServiceCollection AddElsaClient(this IServiceCollection services, Action<ElsaClientOptions> configureOptions)
     {
         services.Configure(configureOptions);
-        services.AddSingleton<IElsaClient, ElsaClient>();
+        services.AddScoped<IElsaClient, ElsaClient>();
         services.AddActivityTypeService();
 
         services.AddApi<IWorkflowDefinitionsApi>(CreateRefitSettings);
@@ -71,6 +71,7 @@ public static class DependencyInjectionExtensions
     {
         var options = serviceProvider.GetRequiredService<IOptions<ElsaClientOptions>>().Value;
         httpClient.BaseAddress = options.BaseAddress;
+        options.ConfigureHttpClient?.Invoke(httpClient);
     }
     
     private static RefitSettings CreateRefitSettings(IServiceProvider serviceProvider)
