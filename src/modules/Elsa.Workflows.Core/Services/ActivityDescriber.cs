@@ -71,6 +71,7 @@ public class ActivityDescriber : IActivityDescriber
         var outputProperties = GetOutputProperties(activityType).ToList();
         var isTrigger = activityType.IsAssignableTo(typeof(ITrigger));
         var browsableAttr = activityType.GetCustomAttribute<BrowsableAttribute>();
+        var attributes = activityType.GetCustomAttributes(true).Cast<Attribute>().ToList();
 
         var descriptor = new ActivityDescriptor
         {
@@ -87,6 +88,7 @@ public class ActivityDescriber : IActivityDescriber
             Outputs = (await DescribeOutputPropertiesAsync(outputProperties, cancellationToken)).ToList(),
             IsContainer = typeof(IContainer).IsAssignableFrom(activityType),
             IsBrowsable = browsableAttr == null || browsableAttr.Browsable,
+            Attributes = attributes,
             Constructor = context =>
             {
                 var activity = _activityFactory.Create(activityType, context);
