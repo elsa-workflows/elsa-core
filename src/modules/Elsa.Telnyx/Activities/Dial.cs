@@ -61,7 +61,7 @@ public class Dial : CodeActivity<DialResponse>
     public Input<string?> AnsweringMachineDetection { get; set; } = new("disabled");
 
     /// <summary>
-    /// Enables answering machine detection.
+    /// Start recording automatically after an event. Disabled by default.
     /// </summary>
     [Input(Description = "Start recording automatically after an event. Disabled by default.")]
     public Input<bool> Record { get; set; } = default!;

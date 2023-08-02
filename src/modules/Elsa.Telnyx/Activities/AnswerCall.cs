@@ -47,6 +47,12 @@ public class FlowAnswerCall : AnswerCallBase
 public class AnswerCall : AnswerCallBase
 {
     /// <inheritdoc />
+    [JsonConstructor]
+    public AnswerCall()
+    {
+    }
+    
+    /// <inheritdoc />
     public AnswerCall([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }

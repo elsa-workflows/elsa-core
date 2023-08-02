@@ -29,7 +29,6 @@ public class FlowStartRecording : StartRecordingBase
     }
     
     /// <inheritdoc />
-    [JsonConstructor]
     public FlowStartRecording([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
