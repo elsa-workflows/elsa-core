@@ -30,6 +30,7 @@ public static class DependencyInjectionExtensions
         Action<IHttpClientBuilder>? configureHttpClientBuilder = default)
     {
         // Telnyx options.
+        configure ??= options => options.ApiUrl = new Uri("https://api.telnyx.com");
         services.Configure(configure);
 
         // Services.

@@ -8,12 +8,14 @@ using Elsa.Telnyx.Payloads.Abstract;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Runtime.Contracts;
+using JetBrains.Annotations;
 
 namespace Elsa.Telnyx.Handlers;
 
 /// <summary>
 /// Resumes all workflows blocked on activities that are waiting for a given webhook.
 /// </summary>
+[PublicAPI]
 internal class TriggerWebhookDrivenActivities : INotificationHandler<TelnyxWebhookReceived>
 {
     private readonly IWorkflowRuntime _workflowRuntime;

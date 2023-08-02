@@ -92,6 +92,7 @@ public abstract class AnswerCallBase : Activity<CallAnsweredPayload>, IBookmarks
     /// <summary>
     /// The call control ID to answer. Leave blank when the workflow is driven by an incoming call and you wish to pick up that one.
     /// </summary>
+    [Input(DisplayName = "Call Control ID", Description = "The call control ID of the call to answer.", Category = "Advanced")]
     public Input<string?>? CallControlId { get; set; }
 
     /// <inheritdoc />

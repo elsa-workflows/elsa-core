@@ -8,6 +8,7 @@ using Elsa.Telnyx.Payloads.Abstract;
 using Elsa.Telnyx.Payloads.Call;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Runtime.Contracts;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Telnyx.Handlers;
@@ -15,6 +16,7 @@ namespace Elsa.Telnyx.Handlers;
 /// <summary>
 /// Triggers all workflows starting with or blocked on a <see cref="IncomingCall"/> activity.
 /// </summary>
+[PublicAPI]
 internal class TriggerIncomingCallActivities : INotificationHandler<TelnyxWebhookReceived>
 {
     private readonly IWorkflowRuntime _workflowRuntime;
@@ -37,7 +39,7 @@ internal class TriggerIncomingCallActivities : INotificationHandler<TelnyxWebhoo
         if (callInitiatedPayload.Direction != "incoming")
             return;
 
-        var correlationId = ((Payload)webhook.Data.Payload).GetCorrelationId();;
+        var correlationId = ((Payload)webhook.Data.Payload).GetCorrelationId();
         var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<IncomingCall>();
         var input = new Dictionary<string, object>().AddInput(webhook);
 

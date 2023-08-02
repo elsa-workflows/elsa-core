@@ -8,6 +8,7 @@ using Elsa.Telnyx.Events;
 using Elsa.Telnyx.Extensions;
 using Elsa.Telnyx.Payloads.Abstract;
 using Elsa.Workflows.Runtime.Contracts;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Telnyx.Handlers;
@@ -15,6 +16,7 @@ namespace Elsa.Telnyx.Handlers;
 /// <summary>
 /// Triggers all workflows starting with or blocked on a <see cref="WebhookEvent"/> activity.
 /// </summary>
+[PublicAPI]
 internal class TriggerWebhookActivities : INotificationHandler<TelnyxWebhookReceived>
 {
     private readonly IWorkflowRuntime _workflowRuntime;

@@ -8,6 +8,7 @@ using Elsa.Telnyx.Payloads.Abstract;
 using Elsa.Telnyx.Payloads.Call;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Runtime.Contracts;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Telnyx.Handlers;
@@ -15,6 +16,7 @@ namespace Elsa.Telnyx.Handlers;
 /// <summary>
 /// Triggers all workflows starting with or blocked on a <see cref="IncomingCall"/> activity.
 /// </summary>
+[PublicAPI]
 internal class TriggerBridgeCallActivities : INotificationHandler<TelnyxWebhookReceived>
 {
     private readonly IWorkflowRuntime _workflowRuntime;
@@ -34,7 +36,7 @@ internal class TriggerBridgeCallActivities : INotificationHandler<TelnyxWebhookR
         if (payload is not CallBridgedPayload callBridgedPayload)
             return;
         
-        var correlationId = ((Payload)webhook.Data.Payload).GetCorrelationId();;
+        var correlationId = ((Payload)webhook.Data.Payload).GetCorrelationId();
         var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<BridgeCalls>();
         var input = new Dictionary<string, object>().AddInput(callBridgedPayload);
         var callBridgedBookmarkPayload = new CallBridgedBookmarkPayload(callBridgedPayload.CallControlId);

@@ -1,4 +1,5 @@
 ﻿using Elsa.Telnyx.Contracts;
+using JetBrains.Annotations;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -10,6 +11,7 @@ namespace Elsa.Extensions;
 /// <summary>
 /// Provides extensions on <see cref="IEndpointRouteBuilder"/>
 /// </summary>
+[PublicAPI]
 public static class EndpointsExtensions
 {
     /// <summary>
