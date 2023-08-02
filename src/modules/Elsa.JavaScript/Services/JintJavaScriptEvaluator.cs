@@ -168,7 +168,12 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
     {
         // Select activities with outputs.
         var activityExecutionContext = context.GetActivityExecutionContext();
+        var toolVersion = activityExecutionContext.WorkflowExecutionContext.Workflow.WorkflowMetadata.ToolVersion;
+        var useActivityName = toolVersion?.Major >= 3;
         var activitiesWithOutputs = activityExecutionContext.GetActivitiesWithOutputs();
+
+        if (useActivityName)
+            activitiesWithOutputs = activitiesWithOutputs.Where(x => !string.IsNullOrWhiteSpace(x.Activity.Name));
 
         foreach (var activityWithOutput in activitiesWithOutputs)
         {
@@ -178,7 +183,8 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
             foreach (var output in activityDescriptor.Outputs)
             {
                 var outputPascalName = output.Name.Pascalize();
-                var activityIdPascalName = activity.Id.Pascalize();
+                var activityIdentifier = useActivityName ? activity.Name : activity.Id;
+                var activityIdPascalName = activityIdentifier.Pascalize();
                 engine.SetValue($"get{outputPascalName}From{activityIdPascalName}", (Func<object?>)(() => GetOutput(context, activity.Id, output.Name)));
             }
         }
