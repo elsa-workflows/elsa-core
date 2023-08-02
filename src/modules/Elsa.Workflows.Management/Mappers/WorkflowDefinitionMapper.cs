@@ -38,7 +38,7 @@ public class WorkflowDefinitionMapper
         return new(
             new WorkflowIdentity(source.DefinitionId, source.Version, source.Id),
             new WorkflowPublication(source.IsLatest, source.IsPublished),
-            new WorkflowMetadata(source.Name, source.Description, source.CreatedAt),
+            new WorkflowMetadata(source.Name, source.Description, source.CreatedAt, source.ToolVersion),
             source.Options,
             root,
             source.Variables,
