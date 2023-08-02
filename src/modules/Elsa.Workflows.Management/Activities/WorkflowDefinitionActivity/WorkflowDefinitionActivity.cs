@@ -135,7 +135,19 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
         var workflowDefinition = await workflowDefinitionStore.FindAsync(filter, cancellationToken);
 
         if (workflowDefinition == null)
-            throw new Exception($"Workflow definition {WorkflowDefinitionId} not found");
+        {
+            // Find the latest published version.
+            workflowDefinition = await workflowDefinitionStore.FindAsync(new WorkflowDefinitionFilter { DefinitionId = WorkflowDefinitionId, VersionOptions = VersionOptions.Published }, cancellationToken);
+
+            if (workflowDefinition == null)
+            {
+                // Find the latest version.
+                workflowDefinition = await workflowDefinitionStore.FindAsync(new WorkflowDefinitionFilter { DefinitionId = WorkflowDefinitionId, VersionOptions = VersionOptions.Latest }, cancellationToken);
+            }
+            
+            if (workflowDefinition == null)
+                throw new Exception($"Could not find workflow definition with ID {WorkflowDefinitionId}.");
+        }
 
         // Construct the root activity stored in the activity definitions.
         var materializer = serviceProvider.GetRequiredService<IWorkflowMaterializer>();
