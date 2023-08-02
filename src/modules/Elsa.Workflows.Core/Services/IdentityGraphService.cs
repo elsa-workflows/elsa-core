@@ -42,8 +42,8 @@ public class IdentityGraphService : IIdentityGraphService
         {
             node.Activity.Id = CreateId(node, identityCounters, flattenedList);
             AssignInputOutputs(node.Activity);
-            
-            if(node.Activity is IVariableContainer variableContainer)
+
+            if (node.Activity is IVariableContainer variableContainer)
                 AssignVariables(variableContainer);
         }
     }
@@ -52,32 +52,32 @@ public class IdentityGraphService : IIdentityGraphService
     public void AssignInputOutputs(IActivity activity)
     {
         var activityDescriptor = _activityRegistry.Find(activity.Type, activity.Version) ?? throw new Exception("Activity descriptor not found");
-        var inputs = activityDescriptor.GetWrappedInputProperties(activity).Values.Where(x => x != null).Cast<Input>().ToList();
+        var inputs = activityDescriptor.GetWrappedInputProperties(activity).Values.Cast<Input>().ToList();
         var seed = 0;
 
         foreach (var input in inputs)
         {
-            var blockReference = input.MemoryBlockReference();
-            
-            if(string.IsNullOrEmpty(blockReference.Id))
-                blockReference.Id = $"{activity.Id}:input-{++seed}";
+            var blockReference = input?.MemoryBlockReference();
+
+            if (blockReference != null!)
+                if (string.IsNullOrEmpty(blockReference.Id))
+                    blockReference.Id = $"{activity.Id}:input-{seed}";
+
+            seed++;
         }
 
         seed = 0;
         var outputs = activity.GetOutputs();
-        
-        var assignedOutputs = outputs.Where(x =>
-        {
-            var memoryBlockReference = x.Value.MemoryBlockReference();
-            return memoryBlockReference != null! && memoryBlockReference.Id == null!;
-        }).ToList();
 
-        foreach (var output in assignedOutputs)
+        foreach (var output in outputs)
         {
             var blockReference = output.Value.MemoryBlockReference();
-            
-            if(string.IsNullOrEmpty(blockReference.Id))
-                blockReference.Id = $"{activity.Id}:output-{++seed}";
+
+            if (blockReference != null!)
+                if (string.IsNullOrEmpty(blockReference.Id))
+                    blockReference.Id = $"{activity.Id}:output-{seed}";
+
+            seed++;
         }
     }
 
