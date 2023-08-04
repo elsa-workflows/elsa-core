@@ -52,7 +52,7 @@ public class MongoWorkflowStateStore : IWorkflowStateStore
     /// <inheritdoc />
     public async Task<long> DeleteManyAsync(WorkflowStateFilter filter, CancellationToken cancellationToken = default)
     {
-        return await _mongoDbStore.DeleteWhereAsync(queryable => Filter(queryable, filter), cancellationToken);
+        return await _mongoDbStore.DeleteWhereAsync<string>(queryable => Filter(queryable, filter), x => x.Id, cancellationToken);
     }
 
     private IMongoQueryable<WorkflowState> Filter(IMongoQueryable<WorkflowState> queryable, WorkflowStateFilter filter) => (filter.Apply(queryable) as IMongoQueryable<WorkflowState>)!;

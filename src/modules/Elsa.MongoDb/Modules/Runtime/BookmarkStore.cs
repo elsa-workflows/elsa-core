@@ -31,7 +31,7 @@ public class MongoBookmarkStore : IBookmarkStore
 
     /// <inheritdoc />
     public async ValueTask<long> DeleteAsync(BookmarkFilter filter, CancellationToken cancellationToken = default) => 
-        await _mongoDbStore.DeleteWhereAsync(query => Filter(query, filter), cancellationToken);
+        await _mongoDbStore.DeleteWhereAsync<string>(query => Filter(query, filter), x => x.BookmarkId, cancellationToken);
 
     private IMongoQueryable<StoredBookmark> Filter(IMongoQueryable<StoredBookmark> queryable, BookmarkFilter filter) => 
         (filter.Apply(queryable) as IMongoQueryable<StoredBookmark>)!;

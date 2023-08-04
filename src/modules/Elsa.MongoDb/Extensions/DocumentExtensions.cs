@@ -42,11 +42,12 @@ public static class DocumentExtensions
     /// Builds a filter expression for the Id property name of the specified documents.
     /// </summary>
     /// <param name="documents">The documents.</param>
+    /// <param name="key">The key.</param>
     /// <typeparam name="TDocument">The type of the document.</typeparam>
     /// <exception cref="InvalidOperationException">The type does not have an Id property.</exception>
-    public static FilterDefinition<TDocument> BuildIdFilterForList<TDocument>(this IEnumerable<TDocument> documents)
+    public static FilterDefinition<TDocument> BuildIdFilterForList<TDocument>(this IEnumerable<TDocument> documents, string key = "Id")
     {
-        var propertyName = "Id";
+        var propertyName = key;
         var idProperty = typeof(TDocument).GetProperty(propertyName);
         if (idProperty == null)
         {

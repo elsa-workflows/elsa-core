@@ -27,7 +27,7 @@ public class MongoApplicationStore : IApplicationStore
 
     /// <inheritdoc />
     public async Task DeleteAsync(ApplicationFilter filter, CancellationToken cancellationToken = default) => 
-        await _applicationMongoDbStore.DeleteWhereAsync(query => Filter(query, filter), cancellationToken);
+        await _applicationMongoDbStore.DeleteWhereAsync<string>(query => Filter(query, filter), x => x.Id, cancellationToken);
 
     /// <inheritdoc />
     public async Task<Application?> FindAsync(ApplicationFilter filter, CancellationToken cancellationToken = default) => 

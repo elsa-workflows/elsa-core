@@ -85,7 +85,7 @@ public class MongoWorkflowInstanceStore : IWorkflowInstanceStore
 
     /// <inheritdoc />
     public async Task<long> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default) => 
-        await _mongoDbStore.DeleteWhereAsync(query => Filter(query, filter), cancellationToken);
+        await _mongoDbStore.DeleteWhereAsync<string>(query => Filter(query, filter), x => x.Id, cancellationToken);
 
     /// <inheritdoc />
     public async Task SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default) =>

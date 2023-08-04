@@ -25,12 +25,13 @@ public class MongoRoleStore : IRoleStore
     public async Task SaveAsync(Role application, CancellationToken cancellationToken = default) => 
         await _roleMongoDbStore.SaveAsync(application, cancellationToken);
 
+    /// <inheritdoc />
     public async Task AddAsync(Role role, CancellationToken cancellationToken = default) => 
         await _roleMongoDbStore.SaveAsync(role, cancellationToken);
 
     /// <inheritdoc />
     public async Task DeleteAsync(RoleFilter filter, CancellationToken cancellationToken = default) => 
-        await _roleMongoDbStore.DeleteWhereAsync(query => Filter(query, filter), cancellationToken);
+        await _roleMongoDbStore.DeleteWhereAsync<string>(query => Filter(query, filter), x => x.Id, cancellationToken);
 
     /// <inheritdoc />
     public async Task<Role?> FindAsync(RoleFilter filter, CancellationToken cancellationToken = default) => 

@@ -49,7 +49,7 @@ public class MongoTriggerStore : ITriggerStore
 
     /// <inheritdoc />
     public async ValueTask<long> DeleteManyAsync(TriggerFilter filter, CancellationToken cancellationToken = default) =>
-        await _mongoDbStore.DeleteWhereAsync(query => Filter(query, filter), cancellationToken);
+        await _mongoDbStore.DeleteWhereAsync<string>(query => Filter(query, filter), x => x.Id, cancellationToken);
     
     private static IMongoQueryable<StoredTrigger> Filter(IMongoQueryable<StoredTrigger> queryable, TriggerFilter filter) => 
         (filter.Apply(queryable) as IMongoQueryable<StoredTrigger>)!;

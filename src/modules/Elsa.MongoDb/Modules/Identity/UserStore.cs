@@ -27,7 +27,7 @@ public class MongoUserStore : IUserStore
 
     /// <inheritdoc />
     public async Task DeleteAsync(UserFilter filter, CancellationToken cancellationToken = default) => 
-        await _userMongoDbStore.DeleteWhereAsync(query => Filter(query, filter), cancellationToken);
+        await _userMongoDbStore.DeleteWhereAsync<string>(query => Filter(query, filter), x => x.Id, cancellationToken);
 
     /// <inheritdoc />
     public async Task<User?> FindAsync(UserFilter filter, CancellationToken cancellationToken = default) => 

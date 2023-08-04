@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using Elsa.Extensions;
 using Elsa.MongoDb.Extensions;
 using JetBrains.Annotations;
 using MongoDB.Driver;
@@ -163,12 +164,21 @@ public class MongoDbStore<TDocument> where TDocument : class
     /// Deletes documents using a query.
     /// </summary>
     /// <returns>The number of documents deleted.</returns>
-    public async Task<long> DeleteWhereAsync(Func<IMongoQueryable<TDocument>, IMongoQueryable<TDocument>> query, CancellationToken cancellationToken = default)
+    public async Task<long> DeleteWhereAsync<TKey>(Func<IMongoQueryable<TDocument>, IMongoQueryable<TDocument>> query, Expression<Func<TDocument, TKey>> keySelector, CancellationToken cancellationToken = default)
+    {
+        var key = keySelector.GetPropertyName();
+        return await DeleteWhereAsync(query, key, cancellationToken);
+    }
+    
+    /// <summary>
+    /// Deletes documents using a query.
+    /// </summary>
+    /// <returns>The number of documents deleted.</returns>
+    public async Task<long> DeleteWhereAsync(Func<IMongoQueryable<TDocument>, IMongoQueryable<TDocument>> query, string key = "Id", CancellationToken cancellationToken = default)
     {
         var documentsToDelete = await query(_collection.AsQueryable()).ToListAsync(cancellationToken);
         var count = documentsToDelete.LongCount();
-
-        var filter = documentsToDelete.BuildIdFilterForList();
+        var filter = documentsToDelete.BuildIdFilterForList(key);
         await _collection.DeleteManyAsync(filter, cancellationToken);
 
         return count;
