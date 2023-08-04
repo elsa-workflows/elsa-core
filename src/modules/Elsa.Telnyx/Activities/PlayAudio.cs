@@ -164,7 +164,11 @@ public abstract class PlayAudioBase : Activity, IBookmarksPersistedHandler
     }
 
     /// <inheritdoc />
-    protected override void Execute(ActivityExecutionContext context) => context.CreateBookmark(new WebhookEventBookmarkPayload(WebhookEventTypes.CallPlaybackStarted), ResumeAsync);
+    protected override void Execute(ActivityExecutionContext context)
+    {
+        var callControlId = context.GetPrimaryCallControlId(CallControlId) ?? throw new Exception("CallControlId is required.");
+        context.CreateBookmark(new WebhookEventBookmarkPayload(WebhookEventTypes.CallPlaybackStarted, callControlId), ResumeAsync);
+    }
 
     /// <summary>
     /// Called when playback has started.

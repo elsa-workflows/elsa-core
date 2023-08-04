@@ -1,6 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 using Elsa.Extensions;
+using Elsa.Telnyx.Attributes;
 using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Client.Models;
 using Elsa.Telnyx.Client.Services;
@@ -78,6 +79,7 @@ public class BridgeCalls : BridgeCallsBase
 /// Bridge two calls.
 /// </summary>
 [Activity(Constants.Namespace, "Bridge two calls.", Kind = ActivityKind.Task)]
+[WebhookDriven(WebhookEventTypes.CallBridged)]
 [PublicAPI]
 public abstract class BridgeCallsBase : Activity<BridgedCallsOutput>, IBookmarksPersistedHandler
 {
@@ -119,12 +121,12 @@ public abstract class BridgeCallsBase : Activity<BridgedCallsOutput>, IBookmarks
     }
 
     /// <inheritdoc />
-    protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
+    protected override void Execute(ActivityExecutionContext context)
     {
         var callControlIdA = context.GetPrimaryCallControlId(CallControlIdA) ?? throw new Exception("CallControlA is required");
         var callControlIdB = context.GetSecondaryCallControlId(CallControlIdB) ?? throw new Exception("CallControlB is required");
-        var bookmarkA = new CallBridgedBookmarkPayload(callControlIdA);
-        var bookmarkB = new CallBridgedBookmarkPayload(callControlIdB);
+        var bookmarkA = new WebhookEventBookmarkPayload(WebhookEventTypes.CallBridged, callControlIdA);
+        var bookmarkB = new WebhookEventBookmarkPayload(WebhookEventTypes.CallBridged, callControlIdB);
         context.CreateBookmarks(new[] { bookmarkA, bookmarkB }, ResumeAsync);
     }
 

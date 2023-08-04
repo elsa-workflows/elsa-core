@@ -5,6 +5,7 @@ using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Events;
 using Elsa.Telnyx.Extensions;
 using Elsa.Telnyx.Payloads.Abstract;
+using Elsa.Telnyx.Payloads.Call;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Runtime.Contracts;
@@ -32,13 +33,20 @@ internal class TriggerWebhookDrivenActivities : INotificationHandler<TelnyxWebho
         var webhook = notification.Webhook;
         var eventType = webhook.Data.EventType;
         var eventPayload = webhook.Data.Payload;
+        var callPayload = eventPayload as CallPayload;
+        var callControlId = callPayload?.CallControlId;
         var input = new Dictionary<string, object>().AddInput(eventPayload.GetType().Name, eventPayload);
         var activityDescriptors = FindActivityDescriptors(eventType).ToList();
         var correlationId = ((Payload)webhook.Data.Payload).GetCorrelationId();
         var bookmarkPayload = new WebhookEventBookmarkPayload(eventType);
+        var bookmarkPayloadWithCallControl = new WebhookEventBookmarkPayload(eventType, callControlId);
+        var options = new TriggerWorkflowsRuntimeOptions(correlationId, Input: input);
 
         foreach (var activityDescriptor in activityDescriptors)
-            await _workflowRuntime.ResumeWorkflowsAsync(activityDescriptor.TypeName, bookmarkPayload, new TriggerWorkflowsRuntimeOptions(correlationId, Input: input), cancellationToken);
+        {
+            await _workflowRuntime.ResumeWorkflowsAsync(activityDescriptor.TypeName, bookmarkPayload, options, cancellationToken);
+            await _workflowRuntime.ResumeWorkflowsAsync(activityDescriptor.TypeName, bookmarkPayloadWithCallControl, options, cancellationToken);
+        }
     }
 
     private IEnumerable<ActivityDescriptor> FindActivityDescriptors(string eventType) =>

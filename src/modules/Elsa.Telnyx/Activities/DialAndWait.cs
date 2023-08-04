@@ -1,11 +1,15 @@
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 using Elsa.Extensions;
+using Elsa.Telnyx.Attributes;
+using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Client.Models;
 using Elsa.Telnyx.Client.Services;
 using Elsa.Telnyx.Exceptions;
 using Elsa.Telnyx.Extensions;
 using Elsa.Telnyx.Options;
+using Elsa.Telnyx.Payloads.Call;
 using Elsa.Workflows.Core;
+using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 using JetBrains.Annotations;
@@ -16,18 +20,20 @@ namespace Elsa.Telnyx.Activities;
 /// <summary>
 /// Dial a number or SIP URI.
 /// </summary>
-[Activity(Constants.Namespace, "Dial a number or SIP URI.", Kind = ActivityKind.Task)]
+[Activity(Constants.Namespace, "Dial a number or SIP URI and wait for an event.", Kind = ActivityKind.Task)]
+[FlowNode("Answered", "Hangup")]
+[WebhookDriven(WebhookEventTypes.CallAnswered, WebhookEventTypes.CallHangup)]
 [PublicAPI]
-public class Dial : CodeActivity<DialResponse>
+public class DialAndWait : Activity<CallPayload>
 {
     /// <inheritdoc />
     [JsonConstructor]
-    public Dial()
+    public DialAndWait()
     {
     }
     
     /// <inheritdoc />
-    public Dial(string? source = default, int? line = default) : base(source, line)
+    public DialAndWait(string? source = default, int? line = default) : base(source, line)
     {
     }
 
@@ -81,7 +87,25 @@ public class Dial : CodeActivity<DialResponse>
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var response = await DialAsync(context);
-        Result.Set(context, response);
+        var answeredBookmark = new WebhookEventBookmarkPayload(WebhookEventTypes.CallAnswered, response.CallControlId);
+        var hangupBookmark = new WebhookEventBookmarkPayload(WebhookEventTypes.CallHangup, response.CallControlId);
+        
+        context.CreateBookmark(answeredBookmark, OnCallAnswered);
+        context.CreateBookmark(hangupBookmark, OnCallHangup);
+    }
+
+    private async ValueTask OnCallAnswered(ActivityExecutionContext context)
+    {
+        var payload = context.GetInput<CallAnsweredPayload>();
+        Result.Set(context, payload);
+        await context.CompleteActivityWithOutcomesAsync("Answered");
+    }
+    
+    private async ValueTask OnCallHangup(ActivityExecutionContext context)
+    {
+        var payload = context.GetInput<CallHangupPayload>();
+        Result.Set(context, payload);
+        await context.CompleteActivityWithOutcomesAsync("Hangup");
     }
 
     private async Task<DialResponse> DialAsync(ActivityExecutionContext context)

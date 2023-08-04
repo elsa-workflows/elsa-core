@@ -7,6 +7,7 @@ using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Events;
 using Elsa.Telnyx.Extensions;
 using Elsa.Telnyx.Payloads.Abstract;
+using Elsa.Telnyx.Payloads.Call;
 using Elsa.Workflows.Runtime.Contracts;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
@@ -39,11 +40,13 @@ internal class TriggerWebhookActivities : INotificationHandler<TelnyxWebhookRece
             return;
 
         var correlationId = ((Payload)webhook.Data.Payload).GetCorrelationId();
+        var callControlId = (webhook.Data.Payload as CallPayload)?.CallControlId;
+        var bookmarkPayloadWithCallControl = new WebhookEventBookmarkPayload(eventType, callControlId);
         var bookmarkPayload = new WebhookEventBookmarkPayload(eventType);
         var input = new Dictionary<string, object>().AddInput(webhook);
+        var options = new TriggerWorkflowsRuntimeOptions(correlationId, default, input);
         
-        _logger.LogDebug("Triggering {ActivityType} with correlation ID {CorrelationId}", activityType, correlationId);
-        var result = await _workflowRuntime.TriggerWorkflowsAsync(activityType, bookmarkPayload, new TriggerWorkflowsRuntimeOptions(correlationId, default, input), cancellationToken);
-        _logger.LogDebug("Triggered {WorkflowInstanceCount} workflows", result.TriggeredWorkflows.Count);
+        await _workflowRuntime.TriggerWorkflowsAsync(activityType, bookmarkPayload, options, cancellationToken);
+        await _workflowRuntime.TriggerWorkflowsAsync(activityType, bookmarkPayloadWithCallControl, options, cancellationToken);
     }
 }

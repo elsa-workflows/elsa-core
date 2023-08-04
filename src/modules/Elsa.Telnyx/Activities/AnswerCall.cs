@@ -100,7 +100,8 @@ public abstract class AnswerCallBase : Activity<CallAnsweredPayload>, IBookmarks
     {
         // Create a bookmark first, then after it's persisted, we call out to Telnyx.
         // This ensures that the bookmark is available in case Telnyx responds with the webhook before the runtime got a chance to persist bookmarks.
-        context.CreateBookmark(new WebhookEventBookmarkPayload(WebhookEventTypes.CallAnswered), ResumeAsync);
+        var callControlId = context.GetPrimaryCallControlId(CallControlId) ?? throw new Exception("CallControlId is required.");
+        context.CreateBookmark(new WebhookEventBookmarkPayload(WebhookEventTypes.CallAnswered, callControlId), ResumeAsync);
     }
 
     /// <summary>
