@@ -31,8 +31,11 @@ public class FlowJoin : Activity, IJoinNode
     /// <summary>
     /// The join mode determines whether this activity should continue as soon as one inbound path comes in (Wait Any), or once all inbound paths have executed (Wait All).
     /// </summary>
-    [Input(Description = "The join mode determines whether this activity should continue as soon as one inbound path comes in (Wait Any), or once all inbound paths have executed (Wait All).")] 
-    public Input<FlowJoinMode> Mode { get; set; } = new(FlowJoinMode.WaitAll);
+    [Input(
+        Description = "The join mode determines whether this activity should continue as soon as one inbound path comes in (Wait Any), or once all inbound paths have executed (Wait All).",
+        DefaultValue = FlowJoinMode.WaitAny
+    )] 
+    public Input<FlowJoinMode> Mode { get; set; } = new(FlowJoinMode.WaitAny);
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)

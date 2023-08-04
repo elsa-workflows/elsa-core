@@ -49,16 +49,16 @@ public class Flowchart : Container
     /// <inheritdoc />
     protected override async ValueTask ScheduleChildrenAsync(ActivityExecutionContext context)
     {
-        var triggerActivityId = context.WorkflowExecutionContext.TriggerActivityId;
-        var triggerActivity = triggerActivityId != null ? Activities.FirstOrDefault(x => x.Id == triggerActivityId) : default;
-        var startActivity = triggerActivity ?? Start ?? Activities.FirstOrDefault();
+        var startActivity = GetStartActivity(context);
 
-        if (startActivity == null!)
+        if (startActivity == null)
         {
+            // Nothing else to execute.
             await context.CompleteActivityAsync();
             return;
         }
 
+        // Schedule the start activity.
         await context.ScheduleActivityAsync(startActivity);
     }
 
@@ -157,5 +157,47 @@ public class Flowchart : Container
         var leafs = Activities.Where(x => Connections.All(y => y.Source != x)).ToList();
         var leafsExecuted = leafs.All(x => scope.GetExecutionCount(x) > 0);
         return leafsExecuted;
+    }
+
+    private IActivity? GetStartActivity(ActivityExecutionContext context)
+    {
+        // If there's a trigger that triggered this workflow, use that.
+        var triggerActivityId = context.WorkflowExecutionContext.TriggerActivityId;
+        var triggerActivity = triggerActivityId != null ? Activities.FirstOrDefault(x => x.Id == triggerActivityId) : default;
+        
+        if(triggerActivity != null)
+            return triggerActivity;
+        
+        // If an explicit Start activity was provided, use that.
+        if(Start != null)
+            return Start;
+        
+        // If there is a Start activity on the flowchart, use that.
+        var startActivity = Activities.FirstOrDefault(x => x is Start);
+        
+        if(startActivity != null)
+            return startActivity;
+
+        // If there is a single activity that has no inbound connections, use that.
+        var root = GetRootActivity();
+
+        if (root != null)
+            return root;
+        
+        // If no start activity found, return the first activity.
+        return Activities.FirstOrDefault();
+    }
+
+    private IActivity? GetRootActivity()
+    {
+        // Get the first activity that has no inbound connections.
+        var query =
+            from activity in Activities
+            let inboundConnections = Connections.Any(x => x.Target.Activity == activity)
+            where !inboundConnections
+            select activity;
+        
+        var rootActivity = query.FirstOrDefault();
+        return rootActivity;
     }
 }

@@ -35,7 +35,7 @@ public class FlowchartJsonConverter : JsonConverter<Activities.Flowchart>
         var activities = activitiesElement.ValueKind != JsonValueKind.Undefined ? activitiesElement.Deserialize<ICollection<IActivity>>(options) ?? new List<IActivity>() : new List<IActivity>();
         var metadataElement = doc.RootElement.TryGetProperty("metadata", out var metadataEl) ? metadataEl : default;
         var metadata = metadataElement.ValueKind != JsonValueKind.Undefined ? metadataElement.Deserialize<IDictionary<string, object>>(options) ?? new Dictionary<string, object>() : new Dictionary<string, object>();
-        var start = activities.FirstOrDefault(x => x.Id == startId) ?? activities.FirstOrDefault();
+        var start = activities.FirstOrDefault(x => x.Id == startId);
         var activityDictionary = activities.ToDictionary(x => x.Id);
         var connections = DeserializeConnections(connectionsElement, activityDictionary, options);
         var notFoundConnections = GetNotFoundConnections(doc.RootElement, activityDictionary, connections, options);

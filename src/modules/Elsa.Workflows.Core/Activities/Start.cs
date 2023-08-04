@@ -6,9 +6,9 @@ using JetBrains.Annotations;
 namespace Elsa.Workflows.Core.Activities;
 
 /// <summary>
-/// Mark the workflow as finished.
+/// Marks the start of a flowchart.
 /// </summary>
-[Activity("Elsa", "Primitives", "A milestone activity with no behavior other than marking a milestone.", Kind = ActivityKind.Action)]
+[Activity("Elsa", "Flow", "A milestone activity with no behavior other than marking the start of a flowchart.", Kind = ActivityKind.Action)]
 [PublicAPI]
 public class Start : CodeActivity
 {
