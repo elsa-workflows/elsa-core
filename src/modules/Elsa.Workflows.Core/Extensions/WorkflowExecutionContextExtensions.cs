@@ -102,7 +102,9 @@ public static class WorkflowExecutionContextExtensions
         object? tag = default)
     {
         var activityInvoker = workflowExecutionContext.GetRequiredService<IActivityInvoker>();
-        var workItem = new ActivityWorkItem(activityNode.NodeId, async () => await activityInvoker.InvokeAsync(workflowExecutionContext, activityNode.Activity, owner), tag);
+        var toolVersion = workflowExecutionContext.Workflow.ToolVersion;
+        var activityId = toolVersion.Major >= 3 ? activityNode.Activity.Id : activityNode.NodeId;
+        var workItem = new ActivityWorkItem(activityId, async () => await activityInvoker.InvokeAsync(workflowExecutionContext, activityNode.Activity, owner), tag);
         workflowExecutionContext.Scheduler.Schedule(workItem);
         workflowExecutionContext.AddCompletionCallback(owner, activityNode, completionCallback);
     }

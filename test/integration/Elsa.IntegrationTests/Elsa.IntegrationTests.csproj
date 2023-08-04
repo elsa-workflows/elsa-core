@@ -58,16 +58,16 @@
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
       <None Update="Scenarios\FlowchartCompletion\Workflows\workflow1.json">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
       <None Update="Scenarios\FlowchartCompletion\Workflows\workflow2.json">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
       <None Update="Scenarios\FlowchartCompletion\Workflows\workflow3.json">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
       <None Update="Scenarios\FlowchartCompletion\Workflows\workflow4.json">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
       <None Update="Scenarios\ImportAndExecute\Workflows\implicit-loop.json">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -82,6 +82,9 @@
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
       <None Update="Scenarios\DependencyWorkflows\Workflows\molecule-activity.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Scenarios\FlowchartCompletion\Workflows\workflow5.json">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
     </ItemGroup>

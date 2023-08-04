@@ -144,19 +144,13 @@ public class Flowchart : Container
     /// </summary>
     private bool HasPendingWork(WorkflowExecutionContext workflowExecutionContext)
     {
-        var scheduler = workflowExecutionContext.Scheduler;
-        var workItems = scheduler.List();
-        var activityNodeIds = workItems.Select(x => x.ActivityId).ToList();
-        var flowchartChildNodeIds = Activities.Select(workflowExecutionContext.FindNodeByActivity).Select(x => x.NodeId).ToList();
-        var hasPendingWork = activityNodeIds.Intersect(flowchartChildNodeIds).Any();
-        return hasPendingWork;
-    }
-
-    private bool HaveAllLeafsExecuted(FlowScope scope)
-    {
-        var leafs = Activities.Where(x => Connections.All(y => y.Source != x)).ToList();
-        var leafsExecuted = leafs.All(x => scope.GetExecutionCount(x) > 0);
-        return leafsExecuted;
+        var activityIds = Activities.Select(x => x.Id).ToList();
+        var activityNodeIds = workflowExecutionContext.Workflow.ToolVersion.Major >= 3 ? activityIds : workflowExecutionContext.Nodes.Where(x => activityIds.Contains(x.Activity.Id)).Select(x => x.NodeId).ToList();
+        var activityExecutionContexts = workflowExecutionContext.ActivityExecutionContexts.Where(x => activityIds.Contains(x.Activity.Id)).ToList();
+        var hasPendingWork = workflowExecutionContext.Scheduler.List().Any(x => activityNodeIds.Contains(x.ActivityId));
+        var hasRunningActivityInstances = activityExecutionContexts.Any(x => x.Status == ActivityStatus.Running);
+        
+        return hasRunningActivityInstances || hasPendingWork;
     }
 
     private IActivity? GetStartActivity(ActivityExecutionContext context)
