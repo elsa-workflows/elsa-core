@@ -73,6 +73,7 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
         return new ActivityDescriptor
         {
             TypeName = typeName,
+            Name = typeName,
             Version = definition.Version,
             DisplayName = definition.Name,
             Description = definition.Description,

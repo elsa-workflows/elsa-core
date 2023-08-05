@@ -51,7 +51,7 @@ public class WebhookEventActivityProvider : IActivityProvider
         var categoryAttr = payloadType.GetCustomAttribute<CategoryAttribute>();
         var category = categoryAttr?.Category ?? Constants.Category;
         var descriptionAttr = payloadType.GetCustomAttribute<DescriptionAttribute>();
-        var description = descriptionAttr?.Description ?? webhookAttribute?.Description;
+        var description = descriptionAttr?.Description ?? webhookAttribute.Description;
         var outputPropertyDescriptor = await _activityDescriber.DescribeOutputProperty<WebhookEvent, Output<Payload>>(x => x.Result!, cancellationToken);
 
         outputPropertyDescriptor.Type = payloadType;
@@ -59,6 +59,7 @@ public class WebhookEventActivityProvider : IActivityProvider
         return new()
         {
             TypeName = typeName,
+            Name = typeName,
             Version = 1,
             DisplayName = displayName,
             Description = description,
