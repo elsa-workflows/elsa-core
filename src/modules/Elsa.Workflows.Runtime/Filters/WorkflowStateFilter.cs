@@ -76,7 +76,6 @@ public class WorkflowStateFilter
     /// <summary>
     /// Applies the filter to the specified query.
     /// </summary>
-    /// <param name="query">The query to apply the filter to.</param>
     /// <returns>The filtered query.</returns>
     public IQueryable<WorkflowState> Apply(IQueryable<WorkflowState> query)
     {

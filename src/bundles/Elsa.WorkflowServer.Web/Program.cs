@@ -13,7 +13,7 @@ using Microsoft.Data.Sqlite;
 using Proto.Persistence.Sqlite;
 
 const bool useMongoDb = false;
-const bool useProtoActor = true;
+const bool useProtoActor = false;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;

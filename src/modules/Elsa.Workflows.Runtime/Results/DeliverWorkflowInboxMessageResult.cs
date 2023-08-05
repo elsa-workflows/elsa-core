@@ -1,0 +1,3 @@
+namespace Elsa.Workflows.Runtime.Contracts;
+
+public record DeliverWorkflowInboxMessageResult(ICollection<WorkflowExecutionResult> WorkflowExecutionResults);

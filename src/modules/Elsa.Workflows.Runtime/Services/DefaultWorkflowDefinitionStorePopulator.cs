@@ -1,6 +1,5 @@
 using Elsa.Common.Contracts;
 using Elsa.Common.Models;
-using Elsa.Extensions;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Management.Contracts;
@@ -8,7 +7,6 @@ using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Models;
-using Medallion.Threading;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Workflows.Runtime.Services;
