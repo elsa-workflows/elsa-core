@@ -33,6 +33,12 @@ public class PublishEvent : Activity
     public Input<string?> CorrelationId { get; set; } = default!;
 
     /// <summary>
+    /// Whether the event is local to the workflow.
+    /// </summary>
+    [Input(DisplayName = "Local event", Description = "Whether the event is local to the workflow. When checked, the event will be delivered to this workflow instance only.")]
+    public Input<bool> IsLocalEvent { get; set; } = default!;
+
+    /// <summary>
     /// The input to send as the event body.
     /// </summary>
     [Input(Description = "The input to send as the event body.")]
@@ -43,10 +49,12 @@ public class PublishEvent : Activity
     {
         var eventName = EventName.Get(context);
         var correlationId = CorrelationId.GetOrDefault(context);
+        var isLocalEvent = IsLocalEvent.GetOrDefault(context);
+        var workflowInstanceId = isLocalEvent ? context.WorkflowExecutionContext.Id : default;
         var input = Input.GetOrDefault(context);
         var publisher = context.GetRequiredService<IEventPublisher>();
 
-        await publisher.DispatchAsync(eventName, correlationId, input: input, cancellationToken: context.CancellationToken);
+        await publisher.DispatchAsync(eventName, correlationId, workflowInstanceId, input, context.CancellationToken);
         await context.CompleteActivityAsync();
     }
 }
