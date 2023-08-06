@@ -1,5 +1,4 @@
 ﻿using System.Runtime.CompilerServices;
-using System.Text.Json.Serialization;
 using Elsa.Extensions;
 using Elsa.Telnyx.Attributes;
 using Elsa.Telnyx.Bookmarks;
@@ -12,7 +11,6 @@ using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Runtime.Contracts;
-using JetBrains.Annotations;
 using Refit;
 
 namespace Elsa.Telnyx.Activities;
@@ -23,15 +21,8 @@ namespace Elsa.Telnyx.Activities;
 [Activity(Constants.Namespace, "Play an audio file on the call until the required DTMF signals are gathered to build interactive menus.", Kind = ActivityKind.Task)]
 [FlowNode("Valid input", "Invalid input", "Disconnected")]
 [WebhookDriven(WebhookEventTypes.CallGatherEnded)]
-[PublicAPI]
 public class GatherUsingAudio : Activity<CallGatherEndedPayload>, IBookmarksPersistedHandler
 {
-    /// <inheritdoc />
-    [JsonConstructor]
-    public GatherUsingAudio()
-    {
-    }
-    
     /// <inheritdoc />
     public GatherUsingAudio([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {

@@ -1,5 +1,5 @@
 using System.ComponentModel;
-using System.Text.Json.Serialization;
+using System.Runtime.CompilerServices;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.MassTransit.Implementations;
@@ -16,8 +16,7 @@ public class MessageReceived : Trigger<object>
     internal const string InputKey = "Message";
 
     /// <inheritdoc />
-    [JsonConstructor]
-    public MessageReceived()
+    public MessageReceived([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
 

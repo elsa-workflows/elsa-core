@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using Elsa.Workflows.Core.Attributes;
 using JetBrains.Annotations;
 
@@ -13,12 +14,12 @@ namespace Elsa.Workflows.Core.Activities;
 public class NotFoundActivity : CodeActivity
 {
     /// <inheritdoc />
-    public NotFoundActivity()
+    public NotFoundActivity([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
 
     /// <inheritdoc />
-    public NotFoundActivity(string missingTypeName)
+    public NotFoundActivity(string missingTypeName, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line)
     {
         MissingTypeName = missingTypeName;
     }

@@ -54,7 +54,7 @@ public class JsonActivitySerializer : IActivitySerializer
     {
         var options = new JsonSerializerOptions
         {
-            TypeInfoResolver = new PrivateConstructorContractResolver(),
+            TypeInfoResolver = new ActivityConstructorContractResolver(),
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             PropertyNameCaseInsensitive = true,
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull

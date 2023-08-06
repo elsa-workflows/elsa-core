@@ -1,0 +1,89 @@
+using Elsa.Extensions;
+using Elsa.Telnyx.Attributes;
+using Elsa.Telnyx.Bookmarks;
+using Elsa.Telnyx.Client.Models;
+using Elsa.Telnyx.Client.Services;
+using Elsa.Telnyx.Extensions;
+using Elsa.Telnyx.Payloads.Call;
+using Elsa.Workflows.Core;
+using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Runtime.Contracts;
+using Refit;
+
+namespace Elsa.Telnyx.Activities;
+
+/// <summary>
+/// Answer an incoming call. You must issue this command before executing subsequent commands on an incoming call.
+/// </summary>
+[Activity(Constants.Namespace, "Answer an incoming call. You must issue this command before executing subsequent commands on an incoming call.", Kind = ActivityKind.Task)]
+[WebhookDriven(WebhookEventTypes.CallAnswered)]
+public abstract class AnswerCallBase : Activity<CallAnsweredPayload>, IBookmarksPersistedHandler
+{
+    /// <inheritdoc />
+    protected AnswerCallBase(string? source = default, int? line = default) : base(source, line)
+    {
+    }
+    
+    /// <summary>
+    /// The call control ID to answer. Leave blank when the workflow is driven by an incoming call and you wish to pick up that one.
+    /// </summary>
+    [Input(DisplayName = "Call Control ID", Description = "The call control ID of the call to answer.", Category = "Advanced")]
+    public Input<string?>? CallControlId { get; set; }
+
+    /// <inheritdoc />
+    protected override void Execute(ActivityExecutionContext context)
+    {
+        // Create a bookmark first, then after it's persisted, we call out to Telnyx.
+        // This ensures that the bookmark is available in case Telnyx responds with the webhook before the runtime got a chance to persist bookmarks.
+        var callControlId = context.GetPrimaryCallControlId(CallControlId) ?? throw new Exception("CallControlId is required.");
+        context.CreateBookmark(new WebhookEventBookmarkPayload(WebhookEventTypes.CallAnswered, callControlId), ResumeAsync);
+    }
+
+    /// <summary>
+    /// Invokes Telnyx to answer the call.
+    /// </summary>
+    public async ValueTask BookmarksPersistedAsync(ActivityExecutionContext context) => await InvokeTelnyxAsync(context);
+
+    /// <summary>
+    /// Invoked when the call was successfully answered.
+    /// </summary>
+    protected abstract ValueTask HandleConnectedAsync(ActivityExecutionContext context);
+    
+    /// <summary>
+    /// Invoked when the call was no longer active.
+    /// </summary>
+    protected abstract ValueTask HandleDisconnectedAsync(ActivityExecutionContext context);
+
+    private async ValueTask ResumeAsync(ActivityExecutionContext context)
+    {
+        var payload = context.GetInput<CallAnsweredPayload>();
+        context.Set(Result, payload);
+        await HandleConnectedAsync(context);
+    }
+
+    /// <summary>
+    /// Invokes Telnyx' API to answer the call.
+    /// </summary>
+    private async ValueTask InvokeTelnyxAsync(ActivityExecutionContext context)
+    {
+        var callControlId = context.GetPrimaryCallControlId(CallControlId) ?? throw new Exception("CallControlId is required.");
+        
+        var request = new AnswerCallRequest
+        {
+            ClientState = context.CreateCorrelatingClientState()
+        };
+        
+        var telnyxClient = context.GetRequiredService<ITelnyxClient>();
+
+        try
+        {
+            await telnyxClient.Calls.AnswerCallAsync(callControlId, request, context.CancellationToken);
+        }
+        catch (ApiException e)
+        {
+            if (!await e.CallIsNoLongerActiveAsync()) throw;
+            await HandleDisconnectedAsync(context);
+        }
+    }
+}

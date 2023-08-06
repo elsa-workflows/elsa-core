@@ -1,4 +1,4 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.Runtime.CompilerServices;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
@@ -15,13 +15,12 @@ namespace Elsa.JavaScript.Activities;
 public class RunJavaScript : CodeActivity<object?>
 {
     /// <inheritdoc />
-    [JsonConstructor]
-    public RunJavaScript()
+    public RunJavaScript([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
 
     /// <inheritdoc />
-    public RunJavaScript(string script)
+    public RunJavaScript(string script, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line)
     {
         Script = new Input<string>(script);
     }
@@ -52,7 +51,7 @@ public class RunJavaScript : CodeActivity<object?>
         var result = await javaScriptEvaluator.EvaluateAsync(script, typeof(object), context.ExpressionExecutionContext, cancellationToken: context.CancellationToken);
 
         // Set the result as output, if any.
-        if(result is not null)
+        if (result is not null)
             context.Set(Result, result);
     }
 }

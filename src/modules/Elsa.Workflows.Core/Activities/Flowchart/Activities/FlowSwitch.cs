@@ -21,12 +21,6 @@ namespace Elsa.Workflows.Core.Activities.Flowchart.Activities;
 public class FlowSwitch : Activity
 {
     /// <inheritdoc />
-    [JsonConstructor]
-    public FlowSwitch()
-    {
-    }
-
-    /// <inheritdoc />
     public FlowSwitch([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }

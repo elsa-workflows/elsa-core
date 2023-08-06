@@ -1,6 +1,5 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Text.Json.Serialization;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
@@ -19,13 +18,7 @@ namespace Elsa.Workflows.Core.Activities;
 public class Sequence : Container
 {
     private const string CurrentIndexProperty = "CurrentIndex";
-
-    /// <inheritdoc />
-    [JsonConstructor]
-    public Sequence()  : this(default(string?), default)
-    {
-    }
-
+    
     /// <inheritdoc />
     public Sequence(params IActivity[] activities) : this(default(string?), default)
     {

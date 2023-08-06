@@ -1,4 +1,5 @@
 using System.Net;
+using System.Runtime.CompilerServices;
 using Elsa.Extensions;
 using Elsa.Http.ContentWriters;
 using Elsa.Http.Models;
@@ -16,6 +17,11 @@ namespace Elsa.Http;
 [Activity("Elsa", "HTTP", "Write a response to the current HTTP response object.", DisplayName = "HTTP Response")]
 public class WriteHttpResponse : Activity
 {
+    /// <inheritdoc />
+    public WriteHttpResponse([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    {
+    }
+    
     /// <summary>
     /// The status code to return.
     /// </summary>

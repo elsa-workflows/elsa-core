@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using System.Text.Json.Serialization;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Core;
@@ -18,12 +17,6 @@ namespace Elsa.Workflows.Runtime.Activities;
 [PublicAPI]
 public class Event : Trigger<object?>
 {
-    /// <inheritdoc />
-    [JsonConstructor]
-    public Event()
-    {
-    }
-    
     /// <inheritdoc />
     internal Event([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {

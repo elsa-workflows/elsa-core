@@ -1,5 +1,4 @@
 ﻿using System.Runtime.CompilerServices;
-using System.Text.Json.Serialization;
 using Elsa.Extensions;
 using Elsa.Scheduling.Bookmarks;
 using Elsa.Scheduling.Contracts;
@@ -15,13 +14,6 @@ namespace Elsa.Scheduling.Activities;
 [Activity("Elsa", "Scheduling", "Trigger workflow execution at a specific interval using a CRON expression.")]
 public class Cron : EventGenerator
 {
-    /// <inheritdoc />
-    [JsonConstructor]
-    public Cron()
-    {
-        
-    }
-    
     /// <inheritdoc />
     public Cron([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {

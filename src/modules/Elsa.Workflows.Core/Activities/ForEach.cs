@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using System.Text.Json.Serialization;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Attributes;
@@ -18,12 +17,6 @@ namespace Elsa.Workflows.Core.Activities;
 public class ForEach : Activity
 {
     private const string CurrentIndexProperty = "CurrentIndex";
-
-    /// <inheritdoc />
-    [JsonConstructor]
-    public ForEach() : this(default, default)
-    {
-    }
 
     /// <inheritdoc />
     public ForEach([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
@@ -98,8 +91,7 @@ public class ForEach : Activity
 public class ForEach<T> : ForEach
 {
     /// <inheritdoc />
-    [JsonConstructor]
-    public ForEach()
+    public ForEach([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
 

@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using System.Text.Json.Serialization;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Telnyx.Bookmarks;
@@ -10,7 +9,6 @@ using Elsa.Telnyx.Payloads.Call;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
-using JetBrains.Annotations;
 
 namespace Elsa.Telnyx.Activities;
 
@@ -22,15 +20,8 @@ namespace Elsa.Telnyx.Activities;
     "Telnyx",
     "Triggered when an inbound phone call is received for any of the specified source or destination phone numbers.",
     Kind = ActivityKind.Trigger)]
-[PublicAPI]
 public class IncomingCall : Trigger<CallInitiatedPayload>
 {
-    /// <inheritdoc />
-    [JsonConstructor]
-    public IncomingCall()
-    {
-    }
-    
     /// <inheritdoc />
     public IncomingCall([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {

@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Elsa.Extensions;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
@@ -13,6 +14,11 @@ namespace Elsa.Workflows.Management.Activities.SetOutput;
 [PublicAPI]
 public class SetOutput : CodeActivity
 {
+    /// <inheritdoc />
+    public SetOutput([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    {
+    }
+    
     /// <summary>
     /// The name of the output to assign.
     /// </summary>

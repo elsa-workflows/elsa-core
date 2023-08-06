@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using System.Text.Json.Serialization;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
@@ -18,12 +17,6 @@ namespace Elsa.Workflows.Core.Activities.Flowchart.Activities;
 [PublicAPI]
 public class FlowDecision : Activity
 {
-    /// <inheritdoc />
-    [JsonConstructor]
-    public FlowDecision()
-    {
-    }
-    
     /// <inheritdoc />
     public FlowDecision([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {

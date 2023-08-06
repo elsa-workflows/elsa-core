@@ -17,7 +17,7 @@ namespace Elsa.Workflows.Core.Activities;
 public class Workflow : Composite<object>, ICloneable
 {
     /// <summary>
-    /// Constructor.
+    /// Initializes a new instance of the <see cref="Workflow"/> class.
     /// </summary>
     public Workflow(
         WorkflowIdentity identity,
@@ -47,7 +47,7 @@ public class Workflow : Composite<object>, ICloneable
     }
 
     /// <summary>
-    /// Constructor.
+    /// Initializes a new instance of the <see cref="Workflow"/> class.
     /// </summary>
     public Workflow(IActivity root) : this()
     {

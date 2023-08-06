@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using System.Text.Json.Serialization;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Attributes;
@@ -16,12 +15,6 @@ namespace Elsa.Workflows.Core.Activities;
 [PublicAPI]
 public class If : Activity<bool>
 {
-    /// <inheritdoc />
-    [JsonConstructor]
-    public If()
-    {
-    }
-    
     /// <inheritdoc />
     public If([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {

@@ -1,8 +1,9 @@
 using Elsa.Common.Contracts;
 using Elsa.Scheduling.Activities;
-using Elsa.Workflows.Core.Abstractions;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Core.Models;
 using JetBrains.Annotations;
 
 namespace Elsa.Samples.AspNet.QuartzIntegration.Workflows;
@@ -16,7 +17,7 @@ public class HeartbeatWorkflow : WorkflowBase
     {
         _systemClock = systemClock;
     }
-    
+
     protected override void Build(IWorkflowBuilder builder)
     {
         builder.Root = new Sequence
@@ -28,10 +29,7 @@ public class HeartbeatWorkflow : WorkflowBase
                     CronExpression = new("*/1 * * * * ?"),
                     CanStartWorkflow = true
                 },
-                new WriteLine
-                {
-                    Text = new($"Heartbeat workflow triggered at {_systemClock.UtcNow.LocalDateTime}")
-                }
+                new WriteLine(new Input<string>($"Heartbeat workflow triggered at {_systemClock.UtcNow.LocalDateTime}"))
             }
         };
     }

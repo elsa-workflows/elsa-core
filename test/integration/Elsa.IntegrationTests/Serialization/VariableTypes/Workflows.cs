@@ -1,4 +1,4 @@
-using Elsa.Workflows.Core.Abstractions;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Contracts;
 
 namespace Elsa.IntegrationTests.Serialization.VariableTypes;

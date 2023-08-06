@@ -1,4 +1,6 @@
-namespace Elsa.Workflows.Core.Activities;
+using Elsa.Workflows.Core.Activities;
+
+namespace Elsa.Workflows.Core;
 
 /// <summary>
 /// Controls when a <see cref="Fork"/> completes.

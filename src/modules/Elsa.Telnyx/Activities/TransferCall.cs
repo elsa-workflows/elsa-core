@@ -1,5 +1,4 @@
 ﻿using System.Runtime.CompilerServices;
-using System.Text.Json.Serialization;
 using Elsa.Extensions;
 using Elsa.Telnyx.Client.Models;
 using Elsa.Telnyx.Client.Services;
@@ -9,7 +8,6 @@ using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
-using JetBrains.Annotations;
 using Refit;
 
 namespace Elsa.Telnyx.Activities;
@@ -19,15 +17,8 @@ namespace Elsa.Telnyx.Activities;
 /// </summary>
 [Activity(Constants.Namespace, "Transfer a call to a new destination.", Kind = ActivityKind.Task)]
 [FlowNode("Transferred", "Hangup", "Disconnected")]
-[PublicAPI]
 public class TransferCall : Activity
 {
-    /// <inheritdoc />
-    [JsonConstructor]
-    public TransferCall()
-    {
-    }
-    
     /// <inheritdoc />
     public TransferCall([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {

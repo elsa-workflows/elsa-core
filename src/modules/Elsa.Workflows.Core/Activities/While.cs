@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using System.Text.Json.Serialization;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Attributes;
@@ -26,17 +25,15 @@ public class While : Activity
     };
 
     /// <inheritdoc />
-    [JsonConstructor]
-    public While() : this(default, default, default)
+    public While([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
+        Behaviors.Add<BreakBehavior>(this);
     }
 
     /// <inheritdoc />
-    public While(IActivity? body = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public While(IActivity? body = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line)
     {
         Body = body;
-        Behaviors.Add<BreakBehavior>(this);
-        Behaviors.Remove<AutoCompleteBehavior>();
     }
 
     /// <inheritdoc />

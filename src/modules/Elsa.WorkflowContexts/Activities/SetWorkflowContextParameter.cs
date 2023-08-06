@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using System.Text.Json.Serialization;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.WorkflowContexts.Contracts;
@@ -17,12 +16,6 @@ namespace Elsa.WorkflowContexts.Activities;
 [PublicAPI]
 public class SetWorkflowContextParameter : CodeActivity
 {
-    /// <inheritdoc />
-    [JsonConstructor]
-    public SetWorkflowContextParameter()
-    {
-    }
-    
     /// <inheritdoc />
     public SetWorkflowContextParameter([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {

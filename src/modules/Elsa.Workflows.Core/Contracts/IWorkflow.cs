@@ -1,5 +1,3 @@
-using Elsa.Workflows.Core.Abstractions;
-
 namespace Elsa.Workflows.Core.Contracts;
 
 /// <summary>

@@ -2,7 +2,6 @@ using System.Collections;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Elsa.Email.Contracts;
 using Elsa.Email.Models;
 using Elsa.Email.Options;
@@ -24,12 +23,6 @@ public class SendEmail : Activity
 {
     /// <inheritdoc />
     public SendEmail([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
-    {
-    }
-
-    /// <inheritdoc />
-    [JsonConstructor]
-    public SendEmail()
     {
     }
 

@@ -2,7 +2,6 @@ using System.Text.Json;
 using Elsa.EntityFrameworkCore.Common;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Models;
 
