@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
+namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
 {
     /// <inheritdoc />
     public partial class Initial : Migration
@@ -19,16 +19,16 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                 schema: "Elsa",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "text", nullable: false),
-                    WorkflowInstanceId = table.Column<string>(type: "text", nullable: false),
-                    ActivityId = table.Column<string>(type: "text", nullable: false),
-                    ActivityType = table.Column<string>(type: "text", nullable: false),
-                    ActivityTypeVersion = table.Column<int>(type: "integer", nullable: false),
-                    ActivityName = table.Column<string>(type: "text", nullable: true),
-                    StartedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    HasBookmarks = table.Column<bool>(type: "boolean", nullable: false),
-                    CompletedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    ActivityData = table.Column<string>(type: "text", nullable: true)
+                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    WorkflowInstanceId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ActivityId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ActivityType = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ActivityTypeVersion = table.Column<int>(type: "int", nullable: false),
+                    ActivityName = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    StartedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    HasBookmarks = table.Column<bool>(type: "bit", nullable: false),
+                    CompletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    ActivityData = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -40,12 +40,12 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                 schema: "Elsa",
                 columns: table => new
                 {
-                    BookmarkId = table.Column<string>(type: "text", nullable: false),
-                    ActivityTypeName = table.Column<string>(type: "text", nullable: false),
-                    Hash = table.Column<string>(type: "text", nullable: false),
-                    WorkflowInstanceId = table.Column<string>(type: "text", nullable: false),
-                    CorrelationId = table.Column<string>(type: "text", nullable: true),
-                    Data = table.Column<string>(type: "text", nullable: true)
+                    BookmarkId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ActivityTypeName = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Hash = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    WorkflowInstanceId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    CorrelationId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Data = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -57,25 +57,25 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                 schema: "Elsa",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "text", nullable: false),
-                    WorkflowDefinitionId = table.Column<string>(type: "text", nullable: false),
-                    WorkflowDefinitionVersionId = table.Column<string>(type: "text", nullable: false),
-                    WorkflowInstanceId = table.Column<string>(type: "text", nullable: false),
-                    WorkflowVersion = table.Column<int>(type: "integer", nullable: false),
-                    ActivityInstanceId = table.Column<string>(type: "text", nullable: false),
-                    ParentActivityInstanceId = table.Column<string>(type: "text", nullable: true),
-                    ActivityId = table.Column<string>(type: "text", nullable: false),
-                    ActivityType = table.Column<string>(type: "text", nullable: false),
-                    ActivityTypeVersion = table.Column<int>(type: "integer", nullable: false),
-                    ActivityName = table.Column<string>(type: "text", nullable: true),
-                    NodeId = table.Column<string>(type: "text", nullable: false),
-                    Timestamp = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    WorkflowDefinitionId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    WorkflowDefinitionVersionId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    WorkflowInstanceId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    WorkflowVersion = table.Column<int>(type: "int", nullable: false),
+                    ActivityInstanceId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ParentActivityInstanceId = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    ActivityId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ActivityType = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ActivityTypeVersion = table.Column<int>(type: "int", nullable: false),
+                    ActivityName = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    NodeId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Timestamp = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     Sequence = table.Column<long>(type: "bigint", nullable: false),
-                    EventName = table.Column<string>(type: "text", nullable: true),
-                    Message = table.Column<string>(type: "text", nullable: true),
-                    Source = table.Column<string>(type: "text", nullable: true),
-                    ActivityData = table.Column<string>(type: "text", nullable: true),
-                    PayloadData = table.Column<string>(type: "text", nullable: true)
+                    EventName = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    Message = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Source = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ActivityData = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    PayloadData = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -83,22 +83,45 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                 });
 
             migrationBuilder.CreateTable(
+                name: "WorkflowInboxMessages",
+                schema: "Elsa",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ActivityTypeName = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Hash = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    WorkflowInstanceId = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    CorrelationId = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    IsHandled = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    ExpiresAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    HandledAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    SerializedAffectedWorkflowInstancesIds = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    SerializedBookmarkPayload = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    SerializedInput = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_WorkflowInboxMessages", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "WorkflowStates",
                 schema: "Elsa",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "text", nullable: false),
-                    DefinitionId = table.Column<string>(type: "text", nullable: false),
-                    DefinitionVersionId = table.Column<string>(type: "text", nullable: false),
-                    DefinitionVersion = table.Column<int>(type: "integer", nullable: false),
-                    CorrelationId = table.Column<string>(type: "text", nullable: true),
-                    Status = table.Column<string>(type: "text", nullable: false),
-                    SubStatus = table.Column<string>(type: "text", nullable: false),
+                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    DefinitionId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    DefinitionVersionId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    DefinitionVersion = table.Column<int>(type: "int", nullable: false),
+                    CorrelationId = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    Status = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    SubStatus = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     ExecutionLogSequence = table.Column<long>(type: "bigint", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    FinishedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    Data = table.Column<string>(type: "text", nullable: true)
+                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    FinishedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    Data = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -110,13 +133,13 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                 schema: "Elsa",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "text", nullable: false),
-                    WorkflowDefinitionId = table.Column<string>(type: "text", nullable: false),
-                    WorkflowDefinitionVersionId = table.Column<string>(type: "text", nullable: false),
-                    Name = table.Column<string>(type: "text", nullable: false),
-                    ActivityId = table.Column<string>(type: "text", nullable: false),
-                    Hash = table.Column<string>(type: "text", nullable: true),
-                    Data = table.Column<string>(type: "text", nullable: true)
+                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    WorkflowDefinitionId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    WorkflowDefinitionVersionId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ActivityId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Hash = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    Data = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -298,6 +321,54 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                 column: "WorkflowVersion");
 
             migrationBuilder.CreateIndex(
+                name: "IX_WorkflowInboxMessage_ActivityTypeName",
+                schema: "Elsa",
+                table: "WorkflowInboxMessages",
+                column: "ActivityTypeName");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowInboxMessage_CorrelationId",
+                schema: "Elsa",
+                table: "WorkflowInboxMessages",
+                column: "CorrelationId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowInboxMessage_CreatedAt",
+                schema: "Elsa",
+                table: "WorkflowInboxMessages",
+                column: "CreatedAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowInboxMessage_ExpiresAt",
+                schema: "Elsa",
+                table: "WorkflowInboxMessages",
+                column: "ExpiresAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowInboxMessage_HandledAt",
+                schema: "Elsa",
+                table: "WorkflowInboxMessages",
+                column: "HandledAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowInboxMessage_Hash",
+                schema: "Elsa",
+                table: "WorkflowInboxMessages",
+                column: "Hash");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowInboxMessage_IsHandled",
+                schema: "Elsa",
+                table: "WorkflowInboxMessages",
+                column: "IsHandled");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowInboxMessage_WorkflowInstanceId",
+                schema: "Elsa",
+                table: "WorkflowInboxMessages",
+                column: "WorkflowInstanceId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_WorkflowState_CorrelationId",
                 schema: "Elsa",
                 table: "WorkflowStates",
@@ -383,6 +454,10 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
 
             migrationBuilder.DropTable(
                 name: "WorkflowExecutionLogRecords",
+                schema: "Elsa");
+
+            migrationBuilder.DropTable(
+                name: "WorkflowInboxMessages",
                 schema: "Elsa");
 
             migrationBuilder.DropTable(

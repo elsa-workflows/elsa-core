@@ -355,6 +355,67 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
 
                     b.ToTable("WorkflowExecutionLogRecords", "Elsa");
                 });
+
+            modelBuilder.Entity("Elsa.Workflows.Runtime.Models.WorkflowInboxMessage", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("ActivityTypeName")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("CorrelationId")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTimeOffset?>("HandledAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Hash")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<bool>("IsHandled")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("SerializedAffectedWorkflowInstancesIds")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("SerializedBookmarkPayload")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("SerializedInput")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("WorkflowInstanceId")
+                        .HasColumnType("varchar(255)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex(new[] { "ActivityTypeName" }, "IX_WorkflowInboxMessage_ActivityTypeName");
+
+                    b.HasIndex(new[] { "CorrelationId" }, "IX_WorkflowInboxMessage_CorrelationId");
+
+                    b.HasIndex(new[] { "CreatedAt" }, "IX_WorkflowInboxMessage_CreatedAt");
+
+                    b.HasIndex(new[] { "ExpiresAt" }, "IX_WorkflowInboxMessage_ExpiresAt");
+
+                    b.HasIndex(new[] { "HandledAt" }, "IX_WorkflowInboxMessage_HandledAt");
+
+                    b.HasIndex(new[] { "Hash" }, "IX_WorkflowInboxMessage_Hash");
+
+                    b.HasIndex(new[] { "IsHandled" }, "IX_WorkflowInboxMessage_IsHandled");
+
+                    b.HasIndex(new[] { "WorkflowInstanceId" }, "IX_WorkflowInboxMessage_WorkflowInstanceId");
+
+                    b.ToTable("WorkflowInboxMessages", "Elsa");
+                });
 #pragma warning restore 612, 618
         }
     }

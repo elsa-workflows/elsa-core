@@ -355,6 +355,69 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
 
                     b.ToTable("WorkflowExecutionLogRecords");
                 });
+
+            modelBuilder.Entity("Elsa.Workflows.Runtime.Models.WorkflowInboxMessage", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ActivityTypeName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CorrelationId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedAt")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ExpiresAt")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("HandledAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Hash")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsHandled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("SerializedAffectedWorkflowInstancesIds")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SerializedBookmarkPayload")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SerializedInput")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("WorkflowInstanceId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex(new[] { "ActivityTypeName" }, "IX_WorkflowInboxMessage_ActivityTypeName");
+
+                    b.HasIndex(new[] { "CorrelationId" }, "IX_WorkflowInboxMessage_CorrelationId");
+
+                    b.HasIndex(new[] { "CreatedAt" }, "IX_WorkflowInboxMessage_CreatedAt");
+
+                    b.HasIndex(new[] { "ExpiresAt" }, "IX_WorkflowInboxMessage_ExpiresAt");
+
+                    b.HasIndex(new[] { "HandledAt" }, "IX_WorkflowInboxMessage_HandledAt");
+
+                    b.HasIndex(new[] { "Hash" }, "IX_WorkflowInboxMessage_Hash");
+
+                    b.HasIndex(new[] { "IsHandled" }, "IX_WorkflowInboxMessage_IsHandled");
+
+                    b.HasIndex(new[] { "WorkflowInstanceId" }, "IX_WorkflowInboxMessage_WorkflowInstanceId");
+
+                    b.ToTable("WorkflowInboxMessages");
+                });
 #pragma warning restore 612, 618
         }
     }

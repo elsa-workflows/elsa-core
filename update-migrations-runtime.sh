@@ -1,25 +1,38 @@
-#!/bin/bash
+#!/usr/bin/env zsh
+
+# Define the modules to update
+mods=("Runtime")
 
 # Define the list of providers
 providers=("MySql" "SqlServer" "Sqlite" "PostgreSql")
+#providers=("MySql")
 
-# Connection strings for each provider (these are just placeholder examples, adjust accordingly)
-declare -A connStrings
-connStrings["MySql"]="Server=localhost;Port=3306;Database=elsa;User=root;Password=password;"
-connStrings["SqlServer"]=""
-connStrings["Sqlite"]=""
-connStrings["PostgreSql"]=""
+# Connection strings for each provider
+typeset -A connStrings
+connStrings=(
+    MySql "Server=localhost;Port=3306;Database=elsa;User=root;Password=password;"
+    SqlServer ""
+    Sqlite ""
+    PostgreSql ""
+)
 
-# Loop through each provider
-for provider in "${providers[@]}"; do
-    modulePath="./src/modules/Elsa.EntityFrameworkCore.$provider"
-    migrationsPath="$modulePath/Migrations/Runtime"
+# Loop through each module
 
-    cd $modulePath
-
-    # 1. Delete the existing migrations folder
-    rm -rf $migrationsPath
-
-    # 2. Run the migrations command
-    dotnet ef migrations add Initial -c RuntimeElsaDbContext -o $migrationsPath -- "${connStrings[$provider]}"
+for module in "${mods[@]}"; do
+    # Loop through each provider
+    for provider in "${providers[@]}"; do
+        providerPath="./src/modules/Elsa.EntityFrameworkCore.$provider"
+        migrationsPath="Migrations/$module"
+    
+        echo "Updating migrations for $provider..."
+        echo "Provider path: ${providerPath:?}/${migrationsPath}"
+        echo "Migrations path: $migrationsPath"
+        echo "Connection string: ${connStrings[$provider]}"
+    
+        # 1. Delete the existing migrations folder
+        rm -rf "${providerPath:?}/${migrationsPath}"
+    
+        # 2. Run the migrations command
+        dotnet ef migrations add Initial -c RuntimeElsaDbContext -p "$providerPath"  -o "$migrationsPath" -- "${connStrings[$provider]}"
+    done
 done
