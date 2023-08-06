@@ -1,4 +1,5 @@
 using Elsa.Common.Models;
+using JetBrains.Annotations;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
@@ -6,6 +7,7 @@ namespace Elsa.Extensions;
 /// <summary>
 /// Extension methods for <see cref="IEnumerable{T}"/>.
 /// </summary>
+[PublicAPI]
 public static class EnumerableExtensions
 {
     /// <summary>
@@ -47,4 +49,13 @@ public static class EnumerableExtensions
         var results = items.ToList();
         return Page.Of(results, count);
     }
+
+    /// <summary>
+    /// Returns a value indicating whether two lists are equal.
+    /// </summary>
+    /// <param name="list1">The first list.</param>
+    /// <param name="list2">The second list.</param>
+    /// <typeparam name="T">The type of the items in the lists.</typeparam>
+    /// <returns>True if the lists are equal, otherwise false.</returns>
+    public static bool IsEqualTo<T>(this IEnumerable<T> list1, IEnumerable<T> list2) => list1.OrderBy(g => g).SequenceEqual(list2.OrderBy(g => g));
 }

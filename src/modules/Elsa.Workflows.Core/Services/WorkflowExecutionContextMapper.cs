@@ -111,7 +111,8 @@ public class WorkflowExecutionContextMapper : IWorkflowExecutionContextMapper
                 ActivityState = activityExecutionContext.ActivityState,
                 Status = activityExecutionContext.Status,
                 StartedAt = activityExecutionContext.StartedAt,
-                CompletedAt = activityExecutionContext.CompletedAt
+                CompletedAt = activityExecutionContext.CompletedAt,
+                Tag = activityExecutionContext.Tag
             };
             return activityExecutionContextState;
         }
@@ -133,6 +134,7 @@ public class WorkflowExecutionContextMapper : IWorkflowExecutionContextMapper
             activityExecutionContext.Status = activityExecutionContextState.Status;
             activityExecutionContext.StartedAt = activityExecutionContextState.StartedAt;
             activityExecutionContext.CompletedAt = activityExecutionContextState.CompletedAt;
+            activityExecutionContext.Tag = activityExecutionContextState.Tag;
 
             return activityExecutionContext;
         }

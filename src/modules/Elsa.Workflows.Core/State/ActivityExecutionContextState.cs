@@ -58,4 +58,9 @@ public class ActivityExecutionContextState
     /// The time at which the activity execution completed.
     /// </summary>
     public DateTimeOffset? CompletedAt { get; set; }
+
+    /// <summary>
+    /// An optional tag to associate with the activity execution.
+    /// </summary>
+    public object? Tag { get; set; }
 }

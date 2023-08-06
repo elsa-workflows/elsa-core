@@ -373,7 +373,7 @@ public class WorkflowExecutionContext : IExecutionContext
     /// <summary>
     /// Creates a new <see cref="ActivityExecutionContext"/> for the specified activity.
     /// </summary>
-    public ActivityExecutionContext CreateActivityExecutionContext(IActivity activity, ActivityExecutionContext? parentContext = default)
+    public ActivityExecutionContext CreateActivityExecutionContext(IActivity activity, ActivityExecutionContext? parentContext = default, object? tag = default)
     {
         var activityDescriptor = _activityRegistry.Find(activity) ?? throw new Exception($"Activity with type {activity.Type} not found in registry");
         var parentExpressionExecutionContext = parentContext?.ExpressionExecutionContext ?? ExpressionExecutionContext;
@@ -381,7 +381,7 @@ public class WorkflowExecutionContext : IExecutionContext
         var memory = new MemoryRegister();
         var now = _systemClock.UtcNow;
         var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, memory, parentExpressionExecutionContext, properties, CancellationToken);
-        var activityExecutionContext = new ActivityExecutionContext(this, parentContext, expressionExecutionContext, activity, activityDescriptor, now, CancellationToken);
+        var activityExecutionContext = new ActivityExecutionContext(this, parentContext, expressionExecutionContext, activity, activityDescriptor, now, tag, CancellationToken);
         expressionExecutionContext.TransientProperties[ExpressionExecutionContextExtensions.ActivityExecutionContextKey] = activityExecutionContext;
         return activityExecutionContext;
     }

@@ -126,10 +126,8 @@ public class Flowchart : Container
 
             if (!children.Any())
             {
-                var workflowExecutionContext = context.ReceiverActivityExecutionContext.WorkflowExecutionContext;
-
                 // If there is no pending work, complete the flowchart activity.
-                var hasPendingWork = HasPendingWork(workflowExecutionContext);
+                var hasPendingWork = HasPendingWork(flowchartActivityExecutionContext);
 
                 if (!hasPendingWork)
                     await flowchartActivityExecutionContext.CompleteActivityAsync();
@@ -143,15 +141,54 @@ public class Flowchart : Container
     /// <summary>
     /// Checks if there is any pending work for the flowchart.
     /// </summary>
-    private bool HasPendingWork(WorkflowExecutionContext workflowExecutionContext)
+    private bool HasPendingWork(ActivityExecutionContext context)
     {
+        var workflowExecutionContext = context.WorkflowExecutionContext;
         var activityIds = Activities.Select(x => x.Id).ToList();
-        var activityNodeIds = workflowExecutionContext.Workflow.ToolVersion.Major >= 3 ? activityIds : workflowExecutionContext.Nodes.Where(x => activityIds.Contains(x.Activity.Id)).Select(x => x.NodeId).ToList();
-        var activityExecutionContexts = workflowExecutionContext.ActivityExecutionContexts.Where(x => activityIds.Contains(x.Activity.Id)).ToList();
-        var hasPendingWork = workflowExecutionContext.Scheduler.List().Any(x => activityNodeIds.Contains(x.ActivityId));
+        var descendantContexts = GetDescendents(context).Where(x => x.ParentActivityExecutionContext == context).ToList();
+        var activityExecutionContexts = descendantContexts.Where(x => activityIds.Contains(x.Activity.Id)).ToList();
+        
+        var hasPendingWork = workflowExecutionContext.Scheduler.List().Any(workItem =>
+        {
+            var ownerInstanceId = workItem.OwnerActivityInstanceId;
+            
+            if(ownerInstanceId == null)
+                return false;
+
+            var ownerContext = context.WorkflowExecutionContext.ActiveActivityExecutionContexts.First(x => x.Id == ownerInstanceId);
+            var ancestors = GetAncestors(ownerContext).ToList();
+
+            return ancestors.Any(x => x == context);
+
+        });
+        
         var hasRunningActivityInstances = activityExecutionContexts.Any(x => x.Status == ActivityStatus.Running);
 
         return hasRunningActivityInstances || hasPendingWork;
+    }
+
+    private static IEnumerable<ActivityExecutionContext> GetDescendents(ActivityExecutionContext activityExecutionContext)
+    {
+        var children = activityExecutionContext.WorkflowExecutionContext.ActiveActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == activityExecutionContext).ToList();
+        
+        foreach (var child in children)
+        {
+            yield return child;
+
+            foreach (var descendent in GetDescendents(child))
+                yield return descendent;
+        }
+    }
+
+    private static IEnumerable<ActivityExecutionContext> GetAncestors(ActivityExecutionContext activityExecutionContext)
+    {
+        var current = activityExecutionContext;
+        
+        while (current != null)
+        {
+            yield return current;
+            current = current.ParentActivityExecutionContext;
+        }
     }
 
     private IActivity? GetStartActivity(ActivityExecutionContext context)

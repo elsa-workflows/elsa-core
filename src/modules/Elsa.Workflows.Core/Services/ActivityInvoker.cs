@@ -16,13 +16,13 @@ public class ActivityInvoker : IActivityInvoker
     }
 
     /// <inheritdoc />
-    public async Task InvokeAsync(
-        WorkflowExecutionContext workflowExecutionContext,
+    public async Task InvokeAsync(WorkflowExecutionContext workflowExecutionContext,
         IActivity activity,
-        ActivityExecutionContext? owner)
+        ActivityExecutionContext? owner, 
+        object? tag)
     {
         // Setup an activity execution context.
-        var activityExecutionContext = workflowExecutionContext.CreateActivityExecutionContext(activity, owner);
+        var activityExecutionContext = workflowExecutionContext.CreateActivityExecutionContext(activity, owner, tag);
 
         // Add the activity context to the workflow context.
         workflowExecutionContext.AddActivityExecutionContext(activityExecutionContext);
@@ -31,6 +31,7 @@ public class ActivityInvoker : IActivityInvoker
         await InvokeAsync(activityExecutionContext);
     }
 
+    /// <inheritdoc />
     public async Task InvokeAsync(ActivityExecutionContext activityExecutionContext)
     {
         // Execute the activity execution pipeline.
