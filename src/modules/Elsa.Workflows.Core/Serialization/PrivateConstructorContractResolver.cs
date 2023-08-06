@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 
 namespace Elsa.Workflows.Core.Serialization;
@@ -17,7 +18,7 @@ public class PrivateConstructorContractResolver : DefaultJsonTypeInfoResolver
         if (jsonTypeInfo is not { Kind: JsonTypeInfoKind.Object, CreateObject: null }) 
             return jsonTypeInfo;
         
-        if (jsonTypeInfo.Type.GetConstructors(BindingFlags.Default).Length == 0)
+        if (HasPrivateJsonConstructor(jsonTypeInfo.Type))
         {
             // The type doesn't have public constructors
             jsonTypeInfo.CreateObject = () => Activator.CreateInstance(jsonTypeInfo.Type, true)!;
@@ -25,4 +26,8 @@ public class PrivateConstructorContractResolver : DefaultJsonTypeInfoResolver
 
         return jsonTypeInfo;
     }
+
+    private static bool HasPrivateJsonConstructor(Type type) => type
+        .GetConstructors(BindingFlags.NonPublic | BindingFlags.Instance)
+        .Any(x => (x.IsPrivate || x.IsAssembly || x.IsFamily) && !x.GetParameters().Any() && x.GetCustomAttribute<JsonConstructorAttribute>() != null);
 }
