@@ -12,7 +12,7 @@ public class MongoTriggerStore : ITriggerStore
     private readonly MongoDbStore<StoredTrigger> _mongoDbStore;
 
     /// <summary>
-    /// Constructor.
+    /// Initializes a new instance of the <see cref="MongoTriggerStore"/> class.
     /// </summary>
     public MongoTriggerStore(MongoDbStore<StoredTrigger> mongoDbStore)
     {

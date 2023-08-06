@@ -54,6 +54,9 @@ public class DefaultMediator : IMediator
     }
 
     /// <inheritdoc />
+    public async Task SendAsync(ICommand command, CancellationToken cancellationToken = default) => await SendAsync(command, _defaultCommandStrategy, cancellationToken);
+
+    /// <inheritdoc />
     public async Task SendAsync(ICommand command, ICommandStrategy? strategy = default, CancellationToken cancellationToken = default)
     {
         var resultType = typeof(Unit);
@@ -63,7 +66,10 @@ public class DefaultMediator : IMediator
     }
 
     /// <inheritdoc />
-    public async Task<T> SendAsync<T>(ICommand<T> command, ICommandStrategy? strategy = default, CancellationToken cancellationToken = default)
+    public async Task<T> SendAsync<T>(ICommand<T> command, CancellationToken cancellationToken = default) => await SendAsync(command, _defaultCommandStrategy, cancellationToken);
+
+    /// <inheritdoc />
+    public async Task<T> SendAsync<T>(ICommand<T> command, ICommandStrategy strategy, CancellationToken cancellationToken = default)
     {
         var resultType = typeof(T);
         strategy ??= _defaultCommandStrategy;
@@ -72,6 +78,9 @@ public class DefaultMediator : IMediator
 
         return (T)context.Result!;
     }
+
+    /// <inheritdoc />
+    public async Task SendAsync(INotification notification, CancellationToken cancellationToken = default) => await SendAsync(notification, _defaultPublishingStrategy, cancellationToken);
 
     /// <inheritdoc />
     public async Task SendAsync(INotification notification, IEventPublishingStrategy? strategy = default, CancellationToken cancellationToken = default)

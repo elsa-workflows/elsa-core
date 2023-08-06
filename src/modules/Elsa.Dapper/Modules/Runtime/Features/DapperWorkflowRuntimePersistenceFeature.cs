@@ -1,5 +1,5 @@
 using Elsa.Dapper.Features;
-using Elsa.Dapper.Modules.Runtime.Services;
+using Elsa.Dapper.Modules.Runtime.Stores;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
@@ -21,8 +21,6 @@ public class DapperWorkflowRuntimePersistenceFeature : FeatureBase
     {
     }
     
-    
-
     /// <inheritdoc />
     public override void Configure()
     {
@@ -30,6 +28,7 @@ public class DapperWorkflowRuntimePersistenceFeature : FeatureBase
         {
             feature.TriggerStore = sp => sp.GetRequiredService<DapperTriggerStore>();
             feature.BookmarkStore = sp => sp.GetRequiredService<DapperBookmarkStore>();
+            feature.WorkflowInboxStore = sp => sp.GetRequiredService<DapperWorkflowInboxStore>();
         });
     }
 
@@ -40,5 +39,6 @@ public class DapperWorkflowRuntimePersistenceFeature : FeatureBase
         
         Services.AddSingleton<DapperTriggerStore>();
         Services.AddSingleton<DapperBookmarkStore>();
+        Services.AddSingleton<DapperWorkflowInboxStore>();
     }
 }

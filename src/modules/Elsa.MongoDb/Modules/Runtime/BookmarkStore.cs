@@ -14,7 +14,7 @@ public class MongoBookmarkStore : IBookmarkStore
     private readonly MongoDbStore<StoredBookmark> _mongoDbStore;
 
     /// <summary>
-    /// Constructor.
+    /// Initializes a new instance of the <see cref="MongoBookmarkStore"/> class.
     /// </summary>
     public MongoBookmarkStore(MongoDbStore<StoredBookmark> mongoDbStore)
     {

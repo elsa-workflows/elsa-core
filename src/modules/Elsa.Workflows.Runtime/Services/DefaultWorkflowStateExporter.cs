@@ -1,4 +1,3 @@
-using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.State;

@@ -1,6 +1,7 @@
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
@@ -15,7 +16,8 @@ public class Configurations :
     IEntityTypeConfiguration<StoredTrigger>,
     IEntityTypeConfiguration<WorkflowExecutionLogRecord>,
     IEntityTypeConfiguration<ActivityExecutionRecord>,
-    IEntityTypeConfiguration<StoredBookmark>
+    IEntityTypeConfiguration<StoredBookmark>,
+    IEntityTypeConfiguration<WorkflowInboxMessage>
 {
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<WorkflowState> builder)
@@ -104,5 +106,24 @@ public class Configurations :
         builder.HasIndex(x => x.WorkflowInstanceId, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.WorkflowInstanceId)}");
         builder.HasIndex(x => new { x.ActivityTypeName, x.Hash }, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.ActivityTypeName)}_{nameof(StoredBookmark.Hash)}");
         builder.HasIndex(x => new { x.ActivityTypeName, x.Hash, x.WorkflowInstanceId }, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.ActivityTypeName)}_{nameof(StoredBookmark.Hash)}_{nameof(StoredBookmark.WorkflowInstanceId)}");
+    }
+
+    /// <inheritdoc />
+    public void Configure(EntityTypeBuilder<WorkflowInboxMessage> builder)
+    {
+        builder.Ignore(x => x.Input);
+        builder.Ignore(x => x.BookmarkPayload);
+        builder.Ignore(x => x.AffectedWorkflowInstancesIds);
+        builder.Property<string>("SerializedInput");
+        builder.Property<string>("SerializedBookmarkPayload");
+        builder.Property<string>("SerializedAffectedWorkflowInstancesIds");
+        builder.HasIndex(x => x.ActivityTypeName, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.ActivityTypeName)}");
+        builder.HasIndex(x => x.Hash, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.Hash)}");
+        builder.HasIndex(x => x.WorkflowInstanceId, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.WorkflowInstanceId)}");
+        builder.HasIndex(x => x.CorrelationId, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.CorrelationId)}");
+        builder.HasIndex(x => x.CreatedAt, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.CreatedAt)}");
+        builder.HasIndex(x => x.ExpiresAt, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.ExpiresAt)}");
+        builder.HasIndex(x => x.HandledAt, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.HandledAt)}");
+        builder.HasIndex(x => x.IsHandled, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.IsHandled)}");
     }
 }

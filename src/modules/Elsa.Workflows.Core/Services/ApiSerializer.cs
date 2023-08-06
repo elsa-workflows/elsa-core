@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.Serialization.Converters;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -48,6 +49,7 @@ public class ApiSerializer : IApiSerializer
         options.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
         options.PropertyNameCaseInsensitive = true;
         options.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+        options.TypeInfoResolver = new PrivateConstructorContractResolver();
         options.Converters.Add(Create<JsonStringEnumConverter>());
         options.Converters.Add(Create<TypeJsonConverter>());
         options.Converters.Add(JsonMetadataServices.TimeSpanConverter);

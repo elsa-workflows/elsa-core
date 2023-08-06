@@ -1,6 +1,7 @@
 ﻿using Elsa.EntityFrameworkCore.Common;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.EntityFrameworkCore.Modules.Runtime;
@@ -40,6 +41,11 @@ public class RuntimeElsaDbContext : ElsaDbContextBase
     /// </summary>
     public DbSet<StoredBookmark> Bookmarks { get; set; } = default!;
 
+    /// <summary>
+    /// The workflow inbox messages.
+    /// </summary>
+    public DbSet<WorkflowInboxMessage> WorkflowInboxMessages { get; set; } = default!;
+
     /// <inheritdoc />
     protected override void ApplyEntityConfigurations(ModelBuilder modelBuilder)
     {
@@ -49,5 +55,6 @@ public class RuntimeElsaDbContext : ElsaDbContextBase
         modelBuilder.ApplyConfiguration<WorkflowExecutionLogRecord>(config);
         modelBuilder.ApplyConfiguration<ActivityExecutionRecord>(config);
         modelBuilder.ApplyConfiguration<StoredBookmark>(config);
+        modelBuilder.ApplyConfiguration<WorkflowInboxMessage>(config);
     }
 }

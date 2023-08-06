@@ -30,7 +30,7 @@ public class ActivityExecutionRecord : Entity
     /// <summary>
     /// The name of the activity.
     /// </summary>
-    public string? ActivityName { get; set; } = default!;
+    public string? ActivityName { get; set; }
     
     /// <summary>
     /// The state of the activity at the time this record is created or last updated.

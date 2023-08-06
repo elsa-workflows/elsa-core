@@ -1,5 +1,6 @@
 using Elsa.Extensions;
 using Elsa.Scheduling.Activities;
+using Elsa.Scheduling.Bookmarks;
 using Elsa.Scheduling.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Runtime.Entities;

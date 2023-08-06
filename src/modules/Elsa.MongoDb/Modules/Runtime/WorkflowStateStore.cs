@@ -14,7 +14,7 @@ public class MongoWorkflowStateStore : IWorkflowStateStore
     private readonly ISystemClock _systemClock;
 
     /// <summary>
-    /// Constructor.
+    /// Initializes a new instance of the <see cref="MongoWorkflowStateStore"/> class.
     /// </summary>
     public MongoWorkflowStateStore(
         MongoDbStore<WorkflowState> mongoDbStore,

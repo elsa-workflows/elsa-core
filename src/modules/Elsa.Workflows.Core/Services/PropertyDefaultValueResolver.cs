@@ -5,15 +5,20 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Core.Services;
 
+/// <inheritdoc />
 public class PropertyDefaultValueResolver : IPropertyDefaultValueResolver
 {
     private readonly IServiceProvider _serviceProvider;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PropertyDefaultValueResolver"/> class.
+    /// </summary>
     public PropertyDefaultValueResolver(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
     }
 
+    /// <inheritdoc />
     public object? GetDefaultValue(PropertyInfo activityPropertyInfo)
     {
         var inputAttribute = activityPropertyInfo.GetCustomAttribute<InputAttribute>();

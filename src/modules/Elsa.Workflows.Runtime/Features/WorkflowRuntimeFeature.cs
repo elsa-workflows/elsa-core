@@ -14,9 +14,11 @@ using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Handlers;
 using Elsa.Workflows.Runtime.HostedServices;
+using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Providers;
 using Elsa.Workflows.Runtime.Services;
+using Elsa.Workflows.Runtime.Stores;
 using Medallion.Threading;
 using Medallion.Threading.FileSystem;
 using Microsoft.Extensions.DependencyInjection;
@@ -68,6 +70,11 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// A factory that instantiates an <see cref="IActivityExecutionStore"/>.
     /// </summary>
     public Func<IServiceProvider, IActivityExecutionStore> ActivityExecutionLogStore { get; set; } = sp => sp.GetRequiredService<NoopActivityExecutionStore>();
+
+    /// <summary>
+    /// A factory that instantiates an <see cref="IWorkflowInboxStore"/>.
+    /// </summary>
+    public Func<IServiceProvider, IWorkflowInboxStore> WorkflowInboxStore { get; set; } = sp => sp.GetRequiredService<MemoryWorkflowInboxStore>();
 
     /// <summary>
     /// A factory that instantiates an <see cref="IDistributedLockProvider"/>.
@@ -150,6 +157,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddSingleton(TriggerStore)
             .AddSingleton(WorkflowExecutionLogStore)
             .AddSingleton(ActivityExecutionLogStore)
+            .AddSingleton(WorkflowInboxStore)
             .AddSingleton(RunTaskDispatcher)
             .AddSingleton(BackgroundActivityInvoker)
             .AddSingleton<IBookmarkManager, DefaultBookmarkManager>()
@@ -160,6 +168,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddSingleton<SynchronousTaskDispatcher>()
             .AddSingleton<BackgroundTaskDispatcher>()
             .AddSingleton<IEventPublisher, EventPublisher>()
+            .AddSingleton<IWorkflowInbox, DefaultWorkflowInbox>()
             
             // Lazy services.
             .AddSingleton<Func<IEnumerable<IWorkflowProvider>>>(sp => sp.GetServices<IWorkflowProvider>)
@@ -175,6 +184,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddMemoryStore<StoredTrigger, MemoryTriggerStore>()
             .AddMemoryStore<WorkflowExecutionLogRecord, MemoryWorkflowExecutionLogStore>()
             .AddMemoryStore<ActivityExecutionRecord, MemoryActivityExecutionStore>()
+            .AddMemoryStore<WorkflowInboxMessage, MemoryWorkflowInboxStore>()
 
             // Distributed locking.
             .AddSingleton(DistributedLockProvider)
@@ -195,6 +205,8 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddNotificationHandler<DeleteBookmarks>()
             .AddNotificationHandler<DeleteTriggers>()
             .AddNotificationHandler<DeleteWorkflowInstances>()
+            .AddNotificationHandler<ReadWorkflowInboxMessage>()
+            .AddNotificationHandler<DeliverWorkflowMessagesFromInbox>()
 
             // Workflow activation strategies.
             .AddSingleton<IWorkflowActivationStrategy, SingletonStrategy>()

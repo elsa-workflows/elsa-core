@@ -5,7 +5,7 @@ using Elsa.Features.Services;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Handlers;
-using Elsa.Workflows.Runtime.Services;
+using Elsa.Workflows.Runtime.Stores;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Runtime.Features;

@@ -1,4 +1,4 @@
-using Elsa.Extensions;
+using Elsa.Mediator;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Helpers;
@@ -52,5 +52,8 @@ public class PersistBookmarkMiddleware : WorkflowExecutionMiddleware
 
         foreach (var activityExecutionContext in activityExecutionContexts) 
             await ((IBookmarksPersistedHandler)activityExecutionContext.Activity).BookmarksPersistedAsync(activityExecutionContext);
+        
+        // Publish domain event.
+        await _notificationSender.SendAsync(new WorkflowBookmarksPersisted(context, diff), NotificationStrategy.Background, cancellationToken);
     }
 }

@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using Elsa.Common.Contracts;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
+using Elsa.Scheduling.Bookmarks;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Memory;
@@ -108,5 +109,3 @@ public class StartAt : Trigger
     /// </summary>
     public static StartAt From(DateTimeOffset value, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(value, source, line);
 }
-
-internal record StartAtPayload(DateTimeOffset ExecuteAt);
