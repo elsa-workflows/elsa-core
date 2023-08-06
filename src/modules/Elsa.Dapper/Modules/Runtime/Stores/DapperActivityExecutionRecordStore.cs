@@ -9,7 +9,7 @@ using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.OrderDefinitions;
 
-namespace Elsa.Dapper.Modules.Runtime.Services;
+namespace Elsa.Dapper.Modules.Runtime.Stores;
 
 /// <summary>
 /// Implements the <see cref="IActivityExecutionStore"/> using Dapper.

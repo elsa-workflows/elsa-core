@@ -1,4 +1,4 @@
-using Elsa.Dapper.Modules.Runtime.Services;
+using Elsa.Dapper.Modules.Runtime.Stores;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Elsa.Dapper.Contracts;
 using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Models;
@@ -5,11 +6,10 @@ using Elsa.Dapper.Modules.Runtime.Records;
 using Elsa.Dapper.Services;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Models;
 
-namespace Elsa.Dapper.Modules.Runtime.Services;
+namespace Elsa.Dapper.Modules.Runtime.Stores;
 
 /// <summary>
 /// A Dapper-based <see cref="IBookmarkStore"/> implementation.
@@ -75,7 +75,7 @@ public class DapperWorkflowInboxStore : IWorkflowInboxStore
             BookmarkPayload = _payloadSerializer.Serialize(source.BookmarkPayload),
             Input = source.Input != null ? _payloadSerializer.Serialize(source.Input) : default,
             HandledAt = source.HandledAt,
-            AffectedWorkflowInstancesIds = source.AffectedWorkflowInstancesIds != null ? _payloadSerializer.Serialize(source.AffectedWorkflowInstancesIds) : default,
+            AffectedWorkflowInstancesIds = source.AffectedWorkflowInstancesIds != null ? JsonSerializer.Serialize(source.AffectedWorkflowInstancesIds) : default,
             IsHandled = source.IsHandled,
             CreatedAt = source.CreatedAt,
             ExpiresAt = source.ExpiresAt,
@@ -92,7 +92,7 @@ public class DapperWorkflowInboxStore : IWorkflowInboxStore
             CorrelationId = source.CorrelationId,
             Hash = source.Hash,
             BookmarkPayload = _payloadSerializer.Deserialize(source.BookmarkPayload),
-            AffectedWorkflowInstancesIds = source.AffectedWorkflowInstancesIds != null ? _payloadSerializer.Deserialize<string[]>(source.AffectedWorkflowInstancesIds) : default,
+            AffectedWorkflowInstancesIds = source.AffectedWorkflowInstancesIds != null ? JsonSerializer.Deserialize<List<string>>(source.AffectedWorkflowInstancesIds) : default,
             HandledAt = source.HandledAt,
             IsHandled = source.IsHandled,
             Input = source.Input != null ? _payloadSerializer.Deserialize<Dictionary<string, object>>(source.Input) : default,

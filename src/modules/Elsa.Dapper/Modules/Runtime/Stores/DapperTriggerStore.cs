@@ -8,7 +8,7 @@ using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 
-namespace Elsa.Dapper.Modules.Runtime.Services;
+namespace Elsa.Dapper.Modules.Runtime.Stores;
 
 /// <summary>
 /// Provides a Dapper implementation of <see cref="ITriggerStore"/>.
