@@ -21,6 +21,7 @@ internal class CreateIndices : IHostedService
         return Task.WhenAll(
             CreateWorkflowStateIndices(cancellationToken),
             CreateWorkflowExecutionLogIndices(cancellationToken),
+            CreateActivityExecutionLogIndices(cancellationToken),
             CreateWorkflowBookmarkIndices(cancellationToken),
             CreateWorkflowTriggerIndices(cancellationToken),
             CreateWorkflowInboxIndices(cancellationToken)
@@ -89,6 +90,29 @@ internal class CreateIndices : IHostedService
                         new(indexBuilder.Ascending(x => x.EventName)),
                         new(indexBuilder.Ascending(x => x.WorkflowInstanceId)),
                         new(indexBuilder.Ascending(x => x.WorkflowVersion))
+                    },
+                    cancellationToken));
+    }
+
+    private Task CreateActivityExecutionLogIndices(CancellationToken cancellationToken)
+    {
+        var activityExecutionLogCollection = _serviceProvider.GetService<IMongoCollection<ActivityExecutionRecord>>();
+        if (activityExecutionLogCollection == null) return Task.CompletedTask;
+
+        return IndexHelpers.CreateAsync(
+            activityExecutionLogCollection,
+            async (collection, indexBuilder) =>
+                await collection.Indexes.CreateManyAsync(
+                    new List<CreateIndexModel<ActivityExecutionRecord>>
+                    {
+                        new(indexBuilder.Ascending(x => x.StartedAt)),
+                        new(indexBuilder.Ascending(x => x.ActivityId)),
+                        new(indexBuilder.Ascending(x => x.ActivityType)),
+                        new(indexBuilder.Ascending(x => x.ActivityTypeVersion)),
+                        new(indexBuilder.Ascending(x => x.ActivityName)),
+                        new(indexBuilder.Ascending(x => x.WorkflowInstanceId)),
+                        new(indexBuilder.Ascending(x => x.HasBookmarks)),
+                        new(indexBuilder.Ascending(x => x.CompletedAt))
                     },
                     cancellationToken));
     }

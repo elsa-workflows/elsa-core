@@ -12,7 +12,7 @@ using Elsa.WorkflowServer.Web;
 using Microsoft.Data.Sqlite;
 using Proto.Persistence.Sqlite;
 
-const bool useMongoDb = false;
+const bool useMongoDb = true;
 const bool useProtoActor = false;
 
 var builder = WebApplication.CreateBuilder(args);
