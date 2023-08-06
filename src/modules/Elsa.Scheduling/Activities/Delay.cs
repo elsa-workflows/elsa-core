@@ -1,10 +1,15 @@
+using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using Elsa.Common.Contracts;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
+using Elsa.Scheduling.Bookmarks;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Memory;
 using Elsa.Workflows.Core.Models;
 
@@ -14,11 +19,11 @@ namespace Elsa.Scheduling.Activities;
 /// Delay execution for the specified amount of time.
 /// </summary>
 [Activity( "Elsa", "Scheduling", "Delay execution for the specified amount of time.")]
-public class Delay : Activity
+public class Delay : Activity, IActivityPropertyDefaultValueProvider
 {
     /// <inheritdoc />
     [JsonConstructor]
-    public Delay()
+    internal Delay()
     {
     }
     
@@ -68,7 +73,11 @@ public class Delay : Activity
     /// <summary>
     /// The amount of time to delay execution.
     /// </summary>
-    [Input] public Input<TimeSpan> TimeSpan { get; set; } = default!;
+    [Input(
+        Description = "The timespan to delay workflow execution.",
+        DefaultValueProvider = typeof(Delay)
+    )] 
+    public Input<TimeSpan> TimeSpan { get; set; } = default!;
 
     /// <inheritdoc />
     protected override void Execute(ActivityExecutionContext context)
@@ -116,9 +125,6 @@ public class Delay : Activity
     public static Delay FromDays(
         double value,
         [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(System.TimeSpan.FromDays(value), source, line);
-}
 
-/// <summary>
-/// A bookmark payload for <see cref="Delay"/>.
-/// </summary>
-public record DelayPayload(DateTimeOffset ResumeAt);
+    object IActivityPropertyDefaultValueProvider.GetDefaultValue(PropertyInfo property) => System.TimeSpan.FromMinutes(1);
+}

@@ -15,7 +15,7 @@ public interface IWorkflowInbox
     /// </summary>
     /// <param name="message">The message to deliver.</param>
     /// <param name="cancellationToken">An optional cancellation token.</param>
-    ValueTask<SubmitWorkflowInboxMessageResult> SubmitAsync(WorkflowInboxMessage message, CancellationToken cancellationToken = default);
+    ValueTask<SubmitWorkflowInboxMessageResult> SubmitAsync(NewWorkflowInboxMessage message, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Stores a message for a workflow instance.
@@ -23,7 +23,7 @@ public interface IWorkflowInbox
     /// <param name="message">The message to store.</param>
     /// <param name="options">An optional set of delivery options.</param>
     /// <param name="cancellationToken">An optional cancellation token.</param>
-    ValueTask<SubmitWorkflowInboxMessageResult> SubmitAsync(WorkflowInboxMessage message, WorkflowInboxMessageDeliveryOptions options, CancellationToken cancellationToken = default);
+    ValueTask<SubmitWorkflowInboxMessageResult> SubmitAsync(NewWorkflowInboxMessage message, WorkflowInboxMessageDeliveryOptions options, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Delivers a message to a workflow instance.

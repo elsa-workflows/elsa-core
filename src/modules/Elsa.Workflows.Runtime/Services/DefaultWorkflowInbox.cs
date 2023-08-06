@@ -18,40 +18,64 @@ public class DefaultWorkflowInbox : IWorkflowInbox
     private readonly INotificationSender _notificationSender;
     private readonly ISystemClock _systemClock;
     private readonly IIdentityGenerator _identityGenerator;
+    private readonly IBookmarkHasher _bookmarkHasher;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DefaultWorkflowInbox"/> class.
     /// </summary>
-    public DefaultWorkflowInbox(IWorkflowRuntime workflowRuntime, IWorkflowInboxStore store, INotificationSender notificationSender, ISystemClock systemClock, IIdentityGenerator identityGenerator)
+    public DefaultWorkflowInbox(
+        IWorkflowRuntime workflowRuntime, 
+        IWorkflowInboxStore store, 
+        INotificationSender notificationSender, 
+        ISystemClock systemClock, 
+        IIdentityGenerator identityGenerator, 
+        IBookmarkHasher bookmarkHasher)
     {
         _workflowRuntime = workflowRuntime;
         _store = store;
         _notificationSender = notificationSender;
         _systemClock = systemClock;
         _identityGenerator = identityGenerator;
+        _bookmarkHasher = bookmarkHasher;
     }
 
     /// <inheritdoc />
-    public async ValueTask<SubmitWorkflowInboxMessageResult> SubmitAsync(WorkflowInboxMessage message, CancellationToken cancellationToken = default)
+    public async ValueTask<SubmitWorkflowInboxMessageResult> SubmitAsync(NewWorkflowInboxMessage message, CancellationToken cancellationToken = default)
     {
         var defaultOptions = new WorkflowInboxMessageDeliveryOptions();
         return await SubmitAsync(message, defaultOptions, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async ValueTask<SubmitWorkflowInboxMessageResult> SubmitAsync(WorkflowInboxMessage message, WorkflowInboxMessageDeliveryOptions options, CancellationToken cancellationToken = default)
+    public async ValueTask<SubmitWorkflowInboxMessageResult> SubmitAsync(NewWorkflowInboxMessage newMessage, WorkflowInboxMessageDeliveryOptions options, CancellationToken cancellationToken = default)
     {
-        if(message.Id == null!) message.Id = _identityGenerator.GenerateId();
-        if(message.CreatedAt == default) message.CreatedAt = _systemClock.UtcNow;
+        var now = _systemClock.UtcNow;
         
+        // Create a new message.
+        var message = new WorkflowInboxMessage
+        {
+            Id = _identityGenerator.GenerateId(),
+            CreatedAt = now,
+            ExpiresAt = now + newMessage.TimeToLive,
+            CorrelationId = newMessage.CorrelationId,
+            WorkflowInstanceId = newMessage.WorkflowInstanceId,
+            ActivityTypeName = newMessage.ActivityTypeName,
+            BookmarkPayload = newMessage.BookmarkPayload,
+            Input = newMessage.Input,
+            Hash = _bookmarkHasher.Hash(newMessage.ActivityTypeName, newMessage.BookmarkPayload),
+        };
+        
+        // Store the message.
         await _store.SaveAsync(message, cancellationToken);
         
+        // Send a notification.
         var strategy = options.EventPublishingStrategy;
         var workflowExecutionResults = new List<WorkflowExecutionResult>();
         var notification = new WorkflowInboxMessageReceived(message, workflowExecutionResults);
         await _notificationSender.SendAsync(notification, strategy, cancellationToken);
-        var result = new SubmitWorkflowInboxMessageResult(workflowExecutionResults);
-        return result;
+        
+        // Return the result.
+        return new SubmitWorkflowInboxMessageResult(message, workflowExecutionResults);
     }
 
     /// <inheritdoc />
@@ -69,7 +93,7 @@ public class DefaultWorkflowInbox : IWorkflowInbox
 
         if (message.IsHandled)
         {
-            message.AffectedWorkflowInstancesId = result.TriggeredWorkflows.Select(x => x.WorkflowInstanceId).ToList();
+            message.AffectedWorkflowInstancesIds = result.TriggeredWorkflows.Select(x => x.WorkflowInstanceId).ToList();
             message.HandledAt = _systemClock.UtcNow;
             await _store.SaveAsync(message, cancellationToken);
         }

@@ -89,7 +89,7 @@ public class Initial : Migration
             .WithColumn("ExecutionLogSequence").AsInt64().NotNullable()
             .WithColumn("Props").AsString().NotNullable()
             ;
-        
+
         IfDatabase("SqlServer", "Oracle", "MySql", "Postgres")
             .Create
             .Table("ActivityExecutionRecords")
@@ -118,6 +118,38 @@ public class Initial : Migration
             .WithColumn("StartedAt").AsDateTime2().NotNullable()
             .WithColumn("CompletedAt").AsDateTime2().Nullable()
             .WithColumn("HasBookmarks").AsBoolean().NotNullable();
+
+        IfDatabase("SqlServer", "Oracle", "MySql", "Postgres")
+            .Create
+            .Table("WorkflowInboxMessages")
+            .WithColumn("Id").AsString().PrimaryKey()
+            .WithColumn("ActivityTypeName").AsString().NotNullable()
+            .WithColumn("WorkflowInstanceId").AsString().NotNullable()
+            .WithColumn("CorrelationId").AsString().Nullable()
+            .WithColumn("Hash").AsString().Nullable()
+            .WithColumn("BookmarkPayload").AsString()
+            .WithColumn("AffectedWorkflowInstancesIds").AsString().Nullable()
+            .WithColumn("Input").AsString().Nullable()
+            .WithColumn("IsHandled").AsBoolean().Nullable()
+            .WithColumn("CreatedAt").AsDateTimeOffset()
+            .WithColumn("ExpiresAt").AsDateTimeOffset()
+            .WithColumn("HandledAt").AsDateTimeOffset().Nullable();
+        
+        IfDatabase("Sqlite")
+            .Create
+            .Table("WorkflowInboxMessages")
+            .WithColumn("Id").AsString().PrimaryKey()
+            .WithColumn("ActivityTypeName").AsString().NotNullable()
+            .WithColumn("WorkflowInstanceId").AsString().NotNullable()
+            .WithColumn("CorrelationId").AsString().Nullable()
+            .WithColumn("Hash").AsString().Nullable()
+            .WithColumn("BookmarkPayload").AsString()
+            .WithColumn("AffectedWorkflowInstancesIds").AsString().Nullable()
+            .WithColumn("Input").AsString().Nullable()
+            .WithColumn("IsHandled").AsBoolean().Nullable()
+            .WithColumn("CreatedAt").AsDateTime2()
+            .WithColumn("ExpiresAt").AsDateTime2()
+            .WithColumn("HandledAt").AsDateTime2().Nullable();
     }
 
     /// <inheritdoc />
@@ -128,5 +160,6 @@ public class Initial : Migration
         Delete.Table("WorkflowExecutionLogRecords");
         Delete.Table("WorkflowStates");
         Delete.Table("ActivityExecutionRecords");
+        Delete.Table("WorkflowInboxMessages");
     }
 }

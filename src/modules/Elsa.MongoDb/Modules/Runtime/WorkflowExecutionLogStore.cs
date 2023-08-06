@@ -16,7 +16,7 @@ public class MongoWorkflowExecutionLogStore : IWorkflowExecutionLogStore
     private readonly MongoDbStore<WorkflowExecutionLogRecord> _mongoDbStore;
 
     /// <summary>
-    /// Constructor
+    /// Initializes a new instance of the <see cref="MongoWorkflowExecutionLogStore"/> class.
     /// </summary>
     public MongoWorkflowExecutionLogStore(MongoDbStore<WorkflowExecutionLogRecord> mongoDbStore)
     {

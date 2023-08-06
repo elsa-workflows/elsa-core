@@ -1,12 +1,15 @@
-using Elsa.Common.Entities;
-
-namespace Elsa.Workflows.Runtime.Models;
+namespace Elsa.Dapper.Modules.Runtime.Records;
 
 /// <summary>
 /// A message that can be delivered to a workflow instance.
 /// </summary>
-public class WorkflowInboxMessage : Entity
+public class WorkflowInboxMessageRecord
 {
+    /// <summary>
+    /// The ID of the message.
+    /// </summary>
+    public string Id { get; set; } = default!;
+    
     /// <summary>
     /// The type name of the activity to deliver the message to.
     /// </summary>
@@ -15,7 +18,7 @@ public class WorkflowInboxMessage : Entity
     /// <summary>
     /// An optional bookmark payload that can be used to filter the workflow instances to deliver the message to.
     /// </summary>
-    public object BookmarkPayload { get; set; } = default!;
+    public string BookmarkPayload { get; set; } = default!;
     
     /// <summary>
     /// The hash of the bookmark.
@@ -35,7 +38,7 @@ public class WorkflowInboxMessage : Entity
     /// <summary>
     /// An optional set of inputs to deliver to the workflow instance.
     /// </summary>
-    public IDictionary<string, object>? Input { get; set; }
+    public string? Input { get; set; }
 
     /// <summary>
     /// Set to true if the message was handled by a workflow instance.
@@ -45,7 +48,7 @@ public class WorkflowInboxMessage : Entity
     /// <summary>
     /// The IDs of the workflow instances that handled the message.
     /// </summary>
-    public ICollection<string>? AffectedWorkflowInstancesIds { get; set; }
+    public string? AffectedWorkflowInstancesIds { get; set; }
 
     /// <summary>
     /// The date and time the message was created.

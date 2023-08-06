@@ -3,6 +3,7 @@ using Elsa.Features.Services;
 using Elsa.MongoDb.Common;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Features;
+using Elsa.Workflows.Runtime.Models;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.MongoDb.Modules.Runtime;
@@ -25,6 +26,7 @@ public class MongoWorkflowRuntimePersistenceFeature : PersistenceFeatureBase
         {
             feature.TriggerStore = sp => sp.GetRequiredService<MongoTriggerStore>();
             feature.BookmarkStore = sp => sp.GetRequiredService<MongoBookmarkStore>();
+            feature.WorkflowInboxStore = sp => sp.GetRequiredService<MongoWorkflowInboxStore>();
         });
     }
 
@@ -35,9 +37,11 @@ public class MongoWorkflowRuntimePersistenceFeature : PersistenceFeatureBase
         
         AddCollection<StoredTrigger>("triggers");
         AddCollection<StoredBookmark>("bookmarks");
+        AddCollection<WorkflowInboxMessage>("workflow_inbox_messages");
         
         AddStore<StoredTrigger, MongoTriggerStore>();
         AddStore<StoredBookmark, MongoBookmarkStore>();
+        AddStore<WorkflowInboxMessage, MongoWorkflowInboxStore>();
         
         Services.AddHostedService<CreateIndices>();
     }

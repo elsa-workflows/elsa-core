@@ -24,4 +24,12 @@ public interface IWorkflowInboxStore
     /// <param name="cancellationToken">An optional cancellation token.</param>
     /// <returns>A list of messages that match the filter.</returns>
     ValueTask<IEnumerable<WorkflowInboxMessage>> FindManyAsync(WorkflowInboxMessageFilter filter, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Deletes all messages matching the specified filter.
+    /// </summary>
+    /// <param name="filter">The filter to apply.</param>
+    /// <param name="cancellationToken">An optional cancellation token.</param>
+    /// <returns>The number of deleted messages.</returns>
+    ValueTask<long> DeleteAsync(WorkflowInboxMessageFilter filter, CancellationToken cancellationToken = default);
 }

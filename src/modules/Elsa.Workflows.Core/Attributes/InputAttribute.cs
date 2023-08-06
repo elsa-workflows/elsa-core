@@ -1,3 +1,5 @@
+using Elsa.Workflows.Core.Contracts;
+
 namespace Elsa.Workflows.Core.Attributes;
 
 /// <summary>
@@ -53,7 +55,7 @@ public class InputAttribute : Attribute
     public object? DefaultValue { get; set; }
 
     /// <summary>
-    /// The type that provides a default value. When specified, the <see cref="DefaultValue"/> will be ignored.
+    /// A type that implements <see cref="IActivityPropertyDefaultValueProvider"/> and provides a default value. When specified, the <see cref="DefaultValue"/> will be ignored.
     /// </summary>
     public Type? DefaultValueProvider { get; set; }
 

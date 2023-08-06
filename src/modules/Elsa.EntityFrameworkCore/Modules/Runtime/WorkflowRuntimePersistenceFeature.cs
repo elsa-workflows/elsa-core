@@ -3,6 +3,7 @@ using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Features;
+using Elsa.Workflows.Runtime.Models;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.EntityFrameworkCore.Modules.Runtime;
@@ -25,6 +26,7 @@ public class EFCoreWorkflowRuntimePersistenceFeature : PersistenceFeatureBase<Ru
         {
             feature.TriggerStore = sp => sp.GetRequiredService<EFCoreTriggerStore>();
             feature.BookmarkStore = sp => sp.GetRequiredService<EFCoreBookmarkStore>();
+            feature.WorkflowInboxStore = sp => sp.GetRequiredService<EFCoreWorkflowInboxStore>();
         });
     }
 
@@ -35,5 +37,6 @@ public class EFCoreWorkflowRuntimePersistenceFeature : PersistenceFeatureBase<Ru
         
         AddEntityStore<StoredTrigger, EFCoreTriggerStore>();
         AddStore<StoredBookmark, EFCoreBookmarkStore>();
+        AddEntityStore<WorkflowInboxMessage, EFCoreWorkflowInboxStore>();
     }
 }

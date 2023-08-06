@@ -1,6 +1,7 @@
 using Elsa.MongoDb.Helpers;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using MongoDB.Driver;
@@ -21,7 +22,9 @@ internal class CreateIndices : IHostedService
             CreateWorkflowStateIndices(cancellationToken),
             CreateWorkflowExecutionLogIndices(cancellationToken),
             CreateWorkflowBookmarkIndices(cancellationToken),
-            CreateWorkflowTriggerIndices(cancellationToken));
+            CreateWorkflowTriggerIndices(cancellationToken),
+            CreateWorkflowInboxIndices(cancellationToken)
+        );
     }
 
     public Task StopAsync(CancellationToken cancellationToken)
@@ -33,7 +36,7 @@ internal class CreateIndices : IHostedService
     {
         var workflowStateCollection = _serviceProvider.GetService<IMongoCollection<WorkflowState>>();
         if (workflowStateCollection == null) return Task.CompletedTask;
-        
+
         return IndexHelpers.CreateAsync(
             workflowStateCollection,
             async (collection, indexBuilder) =>
@@ -60,12 +63,12 @@ internal class CreateIndices : IHostedService
                     },
                     cancellationToken));
     }
-    
+
     private Task CreateWorkflowExecutionLogIndices(CancellationToken cancellationToken)
     {
         var workflowExecutionLogCollection = _serviceProvider.GetService<IMongoCollection<WorkflowExecutionLogRecord>>();
         if (workflowExecutionLogCollection == null) return Task.CompletedTask;
-        
+
         return IndexHelpers.CreateAsync(
             workflowExecutionLogCollection,
             async (collection, indexBuilder) =>
@@ -89,12 +92,12 @@ internal class CreateIndices : IHostedService
                     },
                     cancellationToken));
     }
-    
+
     private Task CreateWorkflowBookmarkIndices(CancellationToken cancellationToken)
     {
         var workflowBookmarkCollection = _serviceProvider.GetService<IMongoCollection<StoredBookmark>>();
         if (workflowBookmarkCollection == null) return Task.CompletedTask;
-        
+
         return IndexHelpers.CreateAsync(
             workflowBookmarkCollection,
             async (collection, indexBuilder) =>
@@ -115,12 +118,12 @@ internal class CreateIndices : IHostedService
                     },
                     cancellationToken));
     }
-    
+
     private Task CreateWorkflowTriggerIndices(CancellationToken cancellationToken)
     {
         var workflowTriggerCollection = _serviceProvider.GetService<IMongoCollection<StoredTrigger>>();
         if (workflowTriggerCollection == null) return Task.CompletedTask;
-        
+
         return IndexHelpers.CreateAsync(
             workflowTriggerCollection,
             async (collection, indexBuilder) =>
@@ -131,6 +134,29 @@ internal class CreateIndices : IHostedService
                         new(indexBuilder.Ascending(x => x.WorkflowDefinitionVersionId)),
                         new(indexBuilder.Ascending(x => x.Name)),
                         new(indexBuilder.Ascending(x => x.Hash))
+                    },
+                    cancellationToken));
+    }
+
+    private Task CreateWorkflowInboxIndices(CancellationToken cancellationToken)
+    {
+        var collection = _serviceProvider.GetService<IMongoCollection<WorkflowInboxMessage>>();
+        if (collection == null) return Task.CompletedTask;
+
+        return IndexHelpers.CreateAsync(
+            collection,
+            async (col, indexBuilder) =>
+                await col.Indexes.CreateManyAsync(
+                    new List<CreateIndexModel<WorkflowInboxMessage>>
+                    {
+                        new(indexBuilder.Ascending(x => x.ActivityTypeName)),
+                        new(indexBuilder.Ascending(x => x.Hash)),
+                        new(indexBuilder.Ascending(x => x.WorkflowInstanceId)),
+                        new(indexBuilder.Ascending(x => x.CorrelationId)),
+                        new(indexBuilder.Ascending(x => x.IsHandled)),
+                        new(indexBuilder.Ascending(x => x.CreatedAt)),
+                        new(indexBuilder.Ascending(x => x.ExpiresAt)),
+                        new(indexBuilder.Ascending(x => x.HandledAt)),
                     },
                     cancellationToken));
     }

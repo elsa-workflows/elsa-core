@@ -2,6 +2,7 @@
 using System.Text.Json.Serialization;
 using Elsa.Common.Contracts;
 using Elsa.Extensions;
+using Elsa.Scheduling.Bookmarks;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
@@ -78,6 +79,3 @@ public class Timer : EventGenerator
     /// </summary>
     public static Timer FromSeconds(double value, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => FromTimeSpan(TimeSpan.FromSeconds(value), source, line);
 }
-
-internal record TimerTriggerPayload(DateTimeOffset StartAt, TimeSpan Interval);
-internal record TimerBookmarkPayload(DateTimeOffset ResumeAt);

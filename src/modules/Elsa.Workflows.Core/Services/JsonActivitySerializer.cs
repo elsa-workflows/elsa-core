@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.Serialization.Converters;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -53,6 +54,7 @@ public class JsonActivitySerializer : IActivitySerializer
     {
         var options = new JsonSerializerOptions
         {
+            TypeInfoResolver = new PrivateConstructorContractResolver(),
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             PropertyNameCaseInsensitive = true,
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull

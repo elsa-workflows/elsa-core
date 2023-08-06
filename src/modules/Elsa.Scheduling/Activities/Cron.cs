@@ -1,6 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 using Elsa.Extensions;
+using Elsa.Scheduling.Bookmarks;
 using Elsa.Scheduling.Contracts;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
@@ -72,6 +73,3 @@ public class Cron : EventGenerator
     /// </summary>
     public static Cron FromCronExpression(string value, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(value, source, line);
 }
-
-internal record CronTriggerPayload(string CronExpression);
-internal record CronBookmarkPayload(DateTimeOffset ExecuteAt, string CronExpression);
