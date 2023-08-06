@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using System.Text.Json.Serialization;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
@@ -16,12 +15,6 @@ namespace Elsa.Workflows.Core.Activities;
 [PublicAPI]
 public class ReadLine : CodeActivity<string>
 {
-    /// <inheritdoc />
-    [JsonConstructor]
-    public ReadLine()
-    {
-    }
-
     /// <inheritdoc />
     public ReadLine([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {

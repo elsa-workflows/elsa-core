@@ -1,5 +1,4 @@
 ﻿using System.Runtime.CompilerServices;
-using System.Text.Json.Serialization;
 using Elsa.Common.Contracts;
 using Elsa.Extensions;
 using Elsa.Scheduling.Bookmarks;
@@ -15,12 +14,6 @@ namespace Elsa.Scheduling.Activities;
 [Activity("Elsa", "Scheduling", "Trigger workflow execution at a specific interval.")]
 public class Timer : EventGenerator
 {
-    /// <inheritdoc />
-    [JsonConstructor]
-    public Timer()
-    {
-    }
-    
     /// <inheritdoc />
     public Timer([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {

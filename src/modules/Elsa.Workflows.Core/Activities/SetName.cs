@@ -1,5 +1,4 @@
 ﻿using System.Runtime.CompilerServices;
-using System.Text.Json.Serialization;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 using JetBrains.Annotations;
@@ -18,12 +17,6 @@ public class SetName : CodeActivity
     /// </summary>
     public const string WorkflowInstanceNameKey = "WorkflowInstanceName";
 
-    /// <inheritdoc />
-    [JsonConstructor]
-    public SetName()
-    {
-    }
-    
     /// <inheritdoc />
     public SetName([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {

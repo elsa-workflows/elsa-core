@@ -1,8 +1,5 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Text.Json.Serialization.Metadata;
 using Elsa.Common.Contracts;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
@@ -21,12 +18,6 @@ namespace Elsa.Scheduling.Activities;
 [Activity( "Elsa", "Scheduling", "Delay execution for the specified amount of time.")]
 public class Delay : Activity, IActivityPropertyDefaultValueProvider
 {
-    /// <inheritdoc />
-    [JsonConstructor]
-    internal Delay()
-    {
-    }
-    
     /// <inheritdoc />
     public Delay([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {

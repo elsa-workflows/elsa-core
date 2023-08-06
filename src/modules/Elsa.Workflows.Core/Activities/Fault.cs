@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using System.Text.Json.Serialization;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
@@ -14,12 +13,6 @@ namespace Elsa.Workflows.Core.Activities;
 [PublicAPI]
 public class Fault : Activity
 {
-    /// <inheritdoc />
-    [JsonConstructor]
-    public Fault()
-    {
-    }
-    
     /// <inheritdoc />
     public Fault([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {

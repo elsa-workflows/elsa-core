@@ -1,4 +1,3 @@
-using Elsa.Workflows.Api.Middleware;
 using Elsa.Workflows.Api.RealTime.Hubs;
 using Microsoft.AspNetCore.Builder;
 

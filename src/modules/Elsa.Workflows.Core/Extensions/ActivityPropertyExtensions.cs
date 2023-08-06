@@ -53,7 +53,7 @@ public static class ActivityPropertyExtensions
     /// </summary>
     public static void SetSource(this IActivity activity, string? sourceFile, int? lineNumber)
     {
-        if (sourceFile == null || lineNumber != null)
+        if (sourceFile == null || lineNumber == null)
             return;
 
         var source = $"{Path.GetFileName(sourceFile)}:{lineNumber}";

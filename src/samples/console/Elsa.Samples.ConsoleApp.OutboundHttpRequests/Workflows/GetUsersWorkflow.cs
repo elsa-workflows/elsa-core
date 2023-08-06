@@ -1,6 +1,6 @@
 using System.Dynamic;
 using Elsa.Http;
-using Elsa.Workflows.Core.Abstractions;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
 using Microsoft.AspNetCore.Http;

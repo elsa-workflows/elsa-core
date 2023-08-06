@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using System.Text.Json.Serialization;
 using Elsa.Workflows.Core.Attributes;
 using JetBrains.Annotations;
 
@@ -12,12 +11,6 @@ namespace Elsa.Workflows.Core.Activities;
 [PublicAPI]
 public class Finish : Activity
 {
-    /// <inheritdoc />
-    [JsonConstructor]
-    public Finish()
-    {
-    }
-    
     /// <inheritdoc />
     public Finish([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {

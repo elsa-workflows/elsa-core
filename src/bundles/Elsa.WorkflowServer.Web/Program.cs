@@ -32,6 +32,7 @@ services
         
         elsa
             .AddActivitiesFrom<Program>()
+            .AddWorkflowsFrom<Program>()
             .UseFluentStorageProvider()
             .AddTypeAlias<ApiResponse<User>>("ApiResponse[User]")
             .UseIdentity(identity =>

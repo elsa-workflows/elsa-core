@@ -1,6 +1,5 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Text.Json.Serialization;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Attributes;
@@ -18,12 +17,6 @@ namespace Elsa.Workflows.Core.Activities;
 [PublicAPI]
 public class SetVariable<T> : CodeActivity
 {
-    /// <inheritdoc />
-    [JsonConstructor]
-    public SetVariable()
-    {
-    }
-    
     /// <inheritdoc />
     public SetVariable([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
@@ -87,12 +80,6 @@ public class SetVariable<T> : CodeActivity
 [PublicAPI]
 public class SetVariable : CodeActivity
 {
-    /// <inheritdoc />
-    [JsonConstructor]
-    public SetVariable()
-    {
-    }
-    
     /// <inheritdoc />
     public SetVariable([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {

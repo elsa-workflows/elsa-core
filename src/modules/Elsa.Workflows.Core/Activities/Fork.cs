@@ -1,7 +1,6 @@
 using System.Collections.Immutable;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Text.Json.Serialization;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
@@ -17,12 +16,6 @@ namespace Elsa.Workflows.Core.Activities;
 [Browsable(false)]
 public class Fork : Activity
 {
-    /// <inheritdoc />
-    [JsonConstructor]
-    public Fork()
-    {
-    }
-    
     /// <inheritdoc />
     public Fork([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {

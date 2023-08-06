@@ -49,7 +49,7 @@ public class ApiSerializer : IApiSerializer
         options.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
         options.PropertyNameCaseInsensitive = true;
         options.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
-        options.TypeInfoResolver = new PrivateConstructorContractResolver();
+        options.TypeInfoResolver = new ActivityConstructorContractResolver();
         options.Converters.Add(Create<JsonStringEnumConverter>());
         options.Converters.Add(Create<TypeJsonConverter>());
         options.Converters.Add(JsonMetadataServices.TimeSpanConverter);

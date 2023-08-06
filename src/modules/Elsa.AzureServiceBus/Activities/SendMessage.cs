@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Azure.Messaging.ServiceBus;
 using Elsa.Common.Contracts;
 using Elsa.Common.Services;
@@ -16,6 +17,11 @@ namespace Elsa.AzureServiceBus.Activities;
 [PublicAPI]
 public class SendMessage : CodeActivity
 {
+    /// <inheritdoc />
+    public SendMessage([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    {
+    }
+    
     /// <summary>
     /// The contents of the message to send.
     /// </summary>

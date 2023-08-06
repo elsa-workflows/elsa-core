@@ -1,5 +1,3 @@
-using Elsa.Common.Entities;
-
 namespace Elsa.Dapper.Modules.Runtime.Records;
 
 /// <summary>

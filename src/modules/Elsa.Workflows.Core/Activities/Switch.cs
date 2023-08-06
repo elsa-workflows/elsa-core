@@ -20,12 +20,6 @@ namespace Elsa.Workflows.Core.Activities;
 public class Switch : Activity
 {
     /// <inheritdoc />
-    [JsonConstructor]
-    public Switch()
-    {
-    }
-
-    /// <inheritdoc />
     public Switch([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }

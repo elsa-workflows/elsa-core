@@ -1,6 +1,5 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Text.Json.Serialization;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
@@ -18,12 +17,6 @@ public class Parallel : Container
 {
     private const string ScheduledChildrenProperty = "ScheduledChildren";
 
-    /// <inheritdoc />
-    [JsonConstructor]
-    public Parallel()
-    {
-    }
-    
     /// <inheritdoc />
     public Parallel([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {

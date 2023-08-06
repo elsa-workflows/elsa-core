@@ -1,4 +1,4 @@
-using System.Text.Json.Serialization;
+using System.Runtime.CompilerServices;
 using Elsa.AzureServiceBus.Models;
 using Elsa.Common.Contracts;
 using Elsa.Expressions.Models;
@@ -18,8 +18,7 @@ public class MessageReceived : Trigger
     internal const string InputKey = "TransportMessage";
 
     /// <inheritdoc />
-    [JsonConstructor]
-    public MessageReceived()
+    public MessageReceived([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
 

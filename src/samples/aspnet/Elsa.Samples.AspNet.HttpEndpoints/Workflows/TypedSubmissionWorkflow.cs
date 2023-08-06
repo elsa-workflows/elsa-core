@@ -2,7 +2,7 @@ using System.Net.Mime;
 using Elsa.Http;
 using Elsa.Samples.AspNet.HttpEndpoints.Activities;
 using Elsa.Samples.AspNet.HttpEndpoints.Models;
-using Elsa.Workflows.Core.Abstractions;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
 

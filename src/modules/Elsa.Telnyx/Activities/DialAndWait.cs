@@ -1,5 +1,4 @@
-﻿using System.Text.Json.Serialization;
-using Elsa.Extensions;
+﻿using Elsa.Extensions;
 using Elsa.Telnyx.Attributes;
 using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Client.Models;
@@ -12,7 +11,6 @@ using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
-using JetBrains.Annotations;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Telnyx.Activities;
@@ -23,15 +21,8 @@ namespace Elsa.Telnyx.Activities;
 [Activity(Constants.Namespace, "Dial a number or SIP URI and wait for an event.", Kind = ActivityKind.Task)]
 [FlowNode("Answered", "Hangup")]
 [WebhookDriven(WebhookEventTypes.CallAnswered, WebhookEventTypes.CallHangup)]
-[PublicAPI]
 public class DialAndWait : Activity<CallPayload>
 {
-    /// <inheritdoc />
-    [JsonConstructor]
-    public DialAndWait()
-    {
-    }
-    
     /// <inheritdoc />
     public DialAndWait(string? source = default, int? line = default) : base(source, line)
     {

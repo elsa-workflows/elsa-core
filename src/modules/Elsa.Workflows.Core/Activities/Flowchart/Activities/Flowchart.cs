@@ -1,6 +1,5 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Text.Json.Serialization;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Activities.Flowchart.Contracts;
 using Elsa.Workflows.Core.Activities.Flowchart.Extensions;
@@ -21,12 +20,6 @@ namespace Elsa.Workflows.Core.Activities.Flowchart.Activities;
 public class Flowchart : Container
 {
     internal const string ScopeProperty = "Scope";
-
-    /// <inheritdoc />
-    [JsonConstructor]
-    public Flowchart() : this(default, default)
-    {
-    }
 
     /// <inheritdoc />
     public Flowchart([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
@@ -92,47 +85,55 @@ public class Flowchart : Container
 
         scope.RegisterActivityExecution(completedActivity);
 
-        if (children.Any())
+        // If the completed activity is an End activity, complete the flowchart.
+        if (completedActivity is End)
         {
-            scope.AddActivities(children);
-
-            // Schedule each child, but only if all of its left inbound activities have already executed.
-            foreach (var activity in children)
+            await flowchartActivityExecutionContext.CompleteActivityAsync();
+        }
+        else
+        {
+            if (children.Any())
             {
-                var inboundActivities = Connections.LeftInboundActivities(activity).ToList();
+                scope.AddActivities(children);
 
-                // If the completed activity is not part of the left inbound path, always allow its children to be scheduled.
-                if (!inboundActivities.Contains(completedActivity))
+                // Schedule each child, but only if all of its left inbound activities have already executed.
+                foreach (var activity in children)
                 {
-                    await flowchartActivityExecutionContext.ScheduleActivityAsync(activity);
-                    continue;
-                }
+                    var inboundActivities = Connections.LeftInboundActivities(activity).ToList();
 
-                // If the activity is anything but a join activity, only schedule it if all of its left-inbound activities have executed, effectively implementing a "wait all" join. 
-                if (activity is not IJoinNode)
-                {
-                    var executionCount = scope.GetExecutionCount(activity);
-                    var haveInboundActivitiesExecuted = inboundActivities.All(x => scope.GetExecutionCount(x) > executionCount);
-
-                    if (haveInboundActivitiesExecuted)
+                    // If the completed activity is not part of the left inbound path, always allow its children to be scheduled.
+                    if (!inboundActivities.Contains(completedActivity))
+                    {
                         await flowchartActivityExecutionContext.ScheduleActivityAsync(activity);
-                }
-                else
-                {
-                    await flowchartActivityExecutionContext.ScheduleActivityAsync(activity);
+                        continue;
+                    }
+
+                    // If the activity is anything but a join activity, only schedule it if all of its left-inbound activities have executed, effectively implementing a "wait all" join. 
+                    if (activity is not IJoinNode)
+                    {
+                        var executionCount = scope.GetExecutionCount(activity);
+                        var haveInboundActivitiesExecuted = inboundActivities.All(x => scope.GetExecutionCount(x) > executionCount);
+
+                        if (haveInboundActivitiesExecuted)
+                            await flowchartActivityExecutionContext.ScheduleActivityAsync(activity);
+                    }
+                    else
+                    {
+                        await flowchartActivityExecutionContext.ScheduleActivityAsync(activity);
+                    }
                 }
             }
-        }
 
-        if (!children.Any())
-        {
-            var workflowExecutionContext = context.ReceiverActivityExecutionContext.WorkflowExecutionContext;
+            if (!children.Any())
+            {
+                var workflowExecutionContext = context.ReceiverActivityExecutionContext.WorkflowExecutionContext;
 
-            // If there is no pending work, complete the flowchart activity.
-            var hasPendingWork = HasPendingWork(workflowExecutionContext);
+                // If there is no pending work, complete the flowchart activity.
+                var hasPendingWork = HasPendingWork(workflowExecutionContext);
 
-            if (!hasPendingWork)
-                await flowchartActivityExecutionContext.CompleteActivityAsync();
+                if (!hasPendingWork)
+                    await flowchartActivityExecutionContext.CompleteActivityAsync();
+            }
         }
 
         flowchartActivityExecutionContext.SetProperty(ScopeProperty, scope);
@@ -149,7 +150,7 @@ public class Flowchart : Container
         var activityExecutionContexts = workflowExecutionContext.ActivityExecutionContexts.Where(x => activityIds.Contains(x.Activity.Id)).ToList();
         var hasPendingWork = workflowExecutionContext.Scheduler.List().Any(x => activityNodeIds.Contains(x.ActivityId));
         var hasRunningActivityInstances = activityExecutionContexts.Any(x => x.Status == ActivityStatus.Running);
-        
+
         return hasRunningActivityInstances || hasPendingWork;
     }
 
@@ -158,18 +159,18 @@ public class Flowchart : Container
         // If there's a trigger that triggered this workflow, use that.
         var triggerActivityId = context.WorkflowExecutionContext.TriggerActivityId;
         var triggerActivity = triggerActivityId != null ? Activities.FirstOrDefault(x => x.Id == triggerActivityId) : default;
-        
-        if(triggerActivity != null)
+
+        if (triggerActivity != null)
             return triggerActivity;
-        
+
         // If an explicit Start activity was provided, use that.
-        if(Start != null)
+        if (Start != null)
             return Start;
-        
+
         // If there is a Start activity on the flowchart, use that.
         var startActivity = Activities.FirstOrDefault(x => x is Start);
-        
-        if(startActivity != null)
+
+        if (startActivity != null)
             return startActivity;
 
         // If there is a single activity that has no inbound connections, use that.
@@ -177,7 +178,7 @@ public class Flowchart : Container
 
         if (root != null)
             return root;
-        
+
         // If no start activity found, return the first activity.
         return Activities.FirstOrDefault();
     }
@@ -190,7 +191,7 @@ public class Flowchart : Container
             let inboundConnections = Connections.Any(x => x.Target.Activity == activity)
             where !inboundConnections
             select activity;
-        
+
         var rootActivity = query.FirstOrDefault();
         return rootActivity;
     }

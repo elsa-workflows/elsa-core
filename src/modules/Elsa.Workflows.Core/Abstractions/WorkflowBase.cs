@@ -1,11 +1,13 @@
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Memory;
+using JetBrains.Annotations;
 
-namespace Elsa.Workflows.Core.Abstractions;
+namespace Elsa.Workflows.Core;
 
 /// <summary>
 /// A base class for implementing workflow definitions using the pipelineBuilder API.
 /// </summary>
+[UsedImplicitly(ImplicitUseTargetFlags.WithInheritors)]
 public abstract class WorkflowBase : IWorkflow
 {
     /// <summary>

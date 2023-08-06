@@ -1,5 +1,4 @@
 ﻿using System.Runtime.CompilerServices;
-using System.Text.Json.Serialization;
 using Elsa.Extensions;
 using Elsa.Telnyx.Client.Models;
 using Elsa.Telnyx.Client.Services;
@@ -8,7 +7,6 @@ using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
-using JetBrains.Annotations;
 using Refit;
 
 namespace Elsa.Telnyx.Activities;
@@ -18,15 +16,8 @@ namespace Elsa.Telnyx.Activities;
 /// </summary>
 [Activity(Constants.Namespace, "Stop recording the call.", Kind = ActivityKind.Task)]
 [FlowNode("Recording stopped", "Disconnected")]
-[PublicAPI]
 public class StopRecording : Activity
 {
-    /// <inheritdoc />
-    [JsonConstructor]
-    public StopRecording()
-    {
-    }
-
     /// <inheritdoc />
     public StopRecording([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {

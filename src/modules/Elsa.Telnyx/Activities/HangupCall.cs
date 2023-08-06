@@ -1,52 +1,16 @@
 ﻿using System.Runtime.CompilerServices;
-using System.Text.Json.Serialization;
 using Elsa.Extensions;
-using Elsa.Telnyx.Client.Models;
-using Elsa.Telnyx.Client.Services;
-using Elsa.Telnyx.Extensions;
 using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Models;
 using JetBrains.Annotations;
-using Refit;
 
 namespace Elsa.Telnyx.Activities;
-
-/// <inheritdoc />
-[FlowNode("Done", "Disconnected")]
-[PublicAPI]
-public class FlowHangupCall : HangupCallBase
-{
-    /// <inheritdoc />
-    [JsonConstructor]
-    public FlowHangupCall()
-    {
-    }
-    
-    /// <inheritdoc />
-    public FlowHangupCall([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
-    {
-    }
-    
-    /// <inheritdoc />
-    protected override ValueTask HandleDoneAsync(ActivityExecutionContext context) => context.CompleteActivityWithOutcomesAsync("Done");
-
-    /// <inheritdoc />
-    protected override ValueTask HandleDisconnectedAsync(ActivityExecutionContext context) => context.CompleteActivityWithOutcomesAsync("Disconnected");
-}
 
 /// <inheritdoc />
 [PublicAPI]
 public class HangupCall : HangupCallBase
 {
-    /// <inheritdoc />
-    [JsonConstructor]
-    public HangupCall()
-    {
-    }
-    
     /// <inheritdoc />
     public HangupCall([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
@@ -67,52 +31,4 @@ public class HangupCall : HangupCallBase
     /// Executed when any child activity completed.
     /// </summary>
     private async ValueTask OnCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext) => await context.CompleteActivityAsync();
-}
-
-/// <summary>
-/// Hang up the call.
-/// </summary>
-[Activity(Constants.Namespace, "Hang up the call.", Kind = ActivityKind.Task)]
-[PublicAPI]
-public abstract class HangupCallBase : Activity
-{
-    /// <inheritdoc />
-    protected HangupCallBase([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
-    {
-    }
-    
-    /// <summary>
-    /// Unique identifier and token for controlling the call.
-    /// </summary>
-    [Input(DisplayName = "Call Control ID", Description = "Unique identifier and token for controlling the call.", Category = "Advanced")]
-    public Input<string?>? CallControlId { get; set; } = default!;
-
-    /// <inheritdoc />
-    protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
-    {
-        var callControlId = context.GetPrimaryCallControlId(CallControlId) ?? throw new Exception("CallControlId is required.");
-        var request = new HangupCallRequest(ClientState: context.CreateCorrelatingClientState());
-        var telnyxClient = context.GetRequiredService<ITelnyxClient>();
-
-        try
-        {
-            await telnyxClient.Calls.HangupCallAsync(callControlId, request, context.CancellationToken);
-            await HandleDoneAsync(context);
-        }
-        catch (ApiException e)
-        {
-            if (!await e.CallIsNoLongerActiveAsync()) throw;
-            await HandleDisconnectedAsync(context);
-        }
-    }
-
-    /// <summary>
-    /// Executed when the call was hangup.
-    /// </summary>
-    protected abstract ValueTask HandleDoneAsync(ActivityExecutionContext context);
-    
-    /// <summary>
-    /// Executed when the call was no longer active.
-    /// </summary>
-    protected abstract ValueTask HandleDisconnectedAsync(ActivityExecutionContext context);
 }

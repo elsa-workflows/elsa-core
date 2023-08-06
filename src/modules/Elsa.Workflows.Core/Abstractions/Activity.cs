@@ -5,6 +5,7 @@ using Elsa.Workflows.Core.Behaviors;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
+using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Core;
 
@@ -12,6 +13,7 @@ namespace Elsa.Workflows.Core;
 /// Base class for custom activities.
 /// </summary>
 [DebuggerDisplay("{Type} - {Id}")]
+[UsedImplicitly(ImplicitUseTargetFlags.WithInheritors)]
 public abstract class Activity : IActivity, ISignalHandler
 {
     private readonly ICollection<SignalHandlerRegistration> _signalHandlers = new List<SignalHandlerRegistration>();

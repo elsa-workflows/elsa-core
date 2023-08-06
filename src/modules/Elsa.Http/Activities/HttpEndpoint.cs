@@ -1,4 +1,4 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.Runtime.CompilerServices;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Http.Contracts;
@@ -23,8 +23,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
     internal const string RequestPathInputKey = "RequestPath";
 
     /// <inheritdoc />
-    [JsonConstructor]
-    public HttpEndpoint()
+    public HttpEndpoint([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
 

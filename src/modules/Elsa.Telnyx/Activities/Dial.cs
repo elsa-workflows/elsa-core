@@ -1,4 +1,3 @@
-using System.Text.Json.Serialization;
 using Elsa.Extensions;
 using Elsa.Telnyx.Client.Models;
 using Elsa.Telnyx.Client.Services;
@@ -8,7 +7,6 @@ using Elsa.Telnyx.Options;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
-using JetBrains.Annotations;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Telnyx.Activities;
@@ -17,15 +15,8 @@ namespace Elsa.Telnyx.Activities;
 /// Dial a number or SIP URI.
 /// </summary>
 [Activity(Constants.Namespace, "Dial a number or SIP URI.", Kind = ActivityKind.Task)]
-[PublicAPI]
 public class Dial : CodeActivity<DialResponse>
 {
-    /// <inheritdoc />
-    [JsonConstructor]
-    public Dial()
-    {
-    }
-    
     /// <inheritdoc />
     public Dial(string? source = default, int? line = default) : base(source, line)
     {

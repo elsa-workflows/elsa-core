@@ -1,5 +1,4 @@
 ﻿using System.Runtime.CompilerServices;
-using System.Text.Json.Serialization;
 using Elsa.Common.Contracts;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
@@ -20,12 +19,6 @@ public class StartAt : Trigger
 {
     private const string InputKey = "ExecuteAt";
 
-    /// <inheritdoc />
-    [JsonConstructor]
-    public StartAt()
-    {
-    }
-    
     /// <inheritdoc />
     public StartAt([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {

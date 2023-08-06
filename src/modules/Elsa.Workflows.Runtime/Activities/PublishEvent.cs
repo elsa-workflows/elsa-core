@@ -4,7 +4,6 @@ using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Runtime.Contracts;
 using JetBrains.Annotations;
 using System.Runtime.CompilerServices;
-using System.Text.Json.Serialization;
 using Elsa.Workflows.Core;
 
 namespace Elsa.Workflows.Runtime.Activities;
@@ -16,12 +15,6 @@ namespace Elsa.Workflows.Runtime.Activities;
 [PublicAPI]
 public class PublishEvent : Activity
 {
-    /// <inheritdoc />
-    [JsonConstructor]
-    public PublishEvent()
-    {
-    }
-
     /// <inheritdoc />
     public PublishEvent([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {

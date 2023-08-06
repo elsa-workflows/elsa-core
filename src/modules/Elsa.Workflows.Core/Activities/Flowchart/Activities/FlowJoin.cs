@@ -6,7 +6,6 @@ using Elsa.Workflows.Core.Activities.Flowchart.Models;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 using JetBrains.Annotations;
-using Newtonsoft.Json;
 
 namespace Elsa.Workflows.Core.Activities.Flowchart.Activities;
 
@@ -17,12 +16,6 @@ namespace Elsa.Workflows.Core.Activities.Flowchart.Activities;
 [PublicAPI]
 public class FlowJoin : Activity, IJoinNode
 {
-    /// <inheritdoc />
-    [JsonConstructor]
-    public FlowJoin()
-    {
-    }
-    
     /// <inheritdoc />
     public FlowJoin([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {

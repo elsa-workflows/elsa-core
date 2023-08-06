@@ -4,7 +4,7 @@ using Elsa.Samples.AspNet.WorkflowContexts.Providers;
 using Elsa.Samples.AspNet.WorkflowContexts.Extensions;
 using Elsa.Scheduling.Activities;
 using Elsa.WorkflowContexts.Activities;
-using Elsa.Workflows.Core.Abstractions;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
 

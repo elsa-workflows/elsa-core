@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Core;
@@ -18,6 +19,11 @@ namespace Elsa.Workflows.Runtime.Activities;
 [PublicAPI]
 public class DispatchWorkflow : Activity<object>, IBookmarksPersistedHandler
 {
+    /// <inheritdoc />
+    public DispatchWorkflow([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    {
+    }
+    
     /// <summary>
     /// The definition ID of the workflow to dispatch. 
     /// </summary>

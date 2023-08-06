@@ -43,10 +43,10 @@ public class RunTask : Activity<object>, IBookmarksPersistedHandler
     
     /// <inheritdoc />
     [JsonConstructor]
-    public RunTask()
+    private RunTask(string? source = default, int? line = default) : base(source, line)
     {
     }
-
+    
     /// <inheritdoc />
     public RunTask(MemoryBlockReference output, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(output, source, line)
     {

@@ -1,6 +1,5 @@
 using System.Runtime.CompilerServices;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Activities.Flowchart.Models;
@@ -18,12 +17,6 @@ namespace Elsa.Workflows.Core.Activities;
 [PublicAPI]
 public class Complete : Activity
 {
-    /// <inheritdoc />
-    [JsonConstructor]
-    public Complete()
-    {
-    }
-    
     /// <inheritdoc />
     public Complete([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
