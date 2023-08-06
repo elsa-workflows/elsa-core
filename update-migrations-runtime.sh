@@ -5,7 +5,6 @@ mods=("Runtime")
 
 # Define the list of providers
 providers=("MySql" "SqlServer" "Sqlite" "PostgreSql")
-#providers=("MySql")
 
 # Connection strings for each provider
 typeset -A connStrings
@@ -17,7 +16,6 @@ connStrings=(
 )
 
 # Loop through each module
-
 for module in "${mods[@]}"; do
     # Loop through each provider
     for provider in "${providers[@]}"; do

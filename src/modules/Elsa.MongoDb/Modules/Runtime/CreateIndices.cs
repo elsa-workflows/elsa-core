@@ -113,8 +113,7 @@ internal class CreateIndices : IHostedService
                             .Ascending(x => x.WorkflowInstanceId)),
                         new(indexBuilder.Ascending(x => x.WorkflowInstanceId)),
                         new(indexBuilder.Ascending(x => x.ActivityTypeName)),
-                        new(indexBuilder.Ascending(x => x.Hash)),
-                        new(indexBuilder.Ascending(x => x.BookmarkId), new CreateIndexOptions { Unique = true })
+                        new(indexBuilder.Ascending(x => x.Hash))
                     },
                     cancellationToken));
     }
