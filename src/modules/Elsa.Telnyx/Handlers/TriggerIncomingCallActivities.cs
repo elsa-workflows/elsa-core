@@ -8,6 +8,7 @@ using Elsa.Telnyx.Payloads.Abstract;
 using Elsa.Telnyx.Payloads.Call;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Models;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 
@@ -19,12 +20,12 @@ namespace Elsa.Telnyx.Handlers;
 [PublicAPI]
 internal class TriggerIncomingCallActivities : INotificationHandler<TelnyxWebhookReceived>
 {
-    private readonly IWorkflowRuntime _workflowRuntime;
+    private readonly IWorkflowInbox _workflowInbox;
     private readonly ILogger _logger;
 
-    public TriggerIncomingCallActivities(IWorkflowRuntime workflowRuntime, ILogger<TriggerIncomingCallActivities> logger)
+    public TriggerIncomingCallActivities(IWorkflowInbox workflowInbox, ILogger<TriggerIncomingCallActivities> logger)
     {
-        _workflowRuntime = workflowRuntime;
+        _workflowInbox = workflowInbox;
         _logger = logger;
     }
 
@@ -46,15 +47,34 @@ internal class TriggerIncomingCallActivities : INotificationHandler<TelnyxWebhoo
         // Trigger all workflows matching the From number.
         var fromNumber = callInitiatedPayload.From;
         var fromBookmarkPayload = new IncomingCallFromBookmarkPayload(fromNumber);
-        await _workflowRuntime.TriggerWorkflowsAsync(activityTypeName, fromBookmarkPayload, new TriggerWorkflowsRuntimeOptions(correlationId, default, input), cancellationToken);
+
+        await _workflowInbox.SubmitAsync(new NewWorkflowInboxMessage
+        {
+            ActivityTypeName = activityTypeName,
+            BookmarkPayload = fromBookmarkPayload,
+            CorrelationId = correlationId,
+            Input = input
+        }, cancellationToken);
 
         // Trigger all workflows matching the To number.
         var toNumber = callInitiatedPayload.To;
         var toBookmarkPayload = new IncomingCallToBookmarkPayload(toNumber);
-        await _workflowRuntime.TriggerWorkflowsAsync(activityTypeName, toBookmarkPayload, new TriggerWorkflowsRuntimeOptions(correlationId, default, input), cancellationToken);
+        await _workflowInbox.SubmitAsync(new NewWorkflowInboxMessage
+        {
+            ActivityTypeName = activityTypeName,
+            BookmarkPayload = toBookmarkPayload,
+            CorrelationId = correlationId,
+            Input = input
+        }, cancellationToken);
 
         // Trigger all catch-all workflows.
         var catchallBookmarkPayload = new IncomingCallCatchAllBookmarkPayload();
-        await _workflowRuntime.TriggerWorkflowsAsync(activityTypeName, catchallBookmarkPayload, new TriggerWorkflowsRuntimeOptions(correlationId, default, input), cancellationToken);
+        await _workflowInbox.SubmitAsync(new NewWorkflowInboxMessage
+        {
+            ActivityTypeName = activityTypeName,
+            BookmarkPayload = catchallBookmarkPayload,
+            CorrelationId = correlationId,
+            Input = input
+        }, cancellationToken);
     }
 }

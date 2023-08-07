@@ -1,4 +1,6 @@
 using Elsa.Extensions;
+using Elsa.Telnyx.Attributes;
+using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Client.Models;
 using Elsa.Telnyx.Client.Services;
 using Elsa.Telnyx.Extensions;
@@ -13,6 +15,7 @@ namespace Elsa.Telnyx.Activities;
 /// Convert text to speech and play it back on the call.
 /// </summary>
 [Activity(Constants.Namespace, "Convert text to speech and play it back on the call.", Kind = ActivityKind.Task)]
+[WebhookDriven(WebhookEventTypes.CallSpeakEnded)]
 public abstract class SpeakTextBase : Activity
 {
     /// <inheritdoc />
@@ -91,7 +94,7 @@ public abstract class SpeakTextBase : Activity
             Payload.Get(context),
             PayloadType.GetOrDefault(context).EmptyToNull(),
             ServiceLevel.GetOrDefault(context).EmptyToNull(),
-            ClientState: context.CreateCorrelatingClientState()
+            ClientState: context.CreateCorrelatingClientState(context.Id)
         );
 
         var callControlId = context.GetPrimaryCallControlId(CallControlId) ?? throw new Exception("CallControlId is required.");
@@ -99,8 +102,11 @@ public abstract class SpeakTextBase : Activity
 
         try
         {
+            // Send the request to Telnyx.
             await telnyxClient.Calls.SpeakTextAsync(callControlId, request, context.CancellationToken);
-            await HandleDone(context);
+            
+            // Create bookmark to resume the workflow when speaking has finished.
+            context.CreateBookmark(new WebhookEventBookmarkPayload(WebhookEventTypes.CallSpeakEnded, callControlId, context.Id), HandleSpeakingHasFinished);
         }
         catch (ApiException e)
         {
@@ -117,7 +123,5 @@ public abstract class SpeakTextBase : Activity
     /// <summary>
     /// Called when speaking has finished.
     /// </summary>
-    protected abstract ValueTask HandleDone(ActivityExecutionContext context);
-
-    private async ValueTask ResumeAsync(ActivityExecutionContext context) => await HandleDone(context);
+    protected abstract ValueTask HandleSpeakingHasFinished(ActivityExecutionContext context);
 }

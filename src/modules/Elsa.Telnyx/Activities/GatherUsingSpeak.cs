@@ -21,7 +21,7 @@ namespace Elsa.Telnyx.Activities;
 [Activity(Constants.Namespace, "Convert text to speech and play it on the call until the required DTMF signals are gathered to build interactive menus.", Kind = ActivityKind.Task)]
 [FlowNode("Valid input", "Invalid input", "Disconnected")]
 [WebhookDriven(WebhookEventTypes.CallGatherEnded)]
-public class GatherUsingSpeak : Activity<CallGatherEndedPayload>, IBookmarksPersistedHandler
+public class GatherUsingSpeak : Activity<CallGatherEndedPayload>
 {
     /// <inheritdoc />
     public GatherUsingSpeak([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
@@ -141,12 +141,12 @@ public class GatherUsingSpeak : Activity<CallGatherEndedPayload>, IBookmarksPers
         DefaultValue = 60000
     )]
     public Input<int?>? TimeoutMillis { get; set; } = new(60000);
-    
-    /// <summary>
-    /// Calls out to Telnyx to start gathering input.
-    /// </summary>
-    public async ValueTask BookmarksPersistedAsync(ActivityExecutionContext context)
+
+    /// <inheritdoc />
+    protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
+        var callControlId = context.GetPrimaryCallControlId(CallControlId) ?? throw new Exception("CallControlId is required");
+        
         var request = new GatherUsingSpeakRequest(
             Language.Get(context) ?? throw new Exception("Language is required."),
             Voice.Get(context) ?? throw new Exception("Voice is required."),
@@ -160,28 +160,24 @@ public class GatherUsingSpeak : Activity<CallGatherEndedPayload>, IBookmarksPers
             TerminatingDigit.GetOrDefault(context).EmptyToNull(),
             TimeoutMillis.GetOrDefault(context),
             ValidDigits.GetOrDefault(context).EmptyToNull(),
-            context.CreateCorrelatingClientState()
+            context.CreateCorrelatingClientState(context.Id)
         );
-
-        var callControlId = context.GetPrimaryCallControlId(CallControlId) ?? throw new Exception("CallControlId is required");
+        
         var telnyxClient = context.GetRequiredService<ITelnyxClient>();
 
         try
         {
+            // Send the request to Telnyx.
             await telnyxClient.Calls.GatherUsingSpeakAsync(callControlId, request, context.CancellationToken);
+            
+            // Create a bookmark so we can resume this activity when the call.gather.ended webhook comes back.
+            context.CreateBookmark(new WebhookEventBookmarkPayload(WebhookEventTypes.CallGatherEnded, callControlId, context.Id), ResumeAsync);
         }
         catch (ApiException e)
         {
             if (!await e.CallIsNoLongerActiveAsync()) throw;
             await context.CompleteActivityWithOutcomesAsync("Disconnected");
         }
-    }
-
-    /// <inheritdoc />
-    protected override void Execute(ActivityExecutionContext context)
-    {
-        var callControlId = context.GetPrimaryCallControlId(CallControlId) ?? throw new Exception("CallControlId is required");
-        context.CreateBookmark(new WebhookEventBookmarkPayload(WebhookEventTypes.CallGatherEnded, callControlId), ResumeAsync);
     }
 
     private async ValueTask ResumeAsync(ActivityExecutionContext context)

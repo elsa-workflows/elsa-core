@@ -5,6 +5,9 @@ using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Telnyx.Extensions;
 
+/// <summary>
+/// Provides extensions on <see cref="ActivityExecutionContext"/>.
+/// </summary>
 public static class ActivityExecutionExtensions
 {
     private const string PrimaryCallControlIdKey = "telnyx:primary-callcontrol-id";
@@ -22,7 +25,7 @@ public static class ActivityExecutionExtensions
     public static string? GetSecondaryCallControlId(this ActivityExecutionContext context, string? callControlId) => string.IsNullOrWhiteSpace(callControlId) ? context.GetSecondaryCallControlId() : callControlId;
     public static string? GetSecondaryCallControlId(this ActivityExecutionContext context, Input<string?>? callControlId) => context.GetSecondaryCallControlId(callControlId.Get(context));
     public static bool HasSecondaryCallControlId(this ActivityExecutionContext context) => context.WorkflowExecutionContext.HasProperty(SecondaryCallControlIdKey);
-    public static string CreateCorrelatingClientState(this ActivityExecutionContext context) => new ClientStatePayload(context.WorkflowExecutionContext.CorrelationId!).ToBase64();
+    public static string CreateCorrelatingClientState(this ActivityExecutionContext context, string? activityInstanceId = default) => new ClientStatePayload(context.WorkflowExecutionContext.CorrelationId!, activityInstanceId).ToBase64();
     
     public static void SetFrom(this ActivityExecutionContext context, string value) => context.WorkflowExecutionContext.SetProperty(FromKey, value);
     public static string? GetFrom(this ActivityExecutionContext context) => context.WorkflowExecutionContext.GetProperty<string>(FromKey);
