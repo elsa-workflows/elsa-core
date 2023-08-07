@@ -2,7 +2,6 @@ namespace Elsa.Telnyx;
 
 public static class WebhookActivityTypeNames
 {
-    public const string CallAnswered = $"{Constants.Namespace}.{nameof(CallAnswered)}";
     public const string CallBridged = $"{Constants.Namespace}.{nameof(CallBridged)}";
     public const string CallDtmfReceived = $"{Constants.Namespace}.{nameof(CallDtmfReceived)}";
     public const string CallGatherEnded = $"{Constants.Namespace}.{nameof(CallGatherEnded)}";

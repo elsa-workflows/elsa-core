@@ -19,14 +19,27 @@ public class TelnyxFeature : FeatureBase
 {
     private const string TelnyxCategoryName = "Telnyx";
 
+    /// <inheritdoc />
     public TelnyxFeature(IModule module) : base(module)
     {
     }
 
+    /// <summary>
+    /// Configures Telnyx options.
+    /// </summary>
     public Action<TelnyxOptions> ConfigureTelnyxOptions { get; set; } = _ => { };
+    
+    /// <summary>
+    /// Gets or sets a factory that creates an <see cref="HttpClient"/> used to communicate with the Telnyx API.
+    /// </summary>
     public Func<IServiceProvider, HttpClient>? HttpClientFactory { get; set; }
+    
+    /// <summary>
+    /// Configures the <see cref="IHttpClientBuilder"/> used to communicate with the Telnyx API.
+    /// </summary>
     public Action<IHttpClientBuilder>? ConfigureHttpClientBuilder { get; set; }
 
+    /// <inheritdoc />
     public override void Configure()
     {
         Module.UseWorkflowManagement(management =>
@@ -46,6 +59,7 @@ public class TelnyxFeature : FeatureBase
         });
     }
 
+    /// <inheritdoc />
     public override void Apply()
     {
         Services

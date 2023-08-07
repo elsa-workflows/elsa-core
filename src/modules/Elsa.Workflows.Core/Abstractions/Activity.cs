@@ -13,7 +13,7 @@ namespace Elsa.Workflows.Core;
 /// Base class for custom activities.
 /// </summary>
 [DebuggerDisplay("{Type} - {Id}")]
-[UsedImplicitly(ImplicitUseTargetFlags.WithInheritors)]
+[UsedImplicitly(ImplicitUseTargetFlags.WithInheritors | ImplicitUseTargetFlags.Members)]
 public abstract class Activity : IActivity, ISignalHandler
 {
     private readonly ICollection<SignalHandlerRegistration> _signalHandlers = new List<SignalHandlerRegistration>();

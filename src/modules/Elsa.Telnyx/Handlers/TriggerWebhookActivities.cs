@@ -35,7 +35,7 @@ internal class TriggerWebhookActivities : INotificationHandler<TelnyxWebhookRece
         var webhook = notification.Webhook;
         var eventType = webhook.Data.EventType;
         var payload = webhook.Data.Payload;
-        var activityType = payload.GetType().GetCustomAttribute<WebhookAttribute>()?.ActivityType;
+        var activityType = payload.GetType().GetCustomAttribute<WebhookActivityAttribute>()?.ActivityType;
 
         if (activityType == null)
             return;
