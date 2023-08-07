@@ -37,7 +37,8 @@ internal class TriggerIncomingCallActivities : INotificationHandler<TelnyxWebhoo
         if (payload is not CallInitiatedPayload callInitiatedPayload)
             return;
 
-        if (callInitiatedPayload.Direction != "incoming")
+        // Only trigger workflows for incoming calls.
+        if (callInitiatedPayload.Direction != "incoming" || callInitiatedPayload.ClientState != null)
             return;
 
         var correlationId = callInitiatedPayload.GetCorrelationId();
