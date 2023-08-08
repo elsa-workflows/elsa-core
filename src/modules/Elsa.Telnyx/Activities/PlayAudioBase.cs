@@ -20,7 +20,7 @@ namespace Elsa.Telnyx.Activities;
 [Activity(Constants.Namespace, "Play an audio file on the call.", Kind = ActivityKind.Task)]
 [FlowNode("Playback started", "Disconnected")]
 [WebhookDriven(WebhookEventTypes.CallPlaybackStarted)]
-public abstract class PlayAudioBase : Activity, IBookmarksPersistedHandler
+public abstract class PlayAudioBase : Activity
 {
     /// <inheritdoc />
     protected PlayAudioBase([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
@@ -75,21 +75,19 @@ public abstract class PlayAudioBase : Activity, IBookmarksPersistedHandler
         Options = new[] { "", "self", "opposite", "both" },
         Category = "Advanced"
     )]
-    public Input<string?>? TargetLegs { get; set; }
+    public Input<string?> TargetLegs { get; set; } = default!;
 
-    /// <summary>
-    /// Calls out to Telnyx to start playing an audio file.
-    /// </summary>
-    public async ValueTask BookmarksPersistedAsync(ActivityExecutionContext context)
+    /// <inheritdoc />
+    protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        var loop = Loop.Get(context);
+        var loop = Loop.GetOrDefault(context);
 
         var request = new PlayAudioRequest(
-            AudioUrl.Get(context) ?? throw new Exception("AudioUrl is required."),
-            Overlay.Get(context),
+            AudioUrl.Get(context),
+            Overlay.GetOrDefault(context),
             string.IsNullOrWhiteSpace(loop) ? null : loop == "infinity" ? "infinity" : int.Parse(loop),
-            TargetLegs.Get(context).EmptyToNull(),
-            ClientState: context.CreateCorrelatingClientState()
+            TargetLegs.GetOrDefault(context).EmptyToNull(),
+            ClientState: context.CreateCorrelatingClientState(context.Id)
         );
 
         var callControlId = context.GetPrimaryCallControlId(CallControlId) ?? throw new Exception("CallControlId is required.");
@@ -104,13 +102,8 @@ public abstract class PlayAudioBase : Activity, IBookmarksPersistedHandler
             if (!await e.CallIsNoLongerActiveAsync()) throw;
             await HandleDisconnectedAsync(context);
         }
-    }
-
-    /// <inheritdoc />
-    protected override void Execute(ActivityExecutionContext context)
-    {
-        var callControlId = context.GetPrimaryCallControlId(CallControlId) ?? throw new Exception("CallControlId is required.");
-        context.CreateBookmark(new WebhookEventBookmarkPayload(WebhookEventTypes.CallPlaybackStarted, callControlId), ResumeAsync);
+        
+        context.CreateBookmark(new WebhookEventBookmarkPayload(WebhookEventTypes.CallPlaybackStarted, callControlId, context.Id), ResumeAsync);
     }
 
     /// <summary>

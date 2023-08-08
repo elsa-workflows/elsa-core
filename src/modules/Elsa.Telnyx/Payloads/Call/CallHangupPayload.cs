@@ -2,7 +2,10 @@
 
 namespace Elsa.Telnyx.Payloads.Call;
 
-[WebhookActivity(WebhookEventTypes.CallHangup, WebhookActivityTypeNames.CallHangup, "Call Hangup", "Triggered when an incoming call was hangup.")]
+/// <summary>
+/// A payload representing the call.hangup Telnyx webhook event.
+/// </summary>
+[Webhook(WebhookEventTypes.CallHangup)]
 public sealed record CallHangupPayload : CallPayload
 {
     public DateTimeOffset StartTime { get; init; }

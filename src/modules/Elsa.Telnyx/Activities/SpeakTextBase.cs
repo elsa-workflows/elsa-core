@@ -89,8 +89,8 @@ public abstract class SpeakTextBase : Activity
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var request = new SpeakTextRequest(
-            Language.Get(context),
-            Voice.Get(context),
+            Language.GetOrDefault(context) ?? "en-US",
+            Voice.GetOrDefault(context) ?? "female",
             Payload.Get(context),
             PayloadType.GetOrDefault(context).EmptyToNull(),
             ServiceLevel.GetOrDefault(context).EmptyToNull(),

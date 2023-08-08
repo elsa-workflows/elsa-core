@@ -23,7 +23,7 @@ public abstract class HangupCallBase : Activity
     /// Unique identifier and token for controlling the call.
     /// </summary>
     [Input(DisplayName = "Call Control ID", Description = "Unique identifier and token for controlling the call.", Category = "Advanced")]
-    public Input<string?>? CallControlId { get; set; } = default!;
+    public Input<string?> CallControlId { get; set; } = default!;
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
