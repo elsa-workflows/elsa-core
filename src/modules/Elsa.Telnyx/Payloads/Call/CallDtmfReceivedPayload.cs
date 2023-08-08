@@ -2,7 +2,7 @@
 
 namespace Elsa.Telnyx.Payloads.Call;
 
-[Webhook(WebhookEventTypes.CallDtmfReceived, WebhookActivityTypeNames.CallDtmfReceived, "Call DTMF Received", "Triggered when DTMF input is received.")]
+[WebhookActivity(WebhookEventTypes.CallDtmfReceived, WebhookActivityTypeNames.CallDtmfReceived, "Call DTMF Received", "Triggered when DTMF input is received.")]
 public sealed record CallDtmfReceivedPayload : CallPayload
 {
     public string Digit { get; set; } = default!;

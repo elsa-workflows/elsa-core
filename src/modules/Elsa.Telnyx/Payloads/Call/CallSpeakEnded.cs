@@ -2,5 +2,5 @@
 
 namespace Elsa.Telnyx.Payloads.Call;
 
-[Webhook(WebhookEventTypes.CallSpeakEnded, WebhookActivityTypeNames.CallSpeakEnded, "Call Speak Ended", "Triggered when speaking has ended.")]
+[WebhookActivity(WebhookEventTypes.CallSpeakEnded, WebhookActivityTypeNames.CallSpeakEnded, "Call Speak Ended", "Triggered when speaking has ended.")]
 public sealed record CallSpeakEnded : CallPayload;

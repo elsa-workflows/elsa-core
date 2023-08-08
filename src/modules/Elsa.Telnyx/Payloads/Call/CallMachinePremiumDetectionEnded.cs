@@ -2,7 +2,7 @@ using Elsa.Telnyx.Attributes;
 
 namespace Elsa.Telnyx.Payloads.Call;
 
-[Webhook(
+[WebhookActivity(
     WebhookEventTypes.CallMachinePremiumDetectionEnded, 
     WebhookActivityTypeNames.CallMachinePremiumDetectionEnded, 
     "Call Machine Premium Detection Ended", 

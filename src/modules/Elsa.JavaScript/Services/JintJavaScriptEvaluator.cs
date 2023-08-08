@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
@@ -132,7 +133,27 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
             select variable.Get(context);
 
         var value = q.FirstOrDefault();
-        return value!;
+
+        return ConvertIEnumerableToArray(value);
+    }
+
+    private static object ConvertIEnumerableToArray(object? obj)
+    {
+        if(obj == null)
+            return null!;
+        
+        // If it's not an IEnumerable or it's a string, return the original object
+        if (obj is not IEnumerable enumerable || obj is string)
+            return obj;
+
+        // Use LINQ to convert the IEnumerable to an array
+        var elementType = obj.GetType().GetGenericArguments().FirstOrDefault();
+
+        if (elementType == null)
+            return obj;
+
+        var toArrayMethod = typeof(Enumerable).GetMethod("ToArray")!.MakeGenericMethod(elementType);
+        return toArrayMethod.Invoke(null, new object[] { enumerable })!;
     }
 
     private static void SetVariableInScope(ExpressionExecutionContext context, string variableName, object? value)

@@ -21,7 +21,7 @@ public static class WebhookPayloadTypes
 
     static WebhookPayloadTypes()
     {
-        PayloadTypes = typeof(WebhookPayloadTypes).Assembly.GetTypes().Where(x => typeof(Payload).IsAssignableFrom(x) && x.GetCustomAttribute<WebhookAttribute>() != null).ToList();
+        PayloadTypes = typeof(WebhookPayloadTypes).Assembly.GetTypes().Where(x => typeof(Payload).IsAssignableFrom(x) && x.GetCustomAttribute<WebhookAttribute>(true) != null).ToList();
         
         var query =
             from payloadType in PayloadTypes

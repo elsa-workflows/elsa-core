@@ -31,5 +31,5 @@ public class SpeakText : SpeakTextBase
     protected override async ValueTask HandleDisconnected(ActivityExecutionContext context) => await context.ScheduleActivityAsync(Disconnected);
 
     /// <inheritdoc />
-    protected override async ValueTask HandleDone(ActivityExecutionContext context) => await context.ScheduleActivityAsync(FinishedSpeaking);
+    protected override async ValueTask HandleSpeakingHasFinished(ActivityExecutionContext context) => await context.ScheduleActivityAsync(FinishedSpeaking);
 }

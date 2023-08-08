@@ -7,7 +7,6 @@ using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Memory;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
-using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Core.Activities;
 
@@ -15,7 +14,6 @@ namespace Elsa.Workflows.Core.Activities;
 ///  Write a line of text to the console.
 /// </summary>
 [Activity("Elsa", "Console", "Write a line of text to the console.")]
-[PublicAPI]
 public class WriteLine : CodeActivity
 {
     /// <inheritdoc />

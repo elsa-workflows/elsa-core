@@ -2,7 +2,7 @@
 
 namespace Elsa.Telnyx.Payloads.Call;
 
-[Webhook(WebhookEventTypes.CallGatherEnded, WebhookActivityTypeNames.CallGatherEnded, "Call Gather Ended", "Triggered when an call gather has ended.")]
+[WebhookActivity(WebhookEventTypes.CallGatherEnded, WebhookActivityTypeNames.CallGatherEnded, "Call Gather Ended", "Triggered when an call gather has ended.")]
 public sealed record CallGatherEndedPayload : CallPayload
 {
     public string Digits { get; set; } = default!;

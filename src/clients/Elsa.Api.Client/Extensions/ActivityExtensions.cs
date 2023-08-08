@@ -115,4 +115,9 @@ public static class ActivityExtensions
     /// Sets the connections in the specified flowchart.
     /// </summary>
     public static void SetConnections(this JsonObject flowchart, IEnumerable<Connection> connections) => flowchart.SetProperty(JsonValue.Create(connections), "connections");
+    
+    /// <summary>
+    /// Gets the root activity in the specified activity.
+    /// </summary>
+    public static JsonObject? GetRoot(this JsonObject activity) => activity.GetProperty("root") as JsonObject;
 }

@@ -58,5 +58,5 @@ public class NewWorkflowInboxMessage
     /// <summary>
     /// The duration after which the message expires.
     /// </summary>
-    public TimeSpan TimeToLive { get; set; } = TimeSpan.FromMinutes(10);
+    public TimeSpan TimeToLive { get; set; } = TimeSpan.FromMinutes(1);
 }

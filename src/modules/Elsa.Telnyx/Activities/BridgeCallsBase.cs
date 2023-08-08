@@ -21,7 +21,7 @@ namespace Elsa.Telnyx.Activities;
 [Activity(Constants.Namespace, "Bridge two calls.", Kind = ActivityKind.Task)]
 [WebhookDriven(WebhookEventTypes.CallBridged)]
 [PublicAPI]
-public abstract class BridgeCallsBase : Activity<BridgedCallsOutput>, IBookmarksPersistedHandler
+public abstract class BridgeCallsBase : Activity<BridgedCallsOutput>
 {
     /// <inheritdoc />
     protected BridgeCallsBase(string? source = default, int? line = default) : base(source, line)
@@ -41,7 +41,7 @@ public abstract class BridgeCallsBase : Activity<BridgedCallsOutput>, IBookmarks
     public Input<string?>? CallControlIdB { get; set; }
 
     /// <inheritdoc />
-    public async ValueTask BookmarksPersistedAsync(ActivityExecutionContext context)
+    protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var callControlIdA = context.GetPrimaryCallControlId(CallControlIdA) ?? throw new Exception("CallControlA is required");
         var callControlIdB = context.GetSecondaryCallControlId(CallControlIdB) ?? throw new Exception("CallControlB is required");
@@ -51,6 +51,10 @@ public abstract class BridgeCallsBase : Activity<BridgedCallsOutput>, IBookmarks
         try
         {
             await telnyxClient.Calls.BridgeCallsAsync(callControlIdA, request, context.CancellationToken);
+            
+            var bookmarkA = new WebhookEventBookmarkPayload(WebhookEventTypes.CallBridged, callControlIdA);
+            var bookmarkB = new WebhookEventBookmarkPayload(WebhookEventTypes.CallBridged, callControlIdB);
+            context.CreateBookmarks(new[] { bookmarkA, bookmarkB }, ResumeAsync);
         }
         catch (ApiException e)
         {
@@ -60,18 +64,20 @@ public abstract class BridgeCallsBase : Activity<BridgedCallsOutput>, IBookmarks
         }
     }
 
-    /// <inheritdoc />
-    protected override void Execute(ActivityExecutionContext context)
-    {
-        var callControlIdA = context.GetPrimaryCallControlId(CallControlIdA) ?? throw new Exception("CallControlA is required");
-        var callControlIdB = context.GetSecondaryCallControlId(CallControlIdB) ?? throw new Exception("CallControlB is required");
-        var bookmarkA = new WebhookEventBookmarkPayload(WebhookEventTypes.CallBridged, callControlIdA);
-        var bookmarkB = new WebhookEventBookmarkPayload(WebhookEventTypes.CallBridged, callControlIdB);
-        context.CreateBookmarks(new[] { bookmarkA, bookmarkB }, ResumeAsync);
-    }
-
+    /// <summary>
+    /// Called when the call is disconnected.
+    /// </summary>
     protected abstract ValueTask HandleDisconnectedAsync(ActivityExecutionContext context);
+    
+    /// <summary>
+    /// Called when the call is bridged.
+    /// </summary> <param name="context"></param>
+    /// <returns></returns>
     protected abstract ValueTask HandleBridgedAsync(ActivityExecutionContext context);
+    
+    /// <summary>
+    /// Called when the activity is completed.
+    /// </summary>
     protected async ValueTask OnCompleted(ActivityExecutionContext context, ActivityExecutionContext childContext) => await context.CompleteActivityAsync();
 
     private async ValueTask ResumeAsync(ActivityExecutionContext context)

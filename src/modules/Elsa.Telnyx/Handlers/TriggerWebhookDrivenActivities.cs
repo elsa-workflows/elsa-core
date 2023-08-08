@@ -9,6 +9,7 @@ using Elsa.Telnyx.Payloads.Call;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Models;
 using JetBrains.Annotations;
 
 namespace Elsa.Telnyx.Handlers;
@@ -19,12 +20,12 @@ namespace Elsa.Telnyx.Handlers;
 [PublicAPI]
 internal class TriggerWebhookDrivenActivities : INotificationHandler<TelnyxWebhookReceived>
 {
-    private readonly IWorkflowRuntime _workflowRuntime;
+    private readonly IWorkflowInbox _workflowInbox;
     private readonly IActivityRegistry _activityRegistry;
 
-    public TriggerWebhookDrivenActivities(IWorkflowRuntime workflowRuntime, IActivityRegistry activityRegistry)
+    public TriggerWebhookDrivenActivities(IWorkflowInbox workflowInbox, IActivityRegistry activityRegistry)
     {
-        _workflowRuntime = workflowRuntime;
+        _workflowInbox = workflowInbox;
         _activityRegistry = activityRegistry;
     }
 
@@ -37,15 +38,28 @@ internal class TriggerWebhookDrivenActivities : INotificationHandler<TelnyxWebho
         var callControlId = callPayload?.CallControlId;
         var input = new Dictionary<string, object>().AddInput(eventPayload.GetType().Name, eventPayload);
         var activityDescriptors = FindActivityDescriptors(eventType).ToList();
-        var correlationId = ((Payload)webhook.Data.Payload).GetCorrelationId();
-        var bookmarkPayload = new WebhookEventBookmarkPayload(eventType);
-        var bookmarkPayloadWithCallControl = new WebhookEventBookmarkPayload(eventType, callControlId);
-        var options = new TriggerWorkflowsRuntimeOptions(correlationId, Input: input);
+        var clientStatePayload = ((Payload)webhook.Data.Payload).GetClientStatePayload();
+        var correlationId = clientStatePayload.CorrelationId;
+        var bookmarkPayload = new WebhookEventBookmarkPayload(eventType, default, clientStatePayload.ActivityInstanceId);
+        var bookmarkPayloadWithCallControl = new WebhookEventBookmarkPayload(eventType, callControlId, clientStatePayload.ActivityInstanceId);
 
         foreach (var activityDescriptor in activityDescriptors)
         {
-            await _workflowRuntime.ResumeWorkflowsAsync(activityDescriptor.TypeName, bookmarkPayload, options, cancellationToken);
-            await _workflowRuntime.ResumeWorkflowsAsync(activityDescriptor.TypeName, bookmarkPayloadWithCallControl, options, cancellationToken);
+            await _workflowInbox.SubmitAsync(new NewWorkflowInboxMessage
+            {
+                ActivityTypeName = activityDescriptor.TypeName,
+                BookmarkPayload = bookmarkPayload,
+                CorrelationId = correlationId,
+                Input = input
+            }, cancellationToken);
+            
+            await _workflowInbox.SubmitAsync(new NewWorkflowInboxMessage
+            {
+                ActivityTypeName = activityDescriptor.TypeName,
+                BookmarkPayload = bookmarkPayloadWithCallControl,
+                CorrelationId = correlationId,
+                Input = input
+            }, cancellationToken);
         }
     }
 

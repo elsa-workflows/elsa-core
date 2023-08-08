@@ -11,8 +11,7 @@ namespace Elsa.Workflows.Core.Activities;
 /// Execute a set of activities in parallel.
 /// </summary>
 [Activity("Elsa", "Workflows", "Execute a set of activities in parallel.")]
-[PublicAPI]
-[Browsable(false)]
+[Browsable(false)] // Hidden from the designer until we have Sequential activity designer support.
 public class Parallel : Container
 {
     private const string ScheduledChildrenProperty = "ScheduledChildren";

@@ -33,7 +33,7 @@ public class WebhookEventActivityProvider : IActivityProvider
     /// <inheritdoc />
     public async ValueTask<IEnumerable<ActivityDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default)
     {
-        var payloadTypes = WebhookPayloadTypes.PayloadTypes;
+        var payloadTypes = WebhookPayloadTypes.PayloadTypes.Where(x => x.GetCustomAttribute<WebhookActivityAttribute>() != null);
         return await CreateDescriptorsAsync(payloadTypes, cancellationToken);
     }
 
@@ -44,7 +44,7 @@ public class WebhookEventActivityProvider : IActivityProvider
 
     private async Task<ActivityDescriptor> CreateDescriptorAsync(Type payloadType, CancellationToken cancellationToken = default)
     {
-        var webhookAttribute = payloadType.GetCustomAttribute<WebhookAttribute>() ?? throw new Exception($"No WebhookAttribute found on payload type {payloadType}");
+        var webhookAttribute = payloadType.GetCustomAttribute<WebhookActivityAttribute>() ?? throw new Exception($"No WebhookActivityAttribute found on payload type {payloadType}");
         var typeName = webhookAttribute.ActivityType;
         var displayNameAttr = payloadType.GetCustomAttribute<DisplayNameAttribute>();
         var displayName = displayNameAttr?.DisplayName ?? webhookAttribute.DisplayName;

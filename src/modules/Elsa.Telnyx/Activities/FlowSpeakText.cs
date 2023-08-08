@@ -18,5 +18,5 @@ public class FlowSpeakText : SpeakTextBase
     protected override async ValueTask HandleDisconnected(ActivityExecutionContext context) => await context.CompleteActivityWithOutcomesAsync("Disconnected", "Done");
 
     /// <inheritdoc />
-    protected override async ValueTask HandleDone(ActivityExecutionContext context) => await context.CompleteActivityWithOutcomesAsync("Finished speaking", "Done");
+    protected override async ValueTask HandleSpeakingHasFinished(ActivityExecutionContext context) => await context.CompleteActivityWithOutcomesAsync("Finished speaking", "Done");
 }
