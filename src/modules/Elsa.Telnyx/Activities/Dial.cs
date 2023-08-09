@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Elsa.Extensions;
 using Elsa.Telnyx.Client.Models;
 using Elsa.Telnyx.Client.Services;
@@ -18,7 +19,7 @@ namespace Elsa.Telnyx.Activities;
 public class Dial : CodeActivity<DialResponse>
 {
     /// <inheritdoc />
-    public Dial(string? source = default, int? line = default) : base(source, line)
+    public Dial([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
 

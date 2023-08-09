@@ -40,8 +40,8 @@ internal class TriggerWebhookDrivenActivities : INotificationHandler<TelnyxWebho
         var activityDescriptors = FindActivityDescriptors(eventType).ToList();
         var clientStatePayload = ((Payload)webhook.Data.Payload).GetClientStatePayload();
         var correlationId = clientStatePayload.CorrelationId;
-        var bookmarkPayload = new WebhookEventBookmarkPayload(eventType, default, clientStatePayload.ActivityInstanceId);
-        var bookmarkPayloadWithCallControl = new WebhookEventBookmarkPayload(eventType, callControlId, clientStatePayload.ActivityInstanceId);
+        var bookmarkPayload = new WebhookEventBookmarkPayload(eventType);
+        var bookmarkPayloadWithCallControl = new WebhookEventBookmarkPayload(eventType, callControlId);
 
         foreach (var activityDescriptor in activityDescriptors)
         {
@@ -50,6 +50,7 @@ internal class TriggerWebhookDrivenActivities : INotificationHandler<TelnyxWebho
                 ActivityTypeName = activityDescriptor.TypeName,
                 BookmarkPayload = bookmarkPayload,
                 CorrelationId = correlationId,
+                ActivityInstanceId = clientStatePayload.ActivityInstanceId,
                 Input = input
             }, cancellationToken);
             
@@ -58,6 +59,7 @@ internal class TriggerWebhookDrivenActivities : INotificationHandler<TelnyxWebho
                 ActivityTypeName = activityDescriptor.TypeName,
                 BookmarkPayload = bookmarkPayloadWithCallControl,
                 CorrelationId = correlationId,
+                ActivityInstanceId = clientStatePayload.ActivityInstanceId,
                 Input = input
             }, cancellationToken);
         }

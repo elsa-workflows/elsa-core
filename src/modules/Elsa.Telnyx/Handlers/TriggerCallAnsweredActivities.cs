@@ -39,6 +39,7 @@ internal class TriggerCallAnsweredActivities : INotificationHandler<TelnyxWebhoo
 
         var clientStatePayload = callAnsweredPayload.GetClientStatePayload();
         var correlationId = clientStatePayload.CorrelationId;
+        var activityInstanceId = clientStatePayload.ActivityInstanceId!;
         var input = new Dictionary<string, object>().AddInput(callAnsweredPayload);
         var callControlId = callAnsweredPayload.CallControlId;
         
@@ -47,6 +48,7 @@ internal class TriggerCallAnsweredActivities : INotificationHandler<TelnyxWebhoo
             ActivityTypeName = ActivityTypeNameHelper.GenerateTypeName<CallAnswered>(),
             BookmarkPayload = new CallAnsweredBookmarkPayload(callControlId),
             CorrelationId = correlationId,
+            ActivityInstanceId = activityInstanceId,
             Input = input
         }, cancellationToken);
     }
