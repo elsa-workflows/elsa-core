@@ -1,7 +1,6 @@
 using Elsa.MongoDb.Helpers;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Runtime.Entities;
-using Elsa.Workflows.Runtime.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using MongoDB.Driver;

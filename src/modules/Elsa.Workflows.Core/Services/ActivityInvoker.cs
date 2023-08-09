@@ -1,4 +1,5 @@
 using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Core.Options;
 
 namespace Elsa.Workflows.Core.Services;
 
@@ -16,13 +17,10 @@ public class ActivityInvoker : IActivityInvoker
     }
 
     /// <inheritdoc />
-    public async Task InvokeAsync(WorkflowExecutionContext workflowExecutionContext,
-        IActivity activity,
-        ActivityExecutionContext? owner, 
-        object? tag)
+    public async Task InvokeAsync(WorkflowExecutionContext workflowExecutionContext, IActivity activity, ActivityInvocationOptions? options = default)
     {
         // Setup an activity execution context.
-        var activityExecutionContext = workflowExecutionContext.CreateActivityExecutionContext(activity, owner, tag);
+        var activityExecutionContext = workflowExecutionContext.CreateActivityExecutionContext(activity, options);
 
         // Add the activity context to the workflow context.
         workflowExecutionContext.AddActivityExecutionContext(activityExecutionContext);

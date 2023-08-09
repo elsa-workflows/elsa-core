@@ -230,8 +230,7 @@ public static class ActivityExecutionContextExtensions
     }
 
     /// <summary>
-    /// Schedules the specified activity with the provided callback.
-    /// If the activity is null, the callback is invoked immediately.
+    /// Schedules the specified activity.
     /// </summary>
     public static async Task ScheduleOutcomeAsync(this ActivityExecutionContext context, IActivity? activity, [CallerArgumentExpression("activity")] string portPropertyName = default!)
     {

@@ -3,7 +3,6 @@ using Elsa.Features.Services;
 using Elsa.MongoDb.Common;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Features;
-using Elsa.Workflows.Runtime.Models;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.MongoDb.Modules.Runtime;

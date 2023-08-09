@@ -112,7 +112,9 @@ public class WorkflowExecutionContextMapper : IWorkflowExecutionContextMapper
                 Status = activityExecutionContext.Status,
                 StartedAt = activityExecutionContext.StartedAt,
                 CompletedAt = activityExecutionContext.CompletedAt,
-                Tag = activityExecutionContext.Tag
+                Tag = activityExecutionContext.Tag,
+                DynamicVariables = activityExecutionContext.DynamicVariables
+                
             };
             return activityExecutionContextState;
         }
@@ -135,6 +137,7 @@ public class WorkflowExecutionContextMapper : IWorkflowExecutionContextMapper
             activityExecutionContext.StartedAt = activityExecutionContextState.StartedAt;
             activityExecutionContext.CompletedAt = activityExecutionContextState.CompletedAt;
             activityExecutionContext.Tag = activityExecutionContextState.Tag;
+            activityExecutionContext.DynamicVariables = activityExecutionContextState.DynamicVariables;
 
             return activityExecutionContext;
         }

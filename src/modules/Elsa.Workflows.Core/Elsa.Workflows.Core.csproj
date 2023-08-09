@@ -27,8 +27,4 @@
         <ProjectReference Include="..\Elsa.Expressions\Elsa.Expressions.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Bookmarks\" />
-    </ItemGroup>
-
 </Project>

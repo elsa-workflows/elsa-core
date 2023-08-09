@@ -7,6 +7,7 @@ using Elsa.Extensions;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Memory;
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Options;
 using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Core;
@@ -87,7 +88,20 @@ public class ActivityExecutionContext : IExecutionContext
     public ExpressionExecutionContext ExpressionExecutionContext { get; }
 
     /// <inheritdoc />
-    public IEnumerable<Variable> Variables => (Activity as IVariableContainer)?.Variables ?? Enumerable.Empty<Variable>();
+    public IEnumerable<Variable> Variables
+    {
+        get
+        {
+            var containerVariables = (Activity as IVariableContainer)?.Variables ?? Enumerable.Empty<Variable>();
+            var dynamicVariables = DynamicVariables;
+            return containerVariables.Concat(dynamicVariables).DistinctBy(x => x.Name);
+        }
+    }
+
+    /// <summary>
+    /// A list of variables that are dynamically added to the activity execution context.
+    /// </summary>
+    public ICollection<Variable> DynamicVariables { get; set; } = new List<Variable>();
 
     /// <summary>
     /// The currently executing activity.
@@ -159,47 +173,49 @@ public class ActivityExecutionContext : IExecutionContext
     /// Schedules the specified activity to be executed.
     /// </summary>
     /// <param name="activity">The activity to schedule.</param>
-    /// <param name="completionCallback">An optional callback that is invoked when the activity completes.</param>
-    /// <param name="tag">An optional tag that can be used to identify the activity.</param>
-    public async ValueTask ScheduleActivityAsync(IActivity? activity, ActivityCompletionCallback? completionCallback = default, object? tag = default)
+    /// <param name="completionCallback">An optional callback to invoke when the activity completes.</param>
+    /// <param name="tag">An optional tag to associate with the activity execution.</param>
+    /// <param name="variables">An optional list of variables to declare with the activity execution.</param>
+    public async ValueTask ScheduleActivityAsync(IActivity? activity, ActivityCompletionCallback? completionCallback, object? tag = default, IEnumerable<Variable>? variables = default)
     {
-        var activityNode = activity != null ? WorkflowExecutionContext.FindNodeByActivity(activity) : default;
-        await ScheduleActivityAsync(activityNode, completionCallback, tag);
+        var options = new ScheduleWorkOptions(completionCallback, tag, variables);
+        await ScheduleActivityAsync(activity, options);
     }
 
     /// <summary>
     /// Schedules the specified activity to be executed.
     /// </summary>
     /// <param name="activity">The activity to schedule.</param>
-    /// <param name="owner">The activity execution context that owns the activity.</param>
-    /// <param name="completionCallback">An optional callback that is invoked when the activity completes.</param>
-    /// <param name="tag">An optional tag that can be used to identify the activity.</param>
-    public async ValueTask ScheduleActivityAsync(IActivity? activity, ActivityExecutionContext owner, ActivityCompletionCallback? completionCallback = default, object? tag = default)
+    /// <param name="options">The options used to schedule the activity.</param>
+    public async ValueTask ScheduleActivityAsync(IActivity? activity, ScheduleWorkOptions? options = default)
     {
         var activityNode = activity != null ? WorkflowExecutionContext.FindNodeByActivity(activity) : default;
-        await ScheduleActivityAsync(activityNode, this, completionCallback, tag);
+        await ScheduleActivityAsync(activityNode, this, options);
     }
 
     /// <summary>
     /// Schedules the specified activity to be executed.
     /// </summary>
-    /// <param name="activityNode">The activity node to schedule.</param>
-    /// <param name="completionCallback">An optional callback that is invoked when the activity completes.</param>
-    /// <param name="tag">An optional tag that can be used to identify the activity.</param>
-    public async ValueTask ScheduleActivityAsync(ActivityNode? activityNode, ActivityCompletionCallback? completionCallback = default, object? tag = default)
+    /// <param name="activity">The activity to schedule.</param>
+    /// <param name="owner">The activity execution context that owns the scheduled activity.</param>
+    /// <param name="options">The options used to schedule the activity.</param>
+    public async ValueTask ScheduleActivityAsync(IActivity? activity, ActivityExecutionContext? owner, ScheduleWorkOptions? options = default)
     {
-        await ScheduleActivityAsync(activityNode, this, completionCallback, tag);
+        var activityNode = activity != null ? WorkflowExecutionContext.FindNodeByActivity(activity) : default;
+        await ScheduleActivityAsync(activityNode, owner, options);
     }
-
+    
     /// <summary>
     /// Schedules the specified activity to be executed.
     /// </summary>
     /// <param name="activityNode">The activity node to schedule.</param>
-    /// <param name="owner">The activity execution context that owns the activity.</param>
-    /// <param name="completionCallback">An optional callback that is invoked when the activity completes.</param>
-    /// <param name="tag">An optional tag that can be used to identify the activity.</param>
-    public async ValueTask ScheduleActivityAsync(ActivityNode? activityNode, ActivityExecutionContext owner, ActivityCompletionCallback? completionCallback = default, object? tag = default)
+    /// <param name="owner">The activity execution context that owns the scheduled activity.</param>
+    /// <param name="options">The options used to schedule the activity.</param>
+    public async ValueTask ScheduleActivityAsync(ActivityNode? activityNode, ActivityExecutionContext? owner = default, ScheduleWorkOptions? options = default)
     {
+        var completionCallback = options?.CompletionCallback;
+        owner ??= this;
+
         if (activityNode == null)
         {
             if (completionCallback != null)
@@ -209,7 +225,7 @@ public class ActivityExecutionContext : IExecutionContext
             return;
         }
 
-        WorkflowExecutionContext.Schedule(activityNode, owner, completionCallback, tag);
+        WorkflowExecutionContext.Schedule(activityNode, owner, options);
     }
 
     /// <summary>
@@ -222,11 +238,24 @@ public class ActivityExecutionContext : IExecutionContext
     /// Schedules the specified activities to be executed.
     /// </summary>
     /// <param name="activities">The activities to schedule.</param>
-    /// <param name="completionCallback">An optional callback that is invoked for each activity when it completes.</param>
-    public async ValueTask ScheduleActivities(IEnumerable<IActivity?> activities, ActivityCompletionCallback? completionCallback = default)
+    /// <param name="completionCallback">The callback to invoke when the activities complete.</param>
+    /// <param name="tag">An optional tag to associate with the activity execution.</param>
+    /// <param name="variables">An optional list of variables to declare with the activity execution.</param>
+    public async ValueTask ScheduleActivities(IEnumerable<IActivity?> activities, ActivityCompletionCallback? completionCallback, object? tag = default, IEnumerable<Variable>? variables = default)
+    {
+        var options = new ScheduleWorkOptions(completionCallback, tag, variables);
+        await ScheduleActivities(activities, options);
+    }
+
+    /// <summary>
+    /// Schedules the specified activities to be executed.
+    /// </summary>
+    /// <param name="activities">The activities to schedule.</param>
+    /// <param name="options">The options used to schedule the activities.</param>
+    public async ValueTask ScheduleActivities(IEnumerable<IActivity?> activities, ScheduleWorkOptions? options = default)
     {
         foreach (var activity in activities)
-            await ScheduleActivityAsync(activity, completionCallback);
+            await ScheduleActivityAsync(activity, options);
     }
 
     /// <summary>

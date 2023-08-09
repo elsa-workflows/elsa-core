@@ -9,6 +9,7 @@ using Elsa.Common.Contracts;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Memory;
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Options;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Core;
@@ -122,7 +123,7 @@ public class WorkflowExecutionContext : IExecutionContext
     /// The date and time the workflow execution context was created.
     /// </summary>
     public DateTimeOffset CreatedAt { get; set; }
-    
+
     /// <summary>
     /// A flattened list of <see cref="ActivityNode"/>s from the <see cref="Graph"/>. 
     /// </summary>
@@ -373,16 +374,34 @@ public class WorkflowExecutionContext : IExecutionContext
     /// <summary>
     /// Creates a new <see cref="ActivityExecutionContext"/> for the specified activity.
     /// </summary>
-    public ActivityExecutionContext CreateActivityExecutionContext(IActivity activity, ActivityExecutionContext? parentContext = default, object? tag = default)
+    public ActivityExecutionContext CreateActivityExecutionContext(IActivity activity, ActivityInvocationOptions? options = default)
     {
         var activityDescriptor = _activityRegistry.Find(activity) ?? throw new Exception($"Activity with type {activity.Type} not found in registry");
+        var tag = options?.Tag;
+        var parentContext = options?.Owner;
         var parentExpressionExecutionContext = parentContext?.ExpressionExecutionContext ?? ExpressionExecutionContext;
         var properties = ExpressionExecutionContextExtensions.CreateActivityExecutionContextPropertiesFrom(this, Input);
         var memory = new MemoryRegister();
         var now = _systemClock.UtcNow;
         var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, memory, parentExpressionExecutionContext, properties, CancellationToken);
         var activityExecutionContext = new ActivityExecutionContext(this, parentContext, expressionExecutionContext, activity, activityDescriptor, now, tag, _systemClock, CancellationToken);
+        var variablesToDeclare = options?.Variables ?? Array.Empty<Variable>();
+        var variableContainer = new[] { activityExecutionContext.ActivityNode }.Concat(activityExecutionContext.ActivityNode.Ancestors()).FirstOrDefault(x => x.Activity is IVariableContainer)?.Activity as IVariableContainer;
         expressionExecutionContext.TransientProperties[ExpressionExecutionContextExtensions.ActivityExecutionContextKey] = activityExecutionContext;
+
+        if (variableContainer != null)
+        {
+            foreach (var variable in variablesToDeclare)
+            {
+                // Declare a dynamic variable on the activity execution context.
+                activityExecutionContext.DynamicVariables.RemoveWhere(x => x.Name == variable.Name);
+                activityExecutionContext.DynamicVariables.Add(variable);
+                
+                // Assign the variable to the expression execution context.
+                expressionExecutionContext.CreateVariable(variable.Name, variable.Value);
+            }
+        }
+
         return activityExecutionContext;
     }
 

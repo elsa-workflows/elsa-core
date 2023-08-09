@@ -1,7 +1,7 @@
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Core.Options;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
@@ -98,13 +98,15 @@ public static class WorkflowExecutionContextExtensions
         this WorkflowExecutionContext workflowExecutionContext,
         ActivityNode activityNode,
         ActivityExecutionContext owner,
-        ActivityCompletionCallback? completionCallback = default,
-        object? tag = default)
+        ScheduleWorkOptions? options = default)
     {
         var activityInvoker = workflowExecutionContext.GetRequiredService<IActivityInvoker>();
         var toolVersion = workflowExecutionContext.Workflow.ToolVersion;
         var activityId = toolVersion.Major >= 3 ? activityNode.Activity.Id : activityNode.NodeId;
-        var workItem = new ActivityWorkItem(activityId, owner.Id, async () => await activityInvoker.InvokeAsync(workflowExecutionContext, activityNode.Activity, owner, tag), tag);
+        var tag = options?.Tag;
+        var activityInvocationOptions = new ActivityInvocationOptions(owner, tag, options?.Variables);
+        var workItem = new ActivityWorkItem(activityId, owner.Id, async () => await activityInvoker.InvokeAsync(workflowExecutionContext, activityNode.Activity, activityInvocationOptions), tag);
+        var completionCallback = options?.CompletionCallback;
         workflowExecutionContext.Scheduler.Schedule(workItem);
         workflowExecutionContext.AddCompletionCallback(owner, activityNode, completionCallback);
     }
