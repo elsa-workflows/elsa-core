@@ -68,9 +68,8 @@ public static class ActivityExtensions
     public static object? GetOutput(this IActivity activity, ExpressionExecutionContext context, string? outputName = default)
     {
         var workflowExecutionContext = context.GetWorkflowExecutionContext();
-        var activityNode = workflowExecutionContext.FindNodeByActivity(activity);
         var outputRegister = workflowExecutionContext.GetActivityOutputRegister();
-        var output = outputRegister.FindOutputByNodeId(activityNode.NodeId, outputName);
+        var output = outputRegister.FindOutputByActivityInstanceId(context.GetActivityExecutionContext().Id, outputName);
         return output;
     }
 

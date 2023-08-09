@@ -1,5 +1,3 @@
-using Elsa.Extensions;
-
 namespace Elsa.Workflows.Core.Models;
 
 /// <summary>
@@ -7,14 +5,12 @@ namespace Elsa.Workflows.Core.Models;
 /// </summary>
 public class ActivityOutputRegister
 {
+    private readonly ICollection<ActivityOutputRecord> _records = new List<ActivityOutputRecord>();
+    
     /// <summary>
     /// The default output name.
     /// </summary>
     public const string DefaultOutputName = "Result";
-    
-    private readonly Dictionary<string, IDictionary<string, object>> _nodeIdLookup = new();
-    private readonly Dictionary<string, IDictionary<string, object>> _activityIdLookup = new();
-    private readonly Dictionary<string, IDictionary<string, object>> _activityInstanceIdLookup = new();
     
     /// <summary>
     /// Records an activity's output.
@@ -34,30 +30,21 @@ public class ActivityOutputRegister
     /// <param name="outputValue">The output value.</param>
     public void Record(ActivityExecutionContext activityExecutionContext, string? outputName, object? outputValue)
     {
-        var nodeId = activityExecutionContext.NodeId;
         var activityId = activityExecutionContext.Activity.Id;
         var activityInstanceId = activityExecutionContext.Id;
-        var record = (_nodeIdLookup.TryGetValue(nodeId, out var value) ? value : default) ?? new Dictionary<string, object>();
-
-        record[outputName ?? DefaultOutputName] = outputValue!;
+        var containerId = activityExecutionContext.ParentActivityExecutionContext!.Id;
         
-        _nodeIdLookup[nodeId] = record;
-        _activityIdLookup[activityId] = record;
-        _activityInstanceIdLookup[activityInstanceId] = record;
+        outputName ??= DefaultOutputName;
+        var record = new ActivityOutputRecord(containerId, activityId, activityInstanceId, outputName, outputValue);
+        
+        _records.Add(record);
     }
-
+    
     /// <summary>
-    /// Gets the output value for the specified node ID.
+    /// Finds all output records matching the specified predicate.
     /// </summary>
-    /// <param name="nodeId">The node ID.</param>
-    /// <param name="outputName">Name of the output.</param>
-    /// <returns>The output value.</returns>
-    public object? FindOutputByNodeId(string nodeId, string? outputName = default)
-    {
-        var record = _nodeIdLookup.TryGetValue(nodeId, out var value) ? value : default;
-        return record?.GetValueOrDefault<object>(outputName ?? DefaultOutputName);
-    }
-
+    public IEnumerable<ActivityOutputRecord> FindMany(Func<ActivityOutputRecord, bool> predicate) => _records.Where(predicate);
+    
     /// <summary>
     /// Gets the output value for the specified activity ID.
     /// </summary>
@@ -66,8 +53,8 @@ public class ActivityOutputRegister
     /// <returns>The output value.</returns>
     public object? FindOutputByActivityId(string activityId, string? outputName = default)
     {
-        var record = _activityIdLookup.TryGetValue(activityId, out var value) ? value : default;
-        return record?.GetValueOrDefault<object>(outputName ?? DefaultOutputName);
+        var record = _records.FirstOrDefault(x => x.ActivityId == activityId && x.OutputName == (outputName ?? DefaultOutputName));
+        return record?.Value;
     }
 
     /// <summary>
@@ -78,7 +65,7 @@ public class ActivityOutputRegister
     /// <returns>The output value.</returns>
     public object? FindOutputByActivityInstanceId(string activityInstanceId, string? outputName = default)
     {
-        var record = _activityInstanceIdLookup.TryGetValue(activityInstanceId, out var value) ? value : default;
-        return record?.GetValueOrDefault<object>(outputName ?? DefaultOutputName);
+        var record = _records.FirstOrDefault(x => x.ActivityInstanceId == activityInstanceId && x.OutputName == (outputName ?? DefaultOutputName));
+        return record?.Value;
     }
 }

@@ -104,7 +104,12 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
     {
         var workflowExecutionContext = context.GetWorkflowExecutionContext();
         var outputRegister = workflowExecutionContext.GetActivityOutputRegister();
-        return outputRegister.FindOutputByActivityId(activityId, outputName);
+        var outputRecordCandidates = outputRegister.FindMany(x => x.ActivityId == activityId && x.OutputName == outputName).ToList();
+        var currentActivityExecutionContext = context.GetActivityExecutionContext();
+        var containerIds = currentActivityExecutionContext.GetAncestors().Select(x => x.Id).ToList();
+        var filteredOutputRecordCandidates = outputRecordCandidates.Where(x => containerIds.Contains(x.ContainerId)).ToList();
+        var outputRecord = filteredOutputRecordCandidates.FirstOrDefault();
+        return outputRecord?.Value;
     }
 
     private static void CreateVariableAccessors(Engine engine, ExpressionExecutionContext context)
@@ -129,15 +134,15 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
     {
         var variable = context.GetVariable(variableName);
         var value = variable?.Get(context);
-        
+
         return ConvertIEnumerableToArray(value);
     }
 
     private static object ConvertIEnumerableToArray(object? obj)
     {
-        if(obj == null)
+        if (obj == null)
             return null!;
-        
+
         // If it's not an IEnumerable or it's a string, return the original object
         if (obj is not IEnumerable enumerable || obj is string)
             return obj;
