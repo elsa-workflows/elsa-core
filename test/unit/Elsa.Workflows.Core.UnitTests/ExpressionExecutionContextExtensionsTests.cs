@@ -71,14 +71,18 @@ public class ExpressionExecutionContextExtensionsTests
     }
 
     [Fact]
-    public void SetVariable_ThrowsException_WhenVariableDoesNotExist()
+    public void SetVariable_CreatesVariable_WhenVariableDoesNotExist()
     {
         // Arrange
         var memoryRegister = new MemoryRegister(new Dictionary<string, MemoryBlock>());
         var context = new ExpressionExecutionContext(null!, memoryRegister);
 
-        // Act & Assert
-        Assert.Throws<Exception>(() => context.SetVariable("nonexistent", 10));
+        // Act
+        context.CreateVariable("newVariable", 10);
+
+        // Assert
+        var variable = context.GetVariable<int>("newVariable");
+        Assert.Equal(10, variable);
     }
 
     [Fact]
