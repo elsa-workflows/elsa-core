@@ -1,0 +1,19 @@
+name: Auto-PR-Body Generator
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  repository-projects: write
+  pull-requests: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: AI powered Automatic PR Body Generation
+        uses: jbrocher/auto-pr-body-generator@v0.2.2
+        with:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
